@@ -20,6 +20,7 @@ delete:
       description: The ID of the session (the `id` of a browser session).
       schema:
         $ref: ../components/schemas/Id.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The browser is signed out.

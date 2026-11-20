@@ -15437,6 +15437,11 @@ type PreviewDomainBlockImportRequest struct {
 //     use the app (registration pending or rejected, email unverified, the account
 //     deactivated or deleted, or a moderation action that disables its login). The user
 //     can still sign in to the server's sign-in page, which says why.
+//   - `/api/v1/problems/idempotency-key-reused` (422): the `Idempotency-Key` was sent to the
+//     operation with another request in the last 24 hours. Choose a new key for a new request.
+//   - `/api/v1/problems/idempotency-key-in-use` (409): the request with this
+//     `Idempotency-Key` is still being carried out. Send it again after `Retry-After` for its
+//     answer.
 //   - `/api/v1/problems/blocking` (409): the viewer blocks the account, which keeps them
 //     from following it. Unblock it first.
 //   - `/api/v1/problems/federation-restricted` (403): the instance's federation mode
@@ -18478,6 +18483,73 @@ type StatusAfterAction = Status
 type RemoveAccountAliasParams struct {
 	// Uri The `uri` of the alias, as `GET /accounts/aliases` lists it.
 	Uri string `form:"uri" json:"uri"`
+
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AddAccountAliasParams defines parameters for AddAccountAlias.
+type AddAccountAliasParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeactivateOwnAccountParams defines parameters for DeactivateOwnAccount.
+type DeactivateOwnAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteOwnAccountParams defines parameters for DeleteOwnAccount.
+type DeleteOwnAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ResendVerificationEmailParams defines parameters for ResendVerificationEmail.
+type ResendVerificationEmailParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // LookupAccountParams defines parameters for LookupAccount.
@@ -18487,6 +18559,62 @@ type LookupAccountParams struct {
 
 	// Resolve Fetch a remote account that the instance does not know yet.
 	Resolve *bool `form:"resolve,omitempty" json:"resolve,omitempty"`
+}
+
+// CancelOwnAccountMoveParams defines parameters for CancelOwnAccountMove.
+type CancelOwnAccountMoveParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// MoveOwnAccountParams defines parameters for MoveOwnAccount.
+type MoveOwnAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ChangePasswordParams defines parameters for ChangePassword.
+type ChangePasswordParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RemovePasswordParams defines parameters for RemovePassword.
+type RemovePasswordParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // GetRelationshipsParams defines parameters for GetRelationships.
@@ -18511,6 +18639,90 @@ type ListAccountSuggestionsParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// UpdateAccountCredentialsParams defines parameters for UpdateAccountCredentials.
+type UpdateAccountCredentialsParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnblockAccountParams defines parameters for UnblockAccount.
+type UnblockAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// BlockAccountParams defines parameters for BlockAccount.
+type BlockAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnfollowAccountParams defines parameters for UnfollowAccount.
+type UnfollowAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// FollowAccountParams defines parameters for FollowAccount.
+type FollowAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RemoveFollowerParams defines parameters for RemoveFollower.
+type RemoveFollowerParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListAccountFollowersParams defines parameters for ListAccountFollowers.
 type ListAccountFollowersParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -18527,6 +18739,62 @@ type ListAccountFollowingParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// UnmuteAccountParams defines parameters for UnmuteAccount.
+type UnmuteAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// MuteAccountParams defines parameters for MuteAccount.
+type MuteAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteAccountNoteParams defines parameters for DeleteAccountNote.
+type DeleteAccountNoteParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetAccountNoteParams defines parameters for SetAccountNote.
+type SetAccountNoteParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListAccountStatusesParams defines parameters for ListAccountStatuses.
@@ -18552,6 +18820,48 @@ type ListAccountStatusesParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// UnsubscribeAccountParams defines parameters for UnsubscribeAccount.
+type UnsubscribeAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SubscribeAccountParams defines parameters for SubscribeAccount.
+type SubscribeAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// LiftAccountActionParams defines parameters for LiftAccountAction.
+type LiftAccountActionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListAdminAccountsParams defines parameters for ListAdminAccounts.
@@ -18601,6 +18911,76 @@ type ListAccountActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateAccountActionParams defines parameters for CreateAccountAction.
+type CreateAccountActionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// LiftAdminAccountEmailSuppressionParams defines parameters for LiftAdminAccountEmailSuppression.
+type LiftAdminAccountEmailSuppressionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RefetchAccountStatusesParams defines parameters for RefetchAccountStatuses.
+type RefetchAccountStatusesParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RevokeAccountRoleParams defines parameters for RevokeAccountRole.
+type RevokeAccountRoleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// GrantAccountRoleParams defines parameters for GrantAccountRole.
+type GrantAccountRoleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListAdminAccountSameIPAccountsParams defines parameters for ListAdminAccountSameIPAccounts.
 type ListAdminAccountSameIPAccountsParams struct {
 	// Ip The IP address, as `sign_ins` or `registration_ip` of the reveal give it.
@@ -18622,6 +19002,20 @@ type ListAdminAccountSignInsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// DisableAdminAccountTwoFactorParams defines parameters for DisableAdminAccountTwoFactor.
+type DisableAdminAccountTwoFactorParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListAdminAnnouncementsParams defines parameters for ListAdminAnnouncements.
 type ListAdminAnnouncementsParams struct {
 	// State Keep only these announcements; omitted keeps every one.
@@ -18634,6 +19028,76 @@ type ListAdminAnnouncementsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateAdminAnnouncementParams defines parameters for CreateAdminAnnouncement.
+type CreateAdminAnnouncementParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteAdminAnnouncementParams defines parameters for DeleteAdminAnnouncement.
+type DeleteAdminAnnouncementParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateAdminAnnouncementParams defines parameters for UpdateAdminAnnouncement.
+type UpdateAdminAnnouncementParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// PublishAdminAnnouncementParams defines parameters for PublishAdminAnnouncement.
+type PublishAdminAnnouncementParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// WithdrawAdminAnnouncementParams defines parameters for WithdrawAdminAnnouncement.
+type WithdrawAdminAnnouncementParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListAppealsParams defines parameters for ListAppeals.
 type ListAppealsParams struct {
 	// State Keep only the appeals in this state; omitted keeps every state.
@@ -18644,6 +19108,34 @@ type ListAppealsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// OverturnAppealParams defines parameters for OverturnAppeal.
+type OverturnAppealParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpholdAppealParams defines parameters for UpholdAppeal.
+type UpholdAppealParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListAuditLogParams defines parameters for ListAuditLog.
@@ -18668,6 +19160,62 @@ type ListAuditLogParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// RunBillingImportParams defines parameters for RunBillingImport.
+type RunBillingImportParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// WithdrawServiceClosureParams defines parameters for WithdrawServiceClosure.
+type WithdrawServiceClosureParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AnnounceServiceClosureParams defines parameters for AnnounceServiceClosure.
+type AnnounceServiceClosureParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CloseServiceParams defines parameters for CloseService.
+type CloseServiceParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListCostItemsParams defines parameters for ListCostItems.
 type ListCostItemsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -18675,6 +19223,76 @@ type ListCostItemsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// CreateCostItemParams defines parameters for CreateCostItem.
+type CreateCostItemParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteCostItemParams defines parameters for DeleteCostItem.
+type DeleteCostItemParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateCostItemParams defines parameters for UpdateCostItem.
+type UpdateCostItemParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetCostItemEndParams defines parameters for SetCostItemEnd.
+type SetCostItemEndParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ReviseCostItemPriceParams defines parameters for ReviseCostItemPrice.
+type ReviseCostItemPriceParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // GetCostTotalsParams defines parameters for GetCostTotals.
@@ -18703,6 +19321,34 @@ type ListAdminCustomEmojiRequestsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ApproveCustomEmojiRequestParams defines parameters for ApproveCustomEmojiRequest.
+type ApproveCustomEmojiRequestParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RejectCustomEmojiRequestParams defines parameters for RejectCustomEmojiRequest.
+type RejectCustomEmojiRequestParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListAdminCustomEmojisParams defines parameters for ListAdminCustomEmojis.
 type ListAdminCustomEmojisParams struct {
 	// Local Keep the local emoji (`true`) or the remote ones (`false`).
@@ -18721,6 +19367,104 @@ type ListAdminCustomEmojisParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateCustomEmojiParams defines parameters for CreateCustomEmoji.
+type CreateCustomEmojiParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteCustomEmojiParams defines parameters for DeleteCustomEmoji.
+type DeleteCustomEmojiParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateCustomEmojiParams defines parameters for UpdateCustomEmoji.
+type UpdateCustomEmojiParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CopyCustomEmojiParams defines parameters for CopyCustomEmoji.
+type CopyCustomEmojiParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DisableCustomEmojiParams defines parameters for DisableCustomEmoji.
+type DisableCustomEmojiParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// EnableCustomEmojiParams defines parameters for EnableCustomEmoji.
+type EnableCustomEmojiParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ReplaceCustomEmojiImageParams defines parameters for ReplaceCustomEmojiImage.
+type ReplaceCustomEmojiImageParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListDomainActionsParams defines parameters for ListDomainActions.
 type ListDomainActionsParams struct {
 	// Domain Keep only the actions on this domain (not those on its parent domains). It is
@@ -18737,10 +19481,94 @@ type ListDomainActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateDomainActionParams defines parameters for CreateDomainAction.
+type CreateDomainActionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // GetDomainSuspendImpactParams defines parameters for GetDomainSuspendImpact.
 type GetDomainSuspendImpactParams struct {
 	// Domain The domain to count for; its subdomains are counted with it.
 	Domain string `form:"domain" json:"domain"`
+}
+
+// ImportDomainBlocksParams defines parameters for ImportDomainBlocks.
+type ImportDomainBlocksParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// PreviewDomainBlockImportParams defines parameters for PreviewDomainBlockImport.
+type PreviewDomainBlockImportParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// LiftDomainActionParams defines parameters for LiftDomainAction.
+type LiftDomainActionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CreateDomainAllowParams defines parameters for CreateDomainAllow.
+type CreateDomainAllowParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RemoveDomainAllowParams defines parameters for RemoveDomainAllow.
+type RemoveDomainAllowParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListDomainListSubscriptionsParams defines parameters for ListDomainListSubscriptions.
@@ -18752,10 +19580,91 @@ type ListDomainListSubscriptionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateDomainListSubscriptionParams defines parameters for CreateDomainListSubscription.
+type CreateDomainListSubscriptionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // DeleteDomainListSubscriptionParams defines parameters for DeleteDomainListSubscription.
 type DeleteDomainListSubscriptionParams struct {
 	// LiftActions Lift the actions the subscription issued.
 	LiftActions *bool `form:"lift_actions,omitempty" json:"lift_actions,omitempty"`
+
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateDomainListSubscriptionParams defines parameters for UpdateDomainListSubscription.
+type UpdateDomainListSubscriptionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AcceptDomainListDraftsParams defines parameters for AcceptDomainListDrafts.
+type AcceptDomainListDraftsParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RejectDomainListDraftsParams defines parameters for RejectDomainListDrafts.
+type RejectDomainListDraftsParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// FetchDomainListSubscriptionParams defines parameters for FetchDomainListSubscription.
+type FetchDomainListSubscriptionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListDomainListFetchesParams defines parameters for ListDomainListFetches.
@@ -18782,6 +19691,62 @@ type ListErrorGroupsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// MuteErrorGroupParams defines parameters for MuteErrorGroup.
+type MuteErrorGroupParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ResolveErrorGroupParams defines parameters for ResolveErrorGroup.
+type ResolveErrorGroupParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnmuteErrorGroupParams defines parameters for UnmuteErrorGroup.
+type UnmuteErrorGroupParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CancelEventAsModeratorParams defines parameters for CancelEventAsModerator.
+type CancelEventAsModeratorParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListHookAppealsParams defines parameters for ListHookAppeals.
 type ListHookAppealsParams struct {
 	// State Keep only the appeals in this state; omitted keeps every state.
@@ -18792,6 +19757,34 @@ type ListHookAppealsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// OverturnHookAppealParams defines parameters for OverturnHookAppeal.
+type OverturnHookAppealParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpholdHookAppealParams defines parameters for UpholdHookAppeal.
+type UpholdHookAppealParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListHookDecisionsParams defines parameters for ListHookDecisions.
@@ -18810,6 +19803,20 @@ type ListHookDecisionsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// OverrideHookDecisionParams defines parameters for OverrideHookDecision.
+type OverrideHookDecisionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListIncomeMovementsParams defines parameters for ListIncomeMovements.
@@ -18842,6 +19849,62 @@ type GetIncomeTotalsParams struct {
 
 	// Basis How the totals place a payment; `amortized` by default.
 	Basis *CostBasis `form:"basis,omitempty" json:"basis,omitempty"`
+}
+
+// SanitizeAdminBrandParams defines parameters for SanitizeAdminBrand.
+type SanitizeAdminBrandParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ClearAdminBrandParams defines parameters for ClearAdminBrand.
+type ClearAdminBrandParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetAdminBrandParams defines parameters for SetAdminBrand.
+type SetAdminBrandParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetInstanceTextParams defines parameters for SetInstanceText.
+type SetInstanceTextParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListInstanceHealthParams defines parameters for ListInstanceHealth.
@@ -18880,6 +19943,34 @@ type ListInstanceDeliveriesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// MarkInstanceAvailableParams defines parameters for MarkInstanceAvailable.
+type MarkInstanceAvailableParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RefetchInstanceStatusesParams defines parameters for RefetchInstanceStatuses.
+type RefetchInstanceStatusesParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListInvitesParams defines parameters for ListInvites.
 type ListInvitesParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -18887,6 +19978,34 @@ type ListInvitesParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// CreateInviteParams defines parameters for CreateInvite.
+type CreateInviteParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RevokeInviteParams defines parameters for RevokeInvite.
+type RevokeInviteParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListAdminJobsParams defines parameters for ListAdminJobs.
@@ -18913,6 +20032,132 @@ type ListAdminJobAttemptsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// RetryAdminJobParams defines parameters for RetryAdminJob.
+type RetryAdminJobParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RemoveLinkCardDomainRuleParams defines parameters for RemoveLinkCardDomainRule.
+type RemoveLinkCardDomainRuleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetLinkCardDomainRuleParams defines parameters for SetLinkCardDomainRule.
+type SetLinkCardDomainRuleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CreateLoginProviderParams defines parameters for CreateLoginProvider.
+type CreateLoginProviderParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteLoginProviderParams defines parameters for DeleteLoginProvider.
+type DeleteLoginProviderParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateLoginProviderParams defines parameters for UpdateLoginProvider.
+type UpdateLoginProviderParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DisableLoginProviderParams defines parameters for DisableLoginProvider.
+type DisableLoginProviderParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// EnableLoginProviderParams defines parameters for EnableLoginProvider.
+type EnableLoginProviderParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RotateLoginProviderSecretParams defines parameters for RotateLoginProviderSecret.
+type RotateLoginProviderSecretParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListOAuthClientHostDenialsParams defines parameters for ListOAuthClientHostDenials.
 type ListOAuthClientHostDenialsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -18920,6 +20165,34 @@ type ListOAuthClientHostDenialsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// DenyOAuthClientHostParams defines parameters for DenyOAuthClientHost.
+type DenyOAuthClientHostParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AllowOAuthClientHostParams defines parameters for AllowOAuthClientHost.
+type AllowOAuthClientHostParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListAdminOAuthClientsParams defines parameters for ListAdminOAuthClients.
@@ -18934,6 +20207,48 @@ type ListAdminOAuthClientsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// DisableOAuthClientParams defines parameters for DisableOAuthClient.
+type DisableOAuthClientParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// EnableOAuthClientParams defines parameters for EnableOAuthClient.
+type EnableOAuthClientParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RunPaymentReconciliationParams defines parameters for RunPaymentReconciliation.
+type RunPaymentReconciliationParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListPendingRegistrationsParams defines parameters for ListPendingRegistrations.
 type ListPendingRegistrationsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -18941,6 +20256,90 @@ type ListPendingRegistrationsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ApproveRegistrationParams defines parameters for ApproveRegistration.
+type ApproveRegistrationParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RejectRegistrationParams defines parameters for RejectRegistration.
+type RejectRegistrationParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CreateRelayParams defines parameters for CreateRelay.
+type CreateRelayParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteRelayParams defines parameters for DeleteRelay.
+type DeleteRelayParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnfollowRelayParams defines parameters for UnfollowRelay.
+type UnfollowRelayParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// FollowRelayParams defines parameters for FollowRelay.
+type FollowRelayParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListReportsParams defines parameters for ListReports.
@@ -18974,10 +20373,234 @@ type ListReportsParams struct {
 // ListReportsParamsOrder defines parameters for ListReports.
 type ListReportsParamsOrder string
 
+// AssignReportToSelfParams defines parameters for AssignReportToSelf.
+type AssignReportToSelfParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// TranslateReportCommentParams defines parameters for TranslateReportComment.
+type TranslateReportCommentParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ForwardReportParams defines parameters for ForwardReport.
+type ForwardReportParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AddReportNoteParams defines parameters for AddReportNote.
+type AddReportNoteParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ReopenReportParams defines parameters for ReopenReport.
+type ReopenReportParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ResolveReportParams defines parameters for ResolveReport.
+type ResolveReportParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// TranslateReportedStatusParams defines parameters for TranslateReportedStatus.
+type TranslateReportedStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnassignReportParams defines parameters for UnassignReport.
+type UnassignReportParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CreateRoleParams defines parameters for CreateRole.
+type CreateRoleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteRoleParams defines parameters for DeleteRole.
+type DeleteRoleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateRoleParams defines parameters for UpdateRole.
+type UpdateRoleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListInstanceRulesParams defines parameters for ListInstanceRules.
 type ListInstanceRulesParams struct {
 	// IncludeRetired Also list the retired rules, after the rules in effect.
 	IncludeRetired *bool `form:"include_retired,omitempty" json:"include_retired,omitempty"`
+}
+
+// CreateInstanceRuleParams defines parameters for CreateInstanceRule.
+type CreateInstanceRuleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateInstanceRuleParams defines parameters for UpdateInstanceRule.
+type UpdateInstanceRuleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// MoveInstanceRuleParams defines parameters for MoveInstanceRule.
+type MoveInstanceRuleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RetireInstanceRuleParams defines parameters for RetireInstanceRule.
+type RetireInstanceRuleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateInstanceSettingsParams defines parameters for UpdateInstanceSettings.
+type UpdateInstanceSettingsParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // GetLoginProvidersOnlyImpactParams defines parameters for GetLoginProvidersOnlyImpact.
@@ -19002,6 +20625,118 @@ type ListSignupBlocksParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateSignupBlockParams defines parameters for CreateSignupBlock.
+type CreateSignupBlockParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ImportSignupBlocksParams defines parameters for ImportSignupBlocks.
+type ImportSignupBlocksParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// LiftSignupBlockParams defines parameters for LiftSignupBlock.
+type LiftSignupBlockParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RefetchStatusParams defines parameters for RefetchStatus.
+type RefetchStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CreateSupporterPlanParams defines parameters for CreateSupporterPlan.
+type CreateSupporterPlanParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateSupporterPlanParams defines parameters for UpdateSupporterPlan.
+type UpdateSupporterPlanParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RetireSupporterPlanParams defines parameters for RetireSupporterPlan.
+type RetireSupporterPlanParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetSupporterProgramParams defines parameters for SetSupporterProgram.
+type SetSupporterProgramParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListSupporterSubscriptionsParams defines parameters for ListSupporterSubscriptions.
 type ListSupporterSubscriptionsParams struct {
 	// PlanId Only the subscriptions of this plan.
@@ -19017,10 +20752,122 @@ type ListSupporterSubscriptionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// EndSupporterSubscriptionParams defines parameters for EndSupporterSubscription.
+type EndSupporterSubscriptionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetSupporterTipsParams defines parameters for SetSupporterTips.
+type SetSupporterTipsParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetAdminThemeDraftParams defines parameters for SetAdminThemeDraft.
+type SetAdminThemeDraftParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// PublishAdminThemeParams defines parameters for PublishAdminTheme.
+type PublishAdminThemeParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RestoreAdminThemeParams defines parameters for RestoreAdminTheme.
+type RestoreAdminThemeParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListUXMeasurementsParams defines parameters for ListUXMeasurements.
 type ListUXMeasurementsParams struct {
 	// Hours The hours of the window, 24 by default.
 	Hours *int `form:"hours,omitempty" json:"hours,omitempty"`
+}
+
+// EndVoiceRoomAsModeratorParams defines parameters for EndVoiceRoomAsModerator.
+type EndVoiceRoomAsModeratorParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteWebhookParams defines parameters for DeleteWebhook.
+type DeleteWebhookParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateWebhookParams defines parameters for UpdateWebhook.
+type UpdateWebhookParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListWebhookDeliveriesParams defines parameters for ListWebhookDeliveries.
@@ -19032,6 +20879,62 @@ type ListWebhookDeliveriesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// RedeliverWebhookDeliveryParams defines parameters for RedeliverWebhookDelivery.
+type RedeliverWebhookDeliveryParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DisableWebhookParams defines parameters for DisableWebhook.
+type DisableWebhookParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// EnableWebhookParams defines parameters for EnableWebhook.
+type EnableWebhookParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// TestWebhookParams defines parameters for TestWebhook.
+type TestWebhookParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListAnnouncementHistoryParams defines parameters for ListAnnouncementHistory.
 type ListAnnouncementHistoryParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19041,11 +20944,73 @@ type ListAnnouncementHistoryParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// MarkAnnouncementReadParams defines parameters for MarkAnnouncementRead.
+type MarkAnnouncementReadParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // CreateArticleParams defines parameters for CreateArticle.
 type CreateArticleParams struct {
-	// IdempotencyKey A key the client chooses per new status; a retry with the same key returns the status
-	// posted with it instead of posting again. A key longer than 256 characters, or one
-	// that is not UTF-8 without U+0000, is a 422.
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// PreviewArticleParams defines parameters for PreviewArticle.
+type PreviewArticleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// EditArticleParams defines parameters for EditArticle.
+type EditArticleParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RevokeAuthorizedAppParams defines parameters for RevokeAuthorizedApp.
+type RevokeAuthorizedAppParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
@@ -19076,6 +21041,34 @@ type ListConversationsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// HideConversationParams defines parameters for HideConversation.
+type HideConversationParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// MarkConversationReadParams defines parameters for MarkConversationRead.
+type MarkConversationReadParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListCustomEmojiRequestsParams defines parameters for ListCustomEmojiRequests.
 type ListCustomEmojiRequestsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19083,6 +21076,34 @@ type ListCustomEmojiRequestsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// CreateCustomEmojiRequestParams defines parameters for CreateCustomEmojiRequest.
+type CreateCustomEmojiRequestParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// WithdrawCustomEmojiRequestParams defines parameters for WithdrawCustomEmojiRequest.
+type WithdrawCustomEmojiRequestParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListOwnCustomEmojisParams defines parameters for ListOwnCustomEmojis.
@@ -19094,6 +21115,34 @@ type ListOwnCustomEmojisParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// DeleteOwnCustomEmojiParams defines parameters for DeleteOwnCustomEmoji.
+type DeleteOwnCustomEmojiParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateOwnCustomEmojiParams defines parameters for UpdateOwnCustomEmoji.
+type UpdateOwnCustomEmojiParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListDomainMutesParams defines parameters for ListDomainMutes.
 type ListDomainMutesParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19101,6 +21150,34 @@ type ListDomainMutesParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// MuteDomainParams defines parameters for MuteDomain.
+type MuteDomainParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnmuteDomainParams defines parameters for UnmuteDomain.
+type UnmuteDomainParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListDraftsParams defines parameters for ListDrafts.
@@ -19115,12 +21192,93 @@ type ListDraftsParams struct {
 	Scheduled *bool `form:"scheduled,omitempty" json:"scheduled,omitempty"`
 }
 
+// CreateDraftParams defines parameters for CreateDraft.
+type CreateDraftParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteDraftParams defines parameters for DeleteDraft.
+type DeleteDraftParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // UpdateDraftParams defines parameters for UpdateDraft.
 type UpdateDraftParams struct {
 	// IfMatch The `ETag` of the draft as the client last read it. When another save changed the draft
 	// since, the answer is a 412 and nothing is saved, so that a save on one device never silently
 	// overwrites one made on another; read the draft again and merge. Without it, the save is a 428.
 	IfMatch *IfMatch `json:"If-Match,omitempty"`
+
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// PublishDraftParams defines parameters for PublishDraft.
+type PublishDraftParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnscheduleDraftParams defines parameters for UnscheduleDraft.
+type UnscheduleDraftParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ScheduleDraftParams defines parameters for ScheduleDraft.
+type ScheduleDraftParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListEventsParams defines parameters for ListEvents.
@@ -19135,6 +21293,34 @@ type ListEventsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateEventParams defines parameters for CreateEvent.
+type CreateEventParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateEventParams defines parameters for UpdateEvent.
+type UpdateEventParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListEventAttendeesParams defines parameters for ListEventAttendees.
 type ListEventAttendeesParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19142,6 +21328,104 @@ type ListEventAttendeesParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// RevokeEventAttendeeApprovalParams defines parameters for RevokeEventAttendeeApproval.
+type RevokeEventAttendeeApprovalParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ApproveEventAttendeeParams defines parameters for ApproveEventAttendee.
+type ApproveEventAttendeeParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CancelEventParams defines parameters for CancelEvent.
+type CancelEventParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AddEventCandidateParams defines parameters for AddEventCandidate.
+type AddEventCandidateParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// WithdrawEventCandidateParams defines parameters for WithdrawEventCandidate.
+type WithdrawEventCandidateParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ConfirmEventCandidateParams defines parameters for ConfirmEventCandidate.
+type ConfirmEventCandidateParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// VoteEventCandidateParams defines parameters for VoteEventCandidate.
+type VoteEventCandidateParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListEventCandidateVotesParams defines parameters for ListEventCandidateVotes.
@@ -19156,6 +21440,34 @@ type ListEventCandidateVotesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// RemoveEventCoorganizerParams defines parameters for RemoveEventCoorganizer.
+type RemoveEventCoorganizerParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AssignEventCoorganizerParams defines parameters for AssignEventCoorganizer.
+type AssignEventCoorganizerParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListEventInvitationsParams defines parameters for ListEventInvitations.
 type ListEventInvitationsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19163,6 +21475,118 @@ type ListEventInvitationsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// InviteToEventParams defines parameters for InviteToEvent.
+type InviteToEventParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RevokeEventInvitationParams defines parameters for RevokeEventInvitation.
+type RevokeEventInvitationParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AnswerEventParams defines parameters for AnswerEvent.
+type AnswerEventParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RequestDataExportParams defines parameters for RequestDataExport.
+type RequestDataExportParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetFeaturedTagsParams defines parameters for SetFeaturedTags.
+type SetFeaturedTagsParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CreateKeywordFilterParams defines parameters for CreateKeywordFilter.
+type CreateKeywordFilterParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteKeywordFilterParams defines parameters for DeleteKeywordFilter.
+type DeleteKeywordFilterParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateKeywordFilterParams defines parameters for UpdateKeywordFilter.
+type UpdateKeywordFilterParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // GetFinanceCostTotalsParams defines parameters for GetFinanceCostTotals.
@@ -19200,6 +21624,76 @@ type ListFollowRequestsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// AcceptFollowRequestParams defines parameters for AcceptFollowRequest.
+type AcceptFollowRequestParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RejectFollowRequestParams defines parameters for RejectFollowRequest.
+type RejectFollowRequestParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AppealHookDecisionParams defines parameters for AppealHookDecision.
+type AppealHookDecisionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// StartDataImportParams defines parameters for StartDataImport.
+type StartDataImportParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// PreviewDataImportParams defines parameters for PreviewDataImport.
+type PreviewDataImportParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // GetInstanceCostTotalsParams defines parameters for GetInstanceCostTotals.
@@ -19263,6 +21757,34 @@ type ListInteractionRequestsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// AcceptInteractionRequestParams defines parameters for AcceptInteractionRequest.
+type AcceptInteractionRequestParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RejectInteractionRequestParams defines parameters for RejectInteractionRequest.
+type RejectInteractionRequestParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListOwnInvitesParams defines parameters for ListOwnInvites.
 type ListOwnInvitesParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19272,6 +21794,90 @@ type ListOwnInvitesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateOwnInviteParams defines parameters for CreateOwnInvite.
+type CreateOwnInviteParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RevokeOwnInviteParams defines parameters for RevokeOwnInvite.
+type RevokeOwnInviteParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnlinkIdentityParams defines parameters for UnlinkIdentity.
+type UnlinkIdentityParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CreateListParams defines parameters for CreateList.
+type CreateListParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteListParams defines parameters for DeleteList.
+type DeleteListParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateListParams defines parameters for UpdateList.
+type UpdateListParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListListAccountsParams defines parameters for ListListAccounts.
 type ListListAccountsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19279,6 +21885,62 @@ type ListListAccountsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// RemoveListAccountParams defines parameters for RemoveListAccount.
+type RemoveListAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AddListAccountParams defines parameters for AddListAccount.
+type AddListAccountParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UploadMediaParams defines parameters for UploadMedia.
+type UploadMediaParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateMediaParams defines parameters for UpdateMedia.
+type UpdateMediaParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListOwnModerationActionsParams defines parameters for ListOwnModerationActions.
@@ -19291,6 +21953,20 @@ type ListOwnModerationActionsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// AppealModerationActionParams defines parameters for AppealModerationAction.
+type AppealModerationActionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListMutesParams defines parameters for ListMutes.
@@ -19314,6 +21990,20 @@ type ListNotificationsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// UpdateNotificationMarkerParams defines parameters for UpdateNotificationMarker.
+type UpdateNotificationMarkerParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListNotificationRequestsParams defines parameters for ListNotificationRequests.
 type ListNotificationRequestsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19321,6 +22011,34 @@ type ListNotificationRequestsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// AcceptNotificationRequestParams defines parameters for AcceptNotificationRequest.
+type AcceptNotificationRequestParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DismissNotificationRequestParams defines parameters for DismissNotificationRequest.
+type DismissNotificationRequestParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListNotificationRequestNotificationsParams defines parameters for ListNotificationRequestNotifications.
@@ -19332,6 +22050,216 @@ type ListNotificationRequestNotificationsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// DismissNotificationParams defines parameters for DismissNotification.
+type DismissNotificationParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeleteOAuthAppParams defines parameters for DeleteOAuthApp.
+type DeleteOAuthAppParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateOAuthAppParams defines parameters for UpdateOAuthApp.
+type UpdateOAuthAppParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CreatePasskeyParams defines parameters for CreatePasskey.
+type CreatePasskeyParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeletePasskeyParams defines parameters for DeletePasskey.
+type DeletePasskeyParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdatePreferencesParams defines parameters for UpdatePreferences.
+type UpdatePreferencesParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateAutoDeletePolicyParams defines parameters for UpdateAutoDeletePolicy.
+type UpdateAutoDeletePolicyParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// PreviewAutoDeletePolicyParams defines parameters for PreviewAutoDeletePolicy.
+type PreviewAutoDeletePolicyParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateBadgeChoiceParams defines parameters for UpdateBadgeChoice.
+type UpdateBadgeChoiceParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateEventRemindersParams defines parameters for UpdateEventReminders.
+type UpdateEventRemindersParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateNotificationPolicyParams defines parameters for UpdateNotificationPolicy.
+type UpdateNotificationPolicyParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateNotificationSettingsParams defines parameters for UpdateNotificationSettings.
+type UpdateNotificationSettingsParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateSupporterListingParams defines parameters for UpdateSupporterListing.
+type UpdateSupporterListingParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DeletePushSubscriptionParams defines parameters for DeletePushSubscription.
+type DeletePushSubscriptionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// PutPushSubscriptionParams defines parameters for PutPushSubscription.
+type PutPushSubscriptionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListOwnReportsParams defines parameters for ListOwnReports.
 type ListOwnReportsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19341,11 +22269,59 @@ type ListOwnReportsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateReportParams defines parameters for CreateReport.
+type CreateReportParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RevokeOtherSessionsParams defines parameters for RevokeOtherSessions.
+type RevokeOtherSessionsParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RevokeSessionParams defines parameters for RevokeSession.
+type RevokeSessionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // CreateStatusParams defines parameters for CreateStatus.
 type CreateStatusParams struct {
-	// IdempotencyKey A key the client chooses per new status; a retry with the same key returns the status
-	// posted with it instead of posting again. A key longer than 256 characters, or one
-	// that is not UTF-8 without U+0000, is a 422.
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
@@ -19367,6 +22343,202 @@ type SearchStatusesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// DeleteStatusParams defines parameters for DeleteStatus.
+type DeleteStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// EditStatusParams defines parameters for EditStatus.
+type EditStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnbookmarkStatusParams defines parameters for UnbookmarkStatus.
+type UnbookmarkStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// BookmarkStatusParams defines parameters for BookmarkStatus.
+type BookmarkStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnboostStatusParams defines parameters for UnboostStatus.
+type UnboostStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// BoostStatusParams defines parameters for BoostStatus.
+type BoostStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnfavouriteStatusParams defines parameters for UnfavouriteStatus.
+type UnfavouriteStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// FavouriteStatusParams defines parameters for FavouriteStatus.
+type FavouriteStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetStatusInteractionPolicyParams defines parameters for SetStatusInteractionPolicy.
+type SetStatusInteractionPolicyParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnmuteStatusThreadParams defines parameters for UnmuteStatusThread.
+type UnmuteStatusThreadParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// MuteStatusThreadParams defines parameters for MuteStatusThread.
+type MuteStatusThreadParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnpinStatusParams defines parameters for UnpinStatus.
+type UnpinStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// PinStatusParams defines parameters for PinStatus.
+type PinStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// VoteInPollParams defines parameters for VoteInPoll.
+type VoteInPollParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListStatusQuotesParams defines parameters for ListStatusQuotes.
 type ListStatusQuotesParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19374,6 +22546,48 @@ type ListStatusQuotesParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// RevokeStatusQuoteApprovalParams defines parameters for RevokeStatusQuoteApproval.
+type RevokeStatusQuoteApprovalParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UnreactToStatusParams defines parameters for UnreactToStatus.
+type UnreactToStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ReactToStatusParams defines parameters for ReactToStatus.
+type ReactToStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListStatusReactionsParams defines parameters for ListStatusReactions.
@@ -19389,6 +22603,20 @@ type ListStatusReactionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// TranslateStatusParams defines parameters for TranslateStatus.
+type TranslateStatusParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListSubscriptionsParams defines parameters for ListSubscriptions.
 type ListSubscriptionsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19396,6 +22624,76 @@ type ListSubscriptionsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// CancelOwnSupporterSubscriptionParams defines parameters for CancelOwnSupporterSubscription.
+type CancelOwnSupporterSubscriptionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// CancelOwnSupporterScheduledChangeParams defines parameters for CancelOwnSupporterScheduledChange.
+type CancelOwnSupporterScheduledChangeParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ChangeOwnSupporterSubscriptionParams defines parameters for ChangeOwnSupporterSubscription.
+type ChangeOwnSupporterSubscriptionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ResumeOwnSupporterSubscriptionParams defines parameters for ResumeOwnSupporterSubscription.
+type ResumeOwnSupporterSubscriptionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SyncOwnSupporterSubscriptionParams defines parameters for SyncOwnSupporterSubscription.
+type SyncOwnSupporterSubscriptionParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // SearchTagsParams defines parameters for SearchTags.
@@ -19406,6 +22704,34 @@ type SearchTagsParams struct {
 
 	// Limit The maximum number of results of a prefix search for the autocomplete.
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// UnfollowTagParams defines parameters for UnfollowTag.
+type UnfollowTagParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// FollowTagParams defines parameters for FollowTag.
+type FollowTagParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // GetFederatedTimelineParams defines parameters for GetFederatedTimeline.
@@ -19453,6 +22779,20 @@ type GetHashtagTimelineParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// DisableTotpParams defines parameters for DisableTotp.
+type DisableTotpParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListVoiceHistoryParams defines parameters for ListVoiceHistory.
 type ListVoiceHistoryParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19474,6 +22814,90 @@ type ListVoiceRoomsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// EndVoiceRoomParams defines parameters for EndVoiceRoom.
+type EndVoiceRoomParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// UpdateVoiceRoomParams defines parameters for UpdateVoiceRoom.
+type UpdateVoiceRoomParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// LowerVoiceHandParams defines parameters for LowerVoiceHand.
+type LowerVoiceHandParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RaiseVoiceHandParams defines parameters for RaiseVoiceHand.
+type RaiseVoiceHandParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SendVoiceHeartbeatParams defines parameters for SendVoiceHeartbeat.
+type SendVoiceHeartbeatParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// HandOverVoiceRoomParams defines parameters for HandOverVoiceRoom.
+type HandOverVoiceRoomParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListVoiceInvitationsParams defines parameters for ListVoiceInvitations.
 type ListVoiceInvitationsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19481,6 +22905,146 @@ type ListVoiceInvitationsParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// InviteToVoiceRoomParams defines parameters for InviteToVoiceRoom.
+type InviteToVoiceRoomParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RevokeVoiceInvitationParams defines parameters for RevokeVoiceInvitation.
+type RevokeVoiceInvitationParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SetVoiceMicParams defines parameters for SetVoiceMic.
+type SetVoiceMicParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RemoveVoiceParticipantParams defines parameters for RemoveVoiceParticipant.
+type RemoveVoiceParticipantParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RemoveVoiceCohostParams defines parameters for RemoveVoiceCohost.
+type RemoveVoiceCohostParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// AssignVoiceCohostParams defines parameters for AssignVoiceCohost.
+type AssignVoiceCohostParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// DismissVoiceHandParams defines parameters for DismissVoiceHand.
+type DismissVoiceHandParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// MuteVoiceParticipantParams defines parameters for MuteVoiceParticipant.
+type MuteVoiceParticipantParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// RevokeVoiceSpeakingParams defines parameters for RevokeVoiceSpeaking.
+type RevokeVoiceSpeakingParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// GrantVoiceSpeakingParams defines parameters for GrantVoiceSpeaking.
+type GrantVoiceSpeakingParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // LeaveVoiceRoomParams defines parameters for LeaveVoiceRoom.
@@ -19493,6 +23057,73 @@ type LeaveVoiceRoomParams struct {
 
 	// End Whether the host ends the room on leaving.
 	End *bool `form:"end,omitempty" json:"end,omitempty"`
+
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// ReactInVoiceRoomParams defines parameters for ReactInVoiceRoom.
+type ReactInVoiceRoomParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SendVoiceSignalParams defines parameters for SendVoiceSignal.
+type SendVoiceSignalParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// BecomeVoiceListenerParams defines parameters for BecomeVoiceListener.
+type BecomeVoiceListenerParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// BecomeVoiceSpeakerParams defines parameters for BecomeVoiceSpeaker.
+type BecomeVoiceSpeakerParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // AddAccountAliasJSONRequestBody defines body for AddAccountAlias for application/json ContentType.
@@ -19913,37 +23544,37 @@ type ServerInterface interface {
 	ListAccountAliases(w http.ResponseWriter, r *http.Request)
 	// AddAccountAlias Add an alias to the authenticated user
 	// (POST /accounts/aliases)
-	AddAccountAlias(w http.ResponseWriter, r *http.Request)
+	AddAccountAlias(w http.ResponseWriter, r *http.Request, params AddAccountAliasParams)
 	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
 	// (GET /accounts/deactivation)
 	GetDeactivationPreview(w http.ResponseWriter, r *http.Request)
 	// DeactivateOwnAccount Deactivate the authenticated user's account
 	// (POST /accounts/deactivation)
-	DeactivateOwnAccount(w http.ResponseWriter, r *http.Request)
+	DeactivateOwnAccount(w http.ResponseWriter, r *http.Request, params DeactivateOwnAccountParams)
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
-	DeleteOwnAccount(w http.ResponseWriter, r *http.Request)
+	DeleteOwnAccount(w http.ResponseWriter, r *http.Request, params DeleteOwnAccountParams)
 	// ResendVerificationEmail Send the authenticated user a new verification email
 	// (POST /accounts/email/verification)
-	ResendVerificationEmail(w http.ResponseWriter, r *http.Request)
+	ResendVerificationEmail(w http.ResponseWriter, r *http.Request, params ResendVerificationEmailParams)
 	// LookupAccount Look up or resolve an account by its handle or URL
 	// (GET /accounts/lookup)
 	LookupAccount(w http.ResponseWriter, r *http.Request, params LookupAccountParams)
 	// CancelOwnAccountMove Cancel the move of the authenticated user's account
 	// (DELETE /accounts/move)
-	CancelOwnAccountMove(w http.ResponseWriter, r *http.Request)
+	CancelOwnAccountMove(w http.ResponseWriter, r *http.Request, params CancelOwnAccountMoveParams)
 	// MoveOwnAccount Move the authenticated user's account to another account
 	// (POST /accounts/move)
-	MoveOwnAccount(w http.ResponseWriter, r *http.Request)
+	MoveOwnAccount(w http.ResponseWriter, r *http.Request, params MoveOwnAccountParams)
 	// GetPasswordStatus Get whether the authenticated user has a password
 	// (GET /accounts/password)
 	GetPasswordStatus(w http.ResponseWriter, r *http.Request)
 	// ChangePassword Change or set the authenticated user's password
 	// (POST /accounts/password)
-	ChangePassword(w http.ResponseWriter, r *http.Request)
+	ChangePassword(w http.ResponseWriter, r *http.Request, params ChangePasswordParams)
 	// RemovePassword Remove the authenticated user's password
 	// (POST /accounts/password/remove)
-	RemovePassword(w http.ResponseWriter, r *http.Request)
+	RemovePassword(w http.ResponseWriter, r *http.Request, params RemovePasswordParams)
 	// GetRelationships Get the viewer's relationships with accounts
 	// (GET /accounts/relationships)
 	GetRelationships(w http.ResponseWriter, r *http.Request, params GetRelationshipsParams)
@@ -19955,7 +23586,7 @@ type ServerInterface interface {
 	ListAccountSuggestions(w http.ResponseWriter, r *http.Request, params ListAccountSuggestionsParams)
 	// UpdateAccountCredentials Change the authenticated user's profile
 	// (PATCH /accounts/update_credentials)
-	UpdateAccountCredentials(w http.ResponseWriter, r *http.Request)
+	UpdateAccountCredentials(w http.ResponseWriter, r *http.Request, params UpdateAccountCredentialsParams)
 	// VerifyAccountCredentials Get the authenticated user's own account
 	// (GET /accounts/verify_credentials)
 	VerifyAccountCredentials(w http.ResponseWriter, r *http.Request)
@@ -19964,22 +23595,22 @@ type ServerInterface interface {
 	GetAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// UnblockAccount Unblock an account
 	// (DELETE /accounts/{id}/block)
-	UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId, params UnblockAccountParams)
 	// BlockAccount Block an account
 	// (POST /accounts/{id}/block)
-	BlockAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	BlockAccount(w http.ResponseWriter, r *http.Request, id AccountId, params BlockAccountParams)
 	// ListAccountFeaturedTags List the hashtags an account features
 	// (GET /accounts/{id}/featured_tags)
 	ListAccountFeaturedTags(w http.ResponseWriter, r *http.Request, id Id)
 	// UnfollowAccount Unfollow an account
 	// (DELETE /accounts/{id}/follow)
-	UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId, params UnfollowAccountParams)
 	// FollowAccount Follow an account
 	// (POST /accounts/{id}/follow)
-	FollowAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	FollowAccount(w http.ResponseWriter, r *http.Request, id AccountId, params FollowAccountParams)
 	// RemoveFollower Remove an account from the viewer's followers
 	// (DELETE /accounts/{id}/follower)
-	RemoveFollower(w http.ResponseWriter, r *http.Request, id AccountId)
+	RemoveFollower(w http.ResponseWriter, r *http.Request, id AccountId, params RemoveFollowerParams)
 	// ListAccountFollowers List the followers of an account
 	// (GET /accounts/{id}/followers)
 	ListAccountFollowers(w http.ResponseWriter, r *http.Request, id AccountId, params ListAccountFollowersParams)
@@ -19991,31 +23622,31 @@ type ServerInterface interface {
 	ListAccountLists(w http.ResponseWriter, r *http.Request, id AccountId)
 	// UnmuteAccount Unmute an account
 	// (DELETE /accounts/{id}/mute)
-	UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId, params UnmuteAccountParams)
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
-	MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId, params MuteAccountParams)
 	// DeleteAccountNote Remove the private note on an account
 	// (DELETE /accounts/{id}/note)
-	DeleteAccountNote(w http.ResponseWriter, r *http.Request, id AccountId)
+	DeleteAccountNote(w http.ResponseWriter, r *http.Request, id AccountId, params DeleteAccountNoteParams)
 	// SetAccountNote Write a private note on an account
 	// (PUT /accounts/{id}/note)
-	SetAccountNote(w http.ResponseWriter, r *http.Request, id AccountId)
+	SetAccountNote(w http.ResponseWriter, r *http.Request, id AccountId, params SetAccountNoteParams)
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(w http.ResponseWriter, r *http.Request, id Id, params ListAccountStatusesParams)
 	// UnsubscribeAccount Stop being notified of an account's new posts
 	// (DELETE /accounts/{id}/subscribe)
-	UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId, params UnsubscribeAccountParams)
 	// SubscribeAccount Be notified of an account's new posts
 	// (POST /accounts/{id}/subscribe)
-	SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId, params SubscribeAccountParams)
 	// GetAccountAction Get a moderation action on an account
 	// (GET /admin/account_actions/{id})
 	GetAccountAction(w http.ResponseWriter, r *http.Request, id AccountActionId)
 	// LiftAccountAction Lift a moderation action on an account
 	// (POST /admin/account_actions/{id}/lift)
-	LiftAccountAction(w http.ResponseWriter, r *http.Request, id AccountActionId)
+	LiftAccountAction(w http.ResponseWriter, r *http.Request, id AccountActionId, params LiftAccountActionParams)
 	// ListAdminAccounts Search the accounts
 	// (GET /admin/accounts)
 	ListAdminAccounts(w http.ResponseWriter, r *http.Request, params ListAdminAccountsParams)
@@ -20027,16 +23658,16 @@ type ServerInterface interface {
 	ListAccountActions(w http.ResponseWriter, r *http.Request, id AdminAccountId, params ListAccountActionsParams)
 	// CreateAccountAction Take a moderation action on an account
 	// (POST /admin/accounts/{id}/actions)
-	CreateAccountAction(w http.ResponseWriter, r *http.Request, id AdminAccountId)
+	CreateAccountAction(w http.ResponseWriter, r *http.Request, id AdminAccountId, params CreateAccountActionParams)
 	// LiftAdminAccountEmailSuppression Lift the suppression of the email address of a local account
 	// (POST /admin/accounts/{id}/email_suppression/lift)
-	LiftAdminAccountEmailSuppression(w http.ResponseWriter, r *http.Request, id AdminAccountId)
+	LiftAdminAccountEmailSuppression(w http.ResponseWriter, r *http.Request, id AdminAccountId, params LiftAdminAccountEmailSuppressionParams)
 	// IssueAdminAccountPasswordResetLink Issue a password reset link for a local account
 	// (POST /admin/accounts/{id}/password_reset_link)
 	IssueAdminAccountPasswordResetLink(w http.ResponseWriter, r *http.Request, id AdminAccountId)
 	// RefetchAccountStatuses Refetch the posts of a remote account from its server
 	// (POST /admin/accounts/{id}/refetch_statuses)
-	RefetchAccountStatuses(w http.ResponseWriter, r *http.Request, id Id)
+	RefetchAccountStatuses(w http.ResponseWriter, r *http.Request, id Id, params RefetchAccountStatusesParams)
 	// RevealAdminAccount Show the email address and the IP addresses of a local account
 	// (POST /admin/accounts/{id}/reveal)
 	RevealAdminAccount(w http.ResponseWriter, r *http.Request, id AdminAccountId)
@@ -20045,10 +23676,10 @@ type ServerInterface interface {
 	ListAccountRoles(w http.ResponseWriter, r *http.Request, id AdminAccountId)
 	// RevokeAccountRole Revoke a role from a local account
 	// (DELETE /admin/accounts/{id}/roles/{role})
-	RevokeAccountRole(w http.ResponseWriter, r *http.Request, id AdminAccountId, role RoleKey)
+	RevokeAccountRole(w http.ResponseWriter, r *http.Request, id AdminAccountId, role RoleKey, params RevokeAccountRoleParams)
 	// GrantAccountRole Grant a role to a local account
 	// (PUT /admin/accounts/{id}/roles/{role})
-	GrantAccountRole(w http.ResponseWriter, r *http.Request, id AdminAccountId, role RoleKey)
+	GrantAccountRole(w http.ResponseWriter, r *http.Request, id AdminAccountId, role RoleKey, params GrantAccountRoleParams)
 	// ListAdminAccountSameIPAccounts List the other accounts that used an IP address of a local account
 	// (GET /admin/accounts/{id}/same_ip_accounts)
 	ListAdminAccountSameIPAccounts(w http.ResponseWriter, r *http.Request, id AdminAccountId, params ListAdminAccountSameIPAccountsParams)
@@ -20057,28 +23688,28 @@ type ServerInterface interface {
 	ListAdminAccountSignIns(w http.ResponseWriter, r *http.Request, id AdminAccountId, params ListAdminAccountSignInsParams)
 	// DisableAdminAccountTwoFactor Remove the two-factor authentication of a local account
 	// (POST /admin/accounts/{id}/two_factor/disable)
-	DisableAdminAccountTwoFactor(w http.ResponseWriter, r *http.Request, id AdminAccountId)
+	DisableAdminAccountTwoFactor(w http.ResponseWriter, r *http.Request, id AdminAccountId, params DisableAdminAccountTwoFactorParams)
 	// ListAdminAnnouncements List the announcements
 	// (GET /admin/announcements)
 	ListAdminAnnouncements(w http.ResponseWriter, r *http.Request, params ListAdminAnnouncementsParams)
 	// CreateAdminAnnouncement Write an announcement
 	// (POST /admin/announcements)
-	CreateAdminAnnouncement(w http.ResponseWriter, r *http.Request)
+	CreateAdminAnnouncement(w http.ResponseWriter, r *http.Request, params CreateAdminAnnouncementParams)
 	// DeleteAdminAnnouncement Delete a draft announcement
 	// (DELETE /admin/announcements/{id})
-	DeleteAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId)
+	DeleteAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId, params DeleteAdminAnnouncementParams)
 	// GetAdminAnnouncement Get an announcement
 	// (GET /admin/announcements/{id})
 	GetAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId)
 	// UpdateAdminAnnouncement Revise an announcement
 	// (PUT /admin/announcements/{id})
-	UpdateAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId)
+	UpdateAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId, params UpdateAdminAnnouncementParams)
 	// PublishAdminAnnouncement Publish an announcement
 	// (POST /admin/announcements/{id}/publish)
-	PublishAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId)
+	PublishAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId, params PublishAdminAnnouncementParams)
 	// WithdrawAdminAnnouncement Withdraw an announcement
 	// (POST /admin/announcements/{id}/withdraw)
-	WithdrawAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId)
+	WithdrawAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId, params WithdrawAdminAnnouncementParams)
 	// ListAppeals List the appeals of moderation actions
 	// (GET /admin/appeals)
 	ListAppeals(w http.ResponseWriter, r *http.Request, params ListAppealsParams)
@@ -20087,10 +23718,10 @@ type ServerInterface interface {
 	GetAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
 	// OverturnAppeal Overturn an appeal, lifting its action
 	// (POST /admin/appeals/{id}/overturn)
-	OverturnAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
+	OverturnAppeal(w http.ResponseWriter, r *http.Request, id AppealId, params OverturnAppealParams)
 	// UpholdAppeal Uphold an appeal, keeping its action
 	// (POST /admin/appeals/{id}/uphold)
-	UpholdAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
+	UpholdAppeal(w http.ResponseWriter, r *http.Request, id AppealId, params UpholdAppealParams)
 	// ListAuditLog List the audit log
 	// (GET /admin/audit_log)
 	ListAuditLog(w http.ResponseWriter, r *http.Request, params ListAuditLogParams)
@@ -20099,43 +23730,43 @@ type ServerInterface interface {
 	ListBillingImports(w http.ResponseWriter, r *http.Request)
 	// RunBillingImport Import a provider's usage charges now
 	// (POST /admin/billing_imports/{source}/runs)
-	RunBillingImport(w http.ResponseWriter, r *http.Request, source BillingSourceName)
+	RunBillingImport(w http.ResponseWriter, r *http.Request, source BillingSourceName, params RunBillingImportParams)
 	// GetAdminServiceClosure Read the service closure
 	// (GET /admin/closure)
 	GetAdminServiceClosure(w http.ResponseWriter, r *http.Request)
 	// WithdrawServiceClosure Withdraw the announcement of the closure
 	// (DELETE /admin/closure/announcement)
-	WithdrawServiceClosure(w http.ResponseWriter, r *http.Request)
+	WithdrawServiceClosure(w http.ResponseWriter, r *http.Request, params WithdrawServiceClosureParams)
 	// AnnounceServiceClosure Announce the closure of the service
 	// (PUT /admin/closure/announcement)
-	AnnounceServiceClosure(w http.ResponseWriter, r *http.Request)
+	AnnounceServiceClosure(w http.ResponseWriter, r *http.Request, params AnnounceServiceClosureParams)
 	// GetAdminServiceClosureCheck Check the server before its closure
 	// (GET /admin/closure/check)
 	GetAdminServiceClosureCheck(w http.ResponseWriter, r *http.Request)
 	// CloseService Close the server
 	// (POST /admin/closure/close)
-	CloseService(w http.ResponseWriter, r *http.Request)
+	CloseService(w http.ResponseWriter, r *http.Request, params CloseServiceParams)
 	// ListCostItems List the cost items
 	// (GET /admin/cost_items)
 	ListCostItems(w http.ResponseWriter, r *http.Request, params ListCostItemsParams)
 	// CreateCostItem Record a cost item
 	// (POST /admin/cost_items)
-	CreateCostItem(w http.ResponseWriter, r *http.Request)
+	CreateCostItem(w http.ResponseWriter, r *http.Request, params CreateCostItemParams)
 	// DeleteCostItem Delete a cost item
 	// (DELETE /admin/cost_items/{id})
-	DeleteCostItem(w http.ResponseWriter, r *http.Request, id CostItemId)
+	DeleteCostItem(w http.ResponseWriter, r *http.Request, id CostItemId, params DeleteCostItemParams)
 	// GetCostItem Get a cost item
 	// (GET /admin/cost_items/{id})
 	GetCostItem(w http.ResponseWriter, r *http.Request, id CostItemId)
 	// UpdateCostItem Change a cost item's label
 	// (PATCH /admin/cost_items/{id})
-	UpdateCostItem(w http.ResponseWriter, r *http.Request, id CostItemId)
+	UpdateCostItem(w http.ResponseWriter, r *http.Request, id CostItemId, params UpdateCostItemParams)
 	// SetCostItemEnd Set a cost item's end
 	// (PUT /admin/cost_items/{id}/end)
-	SetCostItemEnd(w http.ResponseWriter, r *http.Request, id CostItemId)
+	SetCostItemEnd(w http.ResponseWriter, r *http.Request, id CostItemId, params SetCostItemEndParams)
 	// ReviseCostItemPrice Revise a cost item's price
 	// (POST /admin/cost_items/{id}/price_revisions)
-	ReviseCostItemPrice(w http.ResponseWriter, r *http.Request, id CostItemId)
+	ReviseCostItemPrice(w http.ResponseWriter, r *http.Request, id CostItemId, params ReviseCostItemPriceParams)
 	// GetCostTotals Total the costs by period
 	// (GET /admin/cost_totals)
 	GetCostTotals(w http.ResponseWriter, r *http.Request, params GetCostTotalsParams)
@@ -20147,43 +23778,43 @@ type ServerInterface interface {
 	ListAdminCustomEmojiRequests(w http.ResponseWriter, r *http.Request, params ListAdminCustomEmojiRequestsParams)
 	// ApproveCustomEmojiRequest Approve a custom emoji request
 	// (POST /admin/custom_emoji_requests/{id}/approve)
-	ApproveCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId)
+	ApproveCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId, params ApproveCustomEmojiRequestParams)
 	// RejectCustomEmojiRequest Reject a custom emoji request
 	// (POST /admin/custom_emoji_requests/{id}/reject)
-	RejectCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId)
+	RejectCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId, params RejectCustomEmojiRequestParams)
 	// ListAdminCustomEmojis List the custom emoji
 	// (GET /admin/custom_emojis)
 	ListAdminCustomEmojis(w http.ResponseWriter, r *http.Request, params ListAdminCustomEmojisParams)
 	// CreateCustomEmoji Register a local custom emoji
 	// (POST /admin/custom_emojis)
-	CreateCustomEmoji(w http.ResponseWriter, r *http.Request)
+	CreateCustomEmoji(w http.ResponseWriter, r *http.Request, params CreateCustomEmojiParams)
 	// DeleteCustomEmoji Delete a local custom emoji
 	// (DELETE /admin/custom_emojis/{id})
-	DeleteCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
+	DeleteCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params DeleteCustomEmojiParams)
 	// GetAdminCustomEmoji Get a custom emoji
 	// (GET /admin/custom_emojis/{id})
 	GetAdminCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
 	// UpdateCustomEmoji Change the settings of a custom emoji
 	// (PATCH /admin/custom_emojis/{id})
-	UpdateCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
+	UpdateCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params UpdateCustomEmojiParams)
 	// CopyCustomEmoji Copy a remote custom emoji into a local one
 	// (POST /admin/custom_emojis/{id}/copy)
-	CopyCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
+	CopyCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params CopyCustomEmojiParams)
 	// DisableCustomEmoji Disable a custom emoji
 	// (POST /admin/custom_emojis/{id}/disable)
-	DisableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
+	DisableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params DisableCustomEmojiParams)
 	// EnableCustomEmoji Enable a custom emoji
 	// (POST /admin/custom_emojis/{id}/enable)
-	EnableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
+	EnableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params EnableCustomEmojiParams)
 	// ReplaceCustomEmojiImage Replace the image of a local custom emoji
 	// (PUT /admin/custom_emojis/{id}/image)
-	ReplaceCustomEmojiImage(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
+	ReplaceCustomEmojiImage(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params ReplaceCustomEmojiImageParams)
 	// ListDomainActions List the moderation actions on domains
 	// (GET /admin/domain_actions)
 	ListDomainActions(w http.ResponseWriter, r *http.Request, params ListDomainActionsParams)
 	// CreateDomainAction Take a moderation action on a domain
 	// (POST /admin/domain_actions)
-	CreateDomainAction(w http.ResponseWriter, r *http.Request)
+	CreateDomainAction(w http.ResponseWriter, r *http.Request, params CreateDomainActionParams)
 	// ExportDomainBlocks Export the domain actions as Mastodon's domain block CSV
 	// (GET /admin/domain_actions/export)
 	ExportDomainBlocks(w http.ResponseWriter, r *http.Request)
@@ -20192,31 +23823,31 @@ type ServerInterface interface {
 	GetDomainSuspendImpact(w http.ResponseWriter, r *http.Request, params GetDomainSuspendImpactParams)
 	// ImportDomainBlocks Import the chosen rows of a Mastodon domain block CSV
 	// (POST /admin/domain_actions/import)
-	ImportDomainBlocks(w http.ResponseWriter, r *http.Request)
+	ImportDomainBlocks(w http.ResponseWriter, r *http.Request, params ImportDomainBlocksParams)
 	// PreviewDomainBlockImport Preview the import of a Mastodon domain block CSV
 	// (POST /admin/domain_actions/import/preview)
-	PreviewDomainBlockImport(w http.ResponseWriter, r *http.Request)
+	PreviewDomainBlockImport(w http.ResponseWriter, r *http.Request, params PreviewDomainBlockImportParams)
 	// GetDomainAction Get a moderation action on a domain
 	// (GET /admin/domain_actions/{id})
 	GetDomainAction(w http.ResponseWriter, r *http.Request, id DomainActionId)
 	// LiftDomainAction Lift a moderation action on a domain
 	// (POST /admin/domain_actions/{id}/lift)
-	LiftDomainAction(w http.ResponseWriter, r *http.Request, id DomainActionId)
+	LiftDomainAction(w http.ResponseWriter, r *http.Request, id DomainActionId, params LiftDomainActionParams)
 	// ListDomainAllows List the allowlist of federation
 	// (GET /admin/domain_allows)
 	ListDomainAllows(w http.ResponseWriter, r *http.Request)
 	// CreateDomainAllow Allow a domain to federate
 	// (POST /admin/domain_allows)
-	CreateDomainAllow(w http.ResponseWriter, r *http.Request)
+	CreateDomainAllow(w http.ResponseWriter, r *http.Request, params CreateDomainAllowParams)
 	// RemoveDomainAllow Remove a domain from the allowlist of federation
 	// (DELETE /admin/domain_allows/{domain})
-	RemoveDomainAllow(w http.ResponseWriter, r *http.Request, domain string)
+	RemoveDomainAllow(w http.ResponseWriter, r *http.Request, domain string, params RemoveDomainAllowParams)
 	// ListDomainListSubscriptions List the subscriptions to domain block lists
 	// (GET /admin/domain_list_subscriptions)
 	ListDomainListSubscriptions(w http.ResponseWriter, r *http.Request, params ListDomainListSubscriptionsParams)
 	// CreateDomainListSubscription Subscribe to a domain block list
 	// (POST /admin/domain_list_subscriptions)
-	CreateDomainListSubscription(w http.ResponseWriter, r *http.Request)
+	CreateDomainListSubscription(w http.ResponseWriter, r *http.Request, params CreateDomainListSubscriptionParams)
 	// DeleteDomainListSubscription Delete a subscription to a domain block list
 	// (DELETE /admin/domain_list_subscriptions/{id})
 	DeleteDomainListSubscription(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId, params DeleteDomainListSubscriptionParams)
@@ -20225,19 +23856,19 @@ type ServerInterface interface {
 	GetDomainListSubscription(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId)
 	// UpdateDomainListSubscription Change the settings of a subscription
 	// (PATCH /admin/domain_list_subscriptions/{id})
-	UpdateDomainListSubscription(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId)
+	UpdateDomainListSubscription(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId, params UpdateDomainListSubscriptionParams)
 	// ListDomainListDrafts List the drafts of a subscription
 	// (GET /admin/domain_list_subscriptions/{id}/drafts)
 	ListDomainListDrafts(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId)
 	// AcceptDomainListDrafts Accept drafts of a subscription
 	// (POST /admin/domain_list_subscriptions/{id}/drafts/accept)
-	AcceptDomainListDrafts(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId)
+	AcceptDomainListDrafts(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId, params AcceptDomainListDraftsParams)
 	// RejectDomainListDrafts Reject drafts of a subscription
 	// (POST /admin/domain_list_subscriptions/{id}/drafts/reject)
-	RejectDomainListDrafts(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId)
+	RejectDomainListDrafts(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId, params RejectDomainListDraftsParams)
 	// FetchDomainListSubscription Fetch a subscribed list now
 	// (POST /admin/domain_list_subscriptions/{id}/fetch)
-	FetchDomainListSubscription(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId)
+	FetchDomainListSubscription(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId, params FetchDomainListSubscriptionParams)
 	// ListDomainListFetches List the fetches of a subscription
 	// (GET /admin/domain_list_subscriptions/{id}/fetches)
 	ListDomainListFetches(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId, params ListDomainListFetchesParams)
@@ -20249,16 +23880,16 @@ type ServerInterface interface {
 	GetErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
 	// MuteErrorGroup Mute an error group
 	// (POST /admin/error_groups/{id}/mute)
-	MuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
+	MuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId, params MuteErrorGroupParams)
 	// ResolveErrorGroup Resolve an error group
 	// (POST /admin/error_groups/{id}/resolve)
-	ResolveErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
+	ResolveErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId, params ResolveErrorGroupParams)
 	// UnmuteErrorGroup Unmute an error group
 	// (POST /admin/error_groups/{id}/unmute)
-	UnmuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
+	UnmuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId, params UnmuteErrorGroupParams)
 	// CancelEventAsModerator Cancel an event as a moderator
 	// (POST /admin/events/{id}/cancel)
-	CancelEventAsModerator(w http.ResponseWriter, r *http.Request, id EventId)
+	CancelEventAsModerator(w http.ResponseWriter, r *http.Request, id EventId, params CancelEventAsModeratorParams)
 	// ListHookAppeals List the appeals of refused posts
 	// (GET /admin/hook_appeals)
 	ListHookAppeals(w http.ResponseWriter, r *http.Request, params ListHookAppealsParams)
@@ -20267,10 +23898,10 @@ type ServerInterface interface {
 	GetHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
 	// OverturnHookAppeal Overturn an appeal of a refused post
 	// (POST /admin/hook_appeals/{id}/overturn)
-	OverturnHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
+	OverturnHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId, params OverturnHookAppealParams)
 	// UpholdHookAppeal Uphold an appeal of a refused post
 	// (POST /admin/hook_appeals/{id}/uphold)
-	UpholdHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
+	UpholdHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId, params UpholdHookAppealParams)
 	// ListHookDecisions List the decisions of the decision hooks
 	// (GET /admin/hook_decisions)
 	ListHookDecisions(w http.ResponseWriter, r *http.Request, params ListHookDecisionsParams)
@@ -20282,7 +23913,7 @@ type ServerInterface interface {
 	GetHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId)
 	// OverrideHookDecision Cancel a decision
 	// (POST /admin/hook_decisions/{id}/override)
-	OverrideHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId)
+	OverrideHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId, params OverrideHookDecisionParams)
 	// ListIncomeMovements List the money movements of the income
 	// (GET /admin/income_movements)
 	ListIncomeMovements(w http.ResponseWriter, r *http.Request, params ListIncomeMovementsParams)
@@ -20294,19 +23925,19 @@ type ServerInterface interface {
 	GetAdminBrands(w http.ResponseWriter, r *http.Request)
 	// SanitizeAdminBrand Check an SVG for a brand image
 	// (POST /admin/instance/brand/sanitize)
-	SanitizeAdminBrand(w http.ResponseWriter, r *http.Request)
+	SanitizeAdminBrand(w http.ResponseWriter, r *http.Request, params SanitizeAdminBrandParams)
 	// ClearAdminBrand Clear a brand image
 	// (DELETE /admin/instance/brand/{kind})
-	ClearAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind)
+	ClearAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind, params ClearAdminBrandParams)
 	// SetAdminBrand Set a brand image
 	// (PUT /admin/instance/brand/{kind})
-	SetAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind)
+	SetAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind, params SetAdminBrandParams)
 	// ListInstanceTexts List the instance texts
 	// (GET /admin/instance_texts)
 	ListInstanceTexts(w http.ResponseWriter, r *http.Request)
 	// SetInstanceText Set an instance text
 	// (PUT /admin/instance_texts/{key})
-	SetInstanceText(w http.ResponseWriter, r *http.Request, key InstanceTextKey)
+	SetInstanceText(w http.ResponseWriter, r *http.Request, key InstanceTextKey, params SetInstanceTextParams)
 	// ListInstanceHealth List the remote servers with delivery failures or marked unavailable
 	// (GET /admin/instances)
 	ListInstanceHealth(w http.ResponseWriter, r *http.Request, params ListInstanceHealthParams)
@@ -20324,19 +23955,19 @@ type ServerInterface interface {
 	RevealInstanceDelivery(w http.ResponseWriter, r *http.Request, domain InstanceDomain, id DeliveryId)
 	// MarkInstanceAvailable Mark a remote server available
 	// (POST /admin/instances/{domain}/mark_available)
-	MarkInstanceAvailable(w http.ResponseWriter, r *http.Request, domain InstanceDomain)
+	MarkInstanceAvailable(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params MarkInstanceAvailableParams)
 	// RefetchInstanceStatuses Refetch the posts of the accounts of a remote server
 	// (POST /admin/instances/{domain}/refetch_statuses)
-	RefetchInstanceStatuses(w http.ResponseWriter, r *http.Request, domain InstanceDomain)
+	RefetchInstanceStatuses(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params RefetchInstanceStatusesParams)
 	// ListInvites List the invites
 	// (GET /admin/invites)
 	ListInvites(w http.ResponseWriter, r *http.Request, params ListInvitesParams)
 	// CreateInvite Create an invite
 	// (POST /admin/invites)
-	CreateInvite(w http.ResponseWriter, r *http.Request)
+	CreateInvite(w http.ResponseWriter, r *http.Request, params CreateInviteParams)
 	// RevokeInvite Revoke an invite
 	// (POST /admin/invites/{id}/revoke)
-	RevokeInvite(w http.ResponseWriter, r *http.Request, id InviteId)
+	RevokeInvite(w http.ResponseWriter, r *http.Request, id InviteId, params RevokeInviteParams)
 	// ListAdminJobs List the jobs of the job queue
 	// (GET /admin/jobs)
 	ListAdminJobs(w http.ResponseWriter, r *http.Request, params ListAdminJobsParams)
@@ -20348,61 +23979,61 @@ type ServerInterface interface {
 	ListAdminJobAttempts(w http.ResponseWriter, r *http.Request, id Id, params ListAdminJobAttemptsParams)
 	// RetryAdminJob Run a dead job again
 	// (POST /admin/jobs/{id}/retry)
-	RetryAdminJob(w http.ResponseWriter, r *http.Request, id Id)
+	RetryAdminJob(w http.ResponseWriter, r *http.Request, id Id, params RetryAdminJobParams)
 	// ListLinkCardDomainRules List the rules of the link card crawler
 	// (GET /admin/link_card_domains)
 	ListLinkCardDomainRules(w http.ResponseWriter, r *http.Request)
 	// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
 	// (DELETE /admin/link_card_domains/{domain})
-	RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string)
+	RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string, params RemoveLinkCardDomainRuleParams)
 	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
 	// (PUT /admin/link_card_domains/{domain})
-	SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string)
+	SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string, params SetLinkCardDomainRuleParams)
 	// ListAdminLoginProviders List the login providers
 	// (GET /admin/login_providers)
 	ListAdminLoginProviders(w http.ResponseWriter, r *http.Request)
 	// CreateLoginProvider Set up a login provider
 	// (POST /admin/login_providers)
-	CreateLoginProvider(w http.ResponseWriter, r *http.Request)
+	CreateLoginProvider(w http.ResponseWriter, r *http.Request, params CreateLoginProviderParams)
 	// DeleteLoginProvider Delete a login provider
 	// (DELETE /admin/login_providers/{id})
-	DeleteLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId)
+	DeleteLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId, params DeleteLoginProviderParams)
 	// GetAdminLoginProvider Get a login provider
 	// (GET /admin/login_providers/{id})
 	GetAdminLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId)
 	// UpdateLoginProvider Change a login provider
 	// (PATCH /admin/login_providers/{id})
-	UpdateLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId)
+	UpdateLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId, params UpdateLoginProviderParams)
 	// DisableLoginProvider Disable a login provider
 	// (POST /admin/login_providers/{id}/disable)
-	DisableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId)
+	DisableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId, params DisableLoginProviderParams)
 	// EnableLoginProvider Enable a login provider
 	// (POST /admin/login_providers/{id}/enable)
-	EnableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId)
+	EnableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId, params EnableLoginProviderParams)
 	// RotateLoginProviderSecret Give a login provider a new client secret
 	// (POST /admin/login_providers/{id}/rotate_secret)
-	RotateLoginProviderSecret(w http.ResponseWriter, r *http.Request, id LoginProviderId)
+	RotateLoginProviderSecret(w http.ResponseWriter, r *http.Request, id LoginProviderId, params RotateLoginProviderSecretParams)
 	// ListOAuthClientHostDenials List the denied hosts of client metadata documents
 	// (GET /admin/oauth_client_host_denials)
 	ListOAuthClientHostDenials(w http.ResponseWriter, r *http.Request, params ListOAuthClientHostDenialsParams)
 	// DenyOAuthClientHost Deny a host of client metadata documents
 	// (POST /admin/oauth_client_host_denials)
-	DenyOAuthClientHost(w http.ResponseWriter, r *http.Request)
+	DenyOAuthClientHost(w http.ResponseWriter, r *http.Request, params DenyOAuthClientHostParams)
 	// AllowOAuthClientHost Lift the denial of a host
 	// (DELETE /admin/oauth_client_host_denials/{host})
-	AllowOAuthClientHost(w http.ResponseWriter, r *http.Request, host OAuthClientHost)
+	AllowOAuthClientHost(w http.ResponseWriter, r *http.Request, host OAuthClientHost, params AllowOAuthClientHostParams)
 	// ListAdminOAuthClients List the OAuth clients
 	// (GET /admin/oauth_clients)
 	ListAdminOAuthClients(w http.ResponseWriter, r *http.Request, params ListAdminOAuthClientsParams)
 	// DisableOAuthClient Disable an OAuth client
 	// (POST /admin/oauth_clients/{id}/disable)
-	DisableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId)
+	DisableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId, params DisableOAuthClientParams)
 	// EnableOAuthClient Enable an OAuth client
 	// (POST /admin/oauth_clients/{id}/enable)
-	EnableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId)
+	EnableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId, params EnableOAuthClientParams)
 	// RunPaymentReconciliation Reconcile with the payment provider now
 	// (POST /admin/payment_reconciliation/runs)
-	RunPaymentReconciliation(w http.ResponseWriter, r *http.Request)
+	RunPaymentReconciliation(w http.ResponseWriter, r *http.Request, params RunPaymentReconciliationParams)
 	// GetPaymentStatus Get the state of the payment provider
 	// (GET /admin/payment_status)
 	GetPaymentStatus(w http.ResponseWriter, r *http.Request)
@@ -20414,25 +24045,25 @@ type ServerInterface interface {
 	ListPendingRegistrations(w http.ResponseWriter, r *http.Request, params ListPendingRegistrationsParams)
 	// ApproveRegistration Approve a registration
 	// (POST /admin/registrations/{id}/approve)
-	ApproveRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId)
+	ApproveRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId, params ApproveRegistrationParams)
 	// RejectRegistration Reject a registration
 	// (POST /admin/registrations/{id}/reject)
-	RejectRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId)
+	RejectRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId, params RejectRegistrationParams)
 	// ListAdminRelays List the relays
 	// (GET /admin/relays)
 	ListAdminRelays(w http.ResponseWriter, r *http.Request)
 	// CreateRelay Register a relay and join it
 	// (POST /admin/relays)
-	CreateRelay(w http.ResponseWriter, r *http.Request)
+	CreateRelay(w http.ResponseWriter, r *http.Request, params CreateRelayParams)
 	// DeleteRelay Delete a relay
 	// (DELETE /admin/relays/{id})
-	DeleteRelay(w http.ResponseWriter, r *http.Request, id RelayId)
+	DeleteRelay(w http.ResponseWriter, r *http.Request, id RelayId, params DeleteRelayParams)
 	// UnfollowRelay Leave a relay
 	// (DELETE /admin/relays/{id}/follow)
-	UnfollowRelay(w http.ResponseWriter, r *http.Request, id RelayId)
+	UnfollowRelay(w http.ResponseWriter, r *http.Request, id RelayId, params UnfollowRelayParams)
 	// FollowRelay Join a relay again
 	// (POST /admin/relays/{id}/follow)
-	FollowRelay(w http.ResponseWriter, r *http.Request, id RelayId)
+	FollowRelay(w http.ResponseWriter, r *http.Request, id RelayId, params FollowRelayParams)
 	// ListReports List the reports
 	// (GET /admin/reports)
 	ListReports(w http.ResponseWriter, r *http.Request, params ListReportsParams)
@@ -20441,64 +24072,64 @@ type ServerInterface interface {
 	GetReport(w http.ResponseWriter, r *http.Request, id ReportId)
 	// AssignReportToSelf Take a report
 	// (POST /admin/reports/{id}/assign_to_self)
-	AssignReportToSelf(w http.ResponseWriter, r *http.Request, id ReportId)
+	AssignReportToSelf(w http.ResponseWriter, r *http.Request, id ReportId, params AssignReportToSelfParams)
 	// TranslateReportComment Translate the comment of a report into a language
 	// (POST /admin/reports/{id}/comment/translation)
-	TranslateReportComment(w http.ResponseWriter, r *http.Request, id ReportId)
+	TranslateReportComment(w http.ResponseWriter, r *http.Request, id ReportId, params TranslateReportCommentParams)
 	// ForwardReport Forward a report to the target's server
 	// (POST /admin/reports/{id}/forward)
-	ForwardReport(w http.ResponseWriter, r *http.Request, id ReportId)
+	ForwardReport(w http.ResponseWriter, r *http.Request, id ReportId, params ForwardReportParams)
 	// AddReportNote Write a note on a report
 	// (POST /admin/reports/{id}/notes)
-	AddReportNote(w http.ResponseWriter, r *http.Request, id ReportId)
+	AddReportNote(w http.ResponseWriter, r *http.Request, id ReportId, params AddReportNoteParams)
 	// ReopenReport Reopen a resolved report
 	// (POST /admin/reports/{id}/reopen)
-	ReopenReport(w http.ResponseWriter, r *http.Request, id ReportId)
+	ReopenReport(w http.ResponseWriter, r *http.Request, id ReportId, params ReopenReportParams)
 	// ResolveReport Resolve a report
 	// (POST /admin/reports/{id}/resolve)
-	ResolveReport(w http.ResponseWriter, r *http.Request, id ReportId)
+	ResolveReport(w http.ResponseWriter, r *http.Request, id ReportId, params ResolveReportParams)
 	// TranslateReportedStatus Translate a reported post into a language
 	// (POST /admin/reports/{id}/statuses/{status_id}/translation)
-	TranslateReportedStatus(w http.ResponseWriter, r *http.Request, id ReportId, statusId Id)
+	TranslateReportedStatus(w http.ResponseWriter, r *http.Request, id ReportId, statusId Id, params TranslateReportedStatusParams)
 	// UnassignReport Leave a report to nobody
 	// (POST /admin/reports/{id}/unassign)
-	UnassignReport(w http.ResponseWriter, r *http.Request, id ReportId)
+	UnassignReport(w http.ResponseWriter, r *http.Request, id ReportId, params UnassignReportParams)
 	// ListRoles List the roles
 	// (GET /admin/roles)
 	ListRoles(w http.ResponseWriter, r *http.Request)
 	// CreateRole Create a role
 	// (POST /admin/roles)
-	CreateRole(w http.ResponseWriter, r *http.Request)
+	CreateRole(w http.ResponseWriter, r *http.Request, params CreateRoleParams)
 	// DeleteRole Delete a role
 	// (DELETE /admin/roles/{role})
-	DeleteRole(w http.ResponseWriter, r *http.Request, role RoleKey)
+	DeleteRole(w http.ResponseWriter, r *http.Request, role RoleKey, params DeleteRoleParams)
 	// UpdateRole Change a role
 	// (PATCH /admin/roles/{role})
-	UpdateRole(w http.ResponseWriter, r *http.Request, role RoleKey)
+	UpdateRole(w http.ResponseWriter, r *http.Request, role RoleKey, params UpdateRoleParams)
 	// ListInstanceRules List the instance rules
 	// (GET /admin/rules)
 	ListInstanceRules(w http.ResponseWriter, r *http.Request, params ListInstanceRulesParams)
 	// CreateInstanceRule Add an instance rule
 	// (POST /admin/rules)
-	CreateInstanceRule(w http.ResponseWriter, r *http.Request)
+	CreateInstanceRule(w http.ResponseWriter, r *http.Request, params CreateInstanceRuleParams)
 	// GetInstanceRule Get an instance rule
 	// (GET /admin/rules/{id})
 	GetInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId)
 	// UpdateInstanceRule Revise the text of an instance rule
 	// (PUT /admin/rules/{id})
-	UpdateInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId)
+	UpdateInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId, params UpdateInstanceRuleParams)
 	// MoveInstanceRule Move an instance rule
 	// (POST /admin/rules/{id}/move)
-	MoveInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId)
+	MoveInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId, params MoveInstanceRuleParams)
 	// RetireInstanceRule Retire an instance rule
 	// (POST /admin/rules/{id}/retire)
-	RetireInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId)
+	RetireInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId, params RetireInstanceRuleParams)
 	// ListInstanceSettings List the instance settings
 	// (GET /admin/settings)
 	ListInstanceSettings(w http.ResponseWriter, r *http.Request)
 	// UpdateInstanceSettings Change instance settings
 	// (PATCH /admin/settings)
-	UpdateInstanceSettings(w http.ResponseWriter, r *http.Request)
+	UpdateInstanceSettings(w http.ResponseWriter, r *http.Request, params UpdateInstanceSettingsParams)
 	// GetFederationScopeImpact Count what switching federation to the allowlist would end
 	// (GET /admin/settings/federation_scope/impact)
 	GetFederationScopeImpact(w http.ResponseWriter, r *http.Request)
@@ -20510,37 +24141,37 @@ type ServerInterface interface {
 	ListSignupBlocks(w http.ResponseWriter, r *http.Request, params ListSignupBlocksParams)
 	// CreateSignupBlock Block sign-ups
 	// (POST /admin/signup_blocks)
-	CreateSignupBlock(w http.ResponseWriter, r *http.Request)
+	CreateSignupBlock(w http.ResponseWriter, r *http.Request, params CreateSignupBlockParams)
 	// ImportSignupBlocks Block sign-ups from a list
 	// (POST /admin/signup_blocks/import)
-	ImportSignupBlocks(w http.ResponseWriter, r *http.Request)
+	ImportSignupBlocks(w http.ResponseWriter, r *http.Request, params ImportSignupBlocksParams)
 	// GetSignupBlock Get a sign-up block
 	// (GET /admin/signup_blocks/{id})
 	GetSignupBlock(w http.ResponseWriter, r *http.Request, id SignupBlockId)
 	// LiftSignupBlock Lift a sign-up block
 	// (POST /admin/signup_blocks/{id}/lift)
-	LiftSignupBlock(w http.ResponseWriter, r *http.Request, id SignupBlockId)
+	LiftSignupBlock(w http.ResponseWriter, r *http.Request, id SignupBlockId, params LiftSignupBlockParams)
 	// RefetchStatus Refetch a remote post from its origin
 	// (POST /admin/statuses/{id}/refetch)
-	RefetchStatus(w http.ResponseWriter, r *http.Request, id Id)
+	RefetchStatus(w http.ResponseWriter, r *http.Request, id Id, params RefetchStatusParams)
 	// ListAdminSupporterPlans List the supporter plans
 	// (GET /admin/supporter_plans)
 	ListAdminSupporterPlans(w http.ResponseWriter, r *http.Request)
 	// CreateSupporterPlan Create a supporter plan
 	// (POST /admin/supporter_plans)
-	CreateSupporterPlan(w http.ResponseWriter, r *http.Request)
+	CreateSupporterPlan(w http.ResponseWriter, r *http.Request, params CreateSupporterPlanParams)
 	// UpdateSupporterPlan Change a supporter plan
 	// (PATCH /admin/supporter_plans/{id})
-	UpdateSupporterPlan(w http.ResponseWriter, r *http.Request, id SupporterPlanId)
+	UpdateSupporterPlan(w http.ResponseWriter, r *http.Request, id SupporterPlanId, params UpdateSupporterPlanParams)
 	// RetireSupporterPlan Retire a supporter plan
 	// (POST /admin/supporter_plans/{id}/retire)
-	RetireSupporterPlan(w http.ResponseWriter, r *http.Request, id SupporterPlanId)
+	RetireSupporterPlan(w http.ResponseWriter, r *http.Request, id SupporterPlanId, params RetireSupporterPlanParams)
 	// GetSupporterProgram Get the supporter program
 	// (GET /admin/supporter_program)
 	GetSupporterProgram(w http.ResponseWriter, r *http.Request)
 	// SetSupporterProgram Enable or disable the supporter program
 	// (PUT /admin/supporter_program)
-	SetSupporterProgram(w http.ResponseWriter, r *http.Request)
+	SetSupporterProgram(w http.ResponseWriter, r *http.Request, params SetSupporterProgramParams)
 	// ListSupporterSubscriptions List the subscriptions
 	// (GET /admin/supporter_subscriptions)
 	ListSupporterSubscriptions(w http.ResponseWriter, r *http.Request, params ListSupporterSubscriptionsParams)
@@ -20549,28 +24180,28 @@ type ServerInterface interface {
 	GetSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId)
 	// EndSupporterSubscription End a subscription at once
 	// (POST /admin/supporter_subscriptions/{id}/end)
-	EndSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId)
+	EndSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId, params EndSupporterSubscriptionParams)
 	// GetSupporterTips Get the tips
 	// (GET /admin/supporter_tips)
 	GetSupporterTips(w http.ResponseWriter, r *http.Request)
 	// SetSupporterTips Enable or disable the tips
 	// (PUT /admin/supporter_tips)
-	SetSupporterTips(w http.ResponseWriter, r *http.Request)
+	SetSupporterTips(w http.ResponseWriter, r *http.Request, params SetSupporterTipsParams)
 	// GetAdminTheme Read the instance theme
 	// (GET /admin/theme)
 	GetAdminTheme(w http.ResponseWriter, r *http.Request)
 	// SetAdminThemeDraft Save the draft of the instance theme
 	// (PUT /admin/theme/draft)
-	SetAdminThemeDraft(w http.ResponseWriter, r *http.Request)
+	SetAdminThemeDraft(w http.ResponseWriter, r *http.Request, params SetAdminThemeDraftParams)
 	// GetAdminThemeDraftStylesheet Preview the draft of the instance theme
 	// (GET /admin/theme/draft/stylesheet)
 	GetAdminThemeDraftStylesheet(w http.ResponseWriter, r *http.Request)
 	// PublishAdminTheme Publish the draft of the instance theme
 	// (POST /admin/theme/publish)
-	PublishAdminTheme(w http.ResponseWriter, r *http.Request)
+	PublishAdminTheme(w http.ResponseWriter, r *http.Request, params PublishAdminThemeParams)
 	// RestoreAdminTheme Restore the previously published instance theme
 	// (POST /admin/theme/restore)
-	RestoreAdminTheme(w http.ResponseWriter, r *http.Request)
+	RestoreAdminTheme(w http.ResponseWriter, r *http.Request, params RestoreAdminThemeParams)
 	// GetAdminTranslationOverview Show how translation is used
 	// (GET /admin/translation)
 	GetAdminTranslationOverview(w http.ResponseWriter, r *http.Request)
@@ -20579,7 +24210,7 @@ type ServerInterface interface {
 	ListUXMeasurements(w http.ResponseWriter, r *http.Request, params ListUXMeasurementsParams)
 	// EndVoiceRoomAsModerator End a voice chat room as a moderator
 	// (POST /admin/voice_rooms/{id}/end)
-	EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params EndVoiceRoomAsModeratorParams)
 	// ListAdminWebhooks List the webhooks
 	// (GET /admin/webhooks)
 	ListAdminWebhooks(w http.ResponseWriter, r *http.Request)
@@ -20588,31 +24219,31 @@ type ServerInterface interface {
 	CreateWebhook(w http.ResponseWriter, r *http.Request)
 	// DeleteWebhook Delete a webhook
 	// (DELETE /admin/webhooks/{id})
-	DeleteWebhook(w http.ResponseWriter, r *http.Request, id WebhookId)
+	DeleteWebhook(w http.ResponseWriter, r *http.Request, id WebhookId, params DeleteWebhookParams)
 	// GetAdminWebhook Get a webhook
 	// (GET /admin/webhooks/{id})
 	GetAdminWebhook(w http.ResponseWriter, r *http.Request, id WebhookId)
 	// UpdateWebhook Change a webhook
 	// (PATCH /admin/webhooks/{id})
-	UpdateWebhook(w http.ResponseWriter, r *http.Request, id WebhookId)
+	UpdateWebhook(w http.ResponseWriter, r *http.Request, id WebhookId, params UpdateWebhookParams)
 	// ListWebhookDeliveries List the deliveries of a webhook
 	// (GET /admin/webhooks/{id}/deliveries)
 	ListWebhookDeliveries(w http.ResponseWriter, r *http.Request, id WebhookId, params ListWebhookDeliveriesParams)
 	// RedeliverWebhookDelivery Send a delivery of a webhook again
 	// (POST /admin/webhooks/{id}/deliveries/{delivery_id}/redeliver)
-	RedeliverWebhookDelivery(w http.ResponseWriter, r *http.Request, id WebhookId, deliveryId Id)
+	RedeliverWebhookDelivery(w http.ResponseWriter, r *http.Request, id WebhookId, deliveryId Id, params RedeliverWebhookDeliveryParams)
 	// DisableWebhook Disable a webhook
 	// (POST /admin/webhooks/{id}/disable)
-	DisableWebhook(w http.ResponseWriter, r *http.Request, id WebhookId)
+	DisableWebhook(w http.ResponseWriter, r *http.Request, id WebhookId, params DisableWebhookParams)
 	// EnableWebhook Enable a webhook
 	// (POST /admin/webhooks/{id}/enable)
-	EnableWebhook(w http.ResponseWriter, r *http.Request, id WebhookId)
+	EnableWebhook(w http.ResponseWriter, r *http.Request, id WebhookId, params EnableWebhookParams)
 	// RotateWebhookSecret Give a webhook a new secret
 	// (POST /admin/webhooks/{id}/rotate_secret)
 	RotateWebhookSecret(w http.ResponseWriter, r *http.Request, id WebhookId)
 	// TestWebhook Send a test message to a webhook
 	// (POST /admin/webhooks/{id}/test)
-	TestWebhook(w http.ResponseWriter, r *http.Request, id WebhookId)
+	TestWebhook(w http.ResponseWriter, r *http.Request, id WebhookId, params TestWebhookParams)
 	// ListAnnouncements List the announcements
 	// (GET /announcements)
 	ListAnnouncements(w http.ResponseWriter, r *http.Request)
@@ -20624,22 +24255,22 @@ type ServerInterface interface {
 	GetAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId)
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
-	MarkAnnouncementRead(w http.ResponseWriter, r *http.Request, id AnnouncementId)
+	MarkAnnouncementRead(w http.ResponseWriter, r *http.Request, id AnnouncementId, params MarkAnnouncementReadParams)
 	// CreateArticle Post an article
 	// (POST /articles)
 	CreateArticle(w http.ResponseWriter, r *http.Request, params CreateArticleParams)
 	// PreviewArticle Preview the body of an article
 	// (POST /articles/preview)
-	PreviewArticle(w http.ResponseWriter, r *http.Request)
+	PreviewArticle(w http.ResponseWriter, r *http.Request, params PreviewArticleParams)
 	// EditArticle Edit the authenticated user's article
 	// (PUT /articles/{id})
-	EditArticle(w http.ResponseWriter, r *http.Request, id StatusId)
+	EditArticle(w http.ResponseWriter, r *http.Request, id StatusId, params EditArticleParams)
 	// ListAuthorizedApps List the apps the authenticated user authorized
 	// (GET /authorized_apps)
 	ListAuthorizedApps(w http.ResponseWriter, r *http.Request)
 	// RevokeAuthorizedApp Revoke an authorized app
 	// (DELETE /authorized_apps/{id})
-	RevokeAuthorizedApp(w http.ResponseWriter, r *http.Request, id Id)
+	RevokeAuthorizedApp(w http.ResponseWriter, r *http.Request, id Id, params RevokeAuthorizedAppParams)
 	// ListBlocks List the accounts that the viewer blocks
 	// (GET /blocks)
 	ListBlocks(w http.ResponseWriter, r *http.Request, params ListBlocksParams)
@@ -20654,10 +24285,10 @@ type ServerInterface interface {
 	GetConversation(w http.ResponseWriter, r *http.Request, id ConversationId)
 	// HideConversation Hide a conversation
 	// (POST /conversations/{id}/hide)
-	HideConversation(w http.ResponseWriter, r *http.Request, id ConversationId)
+	HideConversation(w http.ResponseWriter, r *http.Request, id ConversationId, params HideConversationParams)
 	// MarkConversationRead Mark a conversation read
 	// (POST /conversations/{id}/read)
-	MarkConversationRead(w http.ResponseWriter, r *http.Request, id ConversationId)
+	MarkConversationRead(w http.ResponseWriter, r *http.Request, id ConversationId, params MarkConversationReadParams)
 	// ExportCsv Export the authenticated user's follows, followed hashtags, blocks, mutes, muted domains, or bookmarks as CSV
 	// (GET /csv_exports/{kind})
 	ExportCsv(w http.ResponseWriter, r *http.Request, kind DataImportKind)
@@ -20666,10 +24297,10 @@ type ServerInterface interface {
 	ListCustomEmojiRequests(w http.ResponseWriter, r *http.Request, params ListCustomEmojiRequestsParams)
 	// CreateCustomEmojiRequest Request a custom emoji or a new image of one
 	// (POST /custom_emoji_requests)
-	CreateCustomEmojiRequest(w http.ResponseWriter, r *http.Request)
+	CreateCustomEmojiRequest(w http.ResponseWriter, r *http.Request, params CreateCustomEmojiRequestParams)
 	// WithdrawCustomEmojiRequest Withdraw a custom emoji request
 	// (POST /custom_emoji_requests/{id}/withdraw)
-	WithdrawCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId)
+	WithdrawCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId, params WithdrawCustomEmojiRequestParams)
 	// ListCustomEmojis List the custom emoji of the picker
 	// (GET /custom_emojis)
 	ListCustomEmojis(w http.ResponseWriter, r *http.Request)
@@ -20678,28 +24309,28 @@ type ServerInterface interface {
 	ListOwnCustomEmojis(w http.ResponseWriter, r *http.Request, params ListOwnCustomEmojisParams)
 	// DeleteOwnCustomEmoji Delete a custom emoji that the user made
 	// (DELETE /custom_emojis/mine/{id})
-	DeleteOwnCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
+	DeleteOwnCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params DeleteOwnCustomEmojiParams)
 	// UpdateOwnCustomEmoji Change a custom emoji that the user made
 	// (PATCH /custom_emojis/mine/{id})
-	UpdateOwnCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
+	UpdateOwnCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params UpdateOwnCustomEmojiParams)
 	// ListDomainMutes List the domains that the viewer mutes
 	// (GET /domain_mutes)
 	ListDomainMutes(w http.ResponseWriter, r *http.Request, params ListDomainMutesParams)
 	// MuteDomain Mute a domain
 	// (POST /domain_mutes)
-	MuteDomain(w http.ResponseWriter, r *http.Request)
+	MuteDomain(w http.ResponseWriter, r *http.Request, params MuteDomainParams)
 	// UnmuteDomain Unmute a domain
 	// (DELETE /domain_mutes/{domain})
-	UnmuteDomain(w http.ResponseWriter, r *http.Request, domain string)
+	UnmuteDomain(w http.ResponseWriter, r *http.Request, domain string, params UnmuteDomainParams)
 	// ListDrafts List the user's drafts, newest first
 	// (GET /drafts)
 	ListDrafts(w http.ResponseWriter, r *http.Request, params ListDraftsParams)
 	// CreateDraft Save a new draft
 	// (POST /drafts)
-	CreateDraft(w http.ResponseWriter, r *http.Request)
+	CreateDraft(w http.ResponseWriter, r *http.Request, params CreateDraftParams)
 	// DeleteDraft Delete a draft
 	// (DELETE /drafts/{id})
-	DeleteDraft(w http.ResponseWriter, r *http.Request, id DraftId)
+	DeleteDraft(w http.ResponseWriter, r *http.Request, id DraftId, params DeleteDraftParams)
 	// GetDraft Get a draft
 	// (GET /drafts/{id})
 	GetDraft(w http.ResponseWriter, r *http.Request, id DraftId)
@@ -20708,82 +24339,82 @@ type ServerInterface interface {
 	UpdateDraft(w http.ResponseWriter, r *http.Request, id DraftId, params UpdateDraftParams)
 	// PublishDraft Publish a draft now
 	// (POST /drafts/{id}/publish)
-	PublishDraft(w http.ResponseWriter, r *http.Request, id DraftId)
+	PublishDraft(w http.ResponseWriter, r *http.Request, id DraftId, params PublishDraftParams)
 	// UnscheduleDraft Cancel the schedule of a draft
 	// (DELETE /drafts/{id}/schedule)
-	UnscheduleDraft(w http.ResponseWriter, r *http.Request, id DraftId)
+	UnscheduleDraft(w http.ResponseWriter, r *http.Request, id DraftId, params UnscheduleDraftParams)
 	// ScheduleDraft Schedule a draft, or move its schedule
 	// (PUT /drafts/{id}/schedule)
-	ScheduleDraft(w http.ResponseWriter, r *http.Request, id DraftId)
+	ScheduleDraft(w http.ResponseWriter, r *http.Request, id DraftId, params ScheduleDraftParams)
 	// ListEvents List the upcoming events
 	// (GET /events)
 	ListEvents(w http.ResponseWriter, r *http.Request, params ListEventsParams)
 	// CreateEvent Create an event
 	// (POST /events)
-	CreateEvent(w http.ResponseWriter, r *http.Request)
+	CreateEvent(w http.ResponseWriter, r *http.Request, params CreateEventParams)
 	// GetEvent Get an event
 	// (GET /events/{id})
 	GetEvent(w http.ResponseWriter, r *http.Request, id EventId)
 	// UpdateEvent Change an event
 	// (PATCH /events/{id})
-	UpdateEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	UpdateEvent(w http.ResponseWriter, r *http.Request, id EventId, params UpdateEventParams)
 	// ListEventAttendees List the attendees of an event
 	// (GET /events/{id}/attendees)
 	ListEventAttendees(w http.ResponseWriter, r *http.Request, id EventId, params ListEventAttendeesParams)
 	// RevokeEventAttendeeApproval Revoke the approval of an attendee of an event
 	// (DELETE /events/{id}/attendees/{account_id}/approval)
-	RevokeEventAttendeeApproval(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	RevokeEventAttendeeApproval(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params RevokeEventAttendeeApprovalParams)
 	// ApproveEventAttendee Approve an attendee of an event
 	// (PUT /events/{id}/attendees/{account_id}/approval)
-	ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params ApproveEventAttendeeParams)
 	// GetEventCalendar Get an event as an iCalendar file
 	// (GET /events/{id}/calendar.ics)
 	GetEventCalendar(w http.ResponseWriter, r *http.Request, id EventId)
 	// CancelEvent Cancel an event
 	// (POST /events/{id}/cancel)
-	CancelEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	CancelEvent(w http.ResponseWriter, r *http.Request, id EventId, params CancelEventParams)
 	// ListEventCandidates List the candidate dates of an event
 	// (GET /events/{id}/candidates)
 	ListEventCandidates(w http.ResponseWriter, r *http.Request, id EventId)
 	// AddEventCandidate Add a candidate date to an event
 	// (POST /events/{id}/candidates)
-	AddEventCandidate(w http.ResponseWriter, r *http.Request, id EventId)
+	AddEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, params AddEventCandidateParams)
 	// WithdrawEventCandidate Withdraw a candidate date of an event
 	// (DELETE /events/{id}/candidates/{candidate_id})
-	WithdrawEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId)
+	WithdrawEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId, params WithdrawEventCandidateParams)
 	// ConfirmEventCandidate Confirm a candidate date of an event
 	// (POST /events/{id}/candidates/{candidate_id}/confirm)
-	ConfirmEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId)
+	ConfirmEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId, params ConfirmEventCandidateParams)
 	// VoteEventCandidate Answer a candidate date of an event
 	// (PUT /events/{id}/candidates/{candidate_id}/vote)
-	VoteEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId)
+	VoteEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId, params VoteEventCandidateParams)
 	// ListEventCandidateVotes List the answers to a candidate date of an event
 	// (GET /events/{id}/candidates/{candidate_id}/votes)
 	ListEventCandidateVotes(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId, params ListEventCandidateVotesParams)
 	// RemoveEventCoorganizer Remove a co-organizer of an event
 	// (DELETE /events/{id}/coorganizers/{account_id})
-	RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params RemoveEventCoorganizerParams)
 	// AssignEventCoorganizer Name a co-organizer of an event
 	// (PUT /events/{id}/coorganizers/{account_id})
-	AssignEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	AssignEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params AssignEventCoorganizerParams)
 	// ListEventInvitations List the invitations of an event
 	// (GET /events/{id}/invitations)
 	ListEventInvitations(w http.ResponseWriter, r *http.Request, id EventId, params ListEventInvitationsParams)
 	// InviteToEvent Invite a user to an event
 	// (POST /events/{id}/invitations)
-	InviteToEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	InviteToEvent(w http.ResponseWriter, r *http.Request, id EventId, params InviteToEventParams)
 	// RevokeEventInvitation Revoke an invitation to an event
 	// (DELETE /events/{id}/invitations/{account_id})
-	RevokeEventInvitation(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	RevokeEventInvitation(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params RevokeEventInvitationParams)
 	// AnswerEvent Answer an event
 	// (PUT /events/{id}/rsvp)
-	AnswerEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	AnswerEvent(w http.ResponseWriter, r *http.Request, id EventId, params AnswerEventParams)
 	// ListDataExports List the authenticated user's data exports
 	// (GET /exports)
 	ListDataExports(w http.ResponseWriter, r *http.Request)
 	// RequestDataExport Request an archive of the authenticated user's data
 	// (POST /exports)
-	RequestDataExport(w http.ResponseWriter, r *http.Request)
+	RequestDataExport(w http.ResponseWriter, r *http.Request, params RequestDataExportParams)
 	// DownloadDataExport Download the archive of a data export
 	// (GET /exports/{id}/archive)
 	DownloadDataExport(w http.ResponseWriter, r *http.Request, id Id)
@@ -20792,22 +24423,22 @@ type ServerInterface interface {
 	ListFeaturedTags(w http.ResponseWriter, r *http.Request)
 	// SetFeaturedTags Choose the hashtags the user features
 	// (PUT /featured_tags)
-	SetFeaturedTags(w http.ResponseWriter, r *http.Request)
+	SetFeaturedTags(w http.ResponseWriter, r *http.Request, params SetFeaturedTagsParams)
 	// ListKeywordFilters List the user's keyword filters
 	// (GET /filters)
 	ListKeywordFilters(w http.ResponseWriter, r *http.Request)
 	// CreateKeywordFilter Create a keyword filter
 	// (POST /filters)
-	CreateKeywordFilter(w http.ResponseWriter, r *http.Request)
+	CreateKeywordFilter(w http.ResponseWriter, r *http.Request, params CreateKeywordFilterParams)
 	// DeleteKeywordFilter Delete a keyword filter
 	// (DELETE /filters/{id})
-	DeleteKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId)
+	DeleteKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId, params DeleteKeywordFilterParams)
 	// GetKeywordFilter Get a keyword filter
 	// (GET /filters/{id})
 	GetKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId)
 	// UpdateKeywordFilter Change a keyword filter
 	// (PATCH /filters/{id})
-	UpdateKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId)
+	UpdateKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId, params UpdateKeywordFilterParams)
 	// GetFinanceCostTotals Total the costs by period for the finance viewers
 	// (GET /finance/cost_totals)
 	GetFinanceCostTotals(w http.ResponseWriter, r *http.Request, params GetFinanceCostTotalsParams)
@@ -20819,10 +24450,10 @@ type ServerInterface interface {
 	ListFollowRequests(w http.ResponseWriter, r *http.Request, params ListFollowRequestsParams)
 	// AcceptFollowRequest Accept a follow request
 	// (POST /follow_requests/{id}/accept)
-	AcceptFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId)
+	AcceptFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId, params AcceptFollowRequestParams)
 	// RejectFollowRequest Reject a follow request
 	// (POST /follow_requests/{id}/reject)
-	RejectFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId)
+	RejectFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId, params RejectFollowRequestParams)
 	// ListFollowedTags List the hashtags the user follows
 	// (GET /followed_tags)
 	ListFollowedTags(w http.ResponseWriter, r *http.Request)
@@ -20831,16 +24462,16 @@ type ServerInterface interface {
 	GetOwnHookAppeal(w http.ResponseWriter, r *http.Request, id Id)
 	// AppealHookDecision Appeal a post that the automated review refused
 	// (POST /hook_decisions/{id}/appeal)
-	AppealHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId)
+	AppealHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId, params AppealHookDecisionParams)
 	// ListDataImports List the authenticated user's imports
 	// (GET /imports)
 	ListDataImports(w http.ResponseWriter, r *http.Request)
 	// StartDataImport Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
 	// (POST /imports)
-	StartDataImport(w http.ResponseWriter, r *http.Request)
+	StartDataImport(w http.ResponseWriter, r *http.Request, params StartDataImportParams)
 	// PreviewDataImport Preview an import of a CSV file
 	// (POST /imports/preview)
-	PreviewDataImport(w http.ResponseWriter, r *http.Request)
+	PreviewDataImport(w http.ResponseWriter, r *http.Request, params PreviewDataImportParams)
 	// GetInstance Get the public information of the instance
 	// (GET /instance)
 	GetInstance(w http.ResponseWriter, r *http.Request)
@@ -20876,19 +24507,19 @@ type ServerInterface interface {
 	ListInteractionRequests(w http.ResponseWriter, r *http.Request, params ListInteractionRequestsParams)
 	// AcceptInteractionRequest Approve an interaction request
 	// (POST /interaction_requests/{id}/accept)
-	AcceptInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId)
+	AcceptInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId, params AcceptInteractionRequestParams)
 	// RejectInteractionRequest Refuse an interaction request
 	// (POST /interaction_requests/{id}/reject)
-	RejectInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId)
+	RejectInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId, params RejectInteractionRequestParams)
 	// ListOwnInvites List the user's own invites
 	// (GET /invites)
 	ListOwnInvites(w http.ResponseWriter, r *http.Request, params ListOwnInvitesParams)
 	// CreateOwnInvite Create an invite of the user's own
 	// (POST /invites)
-	CreateOwnInvite(w http.ResponseWriter, r *http.Request)
+	CreateOwnInvite(w http.ResponseWriter, r *http.Request, params CreateOwnInviteParams)
 	// RevokeOwnInvite Revoke an invite of the user's own
 	// (POST /invites/{id}/revoke)
-	RevokeOwnInvite(w http.ResponseWriter, r *http.Request, id InviteId)
+	RevokeOwnInvite(w http.ResponseWriter, r *http.Request, id InviteId, params RevokeOwnInviteParams)
 	// ListLinkedIdentities List the authenticated user's linked accounts and the login providers
 	// (GET /linked_identities)
 	ListLinkedIdentities(w http.ResponseWriter, r *http.Request)
@@ -20900,46 +24531,46 @@ type ServerInterface interface {
 	BeginExternalConfirmation(w http.ResponseWriter, r *http.Request)
 	// UnlinkIdentity Unlink an account at a login provider
 	// (DELETE /linked_identities/{id})
-	UnlinkIdentity(w http.ResponseWriter, r *http.Request, id Id)
+	UnlinkIdentity(w http.ResponseWriter, r *http.Request, id Id, params UnlinkIdentityParams)
 	// ListLists List the user's lists
 	// (GET /lists)
 	ListLists(w http.ResponseWriter, r *http.Request)
 	// CreateList Create a list
 	// (POST /lists)
-	CreateList(w http.ResponseWriter, r *http.Request)
+	CreateList(w http.ResponseWriter, r *http.Request, params CreateListParams)
 	// DeleteList Delete a list
 	// (DELETE /lists/{id})
-	DeleteList(w http.ResponseWriter, r *http.Request, id ListId)
+	DeleteList(w http.ResponseWriter, r *http.Request, id ListId, params DeleteListParams)
 	// GetList Get a list
 	// (GET /lists/{id})
 	GetList(w http.ResponseWriter, r *http.Request, id ListId)
 	// UpdateList Rename a list
 	// (PATCH /lists/{id})
-	UpdateList(w http.ResponseWriter, r *http.Request, id ListId)
+	UpdateList(w http.ResponseWriter, r *http.Request, id ListId, params UpdateListParams)
 	// ListListAccounts List the members of a list
 	// (GET /lists/{id}/accounts)
 	ListListAccounts(w http.ResponseWriter, r *http.Request, id ListId, params ListListAccountsParams)
 	// RemoveListAccount Remove an account from a list
 	// (DELETE /lists/{id}/accounts/{account_id})
-	RemoveListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId)
+	RemoveListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId, params RemoveListAccountParams)
 	// AddListAccount Add an account to a list
 	// (POST /lists/{id}/accounts/{account_id})
-	AddListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId)
+	AddListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId, params AddListAccountParams)
 	// UploadMedia Upload a media file
 	// (POST /media)
-	UploadMedia(w http.ResponseWriter, r *http.Request)
+	UploadMedia(w http.ResponseWriter, r *http.Request, params UploadMediaParams)
 	// GetMedia Get a media file that the user uploaded
 	// (GET /media/{id})
 	GetMedia(w http.ResponseWriter, r *http.Request, id Id)
 	// UpdateMedia Change the description or focal point of a media file
 	// (PATCH /media/{id})
-	UpdateMedia(w http.ResponseWriter, r *http.Request, id Id)
+	UpdateMedia(w http.ResponseWriter, r *http.Request, id Id, params UpdateMediaParams)
 	// ListOwnModerationActions List the moderation actions on the authenticated user's account
 	// (GET /moderation/actions)
 	ListOwnModerationActions(w http.ResponseWriter, r *http.Request, params ListOwnModerationActionsParams)
 	// AppealModerationAction Appeal a moderation action on the authenticated user's account
 	// (POST /moderation/actions/{id}/appeal)
-	AppealModerationAction(w http.ResponseWriter, r *http.Request, id Id)
+	AppealModerationAction(w http.ResponseWriter, r *http.Request, id Id, params AppealModerationActionParams)
 	// ListMutes List the accounts that the viewer mutes
 	// (GET /mutes)
 	ListMutes(w http.ResponseWriter, r *http.Request, params ListMutesParams)
@@ -20951,7 +24582,7 @@ type ServerInterface interface {
 	GetNotificationMarker(w http.ResponseWriter, r *http.Request)
 	// UpdateNotificationMarker Mark notifications read
 	// (PUT /notifications/marker)
-	UpdateNotificationMarker(w http.ResponseWriter, r *http.Request)
+	UpdateNotificationMarker(w http.ResponseWriter, r *http.Request, params UpdateNotificationMarkerParams)
 	// ListNotificationRequests List the notification requests
 	// (GET /notifications/requests)
 	ListNotificationRequests(w http.ResponseWriter, r *http.Request, params ListNotificationRequestsParams)
@@ -20963,10 +24594,10 @@ type ServerInterface interface {
 	GetNotificationRequest(w http.ResponseWriter, r *http.Request, id AccountId)
 	// AcceptNotificationRequest Accept a notification request
 	// (POST /notifications/requests/{id}/accept)
-	AcceptNotificationRequest(w http.ResponseWriter, r *http.Request, id AccountId)
+	AcceptNotificationRequest(w http.ResponseWriter, r *http.Request, id AccountId, params AcceptNotificationRequestParams)
 	// DismissNotificationRequest Dismiss a notification request
 	// (POST /notifications/requests/{id}/dismiss)
-	DismissNotificationRequest(w http.ResponseWriter, r *http.Request, id AccountId)
+	DismissNotificationRequest(w http.ResponseWriter, r *http.Request, id AccountId, params DismissNotificationRequestParams)
 	// ListNotificationRequestNotifications List the notifications of a notification request
 	// (GET /notifications/requests/{id}/notifications)
 	ListNotificationRequestNotifications(w http.ResponseWriter, r *http.Request, id AccountId, params ListNotificationRequestNotificationsParams)
@@ -20975,7 +24606,7 @@ type ServerInterface interface {
 	GetNotification(w http.ResponseWriter, r *http.Request, id Id)
 	// DismissNotification Dismiss a notification
 	// (POST /notifications/{id}/dismiss)
-	DismissNotification(w http.ResponseWriter, r *http.Request, id Id)
+	DismissNotification(w http.ResponseWriter, r *http.Request, id Id, params DismissNotificationParams)
 	// ListOAuthApps List the OAuth apps that the authenticated user registered
 	// (GET /oauth_apps)
 	ListOAuthApps(w http.ResponseWriter, r *http.Request)
@@ -20984,13 +24615,13 @@ type ServerInterface interface {
 	CreateOAuthApp(w http.ResponseWriter, r *http.Request)
 	// DeleteOAuthApp Delete an OAuth app
 	// (DELETE /oauth_apps/{id})
-	DeleteOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId)
+	DeleteOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId, params DeleteOAuthAppParams)
 	// GetOAuthApp Get an OAuth app that the authenticated user registered
 	// (GET /oauth_apps/{id})
 	GetOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId)
 	// UpdateOAuthApp Change an OAuth app
 	// (PATCH /oauth_apps/{id})
-	UpdateOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId)
+	UpdateOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId, params UpdateOAuthAppParams)
 	// RotateOAuthAppSecret Issue a new secret to a confidential OAuth app
 	// (POST /oauth_apps/{id}/rotate_secret)
 	RotateOAuthAppSecret(w http.ResponseWriter, r *http.Request, id OAuthAppId)
@@ -21002,7 +24633,7 @@ type ServerInterface interface {
 	ListPasskeys(w http.ResponseWriter, r *http.Request)
 	// CreatePasskey Register a passkey with the browser's response to a registration
 	// (POST /passkeys)
-	CreatePasskey(w http.ResponseWriter, r *http.Request)
+	CreatePasskey(w http.ResponseWriter, r *http.Request, params CreatePasskeyParams)
 	// BeginPasskeyConfirmation Start a confirmation with a passkey
 	// (POST /passkeys/confirmation)
 	BeginPasskeyConfirmation(w http.ResponseWriter, r *http.Request)
@@ -21011,76 +24642,76 @@ type ServerInterface interface {
 	BeginPasskeyRegistration(w http.ResponseWriter, r *http.Request)
 	// DeletePasskey Remove a passkey
 	// (DELETE /passkeys/{id})
-	DeletePasskey(w http.ResponseWriter, r *http.Request, id Id)
+	DeletePasskey(w http.ResponseWriter, r *http.Request, id Id, params DeletePasskeyParams)
 	// GetPreferences Get the authenticated user's preferences
 	// (GET /preferences)
 	GetPreferences(w http.ResponseWriter, r *http.Request)
 	// UpdatePreferences Change the authenticated user's preferences
 	// (PATCH /preferences)
-	UpdatePreferences(w http.ResponseWriter, r *http.Request)
+	UpdatePreferences(w http.ResponseWriter, r *http.Request, params UpdatePreferencesParams)
 	// GetAutoDeletePolicy Get the authenticated user's automatic deletion of old posts
 	// (GET /preferences/auto_delete)
 	GetAutoDeletePolicy(w http.ResponseWriter, r *http.Request)
 	// UpdateAutoDeletePolicy Replace the authenticated user's automatic deletion of old posts
 	// (PUT /preferences/auto_delete)
-	UpdateAutoDeletePolicy(w http.ResponseWriter, r *http.Request)
+	UpdateAutoDeletePolicy(w http.ResponseWriter, r *http.Request, params UpdateAutoDeletePolicyParams)
 	// PreviewAutoDeletePolicy Estimate what a draft automatic deletion of old posts would delete
 	// (POST /preferences/auto_delete/preview)
-	PreviewAutoDeletePolicy(w http.ResponseWriter, r *http.Request)
+	PreviewAutoDeletePolicy(w http.ResponseWriter, r *http.Request, params PreviewAutoDeletePolicyParams)
 	// ListBadgeChoices List the badges that the authenticated user may show
 	// (GET /preferences/badges)
 	ListBadgeChoices(w http.ResponseWriter, r *http.Request)
 	// UpdateBadgeChoice Show or hide the badge of a role on the authenticated user's profile
 	// (PUT /preferences/badges/{role_id})
-	UpdateBadgeChoice(w http.ResponseWriter, r *http.Request, roleId BadgeRoleId)
+	UpdateBadgeChoice(w http.ResponseWriter, r *http.Request, roleId BadgeRoleId, params UpdateBadgeChoiceParams)
 	// GetEventReminders Get the authenticated user's reminders of events
 	// (GET /preferences/event_reminders)
 	GetEventReminders(w http.ResponseWriter, r *http.Request)
 	// UpdateEventReminders Change the authenticated user's reminders of events
 	// (PUT /preferences/event_reminders)
-	UpdateEventReminders(w http.ResponseWriter, r *http.Request)
+	UpdateEventReminders(w http.ResponseWriter, r *http.Request, params UpdateEventRemindersParams)
 	// GetNotificationPolicy Get the authenticated user's notification policy
 	// (GET /preferences/notification_policy)
 	GetNotificationPolicy(w http.ResponseWriter, r *http.Request)
 	// UpdateNotificationPolicy Change the authenticated user's notification policy
 	// (PATCH /preferences/notification_policy)
-	UpdateNotificationPolicy(w http.ResponseWriter, r *http.Request)
+	UpdateNotificationPolicy(w http.ResponseWriter, r *http.Request, params UpdateNotificationPolicyParams)
 	// GetNotificationSettings Get the authenticated user's notification settings
 	// (GET /preferences/notifications)
 	GetNotificationSettings(w http.ResponseWriter, r *http.Request)
 	// UpdateNotificationSettings Change the authenticated user's notification settings
 	// (PATCH /preferences/notifications)
-	UpdateNotificationSettings(w http.ResponseWriter, r *http.Request)
+	UpdateNotificationSettings(w http.ResponseWriter, r *http.Request, params UpdateNotificationSettingsParams)
 	// GetSupporterListing Get whether the authenticated user is on the supporter list
 	// (GET /preferences/supporter_listing)
 	GetSupporterListing(w http.ResponseWriter, r *http.Request)
 	// UpdateSupporterListing Choose whether the authenticated user is on the supporter list
 	// (PUT /preferences/supporter_listing)
-	UpdateSupporterListing(w http.ResponseWriter, r *http.Request)
+	UpdateSupporterListing(w http.ResponseWriter, r *http.Request, params UpdateSupporterListingParams)
 	// DeletePushSubscription Delete the Web Push subscription of the grant
 	// (DELETE /push/subscription)
-	DeletePushSubscription(w http.ResponseWriter, r *http.Request)
+	DeletePushSubscription(w http.ResponseWriter, r *http.Request, params DeletePushSubscriptionParams)
 	// GetPushSubscription Get the Web Push subscription of the grant
 	// (GET /push/subscription)
 	GetPushSubscription(w http.ResponseWriter, r *http.Request)
 	// PutPushSubscription Register the Web Push subscription of the grant
 	// (PUT /push/subscription)
-	PutPushSubscription(w http.ResponseWriter, r *http.Request)
+	PutPushSubscription(w http.ResponseWriter, r *http.Request, params PutPushSubscriptionParams)
 	// ListOwnReports List the reports that the authenticated user filed
 	// (GET /reports)
 	ListOwnReports(w http.ResponseWriter, r *http.Request, params ListOwnReportsParams)
 	// CreateReport Report an account
 	// (POST /reports)
-	CreateReport(w http.ResponseWriter, r *http.Request)
+	CreateReport(w http.ResponseWriter, r *http.Request, params CreateReportParams)
 	// ListSessions List the browsers signed in to the authenticated user's account
 	// (GET /sessions)
 	ListSessions(w http.ResponseWriter, r *http.Request)
 	// RevokeOtherSessions Sign out every browser but the one that asks
 	// (POST /sessions/revoke_others)
-	RevokeOtherSessions(w http.ResponseWriter, r *http.Request)
+	RevokeOtherSessions(w http.ResponseWriter, r *http.Request, params RevokeOtherSessionsParams)
 	// RevokeSession Sign out one of the browsers signed in to the account
 	// (DELETE /sessions/{id})
-	RevokeSession(w http.ResponseWriter, r *http.Request, id Id)
+	RevokeSession(w http.ResponseWriter, r *http.Request, id Id, params RevokeSessionParams)
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(w http.ResponseWriter, r *http.Request, params CreateStatusParams)
@@ -21092,67 +24723,67 @@ type ServerInterface interface {
 	SearchStatuses(w http.ResponseWriter, r *http.Request, params SearchStatusesParams)
 	// DeleteStatus Delete the authenticated user's status
 	// (DELETE /statuses/{id})
-	DeleteStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	DeleteStatus(w http.ResponseWriter, r *http.Request, id StatusId, params DeleteStatusParams)
 	// GetStatus Get a status
 	// (GET /statuses/{id})
 	GetStatus(w http.ResponseWriter, r *http.Request, id StatusId)
 	// EditStatus Edit the authenticated user's status
 	// (PUT /statuses/{id})
-	EditStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	EditStatus(w http.ResponseWriter, r *http.Request, id StatusId, params EditStatusParams)
 	// UnbookmarkStatus Remove the bookmark of a status
 	// (DELETE /statuses/{id}/bookmark)
-	UnbookmarkStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	UnbookmarkStatus(w http.ResponseWriter, r *http.Request, id StatusId, params UnbookmarkStatusParams)
 	// BookmarkStatus Bookmark a status
 	// (POST /statuses/{id}/bookmark)
-	BookmarkStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	BookmarkStatus(w http.ResponseWriter, r *http.Request, id StatusId, params BookmarkStatusParams)
 	// UnboostStatus Retract the boost of a status
 	// (DELETE /statuses/{id}/boost)
-	UnboostStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	UnboostStatus(w http.ResponseWriter, r *http.Request, id StatusId, params UnboostStatusParams)
 	// BoostStatus Boost a status
 	// (POST /statuses/{id}/boost)
-	BoostStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	BoostStatus(w http.ResponseWriter, r *http.Request, id StatusId, params BoostStatusParams)
 	// GetStatusContext Get the thread around a status
 	// (GET /statuses/{id}/context)
 	GetStatusContext(w http.ResponseWriter, r *http.Request, id StatusId)
 	// UnfavouriteStatus Remove the favourite of a status
 	// (DELETE /statuses/{id}/favourite)
-	UnfavouriteStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	UnfavouriteStatus(w http.ResponseWriter, r *http.Request, id StatusId, params UnfavouriteStatusParams)
 	// FavouriteStatus Favourite a status
 	// (POST /statuses/{id}/favourite)
-	FavouriteStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	FavouriteStatus(w http.ResponseWriter, r *http.Request, id StatusId, params FavouriteStatusParams)
 	// GetStatusHistory Get the edit history of a status
 	// (GET /statuses/{id}/history)
 	GetStatusHistory(w http.ResponseWriter, r *http.Request, id StatusId)
 	// SetStatusInteractionPolicy Change who may reply to, boost, and quote the authenticated user's status
 	// (PUT /statuses/{id}/interaction_policy)
-	SetStatusInteractionPolicy(w http.ResponseWriter, r *http.Request, id StatusId)
+	SetStatusInteractionPolicy(w http.ResponseWriter, r *http.Request, id StatusId, params SetStatusInteractionPolicyParams)
 	// UnmuteStatusThread Unmute the thread of a status
 	// (DELETE /statuses/{id}/mute)
-	UnmuteStatusThread(w http.ResponseWriter, r *http.Request, id StatusId)
+	UnmuteStatusThread(w http.ResponseWriter, r *http.Request, id StatusId, params UnmuteStatusThreadParams)
 	// MuteStatusThread Mute the thread of a status
 	// (POST /statuses/{id}/mute)
-	MuteStatusThread(w http.ResponseWriter, r *http.Request, id StatusId)
+	MuteStatusThread(w http.ResponseWriter, r *http.Request, id StatusId, params MuteStatusThreadParams)
 	// UnpinStatus Unpin a status
 	// (DELETE /statuses/{id}/pin)
-	UnpinStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	UnpinStatus(w http.ResponseWriter, r *http.Request, id StatusId, params UnpinStatusParams)
 	// PinStatus Pin the authenticated user's status to the profile
 	// (POST /statuses/{id}/pin)
-	PinStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	PinStatus(w http.ResponseWriter, r *http.Request, id StatusId, params PinStatusParams)
 	// VoteInPoll Vote in the poll of a status
 	// (POST /statuses/{id}/poll/votes)
-	VoteInPoll(w http.ResponseWriter, r *http.Request, id StatusId)
+	VoteInPoll(w http.ResponseWriter, r *http.Request, id StatusId, params VoteInPollParams)
 	// ListStatusQuotes List the statuses that quote the authenticated user's status
 	// (GET /statuses/{id}/quotes)
 	ListStatusQuotes(w http.ResponseWriter, r *http.Request, id StatusId, params ListStatusQuotesParams)
 	// RevokeStatusQuoteApproval Revoke the approval of a quote of the authenticated user's status
 	// (DELETE /statuses/{id}/quotes/{quote_id}/approval)
-	RevokeStatusQuoteApproval(w http.ResponseWriter, r *http.Request, id StatusId, quoteId Id)
+	RevokeStatusQuoteApproval(w http.ResponseWriter, r *http.Request, id StatusId, quoteId Id, params RevokeStatusQuoteApprovalParams)
 	// UnreactToStatus Take back the emoji reaction to a status
 	// (DELETE /statuses/{id}/reaction)
-	UnreactToStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	UnreactToStatus(w http.ResponseWriter, r *http.Request, id StatusId, params UnreactToStatusParams)
 	// ReactToStatus React to a status with an emoji
 	// (PUT /statuses/{id}/reaction)
-	ReactToStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	ReactToStatus(w http.ResponseWriter, r *http.Request, id StatusId, params ReactToStatusParams)
 	// ListStatusReactions List the emoji reactions to a status
 	// (GET /statuses/{id}/reactions)
 	ListStatusReactions(w http.ResponseWriter, r *http.Request, id StatusId, params ListStatusReactionsParams)
@@ -21161,7 +24792,7 @@ type ServerInterface interface {
 	GetStatusSource(w http.ResponseWriter, r *http.Request, id StatusId)
 	// TranslateStatus Translate a post into a language
 	// (POST /statuses/{id}/translation)
-	TranslateStatus(w http.ResponseWriter, r *http.Request, id StatusId)
+	TranslateStatus(w http.ResponseWriter, r *http.Request, id StatusId, params TranslateStatusParams)
 	// ListSubscriptions List the accounts whose new posts notify the viewer
 	// (GET /subscriptions)
 	ListSubscriptions(w http.ResponseWriter, r *http.Request, params ListSubscriptionsParams)
@@ -21176,19 +24807,19 @@ type ServerInterface interface {
 	GetOwnSupporterSubscription(w http.ResponseWriter, r *http.Request)
 	// CancelOwnSupporterSubscription Cancel the authenticated user's subscription at the end of its period
 	// (POST /supporter/subscription/cancel)
-	CancelOwnSupporterSubscription(w http.ResponseWriter, r *http.Request)
+	CancelOwnSupporterSubscription(w http.ResponseWriter, r *http.Request, params CancelOwnSupporterSubscriptionParams)
 	// CancelOwnSupporterScheduledChange Cancel the scheduled change of the authenticated user's subscription
 	// (POST /supporter/subscription/cancel_scheduled_change)
-	CancelOwnSupporterScheduledChange(w http.ResponseWriter, r *http.Request)
+	CancelOwnSupporterScheduledChange(w http.ResponseWriter, r *http.Request, params CancelOwnSupporterScheduledChangeParams)
 	// ChangeOwnSupporterSubscription Change the plan or the interval of the authenticated user's subscription
 	// (POST /supporter/subscription/change)
-	ChangeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request)
+	ChangeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request, params ChangeOwnSupporterSubscriptionParams)
 	// ResumeOwnSupporterSubscription Resume the authenticated user's canceling subscription
 	// (POST /supporter/subscription/resume)
-	ResumeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request)
+	ResumeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request, params ResumeOwnSupporterSubscriptionParams)
 	// SyncOwnSupporterSubscription Re-read the authenticated user's subscription from the payment provider
 	// (POST /supporter/subscription/sync)
-	SyncOwnSupporterSubscription(w http.ResponseWriter, r *http.Request)
+	SyncOwnSupporterSubscription(w http.ResponseWriter, r *http.Request, params SyncOwnSupporterSubscriptionParams)
 	// StartSupporterTip Start a tip
 	// (POST /supporter/tips)
 	StartSupporterTip(w http.ResponseWriter, r *http.Request)
@@ -21203,10 +24834,10 @@ type ServerInterface interface {
 	GetTag(w http.ResponseWriter, r *http.Request, hashtag HashtagName)
 	// UnfollowTag Unfollow a hashtag
 	// (DELETE /tags/{hashtag}/follow)
-	UnfollowTag(w http.ResponseWriter, r *http.Request, hashtag HashtagName)
+	UnfollowTag(w http.ResponseWriter, r *http.Request, hashtag HashtagName, params UnfollowTagParams)
 	// FollowTag Follow a hashtag
 	// (POST /tags/{hashtag}/follow)
-	FollowTag(w http.ResponseWriter, r *http.Request, hashtag HashtagName)
+	FollowTag(w http.ResponseWriter, r *http.Request, hashtag HashtagName, params FollowTagParams)
 	// GetFederatedTimeline Get the federated timeline
 	// (GET /timelines/federated)
 	GetFederatedTimeline(w http.ResponseWriter, r *http.Request, params GetFederatedTimelineParams)
@@ -21233,7 +24864,7 @@ type ServerInterface interface {
 	EnableTotp(w http.ResponseWriter, r *http.Request)
 	// DisableTotp Disable two-factor authentication
 	// (POST /two_factor/totp/disable)
-	DisableTotp(w http.ResponseWriter, r *http.Request)
+	DisableTotp(w http.ResponseWriter, r *http.Request, params DisableTotpParams)
 	// SetUpTotp Generate a TOTP secret for the authenticated user to add to an authenticator app
 	// (POST /two_factor/totp/setup)
 	SetUpTotp(w http.ResponseWriter, r *http.Request)
@@ -21248,61 +24879,61 @@ type ServerInterface interface {
 	OpenVoiceRoom(w http.ResponseWriter, r *http.Request)
 	// EndVoiceRoom End a voice chat room
 	// (DELETE /voice/rooms/{id})
-	EndVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	EndVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params EndVoiceRoomParams)
 	// GetVoiceRoom Get a voice chat room
 	// (GET /voice/rooms/{id})
 	GetVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
 	// UpdateVoiceRoom Change the settings of a voice chat room
 	// (PATCH /voice/rooms/{id})
-	UpdateVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	UpdateVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params UpdateVoiceRoomParams)
 	// RefreshVoiceGrant Get a new grant for a session of a voice chat room
 	// (POST /voice/rooms/{id}/grant)
 	RefreshVoiceGrant(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
 	// LowerVoiceHand Lower a hand in a voice chat room
 	// (DELETE /voice/rooms/{id}/hand)
-	LowerVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	LowerVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params LowerVoiceHandParams)
 	// RaiseVoiceHand Raise a hand in a voice chat room
 	// (POST /voice/rooms/{id}/hand)
-	RaiseVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	RaiseVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params RaiseVoiceHandParams)
 	// SendVoiceHeartbeat Keep a session of a voice chat room alive
 	// (POST /voice/rooms/{id}/heartbeat)
-	SendVoiceHeartbeat(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	SendVoiceHeartbeat(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params SendVoiceHeartbeatParams)
 	// HandOverVoiceRoom Hand a voice chat room over to another host
 	// (POST /voice/rooms/{id}/host)
-	HandOverVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	HandOverVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params HandOverVoiceRoomParams)
 	// ListVoiceInvitations List the invitations of a voice chat room
 	// (GET /voice/rooms/{id}/invitations)
 	ListVoiceInvitations(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params ListVoiceInvitationsParams)
 	// InviteToVoiceRoom Invite a user to a voice chat room
 	// (POST /voice/rooms/{id}/invitations)
-	InviteToVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	InviteToVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params InviteToVoiceRoomParams)
 	// RevokeVoiceInvitation Revoke an invitation to a voice chat room
 	// (DELETE /voice/rooms/{id}/invitations/{account_id})
-	RevokeVoiceInvitation(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	RevokeVoiceInvitation(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params RevokeVoiceInvitationParams)
 	// SetVoiceMic Turn the microphone on or off in a voice chat room
 	// (POST /voice/rooms/{id}/mic)
-	SetVoiceMic(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	SetVoiceMic(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params SetVoiceMicParams)
 	// RemoveVoiceParticipant Remove a participant from a voice chat room
 	// (DELETE /voice/rooms/{id}/participants/{account_id})
-	RemoveVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	RemoveVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params RemoveVoiceParticipantParams)
 	// RemoveVoiceCohost Stop a participant of a voice chat room being a co-host
 	// (DELETE /voice/rooms/{id}/participants/{account_id}/cohost)
-	RemoveVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	RemoveVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params RemoveVoiceCohostParams)
 	// AssignVoiceCohost Make a participant of a voice chat room a co-host
 	// (POST /voice/rooms/{id}/participants/{account_id}/cohost)
-	AssignVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	AssignVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params AssignVoiceCohostParams)
 	// DismissVoiceHand Dismiss the raised hand of a participant of a voice chat room
 	// (DELETE /voice/rooms/{id}/participants/{account_id}/hand)
-	DismissVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	DismissVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params DismissVoiceHandParams)
 	// MuteVoiceParticipant Mute a participant of a voice chat room
 	// (POST /voice/rooms/{id}/participants/{account_id}/mute)
-	MuteVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	MuteVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params MuteVoiceParticipantParams)
 	// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
 	// (DELETE /voice/rooms/{id}/participants/{account_id}/speaking_permission)
-	RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params RevokeVoiceSpeakingParams)
 	// GrantVoiceSpeaking Let a participant of a voice chat room speak
 	// (POST /voice/rooms/{id}/participants/{account_id}/speaking_permission)
-	GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params GrantVoiceSpeakingParams)
 	// LeaveVoiceRoom Leave a voice chat room
 	// (DELETE /voice/rooms/{id}/participation)
 	LeaveVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params LeaveVoiceRoomParams)
@@ -21311,16 +24942,16 @@ type ServerInterface interface {
 	JoinVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
 	// ReactInVoiceRoom React in a voice chat room
 	// (POST /voice/rooms/{id}/reactions)
-	ReactInVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	ReactInVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params ReactInVoiceRoomParams)
 	// SendVoiceSignal Send a signal to another session of a voice chat room
 	// (POST /voice/rooms/{id}/signals)
-	SendVoiceSignal(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	SendVoiceSignal(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params SendVoiceSignalParams)
 	// BecomeVoiceListener Go back to listening in a voice chat room
 	// (DELETE /voice/rooms/{id}/speaker)
-	BecomeVoiceListener(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	BecomeVoiceListener(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params BecomeVoiceListenerParams)
 	// BecomeVoiceSpeaker Become a speaker in a voice chat room
 	// (POST /voice/rooms/{id}/speaker)
-	BecomeVoiceSpeaker(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
+	BecomeVoiceSpeaker(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params BecomeVoiceSpeakerParams)
 	// GetVoiceRoomSummary Get the summary of a voice chat room
 	// (GET /voice/rooms/{id}/summary)
 	GetVoiceRoomSummary(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
@@ -21357,6 +24988,27 @@ func (siw *ServerInterfaceWrapper) RemoveAccountAlias(w http.ResponseWriter, r *
 		return
 	}
 
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RemoveAccountAlias(w, r, params)
 	}))
@@ -21385,8 +25037,35 @@ func (siw *ServerInterfaceWrapper) ListAccountAliases(w http.ResponseWriter, r *
 // AddAccountAlias operation middleware
 func (siw *ServerInterfaceWrapper) AddAccountAlias(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AddAccountAliasParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddAccountAlias(w, r)
+		siw.Handler.AddAccountAlias(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21413,8 +25092,35 @@ func (siw *ServerInterfaceWrapper) GetDeactivationPreview(w http.ResponseWriter,
 // DeactivateOwnAccount operation middleware
 func (siw *ServerInterfaceWrapper) DeactivateOwnAccount(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeactivateOwnAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeactivateOwnAccount(w, r)
+		siw.Handler.DeactivateOwnAccount(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21427,8 +25133,35 @@ func (siw *ServerInterfaceWrapper) DeactivateOwnAccount(w http.ResponseWriter, r
 // DeleteOwnAccount operation middleware
 func (siw *ServerInterfaceWrapper) DeleteOwnAccount(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteOwnAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteOwnAccount(w, r)
+		siw.Handler.DeleteOwnAccount(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21441,8 +25174,35 @@ func (siw *ServerInterfaceWrapper) DeleteOwnAccount(w http.ResponseWriter, r *ht
 // ResendVerificationEmail operation middleware
 func (siw *ServerInterfaceWrapper) ResendVerificationEmail(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ResendVerificationEmailParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ResendVerificationEmail(w, r)
+		siw.Handler.ResendVerificationEmail(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21501,8 +25261,35 @@ func (siw *ServerInterfaceWrapper) LookupAccount(w http.ResponseWriter, r *http.
 // CancelOwnAccountMove operation middleware
 func (siw *ServerInterfaceWrapper) CancelOwnAccountMove(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CancelOwnAccountMoveParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CancelOwnAccountMove(w, r)
+		siw.Handler.CancelOwnAccountMove(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21515,8 +25302,35 @@ func (siw *ServerInterfaceWrapper) CancelOwnAccountMove(w http.ResponseWriter, r
 // MoveOwnAccount operation middleware
 func (siw *ServerInterfaceWrapper) MoveOwnAccount(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MoveOwnAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MoveOwnAccount(w, r)
+		siw.Handler.MoveOwnAccount(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21543,8 +25357,35 @@ func (siw *ServerInterfaceWrapper) GetPasswordStatus(w http.ResponseWriter, r *h
 // ChangePassword operation middleware
 func (siw *ServerInterfaceWrapper) ChangePassword(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ChangePasswordParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ChangePassword(w, r)
+		siw.Handler.ChangePassword(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21557,8 +25398,35 @@ func (siw *ServerInterfaceWrapper) ChangePassword(w http.ResponseWriter, r *http
 // RemovePassword operation middleware
 func (siw *ServerInterfaceWrapper) RemovePassword(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemovePasswordParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemovePassword(w, r)
+		siw.Handler.RemovePassword(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21683,8 +25551,35 @@ func (siw *ServerInterfaceWrapper) ListAccountSuggestions(w http.ResponseWriter,
 // UpdateAccountCredentials operation middleware
 func (siw *ServerInterfaceWrapper) UpdateAccountCredentials(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateAccountCredentialsParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateAccountCredentials(w, r)
+		siw.Handler.UpdateAccountCredentials(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21749,8 +25644,32 @@ func (siw *ServerInterfaceWrapper) UnblockAccount(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnblockAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnblockAccount(w, r, id)
+		siw.Handler.UnblockAccount(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21775,8 +25694,32 @@ func (siw *ServerInterfaceWrapper) BlockAccount(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params BlockAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BlockAccount(w, r, id)
+		siw.Handler.BlockAccount(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21827,8 +25770,32 @@ func (siw *ServerInterfaceWrapper) UnfollowAccount(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnfollowAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnfollowAccount(w, r, id)
+		siw.Handler.UnfollowAccount(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21853,8 +25820,32 @@ func (siw *ServerInterfaceWrapper) FollowAccount(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params FollowAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FollowAccount(w, r, id)
+		siw.Handler.FollowAccount(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21879,8 +25870,32 @@ func (siw *ServerInterfaceWrapper) RemoveFollower(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveFollowerParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveFollower(w, r, id)
+		siw.Handler.RemoveFollower(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22041,8 +26056,32 @@ func (siw *ServerInterfaceWrapper) UnmuteAccount(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnmuteAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnmuteAccount(w, r, id)
+		siw.Handler.UnmuteAccount(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22067,8 +26106,32 @@ func (siw *ServerInterfaceWrapper) MuteAccount(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MuteAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MuteAccount(w, r, id)
+		siw.Handler.MuteAccount(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22093,8 +26156,32 @@ func (siw *ServerInterfaceWrapper) DeleteAccountNote(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteAccountNoteParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteAccountNote(w, r, id)
+		siw.Handler.DeleteAccountNote(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22119,8 +26206,32 @@ func (siw *ServerInterfaceWrapper) SetAccountNote(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetAccountNoteParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetAccountNote(w, r, id)
+		siw.Handler.SetAccountNote(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22265,8 +26376,32 @@ func (siw *ServerInterfaceWrapper) UnsubscribeAccount(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnsubscribeAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnsubscribeAccount(w, r, id)
+		siw.Handler.UnsubscribeAccount(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22291,8 +26426,32 @@ func (siw *ServerInterfaceWrapper) SubscribeAccount(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SubscribeAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SubscribeAccount(w, r, id)
+		siw.Handler.SubscribeAccount(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22343,8 +26502,32 @@ func (siw *ServerInterfaceWrapper) LiftAccountAction(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LiftAccountActionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.LiftAccountAction(w, r, id)
+		siw.Handler.LiftAccountAction(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22600,8 +26783,32 @@ func (siw *ServerInterfaceWrapper) CreateAccountAction(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateAccountActionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateAccountAction(w, r, id)
+		siw.Handler.CreateAccountAction(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22626,8 +26833,32 @@ func (siw *ServerInterfaceWrapper) LiftAdminAccountEmailSuppression(w http.Respo
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LiftAdminAccountEmailSuppressionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.LiftAdminAccountEmailSuppression(w, r, id)
+		siw.Handler.LiftAdminAccountEmailSuppression(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22678,8 +26909,32 @@ func (siw *ServerInterfaceWrapper) RefetchAccountStatuses(w http.ResponseWriter,
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RefetchAccountStatusesParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RefetchAccountStatuses(w, r, id)
+		siw.Handler.RefetchAccountStatuses(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22765,8 +27020,32 @@ func (siw *ServerInterfaceWrapper) RevokeAccountRole(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeAccountRoleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeAccountRole(w, r, id, role)
+		siw.Handler.RevokeAccountRole(w, r, id, role, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22800,8 +27079,32 @@ func (siw *ServerInterfaceWrapper) GrantAccountRole(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GrantAccountRoleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GrantAccountRole(w, r, id, role)
+		siw.Handler.GrantAccountRole(w, r, id, role, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22949,8 +27252,32 @@ func (siw *ServerInterfaceWrapper) DisableAdminAccountTwoFactor(w http.ResponseW
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DisableAdminAccountTwoFactorParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DisableAdminAccountTwoFactor(w, r, id)
+		siw.Handler.DisableAdminAccountTwoFactor(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23022,8 +27349,35 @@ func (siw *ServerInterfaceWrapper) ListAdminAnnouncements(w http.ResponseWriter,
 // CreateAdminAnnouncement operation middleware
 func (siw *ServerInterfaceWrapper) CreateAdminAnnouncement(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateAdminAnnouncementParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateAdminAnnouncement(w, r)
+		siw.Handler.CreateAdminAnnouncement(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23048,8 +27402,32 @@ func (siw *ServerInterfaceWrapper) DeleteAdminAnnouncement(w http.ResponseWriter
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteAdminAnnouncementParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteAdminAnnouncement(w, r, id)
+		siw.Handler.DeleteAdminAnnouncement(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23100,8 +27478,32 @@ func (siw *ServerInterfaceWrapper) UpdateAdminAnnouncement(w http.ResponseWriter
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateAdminAnnouncementParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateAdminAnnouncement(w, r, id)
+		siw.Handler.UpdateAdminAnnouncement(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23126,8 +27528,32 @@ func (siw *ServerInterfaceWrapper) PublishAdminAnnouncement(w http.ResponseWrite
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PublishAdminAnnouncementParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PublishAdminAnnouncement(w, r, id)
+		siw.Handler.PublishAdminAnnouncement(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23152,8 +27578,32 @@ func (siw *ServerInterfaceWrapper) WithdrawAdminAnnouncement(w http.ResponseWrit
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params WithdrawAdminAnnouncementParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.WithdrawAdminAnnouncement(w, r, id)
+		siw.Handler.WithdrawAdminAnnouncement(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23263,8 +27713,32 @@ func (siw *ServerInterfaceWrapper) OverturnAppeal(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params OverturnAppealParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.OverturnAppeal(w, r, id)
+		siw.Handler.OverturnAppeal(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23289,8 +27763,32 @@ func (siw *ServerInterfaceWrapper) UpholdAppeal(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpholdAppealParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpholdAppeal(w, r, id)
+		siw.Handler.UpholdAppeal(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23427,8 +27925,32 @@ func (siw *ServerInterfaceWrapper) RunBillingImport(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RunBillingImportParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RunBillingImport(w, r, source)
+		siw.Handler.RunBillingImport(w, r, source, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23455,8 +27977,35 @@ func (siw *ServerInterfaceWrapper) GetAdminServiceClosure(w http.ResponseWriter,
 // WithdrawServiceClosure operation middleware
 func (siw *ServerInterfaceWrapper) WithdrawServiceClosure(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params WithdrawServiceClosureParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.WithdrawServiceClosure(w, r)
+		siw.Handler.WithdrawServiceClosure(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23469,8 +28018,35 @@ func (siw *ServerInterfaceWrapper) WithdrawServiceClosure(w http.ResponseWriter,
 // AnnounceServiceClosure operation middleware
 func (siw *ServerInterfaceWrapper) AnnounceServiceClosure(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AnnounceServiceClosureParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AnnounceServiceClosure(w, r)
+		siw.Handler.AnnounceServiceClosure(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23497,8 +28073,35 @@ func (siw *ServerInterfaceWrapper) GetAdminServiceClosureCheck(w http.ResponseWr
 // CloseService operation middleware
 func (siw *ServerInterfaceWrapper) CloseService(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CloseServiceParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CloseService(w, r)
+		siw.Handler.CloseService(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23557,8 +28160,35 @@ func (siw *ServerInterfaceWrapper) ListCostItems(w http.ResponseWriter, r *http.
 // CreateCostItem operation middleware
 func (siw *ServerInterfaceWrapper) CreateCostItem(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateCostItemParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateCostItem(w, r)
+		siw.Handler.CreateCostItem(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23583,8 +28213,32 @@ func (siw *ServerInterfaceWrapper) DeleteCostItem(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteCostItemParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteCostItem(w, r, id)
+		siw.Handler.DeleteCostItem(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23635,8 +28289,32 @@ func (siw *ServerInterfaceWrapper) UpdateCostItem(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateCostItemParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateCostItem(w, r, id)
+		siw.Handler.UpdateCostItem(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23661,8 +28339,32 @@ func (siw *ServerInterfaceWrapper) SetCostItemEnd(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetCostItemEndParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetCostItemEnd(w, r, id)
+		siw.Handler.SetCostItemEnd(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23687,8 +28389,32 @@ func (siw *ServerInterfaceWrapper) ReviseCostItemPrice(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ReviseCostItemPriceParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ReviseCostItemPrice(w, r, id)
+		siw.Handler.ReviseCostItemPrice(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23858,8 +28584,32 @@ func (siw *ServerInterfaceWrapper) ApproveCustomEmojiRequest(w http.ResponseWrit
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ApproveCustomEmojiRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ApproveCustomEmojiRequest(w, r, id)
+		siw.Handler.ApproveCustomEmojiRequest(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23884,8 +28634,32 @@ func (siw *ServerInterfaceWrapper) RejectCustomEmojiRequest(w http.ResponseWrite
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RejectCustomEmojiRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RejectCustomEmojiRequest(w, r, id)
+		siw.Handler.RejectCustomEmojiRequest(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23983,8 +28757,35 @@ func (siw *ServerInterfaceWrapper) ListAdminCustomEmojis(w http.ResponseWriter, 
 // CreateCustomEmoji operation middleware
 func (siw *ServerInterfaceWrapper) CreateCustomEmoji(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateCustomEmojiParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateCustomEmoji(w, r)
+		siw.Handler.CreateCustomEmoji(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24009,8 +28810,32 @@ func (siw *ServerInterfaceWrapper) DeleteCustomEmoji(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteCustomEmojiParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteCustomEmoji(w, r, id)
+		siw.Handler.DeleteCustomEmoji(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24061,8 +28886,32 @@ func (siw *ServerInterfaceWrapper) UpdateCustomEmoji(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateCustomEmojiParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateCustomEmoji(w, r, id)
+		siw.Handler.UpdateCustomEmoji(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24087,8 +28936,32 @@ func (siw *ServerInterfaceWrapper) CopyCustomEmoji(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CopyCustomEmojiParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CopyCustomEmoji(w, r, id)
+		siw.Handler.CopyCustomEmoji(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24113,8 +28986,32 @@ func (siw *ServerInterfaceWrapper) DisableCustomEmoji(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DisableCustomEmojiParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DisableCustomEmoji(w, r, id)
+		siw.Handler.DisableCustomEmoji(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24139,8 +29036,32 @@ func (siw *ServerInterfaceWrapper) EnableCustomEmoji(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params EnableCustomEmojiParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EnableCustomEmoji(w, r, id)
+		siw.Handler.EnableCustomEmoji(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24165,8 +29086,32 @@ func (siw *ServerInterfaceWrapper) ReplaceCustomEmojiImage(w http.ResponseWriter
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ReplaceCustomEmojiImageParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ReplaceCustomEmojiImage(w, r, id)
+		siw.Handler.ReplaceCustomEmojiImage(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24251,8 +29196,35 @@ func (siw *ServerInterfaceWrapper) ListDomainActions(w http.ResponseWriter, r *h
 // CreateDomainAction operation middleware
 func (siw *ServerInterfaceWrapper) CreateDomainAction(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateDomainActionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateDomainAction(w, r)
+		siw.Handler.CreateDomainAction(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24312,8 +29284,35 @@ func (siw *ServerInterfaceWrapper) GetDomainSuspendImpact(w http.ResponseWriter,
 // ImportDomainBlocks operation middleware
 func (siw *ServerInterfaceWrapper) ImportDomainBlocks(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ImportDomainBlocksParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ImportDomainBlocks(w, r)
+		siw.Handler.ImportDomainBlocks(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24326,8 +29325,35 @@ func (siw *ServerInterfaceWrapper) ImportDomainBlocks(w http.ResponseWriter, r *
 // PreviewDomainBlockImport operation middleware
 func (siw *ServerInterfaceWrapper) PreviewDomainBlockImport(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PreviewDomainBlockImportParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PreviewDomainBlockImport(w, r)
+		siw.Handler.PreviewDomainBlockImport(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24378,8 +29404,32 @@ func (siw *ServerInterfaceWrapper) LiftDomainAction(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LiftDomainActionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.LiftDomainAction(w, r, id)
+		siw.Handler.LiftDomainAction(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24406,8 +29456,35 @@ func (siw *ServerInterfaceWrapper) ListDomainAllows(w http.ResponseWriter, r *ht
 // CreateDomainAllow operation middleware
 func (siw *ServerInterfaceWrapper) CreateDomainAllow(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateDomainAllowParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateDomainAllow(w, r)
+		siw.Handler.CreateDomainAllow(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24432,8 +29509,32 @@ func (siw *ServerInterfaceWrapper) RemoveDomainAllow(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveDomainAllowParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveDomainAllow(w, r, domain)
+		siw.Handler.RemoveDomainAllow(w, r, domain, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24492,8 +29593,35 @@ func (siw *ServerInterfaceWrapper) ListDomainListSubscriptions(w http.ResponseWr
 // CreateDomainListSubscription operation middleware
 func (siw *ServerInterfaceWrapper) CreateDomainListSubscription(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateDomainListSubscriptionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateDomainListSubscription(w, r)
+		siw.Handler.CreateDomainListSubscription(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24532,6 +29660,27 @@ func (siw *ServerInterfaceWrapper) DeleteDomainListSubscription(w http.ResponseW
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lift_actions", Err: err})
 		}
 		return
+	}
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -24586,8 +29735,32 @@ func (siw *ServerInterfaceWrapper) UpdateDomainListSubscription(w http.ResponseW
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateDomainListSubscriptionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateDomainListSubscription(w, r, id)
+		siw.Handler.UpdateDomainListSubscription(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24638,8 +29811,32 @@ func (siw *ServerInterfaceWrapper) AcceptDomainListDrafts(w http.ResponseWriter,
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AcceptDomainListDraftsParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AcceptDomainListDrafts(w, r, id)
+		siw.Handler.AcceptDomainListDrafts(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24664,8 +29861,32 @@ func (siw *ServerInterfaceWrapper) RejectDomainListDrafts(w http.ResponseWriter,
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RejectDomainListDraftsParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RejectDomainListDrafts(w, r, id)
+		siw.Handler.RejectDomainListDrafts(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24690,8 +29911,32 @@ func (siw *ServerInterfaceWrapper) FetchDomainListSubscription(w http.ResponseWr
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params FetchDomainListSubscriptionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FetchDomainListSubscription(w, r, id)
+		siw.Handler.FetchDomainListSubscription(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24869,8 +30114,32 @@ func (siw *ServerInterfaceWrapper) MuteErrorGroup(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MuteErrorGroupParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MuteErrorGroup(w, r, id)
+		siw.Handler.MuteErrorGroup(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24895,8 +30164,32 @@ func (siw *ServerInterfaceWrapper) ResolveErrorGroup(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ResolveErrorGroupParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ResolveErrorGroup(w, r, id)
+		siw.Handler.ResolveErrorGroup(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24921,8 +30214,32 @@ func (siw *ServerInterfaceWrapper) UnmuteErrorGroup(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnmuteErrorGroupParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnmuteErrorGroup(w, r, id)
+		siw.Handler.UnmuteErrorGroup(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24947,8 +30264,32 @@ func (siw *ServerInterfaceWrapper) CancelEventAsModerator(w http.ResponseWriter,
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CancelEventAsModeratorParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CancelEventAsModerator(w, r, id)
+		siw.Handler.CancelEventAsModerator(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25058,8 +30399,32 @@ func (siw *ServerInterfaceWrapper) OverturnHookAppeal(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params OverturnHookAppealParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.OverturnHookAppeal(w, r, id)
+		siw.Handler.OverturnHookAppeal(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25084,8 +30449,32 @@ func (siw *ServerInterfaceWrapper) UpholdHookAppeal(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpholdHookAppealParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpholdHookAppeal(w, r, id)
+		siw.Handler.UpholdHookAppeal(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25235,8 +30624,32 @@ func (siw *ServerInterfaceWrapper) OverrideHookDecision(w http.ResponseWriter, r
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params OverrideHookDecisionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.OverrideHookDecision(w, r, id)
+		siw.Handler.OverrideHookDecision(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25420,8 +30833,35 @@ func (siw *ServerInterfaceWrapper) GetAdminBrands(w http.ResponseWriter, r *http
 // SanitizeAdminBrand operation middleware
 func (siw *ServerInterfaceWrapper) SanitizeAdminBrand(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SanitizeAdminBrandParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SanitizeAdminBrand(w, r)
+		siw.Handler.SanitizeAdminBrand(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25446,8 +30886,32 @@ func (siw *ServerInterfaceWrapper) ClearAdminBrand(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ClearAdminBrandParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ClearAdminBrand(w, r, kind)
+		siw.Handler.ClearAdminBrand(w, r, kind, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25472,8 +30936,32 @@ func (siw *ServerInterfaceWrapper) SetAdminBrand(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetAdminBrandParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetAdminBrand(w, r, kind)
+		siw.Handler.SetAdminBrand(w, r, kind, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25512,8 +31000,32 @@ func (siw *ServerInterfaceWrapper) SetInstanceText(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetInstanceTextParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetInstanceText(w, r, key)
+		siw.Handler.SetInstanceText(w, r, key, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25794,8 +31306,32 @@ func (siw *ServerInterfaceWrapper) MarkInstanceAvailable(w http.ResponseWriter, 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MarkInstanceAvailableParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MarkInstanceAvailable(w, r, domain)
+		siw.Handler.MarkInstanceAvailable(w, r, domain, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25820,8 +31356,32 @@ func (siw *ServerInterfaceWrapper) RefetchInstanceStatuses(w http.ResponseWriter
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RefetchInstanceStatusesParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RefetchInstanceStatuses(w, r, domain)
+		siw.Handler.RefetchInstanceStatuses(w, r, domain, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25880,8 +31440,35 @@ func (siw *ServerInterfaceWrapper) ListInvites(w http.ResponseWriter, r *http.Re
 // CreateInvite operation middleware
 func (siw *ServerInterfaceWrapper) CreateInvite(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateInviteParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateInvite(w, r)
+		siw.Handler.CreateInvite(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25906,8 +31493,32 @@ func (siw *ServerInterfaceWrapper) RevokeInvite(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeInviteParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeInvite(w, r, id)
+		siw.Handler.RevokeInvite(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26085,8 +31696,32 @@ func (siw *ServerInterfaceWrapper) RetryAdminJob(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RetryAdminJobParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RetryAdminJob(w, r, id)
+		siw.Handler.RetryAdminJob(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26125,8 +31760,32 @@ func (siw *ServerInterfaceWrapper) RemoveLinkCardDomainRule(w http.ResponseWrite
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveLinkCardDomainRuleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveLinkCardDomainRule(w, r, domain)
+		siw.Handler.RemoveLinkCardDomainRule(w, r, domain, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26151,8 +31810,32 @@ func (siw *ServerInterfaceWrapper) SetLinkCardDomainRule(w http.ResponseWriter, 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetLinkCardDomainRuleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetLinkCardDomainRule(w, r, domain)
+		siw.Handler.SetLinkCardDomainRule(w, r, domain, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26179,8 +31862,35 @@ func (siw *ServerInterfaceWrapper) ListAdminLoginProviders(w http.ResponseWriter
 // CreateLoginProvider operation middleware
 func (siw *ServerInterfaceWrapper) CreateLoginProvider(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateLoginProviderParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateLoginProvider(w, r)
+		siw.Handler.CreateLoginProvider(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26205,8 +31915,32 @@ func (siw *ServerInterfaceWrapper) DeleteLoginProvider(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteLoginProviderParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteLoginProvider(w, r, id)
+		siw.Handler.DeleteLoginProvider(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26257,8 +31991,32 @@ func (siw *ServerInterfaceWrapper) UpdateLoginProvider(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateLoginProviderParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateLoginProvider(w, r, id)
+		siw.Handler.UpdateLoginProvider(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26283,8 +32041,32 @@ func (siw *ServerInterfaceWrapper) DisableLoginProvider(w http.ResponseWriter, r
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DisableLoginProviderParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DisableLoginProvider(w, r, id)
+		siw.Handler.DisableLoginProvider(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26309,8 +32091,32 @@ func (siw *ServerInterfaceWrapper) EnableLoginProvider(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params EnableLoginProviderParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EnableLoginProvider(w, r, id)
+		siw.Handler.EnableLoginProvider(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26335,8 +32141,32 @@ func (siw *ServerInterfaceWrapper) RotateLoginProviderSecret(w http.ResponseWrit
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RotateLoginProviderSecretParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RotateLoginProviderSecret(w, r, id)
+		siw.Handler.RotateLoginProviderSecret(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26395,8 +32225,35 @@ func (siw *ServerInterfaceWrapper) ListOAuthClientHostDenials(w http.ResponseWri
 // DenyOAuthClientHost operation middleware
 func (siw *ServerInterfaceWrapper) DenyOAuthClientHost(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DenyOAuthClientHostParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DenyOAuthClientHost(w, r)
+		siw.Handler.DenyOAuthClientHost(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26421,8 +32278,32 @@ func (siw *ServerInterfaceWrapper) AllowOAuthClientHost(w http.ResponseWriter, r
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AllowOAuthClientHostParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AllowOAuthClientHost(w, r, host)
+		siw.Handler.AllowOAuthClientHost(w, r, host, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26506,8 +32387,32 @@ func (siw *ServerInterfaceWrapper) DisableOAuthClient(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DisableOAuthClientParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DisableOAuthClient(w, r, id)
+		siw.Handler.DisableOAuthClient(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26532,8 +32437,32 @@ func (siw *ServerInterfaceWrapper) EnableOAuthClient(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params EnableOAuthClientParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EnableOAuthClient(w, r, id)
+		siw.Handler.EnableOAuthClient(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26546,8 +32475,35 @@ func (siw *ServerInterfaceWrapper) EnableOAuthClient(w http.ResponseWriter, r *h
 // RunPaymentReconciliation operation middleware
 func (siw *ServerInterfaceWrapper) RunPaymentReconciliation(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RunPaymentReconciliationParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RunPaymentReconciliation(w, r)
+		siw.Handler.RunPaymentReconciliation(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26646,8 +32602,32 @@ func (siw *ServerInterfaceWrapper) ApproveRegistration(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ApproveRegistrationParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ApproveRegistration(w, r, id)
+		siw.Handler.ApproveRegistration(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26672,8 +32652,32 @@ func (siw *ServerInterfaceWrapper) RejectRegistration(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RejectRegistrationParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RejectRegistration(w, r, id)
+		siw.Handler.RejectRegistration(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26700,8 +32704,35 @@ func (siw *ServerInterfaceWrapper) ListAdminRelays(w http.ResponseWriter, r *htt
 // CreateRelay operation middleware
 func (siw *ServerInterfaceWrapper) CreateRelay(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRelayParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateRelay(w, r)
+		siw.Handler.CreateRelay(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26726,8 +32757,32 @@ func (siw *ServerInterfaceWrapper) DeleteRelay(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRelayParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteRelay(w, r, id)
+		siw.Handler.DeleteRelay(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26752,8 +32807,32 @@ func (siw *ServerInterfaceWrapper) UnfollowRelay(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnfollowRelayParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnfollowRelay(w, r, id)
+		siw.Handler.UnfollowRelay(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26778,8 +32857,32 @@ func (siw *ServerInterfaceWrapper) FollowRelay(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params FollowRelayParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FollowRelay(w, r, id)
+		siw.Handler.FollowRelay(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26941,8 +33044,32 @@ func (siw *ServerInterfaceWrapper) AssignReportToSelf(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AssignReportToSelfParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AssignReportToSelf(w, r, id)
+		siw.Handler.AssignReportToSelf(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26967,8 +33094,32 @@ func (siw *ServerInterfaceWrapper) TranslateReportComment(w http.ResponseWriter,
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params TranslateReportCommentParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.TranslateReportComment(w, r, id)
+		siw.Handler.TranslateReportComment(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26993,8 +33144,32 @@ func (siw *ServerInterfaceWrapper) ForwardReport(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ForwardReportParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ForwardReport(w, r, id)
+		siw.Handler.ForwardReport(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27019,8 +33194,32 @@ func (siw *ServerInterfaceWrapper) AddReportNote(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AddReportNoteParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddReportNote(w, r, id)
+		siw.Handler.AddReportNote(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27045,8 +33244,32 @@ func (siw *ServerInterfaceWrapper) ReopenReport(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ReopenReportParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ReopenReport(w, r, id)
+		siw.Handler.ReopenReport(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27071,8 +33294,32 @@ func (siw *ServerInterfaceWrapper) ResolveReport(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ResolveReportParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ResolveReport(w, r, id)
+		siw.Handler.ResolveReport(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27106,8 +33353,32 @@ func (siw *ServerInterfaceWrapper) TranslateReportedStatus(w http.ResponseWriter
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params TranslateReportedStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.TranslateReportedStatus(w, r, id, statusId)
+		siw.Handler.TranslateReportedStatus(w, r, id, statusId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27132,8 +33403,32 @@ func (siw *ServerInterfaceWrapper) UnassignReport(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnassignReportParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnassignReport(w, r, id)
+		siw.Handler.UnassignReport(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27160,8 +33455,35 @@ func (siw *ServerInterfaceWrapper) ListRoles(w http.ResponseWriter, r *http.Requ
 // CreateRole operation middleware
 func (siw *ServerInterfaceWrapper) CreateRole(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRoleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateRole(w, r)
+		siw.Handler.CreateRole(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27186,8 +33508,32 @@ func (siw *ServerInterfaceWrapper) DeleteRole(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRoleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteRole(w, r, role)
+		siw.Handler.DeleteRole(w, r, role, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27212,8 +33558,32 @@ func (siw *ServerInterfaceWrapper) UpdateRole(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateRoleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateRole(w, r, role)
+		siw.Handler.UpdateRole(w, r, role, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27259,8 +33629,35 @@ func (siw *ServerInterfaceWrapper) ListInstanceRules(w http.ResponseWriter, r *h
 // CreateInstanceRule operation middleware
 func (siw *ServerInterfaceWrapper) CreateInstanceRule(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateInstanceRuleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateInstanceRule(w, r)
+		siw.Handler.CreateInstanceRule(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27311,8 +33708,32 @@ func (siw *ServerInterfaceWrapper) UpdateInstanceRule(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateInstanceRuleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateInstanceRule(w, r, id)
+		siw.Handler.UpdateInstanceRule(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27337,8 +33758,32 @@ func (siw *ServerInterfaceWrapper) MoveInstanceRule(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MoveInstanceRuleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MoveInstanceRule(w, r, id)
+		siw.Handler.MoveInstanceRule(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27363,8 +33808,32 @@ func (siw *ServerInterfaceWrapper) RetireInstanceRule(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RetireInstanceRuleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RetireInstanceRule(w, r, id)
+		siw.Handler.RetireInstanceRule(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27391,8 +33860,35 @@ func (siw *ServerInterfaceWrapper) ListInstanceSettings(w http.ResponseWriter, r
 // UpdateInstanceSettings operation middleware
 func (siw *ServerInterfaceWrapper) UpdateInstanceSettings(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateInstanceSettingsParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateInstanceSettings(w, r)
+		siw.Handler.UpdateInstanceSettings(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27524,8 +34020,35 @@ func (siw *ServerInterfaceWrapper) ListSignupBlocks(w http.ResponseWriter, r *ht
 // CreateSignupBlock operation middleware
 func (siw *ServerInterfaceWrapper) CreateSignupBlock(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateSignupBlockParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateSignupBlock(w, r)
+		siw.Handler.CreateSignupBlock(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27538,8 +34061,35 @@ func (siw *ServerInterfaceWrapper) CreateSignupBlock(w http.ResponseWriter, r *h
 // ImportSignupBlocks operation middleware
 func (siw *ServerInterfaceWrapper) ImportSignupBlocks(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ImportSignupBlocksParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ImportSignupBlocks(w, r)
+		siw.Handler.ImportSignupBlocks(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27590,8 +34140,32 @@ func (siw *ServerInterfaceWrapper) LiftSignupBlock(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LiftSignupBlockParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.LiftSignupBlock(w, r, id)
+		siw.Handler.LiftSignupBlock(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27616,8 +34190,32 @@ func (siw *ServerInterfaceWrapper) RefetchStatus(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RefetchStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RefetchStatus(w, r, id)
+		siw.Handler.RefetchStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27644,8 +34242,35 @@ func (siw *ServerInterfaceWrapper) ListAdminSupporterPlans(w http.ResponseWriter
 // CreateSupporterPlan operation middleware
 func (siw *ServerInterfaceWrapper) CreateSupporterPlan(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateSupporterPlanParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateSupporterPlan(w, r)
+		siw.Handler.CreateSupporterPlan(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27670,8 +34295,32 @@ func (siw *ServerInterfaceWrapper) UpdateSupporterPlan(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateSupporterPlanParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateSupporterPlan(w, r, id)
+		siw.Handler.UpdateSupporterPlan(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27696,8 +34345,32 @@ func (siw *ServerInterfaceWrapper) RetireSupporterPlan(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RetireSupporterPlanParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RetireSupporterPlan(w, r, id)
+		siw.Handler.RetireSupporterPlan(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27724,8 +34397,35 @@ func (siw *ServerInterfaceWrapper) GetSupporterProgram(w http.ResponseWriter, r 
 // SetSupporterProgram operation middleware
 func (siw *ServerInterfaceWrapper) SetSupporterProgram(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetSupporterProgramParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetSupporterProgram(w, r)
+		siw.Handler.SetSupporterProgram(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27848,8 +34548,32 @@ func (siw *ServerInterfaceWrapper) EndSupporterSubscription(w http.ResponseWrite
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params EndSupporterSubscriptionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EndSupporterSubscription(w, r, id)
+		siw.Handler.EndSupporterSubscription(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27876,8 +34600,35 @@ func (siw *ServerInterfaceWrapper) GetSupporterTips(w http.ResponseWriter, r *ht
 // SetSupporterTips operation middleware
 func (siw *ServerInterfaceWrapper) SetSupporterTips(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetSupporterTipsParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetSupporterTips(w, r)
+		siw.Handler.SetSupporterTips(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27904,8 +34655,35 @@ func (siw *ServerInterfaceWrapper) GetAdminTheme(w http.ResponseWriter, r *http.
 // SetAdminThemeDraft operation middleware
 func (siw *ServerInterfaceWrapper) SetAdminThemeDraft(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetAdminThemeDraftParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetAdminThemeDraft(w, r)
+		siw.Handler.SetAdminThemeDraft(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27932,8 +34710,35 @@ func (siw *ServerInterfaceWrapper) GetAdminThemeDraftStylesheet(w http.ResponseW
 // PublishAdminTheme operation middleware
 func (siw *ServerInterfaceWrapper) PublishAdminTheme(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PublishAdminThemeParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PublishAdminTheme(w, r)
+		siw.Handler.PublishAdminTheme(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27946,8 +34751,35 @@ func (siw *ServerInterfaceWrapper) PublishAdminTheme(w http.ResponseWriter, r *h
 // RestoreAdminTheme operation middleware
 func (siw *ServerInterfaceWrapper) RestoreAdminTheme(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RestoreAdminThemeParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RestoreAdminTheme(w, r)
+		siw.Handler.RestoreAdminTheme(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28019,8 +34851,32 @@ func (siw *ServerInterfaceWrapper) EndVoiceRoomAsModerator(w http.ResponseWriter
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params EndVoiceRoomAsModeratorParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EndVoiceRoomAsModerator(w, r, id)
+		siw.Handler.EndVoiceRoomAsModerator(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28073,8 +34929,32 @@ func (siw *ServerInterfaceWrapper) DeleteWebhook(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteWebhookParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteWebhook(w, r, id)
+		siw.Handler.DeleteWebhook(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28125,8 +35005,32 @@ func (siw *ServerInterfaceWrapper) UpdateWebhook(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateWebhookParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateWebhook(w, r, id)
+		siw.Handler.UpdateWebhook(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28215,8 +35119,32 @@ func (siw *ServerInterfaceWrapper) RedeliverWebhookDelivery(w http.ResponseWrite
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RedeliverWebhookDeliveryParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RedeliverWebhookDelivery(w, r, id, deliveryId)
+		siw.Handler.RedeliverWebhookDelivery(w, r, id, deliveryId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28241,8 +35169,32 @@ func (siw *ServerInterfaceWrapper) DisableWebhook(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DisableWebhookParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DisableWebhook(w, r, id)
+		siw.Handler.DisableWebhook(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28267,8 +35219,32 @@ func (siw *ServerInterfaceWrapper) EnableWebhook(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params EnableWebhookParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EnableWebhook(w, r, id)
+		siw.Handler.EnableWebhook(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28319,8 +35295,32 @@ func (siw *ServerInterfaceWrapper) TestWebhook(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params TestWebhookParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.TestWebhook(w, r, id)
+		siw.Handler.TestWebhook(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28431,8 +35431,32 @@ func (siw *ServerInterfaceWrapper) MarkAnnouncementRead(w http.ResponseWriter, r
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MarkAnnouncementReadParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MarkAnnouncementRead(w, r, id)
+		siw.Handler.MarkAnnouncementRead(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28486,8 +35510,35 @@ func (siw *ServerInterfaceWrapper) CreateArticle(w http.ResponseWriter, r *http.
 // PreviewArticle operation middleware
 func (siw *ServerInterfaceWrapper) PreviewArticle(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PreviewArticleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PreviewArticle(w, r)
+		siw.Handler.PreviewArticle(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28512,8 +35563,32 @@ func (siw *ServerInterfaceWrapper) EditArticle(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params EditArticleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EditArticle(w, r, id)
+		siw.Handler.EditArticle(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28552,8 +35627,32 @@ func (siw *ServerInterfaceWrapper) RevokeAuthorizedApp(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeAuthorizedAppParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeAuthorizedApp(w, r, id)
+		siw.Handler.RevokeAuthorizedApp(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28742,8 +35841,32 @@ func (siw *ServerInterfaceWrapper) HideConversation(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params HideConversationParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.HideConversation(w, r, id)
+		siw.Handler.HideConversation(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28768,8 +35891,32 @@ func (siw *ServerInterfaceWrapper) MarkConversationRead(w http.ResponseWriter, r
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MarkConversationReadParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MarkConversationRead(w, r, id)
+		siw.Handler.MarkConversationRead(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28854,8 +36001,35 @@ func (siw *ServerInterfaceWrapper) ListCustomEmojiRequests(w http.ResponseWriter
 // CreateCustomEmojiRequest operation middleware
 func (siw *ServerInterfaceWrapper) CreateCustomEmojiRequest(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateCustomEmojiRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateCustomEmojiRequest(w, r)
+		siw.Handler.CreateCustomEmojiRequest(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28880,8 +36054,32 @@ func (siw *ServerInterfaceWrapper) WithdrawCustomEmojiRequest(w http.ResponseWri
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params WithdrawCustomEmojiRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.WithdrawCustomEmojiRequest(w, r, id)
+		siw.Handler.WithdrawCustomEmojiRequest(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28966,8 +36164,32 @@ func (siw *ServerInterfaceWrapper) DeleteOwnCustomEmoji(w http.ResponseWriter, r
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteOwnCustomEmojiParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteOwnCustomEmoji(w, r, id)
+		siw.Handler.DeleteOwnCustomEmoji(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28992,8 +36214,32 @@ func (siw *ServerInterfaceWrapper) UpdateOwnCustomEmoji(w http.ResponseWriter, r
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateOwnCustomEmojiParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateOwnCustomEmoji(w, r, id)
+		siw.Handler.UpdateOwnCustomEmoji(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29052,8 +36298,35 @@ func (siw *ServerInterfaceWrapper) ListDomainMutes(w http.ResponseWriter, r *htt
 // MuteDomain operation middleware
 func (siw *ServerInterfaceWrapper) MuteDomain(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MuteDomainParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MuteDomain(w, r)
+		siw.Handler.MuteDomain(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29078,8 +36351,32 @@ func (siw *ServerInterfaceWrapper) UnmuteDomain(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnmuteDomainParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnmuteDomain(w, r, domain)
+		siw.Handler.UnmuteDomain(w, r, domain, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29151,8 +36448,35 @@ func (siw *ServerInterfaceWrapper) ListDrafts(w http.ResponseWriter, r *http.Req
 // CreateDraft operation middleware
 func (siw *ServerInterfaceWrapper) CreateDraft(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateDraftParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateDraft(w, r)
+		siw.Handler.CreateDraft(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29177,8 +36501,32 @@ func (siw *ServerInterfaceWrapper) DeleteDraft(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteDraftParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteDraft(w, r, id)
+		siw.Handler.DeleteDraft(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29253,6 +36601,25 @@ func (siw *ServerInterfaceWrapper) UpdateDraft(w http.ResponseWriter, r *http.Re
 
 	}
 
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateDraft(w, r, id, params)
 	}))
@@ -29279,8 +36646,32 @@ func (siw *ServerInterfaceWrapper) PublishDraft(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PublishDraftParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PublishDraft(w, r, id)
+		siw.Handler.PublishDraft(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29305,8 +36696,32 @@ func (siw *ServerInterfaceWrapper) UnscheduleDraft(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnscheduleDraftParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnscheduleDraft(w, r, id)
+		siw.Handler.UnscheduleDraft(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29331,8 +36746,32 @@ func (siw *ServerInterfaceWrapper) ScheduleDraft(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ScheduleDraftParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ScheduleDraft(w, r, id)
+		siw.Handler.ScheduleDraft(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29404,8 +36843,35 @@ func (siw *ServerInterfaceWrapper) ListEvents(w http.ResponseWriter, r *http.Req
 // CreateEvent operation middleware
 func (siw *ServerInterfaceWrapper) CreateEvent(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateEventParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateEvent(w, r)
+		siw.Handler.CreateEvent(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29456,8 +36922,32 @@ func (siw *ServerInterfaceWrapper) UpdateEvent(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateEventParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateEvent(w, r, id)
+		siw.Handler.UpdateEvent(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29546,8 +37036,32 @@ func (siw *ServerInterfaceWrapper) RevokeEventAttendeeApproval(w http.ResponseWr
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeEventAttendeeApprovalParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeEventAttendeeApproval(w, r, id, accountId)
+		siw.Handler.RevokeEventAttendeeApproval(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29581,8 +37095,32 @@ func (siw *ServerInterfaceWrapper) ApproveEventAttendee(w http.ResponseWriter, r
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ApproveEventAttendeeParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ApproveEventAttendee(w, r, id, accountId)
+		siw.Handler.ApproveEventAttendee(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29633,8 +37171,32 @@ func (siw *ServerInterfaceWrapper) CancelEvent(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CancelEventParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CancelEvent(w, r, id)
+		siw.Handler.CancelEvent(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29685,8 +37247,32 @@ func (siw *ServerInterfaceWrapper) AddEventCandidate(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AddEventCandidateParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddEventCandidate(w, r, id)
+		siw.Handler.AddEventCandidate(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29720,8 +37306,32 @@ func (siw *ServerInterfaceWrapper) WithdrawEventCandidate(w http.ResponseWriter,
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params WithdrawEventCandidateParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.WithdrawEventCandidate(w, r, id, candidateId)
+		siw.Handler.WithdrawEventCandidate(w, r, id, candidateId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29755,8 +37365,32 @@ func (siw *ServerInterfaceWrapper) ConfirmEventCandidate(w http.ResponseWriter, 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ConfirmEventCandidateParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ConfirmEventCandidate(w, r, id, candidateId)
+		siw.Handler.ConfirmEventCandidate(w, r, id, candidateId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29790,8 +37424,32 @@ func (siw *ServerInterfaceWrapper) VoteEventCandidate(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params VoteEventCandidateParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.VoteEventCandidate(w, r, id, candidateId)
+		siw.Handler.VoteEventCandidate(w, r, id, candidateId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29902,8 +37560,32 @@ func (siw *ServerInterfaceWrapper) RemoveEventCoorganizer(w http.ResponseWriter,
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveEventCoorganizerParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveEventCoorganizer(w, r, id, accountId)
+		siw.Handler.RemoveEventCoorganizer(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29937,8 +37619,32 @@ func (siw *ServerInterfaceWrapper) AssignEventCoorganizer(w http.ResponseWriter,
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AssignEventCoorganizerParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AssignEventCoorganizer(w, r, id, accountId)
+		siw.Handler.AssignEventCoorganizer(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30018,8 +37724,32 @@ func (siw *ServerInterfaceWrapper) InviteToEvent(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params InviteToEventParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.InviteToEvent(w, r, id)
+		siw.Handler.InviteToEvent(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30053,8 +37783,32 @@ func (siw *ServerInterfaceWrapper) RevokeEventInvitation(w http.ResponseWriter, 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeEventInvitationParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeEventInvitation(w, r, id, accountId)
+		siw.Handler.RevokeEventInvitation(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30079,8 +37833,32 @@ func (siw *ServerInterfaceWrapper) AnswerEvent(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AnswerEventParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AnswerEvent(w, r, id)
+		siw.Handler.AnswerEvent(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30107,8 +37885,35 @@ func (siw *ServerInterfaceWrapper) ListDataExports(w http.ResponseWriter, r *htt
 // RequestDataExport operation middleware
 func (siw *ServerInterfaceWrapper) RequestDataExport(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RequestDataExportParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RequestDataExport(w, r)
+		siw.Handler.RequestDataExport(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30161,8 +37966,35 @@ func (siw *ServerInterfaceWrapper) ListFeaturedTags(w http.ResponseWriter, r *ht
 // SetFeaturedTags operation middleware
 func (siw *ServerInterfaceWrapper) SetFeaturedTags(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetFeaturedTagsParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetFeaturedTags(w, r)
+		siw.Handler.SetFeaturedTags(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30189,8 +38021,35 @@ func (siw *ServerInterfaceWrapper) ListKeywordFilters(w http.ResponseWriter, r *
 // CreateKeywordFilter operation middleware
 func (siw *ServerInterfaceWrapper) CreateKeywordFilter(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateKeywordFilterParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateKeywordFilter(w, r)
+		siw.Handler.CreateKeywordFilter(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30215,8 +38074,32 @@ func (siw *ServerInterfaceWrapper) DeleteKeywordFilter(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteKeywordFilterParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteKeywordFilter(w, r, id)
+		siw.Handler.DeleteKeywordFilter(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30267,8 +38150,32 @@ func (siw *ServerInterfaceWrapper) UpdateKeywordFilter(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateKeywordFilterParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateKeywordFilter(w, r, id)
+		siw.Handler.UpdateKeywordFilter(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30483,8 +38390,32 @@ func (siw *ServerInterfaceWrapper) AcceptFollowRequest(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AcceptFollowRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AcceptFollowRequest(w, r, id)
+		siw.Handler.AcceptFollowRequest(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30509,8 +38440,32 @@ func (siw *ServerInterfaceWrapper) RejectFollowRequest(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RejectFollowRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RejectFollowRequest(w, r, id)
+		siw.Handler.RejectFollowRequest(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30575,8 +38530,32 @@ func (siw *ServerInterfaceWrapper) AppealHookDecision(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AppealHookDecisionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AppealHookDecision(w, r, id)
+		siw.Handler.AppealHookDecision(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30603,8 +38582,35 @@ func (siw *ServerInterfaceWrapper) ListDataImports(w http.ResponseWriter, r *htt
 // StartDataImport operation middleware
 func (siw *ServerInterfaceWrapper) StartDataImport(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params StartDataImportParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.StartDataImport(w, r)
+		siw.Handler.StartDataImport(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -30617,8 +38623,35 @@ func (siw *ServerInterfaceWrapper) StartDataImport(w http.ResponseWriter, r *htt
 // PreviewDataImport operation middleware
 func (siw *ServerInterfaceWrapper) PreviewDataImport(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PreviewDataImportParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PreviewDataImport(w, r)
+		siw.Handler.PreviewDataImport(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31047,8 +39080,32 @@ func (siw *ServerInterfaceWrapper) AcceptInteractionRequest(w http.ResponseWrite
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AcceptInteractionRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AcceptInteractionRequest(w, r, id)
+		siw.Handler.AcceptInteractionRequest(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31073,8 +39130,32 @@ func (siw *ServerInterfaceWrapper) RejectInteractionRequest(w http.ResponseWrite
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RejectInteractionRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RejectInteractionRequest(w, r, id)
+		siw.Handler.RejectInteractionRequest(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31133,8 +39214,35 @@ func (siw *ServerInterfaceWrapper) ListOwnInvites(w http.ResponseWriter, r *http
 // CreateOwnInvite operation middleware
 func (siw *ServerInterfaceWrapper) CreateOwnInvite(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateOwnInviteParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateOwnInvite(w, r)
+		siw.Handler.CreateOwnInvite(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31159,8 +39267,32 @@ func (siw *ServerInterfaceWrapper) RevokeOwnInvite(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeOwnInviteParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeOwnInvite(w, r, id)
+		siw.Handler.RevokeOwnInvite(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31227,8 +39359,32 @@ func (siw *ServerInterfaceWrapper) UnlinkIdentity(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnlinkIdentityParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnlinkIdentity(w, r, id)
+		siw.Handler.UnlinkIdentity(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31255,8 +39411,35 @@ func (siw *ServerInterfaceWrapper) ListLists(w http.ResponseWriter, r *http.Requ
 // CreateList operation middleware
 func (siw *ServerInterfaceWrapper) CreateList(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateListParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateList(w, r)
+		siw.Handler.CreateList(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31281,8 +39464,32 @@ func (siw *ServerInterfaceWrapper) DeleteList(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteListParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteList(w, r, id)
+		siw.Handler.DeleteList(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31333,8 +39540,32 @@ func (siw *ServerInterfaceWrapper) UpdateList(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateListParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateList(w, r, id)
+		siw.Handler.UpdateList(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31423,8 +39654,32 @@ func (siw *ServerInterfaceWrapper) RemoveListAccount(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveListAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveListAccount(w, r, id, accountId)
+		siw.Handler.RemoveListAccount(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31458,8 +39713,32 @@ func (siw *ServerInterfaceWrapper) AddListAccount(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AddListAccountParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddListAccount(w, r, id, accountId)
+		siw.Handler.AddListAccount(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31472,8 +39751,35 @@ func (siw *ServerInterfaceWrapper) AddListAccount(w http.ResponseWriter, r *http
 // UploadMedia operation middleware
 func (siw *ServerInterfaceWrapper) UploadMedia(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UploadMediaParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UploadMedia(w, r)
+		siw.Handler.UploadMedia(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31524,8 +39830,32 @@ func (siw *ServerInterfaceWrapper) UpdateMedia(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateMediaParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateMedia(w, r, id)
+		siw.Handler.UpdateMedia(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31609,8 +39939,32 @@ func (siw *ServerInterfaceWrapper) AppealModerationAction(w http.ResponseWriter,
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AppealModerationActionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AppealModerationAction(w, r, id)
+		siw.Handler.AppealModerationAction(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31742,8 +40096,35 @@ func (siw *ServerInterfaceWrapper) GetNotificationMarker(w http.ResponseWriter, 
 // UpdateNotificationMarker operation middleware
 func (siw *ServerInterfaceWrapper) UpdateNotificationMarker(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateNotificationMarkerParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateNotificationMarker(w, r)
+		siw.Handler.UpdateNotificationMarker(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31854,8 +40235,32 @@ func (siw *ServerInterfaceWrapper) AcceptNotificationRequest(w http.ResponseWrit
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AcceptNotificationRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AcceptNotificationRequest(w, r, id)
+		siw.Handler.AcceptNotificationRequest(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31880,8 +40285,32 @@ func (siw *ServerInterfaceWrapper) DismissNotificationRequest(w http.ResponseWri
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DismissNotificationRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DismissNotificationRequest(w, r, id)
+		siw.Handler.DismissNotificationRequest(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31987,8 +40416,32 @@ func (siw *ServerInterfaceWrapper) DismissNotification(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DismissNotificationParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DismissNotification(w, r, id)
+		siw.Handler.DismissNotification(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32041,8 +40494,32 @@ func (siw *ServerInterfaceWrapper) DeleteOAuthApp(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteOAuthAppParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteOAuthApp(w, r, id)
+		siw.Handler.DeleteOAuthApp(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32093,8 +40570,32 @@ func (siw *ServerInterfaceWrapper) UpdateOAuthApp(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateOAuthAppParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateOAuthApp(w, r, id)
+		siw.Handler.UpdateOAuthApp(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32173,8 +40674,35 @@ func (siw *ServerInterfaceWrapper) ListPasskeys(w http.ResponseWriter, r *http.R
 // CreatePasskey operation middleware
 func (siw *ServerInterfaceWrapper) CreatePasskey(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreatePasskeyParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreatePasskey(w, r)
+		siw.Handler.CreatePasskey(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32227,8 +40755,32 @@ func (siw *ServerInterfaceWrapper) DeletePasskey(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeletePasskeyParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeletePasskey(w, r, id)
+		siw.Handler.DeletePasskey(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32255,8 +40807,35 @@ func (siw *ServerInterfaceWrapper) GetPreferences(w http.ResponseWriter, r *http
 // UpdatePreferences operation middleware
 func (siw *ServerInterfaceWrapper) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdatePreferencesParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdatePreferences(w, r)
+		siw.Handler.UpdatePreferences(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32283,8 +40862,35 @@ func (siw *ServerInterfaceWrapper) GetAutoDeletePolicy(w http.ResponseWriter, r 
 // UpdateAutoDeletePolicy operation middleware
 func (siw *ServerInterfaceWrapper) UpdateAutoDeletePolicy(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateAutoDeletePolicyParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateAutoDeletePolicy(w, r)
+		siw.Handler.UpdateAutoDeletePolicy(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32297,8 +40903,35 @@ func (siw *ServerInterfaceWrapper) UpdateAutoDeletePolicy(w http.ResponseWriter,
 // PreviewAutoDeletePolicy operation middleware
 func (siw *ServerInterfaceWrapper) PreviewAutoDeletePolicy(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PreviewAutoDeletePolicyParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PreviewAutoDeletePolicy(w, r)
+		siw.Handler.PreviewAutoDeletePolicy(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32337,8 +40970,32 @@ func (siw *ServerInterfaceWrapper) UpdateBadgeChoice(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateBadgeChoiceParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateBadgeChoice(w, r, roleId)
+		siw.Handler.UpdateBadgeChoice(w, r, roleId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32365,8 +41022,35 @@ func (siw *ServerInterfaceWrapper) GetEventReminders(w http.ResponseWriter, r *h
 // UpdateEventReminders operation middleware
 func (siw *ServerInterfaceWrapper) UpdateEventReminders(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateEventRemindersParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateEventReminders(w, r)
+		siw.Handler.UpdateEventReminders(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32393,8 +41077,35 @@ func (siw *ServerInterfaceWrapper) GetNotificationPolicy(w http.ResponseWriter, 
 // UpdateNotificationPolicy operation middleware
 func (siw *ServerInterfaceWrapper) UpdateNotificationPolicy(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateNotificationPolicyParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateNotificationPolicy(w, r)
+		siw.Handler.UpdateNotificationPolicy(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32421,8 +41132,35 @@ func (siw *ServerInterfaceWrapper) GetNotificationSettings(w http.ResponseWriter
 // UpdateNotificationSettings operation middleware
 func (siw *ServerInterfaceWrapper) UpdateNotificationSettings(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateNotificationSettingsParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateNotificationSettings(w, r)
+		siw.Handler.UpdateNotificationSettings(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32449,8 +41187,35 @@ func (siw *ServerInterfaceWrapper) GetSupporterListing(w http.ResponseWriter, r 
 // UpdateSupporterListing operation middleware
 func (siw *ServerInterfaceWrapper) UpdateSupporterListing(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateSupporterListingParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateSupporterListing(w, r)
+		siw.Handler.UpdateSupporterListing(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32463,8 +41228,35 @@ func (siw *ServerInterfaceWrapper) UpdateSupporterListing(w http.ResponseWriter,
 // DeletePushSubscription operation middleware
 func (siw *ServerInterfaceWrapper) DeletePushSubscription(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeletePushSubscriptionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeletePushSubscription(w, r)
+		siw.Handler.DeletePushSubscription(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32491,8 +41283,35 @@ func (siw *ServerInterfaceWrapper) GetPushSubscription(w http.ResponseWriter, r 
 // PutPushSubscription operation middleware
 func (siw *ServerInterfaceWrapper) PutPushSubscription(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutPushSubscriptionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PutPushSubscription(w, r)
+		siw.Handler.PutPushSubscription(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32551,8 +41370,35 @@ func (siw *ServerInterfaceWrapper) ListOwnReports(w http.ResponseWriter, r *http
 // CreateReport operation middleware
 func (siw *ServerInterfaceWrapper) CreateReport(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateReportParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateReport(w, r)
+		siw.Handler.CreateReport(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32579,8 +41425,35 @@ func (siw *ServerInterfaceWrapper) ListSessions(w http.ResponseWriter, r *http.R
 // RevokeOtherSessions operation middleware
 func (siw *ServerInterfaceWrapper) RevokeOtherSessions(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeOtherSessionsParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeOtherSessions(w, r)
+		siw.Handler.RevokeOtherSessions(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32605,8 +41478,32 @@ func (siw *ServerInterfaceWrapper) RevokeSession(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeSessionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeSession(w, r, id)
+		siw.Handler.RevokeSession(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32764,8 +41661,32 @@ func (siw *ServerInterfaceWrapper) DeleteStatus(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteStatus(w, r, id)
+		siw.Handler.DeleteStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32816,8 +41737,32 @@ func (siw *ServerInterfaceWrapper) EditStatus(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params EditStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EditStatus(w, r, id)
+		siw.Handler.EditStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32842,8 +41787,32 @@ func (siw *ServerInterfaceWrapper) UnbookmarkStatus(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnbookmarkStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnbookmarkStatus(w, r, id)
+		siw.Handler.UnbookmarkStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32868,8 +41837,32 @@ func (siw *ServerInterfaceWrapper) BookmarkStatus(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params BookmarkStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BookmarkStatus(w, r, id)
+		siw.Handler.BookmarkStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32894,8 +41887,32 @@ func (siw *ServerInterfaceWrapper) UnboostStatus(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnboostStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnboostStatus(w, r, id)
+		siw.Handler.UnboostStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32920,8 +41937,32 @@ func (siw *ServerInterfaceWrapper) BoostStatus(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params BoostStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BoostStatus(w, r, id)
+		siw.Handler.BoostStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32972,8 +42013,32 @@ func (siw *ServerInterfaceWrapper) UnfavouriteStatus(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnfavouriteStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnfavouriteStatus(w, r, id)
+		siw.Handler.UnfavouriteStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32998,8 +42063,32 @@ func (siw *ServerInterfaceWrapper) FavouriteStatus(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params FavouriteStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FavouriteStatus(w, r, id)
+		siw.Handler.FavouriteStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33050,8 +42139,32 @@ func (siw *ServerInterfaceWrapper) SetStatusInteractionPolicy(w http.ResponseWri
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetStatusInteractionPolicyParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetStatusInteractionPolicy(w, r, id)
+		siw.Handler.SetStatusInteractionPolicy(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33076,8 +42189,32 @@ func (siw *ServerInterfaceWrapper) UnmuteStatusThread(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnmuteStatusThreadParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnmuteStatusThread(w, r, id)
+		siw.Handler.UnmuteStatusThread(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33102,8 +42239,32 @@ func (siw *ServerInterfaceWrapper) MuteStatusThread(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MuteStatusThreadParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MuteStatusThread(w, r, id)
+		siw.Handler.MuteStatusThread(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33128,8 +42289,32 @@ func (siw *ServerInterfaceWrapper) UnpinStatus(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnpinStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnpinStatus(w, r, id)
+		siw.Handler.UnpinStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33154,8 +42339,32 @@ func (siw *ServerInterfaceWrapper) PinStatus(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PinStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PinStatus(w, r, id)
+		siw.Handler.PinStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33180,8 +42389,32 @@ func (siw *ServerInterfaceWrapper) VoteInPoll(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params VoteInPollParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.VoteInPoll(w, r, id)
+		siw.Handler.VoteInPoll(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33270,8 +42503,32 @@ func (siw *ServerInterfaceWrapper) RevokeStatusQuoteApproval(w http.ResponseWrit
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeStatusQuoteApprovalParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeStatusQuoteApproval(w, r, id, quoteId)
+		siw.Handler.RevokeStatusQuoteApproval(w, r, id, quoteId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33296,8 +42553,32 @@ func (siw *ServerInterfaceWrapper) UnreactToStatus(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnreactToStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnreactToStatus(w, r, id)
+		siw.Handler.UnreactToStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33322,8 +42603,32 @@ func (siw *ServerInterfaceWrapper) ReactToStatus(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ReactToStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ReactToStatus(w, r, id)
+		siw.Handler.ReactToStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33442,8 +42747,32 @@ func (siw *ServerInterfaceWrapper) TranslateStatus(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params TranslateStatusParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.TranslateStatus(w, r, id)
+		siw.Handler.TranslateStatus(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33544,8 +42873,35 @@ func (siw *ServerInterfaceWrapper) GetOwnSupporterSubscription(w http.ResponseWr
 // CancelOwnSupporterSubscription operation middleware
 func (siw *ServerInterfaceWrapper) CancelOwnSupporterSubscription(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CancelOwnSupporterSubscriptionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CancelOwnSupporterSubscription(w, r)
+		siw.Handler.CancelOwnSupporterSubscription(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33558,8 +42914,35 @@ func (siw *ServerInterfaceWrapper) CancelOwnSupporterSubscription(w http.Respons
 // CancelOwnSupporterScheduledChange operation middleware
 func (siw *ServerInterfaceWrapper) CancelOwnSupporterScheduledChange(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CancelOwnSupporterScheduledChangeParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CancelOwnSupporterScheduledChange(w, r)
+		siw.Handler.CancelOwnSupporterScheduledChange(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33572,8 +42955,35 @@ func (siw *ServerInterfaceWrapper) CancelOwnSupporterScheduledChange(w http.Resp
 // ChangeOwnSupporterSubscription operation middleware
 func (siw *ServerInterfaceWrapper) ChangeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ChangeOwnSupporterSubscriptionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ChangeOwnSupporterSubscription(w, r)
+		siw.Handler.ChangeOwnSupporterSubscription(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33586,8 +42996,35 @@ func (siw *ServerInterfaceWrapper) ChangeOwnSupporterSubscription(w http.Respons
 // ResumeOwnSupporterSubscription operation middleware
 func (siw *ServerInterfaceWrapper) ResumeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ResumeOwnSupporterSubscriptionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ResumeOwnSupporterSubscription(w, r)
+		siw.Handler.ResumeOwnSupporterSubscription(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33600,8 +43037,35 @@ func (siw *ServerInterfaceWrapper) ResumeOwnSupporterSubscription(w http.Respons
 // SyncOwnSupporterSubscription operation middleware
 func (siw *ServerInterfaceWrapper) SyncOwnSupporterSubscription(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SyncOwnSupporterSubscriptionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SyncOwnSupporterSubscription(w, r)
+		siw.Handler.SyncOwnSupporterSubscription(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33738,8 +43202,32 @@ func (siw *ServerInterfaceWrapper) UnfollowTag(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UnfollowTagParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnfollowTag(w, r, hashtag)
+		siw.Handler.UnfollowTag(w, r, hashtag, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33764,8 +43252,32 @@ func (siw *ServerInterfaceWrapper) FollowTag(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params FollowTagParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FollowTag(w, r, hashtag)
+		siw.Handler.FollowTag(w, r, hashtag, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34068,8 +43580,35 @@ func (siw *ServerInterfaceWrapper) EnableTotp(w http.ResponseWriter, r *http.Req
 // DisableTotp operation middleware
 func (siw *ServerInterfaceWrapper) DisableTotp(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DisableTotpParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DisableTotp(w, r)
+		siw.Handler.DisableTotp(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34227,8 +43766,32 @@ func (siw *ServerInterfaceWrapper) EndVoiceRoom(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params EndVoiceRoomParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EndVoiceRoom(w, r, id)
+		siw.Handler.EndVoiceRoom(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34279,8 +43842,32 @@ func (siw *ServerInterfaceWrapper) UpdateVoiceRoom(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateVoiceRoomParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateVoiceRoom(w, r, id)
+		siw.Handler.UpdateVoiceRoom(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34331,8 +43918,32 @@ func (siw *ServerInterfaceWrapper) LowerVoiceHand(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LowerVoiceHandParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.LowerVoiceHand(w, r, id)
+		siw.Handler.LowerVoiceHand(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34357,8 +43968,32 @@ func (siw *ServerInterfaceWrapper) RaiseVoiceHand(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RaiseVoiceHandParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RaiseVoiceHand(w, r, id)
+		siw.Handler.RaiseVoiceHand(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34383,8 +44018,32 @@ func (siw *ServerInterfaceWrapper) SendVoiceHeartbeat(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SendVoiceHeartbeatParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SendVoiceHeartbeat(w, r, id)
+		siw.Handler.SendVoiceHeartbeat(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34409,8 +44068,32 @@ func (siw *ServerInterfaceWrapper) HandOverVoiceRoom(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params HandOverVoiceRoomParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.HandOverVoiceRoom(w, r, id)
+		siw.Handler.HandOverVoiceRoom(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34490,8 +44173,32 @@ func (siw *ServerInterfaceWrapper) InviteToVoiceRoom(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params InviteToVoiceRoomParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.InviteToVoiceRoom(w, r, id)
+		siw.Handler.InviteToVoiceRoom(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34525,8 +44232,32 @@ func (siw *ServerInterfaceWrapper) RevokeVoiceInvitation(w http.ResponseWriter, 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeVoiceInvitationParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeVoiceInvitation(w, r, id, accountId)
+		siw.Handler.RevokeVoiceInvitation(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34551,8 +44282,32 @@ func (siw *ServerInterfaceWrapper) SetVoiceMic(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SetVoiceMicParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetVoiceMic(w, r, id)
+		siw.Handler.SetVoiceMic(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34586,8 +44341,32 @@ func (siw *ServerInterfaceWrapper) RemoveVoiceParticipant(w http.ResponseWriter,
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveVoiceParticipantParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveVoiceParticipant(w, r, id, accountId)
+		siw.Handler.RemoveVoiceParticipant(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34621,8 +44400,32 @@ func (siw *ServerInterfaceWrapper) RemoveVoiceCohost(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveVoiceCohostParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveVoiceCohost(w, r, id, accountId)
+		siw.Handler.RemoveVoiceCohost(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34656,8 +44459,32 @@ func (siw *ServerInterfaceWrapper) AssignVoiceCohost(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AssignVoiceCohostParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AssignVoiceCohost(w, r, id, accountId)
+		siw.Handler.AssignVoiceCohost(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34691,8 +44518,32 @@ func (siw *ServerInterfaceWrapper) DismissVoiceHand(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DismissVoiceHandParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DismissVoiceHand(w, r, id, accountId)
+		siw.Handler.DismissVoiceHand(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34726,8 +44577,32 @@ func (siw *ServerInterfaceWrapper) MuteVoiceParticipant(w http.ResponseWriter, r
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MuteVoiceParticipantParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MuteVoiceParticipant(w, r, id, accountId)
+		siw.Handler.MuteVoiceParticipant(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34761,8 +44636,32 @@ func (siw *ServerInterfaceWrapper) RevokeVoiceSpeaking(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeVoiceSpeakingParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeVoiceSpeaking(w, r, id, accountId)
+		siw.Handler.RevokeVoiceSpeaking(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34796,8 +44695,32 @@ func (siw *ServerInterfaceWrapper) GrantVoiceSpeaking(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GrantVoiceSpeakingParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GrantVoiceSpeaking(w, r, id, accountId)
+		siw.Handler.GrantVoiceSpeaking(w, r, id, accountId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34864,6 +44787,27 @@ func (siw *ServerInterfaceWrapper) LeaveVoiceRoom(w http.ResponseWriter, r *http
 		return
 	}
 
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.LeaveVoiceRoom(w, r, id, params)
 	}))
@@ -34916,8 +44860,32 @@ func (siw *ServerInterfaceWrapper) ReactInVoiceRoom(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ReactInVoiceRoomParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ReactInVoiceRoom(w, r, id)
+		siw.Handler.ReactInVoiceRoom(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34942,8 +44910,32 @@ func (siw *ServerInterfaceWrapper) SendVoiceSignal(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SendVoiceSignalParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SendVoiceSignal(w, r, id)
+		siw.Handler.SendVoiceSignal(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34968,8 +44960,32 @@ func (siw *ServerInterfaceWrapper) BecomeVoiceListener(w http.ResponseWriter, r 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params BecomeVoiceListenerParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BecomeVoiceListener(w, r, id)
+		siw.Handler.BecomeVoiceListener(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34994,8 +45010,32 @@ func (siw *ServerInterfaceWrapper) BecomeVoiceSpeaker(w http.ResponseWriter, r *
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params BecomeVoiceSpeakerParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BecomeVoiceSpeaker(w, r, id)
+		siw.Handler.BecomeVoiceSpeaker(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -36329,7 +46369,8 @@ func (response ListAccountAliasesdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type AddAccountAliasRequestObject struct {
-	Body *AddAccountAliasJSONRequestBody
+	Params AddAccountAliasParams
+	Body   *AddAccountAliasJSONRequestBody
 }
 
 type AddAccountAliasResponseObject interface {
@@ -36445,7 +46486,8 @@ func (response GetDeactivationPreviewdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type DeactivateOwnAccountRequestObject struct {
-	Body *DeactivateOwnAccountJSONRequestBody
+	Params DeactivateOwnAccountParams
+	Body   *DeactivateOwnAccountJSONRequestBody
 }
 
 type DeactivateOwnAccountResponseObject interface {
@@ -36507,7 +46549,8 @@ func (response DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse) Vi
 }
 
 type DeleteOwnAccountRequestObject struct {
-	Body *DeleteOwnAccountJSONRequestBody
+	Params DeleteOwnAccountParams
+	Body   *DeleteOwnAccountJSONRequestBody
 }
 
 type DeleteOwnAccountResponseObject interface {
@@ -36553,6 +46596,7 @@ func (response DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse) VisitD
 }
 
 type ResendVerificationEmailRequestObject struct {
+	Params ResendVerificationEmailParams
 }
 
 type ResendVerificationEmailResponseObject interface {
@@ -36653,6 +46697,7 @@ func (response LookupAccountdefaultApplicationProblemPlusJSONResponse) VisitLook
 }
 
 type CancelOwnAccountMoveRequestObject struct {
+	Params CancelOwnAccountMoveParams
 }
 
 type CancelOwnAccountMoveResponseObject interface {
@@ -36698,7 +46743,8 @@ func (response CancelOwnAccountMovedefaultApplicationProblemPlusJSONResponse) Vi
 }
 
 type MoveOwnAccountRequestObject struct {
-	Body *MoveOwnAccountJSONRequestBody
+	Params MoveOwnAccountParams
+	Body   *MoveOwnAccountJSONRequestBody
 }
 
 type MoveOwnAccountResponseObject interface {
@@ -36805,7 +46851,8 @@ func (response GetPasswordStatusdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type ChangePasswordRequestObject struct {
-	Body *ChangePasswordJSONRequestBody
+	Params ChangePasswordParams
+	Body   *ChangePasswordJSONRequestBody
 }
 
 type ChangePasswordResponseObject interface {
@@ -36851,7 +46898,8 @@ func (response ChangePassworddefaultApplicationProblemPlusJSONResponse) VisitCha
 }
 
 type RemovePasswordRequestObject struct {
-	Body *RemovePasswordJSONRequestBody
+	Params RemovePasswordParams
+	Body   *RemovePasswordJSONRequestBody
 }
 
 type RemovePasswordResponseObject interface {
@@ -37083,7 +47131,8 @@ func (response ListAccountSuggestionsdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type UpdateAccountCredentialsRequestObject struct {
-	Body *UpdateAccountCredentialsJSONRequestBody
+	Params UpdateAccountCredentialsParams
+	Body   *UpdateAccountCredentialsJSONRequestBody
 }
 
 type UpdateAccountCredentialsResponseObject interface {
@@ -37261,7 +47310,8 @@ func (response GetAccountdefaultApplicationProblemPlusJSONResponse) VisitGetAcco
 }
 
 type UnblockAccountRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params UnblockAccountParams
 }
 
 type UnblockAccountResponseObject interface {
@@ -37316,7 +47366,8 @@ func (response UnblockAccountdefaultApplicationProblemPlusJSONResponse) VisitUnb
 }
 
 type BlockAccountRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params BlockAccountParams
 }
 
 type BlockAccountResponseObject interface {
@@ -37428,7 +47479,8 @@ func (response ListAccountFeaturedTagsdefaultApplicationProblemPlusJSONResponse)
 }
 
 type UnfollowAccountRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params UnfollowAccountParams
 }
 
 type UnfollowAccountResponseObject interface {
@@ -37483,8 +47535,9 @@ func (response UnfollowAccountdefaultApplicationProblemPlusJSONResponse) VisitUn
 }
 
 type FollowAccountRequestObject struct {
-	Id   AccountId `json:"id"`
-	Body *FollowAccountJSONRequestBody
+	Id     AccountId `json:"id"`
+	Params FollowAccountParams
+	Body   *FollowAccountJSONRequestBody
 }
 
 type FollowAccountResponseObject interface {
@@ -37539,7 +47592,8 @@ func (response FollowAccountdefaultApplicationProblemPlusJSONResponse) VisitFoll
 }
 
 type RemoveFollowerRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params RemoveFollowerParams
 }
 
 type RemoveFollowerResponseObject interface {
@@ -37761,7 +47815,8 @@ func (response ListAccountListsdefaultApplicationProblemPlusJSONResponse) VisitL
 }
 
 type UnmuteAccountRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params UnmuteAccountParams
 }
 
 type UnmuteAccountResponseObject interface {
@@ -37816,8 +47871,9 @@ func (response UnmuteAccountdefaultApplicationProblemPlusJSONResponse) VisitUnmu
 }
 
 type MuteAccountRequestObject struct {
-	Id   AccountId `json:"id"`
-	Body *MuteAccountJSONRequestBody
+	Id     AccountId `json:"id"`
+	Params MuteAccountParams
+	Body   *MuteAccountJSONRequestBody
 }
 
 type MuteAccountResponseObject interface {
@@ -37872,7 +47928,8 @@ func (response MuteAccountdefaultApplicationProblemPlusJSONResponse) VisitMuteAc
 }
 
 type DeleteAccountNoteRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params DeleteAccountNoteParams
 }
 
 type DeleteAccountNoteResponseObject interface {
@@ -37927,8 +47984,9 @@ func (response DeleteAccountNotedefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type SetAccountNoteRequestObject struct {
-	Id   AccountId `json:"id"`
-	Body *SetAccountNoteJSONRequestBody
+	Id     AccountId `json:"id"`
+	Params SetAccountNoteParams
+	Body   *SetAccountNoteJSONRequestBody
 }
 
 type SetAccountNoteResponseObject interface {
@@ -38039,7 +48097,8 @@ func (response ListAccountStatusesdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type UnsubscribeAccountRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params UnsubscribeAccountParams
 }
 
 type UnsubscribeAccountResponseObject interface {
@@ -38094,7 +48153,8 @@ func (response UnsubscribeAccountdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type SubscribeAccountRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params SubscribeAccountParams
 }
 
 type SubscribeAccountResponseObject interface {
@@ -38204,8 +48264,9 @@ func (response GetAccountActiondefaultApplicationProblemPlusJSONResponse) VisitG
 }
 
 type LiftAccountActionRequestObject struct {
-	Id   AccountActionId `json:"id"`
-	Body *LiftAccountActionJSONRequestBody
+	Id     AccountActionId `json:"id"`
+	Params LiftAccountActionParams
+	Body   *LiftAccountActionJSONRequestBody
 }
 
 type LiftAccountActionResponseObject interface {
@@ -38447,8 +48508,9 @@ func (response ListAccountActionsdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type CreateAccountActionRequestObject struct {
-	Id   AdminAccountId `json:"id"`
-	Body *CreateAccountActionJSONRequestBody
+	Id     AdminAccountId `json:"id"`
+	Params CreateAccountActionParams
+	Body   *CreateAccountActionJSONRequestBody
 }
 
 type CreateAccountActionResponseObject interface {
@@ -38503,7 +48565,8 @@ func (response CreateAccountActiondefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type LiftAdminAccountEmailSuppressionRequestObject struct {
-	Id AdminAccountId `json:"id"`
+	Id     AdminAccountId `json:"id"`
+	Params LiftAdminAccountEmailSuppressionParams
 }
 
 type LiftAdminAccountEmailSuppressionResponseObject interface {
@@ -38611,7 +48674,8 @@ func (response IssueAdminAccountPasswordResetLinkdefaultApplicationProblemPlusJS
 }
 
 type RefetchAccountStatusesRequestObject struct {
-	Id Id `json:"id"`
+	Id     Id `json:"id"`
+	Params RefetchAccountStatusesParams
 }
 
 type RefetchAccountStatusesResponseObject interface {
@@ -38774,8 +48838,9 @@ func (response ListAccountRolesdefaultApplicationProblemPlusJSONResponse) VisitL
 }
 
 type RevokeAccountRoleRequestObject struct {
-	Id   AdminAccountId `json:"id"`
-	Role RoleKey        `json:"role"`
+	Id     AdminAccountId `json:"id"`
+	Role   RoleKey        `json:"role"`
+	Params RevokeAccountRoleParams
 }
 
 type RevokeAccountRoleResponseObject interface {
@@ -38830,8 +48895,9 @@ func (response RevokeAccountRoledefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type GrantAccountRoleRequestObject struct {
-	Id   AdminAccountId `json:"id"`
-	Role RoleKey        `json:"role"`
+	Id     AdminAccountId `json:"id"`
+	Role   RoleKey        `json:"role"`
+	Params GrantAccountRoleParams
 }
 
 type GrantAccountRoleResponseObject interface {
@@ -39012,7 +49078,8 @@ func (response ListAdminAccountSignInsdefaultApplicationProblemPlusJSONResponse)
 }
 
 type DisableAdminAccountTwoFactorRequestObject struct {
-	Id AdminAccountId `json:"id"`
+	Id     AdminAccountId `json:"id"`
+	Params DisableAdminAccountTwoFactorParams
 }
 
 type DisableAdminAccountTwoFactorResponseObject interface {
@@ -39120,7 +49187,8 @@ func (response ListAdminAnnouncementsdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type CreateAdminAnnouncementRequestObject struct {
-	Body *CreateAdminAnnouncementJSONRequestBody
+	Params CreateAdminAnnouncementParams
+	Body   *CreateAdminAnnouncementJSONRequestBody
 }
 
 type CreateAdminAnnouncementResponseObject interface {
@@ -39175,7 +49243,8 @@ func (response CreateAdminAnnouncementdefaultApplicationProblemPlusJSONResponse)
 }
 
 type DeleteAdminAnnouncementRequestObject struct {
-	Id AnnouncementId `json:"id"`
+	Id     AnnouncementId `json:"id"`
+	Params DeleteAdminAnnouncementParams
 }
 
 type DeleteAdminAnnouncementResponseObject interface {
@@ -39276,8 +49345,9 @@ func (response GetAdminAnnouncementdefaultApplicationProblemPlusJSONResponse) Vi
 }
 
 type UpdateAdminAnnouncementRequestObject struct {
-	Id   AnnouncementId `json:"id"`
-	Body *UpdateAdminAnnouncementJSONRequestBody
+	Id     AnnouncementId `json:"id"`
+	Params UpdateAdminAnnouncementParams
+	Body   *UpdateAdminAnnouncementJSONRequestBody
 }
 
 type UpdateAdminAnnouncementResponseObject interface {
@@ -39332,7 +49402,8 @@ func (response UpdateAdminAnnouncementdefaultApplicationProblemPlusJSONResponse)
 }
 
 type PublishAdminAnnouncementRequestObject struct {
-	Id AnnouncementId `json:"id"`
+	Id     AnnouncementId `json:"id"`
+	Params PublishAdminAnnouncementParams
 }
 
 type PublishAdminAnnouncementResponseObject interface {
@@ -39387,7 +49458,8 @@ func (response PublishAdminAnnouncementdefaultApplicationProblemPlusJSONResponse
 }
 
 type WithdrawAdminAnnouncementRequestObject struct {
-	Id AnnouncementId `json:"id"`
+	Id     AnnouncementId `json:"id"`
+	Params WithdrawAdminAnnouncementParams
 }
 
 type WithdrawAdminAnnouncementResponseObject interface {
@@ -39559,8 +49631,9 @@ func (response GetAppealdefaultApplicationProblemPlusJSONResponse) VisitGetAppea
 }
 
 type OverturnAppealRequestObject struct {
-	Id   AppealId `json:"id"`
-	Body *OverturnAppealJSONRequestBody
+	Id     AppealId `json:"id"`
+	Params OverturnAppealParams
+	Body   *OverturnAppealJSONRequestBody
 }
 
 type OverturnAppealResponseObject interface {
@@ -39615,8 +49688,9 @@ func (response OverturnAppealdefaultApplicationProblemPlusJSONResponse) VisitOve
 }
 
 type UpholdAppealRequestObject struct {
-	Id   AppealId `json:"id"`
-	Body *UpholdAppealJSONRequestBody
+	Id     AppealId `json:"id"`
+	Params UpholdAppealParams
+	Body   *UpholdAppealJSONRequestBody
 }
 
 type UpholdAppealResponseObject interface {
@@ -39795,6 +49869,7 @@ func (response ListBillingImportsdefaultApplicationProblemPlusJSONResponse) Visi
 
 type RunBillingImportRequestObject struct {
 	Source BillingSourceName `json:"source"`
+	Params RunBillingImportParams
 }
 
 type RunBillingImportResponseObject interface {
@@ -39896,6 +49971,7 @@ func (response GetAdminServiceClosuredefaultApplicationProblemPlusJSONResponse) 
 }
 
 type WithdrawServiceClosureRequestObject struct {
+	Params WithdrawServiceClosureParams
 }
 
 type WithdrawServiceClosureResponseObject interface {
@@ -39952,7 +50028,8 @@ func (response WithdrawServiceClosuredefaultApplicationProblemPlusJSONResponse) 
 }
 
 type AnnounceServiceClosureRequestObject struct {
-	Body *AnnounceServiceClosureJSONRequestBody
+	Params AnnounceServiceClosureParams
+	Body   *AnnounceServiceClosureJSONRequestBody
 }
 
 type AnnounceServiceClosureResponseObject interface {
@@ -40065,7 +50142,8 @@ func (response GetAdminServiceClosureCheckdefaultApplicationProblemPlusJSONRespo
 }
 
 type CloseServiceRequestObject struct {
-	Body *CloseServiceJSONRequestBody
+	Params CloseServiceParams
+	Body   *CloseServiceJSONRequestBody
 }
 
 type CloseServiceResponseObject interface {
@@ -40184,7 +50262,8 @@ func (response ListCostItemsdefaultApplicationProblemPlusJSONResponse) VisitList
 }
 
 type CreateCostItemRequestObject struct {
-	Body *CreateCostItemJSONRequestBody
+	Params CreateCostItemParams
+	Body   *CreateCostItemJSONRequestBody
 }
 
 type CreateCostItemResponseObject interface {
@@ -40239,7 +50318,8 @@ func (response CreateCostItemdefaultApplicationProblemPlusJSONResponse) VisitCre
 }
 
 type DeleteCostItemRequestObject struct {
-	Id CostItemId `json:"id"`
+	Id     CostItemId `json:"id"`
+	Params DeleteCostItemParams
 }
 
 type DeleteCostItemResponseObject interface {
@@ -40340,8 +50420,9 @@ func (response GetCostItemdefaultApplicationProblemPlusJSONResponse) VisitGetCos
 }
 
 type UpdateCostItemRequestObject struct {
-	Id   CostItemId `json:"id"`
-	Body *UpdateCostItemJSONRequestBody
+	Id     CostItemId `json:"id"`
+	Params UpdateCostItemParams
+	Body   *UpdateCostItemJSONRequestBody
 }
 
 type UpdateCostItemResponseObject interface {
@@ -40396,8 +50477,9 @@ func (response UpdateCostItemdefaultApplicationProblemPlusJSONResponse) VisitUpd
 }
 
 type SetCostItemEndRequestObject struct {
-	Id   CostItemId `json:"id"`
-	Body *SetCostItemEndJSONRequestBody
+	Id     CostItemId `json:"id"`
+	Params SetCostItemEndParams
+	Body   *SetCostItemEndJSONRequestBody
 }
 
 type SetCostItemEndResponseObject interface {
@@ -40452,8 +50534,9 @@ func (response SetCostItemEnddefaultApplicationProblemPlusJSONResponse) VisitSet
 }
 
 type ReviseCostItemPriceRequestObject struct {
-	Id   CostItemId `json:"id"`
-	Body *ReviseCostItemPriceJSONRequestBody
+	Id     CostItemId `json:"id"`
+	Params ReviseCostItemPriceParams
+	Body   *ReviseCostItemPriceJSONRequestBody
 }
 
 type ReviseCostItemPriceResponseObject interface {
@@ -40693,7 +50776,8 @@ func (response ListAdminCustomEmojiRequestsdefaultApplicationProblemPlusJSONResp
 }
 
 type ApproveCustomEmojiRequestRequestObject struct {
-	Id CustomEmojiRequestId `json:"id"`
+	Id     CustomEmojiRequestId `json:"id"`
+	Params ApproveCustomEmojiRequestParams
 }
 
 type ApproveCustomEmojiRequestResponseObject interface {
@@ -40794,8 +50878,9 @@ func (response ApproveCustomEmojiRequestdefaultApplicationProblemPlusJSONRespons
 }
 
 type RejectCustomEmojiRequestRequestObject struct {
-	Id   CustomEmojiRequestId `json:"id"`
-	Body *RejectCustomEmojiRequestJSONRequestBody
+	Id     CustomEmojiRequestId `json:"id"`
+	Params RejectCustomEmojiRequestParams
+	Body   *RejectCustomEmojiRequestJSONRequestBody
 }
 
 type RejectCustomEmojiRequestResponseObject interface {
@@ -40958,7 +51043,8 @@ func (response ListAdminCustomEmojisdefaultApplicationProblemPlusJSONResponse) V
 }
 
 type CreateCustomEmojiRequestObject struct {
-	Body *CreateCustomEmojiJSONRequestBody
+	Params CreateCustomEmojiParams
+	Body   *CreateCustomEmojiJSONRequestBody
 }
 
 type CreateCustomEmojiResponseObject interface {
@@ -41035,7 +51121,8 @@ func (response CreateCustomEmojidefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type DeleteCustomEmojiRequestObject struct {
-	Id CustomEmojiId `json:"id"`
+	Id     CustomEmojiId `json:"id"`
+	Params DeleteCustomEmojiParams
 }
 
 type DeleteCustomEmojiResponseObject interface {
@@ -41158,8 +51245,9 @@ func (response GetAdminCustomEmojidefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type UpdateCustomEmojiRequestObject struct {
-	Id   CustomEmojiId `json:"id"`
-	Body *UpdateCustomEmojiJSONRequestBody
+	Id     CustomEmojiId `json:"id"`
+	Params UpdateCustomEmojiParams
+	Body   *UpdateCustomEmojiJSONRequestBody
 }
 
 type UpdateCustomEmojiResponseObject interface {
@@ -41236,8 +51324,9 @@ func (response UpdateCustomEmojidefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type CopyCustomEmojiRequestObject struct {
-	Id   CustomEmojiId `json:"id"`
-	Body *CopyCustomEmojiJSONRequestBody
+	Id     CustomEmojiId `json:"id"`
+	Params CopyCustomEmojiParams
+	Body   *CopyCustomEmojiJSONRequestBody
 }
 
 type CopyCustomEmojiResponseObject interface {
@@ -41314,7 +51403,8 @@ func (response CopyCustomEmojidefaultApplicationProblemPlusJSONResponse) VisitCo
 }
 
 type DisableCustomEmojiRequestObject struct {
-	Id CustomEmojiId `json:"id"`
+	Id     CustomEmojiId `json:"id"`
+	Params DisableCustomEmojiParams
 }
 
 type DisableCustomEmojiResponseObject interface {
@@ -41369,7 +51459,8 @@ func (response DisableCustomEmojidefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type EnableCustomEmojiRequestObject struct {
-	Id CustomEmojiId `json:"id"`
+	Id     CustomEmojiId `json:"id"`
+	Params EnableCustomEmojiParams
 }
 
 type EnableCustomEmojiResponseObject interface {
@@ -41424,8 +51515,9 @@ func (response EnableCustomEmojidefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type ReplaceCustomEmojiImageRequestObject struct {
-	Id   CustomEmojiId `json:"id"`
-	Body *ReplaceCustomEmojiImageJSONRequestBody
+	Id     CustomEmojiId `json:"id"`
+	Params ReplaceCustomEmojiImageParams
+	Body   *ReplaceCustomEmojiImageJSONRequestBody
 }
 
 type ReplaceCustomEmojiImageResponseObject interface {
@@ -41564,7 +51656,8 @@ func (response ListDomainActionsdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type CreateDomainActionRequestObject struct {
-	Body *CreateDomainActionJSONRequestBody
+	Params CreateDomainActionParams
+	Body   *CreateDomainActionJSONRequestBody
 }
 
 type CreateDomainActionResponseObject interface {
@@ -41750,7 +51843,8 @@ func (response GetDomainSuspendImpactdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type ImportDomainBlocksRequestObject struct {
-	Body *ImportDomainBlocksJSONRequestBody
+	Params ImportDomainBlocksParams
+	Body   *ImportDomainBlocksJSONRequestBody
 }
 
 type ImportDomainBlocksResponseObject interface {
@@ -41812,7 +51906,8 @@ func (response ImportDomainBlocksdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type PreviewDomainBlockImportRequestObject struct {
-	Body *PreviewDomainBlockImportJSONRequestBody
+	Params PreviewDomainBlockImportParams
+	Body   *PreviewDomainBlockImportJSONRequestBody
 }
 
 type PreviewDomainBlockImportResponseObject interface {
@@ -41929,7 +52024,8 @@ func (response GetDomainActiondefaultApplicationProblemPlusJSONResponse) VisitGe
 }
 
 type LiftDomainActionRequestObject struct {
-	Id DomainActionId `json:"id"`
+	Id     DomainActionId `json:"id"`
+	Params LiftDomainActionParams
 }
 
 type LiftDomainActionResponseObject interface {
@@ -42045,7 +52141,8 @@ func (response ListDomainAllowsdefaultApplicationProblemPlusJSONResponse) VisitL
 }
 
 type CreateDomainAllowRequestObject struct {
-	Body *CreateDomainAllowJSONRequestBody
+	Params CreateDomainAllowParams
+	Body   *CreateDomainAllowJSONRequestBody
 }
 
 type CreateDomainAllowResponseObject interface {
@@ -42132,6 +52229,7 @@ func (response CreateDomainAllowdefaultApplicationProblemPlusJSONResponse) Visit
 
 type RemoveDomainAllowRequestObject struct {
 	Domain string `json:"domain"`
+	Params RemoveDomainAllowParams
 }
 
 type RemoveDomainAllowResponseObject interface {
@@ -42239,7 +52337,8 @@ func (response ListDomainListSubscriptionsdefaultApplicationProblemPlusJSONRespo
 }
 
 type CreateDomainListSubscriptionRequestObject struct {
-	Body *CreateDomainListSubscriptionJSONRequestBody
+	Params CreateDomainListSubscriptionParams
+	Body   *CreateDomainListSubscriptionJSONRequestBody
 }
 
 type CreateDomainListSubscriptionResponseObject interface {
@@ -42400,8 +52499,9 @@ func (response GetDomainListSubscriptiondefaultApplicationProblemPlusJSONRespons
 }
 
 type UpdateDomainListSubscriptionRequestObject struct {
-	Id   DomainListSubscriptionId `json:"id"`
-	Body *UpdateDomainListSubscriptionJSONRequestBody
+	Id     DomainListSubscriptionId `json:"id"`
+	Params UpdateDomainListSubscriptionParams
+	Body   *UpdateDomainListSubscriptionJSONRequestBody
 }
 
 type UpdateDomainListSubscriptionResponseObject interface {
@@ -42520,8 +52620,9 @@ func (response ListDomainListDraftsdefaultApplicationProblemPlusJSONResponse) Vi
 }
 
 type AcceptDomainListDraftsRequestObject struct {
-	Id   DomainListSubscriptionId `json:"id"`
-	Body *AcceptDomainListDraftsJSONRequestBody
+	Id     DomainListSubscriptionId `json:"id"`
+	Params AcceptDomainListDraftsParams
+	Body   *AcceptDomainListDraftsJSONRequestBody
 }
 
 type AcceptDomainListDraftsResponseObject interface {
@@ -42578,8 +52679,9 @@ func (response AcceptDomainListDraftsdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type RejectDomainListDraftsRequestObject struct {
-	Id   DomainListSubscriptionId `json:"id"`
-	Body *RejectDomainListDraftsJSONRequestBody
+	Id     DomainListSubscriptionId `json:"id"`
+	Params RejectDomainListDraftsParams
+	Body   *RejectDomainListDraftsJSONRequestBody
 }
 
 type RejectDomainListDraftsResponseObject interface {
@@ -42636,7 +52738,8 @@ func (response RejectDomainListDraftsdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type FetchDomainListSubscriptionRequestObject struct {
-	Id DomainListSubscriptionId `json:"id"`
+	Id     DomainListSubscriptionId `json:"id"`
+	Params FetchDomainListSubscriptionParams
 }
 
 type FetchDomainListSubscriptionResponseObject interface {
@@ -42869,7 +52972,8 @@ func (response GetErrorGroupdefaultApplicationProblemPlusJSONResponse) VisitGetE
 }
 
 type MuteErrorGroupRequestObject struct {
-	Id ErrorGroupId `json:"id"`
+	Id     ErrorGroupId `json:"id"`
+	Params MuteErrorGroupParams
 }
 
 type MuteErrorGroupResponseObject interface {
@@ -42924,7 +53028,8 @@ func (response MuteErrorGroupdefaultApplicationProblemPlusJSONResponse) VisitMut
 }
 
 type ResolveErrorGroupRequestObject struct {
-	Id ErrorGroupId `json:"id"`
+	Id     ErrorGroupId `json:"id"`
+	Params ResolveErrorGroupParams
 }
 
 type ResolveErrorGroupResponseObject interface {
@@ -42979,7 +53084,8 @@ func (response ResolveErrorGroupdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type UnmuteErrorGroupRequestObject struct {
-	Id ErrorGroupId `json:"id"`
+	Id     ErrorGroupId `json:"id"`
+	Params UnmuteErrorGroupParams
 }
 
 type UnmuteErrorGroupResponseObject interface {
@@ -43034,8 +53140,9 @@ func (response UnmuteErrorGroupdefaultApplicationProblemPlusJSONResponse) VisitU
 }
 
 type CancelEventAsModeratorRequestObject struct {
-	Id   EventId `json:"id"`
-	Body *CancelEventAsModeratorJSONRequestBody
+	Id     EventId `json:"id"`
+	Params CancelEventAsModeratorParams
+	Body   *CancelEventAsModeratorJSONRequestBody
 }
 
 type CancelEventAsModeratorResponseObject interface {
@@ -43198,7 +53305,8 @@ func (response GetHookAppealdefaultApplicationProblemPlusJSONResponse) VisitGetH
 }
 
 type OverturnHookAppealRequestObject struct {
-	Id AppealId `json:"id"`
+	Id     AppealId `json:"id"`
+	Params OverturnHookAppealParams
 }
 
 type OverturnHookAppealResponseObject interface {
@@ -43253,7 +53361,8 @@ func (response OverturnHookAppealdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type UpholdHookAppealRequestObject struct {
-	Id AppealId `json:"id"`
+	Id     AppealId `json:"id"`
+	Params UpholdHookAppealParams
 }
 
 type UpholdHookAppealResponseObject interface {
@@ -43493,7 +53602,8 @@ func (response GetHookDecisiondefaultApplicationProblemPlusJSONResponse) VisitGe
 }
 
 type OverrideHookDecisionRequestObject struct {
-	Id HookDecisionId `json:"id"`
+	Id     HookDecisionId `json:"id"`
+	Params OverrideHookDecisionParams
 }
 
 type OverrideHookDecisionResponseObject interface {
@@ -43740,7 +53850,8 @@ func (response GetAdminBrandsdefaultApplicationProblemPlusJSONResponse) VisitGet
 }
 
 type SanitizeAdminBrandRequestObject struct {
-	Body *multipart.Reader
+	Params SanitizeAdminBrandParams
+	Body   *multipart.Reader
 }
 
 type SanitizeAdminBrandResponseObject interface {
@@ -43824,7 +53935,8 @@ func (response SanitizeAdminBranddefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type ClearAdminBrandRequestObject struct {
-	Kind BrandKind `json:"kind"`
+	Kind   BrandKind `json:"kind"`
+	Params ClearAdminBrandParams
 }
 
 type ClearAdminBrandResponseObject interface {
@@ -43870,8 +53982,9 @@ func (response ClearAdminBranddefaultApplicationProblemPlusJSONResponse) VisitCl
 }
 
 type SetAdminBrandRequestObject struct {
-	Kind BrandKind `json:"kind"`
-	Body *multipart.Reader
+	Kind   BrandKind `json:"kind"`
+	Params SetAdminBrandParams
+	Body   *multipart.Reader
 }
 
 type SetAdminBrandResponseObject interface {
@@ -44016,8 +54129,9 @@ func (response ListInstanceTextsdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type SetInstanceTextRequestObject struct {
-	Key  InstanceTextKey `json:"key"`
-	Body *SetInstanceTextJSONRequestBody
+	Key    InstanceTextKey `json:"key"`
+	Params SetInstanceTextParams
+	Body   *SetInstanceTextJSONRequestBody
 }
 
 type SetInstanceTextResponseObject interface {
@@ -44388,6 +54502,7 @@ func (response RevealInstanceDeliverydefaultApplicationProblemPlusJSONResponse) 
 
 type MarkInstanceAvailableRequestObject struct {
 	Domain InstanceDomain `json:"domain"`
+	Params MarkInstanceAvailableParams
 }
 
 type MarkInstanceAvailableResponseObject interface {
@@ -44445,6 +54560,7 @@ func (response MarkInstanceAvailabledefaultApplicationProblemPlusJSONResponse) V
 
 type RefetchInstanceStatusesRequestObject struct {
 	Domain InstanceDomain `json:"domain"`
+	Params RefetchInstanceStatusesParams
 }
 
 type RefetchInstanceStatusesResponseObject interface {
@@ -44552,7 +54668,8 @@ func (response ListInvitesdefaultApplicationProblemPlusJSONResponse) VisitListIn
 }
 
 type CreateInviteRequestObject struct {
-	Body *CreateInviteJSONRequestBody
+	Params CreateInviteParams
+	Body   *CreateInviteJSONRequestBody
 }
 
 type CreateInviteResponseObject interface {
@@ -44607,7 +54724,8 @@ func (response CreateInvitedefaultApplicationProblemPlusJSONResponse) VisitCreat
 }
 
 type RevokeInviteRequestObject struct {
-	Id InviteId `json:"id"`
+	Id     InviteId `json:"id"`
+	Params RevokeInviteParams
 }
 
 type RevokeInviteResponseObject interface {
@@ -44849,7 +54967,8 @@ func (response ListAdminJobAttemptsdefaultApplicationProblemPlusJSONResponse) Vi
 }
 
 type RetryAdminJobRequestObject struct {
-	Id Id `json:"id"`
+	Id     Id `json:"id"`
+	Params RetryAdminJobParams
 }
 
 type RetryAdminJobResponseObject interface {
@@ -44957,6 +55076,7 @@ func (response ListLinkCardDomainRulesdefaultApplicationProblemPlusJSONResponse)
 
 type RemoveLinkCardDomainRuleRequestObject struct {
 	Domain string `json:"domain"`
+	Params RemoveLinkCardDomainRuleParams
 }
 
 type RemoveLinkCardDomainRuleResponseObject interface {
@@ -45003,6 +55123,7 @@ func (response RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse
 
 type SetLinkCardDomainRuleRequestObject struct {
 	Domain string `json:"domain"`
+	Params SetLinkCardDomainRuleParams
 	Body   *SetLinkCardDomainRuleJSONRequestBody
 }
 
@@ -45126,7 +55247,8 @@ func (response ListAdminLoginProvidersdefaultApplicationProblemPlusJSONResponse)
 }
 
 type CreateLoginProviderRequestObject struct {
-	Body *CreateLoginProviderJSONRequestBody
+	Params CreateLoginProviderParams
+	Body   *CreateLoginProviderJSONRequestBody
 }
 
 type CreateLoginProviderResponseObject interface {
@@ -45203,7 +55325,8 @@ func (response CreateLoginProviderdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type DeleteLoginProviderRequestObject struct {
-	Id LoginProviderId `json:"id"`
+	Id     LoginProviderId `json:"id"`
+	Params DeleteLoginProviderParams
 }
 
 type DeleteLoginProviderResponseObject interface {
@@ -45304,8 +55427,9 @@ func (response GetAdminLoginProviderdefaultApplicationProblemPlusJSONResponse) V
 }
 
 type UpdateLoginProviderRequestObject struct {
-	Id   LoginProviderId `json:"id"`
-	Body *UpdateLoginProviderJSONRequestBody
+	Id     LoginProviderId `json:"id"`
+	Params UpdateLoginProviderParams
+	Body   *UpdateLoginProviderJSONRequestBody
 }
 
 type UpdateLoginProviderResponseObject interface {
@@ -45382,7 +55506,8 @@ func (response UpdateLoginProviderdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type DisableLoginProviderRequestObject struct {
-	Id LoginProviderId `json:"id"`
+	Id     LoginProviderId `json:"id"`
+	Params DisableLoginProviderParams
 }
 
 type DisableLoginProviderResponseObject interface {
@@ -45437,7 +55562,8 @@ func (response DisableLoginProviderdefaultApplicationProblemPlusJSONResponse) Vi
 }
 
 type EnableLoginProviderRequestObject struct {
-	Id LoginProviderId `json:"id"`
+	Id     LoginProviderId `json:"id"`
+	Params EnableLoginProviderParams
 }
 
 type EnableLoginProviderResponseObject interface {
@@ -45492,8 +55618,9 @@ func (response EnableLoginProviderdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type RotateLoginProviderSecretRequestObject struct {
-	Id   LoginProviderId `json:"id"`
-	Body *RotateLoginProviderSecretJSONRequestBody
+	Id     LoginProviderId `json:"id"`
+	Params RotateLoginProviderSecretParams
+	Body   *RotateLoginProviderSecretJSONRequestBody
 }
 
 type RotateLoginProviderSecretResponseObject interface {
@@ -45632,7 +55759,8 @@ func (response ListOAuthClientHostDenialsdefaultApplicationProblemPlusJSONRespon
 }
 
 type DenyOAuthClientHostRequestObject struct {
-	Body *DenyOAuthClientHostJSONRequestBody
+	Params DenyOAuthClientHostParams
+	Body   *DenyOAuthClientHostJSONRequestBody
 }
 
 type DenyOAuthClientHostResponseObject interface {
@@ -45718,7 +55846,8 @@ func (response DenyOAuthClientHostdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type AllowOAuthClientHostRequestObject struct {
-	Host OAuthClientHost `json:"host"`
+	Host   OAuthClientHost `json:"host"`
+	Params AllowOAuthClientHostParams
 }
 
 type AllowOAuthClientHostResponseObject interface {
@@ -45826,7 +55955,8 @@ func (response ListAdminOAuthClientsdefaultApplicationProblemPlusJSONResponse) V
 }
 
 type DisableOAuthClientRequestObject struct {
-	Id OAuthClientId `json:"id"`
+	Id     OAuthClientId `json:"id"`
+	Params DisableOAuthClientParams
 }
 
 type DisableOAuthClientResponseObject interface {
@@ -45881,7 +56011,8 @@ func (response DisableOAuthClientdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type EnableOAuthClientRequestObject struct {
-	Id OAuthClientId `json:"id"`
+	Id     OAuthClientId `json:"id"`
+	Params EnableOAuthClientParams
 }
 
 type EnableOAuthClientResponseObject interface {
@@ -45936,6 +56067,7 @@ func (response EnableOAuthClientdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type RunPaymentReconciliationRequestObject struct {
+	Params RunPaymentReconciliationParams
 }
 
 type RunPaymentReconciliationResponseObject interface {
@@ -46165,8 +56297,9 @@ func (response ListPendingRegistrationsdefaultApplicationProblemPlusJSONResponse
 }
 
 type ApproveRegistrationRequestObject struct {
-	Id   RegistrationId `json:"id"`
-	Body *ApproveRegistrationJSONRequestBody
+	Id     RegistrationId `json:"id"`
+	Params ApproveRegistrationParams
+	Body   *ApproveRegistrationJSONRequestBody
 }
 
 type ApproveRegistrationResponseObject interface {
@@ -46221,8 +56354,9 @@ func (response ApproveRegistrationdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type RejectRegistrationRequestObject struct {
-	Id   RegistrationId `json:"id"`
-	Body *RejectRegistrationJSONRequestBody
+	Id     RegistrationId `json:"id"`
+	Params RejectRegistrationParams
+	Body   *RejectRegistrationJSONRequestBody
 }
 
 type RejectRegistrationResponseObject interface {
@@ -46338,7 +56472,8 @@ func (response ListAdminRelaysdefaultApplicationProblemPlusJSONResponse) VisitLi
 }
 
 type CreateRelayRequestObject struct {
-	Body *CreateRelayJSONRequestBody
+	Params CreateRelayParams
+	Body   *CreateRelayJSONRequestBody
 }
 
 type CreateRelayResponseObject interface {
@@ -46415,7 +56550,8 @@ func (response CreateRelaydefaultApplicationProblemPlusJSONResponse) VisitCreate
 }
 
 type DeleteRelayRequestObject struct {
-	Id RelayId `json:"id"`
+	Id     RelayId `json:"id"`
+	Params DeleteRelayParams
 }
 
 type DeleteRelayResponseObject interface {
@@ -46483,7 +56619,8 @@ func (response DeleteRelaydefaultApplicationProblemPlusJSONResponse) VisitDelete
 }
 
 type UnfollowRelayRequestObject struct {
-	Id RelayId `json:"id"`
+	Id     RelayId `json:"id"`
+	Params UnfollowRelayParams
 }
 
 type UnfollowRelayResponseObject interface {
@@ -46560,7 +56697,8 @@ func (response UnfollowRelaydefaultApplicationProblemPlusJSONResponse) VisitUnfo
 }
 
 type FollowRelayRequestObject struct {
-	Id RelayId `json:"id"`
+	Id     RelayId `json:"id"`
+	Params FollowRelayParams
 }
 
 type FollowRelayResponseObject interface {
@@ -46754,7 +56892,8 @@ func (response GetReportdefaultApplicationProblemPlusJSONResponse) VisitGetRepor
 }
 
 type AssignReportToSelfRequestObject struct {
-	Id ReportId `json:"id"`
+	Id     ReportId `json:"id"`
+	Params AssignReportToSelfParams
 }
 
 type AssignReportToSelfResponseObject interface {
@@ -46809,8 +56948,9 @@ func (response AssignReportToSelfdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type TranslateReportCommentRequestObject struct {
-	Id   ReportId `json:"id"`
-	Body *TranslateReportCommentJSONRequestBody
+	Id     ReportId `json:"id"`
+	Params TranslateReportCommentParams
+	Body   *TranslateReportCommentJSONRequestBody
 }
 
 type TranslateReportCommentResponseObject interface {
@@ -46872,8 +57012,9 @@ func (response TranslateReportCommentdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type ForwardReportRequestObject struct {
-	Id   ReportId `json:"id"`
-	Body *ForwardReportJSONRequestBody
+	Id     ReportId `json:"id"`
+	Params ForwardReportParams
+	Body   *ForwardReportJSONRequestBody
 }
 
 type ForwardReportResponseObject interface {
@@ -46928,8 +57069,9 @@ func (response ForwardReportdefaultApplicationProblemPlusJSONResponse) VisitForw
 }
 
 type AddReportNoteRequestObject struct {
-	Id   ReportId `json:"id"`
-	Body *AddReportNoteJSONRequestBody
+	Id     ReportId `json:"id"`
+	Params AddReportNoteParams
+	Body   *AddReportNoteJSONRequestBody
 }
 
 type AddReportNoteResponseObject interface {
@@ -46984,7 +57126,8 @@ func (response AddReportNotedefaultApplicationProblemPlusJSONResponse) VisitAddR
 }
 
 type ReopenReportRequestObject struct {
-	Id ReportId `json:"id"`
+	Id     ReportId `json:"id"`
+	Params ReopenReportParams
 }
 
 type ReopenReportResponseObject interface {
@@ -47039,8 +57182,9 @@ func (response ReopenReportdefaultApplicationProblemPlusJSONResponse) VisitReope
 }
 
 type ResolveReportRequestObject struct {
-	Id   ReportId `json:"id"`
-	Body *ResolveReportJSONRequestBody
+	Id     ReportId `json:"id"`
+	Params ResolveReportParams
+	Body   *ResolveReportJSONRequestBody
 }
 
 type ResolveReportResponseObject interface {
@@ -47097,6 +57241,7 @@ func (response ResolveReportdefaultApplicationProblemPlusJSONResponse) VisitReso
 type TranslateReportedStatusRequestObject struct {
 	Id       ReportId `json:"id"`
 	StatusId Id       `json:"status_id"`
+	Params   TranslateReportedStatusParams
 	Body     *TranslateReportedStatusJSONRequestBody
 }
 
@@ -47159,7 +57304,8 @@ func (response TranslateReportedStatusdefaultApplicationProblemPlusJSONResponse)
 }
 
 type UnassignReportRequestObject struct {
-	Id ReportId `json:"id"`
+	Id     ReportId `json:"id"`
+	Params UnassignReportParams
 }
 
 type UnassignReportResponseObject interface {
@@ -47268,7 +57414,8 @@ func (response ListRolesdefaultApplicationProblemPlusJSONResponse) VisitListRole
 }
 
 type CreateRoleRequestObject struct {
-	Body *CreateRoleJSONRequestBody
+	Params CreateRoleParams
+	Body   *CreateRoleJSONRequestBody
 }
 
 type CreateRoleResponseObject interface {
@@ -47345,7 +57492,8 @@ func (response CreateRoledefaultApplicationProblemPlusJSONResponse) VisitCreateR
 }
 
 type DeleteRoleRequestObject struct {
-	Role RoleKey `json:"role"`
+	Role   RoleKey `json:"role"`
+	Params DeleteRoleParams
 }
 
 type DeleteRoleResponseObject interface {
@@ -47413,8 +57561,9 @@ func (response DeleteRoledefaultApplicationProblemPlusJSONResponse) VisitDeleteR
 }
 
 type UpdateRoleRequestObject struct {
-	Role RoleKey `json:"role"`
-	Body *UpdateRoleJSONRequestBody
+	Role   RoleKey `json:"role"`
+	Params UpdateRoleParams
+	Body   *UpdateRoleJSONRequestBody
 }
 
 type UpdateRoleResponseObject interface {
@@ -47553,7 +57702,8 @@ func (response ListInstanceRulesdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type CreateInstanceRuleRequestObject struct {
-	Body *CreateInstanceRuleJSONRequestBody
+	Params CreateInstanceRuleParams
+	Body   *CreateInstanceRuleJSONRequestBody
 }
 
 type CreateInstanceRuleResponseObject interface {
@@ -47663,8 +57813,9 @@ func (response GetInstanceRuledefaultApplicationProblemPlusJSONResponse) VisitGe
 }
 
 type UpdateInstanceRuleRequestObject struct {
-	Id   RuleId `json:"id"`
-	Body *UpdateInstanceRuleJSONRequestBody
+	Id     RuleId `json:"id"`
+	Params UpdateInstanceRuleParams
+	Body   *UpdateInstanceRuleJSONRequestBody
 }
 
 type UpdateInstanceRuleResponseObject interface {
@@ -47719,8 +57870,9 @@ func (response UpdateInstanceRuledefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type MoveInstanceRuleRequestObject struct {
-	Id   RuleId `json:"id"`
-	Body *MoveInstanceRuleJSONRequestBody
+	Id     RuleId `json:"id"`
+	Params MoveInstanceRuleParams
+	Body   *MoveInstanceRuleJSONRequestBody
 }
 
 type MoveInstanceRuleResponseObject interface {
@@ -47775,7 +57927,8 @@ func (response MoveInstanceRuledefaultApplicationProblemPlusJSONResponse) VisitM
 }
 
 type RetireInstanceRuleRequestObject struct {
-	Id RuleId `json:"id"`
+	Id     RuleId `json:"id"`
+	Params RetireInstanceRuleParams
 }
 
 type RetireInstanceRuleResponseObject interface {
@@ -47884,7 +58037,8 @@ func (response ListInstanceSettingsdefaultApplicationProblemPlusJSONResponse) Vi
 }
 
 type UpdateInstanceSettingsRequestObject struct {
-	Body *UpdateInstanceSettingsJSONRequestBody
+	Params UpdateInstanceSettingsParams
+	Body   *UpdateInstanceSettingsJSONRequestBody
 }
 
 type UpdateInstanceSettingsResponseObject interface {
@@ -48124,7 +58278,8 @@ func (response ListSignupBlocksdefaultApplicationProblemPlusJSONResponse) VisitL
 }
 
 type CreateSignupBlockRequestObject struct {
-	Body *CreateSignupBlockJSONRequestBody
+	Params CreateSignupBlockParams
+	Body   *CreateSignupBlockJSONRequestBody
 }
 
 type CreateSignupBlockResponseObject interface {
@@ -48179,7 +58334,8 @@ func (response CreateSignupBlockdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type ImportSignupBlocksRequestObject struct {
-	Body *ImportSignupBlocksJSONRequestBody
+	Params ImportSignupBlocksParams
+	Body   *ImportSignupBlocksJSONRequestBody
 }
 
 type ImportSignupBlocksResponseObject interface {
@@ -48296,7 +58452,8 @@ func (response GetSignupBlockdefaultApplicationProblemPlusJSONResponse) VisitGet
 }
 
 type LiftSignupBlockRequestObject struct {
-	Id SignupBlockId `json:"id"`
+	Id     SignupBlockId `json:"id"`
+	Params LiftSignupBlockParams
 }
 
 type LiftSignupBlockResponseObject interface {
@@ -48351,7 +58508,8 @@ func (response LiftSignupBlockdefaultApplicationProblemPlusJSONResponse) VisitLi
 }
 
 type RefetchStatusRequestObject struct {
-	Id Id `json:"id"`
+	Id     Id `json:"id"`
+	Params RefetchStatusParams
 }
 
 type RefetchStatusResponseObject interface {
@@ -48458,7 +58616,8 @@ func (response ListAdminSupporterPlansdefaultApplicationProblemPlusJSONResponse)
 }
 
 type CreateSupporterPlanRequestObject struct {
-	Body *CreateSupporterPlanJSONRequestBody
+	Params CreateSupporterPlanParams
+	Body   *CreateSupporterPlanJSONRequestBody
 }
 
 type CreateSupporterPlanResponseObject interface {
@@ -48535,8 +58694,9 @@ func (response CreateSupporterPlandefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type UpdateSupporterPlanRequestObject struct {
-	Id   SupporterPlanId `json:"id"`
-	Body *UpdateSupporterPlanJSONRequestBody
+	Id     SupporterPlanId `json:"id"`
+	Params UpdateSupporterPlanParams
+	Body   *UpdateSupporterPlanJSONRequestBody
 }
 
 type UpdateSupporterPlanResponseObject interface {
@@ -48613,7 +58773,8 @@ func (response UpdateSupporterPlandefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type RetireSupporterPlanRequestObject struct {
-	Id SupporterPlanId `json:"id"`
+	Id     SupporterPlanId `json:"id"`
+	Params RetireSupporterPlanParams
 }
 
 type RetireSupporterPlanResponseObject interface {
@@ -48724,7 +58885,8 @@ func (response GetSupporterProgramdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type SetSupporterProgramRequestObject struct {
-	Body *SetSupporterProgramJSONRequestBody
+	Params SetSupporterProgramParams
+	Body   *SetSupporterProgramJSONRequestBody
 }
 
 type SetSupporterProgramResponseObject interface {
@@ -48905,7 +59067,8 @@ func (response GetSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse
 }
 
 type EndSupporterSubscriptionRequestObject struct {
-	Id SupporterSubscriptionId `json:"id"`
+	Id     SupporterSubscriptionId `json:"id"`
+	Params EndSupporterSubscriptionParams
 }
 
 type EndSupporterSubscriptionResponseObject interface {
@@ -49021,7 +59184,8 @@ func (response GetSupporterTipsdefaultApplicationProblemPlusJSONResponse) VisitG
 }
 
 type SetSupporterTipsRequestObject struct {
-	Body *SetSupporterTipsJSONRequestBody
+	Params SetSupporterTipsParams
+	Body   *SetSupporterTipsJSONRequestBody
 }
 
 type SetSupporterTipsResponseObject interface {
@@ -49152,7 +59316,8 @@ func (response GetAdminThemedefaultApplicationProblemPlusJSONResponse) VisitGetA
 }
 
 type SetAdminThemeDraftRequestObject struct {
-	Body *SetAdminThemeDraftJSONRequestBody
+	Params SetAdminThemeDraftParams
+	Body   *SetAdminThemeDraftJSONRequestBody
 }
 
 type SetAdminThemeDraftResponseObject interface {
@@ -49294,6 +59459,7 @@ func (response GetAdminThemeDraftStylesheetdefaultApplicationProblemPlusJSONResp
 }
 
 type PublishAdminThemeRequestObject struct {
+	Params PublishAdminThemeParams
 }
 
 type PublishAdminThemeResponseObject interface {
@@ -49370,6 +59536,7 @@ func (response PublishAdminThemedefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type RestoreAdminThemeRequestObject struct {
+	Params RestoreAdminThemeParams
 }
 
 type RestoreAdminThemeResponseObject interface {
@@ -49569,8 +59736,9 @@ func (response ListUXMeasurementsdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type EndVoiceRoomAsModeratorRequestObject struct {
-	Id   VoiceRoomId `json:"id"`
-	Body *EndVoiceRoomAsModeratorJSONRequestBody
+	Id     VoiceRoomId `json:"id"`
+	Params EndVoiceRoomAsModeratorParams
+	Body   *EndVoiceRoomAsModeratorJSONRequestBody
 }
 
 type EndVoiceRoomAsModeratorResponseObject interface {
@@ -49761,7 +59929,8 @@ func (response CreateWebhookdefaultApplicationProblemPlusJSONResponse) VisitCrea
 }
 
 type DeleteWebhookRequestObject struct {
-	Id WebhookId `json:"id"`
+	Id     WebhookId `json:"id"`
+	Params DeleteWebhookParams
 }
 
 type DeleteWebhookResponseObject interface {
@@ -49862,8 +60031,9 @@ func (response GetAdminWebhookdefaultApplicationProblemPlusJSONResponse) VisitGe
 }
 
 type UpdateWebhookRequestObject struct {
-	Id   WebhookId `json:"id"`
-	Body *UpdateWebhookJSONRequestBody
+	Id     WebhookId `json:"id"`
+	Params UpdateWebhookParams
+	Body   *UpdateWebhookJSONRequestBody
 }
 
 type UpdateWebhookResponseObject interface {
@@ -50005,6 +60175,7 @@ func (response ListWebhookDeliveriesdefaultApplicationProblemPlusJSONResponse) V
 type RedeliverWebhookDeliveryRequestObject struct {
 	Id         WebhookId `json:"id"`
 	DeliveryId Id        `json:"delivery_id"`
+	Params     RedeliverWebhookDeliveryParams
 }
 
 type RedeliverWebhookDeliveryResponseObject interface {
@@ -50061,7 +60232,8 @@ func (response RedeliverWebhookDeliverydefaultApplicationProblemPlusJSONResponse
 }
 
 type DisableWebhookRequestObject struct {
-	Id WebhookId `json:"id"`
+	Id     WebhookId `json:"id"`
+	Params DisableWebhookParams
 }
 
 type DisableWebhookResponseObject interface {
@@ -50116,7 +60288,8 @@ func (response DisableWebhookdefaultApplicationProblemPlusJSONResponse) VisitDis
 }
 
 type EnableWebhookRequestObject struct {
-	Id WebhookId `json:"id"`
+	Id     WebhookId `json:"id"`
+	Params EnableWebhookParams
 }
 
 type EnableWebhookResponseObject interface {
@@ -50233,7 +60406,8 @@ func (response RotateWebhookSecretdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type TestWebhookRequestObject struct {
-	Id WebhookId `json:"id"`
+	Id     WebhookId `json:"id"`
+	Params TestWebhookParams
 }
 
 type TestWebhookResponseObject interface {
@@ -50475,7 +60649,8 @@ func (response GetAnnouncementdefaultApplicationProblemPlusJSONResponse) VisitGe
 }
 
 type MarkAnnouncementReadRequestObject struct {
-	Id AnnouncementId `json:"id"`
+	Id     AnnouncementId `json:"id"`
+	Params MarkAnnouncementReadParams
 }
 
 type MarkAnnouncementReadResponseObject interface {
@@ -50622,7 +60797,8 @@ func (response CreateArticledefaultApplicationProblemPlusJSONResponse) VisitCrea
 }
 
 type PreviewArticleRequestObject struct {
-	Body *PreviewArticleJSONRequestBody
+	Params PreviewArticleParams
+	Body   *PreviewArticleJSONRequestBody
 }
 
 type PreviewArticleResponseObject interface {
@@ -50684,8 +60860,9 @@ func (response PreviewArticledefaultApplicationProblemPlusJSONResponse) VisitPre
 }
 
 type EditArticleRequestObject struct {
-	Id   StatusId `json:"id"`
-	Body *EditArticleJSONRequestBody
+	Id     StatusId `json:"id"`
+	Params EditArticleParams
+	Body   *EditArticleJSONRequestBody
 }
 
 type EditArticleResponseObject interface {
@@ -50808,7 +60985,8 @@ func (response ListAuthorizedAppsdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type RevokeAuthorizedAppRequestObject struct {
-	Id Id `json:"id"`
+	Id     Id `json:"id"`
+	Params RevokeAuthorizedAppParams
 }
 
 type RevokeAuthorizedAppResponseObject interface {
@@ -51088,7 +61266,8 @@ func (response GetConversationdefaultApplicationProblemPlusJSONResponse) VisitGe
 }
 
 type HideConversationRequestObject struct {
-	Id ConversationId `json:"id"`
+	Id     ConversationId `json:"id"`
+	Params HideConversationParams
 }
 
 type HideConversationResponseObject interface {
@@ -51134,7 +61313,8 @@ func (response HideConversationdefaultApplicationProblemPlusJSONResponse) VisitH
 }
 
 type MarkConversationReadRequestObject struct {
-	Id ConversationId `json:"id"`
+	Id     ConversationId `json:"id"`
+	Params MarkConversationReadParams
 }
 
 type MarkConversationReadResponseObject interface {
@@ -51321,7 +61501,8 @@ func (response ListCustomEmojiRequestsdefaultApplicationProblemPlusJSONResponse)
 }
 
 type CreateCustomEmojiRequestRequestObject struct {
-	Body *CreateCustomEmojiRequestJSONRequestBody
+	Params CreateCustomEmojiRequestParams
+	Body   *CreateCustomEmojiRequestJSONRequestBody
 }
 
 type CreateCustomEmojiRequestResponseObject interface {
@@ -51398,7 +61579,8 @@ func (response CreateCustomEmojiRequestdefaultApplicationProblemPlusJSONResponse
 }
 
 type WithdrawCustomEmojiRequestRequestObject struct {
-	Id CustomEmojiRequestId `json:"id"`
+	Id     CustomEmojiRequestId `json:"id"`
+	Params WithdrawCustomEmojiRequestParams
 }
 
 type WithdrawCustomEmojiRequestResponseObject interface {
@@ -51598,7 +61780,8 @@ func (response ListOwnCustomEmojisdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type DeleteOwnCustomEmojiRequestObject struct {
-	Id CustomEmojiId `json:"id"`
+	Id     CustomEmojiId `json:"id"`
+	Params DeleteOwnCustomEmojiParams
 }
 
 type DeleteOwnCustomEmojiResponseObject interface {
@@ -51644,8 +61827,9 @@ func (response DeleteOwnCustomEmojidefaultApplicationProblemPlusJSONResponse) Vi
 }
 
 type UpdateOwnCustomEmojiRequestObject struct {
-	Id   CustomEmojiId `json:"id"`
-	Body *UpdateOwnCustomEmojiJSONRequestBody
+	Id     CustomEmojiId `json:"id"`
+	Params UpdateOwnCustomEmojiParams
+	Body   *UpdateOwnCustomEmojiJSONRequestBody
 }
 
 type UpdateOwnCustomEmojiResponseObject interface {
@@ -51784,7 +61968,8 @@ func (response ListDomainMutesdefaultApplicationProblemPlusJSONResponse) VisitLi
 }
 
 type MuteDomainRequestObject struct {
-	Body *MuteDomainJSONRequestBody
+	Params MuteDomainParams
+	Body   *MuteDomainJSONRequestBody
 }
 
 type MuteDomainResponseObject interface {
@@ -51847,6 +62032,7 @@ func (response MuteDomaindefaultApplicationProblemPlusJSONResponse) VisitMuteDom
 
 type UnmuteDomainRequestObject struct {
 	Domain string `json:"domain"`
+	Params UnmuteDomainParams
 }
 
 type UnmuteDomainResponseObject interface {
@@ -51944,7 +62130,8 @@ func (response ListDraftsdefaultApplicationProblemPlusJSONResponse) VisitListDra
 }
 
 type CreateDraftRequestObject struct {
-	Body *CreateDraftJSONRequestBody
+	Params CreateDraftParams
+	Body   *CreateDraftJSONRequestBody
 }
 
 type CreateDraftResponseObject interface {
@@ -51999,7 +62186,8 @@ func (response CreateDraftdefaultApplicationProblemPlusJSONResponse) VisitCreate
 }
 
 type DeleteDraftRequestObject struct {
-	Id DraftId `json:"id"`
+	Id     DraftId `json:"id"`
+	Params DeleteDraftParams
 }
 
 type DeleteDraftResponseObject interface {
@@ -52157,7 +62345,8 @@ func (response UpdateDraftdefaultApplicationProblemPlusJSONResponse) VisitUpdate
 }
 
 type PublishDraftRequestObject struct {
-	Id DraftId `json:"id"`
+	Id     DraftId `json:"id"`
+	Params PublishDraftParams
 }
 
 type PublishDraftResponseObject interface {
@@ -52241,7 +62430,8 @@ func (response PublishDraftdefaultApplicationProblemPlusJSONResponse) VisitPubli
 }
 
 type UnscheduleDraftRequestObject struct {
-	Id DraftId `json:"id"`
+	Id     DraftId `json:"id"`
+	Params UnscheduleDraftParams
 }
 
 type UnscheduleDraftResponseObject interface {
@@ -52296,8 +62486,9 @@ func (response UnscheduleDraftdefaultApplicationProblemPlusJSONResponse) VisitUn
 }
 
 type ScheduleDraftRequestObject struct {
-	Id   DraftId `json:"id"`
-	Body *ScheduleDraftJSONRequestBody
+	Id     DraftId `json:"id"`
+	Params ScheduleDraftParams
+	Body   *ScheduleDraftJSONRequestBody
 }
 
 type ScheduleDraftResponseObject interface {
@@ -52414,7 +62605,8 @@ func (response ListEventsdefaultApplicationProblemPlusJSONResponse) VisitListEve
 }
 
 type CreateEventRequestObject struct {
-	Body *CreateEventJSONRequestBody
+	Params CreateEventParams
+	Body   *CreateEventJSONRequestBody
 }
 
 type CreateEventResponseObject interface {
@@ -52538,8 +62730,9 @@ func (response GetEventdefaultApplicationProblemPlusJSONResponse) VisitGetEventR
 }
 
 type UpdateEventRequestObject struct {
-	Id   EventId `json:"id"`
-	Body *UpdateEventJSONRequestBody
+	Id     EventId `json:"id"`
+	Params UpdateEventParams
+	Body   *UpdateEventJSONRequestBody
 }
 
 type UpdateEventResponseObject interface {
@@ -52666,6 +62859,7 @@ func (response ListEventAttendeesdefaultApplicationProblemPlusJSONResponse) Visi
 type RevokeEventAttendeeApprovalRequestObject struct {
 	Id        EventId        `json:"id"`
 	AccountId EventAccountId `json:"account_id"`
+	Params    RevokeEventAttendeeApprovalParams
 }
 
 type RevokeEventAttendeeApprovalResponseObject interface {
@@ -52729,6 +62923,7 @@ func (response RevokeEventAttendeeApprovaldefaultApplicationProblemPlusJSONRespo
 type ApproveEventAttendeeRequestObject struct {
 	Id        EventId        `json:"id"`
 	AccountId EventAccountId `json:"account_id"`
+	Params    ApproveEventAttendeeParams
 }
 
 type ApproveEventAttendeeResponseObject interface {
@@ -52860,8 +63055,9 @@ func (response GetEventCalendardefaultApplicationProblemPlusJSONResponse) VisitG
 }
 
 type CancelEventRequestObject struct {
-	Id   EventId `json:"id"`
-	Body *CancelEventJSONRequestBody
+	Id     EventId `json:"id"`
+	Params CancelEventParams
+	Body   *CancelEventJSONRequestBody
 }
 
 type CancelEventResponseObject interface {
@@ -52985,8 +63181,9 @@ func (response ListEventCandidatesdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type AddEventCandidateRequestObject struct {
-	Id   EventId `json:"id"`
-	Body *AddEventCandidateJSONRequestBody
+	Id     EventId `json:"id"`
+	Params AddEventCandidateParams
+	Body   *AddEventCandidateJSONRequestBody
 }
 
 type AddEventCandidateResponseObject interface {
@@ -53050,6 +63247,7 @@ func (response AddEventCandidatedefaultApplicationProblemPlusJSONResponse) Visit
 type WithdrawEventCandidateRequestObject struct {
 	Id          EventId          `json:"id"`
 	CandidateId EventCandidateId `json:"candidate_id"`
+	Params      WithdrawEventCandidateParams
 }
 
 type WithdrawEventCandidateResponseObject interface {
@@ -53097,6 +63295,7 @@ func (response WithdrawEventCandidatedefaultApplicationProblemPlusJSONResponse) 
 type ConfirmEventCandidateRequestObject struct {
 	Id          EventId          `json:"id"`
 	CandidateId EventCandidateId `json:"candidate_id"`
+	Params      ConfirmEventCandidateParams
 }
 
 type ConfirmEventCandidateResponseObject interface {
@@ -53160,6 +63359,7 @@ func (response ConfirmEventCandidatedefaultApplicationProblemPlusJSONResponse) V
 type VoteEventCandidateRequestObject struct {
 	Id          EventId          `json:"id"`
 	CandidateId EventCandidateId `json:"candidate_id"`
+	Params      VoteEventCandidateParams
 	Body        *VoteEventCandidateJSONRequestBody
 }
 
@@ -53288,6 +63488,7 @@ func (response ListEventCandidateVotesdefaultApplicationProblemPlusJSONResponse)
 type RemoveEventCoorganizerRequestObject struct {
 	Id        EventId        `json:"id"`
 	AccountId EventAccountId `json:"account_id"`
+	Params    RemoveEventCoorganizerParams
 }
 
 type RemoveEventCoorganizerResponseObject interface {
@@ -53351,6 +63552,7 @@ func (response RemoveEventCoorganizerdefaultApplicationProblemPlusJSONResponse) 
 type AssignEventCoorganizerRequestObject struct {
 	Id        EventId        `json:"id"`
 	AccountId EventAccountId `json:"account_id"`
+	Params    AssignEventCoorganizerParams
 }
 
 type AssignEventCoorganizerResponseObject interface {
@@ -53475,8 +63677,9 @@ func (response ListEventInvitationsdefaultApplicationProblemPlusJSONResponse) Vi
 }
 
 type InviteToEventRequestObject struct {
-	Id   EventId `json:"id"`
-	Body *InviteToEventJSONRequestBody
+	Id     EventId `json:"id"`
+	Params InviteToEventParams
+	Body   *InviteToEventJSONRequestBody
 }
 
 type InviteToEventResponseObject interface {
@@ -53540,6 +63743,7 @@ func (response InviteToEventdefaultApplicationProblemPlusJSONResponse) VisitInvi
 type RevokeEventInvitationRequestObject struct {
 	Id        EventId        `json:"id"`
 	AccountId EventAccountId `json:"account_id"`
+	Params    RevokeEventInvitationParams
 }
 
 type RevokeEventInvitationResponseObject interface {
@@ -53585,8 +63789,9 @@ func (response RevokeEventInvitationdefaultApplicationProblemPlusJSONResponse) V
 }
 
 type AnswerEventRequestObject struct {
-	Id   EventId `json:"id"`
-	Body *AnswerEventJSONRequestBody
+	Id     EventId `json:"id"`
+	Params AnswerEventParams
+	Body   *AnswerEventJSONRequestBody
 }
 
 type AnswerEventResponseObject interface {
@@ -53709,6 +63914,7 @@ func (response ListDataExportsdefaultApplicationProblemPlusJSONResponse) VisitLi
 }
 
 type RequestDataExportRequestObject struct {
+	Params RequestDataExportParams
 }
 
 type RequestDataExportResponseObject interface {
@@ -53896,7 +64102,8 @@ func (response ListFeaturedTagsdefaultApplicationProblemPlusJSONResponse) VisitL
 }
 
 type SetFeaturedTagsRequestObject struct {
-	Body *SetFeaturedTagsJSONRequestBody
+	Params SetFeaturedTagsParams
+	Body   *SetFeaturedTagsJSONRequestBody
 }
 
 type SetFeaturedTagsResponseObject interface {
@@ -54009,7 +64216,8 @@ func (response ListKeywordFiltersdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type CreateKeywordFilterRequestObject struct {
-	Body *CreateKeywordFilterJSONRequestBody
+	Params CreateKeywordFilterParams
+	Body   *CreateKeywordFilterJSONRequestBody
 }
 
 type CreateKeywordFilterResponseObject interface {
@@ -54064,7 +64272,8 @@ func (response CreateKeywordFilterdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type DeleteKeywordFilterRequestObject struct {
-	Id KeywordFilterId `json:"id"`
+	Id     KeywordFilterId `json:"id"`
+	Params DeleteKeywordFilterParams
 }
 
 type DeleteKeywordFilterResponseObject interface {
@@ -54165,8 +64374,9 @@ func (response GetKeywordFilterdefaultApplicationProblemPlusJSONResponse) VisitG
 }
 
 type UpdateKeywordFilterRequestObject struct {
-	Id   KeywordFilterId `json:"id"`
-	Body *UpdateKeywordFilterJSONRequestBody
+	Id     KeywordFilterId `json:"id"`
+	Params UpdateKeywordFilterParams
+	Body   *UpdateKeywordFilterJSONRequestBody
 }
 
 type UpdateKeywordFilterResponseObject interface {
@@ -54400,7 +64610,8 @@ func (response ListFollowRequestsdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type AcceptFollowRequestRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params AcceptFollowRequestParams
 }
 
 type AcceptFollowRequestResponseObject interface {
@@ -54455,7 +64666,8 @@ func (response AcceptFollowRequestdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type RejectFollowRequestRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params RejectFollowRequestParams
 }
 
 type RejectFollowRequestResponseObject interface {
@@ -54628,8 +64840,9 @@ func (response GetOwnHookAppealdefaultApplicationProblemPlusJSONResponse) VisitG
 }
 
 type AppealHookDecisionRequestObject struct {
-	Id   HookDecisionId `json:"id"`
-	Body *AppealHookDecisionJSONRequestBody
+	Id     HookDecisionId `json:"id"`
+	Params AppealHookDecisionParams
+	Body   *AppealHookDecisionJSONRequestBody
 }
 
 type AppealHookDecisionResponseObject interface {
@@ -54752,7 +64965,8 @@ func (response ListDataImportsdefaultApplicationProblemPlusJSONResponse) VisitLi
 }
 
 type StartDataImportRequestObject struct {
-	Body *StartDataImportJSONRequestBody
+	Params StartDataImportParams
+	Body   *StartDataImportJSONRequestBody
 }
 
 type StartDataImportResponseObject interface {
@@ -54814,7 +65028,8 @@ func (response StartDataImportdefaultApplicationProblemPlusJSONResponse) VisitSt
 }
 
 type PreviewDataImportRequestObject struct {
-	Body *PreviewDataImportJSONRequestBody
+	Params PreviewDataImportParams
+	Body   *PreviewDataImportJSONRequestBody
 }
 
 type PreviewDataImportResponseObject interface {
@@ -55575,7 +65790,8 @@ func (response ListInteractionRequestsdefaultApplicationProblemPlusJSONResponse)
 }
 
 type AcceptInteractionRequestRequestObject struct {
-	Id InteractionRequestId `json:"id"`
+	Id     InteractionRequestId `json:"id"`
+	Params AcceptInteractionRequestParams
 }
 
 type AcceptInteractionRequestResponseObject interface {
@@ -55627,7 +65843,8 @@ func (response AcceptInteractionRequestdefaultApplicationProblemPlusJSONResponse
 }
 
 type RejectInteractionRequestRequestObject struct {
-	Id InteractionRequestId `json:"id"`
+	Id     InteractionRequestId `json:"id"`
+	Params RejectInteractionRequestParams
 }
 
 type RejectInteractionRequestResponseObject interface {
@@ -55741,7 +65958,8 @@ func (response ListOwnInvitesdefaultApplicationProblemPlusJSONResponse) VisitLis
 }
 
 type CreateOwnInviteRequestObject struct {
-	Body *CreateOwnInviteJSONRequestBody
+	Params CreateOwnInviteParams
+	Body   *CreateOwnInviteJSONRequestBody
 }
 
 type CreateOwnInviteResponseObject interface {
@@ -55818,7 +66036,8 @@ func (response CreateOwnInvitedefaultApplicationProblemPlusJSONResponse) VisitCr
 }
 
 type RevokeOwnInviteRequestObject struct {
-	Id InviteId `json:"id"`
+	Id     InviteId `json:"id"`
+	Params RevokeOwnInviteParams
 }
 
 type RevokeOwnInviteResponseObject interface {
@@ -56058,7 +66277,8 @@ func (response BeginExternalConfirmationdefaultApplicationProblemPlusJSONRespons
 }
 
 type UnlinkIdentityRequestObject struct {
-	Id Id `json:"id"`
+	Id     Id `json:"id"`
+	Params UnlinkIdentityParams
 }
 
 type UnlinkIdentityResponseObject interface {
@@ -56158,7 +66378,8 @@ func (response ListListsdefaultApplicationProblemPlusJSONResponse) VisitListList
 }
 
 type CreateListRequestObject struct {
-	Body *CreateListJSONRequestBody
+	Params CreateListParams
+	Body   *CreateListJSONRequestBody
 }
 
 type CreateListResponseObject interface {
@@ -56213,7 +66434,8 @@ func (response CreateListdefaultApplicationProblemPlusJSONResponse) VisitCreateL
 }
 
 type DeleteListRequestObject struct {
-	Id ListId `json:"id"`
+	Id     ListId `json:"id"`
+	Params DeleteListParams
 }
 
 type DeleteListResponseObject interface {
@@ -56314,8 +66536,9 @@ func (response GetListdefaultApplicationProblemPlusJSONResponse) VisitGetListRes
 }
 
 type UpdateListRequestObject struct {
-	Id   ListId `json:"id"`
-	Body *UpdateListJSONRequestBody
+	Id     ListId `json:"id"`
+	Params UpdateListParams
+	Body   *UpdateListJSONRequestBody
 }
 
 type UpdateListResponseObject interface {
@@ -56428,6 +66651,7 @@ func (response ListListAccountsdefaultApplicationProblemPlusJSONResponse) VisitL
 type RemoveListAccountRequestObject struct {
 	Id        ListId        `json:"id"`
 	AccountId ListAccountId `json:"account_id"`
+	Params    RemoveListAccountParams
 }
 
 type RemoveListAccountResponseObject interface {
@@ -56475,6 +66699,7 @@ func (response RemoveListAccountdefaultApplicationProblemPlusJSONResponse) Visit
 type AddListAccountRequestObject struct {
 	Id        ListId        `json:"id"`
 	AccountId ListAccountId `json:"account_id"`
+	Params    AddListAccountParams
 }
 
 type AddListAccountResponseObject interface {
@@ -56520,7 +66745,8 @@ func (response AddListAccountdefaultApplicationProblemPlusJSONResponse) VisitAdd
 }
 
 type UploadMediaRequestObject struct {
-	Body *multipart.Reader
+	Params UploadMediaParams
+	Body   *multipart.Reader
 }
 
 type UploadMediaResponseObject interface {
@@ -56644,8 +66870,9 @@ func (response GetMediadefaultApplicationProblemPlusJSONResponse) VisitGetMediaR
 }
 
 type UpdateMediaRequestObject struct {
-	Id   Id `json:"id"`
-	Body *UpdateMediaJSONRequestBody
+	Id     Id `json:"id"`
+	Params UpdateMediaParams
+	Body   *UpdateMediaJSONRequestBody
 }
 
 type UpdateMediaResponseObject interface {
@@ -56769,8 +66996,9 @@ func (response ListOwnModerationActionsdefaultApplicationProblemPlusJSONResponse
 }
 
 type AppealModerationActionRequestObject struct {
-	Id   Id `json:"id"`
-	Body *AppealModerationActionJSONRequestBody
+	Id     Id `json:"id"`
+	Params AppealModerationActionParams
+	Body   *AppealModerationActionJSONRequestBody
 }
 
 type AppealModerationActionResponseObject interface {
@@ -57017,7 +67245,8 @@ func (response GetNotificationMarkerdefaultApplicationProblemPlusJSONResponse) V
 }
 
 type UpdateNotificationMarkerRequestObject struct {
-	Body *UpdateNotificationMarkerJSONRequestBody
+	Params UpdateNotificationMarkerParams
+	Body   *UpdateNotificationMarkerJSONRequestBody
 }
 
 type UpdateNotificationMarkerResponseObject interface {
@@ -57264,7 +67493,8 @@ func (response GetNotificationRequestdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type AcceptNotificationRequestRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params AcceptNotificationRequestParams
 }
 
 type AcceptNotificationRequestResponseObject interface {
@@ -57310,7 +67540,8 @@ func (response AcceptNotificationRequestdefaultApplicationProblemPlusJSONRespons
 }
 
 type DismissNotificationRequestRequestObject struct {
-	Id AccountId `json:"id"`
+	Id     AccountId `json:"id"`
+	Params DismissNotificationRequestParams
 }
 
 type DismissNotificationRequestResponseObject interface {
@@ -57481,7 +67712,8 @@ func (response GetNotificationdefaultApplicationProblemPlusJSONResponse) VisitGe
 }
 
 type DismissNotificationRequestObject struct {
-	Id Id `json:"id"`
+	Id     Id `json:"id"`
+	Params DismissNotificationParams
 }
 
 type DismissNotificationResponseObject interface {
@@ -57650,7 +67882,8 @@ func (response CreateOAuthAppdefaultApplicationProblemPlusJSONResponse) VisitCre
 }
 
 type DeleteOAuthAppRequestObject struct {
-	Id OAuthAppId `json:"id"`
+	Id     OAuthAppId `json:"id"`
+	Params DeleteOAuthAppParams
 }
 
 type DeleteOAuthAppResponseObject interface {
@@ -57751,8 +67984,9 @@ func (response GetOAuthAppdefaultApplicationProblemPlusJSONResponse) VisitGetOAu
 }
 
 type UpdateOAuthAppRequestObject struct {
-	Id   OAuthAppId `json:"id"`
-	Body *UpdateOAuthAppJSONRequestBody
+	Id     OAuthAppId `json:"id"`
+	Params UpdateOAuthAppParams
+	Body   *UpdateOAuthAppJSONRequestBody
 }
 
 type UpdateOAuthAppResponseObject interface {
@@ -57993,7 +68227,8 @@ func (response ListPasskeysdefaultApplicationProblemPlusJSONResponse) VisitListP
 }
 
 type CreatePasskeyRequestObject struct {
-	Body *CreatePasskeyJSONRequestBody
+	Params CreatePasskeyParams
+	Body   *CreatePasskeyJSONRequestBody
 }
 
 type CreatePasskeyResponseObject interface {
@@ -58178,7 +68413,8 @@ func (response BeginPasskeyRegistrationdefaultApplicationProblemPlusJSONResponse
 }
 
 type DeletePasskeyRequestObject struct {
-	Id Id `json:"id"`
+	Id     Id `json:"id"`
+	Params DeletePasskeyParams
 }
 
 type DeletePasskeyResponseObject interface {
@@ -58285,7 +68521,8 @@ func (response GetPreferencesdefaultApplicationProblemPlusJSONResponse) VisitGet
 }
 
 type UpdatePreferencesRequestObject struct {
-	Body *UpdatePreferencesJSONRequestBody
+	Params UpdatePreferencesParams
+	Body   *UpdatePreferencesJSONRequestBody
 }
 
 type UpdatePreferencesResponseObject interface {
@@ -58408,7 +68645,8 @@ func (response GetAutoDeletePolicydefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type UpdateAutoDeletePolicyRequestObject struct {
-	Body *UpdateAutoDeletePolicyJSONRequestBody
+	Params UpdateAutoDeletePolicyParams
+	Body   *UpdateAutoDeletePolicyJSONRequestBody
 }
 
 type UpdateAutoDeletePolicyResponseObject interface {
@@ -58470,7 +68708,8 @@ func (response UpdateAutoDeletePolicydefaultApplicationProblemPlusJSONResponse) 
 }
 
 type PreviewAutoDeletePolicyRequestObject struct {
-	Body *PreviewAutoDeletePolicyJSONRequestBody
+	Params PreviewAutoDeletePolicyParams
+	Body   *PreviewAutoDeletePolicyJSONRequestBody
 }
 
 type PreviewAutoDeletePolicyResponseObject interface {
@@ -58594,6 +68833,7 @@ func (response ListBadgeChoicesdefaultApplicationProblemPlusJSONResponse) VisitL
 
 type UpdateBadgeChoiceRequestObject struct {
 	RoleId BadgeRoleId `json:"role_id"`
+	Params UpdateBadgeChoiceParams
 	Body   *UpdateBadgeChoiceJSONRequestBody
 }
 
@@ -58717,7 +68957,8 @@ func (response GetEventRemindersdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type UpdateEventRemindersRequestObject struct {
-	Body *UpdateEventRemindersJSONRequestBody
+	Params UpdateEventRemindersParams
+	Body   *UpdateEventRemindersJSONRequestBody
 }
 
 type UpdateEventRemindersResponseObject interface {
@@ -58840,7 +69081,8 @@ func (response GetNotificationPolicydefaultApplicationProblemPlusJSONResponse) V
 }
 
 type UpdateNotificationPolicyRequestObject struct {
-	Body *UpdateNotificationPolicyJSONRequestBody
+	Params UpdateNotificationPolicyParams
+	Body   *UpdateNotificationPolicyJSONRequestBody
 }
 
 type UpdateNotificationPolicyResponseObject interface {
@@ -58963,7 +69205,8 @@ func (response GetNotificationSettingsdefaultApplicationProblemPlusJSONResponse)
 }
 
 type UpdateNotificationSettingsRequestObject struct {
-	Body *UpdateNotificationSettingsJSONRequestBody
+	Params UpdateNotificationSettingsParams
+	Body   *UpdateNotificationSettingsJSONRequestBody
 }
 
 type UpdateNotificationSettingsResponseObject interface {
@@ -59086,7 +69329,8 @@ func (response GetSupporterListingdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type UpdateSupporterListingRequestObject struct {
-	Body *UpdateSupporterListingJSONRequestBody
+	Params UpdateSupporterListingParams
+	Body   *UpdateSupporterListingJSONRequestBody
 }
 
 type UpdateSupporterListingResponseObject interface {
@@ -59148,6 +69392,7 @@ func (response UpdateSupporterListingdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type DeletePushSubscriptionRequestObject struct {
+	Params DeletePushSubscriptionParams
 }
 
 type DeletePushSubscriptionResponseObject interface {
@@ -59254,7 +69499,8 @@ func (response GetPushSubscriptiondefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type PutPushSubscriptionRequestObject struct {
-	Body *PutPushSubscriptionJSONRequestBody
+	Params PutPushSubscriptionParams
+	Body   *PutPushSubscriptionJSONRequestBody
 }
 
 type PutPushSubscriptionResponseObject interface {
@@ -59378,7 +69624,8 @@ func (response ListOwnReportsdefaultApplicationProblemPlusJSONResponse) VisitLis
 }
 
 type CreateReportRequestObject struct {
-	Body *CreateReportJSONRequestBody
+	Params CreateReportParams
+	Body   *CreateReportJSONRequestBody
 }
 
 type CreateReportResponseObject interface {
@@ -59501,6 +69748,7 @@ func (response ListSessionsdefaultApplicationProblemPlusJSONResponse) VisitListS
 }
 
 type RevokeOtherSessionsRequestObject struct {
+	Params RevokeOtherSessionsParams
 }
 
 type RevokeOtherSessionsResponseObject interface {
@@ -59546,7 +69794,8 @@ func (response RevokeOtherSessionsdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type RevokeSessionRequestObject struct {
-	Id Id `json:"id"`
+	Id     Id `json:"id"`
+	Params RevokeSessionParams
 }
 
 type RevokeSessionResponseObject interface {
@@ -59794,7 +70043,8 @@ func (response SearchStatusesdefaultApplicationProblemPlusJSONResponse) VisitSea
 }
 
 type DeleteStatusRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params DeleteStatusParams
 }
 
 type DeleteStatusResponseObject interface {
@@ -59902,8 +70152,9 @@ func (response GetStatusdefaultApplicationProblemPlusJSONResponse) VisitGetStatu
 }
 
 type EditStatusRequestObject struct {
-	Id   StatusId `json:"id"`
-	Body *EditStatusJSONRequestBody
+	Id     StatusId `json:"id"`
+	Params EditStatusParams
+	Body   *EditStatusJSONRequestBody
 }
 
 type EditStatusResponseObject interface {
@@ -59965,7 +70216,8 @@ func (response EditStatusdefaultApplicationProblemPlusJSONResponse) VisitEditSta
 }
 
 type UnbookmarkStatusRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params UnbookmarkStatusParams
 }
 
 type UnbookmarkStatusResponseObject interface {
@@ -60020,7 +70272,8 @@ func (response UnbookmarkStatusdefaultApplicationProblemPlusJSONResponse) VisitU
 }
 
 type BookmarkStatusRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params BookmarkStatusParams
 }
 
 type BookmarkStatusResponseObject interface {
@@ -60075,7 +70328,8 @@ func (response BookmarkStatusdefaultApplicationProblemPlusJSONResponse) VisitBoo
 }
 
 type UnboostStatusRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params UnboostStatusParams
 }
 
 type UnboostStatusResponseObject interface {
@@ -60130,7 +70384,8 @@ func (response UnboostStatusdefaultApplicationProblemPlusJSONResponse) VisitUnbo
 }
 
 type BoostStatusRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params BoostStatusParams
 }
 
 type BoostStatusResponseObject interface {
@@ -60247,7 +70502,8 @@ func (response GetStatusContextdefaultApplicationProblemPlusJSONResponse) VisitG
 }
 
 type UnfavouriteStatusRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params UnfavouriteStatusParams
 }
 
 type UnfavouriteStatusResponseObject interface {
@@ -60302,7 +70558,8 @@ func (response UnfavouriteStatusdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type FavouriteStatusRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params FavouriteStatusParams
 }
 
 type FavouriteStatusResponseObject interface {
@@ -60419,8 +70676,9 @@ func (response GetStatusHistorydefaultApplicationProblemPlusJSONResponse) VisitG
 }
 
 type SetStatusInteractionPolicyRequestObject struct {
-	Id   StatusId `json:"id"`
-	Body *SetStatusInteractionPolicyJSONRequestBody
+	Id     StatusId `json:"id"`
+	Params SetStatusInteractionPolicyParams
+	Body   *SetStatusInteractionPolicyJSONRequestBody
 }
 
 type SetStatusInteractionPolicyResponseObject interface {
@@ -60475,7 +70733,8 @@ func (response SetStatusInteractionPolicydefaultApplicationProblemPlusJSONRespon
 }
 
 type UnmuteStatusThreadRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params UnmuteStatusThreadParams
 }
 
 type UnmuteStatusThreadResponseObject interface {
@@ -60530,7 +70789,8 @@ func (response UnmuteStatusThreaddefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type MuteStatusThreadRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params MuteStatusThreadParams
 }
 
 type MuteStatusThreadResponseObject interface {
@@ -60585,7 +70845,8 @@ func (response MuteStatusThreaddefaultApplicationProblemPlusJSONResponse) VisitM
 }
 
 type UnpinStatusRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params UnpinStatusParams
 }
 
 type UnpinStatusResponseObject interface {
@@ -60640,7 +70901,8 @@ func (response UnpinStatusdefaultApplicationProblemPlusJSONResponse) VisitUnpinS
 }
 
 type PinStatusRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params PinStatusParams
 }
 
 type PinStatusResponseObject interface {
@@ -60695,8 +70957,9 @@ func (response PinStatusdefaultApplicationProblemPlusJSONResponse) VisitPinStatu
 }
 
 type VoteInPollRequestObject struct {
-	Id   StatusId `json:"id"`
-	Body *VoteInPollJSONRequestBody
+	Id     StatusId `json:"id"`
+	Params VoteInPollParams
+	Body   *VoteInPollJSONRequestBody
 }
 
 type VoteInPollResponseObject interface {
@@ -60809,6 +71072,7 @@ func (response ListStatusQuotesdefaultApplicationProblemPlusJSONResponse) VisitL
 type RevokeStatusQuoteApprovalRequestObject struct {
 	Id      StatusId `json:"id"`
 	QuoteId Id       `json:"quote_id"`
+	Params  RevokeStatusQuoteApprovalParams
 }
 
 type RevokeStatusQuoteApprovalResponseObject interface {
@@ -60854,7 +71118,8 @@ func (response RevokeStatusQuoteApprovaldefaultApplicationProblemPlusJSONRespons
 }
 
 type UnreactToStatusRequestObject struct {
-	Id StatusId `json:"id"`
+	Id     StatusId `json:"id"`
+	Params UnreactToStatusParams
 }
 
 type UnreactToStatusResponseObject interface {
@@ -60909,8 +71174,9 @@ func (response UnreactToStatusdefaultApplicationProblemPlusJSONResponse) VisitUn
 }
 
 type ReactToStatusRequestObject struct {
-	Id   StatusId `json:"id"`
-	Body *ReactToStatusJSONRequestBody
+	Id     StatusId `json:"id"`
+	Params ReactToStatusParams
+	Body   *ReactToStatusJSONRequestBody
 }
 
 type ReactToStatusResponseObject interface {
@@ -61090,8 +71356,9 @@ func (response GetStatusSourcedefaultApplicationProblemPlusJSONResponse) VisitGe
 }
 
 type TranslateStatusRequestObject struct {
-	Id   StatusId `json:"id"`
-	Body *TranslateStatusJSONRequestBody
+	Id     StatusId `json:"id"`
+	Params TranslateStatusParams
+	Body   *TranslateStatusJSONRequestBody
 }
 
 type TranslateStatusResponseObject interface {
@@ -61392,6 +71659,7 @@ func (response GetOwnSupporterSubscriptiondefaultApplicationProblemPlusJSONRespo
 }
 
 type CancelOwnSupporterSubscriptionRequestObject struct {
+	Params CancelOwnSupporterSubscriptionParams
 }
 
 type CancelOwnSupporterSubscriptionResponseObject interface {
@@ -61453,6 +71721,7 @@ func (response CancelOwnSupporterSubscriptiondefaultApplicationProblemPlusJSONRe
 }
 
 type CancelOwnSupporterScheduledChangeRequestObject struct {
+	Params CancelOwnSupporterScheduledChangeParams
 }
 
 type CancelOwnSupporterScheduledChangeResponseObject interface {
@@ -61514,7 +71783,8 @@ func (response CancelOwnSupporterScheduledChangedefaultApplicationProblemPlusJSO
 }
 
 type ChangeOwnSupporterSubscriptionRequestObject struct {
-	Body *ChangeOwnSupporterSubscriptionJSONRequestBody
+	Params ChangeOwnSupporterSubscriptionParams
+	Body   *ChangeOwnSupporterSubscriptionJSONRequestBody
 }
 
 type ChangeOwnSupporterSubscriptionResponseObject interface {
@@ -61576,6 +71846,7 @@ func (response ChangeOwnSupporterSubscriptiondefaultApplicationProblemPlusJSONRe
 }
 
 type ResumeOwnSupporterSubscriptionRequestObject struct {
+	Params ResumeOwnSupporterSubscriptionParams
 }
 
 type ResumeOwnSupporterSubscriptionResponseObject interface {
@@ -61637,6 +71908,7 @@ func (response ResumeOwnSupporterSubscriptiondefaultApplicationProblemPlusJSONRe
 }
 
 type SyncOwnSupporterSubscriptionRequestObject struct {
+	Params SyncOwnSupporterSubscriptionParams
 }
 
 type SyncOwnSupporterSubscriptionResponseObject interface {
@@ -61940,6 +72212,7 @@ func (response GetTagdefaultApplicationProblemPlusJSONResponse) VisitGetTagRespo
 
 type UnfollowTagRequestObject struct {
 	Hashtag HashtagName `json:"hashtag"`
+	Params  UnfollowTagParams
 }
 
 type UnfollowTagResponseObject interface {
@@ -61995,6 +72268,7 @@ func (response UnfollowTagdefaultApplicationProblemPlusJSONResponse) VisitUnfoll
 
 type FollowTagRequestObject struct {
 	Hashtag HashtagName `json:"hashtag"`
+	Params  FollowTagParams
 }
 
 type FollowTagResponseObject interface {
@@ -62511,7 +72785,8 @@ func (response EnableTotpdefaultApplicationProblemPlusJSONResponse) VisitEnableT
 }
 
 type DisableTotpRequestObject struct {
-	Body *DisableTotpJSONRequestBody
+	Params DisableTotpParams
+	Body   *DisableTotpJSONRequestBody
 }
 
 type DisableTotpResponseObject interface {
@@ -62820,7 +73095,8 @@ func (response OpenVoiceRoomdefaultApplicationProblemPlusJSONResponse) VisitOpen
 }
 
 type EndVoiceRoomRequestObject struct {
-	Id VoiceRoomId `json:"id"`
+	Id     VoiceRoomId `json:"id"`
+	Params EndVoiceRoomParams
 }
 
 type EndVoiceRoomResponseObject interface {
@@ -62928,8 +73204,9 @@ func (response GetVoiceRoomdefaultApplicationProblemPlusJSONResponse) VisitGetVo
 }
 
 type UpdateVoiceRoomRequestObject struct {
-	Id   VoiceRoomId `json:"id"`
-	Body *UpdateVoiceRoomJSONRequestBody
+	Id     VoiceRoomId `json:"id"`
+	Params UpdateVoiceRoomParams
+	Body   *UpdateVoiceRoomJSONRequestBody
 }
 
 type UpdateVoiceRoomResponseObject interface {
@@ -63054,7 +73331,8 @@ func (response RefreshVoiceGrantdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type LowerVoiceHandRequestObject struct {
-	Id VoiceRoomId `json:"id"`
+	Id     VoiceRoomId `json:"id"`
+	Params LowerVoiceHandParams
 }
 
 type LowerVoiceHandResponseObject interface {
@@ -63116,7 +73394,8 @@ func (response LowerVoiceHanddefaultApplicationProblemPlusJSONResponse) VisitLow
 }
 
 type RaiseVoiceHandRequestObject struct {
-	Id VoiceRoomId `json:"id"`
+	Id     VoiceRoomId `json:"id"`
+	Params RaiseVoiceHandParams
 }
 
 type RaiseVoiceHandResponseObject interface {
@@ -63178,8 +73457,9 @@ func (response RaiseVoiceHanddefaultApplicationProblemPlusJSONResponse) VisitRai
 }
 
 type SendVoiceHeartbeatRequestObject struct {
-	Id   VoiceRoomId `json:"id"`
-	Body *SendVoiceHeartbeatJSONRequestBody
+	Id     VoiceRoomId `json:"id"`
+	Params SendVoiceHeartbeatParams
+	Body   *SendVoiceHeartbeatJSONRequestBody
 }
 
 type SendVoiceHeartbeatResponseObject interface {
@@ -63225,8 +73505,9 @@ func (response SendVoiceHeartbeatdefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type HandOverVoiceRoomRequestObject struct {
-	Id   VoiceRoomId `json:"id"`
-	Body *HandOverVoiceRoomJSONRequestBody
+	Id     VoiceRoomId `json:"id"`
+	Params HandOverVoiceRoomParams
+	Body   *HandOverVoiceRoomJSONRequestBody
 }
 
 type HandOverVoiceRoomResponseObject interface {
@@ -63351,8 +73632,9 @@ func (response ListVoiceInvitationsdefaultApplicationProblemPlusJSONResponse) Vi
 }
 
 type InviteToVoiceRoomRequestObject struct {
-	Id   VoiceRoomId `json:"id"`
-	Body *InviteToVoiceRoomJSONRequestBody
+	Id     VoiceRoomId `json:"id"`
+	Params InviteToVoiceRoomParams
+	Body   *InviteToVoiceRoomJSONRequestBody
 }
 
 type InviteToVoiceRoomResponseObject interface {
@@ -63416,6 +73698,7 @@ func (response InviteToVoiceRoomdefaultApplicationProblemPlusJSONResponse) Visit
 type RevokeVoiceInvitationRequestObject struct {
 	Id        VoiceRoomId    `json:"id"`
 	AccountId VoiceAccountId `json:"account_id"`
+	Params    RevokeVoiceInvitationParams
 }
 
 type RevokeVoiceInvitationResponseObject interface {
@@ -63461,8 +73744,9 @@ func (response RevokeVoiceInvitationdefaultApplicationProblemPlusJSONResponse) V
 }
 
 type SetVoiceMicRequestObject struct {
-	Id   VoiceRoomId `json:"id"`
-	Body *SetVoiceMicJSONRequestBody
+	Id     VoiceRoomId `json:"id"`
+	Params SetVoiceMicParams
+	Body   *SetVoiceMicJSONRequestBody
 }
 
 type SetVoiceMicResponseObject interface {
@@ -63510,6 +73794,7 @@ func (response SetVoiceMicdefaultApplicationProblemPlusJSONResponse) VisitSetVoi
 type RemoveVoiceParticipantRequestObject struct {
 	Id        VoiceRoomId    `json:"id"`
 	AccountId VoiceAccountId `json:"account_id"`
+	Params    RemoveVoiceParticipantParams
 }
 
 type RemoveVoiceParticipantResponseObject interface {
@@ -63573,6 +73858,7 @@ func (response RemoveVoiceParticipantdefaultApplicationProblemPlusJSONResponse) 
 type RemoveVoiceCohostRequestObject struct {
 	Id        VoiceRoomId    `json:"id"`
 	AccountId VoiceAccountId `json:"account_id"`
+	Params    RemoveVoiceCohostParams
 }
 
 type RemoveVoiceCohostResponseObject interface {
@@ -63636,6 +73922,7 @@ func (response RemoveVoiceCohostdefaultApplicationProblemPlusJSONResponse) Visit
 type AssignVoiceCohostRequestObject struct {
 	Id        VoiceRoomId    `json:"id"`
 	AccountId VoiceAccountId `json:"account_id"`
+	Params    AssignVoiceCohostParams
 }
 
 type AssignVoiceCohostResponseObject interface {
@@ -63699,6 +73986,7 @@ func (response AssignVoiceCohostdefaultApplicationProblemPlusJSONResponse) Visit
 type DismissVoiceHandRequestObject struct {
 	Id        VoiceRoomId    `json:"id"`
 	AccountId VoiceAccountId `json:"account_id"`
+	Params    DismissVoiceHandParams
 }
 
 type DismissVoiceHandResponseObject interface {
@@ -63762,6 +74050,7 @@ func (response DismissVoiceHanddefaultApplicationProblemPlusJSONResponse) VisitD
 type MuteVoiceParticipantRequestObject struct {
 	Id        VoiceRoomId    `json:"id"`
 	AccountId VoiceAccountId `json:"account_id"`
+	Params    MuteVoiceParticipantParams
 }
 
 type MuteVoiceParticipantResponseObject interface {
@@ -63809,6 +74098,7 @@ func (response MuteVoiceParticipantdefaultApplicationProblemPlusJSONResponse) Vi
 type RevokeVoiceSpeakingRequestObject struct {
 	Id        VoiceRoomId    `json:"id"`
 	AccountId VoiceAccountId `json:"account_id"`
+	Params    RevokeVoiceSpeakingParams
 }
 
 type RevokeVoiceSpeakingResponseObject interface {
@@ -63872,6 +74162,7 @@ func (response RevokeVoiceSpeakingdefaultApplicationProblemPlusJSONResponse) Vis
 type GrantVoiceSpeakingRequestObject struct {
 	Id        VoiceRoomId    `json:"id"`
 	AccountId VoiceAccountId `json:"account_id"`
+	Params    GrantVoiceSpeakingParams
 }
 
 type GrantVoiceSpeakingResponseObject interface {
@@ -64042,8 +74333,9 @@ func (response JoinVoiceRoomdefaultApplicationProblemPlusJSONResponse) VisitJoin
 }
 
 type ReactInVoiceRoomRequestObject struct {
-	Id   VoiceRoomId `json:"id"`
-	Body *ReactInVoiceRoomJSONRequestBody
+	Id     VoiceRoomId `json:"id"`
+	Params ReactInVoiceRoomParams
+	Body   *ReactInVoiceRoomJSONRequestBody
 }
 
 type ReactInVoiceRoomResponseObject interface {
@@ -64089,8 +74381,9 @@ func (response ReactInVoiceRoomdefaultApplicationProblemPlusJSONResponse) VisitR
 }
 
 type SendVoiceSignalRequestObject struct {
-	Id   VoiceRoomId `json:"id"`
-	Body *SendVoiceSignalJSONRequestBody
+	Id     VoiceRoomId `json:"id"`
+	Params SendVoiceSignalParams
+	Body   *SendVoiceSignalJSONRequestBody
 }
 
 type SendVoiceSignalResponseObject interface {
@@ -64136,7 +74429,8 @@ func (response SendVoiceSignaldefaultApplicationProblemPlusJSONResponse) VisitSe
 }
 
 type BecomeVoiceListenerRequestObject struct {
-	Id VoiceRoomId `json:"id"`
+	Id     VoiceRoomId `json:"id"`
+	Params BecomeVoiceListenerParams
 }
 
 type BecomeVoiceListenerResponseObject interface {
@@ -64198,7 +74492,8 @@ func (response BecomeVoiceListenerdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type BecomeVoiceSpeakerRequestObject struct {
-	Id VoiceRoomId `json:"id"`
+	Id     VoiceRoomId `json:"id"`
+	Params BecomeVoiceSpeakerParams
 }
 
 type BecomeVoiceSpeakerResponseObject interface {
@@ -65834,8 +76129,10 @@ func (sh *strictHandler) ListAccountAliases(w http.ResponseWriter, r *http.Reque
 }
 
 // AddAccountAlias operation middleware
-func (sh *strictHandler) AddAccountAlias(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) AddAccountAlias(w http.ResponseWriter, r *http.Request, params AddAccountAliasParams) {
 	var request AddAccountAliasRequestObject
+
+	request.Params = params
 
 	var body AddAccountAliasJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -65889,8 +76186,10 @@ func (sh *strictHandler) GetDeactivationPreview(w http.ResponseWriter, r *http.R
 }
 
 // DeactivateOwnAccount operation middleware
-func (sh *strictHandler) DeactivateOwnAccount(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) DeactivateOwnAccount(w http.ResponseWriter, r *http.Request, params DeactivateOwnAccountParams) {
 	var request DeactivateOwnAccountRequestObject
+
+	request.Params = params
 
 	var body DeactivateOwnAccountJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -65920,8 +76219,10 @@ func (sh *strictHandler) DeactivateOwnAccount(w http.ResponseWriter, r *http.Req
 }
 
 // DeleteOwnAccount operation middleware
-func (sh *strictHandler) DeleteOwnAccount(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) DeleteOwnAccount(w http.ResponseWriter, r *http.Request, params DeleteOwnAccountParams) {
 	var request DeleteOwnAccountRequestObject
+
+	request.Params = params
 
 	var body DeleteOwnAccountJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -65951,8 +76252,10 @@ func (sh *strictHandler) DeleteOwnAccount(w http.ResponseWriter, r *http.Request
 }
 
 // ResendVerificationEmail operation middleware
-func (sh *strictHandler) ResendVerificationEmail(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ResendVerificationEmail(w http.ResponseWriter, r *http.Request, params ResendVerificationEmailParams) {
 	var request ResendVerificationEmailRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ResendVerificationEmail(ctx, request.(ResendVerificationEmailRequestObject))
@@ -66001,8 +76304,10 @@ func (sh *strictHandler) LookupAccount(w http.ResponseWriter, r *http.Request, p
 }
 
 // CancelOwnAccountMove operation middleware
-func (sh *strictHandler) CancelOwnAccountMove(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CancelOwnAccountMove(w http.ResponseWriter, r *http.Request, params CancelOwnAccountMoveParams) {
 	var request CancelOwnAccountMoveRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.CancelOwnAccountMove(ctx, request.(CancelOwnAccountMoveRequestObject))
@@ -66025,8 +76330,10 @@ func (sh *strictHandler) CancelOwnAccountMove(w http.ResponseWriter, r *http.Req
 }
 
 // MoveOwnAccount operation middleware
-func (sh *strictHandler) MoveOwnAccount(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) MoveOwnAccount(w http.ResponseWriter, r *http.Request, params MoveOwnAccountParams) {
 	var request MoveOwnAccountRequestObject
+
+	request.Params = params
 
 	var body MoveOwnAccountJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -66080,8 +76387,10 @@ func (sh *strictHandler) GetPasswordStatus(w http.ResponseWriter, r *http.Reques
 }
 
 // ChangePassword operation middleware
-func (sh *strictHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ChangePassword(w http.ResponseWriter, r *http.Request, params ChangePasswordParams) {
 	var request ChangePasswordRequestObject
+
+	request.Params = params
 
 	var body ChangePasswordJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -66111,8 +76420,10 @@ func (sh *strictHandler) ChangePassword(w http.ResponseWriter, r *http.Request) 
 }
 
 // RemovePassword operation middleware
-func (sh *strictHandler) RemovePassword(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) RemovePassword(w http.ResponseWriter, r *http.Request, params RemovePasswordParams) {
 	var request RemovePasswordRequestObject
+
+	request.Params = params
 
 	var body RemovePasswordJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -66220,8 +76531,10 @@ func (sh *strictHandler) ListAccountSuggestions(w http.ResponseWriter, r *http.R
 }
 
 // UpdateAccountCredentials operation middleware
-func (sh *strictHandler) UpdateAccountCredentials(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) UpdateAccountCredentials(w http.ResponseWriter, r *http.Request, params UpdateAccountCredentialsParams) {
 	var request UpdateAccountCredentialsRequestObject
+
+	request.Params = params
 
 	var body UpdateAccountCredentialsJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -66301,10 +76614,11 @@ func (sh *strictHandler) GetAccount(w http.ResponseWriter, r *http.Request, id A
 }
 
 // UnblockAccount operation middleware
-func (sh *strictHandler) UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId, params UnblockAccountParams) {
 	var request UnblockAccountRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnblockAccount(ctx, request.(UnblockAccountRequestObject))
@@ -66327,10 +76641,11 @@ func (sh *strictHandler) UnblockAccount(w http.ResponseWriter, r *http.Request, 
 }
 
 // BlockAccount operation middleware
-func (sh *strictHandler) BlockAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) BlockAccount(w http.ResponseWriter, r *http.Request, id AccountId, params BlockAccountParams) {
 	var request BlockAccountRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.BlockAccount(ctx, request.(BlockAccountRequestObject))
@@ -66379,10 +76694,11 @@ func (sh *strictHandler) ListAccountFeaturedTags(w http.ResponseWriter, r *http.
 }
 
 // UnfollowAccount operation middleware
-func (sh *strictHandler) UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId, params UnfollowAccountParams) {
 	var request UnfollowAccountRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnfollowAccount(ctx, request.(UnfollowAccountRequestObject))
@@ -66405,10 +76721,11 @@ func (sh *strictHandler) UnfollowAccount(w http.ResponseWriter, r *http.Request,
 }
 
 // FollowAccount operation middleware
-func (sh *strictHandler) FollowAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) FollowAccount(w http.ResponseWriter, r *http.Request, id AccountId, params FollowAccountParams) {
 	var request FollowAccountRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body FollowAccountJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -66441,10 +76758,11 @@ func (sh *strictHandler) FollowAccount(w http.ResponseWriter, r *http.Request, i
 }
 
 // RemoveFollower operation middleware
-func (sh *strictHandler) RemoveFollower(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) RemoveFollower(w http.ResponseWriter, r *http.Request, id AccountId, params RemoveFollowerParams) {
 	var request RemoveFollowerRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveFollower(ctx, request.(RemoveFollowerRequestObject))
@@ -66547,10 +76865,11 @@ func (sh *strictHandler) ListAccountLists(w http.ResponseWriter, r *http.Request
 }
 
 // UnmuteAccount operation middleware
-func (sh *strictHandler) UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId, params UnmuteAccountParams) {
 	var request UnmuteAccountRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnmuteAccount(ctx, request.(UnmuteAccountRequestObject))
@@ -66573,10 +76892,11 @@ func (sh *strictHandler) UnmuteAccount(w http.ResponseWriter, r *http.Request, i
 }
 
 // MuteAccount operation middleware
-func (sh *strictHandler) MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId, params MuteAccountParams) {
 	var request MuteAccountRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body MuteAccountJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -66609,10 +76929,11 @@ func (sh *strictHandler) MuteAccount(w http.ResponseWriter, r *http.Request, id 
 }
 
 // DeleteAccountNote operation middleware
-func (sh *strictHandler) DeleteAccountNote(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) DeleteAccountNote(w http.ResponseWriter, r *http.Request, id AccountId, params DeleteAccountNoteParams) {
 	var request DeleteAccountNoteRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteAccountNote(ctx, request.(DeleteAccountNoteRequestObject))
@@ -66635,10 +76956,11 @@ func (sh *strictHandler) DeleteAccountNote(w http.ResponseWriter, r *http.Reques
 }
 
 // SetAccountNote operation middleware
-func (sh *strictHandler) SetAccountNote(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) SetAccountNote(w http.ResponseWriter, r *http.Request, id AccountId, params SetAccountNoteParams) {
 	var request SetAccountNoteRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body SetAccountNoteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -66695,10 +77017,11 @@ func (sh *strictHandler) ListAccountStatuses(w http.ResponseWriter, r *http.Requ
 }
 
 // UnsubscribeAccount operation middleware
-func (sh *strictHandler) UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId, params UnsubscribeAccountParams) {
 	var request UnsubscribeAccountRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnsubscribeAccount(ctx, request.(UnsubscribeAccountRequestObject))
@@ -66721,10 +77044,11 @@ func (sh *strictHandler) UnsubscribeAccount(w http.ResponseWriter, r *http.Reque
 }
 
 // SubscribeAccount operation middleware
-func (sh *strictHandler) SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId, params SubscribeAccountParams) {
 	var request SubscribeAccountRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.SubscribeAccount(ctx, request.(SubscribeAccountRequestObject))
@@ -66773,10 +77097,11 @@ func (sh *strictHandler) GetAccountAction(w http.ResponseWriter, r *http.Request
 }
 
 // LiftAccountAction operation middleware
-func (sh *strictHandler) LiftAccountAction(w http.ResponseWriter, r *http.Request, id AccountActionId) {
+func (sh *strictHandler) LiftAccountAction(w http.ResponseWriter, r *http.Request, id AccountActionId, params LiftAccountActionParams) {
 	var request LiftAccountActionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body LiftAccountActionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -66888,10 +77213,11 @@ func (sh *strictHandler) ListAccountActions(w http.ResponseWriter, r *http.Reque
 }
 
 // CreateAccountAction operation middleware
-func (sh *strictHandler) CreateAccountAction(w http.ResponseWriter, r *http.Request, id AdminAccountId) {
+func (sh *strictHandler) CreateAccountAction(w http.ResponseWriter, r *http.Request, id AdminAccountId, params CreateAccountActionParams) {
 	var request CreateAccountActionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body CreateAccountActionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -66921,10 +77247,11 @@ func (sh *strictHandler) CreateAccountAction(w http.ResponseWriter, r *http.Requ
 }
 
 // LiftAdminAccountEmailSuppression operation middleware
-func (sh *strictHandler) LiftAdminAccountEmailSuppression(w http.ResponseWriter, r *http.Request, id AdminAccountId) {
+func (sh *strictHandler) LiftAdminAccountEmailSuppression(w http.ResponseWriter, r *http.Request, id AdminAccountId, params LiftAdminAccountEmailSuppressionParams) {
 	var request LiftAdminAccountEmailSuppressionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.LiftAdminAccountEmailSuppression(ctx, request.(LiftAdminAccountEmailSuppressionRequestObject))
@@ -66973,10 +77300,11 @@ func (sh *strictHandler) IssueAdminAccountPasswordResetLink(w http.ResponseWrite
 }
 
 // RefetchAccountStatuses operation middleware
-func (sh *strictHandler) RefetchAccountStatuses(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) RefetchAccountStatuses(w http.ResponseWriter, r *http.Request, id Id, params RefetchAccountStatusesParams) {
 	var request RefetchAccountStatusesRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RefetchAccountStatuses(ctx, request.(RefetchAccountStatusesRequestObject))
@@ -67051,11 +77379,12 @@ func (sh *strictHandler) ListAccountRoles(w http.ResponseWriter, r *http.Request
 }
 
 // RevokeAccountRole operation middleware
-func (sh *strictHandler) RevokeAccountRole(w http.ResponseWriter, r *http.Request, id AdminAccountId, role RoleKey) {
+func (sh *strictHandler) RevokeAccountRole(w http.ResponseWriter, r *http.Request, id AdminAccountId, role RoleKey, params RevokeAccountRoleParams) {
 	var request RevokeAccountRoleRequestObject
 
 	request.Id = id
 	request.Role = role
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeAccountRole(ctx, request.(RevokeAccountRoleRequestObject))
@@ -67078,11 +77407,12 @@ func (sh *strictHandler) RevokeAccountRole(w http.ResponseWriter, r *http.Reques
 }
 
 // GrantAccountRole operation middleware
-func (sh *strictHandler) GrantAccountRole(w http.ResponseWriter, r *http.Request, id AdminAccountId, role RoleKey) {
+func (sh *strictHandler) GrantAccountRole(w http.ResponseWriter, r *http.Request, id AdminAccountId, role RoleKey, params GrantAccountRoleParams) {
 	var request GrantAccountRoleRequestObject
 
 	request.Id = id
 	request.Role = role
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GrantAccountRole(ctx, request.(GrantAccountRoleRequestObject))
@@ -67159,10 +77489,11 @@ func (sh *strictHandler) ListAdminAccountSignIns(w http.ResponseWriter, r *http.
 }
 
 // DisableAdminAccountTwoFactor operation middleware
-func (sh *strictHandler) DisableAdminAccountTwoFactor(w http.ResponseWriter, r *http.Request, id AdminAccountId) {
+func (sh *strictHandler) DisableAdminAccountTwoFactor(w http.ResponseWriter, r *http.Request, id AdminAccountId, params DisableAdminAccountTwoFactorParams) {
 	var request DisableAdminAccountTwoFactorRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DisableAdminAccountTwoFactor(ctx, request.(DisableAdminAccountTwoFactorRequestObject))
@@ -67211,8 +77542,10 @@ func (sh *strictHandler) ListAdminAnnouncements(w http.ResponseWriter, r *http.R
 }
 
 // CreateAdminAnnouncement operation middleware
-func (sh *strictHandler) CreateAdminAnnouncement(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateAdminAnnouncement(w http.ResponseWriter, r *http.Request, params CreateAdminAnnouncementParams) {
 	var request CreateAdminAnnouncementRequestObject
+
+	request.Params = params
 
 	var body CreateAdminAnnouncementJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -67242,10 +77575,11 @@ func (sh *strictHandler) CreateAdminAnnouncement(w http.ResponseWriter, r *http.
 }
 
 // DeleteAdminAnnouncement operation middleware
-func (sh *strictHandler) DeleteAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId) {
+func (sh *strictHandler) DeleteAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId, params DeleteAdminAnnouncementParams) {
 	var request DeleteAdminAnnouncementRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteAdminAnnouncement(ctx, request.(DeleteAdminAnnouncementRequestObject))
@@ -67294,10 +77628,11 @@ func (sh *strictHandler) GetAdminAnnouncement(w http.ResponseWriter, r *http.Req
 }
 
 // UpdateAdminAnnouncement operation middleware
-func (sh *strictHandler) UpdateAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId) {
+func (sh *strictHandler) UpdateAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId, params UpdateAdminAnnouncementParams) {
 	var request UpdateAdminAnnouncementRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateAdminAnnouncementJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -67327,10 +77662,11 @@ func (sh *strictHandler) UpdateAdminAnnouncement(w http.ResponseWriter, r *http.
 }
 
 // PublishAdminAnnouncement operation middleware
-func (sh *strictHandler) PublishAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId) {
+func (sh *strictHandler) PublishAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId, params PublishAdminAnnouncementParams) {
 	var request PublishAdminAnnouncementRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.PublishAdminAnnouncement(ctx, request.(PublishAdminAnnouncementRequestObject))
@@ -67353,10 +77689,11 @@ func (sh *strictHandler) PublishAdminAnnouncement(w http.ResponseWriter, r *http
 }
 
 // WithdrawAdminAnnouncement operation middleware
-func (sh *strictHandler) WithdrawAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId) {
+func (sh *strictHandler) WithdrawAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId, params WithdrawAdminAnnouncementParams) {
 	var request WithdrawAdminAnnouncementRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.WithdrawAdminAnnouncement(ctx, request.(WithdrawAdminAnnouncementRequestObject))
@@ -67431,10 +77768,11 @@ func (sh *strictHandler) GetAppeal(w http.ResponseWriter, r *http.Request, id Ap
 }
 
 // OverturnAppeal operation middleware
-func (sh *strictHandler) OverturnAppeal(w http.ResponseWriter, r *http.Request, id AppealId) {
+func (sh *strictHandler) OverturnAppeal(w http.ResponseWriter, r *http.Request, id AppealId, params OverturnAppealParams) {
 	var request OverturnAppealRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body OverturnAppealJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -67467,10 +77805,11 @@ func (sh *strictHandler) OverturnAppeal(w http.ResponseWriter, r *http.Request, 
 }
 
 // UpholdAppeal operation middleware
-func (sh *strictHandler) UpholdAppeal(w http.ResponseWriter, r *http.Request, id AppealId) {
+func (sh *strictHandler) UpholdAppeal(w http.ResponseWriter, r *http.Request, id AppealId, params UpholdAppealParams) {
 	var request UpholdAppealRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpholdAppealJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -67553,10 +77892,11 @@ func (sh *strictHandler) ListBillingImports(w http.ResponseWriter, r *http.Reque
 }
 
 // RunBillingImport operation middleware
-func (sh *strictHandler) RunBillingImport(w http.ResponseWriter, r *http.Request, source BillingSourceName) {
+func (sh *strictHandler) RunBillingImport(w http.ResponseWriter, r *http.Request, source BillingSourceName, params RunBillingImportParams) {
 	var request RunBillingImportRequestObject
 
 	request.Source = source
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RunBillingImport(ctx, request.(RunBillingImportRequestObject))
@@ -67603,8 +77943,10 @@ func (sh *strictHandler) GetAdminServiceClosure(w http.ResponseWriter, r *http.R
 }
 
 // WithdrawServiceClosure operation middleware
-func (sh *strictHandler) WithdrawServiceClosure(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) WithdrawServiceClosure(w http.ResponseWriter, r *http.Request, params WithdrawServiceClosureParams) {
 	var request WithdrawServiceClosureRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.WithdrawServiceClosure(ctx, request.(WithdrawServiceClosureRequestObject))
@@ -67627,8 +77969,10 @@ func (sh *strictHandler) WithdrawServiceClosure(w http.ResponseWriter, r *http.R
 }
 
 // AnnounceServiceClosure operation middleware
-func (sh *strictHandler) AnnounceServiceClosure(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) AnnounceServiceClosure(w http.ResponseWriter, r *http.Request, params AnnounceServiceClosureParams) {
 	var request AnnounceServiceClosureRequestObject
+
+	request.Params = params
 
 	var body AnnounceServiceClosureJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -67682,8 +78026,10 @@ func (sh *strictHandler) GetAdminServiceClosureCheck(w http.ResponseWriter, r *h
 }
 
 // CloseService operation middleware
-func (sh *strictHandler) CloseService(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CloseService(w http.ResponseWriter, r *http.Request, params CloseServiceParams) {
 	var request CloseServiceRequestObject
+
+	request.Params = params
 
 	var body CloseServiceJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -67739,8 +78085,10 @@ func (sh *strictHandler) ListCostItems(w http.ResponseWriter, r *http.Request, p
 }
 
 // CreateCostItem operation middleware
-func (sh *strictHandler) CreateCostItem(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateCostItem(w http.ResponseWriter, r *http.Request, params CreateCostItemParams) {
 	var request CreateCostItemRequestObject
+
+	request.Params = params
 
 	var body CreateCostItemJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -67770,10 +78118,11 @@ func (sh *strictHandler) CreateCostItem(w http.ResponseWriter, r *http.Request) 
 }
 
 // DeleteCostItem operation middleware
-func (sh *strictHandler) DeleteCostItem(w http.ResponseWriter, r *http.Request, id CostItemId) {
+func (sh *strictHandler) DeleteCostItem(w http.ResponseWriter, r *http.Request, id CostItemId, params DeleteCostItemParams) {
 	var request DeleteCostItemRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteCostItem(ctx, request.(DeleteCostItemRequestObject))
@@ -67822,10 +78171,11 @@ func (sh *strictHandler) GetCostItem(w http.ResponseWriter, r *http.Request, id 
 }
 
 // UpdateCostItem operation middleware
-func (sh *strictHandler) UpdateCostItem(w http.ResponseWriter, r *http.Request, id CostItemId) {
+func (sh *strictHandler) UpdateCostItem(w http.ResponseWriter, r *http.Request, id CostItemId, params UpdateCostItemParams) {
 	var request UpdateCostItemRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateCostItemJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -67855,10 +78205,11 @@ func (sh *strictHandler) UpdateCostItem(w http.ResponseWriter, r *http.Request, 
 }
 
 // SetCostItemEnd operation middleware
-func (sh *strictHandler) SetCostItemEnd(w http.ResponseWriter, r *http.Request, id CostItemId) {
+func (sh *strictHandler) SetCostItemEnd(w http.ResponseWriter, r *http.Request, id CostItemId, params SetCostItemEndParams) {
 	var request SetCostItemEndRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body SetCostItemEndJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -67888,10 +78239,11 @@ func (sh *strictHandler) SetCostItemEnd(w http.ResponseWriter, r *http.Request, 
 }
 
 // ReviseCostItemPrice operation middleware
-func (sh *strictHandler) ReviseCostItemPrice(w http.ResponseWriter, r *http.Request, id CostItemId) {
+func (sh *strictHandler) ReviseCostItemPrice(w http.ResponseWriter, r *http.Request, id CostItemId, params ReviseCostItemPriceParams) {
 	var request ReviseCostItemPriceRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body ReviseCostItemPriceJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -67997,10 +78349,11 @@ func (sh *strictHandler) ListAdminCustomEmojiRequests(w http.ResponseWriter, r *
 }
 
 // ApproveCustomEmojiRequest operation middleware
-func (sh *strictHandler) ApproveCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId) {
+func (sh *strictHandler) ApproveCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId, params ApproveCustomEmojiRequestParams) {
 	var request ApproveCustomEmojiRequestRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ApproveCustomEmojiRequest(ctx, request.(ApproveCustomEmojiRequestRequestObject))
@@ -68023,10 +78376,11 @@ func (sh *strictHandler) ApproveCustomEmojiRequest(w http.ResponseWriter, r *htt
 }
 
 // RejectCustomEmojiRequest operation middleware
-func (sh *strictHandler) RejectCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId) {
+func (sh *strictHandler) RejectCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId, params RejectCustomEmojiRequestParams) {
 	var request RejectCustomEmojiRequestRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body RejectCustomEmojiRequestJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68085,8 +78439,10 @@ func (sh *strictHandler) ListAdminCustomEmojis(w http.ResponseWriter, r *http.Re
 }
 
 // CreateCustomEmoji operation middleware
-func (sh *strictHandler) CreateCustomEmoji(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateCustomEmoji(w http.ResponseWriter, r *http.Request, params CreateCustomEmojiParams) {
 	var request CreateCustomEmojiRequestObject
+
+	request.Params = params
 
 	var body CreateCustomEmojiJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68116,10 +78472,11 @@ func (sh *strictHandler) CreateCustomEmoji(w http.ResponseWriter, r *http.Reques
 }
 
 // DeleteCustomEmoji operation middleware
-func (sh *strictHandler) DeleteCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId) {
+func (sh *strictHandler) DeleteCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params DeleteCustomEmojiParams) {
 	var request DeleteCustomEmojiRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteCustomEmoji(ctx, request.(DeleteCustomEmojiRequestObject))
@@ -68168,10 +78525,11 @@ func (sh *strictHandler) GetAdminCustomEmoji(w http.ResponseWriter, r *http.Requ
 }
 
 // UpdateCustomEmoji operation middleware
-func (sh *strictHandler) UpdateCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId) {
+func (sh *strictHandler) UpdateCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params UpdateCustomEmojiParams) {
 	var request UpdateCustomEmojiRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateCustomEmojiJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68201,10 +78559,11 @@ func (sh *strictHandler) UpdateCustomEmoji(w http.ResponseWriter, r *http.Reques
 }
 
 // CopyCustomEmoji operation middleware
-func (sh *strictHandler) CopyCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId) {
+func (sh *strictHandler) CopyCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params CopyCustomEmojiParams) {
 	var request CopyCustomEmojiRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body CopyCustomEmojiJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68237,10 +78596,11 @@ func (sh *strictHandler) CopyCustomEmoji(w http.ResponseWriter, r *http.Request,
 }
 
 // DisableCustomEmoji operation middleware
-func (sh *strictHandler) DisableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId) {
+func (sh *strictHandler) DisableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params DisableCustomEmojiParams) {
 	var request DisableCustomEmojiRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DisableCustomEmoji(ctx, request.(DisableCustomEmojiRequestObject))
@@ -68263,10 +78623,11 @@ func (sh *strictHandler) DisableCustomEmoji(w http.ResponseWriter, r *http.Reque
 }
 
 // EnableCustomEmoji operation middleware
-func (sh *strictHandler) EnableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId) {
+func (sh *strictHandler) EnableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params EnableCustomEmojiParams) {
 	var request EnableCustomEmojiRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.EnableCustomEmoji(ctx, request.(EnableCustomEmojiRequestObject))
@@ -68289,10 +78650,11 @@ func (sh *strictHandler) EnableCustomEmoji(w http.ResponseWriter, r *http.Reques
 }
 
 // ReplaceCustomEmojiImage operation middleware
-func (sh *strictHandler) ReplaceCustomEmojiImage(w http.ResponseWriter, r *http.Request, id CustomEmojiId) {
+func (sh *strictHandler) ReplaceCustomEmojiImage(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params ReplaceCustomEmojiImageParams) {
 	var request ReplaceCustomEmojiImageRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body ReplaceCustomEmojiImageJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68348,8 +78710,10 @@ func (sh *strictHandler) ListDomainActions(w http.ResponseWriter, r *http.Reques
 }
 
 // CreateDomainAction operation middleware
-func (sh *strictHandler) CreateDomainAction(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateDomainAction(w http.ResponseWriter, r *http.Request, params CreateDomainActionParams) {
 	var request CreateDomainActionRequestObject
+
+	request.Params = params
 
 	var body CreateDomainActionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68429,8 +78793,10 @@ func (sh *strictHandler) GetDomainSuspendImpact(w http.ResponseWriter, r *http.R
 }
 
 // ImportDomainBlocks operation middleware
-func (sh *strictHandler) ImportDomainBlocks(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ImportDomainBlocks(w http.ResponseWriter, r *http.Request, params ImportDomainBlocksParams) {
 	var request ImportDomainBlocksRequestObject
+
+	request.Params = params
 
 	var body ImportDomainBlocksJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68460,8 +78826,10 @@ func (sh *strictHandler) ImportDomainBlocks(w http.ResponseWriter, r *http.Reque
 }
 
 // PreviewDomainBlockImport operation middleware
-func (sh *strictHandler) PreviewDomainBlockImport(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) PreviewDomainBlockImport(w http.ResponseWriter, r *http.Request, params PreviewDomainBlockImportParams) {
 	var request PreviewDomainBlockImportRequestObject
+
+	request.Params = params
 
 	var body PreviewDomainBlockImportJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68517,10 +78885,11 @@ func (sh *strictHandler) GetDomainAction(w http.ResponseWriter, r *http.Request,
 }
 
 // LiftDomainAction operation middleware
-func (sh *strictHandler) LiftDomainAction(w http.ResponseWriter, r *http.Request, id DomainActionId) {
+func (sh *strictHandler) LiftDomainAction(w http.ResponseWriter, r *http.Request, id DomainActionId, params LiftDomainActionParams) {
 	var request LiftDomainActionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.LiftDomainAction(ctx, request.(LiftDomainActionRequestObject))
@@ -68567,8 +78936,10 @@ func (sh *strictHandler) ListDomainAllows(w http.ResponseWriter, r *http.Request
 }
 
 // CreateDomainAllow operation middleware
-func (sh *strictHandler) CreateDomainAllow(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateDomainAllow(w http.ResponseWriter, r *http.Request, params CreateDomainAllowParams) {
 	var request CreateDomainAllowRequestObject
+
+	request.Params = params
 
 	var body CreateDomainAllowJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68598,10 +78969,11 @@ func (sh *strictHandler) CreateDomainAllow(w http.ResponseWriter, r *http.Reques
 }
 
 // RemoveDomainAllow operation middleware
-func (sh *strictHandler) RemoveDomainAllow(w http.ResponseWriter, r *http.Request, domain string) {
+func (sh *strictHandler) RemoveDomainAllow(w http.ResponseWriter, r *http.Request, domain string, params RemoveDomainAllowParams) {
 	var request RemoveDomainAllowRequestObject
 
 	request.Domain = domain
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveDomainAllow(ctx, request.(RemoveDomainAllowRequestObject))
@@ -68650,8 +79022,10 @@ func (sh *strictHandler) ListDomainListSubscriptions(w http.ResponseWriter, r *h
 }
 
 // CreateDomainListSubscription operation middleware
-func (sh *strictHandler) CreateDomainListSubscription(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateDomainListSubscription(w http.ResponseWriter, r *http.Request, params CreateDomainListSubscriptionParams) {
 	var request CreateDomainListSubscriptionRequestObject
+
+	request.Params = params
 
 	var body CreateDomainListSubscriptionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68734,10 +79108,11 @@ func (sh *strictHandler) GetDomainListSubscription(w http.ResponseWriter, r *htt
 }
 
 // UpdateDomainListSubscription operation middleware
-func (sh *strictHandler) UpdateDomainListSubscription(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId) {
+func (sh *strictHandler) UpdateDomainListSubscription(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId, params UpdateDomainListSubscriptionParams) {
 	var request UpdateDomainListSubscriptionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateDomainListSubscriptionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68793,10 +79168,11 @@ func (sh *strictHandler) ListDomainListDrafts(w http.ResponseWriter, r *http.Req
 }
 
 // AcceptDomainListDrafts operation middleware
-func (sh *strictHandler) AcceptDomainListDrafts(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId) {
+func (sh *strictHandler) AcceptDomainListDrafts(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId, params AcceptDomainListDraftsParams) {
 	var request AcceptDomainListDraftsRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body AcceptDomainListDraftsJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68829,10 +79205,11 @@ func (sh *strictHandler) AcceptDomainListDrafts(w http.ResponseWriter, r *http.R
 }
 
 // RejectDomainListDrafts operation middleware
-func (sh *strictHandler) RejectDomainListDrafts(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId) {
+func (sh *strictHandler) RejectDomainListDrafts(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId, params RejectDomainListDraftsParams) {
 	var request RejectDomainListDraftsRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body RejectDomainListDraftsJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -68865,10 +79242,11 @@ func (sh *strictHandler) RejectDomainListDrafts(w http.ResponseWriter, r *http.R
 }
 
 // FetchDomainListSubscription operation middleware
-func (sh *strictHandler) FetchDomainListSubscription(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId) {
+func (sh *strictHandler) FetchDomainListSubscription(w http.ResponseWriter, r *http.Request, id DomainListSubscriptionId, params FetchDomainListSubscriptionParams) {
 	var request FetchDomainListSubscriptionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.FetchDomainListSubscription(ctx, request.(FetchDomainListSubscriptionRequestObject))
@@ -68970,10 +79348,11 @@ func (sh *strictHandler) GetErrorGroup(w http.ResponseWriter, r *http.Request, i
 }
 
 // MuteErrorGroup operation middleware
-func (sh *strictHandler) MuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId) {
+func (sh *strictHandler) MuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId, params MuteErrorGroupParams) {
 	var request MuteErrorGroupRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.MuteErrorGroup(ctx, request.(MuteErrorGroupRequestObject))
@@ -68996,10 +79375,11 @@ func (sh *strictHandler) MuteErrorGroup(w http.ResponseWriter, r *http.Request, 
 }
 
 // ResolveErrorGroup operation middleware
-func (sh *strictHandler) ResolveErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId) {
+func (sh *strictHandler) ResolveErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId, params ResolveErrorGroupParams) {
 	var request ResolveErrorGroupRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ResolveErrorGroup(ctx, request.(ResolveErrorGroupRequestObject))
@@ -69022,10 +79402,11 @@ func (sh *strictHandler) ResolveErrorGroup(w http.ResponseWriter, r *http.Reques
 }
 
 // UnmuteErrorGroup operation middleware
-func (sh *strictHandler) UnmuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId) {
+func (sh *strictHandler) UnmuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId, params UnmuteErrorGroupParams) {
 	var request UnmuteErrorGroupRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnmuteErrorGroup(ctx, request.(UnmuteErrorGroupRequestObject))
@@ -69048,10 +79429,11 @@ func (sh *strictHandler) UnmuteErrorGroup(w http.ResponseWriter, r *http.Request
 }
 
 // CancelEventAsModerator operation middleware
-func (sh *strictHandler) CancelEventAsModerator(w http.ResponseWriter, r *http.Request, id EventId) {
+func (sh *strictHandler) CancelEventAsModerator(w http.ResponseWriter, r *http.Request, id EventId, params CancelEventAsModeratorParams) {
 	var request CancelEventAsModeratorRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body CancelEventAsModeratorJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -69136,10 +79518,11 @@ func (sh *strictHandler) GetHookAppeal(w http.ResponseWriter, r *http.Request, i
 }
 
 // OverturnHookAppeal operation middleware
-func (sh *strictHandler) OverturnHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId) {
+func (sh *strictHandler) OverturnHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId, params OverturnHookAppealParams) {
 	var request OverturnHookAppealRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.OverturnHookAppeal(ctx, request.(OverturnHookAppealRequestObject))
@@ -69162,10 +79545,11 @@ func (sh *strictHandler) OverturnHookAppeal(w http.ResponseWriter, r *http.Reque
 }
 
 // UpholdHookAppeal operation middleware
-func (sh *strictHandler) UpholdHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId) {
+func (sh *strictHandler) UpholdHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId, params UpholdHookAppealParams) {
 	var request UpholdHookAppealRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UpholdHookAppeal(ctx, request.(UpholdHookAppealRequestObject))
@@ -69264,10 +79648,11 @@ func (sh *strictHandler) GetHookDecision(w http.ResponseWriter, r *http.Request,
 }
 
 // OverrideHookDecision operation middleware
-func (sh *strictHandler) OverrideHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId) {
+func (sh *strictHandler) OverrideHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId, params OverrideHookDecisionParams) {
 	var request OverrideHookDecisionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.OverrideHookDecision(ctx, request.(OverrideHookDecisionRequestObject))
@@ -69366,8 +79751,10 @@ func (sh *strictHandler) GetAdminBrands(w http.ResponseWriter, r *http.Request) 
 }
 
 // SanitizeAdminBrand operation middleware
-func (sh *strictHandler) SanitizeAdminBrand(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) SanitizeAdminBrand(w http.ResponseWriter, r *http.Request, params SanitizeAdminBrandParams) {
 	var request SanitizeAdminBrandRequestObject
+
+	request.Params = params
 
 	if reader, err := r.MultipartReader(); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
@@ -69397,10 +79784,11 @@ func (sh *strictHandler) SanitizeAdminBrand(w http.ResponseWriter, r *http.Reque
 }
 
 // ClearAdminBrand operation middleware
-func (sh *strictHandler) ClearAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind) {
+func (sh *strictHandler) ClearAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind, params ClearAdminBrandParams) {
 	var request ClearAdminBrandRequestObject
 
 	request.Kind = kind
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ClearAdminBrand(ctx, request.(ClearAdminBrandRequestObject))
@@ -69423,10 +79811,11 @@ func (sh *strictHandler) ClearAdminBrand(w http.ResponseWriter, r *http.Request,
 }
 
 // SetAdminBrand operation middleware
-func (sh *strictHandler) SetAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind) {
+func (sh *strictHandler) SetAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind, params SetAdminBrandParams) {
 	var request SetAdminBrandRequestObject
 
 	request.Kind = kind
+	request.Params = params
 
 	if reader, err := r.MultipartReader(); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
@@ -69480,10 +79869,11 @@ func (sh *strictHandler) ListInstanceTexts(w http.ResponseWriter, r *http.Reques
 }
 
 // SetInstanceText operation middleware
-func (sh *strictHandler) SetInstanceText(w http.ResponseWriter, r *http.Request, key InstanceTextKey) {
+func (sh *strictHandler) SetInstanceText(w http.ResponseWriter, r *http.Request, key InstanceTextKey, params SetInstanceTextParams) {
 	var request SetInstanceTextRequestObject
 
 	request.Key = key
+	request.Params = params
 
 	var body SetInstanceTextJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -69646,10 +80036,11 @@ func (sh *strictHandler) RevealInstanceDelivery(w http.ResponseWriter, r *http.R
 }
 
 // MarkInstanceAvailable operation middleware
-func (sh *strictHandler) MarkInstanceAvailable(w http.ResponseWriter, r *http.Request, domain InstanceDomain) {
+func (sh *strictHandler) MarkInstanceAvailable(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params MarkInstanceAvailableParams) {
 	var request MarkInstanceAvailableRequestObject
 
 	request.Domain = domain
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.MarkInstanceAvailable(ctx, request.(MarkInstanceAvailableRequestObject))
@@ -69672,10 +80063,11 @@ func (sh *strictHandler) MarkInstanceAvailable(w http.ResponseWriter, r *http.Re
 }
 
 // RefetchInstanceStatuses operation middleware
-func (sh *strictHandler) RefetchInstanceStatuses(w http.ResponseWriter, r *http.Request, domain InstanceDomain) {
+func (sh *strictHandler) RefetchInstanceStatuses(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params RefetchInstanceStatusesParams) {
 	var request RefetchInstanceStatusesRequestObject
 
 	request.Domain = domain
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RefetchInstanceStatuses(ctx, request.(RefetchInstanceStatusesRequestObject))
@@ -69724,8 +80116,10 @@ func (sh *strictHandler) ListInvites(w http.ResponseWriter, r *http.Request, par
 }
 
 // CreateInvite operation middleware
-func (sh *strictHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateInvite(w http.ResponseWriter, r *http.Request, params CreateInviteParams) {
 	var request CreateInviteRequestObject
+
+	request.Params = params
 
 	var body CreateInviteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -69758,10 +80152,11 @@ func (sh *strictHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
 }
 
 // RevokeInvite operation middleware
-func (sh *strictHandler) RevokeInvite(w http.ResponseWriter, r *http.Request, id InviteId) {
+func (sh *strictHandler) RevokeInvite(w http.ResponseWriter, r *http.Request, id InviteId, params RevokeInviteParams) {
 	var request RevokeInviteRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeInvite(ctx, request.(RevokeInviteRequestObject))
@@ -69863,10 +80258,11 @@ func (sh *strictHandler) ListAdminJobAttempts(w http.ResponseWriter, r *http.Req
 }
 
 // RetryAdminJob operation middleware
-func (sh *strictHandler) RetryAdminJob(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) RetryAdminJob(w http.ResponseWriter, r *http.Request, id Id, params RetryAdminJobParams) {
 	var request RetryAdminJobRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RetryAdminJob(ctx, request.(RetryAdminJobRequestObject))
@@ -69913,10 +80309,11 @@ func (sh *strictHandler) ListLinkCardDomainRules(w http.ResponseWriter, r *http.
 }
 
 // RemoveLinkCardDomainRule operation middleware
-func (sh *strictHandler) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string) {
+func (sh *strictHandler) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string, params RemoveLinkCardDomainRuleParams) {
 	var request RemoveLinkCardDomainRuleRequestObject
 
 	request.Domain = domain
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveLinkCardDomainRule(ctx, request.(RemoveLinkCardDomainRuleRequestObject))
@@ -69939,10 +80336,11 @@ func (sh *strictHandler) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http
 }
 
 // SetLinkCardDomainRule operation middleware
-func (sh *strictHandler) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string) {
+func (sh *strictHandler) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string, params SetLinkCardDomainRuleParams) {
 	var request SetLinkCardDomainRuleRequestObject
 
 	request.Domain = domain
+	request.Params = params
 
 	var body SetLinkCardDomainRuleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -69996,8 +80394,10 @@ func (sh *strictHandler) ListAdminLoginProviders(w http.ResponseWriter, r *http.
 }
 
 // CreateLoginProvider operation middleware
-func (sh *strictHandler) CreateLoginProvider(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateLoginProvider(w http.ResponseWriter, r *http.Request, params CreateLoginProviderParams) {
 	var request CreateLoginProviderRequestObject
+
+	request.Params = params
 
 	var body CreateLoginProviderJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70027,10 +80427,11 @@ func (sh *strictHandler) CreateLoginProvider(w http.ResponseWriter, r *http.Requ
 }
 
 // DeleteLoginProvider operation middleware
-func (sh *strictHandler) DeleteLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+func (sh *strictHandler) DeleteLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId, params DeleteLoginProviderParams) {
 	var request DeleteLoginProviderRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteLoginProvider(ctx, request.(DeleteLoginProviderRequestObject))
@@ -70079,10 +80480,11 @@ func (sh *strictHandler) GetAdminLoginProvider(w http.ResponseWriter, r *http.Re
 }
 
 // UpdateLoginProvider operation middleware
-func (sh *strictHandler) UpdateLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+func (sh *strictHandler) UpdateLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId, params UpdateLoginProviderParams) {
 	var request UpdateLoginProviderRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateLoginProviderJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70112,10 +80514,11 @@ func (sh *strictHandler) UpdateLoginProvider(w http.ResponseWriter, r *http.Requ
 }
 
 // DisableLoginProvider operation middleware
-func (sh *strictHandler) DisableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+func (sh *strictHandler) DisableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId, params DisableLoginProviderParams) {
 	var request DisableLoginProviderRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DisableLoginProvider(ctx, request.(DisableLoginProviderRequestObject))
@@ -70138,10 +80541,11 @@ func (sh *strictHandler) DisableLoginProvider(w http.ResponseWriter, r *http.Req
 }
 
 // EnableLoginProvider operation middleware
-func (sh *strictHandler) EnableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+func (sh *strictHandler) EnableLoginProvider(w http.ResponseWriter, r *http.Request, id LoginProviderId, params EnableLoginProviderParams) {
 	var request EnableLoginProviderRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.EnableLoginProvider(ctx, request.(EnableLoginProviderRequestObject))
@@ -70164,10 +80568,11 @@ func (sh *strictHandler) EnableLoginProvider(w http.ResponseWriter, r *http.Requ
 }
 
 // RotateLoginProviderSecret operation middleware
-func (sh *strictHandler) RotateLoginProviderSecret(w http.ResponseWriter, r *http.Request, id LoginProviderId) {
+func (sh *strictHandler) RotateLoginProviderSecret(w http.ResponseWriter, r *http.Request, id LoginProviderId, params RotateLoginProviderSecretParams) {
 	var request RotateLoginProviderSecretRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body RotateLoginProviderSecretJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70223,8 +80628,10 @@ func (sh *strictHandler) ListOAuthClientHostDenials(w http.ResponseWriter, r *ht
 }
 
 // DenyOAuthClientHost operation middleware
-func (sh *strictHandler) DenyOAuthClientHost(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) DenyOAuthClientHost(w http.ResponseWriter, r *http.Request, params DenyOAuthClientHostParams) {
 	var request DenyOAuthClientHostRequestObject
+
+	request.Params = params
 
 	var body DenyOAuthClientHostJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70254,10 +80661,11 @@ func (sh *strictHandler) DenyOAuthClientHost(w http.ResponseWriter, r *http.Requ
 }
 
 // AllowOAuthClientHost operation middleware
-func (sh *strictHandler) AllowOAuthClientHost(w http.ResponseWriter, r *http.Request, host OAuthClientHost) {
+func (sh *strictHandler) AllowOAuthClientHost(w http.ResponseWriter, r *http.Request, host OAuthClientHost, params AllowOAuthClientHostParams) {
 	var request AllowOAuthClientHostRequestObject
 
 	request.Host = host
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.AllowOAuthClientHost(ctx, request.(AllowOAuthClientHostRequestObject))
@@ -70306,10 +80714,11 @@ func (sh *strictHandler) ListAdminOAuthClients(w http.ResponseWriter, r *http.Re
 }
 
 // DisableOAuthClient operation middleware
-func (sh *strictHandler) DisableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId) {
+func (sh *strictHandler) DisableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId, params DisableOAuthClientParams) {
 	var request DisableOAuthClientRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DisableOAuthClient(ctx, request.(DisableOAuthClientRequestObject))
@@ -70332,10 +80741,11 @@ func (sh *strictHandler) DisableOAuthClient(w http.ResponseWriter, r *http.Reque
 }
 
 // EnableOAuthClient operation middleware
-func (sh *strictHandler) EnableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId) {
+func (sh *strictHandler) EnableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId, params EnableOAuthClientParams) {
 	var request EnableOAuthClientRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.EnableOAuthClient(ctx, request.(EnableOAuthClientRequestObject))
@@ -70358,8 +80768,10 @@ func (sh *strictHandler) EnableOAuthClient(w http.ResponseWriter, r *http.Reques
 }
 
 // RunPaymentReconciliation operation middleware
-func (sh *strictHandler) RunPaymentReconciliation(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) RunPaymentReconciliation(w http.ResponseWriter, r *http.Request, params RunPaymentReconciliationParams) {
 	var request RunPaymentReconciliationRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RunPaymentReconciliation(ctx, request.(RunPaymentReconciliationRequestObject))
@@ -70456,10 +80868,11 @@ func (sh *strictHandler) ListPendingRegistrations(w http.ResponseWriter, r *http
 }
 
 // ApproveRegistration operation middleware
-func (sh *strictHandler) ApproveRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId) {
+func (sh *strictHandler) ApproveRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId, params ApproveRegistrationParams) {
 	var request ApproveRegistrationRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body ApproveRegistrationJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70492,10 +80905,11 @@ func (sh *strictHandler) ApproveRegistration(w http.ResponseWriter, r *http.Requ
 }
 
 // RejectRegistration operation middleware
-func (sh *strictHandler) RejectRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId) {
+func (sh *strictHandler) RejectRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId, params RejectRegistrationParams) {
 	var request RejectRegistrationRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body RejectRegistrationJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70552,8 +80966,10 @@ func (sh *strictHandler) ListAdminRelays(w http.ResponseWriter, r *http.Request)
 }
 
 // CreateRelay operation middleware
-func (sh *strictHandler) CreateRelay(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateRelay(w http.ResponseWriter, r *http.Request, params CreateRelayParams) {
 	var request CreateRelayRequestObject
+
+	request.Params = params
 
 	var body CreateRelayJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70583,10 +80999,11 @@ func (sh *strictHandler) CreateRelay(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteRelay operation middleware
-func (sh *strictHandler) DeleteRelay(w http.ResponseWriter, r *http.Request, id RelayId) {
+func (sh *strictHandler) DeleteRelay(w http.ResponseWriter, r *http.Request, id RelayId, params DeleteRelayParams) {
 	var request DeleteRelayRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteRelay(ctx, request.(DeleteRelayRequestObject))
@@ -70609,10 +81026,11 @@ func (sh *strictHandler) DeleteRelay(w http.ResponseWriter, r *http.Request, id 
 }
 
 // UnfollowRelay operation middleware
-func (sh *strictHandler) UnfollowRelay(w http.ResponseWriter, r *http.Request, id RelayId) {
+func (sh *strictHandler) UnfollowRelay(w http.ResponseWriter, r *http.Request, id RelayId, params UnfollowRelayParams) {
 	var request UnfollowRelayRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnfollowRelay(ctx, request.(UnfollowRelayRequestObject))
@@ -70635,10 +81053,11 @@ func (sh *strictHandler) UnfollowRelay(w http.ResponseWriter, r *http.Request, i
 }
 
 // FollowRelay operation middleware
-func (sh *strictHandler) FollowRelay(w http.ResponseWriter, r *http.Request, id RelayId) {
+func (sh *strictHandler) FollowRelay(w http.ResponseWriter, r *http.Request, id RelayId, params FollowRelayParams) {
 	var request FollowRelayRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.FollowRelay(ctx, request.(FollowRelayRequestObject))
@@ -70713,10 +81132,11 @@ func (sh *strictHandler) GetReport(w http.ResponseWriter, r *http.Request, id Re
 }
 
 // AssignReportToSelf operation middleware
-func (sh *strictHandler) AssignReportToSelf(w http.ResponseWriter, r *http.Request, id ReportId) {
+func (sh *strictHandler) AssignReportToSelf(w http.ResponseWriter, r *http.Request, id ReportId, params AssignReportToSelfParams) {
 	var request AssignReportToSelfRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.AssignReportToSelf(ctx, request.(AssignReportToSelfRequestObject))
@@ -70739,10 +81159,11 @@ func (sh *strictHandler) AssignReportToSelf(w http.ResponseWriter, r *http.Reque
 }
 
 // TranslateReportComment operation middleware
-func (sh *strictHandler) TranslateReportComment(w http.ResponseWriter, r *http.Request, id ReportId) {
+func (sh *strictHandler) TranslateReportComment(w http.ResponseWriter, r *http.Request, id ReportId, params TranslateReportCommentParams) {
 	var request TranslateReportCommentRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body TranslateReportCommentJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70772,10 +81193,11 @@ func (sh *strictHandler) TranslateReportComment(w http.ResponseWriter, r *http.R
 }
 
 // ForwardReport operation middleware
-func (sh *strictHandler) ForwardReport(w http.ResponseWriter, r *http.Request, id ReportId) {
+func (sh *strictHandler) ForwardReport(w http.ResponseWriter, r *http.Request, id ReportId, params ForwardReportParams) {
 	var request ForwardReportRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body ForwardReportJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70808,10 +81230,11 @@ func (sh *strictHandler) ForwardReport(w http.ResponseWriter, r *http.Request, i
 }
 
 // AddReportNote operation middleware
-func (sh *strictHandler) AddReportNote(w http.ResponseWriter, r *http.Request, id ReportId) {
+func (sh *strictHandler) AddReportNote(w http.ResponseWriter, r *http.Request, id ReportId, params AddReportNoteParams) {
 	var request AddReportNoteRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body AddReportNoteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70841,10 +81264,11 @@ func (sh *strictHandler) AddReportNote(w http.ResponseWriter, r *http.Request, i
 }
 
 // ReopenReport operation middleware
-func (sh *strictHandler) ReopenReport(w http.ResponseWriter, r *http.Request, id ReportId) {
+func (sh *strictHandler) ReopenReport(w http.ResponseWriter, r *http.Request, id ReportId, params ReopenReportParams) {
 	var request ReopenReportRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ReopenReport(ctx, request.(ReopenReportRequestObject))
@@ -70867,10 +81291,11 @@ func (sh *strictHandler) ReopenReport(w http.ResponseWriter, r *http.Request, id
 }
 
 // ResolveReport operation middleware
-func (sh *strictHandler) ResolveReport(w http.ResponseWriter, r *http.Request, id ReportId) {
+func (sh *strictHandler) ResolveReport(w http.ResponseWriter, r *http.Request, id ReportId, params ResolveReportParams) {
 	var request ResolveReportRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body ResolveReportJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70900,11 +81325,12 @@ func (sh *strictHandler) ResolveReport(w http.ResponseWriter, r *http.Request, i
 }
 
 // TranslateReportedStatus operation middleware
-func (sh *strictHandler) TranslateReportedStatus(w http.ResponseWriter, r *http.Request, id ReportId, statusId Id) {
+func (sh *strictHandler) TranslateReportedStatus(w http.ResponseWriter, r *http.Request, id ReportId, statusId Id, params TranslateReportedStatusParams) {
 	var request TranslateReportedStatusRequestObject
 
 	request.Id = id
 	request.StatusId = statusId
+	request.Params = params
 
 	var body TranslateReportedStatusJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -70934,10 +81360,11 @@ func (sh *strictHandler) TranslateReportedStatus(w http.ResponseWriter, r *http.
 }
 
 // UnassignReport operation middleware
-func (sh *strictHandler) UnassignReport(w http.ResponseWriter, r *http.Request, id ReportId) {
+func (sh *strictHandler) UnassignReport(w http.ResponseWriter, r *http.Request, id ReportId, params UnassignReportParams) {
 	var request UnassignReportRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnassignReport(ctx, request.(UnassignReportRequestObject))
@@ -70984,8 +81411,10 @@ func (sh *strictHandler) ListRoles(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateRole operation middleware
-func (sh *strictHandler) CreateRole(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateRole(w http.ResponseWriter, r *http.Request, params CreateRoleParams) {
 	var request CreateRoleRequestObject
+
+	request.Params = params
 
 	var body CreateRoleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71015,10 +81444,11 @@ func (sh *strictHandler) CreateRole(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteRole operation middleware
-func (sh *strictHandler) DeleteRole(w http.ResponseWriter, r *http.Request, role RoleKey) {
+func (sh *strictHandler) DeleteRole(w http.ResponseWriter, r *http.Request, role RoleKey, params DeleteRoleParams) {
 	var request DeleteRoleRequestObject
 
 	request.Role = role
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteRole(ctx, request.(DeleteRoleRequestObject))
@@ -71041,10 +81471,11 @@ func (sh *strictHandler) DeleteRole(w http.ResponseWriter, r *http.Request, role
 }
 
 // UpdateRole operation middleware
-func (sh *strictHandler) UpdateRole(w http.ResponseWriter, r *http.Request, role RoleKey) {
+func (sh *strictHandler) UpdateRole(w http.ResponseWriter, r *http.Request, role RoleKey, params UpdateRoleParams) {
 	var request UpdateRoleRequestObject
 
 	request.Role = role
+	request.Params = params
 
 	var body UpdateRoleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71100,8 +81531,10 @@ func (sh *strictHandler) ListInstanceRules(w http.ResponseWriter, r *http.Reques
 }
 
 // CreateInstanceRule operation middleware
-func (sh *strictHandler) CreateInstanceRule(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateInstanceRule(w http.ResponseWriter, r *http.Request, params CreateInstanceRuleParams) {
 	var request CreateInstanceRuleRequestObject
+
+	request.Params = params
 
 	var body CreateInstanceRuleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71157,10 +81590,11 @@ func (sh *strictHandler) GetInstanceRule(w http.ResponseWriter, r *http.Request,
 }
 
 // UpdateInstanceRule operation middleware
-func (sh *strictHandler) UpdateInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId) {
+func (sh *strictHandler) UpdateInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId, params UpdateInstanceRuleParams) {
 	var request UpdateInstanceRuleRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateInstanceRuleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71190,10 +81624,11 @@ func (sh *strictHandler) UpdateInstanceRule(w http.ResponseWriter, r *http.Reque
 }
 
 // MoveInstanceRule operation middleware
-func (sh *strictHandler) MoveInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId) {
+func (sh *strictHandler) MoveInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId, params MoveInstanceRuleParams) {
 	var request MoveInstanceRuleRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body MoveInstanceRuleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71223,10 +81658,11 @@ func (sh *strictHandler) MoveInstanceRule(w http.ResponseWriter, r *http.Request
 }
 
 // RetireInstanceRule operation middleware
-func (sh *strictHandler) RetireInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId) {
+func (sh *strictHandler) RetireInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId, params RetireInstanceRuleParams) {
 	var request RetireInstanceRuleRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RetireInstanceRule(ctx, request.(RetireInstanceRuleRequestObject))
@@ -71273,8 +81709,10 @@ func (sh *strictHandler) ListInstanceSettings(w http.ResponseWriter, r *http.Req
 }
 
 // UpdateInstanceSettings operation middleware
-func (sh *strictHandler) UpdateInstanceSettings(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) UpdateInstanceSettings(w http.ResponseWriter, r *http.Request, params UpdateInstanceSettingsParams) {
 	var request UpdateInstanceSettingsRequestObject
+
+	request.Params = params
 
 	var body UpdateInstanceSettingsJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71380,8 +81818,10 @@ func (sh *strictHandler) ListSignupBlocks(w http.ResponseWriter, r *http.Request
 }
 
 // CreateSignupBlock operation middleware
-func (sh *strictHandler) CreateSignupBlock(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateSignupBlock(w http.ResponseWriter, r *http.Request, params CreateSignupBlockParams) {
 	var request CreateSignupBlockRequestObject
+
+	request.Params = params
 
 	var body CreateSignupBlockJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71411,8 +81851,10 @@ func (sh *strictHandler) CreateSignupBlock(w http.ResponseWriter, r *http.Reques
 }
 
 // ImportSignupBlocks operation middleware
-func (sh *strictHandler) ImportSignupBlocks(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ImportSignupBlocks(w http.ResponseWriter, r *http.Request, params ImportSignupBlocksParams) {
 	var request ImportSignupBlocksRequestObject
+
+	request.Params = params
 
 	var body ImportSignupBlocksJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71468,10 +81910,11 @@ func (sh *strictHandler) GetSignupBlock(w http.ResponseWriter, r *http.Request, 
 }
 
 // LiftSignupBlock operation middleware
-func (sh *strictHandler) LiftSignupBlock(w http.ResponseWriter, r *http.Request, id SignupBlockId) {
+func (sh *strictHandler) LiftSignupBlock(w http.ResponseWriter, r *http.Request, id SignupBlockId, params LiftSignupBlockParams) {
 	var request LiftSignupBlockRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.LiftSignupBlock(ctx, request.(LiftSignupBlockRequestObject))
@@ -71494,10 +81937,11 @@ func (sh *strictHandler) LiftSignupBlock(w http.ResponseWriter, r *http.Request,
 }
 
 // RefetchStatus operation middleware
-func (sh *strictHandler) RefetchStatus(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) RefetchStatus(w http.ResponseWriter, r *http.Request, id Id, params RefetchStatusParams) {
 	var request RefetchStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RefetchStatus(ctx, request.(RefetchStatusRequestObject))
@@ -71544,8 +81988,10 @@ func (sh *strictHandler) ListAdminSupporterPlans(w http.ResponseWriter, r *http.
 }
 
 // CreateSupporterPlan operation middleware
-func (sh *strictHandler) CreateSupporterPlan(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateSupporterPlan(w http.ResponseWriter, r *http.Request, params CreateSupporterPlanParams) {
 	var request CreateSupporterPlanRequestObject
+
+	request.Params = params
 
 	var body CreateSupporterPlanJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71575,10 +82021,11 @@ func (sh *strictHandler) CreateSupporterPlan(w http.ResponseWriter, r *http.Requ
 }
 
 // UpdateSupporterPlan operation middleware
-func (sh *strictHandler) UpdateSupporterPlan(w http.ResponseWriter, r *http.Request, id SupporterPlanId) {
+func (sh *strictHandler) UpdateSupporterPlan(w http.ResponseWriter, r *http.Request, id SupporterPlanId, params UpdateSupporterPlanParams) {
 	var request UpdateSupporterPlanRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateSupporterPlanJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71608,10 +82055,11 @@ func (sh *strictHandler) UpdateSupporterPlan(w http.ResponseWriter, r *http.Requ
 }
 
 // RetireSupporterPlan operation middleware
-func (sh *strictHandler) RetireSupporterPlan(w http.ResponseWriter, r *http.Request, id SupporterPlanId) {
+func (sh *strictHandler) RetireSupporterPlan(w http.ResponseWriter, r *http.Request, id SupporterPlanId, params RetireSupporterPlanParams) {
 	var request RetireSupporterPlanRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RetireSupporterPlan(ctx, request.(RetireSupporterPlanRequestObject))
@@ -71658,8 +82106,10 @@ func (sh *strictHandler) GetSupporterProgram(w http.ResponseWriter, r *http.Requ
 }
 
 // SetSupporterProgram operation middleware
-func (sh *strictHandler) SetSupporterProgram(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) SetSupporterProgram(w http.ResponseWriter, r *http.Request, params SetSupporterProgramParams) {
 	var request SetSupporterProgramRequestObject
+
+	request.Params = params
 
 	var body SetSupporterProgramJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71741,10 +82191,11 @@ func (sh *strictHandler) GetSupporterSubscription(w http.ResponseWriter, r *http
 }
 
 // EndSupporterSubscription operation middleware
-func (sh *strictHandler) EndSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId) {
+func (sh *strictHandler) EndSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId, params EndSupporterSubscriptionParams) {
 	var request EndSupporterSubscriptionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.EndSupporterSubscription(ctx, request.(EndSupporterSubscriptionRequestObject))
@@ -71791,8 +82242,10 @@ func (sh *strictHandler) GetSupporterTips(w http.ResponseWriter, r *http.Request
 }
 
 // SetSupporterTips operation middleware
-func (sh *strictHandler) SetSupporterTips(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) SetSupporterTips(w http.ResponseWriter, r *http.Request, params SetSupporterTipsParams) {
 	var request SetSupporterTipsRequestObject
+
+	request.Params = params
 
 	var body SetSupporterTipsJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71846,8 +82299,10 @@ func (sh *strictHandler) GetAdminTheme(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetAdminThemeDraft operation middleware
-func (sh *strictHandler) SetAdminThemeDraft(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) SetAdminThemeDraft(w http.ResponseWriter, r *http.Request, params SetAdminThemeDraftParams) {
 	var request SetAdminThemeDraftRequestObject
+
+	request.Params = params
 
 	var body SetAdminThemeDraftJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -71901,8 +82356,10 @@ func (sh *strictHandler) GetAdminThemeDraftStylesheet(w http.ResponseWriter, r *
 }
 
 // PublishAdminTheme operation middleware
-func (sh *strictHandler) PublishAdminTheme(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) PublishAdminTheme(w http.ResponseWriter, r *http.Request, params PublishAdminThemeParams) {
 	var request PublishAdminThemeRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.PublishAdminTheme(ctx, request.(PublishAdminThemeRequestObject))
@@ -71925,8 +82382,10 @@ func (sh *strictHandler) PublishAdminTheme(w http.ResponseWriter, r *http.Reques
 }
 
 // RestoreAdminTheme operation middleware
-func (sh *strictHandler) RestoreAdminTheme(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) RestoreAdminTheme(w http.ResponseWriter, r *http.Request, params RestoreAdminThemeParams) {
 	var request RestoreAdminThemeRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RestoreAdminTheme(ctx, request.(RestoreAdminThemeRequestObject))
@@ -71999,10 +82458,11 @@ func (sh *strictHandler) ListUXMeasurements(w http.ResponseWriter, r *http.Reque
 }
 
 // EndVoiceRoomAsModerator operation middleware
-func (sh *strictHandler) EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params EndVoiceRoomAsModeratorParams) {
 	var request EndVoiceRoomAsModeratorRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body EndVoiceRoomAsModeratorJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -72090,10 +82550,11 @@ func (sh *strictHandler) CreateWebhook(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteWebhook operation middleware
-func (sh *strictHandler) DeleteWebhook(w http.ResponseWriter, r *http.Request, id WebhookId) {
+func (sh *strictHandler) DeleteWebhook(w http.ResponseWriter, r *http.Request, id WebhookId, params DeleteWebhookParams) {
 	var request DeleteWebhookRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteWebhook(ctx, request.(DeleteWebhookRequestObject))
@@ -72142,10 +82603,11 @@ func (sh *strictHandler) GetAdminWebhook(w http.ResponseWriter, r *http.Request,
 }
 
 // UpdateWebhook operation middleware
-func (sh *strictHandler) UpdateWebhook(w http.ResponseWriter, r *http.Request, id WebhookId) {
+func (sh *strictHandler) UpdateWebhook(w http.ResponseWriter, r *http.Request, id WebhookId, params UpdateWebhookParams) {
 	var request UpdateWebhookRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateWebhookJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -72202,11 +82664,12 @@ func (sh *strictHandler) ListWebhookDeliveries(w http.ResponseWriter, r *http.Re
 }
 
 // RedeliverWebhookDelivery operation middleware
-func (sh *strictHandler) RedeliverWebhookDelivery(w http.ResponseWriter, r *http.Request, id WebhookId, deliveryId Id) {
+func (sh *strictHandler) RedeliverWebhookDelivery(w http.ResponseWriter, r *http.Request, id WebhookId, deliveryId Id, params RedeliverWebhookDeliveryParams) {
 	var request RedeliverWebhookDeliveryRequestObject
 
 	request.Id = id
 	request.DeliveryId = deliveryId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RedeliverWebhookDelivery(ctx, request.(RedeliverWebhookDeliveryRequestObject))
@@ -72229,10 +82692,11 @@ func (sh *strictHandler) RedeliverWebhookDelivery(w http.ResponseWriter, r *http
 }
 
 // DisableWebhook operation middleware
-func (sh *strictHandler) DisableWebhook(w http.ResponseWriter, r *http.Request, id WebhookId) {
+func (sh *strictHandler) DisableWebhook(w http.ResponseWriter, r *http.Request, id WebhookId, params DisableWebhookParams) {
 	var request DisableWebhookRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DisableWebhook(ctx, request.(DisableWebhookRequestObject))
@@ -72255,10 +82719,11 @@ func (sh *strictHandler) DisableWebhook(w http.ResponseWriter, r *http.Request, 
 }
 
 // EnableWebhook operation middleware
-func (sh *strictHandler) EnableWebhook(w http.ResponseWriter, r *http.Request, id WebhookId) {
+func (sh *strictHandler) EnableWebhook(w http.ResponseWriter, r *http.Request, id WebhookId, params EnableWebhookParams) {
 	var request EnableWebhookRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.EnableWebhook(ctx, request.(EnableWebhookRequestObject))
@@ -72307,10 +82772,11 @@ func (sh *strictHandler) RotateWebhookSecret(w http.ResponseWriter, r *http.Requ
 }
 
 // TestWebhook operation middleware
-func (sh *strictHandler) TestWebhook(w http.ResponseWriter, r *http.Request, id WebhookId) {
+func (sh *strictHandler) TestWebhook(w http.ResponseWriter, r *http.Request, id WebhookId, params TestWebhookParams) {
 	var request TestWebhookRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.TestWebhook(ctx, request.(TestWebhookRequestObject))
@@ -72409,10 +82875,11 @@ func (sh *strictHandler) GetAnnouncement(w http.ResponseWriter, r *http.Request,
 }
 
 // MarkAnnouncementRead operation middleware
-func (sh *strictHandler) MarkAnnouncementRead(w http.ResponseWriter, r *http.Request, id AnnouncementId) {
+func (sh *strictHandler) MarkAnnouncementRead(w http.ResponseWriter, r *http.Request, id AnnouncementId, params MarkAnnouncementReadParams) {
 	var request MarkAnnouncementReadRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.MarkAnnouncementRead(ctx, request.(MarkAnnouncementReadRequestObject))
@@ -72468,8 +82935,10 @@ func (sh *strictHandler) CreateArticle(w http.ResponseWriter, r *http.Request, p
 }
 
 // PreviewArticle operation middleware
-func (sh *strictHandler) PreviewArticle(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) PreviewArticle(w http.ResponseWriter, r *http.Request, params PreviewArticleParams) {
 	var request PreviewArticleRequestObject
+
+	request.Params = params
 
 	var body PreviewArticleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -72499,10 +82968,11 @@ func (sh *strictHandler) PreviewArticle(w http.ResponseWriter, r *http.Request) 
 }
 
 // EditArticle operation middleware
-func (sh *strictHandler) EditArticle(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) EditArticle(w http.ResponseWriter, r *http.Request, id StatusId, params EditArticleParams) {
 	var request EditArticleRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body EditArticleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -72556,10 +83026,11 @@ func (sh *strictHandler) ListAuthorizedApps(w http.ResponseWriter, r *http.Reque
 }
 
 // RevokeAuthorizedApp operation middleware
-func (sh *strictHandler) RevokeAuthorizedApp(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) RevokeAuthorizedApp(w http.ResponseWriter, r *http.Request, id Id, params RevokeAuthorizedAppParams) {
 	var request RevokeAuthorizedAppRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeAuthorizedApp(ctx, request.(RevokeAuthorizedAppRequestObject))
@@ -72686,10 +83157,11 @@ func (sh *strictHandler) GetConversation(w http.ResponseWriter, r *http.Request,
 }
 
 // HideConversation operation middleware
-func (sh *strictHandler) HideConversation(w http.ResponseWriter, r *http.Request, id ConversationId) {
+func (sh *strictHandler) HideConversation(w http.ResponseWriter, r *http.Request, id ConversationId, params HideConversationParams) {
 	var request HideConversationRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.HideConversation(ctx, request.(HideConversationRequestObject))
@@ -72712,10 +83184,11 @@ func (sh *strictHandler) HideConversation(w http.ResponseWriter, r *http.Request
 }
 
 // MarkConversationRead operation middleware
-func (sh *strictHandler) MarkConversationRead(w http.ResponseWriter, r *http.Request, id ConversationId) {
+func (sh *strictHandler) MarkConversationRead(w http.ResponseWriter, r *http.Request, id ConversationId, params MarkConversationReadParams) {
 	var request MarkConversationReadRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.MarkConversationRead(ctx, request.(MarkConversationReadRequestObject))
@@ -72790,8 +83263,10 @@ func (sh *strictHandler) ListCustomEmojiRequests(w http.ResponseWriter, r *http.
 }
 
 // CreateCustomEmojiRequest operation middleware
-func (sh *strictHandler) CreateCustomEmojiRequest(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateCustomEmojiRequest(w http.ResponseWriter, r *http.Request, params CreateCustomEmojiRequestParams) {
 	var request CreateCustomEmojiRequestRequestObject
+
+	request.Params = params
 
 	var body CreateCustomEmojiRequestJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -72821,10 +83296,11 @@ func (sh *strictHandler) CreateCustomEmojiRequest(w http.ResponseWriter, r *http
 }
 
 // WithdrawCustomEmojiRequest operation middleware
-func (sh *strictHandler) WithdrawCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId) {
+func (sh *strictHandler) WithdrawCustomEmojiRequest(w http.ResponseWriter, r *http.Request, id CustomEmojiRequestId, params WithdrawCustomEmojiRequestParams) {
 	var request WithdrawCustomEmojiRequestRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.WithdrawCustomEmojiRequest(ctx, request.(WithdrawCustomEmojiRequestRequestObject))
@@ -72897,10 +83373,11 @@ func (sh *strictHandler) ListOwnCustomEmojis(w http.ResponseWriter, r *http.Requ
 }
 
 // DeleteOwnCustomEmoji operation middleware
-func (sh *strictHandler) DeleteOwnCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId) {
+func (sh *strictHandler) DeleteOwnCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params DeleteOwnCustomEmojiParams) {
 	var request DeleteOwnCustomEmojiRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteOwnCustomEmoji(ctx, request.(DeleteOwnCustomEmojiRequestObject))
@@ -72923,10 +83400,11 @@ func (sh *strictHandler) DeleteOwnCustomEmoji(w http.ResponseWriter, r *http.Req
 }
 
 // UpdateOwnCustomEmoji operation middleware
-func (sh *strictHandler) UpdateOwnCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId) {
+func (sh *strictHandler) UpdateOwnCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId, params UpdateOwnCustomEmojiParams) {
 	var request UpdateOwnCustomEmojiRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateOwnCustomEmojiJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -72982,8 +83460,10 @@ func (sh *strictHandler) ListDomainMutes(w http.ResponseWriter, r *http.Request,
 }
 
 // MuteDomain operation middleware
-func (sh *strictHandler) MuteDomain(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) MuteDomain(w http.ResponseWriter, r *http.Request, params MuteDomainParams) {
 	var request MuteDomainRequestObject
+
+	request.Params = params
 
 	var body MuteDomainJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -73013,10 +83493,11 @@ func (sh *strictHandler) MuteDomain(w http.ResponseWriter, r *http.Request) {
 }
 
 // UnmuteDomain operation middleware
-func (sh *strictHandler) UnmuteDomain(w http.ResponseWriter, r *http.Request, domain string) {
+func (sh *strictHandler) UnmuteDomain(w http.ResponseWriter, r *http.Request, domain string, params UnmuteDomainParams) {
 	var request UnmuteDomainRequestObject
 
 	request.Domain = domain
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnmuteDomain(ctx, request.(UnmuteDomainRequestObject))
@@ -73065,8 +83546,10 @@ func (sh *strictHandler) ListDrafts(w http.ResponseWriter, r *http.Request, para
 }
 
 // CreateDraft operation middleware
-func (sh *strictHandler) CreateDraft(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateDraft(w http.ResponseWriter, r *http.Request, params CreateDraftParams) {
 	var request CreateDraftRequestObject
+
+	request.Params = params
 
 	var body CreateDraftJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -73096,10 +83579,11 @@ func (sh *strictHandler) CreateDraft(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteDraft operation middleware
-func (sh *strictHandler) DeleteDraft(w http.ResponseWriter, r *http.Request, id DraftId) {
+func (sh *strictHandler) DeleteDraft(w http.ResponseWriter, r *http.Request, id DraftId, params DeleteDraftParams) {
 	var request DeleteDraftRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteDraft(ctx, request.(DeleteDraftRequestObject))
@@ -73182,10 +83666,11 @@ func (sh *strictHandler) UpdateDraft(w http.ResponseWriter, r *http.Request, id 
 }
 
 // PublishDraft operation middleware
-func (sh *strictHandler) PublishDraft(w http.ResponseWriter, r *http.Request, id DraftId) {
+func (sh *strictHandler) PublishDraft(w http.ResponseWriter, r *http.Request, id DraftId, params PublishDraftParams) {
 	var request PublishDraftRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.PublishDraft(ctx, request.(PublishDraftRequestObject))
@@ -73208,10 +83693,11 @@ func (sh *strictHandler) PublishDraft(w http.ResponseWriter, r *http.Request, id
 }
 
 // UnscheduleDraft operation middleware
-func (sh *strictHandler) UnscheduleDraft(w http.ResponseWriter, r *http.Request, id DraftId) {
+func (sh *strictHandler) UnscheduleDraft(w http.ResponseWriter, r *http.Request, id DraftId, params UnscheduleDraftParams) {
 	var request UnscheduleDraftRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnscheduleDraft(ctx, request.(UnscheduleDraftRequestObject))
@@ -73234,10 +83720,11 @@ func (sh *strictHandler) UnscheduleDraft(w http.ResponseWriter, r *http.Request,
 }
 
 // ScheduleDraft operation middleware
-func (sh *strictHandler) ScheduleDraft(w http.ResponseWriter, r *http.Request, id DraftId) {
+func (sh *strictHandler) ScheduleDraft(w http.ResponseWriter, r *http.Request, id DraftId, params ScheduleDraftParams) {
 	var request ScheduleDraftRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body ScheduleDraftJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -73293,8 +83780,10 @@ func (sh *strictHandler) ListEvents(w http.ResponseWriter, r *http.Request, para
 }
 
 // CreateEvent operation middleware
-func (sh *strictHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateEvent(w http.ResponseWriter, r *http.Request, params CreateEventParams) {
 	var request CreateEventRequestObject
+
+	request.Params = params
 
 	var body CreateEventJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -73350,10 +83839,11 @@ func (sh *strictHandler) GetEvent(w http.ResponseWriter, r *http.Request, id Eve
 }
 
 // UpdateEvent operation middleware
-func (sh *strictHandler) UpdateEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+func (sh *strictHandler) UpdateEvent(w http.ResponseWriter, r *http.Request, id EventId, params UpdateEventParams) {
 	var request UpdateEventRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateEventJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -73410,11 +83900,12 @@ func (sh *strictHandler) ListEventAttendees(w http.ResponseWriter, r *http.Reque
 }
 
 // RevokeEventAttendeeApproval operation middleware
-func (sh *strictHandler) RevokeEventAttendeeApproval(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+func (sh *strictHandler) RevokeEventAttendeeApproval(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params RevokeEventAttendeeApprovalParams) {
 	var request RevokeEventAttendeeApprovalRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeEventAttendeeApproval(ctx, request.(RevokeEventAttendeeApprovalRequestObject))
@@ -73437,11 +83928,12 @@ func (sh *strictHandler) RevokeEventAttendeeApproval(w http.ResponseWriter, r *h
 }
 
 // ApproveEventAttendee operation middleware
-func (sh *strictHandler) ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+func (sh *strictHandler) ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params ApproveEventAttendeeParams) {
 	var request ApproveEventAttendeeRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ApproveEventAttendee(ctx, request.(ApproveEventAttendeeRequestObject))
@@ -73490,10 +83982,11 @@ func (sh *strictHandler) GetEventCalendar(w http.ResponseWriter, r *http.Request
 }
 
 // CancelEvent operation middleware
-func (sh *strictHandler) CancelEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+func (sh *strictHandler) CancelEvent(w http.ResponseWriter, r *http.Request, id EventId, params CancelEventParams) {
 	var request CancelEventRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body CancelEventJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -73552,10 +84045,11 @@ func (sh *strictHandler) ListEventCandidates(w http.ResponseWriter, r *http.Requ
 }
 
 // AddEventCandidate operation middleware
-func (sh *strictHandler) AddEventCandidate(w http.ResponseWriter, r *http.Request, id EventId) {
+func (sh *strictHandler) AddEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, params AddEventCandidateParams) {
 	var request AddEventCandidateRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body AddEventCandidateJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -73585,11 +84079,12 @@ func (sh *strictHandler) AddEventCandidate(w http.ResponseWriter, r *http.Reques
 }
 
 // WithdrawEventCandidate operation middleware
-func (sh *strictHandler) WithdrawEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId) {
+func (sh *strictHandler) WithdrawEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId, params WithdrawEventCandidateParams) {
 	var request WithdrawEventCandidateRequestObject
 
 	request.Id = id
 	request.CandidateId = candidateId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.WithdrawEventCandidate(ctx, request.(WithdrawEventCandidateRequestObject))
@@ -73612,11 +84107,12 @@ func (sh *strictHandler) WithdrawEventCandidate(w http.ResponseWriter, r *http.R
 }
 
 // ConfirmEventCandidate operation middleware
-func (sh *strictHandler) ConfirmEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId) {
+func (sh *strictHandler) ConfirmEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId, params ConfirmEventCandidateParams) {
 	var request ConfirmEventCandidateRequestObject
 
 	request.Id = id
 	request.CandidateId = candidateId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ConfirmEventCandidate(ctx, request.(ConfirmEventCandidateRequestObject))
@@ -73639,11 +84135,12 @@ func (sh *strictHandler) ConfirmEventCandidate(w http.ResponseWriter, r *http.Re
 }
 
 // VoteEventCandidate operation middleware
-func (sh *strictHandler) VoteEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId) {
+func (sh *strictHandler) VoteEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId, params VoteEventCandidateParams) {
 	var request VoteEventCandidateRequestObject
 
 	request.Id = id
 	request.CandidateId = candidateId
+	request.Params = params
 
 	var body VoteEventCandidateJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -73701,11 +84198,12 @@ func (sh *strictHandler) ListEventCandidateVotes(w http.ResponseWriter, r *http.
 }
 
 // RemoveEventCoorganizer operation middleware
-func (sh *strictHandler) RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+func (sh *strictHandler) RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params RemoveEventCoorganizerParams) {
 	var request RemoveEventCoorganizerRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveEventCoorganizer(ctx, request.(RemoveEventCoorganizerRequestObject))
@@ -73728,11 +84226,12 @@ func (sh *strictHandler) RemoveEventCoorganizer(w http.ResponseWriter, r *http.R
 }
 
 // AssignEventCoorganizer operation middleware
-func (sh *strictHandler) AssignEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+func (sh *strictHandler) AssignEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params AssignEventCoorganizerParams) {
 	var request AssignEventCoorganizerRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.AssignEventCoorganizer(ctx, request.(AssignEventCoorganizerRequestObject))
@@ -73782,10 +84281,11 @@ func (sh *strictHandler) ListEventInvitations(w http.ResponseWriter, r *http.Req
 }
 
 // InviteToEvent operation middleware
-func (sh *strictHandler) InviteToEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+func (sh *strictHandler) InviteToEvent(w http.ResponseWriter, r *http.Request, id EventId, params InviteToEventParams) {
 	var request InviteToEventRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body InviteToEventJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -73815,11 +84315,12 @@ func (sh *strictHandler) InviteToEvent(w http.ResponseWriter, r *http.Request, i
 }
 
 // RevokeEventInvitation operation middleware
-func (sh *strictHandler) RevokeEventInvitation(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+func (sh *strictHandler) RevokeEventInvitation(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params RevokeEventInvitationParams) {
 	var request RevokeEventInvitationRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeEventInvitation(ctx, request.(RevokeEventInvitationRequestObject))
@@ -73842,10 +84343,11 @@ func (sh *strictHandler) RevokeEventInvitation(w http.ResponseWriter, r *http.Re
 }
 
 // AnswerEvent operation middleware
-func (sh *strictHandler) AnswerEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+func (sh *strictHandler) AnswerEvent(w http.ResponseWriter, r *http.Request, id EventId, params AnswerEventParams) {
 	var request AnswerEventRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body AnswerEventJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -73899,8 +84401,10 @@ func (sh *strictHandler) ListDataExports(w http.ResponseWriter, r *http.Request)
 }
 
 // RequestDataExport operation middleware
-func (sh *strictHandler) RequestDataExport(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) RequestDataExport(w http.ResponseWriter, r *http.Request, params RequestDataExportParams) {
 	var request RequestDataExportRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RequestDataExport(ctx, request.(RequestDataExportRequestObject))
@@ -73973,8 +84477,10 @@ func (sh *strictHandler) ListFeaturedTags(w http.ResponseWriter, r *http.Request
 }
 
 // SetFeaturedTags operation middleware
-func (sh *strictHandler) SetFeaturedTags(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) SetFeaturedTags(w http.ResponseWriter, r *http.Request, params SetFeaturedTagsParams) {
 	var request SetFeaturedTagsRequestObject
+
+	request.Params = params
 
 	var body SetFeaturedTagsJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -74028,8 +84534,10 @@ func (sh *strictHandler) ListKeywordFilters(w http.ResponseWriter, r *http.Reque
 }
 
 // CreateKeywordFilter operation middleware
-func (sh *strictHandler) CreateKeywordFilter(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateKeywordFilter(w http.ResponseWriter, r *http.Request, params CreateKeywordFilterParams) {
 	var request CreateKeywordFilterRequestObject
+
+	request.Params = params
 
 	var body CreateKeywordFilterJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -74059,10 +84567,11 @@ func (sh *strictHandler) CreateKeywordFilter(w http.ResponseWriter, r *http.Requ
 }
 
 // DeleteKeywordFilter operation middleware
-func (sh *strictHandler) DeleteKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId) {
+func (sh *strictHandler) DeleteKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId, params DeleteKeywordFilterParams) {
 	var request DeleteKeywordFilterRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteKeywordFilter(ctx, request.(DeleteKeywordFilterRequestObject))
@@ -74111,10 +84620,11 @@ func (sh *strictHandler) GetKeywordFilter(w http.ResponseWriter, r *http.Request
 }
 
 // UpdateKeywordFilter operation middleware
-func (sh *strictHandler) UpdateKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId) {
+func (sh *strictHandler) UpdateKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId, params UpdateKeywordFilterParams) {
 	var request UpdateKeywordFilterRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateKeywordFilterJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -74222,10 +84732,11 @@ func (sh *strictHandler) ListFollowRequests(w http.ResponseWriter, r *http.Reque
 }
 
 // AcceptFollowRequest operation middleware
-func (sh *strictHandler) AcceptFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) AcceptFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId, params AcceptFollowRequestParams) {
 	var request AcceptFollowRequestRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.AcceptFollowRequest(ctx, request.(AcceptFollowRequestRequestObject))
@@ -74248,10 +84759,11 @@ func (sh *strictHandler) AcceptFollowRequest(w http.ResponseWriter, r *http.Requ
 }
 
 // RejectFollowRequest operation middleware
-func (sh *strictHandler) RejectFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) RejectFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId, params RejectFollowRequestParams) {
 	var request RejectFollowRequestRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RejectFollowRequest(ctx, request.(RejectFollowRequestRequestObject))
@@ -74324,10 +84836,11 @@ func (sh *strictHandler) GetOwnHookAppeal(w http.ResponseWriter, r *http.Request
 }
 
 // AppealHookDecision operation middleware
-func (sh *strictHandler) AppealHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId) {
+func (sh *strictHandler) AppealHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId, params AppealHookDecisionParams) {
 	var request AppealHookDecisionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body AppealHookDecisionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -74381,8 +84894,10 @@ func (sh *strictHandler) ListDataImports(w http.ResponseWriter, r *http.Request)
 }
 
 // StartDataImport operation middleware
-func (sh *strictHandler) StartDataImport(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) StartDataImport(w http.ResponseWriter, r *http.Request, params StartDataImportParams) {
 	var request StartDataImportRequestObject
+
+	request.Params = params
 
 	var body StartDataImportJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -74412,8 +84927,10 @@ func (sh *strictHandler) StartDataImport(w http.ResponseWriter, r *http.Request)
 }
 
 // PreviewDataImport operation middleware
-func (sh *strictHandler) PreviewDataImport(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) PreviewDataImport(w http.ResponseWriter, r *http.Request, params PreviewDataImportParams) {
 	var request PreviewDataImportRequestObject
+
+	request.Params = params
 
 	var body PreviewDataImportJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -74719,10 +85236,11 @@ func (sh *strictHandler) ListInteractionRequests(w http.ResponseWriter, r *http.
 }
 
 // AcceptInteractionRequest operation middleware
-func (sh *strictHandler) AcceptInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId) {
+func (sh *strictHandler) AcceptInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId, params AcceptInteractionRequestParams) {
 	var request AcceptInteractionRequestRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.AcceptInteractionRequest(ctx, request.(AcceptInteractionRequestRequestObject))
@@ -74745,10 +85263,11 @@ func (sh *strictHandler) AcceptInteractionRequest(w http.ResponseWriter, r *http
 }
 
 // RejectInteractionRequest operation middleware
-func (sh *strictHandler) RejectInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId) {
+func (sh *strictHandler) RejectInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId, params RejectInteractionRequestParams) {
 	var request RejectInteractionRequestRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RejectInteractionRequest(ctx, request.(RejectInteractionRequestRequestObject))
@@ -74797,8 +85316,10 @@ func (sh *strictHandler) ListOwnInvites(w http.ResponseWriter, r *http.Request, 
 }
 
 // CreateOwnInvite operation middleware
-func (sh *strictHandler) CreateOwnInvite(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateOwnInvite(w http.ResponseWriter, r *http.Request, params CreateOwnInviteParams) {
 	var request CreateOwnInviteRequestObject
+
+	request.Params = params
 
 	var body CreateOwnInviteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -74831,10 +85352,11 @@ func (sh *strictHandler) CreateOwnInvite(w http.ResponseWriter, r *http.Request)
 }
 
 // RevokeOwnInvite operation middleware
-func (sh *strictHandler) RevokeOwnInvite(w http.ResponseWriter, r *http.Request, id InviteId) {
+func (sh *strictHandler) RevokeOwnInvite(w http.ResponseWriter, r *http.Request, id InviteId, params RevokeOwnInviteParams) {
 	var request RevokeOwnInviteRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeOwnInvite(ctx, request.(RevokeOwnInviteRequestObject))
@@ -74943,10 +85465,11 @@ func (sh *strictHandler) BeginExternalConfirmation(w http.ResponseWriter, r *htt
 }
 
 // UnlinkIdentity operation middleware
-func (sh *strictHandler) UnlinkIdentity(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) UnlinkIdentity(w http.ResponseWriter, r *http.Request, id Id, params UnlinkIdentityParams) {
 	var request UnlinkIdentityRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnlinkIdentity(ctx, request.(UnlinkIdentityRequestObject))
@@ -74993,8 +85516,10 @@ func (sh *strictHandler) ListLists(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateList operation middleware
-func (sh *strictHandler) CreateList(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateList(w http.ResponseWriter, r *http.Request, params CreateListParams) {
 	var request CreateListRequestObject
+
+	request.Params = params
 
 	var body CreateListJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -75024,10 +85549,11 @@ func (sh *strictHandler) CreateList(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteList operation middleware
-func (sh *strictHandler) DeleteList(w http.ResponseWriter, r *http.Request, id ListId) {
+func (sh *strictHandler) DeleteList(w http.ResponseWriter, r *http.Request, id ListId, params DeleteListParams) {
 	var request DeleteListRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteList(ctx, request.(DeleteListRequestObject))
@@ -75076,10 +85602,11 @@ func (sh *strictHandler) GetList(w http.ResponseWriter, r *http.Request, id List
 }
 
 // UpdateList operation middleware
-func (sh *strictHandler) UpdateList(w http.ResponseWriter, r *http.Request, id ListId) {
+func (sh *strictHandler) UpdateList(w http.ResponseWriter, r *http.Request, id ListId, params UpdateListParams) {
 	var request UpdateListRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateListJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -75136,11 +85663,12 @@ func (sh *strictHandler) ListListAccounts(w http.ResponseWriter, r *http.Request
 }
 
 // RemoveListAccount operation middleware
-func (sh *strictHandler) RemoveListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId) {
+func (sh *strictHandler) RemoveListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId, params RemoveListAccountParams) {
 	var request RemoveListAccountRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveListAccount(ctx, request.(RemoveListAccountRequestObject))
@@ -75163,11 +85691,12 @@ func (sh *strictHandler) RemoveListAccount(w http.ResponseWriter, r *http.Reques
 }
 
 // AddListAccount operation middleware
-func (sh *strictHandler) AddListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId) {
+func (sh *strictHandler) AddListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId, params AddListAccountParams) {
 	var request AddListAccountRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.AddListAccount(ctx, request.(AddListAccountRequestObject))
@@ -75190,8 +85719,10 @@ func (sh *strictHandler) AddListAccount(w http.ResponseWriter, r *http.Request, 
 }
 
 // UploadMedia operation middleware
-func (sh *strictHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) UploadMedia(w http.ResponseWriter, r *http.Request, params UploadMediaParams) {
 	var request UploadMediaRequestObject
+
+	request.Params = params
 
 	if reader, err := r.MultipartReader(); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
@@ -75247,10 +85778,11 @@ func (sh *strictHandler) GetMedia(w http.ResponseWriter, r *http.Request, id Id)
 }
 
 // UpdateMedia operation middleware
-func (sh *strictHandler) UpdateMedia(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) UpdateMedia(w http.ResponseWriter, r *http.Request, id Id, params UpdateMediaParams) {
 	var request UpdateMediaRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateMediaJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -75306,10 +85838,11 @@ func (sh *strictHandler) ListOwnModerationActions(w http.ResponseWriter, r *http
 }
 
 // AppealModerationAction operation middleware
-func (sh *strictHandler) AppealModerationAction(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) AppealModerationAction(w http.ResponseWriter, r *http.Request, id Id, params AppealModerationActionParams) {
 	var request AppealModerationActionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body AppealModerationActionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -75415,8 +85948,10 @@ func (sh *strictHandler) GetNotificationMarker(w http.ResponseWriter, r *http.Re
 }
 
 // UpdateNotificationMarker operation middleware
-func (sh *strictHandler) UpdateNotificationMarker(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) UpdateNotificationMarker(w http.ResponseWriter, r *http.Request, params UpdateNotificationMarkerParams) {
 	var request UpdateNotificationMarkerRequestObject
+
+	request.Params = params
 
 	var body UpdateNotificationMarkerJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -75522,10 +86057,11 @@ func (sh *strictHandler) GetNotificationRequest(w http.ResponseWriter, r *http.R
 }
 
 // AcceptNotificationRequest operation middleware
-func (sh *strictHandler) AcceptNotificationRequest(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) AcceptNotificationRequest(w http.ResponseWriter, r *http.Request, id AccountId, params AcceptNotificationRequestParams) {
 	var request AcceptNotificationRequestRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.AcceptNotificationRequest(ctx, request.(AcceptNotificationRequestRequestObject))
@@ -75548,10 +86084,11 @@ func (sh *strictHandler) AcceptNotificationRequest(w http.ResponseWriter, r *htt
 }
 
 // DismissNotificationRequest operation middleware
-func (sh *strictHandler) DismissNotificationRequest(w http.ResponseWriter, r *http.Request, id AccountId) {
+func (sh *strictHandler) DismissNotificationRequest(w http.ResponseWriter, r *http.Request, id AccountId, params DismissNotificationRequestParams) {
 	var request DismissNotificationRequestRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DismissNotificationRequest(ctx, request.(DismissNotificationRequestRequestObject))
@@ -75627,10 +86164,11 @@ func (sh *strictHandler) GetNotification(w http.ResponseWriter, r *http.Request,
 }
 
 // DismissNotification operation middleware
-func (sh *strictHandler) DismissNotification(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) DismissNotification(w http.ResponseWriter, r *http.Request, id Id, params DismissNotificationParams) {
 	var request DismissNotificationRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DismissNotification(ctx, request.(DismissNotificationRequestObject))
@@ -75708,10 +86246,11 @@ func (sh *strictHandler) CreateOAuthApp(w http.ResponseWriter, r *http.Request) 
 }
 
 // DeleteOAuthApp operation middleware
-func (sh *strictHandler) DeleteOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId) {
+func (sh *strictHandler) DeleteOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId, params DeleteOAuthAppParams) {
 	var request DeleteOAuthAppRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteOAuthApp(ctx, request.(DeleteOAuthAppRequestObject))
@@ -75760,10 +86299,11 @@ func (sh *strictHandler) GetOAuthApp(w http.ResponseWriter, r *http.Request, id 
 }
 
 // UpdateOAuthApp operation middleware
-func (sh *strictHandler) UpdateOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId) {
+func (sh *strictHandler) UpdateOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId, params UpdateOAuthAppParams) {
 	var request UpdateOAuthAppRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateOAuthAppJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -75879,8 +86419,10 @@ func (sh *strictHandler) ListPasskeys(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreatePasskey operation middleware
-func (sh *strictHandler) CreatePasskey(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreatePasskey(w http.ResponseWriter, r *http.Request, params CreatePasskeyParams) {
 	var request CreatePasskeyRequestObject
+
+	request.Params = params
 
 	var body CreatePasskeyJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -75965,10 +86507,11 @@ func (sh *strictHandler) BeginPasskeyRegistration(w http.ResponseWriter, r *http
 }
 
 // DeletePasskey operation middleware
-func (sh *strictHandler) DeletePasskey(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) DeletePasskey(w http.ResponseWriter, r *http.Request, id Id, params DeletePasskeyParams) {
 	var request DeletePasskeyRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeletePasskey(ctx, request.(DeletePasskeyRequestObject))
@@ -76015,8 +86558,10 @@ func (sh *strictHandler) GetPreferences(w http.ResponseWriter, r *http.Request) 
 }
 
 // UpdatePreferences operation middleware
-func (sh *strictHandler) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) UpdatePreferences(w http.ResponseWriter, r *http.Request, params UpdatePreferencesParams) {
 	var request UpdatePreferencesRequestObject
+
+	request.Params = params
 
 	var body UpdatePreferencesJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76070,8 +86615,10 @@ func (sh *strictHandler) GetAutoDeletePolicy(w http.ResponseWriter, r *http.Requ
 }
 
 // UpdateAutoDeletePolicy operation middleware
-func (sh *strictHandler) UpdateAutoDeletePolicy(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) UpdateAutoDeletePolicy(w http.ResponseWriter, r *http.Request, params UpdateAutoDeletePolicyParams) {
 	var request UpdateAutoDeletePolicyRequestObject
+
+	request.Params = params
 
 	var body UpdateAutoDeletePolicyJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76101,8 +86648,10 @@ func (sh *strictHandler) UpdateAutoDeletePolicy(w http.ResponseWriter, r *http.R
 }
 
 // PreviewAutoDeletePolicy operation middleware
-func (sh *strictHandler) PreviewAutoDeletePolicy(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) PreviewAutoDeletePolicy(w http.ResponseWriter, r *http.Request, params PreviewAutoDeletePolicyParams) {
 	var request PreviewAutoDeletePolicyRequestObject
+
+	request.Params = params
 
 	var body PreviewAutoDeletePolicyJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76156,10 +86705,11 @@ func (sh *strictHandler) ListBadgeChoices(w http.ResponseWriter, r *http.Request
 }
 
 // UpdateBadgeChoice operation middleware
-func (sh *strictHandler) UpdateBadgeChoice(w http.ResponseWriter, r *http.Request, roleId BadgeRoleId) {
+func (sh *strictHandler) UpdateBadgeChoice(w http.ResponseWriter, r *http.Request, roleId BadgeRoleId, params UpdateBadgeChoiceParams) {
 	var request UpdateBadgeChoiceRequestObject
 
 	request.RoleId = roleId
+	request.Params = params
 
 	var body UpdateBadgeChoiceJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76213,8 +86763,10 @@ func (sh *strictHandler) GetEventReminders(w http.ResponseWriter, r *http.Reques
 }
 
 // UpdateEventReminders operation middleware
-func (sh *strictHandler) UpdateEventReminders(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) UpdateEventReminders(w http.ResponseWriter, r *http.Request, params UpdateEventRemindersParams) {
 	var request UpdateEventRemindersRequestObject
+
+	request.Params = params
 
 	var body UpdateEventRemindersJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76268,8 +86820,10 @@ func (sh *strictHandler) GetNotificationPolicy(w http.ResponseWriter, r *http.Re
 }
 
 // UpdateNotificationPolicy operation middleware
-func (sh *strictHandler) UpdateNotificationPolicy(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) UpdateNotificationPolicy(w http.ResponseWriter, r *http.Request, params UpdateNotificationPolicyParams) {
 	var request UpdateNotificationPolicyRequestObject
+
+	request.Params = params
 
 	var body UpdateNotificationPolicyJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76323,8 +86877,10 @@ func (sh *strictHandler) GetNotificationSettings(w http.ResponseWriter, r *http.
 }
 
 // UpdateNotificationSettings operation middleware
-func (sh *strictHandler) UpdateNotificationSettings(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) UpdateNotificationSettings(w http.ResponseWriter, r *http.Request, params UpdateNotificationSettingsParams) {
 	var request UpdateNotificationSettingsRequestObject
+
+	request.Params = params
 
 	var body UpdateNotificationSettingsJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76378,8 +86934,10 @@ func (sh *strictHandler) GetSupporterListing(w http.ResponseWriter, r *http.Requ
 }
 
 // UpdateSupporterListing operation middleware
-func (sh *strictHandler) UpdateSupporterListing(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) UpdateSupporterListing(w http.ResponseWriter, r *http.Request, params UpdateSupporterListingParams) {
 	var request UpdateSupporterListingRequestObject
+
+	request.Params = params
 
 	var body UpdateSupporterListingJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76409,8 +86967,10 @@ func (sh *strictHandler) UpdateSupporterListing(w http.ResponseWriter, r *http.R
 }
 
 // DeletePushSubscription operation middleware
-func (sh *strictHandler) DeletePushSubscription(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) DeletePushSubscription(w http.ResponseWriter, r *http.Request, params DeletePushSubscriptionParams) {
 	var request DeletePushSubscriptionRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeletePushSubscription(ctx, request.(DeletePushSubscriptionRequestObject))
@@ -76457,8 +87017,10 @@ func (sh *strictHandler) GetPushSubscription(w http.ResponseWriter, r *http.Requ
 }
 
 // PutPushSubscription operation middleware
-func (sh *strictHandler) PutPushSubscription(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) PutPushSubscription(w http.ResponseWriter, r *http.Request, params PutPushSubscriptionParams) {
 	var request PutPushSubscriptionRequestObject
+
+	request.Params = params
 
 	var body PutPushSubscriptionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76514,8 +87076,10 @@ func (sh *strictHandler) ListOwnReports(w http.ResponseWriter, r *http.Request, 
 }
 
 // CreateReport operation middleware
-func (sh *strictHandler) CreateReport(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateReport(w http.ResponseWriter, r *http.Request, params CreateReportParams) {
 	var request CreateReportRequestObject
+
+	request.Params = params
 
 	var body CreateReportJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76569,8 +87133,10 @@ func (sh *strictHandler) ListSessions(w http.ResponseWriter, r *http.Request) {
 }
 
 // RevokeOtherSessions operation middleware
-func (sh *strictHandler) RevokeOtherSessions(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) RevokeOtherSessions(w http.ResponseWriter, r *http.Request, params RevokeOtherSessionsParams) {
 	var request RevokeOtherSessionsRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeOtherSessions(ctx, request.(RevokeOtherSessionsRequestObject))
@@ -76593,10 +87159,11 @@ func (sh *strictHandler) RevokeOtherSessions(w http.ResponseWriter, r *http.Requ
 }
 
 // RevokeSession operation middleware
-func (sh *strictHandler) RevokeSession(w http.ResponseWriter, r *http.Request, id Id) {
+func (sh *strictHandler) RevokeSession(w http.ResponseWriter, r *http.Request, id Id, params RevokeSessionParams) {
 	var request RevokeSessionRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeSession(ctx, request.(RevokeSessionRequestObject))
@@ -76704,10 +87271,11 @@ func (sh *strictHandler) SearchStatuses(w http.ResponseWriter, r *http.Request, 
 }
 
 // DeleteStatus operation middleware
-func (sh *strictHandler) DeleteStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) DeleteStatus(w http.ResponseWriter, r *http.Request, id StatusId, params DeleteStatusParams) {
 	var request DeleteStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteStatus(ctx, request.(DeleteStatusRequestObject))
@@ -76756,10 +87324,11 @@ func (sh *strictHandler) GetStatus(w http.ResponseWriter, r *http.Request, id St
 }
 
 // EditStatus operation middleware
-func (sh *strictHandler) EditStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) EditStatus(w http.ResponseWriter, r *http.Request, id StatusId, params EditStatusParams) {
 	var request EditStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body EditStatusJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -76789,10 +87358,11 @@ func (sh *strictHandler) EditStatus(w http.ResponseWriter, r *http.Request, id S
 }
 
 // UnbookmarkStatus operation middleware
-func (sh *strictHandler) UnbookmarkStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) UnbookmarkStatus(w http.ResponseWriter, r *http.Request, id StatusId, params UnbookmarkStatusParams) {
 	var request UnbookmarkStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnbookmarkStatus(ctx, request.(UnbookmarkStatusRequestObject))
@@ -76815,10 +87385,11 @@ func (sh *strictHandler) UnbookmarkStatus(w http.ResponseWriter, r *http.Request
 }
 
 // BookmarkStatus operation middleware
-func (sh *strictHandler) BookmarkStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) BookmarkStatus(w http.ResponseWriter, r *http.Request, id StatusId, params BookmarkStatusParams) {
 	var request BookmarkStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.BookmarkStatus(ctx, request.(BookmarkStatusRequestObject))
@@ -76841,10 +87412,11 @@ func (sh *strictHandler) BookmarkStatus(w http.ResponseWriter, r *http.Request, 
 }
 
 // UnboostStatus operation middleware
-func (sh *strictHandler) UnboostStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) UnboostStatus(w http.ResponseWriter, r *http.Request, id StatusId, params UnboostStatusParams) {
 	var request UnboostStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnboostStatus(ctx, request.(UnboostStatusRequestObject))
@@ -76867,10 +87439,11 @@ func (sh *strictHandler) UnboostStatus(w http.ResponseWriter, r *http.Request, i
 }
 
 // BoostStatus operation middleware
-func (sh *strictHandler) BoostStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) BoostStatus(w http.ResponseWriter, r *http.Request, id StatusId, params BoostStatusParams) {
 	var request BoostStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.BoostStatus(ctx, request.(BoostStatusRequestObject))
@@ -76919,10 +87492,11 @@ func (sh *strictHandler) GetStatusContext(w http.ResponseWriter, r *http.Request
 }
 
 // UnfavouriteStatus operation middleware
-func (sh *strictHandler) UnfavouriteStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) UnfavouriteStatus(w http.ResponseWriter, r *http.Request, id StatusId, params UnfavouriteStatusParams) {
 	var request UnfavouriteStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnfavouriteStatus(ctx, request.(UnfavouriteStatusRequestObject))
@@ -76945,10 +87519,11 @@ func (sh *strictHandler) UnfavouriteStatus(w http.ResponseWriter, r *http.Reques
 }
 
 // FavouriteStatus operation middleware
-func (sh *strictHandler) FavouriteStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) FavouriteStatus(w http.ResponseWriter, r *http.Request, id StatusId, params FavouriteStatusParams) {
 	var request FavouriteStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.FavouriteStatus(ctx, request.(FavouriteStatusRequestObject))
@@ -76997,10 +87572,11 @@ func (sh *strictHandler) GetStatusHistory(w http.ResponseWriter, r *http.Request
 }
 
 // SetStatusInteractionPolicy operation middleware
-func (sh *strictHandler) SetStatusInteractionPolicy(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) SetStatusInteractionPolicy(w http.ResponseWriter, r *http.Request, id StatusId, params SetStatusInteractionPolicyParams) {
 	var request SetStatusInteractionPolicyRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body SetStatusInteractionPolicyJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -77030,10 +87606,11 @@ func (sh *strictHandler) SetStatusInteractionPolicy(w http.ResponseWriter, r *ht
 }
 
 // UnmuteStatusThread operation middleware
-func (sh *strictHandler) UnmuteStatusThread(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) UnmuteStatusThread(w http.ResponseWriter, r *http.Request, id StatusId, params UnmuteStatusThreadParams) {
 	var request UnmuteStatusThreadRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnmuteStatusThread(ctx, request.(UnmuteStatusThreadRequestObject))
@@ -77056,10 +87633,11 @@ func (sh *strictHandler) UnmuteStatusThread(w http.ResponseWriter, r *http.Reque
 }
 
 // MuteStatusThread operation middleware
-func (sh *strictHandler) MuteStatusThread(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) MuteStatusThread(w http.ResponseWriter, r *http.Request, id StatusId, params MuteStatusThreadParams) {
 	var request MuteStatusThreadRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.MuteStatusThread(ctx, request.(MuteStatusThreadRequestObject))
@@ -77082,10 +87660,11 @@ func (sh *strictHandler) MuteStatusThread(w http.ResponseWriter, r *http.Request
 }
 
 // UnpinStatus operation middleware
-func (sh *strictHandler) UnpinStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) UnpinStatus(w http.ResponseWriter, r *http.Request, id StatusId, params UnpinStatusParams) {
 	var request UnpinStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnpinStatus(ctx, request.(UnpinStatusRequestObject))
@@ -77108,10 +87687,11 @@ func (sh *strictHandler) UnpinStatus(w http.ResponseWriter, r *http.Request, id 
 }
 
 // PinStatus operation middleware
-func (sh *strictHandler) PinStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) PinStatus(w http.ResponseWriter, r *http.Request, id StatusId, params PinStatusParams) {
 	var request PinStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.PinStatus(ctx, request.(PinStatusRequestObject))
@@ -77134,10 +87714,11 @@ func (sh *strictHandler) PinStatus(w http.ResponseWriter, r *http.Request, id St
 }
 
 // VoteInPoll operation middleware
-func (sh *strictHandler) VoteInPoll(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) VoteInPoll(w http.ResponseWriter, r *http.Request, id StatusId, params VoteInPollParams) {
 	var request VoteInPollRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body VoteInPollJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -77194,11 +87775,12 @@ func (sh *strictHandler) ListStatusQuotes(w http.ResponseWriter, r *http.Request
 }
 
 // RevokeStatusQuoteApproval operation middleware
-func (sh *strictHandler) RevokeStatusQuoteApproval(w http.ResponseWriter, r *http.Request, id StatusId, quoteId Id) {
+func (sh *strictHandler) RevokeStatusQuoteApproval(w http.ResponseWriter, r *http.Request, id StatusId, quoteId Id, params RevokeStatusQuoteApprovalParams) {
 	var request RevokeStatusQuoteApprovalRequestObject
 
 	request.Id = id
 	request.QuoteId = quoteId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeStatusQuoteApproval(ctx, request.(RevokeStatusQuoteApprovalRequestObject))
@@ -77221,10 +87803,11 @@ func (sh *strictHandler) RevokeStatusQuoteApproval(w http.ResponseWriter, r *htt
 }
 
 // UnreactToStatus operation middleware
-func (sh *strictHandler) UnreactToStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) UnreactToStatus(w http.ResponseWriter, r *http.Request, id StatusId, params UnreactToStatusParams) {
 	var request UnreactToStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnreactToStatus(ctx, request.(UnreactToStatusRequestObject))
@@ -77247,10 +87830,11 @@ func (sh *strictHandler) UnreactToStatus(w http.ResponseWriter, r *http.Request,
 }
 
 // ReactToStatus operation middleware
-func (sh *strictHandler) ReactToStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) ReactToStatus(w http.ResponseWriter, r *http.Request, id StatusId, params ReactToStatusParams) {
 	var request ReactToStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body ReactToStatusJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -77333,10 +87917,11 @@ func (sh *strictHandler) GetStatusSource(w http.ResponseWriter, r *http.Request,
 }
 
 // TranslateStatus operation middleware
-func (sh *strictHandler) TranslateStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+func (sh *strictHandler) TranslateStatus(w http.ResponseWriter, r *http.Request, id StatusId, params TranslateStatusParams) {
 	var request TranslateStatusRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body TranslateStatusJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -77471,8 +88056,10 @@ func (sh *strictHandler) GetOwnSupporterSubscription(w http.ResponseWriter, r *h
 }
 
 // CancelOwnSupporterSubscription operation middleware
-func (sh *strictHandler) CancelOwnSupporterSubscription(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CancelOwnSupporterSubscription(w http.ResponseWriter, r *http.Request, params CancelOwnSupporterSubscriptionParams) {
 	var request CancelOwnSupporterSubscriptionRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.CancelOwnSupporterSubscription(ctx, request.(CancelOwnSupporterSubscriptionRequestObject))
@@ -77495,8 +88082,10 @@ func (sh *strictHandler) CancelOwnSupporterSubscription(w http.ResponseWriter, r
 }
 
 // CancelOwnSupporterScheduledChange operation middleware
-func (sh *strictHandler) CancelOwnSupporterScheduledChange(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CancelOwnSupporterScheduledChange(w http.ResponseWriter, r *http.Request, params CancelOwnSupporterScheduledChangeParams) {
 	var request CancelOwnSupporterScheduledChangeRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.CancelOwnSupporterScheduledChange(ctx, request.(CancelOwnSupporterScheduledChangeRequestObject))
@@ -77519,8 +88108,10 @@ func (sh *strictHandler) CancelOwnSupporterScheduledChange(w http.ResponseWriter
 }
 
 // ChangeOwnSupporterSubscription operation middleware
-func (sh *strictHandler) ChangeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ChangeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request, params ChangeOwnSupporterSubscriptionParams) {
 	var request ChangeOwnSupporterSubscriptionRequestObject
+
+	request.Params = params
 
 	var body ChangeOwnSupporterSubscriptionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -77550,8 +88141,10 @@ func (sh *strictHandler) ChangeOwnSupporterSubscription(w http.ResponseWriter, r
 }
 
 // ResumeOwnSupporterSubscription operation middleware
-func (sh *strictHandler) ResumeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ResumeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request, params ResumeOwnSupporterSubscriptionParams) {
 	var request ResumeOwnSupporterSubscriptionRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ResumeOwnSupporterSubscription(ctx, request.(ResumeOwnSupporterSubscriptionRequestObject))
@@ -77574,8 +88167,10 @@ func (sh *strictHandler) ResumeOwnSupporterSubscription(w http.ResponseWriter, r
 }
 
 // SyncOwnSupporterSubscription operation middleware
-func (sh *strictHandler) SyncOwnSupporterSubscription(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) SyncOwnSupporterSubscription(w http.ResponseWriter, r *http.Request, params SyncOwnSupporterSubscriptionParams) {
 	var request SyncOwnSupporterSubscriptionRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.SyncOwnSupporterSubscription(ctx, request.(SyncOwnSupporterSubscriptionRequestObject))
@@ -77707,10 +88302,11 @@ func (sh *strictHandler) GetTag(w http.ResponseWriter, r *http.Request, hashtag 
 }
 
 // UnfollowTag operation middleware
-func (sh *strictHandler) UnfollowTag(w http.ResponseWriter, r *http.Request, hashtag HashtagName) {
+func (sh *strictHandler) UnfollowTag(w http.ResponseWriter, r *http.Request, hashtag HashtagName, params UnfollowTagParams) {
 	var request UnfollowTagRequestObject
 
 	request.Hashtag = hashtag
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.UnfollowTag(ctx, request.(UnfollowTagRequestObject))
@@ -77733,10 +88329,11 @@ func (sh *strictHandler) UnfollowTag(w http.ResponseWriter, r *http.Request, has
 }
 
 // FollowTag operation middleware
-func (sh *strictHandler) FollowTag(w http.ResponseWriter, r *http.Request, hashtag HashtagName) {
+func (sh *strictHandler) FollowTag(w http.ResponseWriter, r *http.Request, hashtag HashtagName, params FollowTagParams) {
 	var request FollowTagRequestObject
 
 	request.Hashtag = hashtag
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.FollowTag(ctx, request.(FollowTagRequestObject))
@@ -77977,8 +88574,10 @@ func (sh *strictHandler) EnableTotp(w http.ResponseWriter, r *http.Request) {
 }
 
 // DisableTotp operation middleware
-func (sh *strictHandler) DisableTotp(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) DisableTotp(w http.ResponseWriter, r *http.Request, params DisableTotpParams) {
 	var request DisableTotpRequestObject
+
+	request.Params = params
 
 	var body DisableTotpJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -78115,10 +88714,11 @@ func (sh *strictHandler) OpenVoiceRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 // EndVoiceRoom operation middleware
-func (sh *strictHandler) EndVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) EndVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params EndVoiceRoomParams) {
 	var request EndVoiceRoomRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.EndVoiceRoom(ctx, request.(EndVoiceRoomRequestObject))
@@ -78167,10 +88767,11 @@ func (sh *strictHandler) GetVoiceRoom(w http.ResponseWriter, r *http.Request, id
 }
 
 // UpdateVoiceRoom operation middleware
-func (sh *strictHandler) UpdateVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) UpdateVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params UpdateVoiceRoomParams) {
 	var request UpdateVoiceRoomRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateVoiceRoomJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -78233,10 +88834,11 @@ func (sh *strictHandler) RefreshVoiceGrant(w http.ResponseWriter, r *http.Reques
 }
 
 // LowerVoiceHand operation middleware
-func (sh *strictHandler) LowerVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) LowerVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params LowerVoiceHandParams) {
 	var request LowerVoiceHandRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.LowerVoiceHand(ctx, request.(LowerVoiceHandRequestObject))
@@ -78259,10 +88861,11 @@ func (sh *strictHandler) LowerVoiceHand(w http.ResponseWriter, r *http.Request, 
 }
 
 // RaiseVoiceHand operation middleware
-func (sh *strictHandler) RaiseVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) RaiseVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params RaiseVoiceHandParams) {
 	var request RaiseVoiceHandRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RaiseVoiceHand(ctx, request.(RaiseVoiceHandRequestObject))
@@ -78285,10 +88888,11 @@ func (sh *strictHandler) RaiseVoiceHand(w http.ResponseWriter, r *http.Request, 
 }
 
 // SendVoiceHeartbeat operation middleware
-func (sh *strictHandler) SendVoiceHeartbeat(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) SendVoiceHeartbeat(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params SendVoiceHeartbeatParams) {
 	var request SendVoiceHeartbeatRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body SendVoiceHeartbeatJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -78318,10 +88922,11 @@ func (sh *strictHandler) SendVoiceHeartbeat(w http.ResponseWriter, r *http.Reque
 }
 
 // HandOverVoiceRoom operation middleware
-func (sh *strictHandler) HandOverVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) HandOverVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params HandOverVoiceRoomParams) {
 	var request HandOverVoiceRoomRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body HandOverVoiceRoomJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -78378,10 +88983,11 @@ func (sh *strictHandler) ListVoiceInvitations(w http.ResponseWriter, r *http.Req
 }
 
 // InviteToVoiceRoom operation middleware
-func (sh *strictHandler) InviteToVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) InviteToVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params InviteToVoiceRoomParams) {
 	var request InviteToVoiceRoomRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body InviteToVoiceRoomJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -78411,11 +89017,12 @@ func (sh *strictHandler) InviteToVoiceRoom(w http.ResponseWriter, r *http.Reques
 }
 
 // RevokeVoiceInvitation operation middleware
-func (sh *strictHandler) RevokeVoiceInvitation(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+func (sh *strictHandler) RevokeVoiceInvitation(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params RevokeVoiceInvitationParams) {
 	var request RevokeVoiceInvitationRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeVoiceInvitation(ctx, request.(RevokeVoiceInvitationRequestObject))
@@ -78438,10 +89045,11 @@ func (sh *strictHandler) RevokeVoiceInvitation(w http.ResponseWriter, r *http.Re
 }
 
 // SetVoiceMic operation middleware
-func (sh *strictHandler) SetVoiceMic(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) SetVoiceMic(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params SetVoiceMicParams) {
 	var request SetVoiceMicRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body SetVoiceMicJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -78471,11 +89079,12 @@ func (sh *strictHandler) SetVoiceMic(w http.ResponseWriter, r *http.Request, id 
 }
 
 // RemoveVoiceParticipant operation middleware
-func (sh *strictHandler) RemoveVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+func (sh *strictHandler) RemoveVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params RemoveVoiceParticipantParams) {
 	var request RemoveVoiceParticipantRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveVoiceParticipant(ctx, request.(RemoveVoiceParticipantRequestObject))
@@ -78498,11 +89107,12 @@ func (sh *strictHandler) RemoveVoiceParticipant(w http.ResponseWriter, r *http.R
 }
 
 // RemoveVoiceCohost operation middleware
-func (sh *strictHandler) RemoveVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+func (sh *strictHandler) RemoveVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params RemoveVoiceCohostParams) {
 	var request RemoveVoiceCohostRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveVoiceCohost(ctx, request.(RemoveVoiceCohostRequestObject))
@@ -78525,11 +89135,12 @@ func (sh *strictHandler) RemoveVoiceCohost(w http.ResponseWriter, r *http.Reques
 }
 
 // AssignVoiceCohost operation middleware
-func (sh *strictHandler) AssignVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+func (sh *strictHandler) AssignVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params AssignVoiceCohostParams) {
 	var request AssignVoiceCohostRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.AssignVoiceCohost(ctx, request.(AssignVoiceCohostRequestObject))
@@ -78552,11 +89163,12 @@ func (sh *strictHandler) AssignVoiceCohost(w http.ResponseWriter, r *http.Reques
 }
 
 // DismissVoiceHand operation middleware
-func (sh *strictHandler) DismissVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+func (sh *strictHandler) DismissVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params DismissVoiceHandParams) {
 	var request DismissVoiceHandRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DismissVoiceHand(ctx, request.(DismissVoiceHandRequestObject))
@@ -78579,11 +89191,12 @@ func (sh *strictHandler) DismissVoiceHand(w http.ResponseWriter, r *http.Request
 }
 
 // MuteVoiceParticipant operation middleware
-func (sh *strictHandler) MuteVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+func (sh *strictHandler) MuteVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params MuteVoiceParticipantParams) {
 	var request MuteVoiceParticipantRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.MuteVoiceParticipant(ctx, request.(MuteVoiceParticipantRequestObject))
@@ -78606,11 +89219,12 @@ func (sh *strictHandler) MuteVoiceParticipant(w http.ResponseWriter, r *http.Req
 }
 
 // RevokeVoiceSpeaking operation middleware
-func (sh *strictHandler) RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+func (sh *strictHandler) RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params RevokeVoiceSpeakingParams) {
 	var request RevokeVoiceSpeakingRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeVoiceSpeaking(ctx, request.(RevokeVoiceSpeakingRequestObject))
@@ -78633,11 +89247,12 @@ func (sh *strictHandler) RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Requ
 }
 
 // GrantVoiceSpeaking operation middleware
-func (sh *strictHandler) GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+func (sh *strictHandler) GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId, params GrantVoiceSpeakingParams) {
 	var request GrantVoiceSpeakingRequestObject
 
 	request.Id = id
 	request.AccountId = accountId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GrantVoiceSpeaking(ctx, request.(GrantVoiceSpeakingRequestObject))
@@ -78713,10 +89328,11 @@ func (sh *strictHandler) JoinVoiceRoom(w http.ResponseWriter, r *http.Request, i
 }
 
 // ReactInVoiceRoom operation middleware
-func (sh *strictHandler) ReactInVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) ReactInVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params ReactInVoiceRoomParams) {
 	var request ReactInVoiceRoomRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body ReactInVoiceRoomJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -78746,10 +89362,11 @@ func (sh *strictHandler) ReactInVoiceRoom(w http.ResponseWriter, r *http.Request
 }
 
 // SendVoiceSignal operation middleware
-func (sh *strictHandler) SendVoiceSignal(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) SendVoiceSignal(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params SendVoiceSignalParams) {
 	var request SendVoiceSignalRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body SendVoiceSignalJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -78779,10 +89396,11 @@ func (sh *strictHandler) SendVoiceSignal(w http.ResponseWriter, r *http.Request,
 }
 
 // BecomeVoiceListener operation middleware
-func (sh *strictHandler) BecomeVoiceListener(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) BecomeVoiceListener(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params BecomeVoiceListenerParams) {
 	var request BecomeVoiceListenerRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.BecomeVoiceListener(ctx, request.(BecomeVoiceListenerRequestObject))
@@ -78805,10 +89423,11 @@ func (sh *strictHandler) BecomeVoiceListener(w http.ResponseWriter, r *http.Requ
 }
 
 // BecomeVoiceSpeaker operation middleware
-func (sh *strictHandler) BecomeVoiceSpeaker(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
+func (sh *strictHandler) BecomeVoiceSpeaker(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params BecomeVoiceSpeakerParams) {
 	var request BecomeVoiceSpeakerRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.BecomeVoiceSpeaker(ctx, request.(BecomeVoiceSpeakerRequestObject))

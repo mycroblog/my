@@ -24,6 +24,7 @@ post:
       description: The ID of the action.
       schema:
         $ref: ../components/schemas/Id.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

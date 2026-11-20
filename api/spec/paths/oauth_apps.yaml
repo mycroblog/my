@@ -40,6 +40,7 @@ post:
   tags: [oauth-apps]
   security:
     - oauth2: ["write:accounts"]
+  x-no-idempotency-key: The answer carries the client secret, which the server does not keep to send again.
   requestBody:
     required: true
     content:

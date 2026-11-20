@@ -17,6 +17,7 @@ put:
   parameters:
     - $ref: ../components/parameters/AdminAccountId.yaml
     - $ref: ../components/parameters/RoleKey.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/AdminRoleList.yaml
@@ -40,6 +41,7 @@ delete:
   parameters:
     - $ref: ../components/parameters/AdminAccountId.yaml
     - $ref: ../components/parameters/RoleKey.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/AdminRoleList.yaml

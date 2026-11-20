@@ -43,6 +43,8 @@ post:
   tags: [custom-emojis]
   security:
     - oauth2: ["write:custom_emojis"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

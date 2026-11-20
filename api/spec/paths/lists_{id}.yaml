@@ -23,6 +23,7 @@ patch:
     - oauth2: ["write:follows"]
   parameters:
     - $ref: ../components/parameters/ListId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -45,6 +46,7 @@ delete:
     - oauth2: ["write:follows"]
   parameters:
     - $ref: ../components/parameters/ListId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The list is deleted.

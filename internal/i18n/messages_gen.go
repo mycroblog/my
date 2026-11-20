@@ -1447,6 +1447,20 @@ func (l *Localizer) ServerErrorsHookDecisionNotOverridable() string {
 	return l.format("server:errors.hook_decision.not_overridable", nil)
 }
 
+// ServerErrorsIdempotencyKeyInUse formats "server:errors.idempotency_key_in_use". API error title for HTTP 409 when a client sends a request again with the same Idempotency-Key while the first one is still being carried out.
+//
+//	en: The request sent with this key is still being processed. Try again in a moment.
+func (l *Localizer) ServerErrorsIdempotencyKeyInUse() string {
+	return l.format("server:errors.idempotency_key_in_use", nil)
+}
+
+// ServerErrorsIdempotencyKeyReused formats "server:errors.idempotency_key_reused". API error title for HTTP 422 when a client sends an Idempotency-Key header that it already used for a different request. Idempotency-Key is the name of an HTTP header (not translated).
+//
+//	en: This key was already used for a different request. Send the new request with a new key.
+func (l *Localizer) ServerErrorsIdempotencyKeyReused() string {
+	return l.format("server:errors.idempotency_key_reused", nil)
+}
+
 // ServerErrorsImportInProgress formats "server:errors.import.in_progress". API error title for HTTP 409 when the user starts an import of a CSV file of follows, blocks, mutes, or bookmarks while another import is still being carried out.
 //
 //	en: Another import is in progress. Wait until it finishes.

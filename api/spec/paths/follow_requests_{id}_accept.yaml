@@ -10,6 +10,7 @@ post:
     - oauth2: ["write:follows"]
   parameters:
     - $ref: ../components/parameters/AccountId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/Relationship.yaml

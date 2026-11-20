@@ -17,6 +17,7 @@ post:
     - oauth2: ["write:accounts"]
   parameters:
     - $ref: ../components/parameters/InviteId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/OwnInvite.yaml

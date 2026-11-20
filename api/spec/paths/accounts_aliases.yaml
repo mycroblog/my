@@ -34,6 +34,8 @@ post:
   tags: [accounts]
   security:
     - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -64,6 +66,7 @@ delete:
         type: string
         minLength: 1
         maxLength: 2048
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/AccountAliasList.yaml

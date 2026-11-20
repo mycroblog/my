@@ -259,6 +259,14 @@
     "defaultMessage": "‮⊥ɥıs pǝɔısıou ɔɐuuoʇ qǝ ɔɐuɔǝʅʅǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.idempotency_key_in_use": {
+    "defaultMessage": "‮⊥ɥǝ ɹǝbnǝsʇ sǝuʇ ʍıʇɥ ʇɥıs ʞǝʎ ıs sʇıʅʅ qǝıuƃ dɹoɔǝssǝp. ⊥ɹʎ ɐƃɐıu ıu ɐ ɯoɯǝuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.idempotency_key_reused": {
+    "defaultMessage": "‮⊥ɥıs ʞǝʎ ʍɐs ɐʅɹǝɐpʎ nsǝp ɟoɹ ɐ pıɟɟǝɹǝuʇ ɹǝbnǝsʇ. Sǝup ʇɥǝ uǝʍ ɹǝbnǝsʇ ʍıʇɥ ɐ uǝʍ ʞǝʎ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.import.in_progress": {
     "defaultMessage": "‮∀uoʇɥǝɹ ıɯdoɹʇ ıs ıu dɹoƃɹǝss. Mɐıʇ nuʇıʅ ıʇ ɟıuısɥǝs.‬",
     "description": "Generated from en by tools/i18n; do not edit."

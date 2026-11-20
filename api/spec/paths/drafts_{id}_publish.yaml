@@ -12,6 +12,7 @@ post:
     - oauth2: ["write:statuses"]
   parameters:
     - $ref: ../components/parameters/DraftId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "201":
       description: The posted status.

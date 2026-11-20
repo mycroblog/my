@@ -12,6 +12,8 @@ delete:
   tags: [events]
   security:
     - oauth2: ["write:events"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: Done.

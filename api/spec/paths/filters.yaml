@@ -22,6 +22,8 @@ post:
   tags: [filters]
   security:
     - oauth2: ["write:filters"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

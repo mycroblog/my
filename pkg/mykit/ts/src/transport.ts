@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
-import { acceptsIdempotencyKeyAt, idempotencyKeyHeader } from "./idempotency.js";
+import { acceptsIdempotencyKeyAt, idempotencyKeyHeader, problemTypeIdempotencyKeyInUse } from "./idempotency.js";
 import { isAbort } from "./oauth.js";
 import { NetworkError } from "./problem.js";
 import type { TokenSource } from "./token.js";
 
 /**
- * Decides how a request answered with 429 or 503 is sent again. Only requests that are safe to repeat are retried:
- * GET, HEAD, and the requests of an operation that takes an Idempotency-Key that carry one.
+ * Decides how a request answered with 429 or 503, or one that got no answer, is sent again. Only requests that are
+ * safe to repeat are retried: after a 429 or 503 GET, HEAD, and the requests of an operation that takes an
+ * Idempotency-Key that carry one; after no answer, only the latter: every write but the few whose answer carries a
+ * secret.
  */
 export type RetryPolicy = {
   /** Turns the retries off: the 429 or 503 becomes a ProblemError at once. */
@@ -37,9 +39,10 @@ export type TransportOptions = {
 
 /**
  * The fetch of the generated client. For each request it adds the access token; after a 401 it refreshes the token
- * once and sends the request again; after a 429 or 503 it waits and retries the requests that are safe to repeat;
- * and it turns a failure to get an answer into a NetworkError. Every middleware of the client sees only the last
- * answer.
+ * once and sends the request again; after a 429 or 503 it waits and retries the requests that are safe to repeat,
+ * and after a failure to get an answer, or a 409 of the key in use, the writes with an Idempotency-Key, which the server applies once however
+ * many of the attempts reached it; and it turns a failure to get an answer that is not retried into a NetworkError.
+ * Every middleware of the client sees only the last answer.
  */
 export function createTransport({
   fetch,
@@ -75,6 +78,13 @@ export function createTransport({
         response = await fetch(r);
       } catch (error) {
         if (isAbort(error) || request.signal.aborted) throw error;
+        if (idempotencyKey !== null && retries < maxRetries) {
+          // The write may have reached the server: the same key has it applied once.
+          const wait = retryDelay(null, retries, maxWait, Date.now()) ?? maxWait;
+          retries++;
+          await sleep(wait, request.signal);
+          continue;
+        }
         throw new NetworkError(method, request.url, error, idempotencyKey ?? undefined);
       }
       if (response.status === 401 && token !== null && !refreshed && tokenSource?.refresh !== undefined) {
@@ -84,7 +94,12 @@ export function createTransport({
         await discard(response);
         continue;
       }
-      if ((response.status === 429 || response.status === 503) && retryable && retries < maxRetries) {
+      const busy =
+        (response.status === 429 || response.status === 503) && retryable
+          ? true
+          : // The first request with the key is still being carried out: its answer comes after it ends.
+            response.status === 409 && idempotencyKey !== null && (await isKeyInUse(response));
+      if (busy && retries < maxRetries) {
         const wait = retryDelay(response.headers.get("Retry-After"), retries, maxWait, Date.now());
         if (wait === null) return response;
         await discard(response);
@@ -95,6 +110,21 @@ export function createTransport({
       return response;
     }
   };
+}
+
+/** Whether a 409 is the problem of an Idempotency-Key whose first request is still being carried out. */
+async function isKeyInUse(response: Response): Promise<boolean> {
+  if (!/json/i.test(response.headers.get("Content-Type") ?? "")) return false;
+  try {
+    const problem: unknown = await response.clone().json();
+    return (
+      typeof problem === "object" &&
+      problem !== null &&
+      (problem as { type?: unknown }).type === problemTypeIdempotencyKeyInUse
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** Cancels the body of an answer that is not returned. */

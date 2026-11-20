@@ -12,6 +12,7 @@ put:
     - oauth2: ["write:accounts"]
   parameters:
     - $ref: ../components/parameters/AccountId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -32,6 +33,7 @@ delete:
     - oauth2: ["write:accounts"]
   parameters:
     - $ref: ../components/parameters/AccountId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/Relationship.yaml

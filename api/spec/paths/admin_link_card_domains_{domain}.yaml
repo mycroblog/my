@@ -20,6 +20,7 @@ delete:
         type: string
         minLength: 1
         maxLength: 253
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The domain has no rule.
@@ -47,6 +48,7 @@ put:
         type: string
         minLength: 1
         maxLength: 253
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

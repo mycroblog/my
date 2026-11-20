@@ -26,6 +26,8 @@ patch:
   tags: [oauth-apps]
   security:
     - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -48,6 +50,8 @@ delete:
   tags: [oauth-apps]
   security:
     - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The app is deleted.

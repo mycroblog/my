@@ -122,6 +122,9 @@ type operationAccess struct {
 	// (x-permission in api/openapi.yaml). A token of its permission scope stands in for the
 	// operation's admin:read or admin:write scope (ADR-0090 §17).
 	Permission identity.Permission
+	// Idempotent operations take the Idempotency-Key header: the guard keeps their answers and
+	// answers a repeat with them (idempotency.go).
+	Idempotent bool
 	// Deprecated and Sunset are Unix times, set for a deprecated operation (deprecated: true
 	// and x-sunset in api/openapi.yaml): its responses carry the Deprecation and Sunset
 	// headers (ADR-0090 section 8).
@@ -157,7 +160,8 @@ func bearerToken(h http.Header) (token string, present, ok bool) {
 }
 
 // guard authenticates, rate-limits, and authorizes the requests of the operation registered
-// with pattern before next parses them. It panics when the operation has no security
+// with pattern before next parses them, and answers the repeats of an Idempotency-Key
+// (serveIdempotent). It panics when the operation has no security
 // metadata, so that a stale security.gen.go fails at start-up instead of serving the
 // operation unguarded.
 func (s *Server) guard(pattern string, next http.Handler) http.Handler {
@@ -202,7 +206,7 @@ func (s *Server) guard(pattern string, next http.Handler) http.Handler {
 			return
 		}
 		if s.limitBody(w, r, pattern) {
-			next.ServeHTTP(w, r)
+			s.serveIdempotent(w, r, pattern, a, next)
 		}
 	})
 }

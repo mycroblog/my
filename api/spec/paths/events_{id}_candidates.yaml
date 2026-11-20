@@ -36,6 +36,8 @@ post:
   tags: [events]
   security:
     - oauth2: ["write:events"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

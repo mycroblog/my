@@ -9,7 +9,8 @@ const api = createClient({
 });
 
 // Post a status. The library adds an Idempotency-Key that it keeps for every retry, so a post that is sent again
-// after a 429 or a 503 is applied once. A call that gets an answer of 400 or more rejects with a ProblemError.
+// after a 429, a 503, or no answer is applied once. A call that gets an answer of 400 or more rejects with a
+// ProblemError.
 export async function post(text: string): Promise<string> {
   try {
     const { data } = await api.POST("/statuses", { body: { text, visibility: "public" } });

@@ -13,6 +13,8 @@ patch:
   tags: [custom-emojis]
   security:
     - oauth2: ["write:custom_emojis"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -37,6 +39,8 @@ delete:
   tags: [custom-emojis]
   security:
     - oauth2: ["write:custom_emojis"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The emoji is deleted.

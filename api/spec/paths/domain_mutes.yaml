@@ -35,6 +35,8 @@ post:
   tags: [accounts]
   security:
     - oauth2: ["write:mutes"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
