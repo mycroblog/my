@@ -247,6 +247,7 @@ export const idempotencyKeyOperations: readonly { readonly method: string; reado
   { method: "POST", path: "/admin/rules/{id}/retire" },
   { method: "POST", path: "/admin/announcements" },
   { method: "PUT", path: "/admin/announcements/{id}" },
+  { method: "DELETE", path: "/admin/announcements/{id}" },
   { method: "POST", path: "/admin/announcements/{id}/publish" },
   { method: "POST", path: "/admin/announcements/{id}/withdraw" },
   { method: "PUT", path: "/admin/theme/draft" },
