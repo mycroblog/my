@@ -11,7 +11,7 @@
 import { expect, test } from "bun:test";
 import type { FakeSupporterOptions } from "@my/e2e/fake";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
-import { main, renderApp, words, type TestApp } from "./test/app";
+import { heldRepeatsOf, main, renderApp, words, type TestApp } from "./test/app";
 import { fakeApp } from "./test/server";
 
 /** The path and query of the last address the app left for. */
@@ -50,6 +50,16 @@ const says = (sentence: string, timeout = 1000) =>
     { timeout },
   );
 
+/**
+ * Lets the next of the reads again 2 s apart of a payment that settles come now, once the screen waits for it: the
+ * test's clock in place of the wall's, as `heldRepeatsOf(2000)` holds them. How often they come is
+ * supporters-states.dom.test.tsx's.
+ */
+const nextRead = (reads: { tick: () => number }) =>
+  waitFor(() => {
+    expect(reads.tick()).toBe(1);
+  });
+
 /** Presses `name` in the question over the page, once it is there. */
 async function confirm(app: TestApp, name: string) {
   const dialog = await screen.findByRole("alertdialog");
@@ -57,6 +67,7 @@ async function confirm(app: TestApp, name: string) {
 }
 
 test("Choose asks what subscribing does, then leaves for the checkout, whose return the settings say and take off", async () => {
+  const reads = heldRepeatsOf(2000);
   const app = await at("/about/supporters");
   await app.user.click(await main().findByRole("button", { name: "Choose Supporter" }));
   const dialog = await screen.findByRole("alertdialog", { name: "Subscribe to Supporter, monthly?" });
@@ -66,7 +77,8 @@ test("Choose asks what subscribing does, then leaves for the checkout, whose ret
   expect(href.startsWith("/settings/supporter?checkout=success")).toBe(true);
   // The server asked the provider as the screen synced: the screen reads it again 2 s later, while it settles.
   await says("Your payment is being confirmed.");
-  await says("Thank you. You support this server on Supporter, monthly.", 5000);
+  await nextRead(reads);
+  await says("Thank you. You support this server on Supporter, monthly.");
   await waitFor(() => {
     expect(returned.path()).toBe("/settings/supporter");
   });
@@ -139,12 +151,14 @@ test("the reader's choice to be listed saves at once, and lists them under their
 });
 
 test("a tip of the amount chosen leaves for its checkout, and its return says thanks", async () => {
+  const reads = heldRepeatsOf(2000);
   const app = await at("/settings/supporter/tip");
   await app.user.click(await main().findByRole("radio", { name: "¥1,000" }));
   await app.user.click(screen.getByRole("button", { name: "Tip ¥1,000" }));
   const { app: returned } = await app.comeBack();
   // An open tip is read again 2 s later, the server asking the provider at each read.
-  await says("Thank you for your tip of ¥1,000", 5000);
+  await nextRead(reads);
+  await says("Thank you for your tip of ¥1,000");
   await waitFor(() => {
     expect(returned.path()).toBe("/settings/supporter/tip");
   });

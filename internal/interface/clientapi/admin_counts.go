@@ -25,11 +25,12 @@ type RegistrationCounts interface {
 	CountPendingRegistrations(ctx context.Context) (int64, error)
 }
 
-// GetAdminCounts serves GET /api/v1/admin/counts: what awaits the moderators (FR-712): the open
-// reports, and the registrations and appeals pending (AppealModeration, admin_appeals.go). Each
+// GetAdminCounts serves GET /api/v1/admin/counts: what awaits the staff (FR-712): the open
+// reports, the registrations and appeals pending (AppealModeration, admin_appeals.go), the custom
+// emoji requests pending (CustomEmojiRequests), and the open error groups (ErrorGroups). Each
 // count needs its own permission, and a count that the viewer's roles do not allow is omitted
-// rather than refused, so a single request fills the badges of whatever admin menu the viewer
-// has.
+// rather than refused, so a single request fills the badges of whatever staff navigation the
+// viewer has.
 func (s *Server) GetAdminCounts(ctx context.Context, _ GetAdminCountsRequestObject) (GetAdminCountsResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
@@ -67,6 +68,20 @@ func (s *Server) GetAdminCounts(ctx context.Context, _ GetAdminCountsRequestObje
 			return nil, fmt.Errorf("clientapi: count the pending appeals: %w", err)
 		}
 		body.PendingAppeals = &n
+	}
+	if slices.Contains(perms, identity.PermManageCustomEmojis) && s.o.CustomEmojiRequests != nil {
+		n, err := s.o.CustomEmojiRequests.CountPendingRequests(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: count the pending custom emoji requests: %w", err)
+		}
+		body.PendingCustomEmojiRequests = &n
+	}
+	if slices.Contains(perms, identity.PermManageErrors) && s.o.ErrorGroups != nil {
+		n, err := s.o.ErrorGroups.CountOpen(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: count the open error groups: %w", err)
+		}
+		body.OpenErrorGroups = &n
 	}
 	cache := cacheNoStore
 	return GetAdminCounts200JSONResponse{Body: body, Headers: GetAdminCounts200ResponseHeaders{CacheControl: &cache}}, nil

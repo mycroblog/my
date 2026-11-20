@@ -72,6 +72,18 @@ func (q *Queries) AddUXCount(ctx context.Context, arg AddUXCountParams) error {
 	return err
 }
 
+const countErrorGroupsInState = `-- name: CountErrorGroupsInState :one
+SELECT COUNT(*) FROM error_group_states WHERE state = ?
+`
+
+// CountErrorGroupsInState counts the groups in a state (the staff counts).
+func (q *Queries) CountErrorGroupsInState(ctx context.Context, state string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countErrorGroupsInState, state)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteErrorGroupCountsBefore = `-- name: DeleteErrorGroupCountsBefore :execrows
 DELETE FROM error_group_counts WHERE hour_start < ?
 `

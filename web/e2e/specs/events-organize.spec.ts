@@ -5,24 +5,16 @@
 // the organizer confirms a date, the second person answers going, and their place in person stays hidden until the
 // organizer approves them, after which they see it; and the organizer cancels the event. What the screens show in each
 // state is the stories' and the route tests' on the fake (web/app, events.stories.tsx, events-organize.dom.test.tsx).
+// Both people are signed in through the API: the sign-in is other specs'.
 
-import type { Page } from "@playwright/test";
-import type { Person } from "../src/scenario";
-import { EventForm, EventPage, Frame, SignIn } from "./screens";
+import { EventForm, EventPage } from "./screens";
 import { expect, test } from "./test";
-
-/** Signs in as `p` on `page` and waits for the home screen (a fresh person follows no one, so it has no feed). */
-async function signInOn(page: Page, p: Person): Promise<void> {
-  const screen = new SignIn(page);
-  await screen.open();
-  await screen.withPassword(p.email, p.password);
-  await expect(new Frame(page).heading("Home")).toBeVisible();
-}
 
 test("an organizer creates a polled event with a voice room, confirms a date, approves an attendee and cancels it", async ({
   page,
   browser,
   baseURL,
+  signedIn,
   fresh,
 }) => {
   // The organizer may host voice chat rooms (the server's default lets the roles with `start_voice_rooms`, the admin's).
@@ -31,7 +23,7 @@ test("an organizer creates a polled event with a voice room, confirms a date, ap
   const title = `Night walk ${attendee.username.slice(-6)}`;
   const place = `Gate ${attendee.username.slice(-6)}`;
 
-  await signInOn(page, organizer);
+  await signedIn(page, organizer);
   const form = new EventForm(page);
   await form.openFromList();
   await form.title.fill(title);
@@ -60,7 +52,7 @@ test("an organizer creates a polled event with a voice room, confirms a date, ap
     extraHTTPHeaders: { "X-Forwarded-For": "198.19.250.3" },
   });
   const attendeePage = await other.newPage();
-  await signInOn(attendeePage, attendee);
+  await signedIn(attendeePage, attendee);
   const attending = new EventPage(attendeePage, id);
   await attending.open();
   await attending.answerDate(first, "Can go");

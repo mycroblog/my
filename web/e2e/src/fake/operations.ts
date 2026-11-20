@@ -36,6 +36,8 @@ export type OperationsContext = {
 export type FakeOperations = {
   /** The ID of the fake's job or error group of `key` (`job:dead-email`, `error:panic`), or "none". */
   readonly id: (key: string) => string;
+  /** The error groups that are open. */
+  readonly openErrorGroups: () => number;
 };
 
 /** A job of the fake as it starts: its key, and what the server holds of it. */
@@ -620,6 +622,9 @@ export function operationsHandlers(c: OperationsContext): { handlers: Handlers; 
 
   return {
     handlers: { ...jobHandlers, ...groupHandlers, ...uxHandlers, ...ruleHandlers },
-    operations: { id: (key) => keyed.get(key) ?? "none" },
+    operations: {
+      id: (key) => keyed.get(key) ?? "none",
+      openErrorGroups: () => groups.filter((g) => g.state === "open").length,
+    },
   };
 }

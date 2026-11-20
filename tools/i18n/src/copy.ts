@@ -64,7 +64,7 @@ export function parseWords(text: string, path = DECISIONS): Word[] {
         try {
           return new RegExp(p, "mu");
         } catch (e) {
-          throw new Error(`${path}:${i + 1}: ${(e as Error).message}`);
+          throw new Error(`${path}:${i + 1}: ${(e as Error).message}`, { cause: e });
         }
       });
       words.push({ locale, use, avoid: patterns, users: users !== undefined });
@@ -114,12 +114,15 @@ const EMOJI = /\p{Extended_Pictographic}/u;
 /** Characters Extended_Pictographic holds that are not emoji in UI copy. */
 const NOT_EMOJI = new Set(["©", "®", "™"]);
 const DASH = /[‒-―⸺⸻－]|(?<=\S) - (?=\S)/u;
+/** The characters of a text as a reader counts them: its grapheme clusters, an emoji with its modifiers as one. */
+const graphemes = (text: string): string[] =>
+  Array.from(new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text), (s) => s.segment);
 
 /** A line that ends in a colon; the colon is decorative when the line is a label, not a sentence that leads into a list. */
 const COLON_LINE = /^(.*)[:：][ \t]*$/gmu;
 function isLabel(locale: string, line: string): boolean {
   const text = line.replace(/\{[^{}]*\}/g, "x").trim();
-  return locale === "ja" ? [...text.replace(/\s/g, "")].length <= 15 : text.split(/\s+/).length <= 4;
+  return locale === "ja" ? graphemes(text.replace(/\s/g, "")).length <= 15 : text.split(/\s+/).length <= 4;
 }
 
 /** Auxiliary verbs, which are written in hiragana, and the kanji spellings that give them away. */
@@ -437,7 +440,7 @@ export function copyFindings(
       if (found) add("block", "words", `"${found[0]}" is a word to avoid; use ${word.use} (${DECISIONS})`);
     }
   }
-  const emoji = [...text].find((c) => EMOJI.test(c) && !NOT_EMOJI.has(c));
+  const emoji = graphemes(text).find((c) => EMOJI.test(c) && !NOT_EMOJI.has(c.replace(/\uFE0F/gu, "")));
   if (emoji) add("block", "emoji", `no emoji in UI copy ("${emoji}")`);
   const dash = DASH.exec(text);
   if (dash)

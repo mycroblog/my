@@ -10993,12 +10993,13 @@ paths:
   /admin/counts:
     get:
       operationId: getAdminCounts
-      summary: Count what awaits the moderators
+      summary: Count what awaits the staff
       description: |
-        The number of open reports (with the `manage_reports` permission), and of registrations
+        The number of open reports (with the `manage_reports` permission), of registrations
         that await approval and appeals that await a decision (with the `manage_accounts`
-        permission), for the badges of the admin menu. A count whose permission the user's roles lack is omitted, so a
-        user without either gets an empty object.
+        permission), of custom emoji requests that await a decision (with `manage_custom_emojis`), and of
+        open error groups (with `manage_errors`), for the badges of the staff navigation. A count whose
+        permission the user's roles lack is omitted, so a user without any gets an empty object.
       tags:
         - admin-moderation
       security:
@@ -17677,7 +17678,7 @@ components:
           description: The username of the account; absent for an account that is gone.
           type: string
     AdminCounts:
-      description: What awaits the moderators; a count whose permission the user lacks is omitted.
+      description: What awaits the staff; a count whose permission the user lacks is omitted.
       type: object
       properties:
         open_reports:
@@ -17692,6 +17693,18 @@ components:
           minimum: 0
         pending_appeals:
           description: The appeals of moderation actions that await a decision. Needs `manage_accounts`.
+          type: integer
+          format: int64
+          minimum: 0
+        pending_custom_emoji_requests:
+          description: The custom emoji requests that await a decision. Needs `manage_custom_emojis`.
+          type: integer
+          format: int64
+          minimum: 0
+        open_error_groups:
+          description: |
+            The error groups that are open: new, regressed after a resolve, or unmuted. Needs
+            `manage_errors`.
           type: integer
           format: int64
           minimum: 0

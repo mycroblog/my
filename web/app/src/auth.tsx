@@ -10,7 +10,7 @@ import "@my/design-system/emoji.css";
 import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
 import { AuthScreen, parseAuthPage, type AuthPage } from "@my/app-features";
-import { I18nProvider } from "@my/design-system";
+import { claimPressableStyle, I18nProvider } from "@my/design-system";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import wordmarkDark from "../../brand/Wordmark-DarkBg.svg";
@@ -29,6 +29,7 @@ function Entry({ page }: { page: AuthPage }) {
 
 const root = document.getElementById("root");
 if (!root) throw new Error("the shell has no #root");
+claimPressableStyle();
 createRoot(root).render(
   <StrictMode>
     <I18nProvider locale={document.documentElement.lang || "en"}>

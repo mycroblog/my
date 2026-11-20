@@ -42,4 +42,14 @@
   :where(input)::placeholder {
     overflow: visible;
   }
+
+  /*
+   * A pressable of React Aria takes a tap at once, without waiting for a double tap to zoom, and still lets the page
+   * pan and pinch: the rule usePress would put in a style of its own, which the shell's policy refuses
+   * (claimPressableStyle, pressable-style.ts). `manipulation` would say the same, but in Safari a press is then not
+   * cancelled when the page scrolls under it.
+   */
+  :where([data-react-aria-pressable]) {
+    touch-action: pan-x pan-y pinch-zoom;
+  }
 }

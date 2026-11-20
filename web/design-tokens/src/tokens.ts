@@ -162,7 +162,6 @@ export const contrastPairs: readonly ContrastPair[] = [
   { fg: "quote-bar", bg: "surface-raised", minimum: 3 },
 ];
 
-/** The weight of a control's label, and of a name that heads what follows it (a post's author). */
 /**
  * The pairs of the badges' colors, a label on its tint, which a server theme does not change (the badges are fixed,
  * BadgeColor of the client API): held to 4.5:1 like the theme's.
@@ -179,7 +178,11 @@ export const badgeContrastPairs: readonly { fg: BadgeColorName; bg: BadgeColorNa
   { fg: "on-badge-pink", bg: "badge-pink", minimum: 4.5 },
 ];
 
-export const fontWeight = { label: 600, strong: 700 } as const;
+/**
+ * The weights of the text: of running text (normal, as the body, reading and caption steps), of a control's label, and
+ * of a name that heads what follows it (a post's author).
+ */
+export const fontWeight = { normal: 400, label: 600, strong: 700 } as const;
 
 /** The corner radius, in rem: of a control, and of a surface over the page (a menu). */
 export const radius = { control: 0.375, overlay: 0.5 } as const;

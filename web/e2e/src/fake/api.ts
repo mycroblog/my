@@ -3149,6 +3149,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
               pending_appeals: accounts.moderation.pendingAppeals(),
             }
           : {}),
+        ...(granted.includes("manage_custom_emojis")
+          ? { pending_custom_emoji_requests: staffServer.server.pendingEmojiRequests() }
+          : {}),
+        ...(granted.includes("manage_errors") ? { open_error_groups: operated.operations.openErrorGroups() } : {}),
       });
       return { status: 200, body: counts };
     },

@@ -105,6 +105,16 @@ func (f *fakeErrorGroups) Mute(_ context.Context, id string, by appdiagnostics.A
 	return f.change(id, by, "mute", diagnostics.StateMuted)
 }
 
+func (f *fakeErrorGroups) CountOpen(context.Context) (int64, error) {
+	var n int64
+	for _, g := range f.groups {
+		if g.Head.State == diagnostics.StateOpen {
+			n++
+		}
+	}
+	return n, nil
+}
+
 func (f *fakeErrorGroups) Unmute(_ context.Context, id string, by appdiagnostics.Actor) (appdiagnostics.Head, error) {
 	return f.change(id, by, "unmute", diagnostics.StateOpen)
 }

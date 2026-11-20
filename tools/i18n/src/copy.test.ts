@@ -15,6 +15,10 @@ import {
 } from "./copy";
 import { extractArgs, parseMessage } from "./icu";
 
+/** An asymmetric matcher, typed as the string it stands for in a list of strings. */
+const containing = (text: string) => expect.stringContaining(text) as unknown as string;
+const matching = (pattern: RegExp) => expect.stringMatching(pattern) as unknown as string;
+
 const words = loadWords();
 
 /** The tier and rule of each finding of an en message, or of a ja message against its en message. */
@@ -42,18 +46,18 @@ test("the word decisions of the copy role are rules: a word to avoid blocks, the
 
 test("a variant of a recorded term is refused with the term to use; the right sense of a near word passes", () => {
   const found = (locale: string, text: string) => copyFindings(words, locale, text).map((f) => f.message);
-  expect(found("ja", "このサーバーはサービスを終了しました。")).toEqual([expect.stringContaining('use "閉鎖"')]);
-  expect(found("ja", "サーバーをクローズします。")).toEqual([expect.stringContaining('use "閉鎖"')]);
-  expect(found("ja", "運営者からのお知らせ")).toEqual([expect.stringContaining('use "管理者"')]);
-  expect(found("ja", "閉鎖を告知しました。")).toEqual([expect.stringContaining('use "予告"')]);
-  expect(found("ja", "アカウントを再有効化する")).toEqual([expect.stringContaining('use "アカウントをもとに戻す"')]);
-  expect(found("ja", "サーバーから追放する")).toEqual([expect.stringContaining('use "BAN"')]);
-  expect(found("ja", "サポーター制度を始める")).toEqual([expect.stringContaining('use "サポーターのプラン"')]);
-  expect(found("ja", "課金機能を使う")).toEqual([expect.stringContaining('use "サポーターのプラン"')]);
-  expect(found("ja", "GitHub とひも付ける")).toEqual([expect.stringContaining('use "連携"')]);
-  expect(found("ja", "紐づけを外す")).toEqual([expect.stringContaining('use "連携"')]);
-  expect(found("ja", "記事の題を入力")).toEqual([expect.stringContaining('use "タイトル"')]);
-  expect(found("ja", "カバーを追加")).toEqual([expect.stringContaining('use "カバー画像"')]);
+  expect(found("ja", "このサーバーはサービスを終了しました。")).toEqual([containing('use "閉鎖"')]);
+  expect(found("ja", "サーバーをクローズします。")).toEqual([containing('use "閉鎖"')]);
+  expect(found("ja", "運営者からのお知らせ")).toEqual([containing('use "管理者"')]);
+  expect(found("ja", "閉鎖を告知しました。")).toEqual([containing('use "予告"')]);
+  expect(found("ja", "アカウントを再有効化する")).toEqual([containing('use "アカウントをもとに戻す"')]);
+  expect(found("ja", "サーバーから追放する")).toEqual([containing('use "BAN"')]);
+  expect(found("ja", "サポーター制度を始める")).toEqual([containing('use "サポーターのプラン"')]);
+  expect(found("ja", "課金機能を使う")).toEqual([containing('use "サポーターのプラン"')]);
+  expect(found("ja", "GitHub とひも付ける")).toEqual([containing('use "連携"')]);
+  expect(found("ja", "紐づけを外す")).toEqual([containing('use "連携"')]);
+  expect(found("ja", "記事の題を入力")).toEqual([containing('use "タイトル"')]);
+  expect(found("ja", "カバーを追加")).toEqual([containing('use "カバー画像"')]);
   expect(
     found(
       "ja",
@@ -230,8 +234,8 @@ test("an error with no next step is refused unless the reviewed list holds it; a
     ["server:errors.d", error("You cannot create invites.", "招待を作成できません。", false, false)],
   ]);
   expect(nextStepErrors(errors, new Map())).toEqual([
-    expect.stringMatching(/^server:errors\.a: the error says no next step in en and ja; .*no-step\.json/),
-    expect.stringMatching(/^server:errors\.b: the error says no next step in ja;/),
+    matching(/^server:errors\.a: the error says no next step in en and ja; .*no-step\.json/),
+    matching(/^server:errors\.b: the error says no next step in ja;/),
   ]);
   const reason = "It reports a state that already holds: nothing is left for the reader to do.";
   expect(
@@ -288,7 +292,7 @@ test("each branch of an error needs a step, its own or the same branch's of a si
     ]);
   const stateful = y(["The relay cannot be saved.", "保存できません。"], ["It breaks a rule.", "規則に反しています。"]);
   expect(nextStepErrors(stateful, new Map())).toEqual([
-    expect.stringMatching(/^server:errors\.y_detail#other: this branch says no next step in en and ja;/),
+    matching(/^server:errors\.y_detail#other: this branch says no next step in en and ja;/),
   ]);
   // The title's step holds for every branch of its detail.
   expect(
@@ -303,7 +307,7 @@ test("each branch of an error needs a step, its own or the same branch's of a si
       y(["The relay cannot be saved.", "保存できません。"], ["Change the value.", "規則に反しています。"]),
       new Map(),
     ),
-  ).toEqual([expect.stringMatching(/^server:errors\.y_detail#other: this branch says no next step in ja;/)]);
+  ).toEqual([matching(/^server:errors\.y_detail#other: this branch says no next step in ja;/)]);
   const reason = "The fallback of a rule the server checks: no step fits every case it covers.";
   expect(nextStepErrors(stateful, new Map([["server:errors.y_detail#other", reason]]))).toEqual([]);
   expect(nextStepErrors(stateful, new Map([["server:errors.y", reason]]))).toEqual([]);

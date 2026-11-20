@@ -56,8 +56,18 @@ export function drawSVG(d: Drawing): string {
   ].join("");
 }
 
+/** The URL of each drawing drawn so far: the fake answers the same avatars and media in every response of a test. */
+const urls = new WeakMap<Drawing, string>();
+
 /** The drawing as a `data:` URL of its SVG, for an `<img>`. */
-export const drawingURL = (d: Drawing) => `data:image/svg+xml,${encodeURIComponent(drawSVG(d))}`;
+export function drawingURL(d: Drawing): string {
+  let url = urls.get(d);
+  if (url === undefined) {
+    url = `data:image/svg+xml,${encodeURIComponent(drawSVG(d))}`;
+    urls.set(d, url);
+  }
+  return url;
+}
 
 const base83 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~";
 const digits83 = (v: number, n: number) =>

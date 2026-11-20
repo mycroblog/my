@@ -16,7 +16,7 @@ import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
 import { onSignedOutElsewhere, openSession, startStream, visitorData, watchServer } from "@my/app-data";
 import { inCall } from "@my/app-features";
-import { I18nProvider } from "@my/design-system";
+import { claimPressableStyle, I18nProvider } from "@my/design-system";
 import { browserLanguages, readDeviceValue, registerServiceWorker, writeDeviceValue } from "@my/platform";
 
 /** The device's key of when the page last loaded again for a chunk of an older build. */
@@ -67,6 +67,8 @@ if (data !== null)
 
 const root = document.getElementById("root");
 if (!root) throw new Error("the shell has no #root");
+// The style React Aria would put in the head is refused by the shell's policy; styles.css holds its rule.
+claimPressableStyle();
 createRoot(root).render(
   <StrictMode>
     <I18nProvider locale={locale}>
