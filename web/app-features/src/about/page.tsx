@@ -180,10 +180,10 @@ function Head({ instance, builtInIcon }: { instance: Instance; builtInIcon: stri
   );
 }
 
-/** Who runs the server: its account, and its address. */
-function Contact({ contact, t }: { contact: NonNullable<Instance["contact"]>; t: T }) {
+/** Who runs the server: its account, and its address; the crawler's page shows them too. */
+export function ContactDetails({ contact }: { contact: NonNullable<Instance["contact"]> }): ReactNode {
   return (
-    <Section title={t("about.contact")}>
+    <>
       {contact.account !== undefined && <AccountLine account={contact.account} />}
       {contact.email !== undefined && (
         <Box as="p" breaks="anywhere">
@@ -194,6 +194,15 @@ function Contact({ contact, t }: { contact: NonNullable<Instance["contact"]>; t:
           </bdi>
         </Box>
       )}
+    </>
+  );
+}
+
+/** The section of who runs the server. */
+function Contact({ contact, t }: { contact: NonNullable<Instance["contact"]>; t: T }) {
+  return (
+    <Section title={t("about.contact")}>
+      <ContactDetails contact={contact} />
     </Section>
   );
 }
@@ -380,7 +389,11 @@ function AutoDelete({ limit, t }: { limit: NonNullable<Instance["auto_delete_lim
   );
 }
 
-/** What the server states to search engines and to AI crawlers, and the page that says what it means. */
+/**
+ * What the server states to search engines and to AI crawlers, how it states it and how far that reaches, and that it
+ * is no legal advice (ADR-0057 §5); then that it fetches linked pages as a crawler of its own, and the page for the
+ * operators of those websites.
+ */
 function Crawlers({ instance, t }: { instance: Instance; t: T }) {
   const { locale } = useLocale();
   return (
@@ -391,7 +404,16 @@ function Crawlers({ instance, t }: { instance: Instance; t: T }) {
           t("about.crawlers.ai", { value: instance.ai_usage }),
         ])}
       </Box>
-      <OpenRow href={crawlerPagePath} icon="search" title={t("about.crawlers.page")} />
+      <Box as="p" breaks="phrase">
+        {t("about.crawlers.how")}
+      </Box>
+      <Box as="p" text="caption" tone="muted" breaks="phrase">
+        {t("about.crawlers.legal")}
+      </Box>
+      <Box as="p" breaks="phrase">
+        {t("about.crawlers.link_cards")}
+      </Box>
+      <OpenRow href={crawlerPagePath} icon="linkCards" title={t("about.crawlers.crawler")} />
     </Section>
   );
 }

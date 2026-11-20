@@ -2,7 +2,7 @@
 
 // The server's about page and its documents, on the fake API, signed in and signed out: each section shows only where
 // the server sets or shows it; the moderated servers under each of who may read them; a document published, not
-// published, and failing; the crawlers' page; the ways back to the about page, and the ways to it from the shell's
+// published, and failing; the link card crawler's page; the ways back to the about page, and the ways to it from the shell's
 // footer, the landing page and a document. What each state looks like is the stories' (about.stories.tsx).
 
 import { expect, test } from "bun:test";
@@ -112,7 +112,7 @@ test("the about page says the instance could not be read, and Try again reads it
   expect(await main().findByRole("region", { name: "Server" })).toBeDefined();
 });
 
-test("the crawlers' page says the instance could not be read", async () => {
+test("the crawler's page says the instance could not be read", async () => {
   await renderApp("/about/crawler", { about: { instance: "fails" } });
   expect(await main().findByText("The server's information could not be loaded.")).toBeDefined();
 });
@@ -173,28 +173,52 @@ test("a document that could not be read says so, and Try again reads it", async 
   expect(await main().findByRole("heading", { level: 2, name: "Privacy policy" })).toBeDefined();
 });
 
-test("the crawlers' page says what the server states to search engines and AI, and leads back", async () => {
-  const app = await renderApp("/about/crawler", { crawlers: { search: "allow", ai: "deny_training" }, visitor: true });
-  expect(await main().findByRole("heading", { level: 2, name: "Search engines" })).toBeDefined();
-  expect(main().getByText(/^This server lets search engines index/)).toBeDefined();
-  expect(main().getByText(/^This server asks AI crawlers not to train models on its pages\./)).toBeDefined();
-  expect(main().getByText(/^What such a statement means in law depends on the country/)).toBeDefined();
-  expect(app.title()).toBe("Search engines and AI");
+test("the about page says what the server states to search engines and AI, and that it is no legal advice", async () => {
+  await renderApp("/about", { crawlers: { search: "allow", ai: "deny_training" } });
+  const section = await main().findByRole("region", { name: "Search engines and AI" });
+  expect(section.textContent).toContain(
+    "Search engines may index the public posts and profiles of people who allow it.",
+  );
+  expect(section.textContent).toContain("robots.txt");
+  expect(section.textContent).toContain("This text is not legal advice.");
+});
+
+test("the about page leads to the link card crawler's page, which leads back", async () => {
+  const app = await renderApp("/about", { visitor: true });
+  await sections();
+  await app.user.click(main().getByRole("link", { name: "What that crawler does, and how a website refuses it" }));
+  await app.arrived("/about/crawler");
+  expect(await main().findByRole("heading", { level: 2, name: "Link card crawler" })).toBeDefined();
+  expect(app.title()).toBe("Link card crawler");
   await app.user.click(main().getByRole("button", { name: "About this server" }));
   await app.arrived("/about");
 });
 
-test("the crawlers' page of a server that refuses both says so", async () => {
-  await renderApp("/about/crawler", { crawlers: { search: "deny", ai: "deny" } });
-  expect(await main().findByText(/^This server asks search engines not to index any of its pages/)).toBeDefined();
-  expect(main().getByText(/^This server asks AI crawlers neither to train models/)).toBeDefined();
+test("the crawler's page of a server that obeys robots.txt says so, names the crawler, and gives the contact", async () => {
+  await renderApp("/about/crawler", { about: { says: "full", linkCards: "obeys" }, visitor: true });
+  expect(await main().findByText("On this server, the crawler is on and it obeys robots.txt.")).toBeDefined();
+  expect(main().getByText(/^my-linkcard\/0\.0\.0-demo \(\+https:\/\/.+\/\)$/)).toBeDefined();
+  expect(
+    main().getByText("User-agent: my-linkcard Disallow: /", { normalizer: (t) => t.replace(/\s+/g, " ") }),
+  ).toBeDefined();
+  expect(main().getByText(/^robots\.txt of the origin of the page/)).toBeDefined();
+  const table = main().getByRole("table", { name: "What each directive changes in a card" });
+  expect(within(table).getAllByRole("row")).toHaveLength(4);
+  expect(main().getByRole("link", { name: "admin@example.invalid" })).toBeDefined();
+  expect(main().queryByText("This server publishes no contact.")).toBeNull();
 });
 
-test("the about page leads to the crawlers' page", async () => {
-  const app = await renderApp("/about");
-  await sections();
-  await app.user.click(main().getByRole("link", { name: "What this means" }));
-  await app.arrived("/about/crawler");
+test("the crawler's page of a server that does not read robots.txt says a website cannot refuse it there", async () => {
+  await renderApp("/about/crawler", { about: { linkCards: "ignores" } });
+  expect(await main().findByText(/^On this server, the crawler is on and it does not read robots\.txt/)).toBeDefined();
+  expect(main().getByText(/^This server does not read robots\.txt, so this rule has no effect here\./)).toBeDefined();
+  expect(main().queryByText(/^robots\.txt of the origin of the page/)).toBeNull();
+  expect(main().getByText("This server publishes no contact.")).toBeDefined();
+});
+
+test("the crawler's page of a server with link cards off says it fetches nothing now", async () => {
+  await renderApp("/about/crawler");
+  expect(await main().findByText(/^On this server, link cards are off/)).toBeDefined();
 });
 
 test("a visitor reaches the about page and the documents from the shell's footer", async () => {

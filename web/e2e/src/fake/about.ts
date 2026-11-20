@@ -22,6 +22,11 @@ export type FakeAboutOptions = {
   says?: "full" | "bare";
   /** Who may read the moderated domains: nobody by default. */
   domains?: Audience;
+  /**
+   * The link card crawler: off by default (`link_cards`), on and obeying robots.txt (`obeys`), or on and not reading it
+   * (`ignores`, `link_cards_ignore_robots_txt`).
+   */
+  linkCards?: "off" | "obeys" | "ignores";
   /** The instance (`GET /instance`) is never answered (`waits`), or always fails (`fails`). */
   instance?: "waits" | "fails";
 };
@@ -59,6 +64,8 @@ export type AboutInstance = Pick<
   | "external_review_scope"
   | "auto_delete_limit"
   | "domain_actions_visibility"
+  | "link_cards"
+  | "link_cards_ignore_robots_txt"
 >;
 
 const description =
@@ -147,6 +154,8 @@ export function aboutHandlers(c: AboutContext): { handlers: Handlers; instance: 
         }
       : {}),
     domain_actions_visibility: visibility,
+    link_cards: (c.options?.linkCards ?? "off") !== "off",
+    link_cards_ignore_robots_txt: c.options?.linkCards === "ignores",
   };
 
   const handlers: Handlers = {

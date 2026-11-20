@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// What the server states to search engines and AI crawlers, and what that means, at /about/crawler (FR-725, ADR-0057
-// §5), for everyone, signed in or not, where the about page leads.
+// The page for the operators of the websites that posts link to, on the crawler that fetches them for their cards, at
+// /about/crawler (ADR-0028), for everyone, signed in or not, where the about page leads.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { CrawlerPage } from "../about";

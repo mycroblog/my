@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The pages under the about page that the server's documents and its statement to crawlers are (FR-705, FR-725,
-// ADR-0057 §5, ADR-0072 §13), for everyone, signed in or not: each named after what it holds and led by the way back to
-// the about page, but where the server has not published the document, whose sentence offers that way itself.
+// The pages under the about page that the server's documents and its link card crawler's are (FR-705, ADR-0072 §13),
+// for everyone, signed in or not: each named after what it holds and led by the way back to the about page, but where
+// the server has not published the document, whose sentence offers that way itself.
 
 import { aboutPagePath } from "@my/app-components";
 import { useAboutInstance, useInstanceDocument, type InstanceDocumentKind } from "@my/app-data";
@@ -35,7 +35,7 @@ export function DocumentPage({ kind }: { kind: InstanceDocumentKind }): ReactNod
   );
 }
 
-/** The page of what the server states to search engines and AI crawlers, once the instance is read. */
+/** The page of the server's link card crawler, once the instance is read. */
 export function CrawlerPage(): ReactNode {
   const { instance, retry } = useAboutInstance();
   return (

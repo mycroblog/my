@@ -137,7 +137,7 @@
   },
   "about.crawlers": {
     "defaultMessage": "Search engines and AI",
-    "description": "The heading of the section of the about page on what the server states to search engines and AI crawlers, and the title of its own page."
+    "description": "The heading of the section of the about page on what the server states to search engines and AI crawlers."
   },
   "about.crawlers.search": {
     "defaultMessage": "{value, select, allow {Search engines may index the public posts and profiles of people who allow it.} other {Search engines are asked not to index this server.}}",
@@ -147,37 +147,205 @@
     "defaultMessage": "{value, select, allow {AI crawlers are asked nothing.} deny_training {AI crawlers are asked not to train on its pages.} other {AI crawlers are asked not to train on its pages or use them.}}",
     "description": "What the server states to AI crawlers, on the about page, after about.crawlers.search."
   },
-  "about.crawlers.page": {
-    "defaultMessage": "What this means",
-    "description": "The row of the about page that opens the page on what the server states to search engines and AI crawlers."
-  },
-  "about.crawler.search": {
-    "defaultMessage": "Search engines",
-    "description": "A heading of the page on what the server states to search engines and AI crawlers."
-  },
-  "about.crawler.search.text": {
-    "defaultMessage": "{value, select, allow {This server lets search engines index the public posts and profiles of the people here who allow it in their settings. The pages of everyone else are marked not to be indexed.} other {This server asks search engines not to index any of its pages, whatever the people here choose.}}",
-    "description": "What the server states to search engines, on its page."
-  },
-  "about.crawler.ai": {
-    "defaultMessage": "AI",
-    "description": "A heading of the page on what the server states to search engines and AI crawlers."
-  },
-  "about.crawler.ai.text": {
-    "defaultMessage": "{value, select, allow {This server asks nothing of AI crawlers. Each person here can ask them not to train on or use their pages.} deny_training {This server asks AI crawlers not to train models on its pages. Each person here can also ask them not to use their pages in AI search, assistants and agents.} other {This server asks AI crawlers neither to train models on its pages nor to use them in AI search, assistants and agents.}}",
-    "description": "What the server states to AI crawlers, on its page."
-  },
-  "about.crawler.how": {
-    "defaultMessage": "How it is stated",
-    "description": "A heading of the page on what the server states to search engines and AI crawlers."
-  },
-  "about.crawler.how.text": {
+  "about.crawlers.how": {
     "defaultMessage": "The statement is in this server's robots.txt, in the tags and headers of its pages, and in its TDMRep file. It covers the pages of this server alone: other servers make their own, and media files carry only the server's.",
-    "description": "How the server makes its statement to crawlers and how far it reaches, on the page on what the server states to search engines and AI crawlers."
+    "description": "How the server makes its statement to search engines and AI crawlers and how far it reaches, in the section of the about page on them, after what it states."
   },
-  "about.crawler.legal": {
+  "about.crawlers.legal": {
     "defaultMessage": "What such a statement means in law depends on the country, and many operators follow such statements voluntarily. This text is not legal advice.",
-    "description": "The legal note at the end of the page on what the server states to search engines and AI crawlers. It names no country's law."
+    "description": "The legal note at the end of the section of the about page on what the server states to search engines and AI crawlers. It names no country's law."
+  },
+  "about.crawler": {
+    "defaultMessage": "Link card crawler",
+    "description": "The title of the page for the operators of websites on this server's link card crawler, which the row of the about page opens."
+  },
+  "about.crawlers.link_cards": {
+    "defaultMessage": "The server also fetches the pages that posts link to, to show cards of them, as the crawler my-linkcard.",
+    "description": "After what the server states to search engines and AI crawlers, in the section of the about page on them: that the server fetches linked pages for cards, as its own crawler."
+  },
+  "about.crawlers.crawler": {
+    "defaultMessage": "What that crawler does, and how a website refuses it",
+    "description": "The row of the about page that opens the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.intro": {
+    "defaultMessage": "When a post on this server links to a web page, the server fetches that page to show a card with its title, description, and image. This page is for the people who run those websites: what the requests are, and how to refuse them.",
+    "description": "Opening paragraph of the page about the link card crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.obeys": {
+    "defaultMessage": "On this server, the crawler is on and it obeys robots.txt.",
+    "description": "What the crawler does on this server, in its usual settings: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.ignores": {
+    "defaultMessage": "On this server, the crawler is on and it does not read robots.txt, because the operators chose so. A website cannot refuse it here with robots.txt. The directives of a page still apply, and the operators can stop fetching from a domain.",
+    "description": "What the crawler does on a server whose setting link_cards_ignore_robots_txt is on: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.off": {
+    "defaultMessage": "On this server, link cards are off, so the crawler fetches nothing now. The rest of this page says what it does while they are on.",
+    "description": "What the crawler does on a server whose setting link_cards is off: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.title": {
+    "defaultMessage": "How to recognize it",
+    "description": "Heading of the section with the User-Agent of the link card crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.user_agent": {
+    "defaultMessage": "Its requests carry this User-Agent:",
+    "description": "Sentence before the User-Agent of the crawler, shown as code. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.token": {
+    "defaultMessage": "The address in it is this server. In robots.txt and in the directives of a page, the crawler is named my-linkcard.",
+    "description": "Explains the User-Agent of the crawler and the name it goes by. my-linkcard is a literal name: do not translate it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.others": {
+    "defaultMessage": "This server makes other requests under the name my/, which this page does not cover, such as federation. Two of them can follow a card: it may fetch the card's image again as my/ to show it to readers, and it looks up the fediverse:creator account a page names.",
+    "description": "Other requests of the server that a site operator can see, under the server's general User-Agent. my/ and fediverse:creator are literal: do not translate them. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.title": {
+    "defaultMessage": "What causes a fetch",
+    "description": "Heading of the section that says what makes the crawler fetch a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.post": {
+    "defaultMessage": "A post that links the URL. The server makes a card from the first link in the body of a post, whatever the post's visibility, and fetches the page if it has no recent card of it.",
+    "description": "What makes the crawler fetch a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.remote": {
+    "defaultMessage": "That includes posts that arrive from other servers, not only those written here, so a request does not mean that someone here read your page.",
+    "description": "That posts federated from other servers cause fetches too. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.title": {
+    "defaultMessage": "What it fetches",
+    "description": "Heading of the section that lists what the crawler requests from a website. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.page": {
+    "defaultMessage": "The page. It reads only the head of the page, follows up to 5 redirects, and runs nothing in it.",
+    "description": "What the crawler fetches: the linked page. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.image": {
+    "defaultMessage": "One image, the one that the head of the page names.",
+    "description": "What the crawler fetches: the page's image. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.robots": {
+    "defaultMessage": "robots.txt of the origin of the page and of the image, before it requests them.",
+    "description": "What the crawler fetches: robots.txt. Shown only while the server reads it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.nothing_else": {
+    "defaultMessage": "It follows no links, so it does not crawl the rest of your site.",
+    "description": "That the crawler does not crawl a whole website. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.title": {
+    "defaultMessage": "What it sends",
+    "description": "Heading of the section that says what the crawler's requests carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.headers": {
+    "defaultMessage": "The User-Agent above, the kinds of content it accepts, and for a page, this server's default language in Accept-Language.",
+    "description": "What the crawler's requests carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.not": {
+    "defaultMessage": "It sends no cookies and no Referer, and nothing tells you which account or post linked the page.",
+    "description": "What the crawler's requests do not carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.title": {
+    "defaultMessage": "How often",
+    "description": "Heading of the section that says how often the crawler requests a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.once": {
+    "defaultMessage": "Each URL is fetched once, and the posts that link it share its card. A post fetches it again only if the last fetch was 14 days ago or more; the server does not go back over its cards by itself.",
+    "description": "How often the crawler requests a page. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.failure": {
+    "defaultMessage": "A URL that fails is not requested again for 24 hours.",
+    "description": "That the crawler remembers failures. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.host": {
+    "defaultMessage": "It makes one request at a time to a host, with at least a second between them. Only the redirects of a request and the robots.txt it needs come with it.",
+    "description": "The limit of the crawler per host. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.throttled": {
+    "defaultMessage": "When a host answers 429 or 503, the crawler requests nothing from it for the time in Retry-After, at most an hour, or for a minute without one. After 5 such answers for a URL, it counts the URL as failed.",
+    "description": "That the crawler stops for a host that asks it to. 429, 503 and Retry-After are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.robots": {
+    "defaultMessage": "robots.txt is read about once a day per origin (scheme, host, and port). When it cannot be read (429, 5xx, or a network failure), the crawler fetches nothing from the origin and tries again an hour later.",
+    "description": "How often the crawler reads robots.txt. Shown only while the server reads it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.title": {
+    "defaultMessage": "How to opt out",
+    "description": "Heading of the section that says how a website refuses the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.title": {
+    "defaultMessage": "Refuse the fetches: robots.txt",
+    "description": "Heading (h3) of the part about refusing the crawler in robots.txt. robots.txt is literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.intro": {
+    "defaultMessage": "To refuse every fetch from your site, add this to robots.txt:",
+    "description": "Sentence before the robots.txt example that refuses the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.star": {
+    "defaultMessage": "Without a group of that name, the crawler follows the group for *. Allow, Disallow, *, and $ are read, as RFC 9309 says, so you can also refuse only some paths.",
+    "description": "How the crawler reads robots.txt. Allow, Disallow, *, $ and RFC 9309 are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.timing": {
+    "defaultMessage": "The crawler obeys a new rule within a day. A card it already has goes when a post fetches its URL again, or sooner if you ask the operators.",
+    "description": "When a change of robots.txt takes effect. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.ignored": {
+    "defaultMessage": "This server does not read robots.txt, so this rule has no effect here. It applies on servers that obey it.",
+    "description": "Under the robots.txt part, on a server whose setting link_cards_ignore_robots_txt is on. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.title": {
+    "defaultMessage": "Limit the card: directives of a page",
+    "description": "Heading (h3) of the part about the page directives that change a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.intro": {
+    "defaultMessage": "A page can keep its description or its image out of the card. The crawler still requests the page, since it learns the directives from it. These work whatever the setting of robots.txt on this server:",
+    "description": "Sentence before the table of page directives. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.caption": {
+    "defaultMessage": "What each directive changes in a card",
+    "description": "The name, for assistive technology, of the table of what each directive of a page changes in a card, on the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.directive": {
+    "defaultMessage": "Directive",
+    "description": "Column header: a page directive. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.effect": {
+    "defaultMessage": "Card",
+    "description": "Column header: what the directive does to the card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.nosnippet": {
+    "defaultMessage": "No description.",
+    "description": "What the directives nosnippet and max-snippet:0 do to a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noimageindex": {
+    "defaultMessage": "No image, and the image is not requested.",
+    "description": "What the directives noimageindex and max-image-preview:none do to a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noindex": {
+    "defaultMessage": "No change. These ask to stay out of search results, and a card is not a search result: it appears only because someone posted the link, and many pages that stay out of search are meant to be shared. To refuse, use robots.txt.",
+    "description": "What the directives noindex and none do to a card, with the reason in plain words. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noindex_ignored": {
+    "defaultMessage": "No change. These ask to stay out of search results, and a card is not a search result: it appears only because someone posted the link, and many pages that stay out of search are meant to be shared. To refuse on this server, ask its operators.",
+    "description": "What the directives noindex and none do to a card, on a server that does not read robots.txt. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.rest": {
+    "defaultMessage": "The title, the site name, and the author stay under every directive.",
+    "description": "What no page directive removes from a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.where": {
+    "defaultMessage": "Write them in a meta tag named robots or my-linkcard in the head of the page, or in an X-Robots-Tag header:",
+    "description": "Sentence before the examples of where a directive goes. robots, my-linkcard and X-Robots-Tag are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.title": {
+    "defaultMessage": "Contact this server's operators",
+    "description": "Heading of the section with how to reach the operators of the server that runs the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.intro": {
+    "defaultMessage": "The operators can stop the crawler on a domain and its subdomains, or stop only its images. That takes effect at once, also on the cards the server already has, so ask them if you need a fetch to stop or a card to go.",
+    "description": "That the operators of the server can stop the crawler per domain, and that a site operator can ask them. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.none": {
+    "defaultMessage": "This server publishes no contact.",
+    "description": "In place of the contact details when the server has none. On the page for the operators of websites on this server's link card crawler."
   },
   "about.funding": {
     "defaultMessage": "Costs and funding",

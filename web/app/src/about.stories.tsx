@@ -6,8 +6,8 @@
 // reviews, automatic deletion, crawlers, funding, support, and its facts), to a reader and to a visitor; the fake's own
 // server, as it has always said of itself; a server that says almost nothing; a long summary; a visitor of a server
 // that lists its moderated servers to signed-in people; and loading and failing. The documents: the terms, the privacy
-// policy with a table, the commerce disclosure, one not published, loading and failing. The crawlers' page for each
-// choice of search and AI.
+// policy with a table, the commerce disclosure, one not published, loading and failing. The link card crawler's page
+// for the operators of linked websites, as the server's settings have the crawler on, on without robots.txt, and off.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta, type Fake } from "./app.samples";
@@ -67,9 +67,13 @@ export const Unpublished: Story = at("/about/terms", { about: { says: "bare" } }
 export const DocumentLoading: Story = at("/about/terms", {}, { state: "loading" });
 export const DocumentError: Story = at("/about/terms", {}, { state: "error" });
 
-/** Search engines allowed, and nothing asked of AI. */
-export const CrawlerAllow: Story = at("/about/crawler", { crawlers: { search: "allow", ai: "allow" } });
-/** Search engines allowed, AI training refused. */
-export const CrawlerNoTraining: Story = at("/about/crawler", { crawlers: { search: "allow", ai: "deny_training" } });
-/** Neither, as a server with no setting of its own. */
-export const CrawlerDeny: Story = at("/about/crawler", { crawlers: { search: "deny", ai: "deny" } });
+/** The link card crawler on, obeying robots.txt, with the server's contact. */
+export const Crawler: Story = at(
+  "/about/crawler",
+  { about: { says: "full", linkCards: "obeys" } },
+  { signedOut: true },
+);
+/** The crawler on and not reading robots.txt, on a server that publishes no contact. */
+export const CrawlerIgnoresRobots: Story = at("/about/crawler", { about: { linkCards: "ignores" } });
+/** Link cards off: the crawler fetches nothing now. */
+export const CrawlerOff: Story = at("/about/crawler");
