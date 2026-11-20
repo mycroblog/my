@@ -3,7 +3,7 @@
 // The announcements as the administrator writes them (#3263, FR-726, ADR-0125), on the fake API, as what follows a
 // press: one written with a title and a Markdown text is published after a question, and a reader then sees it among
 // the server's announcements and counted above the home timeline; one is saved as a draft, which offers no Withdraw;
-// a draft is published from its page; one showing is revised, and withdrawn after a question; its window is read in
+// a draft's page shows it as its readers' page will; a draft is published from its page; one showing is revised, and withdrawn after a question; its window is read in
 // the reader's time zone. What each screen shows at rest is the stories' (admin-announcements.stories.tsx).
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
@@ -105,6 +105,18 @@ test("an announcement saved as a draft is not published, and its page offers Pub
   expect(button("Publish")).toBeDefined();
   expect(main().queryAllByRole("button", { name: /^Withdraw/ })).toHaveLength(0);
   expect(on.fake.staffServer.shownAnnouncements().map((a) => a.title)).not.toContain("Notes for the moderators");
+});
+
+test("a draft's page shows it as its readers' page will, as if published now", async () => {
+  const { app } = await atAnnouncement((o) => `/admin/announcements/${o.fake.staffServer.id("announcement", "draft")}`);
+  await settled(app);
+
+  const seen = main().getByRole("region", { name: "What readers see" });
+  expect(words(seen)).toContain("As last saved, if it were published now.");
+  const entry = within(seen).getByRole("article");
+  expect(words(entry)).toContain("Moderation report for the autumn");
+  expect(words(entry)).toContain("42 reports, 3 suspended accounts.");
+  expect(words(entry)).toMatch(/Showing since \w+ \d+, \d{4}/);
 });
 
 test("a draft published from its page after the question shows to the readers", async () => {

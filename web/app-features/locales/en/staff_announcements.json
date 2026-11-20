@@ -199,6 +199,10 @@
     "defaultMessage": "As last saved.",
     "description": "Under the heading of what readers see of an announcement. Read by administrators."
   },
+  "staff_announcements.preview.about_draft": {
+    "defaultMessage": "As last saved, if it were published now.",
+    "description": "Under the heading of what readers see of a draft announcement, which shows it as its page would if it were published now (its date is today's or the start of its window). Read by administrators."
+  },
   "staff_announcements.withdraw": {
     "defaultMessage": "Withdraw the announcement",
     "description": "The heading of the last section of an announcement's page, apart, which withdraws it. Read by administrators."

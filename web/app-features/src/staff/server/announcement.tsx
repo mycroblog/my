@@ -6,11 +6,12 @@
 // and when it shows: from and until a moment of the reader's zone, each optional. A new one is kept as a draft or
 // published; a draft is saved and published; a published one is revised, which notifies nobody again. Publishing asks
 // first: every local user is notified once it starts to show. The page of one says first where it stands, then the
-// form, what readers see as last saved, and, last and apart for a published one, Withdraw, which asks first and cannot
-// be undone (a draft never showed, so it has none, and the API deletes no draft); a withdrawn one is what it was,
-// nothing to change. What is wrong with a field stands under it, which takes the focus.
+// form, what readers see as last saved (their own page of it, a draft's as if published now), and, last and apart for
+// a published one, Withdraw, which asks first and cannot be undone (a draft never showed, so it has none, and the API
+// deletes no draft); a withdrawn one is what it was, nothing to change. What is wrong with a field stands under it,
+// which takes the focus.
 
-import { localInput, localInstant, PostContent } from "@my/app-components";
+import { localInput, localInstant } from "@my/app-components";
 import {
   announcementLimits,
   announcementStanding,
@@ -20,6 +21,7 @@ import {
   useAdminAnnouncementWrites,
   type AdminAnnouncement,
   type AdminAnnouncementInput,
+  type Announcement,
 } from "@my/app-data";
 import {
   Box,
@@ -44,6 +46,7 @@ import {
 } from "@my/design-system";
 import type { EditorHandle, PlainTextEditorProps } from "@my/design-system/editor";
 import { Component, lazy, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { AnnouncementEntry } from "../../announcements/announcements";
 import { useMoment, useStaffStrings, type T } from "../parts";
 import { adminAnnouncementPath, adminAnnouncementsPath, StandingMark, useWindowWords } from "./announcements";
 import { Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
@@ -425,14 +428,34 @@ function Standing({ a, t }: { a: AdminAnnouncement; t: T }) {
   );
 }
 
-/** What readers see of an announcement, as last saved: its title and its text as the server renders it. */
+/**
+ * An announcement as its readers get it, at `now`: from its publication, or the start of its window where that is
+ * later, a draft as if it were published now.
+ */
+function asReadersGet(a: AdminAnnouncement, now: number): Announcement {
+  const published = a.published_at === undefined ? now : Date.parse(a.published_at);
+  const starts = a.starts_at === undefined ? published : Math.max(published, Date.parse(a.starts_at));
+  return {
+    id: a.id,
+    title: a.title,
+    content: a.content,
+    published_at: new Date(starts).toISOString(),
+    ...(a.ends_at === undefined ? {} : { ends_at: a.ends_at }),
+    revised_at: a.revised_at,
+    read: false,
+    ended: a.ends_at !== undefined && Date.parse(a.ends_at) <= now,
+  };
+}
+
+/** What readers see of an announcement, as last saved: its page as theirs shows it, a draft's as if published now. */
 function AsReadersSee({ a, t }: { a: AdminAnnouncement; t: T }) {
+  const [now] = useState(() => Date.now());
   return (
-    <SettingsSection heading={t("staff_announcements.preview")} about={t("staff_announcements.preview.about")}>
-      <Box as="p" weight="strong" dir="auto">
-        {a.title}
-      </Box>
-      <PostContent html={a.content} lang={undefined} />
+    <SettingsSection
+      heading={t("staff_announcements.preview")}
+      about={t(a.state === "draft" ? "staff_announcements.preview.about_draft" : "staff_announcements.preview.about")}
+    >
+      <AnnouncementEntry a={asReadersGet(a, now)} />
     </SettingsSection>
   );
 }
