@@ -532,7 +532,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 `GET /api/v1/admin/counts` 會回傳待處理檢舉的數量（`open_reports`，需要 `manage_reports`）、等待核准的註冊申請數量（`pending_registrations`）與等待審查的申訴數量（`pending_appeals`）（兩者都需要 `manage_accounts`）、等待決定的自訂表情符號申請數量（`pending_custom_emoji_requests`，需要 `manage_custom_emojis`），以及未處理的錯誤群組（新的、再次發生的或已取消靜音的）數量（`open_error_groups`，需要 `manage_errors`）。
 你沒有權限的項目不會回傳。
 
-<!-- source: audit-log 4d53a2539898 -->
+<!-- source: audit-log 8334cc0280f5 -->
 ## 稽核記錄
 
 版主與管理員的操作會在與操作相同的交易中，每次一列記錄在稽核記錄（`audit_log_entries`）中。
@@ -562,7 +562,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `supporter_subscription` | `supporter_subscription_ended`（管理員立即結束訂閱；目標名稱為方案名稱與使用者帳號） |
 | `custom_emoji_request` | `custom_emoji_request_submitted`、`custom_emoji_request_withdrawn`、`custom_emoji_request_approved`、`custom_emoji_request_rejected`（提出、撤回、核准與拒絕自訂表情符號申請；目標名稱為 `:shortcode:`） |
 | `payment_provider` | `payment_reconcile_queued`（手動開始與金流服務對帳；目標名稱為服務名稱） |
-| `oauth_client` | `oauth_client_disabled`、`oauth_client_enabled`（停用與撤銷停用 OAuth 用戶端；停用會撤銷其所有權杖；目標名稱為用戶端名稱與 `client_id`） |
+| `oauth_client` | `oauth_client_disabled`、`oauth_client_enabled`（停用與啟用 OAuth 用戶端；停用會撤銷其所有權杖；目標名稱為用戶端名稱與 `client_id`） |
 | `oauth_client_host` | `oauth_client_host_denied`、`oauth_client_host_allowed`（拒絕與撤銷拒絕 Client ID Metadata Document 的主機；拒絕會撤銷該主機用戶端的權杖；目標名稱為主機） |
 | `instance` | `service_closure_announced`、`service_closure_withdrawn`、`service_closure_closed`、`service_closure_delivery_completed`（公告服務關閉或變更日期、撤回公告、關閉，以及完成關閉通知的傳送；目標名稱為 `service_closure`） |
 | `voice_room` | `voice_room_ended`（版主結束了開放中的語音聊天室；由於撰寫名稱的帳號被清除時名稱也會消失，目標名稱為聊天室 ID；檢舉詳細資料會顯示名稱） |
