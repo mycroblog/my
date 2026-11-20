@@ -1,6 +1,6 @@
 {
   "about.loading": {
-    "defaultMessage": "読み込み中…",
+    "defaultMessage": "サーバーの情報を読み込んでいます…",
     "description": "In place of the server's about page while it loads."
   },
   "about.failed": {
@@ -8,7 +8,7 @@
     "description": "In place of the about page when the server's information could not be loaded, before Try again."
   },
   "about.retry": {
-    "defaultMessage": "再試行",
+    "defaultMessage": "もう一度試す",
     "description": "The button after a sentence of the about page or a document's page that says something could not be loaded."
   },
   "about.sign_in": {
@@ -44,15 +44,15 @@
     "description": "The row of the about page that opens the commerce disclosure of the supporter plans (in Japan, the disclosure under the Act on Specified Commercial Transactions)."
   },
   "about.domains": {
-    "defaultMessage": "制限しているサーバー",
+    "defaultMessage": "処分したサーバー",
     "description": "The heading of the list of the other servers this server limits or suspends, on the about page."
   },
   "about.domains.signed_in": {
-    "defaultMessage": "制限しているサーバーは、ログインすると見られます。",
+    "defaultMessage": "処分したサーバーは、このサーバーにログインした人だけが見られます。",
     "description": "In place of the list of moderated servers for a visitor, when the server shows it to signed-in people alone; Sign in follows it."
   },
   "about.domains.loading": {
-    "defaultMessage": "サーバーを読み込み中…",
+    "defaultMessage": "サーバーを読み込んでいます…",
     "description": "In place of the list of moderated servers while it loads."
   },
   "about.domains.failed": {
@@ -60,11 +60,11 @@
     "description": "In place of the list of moderated servers when it could not be loaded, before Try again."
   },
   "about.domains.none": {
-    "defaultMessage": "制限しているサーバーはありません。",
+    "defaultMessage": "処分したサーバーはありません。",
     "description": "In place of the list of moderated servers when it is empty."
   },
   "about.domains.kind": {
-    "defaultMessage": "{kind, select, suspend {停止} limit {制限} other {制限}}",
+    "defaultMessage": "{kind, select, suspend {凍結} limit {制限} other {そのほかの処分}}",
     "description": "What this server did to another server, after its domain in the list of moderated servers: suspended (no federation at all) or limited (its posts kept off the public timelines)."
   },
   "about.reviews": {
@@ -76,7 +76,7 @@
     "description": "The sentence over the list of what the server sends to an external review, on the about page."
   },
   "about.reviews.hook": {
-    "defaultMessage": "{hook, select, inbound_status {ほかのサーバーからの投稿} inbound_follow {ほかのサーバーからのフォロー} signup_check {登録} media_check {アップロードされたメディア} local_status {このサーバーの投稿} inbound_actor {ほかのサーバーのプロフィール} local_profile {このサーバーのプロフィール} other {そのほかの内容}}",
+    "defaultMessage": "{hook, select, inbound_status {ほかのサーバーからの投稿} inbound_follow {ほかのサーバーからのフォロー} signup_check {新規登録} media_check {アップロードされたメディア} local_status {このサーバーの投稿} inbound_actor {ほかのサーバーのプロフィール} local_profile {このサーバーのプロフィール} other {そのほかの内容}}",
     "description": "An item of the list of what the server sends to an external review, on the about page."
   },
   "about.reviews.new_accounts": {
@@ -92,7 +92,7 @@
     "description": "The heading of the section of the about page that says how long the server keeps posts."
   },
   "about.auto_delete.max": {
-    "defaultMessage": "投稿は、公開から{days, plural, other {# 日}}後に削除されます。",
+    "defaultMessage": "投稿は、投稿してから{days, plural, other {# 日}}後に削除されます。",
     "description": "The most days the server keeps a post, on the about page."
   },
   "about.auto_delete.keep": {
@@ -104,7 +104,7 @@
     "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
   },
   "about.auto_delete.pins": {
-    "defaultMessage": "ピン留めした投稿 ({n, plural, other {# 件}}まで)",
+    "defaultMessage": "{n, plural, other {最近ピン留めした # 件の投稿}}",
     "description": "A kind of post people may keep from the automatic deletion when only the latest pins keep posts, in the list of about.auto_delete.keep."
   },
   "about.auto_delete.bookmarked": {
@@ -116,11 +116,11 @@
     "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
   },
   "about.auto_delete.media": {
-    "defaultMessage": "メディアのある投稿",
+    "defaultMessage": "メディア付きの投稿",
     "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
   },
   "about.auto_delete.polls": {
-    "defaultMessage": "投票のある投稿",
+    "defaultMessage": "投票付きの投稿",
     "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
   },
   "about.auto_delete.articles": {
@@ -148,7 +148,7 @@
     "description": "What the server states to AI crawlers, on the about page, after about.crawlers.search."
   },
   "about.crawlers.page": {
-    "defaultMessage": "この表明について",
+    "defaultMessage": "この表明の意味",
     "description": "The row of the about page that opens the page on what the server states to search engines and AI crawlers."
   },
   "about.crawler.search": {
@@ -180,11 +180,11 @@
     "description": "The legal note at the end of the page on what the server states to search engines and AI crawlers. It names no country's law."
   },
   "about.funding": {
-    "defaultMessage": "費用と資金",
+    "defaultMessage": "費用と運営資金",
     "description": "The heading of the section of the about page with this month's funding meter and the way to the server's costs and income."
   },
   "about.funding.page": {
-    "defaultMessage": "運営の費用と収入",
+    "defaultMessage": "費用と収入",
     "description": "The row of the about page that opens the page of the server's published costs and income."
   },
   "about.support": {
@@ -192,7 +192,7 @@
     "description": "The heading of the section of the about page that leads to the supporter plans, the tips and the commerce disclosure."
   },
   "about.support.page": {
-    "defaultMessage": "{offer, select, both {プランとチップ} plans {サポーターのプラン} other {サーバーにチップを贈る}}",
+    "defaultMessage": "{offer, select, both {サポーターのプランとチップ} plans {サポーターのプラン} other {サーバーにチップを贈る}}",
     "description": "The row of the about page that opens the supporters' page: its plans and tips, its plans, or its tips alone."
   },
   "about.support.list": {
@@ -224,7 +224,7 @@
     "description": "Under the title of a document of the server: the day of its last revision, as the reader's language writes a date."
   },
   "about.document.loading": {
-    "defaultMessage": "文書を読み込み中…",
+    "defaultMessage": "文書を読み込んでいます…",
     "description": "In place of a document of the server while it loads."
   },
   "about.document.failed": {

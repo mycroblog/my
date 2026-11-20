@@ -1,6 +1,6 @@
 {
   "about.loading": {
-    "defaultMessage": "Loading…",
+    "defaultMessage": "Loading the server's information…",
     "description": "In place of the server's about page while it loads."
   },
   "about.failed": {
@@ -48,7 +48,7 @@
     "description": "The heading of the list of the other servers this server limits or suspends, on the about page."
   },
   "about.domains.signed_in": {
-    "defaultMessage": "Signed-in people can see which servers this server moderates.",
+    "defaultMessage": "Only people signed in to this server can see which servers it moderates.",
     "description": "In place of the list of moderated servers for a visitor, when the server shows it to signed-in people alone; Sign in follows it."
   },
   "about.domains.loading": {
@@ -64,7 +64,7 @@
     "description": "In place of the list of moderated servers when it is empty."
   },
   "about.domains.kind": {
-    "defaultMessage": "{kind, select, suspend {Suspended} limit {Limited} other {Moderated}}",
+    "defaultMessage": "{kind, select, suspend {Suspended} limit {Limited} other {Other action}}",
     "description": "What this server did to another server, after its domain in the list of moderated servers: suspended (no federation at all) or limited (its posts kept off the public timelines)."
   },
   "about.reviews": {
@@ -80,11 +80,11 @@
     "description": "An item of the list of what the server sends to an external review, on the about page."
   },
   "about.reviews.new_accounts": {
-    "defaultMessage": "{what}, of accounts up to {days, plural, one {# day} other {# days}} old",
+    "defaultMessage": "{what} from accounts up to {days, plural, one {# day} other {# days}} old",
     "description": "An item of the list of what the server sends to an external review, when only the content of new accounts is sent; {what} is the item's name (Posts on this server)."
   },
   "about.reviews.unfollowed_direct": {
-    "defaultMessage": "{what}, direct messages from people nobody here follows included",
+    "defaultMessage": "{what}, including direct messages from people nobody here follows",
     "description": "An item of the list of what the server sends to an external review: posts from other servers, including their direct messages from people no account of this server follows; {what} is the item's name."
   },
   "about.auto_delete": {
@@ -104,7 +104,7 @@
     "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
   },
   "about.auto_delete.pins": {
-    "defaultMessage": "up to {n, plural, one {# pinned post} other {# pinned posts}}",
+    "defaultMessage": "{n, plural, one {your most recently pinned post} other {your # most recently pinned posts}}",
     "description": "A kind of post people may keep from the automatic deletion when only the latest pins keep posts, in the list of about.auto_delete.keep."
   },
   "about.auto_delete.bookmarked": {
@@ -144,7 +144,7 @@
     "description": "What the server states to search engines, on the about page."
   },
   "about.crawlers.ai": {
-    "defaultMessage": "{value, select, allow {AI crawlers are not asked to stay away.} deny_training {AI crawlers are asked not to train on its pages.} other {AI crawlers are asked not to train on its pages or use them.}}",
+    "defaultMessage": "{value, select, allow {AI crawlers are asked nothing.} deny_training {AI crawlers are asked not to train on its pages.} other {AI crawlers are asked not to train on its pages or use them.}}",
     "description": "What the server states to AI crawlers, on the about page, after about.crawlers.search."
   },
   "about.crawlers.page": {
@@ -192,11 +192,11 @@
     "description": "The heading of the section of the about page that leads to the supporter plans, the tips and the commerce disclosure."
   },
   "about.support.page": {
-    "defaultMessage": "{offer, select, both {Plans and tips} plans {Supporter plans} other {Tip the server}}",
+    "defaultMessage": "{offer, select, both {Supporter plans and tips} plans {Supporter plans} other {Tip the server}}",
     "description": "The row of the about page that opens the supporters' page: its plans and tips, its plans, or its tips alone."
   },
   "about.support.list": {
-    "defaultMessage": "With the list of supporters",
+    "defaultMessage": "With the supporters list",
     "description": "The line under the row that opens the supporters' page, where the page lists the supporters too."
   },
   "about.server": {
