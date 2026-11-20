@@ -4,6 +4,7 @@
 // DOM before a test module loads (`bun test --preload`, which dom-tests.ts runs for the package's `test` script).
 
 import globalJsdom from "global-jsdom";
+import { withoutReactTracks } from "./react-tracks";
 
 globalJsdom(undefined, { url: "http://localhost/", pretendToBeVisual: true });
 
@@ -27,4 +28,4 @@ for (const name of [
 ])
   Reflect.set(globalThis, name, Reflect.get(jsdom, name));
 
-await import("./component-tests");
+await withoutReactTracks(() => import("./component-tests"));

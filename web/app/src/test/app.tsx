@@ -9,7 +9,7 @@
 import { startStream } from "@my/app-data";
 import { I18nProvider } from "@my/design-system";
 import { fakeHost, fakeOrigin, type FakeOptions } from "@my/e2e/fake";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { onTestFinished } from "bun:test";
 // What the features load on first use is loaded before a test renders: no test waits for a chunk.
@@ -256,3 +256,46 @@ export function withoutWaitsOf(ms: number): void {
     globalThis.setTimeout = wait;
   });
 }
+
+/**
+ * Renders the app once before the first test of the process, and opens its composer. The first render of a process
+ * runs React's code, the DOM's, the router's, the shell's and the editor's for the first time, and the engine compiles
+ * them then: about two seconds on an idle machine, which the first test of each process would otherwise spend of its
+ * limit. What it leaves (the document, the storage, the announcer's logs) is emptied as after every test.
+ */
+async function warmUp(): Promise<void> {
+  const { watch, data } = fakeApp();
+  const environment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+  const wrapped = environment.IS_REACT_ACT_ENVIRONMENT;
+  environment.IS_REACT_ACT_ENVIRONMENT = false;
+  try {
+    const router = createAppRouter({
+      data,
+      config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },
+      at: "/",
+      leave: () => undefined,
+    });
+    render(
+      <I18nProvider locale="en">
+        <AppRoot router={router} visitor={data} unasked={false} />
+      </I18nProvider>,
+    );
+    const feed = await within(document.body).findByRole("feed", { name: "Home timeline" });
+    const [newPost] = within(document.body).getAllByRole("button", { name: "New post" });
+    if (newPost === undefined) throw new Error("test: the warm-up found no New post");
+    await userEvent.setup().click(newPost);
+    await within(await screen.findByRole("dialog", { name: "New post" })).findByRole("textbox", { name: "Text" });
+    if (!feed.isConnected) throw new Error("test: the warm-up's home timeline left");
+  } finally {
+    cleanup();
+    watch.stop();
+    if (wrapped === undefined) delete environment.IS_REACT_ACT_ENVIRONMENT;
+    else environment.IS_REACT_ACT_ENVIRONMENT = wrapped;
+    localStorage.clear();
+    sessionStorage.clear();
+    for (const log of document.querySelectorAll("[data-live-announcer] [role='log']")) log.replaceChildren();
+    atThePage();
+  }
+}
+
+await warmUp();
