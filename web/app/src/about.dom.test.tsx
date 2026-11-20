@@ -1,0 +1,216 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// The server's about page and its documents, on the fake API, signed in and signed out: each section shows only where
+// the server sets or shows it; the moderated servers under each of who may read them; a document published, not
+// published, and failing; the crawlers' page; the ways back to the about page, and the ways to it from the shell's
+// footer, the landing page and a document. What each state looks like is the stories' (about.stories.tsx).
+
+import { expect, test } from "bun:test";
+import type { FakeOptions } from "@my/e2e/fake";
+import { screen, within } from "@testing-library/react";
+import { main, renderApp } from "./test/app";
+import { fakeApp } from "./test/server";
+
+/** Every section the page can show. */
+const everything: FakeOptions = {
+  about: { says: "full", domains: "everyone" },
+  thumbnail: true,
+  supporters: { tips: {}, list: "everyone" },
+  finance: { costs: "totals", income: "totals", meter: "amounts" },
+};
+
+/** The names of the sections of the main column, in their order, once the server's head is in. */
+async function sections(): Promise<string[]> {
+  await main().findByRole("region", { name: "Server" });
+  return main()
+    .getAllByRole("region")
+    .map((r) => r.getAttribute("aria-label") ?? "")
+    .filter((name) => name !== "");
+}
+
+/** The section of the moderated servers, or null. */
+const domains = () => main().queryByRole("region", { name: "Moderated servers" });
+
+test("the about page shows every section the server sets, in order, and names the page after the server", async () => {
+  const app = await renderApp("/about", everything);
+  expect(await sections()).toEqual([
+    "Contact",
+    "Rules",
+    "Terms and policies",
+    "Moderated servers",
+    "External review",
+    "Automatic deletion",
+    "Search engines and AI",
+    "Costs and funding",
+    "Support",
+    "Server",
+  ]);
+  expect(main().getByRole("heading", { level: 1 }).textContent).toBe("About mycroblog demo");
+  expect(app.title()).toBe("About mycroblog demo");
+});
+
+test("a server that says almost nothing shows only what it states to crawlers and its facts", async () => {
+  await renderApp("/about", { about: { says: "bare" }, finance: { meter: "none" } });
+  expect(await sections()).toEqual(["Search engines and AI", "Server"]);
+  expect(main().queryByRole("link", { name: "Terms of service" })).toBeNull();
+  expect(main().queryByRole("link", { name: "Privacy policy" })).toBeNull();
+});
+
+test("the about page reads the same for a visitor", async () => {
+  await renderApp("/about", { ...everything, visitor: true });
+  expect(await sections()).toContain("Moderated servers");
+  expect(await sections()).toContain("Support");
+});
+
+for (const visitor of [false, true]) {
+  const reader = visitor ? "a visitor" : "a signed-in reader";
+
+  test(`a server that lists its moderated servers to nobody shows ${reader} no section of them`, async () => {
+    await renderApp("/about", { about: { domains: "off" }, visitor });
+    await sections();
+    expect(domains()).toBeNull();
+  });
+
+  test(`a server that lists its moderated servers to everyone lists them to ${reader}`, async () => {
+    await renderApp("/about", { about: { domains: "everyone" }, visitor });
+    const list = await within(await main().findByRole("region", { name: "Moderated servers" })).findByRole("list", {
+      name: "Moderated servers",
+    });
+    const items = within(list).getAllByRole("listitem");
+    expect(items[0]?.textContent).toContain("spam.example");
+    expect(items[0]?.textContent).toContain("Suspended");
+    expect(items[0]?.textContent).toContain("Spam from new accounts every day.");
+  });
+}
+
+test("a server that lists its moderated servers to signed-in people lists them to a signed-in reader", async () => {
+  await renderApp("/about", { about: { domains: "signed_in" } });
+  const section = await main().findByRole("region", { name: "Moderated servers" });
+  expect(await within(section).findByRole("list", { name: "Moderated servers" })).toBeDefined();
+});
+
+test("a visitor of a server that lists its moderated servers to signed-in people is asked to sign in, back here", async () => {
+  const app = await renderApp("/about", { about: { domains: "signed_in" }, visitor: true });
+  const section = await main().findByRole("region", { name: "Moderated servers" });
+  expect(section.textContent).toContain("Only people signed in to this server can see which servers it moderates.");
+  expect(within(section).queryByRole("list")).toBeNull();
+  await app.user.click(within(section).getByRole("link", { name: "Sign in" }));
+  await app.arrived("/login?return_to=%2Fabout");
+});
+
+test("the about page says that it loads until the instance answers", async () => {
+  await renderApp("/about", { about: { instance: "waits" } });
+  expect(await main().findByText("Loading the server's information…")).toBeDefined();
+});
+
+test("the about page says the instance could not be read, and Try again reads it", async () => {
+  const on = fakeApp();
+  on.fake.script("GET /instance", { fail: 500, times: 1 });
+  const app = await renderApp("/about", { on });
+  expect(await main().findByText("The server's information could not be loaded.")).toBeDefined();
+  await app.user.click(main().getByRole("button", { name: "Try again" }));
+  expect(await main().findByRole("region", { name: "Server" })).toBeDefined();
+});
+
+test("the crawlers' page says the instance could not be read", async () => {
+  await renderApp("/about/crawler", { about: { instance: "fails" } });
+  expect(await main().findByText("The server's information could not be loaded.")).toBeDefined();
+});
+
+test("the about page opens a document, which leads back to it", async () => {
+  const app = await renderApp("/about", { visitor: true });
+  await sections();
+  await app.user.click(main().getByRole("link", { name: "Terms of service" }));
+  await app.arrived("/about/terms");
+  expect(await main().findByRole("heading", { level: 2, name: "Terms of service" })).toBeDefined();
+  expect(app.title()).toBe("Terms of service");
+  await app.user.click(main().getByRole("button", { name: "About this server" }));
+  await app.arrived("/about");
+  expect(await main().findByRole("region", { name: "Server" })).toBeDefined();
+});
+
+for (const [path, title, says] of [
+  ["/about/terms", "Terms of service", undefined],
+  ["/about/privacy", "Privacy policy", undefined],
+  ["/about/commerce", "Commerce disclosure", "full"],
+] as const) {
+  for (const visitor of [false, true]) {
+    test(`${path} shows the published document, when it was revised, ${visitor ? "to a visitor" : "signed in"}`, async () => {
+      const app = await renderApp(path, { visitor, ...(says === undefined ? {} : { about: { says } }) });
+      const heading = await main().findByRole("heading", { level: 2, name: title });
+      expect(heading.parentElement?.textContent).toContain("Last revised");
+      expect(main().getByRole("heading", { level: 1 }).textContent).toBe(title);
+      expect(app.title()).toBe(title);
+    });
+  }
+}
+
+test("the privacy policy keeps the server's table", async () => {
+  await renderApp("/about/privacy");
+  const table = await main().findByRole("table");
+  expect(within(table).getByRole("cell", { name: "Sign-in addresses" })).toBeDefined();
+});
+
+test("a document the server has not published says so, with the one way to the about page", async () => {
+  const app = await renderApp("/about/terms", { about: { says: "bare" }, visitor: true });
+  expect(await main().findByText("This server has not published terms of service.")).toBeDefined();
+  expect(main().queryByRole("button", { name: "About this server" })).toBeNull();
+  await app.user.click(main().getByRole("link", { name: "About this server" }));
+  await app.arrived("/about");
+});
+
+test("a commerce disclosure the server has not published says so", async () => {
+  await renderApp("/about/commerce");
+  expect(await main().findByText("This server has not published a commerce disclosure.")).toBeDefined();
+});
+
+test("a document that could not be read says so, and Try again reads it", async () => {
+  const on = fakeApp();
+  on.fake.script("GET /instance/documents/{kind}", { fail: 500, times: 1 });
+  const app = await renderApp("/about/privacy", { on });
+  expect(await main().findByText("The document could not be loaded.")).toBeDefined();
+  await app.user.click(main().getByRole("button", { name: "Try again" }));
+  expect(await main().findByRole("heading", { level: 2, name: "Privacy policy" })).toBeDefined();
+});
+
+test("the crawlers' page says what the server states to search engines and AI, and leads back", async () => {
+  const app = await renderApp("/about/crawler", { crawlers: { search: "allow", ai: "deny_training" }, visitor: true });
+  expect(await main().findByRole("heading", { level: 2, name: "Search engines" })).toBeDefined();
+  expect(main().getByText(/^This server lets search engines index/)).toBeDefined();
+  expect(main().getByText(/^This server asks AI crawlers not to train models on its pages\./)).toBeDefined();
+  expect(main().getByText(/^What such a statement means in law depends on the country/)).toBeDefined();
+  expect(app.title()).toBe("Search engines and AI");
+  await app.user.click(main().getByRole("button", { name: "About this server" }));
+  await app.arrived("/about");
+});
+
+test("the crawlers' page of a server that refuses both says so", async () => {
+  await renderApp("/about/crawler", { crawlers: { search: "deny", ai: "deny" } });
+  expect(await main().findByText(/^This server asks search engines not to index any of its pages/)).toBeDefined();
+  expect(main().getByText(/^This server asks AI crawlers neither to train models/)).toBeDefined();
+});
+
+test("the about page leads to the crawlers' page", async () => {
+  const app = await renderApp("/about");
+  await sections();
+  await app.user.click(main().getByRole("link", { name: "What this means" }));
+  await app.arrived("/about/crawler");
+});
+
+test("a visitor reaches the about page and the documents from the shell's footer", async () => {
+  const app = await renderApp("/local", { visitor: true });
+  const footer = () => within(screen.getAllByRole("navigation", { name: "This server" })[0] as HTMLElement);
+  expect(footer().getByRole("link", { name: "Terms" }).getAttribute("href")).toBe("/about/terms");
+  expect(footer().getByRole("link", { name: "Privacy" }).getAttribute("href")).toBe("/about/privacy");
+  await app.user.click(footer().getByRole("link", { name: "About" }));
+  await app.arrived("/about");
+  expect(await main().findByRole("region", { name: "Server" })).toBeDefined();
+  await app.user.click(footer().getByRole("link", { name: "Privacy" }));
+  await app.arrived("/about/privacy");
+});
+
+test("the landing page leads a visitor to the about page, which the server serves as a page of its own", async () => {
+  await renderApp("/", { visitor: true });
+  const link = await screen.findByRole("link", { name: "More about this server" });
+  expect(link.getAttribute("href")).toBe("/about");
+});
