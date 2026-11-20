@@ -261,7 +261,9 @@ export function withoutWaitsOf(ms: number): void {
  * Renders the app once before the first test of the process, and opens its composer. The first render of a process
  * runs React's code, the DOM's, the router's, the shell's and the editor's for the first time, and the engine compiles
  * them then: about two seconds on an idle machine, which the first test of each process would otherwise spend of its
- * limit. What it leaves (the document, the storage, the announcer's logs) is emptied as after every test.
+ * limit. It has no limit of its own beyond a minute, and a warm-up that does not finish only leaves the first test
+ * colder: it fails no test. What it leaves (the document, the storage, the announcer's logs) is emptied as after every
+ * test.
  */
 async function warmUp(): Promise<void> {
   const { watch, data } = fakeApp();
@@ -280,12 +282,19 @@ async function warmUp(): Promise<void> {
         <AppRoot router={router} visitor={data} unasked={false} />
       </I18nProvider>,
     );
-    const feed = await within(document.body).findByRole("feed", { name: "Home timeline" });
-    const [newPost] = within(document.body).getAllByRole("button", { name: "New post" });
-    if (newPost === undefined) throw new Error("test: the warm-up found no New post");
-    await userEvent.setup().click(newPost);
-    await within(await screen.findByRole("dialog", { name: "New post" })).findByRole("textbox", { name: "Text" });
-    if (!feed.isConnected) throw new Error("test: the warm-up's home timeline left");
+    const long = { timeout: 60_000 };
+    await screen.findByRole("feed", { name: "Home timeline" }, long);
+    const [newPost] = screen.getAllByRole("button", { name: "New post" });
+    if (newPost !== undefined) {
+      await userEvent.setup().click(newPost);
+      await within(await screen.findByRole("dialog", { name: "New post" }, long)).findByRole(
+        "textbox",
+        { name: "Text" },
+        long,
+      );
+    }
+  } catch {
+    // The first test pays what is left.
   } finally {
     cleanup();
     watch.stop();
