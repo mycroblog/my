@@ -8,10 +8,11 @@
 // when it could not. That the list shows the invite revoked once the reader is back is the app's (web/app,
 // settings-invites.dom.test.tsx).
 
-import { describe, expect, onTestFinished, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { settingsFindings } from "@my/design-system/test/settings";
 import { fakeOrigin } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
+import { clipboard, refusingClipboard } from "../../test/apps";
 import { headings, heldInvite, inviteDrawn, inviteRead, loading, notLoaded, sendThis } from "../../test/invites";
 import {
   buttonsOf,
@@ -37,15 +38,6 @@ const asking = (code: string) => screen.findByRole("alertdialog", { name: `Revok
 /** The items of the list named `name`: the link to send. */
 const kept = (name: string) =>
   screen.queryAllByRole("list", { name }).flatMap((list) => within(list).getAllByRole("listitem").map(words));
-
-/**
- * The clipboard the reader's hands brought to the simulation, reached as a stub reaches it: only @my/platform reads
- * the platform's globals in the app.
- */
-function clipboard(): Clipboard {
-  const browser = Reflect.get(globalThis, "navigator") as object;
-  return Reflect.get(browser, "clipboard") as Clipboard;
-}
 
 /** What the section of the link says of a copy: an empty status is the place kept for it. */
 const saidOfCopy = () => words(within(section("Invite link")).getByRole("status"));
@@ -145,12 +137,7 @@ describe("the link of an invite that works", () => {
 
   test("when the browser does not copy, the section says to select the link and copy it", async () => {
     const { user } = await inviteRead(0);
-    const copies = clipboard();
-    const write = copies.writeText.bind(copies);
-    copies.writeText = () => Promise.reject(new DOMException("test: the browser refused", "NotAllowedError"));
-    onTestFinished(() => {
-      copies.writeText = write;
-    });
+    refusingClipboard();
 
     await user.click(within(section("Invite link")).getByRole("button", { name: "Copy link" }));
 

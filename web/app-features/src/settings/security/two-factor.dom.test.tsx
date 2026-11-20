@@ -7,11 +7,11 @@
 // code. That the entry shows it on and off afterwards is the app's test (web/app, settings-security.dom.test.tsx),
 // and a code of a real authenticator on a real server the E2E test's (web/e2e, specs/security.spec.ts).
 
-import { describe, expect, onTestFinished, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { fakeTotpCode } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
-import { before } from "../../test/apps";
+import { before, clipboard, refusingClipboard } from "../../test/apps";
 import {
   atRest,
   buttonsOf,
@@ -65,15 +65,6 @@ const alerts = () => screen.queryAllByRole("alert").map(words);
 const kept = (name: string) =>
   screen.queryAllByRole("list", { name }).flatMap((list) => within(list).getAllByRole("listitem").map(words));
 
-/**
- * The clipboard the reader's hands brought to the simulation, reached as a stub reaches it: only @my/platform reads
- * the platform's globals in the app.
- */
-function clipboard(): Clipboard {
-  const browser = Reflect.get(globalThis, "navigator") as object;
-  return Reflect.get(browser, "clipboard") as Clipboard;
-}
-
 /** Enters `value` as the authenticator's code and presses Turn on. */
 async function turnOn(user: UserEvent, value: string) {
   await user.clear(code());
@@ -116,16 +107,7 @@ describe("an account without it", () => {
 
   test("a clipboard that refuses says to select the text and copy it", async () => {
     const { user } = await read();
-    // The clipboard refuses what is written to it, until the test ends.
-    const held = clipboard();
-    const writeText = held.writeText.bind(held);
-    Object.defineProperty(held, "writeText", {
-      configurable: true,
-      value: () => Promise.reject(new DOMException("test: the clipboard refused", "NotAllowedError")),
-    });
-    onTestFinished(() => {
-      Object.defineProperty(held, "writeText", { configurable: true, value: writeText });
-    });
+    refusingClipboard();
 
     await user.click(screen.getByRole("button", { name: "Copy" }));
 
