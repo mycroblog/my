@@ -3213,6 +3213,8 @@ const (
 	InstanceSettingKeyIncomeVisibility                   InstanceSettingKey = "income_visibility"
 	InstanceSettingKeyIndexableDefault                   InstanceSettingKey = "indexable_default"
 	InstanceSettingKeyInviteCreators                     InstanceSettingKey = "invite_creators"
+	InstanceSettingKeyLandingFeatures                    InstanceSettingKey = "landing_features"
+	InstanceSettingKeyLandingFediverseExplanation        InstanceSettingKey = "landing_fediverse_explanation"
 	InstanceSettingKeyLinkCards                          InstanceSettingKey = "link_cards"
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt           InstanceSettingKey = "link_cards_ignore_robots_txt"
 	InstanceSettingKeyLocalTimelineVisibility            InstanceSettingKey = "local_timeline_visibility"
@@ -3409,6 +3411,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyIndexableDefault:
 		return true
 	case InstanceSettingKeyInviteCreators:
+		return true
+	case InstanceSettingKeyLandingFeatures:
+		return true
+	case InstanceSettingKeyLandingFediverseExplanation:
 		return true
 	case InstanceSettingKeyLinkCards:
 		return true
@@ -12714,6 +12720,15 @@ type Instance struct {
 	// level publishes individual payments, the subscribers, the amounts of each plan, or the
 	// gross and the fees.
 	IncomeVisibility IncomeVisibility `json:"income_visibility"`
+
+	// LandingFeatures Whether the landing page shows what the software does on this instance, a sample of each
+	// feature that is on (the instance setting `landing_features`).
+	LandingFeatures bool `json:"landing_features"`
+
+	// LandingFediverseExplanation Whether the landing page (`/`, signed out) explains how the fediverse works: that an account
+	// here follows and is followed by people on other servers (the instance setting
+	// `landing_fediverse_explanation`).
+	LandingFediverseExplanation bool `json:"landing_fediverse_explanation"`
 
 	// Limits Limits that clients check before sending a request.
 	Limits InstanceLimits `json:"limits"`
