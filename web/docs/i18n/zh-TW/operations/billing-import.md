@@ -1,31 +1,33 @@
-<!-- source: importing-cloud-usage-costs 401e74fb1de0 -->
+<!-- source: importing-cloud-usage-costs 3d538f79c09b -->
 # 匯入雲端用量費用
 
 伺服器每 24 小時會匯入設定 [`billing_sources`](../reference/configuration.md#billing_sources) 所列出的供應商的用量費用，或是為沒有 adapter 的供應商而匯入[外掛](#a-plugin-billing_sources--plugin)的費用，並將它們加到實例的成本中。預設為空，表示什麼都不匯入。
 它會匯入目前與上一個計費月份的費用（到該月 15 日為止，或直到上個月定案為止），每個服務與費用類型（用量、抵免、退款、稅金、支援、手續費、其他）各一行。
 在供應商結算該月之前，這些值會記錄為估計值；結算之後則記錄為定案；而當定案後的值再改變時，則記錄為更正。過去的紀錄絕不會被改寫。
-匯入的狀態（上次成功、上次失敗的種類，以及本月的請求數）會顯示在管理的費用頁面，也可以透過 `GET /api/v1/admin/billing_imports` 取得。
-指標會依來源、結果與失敗種類計算每一次嘗試（`my.billing.imports`），並回報最新一次嘗試失敗的來源（`my.billing.import.failing`）；針對它們的警示請見[警示與運作手冊](alerts.md#mybillingimportfailing)。
+匯入的狀態（上次成功、上次失敗的種類，以及本月的請求數）會顯示在管理介面「Costs and income」的「Billing imports」頁面（`/admin/finance/imports`），該頁面也會以估計、定案或更正列出每個計費月份，並提供「Import now」；也可以透過 `GET /api/v1/admin/billing_imports` 取得。
+指標會依來源、結果與失敗種類計算每一次嘗試（`my.billing.imports`），並回報最新一次嘗試失敗的來源（`my.billing.import.failing`）；
+針對它們的警示請見[警示與運作手冊](alerts.md#mybillingimportfailing)。
 
 對於 AWS 和 Google Cloud，這個伺服器的設定中不保管任何憑證。請讓執行環境提供各供應商 SDK 預設憑證鏈所讀取的內容（AWS 是執行角色、環境變數或共用憑證檔案；Google Cloud 是 Application Default Credentials）。
 Cloudflare 沒有這樣的憑證鏈，所以它的匯入會從 [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare) 讀取 API 權杖。
 
-<!-- source: with-the-opentofu-modules 56be0b668f32 -->
+<!-- source: with-the-opentofu-modules a8e849af2fcd -->
 ## 使用 OpenTofu 模組
 
-[`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) 和 [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) 模組會設定 `billing_sources`，並完成本指南中供應商 API 允許的部分。`billing-gcp` 只能搭配 Google Cloud 的 app 模組使用，所以在 AWS 上，這些模組只匯入 AWS 的費用。`billing-aws` 可以搭配 AWS 的 app 模組，也可以搭配 Cloud Run 的，兩者可以同時放在 `backends` 中。兩者都還沒有在真實的帳號上套用過。
+在 Google Cloud 上，[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) 的 `billing` 區段會設定 `billing_sources = gcp`，並以 `billing_account_id`、`method`（`bigquery` 或 `budget`）和 `dataset_location` 完成本指南中供應商 API 允許的部分。它只匯入 Google Cloud 的費用。在 AWS 上，AWS 範例的模組 [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) 對 AWS 的費用做同樣的事。兩者都還沒有在真實的帳號上套用過。
 
 | 本指南中的步驟 | 使用模組時 |
 | --- | --- |
-| IAM 政策，以及「從 Cloud Run 以 web identity 呼叫」的角色 | `billing-aws` |
+| AWS 的 IAM 政策 | `billing-aws` |
 | 啟用 Cost Explorer、Linked Account Access、成本分配標籤 | 在 AWS 主控台手動進行 |
-| 匯出的資料集，以及「IAM 角色」的角色 | `billing-gcp` |
+| 匯出的資料集，以及「IAM 角色」的角色 | `billing` 區段 |
 | 啟用匯出（「Standard usage cost」） | 在 Google Cloud 主控台手動進行，需要帳單帳戶上的角色 |
-| 預算的主題與 pull 訂閱，以及訂閱者角色 | 使用 `method = "budget"` 的 `billing-gcp` |
+| 預算的主題與 pull 訂閱，以及訂閱者角色 | 使用 `method = "budget"` 的 `billing` 區段 |
 | 建立預算並將它連接到主題 | 在 Google Cloud 主控台手動進行，需要帳單帳戶上的角色 |
 | 啟用 BigQuery 或 Pub/Sub API | 手動進行，如[在 Cloud Run 上部署](deploy-cloud-run.md#1-enable-the-apis)所述 |
-| Cloudflare | 不由這些模組處理。請如同外掛一樣，設定 `MY_BILLING_SOURCES`、`MY_BILLING_CLOUDFLARE_ACCOUNT_ID` 和 `MY_BILLING_CLOUDFLARE_API_TOKEN`（來自 secret） |
-| 外掛 | 不由這些模組處理。`backends` 中沒有帳單模組時，請在 app 模組的 `env` 中設定 `MY_BILLING_SOURCES = plugin` 與[外掛](#a-plugin-billing_sources--plugin)的設定；與帳單模組並存時，app 模組會拒絕 `env` 中的 `MY_BILLING_SOURCES`，所以請加入你自己的後端，並讓它回傳 `billing_sources = ["plugin"]`（[後端的欄位](../../deploy/opentofu/README.md)） |
+| Cloud Run 上的 AWS 費用 | 不由 `mycroblog-gcp` 處理。請手動建立[從 Cloud Run 以 web identity 呼叫](#calling-from-cloud-run-with-web-identity)的角色，並在 `settings` 中設定 `billing_sources = aws` 和 `billing_aws_role_arn`，不使用 `billing` 區段 |
+| Cloudflare | 不由這些模組處理。在 Cloud Run 上，不使用 `billing` 區段，請如同外掛一樣，在 `settings` 中設定 `billing_sources`、`billing_cloudflare_account_id`，並在 `secrets` 中設定 `billing_cloudflare_api_token` |
+| 外掛 | 不由這些模組處理。在 Cloud Run 上，不使用 `billing` 區段，請在 `settings` 中設定 `billing_sources = plugin` 與[外掛](#a-plugin-billing_sources--plugin)的設定。與 `billing` 區段並存時，模組會拒絕 `settings` 中的 `billing_sources` |
 
 <!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS（`billing_sources = aws`）
@@ -288,11 +290,11 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 它會依產品（`R2`、`Workers`、`D1`）加總到 UTC 的日曆月份，所以每個產品每個月是一行用量。在免費額度內的用量也會匯入，金額為 0。
 只有以隨用隨付計費的帳號才有這項資料；Enterprise 合約帳號會以 `not_enabled` 失敗。
 
-<!-- source: what-it-does-not-import 2028c00feb4d -->
+<!-- source: what-it-does-not-import 6281b674b2b7 -->
 ### 它不會匯入的內容
 
 Cloudflare 的計費用量只包含用量費用。固定費用的方案與附加元件（Pro、Business、Workers Paid 等）、稅金與抵免都不在其中，所以費用只會顯示帳單的用量部分。
-請在費用頁面將固定費用加為你自己的費用，或從[外掛](#a-plugin-billing_sources--plugin)匯入。
+請在「Costs and income」的「Costs」頁面（`/admin/finance/costs`）將固定費用加為你自己的費用，或從[外掛](#a-plugin-billing_sources--plugin)匯入。
 
 <!-- source: billing-cycles-and-final-months 155b8bff8c5f -->
 ### 計費週期與定案的月份
@@ -330,10 +332,10 @@ Cloudflare 不對它的 API 計費，所以伺服器不對請求設上限。一�
 
 除了 `throttled` 和 `unavailable` 之外，重試無法修正其他失敗，所以伺服器會記錄它並停止，隔天的排程匯入會再試一次。
 
-<!-- source: a-plugin-billing_sources--plugin 7589c3333153 -->
+<!-- source: a-plugin-billing_sources--plugin 563b0ca17827 -->
 ## 外掛（`billing_sources = plugin`）
 
-對於伺服器沒有轉接器的供應商，例如 Azure、Hetzner 或 Sakura，請執行類型為 `billing` 的[外掛](plugins.md)，讓它讀取供應商的資料。伺服器只有一個 `plugin` 來源。涵蓋多個供應商的外掛要自行彙總，並以其服務的名稱加以區分。
+對於伺服器沒有 adapter 的供應商，例如 Azure、Hetzner 或 Sakura，請執行類型為 `billing` 的[外掛](plugins.md)，讓它讀取供應商的資料。伺服器只有一個 `plugin` 來源。涵蓋多個供應商的外掛要自行彙總，並以其服務的名稱加以區分。
 
 ```toml
 billing_sources = "plugin"
@@ -345,11 +347,11 @@ plugin_billing_provider = "Hetzner"
 使用這個來源時，這三個設定都是必要的；伺服器啟動時不會呼叫外掛，即使外掛停止運作也能啟動。
 
 - `plugin_billing_location` 是劃分外掛帳單月份的時區。
-- `plugin_billing_provider` 是供應商在總計、支出頁面與稽核記錄中顯示的名稱。
+- `plugin_billing_provider` 是供應商在總計、帳單匯入頁面與稽核記錄中顯示的名稱。
 
 伺服器會向外掛要求當前月份，並與其他來源一樣，要求上一個月份直到 15 日或確定為止。其他來源的上限不適用：`max_requests` 為 `2147483647`，代表沒有上限，由外掛決定可以花費多少。外掛會回報它被計費的請求次數與位元組數，伺服器會記錄並顯示這些數值。
 
-由於這個類型只傳遞費用，因此允許使用一般的 TCP，啟動時會發出警告。持有者權杖則需要 `https://` 或 Unix socket：請參閱[外掛的連線目的地](plugins.md#the-destination)。
+這個類型只傳遞費用，因此允許使用一般的 TCP，啟動時會發出警告。持有者權杖則需要 `https://` 或 Unix socket：請參閱[外掛的連線目的地](plugins.md#the-destination)。
 
 <!-- source: the-call 6a2bcce82ab2 -->
 ### 呼叫

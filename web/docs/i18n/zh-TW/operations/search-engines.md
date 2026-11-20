@@ -185,20 +185,23 @@ Kuromoji 會把日文切分成其字典中的詞，並將每個詞還原為基�
 
 `search = opensearch` 會把索引保存在你執行的 OpenSearch 叢集，或 Amazon OpenSearch Service 的網域中。伺服器會與叢集的 REST API 溝通。索引的欄位和它送出的查詢由伺服器負責，其餘的部分可以由你負責：分析器、分片、副本和其他任何索引設定。沒有你自己的設定時，它會使用 OpenSearch 內建的分析器，不需要任何外掛。
 
-<!-- source: setting-it-up-1 11097d66bccc -->
+<!-- source: setting-it-up-1 43f90813166b -->
 ### 設定方式
 
-1. 執行 OpenSearch 2 或 3。一開始使用一個節點就夠了；伺服器只會連到你提供的位址。
-2. 將 [`search`](../reference/configuration.md#search) 設為 `opensearch`，並將 [`search_opensearch_url`](../reference/configuration.md#search_opensearch_url) 設為 REST API 的 URL，例如 `https://search.internal.example.org:9200`。路徑會保留，以便用於位於反向代理後方的叢集。
-3. 提供伺服器存取的方式：
-   - 使用安全外掛時，以 [`search_opensearch_username`](../reference/configuration.md#search_opensearch_username) 和 [`search_opensearch_password`](../reference/configuration.md#search_opensearch_password) 指定使用者，以 HTTP Basic 驗證傳送。叢集不在同一台主機或你信任的私有網路上時，請使用 `https`。該使用者需要能建立名稱以 [`search_opensearch_index`](../reference/configuration.md#search_opensearch_index) 開頭的索引、讀取其 mapping 並刪除它們，能管理該別名，並能讀取、寫入和刪除其中的文件。
-   - 在使用 IAM 存取政策的 Amazon OpenSearch Service 上，將 [`search_opensearch_aws_signing`](../reference/configuration.md#search_opensearch_aws_signing) 設為 `es`，以 AWS Signature Version 4 簽署每個請求。憑證來自 AWS SDK 的預設憑證鏈（執行角色、環境變數、共用檔案），區域則來自 [`search_opensearch_aws_region`](../reference/configuration.md#search_opensearch_aws_region) 或 `AWS_REGION`。該角色需要對網域擁有 `es:ESHttpGet`、`es:ESHttpPost`、`es:ESHttpPut` 和 `es:ESHttpDelete`。使用精細存取控制和內部主要使用者的網域，則改用使用者和密碼。
-   - 不支援 Amazon OpenSearch Serverless：它沒有 delete by query，而移除某位作者或某個可見範圍的貼文需要這項功能。
-4. 可以選擇以設定檔[調整分析](#tuning-the-analysis-of-opensearch)。
-5. 啟動伺服器。它會在啟動時建立索引，無法連到叢集或無法建立索引時會拒絕啟動。
-6. 執行 `my search rebuild`，為既有的貼文建立索引（[重建索引](search.md#rebuilding-the-index)）。
+1. 執行 OpenSearch 2 或 3。一個節點就足以開始；伺服器只會連到你提供給它的位址。
+2. 把 [`search`](../reference/configuration.md#search) 設為 `opensearch`，並把 [`search_opensearch_url`](../reference/configuration.md#search_opensearch_url) 設為 REST API 的 URL，例如 `https://search.internal.example.org:9200`。路徑會被保留，以便使用位於反向代理後方的叢集。
+3. 讓伺服器有辦法連入：
+   - 使用 security 外掛程式時，以 [`search_opensearch_username`](../reference/configuration.md#search_opensearch_username) 和 [`search_opensearch_password`](../reference/configuration.md#search_opensearch_password) 設定使用者，並以 HTTP Basic 驗證傳送。當叢集不在同一台主機，或不在你信任的私有網路上時，請使用 `https`。這個使用者需要能建立、讀取對應（mapping）和刪除名稱以 [`search_opensearch_index`](../reference/configuration.md#search_opensearch_index) 開頭的索引，管理該別名，並讀取、寫入和刪除其中的文件。
+   - 在使用 IAM 存取政策的 Amazon OpenSearch Service 上，把 [`search_opensearch_aws_signing`](../reference/configuration.md#search_opensearch_aws_signing) 設為 `es`，它會以 AWS Signature Version 4 簽署每個請求。憑證來自 AWS SDK 的預設鏈（執行角色、環境變數、共用檔案），區域則來自 [`search_opensearch_aws_region`](../reference/configuration.md#search_opensearch_aws_region) 或 `AWS_REGION`。角色需要在網域上擁有 `es:ESHttpGet`、`es:ESHttpPost`、`es:ESHttpPut` 和 `es:ESHttpDelete`。使用細部存取控制和內部主使用者的網域，則改用該使用者和密碼。
+   - 不支援 Amazon OpenSearch Serverless：它沒有依查詢刪除（delete by query），而移除某位作者或某種可見度的貼文需要這項功能。
 
-URL、使用者、AWS 憑證和設定檔的內容，永遠不會出現在伺服器的日誌或錯誤中。引擎的錯誤只會以操作、HTTP 狀態和引擎錯誤的類型出現在日誌中，因為引擎自己的訊息可能會引用貼文或查詢。唯一的例外是索引建立被拒絕時，其訊息會指出有問題的設定。
+   在 AWS 上使用 OpenTofu 模組 [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) 時，`search` 區段會為你在部署所在區域建立的網域完成第 2 和第 3 步：`search = { domain_name = "my-search" }` 會讀取該網域的端點和區域，允許 task 的角色對它執行這四個 `es:ESHttp*` 動作，並設定 `search`、`search_opensearch_url` 和簽署，若要使用另一個別名則用 `index`。對於位於 VPC 中的網域，`security_group_ids` 指定 task 要加入的群組，由網域的安全群組放行。網域本身、它的存取政策，以及在使用細部存取控制時，task 的角色與 OpenSearch 角色的對應，仍由你負責。
+4. 也可以用設定檔[調整分析](#tuning-the-analysis-of-opensearch)。
+5. 啟動伺服器。它會在啟動時建立索引，並在無法連到叢集或無法建立索引時拒絕啟動。
+
+6. 執行 `my search rebuild`，為已經存在的貼文建立索引（[重建索引](search.md#rebuilding-the-index)）。
+
+URL、使用者、AWS 憑證和設定檔的內容都不會出現在伺服器的日誌或錯誤中。引擎的錯誤只會以操作、HTTP 狀態和引擎的錯誤類型寫入日誌，因為引擎自己的訊息可能引用貼文或查詢。唯一的例外是索引建立被拒絕時，它的訊息會指出有問題的設定。
 
 <!-- source: the-index-and-its-upgrades-1 5529569168b1 -->
 ### 索引及其升級

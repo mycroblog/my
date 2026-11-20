@@ -18,12 +18,17 @@
 
 以下各節說明每個步驟。
 
-<!-- source: the-sign-up-page 111fbe5ecf64 -->
+<!-- source: the-sign-up-page 9a7c6e5bdf58 -->
 ## 註冊頁面
 
-使用者在 `https://<host>/auth/sign_up` 以使用者名稱、電子郵件地址和密碼註冊，除非[註冊僅限於登入服務提供者](#registration-limited-to-login-providers)。註冊後，該瀏覽器會立即登入。這個頁面不需要 JavaScript 也能運作，並與登入頁面一樣，以 CSRF 權杖及拒絕跨來源請求加以保護。當你選擇以 CAPTCHA 防範機器人時，註冊和登入頁面會顯示它的小工具，且需要 JavaScript（[CAPTCHA](captcha.md)）。
+使用者在 `https://<host>/auth/sign_up` 以使用者名稱、電子郵件地址和密碼註冊，除非[註冊僅限於登入服務提供者](#registration-limited-to-login-providers)。
+註冊後，該瀏覽器會立即登入。
+與登入頁面一樣，它以 CSRF 權杖及拒絕跨來源請求加以保護。
+當你選擇以 CAPTCHA 防範機器人時，註冊和登入頁面會顯示它的小工具，且需要 JavaScript（[CAPTCHA](captcha.md)）。
 
-註冊模式是實例設定 `registration_mode`。可以用 CLI 選擇，或在網頁用戶端「伺服器設定」的「註冊」頁面（`/admin/settings/registration`）選擇（[實例設定](instance-settings.md)）。變更會從下一次註冊開始生效。在伺服器公告結束服務期間及結束服務之後，不論設定為何，註冊都會被視為 `closed`（[管理 CLI](admin-cli.md#announcing-the-end-of-the-service)）。在[一人伺服器](instance-settings.md#one-person-server)上也是如此，該伺服器也不提供邀請、註冊審核和註冊封鎖，且沒有任何方式（包括 `my admin create`）可以建立帳號。
+註冊模式是實例設定 `registration_mode`。可以用 CLI 選擇，或在網頁用戶端「伺服器設定」的「註冊」頁面（`/admin/settings/registration`）選擇（[實例設定](instance-settings.md)）。變更會從下一次註冊開始生效。
+在伺服器公告結束服務期間及結束服務之後，不論設定為何，註冊都會被視為 `closed`（[管理 CLI](admin-cli.md#announcing-the-end-of-the-service)）。
+在[一人伺服器](instance-settings.md#one-person-server)上也是如此，該伺服器同樣不提供邀請、註冊審核和註冊封鎖，且沒有任何方式（包括 `my admin create`）可以建立帳號。
 
 ```sh
 my instance set registration_mode invite
@@ -38,14 +43,28 @@ my instance set registration_mode invite
 
 - 在 `closed` 以外的所有模式下，頁面都有邀請碼欄位，會從邀請連結（`?invite=<code>`）自動填入。無法使用的邀請碼（不存在、已撤銷、已過期、已用完，或屬於已無法再邀請的成員）在所有模式下都會被拒絕，而不是被忽略，以免打錯的邀請碼沒被注意到。
 - 要求核准的註冊封鎖，即使有邀請，也會讓註冊保持等待核准（[註冊封鎖](#sign-up-blocks)）。
-- 為決策掛鉤 [`signup.check`](decision-hooks.md#sign-ups) 設定外掛時，沒有邀請的註冊在通過 CAPTCHA 和封鎖之後，還會由該外掛審查，外掛可以將它保留待核准或拒絕。
+- 為決策掛鉤 [`signup.check`](decision-hooks.md#sign-ups) 設定外掛程式時，沒有邀請的註冊在通過 CAPTCHA 和封鎖之後，還會由該外掛程式審查，外掛程式可以將它保留待核准或拒絕。
 
 - 來自同一個網路（IP 位址；IPv6 為 `/64`）的註冊，每 30 分鐘限制 5 次。超過時伺服器會回傳帶有 `Retry-After` 的 `429`。
 - 如果使用者名稱或電子郵件地址已被使用，頁面會在該欄位顯示錯誤，且不寫入任何資料（邀請也不會被消耗）。
-- 當你設定了[外部登入服務提供者](login-providers.md)（OpenID Connect、GitHub、Discord 或 Mastodon），並允許新使用者用它註冊時，登入和註冊頁面會為每個啟用的服務提供者顯示一個按鈕，標籤是你輸入的服務提供者顯示名稱（GitHub 服務提供者會以訪客的語言顯示「使用 GitHub 登入」，Discord 則顯示「使用 Discord 登入」）。在服務提供者的帳號尚未連結到本伺服器使用者的人，會看到相同但沒有密碼欄位的註冊表單，新使用者只能透過該服務提供者登入。註冊模式、邀請碼、加入原因、CAPTCHA、註冊封鎖、`signup.check` 和網路限制都與密碼表單一樣適用；在 `closed` 模式下，或服務提供者不允許註冊時，登入頁面會說明沒有連結的帳號。服務提供者標示為已驗證的地址（`email_verified`；GitHub 為已驗證的主要地址；Discord 為 Discord 標示為已驗證的地址），只要使用者保留它，就會立即確認；其他任何地址，以及透過 Mastodon 伺服器（它不提供地址）註冊的使用者的所有地址，都會依下文以郵件確認。與現有使用者相符的電子郵件地址永遠不會連結到該使用者：表單會說明該地址已被使用。啟用兩步驟驗證的使用者，透過服務提供者登入後仍需輸入代碼。GitHub 服務提供者會向 GitHub 要求 `user:email` 範圍，當你列出允許的 Organization 時，還會要求 `read:org`；伺服器接著會在每次登入時檢查使用者是否屬於其中之一，否則拒絕登入。請把 `https://<host>/auth/external/<provider ID>/callback` 登記為你 GitHub OAuth App 的回呼 URL。Discord 服務提供者會向 Discord 要求 `identify` 和 `email` 範圍，當你列出允許的伺服器時，還會要求 `guilds`；伺服器接著會在每次登入時檢查使用者是否屬於其中之一。請在你的 Discord 應用程式中登記相同的回呼 URL。
-- 已登入的使用者可以在設定的「連結的帳號」中連結服務提供者的帳號，連結前要以密碼、通行金鑰或另一個已連結的帳號確認身分，且只限允許連結的服務提供者。瀏覽器必須以同一個使用者登入登入頁面；否則伺服器會要求先登入。其他使用者已連結的服務提供者帳號會被拒絕，每位使用者在每個服務提供者最多只能連結一個帳號。除非是最後一種登入方式（沒有密碼、沒有通行金鑰，也沒有其他已連結的帳號），否則使用者可以取消連結帳號。
-- 沒有密碼也沒有通行金鑰的使用者，在進行原本需要它們的操作（設定密碼、新增通行金鑰、刪除或搬移帳號、連結其他帳號）時，要在已連結的服務提供者重新登入以確認身分。OpenID Connect 服務提供者會被要求重新驗證使用者（`max_age=0` 和 `prompt=login`），先前的驗證會被拒絕。這項確認只能在 10 分鐘內、針對該項操作使用一次；以非已連結的帳號登入會被視為一次錯誤嘗試，與密碼錯誤計入相同的限制。
-- 每次註冊和登入時，伺服器都會記錄用戶端 IP 位址（登入時還會記錄 User-Agent）。這些記錄會在 180 天後自動移除（實例設定 `session_origins_retention_days` 和 `registration_origins_retention_days`，至少 90 天）。處於保存保留狀態的帳號，其記錄會被保留（[記錄保存與保留](moderation.md#record-retention-and-holds)）。請在你的隱私權政策中說明這個保存期限（[隱私權政策範本](privacy-policy-template.md)）。
+- 當你設定了[外部登入服務提供者](login-providers.md)（OpenID Connect、GitHub、Discord 或 Mastodon），並允許新使用者用它註冊時，登入和註冊頁面會為每個啟用的服務提供者顯示一個按鈕，標籤是你輸入的服務提供者顯示名稱（GitHub 服務提供者會以訪客的語言顯示「使用 GitHub 登入」，Discord 則顯示「使用 Discord 登入」）。
+  在服務提供者的帳號尚未連結到本伺服器使用者的人，會看到相同但沒有密碼欄位的註冊表單，新使用者只能透過該服務提供者登入。
+  註冊模式、邀請碼、加入原因、CAPTCHA、註冊封鎖、`signup.check` 和網路限制都與密碼表單一樣適用；在 `closed` 模式下，或服務提供者不允許註冊時，登入頁面會說明沒有連結的帳號。
+  服務提供者標示為已驗證的地址（`email_verified`；GitHub 為已驗證的主要地址；Discord 為 Discord 標示為已驗證的地址），只要使用者保留它，就會立即確認；其他任何地址，以及透過 Mastodon 伺服器（它不提供地址）註冊的使用者的所有地址，都會依下文以郵件確認。
+  與現有使用者相符的電子郵件地址永遠不會連結到該使用者：表單會說明該地址已被使用。
+  啟用兩步驟驗證的使用者，透過服務提供者登入後仍需輸入代碼。
+  GitHub 服務提供者會向 GitHub 要求 `user:email` 範圍，當你列出允許的 Organization 時，還會要求 `read:org`；伺服器接著會在每次登入時檢查使用者是否屬於其中之一，否則拒絕登入。請把 `https://<host>/auth/external/<provider ID>/callback` 登記為你 GitHub OAuth App 的回呼 URL。
+  Discord 服務提供者會向 Discord 要求 `identify` 和 `email` 範圍，當你列出允許的伺服器時，還會要求 `guilds`；伺服器接著會在每次登入時檢查使用者是否屬於其中之一。請在你的 Discord 應用程式中登記相同的回呼 URL。
+- 已登入的使用者可以在設定的「連結的帳號」中連結服務提供者的帳號，連結前要以密碼、通行金鑰或另一個已連結的帳號確認身分，且只限允許連結的服務提供者。
+  瀏覽器必須以同一個使用者登入登入頁面；否則伺服器會要求先登入。
+  其他使用者已連結的服務提供者帳號會被拒絕，每位使用者在每個服務提供者最多只能連結一個帳號。
+  除非是最後一種登入方式（沒有密碼、沒有通行金鑰，也沒有其他已連結的帳號），否則使用者可以取消連結帳號。
+- 沒有密碼也沒有通行金鑰的使用者，在進行原本需要它們的操作（設定密碼、新增通行金鑰、刪除或搬移帳號、連結其他帳號）時，要在已連結的服務提供者重新登入以確認身分。
+  OpenID Connect 服務提供者會被要求重新驗證使用者（`max_age=0` 和 `prompt=login`），先前的驗證會被拒絕。
+  這項確認只能在 10 分鐘內、針對該項操作使用一次；以非已連結的帳號登入會被視為一次錯誤嘗試，與密碼錯誤計入相同的限制。
+- 每次註冊和登入時，伺服器都會記錄用戶端 IP 位址（登入時還會記錄 User-Agent）。這些記錄會在 180 天後自動移除
+  （實例設定 `session_origins_retention_days` 和 `registration_origins_retention_days`，至少 90 天）。處於保存保留狀態的帳號，其記錄會被保留（[記錄保存與保留](moderation.md#record-retention-and-holds)）。
+  請在你的隱私權政策中說明這個保存期限（[隱私權政策範本](privacy-policy-template.md)）。
 
 <!-- source: when-a-user-can-use-the-app 317d6d8b7688 -->
 ## 使用者何時可以使用 App
@@ -81,7 +100,7 @@ my instance set registration_mode invite
 - 已登入的使用者可以在設定的「密碼」中輸入目前的密碼來變更密碼（每位使用者每小時最多輸入錯誤 5 次）。
 - 重設或變更會撤銷使用者的其他工作階段和 App 權杖（從設定變更時，只保留進行變更的那個 App）。通行金鑰和兩步驟驗證會保留。正在等待兩步驟驗證代碼的登入，以及尚未完成的 App 授權也會失效：使用者需要重新開始。在 `mail = smtp` 時，伺服器也會寄送電子郵件通知使用者密碼已變更。
 
-<!-- source: invite-codes 441b486504dd -->
+<!-- source: invite-codes 4d49dd1f0927 -->
 ## 邀請碼
 
 邀請在 `open`、`approval` 和 `invite` 模式下有效。工作人員的邀請可以用 CLI、審核畫面和下方的管理 API 建立；成員也可以建立自己的邀請（[成員邀請](#member-invites)）。
@@ -104,25 +123,30 @@ my invite revoke <code>
   （內建的 `moderator` 沒有這項權限，所以若要委派，請建立一個具有該權限的角色並授予它）。
   自行發放邀請的服務，會使用範圍為 `admin:manage_invites` 的權杖呼叫同一個 API（[讓其他服務使用管理 API](moderation.md#letting-another-service-use-the-admin-api)）。
   清單上的「建立邀請」會開啟表單（`/moderation/invites/new`），其中會顯示新邀請的邀請碼與註冊連結。
-  清單讓你複製仍可使用的邀請的連結，並撤銷它。
+  清單會顯示每個邀請的邀請碼、建立者、已有多少人用它註冊、結束時間和狀態；選取邀請後選擇「撤銷」，會先詢問確認。
 - 清單會顯示每一個邀請，包括工作人員的與成員的，以及是誰建立的（`created_by`）和以什麼方式建立（`creator_kind`：`staff` 或 `member`）。持有 `manage_invites` 的人可以撤銷其中任何一個。
 - 審核畫面中帳號的審查頁面（`GET /api/v1/admin/accounts/{id}`，權限 `manage_accounts`）會顯示該帳號註冊時所用的邀請，以及建立者，也就是邀請該使用者的人。
 - 建立與撤銷邀請會記錄在稽核紀錄中（`invite_created`、`invite_revoked`），不論是從畫面、API 還是 CLI。目標名稱是邀請碼的前 4 個字元（`ABCD…`）；完整的邀請碼不會複製到稽核紀錄中。
   撤銷已經撤銷的邀請不會改變任何東西，所以不會記錄。
 
-<!-- source: member-invites db3bff74ed69 -->
+<!-- source: member-invites 85edfb5c0806 -->
 ## 成員邀請
 
-除了管理團隊之外，成員也可以建立自己的邀請。誰可以建立由實例設定 `invite_creators` 決定（[實例設定](instance-settings.md)）：
+除了工作人員之外，成員也可以建立自己的邀請。
+誰可以建立由實例設定 `invite_creators` 決定（[實例設定](instance-settings.md)）：
 
 - `permitted`（預設）：只有角色擁有 `create_invites` 權限的使用者。預設只有內建的 `admin` 角色擁有它。你可以把它加到手動授予的角色，或[支持者方案](supporters.md)的角色，讓支持者可以邀請別人。
 - `everyone`：所有已登入的本站使用者。
 
-不論哪一種，帳號被停權或受限、或註冊未獲核准的使用者都無法建立邀請，而在註冊模式為 `closed` 時，任何人都無法建立。擁有 `manage_invites` 的人仍可繼續建立管理團隊的邀請，下方的限制都不適用於這些邀請。
+不論哪一種，帳號被停權或受限、或註冊未獲核准的使用者都無法建立邀請，而在註冊模式為 `closed` 時，任何人都無法建立。
+擁有 `manage_invites` 的人仍可繼續建立工作人員的邀請，下方的限制都不適用於這些邀請。
 
-成員可以在網頁用戶端的設定（「你的邀請」，`/settings/invites`）或透過用戶端 API（`GET` / `POST /api/v1/invites` 和 `POST /api/v1/invites/{id}/revoke`）建立、列出、複製和撤銷自己的邀請。設定中只會為目前可以建立邀請的使用者列出這個頁面；已無法建立邀請的使用者，仍可透過網址開啟它，以複製和撤銷自己建立的邀請。列表會說明每個邀請是可用、已撤銷、已過期、已用完，還是因建立者已無法再邀請而無法使用。
+成員可以在網頁用戶端的設定（「邀請」，`/settings/invites`）或透過用戶端 API（`GET` / `POST /api/v1/invites` 和 `POST /api/v1/invites/{id}/revoke`）建立、列出和撤銷自己的邀請，並複製仍可使用的邀請的連結。
+設定中只會為目前可以建立邀請的使用者列出這個頁面；已無法建立邀請的使用者，仍可透過網址開啟它，頁面會說明原因，讓他們撤銷自己建立的邀請。
+列表會說明每個邀請是可用、已撤銷、已過期、已用完，還是因建立者已無法再邀請而無法使用。
 
-以下限制同樣是實例設定，只適用於成員邀請。管理員可以在伺服器設定的「註冊」頁面（`/admin/settings/registration`）的「成員邀請」中變更這些限制和 `invite_creators`：
+以下限制同樣是實例設定，只適用於成員邀請。
+管理員可以在伺服器設定的「註冊」頁面（`/admin/settings/registration`）的「成員邀請」中變更這些限制和 `invite_creators`：
 
 | 設定 | 意義 | 預設值 | 範圍 |
 | --- | --- | --- | --- |
@@ -132,12 +156,15 @@ my invite revoke <code>
 
 - 成員可以在限制範圍內選擇使用次數和有效時間；沒有選擇時，邀請允許 1 次註冊，有效期 7 天（若限制較低則更短）。無法建立沒有使用次數或時間限制的邀請。
 - 調低限制不會改變既有的邀請；它會套用到下一個建立的邀請。
-- 每次以成員的邀請註冊時，都會檢查其建立者是否仍可建立邀請。當建立者失去 `create_invites`（例如他們的方案已結束）、`invite_creators` 改回 `permitted`，或帳號被停權、受限或刪除時，該邀請就無法使用，註冊頁面會說明它無效。邀請本身不會被變更，因此當建立者再次可以邀請時，它會在有效期限內重新生效。
-- 成員的建立和撤銷會以 `invite_created` 和 `invite_revoked` 記錄在稽核日誌中，執行者為該成員。
+- 每次以成員的邀請註冊時，都會檢查其建立者是否仍可建立邀請。當建立者失去 `create_invites`（例如他們的方案已結束）、`invite_creators` 改回 `permitted`，或帳號被停權、受限或刪除時，該邀請就無法使用，註冊頁面會說明它無效。
+  邀請本身不會被變更，因此當建立者再次可以邀請時，它會在有效期限內重新生效。
+- 成員的建立和撤銷會以 `invite_created` 和 `invite_revoked` 記錄在稽核紀錄中，執行者為該成員。
 
-在 `approval` 模式下，可用的邀請會立即核准新使用者：邀請他們的人代替了版主的審查。因此，在 `invite_creators = everyone` 時，每位使用者都可以不經審查就讓人加入，這會削弱核准模式的效果。如果你仰賴審查，請保持 `permitted`，只把 `create_invites` 給你信任的人，或把 `member_invite_max_active` 和 `member_invite_max_uses` 設低。
+在 `approval` 模式下，可用的邀請會立即核准新使用者：邀請他們的人代替了版主的審查。
+因此，在 `invite_creators = everyone` 時，每位使用者都可以不經審查就讓人加入，這會削弱核准模式的效果。
+如果你仰賴審查，請保持 `permitted`，只把 `create_invites` 給你信任的人，或把 `member_invite_max_active` 和 `member_invite_max_uses` 設低。
 
-<!-- source: approving-and-rejecting e68676f67aab -->
+<!-- source: approving-and-rejecting 34e7c6193247 -->
 ## 核准與拒絕
 
 ```sh
@@ -152,6 +179,7 @@ my registration reject -note "spam" bob
 - 結束代碼 2 表示引數錯誤。
 
 同樣的決定也可以在管理畫面（用戶端 API）中進行。全部都需要 `manage_accounts` 權限。
+在網頁用戶端的「審核」→「註冊」（`/moderation/registrations`）中，會列出等待核准的註冊，以及它們的電子郵件地址、是否已確認和加入原因；選取後選擇「核准」或「拒絕」，會先詢問確認，並可附上給版主的備註。一人伺服器不會顯示這個頁面。
 
 | 操作 | 作用 |
 | --- | --- |
@@ -159,7 +187,7 @@ my registration reject -note "spam" bob
 | `POST /api/v1/admin/registrations/{id}/approve` | 核准。內文 `{"note": "..."}` 為選填。回應會以 `decision_note` 顯示備註，對已決定的註冊的回應不含電子郵件地址 |
 | `POST /api/v1/admin/registrations/{id}/reject` | 拒絕。內文與 `approve` 相同 |
 
-- 這與 CLI 是相同的使用案例，會把決定記錄在 `registration_decisions` 和稽核日誌中（`registration_approved`、`registration_rejected`）。CLI 決定的執行者是 `cli`；API 決定的執行者是做出決定的版主。
+- 這與 CLI 是相同的使用案例，會把決定記錄在 `registration_decisions` 和稽核紀錄中（`registration_approved`、`registration_rejected`）。CLI 決定的執行者是 `cli`；API 決定的執行者是做出決定的版主。
 - 對已決定的註冊再次做決定不會改變任何事，並回傳目前的狀態（如果兩人同時做決定，只會記錄一個決定）。未經註冊頁面建立的使用者會回傳 404。
 
 <!-- source: sign-up-blocks b70eb18cd52f -->
