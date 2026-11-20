@@ -19019,14 +19019,14 @@ type ListAnnouncementHistoryParams struct {
 // CreateArticleParams defines parameters for CreateArticle.
 type CreateArticleParams struct {
 	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
-	// 24 hours, a request with a key the user (an anonymous client: its address) already sent
-	// to the operation gets the first answer again instead of being carried out again. The
-	// same key with another request (another path, query, or body) is a 422
-	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
-	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
-	// carried out. A key longer than 256
-	// characters, or one that is not UTF-8 without U+0000, is a 422.
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use`. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
@@ -19325,14 +19325,14 @@ type ListOwnReportsParams struct {
 // CreateStatusParams defines parameters for CreateStatus.
 type CreateStatusParams struct {
 	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
-	// 24 hours, a request with a key the user (an anonymous client: its address) already sent
-	// to the operation gets the first answer again instead of being carried out again. The
-	// same key with another request (another path, query, or body) is a 422
-	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
-	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
-	// carried out. A key longer than 256
-	// characters, or one that is not UTF-8 without U+0000, is a 422.
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use`. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 

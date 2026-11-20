@@ -59,6 +59,16 @@ func newIdempotencyEnv(t *testing.T, tweaks ...func(*clientapi.Options)) *idempo
 		}
 	})
 	e.auth.tokens["bob-write"] = bearer("write", bobAccountID)
+	// Alice in another app, in another sign-in of the same app, and after refreshing her token.
+	otherApp := bearer("write", aliceAccountID)
+	otherApp.ClientID, otherApp.FamilyID, otherApp.TokenID = "client-2", testkit.NamedID("fam-other-app"), testkit.NamedID("tok-other-app")
+	e.auth.tokens["write-other-app"] = otherApp
+	otherSignIn := bearer("write", aliceAccountID)
+	otherSignIn.FamilyID, otherSignIn.TokenID = testkit.NamedID("fam-other-sign-in"), testkit.NamedID("tok-other-sign-in")
+	e.auth.tokens["write-other-sign-in"] = otherSignIn
+	refreshed := bearer("write", aliceAccountID)
+	refreshed.TokenID = testkit.NamedID("tok-refreshed")
+	e.auth.tokens["write-refreshed"] = refreshed
 	return e
 }
 
@@ -333,5 +343,25 @@ func TestIdempotencySecretThatFailsRefusesKeyedWrites(t *testing.T) {
 	}
 	if n := e.created.Load(); n != 1 {
 		t.Errorf("posted %d times, want once", n)
+	}
+}
+
+// Keys are each sign-in's own in each client: the same key from alice's other app or other
+// sign-in is carried out, and from her token refreshed gets the first answer.
+func TestIdempotencyKeysArePerClientAndSignIn(t *testing.T) {
+	e := newIdempotencyEnv(t)
+	if res := e.post(t, "write", "shared", postBody); res.StatusCode != http.StatusCreated {
+		t.Fatalf("first post = %d", res.StatusCode)
+	}
+	if res := e.post(t, "write-refreshed", "shared", postBody); res.StatusCode != http.StatusCreated || e.created.Load() != 1 {
+		t.Errorf("repeat after a refresh = %d (posted %d), want the first 201", res.StatusCode, e.created.Load())
+	}
+	for _, token := range []string{"write-other-app", "write-other-sign-in"} {
+		if res := e.post(t, token, "shared", otherBody); res.StatusCode != http.StatusCreated {
+			t.Errorf("%s with the key = %d, want 201", token, res.StatusCode)
+		}
+	}
+	if n := e.created.Load(); n != 3 {
+		t.Errorf("posted %d times, want 3", n)
 	}
 }

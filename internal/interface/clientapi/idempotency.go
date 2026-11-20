@@ -75,8 +75,8 @@ var pendingAnswer = []byte(`{"pending":true}`)
 // refusal (any 4xx, a 429 too) or a 5xx frees the key, so that the request corrected, or allowed
 // again, is carried out with it; a repeat of the same request gets that answer, the same key with another request
 // (another path, query, Content-Type or body) a 422, and a repeat while the first is in
-// progress a 409. Keys are the user's own, an anonymous client's those of its address, and
-// each operation's own.
+// progress a 409. Keys are those of the user's grant to one client, an anonymous client's those
+// of its address, and each operation's own.
 func (s *Server) serveIdempotent(w http.ResponseWriter, r *http.Request, pattern string, a operationAccess, next http.Handler) {
 	values := r.Header.Values(IdempotencyKeyHeader)
 	if !a.Idempotent || s.o.Idempotency == nil || len(values) == 0 || (len(values) == 1 && values[0] == "") {
@@ -230,12 +230,14 @@ func (s *Server) bodyError(w http.ResponseWriter, r *http.Request, pattern strin
 	s.writeProblem(w, r, http.StatusBadRequest, ProblemTypeBlank, s.localizer(r).ServerErrorsBadRequest(), "")
 }
 
-// idempotencyStoreKey is the store's key of an Idempotency-Key: of the user, or of an
-// anonymous client's address, and of the operation.
+// idempotencyStoreKey is the store's key of an Idempotency-Key: of the user's grant to one
+// client (its token family, which refreshing the token keeps), or of an anonymous client's
+// address, and of the operation. Two apps of a user, or two of their sign-ins, never share a
+// key.
 func (s *Server) idempotencyStoreKey(r *http.Request, operation, key string) string {
 	scope := "ip:" + s.clientKey(r)
 	if v, ok := ViewerFrom(r.Context()); ok {
-		scope = "account:" + v.AccountID
+		scope = "account:" + v.AccountID + "\x00client:" + v.ClientID + "\x00grant:" + v.FamilyID
 	}
 	sum := sha256.Sum256([]byte(scope + "\x00" + operation + "\x00" + key))
 	return hex.EncodeToString(sum[:])
