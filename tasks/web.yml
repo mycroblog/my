@@ -288,12 +288,13 @@ tasks:
   # when the output contains @my/devtools, which only the Storybook host loads, lacks the license notice of a font it
   # ships, or holds the editor in a chunk that an entry loads with the page.
   build-check:
-    desc: Build web/app for production into .tmp/build-check and fail if the build contains @my/devtools (ADR-0168 §3), ships a font without its license notice, or loads Lexical with an entry
+    desc: Build web/app for production into .tmp/build-check and fail if the build contains @my/devtools (ADR-0168 §3), ships a font without its license notice, loads Lexical with an entry, or loads a locale's strings but en's with index.html or auth.html rather than on demand
     deps: [install, ":i18n:compile", routes]
     cmds:
       - cd web/app && bun --bun vite build --logLevel warn --outDir ../../.tmp/build-check --emptyOutDir
       - bun web/devtools/src/absent.ts .tmp/build-check
       - bun web/app/scripts/build-check.ts .tmp/build-check
+      - bun web/app/scripts/locale-chunks.ts .tmp/build-check
 
   # It skips while node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
   # tasks of `check`, side by side) never install at once after the first install.
