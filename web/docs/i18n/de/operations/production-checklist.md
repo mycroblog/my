@@ -72,14 +72,21 @@ zum Beispiel als Schritt der Bereitstellung, bevor die neue Version Traffic anni
 - **Details**: [den Server betreiben](running.md) (die Föderations-Endpunkte und die Auslieferung der Handles von einer anderen Domain),
   [`host`](../reference/configuration.md#host) und [`account_domain`](../reference/configuration.md#account_domain).
 
-<!-- source: reachable-over-https b7513cc3534f -->
+<!-- source: reachable-over-https 20f0b0b9a2d9 -->
 ### Über `https` erreichbar
 
 - **Warum**: Andere Server rufen die IDs unter `https://<host>/` auf Port 443 ab, und Browser senden die Anmelde-Cookies nur über `https`.
 - **Prüfen**: `curl -sI https://<host>/health/live` antwortet von außerhalb deines Netzwerks mit `200` und einem Zertifikat, das für `host` gültig ist,
-  und `my config check` meldet keinen Fehler zu `web_origin`. `http://<host>/` leitet auf `https` um, was der Reverse-Proxy,
-  Load Balancer oder das CDN vor dem Server erledigt (bei Docker Compose ist die Schicht `compose.caddy.yaml` ein solcher Proxy).
-- **Details**: [den Server betreiben](running.md), [`web_origin`](../reference/configuration.md#web_origin).
+  und `my config check` meldet keinen Fehler zu `web_origin`, `tls`, `tls_acme_agree_terms` oder `tls_cert_file`. `curl -sI http://<host>/` antwortet mit `301`
+  auf `https://<host>/`. Entweder beendet der Reverse-Proxy, Load Balancer oder das CDN vor dem Server TLS und leitet um
+  (bei Docker Compose ist die Schicht `compose.caddy.yaml` ein solcher Proxy), oder der Server übernimmt das selbst. Bei `tls = acme`
+  zeigt `my tls status` ein Zertifikat für `host` (und für den Host von `web_origin`, wenn er sich unterscheidet), dessen Aussteller kein
+  Staging-Aussteller ist: `tls_acme_directory` ist nicht gesetzt oder nennt ein Produktionsverzeichnis. Richte Alarme auf seinen Ablauf und auf fehlgeschlagene
+  Bestellungen ein ([Alarme](alerts.md#mytlscertificateexpiring)). Bei
+  `tls = files` warnt `my config check`, wenn dem Zertifikat weniger als 14 Tage bleiben, und was auch immer es erneuert, muss
+  `tls_cert_file` und `tls_key_file` aktuell halten.
+- **Details**: [den Server betreiben](running.md), [HTTPS vom Server aus ausliefern](running.md#serving-https-from-the-server),
+  [`web_origin`](../reference/configuration.md#web_origin), [`tls`](../reference/configuration.md#tls).
 
 <!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### Nicht am CDN vorbei erreichbar

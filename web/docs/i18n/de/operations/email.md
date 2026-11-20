@@ -78,7 +78,7 @@ in Punycode umgewandelt. An eine Adresse, deren lokaler Teil (vor dem `@`) nicht
 Übergib Secrets per Umgebungsvariable oder Datei (`MY_MAIL_SMTP_PASSWORD` oder `MY_MAIL_SMTP_PASSWORD_FILE`). Schreibe sie nicht in die
 Konfigurationsdatei.
 
-<!-- source: amazon-ses-api 1cef4371e61c -->
+<!-- source: amazon-ses-api f2d42a2b8b19 -->
 ### Amazon SES (API)
 
 Wenn du auf AWS läufst, nutzt `mail = ses` die SES-v2-API. Die Zugangsdaten kommen aus der Standardkette des AWS SDK (die Task-Rolle von
@@ -87,6 +87,9 @@ ECS, Umgebungsvariablen, die gemeinsame Konfigurationsdatei), daher gibt es kein
 1. Verifiziere in SES die Domain von `mail_from` als Identität und aktiviere Easy DKIM (siehe unten).
 2. Beantrage den Produktionszugriff, um die Sandbox zu verlassen. In der Sandbox kannst du nur an verifizierte Adressen senden.
 3. Erlaube `ses:SendEmail` für die Ausführungsrolle auf der Identität von `mail_from` (und auf dem Configuration Set, falls du eines nutzt).
+
+[E-Mails über Amazon SES versenden](email-ses.md) führt durch die Einträge, die Sandbox und die Beantragung des Produktionszugriffs
+und zeigt, was das OpenTofu-Modul für AWS davon übernimmt.
 
 ```sh
 MY_MAIL=ses
@@ -393,21 +396,23 @@ List-Unsubscribe=One-Click` (RFC 8058). Die Schaltfläche „unsubscribe“ von 
   sicherheitsrelevante Hinweise am Ankommen hindern. Diese E-Mails tragen auch keine solchen Header.
 - Nutzer können dieselbe Einstellung auf der Seite **Benachrichtigungen** in den Einstellungen umschalten.
 
-<!-- source: the-html-version 2ca008b1a48a -->
+<!-- source: the-html-version fc06d2fa37c4 -->
 ## Die HTML-Version
 
 Jede E-Mail ist `multipart/alternative` mit demselben Inhalt als `text/plain` und `text/html` (beide UTF-8). Mit `mail = none`
 im Profil `development` wird nur die Textversion ins Log geschrieben.
 
-- Es gibt ein äußeres Layout, mit Absätzen, Schaltflächen und einer Signatur (Servername, URL, Kontakt, der Grund für die E-Mail
-  und der Abmeldelink). `<html lang dir>` stammt aus dem Locale des Empfängers, und Sprachen wie `ar` werden von rechts
-  nach links gesetzt.
-- Es lädt keine externen Schriften oder Stylesheets. Die Farben sind die Standard-Design-Tokens, und hell und dunkel folgen
-  `color-scheme` und `prefers-color-scheme`. Die Theme-Überschreibungen des Administrators wirken sich nicht auf E-Mails aus.
-- Es lädt keine Bilder, außer dem eigenen Logo des Servers, wenn eines gesetzt ist ([Logo und Icon](instance-settings.md#logo-and-icon)):
-  Die HTML-Version beginnt dann mit dem Logo (`https://<host>/brand/...`, stattdessen dem dunklen Logo, wenn der E-Mail-Client einem dunklen Farbschema folgt), mit derselben URL für jeden Empfänger, sodass sie nichts darüber verrät, wer die E-Mail geöffnet hat. Clients, die keine
+- Es gibt ein äußeres Layout mit Absätzen, Buttons und einer Signatur (Servername, URL, Kontakt, der Grund der E-Mail
+  und der Abmeldelink). `<html lang dir>` stammt aus der Sprache des Empfängers, und Sprachen wie `ar` werden von rechts nach
+  links gesetzt.
+- Es lädt keine externen Schriften oder Stylesheets und nutzt die Schriften des Systems. Die Farben stammen aus dem veröffentlichten
+  [Theme](instance-settings.md#theme) (ohne eines aus den Standard-Design-Tokens), und hell und dunkel folgen `color-scheme` und
+  `prefers-color-scheme`.
+- Es lädt keine Bilder, außer dem eigenen Logo der Instanz, falls eines gesetzt ist ([Logo und Icon](instance-settings.md#logo-and-icon)):
+  Die HTML-Version beginnt dann mit dem Logo (`https://<host>/brand/...`, stattdessen das dunkle Logo, wo der E-Mail-Client
+  einem dunklen Farbschema folgt), für jeden Empfänger dieselbe URL, sodass sie nichts darüber verrät, wer die E-Mail geöffnet hat. Clients, die keine
   externen Bilder laden, zeigen stattdessen den Servernamen (den Alt-Text des Bildes). Ohne Logo oder wenn die Server-URL nicht `https` ist,
-  hat die E-Mail kein Bild.
-- Nur `https`-URLs werden zu Links. Ist eine URL `http`, wie in einem Entwicklungs-Setup, in dem `web_origin` `http://{host}` ist, wird die URL
-  als Text statt als Schaltfläche oder Abmeldelink geschrieben, und die Server-URL in der Signatur entfällt.
-- Das Layout ist Teil der Binary, sodass zur Laufzeit im Server kein JavaScript läuft.
+  enthält die E-Mail kein Bild.
+- Nur `https`-URLs werden zu Links. Ist eine URL `http`, etwa in einem Entwicklungs-Setup, in dem `web_origin` `http://{host}` ist, wird die URL
+  als Text geschrieben statt als Button oder Abmeldelink, und die Server-URL in der Signatur entfällt.
+- Das Layout ist Teil des Binärprogramms, daher läuft zur Laufzeit kein JavaScript im Server.

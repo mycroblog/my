@@ -64,12 +64,13 @@ entsprechend.
 - Das Anmelde-Cookie ist `Secure`. Chrome und Firefox akzeptieren es auf `http://localhost`; Safari (WebKit) nicht, nutze lokal also Chrome oder Firefox.
 - Links von Hashtags und Erwähnungen in Beitragstexten verwenden `https://`, da es die föderierten URLs sind.
 
-<!-- source: going-public be2475df6407 -->
+<!-- source: going-public a59510155d91 -->
 ## Öffentlich gehen
 
 - Setze `MY_HOST` in `.env` auf deine echte Domain, entferne `MY_WEB_ORIGIN` (es ist standardmäßig `https://{MY_HOST}`)
   und beende TLS vor dem Server: Die Ebene `compose.caddy.yaml` startet dafür Caddy
-  ([Docker-Compose-Dateien](running.md#docker-compose-files)). `MY_HOST` wird beim ersten Start in der Datenbank
+  ([Docker-Compose-Dateien](running.md#docker-compose-files)), oder lass den Server HTTPS selbst ausliefern
+  ([HTTPS vom Server ausliefern](running.md#serving-https-from-the-server)). `MY_HOST` wird beim ersten Start in der Datenbank
   gespeichert und lässt sich später nicht mehr ändern.
 - Setze hinter einem eigenen Reverse-Proxy `MY_TRUSTED_PROXIES` in `.env`, damit Ratenbegrenzungen wie die bei der
   Anmeldung pro Client-IP gelten statt für den Proxy ([`trusted_proxies`](../reference/configuration.md#trusted_proxies)).

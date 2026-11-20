@@ -4,12 +4,13 @@
 Ein Relay ist ein Server, der die öffentlichen Beiträge der Server, die ihm beitreten, an die anderen beigetretenen Server weitergibt. Selbst ein kleiner Server mit wenigen Follows erhält eine gefüllte föderierte Timeline und Hashtag-Timelines,
 und seine eigenen öffentlichen Beiträge reichen weiter. Ein Server, der keinem Relay beitritt, gewinnt keine Zeilen und keine Jobs.
 
-<!-- source: join-a-relay 147b07e65534 -->
+<!-- source: join-a-relay 5c97a6145f1b -->
 ## Einem Relay beitreten
 
-Verwende „Relays“ im Admin-Bereich (`/admin/relays`). Das braucht die Berechtigung `manage_settings`, die die eingebaute Rolle `admin` hat.
-„Relay beitreten“ öffnet das Formular, das eines registriert. Die Liste zeigt den Status jedes Relays mit einem Button, der es verlässt oder ihm erneut beitritt;
-die Wahl eines Relays öffnet seine Seite mit seinen Adressen, dem, was es in den letzten 24 Stunden eingebracht hat, und dem Button, der es löscht.
+Verwende „Relays“ im Admin-Bereich (`/admin/relays`). Dafür ist die Berechtigung `manage_settings` nötig, die die eingebaute Rolle `admin` hat.
+„Einem Relay beitreten“ öffnet das Formular, das eines registriert. Die Liste zeigt den Zustand jedes Relays und was es in den letzten 24
+Stunden eingebracht hat; wenn du ein Relay auswählst, öffnet sich seine Seite mit seinen Adressen und der Schaltfläche, die es verlässt, oder, sobald es verlassen wurde oder
+es den Server abgelehnt hat, den Schaltflächen, die ihm erneut beitreten und es löschen. Verlassen und Löschen fragen vorher nach.
 Die CLI ist `my admin relay` (`my admin relay -help`):
 
 ```sh
@@ -23,13 +24,13 @@ my admin relay delete <relay id>                                  # delete a rel
 1. Registriere die URL des Relays. Es gibt zwei Protokolle:
    - **Mastodon**: die **Inbox-URL** des Relays (etwa `https://relay.example/inbox`). Viele Relays, darunter pub-relay und Activity-Relay, akzeptieren sie.
    - **LitePub**: die **Actor-URL** des Relays (etwa `https://relay.example/relay`). Das ist das Protokoll der Relays von Pleroma und Akkoma.
-   Wenn du kein Protokoll wählst („Automatisch erkennen“), verwendet der Server LitePub, wenn die URL ein Actor-Dokument liefert, und sonst Mastodon.
-2. Nachdem du es registriert hast, sendet der Server-Actor dem Relay ein `Follow`, und der Status ist „Warten auf die Antwort des Relays“ (`pending`).
-   Wenn das Relay annimmt, wird der Status „Beigetreten“ (`accepted`); wenn es ablehnt, „Vom Relay abgelehnt“ (`rejected`). Manche Relays brauchen eine Weile, weil ein Betreiber jede Anfrage von Hand freigibt.
-3. Wenn du bei der Registrierung „Beiträge vom Relay empfangen“ ausschaltest, sendet der Server nur. Um das zu ändern, verlasse das Relay und registriere es erneut.
+   Wählst du kein Protokoll („Automatisch erkennen“), verwendet der Server LitePub, wenn die URL ein Actor-Dokument ausliefert, und sonst Mastodon.
+2. Nach der Registrierung sendet der Instanz-Actor dem Relay ein `Follow`, und der Zustand lautet „Wartet auf die Antwort des Relays“ (`pending`).
+   Nimmt das Relay an, wird der Zustand „Beigetreten“ (`accepted`); lehnt es ab, „Vom Relay abgelehnt“ (`rejected`). Manche Relays brauchen eine Weile, weil ein Betreiber jede Anfrage von Hand freigibt.
+3. Schaltest du bei der Registrierung „Beiträge vom Relay empfangen“ aus, sendet der Server nur. Um das zu ändern, verlasse das Relay und registriere es erneut.
 
-Du kannst das Relay eines Servers unter einer Domain-Maßnahme (`suspend`) nicht registrieren. Wird der Server eines beigetretenen Relays später gesperrt, ändert sich der Status nicht,
-aber an dieses Relay wird nichts gesendet und von ihm nichts empfangen, und der Admin-Bereich zeigt eine Warnung.
+Du kannst das Relay eines Servers nicht registrieren, auf den eine Domain-Aktion (`suspend`) angewendet wurde. Wird der Server eines beigetretenen Relays später gesperrt, ändert sich der Zustand nicht,
+aber an dieses Relay wird nichts gesendet und von ihm nichts empfangen, und der Admin-Bereich weist im Zustand des Relays darauf hin.
 
 <!-- source: what-the-server-sends 1db52c508f9c -->
 ## Was der Server sendet

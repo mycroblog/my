@@ -5,10 +5,10 @@ Der Server verschlüsselt die Secrets, die er in der Datenbank speichert, mit ei
 Diese Seite beschreibt, wie du den KEK erzeugst, aufbewahrst, sicherst und rotierst, wie du ihn stattdessen in einem KMS hältst und was zu tun ist, wenn er verloren geht oder durchsickert.
 Die [Konfigurationsreferenz](../reference/configuration.md) listet jede Einstellung auf.
 
-<!-- source: how-it-works 37074c6237d0 -->
+<!-- source: how-it-works 92f093e9e7ca -->
 ## So funktioniert es
 
-![Die Schlüsselhierarchie: Der Key-Encryption-Key, der dort liegt, wo key_manager es sagt, und nie in der Datenbank, verpackt einen für jedes Secret erzeugten Data-Encryption-Key, der das Secret verschlüsselt; die Datenbank enthält die Schlüssel-ID, den verpackten Data-Encryption-Key und das verschlüsselte Secret in fünf versiegelten Spalten. Die Liste unten beschreibt jede Schicht.](images/key-hierarchy.svg)
+![Die Schlüsselhierarchie: Der Key-Encryption-Key, der dort liegt, wo key_manager es sagt, und nie in der Datenbank, verpackt einen für jedes Secret erzeugten Data-Encryption-Key, der das Secret verschlüsselt; die Datenbank enthält die Schlüssel-ID, den verpackten Data-Encryption-Key und das verschlüsselte Secret in sieben versiegelten Spalten. Die Liste unten beschreibt jede Schicht.](images/key-hierarchy.svg)
 
 - In der Datenbank gespeicherte Secrets, etwa die privaten Schlüssel der Actors, werden mit AES-256-GCM unter einem für jedes Secret erzeugten Data-Encryption-Key (DEK) verschlüsselt.
   Der DEK wird mit einem **Key-Encryption-Key (KEK)** verpackt und neben dem Chiffretext gespeichert (Envelope Encryption).
@@ -18,14 +18,16 @@ Die [Konfigurationsreferenz](../reference/configuration.md) listet jede Einstell
 - Ein Chiffretext ist an die Zeilen-ID und den Spaltennamen gebunden, wo er gespeichert ist. Wird er in eine andere Zeile oder Spalte kopiert, lässt er sich nicht mehr entschlüsseln.
 - Die versiegelten Spalten, benannt wie `my kek status` sie ausgibt, sind `local_account_private_keys.private_key_enc` (private Schlüssel der Actors),
   `totp_enrollments.secret_enc` (Secrets der Zwei-Faktor-Authentifizierung), `login_provider_secrets.sealed_secret` (Client-Secrets der Anmeldeanbieter),
-  `webhook_secrets.sealed_secret` (Signatur-Secrets von Webhooks) und `instance_secrets.sealed_secret` (der Signaturschlüssel des Media-Proxys).
+  `webhook_secrets.sealed_secret` (Signatur-Secrets von Webhooks), `instance_secrets.sealed_secret` (der Signaturschlüssel des Media-Proxys und der Schlüssel der Idempotenz-Fingerabdrücke),
+  `tls_acme_accounts.sealed_private_key` (die Schlüssel der ACME-Konten, wenn der Server seine Zertifikate selbst bezieht) und
+  `tls_certificates.sealed_private_key` (die Schlüssel dieser Zertifikate).
 - Der Zustand einer Passkey-Anmeldung oder einer Anmeldung über einen externen Anbieter wird auf dieselbe Weise versiegelt, aber nicht gespeichert: Der Browser hält ihn höchstens 30 Minuten.
 - Der Signaturschlüssel (HMAC-SHA256) für Media-Proxy-URLs ist ein zufälliger Schlüssel, den der Server beim ersten Start erzeugt und verschlüsselt wie die anderen Secrets in der Datenbank speichert.
   Er ändert sich nicht, wenn du den KEK rotierst, daher funktionieren Media-Proxy-URLs über Rotationen hinweg weiter, und `my kek rewrap` verpackt ihn zusammen mit den anderen Secrets neu.
 - `key_manager` ist `local` (der Standard: er verwendet die Einstellung `kek`), `gcpkms` (der KEK bleibt in Google Cloud KMS; siehe [Google Cloud KMS](#google-cloud-kms)),
   `awskms` (der KEK bleibt in AWS KMS; siehe [AWS KMS](#aws-kms)) oder `plugin` (der KEK bleibt bei einem Programm von dir; siehe [Ein Plugin](#a-plugin)).
 
-<!-- source: what-happens-if-you-lose-the-kek 76126b09f09c -->
+<!-- source: what-happens-if-you-lose-the-kek d148ff0dedcc -->
 ## Was passiert, wenn du den KEK verlierst
 
 Ohne den KEK kannst du nach dem Wiederherstellen der Datenbank die privaten Schlüssel der Actors nicht entschlüsseln. Ist ein privater Schlüssel verloren, können andere Server die Signaturen dieses Actors nicht mehr prüfen,
@@ -35,7 +37,7 @@ und **die Identität des Actors im Fediverse ist zerstört** (die Beziehungen de
 
 Was nicht versiegelt ist, bleibt lesbar: Beiträge, Konten, Follows und der Rest der Datenbank sowie die Mediendateien im Speicher.
 Jeder versiegelte Wert schlägt mit dem Fehler `unknown key-encryption key` fehl: die privaten Schlüssel der Actors, die Secrets der Zwei-Faktor-Authentifizierung,
-die Client-Secrets der Anmeldeanbieter, die Signatur-Secrets von Webhooks und der Signaturschlüssel des Media-Proxys.
+die Client-Secrets der Anmeldeanbieter, die Signatur-Secrets von Webhooks, der Signaturschlüssel des Media-Proxys und die Schlüssel der Zertifikate, die der Server selbst bezogen hat.
 Dasselbe passiert, wenn anstelle des KEK, der die Secrets verpackt hat, ein anderer gesetzt ist oder wenn der KMS-Schlüssel oder der Schlüssel des Plugins, der sie verpackt hat, deaktiviert oder zerstört ist.
 
 <!-- source: generate-a-kek 44b338b7440b -->

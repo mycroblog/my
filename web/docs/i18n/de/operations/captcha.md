@@ -1,10 +1,10 @@
-<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 2c065ac1d2fb -->
+<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 5931f1f78fe3 -->
 # CAPTCHA-Bot-Schutz (Turnstile / hCaptcha / reCAPTCHA)
 
-CAPTCHA ist standardmäßig aus: Die Einstellung [`captcha`](../reference/configuration.md#captcha) ist `none`. Die Seiten für Anmeldung, Registrierung und Zurücksetzen des Passworts funktionieren dann ohne JavaScript und senden nichts an Dritte.
-Wenn du einen CAPTCHA-Dienst wählst, erscheint das Widget des Dienstes auf drei Formularen: Anmeldung (`/auth/sign_in`), Registrierung (`/auth/sign_up`) und der Anforderung eines Links zum Zurücksetzen des Passworts
-(`/auth/forgot_password`, nur auf Servern, die E-Mails versenden). Der Server prüft das Token, das das Widget erzeugt, mit der siteverify-API des Dienstes.
-Du kannst nicht nur einen Teil der Formulare schützen.
+CAPTCHA ist standardmäßig aus: Die Einstellung [`captcha`](../reference/configuration.md#captcha) ist `none`. Die Seiten für Anmeldung, Registrierung und Zurücksetzen des Passworts senden dann nichts an Dritte.
+Wenn du einen CAPTCHA-Dienst wählst, erscheint das Widget des Dienstes auf drei Formularen: Anmeldung (`/auth/sign_in`), Registrierung (`/auth/sign_up`) und die Anforderung eines Links zum Zurücksetzen des Passworts
+(`/auth/forgot_password`, nur auf Servern, die Mails versenden). Der Server prüft das Token, das das Widget erzeugt, mit der siteverify-API des Dienstes.
+Du kannst nicht nur einige der Formulare schützen.
 
 <!-- source: choosing-a-service 22ddd3cc639f -->
 ## Einen Dienst wählen
@@ -74,14 +74,14 @@ Die Anmeldung wird durchgelassen, damit ein Ausfall des Dienstes oder ein falsch
 Über dem kostenlosen Tarif von 10.000 Bewertungen im Monat ist siteverify von reCAPTCHA **immer erfolgreich** (CAPTCHA bietet in dieser Zeit also keinen Schutz).
 Der Server kann die Überschreitung nicht erkennen, also prüfe deine Nutzung in der Google-Cloud-Konsole.
 
-<!-- source: pages-and-content-security-policy b0cf9741b2ce -->
+<!-- source: pages-and-content-security-policy 666bab0dd33b -->
 ## Seiten und Content-Security-Policy
 
 - Die Sprache des Widgets folgt dem Locale der Seite und sein Design dem Farbschema des Browsers (hell oder dunkel).
   Das Turnstile-Widget folgt dem Farbschema selbst. Bei hCaptcha und reCAPTCHA wird es über den Client Hint `Sec-CH-Prefers-Color-Scheme` gewählt, den der Browser sendet; Browser, die ihn nicht senden, bekommen das helle Design.
 - Neben dem Widget sagt die Seite, welcher Dienst die Prüfung durchführt, dass der Dienst die IP-Adresse und Browserinformationen erhält, und verlinkt auf die Datenschutzerklärung des Dienstes
   (und auf die Nutzungsbedingungen bei hCaptcha und reCAPTCHA). Bei reCAPTCHA dient das auch als der Satz, den Google verlangt: „This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.“
-- In einem Browser ohne JavaScript sagt eine `<noscript>`-Meldung, dass die Prüfung JavaScript braucht. Ein Nutzer, der das CAPTCHA nicht lösen kann, kann sich weder registrieren noch anmelden,
+- Ein Nutzer, der das CAPTCHA nicht lösen kann, kann sich weder registrieren noch anmelden,
   und du kannst ihm nur auf anderem Wege helfen, etwa indem du das Konto mit `my admin create` anlegst oder für eine Weile `captcha = none` setzt.
 - Die `Content-Security-Policy` (CSP) wird nur auf den Seiten für Anmeldung, Registrierung und Anforderung des Zurücksetzens des Passworts erweitert, solange CAPTCHA aktiviert ist. `'unsafe-inline'` und `'unsafe-eval'` werden nie hinzugefügt.
   Die CSP des Web-Clients, der Client-API, des Zustimmungsbildschirms, der E-Mail-Bestätigung und anderer Seiten ändert sich nicht.
