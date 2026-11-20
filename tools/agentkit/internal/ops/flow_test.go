@@ -264,7 +264,7 @@ func TestFastPlanTofuContext(t *testing.T) {
 		{[]string{"docs/reference/configuration.md"}, append([]string{"docs:lint", "docs:rules", "agentkit:map-check"}, tofuConsistency...)},
 		{[]string{"deploy/opentofu/m/main.tf"}, append([]string{"tofu fmt"}, tofuConsistency...)},
 		{[]string{"deploy/opentofu/m/gone.json"}, tofuConsistency},
-		{[]string{"web/client/src/a.tsx"}, []string{"bun fmt", "oxlint (1 files)"}},
+		{[]string{"web/client/src/a.tsx"}, []string{"bun fmt", "web:generated", "oxlint (1 files)"}},
 	}
 	for _, c := range cases {
 		if got := names(fastPlan(root, c.changed)); !reflect.DeepEqual(got, c.want) {
@@ -298,7 +298,7 @@ func TestFastPlan(t *testing.T) {
 		{[]string{"tools/agentkit/x/x.go"}, []string{"gofmt", "go vet tools/agentkit (1 packages)"}},
 		{[]string{"internal/a/a_test.go"}, []string{"gofmt", "go vet (1 packages)", sleepScript}},
 		{[]string{sleepBaseline}, []string{sleepScript}},
-		{[]string{"web/client/src/a.tsx", "web/client/src/gone.tsx"}, []string{"bun fmt", "oxlint (1 files)"}},
+		{[]string{"web/client/src/a.tsx", "web/client/src/gone.tsx"}, []string{"bun fmt", "web:generated", "oxlint (1 files)"}},
 		{[]string{"pkg/mykit/ts/src/b.ts"}, []string{"bun fmt"}},
 		{[]string{"tools/i18n/src/c.ts"}, []string{"bun fmt", "oxlint (1 files)", "i18n:lint"}},
 		{[]string{"docs/a.md"}, []string{"docs:lint", "docs:rules", "agentkit:map-check"}},

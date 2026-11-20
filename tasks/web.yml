@@ -46,10 +46,17 @@ tasks:
   # client from it instead of the build it embeds.
   dev:
     desc: Serve the app (web/app) on Vite's dev server at http://localhost:5173, talking to the server at MY_SERVER (https://my.localhost by default)
-    deps: [install, ":i18n:compile", routes]
+    deps: [generated]
     dir: web/app
     cmds:
       - bun --bun vite {{.CLI_ARGS}}
+
+  # What tsc, Oxlint's type-aware rules, the tests and the builds read and no commit holds (ADR-0081): the compiled
+  # catalogs (messages*.gen.ts) and the route tree. Every task that reads them depends on this, and `agentkit check`
+  # runs it before it lints, so that a fresh worktree lints as one where they were generated.
+  generated:
+    desc: Generate the files of the web client that are not committed (the catalogs' messages*.gen.ts, web/app's routeTree.gen.ts), or leave them while they are current
+    deps: [install, ":i18n:compile", routes]
 
   # Its output is not committed (ADR-0081): the tasks that read the route tree depend on it.
   routes:
@@ -66,7 +73,7 @@ tasks:
   # (`scripts/agentkit.sh feedback url`), this prints its URL and starts none.
   storybook:
     desc: Serve the Storybook host (web/storybook) on Storybook's dev server, unless the worktree's dev server already runs
-    deps: [install, ":i18n:compile", routes]
+    deps: [generated]
     dir: web/storybook
     cmds:
       - |
@@ -79,7 +86,7 @@ tasks:
   # The static build of the Storybook host (web/storybook/dist).
   stories:
     desc: Build the Storybook host (web/storybook) into web/storybook/dist
-    deps: [install, ":i18n:compile", routes]
+    deps: [generated]
     dir: web/storybook
     cmds:
       - bun --bun storybook build -o dist --quiet
@@ -169,7 +176,7 @@ tasks:
 
   typecheck:
     desc: Type-check web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app (with its Service Worker), web/devtools, web/storybook and web/e2e with tsc
-    deps: [install, ":i18n:compile", routes]
+    deps: [generated]
     cmds:
       - cd web/design-tokens && bun --bun tsc -p .
       - cd web/design-system && bun --bun tsc -p .
@@ -191,7 +198,7 @@ tasks:
   # (restrict/layout-parts, restrict/viewport-breakpoints).
   lint:
     desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), prove the rules of web/devtools/src/restrictions.js and styles.js on their fixtures, and fail on a colour outside the tokens in their CSS
-    deps: [install, ":i18n:compile", routes]
+    deps: [generated]
     cmds:
       - bun --bun oxlint web/design-tokens web/design-system web/app-components web/platform web/rtc web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
       - bun test ./web/devtools/src/restrictions.test.js
@@ -205,7 +212,7 @@ tasks:
 
   knip:
     desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/e2e (knip.json)
-    deps: [install, ":i18n:compile", routes]
+    deps: [generated]
     cmds:
       - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/rtc --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/storybook --workspace web/e2e
 
@@ -213,7 +220,7 @@ tasks:
   # reads there which packages there are and which a change reaches (ADR-0079 §18).
   test:
     desc: Run the tests of the packages under web/ (web/design-tokens' fail on a stale internal/domain/instance/theme_tokens.gen.go), side by side, each kind on its DOM - every package, or those of PACKAGES (PACKAGES=app,app-features; `none` for none)
-    deps: [install, ":i18n:compile", routes]
+    deps: [generated]
     vars:
       SELECTED:
         sh: |
@@ -290,7 +297,7 @@ tasks:
   # ships, or holds the editor in a chunk that an entry loads with the page.
   build-check:
     desc: Build web/app for production into .tmp/build-check and fail if the build contains @my/devtools (ADR-0168 §3), ships a font without its license notice, or loads Lexical with an entry
-    deps: [install, ":i18n:compile", routes]
+    deps: [generated]
     cmds:
       - cd web/app && bun --bun vite build --logLevel warn --outDir ../../.tmp/build-check --emptyOutDir
       - bun web/devtools/src/absent.ts .tmp/build-check
@@ -315,7 +322,7 @@ tasks:
   # compose.yaml (scripts/dev-compose.sh) run it too.
   build:
     desc: Build web/app with Vite into internal/interface/web/dist, which the Go server embeds, with the brand assets of web/brand
-    deps: [install, ":i18n:compile", routes]
+    deps: [generated]
     cmds:
       - find {{.WEB_EMBED_DIR}} -mindepth 1 ! -name .gitkeep -delete
       - cd web/app && bun --bun vite build --logLevel warn
