@@ -20,9 +20,12 @@ export type Relationship = components["schemas"]["Relationship"];
 /** A hashtag an account features on its profile. */
 export type FeaturedHashtag = components["schemas"]["FeaturedHashtag"];
 
-/** The account of a handle (`user` or `user@domain`), fetched from its server when this one does not know it yet. */
-export function accountQuery({ queries }: AppData, acct: string) {
-  return queries.queryOptions("get", "/accounts/lookup", { params: { query: { acct, resolve: true } } });
+/**
+ * The account of a handle (`user` or `user@domain`), fetched from its server when this one does not know it yet; for
+ * a reader without a session (`signedIn` false), whom the server fetches nothing for, only one it knows.
+ */
+export function accountQuery({ queries }: AppData, acct: string, signedIn = true) {
+  return queries.queryOptions("get", "/accounts/lookup", { params: { query: { acct, resolve: signedIn } } });
 }
 
 /**
@@ -140,9 +143,13 @@ export function accountStatusesQuery({ api, queries }: AppData, id: string, kind
  * The account of a handle, and its failure (a ProblemError of mykit): at once from a copy the cache holds, fetched
  * again by its ID in the background once stale (accountByIdQuery), else from its lookup; undefined until the server
  * answered, or without a handle. `missing` once the server says the account is not there (404 or 410: never was,
- * deleted, or deactivated, which it does not tell apart), even over a copy the cache held.
+ * deleted, or deactivated, which it does not tell apart), even over a copy the cache held. Without a session
+ * (`signedIn` false), the lookup finds only the accounts the server knows.
  */
-export function useAccount(acct: string | undefined): {
+export function useAccount(
+  acct: string | undefined,
+  signedIn = true,
+): {
   account: Account | undefined;
   error: Error | null;
   missing: boolean;
@@ -150,7 +157,10 @@ export function useAccount(acct: string | undefined): {
   const data = useAppData();
   const id = acct === undefined ? undefined : cachedAccount(data, acct)?.id;
   const byId = useQuery({ ...accountByIdQuery(data, id ?? ""), enabled: id !== undefined });
-  const lookup = useQuery({ ...accountQuery(data, acct ?? ""), enabled: acct !== undefined && id === undefined });
+  const lookup = useQuery({
+    ...accountQuery(data, acct ?? "", signedIn),
+    enabled: acct !== undefined && id === undefined,
+  });
   const query = id === undefined ? lookup : byId;
   // The client rejects with a ProblemError or a NetworkError, which openapi-react-query types as the problem's body.
   const error = query.error as Error | null;

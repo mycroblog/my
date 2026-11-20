@@ -2,7 +2,8 @@
 
 // The home screen, at /: the home timeline of the signed-in reader, under a line that counts the unread announcements
 // where no column beside it holds them (ADR-0125 §4). A visitor without a session sees the operator's profile on a
-// one-person server (ADR-0152 §7); on any other server, the landing page takes the place of the shell (__root.tsx).
+// one-person server (ADR-0152 §7), whose actions that need an account lead to the app's sign-in and back, as on the
+// profile's own address; on any other server, the landing page takes the place of the shell (__root.tsx).
 
 import { useInstance } from "@my/app-data";
 import { HomeTimeline, loadHomeTimeline, Profile } from "@my/app-features";
@@ -12,6 +13,7 @@ import { screenLoad } from "../screen-load";
 import { UnreadAnnouncements } from "../shell/around";
 import { ScreenHeading } from "../shell/heading";
 import { ProfileHeading } from "../shell/profile-heading";
+import { useVisitorSignIn } from "../shell/visitor";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => screenLoad(context, loadHomeTimeline),
@@ -23,11 +25,12 @@ export const Route = createFileRoute("/")({
 /** The first page of a visitor of a one-person server: its operator's profile (ADR-0152 §7). */
 function Visitor() {
   const operator = useInstance()?.single_user_account;
+  const signIn = useVisitorSignIn(false);
   if (operator === undefined) return null;
   return (
     <>
-      <ProfileHeading acct={operator.acct} />
-      <Profile acct={operator.acct} />
+      <ProfileHeading acct={operator.acct} signedIn={false} />
+      <Profile acct={operator.acct} signIn={signIn} />
     </>
   );
 }

@@ -149,9 +149,14 @@ export function useComposeSettings(): ComposeSettings {
 
 /**
  * A status by its ID as it shows, at once from a cached query that holds it, else from the server; none without an ID,
- * or once it is gone.
+ * or once it is gone. `error` is why it could not be loaded, and `refetch` asks again.
  */
-export function useStatus(id: string | undefined): { status: Status | undefined; failed: boolean } {
+export function useStatus(id: string | undefined): {
+  status: Status | undefined;
+  failed: boolean;
+  error: unknown;
+  refetch: () => void;
+} {
   const data = useAppData();
   const show = useShadow();
   const options = data.queries.queryOptions("get", "/statuses/{id}", { params: { path: { id: id ?? "" } } });
@@ -160,7 +165,12 @@ export function useStatus(id: string | undefined): { status: Status | undefined;
     enabled: id !== undefined,
     initialData: () => (id === undefined ? undefined : findCachedCopy(data.queryClient, id)),
   });
-  return { status: query.data && show(query.data), failed: query.isError };
+  return {
+    status: query.data && show(query.data),
+    failed: query.isError,
+    error: query.error,
+    refetch: () => void query.refetch(),
+  };
 }
 
 /**

@@ -26,8 +26,11 @@ export async function readRelationships(data: AppData, ids: readonly string[], s
     data.queryClient.setQueryData(relationshipQuery(data, r.id).queryKey, { items: [r] });
 }
 
-/** The accounts of the account of `id`'s list, newest follow first, with the viewer's relationships with them. */
-export function accountFollowsQuery(data: AppData, id: string, list: FollowsList) {
+/**
+ * The accounts of the account of `id`'s list, newest follow first, with the viewer's relationships with them; without
+ * a session (`signedIn` false), which has none, the accounts alone.
+ */
+export function accountFollowsQuery(data: AppData, id: string, list: FollowsList, signedIn = true) {
   const { api, queries } = data;
   const page = async (cursor: string | undefined, signal: AbortSignal) => {
     const params = { path: { id }, query: cursor === undefined ? {} : { cursor } };
@@ -35,7 +38,7 @@ export function accountFollowsQuery(data: AppData, id: string, list: FollowsList
       list === "followers"
         ? await api.GET("/accounts/{id}/followers", { params, signal })
         : await api.GET("/accounts/{id}/following", { params, signal });
-    if (answer !== undefined)
+    if (answer !== undefined && signedIn)
       await readRelationships(
         data,
         answer.items.map((a) => a.id),
@@ -59,8 +62,11 @@ export type AccountFollows = PagedList<Account> & {
 /** Whether `error` is the server's answer that the account's owner keeps the list from the viewer. */
 const isFollowsHidden = (error: unknown) => error instanceof ProblemError && error.type === followsHidden;
 
-/** The list of the account of `id`; nothing is fetched while `enabled` is false. */
-export function useAccountFollows(id: string, list: FollowsList, enabled = true): AccountFollows {
-  const paged = usePagedList(accountFollowsQuery(useAppData(), id, list), enabled);
+/**
+ * The list of the account of `id`; nothing is fetched while `enabled` is false, and without a session (`signedIn`
+ * false) no relationship.
+ */
+export function useAccountFollows(id: string, list: FollowsList, enabled = true, signedIn = true): AccountFollows {
+  const paged = usePagedList(accountFollowsQuery(useAppData(), id, list, signedIn), enabled);
   return { ...paged, hidden: paged.status === "error" && isFollowsHidden(paged.error) };
 }
