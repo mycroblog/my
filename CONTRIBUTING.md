@@ -134,6 +134,9 @@ The tests do not use these services: they start what they need themselves, and `
 
 `scripts/task.sh docs:site-dev` serves the documentation site (`web/docs`) on `http://localhost:4321`, and
 `scripts/task.sh mail:preview` writes every email to `.tmp/mail/preview/` ([Emails](#emails)).
+`scripts/task.sh web:docs-screenshots` takes the site's screenshots again (`web/docs/src/assets/screenshots/`) from
+the demo server's scenario: run it when a pictured screen changes, and commit the images. Each image is a shot of
+`web/e2e/shots/list.ts`, whose test fails on an image no shot makes.
 
 ## Workflow
 
