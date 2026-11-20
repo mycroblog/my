@@ -100,8 +100,8 @@
     "description": "The heading of the section of an announcement's text, and the name of its editor. Read by administrators."
   },
   "staff_announcements.text.about": {
-    "defaultMessage": "Written in Markdown. Once you save, What readers see shows it as readers get it.",
-    "description": "Under the heading of an announcement's text. Read by administrators."
+    "defaultMessage": "Markdown, up to {max} characters.",
+    "description": "Under the heading of an announcement's text: its format and its limit. Read by administrators."
   },
   "staff_announcements.text.placeholder": {
     "defaultMessage": "What everyone on this server should know",
@@ -120,8 +120,8 @@
     "description": "The heading of the section of when an announcement shows to the readers. Read by administrators."
   },
   "staff_announcements.when.about": {
-    "defaultMessage": "In your time zone. Leave Starts empty to show it from its publication, and Ends empty to show it until it is withdrawn.",
-    "description": "Under the heading of when an announcement shows; Starts and Ends are the names of its two fields. Read by administrators."
+    "defaultMessage": "In your time zone.",
+    "description": "Under the heading of when an announcement shows: the zone its start and end are in. Read by administrators."
   },
   "staff_announcements.when.invalid": {
     "defaultMessage": "Enter a date and a time that exist, or leave it empty.",
@@ -246,5 +246,13 @@
   "staff_announcements.all": {
     "defaultMessage": "All announcements",
     "description": "The link to /admin/announcements under the sentence that an address names no announcement. Read by administrators."
+  },
+  "staff_announcements.section.about": {
+    "defaultMessage": "Plain text on one line, up to {max} characters.",
+    "description": "Under the heading of an announcement's title: its format and its limit. Read by administrators."
+  },
+  "staff_announcements.list.all": {
+    "defaultMessage": "Every announcement",
+    "description": "The heading of the list of announcements at /admin/announcements while no state filter is applied, with Write an announcement at its end. Read by administrators."
   }
 }

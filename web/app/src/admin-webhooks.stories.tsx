@@ -7,15 +7,10 @@
 // one, for the administrator and for a community lead (`lead`: no `manage_domains`, so the servers' events are left
 // out too). A webhook of each state with its deliveries; the lead on a webhook that receives an event they may not
 // handle, shown with no form; loading, failing, and an address that names none. The views of a secret shown once (a new
-// webhook's, a new secret) follow a press, so they are the feature's screens alone, opened in that state on a fake server of their own.
+// webhook's, a new secret) follow a press: the app opens them through the feature's specimen (`WebhookSecretSpecimen`).
 
-import { AppDataProvider, createAppData } from "@my/app-data";
-import { NewWebhookScreen, WebhookScreen } from "@my/app-features";
-import { createFakeApi, fakeOrigin } from "@my/e2e/fake";
-import { createClient } from "@mycroblog/mykit";
-import { FrameMain } from "@my/design-system";
+import { WebhookSecretSpecimen } from "@my/app-features";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
 import { screen, screenMeta, type Fake } from "./app.samples";
 
 const meta = {
@@ -105,46 +100,21 @@ export const WebhookMissing: Story = {
   parameters: asAdmin("/admin/webhooks/none"),
 };
 
-/**
- * The feature's screen alone, on a fake server of its own as the administrator reads it, opened in a state only a
- * press reaches: a new webhook just set up, or a webhook's new secret just made, each secret shown once.
- */
-function Specimen({ shows }: { shows: "created" | "rotated" }) {
-  const [{ data, id, secret }] = useState(() => {
-    const fake = createFakeApi({ viewer: "hana" });
-    const data = createAppData(
-      createClient({
-        server: fakeOrigin,
-        retry: { disabled: true },
-        fetch: fake.serve,
-      }),
-    );
-    // A secret of the server's form and length, so that its box shows how it wraps.
-    return {
-      data,
-      id: fake.staffServer.id("webhook", "alerts"),
-      secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw3b7Qf9eYkVk=",
-    };
-  });
-  const go = () => undefined;
-  return (
-    <AppDataProvider data={data}>
-      <FrameMain>
-        {shows === "created" ? (
-          <NewWebhookScreen go={go} defaultMade={{ id, secret }} />
-        ) : (
-          <WebhookScreen id={id} go={go} defaultSecret={secret} />
-        )}
-      </FrameMain>
-    </AppDataProvider>
-  );
-}
+/** A secret of the server's form and length, so that its box shows how it wraps. */
+const shownSecret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw3b7Qf9eYkVk=";
 
-/** The view that takes the form's place once a new webhook is set up: what happened, then its secret, shown once. */
-export const SecretOfANewWebhook: Story = {
-  render: () => <Specimen shows="created" />,
-};
-/** A webhook's page once a new secret is made: the secret in the section's place, with the 24 hours it overlaps. */
-export const NewSecretShownOnce: Story = {
-  render: () => <Specimen shows="rotated" />,
-};
+/**
+ * The whole app at `fake`'s address, its webhook screens opened with `shownSecret` as if the server had just given it:
+ * a state only a press reaches, which the feature's specimen opens.
+ */
+const withSecret = (fake: ReturnType<typeof asAdmin>): Story => ({
+  parameters: fake,
+  render: (args, context) => (
+    <WebhookSecretSpecimen value={shownSecret}>{screenMeta.render(args, context)}</WebhookSecretSpecimen>
+  ),
+});
+
+/** A new webhook just set up: what happened and its secret, shown once, on one surface, and Done. */
+export const SecretOfANewWebhook: Story = withSecret(asAdmin("/admin/webhooks/new"));
+/** A webhook's page once a new secret is made: the secret at its top, shown once, over the rest of the page. */
+export const NewSecretShownOnce: Story = withSecret(asAdmin("/admin/webhooks/{server:webhook:alerts}"));

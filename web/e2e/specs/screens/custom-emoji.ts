@@ -92,7 +92,7 @@ export class EmojiRequests {
       .click();
     await this.page
       .getByRole("main")
-      .getByRole("tab", { name: /^Requests(?: \d+\+?)?$/ })
+      .getByRole("tab", { name: /^Requests(?: \d+(?: or more)? waiting for review)?$/ })
       .click();
     await expect(this.table).toBeVisible();
   }
@@ -111,9 +111,7 @@ export class EmojiRequests {
 
   /** Opens the request for `shortcode` over the list, approves it, and returns once the server answered. */
   async approve(shortcode: string): Promise<void> {
-    await this.row(shortcode)
-      .getByRole("button", { name: new RegExp(`^:${escape(shortcode)}:(?: .+)?$`) })
-      .click();
+    await this.row(shortcode).getByRole("button", { name: "Review", exact: true }).click();
     const dialog = this.page.getByRole("dialog", { name: `:${shortcode}:`, exact: true });
     await answered(
       this.page,

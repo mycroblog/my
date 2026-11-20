@@ -47,10 +47,6 @@
     "defaultMessage": "新しい絵文字",
     "description": "The heading of the section of a new request's shortcode and image."
   },
-  "emoji_own.request.about": {
-    "defaultMessage": "管理者が承認するまでは使えず、画像はどこにも表示されません。",
-    "description": "Under the heading of a new request for a custom emoji."
-  },
   "emoji_own.request.send": {
     "defaultMessage": "申請する",
     "description": "The button of the submit bar of a new request for a custom emoji."
@@ -187,10 +183,6 @@
     "defaultMessage": "ピッカー",
     "description": "The heading of the section of one of the reader's emoji's category, aliases and whether the picker offers it."
   },
-  "emoji_own.picker.about": {
-    "defaultMessage": "絵文字ピッカーのどこに出すか、どの名前で見つけられるか。ピッカーに出すかどうかにかかわらず、本文で使えます。",
-    "description": "Under the heading of one of the reader's emoji's place in the picker."
-  },
   "emoji_own.category": {
     "defaultMessage": "カテゴリ",
     "description": "The field of the category of one of the reader's emoji; empty for none."
@@ -236,7 +228,7 @@
     "description": "The heading of the last section of one of the reader's emoji, apart, which deletes it."
   },
   "emoji_own.delete.about": {
-    "defaultMessage": "使っていた投稿とプロフィールは :shortcode: の文字で表示されます。削除しても、今月申請できる数は戻りません。",
+    "defaultMessage": "使っていた投稿とプロフィールは :shortcode: の文字で表示され、今月申請できる数も戻りません。取り消せません。",
     "description": "Under the heading of the section that deletes one of the reader's emoji."
   },
   "emoji_own.delete.press": {

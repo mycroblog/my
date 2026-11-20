@@ -16,14 +16,13 @@ import {
   type AppData,
 } from "@my/app-data";
 import {
+  Box,
   FeedNotice,
   FilterBar,
   FilterFacet,
-  LinkButton,
   RecordPages,
   RecordTable,
   ScreenStack,
-  ScreenTitle,
   type FilterValue,
   type RecordColumn,
   type RecordRow,
@@ -31,7 +30,7 @@ import {
 import type { ReactNode } from "react";
 import type { StaffEntryProps, StaffSearch } from "../entries";
 import { ReadNotice, useStaffStrings, type T } from "../parts";
-import { adminEmojiPath, coded, EmojiImage, EmojiState, EmojiTabs, newAdminEmojiPath, originOf } from "./emoji-parts";
+import { adminEmojiPath, coded, EmojiImage, EmojiState, EmojiTabs, EmojiTitle, originOf } from "./emoji-parts";
 
 /** What the list shows at an address's query: every emoji unless it names an origin or a shortcode, and a page. */
 function emojiQueryOf(search: StaffSearch): AdminEmojiQuery {
@@ -62,21 +61,19 @@ export async function loadEmojiScreen(data: AppData, search: StaffSearch): Promi
   await Promise.all([loadAdminEmojis(data, emojiQueryOf(search)), loadAdminEmojiRequests(data, "pending")]);
 }
 
-/** What a row says under an emoji's shortcode: its category and aliases, or its server; and that the picker omits it. */
+/** What a row says under a local emoji's shortcode: its category and aliases; nothing for another server's. */
 function captionOf(t: T, emoji: AdminCustomEmoji): string | undefined {
-  const parts = emoji.local
-    ? [
-        ...(emoji.category === undefined ? [] : [t("staff_emoji.row.category", { category: emoji.category })]),
-        ...(emoji.aliases.length === 0
-          ? []
-          : [t("staff_emoji.row.aliases", { aliases: emoji.aliases.map(coded).join(" ") })]),
-        ...(emoji.visible_in_picker ? [] : [t("staff_emoji.row.hidden")]),
-      ]
-    : [originOf(t, emoji)];
+  if (!emoji.local) return undefined;
+  const parts = [
+    ...(emoji.category === undefined ? [] : [t("staff_emoji.row.category", { category: emoji.category })]),
+    ...(emoji.aliases.length === 0
+      ? []
+      : [t("staff_emoji.row.aliases", { aliases: emoji.aliases.map(coded).join(" ") })]),
+  ];
   return parts.length === 0 ? undefined : parts.join(" · ");
 }
 
-type Column = "image" | "state";
+type Column = "image" | "origin" | "state";
 
 /** The custom emoji: their tabs, their filters, a page of them, and the pages. */
 export function AdminEmojiScreen({ search, onSearch, go }: StaffEntryProps): ReactNode {
@@ -94,6 +91,7 @@ export function AdminEmojiScreen({ search, onSearch, go }: StaffEntryProps): Rea
   ];
   const columns: RecordColumn<Column>[] = [
     { key: "image", label: t("staff_emoji.column.image"), kind: "fit" },
+    { key: "origin", label: t("staff_emoji.origin"), bare: true },
     { key: "state", label: t("staff_emoji.column.state"), kind: "fit", beside: true },
   ];
   const rows = (page.items ?? []).map((e): RecordRow<Column> => ({
@@ -103,21 +101,19 @@ export function AdminEmojiScreen({ search, onSearch, go }: StaffEntryProps): Rea
     href: adminEmojiPath(e.id),
     cells: {
       image: <EmojiImage shortcode={e.shortcode} url={e.url} staticUrl={e.static_url} />,
+      // A server's domain is one word of its column, which keeps it whole.
+      origin: (
+        <Box as="span" nowrap>
+          {originOf(t, e)}
+        </Box>
+      ),
       state: <EmojiState emoji={e} />,
     },
   }));
   const previous = trail.at(-1);
   return (
     <ScreenStack busy={page.stale}>
-      <ScreenTitle
-        actions={
-          <LinkButton size="timeline" href={newAdminEmojiPath}>
-            {t("staff_emoji.add")}
-          </LinkButton>
-        }
-      >
-        {t("staff_emoji.entry")}
-      </ScreenTitle>
+      <EmojiTitle />
       <EmojiTabs current="emoji" go={go}>
         <ScreenStack busy={page.stale}>
           <FilterBar
@@ -160,6 +156,7 @@ export function AdminEmojiScreen({ search, onSearch, go }: StaffEntryProps): Rea
                 columns={columns}
                 rows={rows}
                 busy={page.stale}
+                even
                 empty={<FeedNotice>{t(filtered ? "staff_emoji.empty.filtered" : "staff_emoji.empty")}</FeedNotice>}
               />
               <RecordPages

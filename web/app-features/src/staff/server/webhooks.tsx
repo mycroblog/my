@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The webhooks as a holder of `manage_webhooks` keeps them (FR-722, ADR-0060, ADR-0058 §1): at /admin/webhooks, every
-// endpoint, newest first, each a door to its page under its host, with what it is for, how many events it receives
-// and where it stands (on; failing now; off, by an administrator or by the server after its deliveries kept failing
-// or its endpoint said it is gone), with Set up a webhook. A new one, /admin/webhooks/new, is its address, what it is
+// endpoint, newest first, a row each that opens its page, under its host, with what it is for, how many events it
+// receives and where it stands as a mark (on; failing now; off, by an administrator or by the server after its
+// deliveries kept failing or its endpoint said it is gone), with Set up a webhook. A new one, /admin/webhooks/new, is its address, what it is
 // for and its events (webhook-form.tsx); once set up, its secret is shown once in the form's place.
 
 import {
@@ -17,27 +17,30 @@ import {
 } from "@my/app-data";
 import {
   Button,
+  FeedNotice,
   LinkButton,
   ModalPresence,
+  RecordTable,
   Row,
-  SettingsEmpty,
-  SettingsList,
-  SettingsListRow,
-  SettingsScreen,
+  ScreenStack,
+  ScreenTitle,
   SettingsSection,
+  SettingsScreen,
+  StateMark,
+  type RecordRow,
 } from "@my/design-system";
-import { useState, type ReactNode } from "react";
-import { useMoment, useStaffStrings, type T } from "../parts";
-import { LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
+import { use, useState, type ReactNode } from "react";
+import { ReadNotice, useStaffStrings } from "../parts";
+import { LeaveDialog, type AdminSubProps } from "../settings/parts";
 import { BackTo, useStillThere } from "./parts";
 import {
   hostOf,
-  useFocusOnArrival,
   useWebhookForm,
   WebhookBar,
   WebhookEventFields,
   WebhookPlaceFields,
   WebhookSecret,
+  WebhookSecretSpecimen,
 } from "./webhook-form";
 
 /** The address of the webhooks. */
@@ -50,84 +53,74 @@ export const adminWebhookPath = (id: string): string => `${adminWebhooksPath}/${
 /** Reads the webhooks, for the entry's loader. */
 export const loadWebhooksScreen = (data: AppData): Promise<void> => loadAdminWebhooks(data);
 
-/** Whether `webhook` receives nothing now. */
-const isOff = (webhook: AdminWebhook): boolean => webhook.state === "disabled";
-
-/**
- * Where a webhook stands, in a sentence, where there is more to say than on or off: failing now, or turned off by the
- * server and why; none for one that works or that an administrator turned off.
- */
-function standingOf(t: T, moment: (iso: string) => string, webhook: AdminWebhook): string | undefined {
-  if (webhook.state === "disabled" && webhook.state_reason === "failing")
-    return t("staff_webhooks.standing.failing_off");
-  if (webhook.state === "disabled" && webhook.state_reason === "gone") return t("staff_webhooks.standing.gone");
-  if (webhook.state === "enabled" && webhook.failure !== undefined)
-    return t("staff_webhooks.standing.failing", {
-      count: webhook.failure.consecutive_failures,
-      since: moment(webhook.failure.first_failed_at),
-    });
-  return undefined;
+/** Where a webhook stands in its list, as its mark: on; failing now; off, by an administrator or by the server. */
+function WebhookMark({ webhook }: { webhook: AdminWebhook }): ReactNode {
+  const { t } = useStaffStrings();
+  if (webhook.state === "disabled")
+    return webhook.state_reason === "admin" ? (
+      <StateMark state="disabled">{t("staff_webhooks.state.off")}</StateMark>
+    ) : (
+      <StateMark state="failed">{t("staff_webhooks.state.server_off")}</StateMark>
+    );
+  if (webhook.failure !== undefined) return <StateMark state="failed">{t("staff_webhooks.state.failing")}</StateMark>;
+  return <StateMark state="active">{t("staff_webhooks.state.on")}</StateMark>;
 }
 
-/** The webhooks: every one, newest first, a door each, and Set up a webhook. */
+type Column = "events" | "state";
+
+/** The webhooks: every one, newest first, a row each that opens its page, and Set up a webhook. */
 export function AdminWebhooksScreen(): ReactNode {
   const { t } = useStaffStrings();
-  const moment = useMoment();
   const read = useAdminWebhooks();
-  const title = t("staff_webhooks.entry");
+  const head = <ScreenTitle glyph="link">{t("staff_webhooks.entry")}</ScreenTitle>;
   if (read.webhooks === undefined)
     return (
-      <SettingsScreen
-        sub
-        icon="link"
-        title={title}
-        notice={
-          <ScreenNotice
-            status={read.status === "failed" ? "failed" : "loading"}
-            retry={read.retry}
-            words={{
-              loading: t("staff_webhooks.loading"),
-              failed: t("staff_webhooks.failed"),
-            }}
-          />
-        }
-      />
+      <ScreenStack>
+        {head}
+        <ReadNotice
+          status={read.status === "failed" ? "error" : "pending"}
+          loading={t("staff_webhooks.loading")}
+          failed={t("staff_webhooks.failed")}
+          retry={read.retry}
+        />
+      </ScreenStack>
     );
-  const add = (
-    <LinkButton size="timeline" href={newWebhookPath}>
-      {t("staff_webhooks.add")}
-    </LinkButton>
-  );
-  const { webhooks } = read;
+  const rows = read.webhooks.map((w): RecordRow<Column> => ({
+    id: w.id,
+    head: hostOf(w.url),
+    caption: w.description,
+    href: adminWebhookPath(w.id),
+    cells: {
+      events: t("staff_webhooks.row.events", { count: w.events.length }),
+      state: <WebhookMark webhook={w} />,
+    },
+  }));
   return (
-    <SettingsScreen sub icon="link" title={title}>
+    <ScreenStack>
+      {head}
+      {/* As the other lists of the administration, the way to a new one ends the heading of the list. */}
       <SettingsSection
-        heading={t("staff_webhooks.list.count", { count: webhooks.length })}
-        about={t("staff_webhooks.list.about")}
-        action={webhooks.length === 0 ? undefined : add}
+        heading={t("staff_webhooks.list.count", { count: rows.length })}
+        action={
+          <LinkButton size="timeline" href={newWebhookPath}>
+            {t("staff_webhooks.add")}
+          </LinkButton>
+        }
       >
-        {webhooks.length === 0 ? (
-          <SettingsEmpty action={add}>{t("staff_webhooks.empty")}</SettingsEmpty>
-        ) : (
-          <SettingsList label={title}>
-            {webhooks.map((w) => (
-              <SettingsListRow
-                key={w.id}
-                title={hostOf(w.url)}
-                inactive={isOff(w)}
-                facts={[
-                  ...(w.description === undefined ? [] : [w.description]),
-                  t("staff_webhooks.row.events", { count: w.events.length }),
-                ]}
-                standing={standingOf(t, moment, w)}
-                state={t(isOff(w) ? "staff_webhooks.state.off" : "staff_webhooks.state.on")}
-                href={adminWebhookPath(w.id)}
-              />
-            ))}
-          </SettingsList>
-        )}
+        <RecordTable
+          label={t("staff_webhooks.entry")}
+          head={{ label: t("staff_webhooks.column.host") }}
+          columns={[
+            { key: "events", label: t("staff_webhooks.column.events"), bare: true },
+            { key: "state", label: t("staff_webhooks.column.state"), kind: "fit", beside: true },
+          ]}
+          rows={rows}
+          even
+          contained
+          empty={<FeedNotice>{t("staff_webhooks.empty")}</FeedNotice>}
+        />
       </SettingsSection>
-    </SettingsScreen>
+    </ScreenStack>
   );
 }
 
@@ -137,24 +130,19 @@ export function BackToWebhooks({ go }: { go: (href: string) => void }) {
 }
 
 /**
- * A new webhook: its address, what it is for, and its events; once set up, its secret, shown once. `defaultMade` opens
- * it as just set up (a specimen's): the webhook's ID and the secret the server gave.
+ * A new webhook: its address, what it is for, and its events; once set up, its secret, shown once. A story opens it as
+ * just set up through `WebhookSecretSpecimen`.
  */
-export function NewWebhookScreen({
-  go,
-  onUnsaved,
-  leaving,
-  defaultMade,
-}: AdminSubProps & {
-  defaultMade?: { id: string; secret: string } | undefined;
-}): ReactNode {
+export function NewWebhookScreen({ go, onUnsaved, leaving }: AdminSubProps): ReactNode {
   const { t } = useStaffStrings();
   const permissions = usePermissions();
   const writes = useAdminWebhookWrites();
   const there = useStillThere();
   const f = useWebhookForm({ url: "", description: "", events: new Set() }, permissions, onUnsaved);
-  const [made, setMade] = useState<{ id: string; secret: string } | undefined>(defaultMade);
-  const titleRef = useFocusOnArrival<HTMLHeadingElement>(made !== undefined);
+  const specimen = use(WebhookSecretSpecimen);
+  const [made, setMade] = useState<{ id?: string | undefined; secret: string } | undefined>(
+    specimen === undefined ? undefined : { secret: specimen },
+  );
   const save = () => {
     if (f.busy || !f.check()) return;
     f.setSent({ kind: "sending" });
@@ -183,14 +171,14 @@ export function NewWebhookScreen({
         <WebhookSecret
           kind="created"
           secret={made.secret}
-          titleRef={titleRef}
+          arrived={specimen === undefined}
           done={
             <Row justify="end">
               <Button
                 size="timeline"
                 touch
                 onPress={() => {
-                  go(adminWebhookPath(made.id));
+                  go(made.id === undefined ? adminWebhooksPath : adminWebhookPath(made.id));
                 }}
               >
                 {t("staff_webhooks.secret.done")}

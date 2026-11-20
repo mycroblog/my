@@ -60,15 +60,15 @@
     "description": "Where an announcement stands: a draft nobody sees, published and waiting for its window to start, showing to every local user now, published and its window over, or withdrawn for good. Read by administrators."
   },
   "staff_announcements.window.both": {
-    "defaultMessage": "{from} から {until} まで",
+    "defaultMessage": "{from}から{until}まで",
     "description": "When an announcement shows: both sides of its window, each a date and a time. Read by administrators."
   },
   "staff_announcements.window.from": {
-    "defaultMessage": "{from} から",
+    "defaultMessage": "{from}から",
     "description": "When an announcement shows: from a moment, until it is withdrawn. Read by administrators."
   },
   "staff_announcements.window.until": {
-    "defaultMessage": "公開から {until} まで",
+    "defaultMessage": "公開から{until}まで",
     "description": "When an announcement shows: from its publication until a moment. Read by administrators."
   },
   "staff_announcements.window.open": {
@@ -100,8 +100,8 @@
     "description": "The heading of the section of an announcement's text, and the name of its editor. Read by administrators."
   },
   "staff_announcements.text.about": {
-    "defaultMessage": "Markdown で書きます。保存すると、読む人に届く形を「読む人に見える表示」で確かめられます。",
-    "description": "Under the heading of an announcement's text. Read by administrators."
+    "defaultMessage": "Markdown で {max} 文字まで。",
+    "description": "Under the heading of an announcement's text: its format and its limit. Read by administrators."
   },
   "staff_announcements.text.placeholder": {
     "defaultMessage": "このサーバーの全員に知らせたいこと",
@@ -120,8 +120,8 @@
     "description": "The heading of the section of when an announcement shows to the readers. Read by administrators."
   },
   "staff_announcements.when.about": {
-    "defaultMessage": "あなたのタイムゾーンの日時です。「開始」が空なら公開から、「終了」が空なら取り下げるまで表示します。",
-    "description": "Under the heading of when an announcement shows; Starts and Ends are the names of its two fields. Read by administrators."
+    "defaultMessage": "あなたのタイムゾーンの日時です。",
+    "description": "Under the heading of when an announcement shows: the zone its start and end are in. Read by administrators."
   },
   "staff_announcements.when.invalid": {
     "defaultMessage": "実在する日時を入力するか、空にしてください。",
@@ -184,11 +184,11 @@
     "description": "The heading of the first section of an announcement's page: its state, when it shows, when it was published and revised. Read by administrators."
   },
   "staff_announcements.published_at": {
-    "defaultMessage": "{date} に公開",
+    "defaultMessage": "{date}に公開",
     "description": "A fact of an announcement: when it was last published (a date and a time). Read by administrators."
   },
   "staff_announcements.revised_at": {
-    "defaultMessage": "{date} に最終変更",
+    "defaultMessage": "{date}に最終変更",
     "description": "A fact of an announcement: when its text or window last changed (a date and a time). Read by administrators."
   },
   "staff_announcements.preview": {
@@ -246,5 +246,13 @@
   "staff_announcements.all": {
     "defaultMessage": "すべてのお知らせ",
     "description": "The link to /admin/announcements under the sentence that an address names no announcement. Read by administrators."
+  },
+  "staff_announcements.section.about": {
+    "defaultMessage": "1 行のプレーンテキストで {max} 文字まで。",
+    "description": "Under the heading of an announcement's title: its format and its limit. Read by administrators."
+  },
+  "staff_announcements.list.all": {
+    "defaultMessage": "すべてのお知らせ",
+    "description": "The heading of the list of announcements at /admin/announcements while no state filter is applied, with Write an announcement at its end. Read by administrators."
   }
 }

@@ -26,13 +26,13 @@ import {
   ModalPresence,
   RecordTable,
   Row,
+  Select,
   Stack,
   type RecordColumn,
   type RecordRow,
 } from "@my/design-system";
 import { ProblemError } from "@mycroblog/mykit";
 import { useState, type ReactNode } from "react";
-import { LabelledSelect } from "../accounts/parts";
 import { Titled, useStaffStrings, type T } from "../parts";
 import { useStillThere } from "./parts";
 
@@ -63,7 +63,7 @@ type Column = "place" | "act";
 
 /** The roles of the account of `accountId`: those it holds, Revoke, and Grant. */
 export function AccountRoles({ accountId, handle, say }: AccountRolesProps): ReactNode {
-  const { t } = useStaffStrings();
+  const { t, locale } = useStaffStrings();
   const held = useAccountRoles(accountId);
   const all = useAdminRoles();
   const writes = useAdminRoleWrites();
@@ -120,14 +120,14 @@ export function AccountRoles({ accountId, handle, say }: AccountRolesProps): Rea
     );
   };
   const columns: RecordColumn<Column>[] = [
-    { key: "place", label: t("staff_roles.position"), kind: "fit", bare: true },
+    { key: "place", label: t("staff_roles.position"), kind: "figures" },
     { key: "act", label: t("staff_roles.account.act"), kind: "fit", beside: true },
   ];
   const rows = held.held.map((role): RecordRow<Column> => ({
     id: role.id,
     head: role.key,
     cells: {
-      place: t("staff_roles.row.place", { position: role.position }),
+      place: new Intl.NumberFormat(locale).format(role.position),
       act: mayRevoke(role, rights) ? (
         <Button
           size="timeline"
@@ -160,8 +160,8 @@ export function AccountRoles({ accountId, handle, say }: AccountRolesProps): Rea
           {pick === undefined ? (
             <FeedNotice>{t("staff_roles.account.none_to_grant")}</FeedNotice>
           ) : (
-            <Row align="end" gap="screen-row-gap" wrap>
-              <LabelledSelect
+            <Row align="center" gap="screen-row-gap" wrap>
+              <Select
                 label={t("staff_roles.account.grant_role")}
                 options={grantable.map((r) => ({ value: r.key, label: r.key }))}
                 value={pick.key}

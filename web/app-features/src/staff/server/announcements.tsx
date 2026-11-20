@@ -3,8 +3,9 @@
 // The server's announcements as a holder of `manage_announcements` keeps them (FR-726, ADR-0125, ADR-0058 §1): at
 // /admin/announcements, every one, the newest first, a page at a time by the server's cursor, kept to one state where
 // the address says (a draft, waiting for its window, showing now, over, withdrawn); each its title, as written, where it
-// stands and when it shows, opening its page (announcement.tsx); and Write an announcement. Where the list has nothing
-// to show, it says why.
+// stands and when it shows, opening its page (announcement.tsx); and Write an announcement at the end of the list's
+// heading, as every list of the administration has its way to a new one. Where the list has nothing to show, it says
+// why.
 
 import {
   announcementFilters,
@@ -25,6 +26,7 @@ import {
   RecordTable,
   ScreenStack,
   ScreenTitle,
+  SettingsSection,
   StateMark,
   type FilterValue,
   type IconName,
@@ -121,16 +123,7 @@ export function AdminAnnouncementsScreen({ search, onSearch }: StaffEntryProps):
   }));
   const head = (
     <>
-      <ScreenTitle
-        glyph="announcements"
-        actions={
-          <LinkButton size="timeline" href={newAnnouncementPath}>
-            {t("staff_announcements.write")}
-          </LinkButton>
-        }
-      >
-        {t("staff_announcements.entry")}
-      </ScreenTitle>
+      <ScreenTitle glyph="announcements">{t("staff_announcements.entry")}</ScreenTitle>
       <FilterBar
         label={t("staff_announcements.filters")}
         applied={q.state !== undefined}
@@ -175,22 +168,33 @@ export function AdminAnnouncementsScreen({ search, onSearch }: StaffEntryProps):
   return (
     <ScreenStack busy={page.stale}>
       {head}
-      <RecordTable
-        label={t("staff_announcements.table")}
-        head={{ label: t("staff_announcements.column.title") }}
-        columns={[
-          { key: "window", label: t("staff_announcements.column.window"), bare: true },
-          { key: "state", label: t("staff_announcements.column.state"), kind: "fit", beside: true },
-        ]}
-        rows={rows}
-        busy={page.stale}
-        even
-        empty={
-          <FeedNotice>
-            {t(q.state === undefined ? "staff_announcements.empty" : "staff_announcements.empty.filtered")}
-          </FeedNotice>
+      {/* As the other lists of the administration, the way to a new one ends the heading of the list. */}
+      <SettingsSection
+        heading={q.state === undefined ? t("staff_announcements.list.all") : standingWords(t, q.state)}
+        action={
+          <LinkButton size="timeline" href={newAnnouncementPath}>
+            {t("staff_announcements.write")}
+          </LinkButton>
         }
-      />
+      >
+        <RecordTable
+          label={t("staff_announcements.table")}
+          head={{ label: t("staff_announcements.column.title") }}
+          columns={[
+            { key: "window", label: t("staff_announcements.column.window"), bare: true },
+            { key: "state", label: t("staff_announcements.column.state"), kind: "fit", beside: true },
+          ]}
+          rows={rows}
+          busy={page.stale}
+          even
+          contained
+          empty={
+            <FeedNotice>
+              {t(q.state === undefined ? "staff_announcements.empty" : "staff_announcements.empty.filtered")}
+            </FeedNotice>
+          }
+        />
+      </SettingsSection>
       <RecordPages
         previous={
           previous === undefined

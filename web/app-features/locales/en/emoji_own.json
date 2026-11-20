@@ -47,10 +47,6 @@
     "defaultMessage": "New emoji",
     "description": "The heading of the section of a new request's shortcode and image."
   },
-  "emoji_own.request.about": {
-    "defaultMessage": "An administrator approves it before anyone can use it. Until then, nothing shows its image.",
-    "description": "Under the heading of a new request for a custom emoji."
-  },
   "emoji_own.request.send": {
     "defaultMessage": "Send request",
     "description": "The button of the submit bar of a new request for a custom emoji."
@@ -187,10 +183,6 @@
     "defaultMessage": "In the picker",
     "description": "The heading of the section of one of the reader's emoji's category, aliases and whether the picker offers it."
   },
-  "emoji_own.picker.about": {
-    "defaultMessage": "Where the emoji picker shows it and the names it finds it by. Texts can use it either way.",
-    "description": "Under the heading of one of the reader's emoji's place in the picker."
-  },
   "emoji_own.category": {
     "defaultMessage": "Category",
     "description": "The field of the category of one of the reader's emoji; empty for none."
@@ -236,7 +228,7 @@
     "description": "The heading of the last section of one of the reader's emoji, apart, which deletes it."
   },
   "emoji_own.delete.about": {
-    "defaultMessage": "Posts and profiles that used it show its :shortcode: as text. Deleting it gives no request of this month back.",
+    "defaultMessage": "Posts and profiles that used it show its :shortcode: as text, and no request of this month comes back. This cannot be undone.",
     "description": "Under the heading of the section that deletes one of the reader's emoji."
   },
   "emoji_own.delete.press": {

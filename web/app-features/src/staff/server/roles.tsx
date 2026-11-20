@@ -55,6 +55,8 @@ import {
   SettingsResult,
   SettingsScreen,
   SettingsSection,
+  Row,
+  Stack,
   SubmitBar,
   TextField,
 } from "@my/design-system";
@@ -129,11 +131,6 @@ export function AdminRolesScreen(): ReactNode {
     <SettingsScreen sub icon="members" title={title}>
       <SettingsSection
         heading={t("staff_roles.list.count", { count: roles.length })}
-        about={
-          rights.topKey === undefined
-            ? undefined
-            : t("staff_roles.list.about", { key: rights.topKey, position: rights.top })
-        }
         action={
           <LinkButton size="timeline" href={newRolePath}>
             {t("staff_roles.add")}
@@ -333,27 +330,29 @@ function PermissionFields({ f, rights, fixed }: { f: FormState; rights: RoleRigh
   const error = errorOf(f, "permissions");
   const offered = offeredPermissionsAt(rights, f.form.key, f.form.position);
   return (
-    <SettingsSection heading={t("staff_roles.permissions")} about={t("staff_roles.permissions.about")}>
-      {offered.map((p, i) => (
-        <CheckField
-          key={p}
-          id={`${f.id}-permission-${p}`}
-          name="permissions"
-          value={p}
-          label={permissionName(t, p)}
-          checked={f.form.permissions.has(p)}
-          touch
-          disabled={f.busy}
-          // The refusal of the permissions as a whole stands under the first of them.
-          error={i === 0 ? error : undefined}
-          onChange={(on) => {
-            const next = new Set(f.form.permissions);
-            if (on) next.add(p);
-            else next.delete(p);
-            f.change({ permissions: next });
-          }}
-        />
-      ))}
+    <SettingsSection heading={t("staff_roles.permissions")}>
+      <Stack>
+        {offered.map((p, i) => (
+          <CheckField
+            key={p}
+            id={`${f.id}-permission-${p}`}
+            name="permissions"
+            value={p}
+            label={permissionName(t, p)}
+            checked={f.form.permissions.has(p)}
+            touch
+            disabled={f.busy}
+            // The refusal of the permissions as a whole stands under the first of them.
+            error={i === 0 ? error : undefined}
+            onChange={(on) => {
+              const next = new Set(f.form.permissions);
+              if (on) next.add(p);
+              else next.delete(p);
+              f.change({ permissions: next });
+            }}
+          />
+        ))}
+      </Stack>
       {fixed.length > 0 && (
         <SettingsNote>{t("staff_roles.permissions.fixed", { names: permissionList(t, locale, fixed) })}</SettingsNote>
       )}
@@ -366,7 +365,10 @@ function BadgeFields({ f }: { f: FormState }) {
   const { t } = useStaffStrings();
   const label = f.form.label.trim();
   return (
-    <SettingsSection heading={t("staff_roles.badge")} about={t("staff_roles.badge.about")}>
+    <SettingsSection
+      heading={t("staff_roles.badge")}
+      about={t("staff_roles.badge.about", { max: roleLimits.badgeLabel })}
+    >
       <TextField
         id={`${f.id}-label`}
         name="label"
@@ -386,7 +388,11 @@ function BadgeFields({ f }: { f: FormState }) {
           label={t("staff_roles.badge.color")}
           form
           error={errorOf(f, "color")}
-          values={<Badge>{label}</Badge>}
+          values={
+            <Row justify="start">
+              <Badge hue={f.form.color}>{label}</Badge>
+            </Row>
+          }
         >
           <Select
             id={`${f.id}-color-control`}
@@ -522,23 +528,25 @@ function changeOf(f: FormState, reshape: boolean): RoleChange {
   };
 }
 
-/** What a role that cannot be changed is: its place, its permissions and its badge, and why the reader cannot. */
+/** What a role that cannot be changed is: its place and its permissions, a line each, and why the reader cannot. */
 function RoleFacts({ role, why }: { role: AdminRole; why: string }) {
-  const { t, locale } = useStaffStrings();
+  const { t } = useStaffStrings();
+  const held = permissionOrder.filter((p) => role.permissions.includes(p));
   return (
     <SettingsSection heading={t("staff_roles.role")}>
       <SettingsFacts
         label={t("staff_roles.role")}
-        items={[
-          { text: t("staff_roles.row.place", { position: role.position }) },
-          {
-            text:
-              role.permissions.length === 0
-                ? t("staff_roles.facts.no_permissions")
-                : t("staff_roles.facts.permissions", { names: permissionList(t, locale, role.permissions) }),
-          },
-        ]}
+        items={[{ text: t("staff_roles.row.place", { position: role.position }) }]}
       />
+      {held.length === 0 ? (
+        <SettingsNote instead>{t("staff_roles.facts.no_permissions")}</SettingsNote>
+      ) : (
+        <SettingsFacts
+          shown
+          label={t("staff_roles.permissions")}
+          items={held.map((p) => ({ text: permissionName(t, p) }))}
+        />
+      )}
       <SettingsNote>{why}</SettingsNote>
     </SettingsSection>
   );

@@ -23,6 +23,10 @@
     "defaultMessage": "Nothing changed. Check your connection and try again.",
     "description": "In the section of a custom emoji's actions when disabling or enabling it failed. Read by administrators."
   },
+  "staff_emoji.state.hidden": {
+    "defaultMessage": "Not in the picker",
+    "description": "The state of a local custom emoji that is shown where it is used but that the emoji picker leaves out, in its row and on its page. Read by administrators."
+  },
   "staff_emoji.origin": {
     "defaultMessage": "Server",
     "description": "The filter of the custom emoji by where they come from, and the fact of an emoji's server. Read by administrators."
@@ -47,13 +51,13 @@
     "defaultMessage": "Requests",
     "description": "The second tab of Custom emoji: the requests for new emoji, while none waits. Read by administrators."
   },
-  "staff_emoji.tab.requests.count": {
-    "defaultMessage": "Requests {count}",
-    "description": "The second tab of Custom emoji, with how many requests wait for a decision. Read by administrators."
+  "staff_emoji.tab.pending": {
+    "defaultMessage": "{count, plural, one {# waiting for review} other {# waiting for review}}",
+    "description": "For assistive technology, what the badge on the Requests tab of Custom emoji counts: the requests waiting for review. Read by administrators."
   },
-  "staff_emoji.tab.requests.more": {
-    "defaultMessage": "Requests {count}+",
-    "description": "The second tab of Custom emoji when more requests wait than the first page holds. Read by administrators."
+  "staff_emoji.tab.pending.more": {
+    "defaultMessage": "{count} or more waiting for review",
+    "description": "For assistive technology, what the badge on the Requests tab counts when more requests wait than the first page holds. Read by administrators."
   },
   "staff_emoji.add": {
     "defaultMessage": "Register an emoji",
@@ -94,10 +98,6 @@
   "staff_emoji.row.aliases": {
     "defaultMessage": "Also {aliases}",
     "description": "A fact under a local custom emoji's shortcode: its aliases, each between colons. Read by administrators."
-  },
-  "staff_emoji.row.hidden": {
-    "defaultMessage": "Not in the picker",
-    "description": "A fact under a local custom emoji's shortcode: the picker does not offer it, though texts can use it. Read by administrators."
   },
   "staff_emoji.loading": {
     "defaultMessage": "Loading the custom emoji…",
@@ -219,10 +219,6 @@
     "defaultMessage": "In the picker",
     "description": "The heading of the section of a local custom emoji's category, aliases and whether the picker offers it. Read by administrators."
   },
-  "staff_emoji.picker.about": {
-    "defaultMessage": "Where the emoji picker shows the emoji and the names it finds it by. Texts can use every emoji that is shown, in the picker or not.",
-    "description": "Under the heading of a custom emoji's place in the picker. Read by administrators."
-  },
   "staff_emoji.category": {
     "defaultMessage": "Category",
     "description": "The field of a custom emoji's category in the picker; empty for none. Read by administrators."
@@ -258,14 +254,6 @@
   "staff_emoji.actions": {
     "defaultMessage": "Image and state",
     "description": "The heading of the first section of a custom emoji's page: its image, Disable or Enable, and a new image. Read by administrators."
-  },
-  "staff_emoji.enabled.about": {
-    "defaultMessage": "Shown wherever it is used. Disabled, its :shortcode: stays text everywhere.",
-    "description": "Under the heading of the actions of a custom emoji that is shown. Read by administrators."
-  },
-  "staff_emoji.disabled.about": {
-    "defaultMessage": "Disabled: its :shortcode: stays text everywhere until it is enabled again.",
-    "description": "Under the heading of the actions of a disabled custom emoji. Read by administrators."
   },
   "staff_emoji.disable": {
     "defaultMessage": "Disable",
@@ -314,10 +302,6 @@
   "staff_emoji.copy": {
     "defaultMessage": "Copy to this server",
     "description": "The heading of the section of another server's custom emoji that copies it into a local one. Read by administrators."
-  },
-  "staff_emoji.copy.about": {
-    "defaultMessage": "Makes an emoji of this server with the same image and offers it in the picker.",
-    "description": "Under the heading of the copy of another server's custom emoji. Read by administrators."
   },
   "staff_emoji.copy.shortcode": {
     "defaultMessage": "Shortcode of the copy",
@@ -502,5 +486,17 @@
   "staff_emoji.request.failed.write": {
     "defaultMessage": "Nothing was decided. Check your connection and try again.",
     "description": "Beside Approve and Reject when the decision failed with no reason. Read by administrators."
+  },
+  "staff_emoji.request.review": {
+    "defaultMessage": "Review",
+    "description": "The button of a pending custom emoji request's row that opens it over the list, with Approve and Reject. Read by administrators."
+  },
+  "staff_emoji.request.view": {
+    "defaultMessage": "Details",
+    "description": "The button of a decided custom emoji request's row that opens what it was and how it was decided. Read by administrators."
+  },
+  "staff_emoji.request.review.column": {
+    "defaultMessage": "Decision",
+    "description": "The heading of the column of the buttons that open a custom emoji request (Review, Details) in the table of requests. Read by administrators."
   }
 }

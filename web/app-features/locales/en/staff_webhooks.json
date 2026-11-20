@@ -35,10 +35,6 @@
     "defaultMessage": "{count, plural, one {# webhook} other {# webhooks}}",
     "description": "The heading of the list of webhooks at /admin/webhooks: how many there are. Read by administrators."
   },
-  "staff_webhooks.list.about": {
-    "defaultMessage": "Each webhook posts the events it receives to its address, signed with its secret. One whose deliveries keep failing is turned off by the server.",
-    "description": "Under the heading of the webhooks. Read by administrators."
-  },
   "staff_webhooks.add": {
     "defaultMessage": "Set up a webhook",
     "description": "The button that opens the form of a new webhook, at the end of the webhooks' heading or under the sentence that there is none. Read by administrators."
@@ -58,6 +54,14 @@
   "staff_webhooks.state.off": {
     "defaultMessage": "Off",
     "description": "At the end of a webhook's row: it receives nothing. Read by administrators."
+  },
+  "staff_webhooks.state.failing": {
+    "defaultMessage": "Failing",
+    "description": "The state of a webhook in the list of webhooks while its deliveries keep failing; it is still on. Read by administrators."
+  },
+  "staff_webhooks.state.server_off": {
+    "defaultMessage": "Turned off by the server",
+    "description": "The state of a webhook in the list of webhooks that the server turned off, after its deliveries kept failing or its address answered that it is gone. Read by administrators."
   },
   "staff_webhooks.standing.failing": {
     "defaultMessage": "{count, plural, one {# delivery failed} other {# deliveries failed in a row}} since {since}",
@@ -119,18 +123,6 @@
     "defaultMessage": "Your roles no longer allow the events that need {names}. Undo your change to them and save again.",
     "description": "Under the first event of a webhook's form when the server refused events whose permissions (a list) the reader no longer holds. Read by administrators."
   },
-  "staff_webhooks.events.fixed": {
-    "defaultMessage": "Other events",
-    "description": "The heading of the section that names the events of a webhook the reader may not change. Read by administrators."
-  },
-  "staff_webhooks.events.kept": {
-    "defaultMessage": "It also receives {names}, which your roles do not let you change, so they stay as they are.",
-    "description": "On a webhook's form: the events it receives that the reader may not change (a list). Read by administrators."
-  },
-  "staff_webhooks.events.left": {
-    "defaultMessage": "Your roles do not let you choose {names}.",
-    "description": "On a webhook's form: the events the reader may not subscribe it to (a list). Read by administrators."
-  },
   "staff_webhooks.save.refused": {
     "defaultMessage": "Nothing was saved. Fix what is marked and save again.",
     "description": "Beside Save when the server or the form refused a field of a webhook, which is marked under it. Read by administrators."
@@ -159,17 +151,9 @@
     "defaultMessage": "The webhook is set up",
     "description": "The title of the view that takes the form's place once a new webhook was set up, over its secret. Read by administrators."
   },
-  "staff_webhooks.secret.created.about": {
-    "defaultMessage": "It receives the events you chose from now on, signed with this secret.",
-    "description": "Under the title that a new webhook is set up. Read by administrators."
-  },
   "staff_webhooks.secret.rotated": {
     "defaultMessage": "The webhook has a new secret",
     "description": "The title of the view that takes the place of the new-secret section once a new secret was made. Read by administrators."
-  },
-  "staff_webhooks.secret.rotated.about": {
-    "defaultMessage": "It signs every message from now on. For 24 hours the previous secret signs them too, so the receiving service can switch without losing one.",
-    "description": "Under the title that a webhook has a new secret. Read by administrators."
   },
   "staff_webhooks.secret.done": {
     "defaultMessage": "Done",
@@ -180,8 +164,8 @@
     "description": "The title of a webhook's summary while it receives its events and its last delivery worked. Read by administrators."
   },
   "staff_webhooks.summary.on.about": {
-    "defaultMessage": "It receives the events it subscribes to.",
-    "description": "Under the title that a webhook is on. Read by administrators."
+    "defaultMessage": "{count, plural, one {It receives # kind of event.} other {It receives # kinds of events.}}",
+    "description": "Under On, the summary of a webhook that is on and works: how many kinds of events it receives. Read by administrators."
   },
   "staff_webhooks.summary.failing": {
     "defaultMessage": "Its deliveries are failing",
@@ -263,10 +247,6 @@
     "defaultMessage": "Deliveries",
     "description": "The heading of the section of a webhook's deliveries of the last 14 days. Read by administrators."
   },
-  "staff_webhooks.deliveries.about": {
-    "defaultMessage": "The messages of the last 14 days, newest first. A failed one is tried again for about 27 hours, and any can be sent again with the same message ID.",
-    "description": "Under the heading of a webhook's deliveries. Read by administrators."
-  },
   "staff_webhooks.deliveries.loading": {
     "defaultMessage": "Loading the deliveries…",
     "description": "In the section of a webhook's deliveries while they are read. Read by administrators."
@@ -312,7 +292,7 @@
     "description": "The heading of the section of a webhook's page that makes a new secret. Read by administrators."
   },
   "staff_webhooks.rotate.about": {
-    "defaultMessage": "Make one if the secret leaked or to change it. For 24 hours the previous secret signs messages too.",
+    "defaultMessage": "For 24 hours after a new secret is made, the previous secret signs messages too.",
     "description": "Under the heading of the section that makes a webhook's new secret. Read by administrators."
   },
   "staff_webhooks.rotate.press": {
@@ -374,5 +354,29 @@
   "staff_webhooks.locked": {
     "defaultMessage": "It receives events that your roles do not let you change, so only someone who may handle all of them can change it. You can still test it, turn it off and on, give it a new secret, or delete it.",
     "description": "On the page of a webhook that receives an event whose permission the reader lacks, in the place of its form: why it cannot be changed, and what the reader may still do. Read by administrators."
+  },
+  "staff_webhooks.column.host": {
+    "defaultMessage": "Address",
+    "description": "The heading of the column of the webhooks' hosts in the list of webhooks. Read by administrators."
+  },
+  "staff_webhooks.column.events": {
+    "defaultMessage": "Events",
+    "description": "The heading of the column of how many events each webhook receives, in the list of webhooks. Read by administrators."
+  },
+  "staff_webhooks.column.state": {
+    "defaultMessage": "State",
+    "description": "The heading of the column of where a webhook or a delivery stands, in the list of webhooks and of deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.event": {
+    "defaultMessage": "Event",
+    "description": "The heading of the column of the deliveries' events, in a webhook's deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.attempt": {
+    "defaultMessage": "Attempts",
+    "description": "The heading of the column of a delivery's attempts and the last one's outcome, in a webhook's deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.redeliver": {
+    "defaultMessage": "Send again",
+    "description": "The heading of the column of the Send again buttons, in a webhook's deliveries. Read by administrators."
   }
 }

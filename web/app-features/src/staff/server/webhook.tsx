@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // A webhook as a holder of `manage_webhooks` keeps it (FR-722, ADR-0060), at /admin/webhooks/{id}: first where it
-// stands and what to do with it (Send a test while it is on; Turn off or Turn on), then what it is, and its form saved
-// as a whole (its address, what it is for, its events); after the form's Save, apart, the deliveries of the last 14
-// days (each its event, where it stands, its attempts and the last one's outcome, and Send again), a new secret (asked
-// first, then shown once in the section's place, the previous one still signing for 24 hours), and, last, Delete,
-// confirmed with the host typed. The API gives no delivery's payload, so none is shown.
+// stands and what to do with it (Send a test while it is on; Turn off or Turn on), then its deliveries of the last 14
+// days (each its event, where it stands, its attempts and the last one's outcome, and Send again), so that a failure is
+// in sight, then when it was set up and changed, and its form saved as a whole (its address, what it is for, its
+// events), or, where it receives an event the reader may not handle, what it is and why they cannot change it; after
+// the form's Save, apart, a new secret (asked first, then shown once at the top of the page, the previous one still
+// signing for 24 hours), and, last, Delete, confirmed with the host typed. The API gives no delivery's payload, so
+// none is shown.
 
 import {
   mayHandleEvent,
@@ -25,19 +27,20 @@ import {
   ModalPresence,
   MoreRecords,
   Row,
-  SettingsEmpty,
+  FeedNotice,
+  RecordTable,
   SettingsFacts,
-  SettingsList,
-  SettingsListRow,
   SettingsNote,
   SettingsResult,
   SettingsScreen,
   SettingsSection,
+  StateMark,
   StatusSummary,
   type IconName,
-  type SettingsRowSaid,
+  type RecordRow,
+  type RecordState,
 } from "@my/design-system";
-import { useState, type ReactNode } from "react";
+import { use, useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 import { Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
 import { useStillThere } from "./parts";
@@ -45,12 +48,12 @@ import {
   eventName,
   formOf,
   hostOf,
-  useFocusOnArrival,
   useWebhookForm,
   WebhookBar,
   WebhookEventFields,
   WebhookPlaceFields,
   WebhookSecret,
+  WebhookSecretSpecimen,
   type WebhookFormState,
 } from "./webhook-form";
 import { adminWebhooksPath, BackToWebhooks } from "./webhooks";
@@ -92,7 +95,7 @@ function summaryOf(
   return {
     icon: "accepted",
     title: t("staff_webhooks.summary.on"),
-    about: t("staff_webhooks.summary.on.about"),
+    about: t("staff_webhooks.summary.on.about", { count: w.events.length }),
   };
 }
 
@@ -172,7 +175,7 @@ function WebhookState({ webhook }: { webhook: AdminWebhook }) {
   );
 }
 
-/** What a webhook is: its whole address, when it was set up, and when its address or events last changed. */
+/** When a webhook was set up, and when its address or events last changed. */
 function WebhookFacts({ webhook }: { webhook: AdminWebhook }) {
   const { t } = useStaffStrings();
   const moment = useMoment();
@@ -181,7 +184,6 @@ function WebhookFacts({ webhook }: { webhook: AdminWebhook }) {
       <SettingsFacts
         label={t("staff_webhooks.facts")}
         items={[
-          { text: t("staff_webhooks.url"), about: [webhook.url] },
           {
             text: t("staff_webhooks.facts.created"),
             about: [moment(webhook.created_at)],
@@ -207,7 +209,19 @@ function attemptOf(t: T, moment: (iso: string) => string, d: WebhookDelivery): s
   });
 }
 
-/** The deliveries of the last 14 days, newest first, each with Send again; Show more past the first page. */
+/** How a delivery's status is marked: waiting, delivered, or failing. */
+const deliveryMark: Readonly<Record<WebhookDelivery["status"], RecordState>> = {
+  pending: "pending",
+  succeeded: "resolved",
+  failing: "failed",
+};
+
+type DeliveryColumn = "attempt" | "state" | "act";
+
+/**
+ * The deliveries of the last 14 days, newest first, each its event, when, its attempts and the last one's outcome,
+ * where it stands, and Send again; what came of a press in the section's status; Show more past the first page.
+ */
 function Deliveries({ webhook }: { webhook: AdminWebhook }) {
   const { t } = useStaffStrings();
   const moment = useMoment();
@@ -215,14 +229,14 @@ function Deliveries({ webhook }: { webhook: AdminWebhook }) {
   const writes = useAdminWebhookWrites();
   const there = useStillThere();
   const [busy, setBusy] = useState<string | undefined>(undefined);
-  const [said, setSaid] = useState<Readonly<Record<string, SettingsRowSaid>>>({});
+  const [said, setSaid] = useState<{ text: string; n: number } | undefined>(undefined);
   const heading = t("staff_webhooks.deliveries");
-  const sayOn = (id: string, text: string) => {
-    setSaid((was) => ({ ...was, [id]: { text, n: (was[id]?.n ?? 0) + 1 } }));
+  const say = (text: string) => {
+    setSaid((was) => ({ text, n: (was?.n ?? 0) + 1 }));
   };
   if (list.status !== "success" && list.items.length === 0)
     return (
-      <SettingsSection heading={heading} about={t("staff_webhooks.deliveries.about")}>
+      <SettingsSection heading={heading}>
         <ScreenNotice
           status={list.status === "error" ? "failed" : "loading"}
           retry={list.refetch}
@@ -233,82 +247,84 @@ function Deliveries({ webhook }: { webhook: AdminWebhook }) {
         />
       </SettingsSection>
     );
-  return (
-    <SettingsSection heading={heading} about={t("staff_webhooks.deliveries.about")}>
-      {list.items.length === 0 ? (
-        <SettingsEmpty>{t("staff_webhooks.deliveries.empty")}</SettingsEmpty>
-      ) : (
-        <SettingsList label={heading}>
-          {list.items.map((d) => {
-            const attempt = attemptOf(t, moment, d);
-            return (
-              <SettingsListRow
-                key={d.id}
-                title={eventName(t, d.event_type)}
-                facts={[
-                  moment(d.created_at),
-                  t("staff_webhooks.delivery.attempts", { count: d.attempts }),
-                  ...(attempt === undefined ? [] : [attempt]),
-                ]}
-                state={t("staff_webhooks.delivery.status", {
-                  status: d.status,
-                })}
-                said={said[d.id] ?? null}
-                end={
-                  <Button
-                    size="timeline"
-                    touch
-                    busy={busy === d.id}
-                    isDisabled={busy !== undefined}
-                    onPress={() => {
-                      setBusy(d.id);
-                      writes.redeliver(webhook.id, d.id).then(
-                        () => {
-                          if (!there.current) return;
-                          setBusy(undefined);
-                          sayOn(d.id, t("staff_webhooks.delivery.again"));
-                        },
-                        () => {
-                          if (!there.current) return;
-                          setBusy(undefined);
-                          sayOn(d.id, t("staff_webhooks.delivery.again_failed"));
-                        },
-                      );
-                    }}
-                  >
-                    {t("staff_webhooks.delivery.redeliver")}
-                  </Button>
-                }
-              />
+  const rows = list.items.map((d): RecordRow<DeliveryColumn> => ({
+    id: d.id,
+    head: eventName(t, d.event_type),
+    caption: moment(d.created_at),
+    cells: {
+      attempt: [t("staff_webhooks.delivery.attempts", { count: d.attempts }), attemptOf(t, moment, d)]
+        .filter((x) => x !== undefined)
+        .join(" · "),
+      state: (
+        <StateMark state={deliveryMark[d.status]}>
+          {t("staff_webhooks.delivery.status", { status: d.status })}
+        </StateMark>
+      ),
+      act: (
+        <Button
+          size="timeline"
+          touch
+          busy={busy === d.id}
+          isDisabled={busy !== undefined}
+          onPress={() => {
+            setBusy(d.id);
+            writes.redeliver(webhook.id, d.id).then(
+              () => {
+                if (!there.current) return;
+                setBusy(undefined);
+                say(t("staff_webhooks.delivery.again"));
+              },
+              () => {
+                if (!there.current) return;
+                setBusy(undefined);
+                say(t("staff_webhooks.delivery.again_failed"));
+              },
             );
-          })}
-        </SettingsList>
-      )}
+          }}
+        >
+          {t("staff_webhooks.delivery.redeliver")}
+        </Button>
+      ),
+    },
+  }));
+  return (
+    <SettingsSection heading={heading}>
+      <RecordTable
+        label={heading}
+        head={{ label: t("staff_webhooks.column.event") }}
+        columns={[
+          { key: "attempt", label: t("staff_webhooks.column.attempt"), bare: true },
+          { key: "state", label: t("staff_webhooks.column.state"), kind: "fit", beside: true },
+          { key: "act", label: t("staff_webhooks.column.redeliver"), kind: "fit", bare: true },
+        ]}
+        rows={rows}
+        contained
+        empty={<FeedNotice>{t("staff_webhooks.deliveries.empty")}</FeedNotice>}
+      />
+      <SettingsResult>{said === undefined ? undefined : <span key={said.n}>{said.text}</span>}</SettingsResult>
       {list.failedNextPage && <SettingsResult>{t("staff_webhooks.deliveries.more_failed")}</SettingsResult>}
       {list.hasNextPage && <MoreRecords onPress={list.fetchNextPage} busy={list.isFetchingNextPage} />}
     </SettingsSection>
   );
 }
 
-/** A new secret: asked first, then shown once in the section's place, until the reader is done with it. */
-function NewSecret({ webhook, shown }: { webhook: AdminWebhook; shown?: string | undefined }) {
+/** Make a new secret: asked first; the secret the server gives is handed to the page, which shows it at its top. */
+function NewSecret({ webhook, onMade }: { webhook: AdminWebhook; onMade: (secret: string) => void }) {
   const { t } = useStaffStrings();
   const writes = useAdminWebhookWrites();
   const there = useStillThere();
   const [asking, setAsking] = useState(false);
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [secret, setSecret] = useState<string | undefined>(shown);
-  const titleRef = useFocusOnArrival<HTMLHeadingElement>(secret !== undefined);
   const rotate = () => {
     setSending(true);
     writes.rotate(webhook.id).then(
-      (s) => {
+      (secret) => {
         if (!there.current) return;
         setSending(false);
         setAsking(false);
         setFailed(false);
-        setSecret(s);
+        onMade(secret);
       },
       () => {
         if (!there.current) return;
@@ -318,27 +334,6 @@ function NewSecret({ webhook, shown }: { webhook: AdminWebhook; shown?: string |
       },
     );
   };
-  if (secret !== undefined)
-    return (
-      <WebhookSecret
-        kind="rotated"
-        secret={secret}
-        titleRef={titleRef}
-        done={
-          <Row justify="end">
-            <Button
-              size="timeline"
-              touch
-              onPress={() => {
-                setSecret(undefined);
-              }}
-            >
-              {t("staff_webhooks.secret.done")}
-            </Button>
-          </Row>
-        }
-      />
-    );
   return (
     <>
       <SettingsSection heading={t("staff_webhooks.rotate")} about={t("staff_webhooks.rotate.about")}>
@@ -377,8 +372,8 @@ function NewSecret({ webhook, shown }: { webhook: AdminWebhook; shown?: string |
 }
 
 /**
- * What a webhook that receives an event the reader may not handle says of itself: its description and its events, and
- * that only someone whose roles hold every event's permission can change it.
+ * What a webhook that receives an event the reader may not handle says of itself: its address, its description and its
+ * events, and in one line why the reader cannot change it.
  */
 function LockedSettings({ webhook }: { webhook: AdminWebhook }) {
   const { t, locale } = useStaffStrings();
@@ -390,6 +385,7 @@ function LockedSettings({ webhook }: { webhook: AdminWebhook }) {
       <SettingsFacts
         label={t("staff_webhooks.endpoint")}
         items={[
+          { text: t("staff_webhooks.url"), about: [webhook.url] },
           ...(webhook.description === undefined
             ? []
             : [{ text: t("staff_webhooks.description"), about: [webhook.description] }]),
@@ -415,16 +411,7 @@ function changeOf(f: WebhookFormState): WebhookChange {
 }
 
 /** The webhook's page, once it is read. */
-function WebhookPage({
-  webhook,
-  go,
-  onUnsaved,
-  leaving,
-  defaultSecret,
-}: AdminSubProps & {
-  webhook: AdminWebhook;
-  defaultSecret?: string | undefined;
-}) {
+function WebhookPage({ webhook, go, onUnsaved, leaving }: AdminSubProps & { webhook: AdminWebhook }) {
   const { t } = useStaffStrings();
   const writes = useAdminWebhookWrites();
   const permissions = usePermissions();
@@ -436,6 +423,9 @@ function WebhookPage({
   const locked = webhook.events.some((e) => !mayHandleEvent(e, permissions));
   const [asking, setAsking] = useState(false);
   const [deleting, setDeleting] = useState<"idle" | "sending" | "failed">("idle");
+  // A new secret the server gave once, shown at the top until the reader is done with it; a story's from its specimen.
+  const specimen = use(WebhookSecretSpecimen);
+  const [secret, setSecret] = useState<string | undefined>(specimen);
   const save = () => {
     if (f.busy || !f.check()) return;
     const change = changeOf(f);
@@ -482,8 +472,7 @@ function WebhookPage({
         foot={
           <>
             {!locked && <WebhookBar f={f} onSave={save} label={t("staff_webhooks.save")} />}
-            <Deliveries webhook={webhook} />
-            <NewSecret webhook={webhook} shown={defaultSecret} />
+            <NewSecret webhook={webhook} onMade={setSecret} />
             <SettingsSection heading={t("staff_webhooks.delete")} about={t("staff_webhooks.delete.about")}>
               <Irreversible>{t("staff_webhooks.irreversible")}</Irreversible>
               <Box>
@@ -503,7 +492,28 @@ function WebhookPage({
           </>
         }
       >
+        {secret !== undefined && (
+          <WebhookSecret
+            kind="rotated"
+            secret={secret}
+            arrived={secret !== specimen}
+            done={
+              <Row justify="end">
+                <Button
+                  size="timeline"
+                  touch
+                  onPress={() => {
+                    setSecret(undefined);
+                  }}
+                >
+                  {t("staff_webhooks.secret.done")}
+                </Button>
+              </Row>
+            }
+          />
+        )}
         <WebhookState webhook={webhook} />
+        <Deliveries webhook={webhook} />
         <WebhookFacts webhook={webhook} />
         {locked ? (
           <LockedSettings webhook={webhook} />
@@ -539,17 +549,10 @@ function WebhookPage({
 }
 
 /**
- * The page of the webhook of `id`, or that it loads, could not be read, or is none. `defaultSecret` opens it with a
- * new secret just made (a specimen's), shown once in its section's place.
+ * The page of the webhook of `id`, or that it loads, could not be read, or is none. A story opens it with a new secret
+ * just made through `WebhookSecretSpecimen`.
  */
-export function WebhookScreen({
-  id,
-  defaultSecret,
-  ...sub
-}: AdminSubProps & {
-  id: string;
-  defaultSecret?: string | undefined;
-}): ReactNode {
+export function WebhookScreen({ id, ...sub }: AdminSubProps & { id: string }): ReactNode {
   const { t } = useStaffStrings();
   const read = useAdminWebhook(id);
   if (read.webhook === undefined)
@@ -572,5 +575,5 @@ export function WebhookScreen({
         }
       />
     );
-  return <WebhookPage key={read.webhook.id} webhook={read.webhook} defaultSecret={defaultSecret} {...sub} />;
+  return <WebhookPage key={read.webhook.id} webhook={read.webhook} {...sub} />;
 }

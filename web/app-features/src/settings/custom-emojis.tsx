@@ -44,6 +44,8 @@ import {
   SettingsListRow,
   MoreRecords,
   SettingsNote,
+  StateMark,
+  type RecordState,
   SettingsResult,
   SettingsScreen,
   SettingsSection,
@@ -91,6 +93,15 @@ function quotaFacts(t: T, quota: EmojiQuota, day: (iso: string) => string): { te
 }
 
 /** A request's state in words. */
+/** How a request's state looks, as the administrators' list of requests marks it: what waits, what was decided. */
+const requestLook: Record<OwnCustomEmojiRequest["state"], RecordState> = {
+  pending: "pending",
+  approved: "resolved",
+  rejected: "resolved",
+  withdrawn: "lifted",
+  lapsed: "expired",
+};
+
 const stateOf = (t: T, r: OwnCustomEmojiRequest): string => t("emoji_own.request.state", { state: r.state });
 
 /** What came of a press in a section, each saying a new element, so that the same words are read again. */
@@ -141,7 +152,7 @@ function Requests({ requests, more }: { requests: readonly OwnCustomEmojiRequest
               key={r.id}
               title={coded(r.shortcode)}
               inactive={r.state !== "pending" && r.state !== "approved"}
-              standing={stateOf(t, r)}
+              mark={<StateMark state={requestLook[r.state]}>{stateOf(t, r)}</StateMark>}
               facts={[
                 t("emoji_own.request.asked", { date: moment(r.created_at) }),
                 ...(r.reason === undefined ? [] : [t("emoji_own.request.reason", { reason: r.reason })]),
@@ -392,7 +403,7 @@ export function EmojiRequestScreen({ onBack }: SettingsSubProps): ReactNode {
       back={back}
       foot={<Bar sent={f.sent} label={t("emoji_own.request.send")} onPress={send} />}
     >
-      <SettingsSection heading={t("emoji_own.request.emoji")} about={t("emoji_own.request.about")}>
+      <SettingsSection heading={t("emoji_own.request.emoji")}>
         <TextField
           id={`${id}-shortcode`}
           name="shortcode"
@@ -482,19 +493,26 @@ function OwnEmojiForm({ emoji, onBack }: { emoji: OwnCustomEmoji; onBack: () => 
         foot={
           <>
             <Bar sent={f.sent} label={t("emoji_own.save")} onPress={save} />
-            <SettingsSection heading={t("emoji_own.delete")} about={t("emoji_own.delete.about")}>
-              <Box>
-                <Button
-                  size="timeline"
-                  touch
-                  isDisabled={busy}
-                  onPress={() => {
-                    setAsking(true);
-                  }}
-                >
-                  {t("emoji_own.delete.press")}
-                </Button>
-              </Box>
+            {/* What cannot be undone, last and apart, in the look the settings give such an act (an invite's revocation). */}
+            <SettingsSection heading={t("emoji_own.delete")}>
+              <SettingsList label={t("emoji_own.delete")}>
+                <SettingsListRow
+                  title={coded(emoji.shortcode)}
+                  caption={t("emoji_own.delete.about")}
+                  end={
+                    <Button
+                      size="timeline"
+                      touch
+                      isDisabled={busy}
+                      onPress={() => {
+                        setAsking(true);
+                      }}
+                    >
+                      {t("emoji_own.delete.press")}
+                    </Button>
+                  }
+                />
+              </SettingsList>
             </SettingsSection>
           </>
         }
@@ -511,7 +529,7 @@ function OwnEmojiForm({ emoji, onBack }: { emoji: OwnCustomEmoji; onBack: () => 
           </Row>
           {emoji.state === "disabled" && <SettingsNote>{t("emoji_own.emoji.disabled.about")}</SettingsNote>}
         </SettingsSection>
-        <SettingsSection heading={t("emoji_own.picker")} about={t("emoji_own.picker.about")}>
+        <SettingsSection heading={t("emoji_own.picker")}>
           <TextField
             id={`${id}-category`}
             name="category"

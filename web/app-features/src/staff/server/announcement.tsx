@@ -6,8 +6,9 @@
 // and when it shows: from and until a moment of the reader's zone, each optional. A new one is kept as a draft or
 // published; a draft is saved and published; a published one is revised, which notifies nobody again. Publishing asks
 // first: every local user is notified once it starts to show. The page of one says first where it stands, then the
-// form, what readers see as last saved, and, last and apart, Withdraw, which asks first and cannot be undone; a
-// withdrawn one is what it was, nothing to change. What is wrong with a field stands under it, which takes the focus.
+// form, what readers see as last saved, and, last and apart for a published one, Withdraw, which asks first and cannot
+// be undone (a draft never showed, so it has none, and the API deletes no draft); a withdrawn one is what it was,
+// nothing to change. What is wrong with a field stands under it, which takes the focus.
 
 import { localInput, localInstant, PostContent } from "@my/app-components";
 import {
@@ -241,7 +242,10 @@ function AnnouncementFields({ f }: { f: FormState }) {
   };
   return (
     <>
-      <SettingsSection heading={t("staff_announcements.section")}>
+      <SettingsSection
+        heading={t("staff_announcements.section")}
+        about={t("staff_announcements.section.about", { max: announcementLimits.title })}
+      >
         <TextField
           id={`${f.id}-title`}
           name="title"
@@ -256,7 +260,10 @@ function AnnouncementFields({ f }: { f: FormState }) {
           }}
         />
       </SettingsSection>
-      <SettingsSection heading={t("staff_announcements.text")} about={t("staff_announcements.text.about")}>
+      <SettingsSection
+        heading={t("staff_announcements.text")}
+        about={t("staff_announcements.text.about", { max: announcementLimits.text })}
+      >
         <ComposerText error={textError} errorId={textErrorId}>
           <TextEditor
             namespace="announcement"
@@ -517,27 +524,30 @@ function AnnouncementForm({ a, go, onUnsaved, leaving }: AdminSubProps & { a: Ad
                 </Button>
               )}
             </SubmitBar>
-            <SettingsSection
-              heading={t("staff_announcements.withdraw")}
-              about={t("staff_announcements.withdraw.about")}
-            >
-              <Irreversible>{t("staff_announcements.irreversible")}</Irreversible>
-              <Box>
-                <Button
-                  size="timeline"
-                  touch
-                  isDisabled={f.busy}
-                  onPress={() => {
-                    setAsking("withdraw");
-                  }}
-                >
-                  {t("staff_announcements.withdraw.press")}
-                </Button>
-              </Box>
-              <SettingsResult>
-                {withdrawing === "failed" ? t("staff_announcements.withdraw.failed") : undefined}
-              </SettingsResult>
-            </SettingsSection>
+            {/* A draft never showed to anyone, so there is nothing to withdraw; the API keeps no way to delete one. */}
+            {!draft && (
+              <SettingsSection
+                heading={t("staff_announcements.withdraw")}
+                about={t("staff_announcements.withdraw.about")}
+              >
+                <Irreversible>{t("staff_announcements.irreversible")}</Irreversible>
+                <Box>
+                  <Button
+                    size="timeline"
+                    touch
+                    isDisabled={f.busy}
+                    onPress={() => {
+                      setAsking("withdraw");
+                    }}
+                  >
+                    {t("staff_announcements.withdraw.press")}
+                  </Button>
+                </Box>
+                <SettingsResult>
+                  {withdrawing === "failed" ? t("staff_announcements.withdraw.failed") : undefined}
+                </SettingsResult>
+              </SettingsSection>
+            )}
           </>
         }
       >

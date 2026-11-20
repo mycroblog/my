@@ -5,7 +5,7 @@
 // shown; and the words of an emoji's state and of why the server refused one.
 
 import { usePendingEmojiRequests, type AdminCustomEmoji } from "@my/app-data";
-import { CustomEmoji, StateMark, TabRow } from "@my/design-system";
+import { CustomEmoji, LinkButton, ScreenTitle, StateMark, TabRow } from "@my/design-system";
 import type { ReactNode } from "react";
 import { useStaffStrings, type T } from "../parts";
 
@@ -33,19 +33,26 @@ export function EmojiImage({
   return <CustomEmoji shortcode={shortcode} url={url} staticUrl={staticUrl ?? url} />;
 }
 
-/** The state of an emoji in a word, as its row and its page say it: shown where it is used, or disabled. */
+/**
+ * The state of an emoji in a word, as its row and its page say it: disabled, shown but left out of the picker, or
+ * shown.
+ */
 export function EmojiState({ emoji }: { emoji: AdminCustomEmoji }): ReactNode {
   const { t } = useStaffStrings();
-  return emoji.state === "disabled" ? (
-    <StateMark state="disabled">{t("staff_emoji.state.disabled")}</StateMark>
-  ) : (
-    <StateMark state="active">{t("staff_emoji.state.enabled")}</StateMark>
-  );
+  if (emoji.state === "disabled") return <StateMark state="disabled">{t("staff_emoji.state.disabled")}</StateMark>;
+  if (!emoji.visible_in_picker) return <StateMark state="limited">{t("staff_emoji.state.hidden")}</StateMark>;
+  return <StateMark state="active">{t("staff_emoji.state.enabled")}</StateMark>;
 }
 
 /** Where an emoji comes from, in words: this server, or the domain of another, which never breaks inside. */
 export const originOf = (t: T, emoji: AdminCustomEmoji): string =>
   emoji.local ? t("staff_emoji.origin.local") : (emoji.domain ?? t("staff_emoji.origin.remote"));
+
+/** The title of the screens of the custom emoji, with its glyph, the same over both tabs. */
+export function EmojiTitle(): ReactNode {
+  const { t } = useStaffStrings();
+  return <ScreenTitle glyph="emojiCustom">{t("staff_emoji.entry")}</ScreenTitle>;
+}
 
 /** The tabs over the emoji and the requests, the pending requests counted, and what the current one shows. */
 export function EmojiTabs({
@@ -62,16 +69,23 @@ export function EmojiTabs({
   return (
     <TabRow
       label={t("staff_emoji.entry")}
+      // The one way to register an emoji, at the end of the tabs' line on both tabs, so that nothing moves between them.
+      end={
+        <LinkButton size="timeline" href={newAdminEmojiPath}>
+          {t("staff_emoji.add")}
+        </LinkButton>
+      }
       tabs={[
         { id: "emoji", name: t("staff_emoji.tab.emoji") },
         {
           id: "requests",
-          name:
-            pending === undefined || pending.count === 0
-              ? t("staff_emoji.tab.requests")
-              : t(pending.more ? "staff_emoji.tab.requests.more" : "staff_emoji.tab.requests.count", {
-                  count: pending.count,
-                }),
+          name: t("staff_emoji.tab.requests"),
+          // How many wait, as the navigation's badge counts them; the first page's, and "or more" past it.
+          count: pending?.count,
+          countLabel:
+            pending === undefined
+              ? undefined
+              : t(pending.more ? "staff_emoji.tab.pending.more" : "staff_emoji.tab.pending", { count: pending.count }),
         },
       ]}
       current={current}

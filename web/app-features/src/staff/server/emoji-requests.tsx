@@ -20,6 +20,7 @@ import {
 } from "@my/app-data";
 import { sentenceHandleOf } from "@my/app-components";
 import {
+  Box,
   Button,
   FactList,
   FeedNotice,
@@ -33,7 +34,6 @@ import {
   RelativeTime,
   Row,
   ScreenStack,
-  ScreenTitle,
   SettingsResult,
   StateMark,
   TextField,
@@ -44,7 +44,7 @@ import {
 } from "@my/design-system";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
-import { coded, EmojiImage, EmojiTabs } from "./emoji-parts";
+import { coded, EmojiImage, EmojiTabs, EmojiTitle } from "./emoji-parts";
 import { type AdminSubProps } from "../settings/parts";
 import { useStillThere } from "./parts";
 
@@ -225,7 +225,7 @@ function RequestDialog({
   );
 }
 
-type Column = "image" | "requester" | "created" | "state";
+type Column = "image" | "requester" | "created" | "state" | "act";
 
 /** The requests: their tabs, the state shown, a page of them, the request opened, and what came of a decision. */
 export function AdminEmojiRequestsScreen({ go }: AdminSubProps): ReactNode {
@@ -253,7 +253,8 @@ export function AdminEmojiRequestsScreen({ go }: AdminSubProps): ReactNode {
     { key: "image", label: t("staff_emoji.column.image"), kind: "fit" },
     { key: "requester", label: t("staff_emoji.request.requester"), bare: true },
     { key: "created", label: t("staff_emoji.request.created"), kind: "fit", bare: true },
-    { key: "state", label: t("staff_emoji.column.state"), kind: "fit", beside: true },
+    { key: "state", label: t("staff_emoji.column.state"), kind: "fit" },
+    { key: "act", label: t("staff_emoji.request.review.column"), kind: "fit", beside: true },
   ];
   const rows = (page.items ?? []).map((r): RecordRow<Column> => ({
     id: r.id,
@@ -261,16 +262,33 @@ export function AdminEmojiRequestsScreen({ go }: AdminSubProps): ReactNode {
     caption: t("staff_emoji.request.kind.name", { kind: r.kind }),
     cells: {
       image: <EmojiImage shortcode={r.shortcode} url={r.url} staticUrl={r.static_url} />,
-      requester: requesterOf(t, r),
+      // A handle is one word of its column, which keeps it whole.
+      requester: (
+        <Box as="span" nowrap>
+          {requesterOf(t, r)}
+        </Box>
+      ),
       created: <RelativeTime date={r.created_at} />,
       state: <StateMark state={stateLook[r.state]}>{requestStateWords(t, r.state)}</StateMark>,
+      // The request opens over the list from its row's own button: its image, its facts, and Approve and Reject.
+      act: (
+        <Button
+          size="timeline"
+          touch
+          onPress={() => {
+            setOpen(r);
+          }}
+        >
+          {t(r.state === "pending" ? "staff_emoji.request.review" : "staff_emoji.request.view")}
+        </Button>
+      ),
     },
   }));
   const previous = trail.at(-1);
   return (
     <>
       <ScreenStack busy={page.stale}>
-        <ScreenTitle>{t("staff_emoji.entry")}</ScreenTitle>
+        <EmojiTitle />
         <EmojiTabs current="requests" go={go}>
           <ScreenStack busy={page.stale}>
             <FilterBar
@@ -307,9 +325,7 @@ export function AdminEmojiRequestsScreen({ go }: AdminSubProps): ReactNode {
                   columns={columns}
                   rows={rows}
                   busy={page.stale}
-                  onOpen={(id) => {
-                    setOpen(page.items?.find((r) => r.id === id));
-                  }}
+                  even
                   empty={
                     <FeedNotice>
                       {state === "pending" ? t("staff_emoji.request.empty") : t("staff_emoji.request.empty.state")}

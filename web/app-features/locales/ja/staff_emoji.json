@@ -23,6 +23,10 @@
     "defaultMessage": "変わっていません。接続を確かめて、もう一度試してください。",
     "description": "In the section of a custom emoji's actions when disabling or enabling it failed. Read by administrators."
   },
+  "staff_emoji.state.hidden": {
+    "defaultMessage": "ピッカーに出さない",
+    "description": "The state of a local custom emoji that is shown where it is used but that the emoji picker leaves out, in its row and on its page. Read by administrators."
+  },
   "staff_emoji.origin": {
     "defaultMessage": "サーバー",
     "description": "The filter of the custom emoji by where they come from, and the fact of an emoji's server. Read by administrators."
@@ -47,13 +51,13 @@
     "defaultMessage": "申請",
     "description": "The second tab of Custom emoji: the requests for new emoji, while none waits. Read by administrators."
   },
-  "staff_emoji.tab.requests.count": {
-    "defaultMessage": "申請 {count}",
-    "description": "The second tab of Custom emoji, with how many requests wait for a decision. Read by administrators."
+  "staff_emoji.tab.pending": {
+    "defaultMessage": "{count, plural, other {審査待ち # 件}}",
+    "description": "For assistive technology, what the badge on the Requests tab of Custom emoji counts: the requests waiting for review. Read by administrators."
   },
-  "staff_emoji.tab.requests.more": {
-    "defaultMessage": "申請 {count}+",
-    "description": "The second tab of Custom emoji when more requests wait than the first page holds. Read by administrators."
+  "staff_emoji.tab.pending.more": {
+    "defaultMessage": "審査待ち {count} 件以上",
+    "description": "For assistive technology, what the badge on the Requests tab counts when more requests wait than the first page holds. Read by administrators."
   },
   "staff_emoji.add": {
     "defaultMessage": "絵文字を登録",
@@ -94,10 +98,6 @@
   "staff_emoji.row.aliases": {
     "defaultMessage": "別名 {aliases}",
     "description": "A fact under a local custom emoji's shortcode: its aliases, each between colons. Read by administrators."
-  },
-  "staff_emoji.row.hidden": {
-    "defaultMessage": "ピッカーに出さない",
-    "description": "A fact under a local custom emoji's shortcode: the picker does not offer it, though texts can use it. Read by administrators."
   },
   "staff_emoji.loading": {
     "defaultMessage": "カスタム絵文字を読み込んでいます…",
@@ -219,10 +219,6 @@
     "defaultMessage": "ピッカー",
     "description": "The heading of the section of a local custom emoji's category, aliases and whether the picker offers it. Read by administrators."
   },
-  "staff_emoji.picker.about": {
-    "defaultMessage": "絵文字ピッカーのどこに出すか、どの名前で見つけられるか。表示中の絵文字は、ピッカーに出すかどうかにかかわらず本文で使えます。",
-    "description": "Under the heading of a custom emoji's place in the picker. Read by administrators."
-  },
   "staff_emoji.category": {
     "defaultMessage": "カテゴリ",
     "description": "The field of a custom emoji's category in the picker; empty for none. Read by administrators."
@@ -258,14 +254,6 @@
   "staff_emoji.actions": {
     "defaultMessage": "画像と状態",
     "description": "The heading of the first section of a custom emoji's page: its image, Disable or Enable, and a new image. Read by administrators."
-  },
-  "staff_emoji.enabled.about": {
-    "defaultMessage": "使われている箇所で表示されます。無効にすると、どこでも :shortcode: の文字のままになります。",
-    "description": "Under the heading of the actions of a custom emoji that is shown. Read by administrators."
-  },
-  "staff_emoji.disabled.about": {
-    "defaultMessage": "無効です。有効にするまで、どこでも :shortcode: の文字のままです。",
-    "description": "Under the heading of the actions of a disabled custom emoji. Read by administrators."
   },
   "staff_emoji.disable": {
     "defaultMessage": "無効にする",
@@ -314,10 +302,6 @@
   "staff_emoji.copy": {
     "defaultMessage": "このサーバーへ複製",
     "description": "The heading of the section of another server's custom emoji that copies it into a local one. Read by administrators."
-  },
-  "staff_emoji.copy.about": {
-    "defaultMessage": "同じ画像でこのサーバーの絵文字を作り、ピッカーに出します。",
-    "description": "Under the heading of the copy of another server's custom emoji. Read by administrators."
   },
   "staff_emoji.copy.shortcode": {
     "defaultMessage": "複製のショートコード",
@@ -502,5 +486,17 @@
   "staff_emoji.request.failed.write": {
     "defaultMessage": "決定されていません。接続を確かめて、もう一度試してください。",
     "description": "Beside Approve and Reject when the decision failed with no reason. Read by administrators."
+  },
+  "staff_emoji.request.review": {
+    "defaultMessage": "審査",
+    "description": "The button of a pending custom emoji request's row that opens it over the list, with Approve and Reject. Read by administrators."
+  },
+  "staff_emoji.request.view": {
+    "defaultMessage": "詳細",
+    "description": "The button of a decided custom emoji request's row that opens what it was and how it was decided. Read by administrators."
+  },
+  "staff_emoji.request.review.column": {
+    "defaultMessage": "判断",
+    "description": "The heading of the column of the buttons that open a custom emoji request (Review, Details) in the table of requests. Read by administrators."
   }
 }

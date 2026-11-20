@@ -35,10 +35,6 @@
     "defaultMessage": "{count, plural, other {webhook # 件}}",
     "description": "The heading of the list of webhooks at /admin/webhooks: how many there are. Read by administrators."
   },
-  "staff_webhooks.list.about": {
-    "defaultMessage": "webhook は受け取る出来事をそのアドレスへ送り、シークレットで署名します。配送の失敗が続く webhook はサーバーが無効にします。",
-    "description": "Under the heading of the webhooks. Read by administrators."
-  },
   "staff_webhooks.add": {
     "defaultMessage": "webhook を設定",
     "description": "The button that opens the form of a new webhook, at the end of the webhooks' heading or under the sentence that there is none. Read by administrators."
@@ -58,6 +54,14 @@
   "staff_webhooks.state.off": {
     "defaultMessage": "無効",
     "description": "At the end of a webhook's row: it receives nothing. Read by administrators."
+  },
+  "staff_webhooks.state.failing": {
+    "defaultMessage": "失敗中",
+    "description": "The state of a webhook in the list of webhooks while its deliveries keep failing; it is still on. Read by administrators."
+  },
+  "staff_webhooks.state.server_off": {
+    "defaultMessage": "サーバーが無効化",
+    "description": "The state of a webhook in the list of webhooks that the server turned off, after its deliveries kept failing or its address answered that it is gone. Read by administrators."
   },
   "staff_webhooks.standing.failing": {
     "defaultMessage": "{count, plural, other {{since} から # 回続けて配送に失敗}}",
@@ -116,20 +120,8 @@
     "description": "Under the first event of a webhook's form when none is chosen. Read by administrators."
   },
   "staff_webhooks.events.missing": {
-    "defaultMessage": "{names} が必要な出来事は、あなたのロールでは扱えなくなりました。その変更を元に戻して、もう一度保存してください。",
+    "defaultMessage": "{names}が必要な出来事は、あなたのロールでは扱えなくなりました。その変更を元に戻して、もう一度保存してください。",
     "description": "Under the first event of a webhook's form when the server refused events whose permissions (a list) the reader no longer holds. Read by administrators."
-  },
-  "staff_webhooks.events.fixed": {
-    "defaultMessage": "ほかの出来事",
-    "description": "The heading of the section that names the events of a webhook the reader may not change. Read by administrators."
-  },
-  "staff_webhooks.events.kept": {
-    "defaultMessage": "この webhook は {names} も受け取ります。あなたのロールでは変えられないため、そのまま残ります。",
-    "description": "On a webhook's form: the events it receives that the reader may not change (a list). Read by administrators."
-  },
-  "staff_webhooks.events.left": {
-    "defaultMessage": "{names} は、あなたのロールでは選べません。",
-    "description": "On a webhook's form: the events the reader may not subscribe it to (a list). Read by administrators."
   },
   "staff_webhooks.save.refused": {
     "defaultMessage": "保存されていません。示した箇所を直して、もう一度保存してください。",
@@ -159,17 +151,9 @@
     "defaultMessage": "webhook を設定しました",
     "description": "The title of the view that takes the form's place once a new webhook was set up, over its secret. Read by administrators."
   },
-  "staff_webhooks.secret.created.about": {
-    "defaultMessage": "選んだ出来事をこれから受け取ります。メッセージはこのシークレットで署名されます。",
-    "description": "Under the title that a new webhook is set up. Read by administrators."
-  },
   "staff_webhooks.secret.rotated": {
     "defaultMessage": "新しいシークレットを作りました",
     "description": "The title of the view that takes the place of the new-secret section once a new secret was made. Read by administrators."
-  },
-  "staff_webhooks.secret.rotated.about": {
-    "defaultMessage": "これからのメッセージはすべてこのシークレットで署名されます。24 時間は前のシークレットでも署名されるので、受け取るサービスはメッセージを失わずに切り替えられます。",
-    "description": "Under the title that a webhook has a new secret. Read by administrators."
   },
   "staff_webhooks.secret.done": {
     "defaultMessage": "完了",
@@ -180,8 +164,8 @@
     "description": "The title of a webhook's summary while it receives its events and its last delivery worked. Read by administrators."
   },
   "staff_webhooks.summary.on.about": {
-    "defaultMessage": "選んだ出来事を受け取っています。",
-    "description": "Under the title that a webhook is on. Read by administrators."
+    "defaultMessage": "{count, plural, other {出来事 # 種類を受け取っています。}}",
+    "description": "Under On, the summary of a webhook that is on and works: how many kinds of events it receives. Read by administrators."
   },
   "staff_webhooks.summary.failing": {
     "defaultMessage": "配送に失敗しています",
@@ -263,10 +247,6 @@
     "defaultMessage": "配送の履歴",
     "description": "The heading of the section of a webhook's deliveries of the last 14 days. Read by administrators."
   },
-  "staff_webhooks.deliveries.about": {
-    "defaultMessage": "直近 14 日のメッセージ。新しい順。失敗したものは約 27 時間かけて再送され、どれも同じメッセージ ID でもう一度送れます。",
-    "description": "Under the heading of a webhook's deliveries. Read by administrators."
-  },
   "staff_webhooks.deliveries.loading": {
     "defaultMessage": "配送の履歴を読み込んでいます…",
     "description": "In the section of a webhook's deliveries while they are read. Read by administrators."
@@ -312,7 +292,7 @@
     "description": "The heading of the section of a webhook's page that makes a new secret. Read by administrators."
   },
   "staff_webhooks.rotate.about": {
-    "defaultMessage": "シークレットが漏れたときや変えたいときに作ります。24 時間は前のシークレットでも署名されます。",
+    "defaultMessage": "新しいシークレットを作ってから 24 時間は、前のシークレットでも署名されます。",
     "description": "Under the heading of the section that makes a webhook's new secret. Read by administrators."
   },
   "staff_webhooks.rotate.press": {
@@ -374,5 +354,29 @@
   "staff_webhooks.locked": {
     "defaultMessage": "あなたのロールでは変えられない出来事も受け取るため、すべてを扱える人だけが変更できます。テスト、オン・オフ、新しいシークレット、削除はできます。",
     "description": "On the page of a webhook that receives an event whose permission the reader lacks, in the place of its form: why it cannot be changed, and what the reader may still do. Read by administrators."
+  },
+  "staff_webhooks.column.host": {
+    "defaultMessage": "送り先",
+    "description": "The heading of the column of the webhooks' hosts in the list of webhooks. Read by administrators."
+  },
+  "staff_webhooks.column.events": {
+    "defaultMessage": "出来事",
+    "description": "The heading of the column of how many events each webhook receives, in the list of webhooks. Read by administrators."
+  },
+  "staff_webhooks.column.state": {
+    "defaultMessage": "状態",
+    "description": "The heading of the column of where a webhook or a delivery stands, in the list of webhooks and of deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.event": {
+    "defaultMessage": "出来事",
+    "description": "The heading of the column of the deliveries' events, in a webhook's deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.attempt": {
+    "defaultMessage": "試行",
+    "description": "The heading of the column of a delivery's attempts and the last one's outcome, in a webhook's deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.redeliver": {
+    "defaultMessage": "もう一度送る",
+    "description": "The heading of the column of the Send again buttons, in a webhook's deliveries. Read by administrators."
   }
 }

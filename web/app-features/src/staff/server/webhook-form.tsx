@@ -2,10 +2,9 @@
 
 // The form of a webhook (FR-722, ADR-0060), for a new one and for one that exists: its address, what it is for, and
 // the events it receives, a checkbox each, in groups by what they are about. An event whose permission the reader
-// lacks is not offered: a group of none is no section, and a sentence names what is left out; on a webhook that
-// receives one already, it is named in a sentence and kept. What the server or the form refuses of a field stands
-// under it, which takes the focus. The secret the server gives once (a new webhook's, a new secret) is shown in the
-// place of what asked for it, kept in the screen's state alone (`WebhookSecret`).
+// lacks is not offered, and a group of none is no section. What the server or the form refuses of a field stands
+// under it, which takes the focus. The secret the server gives once (a new webhook's, a new secret) is shown on one
+// surface at the top of the screen, kept in the screen's state alone (`WebhookSecret`).
 
 import {
   mayHandleEvent,
@@ -18,19 +17,19 @@ import {
   type WebhookEvent,
 } from "@my/app-data";
 import {
+  Box,
   Button,
   CheckField,
   focusRefusedField,
   FormAlert,
   SaveState,
-  SettingsNote,
   SettingsSection,
-  StatusSummary,
+  Stack,
   SubmitBar,
   TextField,
 } from "@my/design-system";
 import { ProblemError } from "@mycroblog/mykit";
-import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
+import { createContext, useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useStaffStrings, type T } from "../parts";
 import { permissionName } from "./roles";
 import { CopyValue, type AdminSubProps } from "../settings/parts";
@@ -39,10 +38,6 @@ import { useUnsavedReport } from "./parts";
 /** An event's name, in the reader's language. */
 export const eventName = (t: T, event: string): string =>
   t("staff_webhooks.event", { event: event.replaceAll(".", "_") });
-
-/** Names `events` as the reader's language joins a list. */
-const eventList = (t: T, locale: string, events: readonly string[]): string =>
-  new Intl.ListFormat(locale, { type: "conjunction" }).format(events.map((e) => eventName(t, e)));
 
 /** The host of a webhook's URL, which names it; the URL itself where it has none. */
 export function hostOf(url: string): string {
@@ -236,15 +231,14 @@ export function WebhookPlaceFields({ f }: { f: WebhookFormState }) {
 }
 
 /**
- * The events of a webhook, a section a group, a checkbox each the reader may subscribe to; the events it receives that
- * the reader may not change, and those not offered, said in a sentence.
+ * The events of a webhook, a section a group, a checkbox each the reader may subscribe to, close to each other; an event
+ * the reader may not handle is not offered, and a group of none is no section. (A webhook that receives one is shown,
+ * not offered as this form: webhook.tsx.)
  */
 export function WebhookEventFields({ f }: { f: WebhookFormState }) {
-  const { t, locale } = useStaffStrings();
+  const { t } = useStaffStrings();
   const error = errorOf(f, "events");
   const first = f.offered[0];
-  const kept = webhookEvents.filter((e) => f.base.events.has(e) && !f.offered.includes(e));
-  const left = webhookEvents.filter((e) => !f.base.events.has(e) && !f.offered.includes(e));
   return (
     <>
       {webhookEventGroups.map((group) => {
@@ -252,47 +246,31 @@ export function WebhookEventFields({ f }: { f: WebhookFormState }) {
         if (offered.length === 0) return null;
         return (
           <SettingsSection key={group.id} heading={t("staff_webhooks.group", { group: group.id })}>
-            {offered.map((event) => (
-              <CheckField
-                key={event}
-                id={`${f.id}-event-${event}`}
-                name="events"
-                value={event}
-                label={eventName(t, event)}
-                checked={f.form.events.has(event)}
-                touch
-                disabled={f.busy}
-                // A refusal of the events as a whole stands under the first of them.
-                error={event === first ? error : undefined}
-                onChange={(on) => {
-                  const next = new Set(f.form.events);
-                  if (on) next.add(event);
-                  else next.delete(event);
-                  f.change({ events: next });
-                }}
-              />
-            ))}
+            <Stack>
+              {offered.map((event) => (
+                <CheckField
+                  key={event}
+                  id={`${f.id}-event-${event}`}
+                  name="events"
+                  value={event}
+                  label={eventName(t, event)}
+                  checked={f.form.events.has(event)}
+                  touch
+                  disabled={f.busy}
+                  // A refusal of the events as a whole stands under the first of them.
+                  error={event === first ? error : undefined}
+                  onChange={(on) => {
+                    const next = new Set(f.form.events);
+                    if (on) next.add(event);
+                    else next.delete(event);
+                    f.change({ events: next });
+                  }}
+                />
+              ))}
+            </Stack>
           </SettingsSection>
         );
       })}
-      {(kept.length > 0 || left.length > 0) && (
-        <SettingsSection heading={t("staff_webhooks.events.fixed")}>
-          {kept.length > 0 && (
-            <SettingsNote instead>
-              {t("staff_webhooks.events.kept", {
-                names: eventList(t, locale, kept),
-              })}
-            </SettingsNote>
-          )}
-          {left.length > 0 && (
-            <SettingsNote instead>
-              {t("staff_webhooks.events.left", {
-                names: eventList(t, locale, left),
-              })}
-            </SettingsNote>
-          )}
-        </SettingsSection>
-      )}
     </>
   );
 }
@@ -325,43 +303,59 @@ export const formOf = (webhook: AdminWebhook): WebhookForm => ({
 });
 
 /**
- * A secret the server gave once (`kind`: of a new webhook, or a new one of a webhook that exists): what happened, as
- * the summary whose title takes the focus as the view comes, then the secret to copy under the line that it is not
- * shown again, and the way on (`done`).
+ * What a story opens a webhook's screens with in place of a press (a specimen): the secret the server gave once, as
+ * if the reader had just set the webhook up or made a new secret. None in the app, where only a press shows it.
+ */
+export const WebhookSecretSpecimen = createContext<string | undefined>(undefined);
+
+/**
+ * A secret the server gave once (`kind`: of a new webhook, or a new one of a webhook that exists), on one surface: what
+ * happened, as its heading, which takes the focus as the view comes after a press, the line that it is not shown again
+ * right over the secret to copy, and the way on (`done`).
  */
 export function WebhookSecret({
   kind,
   secret,
-  titleRef,
+  arrived,
   done,
 }: {
   kind: "created" | "rotated";
   secret: string;
-  titleRef?: Ref<HTMLHeadingElement> | undefined;
+  /** It came after the reader's press: its heading takes the focus. */
+  arrived: boolean;
   done: ReactNode;
 }): ReactNode {
   const { t } = useStaffStrings();
+  const ref = useFocusOnArrival<HTMLDivElement>(arrived);
   return (
-    <>
-      <StatusSummary
-        icon="accepted"
-        title={t(kind === "created" ? "staff_webhooks.secret.created" : "staff_webhooks.secret.rotated")}
-        titleRef={titleRef}
-        about={t(kind === "created" ? "staff_webhooks.secret.created.about" : "staff_webhooks.secret.rotated.about")}
-      />
-      <SettingsSection heading={t("staff_webhooks.secret")} about={t("staff_webhooks.secret.once")}>
+    <Box as={<div ref={ref} />}>
+      <SettingsSection
+        heading={t(kind === "created" ? "staff_webhooks.secret.created" : "staff_webhooks.secret.rotated")}
+        about={t("staff_webhooks.secret.once")}
+      >
         <CopyValue primary label={t("staff_webhooks.secret")} value={secret} copy={t("staff_webhooks.secret.copy")} />
+        {done}
       </SettingsSection>
-      {done}
-    </>
+    </Box>
   );
 }
 
-/** Moves the focus to what `ref` reaches once, as the view that holds it comes. */
-export function useFocusOnArrival<E extends HTMLElement>(arrived: boolean): Ref<E> {
+/**
+ * Moves the focus to the first heading inside what `ref` reaches, once, as `arrived` turns true after the view first
+ * drew (a view opened in that state, a story's, leaves the focus where it is).
+ */
+function useFocusOnArrival<E extends HTMLElement>(arrived: boolean): RefObject<E | null> {
   const ref = useRef<E>(null);
+  const before = useRef(arrived);
   useEffect(() => {
-    if (arrived) ref.current?.focus();
+    if (arrived && !before.current) {
+      const heading = ref.current?.querySelector<HTMLElement>("h1, h2, h3, h4");
+      if (heading !== null && heading !== undefined) {
+        heading.tabIndex = -1;
+        heading.focus();
+      }
+    }
+    before.current = arrived;
   }, [arrived]);
   return ref;
 }

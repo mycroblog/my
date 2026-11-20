@@ -27,10 +27,6 @@
     "defaultMessage": "{count, plural, other {ロール # 件}}",
     "description": "The heading of the list of every role at /admin/roles: how many there are. Read by administrators."
   },
-  "staff_roles.list.about": {
-    "defaultMessage": "あなたのいちばん高いロールは {key} (位置 {position}) です。変えられるのはそれ以下のロールだけで、付け外しできるのは自分が持つ権限だけです。",
-    "description": "Under the heading of the roles at /admin/roles: the reader's highest role (its key, as written) and what that lets them change. Read by administrators."
-  },
   "staff_roles.add": {
     "defaultMessage": "ロールを追加",
     "description": "The button at the end of the heading of the roles that opens the form of a new role. Read by administrators."
@@ -115,12 +111,8 @@
     "defaultMessage": "権限",
     "description": "The heading of the section of a role's permissions, a checkbox each. Read by administrators."
   },
-  "staff_roles.permissions.about": {
-    "defaultMessage": "このロールを持つ人ができること。付け外しできるのは自分が持つ権限だけです。",
-    "description": "Under the heading of a role's permissions. Read by administrators."
-  },
   "staff_roles.permissions.fixed": {
-    "defaultMessage": "このロールは {names} も持ちます。あなたが持たない権限なので、そのまま残ります。",
+    "defaultMessage": "このロールは{names}も持ちます。あなたが持たない権限なので、そのまま残ります。",
     "description": "Under the checkboxes of a role's permissions: the permissions the role grants that the reader lacks, as a list. Read by administrators."
   },
   "staff_roles.permissions.refused": {
@@ -128,7 +120,7 @@
     "description": "Under the first permission of a role's form when the server refused the permissions with no list of which. Read by administrators."
   },
   "staff_roles.permissions.missing": {
-    "defaultMessage": "{names} はあなたのロールにもう含まれないため、付け外しできません。その変更を元に戻して、もう一度保存してください。",
+    "defaultMessage": "{names}はあなたのロールにもう含まれないため、付け外しできません。その変更を元に戻して、もう一度保存してください。",
     "description": "Under the first permission of a role's form when the server refused a change of permissions the reader no longer holds (a list). Read by administrators."
   },
   "staff_roles.facts.permissions": {
@@ -144,8 +136,8 @@
     "description": "The heading of the section of a role's badge. Read by administrators."
   },
   "staff_roles.badge.about": {
-    "defaultMessage": "このロールを持つ人がプロフィールに出せるラベル。なしにするときは空にします。",
-    "description": "Under the heading of a role's badge. Read by administrators."
+    "defaultMessage": "1 行で {max} 文字まで。空にするとバッジなし。",
+    "description": "Under the heading of a role's badge: the rule of its label. Read by administrators."
   },
   "staff_roles.badge.label": {
     "defaultMessage": "ラベル",
@@ -300,7 +292,7 @@
     "description": "The heading of the column of role names in the table of the roles an account holds, on its Management page. Read by administrators."
   },
   "staff_roles.account.act": {
-    "defaultMessage": "外す",
+    "defaultMessage": "変更",
     "description": "The heading of the column of Revoke buttons (or why a role cannot be revoked) in the table of an account's roles. Read by administrators."
   }
 }

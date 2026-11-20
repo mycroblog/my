@@ -40,7 +40,7 @@ import {
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
-import { adminEmojiPath, adminEmojisPath, coded, EmojiImage, originOf } from "./emoji-parts";
+import { adminEmojiPath, adminEmojisPath, coded, EmojiImage, EmojiState, originOf } from "./emoji-parts";
 import { Irreversible, LeaveDialog, OnOffRow, ScreenNotice, type AdminSubProps } from "../settings/parts";
 import { BackTo, useStillThere, useUnsavedReport } from "./parts";
 
@@ -163,7 +163,7 @@ const errorOf = (f: FormState, field: Field): string | undefined =>
 function PickerFields({ f }: { f: FormState }) {
   const { t } = useStaffStrings();
   return (
-    <SettingsSection heading={t("staff_emoji.picker")} about={t("staff_emoji.picker.about")}>
+    <SettingsSection heading={t("staff_emoji.picker")}>
       <TextField
         id={`${f.id}-category`}
         name="category"
@@ -363,10 +363,7 @@ function EmojiActions({ emoji }: { emoji: AdminCustomEmoji }) {
     );
   };
   return (
-    <SettingsSection
-      heading={t("staff_emoji.actions")}
-      about={t(disabled ? "staff_emoji.disabled.about" : "staff_emoji.enabled.about")}
-    >
+    <SettingsSection heading={t("staff_emoji.actions")}>
       <Row wrap align="center" gap="screen-row-gap">
         <Box text="title">
           <EmojiImage shortcode={emoji.shortcode} url={emoji.url} staticUrl={emoji.static_url} />
@@ -436,6 +433,7 @@ function EmojiFacts({ emoji }: { emoji: AdminCustomEmoji }) {
       <FactList
         label={t("staff_emoji.facts")}
         items={[
+          { term: t("staff_emoji.column.state"), value: <EmojiState emoji={emoji} /> },
           { term: t("staff_emoji.origin"), value: <bdi>{originOf(t, emoji)}</bdi> },
           ...(emoji.local
             ? [
@@ -492,7 +490,7 @@ function CopyEmoji({ emoji, go }: { emoji: AdminCustomEmoji; go: (href: string) 
     );
   const refusal = typeof state === "object" ? state : undefined;
   return (
-    <SettingsSection heading={t("staff_emoji.copy")} about={t("staff_emoji.copy.about")}>
+    <SettingsSection heading={t("staff_emoji.copy")}>
       <TextField
         id={`${id}-shortcode`}
         name="shortcode"

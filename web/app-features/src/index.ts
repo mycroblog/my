@@ -229,6 +229,7 @@ export { adminRolePath, adminRolesPath, NewRoleScreen, RoleScreen } from "./staf
 export { AnnouncementScreen, NewAnnouncementScreen } from "./staff/server/announcement";
 export { WebhookScreen } from "./staff/server/webhook";
 export { adminWebhookPath, adminWebhooksPath, NewWebhookScreen } from "./staff/server/webhooks";
+export { WebhookSecretSpecimen } from "./staff/server/webhook-form";
 export { EmojiScreen, NewEmojiScreen } from "./staff/server/emoji-item";
 export { adminEmojiPath, adminEmojiRequestsPath, adminEmojisPath, newAdminEmojiPath } from "./staff/server/emoji-parts";
 export { AdminEmojiRequestsScreen } from "./staff/server/emoji-requests";
