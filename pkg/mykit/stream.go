@@ -30,8 +30,8 @@ const (
 )
 
 // StreamEvent is an event of GET /streaming: one of *UpdateEvent, *ListUpdateEvent, *NotificationEvent,
-// *ConversationEvent, *AnnouncementEvent, *AnnouncementRemovedEvent, *DeleteEvent, *NotificationRequestsEvent, and
-// *UnknownEvent.
+// *ConversationEvent, *AnnouncementEvent, *AnnouncementRemovedEvent, *DeleteEvent, *NotificationRequestsEvent,
+// *NotificationsReadEvent, and *UnknownEvent.
 // Branch on it with a type switch.
 type StreamEvent interface {
 	// EventName is the `event` field of the event, such as "update".
@@ -70,6 +70,10 @@ type DeleteEvent struct{ ID string }
 // comes with no NotificationEvent.
 type NotificationRequestsEvent struct{ Summary NotificationRequestSummary }
 
+// NotificationsReadEvent tells that the user read notifications on a device: Read holds the read marker and the
+// unread count now, and the notification read on its own past the marker (Read.Id), if one was.
+type NotificationsReadEvent struct{ Read NotificationsRead }
+
 // UnknownEvent is an event that this version of the library does not know, which a newer server may send. Name
 // is its `event` field ("message" when it has none) and Data its data, unparsed.
 type UnknownEvent struct {
@@ -100,6 +104,9 @@ func (*DeleteEvent) EventName() string { return "delete" }
 
 // EventName is "notification_requests".
 func (*NotificationRequestsEvent) EventName() string { return "notification_requests" }
+
+// EventName is "notifications_read".
+func (*NotificationsReadEvent) EventName() string { return "notifications_read" }
 
 // EventName is the event's own name.
 func (e *UnknownEvent) EventName() string { return e.Name }
@@ -366,6 +373,9 @@ func parseStreamEvent(ev rawEvent) (StreamEvent, error) {
 	case "notification_requests":
 		e := &NotificationRequestsEvent{}
 		typed, target = e, &e.Summary
+	case "notifications_read":
+		e := &NotificationsReadEvent{}
+		typed, target = e, &e.Read
 	default:
 		return &UnknownEvent{Name: ev.name, Data: ev.data}, nil
 	}

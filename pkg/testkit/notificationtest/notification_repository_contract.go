@@ -24,7 +24,8 @@ import (
 // hidden types, shown announcements, and pages, and the count and the check of one notification
 // that read the same; the dismissals, exclusions in force, domain exclusions of a domain and its
 // subdomains, and deleted statuses that hide notifications; the read marker, which only moves
-// forward; the settings, replaced per group and channel; the error group notices of an hour, also
+// forward; the notifications read on their own past it, which the count and the unread statuses
+// leave out and the marker deletes as it passes them; the settings, replaced per group and channel; the error group notices of an hour, also
 // added concurrently, and their prune; the projections emptied for a rebuild with the statuses
 // notified of; the subscriptions to new posts and the requests for them; the thread mutes,
 // inserted once, read by conversation and account, and moved by a merge; and the notification
@@ -43,6 +44,7 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"ListsWithTypesAndPages", notificationRepoLists},
 		{"HidesDismissedExcludedAndDeleted", notificationRepoHides},
 		{"AdvancesTheReadMarker", notificationRepoReadMarker},
+		{"KeepsReadsPastTheMarker", notificationRepoReads},
 		{"ReplacesSettings", notificationRepoSettings},
 		{"InsertsForManyRecipients", notificationRepoInsertsFor},
 		{"CountsErrorGroupNotices", notificationRepoErrorGroupNotices},
@@ -474,6 +476,85 @@ func notificationRepoReadMarker(t *testing.T, r *notificationRepo) {
 		if moved != c.moved || err != nil || m.LastReadID != c.at || m.AccountID != alice {
 			t.Errorf("AdvanceReadMarker(%s) = %v, marker %+v, %v; want %v at %s", c.id, moved, m, err, c.moved, c.at)
 		}
+	}
+}
+
+func notificationRepoReads(t *testing.T, r *notificationRepo) {
+	ctx := t.Context()
+	alice, bob, carol := r.ids.NewID(), r.ids.NewID(), r.ids.NewID()
+	insertWithStatus := func(recipient string) notification.Notification {
+		n, ok := r.insert(t, notification.Notification{RecipientAccountID: recipient, Type: notification.TypeMention, SourceAccountID: carol, StatusID: r.ids.NewID()})
+		if !ok {
+			t.Fatalf("InsertNotification to %s inserted nothing", recipient)
+		}
+		return n
+	}
+	a, b, c := insertWithStatus(alice), insertWithStatus(alice), insertWithStatus(alice)
+	other := insertWithStatus(bob)
+	read := func(account, id string) {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.repo.InsertRead(ctx, tx, account, id) })
+	}
+	among := func(account string, ids ...string) []string {
+		t.Helper()
+		got, err := r.repo.ReadAmong(ctx, account, ids)
+		if err != nil {
+			t.Fatalf("ReadAmong(%s) = %v", account, err)
+		}
+		return got
+	}
+	if got := among(alice, a.ID, b.ID, c.ID); len(got) != 0 {
+		t.Errorf("ReadAmong before any read = %v, want none", got)
+	}
+	if got := among(alice); len(got) != 0 {
+		t.Errorf("ReadAmong of no IDs = %v, want none", got)
+	}
+	read(alice, c.ID)
+	read(alice, c.ID) // again: writes nothing
+	read(alice, a.ID)
+	read(bob, other.ID)
+	if got, want := among(alice, c.ID, b.ID, a.ID, other.ID), []string{a.ID, c.ID}; !slices.Equal(got, want) {
+		t.Errorf("ReadAmong(alice) = %v, want %v in order of ID", got, want)
+	}
+	if got, err := r.repo.CountNotificationsAfter(ctx, alice, "", appnotification.Hidden{}, r.clock.Now()); err != nil || got != 1 {
+		t.Errorf("CountNotificationsAfter with a and c read = %d, %v; want 1 (b)", got, err)
+	}
+	if got, err := r.repo.UnreadNotificationStatuses(ctx, alice, "", appnotification.Hidden{}, r.clock.Now(), 10); err != nil || !slices.Equal(got, []string{b.StatusID}) {
+		t.Errorf("UnreadNotificationStatuses with a and c read = %v, %v; want b's status", got, err)
+	}
+	// The marker at b passes a (and b): their reads go, c's stays.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		_, err := r.repo.AdvanceReadMarker(ctx, tx, notification.ReadMarker{AccountID: alice, LastReadID: b.ID})
+		return err
+	})
+	if got, want := among(alice, a.ID, b.ID, c.ID), []string{c.ID}; !slices.Equal(got, want) {
+		t.Errorf("ReadAmong after the marker passed a = %v, want %v", got, want)
+	}
+	// A read of one the marker is at or past writes nothing.
+	read(alice, a.ID)
+	read(alice, b.ID)
+	if got, want := among(alice, a.ID, b.ID, c.ID), []string{c.ID}; !slices.Equal(got, want) {
+		t.Errorf("ReadAmong after reading behind the marker = %v, want %v", got, want)
+	}
+	if got, err := r.repo.CountNotificationsAfter(ctx, alice, b.ID, appnotification.Hidden{}, r.clock.Now()); err != nil || got != 0 {
+		t.Errorf("CountNotificationsAfter the marker with c read = %d, %v; want 0", got, err)
+	}
+	// A marker that does not move still deletes nothing it does not pass, and bob's reads stay.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		_, err := r.repo.AdvanceReadMarker(ctx, tx, notification.ReadMarker{AccountID: alice, LastReadID: a.ID})
+		return err
+	})
+	if got := among(alice, c.ID); !slices.Equal(got, []string{c.ID}) {
+		t.Errorf("ReadAmong after a marker that did not move = %v, want c", got)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		_, err := r.repo.AdvanceReadMarker(ctx, tx, notification.ReadMarker{AccountID: alice, LastReadID: c.ID})
+		return err
+	})
+	if got := among(alice, c.ID); len(got) != 0 {
+		t.Errorf("ReadAmong after the marker passed c = %v, want none", got)
+	}
+	if got := among(bob, other.ID); !slices.Equal(got, []string{other.ID}) {
+		t.Errorf("bob's reads after alice's marker moved = %v, want his", got)
 	}
 }
 

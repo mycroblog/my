@@ -88,6 +88,8 @@ func encodeSignal(origin string, e Event) ([]byte, error) {
 		s.E = e.Emoji
 	case KindConversation:
 		s.E = e.ConversationID
+	case KindNotificationsRead:
+		s.E = e.NotificationID
 	}
 	b, err := json.Marshal(s)
 	if err != nil {
@@ -121,6 +123,8 @@ func decodeSignal(payload []byte) (origin string, e Event, err error) {
 		return s.Origin, Event{Kind: KindHomeEntry, EntryID: s.E, AuthorAccountID: s.Author}, nil
 	case s.Kind == KindNotifications && s.AccountID != "":
 		return s.Origin, Event{Kind: KindNotifications, AccountID: s.AccountID}, nil
+	case s.Kind == KindNotificationsRead && s.AccountID != "":
+		return s.Origin, Event{Kind: KindNotificationsRead, AccountID: s.AccountID, NotificationID: s.E}, nil
 	case s.Kind == KindConversation && s.AccountID != "" && s.E != "":
 		return s.Origin, Event{Kind: KindConversation, AccountID: s.AccountID, ConversationID: s.E}, nil
 	case s.Kind == KindTLSCertificate && s.Host != "" && s.CertificateID != "":

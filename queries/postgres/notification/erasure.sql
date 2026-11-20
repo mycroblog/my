@@ -8,6 +8,10 @@
 DELETE FROM notification_dismissals WHERE notification_id IN (
   SELECT n.id FROM notifications n WHERE n.status_id = ANY(sqlc.arg(ids)::uuid[]));
 
+-- name: EraseNotificationReadsOfStatuses :exec
+DELETE FROM notification_reads WHERE notification_id IN (
+  SELECT n.id FROM notifications n WHERE n.status_id = ANY(sqlc.arg(ids)::uuid[]));
+
 -- name: EraseNotificationsOfStatuses :exec
 DELETE FROM notifications WHERE status_id = ANY(sqlc.arg(ids)::uuid[]);
 
@@ -26,11 +30,17 @@ LIMIT sqlc.arg(lim);
 -- name: EraseNotificationDismissals :exec
 DELETE FROM notification_dismissals WHERE notification_id = ANY(sqlc.arg(ids)::uuid[]);
 
+-- name: EraseNotificationReads :exec
+DELETE FROM notification_reads WHERE notification_id = ANY(sqlc.arg(ids)::uuid[]);
+
 -- name: EraseNotifications :exec
 DELETE FROM notifications WHERE id = ANY(sqlc.arg(ids)::uuid[]);
 
 -- name: EraseNotificationReadMarker :exec
 DELETE FROM notification_read_markers WHERE account_id = sqlc.arg(account_id);
+
+-- name: EraseNotificationReadsOf :exec
+DELETE FROM notification_reads WHERE account_id = sqlc.arg(account_id);
 
 -- name: EraseNotificationSettingsOf :exec
 DELETE FROM notification_settings WHERE account_id = sqlc.arg(account_id);

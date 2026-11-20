@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The data of the stream event `notifications_read`: the user read notifications on a device,
+  and the read marker and the unread count are now these.
+type: object
+required: [unread_count]
+properties:
+  last_read_id:
+    description: The newest notification read up to the marker; omitted when the user has read none.
+    $ref: ./Id.yaml
+  unread_count:
+    description: The number of listed notifications that are unread, as `Notification.read` tells.
+    type: integer
+    format: int64
+    minimum: 0
+  id:
+    description: |
+      The notification read on its own past the marker (`POST /notifications/{id}/read`);
+      omitted when the marker moved.
+    $ref: ./Id.yaml

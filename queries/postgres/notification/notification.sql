@@ -138,14 +138,16 @@ WHERE n.id = sqlc.arg(id)::uuid AND n.recipient_account_id = sqlc.arg(recipient_
   AND (n.announcement_id IS NULL OR n.announcement_id = ANY(sqlc.arg(shown_announcements)::uuid[])));
 
 -- CountNotificationsAfter counts the notifications of a recipient after the ID after that
--- ListNotifications would return; an empty after counts them all. hidden_types is that of
--- ListNotifications.
+-- ListNotifications would return and that the recipient did not read on its own
+-- (notification_reads): the unread notifications when after is the read marker (domain
+-- ReadMarker.Unread). An empty after counts them all. hidden_types is that of ListNotifications.
 -- name: CountNotificationsAfter :one
 SELECT COUNT(*) FROM notifications n
 WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
   AND n.id > COALESCE(sqlc.narg(after)::uuid, '00000000-0000-0000-0000-000000000000')
   AND NOT (n.type = ANY(sqlc.arg(hidden_types)::text[]))
   AND NOT EXISTS (SELECT 1 FROM notification_dismissals d WHERE d.notification_id = n.id)
+  AND NOT EXISTS (SELECT 1 FROM notification_reads r WHERE r.account_id = n.recipient_account_id AND r.notification_id = n.id)
   AND NOT EXISTS (SELECT 1 FROM notification_exclusions x
     WHERE x.viewer_account_id = n.recipient_account_id AND x.target_account_id = n.source_account_id
       AND (x.expires_at IS NULL OR x.expires_at > sqlc.arg(now)::timestamptz))
@@ -171,6 +173,29 @@ SELECT account_id, last_read_id FROM notification_read_markers WHERE account_id 
 INSERT INTO notification_read_markers (account_id, last_read_id) VALUES ($1, $2)
 ON CONFLICT (account_id) DO UPDATE SET last_read_id = excluded.last_read_id
 WHERE excluded.last_read_id > notification_read_markers.last_read_id;
+
+-- Reads (current value): the notifications newer than the marker that the account read on its
+-- own.
+
+-- InsertNotificationRead inserts nothing when the notification is already read, or the account's
+-- marker is at or past it.
+-- name: InsertNotificationRead :exec
+INSERT INTO notification_reads (account_id, notification_id)
+SELECT sqlc.arg(account_id)::uuid, sqlc.arg(notification_id)::uuid
+WHERE NOT EXISTS (SELECT 1 FROM notification_read_markers m
+  WHERE m.account_id = sqlc.arg(account_id)::uuid AND m.last_read_id >= sqlc.arg(notification_id)::uuid)
+ON CONFLICT (account_id, notification_id) DO NOTHING;
+
+-- DeleteNotificationReadsThrough deletes the reads of an account that the marker at through
+-- passes.
+-- name: DeleteNotificationReadsThrough :exec
+DELETE FROM notification_reads WHERE account_id = sqlc.arg(account_id) AND notification_id <= sqlc.arg(through)::uuid;
+
+-- ListNotificationReadsAmong returns which of the notifications the account read on its own.
+-- name: ListNotificationReadsAmong :many
+SELECT notification_id FROM notification_reads
+WHERE account_id = sqlc.arg(account_id) AND notification_id = ANY(sqlc.arg(notification_ids)::uuid[])
+ORDER BY notification_id;
 
 -- Exclusions (projection of the graph events).
 

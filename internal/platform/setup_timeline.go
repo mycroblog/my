@@ -24,17 +24,17 @@ func (a *App) setUpTimeline(repo timeline.Repository, statuses appcontent.Reposi
 	timeline.RegisterModerationProjectors(a.Projectors, repo, a.Accounts)
 	a.Timeline = timeline.NewService(timeline.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs,
-		Conversations: a.Content, Stream: timelineStreams{a}, Tags: a.Content, Statuses: timelineStatusViews{a},
+		Conversations: a.Content, Stream: lateStreams{a}, Tags: a.Content, Statuses: timelineStatusViews{a},
 	})
 	a.TagSearch = timeline.NewTagSearch(statuses, repo)
 }
 
-// timelineStreams signals the streams for the timeline service, which is built before
-// setUpStreams builds the broker; it is read when a command signals.
-type timelineStreams struct{ a *App }
+// lateStreams signals the streams for the timeline and notification services, which are built
+// before setUpStreams builds the broker; it is read when a command signals.
+type lateStreams struct{ a *App }
 
 // Publish implements stream.Publisher.
-func (t timelineStreams) Publish(e stream.Event) {
+func (t lateStreams) Publish(e stream.Event) {
 	if t.a.Streams != nil {
 		t.a.Streams.Publish(e)
 	}

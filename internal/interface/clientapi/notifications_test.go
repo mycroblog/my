@@ -25,11 +25,13 @@ import (
 )
 
 // fakeNotifications keeps notifications in memory with the semantics of
-// appnotification.Service: newest first, dismissals, and a forward-only read marker.
+// appnotification.Service: newest first, dismissals, a forward-only read marker, and the
+// notifications read on their own past it.
 type fakeNotifications struct {
 	ns        []notification.Notification // ascending by ID
 	dismissed map[string]bool
 	markers   map[string]string
+	reads     map[string]bool // by notification ID
 	queries   []appnotification.Query
 	err       error
 }
@@ -84,11 +86,36 @@ func (f *fakeNotifications) ReadMarker(_ context.Context, accountID string) (not
 func (f *fakeNotifications) UnreadCount(_ context.Context, accountID string, _ bool) (int64, error) {
 	var n int64
 	for _, x := range f.visible(accountID) {
-		if x.ID > f.markers[accountID] {
+		if f.unread(accountID, x.ID) {
 			n++
 		}
 	}
 	return n, nil
+}
+
+func (f *fakeNotifications) unread(accountID, id string) bool {
+	return notification.ReadMarker{LastReadID: f.markers[accountID]}.Unread(id, f.reads[id])
+}
+
+func (f *fakeNotifications) ReadOne(_ context.Context, accountID, id string) error {
+	if err := f.own(accountID, id); err != nil {
+		return err
+	}
+	if f.unread(accountID, id) {
+		if f.reads == nil {
+			f.reads = map[string]bool{}
+		}
+		f.reads[id] = true
+	}
+	return nil
+}
+
+func (f *fakeNotifications) ReadOf(_ context.Context, accountID string, ids []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	for _, id := range ids {
+		out[id] = !f.unread(accountID, id)
+	}
+	return out, nil
 }
 
 func (f *fakeNotifications) own(accountID, id string) error {
@@ -533,6 +560,64 @@ func TestNotificationMarker(t *testing.T) {
 		t.Errorf("malformed body = %d, want 400", res.StatusCode)
 	}
 	if res := e.send(t, http.MethodPut, "/notifications/marker", "read", body(notificationID(3))); res.StatusCode != http.StatusForbidden {
+		t.Errorf("without write:notifications = %d, want 403", res.StatusCode)
+	}
+}
+
+// TestReadNotification checks that POST /notifications/{id}/read marks one notification read
+// past the marker, which the list's read and the marker's unread count then tell, and that
+// another account's or a missing one is a 404.
+func TestReadNotification(t *testing.T) {
+	e, _ := newNotificationEnv(t)
+	readOf := func() map[string]bool {
+		t.Helper()
+		page := decode[clientapi.NotificationPage](t, e.send(t, http.MethodGet, "/notifications", "read", ""))
+		out := map[string]bool{}
+		for _, n := range page.Items {
+			out[n.Id] = n.Read
+		}
+		return out
+	}
+	unread := func() int64 {
+		t.Helper()
+		return decode[clientapi.NotificationMarker](t, e.send(t, http.MethodGet, "/notifications/marker", "read", "")).UnreadCount
+	}
+	for id, read := range readOf() {
+		if read {
+			t.Errorf("%s read before anything was read", id)
+		}
+	}
+
+	// The newest, read while older ones are unread; reading it again changes nothing.
+	for range 2 {
+		if res := e.send(t, http.MethodPost, "/notifications/"+notificationID(4)+"/read", "write", ""); res.StatusCode != http.StatusNoContent {
+			t.Fatalf("read = %d, want 204", res.StatusCode)
+		}
+	}
+	if got := readOf(); !got[notificationID(4)] || got[notificationID(3)] || got[notificationID(1)] {
+		t.Errorf("read after reading 4 = %v, want 4 alone", got)
+	}
+	if n := unread(); n != 3 {
+		t.Errorf("unread_count after reading 4 = %d, want 3", n)
+	}
+	// The marker at 2 reads 1 and 2; 3 stays unread, 4 read.
+	if res := e.send(t, http.MethodPut, "/notifications/marker", "write", `{"last_read_id":"`+notificationID(2)+`"}`); res.StatusCode != http.StatusOK {
+		t.Fatalf("marker = %d", res.StatusCode)
+	}
+	if got := readOf(); !got[notificationID(4)] || got[notificationID(3)] || !got[notificationID(2)] || !got[notificationID(1)] {
+		t.Errorf("read after the marker at 2 = %v, want all but 3", got)
+	}
+	if n := unread(); n != 1 {
+		t.Errorf("unread_count after the marker at 2 = %d, want 1", n)
+	}
+
+	for name, id := range map[string]string{"bob's": notificationID(9), "missing": notificationID(99)} {
+		res := e.send(t, http.MethodPost, "/notifications/"+id+"/read", "write", "")
+		if res.StatusCode != http.StatusNotFound {
+			t.Errorf("reading %s = %d, want 404", name, res.StatusCode)
+		}
+	}
+	if res := e.send(t, http.MethodPost, "/notifications/"+notificationID(3)+"/read", "read", ""); res.StatusCode != http.StatusForbidden {
 		t.Errorf("without write:notifications = %d, want 403", res.StatusCode)
 	}
 }

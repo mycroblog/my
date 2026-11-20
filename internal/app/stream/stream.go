@@ -28,6 +28,9 @@ const (
 	// KindNotifications signals that an account may have new notifications, or that the counts of
 	// its notification requests may have changed.
 	KindNotifications Kind = "notifications"
+	// KindNotificationsRead signals that an account read notifications: its read marker moved, or
+	// it read NotificationID on its own. It goes to the account subscriptions of AccountID.
+	KindNotificationsRead Kind = "notifications_read"
 	// KindConversation signals that a conversation of an account's direct messages changed (a
 	// new direct post, or the account read it): it goes to the account subscriptions of
 	// AccountID, which read ConversationID again.
@@ -104,10 +107,13 @@ func (k Kind) IsInternal() bool { return k == KindTLSCertificate }
 type Event struct {
 	Kind Kind
 	// AccountID is the account whose notifications or direct messages changed
-	// (KindNotifications, KindConversation).
+	// (KindNotifications, KindNotificationsRead, KindConversation).
 	AccountID string
 	// ConversationID is the conversation of KindConversation.
 	ConversationID string
+	// NotificationID is the notification read on its own of KindNotificationsRead; "" when the
+	// read marker moved.
+	NotificationID string
 	// EntryID is the ID of the new timeline entry (KindHomeEntry, KindPublicEntry): a status ID
 	// for a post, a boost ID for a boost; and the deleted status of KindStatusDeleted.
 	EntryID string

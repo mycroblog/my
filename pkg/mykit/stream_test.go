@@ -133,6 +133,7 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 			"event: announcement_removed\ndata: {\"id\":\"a2\"}\n\n",
 			"event: delete\ndata: {\"id\":\"s0\"}\n\n",
 			"event: notification_requests\ndata: {\"accounts_count\":1,\"notifications_count\":3}\n\n",
+			"event: notifications_read\ndata: {\"last_read_id\":\"n0\",\"unread_count\":2,\"id\":\"n1\"}\n\n",
 			"event: poll\ndata: {\"id\":\"p1\"}\ndata: more\n\n",
 			"event: update\ndata: not json\n\n",
 		),
@@ -149,8 +150,8 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 	if !slices.Equal(rec.opens, []bool{false, true}) {
 		t.Errorf("opens = %v, want [false true]", rec.opens)
 	}
-	if len(rec.events) != 9 {
-		t.Fatalf("events = %#v, want 9", rec.events)
+	if len(rec.events) != 10 {
+		t.Fatalf("events = %#v, want 10", rec.events)
 	}
 	if e, ok := rec.events[0].(*UpdateEvent); !ok || e.Status.Id != "s1" {
 		t.Errorf("events[0] = %#v, want the update of s1", rec.events[0])
@@ -179,6 +180,11 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 	if e, ok := rec.events[4].(*NotificationRequestsEvent); !ok || e.Summary.AccountsCount != 1 || e.Summary.NotificationsCount != 3 || e.EventName() != "notification_requests" {
 		t.Errorf("events[4] = %#v, want the counts of the requests", rec.events[4])
 	}
+	if e, ok := rec.events[5].(*NotificationsReadEvent); !ok || e.Read.UnreadCount != 2 || e.Read.LastReadId == nil || *e.Read.LastReadId != "n0" ||
+		e.Read.Id == nil || *e.Read.Id != "n1" || e.EventName() != "notifications_read" {
+		t.Errorf("events[5] = %#v, want the read of n1 with the marker at n0", rec.events[5])
+	}
+	rec.events = slices.Delete(rec.events, 5, 6)
 	if e, ok := rec.events[5].(*UnknownEvent); !ok || e.Name != "poll" || e.Data != "{\"id\":\"p1\"}\nmore" || e.EventName() != "poll" {
 		t.Errorf("events[5] = %#v, want the unknown event poll", rec.events[5])
 	}

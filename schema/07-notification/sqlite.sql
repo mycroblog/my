@@ -110,6 +110,15 @@ CREATE TABLE notification_read_markers (
   last_read_id TEXT NOT NULL
 ) STRICT;
 
+-- Current value: a notification newer than the account's read marker that the account read on
+-- its own. A notification is unread while it is newer than the marker and has no row here; the
+-- rows the marker passes are deleted as it moves.
+CREATE TABLE notification_reads (
+  account_id TEXT NOT NULL,
+  notification_id TEXT NOT NULL,
+  PRIMARY KEY (account_id, notification_id)
+) STRICT;
+
 -- Projection of the graph events: while in force (expires_at NULL or later than now), the
 -- notifications from target_account_id are hidden from viewer_account_id at read time.
 CREATE TABLE notification_exclusions (

@@ -32,6 +32,7 @@ From the top of the diagram down, between the client and the server:
 | `list_update` | `{"list_id": "...", "status": {...}}`: the same post, once for each of the user's lists that shows it, right after its `update`. |
 | `notification` | A `Notification`. A notification that the user's notification policy filters into a notification request sends none. |
 | `notification_requests` | A `NotificationRequestSummary`, as `GET /api/v1/notifications/requests/summary` shows it: the counts of the notification requests changed, because a notification was filtered into one or one was accepted or dismissed. |
+| `notifications_read` | A `NotificationsRead`: the user read notifications on a device, this one or another. `last_read_id` and `unread_count` are the marker and the count as `GET /api/v1/notifications/marker` shows them now, and `id`, when present, is a notification read on its own (`POST /api/v1/notifications/{id}/read`): show it as read. |
 | `conversation` | A `Conversation`, as `GET /api/v1/conversations` shows it: a direct post the user sent or received arrived in it, or the user read it on a device. A token without `read:direct` receives none, and a conversation that the user hid receives none until a newer post arrives. |
 | `announcement` | An `Announcement` that was published or changed. |
 | `announcement_removed` | `{"id": "..."}`: an announcement no longer shows. |
