@@ -419,6 +419,11 @@ type Options struct {
 	// Idempotency keeps the answers to the requests with an Idempotency-Key for
 	// IdempotencyWindow (idempotency.go); nil keeps none, and the key is only checked.
 	Idempotency kernel.KeyValueStore
+	// IdempotencySecret returns the HMAC-SHA256 key (32 bytes or more) of the fingerprints of
+	// the requests kept in Idempotency, which may hold a password: every process needs the same.
+	// It is called on the first request with a key, and again after a failure. nil keys them
+	// with a random key of the process.
+	IdempotencySecret func(ctx context.Context) ([]byte, error)
 	// RateLimiter applies AnonymousLimit and AccountLimit; nil applies no limit.
 	RateLimiter *kernel.RateLimiter
 	// AnonymousLimit and AccountLimit override the package's limits of the same names when
@@ -470,6 +475,8 @@ type Server struct {
 	// public shares the decision and the presentation of a new entry between the streams of the
 	// public timelines of the process.
 	public *publicDispatch
+	// idempotencyKey holds the key of IdempotencySecret once it is loaded.
+	idempotencyKey idempotencySecret
 }
 
 var _ StrictServerInterface = (*Server)(nil)

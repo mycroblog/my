@@ -37,6 +37,12 @@ func (s *Service) MediaProxyKey(ctx context.Context) ([]byte, error) {
 	return s.secret(ctx, instance.SecretMediaProxyKey, mediaProxyKeySize)
 }
 
+// IdempotencyKey returns the key of the fingerprints of the requests with an Idempotency-Key, which
+// every process shares as MediaProxyKey's.
+func (s *Service) IdempotencyKey(ctx context.Context) ([]byte, error) {
+	return s.secret(ctx, instance.SecretIdempotencyKey, mediaProxyKeySize)
+}
+
 // secret returns the secret of name, generating size random bytes for it first when the database
 // has none. Concurrent first calls agree on the one that was inserted first.
 func (s *Service) secret(ctx context.Context, name instance.SecretName, size int) ([]byte, error) {

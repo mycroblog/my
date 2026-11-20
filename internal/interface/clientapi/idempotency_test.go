@@ -15,6 +15,7 @@ import (
 	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/pkg/testkit"
@@ -32,7 +33,7 @@ type idempotencyEnv struct {
 	started, hold chan struct{}
 }
 
-func newIdempotencyEnv(t *testing.T) *idempotencyEnv {
+func newIdempotencyEnv(t *testing.T, tweaks ...func(*clientapi.Options)) *idempotencyEnv {
 	t.Helper()
 	e := &idempotencyEnv{clock: testkit.NewClock(time.Date(2026, 11, 20, 0, 0, 0, 0, time.UTC))}
 	f := &fakeStatuses{
@@ -53,6 +54,9 @@ func newIdempotencyEnv(t *testing.T) *idempotencyEnv {
 	e.authEnv = newAuthEnv(t, func(o *clientapi.Options) {
 		o.Statuses, o.StatusReader, o.Interactions = ctxStatuses{f}, f, f
 		o.Idempotency = testkit.NewKeyValueStore(e.clock)
+		for _, tweak := range tweaks {
+			tweak(o)
+		}
 	})
 	e.auth.tokens["bob-write"] = bearer("write", bobAccountID)
 	return e
@@ -284,5 +288,50 @@ func TestIdempotencyKeyStaysPendingWhenAClientGoneGetsAnError(t *testing.T) {
 	e.clock.Advance(5 * time.Minute)
 	if res := e.post(t, "write", "k1", postBody); res.StatusCode != http.StatusCreated {
 		t.Errorf("repeat after the pending entry expired = %d, want 201", res.StatusCode)
+	}
+}
+
+// keyedBy keeps the answers in kv, with the fingerprints keyed by secret.
+func keyedBy(kv kernel.KeyValueStore, secret string) func(*clientapi.Options) {
+	return func(o *clientapi.Options) {
+		o.Idempotency = kv
+		o.IdempotencySecret = func(context.Context) ([]byte, error) { return []byte(secret), nil }
+	}
+}
+
+// The fingerprint of a request is keyed by IdempotencySecret: processes that share it answer a
+// repeat with the first answer, and one with another secret cannot match what the store keeps
+// (a bare hash of a body, which may hold a password, would).
+func TestIdempotencyFingerprintIsKeyedByTheSecret(t *testing.T) {
+	kv := testkit.NewKeyValueStore(testkit.NewClock(time.Date(2026, 11, 20, 0, 0, 0, 0, time.UTC)))
+	first := newIdempotencyEnv(t, keyedBy(kv, strings.Repeat("a", 32)))
+	if res := first.post(t, "write", "k1", postBody); res.StatusCode != http.StatusCreated {
+		t.Fatalf("first post = %d", res.StatusCode)
+	}
+	same := newIdempotencyEnv(t, keyedBy(kv, strings.Repeat("a", 32)))
+	if res := same.post(t, "write", "k1", postBody); res.StatusCode != http.StatusCreated || same.created.Load() != 0 {
+		t.Errorf("repeat on a process with the same secret = %d (posted %d), want the first 201", res.StatusCode, same.created.Load())
+	}
+	other := newIdempotencyEnv(t, keyedBy(kv, strings.Repeat("b", 32)))
+	res := other.post(t, "write", "k1", postBody)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Type != clientapi.ProblemTypeIdempotencyKeyReused {
+		t.Errorf("repeat under another secret = %d %q, want 422 %s", res.StatusCode, p.Type, clientapi.ProblemTypeIdempotencyKeyReused)
+	}
+}
+
+// Without its secret a keyed write is not carried out: a 500, and a request without a key still
+// is.
+func TestIdempotencySecretThatFailsRefusesKeyedWrites(t *testing.T) {
+	e := newIdempotencyEnv(t, func(o *clientapi.Options) {
+		o.IdempotencySecret = func(context.Context) ([]byte, error) { return nil, errors.New("no database yet") }
+	})
+	if res := e.post(t, "write", "k1", postBody); res.StatusCode != http.StatusInternalServerError {
+		t.Errorf("keyed post without the secret = %d, want 500", res.StatusCode)
+	}
+	if res := e.post(t, "write", "", postBody); res.StatusCode != http.StatusCreated {
+		t.Errorf("post without a key = %d, want 201", res.StatusCode)
+	}
+	if n := e.created.Load(); n != 1 {
+		t.Errorf("posted %d times, want once", n)
 	}
 }

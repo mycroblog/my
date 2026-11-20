@@ -5,15 +5,19 @@ package clientapi
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"hash"
 	"io"
 	"log/slog"
 	"net/http"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -85,6 +89,11 @@ func (s *Server) serveIdempotent(w http.ResponseWriter, r *http.Request, pattern
 		return
 	}
 	kv, ctx := s.o.Idempotency, r.Context()
+	secret, err := s.idempotencyKey.load(ctx, s.o.IdempotencySecret)
+	if err != nil {
+		s.responseError(w, r, err)
+		return
+	}
 	key := s.idempotencyStoreKey(r, a.Operation, values[0])
 	// A kept answer may expire between the swap and the read: then the swap is tried once more.
 	for range 2 {
@@ -94,7 +103,7 @@ func (s *Server) serveIdempotent(w http.ResponseWriter, r *http.Request, pattern
 			return
 		}
 		if first {
-			s.serveFirst(w, r, pattern, key, next)
+			s.serveFirst(w, r, pattern, key, secret, next)
 			return
 		}
 		raw, err := kv.Get(ctx, idempotencyNamespace, key)
@@ -105,7 +114,7 @@ func (s *Server) serveIdempotent(w http.ResponseWriter, r *http.Request, pattern
 			s.responseError(w, r, err)
 			return
 		}
-		s.serveRepeat(w, r, pattern, raw)
+		s.serveRepeat(w, r, pattern, secret, raw)
 		return
 	}
 	s.writeProblem(w, r, http.StatusConflict, ProblemTypeIdempotencyKeyInUse, s.localizer(r).ServerErrorsIdempotencyKeyInUse(), "")
@@ -117,7 +126,7 @@ func (s *Server) serveIdempotent(w http.ResponseWriter, r *http.Request, pattern
 // turned into a 5xx that frees the key and carries the write out again on the retry. A key is
 // not freed either once the client went away: what was done is not known, so its repeats get
 // the 409 until idempotencyPendingTTL.
-func (s *Server) serveFirst(w http.ResponseWriter, r *http.Request, pattern, key string, next http.Handler) {
+func (s *Server) serveFirst(w http.ResponseWriter, r *http.Request, pattern, key string, secret []byte, next http.Handler) {
 	kv, ctx := s.o.Idempotency, context.WithoutCancel(r.Context())
 	free := func() {
 		if r.Context().Err() != nil {
@@ -127,7 +136,7 @@ func (s *Server) serveFirst(w http.ResponseWriter, r *http.Request, pattern, key
 			s.o.Logger.WarnContext(ctx, "freeing an idempotency key failed", slog.Any("error", err))
 		}
 	}
-	h := requestHash(r)
+	h := requestHash(r, secret)
 	if s.maxBody(pattern) <= maxRequestBody {
 		// A small body is read before the handler, so that its fingerprint never depends on what
 		// the handler reads: once the answer is written, the rest of a body may be unreadable.
@@ -182,7 +191,7 @@ func (s *Server) serveFirst(w http.ResponseWriter, r *http.Request, pattern, key
 }
 
 // serveRepeat answers a repeat of a key from what the store keeps for it.
-func (s *Server) serveRepeat(w http.ResponseWriter, r *http.Request, pattern string, raw []byte) {
+func (s *Server) serveRepeat(w http.ResponseWriter, r *http.Request, pattern string, secret, raw []byte) {
 	var kept idempotentAnswer
 	if err := json.Unmarshal(raw, &kept); err != nil {
 		s.responseError(w, r, err)
@@ -193,7 +202,7 @@ func (s *Server) serveRepeat(w http.ResponseWriter, r *http.Request, pattern str
 		s.writeProblem(w, r, http.StatusConflict, ProblemTypeIdempotencyKeyInUse, l.ServerErrorsIdempotencyKeyInUse(), "")
 		return
 	}
-	h := requestHash(r)
+	h := requestHash(r, secret)
 	if _, err := io.Copy(h, r.Body); err != nil {
 		s.bodyError(w, r, pattern, err)
 		return
@@ -232,10 +241,11 @@ func (s *Server) idempotencyStoreKey(r *http.Request, operation, key string) str
 	return hex.EncodeToString(sum[:])
 }
 
-// requestHash returns the hash of the fingerprint of r, holding all of it but the body, which
-// the caller writes to it.
-func requestHash(r *http.Request) hash.Hash {
-	h := sha256.New()
+// requestHash returns the HMAC-SHA256 under secret of the fingerprint of r, holding all of it
+// but the body, which the caller writes to it. It is keyed so that what the store keeps tells
+// nothing of a body, which may hold a password.
+func requestHash(r *http.Request, secret []byte) hash.Hash {
+	h := hmac.New(sha256.New, secret)
 	for _, part := range []string{r.Method, r.URL.EscapedPath(), r.URL.RawQuery, r.Header.Get("Content-Type")} {
 		_, _ = io.WriteString(h, part)
 		_, _ = h.Write([]byte{0})
@@ -289,4 +299,34 @@ func (a *answerRecorder) statusCode() int {
 		return http.StatusOK
 	}
 	return a.status
+}
+
+// idempotencySecret loads the key of the fingerprints from Options.IdempotencySecret once, and
+// again after a failure; without one it is a random key of the process.
+type idempotencySecret struct {
+	mu  sync.Mutex
+	key []byte
+}
+
+func (k *idempotencySecret) load(ctx context.Context, source func(context.Context) ([]byte, error)) ([]byte, error) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	if k.key != nil {
+		return k.key, nil
+	}
+	if source == nil {
+		key := make([]byte, sha256.Size)
+		_, _ = rand.Read(key) // crypto/rand.Read never returns an error
+		k.key = key
+		return key, nil
+	}
+	key, err := source(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: load the idempotency key: %w", err)
+	}
+	if len(key) < sha256.Size {
+		return nil, errors.New("clientapi: the idempotency key must be at least 32 bytes")
+	}
+	k.key = key
+	return key, nil
 }

@@ -134,7 +134,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		// The payment provider's state and the reconciliation by hand (ADR-0074 §4).
 		Payments: a.paymentsAPI(),
 		// The answers to the requests with an Idempotency-Key (ADR-0028 §18), which the KV cleanup purges.
-		Idempotency: a.KV,
+		Idempotency: a.KV, IdempotencySecret: a.Instance.IdempotencyKey,
 		RateLimiter: a.RateLimiter, AccountLimit: accountLimit, ClientLimit: clientLimits(func(ctx context.Context) (map[string]int64, error) {
 			s, err := a.Instance.Settings(ctx)
 			return s.OAuthClientRateLimits(), err
