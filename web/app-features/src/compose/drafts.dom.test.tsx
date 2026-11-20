@@ -458,8 +458,9 @@ test("a time nearer than the server's nearest, or farther than its farthest, say
   );
 });
 
+// Three minutes, not two: the field holds whole minutes, so two ahead may be less than one by the time the form judges it.
 test("the form takes the instance's limits once they are read", async () => {
-  const said = await scheduleForm(from(2 * 60_000), { minutes: 1 });
+  const said = await scheduleForm(from(3 * 60_000), { minutes: 1 });
 
   expect(said).toContain("From 1 minute to 366 days from now");
   expect(said).not.toContain("Schedule the post at least");
