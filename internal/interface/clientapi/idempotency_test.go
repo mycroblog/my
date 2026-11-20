@@ -3,6 +3,7 @@
 package clientapi_test
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -50,11 +51,39 @@ func newIdempotencyEnv(t *testing.T) *idempotencyEnv {
 		view:   func(v appcontent.Viewer, _ string) (appcontent.StatusView, error) { return sampleView(v), nil },
 	}
 	e.authEnv = newAuthEnv(t, func(o *clientapi.Options) {
-		o.Statuses, o.StatusReader, o.Interactions = f, f, f
+		o.Statuses, o.StatusReader, o.Interactions = ctxStatuses{f}, f, f
 		o.Idempotency = testkit.NewKeyValueStore(e.clock)
 	})
 	e.auth.tokens["bob-write"] = bearer("write", bobAccountID)
 	return e
+}
+
+// ctxStatuses fails a post that was made once its context is done, as a store whose commit
+// needs the context would.
+type ctxStatuses struct{ *fakeStatuses }
+
+func (c ctxStatuses) Create(ctx context.Context, in appcontent.CreateInput) (appcontent.Post, error) {
+	p, err := c.fakeStatuses.Create(ctx, in)
+	if err == nil {
+		err = ctx.Err()
+	}
+	return p, err
+}
+
+// startPost begins a post with the key k1 on ctx, held until e.hold is closed; wait waits for
+// its end.
+func (e *idempotencyEnv) startPost(ctx context.Context) (wait func()) {
+	e.started, e.hold = make(chan struct{}), make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		req := httptest.NewRequestWithContext(ctx, http.MethodPost, clientapi.BasePath+"/statuses", strings.NewReader(postBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer write")
+		req.Header.Set("Idempotency-Key", "k1")
+		e.h.ServeHTTP(httptest.NewRecorder(), req)
+	})
+	<-e.started
+	return wg.Wait
 }
 
 // post posts body as the user of token with the Idempotency-Key key ("" for none).
@@ -191,19 +220,10 @@ func TestIdempotencyKeyKeepsNoRefusal(t *testing.T) {
 // A repeat while the first request is in progress is a 409.
 func TestIdempotencyKeyInUseWhileTheFirstRuns(t *testing.T) {
 	e := newIdempotencyEnv(t)
-	e.started, e.hold = make(chan struct{}), make(chan struct{})
-	var wg sync.WaitGroup
-	wg.Go(func() {
-		req := httptest.NewRequest(http.MethodPost, clientapi.BasePath+"/statuses", strings.NewReader(postBody))
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer write")
-		req.Header.Set("Idempotency-Key", "k1")
-		e.h.ServeHTTP(httptest.NewRecorder(), req)
-	})
-	<-e.started
+	wait := e.startPost(t.Context())
 	res := e.post(t, "write", "k1", postBody)
 	close(e.hold)
-	wg.Wait()
+	wait()
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypeIdempotencyKeyInUse {
 		t.Errorf("repeat in progress = %d %q, want 409 %s", res.StatusCode, p.Type, clientapi.ProblemTypeIdempotencyKeyInUse)
 	}
@@ -225,5 +245,44 @@ func TestIdempotencyKeyMustBeValid(t *testing.T) {
 	}
 	if n := e.created.Load(); n != 0 {
 		t.Errorf("posted %d times, want never", n)
+	}
+}
+
+// A client that goes away while its write runs does not cancel it: the write that is made is
+// kept as the answer to the key, and its retry gets it without posting again.
+func TestIdempotencyKeyKeepsTheAnswerOfAClientGone(t *testing.T) {
+	e := newIdempotencyEnv(t)
+	ctx, cancel := context.WithCancel(t.Context())
+	wait := e.startPost(ctx)
+	cancel()
+	close(e.hold)
+	wait()
+	e.hold = nil
+	if res := e.post(t, "write", "k1", postBody); res.StatusCode != http.StatusCreated {
+		t.Errorf("retry after the client went away = %d, want the first 201", res.StatusCode)
+	}
+	if n := e.created.Load(); n != 1 {
+		t.Errorf("posted %d times, want once", n)
+	}
+}
+
+// A write that fails after its client went away may have been made in part: its key is not
+// freed, and its repeats get the 409 until the pending entry expires.
+func TestIdempotencyKeyStaysPendingWhenAClientGoneGetsAnError(t *testing.T) {
+	e := newIdempotencyEnv(t)
+	ctx, cancel := context.WithCancel(t.Context())
+	wait := e.startPost(ctx)
+	e.fail = errors.New("boom")
+	cancel()
+	close(e.hold)
+	wait()
+	e.hold, e.fail = nil, nil
+	res := e.post(t, "write", "k1", postBody)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypeIdempotencyKeyInUse {
+		t.Errorf("repeat after a failure of a client gone = %d %q, want 409 %s", res.StatusCode, p.Type, clientapi.ProblemTypeIdempotencyKeyInUse)
+	}
+	e.clock.Advance(5 * time.Minute)
+	if res := e.post(t, "write", "k1", postBody); res.StatusCode != http.StatusCreated {
+		t.Errorf("repeat after the pending entry expired = %d, want 201", res.StatusCode)
 	}
 }

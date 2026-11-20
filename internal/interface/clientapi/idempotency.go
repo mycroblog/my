@@ -112,16 +112,28 @@ func (s *Server) serveIdempotent(w http.ResponseWriter, r *http.Request, pattern
 }
 
 // serveFirst carries out the first request with the key and keeps its answer, or frees the key
-// when the answer is not kept.
+// when the answer is not kept. The handler runs on a context that the client's going away does
+// not cancel (it keeps the request's values and deadline), so that a write it commits is not
+// turned into a 5xx that frees the key and carries the write out again on the retry. A key is
+// not freed either once the client went away: what was done is not known, so its repeats get
+// the 409 until idempotencyPendingTTL.
 func (s *Server) serveFirst(w http.ResponseWriter, r *http.Request, pattern, key string, next http.Handler) {
 	kv, ctx := s.o.Idempotency, context.WithoutCancel(r.Context())
+	free := func() {
+		if r.Context().Err() != nil {
+			return
+		}
+		if err := kv.Delete(ctx, idempotencyNamespace, key); err != nil {
+			s.o.Logger.WarnContext(ctx, "freeing an idempotency key failed", slog.Any("error", err))
+		}
+	}
 	h := requestHash(r)
 	if s.maxBody(pattern) <= maxRequestBody {
 		// A small body is read before the handler, so that its fingerprint never depends on what
 		// the handler reads: once the answer is written, the rest of a body may be unreadable.
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
-			_ = kv.Delete(ctx, idempotencyNamespace, key)
+			free()
 			s.bodyError(w, r, pattern, err)
 			return
 		}
@@ -140,18 +152,22 @@ func (s *Server) serveFirst(w http.ResponseWriter, r *http.Request, pattern, key
 	defer func() {
 		if !done {
 			// A panic of the handler frees the key, so that a repeat is carried out.
-			_ = kv.Delete(ctx, idempotencyNamespace, key)
+			free()
 		}
 	}()
-	next.ServeHTTP(rec, r)
+	handlerCtx := ctx
+	if deadline, ok := r.Context().Deadline(); ok {
+		var cancel context.CancelFunc
+		handlerCtx, cancel = context.WithDeadline(ctx, deadline)
+		defer cancel()
+	}
+	next.ServeHTTP(rec, r.WithContext(handlerCtx))
 	done = true
 	// What the handler left unread is part of the request too.
 	_, drainErr := io.Copy(io.Discard, r.Body)
 	status := rec.statusCode()
 	if drainErr != nil || rec.overflow || status >= http.StatusBadRequest {
-		if err := kv.Delete(ctx, idempotencyNamespace, key); err != nil {
-			s.o.Logger.WarnContext(ctx, "freeing an idempotency key failed", slog.Any("error", err))
-		}
+		free()
 		return
 	}
 	answer, err := json.Marshal(idempotentAnswer{Fingerprint: hex.EncodeToString(h.Sum(nil)), Status: status, Header: rec.header, Body: rec.body.Bytes()})
