@@ -137,9 +137,10 @@ export async function loadOwnEmojis(data: AppData): Promise<void> {
 /** Whether the reader may ask for one more emoji this month: always without a limit. */
 export const mayRequest = (quota: EmojiQuota): boolean => quota.limit === undefined || quota.used < quota.limit;
 
-/** Reads again what the reader's writes change: their lists, the picker, and the administrators' lists. */
+/** Reads again what the reader's writes change: their lists, the picker, and the administrators' lists and count. */
 async function ownChanged(data: AppData): Promise<void> {
   const paths = new Set([
+    "/admin/counts",
     "/custom_emojis/mine",
     "/custom_emoji_requests",
     "/admin/custom_emojis",

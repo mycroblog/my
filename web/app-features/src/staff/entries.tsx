@@ -15,6 +15,7 @@ import {
   loadReportQueue,
   moderationCountsQuery,
   useAccountCounts,
+  useAdminCounts,
   useInstance,
   useOpenReportCount,
   usePermissions,
@@ -98,6 +99,10 @@ export type StaffFacts = {
    */
   readonly pendingRegistrations: number | undefined;
   readonly pendingAppeals: number | undefined;
+  /** The custom emoji requests that wait for a decision; undefined until the server said, or without `manage_custom_emojis`. */
+  readonly pendingEmojiRequests: number | undefined;
+  /** The error groups that are open; undefined until the server said, or without `manage_errors`. */
+  readonly openErrorGroups: number | undefined;
   /** The server is a one-person server (ADR-0152); undefined until the server said. */
   readonly singleUser: boolean | undefined;
 };
@@ -283,12 +288,15 @@ export function useStaffFacts(enabled = true): StaffFacts & { readonly known: bo
   const permissions = usePermissions(enabled);
   const openReports = useOpenReportCount(enabled);
   const counts = useAccountCounts(enabled);
+  const admin = useAdminCounts(enabled);
   const singleUser = useInstance()?.single_user;
   return {
     permissions,
     openReports,
     pendingRegistrations: counts.registrations,
     pendingAppeals: counts.appeals,
+    pendingEmojiRequests: admin.emojiRequests,
+    openErrorGroups: admin.errorGroups,
     singleUser,
     known,
   };
@@ -338,10 +346,13 @@ export const staffRootPath = (area: StaffArea): string => `/${area}`;
 /** The address of the screen of the entry of `area` at `path`. */
 export const staffEntryPath = (area: StaffArea, path: string): string => `/${area}/${path}`;
 
+/** The permissions that let the reader see a count of what waits for them (GET /admin/counts). */
+const counted: readonly Permission[] = ["manage_reports", "manage_accounts", "manage_custom_emojis", "manage_errors"];
+
 /** Reads who the reader is and what waits for them, which the root lists, for the loader of an area's routes. */
 export async function loadStaffFacts(data: AppData): Promise<void> {
   const viewer = await readViewer(data);
-  if (viewer?.permissions.some((p) => p === "manage_reports" || p === "manage_accounts") === true)
+  if (viewer?.permissions.some((p) => counted.includes(p)) === true)
     await data.queryClient.query(moderationCountsQuery(data)).catch(() => undefined);
 }
 
@@ -372,6 +383,8 @@ export async function loadStaffEntry(
       openReports: undefined,
       pendingRegistrations: undefined,
       pendingAppeals: undefined,
+      pendingEmojiRequests: undefined,
+      openErrorGroups: undefined,
       singleUser: instance?.single_user,
     };
     if (!entry.shown(facts)) return;

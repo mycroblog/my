@@ -48,6 +48,7 @@ export function emojiHandlers(c: StaffServerContext): {
   handlers: Handlers;
   id: (key: string) => string;
   requestId: (key: string) => string;
+  pending: () => number;
 } {
   const none = c.options?.emoji?.none === true;
   const limitOption = c.options?.emoji?.limit;
@@ -494,5 +495,6 @@ export function emojiHandlers(c: StaffServerContext): {
     handlers,
     id: (key) => keyed.get(key) ?? "none",
     requestId: (key) => keyed.get(`request:${key}`) ?? "none",
+    pending: () => requests.filter((r) => r.state === "pending").length,
   };
 }

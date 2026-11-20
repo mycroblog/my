@@ -245,6 +245,11 @@ func (s *Service) Events(ctx context.Context, groupID string) ([]Event, error) {
 	return s.d.Repository.Events(ctx, groupID)
 }
 
+// CountOpen counts the open groups: new, regressed, or unmuted (GET /api/v1/admin/counts).
+func (s *Service) CountOpen(ctx context.Context) (int64, error) {
+	return s.d.Repository.CountGroups(ctx, diagnostics.StateOpen)
+}
+
 // PruneCounts deletes the hourly counts of the hours older than diagnostics.CountRetention and
 // returns how many it deleted. It is safe to repeat.
 func (s *Service) PruneCounts(ctx context.Context) (int64, error) {

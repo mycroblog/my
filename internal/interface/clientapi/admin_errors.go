@@ -30,6 +30,8 @@ type ErrorGroups interface {
 	Resolve(ctx context.Context, groupID string, by appdiagnostics.Actor) (appdiagnostics.Head, error)
 	Mute(ctx context.Context, groupID string, by appdiagnostics.Actor) (appdiagnostics.Head, error)
 	Unmute(ctx context.Context, groupID string, by appdiagnostics.Actor) (appdiagnostics.Head, error)
+	// CountOpen counts the open groups (admin_counts.go).
+	CountOpen(ctx context.Context) (int64, error)
 }
 
 // requireErrorGroups checks manage_errors; a server built without ErrorGroups answers 404.

@@ -37,6 +37,8 @@ type CustomEmojiRequests interface {
 	ListOwn(ctx context.Context, userID, before string, limit int) ([]appcontent.AdminCustomEmoji, error)
 	UpdateOwn(ctx context.Context, id, userID string, u appcontent.OwnCustomEmojiUpdate) (appcontent.AdminCustomEmoji, error)
 	DeleteOwn(ctx context.Context, id, userID string) error
+	// CountPendingRequests counts the requests that await a decision (admin_counts.go).
+	CountPendingRequests(ctx context.Context) (int64, error)
 }
 
 // requireEmojiCreator checks the create_custom_emojis permission and that the use cases are
