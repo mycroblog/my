@@ -61,7 +61,7 @@ promtool test rules alerts.test.yml
 リモートのサーバー。各プロセスの CPU とメモリ。Grafana でインポートし（**Dashboards** → **New** → **Import**）、Prometheus のデータソースを選んでください。
 **Job** 変数でスクレイプのジョブを選びます（既定は `my`）。
 
-<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
+<!-- source: google-cloud-cloud-run addd07c417a9 -->
 ### Google Cloud（Cloud Run）
 
 `metrics_exporter = none` の場合は、Cloud Run と Cloud Logging にすでにあるものからアラートを作ります。
@@ -77,9 +77,9 @@ promtool test rules alerts.test.yml
 - **データベース**: Cloud SQL のディスク使用率と接続のメトリクス、またはデータベースの事業者の使用量アラート。
 - **費用**: アラートのしきい値を設定した Cloud Billing の予算（[費用と予算](#cost-and-budget)）。
 
-モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) は、これらを下の表の名前のポリシーとして作り、違う方法で扱うアラートや表現できないアラートを一覧にしています。このモジュールはまだ一度も適用されたことがありません。トラフィックがあるときだけ生じるメトリクスは、ゼロまでスケールするサービスでは途切れるため、その欠落に対するアラートは誤って発生します。アイドル状態で停止したサーバーに気づくのは、このモジュールの稼働時間チェックです。
+[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) の `monitoring` セクションは、これらを下の表の名前のポリシーとして作ります。[その背後にあるモジュールの README](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) は、違う方法で扱うアラートや表現できないアラートを一覧にしています。このセクションはまだ一度も適用されたことがありません。トラフィックがあるときだけ生じるメトリクスは、ゼロまでスケールするサービスでは途切れるため、その欠落に対するアラートは誤って発生します。アイドル状態で停止したサーバーに気づくのは、その稼働時間チェックです。
 
-<!-- source: aws-ecs 609e5bf632ef -->
+<!-- source: aws-ecs ce4eac5fd50d -->
 ### AWS ECS
 
 `metrics_exporter = emf` の場合、CloudWatch Logs はサーバーのログの行を名前空間 `metrics_emf_namespace` のメトリクスに変換します。名前はドット区切りのもの
@@ -94,9 +94,9 @@ EMF では書き出されないため、代わりに ECS サービスの CPU と
 - **メール**（`mail = ses`）: CloudWatch にある SES の評価のメトリクス（バウンス率と苦情率）。
 - **費用**: アラートを設定した AWS Budgets の予算（[費用と予算](#cost-and-budget)）。
 
-モジュール [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) は、これらを下の表の名前のアラームとして作り、同じように一覧を持っています。このモジュールはまだ一度も適用されたことがありません。
+[`mycroblog-aws`](../../deploy/opentofu/README.md#sections) の `monitoring` セクションは、これらを下の表の名前のアラームとして作ります。[その背後にあるモジュールの README](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) にも同じ一覧があります。このセクションはまだ一度も適用されたことがありません。
 
-<!-- source: the-alerts d76842ca02b8 -->
+<!-- source: the-alerts afb87d0111fd -->
 ## アラートの一覧
 
 緊急度: **page** = 今すぐ対応する、**ticket** = 業務時間内に対応する。ルールの列の「–」は、それに対するメトリクスがまだないことを示します。説明のとおりに確認してください。
@@ -130,10 +130,12 @@ EMF では書き出されないため、代わりに ECS サービスの CPU と
 | リソース | [`MyMediaStorageLarge`](#mymediastoragelarge) | `my_media_stored_bytes` | 計画したサイズ（例: 50 GiB）超が 1 時間続く | ticket | アップロードの増加。プランや予算を上げる時期 |
 | メール | [`MyEmailFailing`](#myemailfailing) | `my_outcome="dead"` のメールのジョブの `my_job_duration_seconds_count` | 1 時間に 1 件でも | ticket | SMTP や SES の設定の誤り、アカウントの停止や送信枠の超過、恒久的に拒否されたアドレス |
 | メール | [`MyEmailRetrying`](#myemailretrying) | 同上、`my_outcome="retry"` | 実行の 50% 超が 15 分続く | ticket | メールサーバーに届かない、ログインを拒否される、送信のレート制限 |
+| TLS | [`MyTLSCertificateExpiring`](#mytlscertificateexpiring) | `my_tls_certificate_expiry_seconds` | どれかのプロセスで 7 日未満が 15 分続く | page | 更新が何週間も失敗している、更新された証明書を読み込まないプロセス、何も更新しない証明書ファイル |
+| TLS | [`MyTLSOrdersFailing`](#mytlsordersfailing) | `my_tls_order_consecutive_failures` | 3 以上が 5 分続く | ticket | DNS がもうサーバーを指していない、80 番と 443 番のポートが遮断されている、認証局のレート制限や障害 |
 | 費用 | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 が 6 時間続く | ticket | 権限の不足、課金のエクスポートが設定されていない、リクエストの上限に達した、事業者が利用できない |
 | 費用 | 予算の超過 | – | – | – | トラフィック、ストレージ、または設定の誤りで計画より費用がかかっている（[下記](#cost-and-budget)） |
 
-<!-- source: where-to-look b9e94304077f -->
+<!-- source: where-to-look 988be973ea5b -->
 ## 確認する場所
 
 以下のツールは、このあとのランブックのほとんどの項目に出てきます。
@@ -145,7 +147,7 @@ EMF では書き出されないため、代わりに ECS サービスの CPU と
   `my job list` は失敗したジョブを新しい順に一覧にし、`my job retry <id>...` はそれらをキューに戻し、`my job delete <id>...` はそれらを削除します。
   ジョブはもう一度実行しても安全です。
 - **リモートのサーバーの画面**（「モデレーション」→「連合先のサーバー」、`/moderation/instances`、`manage_domains` が必要）: 配送が届かなかったサーバーと、
-  配送が停止しているサーバーを、その理由と日時とともに表示します。「配送を再開する」で、そのサーバーを再び利用できる状態にします。
+  配送が停止しているサーバーを、その理由と日時とともに表示します。「配送を再開する」で、そのサーバーを再び利用できる状態にします。「サーバーを開く」は、一覧にあるかどうかにかかわらず、ドメインを指定して任意のサーバーのページを開きます。
 - **ログ**: 標準エラーに出力される JSON の行。HTTP リクエストはそれぞれ `msg` が `http request` の行で終わり、ジョブの実行はそれぞれ `msg` が `job` の行で終わります
   （成功は `INFO`、再試行は `WARN`、最終的に失敗したジョブは `ERROR` で、`error`、`job_id`、`my.job.type` が付きます）。
   リクエストの中の行にはその `request_id` が付き、クライアントからは `X-Request-Id` として見えます。
@@ -551,7 +553,7 @@ Go ランタイムが `GOMEMLIMIT` の 90% を超えて使っています。上�
 取り込んだ請求と月初からの見積もりは、「管理」→「費用」→「利用料金の取り込み」に表示されます。失敗した取り込みはそこに記録され、翌日の取り込みで再試行されます。
 [`MyBillingImportFailing`](#mybillingimportfailing) は、その月の数値が古くなる前に知らせます。
 
-<!-- source: mybillingimportfailing da997f400ac4 -->
+<!-- source: mybillingimportfailing fc199aaa760f -->
 ### MyBillingImportFailing
 
 ある課金ソースの利用料金の最新の取り込みが失敗し、そのあと 6 時間、成功した取り込みがありません。取り込みは 1 日に 1 回実行されます。スロットリングと
@@ -565,9 +567,43 @@ Go ランタイムが `GOMEMLIMIT` の 90% を超えて使っています。上�
 
 対処:
 
-- 原因（権限、課金のエクスポート、リクエストの上限）を直してから、翌日を待たずに「管理」→「費用」→「利用料金の取り込み」で「今すぐ取り込む」を押します。
+- 原因（権限、課金のエクスポート、リクエストの上限）を直してから、翌日を待たずに「管理」→「費用と収入」→「利用料金の取り込み」で「今すぐ取り込む」を押します。
 
 Prometheus がない場合（`metrics_exporter = none` の Cloud Run）は、代わりに `billing import failed` の行に対するログベースのアラートを作ってください。
+
+<!-- source: mytlscertificateexpiring 04321a12c086 -->
+### MyTLSCertificateExpiring
+
+あるプロセスが、7 日以内に期限が切れる証明書を提供しています。`tls = acme` では、サーバーは証明書の有効期間の約 3 分の 1 が残ったところで、
+期限の何週間も前に更新します。そのため、これは更新が長く失敗し続けているか、そのプロセスが更新された証明書を読み込まなかったことを意味します。
+`tls = files` では、ファイルを更新するものが何もなかったということです。
+
+確認すること:
+
+- `instance` ラベル: 同じホストに対して他のプロセスがより新しい証明書を提供しているなら、古いものを持ち続けているのはこのプロセスだけです。
+- `my tls status`: そのホストの現在の証明書、更新される時期、直近の注文とそのエラー。
+- 理由が書かれた `the TLS certificate could not be obtained` のログの行。
+
+対処:
+
+- 失敗している注文の原因を直し（[MyTLSOrdersFailing](#mytlsordersfailing) を参照）、次の注文を待たずに `my tls renew -host <host>` ですぐに注文します。
+- データベースにより新しい証明書があるのに古い証明書を持ち続けているプロセスは、5 分以内にそれを読み込みます。読み込まないときは再起動してください。
+- `tls = files` では、ファイルを書き出すツール（certbot）で更新してください。サーバーは 1 分以内にそれを読み込みます。
+
+<!-- source: mytlsordersfailing a344584cde47 -->
+### MyTLSOrdersFailing
+
+あるホストの証明書の直近 3 回以上の注文が、1 つも証明書を取得できませんでした。3 回目の失敗のあとは、認証局の制限の範囲に収まるよう、サーバーは注文の間に 100 分、そのあとは 1 日待ちます。
+その間も現在の証明書は使われ続けます。
+
+確認すること:
+
+- `my tls status`: 失敗と、注文ごとのエラー。`rejectedIdentifier`、`dns`、`connection`、`unauthorized` のエラーは、認証局がその名前でサーバーに到達できなかったことを意味します。`rateLimited` は、その制限に達したことを意味します。
+- その `host` がサーバーに解決されること、そしてポート 443 と 80 がインターネットから到達できること。
+
+対処:
+
+- 原因を直してから `my tls renew -host <host>` を実行します。待たずにすぐに注文します。
 
 <!-- source: telling-users-about-an-incident e8cb0ca13fe8 -->
 ## 障害を利用者に知らせる

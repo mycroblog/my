@@ -49,7 +49,7 @@ PAY.JP には API v1 と v2 があります。v2 にはまだ定期課金の API
 - **異議申し立て**: PAY.JP がイベントを送るのは、異議申し立てが開かれたときだけです。照合のたびに、あなたに有利に終わった異議申し立て（状態 `cancel`）も読み、支払いトランザクションが自分では報告しないチャージバックの取り消しを記録します。チャージバックなしで終わった異議申し立て（問い合わせ）は、何も記録しません。
 - **返金**: チップの返金は PAY.JP のダッシュボードで行います。全額の返金とチャージバックはチップとともに記録され、一部の返金は収入にだけ記録されます。
 
-<!-- source: card-data-and-pci-dss 7be9976efb0b -->
+<!-- source: card-data-and-pci-dss c29c39d7a69c -->
 ## カード情報と PCI DSS
 
 カード番号、有効期限、セキュリティコードは、payjp.js が表示する PAY.JP の iframe の中でだけ入力されます。このサーバーのページとスクリプトがそれらに触れることはありません。サーバーが受け取るのは、payjp.js が作ったトークンの ID と、3-D セキュアに必要なカード名義とメールアドレスだけです。
@@ -57,12 +57,12 @@ PAY.JP には API v1 と v2 があります。v2 にはまだ定期課金の API
 
 支払いページはこのサーバーのオリジンから配信されるため、PCI DSS v4 の支払いページのスクリプトの管理（要件 6.4.3）と改ざんの検知（要件 11.6.1）を念頭に置いて作られています。
 
-- ページが読み込むのは、`https://js.pay.jp/v2/pay.js` と、ページに埋め込まれた nonce 付きの小さなスクリプトだけです。Web クライアントのバンドルも、解析や広告のスクリプトも含みません。
-- ページは常に独自の Content-Security-Policy（`script-src` は nonce と `https://js.pay.jp` だけ、`frame-src` は `https://js.pay.jp` と `https://api.pay.jp` だけ、`form-action 'self'`、`frame-ancestors 'none'`）、`Referrer-Policy: no-referrer`、`Cache-Control: no-store`、`X-Content-Type-Options: nosniff` を付けます。CSP を変える設定はありません。
-- テンプレートとスクリプトはサーバーのバイナリに埋め込まれており、実行時に変えられません。フォームの送信は同じオリジンからのものだけを受け付けます。
+- ページは Web クライアントの一部で、サーバーのバイナリに組み込まれています。Web クライアント自身のスクリプトをこのサーバーから、それぞれ Subresource Integrity を付けて読み込み、PAY.JP が配信して更新する `https://js.pay.jp/v2/pay.js` を読み込みます。解析や広告のスクリプトは読み込みません。
+- リリースごとに `payment-scripts.json` が付きます。これは、ページが読み込むすべてのスクリプトの一覧で、Web クライアントの各スクリプトとそのハッシュ、そして payjp.js が入っています。ページは Web クライアントのほかの部分とスクリプトを共有するため、一覧はリリースごとに変わります。動かしているリリースの一覧を保管してください。サーバーは、一覧がスクリプトと一致しないビルドでは起動を拒否します。
+- ページは常に独自の Content-Security-Policy（`script-src` はこのサーバーと `https://js.pay.jp` だけ、`frame-src` は `https://js.pay.jp` と `https://api.pay.jp` だけ、`form-action 'self'`、`frame-ancestors 'none'`）、`Referrer-Policy: no-referrer`、`Cache-Control: no-store`、`X-Content-Type-Options: nosniff` を付けます。CSP を変える設定はありません。フォームの送信は同じオリジンからのものだけを受け付けます。
 
 その結果、運営者の対象範囲は、支払いの入力を PAY.JP の iframe に任せる加盟店のもの（SAQ A）になると見込まれます。当てはまる対象範囲と自己問診票の種類は、PAY.JP の案内とカードブランドの要件に照らして確認してください。
-その際、次の点を記録しておくと役に立ちます。支払いページの URL（`/payments/pages/payjp/checkout` と `/portal`）、ページが読み込むスクリプトの一覧（上の 2 つ）、ページの CSP、そしてサーバーへの通信が TLS を使うこと（リバースプロキシの設定）です。
+その際、次の点を記録しておくと役に立ちます。支払いページの URL（`/payments/pages/payjp/checkout` と `/portal`）、ページが読み込むスクリプトの一覧（そのリリースの `payment-scripts.json`）、ページの CSP、そしてサーバーへの通信が TLS を使うこと（リバースプロキシの設定）です。
 
 <!-- source: 1-prepare-the-payjp-account b01b53a61e40 -->
 ## 1. PAY.JP のアカウントを用意する
