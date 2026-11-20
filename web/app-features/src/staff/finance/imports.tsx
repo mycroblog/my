@@ -111,7 +111,9 @@ function Source({ source, say }: { source: BillingImport; say: Say }) {
         {/* Where its imports stand leads its block: a failure, why and what to do, and the way to import again. */}
         <Stack gap="entry-line">
           {run === undefined ? (
-            <Box as="p">{t("staff_finance.imports.never")}</Box>
+            <Box as="p" text="body">
+              {t("staff_finance.imports.never")}
+            </Box>
           ) : run.outcome === "succeeded" ? (
             <StateMark state="active">
               {t("staff_finance.imports.succeeded", { at: moment(run.occurred_at) })}
@@ -121,7 +123,9 @@ function Source({ source, say }: { source: BillingImport; say: Say }) {
               <StateMark state="failed">
                 {t("staff_finance.imports.failed_at", { at: moment(run.occurred_at) })}
               </StateMark>
-              <Box as="p">{t("staff_finance.imports.error", { kind: run.error_kind })}</Box>
+              <Box as="p" text="body" breaks="phrase">
+                {t("staff_finance.imports.error", { kind: run.error_kind })}
+              </Box>
             </>
           )}
           <Row>
