@@ -9,7 +9,7 @@ import { NavigationProvider } from "@my/design-system";
 import { fakeHost, scenario, type FakeOptions, type FakeSeed } from "@my/e2e/fake";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { PostActions, type ComposeRequest } from "../post-actions";
-import { fakeData, renderFeature } from "../test/feature";
+import { dataOn, fakeData, renderFeature } from "../test/feature";
 import { loadNotifications, Notifications } from "./notifications";
 
 type Post = FakeSeed["posts"][number];
@@ -53,12 +53,14 @@ function server(options = answers()) {
           id: "00000000-0000-7000-8000-000000000002",
           type: "moderation_notice" as const,
           created_at: "2026-11-13T01:00:00Z",
+          read: true,
         },
         {
           id: "00000000-0000-7000-8000-000000000001",
           // No kind of the specification: one a server newer than this client sends.
           type: "some_new_kind" as never,
           created_at: "2026-11-12T01:00:00Z",
+          read: true,
         },
       ],
     }),
@@ -540,7 +542,7 @@ test("reading the oldest unread notification moves the marker to it", async () =
   });
 });
 
-test("reading newer notifications while an older one is unread sends nothing, and reading the oldest moves the marker to the newest", async () => {
+test("reading newer notifications while an older one is unread leaves the marker, and reading the oldest moves it to the newest", async () => {
   const { user, marker, id } = await inbox();
   for (const name of ["Hana 花 reacted to your post", "Hana 花 boosted your post"]) {
     await user.click(within(within(feed()).getByRole("article", { name })).getByText(/^Day 3 of the sourdough/));
@@ -555,4 +557,29 @@ test("reading newer notifications while an older one is unread sends nothing, an
     expect(marker.seen.map((s) => s.body.last_read_id)).toEqual([id(0)]);
   });
   expect(unreadCount()).toBe(0);
+});
+
+test("a notification read while an older one is unread stays read when the app loads again, and the older one stays unread", async () => {
+  const { fake, user, marker } = await inbox();
+  const reacted = "Hana 花 reacted to your post";
+  await user.click(within(within(feed()).getByRole("article", { name: reacted })).getByText(/^Day 3 of the sourdough/));
+  await waitFor(() => {
+    expect(unreadCount()).toBe(2);
+  });
+  expect(marker.seen).toHaveLength(0);
+
+  // Another load of the app: its cache knows nothing of what this one read.
+  cleanup();
+  const again = dataOn(fake);
+  await loadNotifications(again.data);
+  renderFeature(
+    again.data,
+    <PostActions onCompose={() => undefined}>
+      <Notifications instance={fakeHost} />
+    </PostActions>,
+  );
+  expect(unreadMark(within(feed()).getByRole("article", { name: reacted }))).toBeNull();
+  for (const name of ["Hana 花 boosted your post", "Hana 花 favourited your post"])
+    expect(unreadMark(within(feed()).getByRole("article", { name }))).not.toBeNull();
+  expect(unreadCount()).toBe(2);
 });

@@ -12,7 +12,7 @@ import {
   useUnreadNotifications,
   type NotificationReads,
 } from "./notifications";
-import { fakeData } from "./test/data";
+import { dataOn, fakeData } from "./test/data";
 import { probe } from "./test/probe";
 
 /**
@@ -49,7 +49,23 @@ async function server(count: number, unread: number) {
   await data.queryClient.infiniteQuery(notificationsQuery(data, "all"));
   await data.queryClient.query(notificationMarkerQuery(data));
   const id = (n: number) => all.at(-n) ?? `none of ${String(n)}`;
-  return { fake, data, requests, id, moves: () => moved.seen.map((s) => s.body.last_read_id) };
+  const readOne = fake.script("POST /notifications/{id}/read");
+  return {
+    fake,
+    data,
+    requests,
+    id,
+    moves: () => moved.seen.map((s) => s.body.last_read_id),
+    readsAlone: () => readOne.seen.map((s) => s.url.pathname.split("/").at(-2)),
+  };
+}
+
+/** The app's data loaded again on the same server: a reload, or another device. */
+async function reloaded(fake: Parameters<typeof dataOn>[0]): Promise<AppData> {
+  const { data } = dataOn(fake);
+  await data.queryClient.infiniteQuery(notificationsQuery(data, "all"));
+  await data.queryClient.query(notificationMarkerQuery(data));
+  return data;
 }
 
 /** What the list and the shell read now. */
@@ -80,6 +96,42 @@ test("reading the newest first leaves the marker until the oldest unread one is 
   await settle();
   expect(moves()).toEqual([id(5)]);
   expect(read(data).count).toBe(0);
+});
+
+test("a notification read above an unread one is read on the server on its own, and stays read after a reload", async () => {
+  const { fake, data, id, moves, readsAlone } = await server(5, 3);
+  read(data).reads.read(id(4));
+  await settle();
+  expect(moves()).toEqual([]);
+  expect(readsAlone()).toEqual([id(4)]);
+  expect(read(data).count).toBe(2);
+  const again = read(await reloaded(fake));
+  expect([5, 4, 3].map((n) => again.reads.unread(id(n)))).toEqual([true, false, true]);
+  expect(again.count).toBe(2);
+});
+
+test("reading the oldest unread one moves the marker over those the server holds read above it", async () => {
+  const { fake, data, id, moves } = await server(5, 3);
+  read(data).reads.read(id(4));
+  await settle();
+  const again = await reloaded(fake);
+  read(again).reads.read(id(3));
+  await settle();
+  expect(moves()).toEqual([id(4)]);
+  const now = read(again);
+  expect([5, 4, 3].map((n) => now.reads.unread(id(n)))).toEqual([true, false, false]);
+  expect(now.count).toBe(1);
+});
+
+test("a notification the server answered read is read already, and reading it asks nothing", async () => {
+  const { fake, data, id, moves, readsAlone } = await server(5, 3);
+  read(data).reads.read(id(5));
+  await settle();
+  const again = await reloaded(fake);
+  read(again).reads.read(id(5));
+  await settle();
+  expect(readsAlone()).toEqual([id(5)]);
+  expect(moves()).toEqual([]);
 });
 
 test("reading the oldest unread one alone moves the marker to it", async () => {

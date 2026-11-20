@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The notifications and their read marker (ADR-0028 §7, §18, ADR-0158 §7). The server holds the marker, shared by
-// every client: the notifications up to it are read, those after it unread, and it only moves forward. A notification
-// the stream receives goes to the top of each cached list it belongs to and counts as unread; after a break of the
-// stream, the lists and the counts are read again.
+// The notifications and their read state (ADR-0028 §7, §18, ADR-0158 §7). The server holds it for every client: a
+// marker, which only moves forward and reads every notification up to it, and the notifications read on their own past
+// it, which each notification's `read` tells. A notification the stream receives goes to the top of each cached list it
+// belongs to and counts as unread; after a break of the stream, the lists and the counts are read again.
 //
 // The reader reads a notification by clicking it or by scrolling it out above the view, newest first, so the newest
-// are read before the older ones under them. The marker cannot say that, so what the reader read after the marker is
-// kept here, for the session, and the marker moves up to the newest notification below which every one is read: once
-// the reader read the oldest unread one, or all of them. Until it moves, those count as read here, in the list's marks
-// and in the unread count.
+// are read before the older ones under them. The marker moves up to the newest notification below which every one is
+// read: once the reader read the oldest unread one, or all of them. A notification read above an unread one is sent to
+// the server on its own. From the read until the server's answer, it counts as read here, in the list's marks and in
+// the unread count.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
@@ -80,9 +80,10 @@ const lists = (data: AppData) =>
 /** IDs are UUIDv7: in their canonical form, a later one sorts after an earlier one. */
 const newer = (a: string, b: string | undefined) => b === undefined || a > b;
 
-// ---- What the reader read after the marker -------------------------------------------------------------------------
+// ---- What the reader read, until the server answers ----------------------------------------------------------------
 
 type Store = {
+  /** The notifications the reader read past the marker that the cache does not yet tell are read. */
   seen: ReadonlySet<string>;
   readonly listeners: Set<() => void>;
   moving: Promise<void>;
@@ -126,6 +127,50 @@ async function putMarker(data: AppData, id: string): Promise<void> {
   if (marker !== undefined) cacheMarker(data, marker);
 }
 
+/** Whether the cache holds the notification of `id` as the server answered it read. */
+function cachedRead(data: AppData, id: string): boolean {
+  const one = data.queryClient.getQueryData<NotificationItem>(notificationQuery(data, id).queryKey);
+  if (one?.read === true) return true;
+  return lists(data).some(({ queryKey }) =>
+    data.queryClient
+      .getQueryData<Pages<NotificationItem>>(queryKey)
+      ?.pages.some((page) => page.items.some((n) => n.id === id && n.read)),
+  );
+}
+
+/** Tells the cached lists and the notification of `id` that it is read. */
+function cacheRead(data: AppData, id: string): void {
+  const { queryClient } = data;
+  for (const { queryKey } of lists(data)) {
+    const cached = queryClient.getQueryData<Pages<NotificationItem>>(queryKey);
+    if (cached === undefined) continue;
+    queryClient.setQueryData<Pages<NotificationItem>>(queryKey, {
+      ...cached,
+      pages: cached.pages.map((page) => ({
+        ...page,
+        items: page.items.map((n) => (n.id === id && !n.read ? { ...n, read: true } : n)),
+      })),
+    });
+  }
+  queryClient.setQueryData<NotificationItem>(notificationQuery(data, id).queryKey, (n) => n && { ...n, read: true });
+}
+
+/**
+ * Reads the notification of `id` on the server on its own, above the marker: the cache tells it read, and the count
+ * the server answered goes down by it until the marker is read again.
+ */
+async function postRead(data: AppData, id: string): Promise<void> {
+  await data.api.POST("/notifications/{id}/read", { params: { path: { id } } });
+  const store = storeOf(data);
+  cacheRead(data, id);
+  data.queryClient.setQueryData<NotificationMarker>(
+    notificationMarkerQuery(data).queryKey,
+    (marker) => marker && { ...marker, unread_count: Math.max(0, marker.unread_count - 1) },
+  );
+  if (store.seen.has(id)) setSeen(store, new Set([...store.seen].filter((seen) => seen !== id)));
+  void data.queryClient.invalidateQueries({ queryKey: notificationMarkerQuery(data).queryKey, exact: true });
+}
+
 /**
  * The newest notification of the full list up to which every unread one is read, or undefined. The list must reach
  * the marker, or its own end, so that no unread notification between them is left out.
@@ -140,7 +185,7 @@ function readUpTo(data: AppData, seen: ReadonlySet<string>): string | undefined 
   if (!reaches) return undefined;
   let upTo: string | undefined;
   for (const n of items.filter((n) => newer(n.id, last)).reverse()) {
-    if (!seen.has(n.id)) break;
+    if (!seen.has(n.id) && !n.read) break;
     upTo = n.id;
   }
   return upTo;
@@ -162,31 +207,37 @@ async function learn(data: AppData): Promise<void> {
   ]).catch(() => undefined);
 }
 
-/** Moves the marker as far as what the reader read allows, one move after another. */
-function advance(data: AppData): Promise<void> {
+/**
+ * Tells the server that the reader read the notification of `id`, one write after another: the marker moves as far as
+ * what the reader read allows when that reaches it, and it is read on its own otherwise.
+ */
+function advance(data: AppData, id: string): Promise<void> {
   const store = storeOf(data);
   store.moving = store.moving
     .then(async () => {
       await learn(data);
+      if (!newer(id, markerOf(data)?.last_read_id)) return;
       const upTo = readUpTo(data, store.seen);
-      if (upTo !== undefined) await putMarker(data, upTo);
+      if (upTo !== undefined && !newer(id, upTo)) await putMarker(data, upTo);
+      else await postRead(data, id);
     })
     .catch(() => {
-      // The marker stays where it was; the next notification read moves it again.
+      // The server keeps it unread; it stays read here for the session, and the next notification read moves the
+      // marker again.
     });
   return store.moving;
 }
 
-/** Counts the notification of `id` as read (acted on, or scrolled out above the view), and moves the marker. */
+/** Counts the notification of `id` as read (acted on, or scrolled out above the view), and tells the server. */
 function readNotification(data: AppData, id: string): Promise<void> {
   const store = storeOf(data);
   const marker = markerOf(data);
   // Without the marker nothing says whether it is unread: it is read once the server said where the marker is.
   if (marker === undefined)
     return learn(data).then(() => (markerOf(data) === undefined ? undefined : readNotification(data, id)));
-  if (store.seen.has(id) || !newer(id, marker.last_read_id)) return Promise.resolve();
+  if (store.seen.has(id) || !newer(id, marker.last_read_id) || cachedRead(data, id)) return Promise.resolve();
   setSeen(store, new Set([...store.seen, id]));
-  return advance(data);
+  return advance(data, id);
 }
 
 /** Moves the marker to the newest notification the cache holds: every one is read. It rejects with the problem. */
@@ -233,8 +284,8 @@ async function dismissNotification(data: AppData, id: string): Promise<void> {
     putBack();
     throw e;
   }
-  // The server counts it no more, so it is no longer one the reader read after the marker: the press that dismissed
-  // it read it, and it would be taken off the unread count twice.
+  // The server counts it no more, so it is no longer one the reader read that the server has yet to answer: the press
+  // that dismissed it read it, and it would be taken off the unread count twice.
   const store = storeOf(data);
   if (store.seen.has(id)) setSeen(store, new Set([...store.seen].filter((seen) => seen !== id)));
   void data.queryClient.invalidateQueries({ queryKey: notificationMarkerQuery(data).queryKey, exact: true });
@@ -323,8 +374,8 @@ function useSeen(data: AppData): ReadonlySet<string> {
 }
 
 /**
- * The number of unread notifications of the viewer, for the shell: the server's, less those the reader read after the
- * marker; undefined until the server answered.
+ * The number of unread notifications of the viewer, for the shell: the server's, less those the reader read that the
+ * server has yet to answer; undefined until the server answered.
  */
 export function useUnreadNotifications(): number | undefined {
   const data = useAppData();
@@ -375,7 +426,7 @@ export function useNotificationReads(): NotificationReads {
   const seen = useSeen(data);
   const marker = useQuery(notificationMarkerQuery(data)).data;
   return {
-    unread: (id) => marker !== undefined && newer(id, marker.last_read_id) && !seen.has(id),
+    unread: (id) => marker !== undefined && newer(id, marker.last_read_id) && !seen.has(id) && !cachedRead(data, id),
     read: (id) => {
       void readNotification(data, id);
     },
