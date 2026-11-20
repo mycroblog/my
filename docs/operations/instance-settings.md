@@ -383,7 +383,7 @@ While it is on:
 - **What a community needs is hidden.** The local and federated timelines and their streams, the suggestions of accounts,
   the invites of users and of administrators, the review of registrations, and the sign-up blocks answer `404` with the type
   `/api/v1/problems/single-user-mode`.
-- **No new local posts.** On a server of one person, a post for "This server" reaches nobody but the followers, so a new
+- **No new local posts.** On a server of one person, a post for "Neighbors" reaches nobody but the followers, so a new
   post cannot be local: the client API answers `422` and leaves it out of what an account may post. A default visibility
   of "This server" reads as "Followers" and cannot be saved, and a voice chat room for the people of this server announces
   itself in a post for the followers. Posts that are already local stay local.
