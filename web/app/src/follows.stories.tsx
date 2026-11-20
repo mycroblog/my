@@ -2,7 +2,8 @@
 
 // The lists of an account's follows, as the reader (yuki) opens them from its profile's counts: sam's followers and
 // follows; mio's, shown to mio's followers only, and kai's, shown to nobody; and a story per state
-// every screen is shown in (app.samples.tsx), on sam's followers.
+// every screen is shown in (app.samples.tsx), on sam's followers; a visitor's, of sam's followers and of mio's, which mio
+// shows to no visitor.
 // More of the followers than a page holds, before and after Show more (pages.samples.ts, `more`).
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -30,6 +31,9 @@ export const Empty: Story = { parameters: screen({ at: followers, state: "empty"
 export const Loading: Story = { parameters: screen({ at: followers, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at: followers, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at: followers, state: "long" }) };
+/** Read without a session: each row's Follow leads to the sign-in. */
+export const Visitor: Story = { parameters: screen({ at: followers, signedOut: true }) };
+export const VisitorHidden: Story = { parameters: screen({ at: "/@mio/followers", signedOut: true }) };
 /** More followers than a page holds: Show more under the first twenty. */
 export const Many: Story = { parameters: screen({ at: followers, server: manyFollowers }) };
 /** The same after Show more: the rest under the first twenty, and no Show more. */

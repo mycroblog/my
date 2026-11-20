@@ -643,6 +643,8 @@ export type FakeApi = {
   readonly operations: FakeOperations;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
+  /** The requests of a visitor (`visitor`) for an operation that needs a session, each as `METHOD /path`, answered 401. */
+  readonly refused: readonly string[];
   /**
    * The token revocations the server took (POST /oauth/revoke), each as the form it was sent with: the client
    * (`client_id`) and the token it names. One it took ended the reader's session.
@@ -1278,7 +1280,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(card.author === undefined ? {} : { author: accountOf(card.author) }),
     });
 
-  // A reply waiting for its approval, or refused it, shows to its author alone; a visitor sees what anyone may.
+  // A reply waiting for its approval, or refused it, shows to its author alone; a visitor sees what anyone may, which
+  // leaves out a post for this server's people (`local`).
   const visible = (p: Post) => {
     const own = !visitor && p.author === viewer;
     return (
@@ -1287,7 +1290,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       (own ||
         p.visibility === "public" ||
         p.visibility === "unlisted" ||
-        p.visibility === "local" ||
+        (!visitor && p.visibility === "local") ||
         (!visitor && p.visibility === "private" && follows_(viewer, p.author)) ||
         (!visitor && p.visibility === "direct" && mentioned(p.text).includes(viewer)))
     );
@@ -2920,7 +2923,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const username = usernameOf.get(id);
     if (username === undefined) return Promise.resolve(notFound());
     const shown = followsVisibility[username] ?? "public";
-    if (username !== viewer && shown !== "public" && !(shown === "followers" && follows_(viewer, username)))
+    // A visitor is no one's follower, and owns no list.
+    const reader = visitor ? undefined : viewer;
+    if (
+      username !== reader &&
+      shown !== "public" &&
+      !(shown === "followers" && reader !== undefined && follows_(reader, username))
+    )
       return Promise.resolve(
         problem(403, "This account's follows are not shown", { type: "/api/v1/problems/follows-hidden" }),
       );
@@ -3249,6 +3258,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     "GET /accounts/lookup": ({ query }) => {
       // A handle, or the address of a profile (`https://host/@user`); the person of another server this one has not
       // met is found only by `resolve`, which fetches and keeps their account (FR-305).
+      // Fetching an account from its server is a reader's: a visitor's resolve is refused, as the server refuses it.
+      if (visitor && query.get("resolve") === "true") return problem(401, "Unauthorized");
       const asked = (query.get("acct") ?? "").replace(/^@/u, "");
       const profile = /^https?:\/\/([^/]+)\/@([^/@]+)\/?$/u.exec(asked);
       const handle = profile === null ? asked : `${profile[2] ?? ""}@${profile[1] ?? ""}`;
@@ -3589,7 +3600,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     "GET /statuses/{id}/context": ({ params }) => {
       if (made.has(params.id)) return { status: 200, body: { ancestors: [], descendants: [] } };
-      const key = keyOf.get(params.id);
+      // The thread of a post the reader may not see is not there either.
+      const key = shownPost(params.id)?.key;
       if (key === undefined) return notFound();
       const { ancestors, descendants } = contextOf(key);
       return {
@@ -4122,7 +4134,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
    * paths read like an account's, a status's or a hashtag's.
    */
   const publicPath =
-    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals|\/documents\/[^/]+|\/domain_actions)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
+    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals|\/documents\/[^/]+|\/domain_actions)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags|\/followers|\/following)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 
@@ -4135,6 +4147,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     json(body, 503, { "Content-Type": "application/json", ...headers });
 
   const unimplemented: string[] = [];
+  const refused: string[] = [];
   const route = createRouter(
     handlers,
     (error) => {
@@ -4180,7 +4193,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
             503,
             { "Retry-After": "3600" },
           );
-    if (o.visitor === true && !publicPath.test(path)) return json(problem(401, "Unauthorized").problem, 401);
+    if (o.visitor === true && !publicPath.test(path)) {
+      refused.push(`${request.method} ${path}`);
+      return json(problem(401, "Unauthorized").problem, 401);
+    }
     const response = await route(request);
     if (o.newerEpoch === true) response.headers.set("X-Web-Client-Epoch", "999");
     return response;
@@ -4285,6 +4301,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     moderation: accounts.moderation,
     operations: operated.operations,
     unimplemented,
+    refused,
     revocations,
     newPosts,
     newNotification,

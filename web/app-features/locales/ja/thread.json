@@ -29,7 +29,11 @@
   },
   "thread.failed": {
     "defaultMessage": "投稿を読み込めませんでした。",
-    "description": "What a post's screen says when the post could not be loaded (it was deleted, or the reader may not see it, or the server did not answer), beside a button to try again."
+    "description": "What a post's screen, and the list of who reacted to a post, say when the post could not be loaded (the server did not answer, or failed), beside a button to try again."
+  },
+  "thread.not_found": {
+    "defaultMessage": "この投稿は見つかりませんでした。削除されたか、リンクが間違っている可能性があります。リンクを確かめるか、前の画面に戻ってください。",
+    "description": "In place of a post's screen, or of the list of who reacted to it, when the server answers that the post is not there: it never was, was deleted, or the reader may not see it (never say which), under a button back."
   },
   "thread.retry": {
     "defaultMessage": "もう一度試す",

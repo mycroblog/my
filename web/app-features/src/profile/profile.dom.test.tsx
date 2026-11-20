@@ -209,7 +209,7 @@ test("an account that is not there says so with its handle, offers Back, and sho
     return status;
   });
   expect(said.textContent).toMatch(
-    /^⁨?@nao⁩? was not found\. The account may no longer exist, or the link may be wrong\.$/,
+    /^⁨?@nao⁩? was not found\. The account may no longer exist, or the link may be wrong\. Check the link, or go back\.$/,
   );
   expect(screen.queryAllByRole("region")).toHaveLength(0);
   await user.click(screen.getByRole("button", { name: "Back" }));

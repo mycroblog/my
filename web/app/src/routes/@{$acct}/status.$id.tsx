@@ -2,14 +2,15 @@
 
 // A post with its thread, at /@user/status/id: the server's address of a post (ADR-0018), under its author's, which
 // its HTML shell serves with the post's link preview. Back goes where the reader came from, or home when the post was
-// the first screen. Without a session it asks the reader to sign in.
+// the first screen. A visitor reads it too, as the server shows a public post and its thread to everyone; the actions
+// that need an account lead them to the app's sign-in, which comes back to the post (ADR-0090 §16).
 
 import { loadThread, Thread } from "@my/app-features";
 import { createFileRoute, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { useStrings } from "../../locale";
 import { screenLoad } from "../../screen-load";
 import { ScreenHeading } from "../../shell/heading";
-import { SignedOut } from "../../shell/signed-out";
+import { useVisitorSignIn } from "../../shell/visitor";
 
 export const Route = createFileRoute("/@{$acct}/status/$id")({
   loader: ({ context, params }) => screenLoad(context, (data) => loadThread(data, params.id)),
@@ -24,21 +25,19 @@ function PostScreen() {
   const router = useRouter();
   const canGoBack = useCanGoBack();
   const t = useStrings();
+  const signIn = useVisitorSignIn(data !== null);
   return (
     <>
       <ScreenHeading>{t("app.post")}</ScreenHeading>
-      {data === null ? (
-        <SignedOut />
-      ) : (
-        <Thread
-          key={id}
-          id={id}
-          onBack={() => {
-            if (canGoBack) router.history.back();
-            else void router.navigate({ to: "/" });
-          }}
-        />
-      )}
+      <Thread
+        key={id}
+        id={id}
+        signIn={signIn}
+        onBack={() => {
+          if (canGoBack) router.history.back();
+          else void router.navigate({ to: "/" });
+        }}
+      />
     </>
   );
 }
