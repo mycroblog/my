@@ -406,7 +406,7 @@ my instance rule list                                  # active rules (-all incl
 - 管理 API は `/api/v1/admin/link_card_domains`（一覧、設定。ドメインを指定した `DELETE` で外します）で、ロールの権限 `manage_settings` が必要です。サーバーが持てるルールは最大 1,000 個で、それぞれに最大 5,000 文字のメモを付けられます。
 - 変更はすべて監査ログに記録されます（`link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`）。
 
-<!-- source: theme 98c2eee35f30 -->
+<!-- source: theme 1ada01b2db2e -->
 ## テーマ
 
 サーバー全体のテーマは、Web クライアントのデザイントークンを上書きする 1 組の設定で、色ごとにライトとダークの値を持ちます。すべての閲覧者の Web クライアントと、サーバーが描画する画面（ログイン、登録、規約など）に適用されます。カスタム CSS はありません。
@@ -418,7 +418,7 @@ my instance rule list                                  # active rules (-all incl
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | 色 | ライトとダークのそれぞれについて `#rrggbb` |
   | `font-sans-override`, `font-mono-override` | フォントファミリー | ファミリー名をカンマ区切りで指定します（最大 30）。`sans-serif` のような総称のファミリーは使えません。数字で始まる単語を含む名前は、`"M PLUS 1p"` のように引用符で囲みます |
   | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | 長さ | `0` か rem / px、0.625rem から 3rem |
-  | `text-*--line-height`（上のそれぞれ） | 数値 | 1 から 2.5 |
+  | `text-*--line-height`（上と同じ 7 つ） | 数値 | 1 から 2.5 |
   | `radius-control`, `radius-overlay` | 長さ | 0 から 2rem |
   | `duration-spin` | 時間 | ms / s、0 から 1000ms |
 

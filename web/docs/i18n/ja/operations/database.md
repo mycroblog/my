@@ -119,7 +119,7 @@ SQLite も `pool_max_conns` を同じ既定値で受け付けます。さらに 
 
 1. `my config check`
 2. `my db upgrade -check`
-3. `my schema apply`（`my upgrade` に `-allow-destructive` を付けたときは、それも付けます）
+3. `my schema apply`。`-allow-destructive` を付けて `my upgrade` を実行したときは、それも付けます
 4. `my db upgrade`
 
 失敗した最初の手順で止まり、その手順の終了コードで終了します。あとの手順は実行されません。各手順は、`==> my schema apply` のように
@@ -128,7 +128,7 @@ SQLite も `pool_max_conns` を同じ既定値で受け付けます。さらに 
 
 `my upgrade -dry-run` は `my config check`、`my db upgrade -check`、`my schema apply -dry-run` を実行し、何も変更しません。
 アップグレードの前に、出力される SQL を読んでください。`my upgrade` の前には、手順 1 のとおりデータベースをバックアップしてください。
-`my upgrade` はメンテナンスモードに切り替えず、サーバーも起動しません。
+これはメンテナンスモードに切り替えず、サーバーも起動しません。
 
 ほとんどのリリースにはデータアップグレード手順がありません。そのとき `my db upgrade -check` は `ok: the database can be upgraded to this release` を、
 それ以前のリリースの手順を記録済みのデータベースでは、`my db upgrade` は `ok: no data upgrade step to run` を出力します。新しいデータベースは、最初の `my db upgrade` でそのリリースのすべての手順を記録し、書き換えるものはありません。それでも両方を実行してください。そうすれば、手順がすべてのリリースノートを読むことに依存しません。
