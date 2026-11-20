@@ -140,7 +140,7 @@
     "description": "The heading of the section of the reader's requests for custom emoji."
   },
   "emoji_own.requests.empty": {
-    "defaultMessage": "まだ絵文字を申請していません。申請とその結果はここに表示されます。",
+    "defaultMessage": "まだ絵文字を申請していません。",
     "description": "In Your requests while the reader made none."
   },
   "emoji_own.emojis": {
@@ -148,7 +148,7 @@
     "description": "The heading of the section of the custom emoji the reader made."
   },
   "emoji_own.emojis.empty": {
-    "defaultMessage": "まだ絵文字はありません。申請が承認されると作られ、ここで変えられます。",
+    "defaultMessage": "まだ絵文字はありません。",
     "description": "In Your emoji while the reader made none."
   },
   "emoji_own.emoji.category": {

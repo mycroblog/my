@@ -19,12 +19,12 @@ export class OwnEmoji {
     this.page = page;
   }
 
-  /** The menu's row to the entry, whose name the row's hint follows. */
+  /** The menu's row to the entry. */
   get menuRow(): Locator {
     return this.page
       .getByRole("main")
       .getByRole("navigation", { name: "Settings", exact: true })
-      .getByRole("link", { name: /^Custom emoji.+$/ });
+      .getByRole("link", { name: "Custom emoji", exact: true });
   }
 
   /** The entry's heading. */
@@ -88,7 +88,7 @@ export class EmojiRequests {
     await this.page
       .getByRole("main")
       .getByRole("navigation", { name: "Administration screens", exact: true })
-      .getByRole("link", { name: /^Custom emoji .+$/ })
+      .getByRole("link", { name: /^Custom emoji(?: .+)?$/ })
       .click();
     await this.page
       .getByRole("main")

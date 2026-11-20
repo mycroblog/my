@@ -30,19 +30,19 @@ const adminSettingsPath = "/admin/settings";
 /** The address of the page of `topic`. */
 const adminSettingsTopicPath = (topic: string): string => `${adminSettingsPath}/${topic}`;
 
-/** The name of each page of Server settings, its title, and the line under it in the list. */
+/** The name of each page of Server settings, in the list and as its title. */
 const topicWords = {
-  general: { name: "staff_settings.topic.general", hint: "staff_settings.topic.general.hint" },
-  branding: { name: "staff_settings.topic.branding", hint: "staff_settings.topic.branding.hint" },
-  registration: { name: "staff_settings.topic.registration", hint: "staff_settings.topic.registration.hint" },
-  content: { name: "staff_settings.topic.content", hint: "staff_settings.topic.content.hint" },
-  voice: { name: "staff_settings.topic.voice", hint: "staff_settings.topic.voice.hint" },
-  "auto-delete": { name: "staff_settings.topic.auto_delete", hint: "staff_settings.topic.auto_delete.hint" },
-  federation: { name: "staff_settings.topic.federation", hint: "staff_settings.topic.federation.hint" },
-  discovery: { name: "staff_settings.topic.discovery", hint: "staff_settings.topic.discovery.hint" },
-  hooks: { name: "staff_settings.topic.hooks", hint: "staff_settings.topic.hooks.hint" },
-  records: { name: "staff_settings.topic.records", hint: "staff_settings.topic.records.hint" },
-} as const satisfies Readonly<Record<string, { name: MessageId; hint: MessageId }>>;
+  general: "staff_settings.topic.general",
+  branding: "staff_settings.topic.branding",
+  registration: "staff_settings.topic.registration",
+  content: "staff_settings.topic.content",
+  voice: "staff_settings.topic.voice",
+  "auto-delete": "staff_settings.topic.auto_delete",
+  federation: "staff_settings.topic.federation",
+  discovery: "staff_settings.topic.discovery",
+  hooks: "staff_settings.topic.hooks",
+  records: "staff_settings.topic.records",
+} as const satisfies Readonly<Record<string, MessageId>>;
 type TopicPath = keyof typeof topicWords;
 
 /** The words of the page at `path`; undefined for an address that names none. */
@@ -72,8 +72,7 @@ export function AdminSettingsScreen(): ReactNode {
               <SettingsItem
                 key={path}
                 icon={iconOf(path)}
-                label={t(topicWords[path].name)}
-                hint={t(topicWords[path].hint)}
+                label={t(topicWords[path])}
                 href={adminSettingsTopicPath(path)}
                 count={undefined}
               />
@@ -94,7 +93,7 @@ export async function loadAdminSettingsTopic(data: AppData, topic: string): Prom
 export function useAdminSettingsTopicTitle(topic: string): string | undefined {
   const { t } = useStaffStrings();
   const words = wordsAt(topic);
-  return words === undefined ? undefined : t(words.name);
+  return words === undefined ? undefined : t(words);
 }
 
 /** A page of Server settings: its form once what it shows is read, until then that it loads or failed. */
@@ -136,7 +135,7 @@ export function AdminSettingsTopicScreen({
         }
       />
     );
-  const title = t(wordsAt(topic)?.name ?? "staff.entry.settings");
+  const title = t(wordsAt(topic) ?? "staff.entry.settings");
   if (read.settings === undefined || read.texts === undefined)
     return (
       <SettingsScreen

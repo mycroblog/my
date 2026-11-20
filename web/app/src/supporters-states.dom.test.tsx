@@ -144,7 +144,7 @@ test("Choose says when the perks start and how to cancel, and sends nothing unti
   expect(said).toContain("You pay ¥15,000 now, then ¥15,000 every year until you cancel.");
   expect(said).toContain("Your perks start once the payment goes through.");
   expect(said).toContain(
-    "You can cancel any time under “Supporter” in the settings, and your perks stay until the end",
+    "You can cancel any time under “Supporter plans and tips” in the settings, and your perks stay until the end",
   );
   // No commerce disclosure on this server: no link to one.
   expect(within(dialog).queryAllByRole("link")).toHaveLength(0);

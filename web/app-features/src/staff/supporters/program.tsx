@@ -9,11 +9,9 @@
 
 import {
   amountFits,
-  loadAdminPlans,
   loadAdminSettings,
   loadSupporterProgram,
   programRefusal,
-  useAdminPlans,
   useFinanceSettings,
   useInstance,
   usePaymentStatus,
@@ -124,30 +122,25 @@ export async function loadSupportersAdmin(data: AppData): Promise<void> {
   const viewer = await data.queryClient.query({ ...viewerQuery(data), staleTime: Infinity }).catch(() => undefined);
   await Promise.all([
     loadSupporterProgram(data),
-    loadAdminPlans(data),
     viewer?.permissions.includes("manage_settings") === true ? loadAdminSettings(data) : undefined,
   ]);
 }
 
-/** The doors to the plans, with how many take subscriptions, and to the subscriptions. */
+/** The doors to the plans and to the subscriptions. */
 function Doors() {
   const { t } = useStaffStrings();
-  const plans = useAdminPlans().value;
-  const live = plans?.filter((p) => !p.retired).length;
   return (
     <SettingsMenu label={t("staff_supporters.doors")}>
       <SettingsGroup heading={t("staff_supporters.doors")}>
         <SettingsItem
           icon="funding"
           label={t("staff_supporters.plans")}
-          hint={live === undefined ? undefined : t("staff_supporters.plans.count", { count: live })}
           count={undefined}
           href={supportersPaths.plans}
         />
         <SettingsItem
           icon="members"
           label={t("staff_supporters.subscriptions")}
-          hint={t("staff_supporters.subscriptions.hint")}
           count={undefined}
           href={supportersPaths.subscriptions}
         />

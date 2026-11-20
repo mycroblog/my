@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Relationships in the settings: the entry at /settings/relationships, whose four sections list the accounts the
-// reader blocks and mutes, the servers they mute and the hashtags they follow, each row with the button that takes it
-// out of its list. A row undone stays where it was, saying what was done, until the reader leaves the screen.
+// Blocks, mutes, and hashtags in the settings: the entry at /settings/relationships, whose four sections list the
+// accounts the reader blocks and mutes, the servers they mute and the hashtags they follow, each row with the button
+// that takes it out of its list. A row undone stays where it was, saying what was done, until the reader leaves the
+// screen.
 
 import { expect, type Locator, type Page } from "@playwright/test";
 import { answered } from "./write";
@@ -27,7 +28,9 @@ export class Relationships {
 
   /** The screen's heading, the entry's name. */
   get heading(): Locator {
-    return this.page.getByRole("main").getByRole("heading", { level: 1, name: "Relationships", exact: true });
+    return this.page
+      .getByRole("main")
+      .getByRole("heading", { level: 1, name: "Blocks, mutes, and hashtags", exact: true });
   }
 
   /** The section of `list`, whose heading says its count after its name once the list is not empty. */

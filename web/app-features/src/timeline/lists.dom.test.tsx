@@ -74,11 +74,9 @@ test("with no lists, the index says so, in en and ja", async () => {
   await loadLists(data);
 
   shown(data, <ListIndex />);
-  expect(screen.getByText("No lists yet. Your lists show here, each with the posts of its members.")).not.toBeNull();
+  expect(screen.getByText("No lists yet.")).not.toBeNull();
   shown(data, <ListIndex />, "ja");
-  expect(
-    screen.getByText("まだリストはありません。リストはここに表示され、それぞれのメンバーの投稿を読めます。"),
-  ).not.toBeNull();
+  expect(screen.getByText("まだリストはありません。")).not.toBeNull();
 });
 
 test("the loader reads the list and its timeline; the screen shows its name, members and posts", async () => {
@@ -135,13 +133,9 @@ test("a list whose members have not posted says so, in en and ja", async () => {
   await loadListTimeline(data, l1);
 
   timeline(data, l1);
-  expect(
-    screen.getByText("No posts from this list's members yet. When they post, their posts show here."),
-  ).not.toBeNull();
+  expect(screen.getByText("No posts from this list's members yet.")).not.toBeNull();
   timeline(data, l1, "ja");
-  expect(
-    screen.getByText("まだこのリストのメンバーの投稿はありません。メンバーが投稿すると、ここに表示されます。"),
-  ).not.toBeNull();
+  expect(screen.getByText("まだこのリストのメンバーの投稿はありません。")).not.toBeNull();
 });
 
 test("a list that no longer exists says so", async () => {

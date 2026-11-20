@@ -99,9 +99,9 @@ export class Settings {
     await expect(this.heading).toBeVisible();
   }
 
-  /** Follows the menu's row to Display and posting, whose name the row's hint follows. */
+  /** Follows the menu's row to Display and posting. */
   async openDisplay(): Promise<DisplaySettings> {
-    await this.menu.getByRole("link", { name: new RegExp(`^${words[this.in].display}.+$`) }).click();
+    await this.menu.getByRole("link", { name: words[this.in].display, exact: true }).click();
     const display = new DisplaySettings(this.page, this.in);
     await expect(display.heading).toBeVisible();
     return display;

@@ -31,11 +31,9 @@ export class Administration {
     return this.main.getByRole("navigation", { name, exact: true });
   }
 
-  /** Opens the screen of the link of `name` (its words, then its hint) of the list `menu`. */
+  /** Opens the screen of the link of `name` of the list `menu`. */
   async go(menu: "Administration screens" | "Server settings", name: string): Promise<void> {
-    await this.menu(menu)
-      .getByRole("link", { name: new RegExp(`^${escape(name)} .+$`) })
-      .click();
+    await this.menu(menu).getByRole("link", { name, exact: true }).click();
   }
 
   /** A field of the screen by its name: a text field, a number or a select. */

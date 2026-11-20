@@ -7,10 +7,6 @@
     "defaultMessage": "異議申し立て",
     "description": "The name of the moderators' queue of appeals of actions, in the list at /moderation and as the title of its screen. Read by moderators."
   },
-  "staff_accounts.entry.appeals.hint": {
-    "defaultMessage": "処分への異議申し立てを審査し、処分を維持または撤回します",
-    "description": "The line under Appeals in the list at /moderation. Read by moderators."
-  },
   "staff_accounts.entry.appeals.count": {
     "defaultMessage": "{count, plural, other {# 件の異議申し立てが待っています}}",
     "description": "For assistive technology, the badge at the end of Appeals at /moderation: how many appeals wait for a decision. Read by moderators."
@@ -18,10 +14,6 @@
   "staff_accounts.entry.registrations": {
     "defaultMessage": "登録の審査",
     "description": "The name of the screen of registrations that wait for approval, in the list at /moderation and as its title. Read by moderators."
-  },
-  "staff_accounts.entry.registrations.hint": {
-    "defaultMessage": "承認を待っている登録",
-    "description": "The line under Registrations in the list at /moderation. Read by moderators."
   },
   "staff_accounts.entry.registrations.count": {
     "defaultMessage": "{count, plural, other {# 件の登録が待っています}}",
@@ -31,33 +23,17 @@
     "defaultMessage": "自動審査の記録",
     "description": "The name of the screen of the decision hooks' decisions, in the list at /moderation and as its title. Read by moderators."
   },
-  "staff_accounts.entry.hook_decisions.hint": {
-    "defaultMessage": "外部の審査が止めたもの・指摘したもの・確かめられなかったもの",
-    "description": "The line under Automated reviews in the list at /moderation. Read by moderators."
-  },
   "staff_accounts.entry.accounts": {
     "defaultMessage": "アカウント",
     "description": "The name of the search of accounts, in the list at /moderation and as the title of its screen. Read by moderators."
-  },
-  "staff_accounts.entry.accounts.hint": {
-    "defaultMessage": "アカウントを探して確認し、処分します",
-    "description": "The line under Accounts in the list at /moderation. Read by moderators."
   },
   "staff_accounts.entry.signup_blocks": {
     "defaultMessage": "登録の制限",
     "description": "The name of the screen of blocks on sign-ups by email domain, email address or IP range, in the list at /moderation and as its title. Read by moderators."
   },
-  "staff_accounts.entry.signup_blocks.hint": {
-    "defaultMessage": "メールアドレスや IP アドレスによる登録の拒否・承認制",
-    "description": "The line under Sign-up blocks in the list at /moderation. Read by moderators."
-  },
   "staff_accounts.entry.invites": {
     "defaultMessage": "招待",
     "description": "The name of the screen of every invite of the server, in the list at /moderation and as its title. Read by moderators."
-  },
-  "staff_accounts.entry.invites.hint": {
-    "defaultMessage": "すべての招待と、作った人、使われた数",
-    "description": "The line under Invites in the list at /moderation. Read by moderators."
   },
   "staff_accounts.forbidden": {
     "defaultMessage": "あなたのアカウントの権限では、もうこの画面を開けません。",
@@ -784,7 +760,7 @@
     "description": "The column of an appeal's state, in a table of appeals. Read by moderators."
   },
   "staff_accounts.appeals.empty.pending": {
-    "defaultMessage": "審査を待っている異議申し立てはありません。利用者が処分に異議を申し立てると、ここに表示されます。",
+    "defaultMessage": "審査を待っている異議申し立てはありません。",
     "description": "In place of the table of appeals when none waits. Read by moderators."
   },
   "staff_accounts.appeals.empty.filtered": {
@@ -960,7 +936,7 @@
     "description": "In the reason column of a registration whose person gave none. Read by moderators."
   },
   "staff_accounts.registrations.empty": {
-    "defaultMessage": "承認を待っている登録はありません。承認制のときや登録の制限に当てはまったとき、登録がここに表示されます。",
+    "defaultMessage": "承認を待っている登録はありません。",
     "description": "In place of the table of registrations when none waits. Read by moderators."
   },
   "staff_accounts.registrations.loading": {
@@ -1384,7 +1360,7 @@
     "description": "For assistive technology, the name of the counts of each hook's decisions of the last 7 days. Read by moderators."
   },
   "staff_accounts.decisions.no_hooks": {
-    "defaultMessage": "プラグインのある自動審査はありません。プラグインを設定すると、その判定がここに表示されます。",
+    "defaultMessage": "プラグインのある自動審査はありません。",
     "description": "At /moderation/hook-decisions when no decision hook has a plugin. Read by moderators."
   },
   "staff_accounts.decisions.filters": {

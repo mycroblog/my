@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The root of an area of the staff's screens, /moderation or /admin (ADR-0058 §2): the screens of the area the
-// reader's permissions open (entries.tsx), in their groups, each with a line of what it holds and how many things wait
-// there; or, where none is open to them, why. It lists nothing until the server said who the reader is, so that no
+// reader's permissions open (entries.tsx), in their groups, each with how many things wait there; or, where none is
+// open to them, why. It lists nothing until the server said who the reader is, so that no
 // entry comes after the others painted.
 
 import {
@@ -71,7 +71,6 @@ export function StaffRoot({ area, rights }: { area: StaffArea; rights: boolean }
                     key={entry.path}
                     icon={entry.icon}
                     label={t(entry.name)}
-                    hint={t(entry.hint)}
                     count={count}
                     countLabel={
                       count === undefined || entry.count === undefined ? undefined : t(entry.count.words, { count })

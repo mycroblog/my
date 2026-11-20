@@ -17,8 +17,8 @@ const height = 640;
 
 // The words of the menu in each language the app has.
 const menus = [
-  { locale: "en", settings: "Settings", group: "General", display: /^Display and posting.+$/, signOut: "Sign out…" },
-  { locale: "ja", settings: "設定", group: "全般", display: /^表示と投稿.+$/, signOut: "ログアウト…" },
+  { locale: "en", settings: "Settings", group: "General", display: "Display and posting", signOut: "Sign out…" },
+  { locale: "ja", settings: "設定", group: "全般", display: "表示と投稿", signOut: "ログアウト…" },
 ] as const;
 
 test("the menu in en and in ja, at the minimum width and on a desktop, in both themes: its rows one under another inside the screen", async ({
@@ -33,7 +33,7 @@ test("the menu in en and in ja, at the minimum width and on a desktop, in both t
         main,
         heading: main.getByRole("heading", { level: 1, name: settings, exact: true }),
         group: menu.getByRole("heading", { name: group, exact: true }),
-        display: menu.getByRole("link", { name: display }),
+        display: menu.getByRole("link", { name: display, exact: true }),
         signOut: menu.getByRole("link", { name: signOut, exact: true }),
       };
 

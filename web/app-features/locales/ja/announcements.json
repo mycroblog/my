@@ -20,7 +20,7 @@
     "description": "What the list of announcements says under them when more could not be loaded, beside a button to try again."
   },
   "announcements.empty": {
-    "defaultMessage": "まだお知らせはありません。サーバーの管理者がお知らせを出すと、ここに表示されます。",
+    "defaultMessage": "まだお知らせはありません。",
     "description": "What the list of announcements says when the server has made none."
   },
   "announcements.unread": {

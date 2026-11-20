@@ -3,10 +3,6 @@
     "defaultMessage": "Announcements",
     "description": "The name of the screen of the server's announcements to every local user, in the list at /admin and as the title of its screen. Read by administrators."
   },
-  "staff_announcements.entry.hint": {
-    "defaultMessage": "News for everyone on this server",
-    "description": "The line under Announcements in the list at /admin: what its screen holds. Read by administrators."
-  },
   "staff_announcements.write": {
     "defaultMessage": "Write an announcement",
     "description": "The button at the end of the title of /admin/announcements that opens the form of a new announcement. Read by administrators."
@@ -48,7 +44,7 @@
     "description": "The header of the column of where each announcement stands. Read by administrators."
   },
   "staff_announcements.empty": {
-    "defaultMessage": "No announcement has been written yet. One you write shows here, as a draft until you publish it.",
+    "defaultMessage": "No announcement has been written yet.",
     "description": "At /admin/announcements while there is none. Read by administrators."
   },
   "staff_announcements.empty.filtered": {

@@ -48,7 +48,7 @@ const registers = (part: HTMLElement) => links(part).filter(([name]) => name ===
 
 const aboutAuthorized = "Apps you allowed to use your account. Revoke one you no longer use or do not recognize.";
 const aboutOwn = "Apps you registered for a bot, a script or a client of your own.";
-const noneAuthorized = "No app can use your account now. An app shows here once you allow it to use your account.";
+const noneAuthorized = "No app can use your account now.";
 const noneOwn = "You have not registered an app yet. Register one to get its client ID and tokens.";
 
 describe("until the entry is read", () => {
