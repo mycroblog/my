@@ -92,3 +92,20 @@ export function useModerationCount(enabled = true): number | undefined {
   if (!moderation || counts === undefined) return undefined;
   return (counts.open_reports ?? 0) + (counts.pending_registrations ?? 0) + (counts.pending_appeals ?? 0);
 }
+
+/**
+ * How many custom emoji requests wait for a decision and error groups are open, of the counts of what awaits the staff,
+ * for the badges of their entries in the root of the administration; each undefined until the server said, or for a
+ * reader without `manage_custom_emojis` or `manage_errors`, and nothing asked while `enabled` is false (a reader without
+ * a session).
+ */
+export function useAdminCounts(enabled = true): {
+  readonly emojiRequests: number | undefined;
+  readonly errorGroups: number | undefined;
+} {
+  const data = useAppData();
+  const permissions = useQuery({ ...viewerQuery(data), enabled }).data?.permissions;
+  const may = enabled && permissions?.some((p) => p === "manage_custom_emojis" || p === "manage_errors") === true;
+  const counts = useQuery({ ...moderationCountsQuery(data), enabled: may }).data;
+  return { emojiRequests: counts?.pending_custom_emoji_requests, errorGroups: counts?.open_error_groups };
+}

@@ -58,6 +58,8 @@ export type FakeStaffServer = {
   readonly id: (area: string, key: string) => string;
   /** The announcements published from the administration that the readers see now, newest first. */
   readonly shownAnnouncements: () => Schema<"Announcement">[];
+  /** The custom emoji requests that wait for a decision. */
+  readonly pendingEmojiRequests: () => number;
 };
 
 /** The handlers of the four areas, and what a test reads of them. */
@@ -77,6 +79,7 @@ export function staffServerHandlers(c: StaffServerContext): { handlers: Handlers
     server: {
       id: (area, key) => ids[area]?.(key) ?? "none",
       shownAnnouncements: announcements.shown,
+      pendingEmojiRequests: emoji.pending,
     },
   };
 }

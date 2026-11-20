@@ -19,6 +19,10 @@
     "defaultMessage": "サーバーと Web クライアントが報告したエラー",
     "description": "The line under Errors in the list at /admin. Read by administrators."
   },
+  "staff_operations.entry.error_groups.count": {
+    "defaultMessage": "{count, plural, other {未対応のエラー # 件}}",
+    "description": "For assistive technology, what the badge at the end of Errors in the list at /admin counts: the error groups that are new, came back after being resolved, or were unmuted. Read by administrators."
+  },
   "staff_operations.entry.ux_measurements": {
     "defaultMessage": "UX の計測",
     "description": "The name of the screen of how fast the web client responds, in the list at /admin and as its title. Read by administrators."
