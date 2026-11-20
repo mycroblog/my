@@ -14274,6 +14274,10 @@ type Notification struct {
 	// Reaction The emoji of a `reaction`; omitted for the other types.
 	Reaction *ReactionEmoji `json:"reaction,omitempty"`
 
+	// Read Whether the user has read it: it is older than or at the marker's `last_read_id`, or
+	// it was marked read on its own (`POST /notifications/{id}/read`).
+	Read bool `json:"read"`
+
 	// RelationshipSeverance The follows that a `relationships_severed` tells of; omitted without `read:follows`.
 	RelationshipSeverance *RelationshipSeverance `json:"relationship_severance,omitempty"`
 
@@ -14468,7 +14472,7 @@ type NotificationMarker struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	LastReadId *Id `json:"last_read_id,omitempty"`
 
-	// UnreadCount The number of listed notifications newer than `last_read_id`.
+	// UnreadCount The number of listed notifications that are unread, as `Notification.read` tells.
 	UnreadCount int64 `json:"unread_count"`
 }
 
@@ -22064,6 +22068,20 @@ type DismissNotificationParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// ReadNotificationParams defines parameters for ReadNotification.
+type ReadNotificationParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // DeleteOAuthAppParams defines parameters for DeleteOAuthApp.
 type DeleteOAuthAppParams struct {
 	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
@@ -24607,6 +24625,9 @@ type ServerInterface interface {
 	// DismissNotification Dismiss a notification
 	// (POST /notifications/{id}/dismiss)
 	DismissNotification(w http.ResponseWriter, r *http.Request, id Id, params DismissNotificationParams)
+	// ReadNotification Mark one notification read
+	// (POST /notifications/{id}/read)
+	ReadNotification(w http.ResponseWriter, r *http.Request, id Id, params ReadNotificationParams)
 	// ListOAuthApps List the OAuth apps that the authenticated user registered
 	// (GET /oauth_apps)
 	ListOAuthApps(w http.ResponseWriter, r *http.Request)
@@ -40451,6 +40472,56 @@ func (siw *ServerInterfaceWrapper) DismissNotification(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
+// ReadNotification operation middleware
+func (siw *ServerInterfaceWrapper) ReadNotification(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ReadNotificationParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReadNotification(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListOAuthApps operation middleware
 func (siw *ServerInterfaceWrapper) ListOAuthApps(w http.ResponseWriter, r *http.Request) {
 
@@ -45322,6 +45393,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/notifications/marker", wrapper.UpdateNotificationMarker)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/{id}", wrapper.GetNotification)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/notifications/{id}/dismiss", wrapper.DismissNotification)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/notifications/{id}/read", wrapper.ReadNotification)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/requests", wrapper.ListNotificationRequests)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/requests/summary", wrapper.GetNotificationRequestSummary)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/requests/{id}", wrapper.GetNotificationRequest)
@@ -67758,6 +67830,53 @@ func (response DismissNotificationdefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type ReadNotificationRequestObject struct {
+	Id     Id `json:"id"`
+	Params ReadNotificationParams
+}
+
+type ReadNotificationResponseObject interface {
+	VisitReadNotificationResponse(w http.ResponseWriter) error
+}
+
+type ReadNotification204Response struct {
+}
+
+func (response ReadNotification204Response) VisitReadNotificationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ReadNotificationdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ReadNotificationdefaultApplicationProblemPlusJSONResponse) VisitReadNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListOAuthAppsRequestObject struct {
 }
 
@@ -75689,6 +75808,9 @@ type StrictServerInterface interface {
 	// DismissNotification Dismiss a notification
 	// (POST /notifications/{id}/dismiss)
 	DismissNotification(ctx context.Context, request DismissNotificationRequestObject) (DismissNotificationResponseObject, error)
+	// ReadNotification Mark one notification read
+	// (POST /notifications/{id}/read)
+	ReadNotification(ctx context.Context, request ReadNotificationRequestObject) (ReadNotificationResponseObject, error)
 	// ListOAuthApps List the OAuth apps that the authenticated user registered
 	// (GET /oauth_apps)
 	ListOAuthApps(ctx context.Context, request ListOAuthAppsRequestObject) (ListOAuthAppsResponseObject, error)
@@ -86183,6 +86305,33 @@ func (sh *strictHandler) DismissNotification(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DismissNotificationResponseObject); ok {
 		if err := validResponse.VisitDismissNotificationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReadNotification operation middleware
+func (sh *strictHandler) ReadNotification(w http.ResponseWriter, r *http.Request, id Id, params ReadNotificationParams) {
+	var request ReadNotificationRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReadNotification(ctx, request.(ReadNotificationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReadNotification")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReadNotificationResponseObject); ok {
+		if err := validResponse.VisitReadNotificationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

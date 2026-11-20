@@ -2690,6 +2690,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark one notification read
+         * @description Marks one notification read, wherever it is in the list, for every client of the user. A
+         *     notification is unread while it is newer than the marker's `last_read_id` and not marked
+         *     read here; marking it again, or marking one the marker already passed, changes nothing. A
+         *     notification that is not the user's is a 404.
+         */
+        post: operations["readNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notifications/requests": {
         parameters: {
             query?: never;
@@ -16635,6 +16658,11 @@ export interface components {
              * @description When it happened.
              */
             created_at: string;
+            /**
+             * @description Whether the user has read it: it is older than or at the marker's `last_read_id`, or
+             *     it was marked read on its own (`POST /notifications/{id}/read`).
+             */
+            read: boolean;
             account?: components["schemas"]["Account"];
             /**
              * @description The post that the notification is about, as the user sees it; omitted when the user
@@ -16732,7 +16760,7 @@ export interface components {
             last_read_id?: components["schemas"]["Id"];
             /**
              * Format: int64
-             * @description The number of listed notifications newer than `last_read_id`.
+             * @description The number of listed notifications that are unread, as `Notification.read` tells.
              */
             unread_count: number;
         };
@@ -24459,6 +24487,41 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The notification is dismissed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    readNotification: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description The ID of the notification. */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The notification is read. */
             204: {
                 headers: {
                     [name: string]: unknown;

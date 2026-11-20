@@ -7,7 +7,7 @@ properties:
     description: The newest notification read; omitted when the user has read none.
     $ref: ./Id.yaml
   unread_count:
-    description: The number of listed notifications newer than `last_read_id`.
+    description: The number of listed notifications that are unread, as `Notification.read` tells.
     type: integer
     format: int64
     minimum: 0

@@ -4072,6 +4072,33 @@ paths:
           description: The notification is dismissed.
         default:
           $ref: '#/components/responses/Problem'
+  /notifications/{id}/read:
+    post:
+      operationId: readNotification
+      summary: Mark one notification read
+      description: |
+        Marks one notification read, wherever it is in the list, for every client of the user. A
+        notification is unread while it is newer than the marker's `last_read_id` and not marked
+        read here; marking it again, or marking one the marker already passed, changes nothing. A
+        notification that is not the user's is a 404.
+      tags:
+        - notifications
+      security:
+        - oauth2:
+            - write:notifications
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the notification.
+          schema:
+            $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '204':
+          description: The notification is read.
+        default:
+          $ref: '#/components/responses/Problem'
   /notifications/requests:
     get:
       operationId: listNotificationRequests
@@ -26606,6 +26633,7 @@ components:
         - id
         - type
         - created_at
+        - read
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -26615,6 +26643,11 @@ components:
           description: When it happened.
           type: string
           format: date-time
+        read:
+          description: |
+            Whether the user has read it: it is older than or at the marker's `last_read_id`, or
+            it was marked read on its own (`POST /notifications/{id}/read`).
+          type: boolean
         account:
           $ref: '#/components/schemas/Account'
         status:
@@ -26765,7 +26798,7 @@ components:
           description: The newest notification read; omitted when the user has read none.
           $ref: '#/components/schemas/Id'
         unread_count:
-          description: The number of listed notifications newer than `last_read_id`.
+          description: The number of listed notifications that are unread, as `Notification.read` tells.
           type: integer
           format: int64
           minimum: 0

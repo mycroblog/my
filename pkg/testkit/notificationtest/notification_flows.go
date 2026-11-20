@@ -54,7 +54,8 @@ type NotificationFactory func(t *testing.T, opts uow.Options) NotificationHarnes
 // hide_notifications, also those notified before the block or mute, which a lifted block or
 // mute shows again; notifying of a source with unsolicited_reach only the accounts that follow
 // it; leaving out notifications about deleted statuses; listing with a type filter and keyset paging; the read marker,
-// unread count, and dismissals; and the moderator notifications of the first open report of an
+// unread count, and dismissals; the notifications read on their own past the marker, which
+// stay read until the marker passes them; and the moderator notifications of the first open report of an
 // account, of a pending registration, and of an appeal, to the holders of the permission they
 // need, emailed by a job to those who get them by email, and left out once the permission is
 // gone; the decision on an appeal to the account that appealed; the notification settings, their
@@ -84,6 +85,7 @@ func NotificationFlows(t *testing.T, newHarness NotificationFactory) {
 		{"LeavesOutDeletedStatuses", notificationDeletedStatuses},
 		{"ListsWithTypesAndPages", notificationLists},
 		{"TracksReadMarkersAndDismissals", notificationReads},
+		{"ReadsNotificationsOutOfOrder", notificationReadsOutOfOrder},
 		{"NotifiesModerators", notificationModerators},
 		{"NotifiesModeratorsOfLimitedMoves", notificationLimitedMoves},
 		{"NotifiesAppeals", notificationAppeals},
@@ -611,6 +613,69 @@ func notificationReads(t *testing.T, e *notificationEnv) {
 	if n, err := e.svc.UnreadCount(ctx, bob, false); err != nil || n != 1 {
 		t.Errorf("UnreadCount(bob) = %d, %v; want 1", n, err)
 	}
+}
+
+func notificationReadsOutOfOrder(t *testing.T, e *notificationEnv) {
+	ctx := t.Context()
+	alice, bob, carol, dave := e.user(t, "alice"), e.user(t, "bob"), e.user(t, "carol"), e.user(t, "dave")
+	e.follow(t, bob, alice)
+	e.follow(t, carol, alice)
+	e.follow(t, dave, alice)
+	e.follow(t, alice, bob)
+	ns := e.list(t, alice) // dave, carol, bob: newest first
+	newest, middle, oldest := ns[0].ID, ns[1].ID, ns[2].ID
+	other := e.list(t, bob)[0]
+
+	checkRead := func(want map[string]bool) {
+		t.Helper()
+		got, err := e.svc.ReadOf(ctx, alice, []string{newest, middle, oldest})
+		if err != nil || !reflect.DeepEqual(got, want) {
+			t.Errorf("ReadOf = %v, %v; want %v", got, err, want)
+		}
+		for id, read := range want {
+			if unread, err := e.svc.Unread(ctx, alice, id); err != nil || unread == read {
+				t.Errorf("Unread(%s) = %v, %v; want %v", id, unread, err, !read)
+			}
+		}
+	}
+	checkRead(map[string]bool{newest: false, middle: false, oldest: false})
+
+	// The newest, read while the older ones are unread, stays read; once is enough.
+	for range 2 {
+		if err := e.svc.ReadOne(ctx, alice, newest); err != nil {
+			t.Fatalf("ReadOne(newest) = %v", err)
+		}
+	}
+	checkRead(map[string]bool{newest: true, middle: false, oldest: false})
+	e.checkUnread(t, alice, 2)
+	if m, err := e.svc.ReadMarker(ctx, alice); err != nil || m.LastReadID != "" {
+		t.Errorf("ReadMarker after ReadOne = %+v, %v; want it not to move", m, err)
+	}
+	if err := e.svc.ReadOne(ctx, alice, other.ID); !errors.Is(err, appnotification.ErrNotFound) {
+		t.Errorf("ReadOne(bob's) = %v, want ErrNotFound", err)
+	}
+	if err := e.svc.ReadOne(ctx, alice, e.IDs.NewID()); !errors.Is(err, appnotification.ErrNotFound) {
+		t.Errorf("ReadOne(missing) = %v, want ErrNotFound", err)
+	}
+	e.checkUnread(t, bob, 1)
+
+	// The marker passes the oldest: the newest stays read, the middle unread.
+	if _, err := e.svc.MarkRead(ctx, alice, oldest); err != nil {
+		t.Fatalf("MarkRead(oldest) = %v", err)
+	}
+	checkRead(map[string]bool{newest: true, middle: false, oldest: true})
+	e.checkUnread(t, alice, 1)
+	// Reading one the marker passed changes nothing.
+	if err := e.svc.ReadOne(ctx, alice, oldest); err != nil {
+		t.Errorf("ReadOne(behind the marker) = %v", err)
+	}
+	e.checkUnread(t, alice, 1)
+	// The marker at the newest passes all of them, and the newest stays read.
+	if _, err := e.svc.MarkRead(ctx, alice, newest); err != nil {
+		t.Fatalf("MarkRead(newest) = %v", err)
+	}
+	checkRead(map[string]bool{newest: true, middle: true, oldest: true})
+	e.checkUnread(t, alice, 0)
 }
 
 func (e *notificationEnv) checkListed(t *testing.T, accountID, id string, want bool) {

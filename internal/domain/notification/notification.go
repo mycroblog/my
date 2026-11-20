@@ -774,11 +774,19 @@ type Dismissal struct {
 }
 
 // ReadMarker is the newest notification an account has read (notification_read_markers, a
-// current value). Notifications with a greater ID are unread.
+// current value). A notification with a greater ID is unread unless the account read it on its
+// own (notification_reads), as Unread tells.
 type ReadMarker struct {
 	AccountID  string
 	LastReadID string
 }
+
+// Unread is the one definition of an unread notification: the notification id is unread for
+// the account of m when it is newer than the marker and the account did not read it on its own
+// (read). The unread count, the delayed email, the count of a third-party token, the keyword
+// filters of the count, and the accepted requests all read it; the queries of the unread
+// notifications apply it in SQL.
+func (m ReadMarker) Unread(id string, read bool) bool { return id > m.LastReadID && !read }
 
 // ExclusionReason is why an exclusion hides a target's notifications from a viewer.
 type ExclusionReason string

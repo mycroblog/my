@@ -31,6 +31,11 @@ type Notifications interface {
 	ReadMarker(ctx context.Context, accountID string) (notification.ReadMarker, error)
 	UnreadCount(ctx context.Context, accountID string, withoutModerator bool) (int64, error)
 	MarkRead(ctx context.Context, accountID, lastReadID string) (notification.ReadMarker, error)
+	// ReadOne marks one of accountID's notifications read on its own; ErrNotFound when it is not
+	// accountID's.
+	ReadOne(ctx context.Context, accountID, notificationID string) error
+	// ReadOf returns which of accountID's notifications ids are read.
+	ReadOf(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
 	Dismiss(ctx context.Context, accountID, notificationID string) error
 	// ErrorGroupOthers returns how many error groups an admin_error_group of the others folds.
 	ErrorGroupOthers(ctx context.Context, n notification.Notification) (int64, error)
@@ -272,12 +277,20 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 			accounts[id] = s.newAccount(*a, parts)
 		}
 	}
+	ids := make([]string, len(ns))
+	for i, n := range ns {
+		ids[i] = n.ID
+	}
+	read, err := s.o.Notifications.ReadOf(ctx, accountID, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the read notifications of %s: %w", accountID, err)
+	}
 	out := make([]Notification, 0, len(ns))
 	for i, n := range ns {
 		if hidden[n.StatusID] {
 			continue
 		}
-		item := Notification{Id: n.ID, Type: NotificationType(n.Type), CreatedAt: n.CreatedAt}
+		item := Notification{Id: n.ID, Type: NotificationType(n.Type), CreatedAt: n.CreatedAt, Read: read[n.ID]}
 		if st, ok := statuses[n.StatusID]; ok {
 			item.Status = &st
 		}
@@ -791,6 +804,24 @@ func (s *Server) GetNotification(ctx context.Context, req GetNotificationRequest
 	}
 	cache := cacheNoStore
 	return GetNotification200JSONResponse{Body: items[0], Headers: GetNotification200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// ReadNotification serves POST /api/v1/notifications/{id}/read: it marks one of the viewer's
+// notifications read, wherever it is in the list.
+func (s *Server) ReadNotification(ctx context.Context, req ReadNotificationRequestObject) (ReadNotificationResponseObject, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = s.o.Notifications.ReadOne(ctx, v.AccountID, req.Id)
+	if errors.Is(err, appnotification.ErrNotFound) {
+		body, headers := s.notFound(ctx)
+		return ReadNotificationdefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusNotFound}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: read notification %s of %s: %w", req.Id, v.AccountID, err)
+	}
+	return ReadNotification204Response{}, nil
 }
 
 // DismissNotification serves POST /api/v1/notifications/{id}/dismiss.

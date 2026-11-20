@@ -8,6 +8,10 @@
 DELETE FROM notification_dismissals WHERE notification_id IN (
   SELECT n.id FROM notifications n WHERE n.status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))));
 
+-- name: EraseNotificationReadsOfStatuses :exec
+DELETE FROM notification_reads WHERE notification_id IN (
+  SELECT n.id FROM notifications n WHERE n.status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))));
+
 -- name: EraseNotificationsOfStatuses :exec
 DELETE FROM notifications WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
 
@@ -26,11 +30,17 @@ LIMIT sqlc.arg(lim);
 -- name: EraseNotificationDismissals :exec
 DELETE FROM notification_dismissals WHERE notification_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
 
+-- name: EraseNotificationReads :exec
+DELETE FROM notification_reads WHERE notification_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
+
 -- name: EraseNotifications :exec
 DELETE FROM notifications WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
 
 -- name: EraseNotificationReadMarker :exec
 DELETE FROM notification_read_markers WHERE account_id = sqlc.arg(account_id);
+
+-- name: EraseNotificationReadsOf :exec
+DELETE FROM notification_reads WHERE account_id = sqlc.arg(account_id);
 
 -- name: EraseNotificationSettingsOf :exec
 DELETE FROM notification_settings WHERE account_id = sqlc.arg(account_id);

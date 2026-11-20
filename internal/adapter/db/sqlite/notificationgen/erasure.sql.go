@@ -121,6 +121,34 @@ func (q *Queries) EraseNotificationReadMarker(ctx context.Context, accountID str
 	return err
 }
 
+const eraseNotificationReads = `-- name: EraseNotificationReads :exec
+DELETE FROM notification_reads WHERE notification_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) EraseNotificationReads(ctx context.Context, ids string) error {
+	_, err := q.db.ExecContext(ctx, eraseNotificationReads, ids)
+	return err
+}
+
+const eraseNotificationReadsOf = `-- name: EraseNotificationReadsOf :exec
+DELETE FROM notification_reads WHERE account_id = ?1
+`
+
+func (q *Queries) EraseNotificationReadsOf(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseNotificationReadsOf, accountID)
+	return err
+}
+
+const eraseNotificationReadsOfStatuses = `-- name: EraseNotificationReadsOfStatuses :exec
+DELETE FROM notification_reads WHERE notification_id IN (
+  SELECT n.id FROM notifications n WHERE n.status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))))
+`
+
+func (q *Queries) EraseNotificationReadsOfStatuses(ctx context.Context, ids string) error {
+	_, err := q.db.ExecContext(ctx, eraseNotificationReadsOfStatuses, ids)
+	return err
+}
+
 const eraseNotificationSettingsOf = `-- name: EraseNotificationSettingsOf :exec
 DELETE FROM notification_settings WHERE account_id = ?1
 `

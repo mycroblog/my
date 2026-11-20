@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -155,8 +156,39 @@ func (s *Service) ReadMarker(ctx context.Context, accountID string) (notificatio
 	return m, err
 }
 
+// Unread reports whether accountID's notification id is unread now, as
+// notification.ReadMarker.Unread defines it.
+func (s *Service) Unread(ctx context.Context, accountID, id string) (bool, error) {
+	read, err := s.ReadOf(ctx, accountID, []string{id})
+	return !read[id], err
+}
+
+// ReadOf returns which of accountID's notifications ids are read, as the complement of
+// notification.ReadMarker.Unread: at or behind the read marker, or read on their own (ReadOne).
+func (s *Service) ReadOf(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {
+	m, err := s.ReadMarker(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	var past []string
+	for _, id := range ids {
+		if m.Unread(id, false) {
+			past = append(past, id)
+		}
+	}
+	own, err := s.d.Repository.ReadAmong(ctx, accountID, past)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		out[id] = !m.Unread(id, slices.Contains(own, id))
+	}
+	return out, nil
+}
+
 // UnreadCount returns the number of accountID's notifications that List would return and that
-// are newer than its read marker; withoutModerator counts as Query.WithoutModerator lists. It
+// are unread (notification.ReadMarker.Unread); withoutModerator counts as Query.WithoutModerator lists. It
 // leaves out the notifications whose status a hide keyword filter matches (Deps.Filters), which
 // the client API leaves out of the list, so that no unread notification stays that cannot be
 // read.
@@ -200,7 +232,7 @@ func (s *Service) hidden(ctx context.Context, accountID string, withoutModerator
 }
 
 // MarkRead marks accountID's notifications up to and including lastReadID as read, and
-// returns the marker. The marker only moves forward: marking an older notification changes
+// returns the marker; the records of ReadOne that it passes are deleted. The marker only moves forward: marking an older notification changes
 // nothing, so clients that report their positions concurrently never move it back.
 // lastReadID must be one of the account's notifications (ErrNotFound otherwise).
 func (s *Service) MarkRead(ctx context.Context, accountID, lastReadID string) (notification.ReadMarker, error) {
@@ -215,6 +247,19 @@ func (s *Service) MarkRead(ctx context.Context, accountID, lastReadID string) (n
 		return notification.ReadMarker{}, err
 	}
 	return s.ReadMarker(ctx, accountID)
+}
+
+// ReadOne marks one of accountID's notifications read wherever it is, for every client: it
+// leaves the unread count. Marking it again, or one that the read marker already passed, changes
+// nothing; a notification of another account fails with ErrNotFound. The marker deletes the
+// record once it passes the notification (MarkRead).
+func (s *Service) ReadOne(ctx context.Context, accountID, notificationID string) error {
+	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if _, err := s.own(ctx, tx, accountID, notificationID); err != nil {
+			return err
+		}
+		return s.d.Repository.InsertRead(ctx, tx, accountID, notificationID)
+	})
 }
 
 // Dismiss dismisses one of accountID's notifications: it leaves the list and the unread count.

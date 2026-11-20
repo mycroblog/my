@@ -411,6 +411,7 @@ var operationSecurity = map[string]operationAccess{
 	"POST /api/v1/notifications/requests/{id}/accept":                               {Operation: "acceptNotificationRequest", Idempotent: true, Scopes: []string{"write:notifications"}},
 	"POST /api/v1/notifications/requests/{id}/dismiss":                              {Operation: "dismissNotificationRequest", Idempotent: true, Scopes: []string{"write:notifications"}},
 	"POST /api/v1/notifications/{id}/dismiss":                                       {Operation: "dismissNotification", Idempotent: true, Scopes: []string{"write:notifications"}},
+	"POST /api/v1/notifications/{id}/read":                                          {Operation: "readNotification", Idempotent: true, Scopes: []string{"write:notifications"}},
 	"POST /api/v1/oauth_apps":                                                       {Operation: "createOAuthApp", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"POST /api/v1/oauth_apps/{id}/rotate_secret":                                    {Operation: "rotateOAuthAppSecret", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"POST /api/v1/oauth_apps/{id}/tokens":                                           {Operation: "issueOAuthAppToken", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
