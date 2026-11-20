@@ -47,6 +47,7 @@ export const serverEntries: readonly StaffEntry[] = [
     icon: "emojiCustom",
     name: "staff_emoji.entry",
     hint: "staff_emoji.entry.hint",
+    count: { of: (facts) => facts.pendingEmojiRequests, words: "staff_emoji.entry.count" },
     Screen: AdminEmojiScreen,
     load: loadEmojiScreen,
   },

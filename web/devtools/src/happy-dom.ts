@@ -4,7 +4,8 @@
 // DOM before a test module loads (`bun test --preload`, which dom-tests.ts runs for the package's `test` script).
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { withoutReactTracks } from "./react-tracks";
 
 GlobalRegistrator.register({ url: "http://localhost/" });
 
-await import("./component-tests");
+await withoutReactTracks(() => import("./component-tests"));

@@ -6714,17 +6714,24 @@ type AdminBrands struct {
 	LogoDark *AdminBrandImage `json:"logo_dark,omitempty"`
 }
 
-// AdminCounts What awaits the moderators; a count whose permission the user lacks is omitted.
+// AdminCounts What awaits the staff; a count whose permission the user lacks is omitted.
 type AdminCounts struct {
 	// OldestOpenReportFiledAt When the open report that has waited longest was filed; omitted when no report is open.
 	// Needs `manage_reports`.
 	OldestOpenReportFiledAt *time.Time `json:"oldest_open_report_filed_at,omitempty"`
+
+	// OpenErrorGroups The error groups that are open: new, regressed after a resolve, or unmuted. Needs
+	// `manage_errors`.
+	OpenErrorGroups *int64 `json:"open_error_groups,omitempty"`
 
 	// OpenReports The reports that are open. Needs `manage_reports`.
 	OpenReports *int64 `json:"open_reports,omitempty"`
 
 	// PendingAppeals The appeals of moderation actions that await a decision. Needs `manage_accounts`.
 	PendingAppeals *int64 `json:"pending_appeals,omitempty"`
+
+	// PendingCustomEmojiRequests The custom emoji requests that await a decision. Needs `manage_custom_emojis`.
+	PendingCustomEmojiRequests *int64 `json:"pending_custom_emoji_requests,omitempty"`
 
 	// PendingRegistrations The registrations that await approval. Needs `manage_accounts`.
 	PendingRegistrations *int64 `json:"pending_registrations,omitempty"`
@@ -20095,7 +20102,7 @@ type ServerInterface interface {
 	// GetCostTotals Total the costs by period
 	// (GET /admin/cost_totals)
 	GetCostTotals(w http.ResponseWriter, r *http.Request, params GetCostTotalsParams)
-	// GetAdminCounts Count what awaits the moderators
+	// GetAdminCounts Count what awaits the staff
 	// (GET /admin/counts)
 	GetAdminCounts(w http.ResponseWriter, r *http.Request)
 	// ListAdminCustomEmojiRequests List the custom emoji requests
@@ -64437,7 +64444,7 @@ type StrictServerInterface interface {
 	// GetCostTotals Total the costs by period
 	// (GET /admin/cost_totals)
 	GetCostTotals(ctx context.Context, request GetCostTotalsRequestObject) (GetCostTotalsResponseObject, error)
-	// GetAdminCounts Count what awaits the moderators
+	// GetAdminCounts Count what awaits the staff
 	// (GET /admin/counts)
 	GetAdminCounts(ctx context.Context, request GetAdminCountsRequestObject) (GetAdminCountsResponseObject, error)
 	// ListAdminCustomEmojiRequests List the custom emoji requests

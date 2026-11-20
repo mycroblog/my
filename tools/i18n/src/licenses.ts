@@ -82,6 +82,8 @@ type Manifest = {
   peerDependencies?: Record<string, string>;
 };
 
+const readManifest = (path: string) => JSON.parse(readFileSync(path, "utf8")) as Manifest;
+
 function licenseOf(m: Manifest): string | undefined {
   const one = (l: unknown) => (typeof l === "string" ? l : (l as { type?: string } | null)?.type);
   // A list in either field (the deprecated `licenses`, or `license` as in pause-stream) offers each license as a choice.
@@ -130,7 +132,7 @@ const walked = new Set<string>();
  */
 function walkDeps(dir: string) {
   walked.add(dir);
-  const m: Manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+  const m = readManifest(join(dir, "package.json"));
   const deps = { ...m.peerDependencies, ...m.optionalDependencies, ...m.dependencies };
   for (const name of Object.keys(deps)) {
     const pkg = resolvePackage(dir, name);
@@ -143,7 +145,7 @@ function walkDeps(dir: string) {
       if (!walked.has(pkg)) walkDeps(pkg);
       continue;
     }
-    if (check(JSON.parse(readFileSync(join(pkg, "package.json"), "utf8")))) walkDeps(pkg);
+    if (check(readManifest(join(pkg, "package.json")))) walkDeps(pkg);
   }
 }
 function walk(dir: string) {
@@ -165,7 +167,7 @@ function walk(dir: string) {
       continue;
     }
     const manifest = join(pkg, "package.json");
-    if (existsSync(manifest)) check(JSON.parse(readFileSync(manifest, "utf8")));
+    if (existsSync(manifest)) check(readManifest(manifest));
     walk(join(pkg, "node_modules"));
   }
 }

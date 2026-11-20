@@ -320,6 +320,7 @@ export {
 export {
   moderationCountsQuery,
   rightsOf,
+  useAdminCounts,
   useModerationCount,
   usePermissions,
   useRights,

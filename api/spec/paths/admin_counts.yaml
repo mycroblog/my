@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getAdminCounts
-  summary: Count what awaits the moderators
+  summary: Count what awaits the staff
   description: |
-    The number of open reports (with the `manage_reports` permission), and of registrations
+    The number of open reports (with the `manage_reports` permission), of registrations
     that await approval and appeals that await a decision (with the `manage_accounts`
-    permission), for the badges of the admin menu. A count whose permission the user's roles lack is omitted, so a
-    user without either gets an empty object.
+    permission), of custom emoji requests that await a decision (with `manage_custom_emojis`), and of
+    open error groups (with `manage_errors`), for the badges of the staff navigation. A count whose
+    permission the user's roles lack is omitted, so a user without any gets an empty object.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]

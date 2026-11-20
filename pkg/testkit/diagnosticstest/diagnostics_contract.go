@@ -679,6 +679,16 @@ func diagnosticsSummaries(t *testing.T, e *diagnosticsEnv) {
 	if got, _ := e.svc.Summaries(ctx, appdiagnostics.SummaryQuery{State: diagnostics.StateMuted, Limit: 10}); len(got) != 1 || got[0].Group.ID != mid.ID {
 		t.Errorf("muted summaries = %+v", got)
 	}
+	// The open groups leave the muted one out, and a resolved one too.
+	if n, err := e.svc.CountOpen(ctx); err != nil || n != 2 {
+		t.Errorf("CountOpen with fp-mid muted = %d, %v; want 2", n, err)
+	}
+	if _, err := e.svc.Resolve(ctx, webGroup.ID, appdiagnostics.Actor{Kind: diagnostics.ActorCLI}); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := e.svc.CountOpen(ctx); err != nil || n != 1 {
+		t.Errorf("CountOpen with fp-web resolved = %d, %v; want 1", n, err)
+	}
 	// One summary, also in a transaction.
 	s, err := e.svc.Summary(ctx, mid.ID)
 	if err != nil || s.Head.State != diagnostics.StateMuted || s.CountDay != 1 || s.CountWeek != 1 {

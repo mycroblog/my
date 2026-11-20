@@ -96,6 +96,10 @@ ORDER BY group_id, hour_start;
 SELECT id, group_id, kind, actor_kind, actor_user_id, version, occurred_at FROM error_group_events
 WHERE group_id = $1 ORDER BY id;
 
+-- CountErrorGroupsInState counts the groups in a state (the staff counts).
+-- name: CountErrorGroupsInState :one
+SELECT COUNT(*) FROM error_group_states WHERE state = $1;
+
 -- name: DeleteErrorGroupStates :exec
 DELETE FROM error_group_states;
 

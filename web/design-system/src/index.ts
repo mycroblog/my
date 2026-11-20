@@ -4,7 +4,8 @@
 // Tailwind from the tokens of @my/design-tokens, and its icons. An app loads @my/design-system/styles.css once, with
 // @my/design-system/emoji.css, the self-hosted Noto Color Emoji (ADR-0091 §9), and places React Aria's I18nProvider,
 // from which every part reads the locale and the direction (locale.ts), and the TimeZoneProvider, from which it reads
-// the zone of the dates and times it shows (zone.tsx).
+// the zone of the dates and times it shows (zone.tsx). It calls claimPressableStyle before it renders, so that React
+// Aria puts no style in the head that the shell's policy refuses (pressable-style.ts).
 
 export { Avatar, type AvatarProps, type AvatarSize } from "./avatar";
 export {
@@ -322,6 +323,7 @@ export {
 } from "./event";
 export { EventDescription, type DescriptionPart } from "./event-description";
 export { SearchField, type SearchFieldProps } from "./search-field";
+export { claimPressableStyle } from "./pressable-style";
 export { SaveState, type SaveStateProps } from "./save-state";
 export {
   NumberField,

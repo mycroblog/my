@@ -7887,11 +7887,12 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Count what awaits the moderators
-         * @description The number of open reports (with the `manage_reports` permission), and of registrations
+         * Count what awaits the staff
+         * @description The number of open reports (with the `manage_reports` permission), of registrations
          *     that await approval and appeals that await a decision (with the `manage_accounts`
-         *     permission), for the badges of the admin menu. A count whose permission the user's roles lack is omitted, so a
-         *     user without either gets an empty object.
+         *     permission), of custom emoji requests that await a decision (with `manage_custom_emojis`), and of
+         *     open error groups (with `manage_errors`), for the badges of the staff navigation. A count whose
+         *     permission the user's roles lack is omitted, so a user without any gets an empty object.
          */
         get: operations["getAdminCounts"];
         put?: never;
@@ -11535,7 +11536,7 @@ export interface components {
             /** @description The username of the account; absent for an account that is gone. */
             username?: string;
         };
-        /** @description What awaits the moderators; a count whose permission the user lacks is omitted. */
+        /** @description What awaits the staff; a count whose permission the user lacks is omitted. */
         AdminCounts: {
             /**
              * Format: int64
@@ -11552,6 +11553,17 @@ export interface components {
              * @description The appeals of moderation actions that await a decision. Needs `manage_accounts`.
              */
             pending_appeals?: number;
+            /**
+             * Format: int64
+             * @description The custom emoji requests that await a decision. Needs `manage_custom_emojis`.
+             */
+            pending_custom_emoji_requests?: number;
+            /**
+             * Format: int64
+             * @description The error groups that are open: new, regressed after a resolve, or unmuted. Needs
+             *     `manage_errors`.
+             */
+            open_error_groups?: number;
             /**
              * Format: date-time
              * @description When the open report that has waited longest was filed; omitted when no report is open.

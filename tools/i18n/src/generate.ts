@@ -70,9 +70,10 @@ export async function pseudoCatalogs(catalog: Catalog): Promise<Catalog> {
     for (const [locale, transform] of Object.entries(PSEUDO_TRANSFORMS)) {
       // FormatJS pseudo-localizes the parsed AST, so arguments, `#` and plural keywords
       // survive; print it back to ICU source.
-      const compiled: Record<string, MessageFormatElement[]> = JSON.parse(
-        await compile(files, { pseudoLocale: transform, ast: true }),
-      );
+      const compiled = JSON.parse(await compile(files, { pseudoLocale: transform, ast: true })) as Record<
+        string,
+        MessageFormatElement[]
+      >;
       const entries: Namespace = {};
       for (const key of keys.sort()) {
         const ast = compiled[key];
@@ -203,7 +204,7 @@ const CLDR_LOCALES = [
 const CLDR_NUMBERS = [0, 1, 2, 3, 5, 11, 21, 22, 101, 1000000, 1.5];
 
 function golden(catalog: Catalog): string {
-  const cases: Cases = JSON.parse(readFileSync(join(goTestdataDir, "cases.json"), "utf8"));
+  const cases = JSON.parse(readFileSync(join(goTestdataDir, "cases.json"), "utf8")) as Cases;
   const catalogOut: Record<string, string[]> = {};
   for (const locale of GOLDEN_LOCALES) {
     const t = createTranslator(catalog, locale);
