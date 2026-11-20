@@ -34,10 +34,11 @@ my admin relay delete <relay id>                                  # delete a rel
 No puedes registrar el relay de un servidor bajo una acción de dominio (`suspend`). Si el servidor de un relay al que te uniste se suspende después, el estado no cambia,
 pero no se envía ni se recibe nada de ese relay, y el área de administración lo dice en el estado del relay.
 
-<!-- source: what-the-server-sends 1db52c508f9c -->
+<!-- source: what-the-server-sends c55ab0a5b079 -->
 ## Qué envía el servidor
 
-- Solo se envían la creación, la edición y la eliminación de publicaciones locales **públicas** (`public`). Las publicaciones `unlisted`, solo para seguidores, directas o solo locales (`local`), y los impulsos, nunca se envían. Para mantener una publicación fuera de los relés, publícala como `unlisted` o `local`. No hay exclusión por usuario.
+- Solo se envían la creación, la edición y la eliminación de publicaciones locales **públicas** (`public`). Las publicaciones `unlisted`, solo para seguidores, directas o para vecinos (`local`), y los impulsos, nunca se envían.
+  Para mantener una publicación fuera de los relés, publícala como `unlisted` o `local`. No hay exclusión por usuario.
 - Los documentos de las publicaciones públicas llevan una firma de Linked Data (`RsaSignature2017`), para que Mastodon y Misskey puedan aceptar publicaciones que un relé transmite sin cambios.
 - El número de entregas crece según el número de relés unidos multiplicado por el número de publicaciones públicas (las entregas a un relé se combinan en una).
 
