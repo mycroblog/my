@@ -30,7 +30,7 @@ const at = (path: string, server: Server = {}, more: Omit<Fake, "at" | "server">
 
 /** Everything the page can show: the program and the tips with the list, the costs and income with the meter. */
 const everything: Server = {
-  about: { says: "full", domains: "everyone" },
+  about: { says: "full", domains: "everyone", rationale: "everyone" },
   thumbnail: true,
   supporters: { tips: {}, list: "everyone" },
   finance: { costs: "totals", income: "totals", meter: "amounts" },

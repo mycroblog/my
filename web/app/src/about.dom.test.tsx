@@ -13,7 +13,7 @@ import { fakeApp } from "./test/server";
 
 /** Every section the page can show. */
 const everything: FakeOptions = {
-  about: { says: "full", domains: "everyone" },
+  about: { says: "full", domains: "everyone", rationale: "everyone" },
   thumbnail: true,
   supporters: { tips: {}, list: "everyone" },
   finance: { costs: "totals", income: "totals", meter: "amounts" },
@@ -71,15 +71,20 @@ for (const visitor of [false, true]) {
     expect(domains()).toBeNull();
   });
 
-  test(`a server that lists its moderated servers to everyone lists them to ${reader}`, async () => {
-    await renderApp("/about", { about: { domains: "everyone" }, visitor });
+  test(`a server that lists its moderated servers to everyone lists them to ${reader}, with the comments it shows them`, async () => {
+    // The comments go to signed-in people alone: a visitor reads each domain and what was done, without why.
+    await renderApp("/about", { about: { domains: "everyone", rationale: "signed_in" }, visitor });
     const list = await within(await main().findByRole("region", { name: "Moderated servers" })).findByRole("list", {
       name: "Moderated servers",
     });
     const items = within(list).getAllByRole("listitem");
     expect(items[0]?.textContent).toContain("spam.example");
     expect(items[0]?.textContent).toContain("Suspended");
-    expect(items[0]?.textContent).toContain("Spam from new accounts every day.");
+    if (visitor) expect(items[0]?.textContent).not.toContain("Spam from new accounts every day.");
+    else expect(items[0]?.textContent).toContain("Spam from new accounts every day.");
+    // A domain moderated without a public comment shows what was done alone.
+    const bots = items.find((item) => item.textContent?.includes("bots.example"));
+    expect(bots?.textContent?.endsWith("Limited")).toBe(true);
   });
 }
 

@@ -22,6 +22,8 @@ export type FakeAboutOptions = {
   says?: "full" | "bare";
   /** Who may read the moderated domains: nobody by default. */
   domains?: Audience;
+  /** Who of those reads each domain's public comment (`domain_actions_rationale_visibility`): nobody by default. */
+  rationale?: Audience;
   /**
    * The link card crawler: off by default (`link_cards`), on and obeying robots.txt (`obeys`), or on and not reading it
    * (`ignores`, `link_cards_ignore_robots_txt`).
@@ -168,7 +170,13 @@ export function aboutHandlers(c: AboutContext): { handlers: Handlers; instance: 
       if (visibility === "off") return c.notFound();
       if (visibility === "signed_in" && c.visitor)
         return c.problem(401, "Sign in to see this", { type: "/api/v1/problems/unauthenticated" });
-      return { status: 200, body: page(domainActions, query, (a) => a.domain).body };
+      // The public comments go only to whom the rationale's audience lets read them, as the server's handler does.
+      const rationale: Audience = c.options?.rationale ?? "off";
+      const comments = rationale === "everyone" || (rationale === "signed_in" && !c.visitor);
+      const items = comments
+        ? domainActions
+        : domainActions.map(({ domain, digest, kind }) => ({ domain, digest, kind }));
+      return { status: 200, body: page(items, query, (a) => a.domain).body };
     },
   };
   return { handlers, instance };
