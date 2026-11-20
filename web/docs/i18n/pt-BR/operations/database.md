@@ -87,28 +87,54 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 3882f4bb0751 -->
+<!-- source: the-connection-pool 94890eb11897 -->
+## O pool de conexões
+
+O pool do PostgreSQL segue os parâmetros `pool_*` de `database_url`: `pool_max_conns` (por padrão o maior valor entre 4 e o número de CPUs) e `pool_min_conns`, as conexões que ele mantém quando nada é pedido, com `pool_max_conn_idle_time` (30 minutos) fechando as demais. Defina `pool_min_conns` para uma instância cujas requisições chegam muito espaçadas, ou cada uma abre uma conexão.
+
+O SQLite também aceita `pool_max_conns`, com o mesmo padrão, e `pool_max_idle_conns`, o máximo de conexões ociosas que ele mantém, um teto e não um piso como `pool_min_conns` (por padrão, todas elas, e nenhuma é fechada por tempo, então uma instância calma responde na hora). Uma nova conexão analisa o esquema antes da primeira consulta, e é por isso que o pool mantém as suas conexões.
+
+<!-- source: upgrading c07691f9e9ac -->
 ## Atualizar
 
 Uma atualização para uma nova versão sempre executa estes passos, nesta ordem, com a imagem do servidor da **nova** versão:
 
 1. **Faça backup** do banco de dados (e, com o armazenamento de blobs em sistema de arquivos, da mídia). Veja [Backup](#backing-up).
-2. **`my db upgrade -check`**. Ele não altera nada. Termina com `1` quando o novo esquema removeria dados que o banco de dados ainda não
-   migrou, e nomeia a versão por meio da qual atualizar primeiro; então pare e siga [Pular versões](#skipping-releases).
+2. **`my db upgrade -check`**. Ele não altera nada. Termina com `1` quando o novo esquema descartaria dados que o banco de dados ainda não
+   transferiu, e nomeia a versão pela qual atualizar primeiro; então pare e siga [Pular versões](#skipping-releases).
    Um banco de dados vazio passa.
-3. **`my schema apply`**, como em [Inicializar](#initializing-applying-the-schema). Verifique o SQL antes com `-dry-run`.
+3. **`my schema apply`**, como em [Inicializar](#initializing-applying-the-schema). Verifique antes o SQL com `-dry-run`.
 4. **`my db upgrade`**. Ele executa cada passo de atualização de dados da versão que o banco de dados ainda não registrou, reconstrói as
-   projeções que esses passos nomeiam e registra cada passo. Executado de novo, não faz nada. Se um passo falhar, termina com `1`; os passos que terminaram
-   continuam registrados, e executá-lo de novo recomeça do que falhou.
-5. **Inicie o novo servidor.** Ele responde `503` em `/readyz` e registra nos logs os passos que faltam até que todos os passos de atualização de dados da sua versão estejam registrados.
+   projeções que esses passos nomeiam e registra cada passo. Executado de novo, não faz nada. Se um passo falha, ele termina com `1`; os passos que foram concluídos
+   continuam registrados, e executá-lo de novo retoma a partir do que falhou.
+5. **Inicie o novo servidor.** Ele responde `503` em `/readyz` e registra no log os passos que faltam até que todo passo de atualização de dados da sua versão esteja registrado.
 
 `my serve` nunca executa `my db upgrade -check`, `my schema apply` nem `my db upgrade`; eles são jobs avulsos. Execute apenas um deles por vez contra um banco de dados.
 
+<!-- source: running-the-steps-in-one-job f249b58d8047 -->
+### Executar os passos em um único job
+
+`my upgrade` executa os passos 2 a 4 em um único processo, depois das verificações de `my config check`, para que um único job avulso (uma execução de job do Cloud Run,
+uma tarefa do ECS, um Job do Kubernetes) conduza toda a migração:
+
+1. `my config check`
+2. `my db upgrade -check`
+3. `my schema apply`, com `-allow-destructive` quando `my upgrade` o recebe
+4. `my db upgrade`
+
+Ele para no primeiro passo que falha e termina com o código desse passo; os passos seguintes não são executados. Cada passo imprime uma linha que o nomeia,
+como `==> my schema apply`, e depois a saída desse comando, para que o log do job mostre onde ele parou. Depois de corrigir a causa, execute
+`my upgrade` de novo: os passos que foram concluídos não encontram mais nada a fazer. `-config <file>` é passado a todos os passos.
+
+`my upgrade -dry-run` executa `my config check`, `my db upgrade -check` e `my schema apply -dry-run`, e não altera nada: leia o SQL que ele
+imprime antes da atualização. Faça backup do banco de dados antes de `my upgrade`, como no passo 1; ele não passa para o modo de manutenção nem inicia
+o servidor.
+
 A maioria das versões não acrescenta nenhum passo de atualização de dados: `my db upgrade -check` imprime `ok: the database can be upgraded to this release` e, em um
 banco de dados que registrou os passos das versões anteriores, `my db upgrade` imprime `ok: no data upgrade step to run`. Um banco de dados novo registra
-todos os passos da versão no seu primeiro `my db upgrade`, sem nada para reescrever. Execute os dois mesmo assim, para que o procedimento não dependa de ler
+todos os passos da versão no seu primeiro `my db upgrade`, sem nada a reescrever. Execute os dois mesmo assim, para que o procedimento não dependa de ler
 todas as notas de versão.
-A seção **Upgrading** das notas de versão lista os passos de cada versão.
+A seção **Atualização** das notas de versão lista os passos de cada versão.
 
 <!-- source: the-server-during-an-upgrade ef479675745b -->
 ### O servidor durante uma atualização
@@ -222,13 +248,14 @@ kubectl rollout status deployment/my
 Se o Job falhar, `kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check` (ou `-c schema`, `-c upgrade`) mostra o motivo, e o Deployment continua na imagem anterior.
 Com SQLite em um volume, monte o mesmo volume no Job e pare antes os pods do Deployment: o SQLite aceita um único escritor.
 
-<!-- source: cloud-run a6c3de3c814f -->
+<!-- source: cloud-run 9e7486b6a4af -->
 ### Cloud Run
 
-Com os módulos OpenTofu, o script de [Implantar no Cloud Run](deploy-cloud-run.md#upgrading) executa esses passos. Manualmente:
+Com o módulo OpenTofu, uma atualização é um apply da nova versão, que executa `my upgrade` no job de migração antes de os serviços adotarem
+a nova imagem, e para ali quando ele falha: veja [Implantação no Cloud Run](deploy-cloud-run.md#upgrading). Manualmente:
 
 Os jobs do Cloud Run executam um contêiner cada, então crie um job por passo e execute-os em ordem com `--wait`, que falha quando o job falha.
-Dê aos jobs as mesmas variáveis de ambiente e segredos do serviço.
+Dê aos jobs as mesmas variáveis de ambiente e os mesmos segredos do serviço.
 
 ```sh
 gcloud run services update my --region=asia-northeast1 --update-env-vars=MY_MAINTENANCE=true
@@ -247,7 +274,7 @@ gcloud run jobs execute my-upgrade-check --region=asia-northeast1 --wait &&
   gcloud run deploy my --region=asia-northeast1 --image=ghcr.io/mycroblog/my:0.2.0 --remove-env-vars=MY_MAINTENANCE
 ```
 
-Para verificar o SQL antes, implante o job de esquema com `--args=schema,apply,-dry-run`, execute-o e leia os logs dele antes de reimplantá-lo para a aplicação.
+Para verificar antes o SQL, implante o job do esquema com `--args=schema,apply,-dry-run`, execute-o e leia os logs dele antes de reimplantá-lo para o apply.
 
 <!-- source: backing-up b597d3139c2b -->
 ### Backup

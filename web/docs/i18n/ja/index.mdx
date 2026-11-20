@@ -1,5 +1,5 @@
 ---
-# source: a6ef24b6984e
+# source: 10be220855d1
 title: mycroblog
 description: 小さく始めて、コミュニティとともに育つ、Fediverse のマイクロブログ。
 template: splash
@@ -31,7 +31,7 @@ import Screenshot from "../../components/Screenshot.astro";
 
 <Screenshot
   name="home"
-  alt="mycroblog のホームタイムライン。湖と夕日の 2 枚の写真を引用した投稿にカスタム絵文字のリアクションが付き、その下にパンについての日本語の投稿があります。横にはナビゲーション、最新の通知、サーバーの情報が並んでいます。"
+  alt="mycroblog のホームタイムライン。翻訳のジョークについてのブーストされた投稿、日本語のウェルカム投稿、パンの写真付きのサワードウについての投稿が並び、横にはナビゲーション、サーバーのお知らせ、近日開催のイベント、最新の通知があります。"
   eager
 />
 
@@ -44,11 +44,11 @@ import Screenshot from "../../components/Screenshot.astro";
   </Card>
   <Card title="連合する" icon="random">
     フォロー、投稿、引用、カスタム絵文字のリアクションが、Mastodon、Misskey、GoToSocial などとやりとりされます。
-    「ローカル限定」の投稿は、あなたのサーバーとフォロワーの中にとどまります。
+    「ご近所」の投稿は、あなたのサーバーとフォロワーの中にとどまります。
   </Card>
   <Card title="サポーターと開かれた会計" icon="heart">
     Stripe や PAY.JP による有料プランで、ロール、バッジ、カスタム絵文字を追加する権利を付与できます。サーバーにかかる費用を記録し、
-    AWS と Google Cloud の請求を自動で取り込み、費用と収入をコミュニティに公開できます。
+    AWS、Google Cloud、Cloudflare の請求を自動で取り込み、費用と収入をコミュニティに公開できます。
   </Card>
   <Card title="通話のルーム" icon="comment">
     サーバーの人たちのための、ホスト、スピーカー、招待、リアクションのある音声のルームです。小さなルームは P2P で、
@@ -73,22 +73,22 @@ import Screenshot from "../../components/Screenshot.astro";
   <Screenshot
     name="post"
     caption="連合する"
-    alt="ほかのサーバーの投稿を 2 枚の写真付きで引用した投稿と、その返信、ブースト、お気に入り、カスタム絵文字のリアクション。"
+    alt="夜明けの山の稜線の写真付きの日本語の投稿と、その返信、ブースト、お気に入り、カスタム絵文字のリアクション、リアクションした人。"
   />
   <Screenshot
     name="supporters"
     caption="サポーターと開かれた会計"
-    alt="サーバーのサポーターのページ。有料プラン「Coffee」と「A whole loaf of sourdough every month」のそれぞれのメンバーがアバターとともに並んでいます。"
+    alt="サーバーのサポーターのページ。月額の 2 つのプラン「Coffee」と「A whole loaf」が年額の料金とともに並び、それぞれのプランの下に、一覧に載ることを選んだサポーターがアバターとともに表示されています。"
   />
   <Screenshot
     name="voice-room"
     caption="通話のルーム"
-    alt="開いてから 47 分たった通話のルーム「Sunday baking club」。ステージにホスト、共同ホスト、2 人のスピーカーがいて、4 人のリスナーのうち 1 人が手を挙げています。"
+    alt="開催中の通話のルーム「Saturday meetup: bread and tea」。ホスト、共同ホスト、さらに 2 人のスピーカーと、3 人のリスナーがいて、うち 1 人が手を挙げています。"
   />
   <Screenshot
     name="reports"
     caption="モデレーションを内蔵"
-    alt="モデレーターの通報の一覧。未対応の 5 件の通報が、分類、通報した人、担当者、待っている時間とともに並んでいます。"
+    alt="モデレーターの通報キュー。1 つのアカウントについての未対応の 4 件の通報が、分類、通報した人、日時とともに並び、うち 1 件はモデレーターに割り当てられています。"
   />
 </CardGrid>
 

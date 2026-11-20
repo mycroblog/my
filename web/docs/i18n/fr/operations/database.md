@@ -87,21 +87,54 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 3882f4bb0751 -->
-## Mise à niveau
+<!-- source: the-connection-pool 94890eb11897 -->
+## Le pool de connexions
+
+Le pool de PostgreSQL suit les paramètres `pool_*` de `database_url` : `pool_max_conns` (par défaut le plus grand de 4 et du nombre de CPU) et `pool_min_conns`, les connexions qu’il conserve lorsque rien n’est demandé, `pool_max_conn_idle_time` (30 minutes) fermant les autres. Définissez `pool_min_conns` pour une instance dont les requêtes sont très espacées, faute de quoi chacune ouvre une connexion.
+
+SQLite accepte aussi `pool_max_conns`, avec la même valeur par défaut, et `pool_max_idle_conns`, le nombre maximal de connexions inactives qu’il conserve, un plafond et non un plancher comme `pool_min_conns` (par défaut toutes, et aucune n’est fermée avec le temps, de sorte qu’une instance calme répond aussitôt). Une nouvelle connexion analyse le schéma avant sa première requête, ce pourquoi le pool conserve ses connexions.
+
+<!-- source: upgrading c07691f9e9ac -->
+## Mettre à niveau
 
 Une mise à niveau vers une nouvelle version exécute toujours ces étapes dans cet ordre, avec l’image de serveur de la **nouvelle** version :
 
-1. **Sauvegardez** la base de données (et, avec le magasin de blobs sur système de fichiers, les médias). Voir [Sauvegarde](#backing-up).
-2. **`my db upgrade -check`**. Il ne change rien. Il se termine avec `1` lorsque le nouveau schéma supprimerait des données que la base de données n’a pas encore reprises, et nomme la version par laquelle passer d’abord ; arrêtez-vous alors et suivez [Sauter des versions](#skipping-releases). Une base de données vide réussit.
-3. **`my schema apply`**, comme dans [Initialisation](#initializing-applying-the-schema). Vérifiez d’abord le SQL avec `-dry-run`.
-4. **`my db upgrade`**. Il exécute chaque étape de mise à niveau des données de la version que la base de données n’a pas encore enregistrée, reconstruit les projections que ces étapes nomment et enregistre chaque étape. Relancé, il ne fait rien. Si une étape échoue, il se termine avec `1` ; les étapes terminées restent enregistrées, et le relancer reprend à l’étape en échec.
+1. **Sauvegardez** la base de données (et, avec le stockage de blobs sur le système de fichiers, les médias). Voir [Sauvegarder](#backing-up).
+2. **`my db upgrade -check`**. Il ne change rien. Il se termine avec `1` lorsque le nouveau schéma supprimerait des données que la base de données n’a pas encore
+   reprises, et nomme la version par laquelle passer d’abord ; arrêtez-vous alors et suivez [Sauter des versions](#skipping-releases).
+   Une base de données vide passe.
+3. **`my schema apply`**, comme dans [Initialiser](#initializing-applying-the-schema). Vérifiez d’abord le SQL avec `-dry-run`.
+4. **`my db upgrade`**. Il exécute chaque étape de mise à niveau des données de la version que la base de données n’a pas encore enregistrée, reconstruit les
+   projections que ces étapes nomment, et enregistre chaque étape. Réexécuté, il ne fait rien. Si une étape échoue, il se termine avec `1` ; les étapes terminées
+   restent enregistrées, et le réexécuter reprend à partir de celle qui a échoué.
 5. **Démarrez le nouveau serveur.** Il répond `503` sur `/readyz` et journalise les étapes manquantes jusqu’à ce que chaque étape de mise à niveau des données de sa version soit enregistrée.
 
-`my serve` n’exécute jamais `my db upgrade -check`, `my schema apply` ni `my db upgrade` ; ce sont des tâches ponctuelles. N’en exécutez qu’une seule à la fois sur une base de données.
+`my serve` n’exécute jamais `my db upgrade -check`, `my schema apply` ni `my db upgrade` ; ce sont des jobs ponctuels. N’en exécutez qu’un seul à la fois sur une base de données.
 
-La plupart des versions n’ajoutent aucune étape de mise à niveau des données : `my db upgrade -check` affiche `ok: the database can be upgraded to this release` et, sur une base de données qui a enregistré les étapes des versions précédentes, `my db upgrade` affiche `ok: no data upgrade step to run`. Une nouvelle base de données enregistre chaque étape de la version lors de son premier `my db upgrade`, sans rien à réécrire. Exécutez-les tout de même toutes les deux, afin que la procédure ne dépende pas de la lecture de chaque note de version.
-La section **Upgrading** des notes de version liste les étapes de chaque version.
+<!-- source: running-the-steps-in-one-job f249b58d8047 -->
+### Exécuter les étapes dans un seul job
+
+`my upgrade` exécute les étapes 2 à 4 dans un seul processus, après les vérifications de `my config check`, de sorte qu’un seul job ponctuel (une exécution de job Cloud Run,
+une tâche ECS, un Job Kubernetes) porte toute la migration :
+
+1. `my config check`
+2. `my db upgrade -check`
+3. `my schema apply`, avec `-allow-destructive` lorsque `my upgrade` le reçoit
+4. `my db upgrade`
+
+Il s’arrête à la première étape qui échoue et se termine avec le code de cette étape ; les étapes suivantes ne s’exécutent pas. Chaque étape affiche une ligne qui la nomme,
+comme `==> my schema apply`, puis la sortie de cette commande, de sorte que le journal du job montre où il s’est arrêté. Après avoir corrigé la cause, exécutez
+`my upgrade` de nouveau : les étapes terminées ne trouvent plus rien à faire. `-config <file>` est transmis à chaque étape.
+
+`my upgrade -dry-run` exécute `my config check`, `my db upgrade -check` et `my schema apply -dry-run`, et ne change rien : lisez le SQL qu’il
+affiche avant la mise à niveau. Sauvegardez la base de données avant `my upgrade`, comme à l’étape 1 ; il ne passe pas en mode maintenance et ne démarre pas
+le serveur.
+
+La plupart des versions n’ajoutent aucune étape de mise à niveau des données : `my db upgrade -check` affiche `ok: the database can be upgraded to this release` et, sur une
+base de données qui a enregistré les étapes des versions précédentes, `my db upgrade` affiche `ok: no data upgrade step to run`. Une nouvelle base de données enregistre
+chaque étape de la version dès son premier `my db upgrade`, sans rien à réécrire. Exécutez-les quand même tous les deux, afin que la procédure ne dépende pas de la lecture de
+chaque note de version.
+La section **Mise à niveau** des notes de version liste les étapes de chaque version.
 
 <!-- source: the-server-during-an-upgrade ef479675745b -->
 ### Le serveur pendant une mise à niveau
@@ -215,12 +248,13 @@ kubectl rollout status deployment/my
 Si le Job échoue, `kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check` (ou `-c schema`, `-c upgrade`) montre pourquoi, et le Deployment reste sur l’image précédente.
 Avec SQLite sur un volume, montez le même volume dans le Job et arrêtez d’abord les pods du Deployment : SQLite n’admet qu’un seul écrivain.
 
-<!-- source: cloud-run a6c3de3c814f -->
+<!-- source: cloud-run 9e7486b6a4af -->
 ### Cloud Run
 
-Avec les modules OpenTofu, le script de [Déployer sur Cloud Run](deploy-cloud-run.md#upgrading) exécute ces étapes. À la main :
+Avec le module OpenTofu, une mise à niveau consiste à appliquer la nouvelle version, ce qui exécute `my upgrade` dans le job de migration avant que les services prennent
+la nouvelle image, et s’arrête là en cas d’échec : voir [Déployer sur Cloud Run](deploy-cloud-run.md#upgrading). À la main :
 
-Les jobs Cloud Run exécutent un conteneur chacun : créez donc un job par étape et exécutez-les dans l’ordre avec `--wait`, qui échoue lorsque le job échoue.
+Les jobs Cloud Run exécutent un conteneur chacun ; créez donc un job par étape et exécutez-les dans l’ordre avec `--wait`, qui échoue lorsque le job échoue.
 Donnez aux jobs les mêmes variables d’environnement et secrets qu’au service.
 
 ```sh

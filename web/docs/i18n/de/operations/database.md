@@ -86,7 +86,14 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 3882f4bb0751 -->
+<!-- source: the-connection-pool 94890eb11897 -->
+## Der Connection-Pool
+
+Der Pool von PostgreSQL folgt den `pool_*`-Parametern von `database_url`: `pool_max_conns` (standardmäßig der größere Wert aus 4 und der CPU-Anzahl) und `pool_min_conns`, die Verbindungen, die er hält, wenn nichts angefragt wird, wobei `pool_max_conn_idle_time` (30 Minuten) den Rest schließt. Setze `pool_min_conns` für eine Instanz, deren Anfragen weit auseinanderliegen, sonst öffnet jede eine Verbindung.
+
+SQLite kennt ebenfalls `pool_max_conns`, mit demselben Standard, und `pool_max_idle_conns`, die höchste Anzahl untätiger Verbindungen, die es hält, eine Obergrenze und keine Untergrenze wie `pool_min_conns` (standardmäßig alle, und keine wird nach Zeit geschlossen, sodass eine ruhige Instanz sofort antwortet). Eine neue Verbindung liest das Schema ein, bevor sie ihre erste Abfrage ausführt, weshalb der Pool seine Verbindungen behält.
+
+<!-- source: upgrading c07691f9e9ac -->
 ## Upgrade
 
 Ein Upgrade auf ein neues Release führt immer diese Schritte in dieser Reihenfolge aus, mit dem Server-Image des **neuen** Releases:
@@ -103,11 +110,29 @@ Ein Upgrade auf ein neues Release führt immer diese Schritte in dieser Reihenfo
 
 `my serve` führt nie `my db upgrade -check`, `my schema apply` oder `my db upgrade` aus; sie sind einmalige Jobs. Führe immer nur einen davon gleichzeitig gegen eine Datenbank aus.
 
+<!-- source: running-the-steps-in-one-job f249b58d8047 -->
+### Die Schritte in einem Job ausführen
+
+`my upgrade` führt die Schritte 2 bis 4 in einem Prozess aus, nach den Prüfungen von `my config check`, sodass ein einziger einmaliger Job (eine Cloud-Run-Job-Ausführung, ein ECS-Task, ein Kubernetes Job) die gesamte Migration trägt:
+
+1. `my config check`
+2. `my db upgrade -check`
+3. `my schema apply`, mit `-allow-destructive`, wenn `my upgrade` es erhält
+4. `my db upgrade`
+
+Es hält beim ersten fehlgeschlagenen Schritt an und endet mit dem Code dieses Schritts; die späteren Schritte laufen nicht. Jeder Schritt gibt eine Zeile aus, die ihn nennt,
+etwa `==> my schema apply`, und danach die Ausgabe dieses Befehls, sodass das Log des Jobs zeigt, wo er angehalten hat. Führe nach der Behebung der Ursache
+`my upgrade` erneut aus: Die abgeschlossenen Schritte finden nichts mehr zu tun. `-config <file>` wird an jeden Schritt weitergegeben.
+
+`my upgrade -dry-run` führt `my config check`, `my db upgrade -check` und `my schema apply -dry-run` aus und ändert nichts: Lies das SQL, das es
+ausgibt, vor dem Upgrade. Sichere die Datenbank vor `my upgrade`, wie in Schritt 1; es schaltet weder in den Wartungsmodus noch startet es
+den Server.
+
 Die meisten Releases fügen keinen Datenupgrade-Schritt hinzu: `my db upgrade -check` gibt `ok: the database can be upgraded to this release` aus und, bei einer
 Datenbank, die die Schritte der früheren Releases verzeichnet hat, gibt `my db upgrade` `ok: no data upgrade step to run` aus. Eine neue Datenbank verzeichnet
-jeden Schritt des Releases beim ersten `my db upgrade`, ohne etwas umzuschreiben. Führe trotzdem beide aus, damit das Verfahren nicht davon abhängt, jede
-Release-Notiz zu lesen.
-Der Abschnitt **Upgrading** der Release Notes listet die Schritte jedes Releases auf.
+jeden Schritt des Releases bei ihrem ersten `my db upgrade`, ohne etwas umzuschreiben. Führe beide trotzdem aus, damit das Vorgehen nicht davon abhängt, jede
+Release Note zu lesen.
+Der Abschnitt **Upgrade** der Release Notes listet die Schritte jedes Releases auf.
 
 <!-- source: the-server-during-an-upgrade ef479675745b -->
 ### Der Server während eines Upgrades
@@ -221,12 +246,13 @@ kubectl rollout status deployment/my
 Schlägt der Job fehl, zeigt `kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check` (oder `-c schema`, `-c upgrade`) warum, und das Deployment bleibt auf dem vorherigen Image.
 Binde bei SQLite auf einem Volume dasselbe Volume im Job ein und halte zuerst die Pods des Deployments an: SQLite erlaubt einen Schreiber.
 
-<!-- source: cloud-run a6c3de3c814f -->
+<!-- source: cloud-run 9e7486b6a4af -->
 ### Cloud Run
 
-Mit den OpenTofu-Modulen führt das Skript aus [Auf Cloud Run deployen](deploy-cloud-run.md#upgrading) diese Schritte aus. Von Hand:
+Mit dem OpenTofu-Modul ist ein Upgrade ein Apply des neuen Releases, das `my upgrade` im Migrationsjob ausführt, bevor die Dienste das neue Image
+übernehmen, und dort anhält, wenn es fehlschlägt: siehe [Auf Cloud Run betreiben](deploy-cloud-run.md#upgrading). Von Hand:
 
-Cloud-Run-Jobs führen je einen Container aus, also lege pro Schritt einen Job an und führe sie der Reihe nach mit `--wait` aus, was fehlschlägt, wenn der Job fehlschlägt.
+Cloud-Run-Jobs führen je einen Container aus, lege also pro Schritt einen Job an und führe sie der Reihe nach mit `--wait` aus, was fehlschlägt, wenn der Job fehlschlägt.
 Gib den Jobs dieselben Umgebungsvariablen und Secrets wie dem Dienst.
 
 ```sh
@@ -246,7 +272,7 @@ gcloud run jobs execute my-upgrade-check --region=asia-northeast1 --wait &&
   gcloud run deploy my --region=asia-northeast1 --image=ghcr.io/mycroblog/my:0.2.0 --remove-env-vars=MY_MAINTENANCE
 ```
 
-Um das SQL zuerst zu prüfen, deploye den Schema-Job mit `--args=schema,apply,-dry-run`, führe ihn aus und lies seine Logs, bevor du ihn für das Anwenden erneut deployst.
+Um das SQL vorher zu prüfen, deploye den Schema-Job mit `--args=schema,apply,-dry-run`, führe ihn aus und lies seine Logs, bevor du ihn für das Apply erneut deployst.
 
 <!-- source: backing-up b597d3139c2b -->
 ### Backup

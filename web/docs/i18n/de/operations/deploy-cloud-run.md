@@ -1,67 +1,66 @@
-<!-- source: deploying-on-cloud-run 9d2acbfd443c -->
+<!-- source: deploying-on-cloud-run 7728d9a37c56 -->
 # Auf Cloud Run bereitstellen
 
-So betreibst du `my` auf Google Cloud mit den OpenTofu-Modulen in [`deploy/opentofu`](../../deploy/opentofu/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage und Pub/Sub, mit einer PostgreSQL-Datenbank auf Neon, hinter einem globalen externen Application Load Balancer. Der Dienst führt keine Instanz aus, solange ihn niemand nutzt, bis auf einen Tick, der den Server jede Minute weckt. Ein Server kostet Geld: Rechne mit etwa 37 $ im Monat vor Speicher, Traffic und offenen Streams, und lies [Kosten](#costs), was sich mit Sorgfalt senken lässt.
+So betreibst du `my` auf Google Cloud mit dem OpenTofu-Modul [`mycroblog-gcp`](../../deploy/opentofu/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage und Pub/Sub, mit einer PostgreSQL-Datenbank auf Neon, hinter einem globalen externen Application Load Balancer. Der Dienst betreibt keine Instanz, solange ihn niemand nutzt, abgesehen von einem Tick, der den Server jede Minute weckt. Ein Server kostet Geld: Rechne mit etwa 37 $ im Monat, vor Speicher, Traffic und offenen Streams, und lies [Kosten](#costs), was Sorgfalt senken kann.
 
-Die Module brauchen OpenTofu 1.11 oder neuer. Terraform wird nicht unterstützt.
+Das Modul braucht OpenTofu 1.11 oder neuer. Terraform wird nicht unterstützt.
 
-<!-- source: what-it-creates c95687df197f -->
+<!-- source: what-it-creates cae1e55a1722 -->
 ## Was erstellt wird
 
-| Teil | Modul | Ressourcen |
+Ein Block von `mycroblog-gcp` erstellt all das. Jede Zeile ist ein Abschnitt des Moduls, und sein Standard ist das, was dieser Leitfaden bereitstellt; [die README des Moduls](../../deploy/opentofu/README.md#sections) listet die anderen Arten auf.
+
+| Teil | Abschnitt | Ressourcen |
 | --- | --- | --- |
-| Server | `app-gcp-cloud-run` | Ein Cloud-Run-Dienst mit `role = all`, ein Migrations-Job, ein Konsolen-Job, solange du ihn brauchst, ein Dienstkonto und öffentlicher Zugriff |
-| Traffic | `ingress-gcp-load-balancer`, oder `ingress-gcp-domain-mapping` oder `ingress-cloudflare-app`, und optional `ingress-cloudflare-media` | Ein globaler externer Application Load Balancer mit Zertifikat, oder ein Domain-Mapping, oder Cloudflare, und ein Medien-Host |
-| Jobs | `queue-gcp-cloud-tasks` | Eine Cloud-Tasks-Queue, ein Cloud-Scheduler-Job und ein Dienstkonto, das den Server aufruft |
-| Medien | `blob-gcp-gcs` | Ein privater Bucket |
-| Echtzeit-Aktualisierungen | `stream-gcp-pubsub` | Ein Topic und eine nutzerdefinierte Rolle. Der Server legt seine eigenen Subscriptions an und entfernt sie wieder |
-| Datenbank | `db-external` | Nichts: Du legst die Datenbank von Hand an |
-| E-Mail | `mail-smtp` | Nichts: ein beliebiger SMTP-Dienst |
-| Secrets | `secrets-gcp-secret-manager` | Secrets für die Datenbank-URL und das SMTP-Passwort, die du befüllst, und ein generierter VAPID-Schlüssel |
-| KEK | `kek-gcp-secret-manager` oder `kek-gcp-kms` | Ein generiertes Secret, das als Datei eingebunden wird, oder ein Cloud-KMS-Schlüssel |
+| Server | `service`, `jobs` | Ein Cloud-Run-Dienst mit `role = all`, ein Migrations-Job, ein Konsolen-Job, solange du ihn brauchst, ein Dienstkonto und öffentlicher Zugriff |
+| Traffic | `ingress` | Ein globaler externer Application Load Balancer mit Zertifikat. Ein Domain-Mapping oder Cloudflare sind die anderen Arten, und ein Medien-Host auf Cloudflare kann neben jeder stehen |
+| Jobs | `queue` | Eine Cloud-Tasks-Queue, ein Cloud-Scheduler-Job und ein Dienstkonto, das den Server aufruft |
+| Medien | `media` | Ein privater Bucket |
+| Echtzeit-Aktualisierungen | `stream` | Ein Topic und eine nutzerdefinierte Rolle. Der Server legt seine eigenen Subscriptions an und entfernt sie wieder |
+| Datenbank | `database` | Ein Secret für ihre URL: Du legst die Datenbank von Hand an |
+| E-Mail | `mail` | Ein Secret für das SMTP-Passwort: ein beliebiger SMTP-Dienst |
+| Secrets | | Ein generierter VAPID-Schlüssel und die Secrets, die nur du befüllen kannst, leer |
+| KEK | `kek` | Ein generiertes Secret, das als Datei eingebunden wird. Cloud KMS ist die andere Art |
+| Metriken, Traces, Fehler | `observability` | Die APIs von Cloud Monitoring, Cloud Trace und Error Reporting, die lesen, was Cloud Run ihnen sendet |
 
-Secret-Werte gelangen nie in den OpenTofu-Plan oder -State: Die Werte, die von anderswo kommen, fügst du selbst hinzu, und die Bereitstellung generiert den KEK und den VAPID-Schlüssel über Write-only-Attribute.
+Secret-Werte gelangen nie in den OpenTofu-Plan oder -State: Die Werte, die von anderswo kommen, fügst du selbst hinzu, und das Modul generiert den KEK und den VAPID-Schlüssel über Write-only-Attribute.
 
-<!-- source: before-you-start 4c624a6b7316 -->
+<!-- source: before-you-start 10846ce6f3b1 -->
 ## Bevor du anfängst
 
-- `tofu` 1.11 oder neuer, `gcloud` und `jq`.
-- Ein Google-Cloud-Projekt mit Abrechnung, das nur für diesen Server genutzt wird, und ein Konto darin mit der Rolle Owner.
+- `tofu` 1.11 oder neuer, `gcloud` und `jq`, dort, wo du anwendest: Ein Apply, der die Version ändert, führt die Migration von dort aus über `gcloud` aus.
+- Ein Google-Cloud-Projekt mit Abrechnung, das nur für diese Instanz genutzt wird, und ein Konto darin mit der Rolle Owner.
 - Eine Domain für [`host`](../reference/configuration.md#host). Sie lässt sich später nicht mehr ändern: Lies [Einstellungen, die sich später nicht mehr ändern lassen](production-checklist.md#settings-you-cannot-change-later).
 - Eine Version von `my` aus den [Releases](running.md#get-the-image). Es gibt kein `latest`-Tag.
 
 <!-- source: first-deployment 996fcc6eb35e -->
 ## Erste Bereitstellung
 
-<!-- source: 1-enable-the-apis 2d9c831fb77d -->
+<!-- source: 1-enable-the-apis c7f2ef4a9ee9 -->
 ### 1. Die APIs aktivieren
 
 ```sh
 gcloud services enable --project="$PROJECT" run.googleapis.com cloudtasks.googleapis.com cloudscheduler.googleapis.com \
   pubsub.googleapis.com secretmanager.googleapis.com storage.googleapis.com iam.googleapis.com \
-  iamcredentials.googleapis.com cloudresourcemanager.googleapis.com logging.googleapis.com compute.googleapis.com
+  iamcredentials.googleapis.com cloudresourcemanager.googleapis.com logging.googleapis.com compute.googleapis.com \
+  monitoring.googleapis.com
 ```
 
 `compute.googleapis.com` ist für den Load Balancer.
 
-<!-- source: 2-create-the-database-on-neon 139308cfc452 -->
+<!-- source: 2-create-the-database-on-neon ca5f51e8979e -->
 ### 2. Die Datenbank auf Neon anlegen
 
 Rechne mit dem Launch-Tarif: Mit dem Standard-Tick stoppt die Compute-Instanz nie. Der Free-Tarif funktioniert ebenfalls, mit den Abstrichen unter [Kosten](#costs).
 
-Es gibt zwei Wege, und das Beispiel nutzt den ersten:
+Lege in der Neon-Konsole ein Projekt in einer Region nahe deiner Cloud-Run-Region an und kopiere seine Verbindungsstrings. Das Modul legt es nie an, damit sein Passwort aus dem OpenTofu-State herausbleibt. Ein Projekt hat zwei Verbindungsstrings, und die Bereitstellung verwendet jeden dort, wo er hingehört:
 
-- **Von Hand, mit `db-external`.** Lege in der Neon-Konsole ein Projekt in einer Region nahe deiner Cloud-Run-Region an und kopiere seine Verbindungsstrings. Das Passwort bleibt aus dem OpenTofu-State heraus.
-- **Mit [`db-neon`](../../deploy/opentofu/modules/internal/db-neon/README.md)**, das das Projekt anlegt und die URLs für dich in die Secrets schreibt. **Das Datenbankpasswort landet dann im State**, und der Provider wird nicht mehr gepflegt: Seine README sagt, was das bedeutet, und ein Kommentar am `db`-Block in `main.tf` zeigt den Austausch.
+- Der **direkte** (der Host ohne `-pooler`) ist erforderlich. Der Migrations-Job und die Konsole verwenden ihn immer: `my schema apply` hält eine Sperre auf Sitzungsebene, die ein Pooler im Transaktionsmodus nicht aufrechterhält.
+- Der **gepoolte** (der Host mit `-pooler`) ist optional, für den Dienst. Der Pooler von Neon verarbeitet, was der Server braucht: siehe [Über einen Connection-Pooler](database.md#through-a-connection-pooler). Setze `database = { pooled = true }`, und das Modul legt dafür ein zweites Secret an.
 
-Ein Projekt hat zwei Verbindungsstrings, und die Bereitstellung verwendet jeden dort, wo er hingehört:
+Ohne gepoolten String verwendet der Dienst ebenfalls den direkten, bis zum Verbindungslimit der Datenbank, das `service.max_instances` begrenzt. Um den Pool von seinem Standard von 4 pro Instanz anzuheben, für die 80 Anfragen, die eine Cloud-Run-Instanz gleichzeitig annimmt, füge `pool_max_conns` zu dem String hinzu, den der Dienst verwendet, zum Beispiel `postgres://...-pooler...neon.tech/neondb?sslmode=require&pool_max_conns=8`. Siehe [Auf eine Datenbankverbindung warten](running.md#waiting-for-a-database-connection).
 
-- Der **direkte** (der Host ohne `-pooler`) ist erforderlich. Der Migrations-Job und die Konsole verwenden ihn immer: `my schema apply` hält eine Lock auf Sitzungsebene, die ein Pooler im Transaktionsmodus nicht aufrechterhält.
-- Der **gepoolte** (der Host mit `-pooler`) ist optional, für den Dienst. Der Pooler von Neon verarbeitet, was der Server braucht: siehe [Über einen Connection-Pooler](database.md#through-a-connection-pooler). Gib ihn an `pooled_url_secret_id` des `db`-Moduls weiter, in einem eigenen Secret, das du zu `referenced` des `secrets`-Moduls hinzufügst.
-
-Ohne gepoolten String verwendet der Dienst ebenfalls den direkten, bis zum Verbindungslimit der Datenbank, das `max_instances` des App-Moduls begrenzt. Um den Pool von seinem Standard von 4 pro Server anzuheben, für die 80 Anfragen, die eine Cloud-Run-Server gleichzeitig annimmt, füge `pool_max_conns` zu dem String hinzu, den der Dienst verwendet, zum Beispiel `postgres://...-pooler...neon.tech/neondb?sslmode=require&pool_max_conns=8`. Siehe [Warten auf eine Datenbankverbindung](running.md#waiting-for-a-database-connection).
-
-<!-- source: 3-copy-the-example-and-set-the-variables 3abe6b730543 -->
+<!-- source: 3-copy-the-example-and-set-the-variables 1b99f37cb3a7 -->
 ### 3. Das Beispiel kopieren und die Variablen setzen
 
 Beginne mit einer Kopie in einem leeren Verzeichnis, mit der Provider-Lock-Datei, aus dem Release, das du bereitstellst:
@@ -76,40 +75,38 @@ cd my-deployment
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-**Setze `ref` auf dieses Release.** Jeder Modulblock in `main.tf` nennt ein Release mit `?ref=`, was die Kopie eines stabilen Releases bereits richtig hat. Bei einem Prerelease setzt du es selbst: `sed -i "s/?ref=[^&]*/?ref=$VERSION/" main.tf`. Module gibt es erst ab dem ersten Release, das sie enthält, daher hat ein früheres Tag kein Beispiel zum Kopieren. Behalte dasselbe Release in `ref` und in `image`, und behalte dieses Verzeichnis: Es enthält deinen State und deine Einstellungen.
+`main.tf` ist der `google`-Provider und ein Block, `module "mycroblog"`. **Setze `ref` auf dieses Release.** Der Block nennt ein Release mit `?ref=`, was die Kopie eines stabilen Releases bereits richtig hat. Das Server-Image ist dasselbe Release, `ref` allein nennt also, was läuft. Bei einem Prerelease setzt du beides selbst: `sed -i "s/?ref=[^&]*/?ref=$VERSION/" main.tf` und `image = { version = "0.1.0-rc.4" }` im Block, die Version ohne ihr `v`, da das Modul eines Prereleases nicht von sich aus sein eigenes Image verwendet. Das Modul gibt es erst ab dem ersten Release, das es enthält, ein früherer Tag hat also kein Beispiel zum Kopieren. Behalte dieses Verzeichnis: Es enthält deinen State und deine Einstellungen.
 
-Fülle `terraform.tfvars` aus. `mail_from`, `mail_smtp_host`, `mail_smtp_port` (standardmäßig 587; Google Cloud blockiert den ausgehenden Port 25) und `mail_smtp_username` konfigurieren die [E-Mail](email.md). `env` und `secret_env` nehmen jede andere Einstellung aus der [Konfigurationsreferenz](../reference/configuration.md) entgegen, per Wert und per Secret-ID. Eine Einstellung, die an zwei Stellen genannt wird, lässt den Plan scheitern.
+Fülle `terraform.tfvars` aus. `mail_from`, `mail_smtp_host` und `mail_smtp_username` konfigurieren die [E-Mail](email.md); der Port ist 587, da Google Cloud den ausgehenden Port 25 blockiert. Um etwas anderes zu ändern, füge den Abschnitt zum Block in `main.tf` hinzu, etwa `ingress = { kind = "domain-mapping" }`: Jeder Abschnitt und was er ablehnt steht in [der README des Moduls](../../deploy/opentofu/README.md#sections).
 
-Um keine E-Mails zu versenden, entferne das `mail`-Modul und sein Secret aus `main.tf`, und `mail` bleibt `none`. Lies zuerst, [was das für Registrierungen bedeutet](production-checklist.md#email).
-
-Entscheide dich jetzt für [`account_domain`](../reference/configuration.md#account_domain), als `MY_ACCOUNT_DOMAIN` in `env`, wenn Handles eine andere Domain verwenden.
+`settings` nimmt jede andere Einstellung aus der [Konfigurationsreferenz](../reference/configuration.md) über ihren Schlüssel, und `secrets` die Schlüssel geheimer Einstellungen, von denen jede ein leeres Secret zum Befüllen bekommt. Ein Schlüssel, den ein Abschnitt oder das Modul setzt, lässt den Plan fehlschlagen, ebenso ein Schlüssel, den das Modul auf Cloud Run nicht annimmt, etwa `listen`; der Fehler sagt, warum. Entscheide dich jetzt für [`account_domain`](../reference/configuration.md#account_domain), als `settings = { account_domain = "example.org" }`, wenn Handles eine andere Domain verwenden.
 
 **Der State** bleibt standardmäßig in diesem Verzeichnis. Er enthält keine Secret-Werte, ist aber die einzige Aufzeichnung dessen, was angelegt wurde: Bewahre ihn in einem Bucket mit einem `backend "gcs"`-Block auf, wenn mehr als eine Person das hier ausführt.
 
-<!-- source: 4-create-the-secrets-and-add-their-values f94fd484e28f -->
+<!-- source: 4-create-the-secrets-and-add-their-values 51cddae33ec9 -->
 ### 4. Die Secrets anlegen und ihre Werte hinzufügen
 
 Das legt die Secrets an und generiert den KEK und den VAPID-Schlüssel:
 
 ```sh
 tofu init
-tofu apply -target=module.secrets -target=module.kek
+tofu apply -target=module.mycroblog.module.secrets -target=module.mycroblog.module.kek_secret_manager
 ```
 
-`tofu init` holt außerdem `upgrade.sh` und `console.sh` in diesem Release, die die nächsten Schritte verwenden:
+`tofu init` holt außerdem die Skripte dieses Releases: `migrate.sh`, das ein Apply ausführt, und `console.sh`, das ein späterer Schritt verwendet:
 
 ```sh
-SCRIPTS=.terraform/modules/app/deploy/opentofu
+SCRIPTS=.terraform/modules/mycroblog/deploy/opentofu
 ```
 
-**Kopiere den KEK jetzt** und bewahre die Kopie getrennt von der Datenbank auf, zum Beispiel in einem Passwortmanager. Ohne ihn lässt sich ein [Backup](backup.md) nicht wiederherstellen, und die Schlüssel der Konten gehen verloren. Tu dasselbe mit dem VAPID-Schlüssel, dessen Verlust jedes Web-Push-Abo beendet:
+**Kopiere den KEK jetzt** und bewahre die Kopie getrennt von der Datenbank auf, zum Beispiel in einem Passwortmanager. Ohne ihn lässt sich ein [Backup](backup.md) nicht wiederherstellen, und die Schlüssel der Konten gehen verloren. `tofu output kek` hat den Befehl. Tu dasselbe mit dem VAPID-Schlüssel, dessen Verlust jedes Web-Push-Abonnement beendet:
 
 ```sh
 gcloud secrets versions access latest --secret=my-kek --project="$PROJECT"
 gcloud secrets versions access latest --secret=my-vapid-key --project="$PROJECT"
 ```
 
-Füge dann die Werte hinzu, die von anderswo kommen. Eine Instanz, deren Secret sich nicht lesen lässt, startet nicht, also füge sie vor der App hinzu:
+Füge dann die Werte hinzu, die von anderswo kommen. `tofu output secrets_to_fill` listet jedes Secret auf, das das Modul leer angelegt hat, mit dem, was hineingehört, und dem Befehl, der es hinzufügt. Eine Instanz, deren Secret sich nicht lesen lässt, startet nicht, also füge sie vor dem Dienst hinzu:
 
 ```sh
 printf '%s' 'postgres://...' | gcloud secrets versions add my-database-url --project="$PROJECT" --data-file=- # the direct string
@@ -118,37 +115,23 @@ printf '%s' '<the SMTP password>' | gcloud secrets versions add my-smtp-password
 
 Der KEK erreicht den Server als eingebundene Datei, benannt durch `MY_KEK_FILE`. Die anderen sind Umgebungsvariablen, die beim Start einer Instanz aufgelöst werden, sodass eine neue Version bei der nächsten Instanz wirksam wird: Stelle eine neue Revision bereit, um sicherzugehen.
 
-**OpenTofu generiert den KEK einmal und nie wieder.** Das Secret und seine Version haben `prevent_destroy`, und die Versionsnummer, die einen neuen Wert schreiben würde, ist im Modul fest vorgegeben: Ändere sie nicht, denn ein neuer zufälliger KEK macht alles unlesbar, was der alte verschlüsselt hat. Zum Rotieren folge [Den KEK rotieren](key-management.md#rotate-the-kek) und füge den neuen Wert mit `gcloud secrets versions add` hinzu. OpenTofu verfolgt nicht, was du dort hinzufügst.
+**OpenTofu generiert den KEK einmal und nie wieder.** Das Secret und seine Version haben `prevent_destroy`, und die Versionsnummer, die einen neuen Wert schreiben würde, ist im Modul fest vorgegeben: Ein neuer zufälliger KEK macht alles unlesbar, was der alte verschlüsselt hat. Um ihn zu rotieren, folge [Den KEK rotieren](key-management.md#rotate-the-kek) und füge den neuen Wert mit `gcloud secrets versions add` hinzu. OpenTofu verfolgt nicht, was du dort hinzufügst.
 
-Um den KEK von Anfang an in Cloud KMS zu halten, ersetze den `kek`-Block in `main.tf`, wie sein Kommentar es zeigt, und aktiviere `cloudkms.googleapis.com`. Um einen eigenen KEK oder VAPID-Schlüssel mitzubringen, setze `create = false` am `kek`-Modul oder entferne den Schlüssel aus `generate_p256_keys`, vor diesem Schritt. Ein anderswo angelegtes Secret braucht nur seine ID: Gib sie an `secret_env` des App-Moduls oder an das Modul weiter, das es verwendet.
+Um den KEK von Anfang an in Cloud KMS zu halten, setze vor diesem Schritt `kek = { kind = "kms" }`, nimm `module.mycroblog.module.kek_kms` anstelle von `kek_secret_manager` als Ziel und aktiviere `cloudkms.googleapis.com`.
 
-<!-- source: 5-create-what-the-migration-needs 006a5b44f702 -->
-### 5. Erstelle, was die Migration braucht
-
-Der Startup-Probe des Dienstes wartet auf `/health/ready`, das mit `503` antwortet, bis das Schema existiert, daher muss das Schema zuerst kommen. Erstelle den Migrations-Job und das, wovon er abhängt, wozu die Adresse des Load Balancers gehört, da die Einstellungen des Servers sie nennen:
-
-```sh
-tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
-```
-
-<!-- source: 6-apply-the-schema 2946ca18d263 -->
-### 6. Das Schema anwenden
-
-```sh
-"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.1.0 --migrate-only
-```
-
-Es führt `my config check`, `my db upgrade -check`, `my schema apply` und `my db upgrade` aus, jeweils als Ausführung des Jobs, und hält beim ersten an, der scheitert. Der erste Befehl, der die Datenbank verwendet, trägt `host` und `account_domain` darin ein.
-
-<!-- source: 7-create-the-rest 368abac4aa08 -->
-### 7. Den Rest anlegen
+<!-- source: 5-apply 2076866c0f3b -->
+### 5. Anwenden
 
 ```sh
 tofu apply
 ```
 
-<!-- source: 8-point-the-domain-at-the-load-balancer 7e54edc163b2 -->
-### 8. Die Domain auf den Load Balancer zeigen lassen
+Das legt alles andere an, in einer Reihenfolge, die der Startup-Probe des Dienstes braucht: Der Probe wartet auf `/health/ready`, das mit `503` antwortet, bis das Schema existiert. Zuerst kommt der Migrations-Job, mit dem, wovon er abhängt, wozu die Adresse des Load Balancers gehört, da die Einstellungen des Servers sie nennen. Dann führt das Apply `my upgrade` als Ausführung des Jobs aus, von deinem Rechner über `gcloud`, und wartet darauf: `my config check`, `my db upgrade -check`, `my schema apply` und `my db upgrade`, was beim ersten anhält, der fehlschlägt. Seine Ausgabe erscheint in der des Apply. Der erste Befehl, der die Datenbank verwendet, trägt `host` und `account_domain` darin ein. Erst dann legt das Apply die Dienste an.
+
+Schlägt die Migration fehl, hält das Apply vor den Diensten an. Behebe die Ursache, oft ein Secret ohne Wert, und führe `tofu apply` erneut aus: Es führt die Migration erneut aus.
+
+<!-- source: 6-point-the-domain-at-the-load-balancer c81cc51be2af -->
+### 6. Die Domain auf den Load Balancer zeigen lassen
 
 `tofu output dns_records` listet einen `A`-Record auf, von `host` auf die Adresse des Load Balancers. Füge ihn bei deinem DNS-Anbieter hinzu. Hat dieser Anbieter einen eigenen Proxy, lass ihn für diesen Record ausgeschaltet.
 
@@ -156,8 +139,8 @@ Das Zertifikat wird von Google verwaltet und wird erst aktiv, wenn DNS auf die A
 
 Was du sonst noch wählen kannst, steht unter [Wie der Traffic den Dienst erreicht](#how-traffic-reaches-the-service).
 
-<!-- source: 9-create-the-first-administrator c5b03212fb36 -->
-### 9. Den ersten Administrator anlegen
+<!-- source: 7-create-the-first-administrator 19137d6d01f0 -->
+### 7. Den ersten Administrator anlegen
 
 Cloud-Run-Jobs haben kein Terminal und keine Standardeingabe, daher gibt `my admin create` einen Link aus, über den das Passwort gesetzt wird, statt eines zu lesen. Schalte die [Konsole](#the-console) ein und führe aus:
 
@@ -169,12 +152,12 @@ tofu apply -var console_enabled=false
 
 Öffne den Link sofort und setze das Passwort. Er funktioniert einmal, eine Stunde lang. **Bis dahin bleibt er in Cloud Logging**, wo ihn jeder verwenden kann, der die Logs des Projekts lesen darf. Läuft er ab, führe `my admin account password-reset-link @alice` über die Konsole aus. Schalte dann die Zwei-Faktor-Authentifizierung ein.
 
-<!-- source: 10-go-through-the-checklist 90add86e4288 -->
-### 10. Die Checkliste durchgehen
+<!-- source: 8-go-through-the-checklist e7fe33d10e80 -->
+### 8. Die Checkliste durchgehen
 
 Gehe die [Produktions-Checkliste](production-checklist.md) durch, beginnend mit der [E-Mail](production-checklist.md#email): SPF, DKIM und DMARC auf der Domain von `mail_from`.
 
-<!-- source: the-console 5aebf704c6d7 -->
+<!-- source: the-console 52df6f8c43ac -->
 ## Die Konsole
 
 Die Konsole führt einen `my`-Befehl mit dem Image, den Einstellungen und den Secrets des Dienstes aus. Sie existiert nur, solange `console_enabled` eingeschaltet ist, schalte sie also aus, wenn du fertig bist:
@@ -185,99 +168,124 @@ tofu output -json console | "$SCRIPTS/console.sh" instance set registration_mode
 tofu apply -var console_enabled=false
 ```
 
-`console.sh` wartet auf den Befehl, gibt seine Ausgabe und seinen Exit-Code aus und beendet sich mit diesem Code. Es braucht `roles/logging.viewer`, weil die Ausgabe eines Jobs in Cloud Logging landet. Es verwendet das Image, das der Dienst ausführt, was auch immer `image` sagt.
+`console.sh` wartet auf den Befehl, gibt seine Ausgabe und seinen Exit-Code aus und beendet sich mit diesem Code. Es braucht `roles/logging.viewer`, weil die Ausgabe eines Jobs in Cloud Logging landet. Es verwendet das Image, das der Dienst ausführt: Nach einem Upgrade, das bei der Migration anhielt, ist das das vorherige Release, zu dem die Datenbank noch passt.
 
 Der Befehl hat keine Standardeingabe und kein Terminal, daher lässt sich ein Befehl, der ein Passwort oder eine Datei von dort liest, so nicht ausführen. Was er ausgibt, bleibt in den Logs, führe also keinen Befehl aus, dessen Ausgabe du nicht dort hinschreiben würdest.
 
-<!-- source: upgrading 31acbd137681 -->
+<!-- source: upgrading fe1bed77d3af -->
 ## Upgrade
 
-Lies zuerst [Upgrade](database.md#upgrading) und die Release Notes und gehe jeweils eine Minor-Version weiter.
+Lies zuerst [Upgrade](database.md#upgrading) und die Release Notes und gehe jeweils eine Minor-Version weiter. Ein Upgrade ist ein Apply des neuen Releases: Der Plan zeigt jeden Dienst und jeden Job, der sein Image übernimmt, und das Apply führt die Migration aus, bevor einer von ihnen es ausliefert.
 
 ```sh
-# 1. Back up the database while nothing writes. Use pg_dump or a Neon branch (see Backup and restore).
-gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --update-env-vars=MY_MAINTENANCE=true
+# 1. Back up the database while nothing writes: see "The maintenance mode" below, and Backup and restore.
 pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
 
-# 2. Read the SQL it would run. This changes nothing but the image of the migration job.
-"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --plan
+# 2. Name the new release in main.tf, as ?ref=v0.2.0, and fetch it.
+tofu init
 
-# 3. Upgrade. These scripts are of the release your modules name, which is enough: they only run gcloud and my.
-"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --maintenance
+# 3. Read the plan, then apply it.
+tofu plan
+tofu apply
 ```
 
-Das Skript tut Folgendes und hält beim ersten Schritt an, der fehlschlägt:
+Das Image ist das Release, das `ref` nennt, die Änderung von `ref` ist also das ganze Upgrade. Lies den Plan, bevor du ihn anwendest: Das Modul eines neuen Releases kann auch Ressourcen ändern. Das Apply tut Folgendes und hält beim ersten Schritt an, der fehlschlägt:
 
-1. Schaltet den Dienst mit `--maintenance` in den [Wartungsmodus](maintenance.md).
-2. Gibt dem Migrations-Job das neue Image.
-3. Führt `my config check`, `my db upgrade -check`, `my schema apply` und `my db upgrade` aus, jeweils im Warten auf den vorigen.
-4. Stellt die neue Revision ohne Wartungsmodus bereit. Sie nimmt Traffic erst an, wenn ihr Startup-Probe auf `/health/ready` besteht.
+1. Gibt dem Migrations- und dem Konsolen-Job das neue Image, mit dem Rest des Plans, von dem die Dienste nicht abhängen.
+2. Führt `my upgrade` als Ausführung des Migrations-Jobs aus, von dort, wo du anwendest, und wartet darauf: `my config check`, `my db upgrade -check`, `my schema apply` und `my db upgrade`. Seine Ausgabe erscheint in der des Apply.
+3. Stellt die neue Revision jedes Workers bereit, dann die des Dienstes. Eine Revision nimmt Traffic erst an, wenn ihr Startup-Probe auf `/health/ready` besteht.
 
-Ohne `--maintenance` bedient die alte Revision während der Schritte 2 und 3 weiter, was [nicht garantiert funktioniert](database.md#the-server-during-an-upgrade). Füge `--allow-destructive` hinzu, wenn die Release Notes es verlangen. Hefte einen Digest mit `--image ghcr.io/mycroblog/my:0.2.0@sha256:...` an, was die [Produktions-Checkliste](production-checklist.md#operations) empfiehlt.
+**Dort, wo du anwendest**, braucht es `gcloud` und `jq` sowie Zugangsdaten, die den Job ausführen und seine Logs lesen dürfen (`roles/run.developer` und `roles/logging.viewer`, die Owner einschließt). Dasselbe gilt für einen CI-Job, der anwendet.
 
-Setze dann `image` in `terraform.tfvars` auf denselben Wert und `ref` in `main.tf` auf dasselbe Release, gefolgt von `tofu init` und `tofu plan`. Lies diesen Plan, bevor du ihn anwendest: Die Module eines neuen Releases können Ressourcen ändern. `tofu apply` ändert nie das Image eines Dienstes oder Jobs, der existiert, ein vergessenes `image` schadet also nicht, aber der Wert ist das, womit ein neuer Job oder ein neu erstellter Dienst starten würde.
+**Wenn ein Schritt fehlschlägt**, bleiben die Dienste auf ihren Revisionen, und die Release Notes oder die Ausgabe der Migration sagen, warum. Behebe die Ursache und führe `tofu apply` erneut aus, mit derselben Version: Es führt die Migration erneut aus, und die abgeschlossenen Schritte finden nichts mehr zu tun. Ein Apply, das unterbrochen wurde oder seine Verbindung verlor, lässt die Ausführung auf Cloud Run weiterlaufen; das nächste Apply wartet, bis sie endet, bevor es seine eigene startet. Um nach einer Schemaänderung zurückzugehen, stelle das Backup wieder her: siehe [Zurückgehen](database.md#rolling-back). Ein Apply mit einer früheren Version hält bei der Migration an, da dieses Release ein neueres Schema ablehnt, und ändert keinen Dienst.
 
-**Wenn ein Schritt fehlschlägt**, bleibt der Dienst auf seiner Revision, im Wartungsmodus, wenn du ihn verlangt hast. Behebe die Ursache und führe das Skript erneut aus: Die Schritte lassen sich gefahrlos wiederholen. So verlässt du den Wartungsmodus, ohne zu upgraden, solange `my schema apply` nicht gelaufen ist:
-
-```sh
-gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE
-```
-
-Um nach einer Schemaänderung zurückzugehen, stelle das Backup wieder her: siehe [Zurückgehen](database.md#rolling-back).
-
-<!-- source: monitoring-and-alerts 771c3c53cc30 -->
-## Monitoring und Alarme
-
-Das Modul [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) fügt eine Uptime-Prüfung von `/health/live`, Alarmrichtlinien mit den Namen aus [dem Runbook](alerts.md) und E-Mail-Benachrichtigungen hinzu. Es wurde noch nie angewendet, probiere es also einmal aus, indem du eine Prüfung fehlschlagen lässt. Aktiviere zuerst `monitoring.googleapis.com` und lies in seiner README, was die Prüfung kostet: Jeder Lauf weckt eine Instanz auf, und die Datenbank ebenfalls, wenn du sie auf `/health/ready` richtest, was zu [dem Zielkonflikt beim Tick](#costs) hinzukommt.
-
-<!-- source: changing-a-backend ef4660f60191 -->
-## Ein Backend wechseln
-
-Ersetze den Block des Moduls in `main.tf`. Das App-Modul nimmt, was der Block zurückgibt, daher ändert sich sonst nichts. Eine Datenbank zu wechseln heißt auch, ihre Daten zu verschieben, da eine neue leer ist: [`db-gcp-cloud-sql`](../../deploy/opentofu/modules/internal/db-gcp-cloud-sql/README.md#coming-from-db-external) hat die Schritte. Zum Beispiel eine eigene Datenbank:
+Um einen Release Candidate auszuprobieren oder das Image eines früheren Releases unter einem neueren Modul zu behalten, setze die Version selbst; es ist der Image-Tag, ohne das `v` des Releases:
 
 ```hcl
-module "db" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/db-external?ref=v0.1.0&depth=1"
-
-  url_secret_id = "another-database-url"
-}
+  image = { version = "0.2.0-rc.1" }
 ```
 
-Für einen Speicher außerhalb von Google Cloud ersetze den `blob`-Block durch [`blob-s3`](../../deploy/opentofu/modules/internal/blob-s3/README.md), für jeden S3-kompatiblen Dienst, oder [`blob-cloudflare-r2`](../../deploy/opentofu/modules/internal/blob-cloudflare-r2/README.md).
+<!-- source: checking-the-sql-first 9ff10080c36d -->
+### Das SQL zuerst prüfen
 
-<!-- source: when-you-need-a-network fb392704a1e7 -->
+Der Plan zeigt das SQL der Migration nicht. Um es vor dem Apply zu lesen, gib allein dem Migrations-Job das neue Image und führe darin `my upgrade -dry-run` aus, das nichts ändert:
+
+```sh
+tofu apply -target='module.mycroblog.module.app.google_cloud_run_v2_job.one_off["migrate"]'
+gcloud run jobs execute my-migrate --project="$PROJECT" --region=asia-northeast1 --args=upgrade,-dry-run --wait
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="my-migrate"' --project="$PROJECT" \
+  --freshness=1h --format='value(textPayload)' --order=asc
+```
+
+<!-- source: destructive-changes 5b3fdea90a55 -->
+### Zerstörerische Änderungen
+
+Wenn die Release Notes `-allow-destructive` verlangen, nenne diese Version im Block:
+
+```hcl
+  upgrade = { allow_destructive_for = "0.3.0" }
+```
+
+`my upgrade` bekommt `-allow-destructive` nur beim Apply dieser Version, sodass ein stehengebliebener Wert kein späteres Release Daten löschen lässt.
+
+<!-- source: pinning-the-image-by-digest b31962ecc908 -->
+### Das Image an einen Digest heften
+
+Die [Produktions-Checkliste](production-checklist.md#operations) empfiehlt einen Digest, aus den Release Notes:
+
+```hcl
+  image = { digest = "sha256:..." }
+```
+
+Ein Digest nennt genau ein Image, was auch immer der Tag daneben sagt, ändere ihn also in derselben Bearbeitung wie `ref`: Ein Digest, der vom vorigen Release übrig bleibt, behält das Image dieses Releases unter der neuen Version.
+
+<!-- source: the-maintenance-mode 518e9aa176c0 -->
+### Der Wartungsmodus
+
+Der [Wartungsmodus](maintenance.md) braucht drei Applies, da sich die Dienste vor dem Upgrade und danach ändern. Füge ihn zu den Einstellungen des Blocks hinzu und wende an, sichere die Datenbank, erhöhe `ref` und wende an, entferne ihn dann und wende an:
+
+```hcl
+  settings = { maintenance = "true" }
+```
+
+Ohne ihn bedient die alte Revision während der Migration weiter, was [nicht garantiert funktioniert](database.md#the-server-during-an-upgrade). Einstellungen, die von Hand mit `gcloud` geändert wurden, halten nicht: Das nächste Apply stellt wieder her, was der Block sagt.
+
+<!-- source: monitoring-and-alerts 930234cd0dde -->
+## Monitoring und Alarme
+
+Das Modul fügt eine Uptime-Prüfung von `/health/live`, logbasierte Metriken und Alarmrichtlinien mit den Namen aus [dem Runbook](alerts.md) hinzu, die die Adressen von `monitoring.notification_emails` (`alert_emails` im Beispiel) oder die Kanäle von `notification_channels` benachrichtigen. Die Eingabe hat keinen Standard: Nenne, wer benachrichtigt wird, oder setze `monitoring = null`, um alles wegzulassen. Es wurde noch nie angewendet, probiere es also einmal aus, indem du eine Prüfung fehlschlagen lässt. Jeder Lauf der Prüfung weckt eine Instanz auf, was zu [dem Zielkonflikt beim Tick](#costs) hinzukommt: `uptime_period`, standardmäßig 15 Minuten, ist, wie oft.
+
+<!-- source: changing-a-backend c20598caf230 -->
+## Ein Backend wechseln
+
+Ändere die `kind` seines Abschnitts. Jede Art setzt auf dem Server, was sie braucht, und der Plan sagt, was sich ändert. Eine Datenbank zu wechseln heißt auch, ihre Daten zu verschieben, da eine neue leer ist: Mache ein [Backup](backup.md) der alten und stelle es in der neuen wieder her, während nichts schreibt. Zum Beispiel Cloud SQL anstelle von Neon:
+
+```hcl
+  database = { kind = "cloud-sql" }
+```
+
+Für einen Speicher außerhalb von Google Cloud setze `media.kind` auf `s3`, für jeden S3-kompatiblen Dienst mit seinem `endpoint`, oder auf `r2`, mit `cloudflare.account_id`. Beide lesen einen Zugriffsschlüssel aus den Secrets, die `secrets_to_fill` auflistet.
+
+<!-- source: when-you-need-a-network 0a4359c002ed -->
 ## Wenn du ein Netzwerk brauchst
 
 Dieser Leitfaden braucht keines: Neon, Cloud Tasks, Cloud Storage und Pub/Sub werden alle über das Internet mit der eigenen Identität des Dienstes erreicht, sodass Cloud Run an nichts angebunden wird und es nichts zu bezahlen oder zu pflegen gibt.
 
-Du brauchst eines, um Memorystore in die Bereitstellung aufzunehmen, da es nur private Adressen hat, oder um Cloud SQL eine private Adresse anstelle seiner öffentlichen zu geben. Füge [`network-gcp-vpc`](../../deploy/opentofu/modules/internal/network-gcp-vpc/README.md) hinzu oder beschreibe ein vorhandenes VPC als Objekt [derselben Form](../../deploy/opentofu/README.md#the-network-on-google-cloud), und gib dasselbe an die App und an jedes Modul weiter, das es entgegennimmt:
+Du brauchst eines, um Memorystore in die Bereitstellung aufzunehmen, da es nur private Adressen hat, oder um Cloud SQL eine private Adresse anstelle seiner öffentlichen zu geben. `network = { kind = "vpc" }` legt eines an, und `network = { kind = "existing", ... }` bindet ein VPC an, das du hast und das du durch `network`, `subnetwork`, `private_services_range` und `memorystore_connection_policy` beschreibst:
 
 ```hcl
-module "network" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/network-gcp-vpc?ref=v0.1.0&depth=1"
-
-  project_id = var.project_id
-  region     = var.region
-}
-
-module "kv" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/kv-gcp-memorystore?ref=v0.1.0&depth=1"
-
-  project_id = var.project_id
-  region     = var.region
-  network    = module.network
-}
+  network = { kind = "vpc" }
+  kv      = { kind = "memorystore" }
 ```
 
-Gib der App ebenfalls `network = module.network` und füge `module.kv` zu ihren `backends` hinzu. Nur private Bereiche laufen durch das Netzwerk, daher erreicht der Dienst das Internet wie zuvor, ohne Cloud NAT. Ein Backend auf privaten Adressen mit einer App in einem anderen oder gar keinem Netzwerk lässt den Plan scheitern. Aktiviere zuerst die Service-Networking- und die Network-Connectivity-API sowie die Compute-Engine-API. Ein Netzwerk verlängert den Kaltstart einer Instanz: Lies [was das private Netzwerk hinzufügt](../../deploy/opentofu/modules/internal/kv-gcp-memorystore/README.md#what-the-private-network-adds).
+Nur private Bereiche laufen durch das Netzwerk, der Dienst erreicht das Internet also wie zuvor, ohne Cloud NAT. `nat = true` schickt stattdessen alles durch Cloud NAT, für eine statische Quelladresse. Aktiviere zuerst die APIs Service Networking und Network Connectivity sowie die Compute Engine API. Ein Netzwerk verlängert den Kaltstart einer Instanz, und Memorystore wird abgerechnet, während der Server im Leerlauf ist.
 
-<!-- source: splitting-jobs-into-workers ed661aede0a3 -->
+<!-- source: splitting-jobs-into-workers 831929244c6d -->
 ## Jobs auf Worker aufteilen
 
-Wenn eine Art von Job den Rest aufhält, gib ihr einen eigenen Dienst. Entscheide anhand der Metriken, was du aufteilst, wie [Worker nach Job-Typ aufteilen](running.md#splitting-workers-by-job-type) es beschreibt. Ein Wert geht an die Queue und an die App, und jede Queue, URL, Route und Einstellung ergibt sich aus seinen Schlüsseln, sodass du nichts davon schreibst:
+Wenn eine Art von Job den Rest aufhält, gib ihr einen eigenen Dienst. Entscheide anhand der Metriken, was du aufteilst, wie [Worker nach Job-Typ aufteilen](running.md#splitting-workers-by-job-type) es sagt. Ein Wert, `workers`, geht an den Dienst, die Queue und das Monitoring, und jede Queue, URL, Route und Einstellung ergibt sich aus seinen Schlüsseln, sodass du keine davon schreibst:
 
 ```hcl
-locals {
   workers = {
     delivery = {
       job_types     = ["federation.fanout", "federation.deliver"]
@@ -285,15 +293,13 @@ locals {
       concurrency   = 16
     }
   }
-}
 ```
 
-Setze `workers = local.workers` am `queue`-Block und am `app`-Block. Der Plan weist eine Aufteilung der Typen ab, die zusammenbleiben müssen, ebenso eine Queue und eine App mit unterschiedlichen Werten. Er braucht außerdem einen Broker, der jeden Prozess erreicht, was `stream-gcp-pubsub` ist. Derselbe Wert geht an `monitoring-gcp`, falls du es verwendest.
+Der Plan lehnt eine Aufteilung der Typen ab, die zusammenbleiben müssen. Er braucht außerdem einen Broker, der jeden Prozess erreicht, was `stream.kind = pubsub` ist.
 
-Die beiden gängigen Aufteilungen dieser Seite sehen so aus. Damit Auslieferungen den Rest nicht verzögern, nimm den Wert oben. Damit E-Mails und Benachrichtigungen schnell bleiben:
+Die zwei gängigen Aufteilungen dieser Seite sehen so aus. Damit Zustellungen den Rest nicht verzögern, nimm den Wert oben. Damit E-Mails und Benachrichtigungen schnell bleiben:
 
 ```hcl
-locals {
   workers = {
     notify = {
       job_types = [
@@ -306,51 +312,47 @@ locals {
       max_instances = 10
     }
   }
-}
 ```
 
-Lass die Typen von Einstellungen weg, die du nicht gesetzt hast, wie diese Seite es sagt: Ein Typ, den der Server nicht registriert hat, verhindert den Start, und der Plan kann nicht erkennen, welche das sind. Mit `workers` hilft der Standarddienst bei diesen Typen nicht, wenn er frei ist, da ihre Tasks in ihre eigene Queue gehen.
+Lass die Typen von Einstellungen weg, die du nicht gesetzt hast, wie diese Seite sagt: Ein Typ, den der Server nicht registriert hat, verhindert den Start, und der Plan kann nicht sehen, welche das sind. Mit `workers` hilft der Standarddienst bei diesen Typen nicht, wenn er frei ist, da ihre Tasks in ihre eigene Queue gehen.
 
-Jedes Feld und was ein Worker von der App hat, steht in [dem Vertrag](../../deploy/opentofu/README.md#workers). Der Dienst eines Workers nimmt keinen Traffic von außen an. `upgrade.sh` verschiebt jeden nach der Migration und vor dem Standarddienst, und ohne dass etwas es ihm sagt: Nur ein Schritt, der scheitert, hält es an. Jeder Worker kann bringen, was der Dienst kostet, und die Verbindungen seiner Serveren zählen gegen das Limit der Datenbank.
+Jeder Worker nimmt `job_types` sowie `min_instances`, `max_instances`, `cpu`, `memory_mib`, `concurrency`, `max_concurrent_dispatches` und `max_dispatches_per_second`, jeweils die des Dienstes oder der Queue, wo er sie nicht nennt. Der Dienst eines Workers nimmt keinen Traffic von außen an. Ein Upgrade verschiebt jeden nach der Migration und vor dem Standarddienst, und ohne dass etwas es ihm sagt: Nur ein Schritt, der fehlschlägt, hält es an. Jeder Worker kann bringen, was der Dienst kostet, und die Verbindungen seiner Instanzen zählen gegen das Limit der Datenbank.
 
-<!-- source: how-traffic-reaches-the-service d1e6d0ed195b -->
+<!-- source: how-traffic-reaches-the-service 156fc6f76743 -->
 ## Wie der Traffic den Dienst erreicht
 
-Das entscheidet der `ingress`-Block in `main.tf`. Das Beispiel nutzt den Load Balancer, der für die Produktion gedacht ist. Das Domain-Mapping steht daneben in einem Kommentar, um eine Bereitstellung günstig auszuprobieren: Zum Austauschen änderst du diesen Block und `service_ingress` des `app`-Blocks, und der Plan sagt, wenn die beiden nicht übereinstimmen.
+`ingress.kind` entscheidet das. Der Standard ist der Load Balancer, der für den Produktivbetrieb gedacht ist. Das Domain-Mapping dient dazu, eine Bereitstellung günstig auszuprobieren: Setze `ingress = { kind = "domain-mapping" }`.
 
-| | `ingress-gcp-load-balancer` (das Beispiel) | `ingress-gcp-domain-mapping` |
+| | `load-balancer` (der Standard) | `domain-mapping` |
 | --- | --- | --- |
-| Monatliche Gebühr | Etwa 18 $ für die Forwarding-Regeln, plus eine Gebühr pro GB. Prüfe die [Preisseite](https://cloud.google.com/vpc/network-pricing): Diese Zahl ließ sich dort nicht bestätigen | Keine |
-| Status | Von Google Cloud empfohlener Weg | Ein Preview-Feature, das Google Cloud wegen der Latenz nicht für die Produktion empfiehlt |
+| Monatliche Gebühr | Etwa 18 $ für die Weiterleitungsregeln, plus eine Gebühr pro GB. Prüfe die [Preisseite](https://cloud.google.com/vpc/network-pricing): Diese Zahl ließ sich dort nicht bestätigen | Keine |
+| Status | Der von Google Cloud empfohlene Weg | Eine Preview-Funktion, die Google Cloud wegen der Latenz nicht für den Produktivbetrieb empfiehlt |
 | Regionen | Alle | `asia-northeast1`, `us-central1` und einige weitere |
 | DNS | Ein `A`-Record, aus `tofu output dns_records` | Die Records, die dieselbe Ausgabe auflistet |
 | Zertifikat | Von Google verwaltet, aktiv, sobald DNS auf die Adresse zeigt | Von Google verwaltet, bis zu 24 Stunden |
-| Domain-Inhaberschaft | Nichts über DNS hinaus | Du und jedes andere Konto, das sie anwendet, müsst vor dem Anwenden ein [verifizierter Inhaber](https://cloud.google.com/run/docs/mapping-custom-domains) sein |
-| `run.app`-URL | Aus dem Internet abgewiesen, sodass niemand den Load Balancer umgeht | Für jeden erreichbar: Ein Domain-Mapping kann keinen Header hinzufügen, daher bleibt der Origin offen |
+| Domain-Inhaberschaft | Nichts außer DNS | Du und jedes andere Konto, das anwendet, müsst vor dem Apply ein [verifizierter Inhaber](https://cloud.google.com/run/docs/mapping-custom-domains) sein |
+| `run.app`-URL | Aus dem Internet abgewiesen, sodass niemand den Load Balancer umgeht | Für jeden erreichbar: Ein Domain-Mapping kann keinen Header hinzufügen, der Origin bleibt also offen |
 | `MY_TRUSTED_PROXIES` | `169.254.0.0/16` und die Adresse des Load Balancers | `169.254.0.0/16` |
-| `service_ingress` des `app`-Blocks | `internal-and-load-balancer`. Eine Abweichung vom `ingress`-Block lässt den Plan scheitern | `all` |
 
-Cloud Tasks und Cloud Scheduler kommen über keinen von beiden: Sie rufen die Standard-`run.app`-URL direkt auf.
+Cloud Tasks und Cloud Scheduler kommen über keines von beiden: Sie rufen die Standard-`run.app`-URL direkt auf.
 
-Um die eigene URL des Dienstes oder etwas anderes davor zu verwenden, etwa ein CDN, entferne den `ingress`-Block und seine Zeile in `backends` und lass `service_ingress` bei dem, was du brauchst: Es ist immer deine ausdrückliche Wahl, und `all` lässt die `run.app`-URL für jeden offen. Setze `MY_TRUSTED_PROXIES` in `env` auf das, was sich mit dem Server verbindet. Was auch immer du davorsetzt, muss weiterhin unter `https://{host}` antworten.
-
-<!-- source: cloudflare eac845a03464 -->
+<!-- source: cloudflare e55e367a0064 -->
 ### Cloudflare
 
-`ingress-cloudflare-app` stellt Cloudflare vor `host`, wobei der Cache für alles umgangen wird, und `ingress-cloudflare-media` fügt neben jedem Ingress einen zwischengespeicherten Medien-Host hinzu. Lies zuerst die README jedes Moduls ([app](../../deploy/opentofu/modules/internal/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/internal/ingress-cloudflare-media/README.md)). Das Token kommt in `CLOUDFLARE_API_TOKEN`. Diese Module sind nur mit gemockten Providern gelaufen.
+`ingress = { kind = "cloudflare" }` stellt Cloudflare vor `host`, wobei der Cache für alles umgangen wird, und `ingress.media_host` fügt neben jeder Art einen gecachten Medien-Host hinzu. Beide brauchen `cloudflare = { zone_id = "..." }`, und das Token kommt in `CLOUDFLARE_API_TOKEN`. Sie sind nur auf gemockten Providern gelaufen.
 
-- **Dein Tarif bestimmt den Origin.** Cloud Run routet nach `Host`, und Cloudflare bietet das Überschreiben des Host-Headers nur im Enterprise-Tarif an. Bei jedem anderen Tarif scheitert ein `*.run.app`-Origin am Plan, daher muss der Origin deinen Host selbst akzeptieren: Behalte ein `ingress-gcp-domain-mapping` dieses Hosts, außerhalb von `backends`, und setze `origin_host = "ghs.googlehosted.com"`. Jeder Host braucht ein eigenes Mapping. Ob sein Zertifikat hinter dem Proxy ausgestellt und erneuert wird, ist ungeprüft, beginne also mit `proxied = false`.
-- **Ein Header schließt den Origin.** `ingress-cloudflare-app` fügt eine Transform Rule für Anfrage-Header hinzu, und der Server lehnt eine Anfrage ohne den Header mit `403` ab, abgesehen von Health-Checks und den eigenen `POST`s der Jobs, die ihre Tokens prüfen. So geht niemand über die `run.app`-URL an Cloudflare vorbei, und ein eigener Cloudflare Worker eines Aufrufers kann die Client-Adresse, die die Ratenlimits sehen, nicht wählen.
-- **Der Wert landet im State.** Der Cloudflare-Provider hat keine Write-only-Form für den Header-Wert einer Regel. Erzeuge einen mit `openssl rand -hex 32`, füge ihn mit `gcloud secrets versions add` einem Secret hinzu, übergib denselben Wert mit `TF_VAR_origin_secret` und halte den State privat. [Die CDN-Anleitung](cdn.md#rotate-the-value) beschreibt, wie du ihn rotierst.
-- **Nichts fügt den Header hinzu, solange ein Record nicht geproxyt ist**, daher lehnt der Server alles außer seinen Health-Checks ab: Richte das Secret bei `proxied = false` für das Zertifikat eines Domain-Mappings erst danach ein.
-- **Schalte Bot Fight Mode aus** im Dashboard. Er gilt für die ganze Zone, und keine Regel kann ihn überspringen, und eine Challenge auf `/ap/`, `/.well-known/` oder `/api/` bricht die Föderation, weil andere Server keine Browser sind. Jobs kommen nicht über Cloudflare. Die Module fügen keine Challenge hinzu und schalten Browser Integrity Check aus, verwalten aber Bot Fight Mode nicht. Schalte aus demselben Grund „I'm Under Attack“ nicht ein.
-- **Email Address Obfuscation kann eingeschaltet bleiben.** Sie schreibt E-Mail-Adressen in HTML in `[email protected]` um und fügt ein Skript hinzu, das sie wiederherstellt, was die Content-Security-Policy des Servers ablehnt. Die eigenen Seiten des Servers, etwa die, die sagt, wohin die Bestätigungs-E-Mail ging, markieren ihren Inhalt so, dass die Adressen in Ruhe gelassen werden.
-- **Schalte Always Use HTTPS ein** im Dashboard, wenn du `http://` umleiten willst. Es gilt für die ganze Zone, daher überlassen die Module es dir.
-- **Timeouts**: Cloudflare antwortet mit `524`, wenn der Origin 125 Sekunden lang nichts sendet. Jobs sind nicht betroffen, da sie die `run.app`-URL direkt aufrufen. Streams senden alle 30 Sekunden einen Heartbeat, unter dem Leerlauf-Limit von 900 Sekunden. Ob es Streams auf einem gewöhnlichen geproxyten Host puffert, ist ungeprüft.
+- **Dein Tarif entscheidet den Origin.** Cloud Run routet nach `Host`, und Cloudflare bietet die Überschreibung des Host-Headers nur im Enterprise-Tarif an. Bei jedem anderen Tarif muss der Origin deinen Host selbst annehmen, daher legt das Modul ein Domain-Mapping jedes Hosts an, mit den Abstrichen der Tabelle oben, und Cloudflare verbindet sich damit. Ob sein Zertifikat hinter dem Proxy ausgestellt und erneuert wird, ist ungeprüft, beginne also mit `cloudflare.proxied = false`. Im Enterprise-Tarif verbindet `cloudflare.host_header_override = true` stattdessen mit der `run.app`-URL, ohne Domain-Mapping.
+- **Ein Header schließt den Origin.** Das Modul fügt eine Transformationsregel für Anfrage-Header hinzu, und der Server weist eine Anfrage ohne den Header mit `403` ab, abgesehen von Health-Checks und den eigenen `POST`s der Jobs, die ihre Tokens prüfen. So umgeht niemand Cloudflare über die `run.app`-URL, und ein eigener Cloudflare Worker eines Aufrufers kann nicht die Client-Adresse wählen, die die Ratenbegrenzungen sehen.
+- **Der Wert landet im State.** Das Modul generiert ihn und schreibt ihn in das Secret `my-origin-secret`, aber der Cloudflare-Provider hat keine Write-only-Form für den Header-Wert einer Regel, halte den State also privat. [Der CDN-Leitfaden](cdn.md#rotate-the-value) erklärt, wie die Rotation funktioniert.
+- **Nichts fügt den Header hinzu, solange ein Record nicht geproxyt ist**, sodass der Server alles außer seinen Health-Checks abweist: Schalte bei `proxied = false` für das Zertifikat eines Domain-Mappings den Proxy ein, sobald das Zertifikat aktiv ist.
+- **Schalte Bot Fight Mode aus** im Dashboard. Er gilt für die ganze Zone, und keine Regel kann ihn überspringen, und eine Challenge auf `/ap/`, `/.well-known/` oder `/api/` bricht die Föderation, da andere Server keine Browser sind. Jobs laufen nicht über Cloudflare. Das Modul fügt keine Challenge hinzu und schaltet Browser Integrity Check aus, verwaltet aber Bot Fight Mode nicht. Schalte aus demselben Grund „I'm Under Attack“ nicht ein.
+- **Email Address Obfuscation kann eingeschaltet bleiben.** Es schreibt E-Mail-Adressen im HTML in `[email protected]` um und fügt ein Skript hinzu, das sie wiederherstellt, was die Content-Security-Policy des Servers ablehnt. Die eigenen Seiten des Servers, etwa die, die sagt, wohin die Bestätigungs-E-Mail ging, markieren ihren Inhalt so, dass er die Adressen in Ruhe lässt.
+- **Schalte Always Use HTTPS ein** im Dashboard, wenn du `http://` umleiten willst. Es gilt für die ganze Zone, daher überlässt das Modul es dir.
+- **Timeouts**: Cloudflare antwortet mit `524`, wenn der Origin 125 Sekunden lang nichts sendet. Jobs sind nicht betroffen, da sie die `run.app`-URL direkt aufrufen. Streams senden alle 30 Sekunden einen Heartbeat, unter dem Leerlauflimit von 900 Sekunden. Ob es Streams auf einem gewöhnlichen geproxyten Host puffert, ist ungeprüft.
 - **Uploads**: 100 MB bei Free und Pro, über den 32 MiB von Cloud Run, die das Limit bleiben.
-- **Video**: Die Bedingungen von Cloudflare beschränken die Auslieferung von Video und eines unverhältnismäßig großen Anteils großer Dateien bei Free, Pro und Business, und es kann den Inhalt umleiten oder andere Maßnahmen ergreifen. Entscheide das, bevor du Video auf dem Medien-Host zwischenspeicherst.
+- **Video**: Die Bedingungen von Cloudflare schränken das Ausliefern von Video und einen unverhältnismäßig hohen Anteil großer Dateien bei Free, Pro und Business ein, und es kann den Inhalt umleiten oder andere Maßnahmen ergreifen. Entscheide das, bevor du Video auf dem Medien-Host cachst.
 
-**Eine gelöschte Datei bleibt zwischengespeichert.** Der Medien-Host folgt dem `Cache-Control` des Servers, sodass eine gelöschte lokale Datei bis zu einem Jahr sichtbar bleiben kann und eine entfernte für `remote_media_cache_ttl_seconds`. Der Server leert sie nicht. Wenn etwas verschwinden muss, leere sie von Hand, im Dashboard unter **Caching > Configuration > Custom Purge**, oder:
+**Eine gelöschte Datei bleibt im Cache.** Der Medien-Host folgt dem `Cache-Control` des Servers, sodass eine gelöschte lokale Datei bis zu einem Jahr sichtbar bleiben kann und eine entfernte für `remote_media_cache_ttl_seconds`. Der Server leert sie nicht. Wenn etwas verschwinden muss, leere sie von Hand, unter **Caching > Configuration > Custom Purge** im Dashboard, oder:
 
 ```sh
 curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
@@ -359,26 +361,26 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
   -d '{"files": ["https://media.example.org/media/<path>"]}'
 ```
 
-Eine Proxy-URL trägt ihr `sig` im Query-String, der zu dem gehört, was zwischengespeichert wird, gib also die ganze URL an.
+Eine Proxy-URL trägt ihr `sig` in der Query-Zeichenfolge, die zu dem gehört, was gecacht wird, gib also die ganze URL an.
 
-<!-- source: changing-the-kek-backend c5e918ea5c81 -->
+<!-- source: changing-the-kek-backend b1e8cbb9ccfb -->
 ## Das KEK-Backend wechseln
 
-Den `kek`-Block zu ersetzen ist ein Block in `main.tf`, aber bei einem Server mit Daten ist es nicht umsonst. Die Datenbank enthält Secrets, die mit dem aktuellen Schlüssel umhüllt sind, sodass ein Server, der ihn verliert, sie nicht mehr lesen kann, und die Schlüssel jedes Kontos gehören dazu.
+`kek.kind` zu ändern ist eine Zeile in `main.tf`, aber bei einer Instanz mit Daten ist es nicht umsonst. Die Datenbank enthält Secrets, die mit dem aktuellen Schlüssel verpackt sind, sodass eine Instanz, die ihn verliert, sie nicht mehr lesen kann, und die Schlüssel jedes Kontos gehören dazu.
 
-Folge [Zwischen dem lokalen KEK und einem KMS wechseln](key-management.md#move-between-the-local-kek-and-a-kms). Vom Secret zu Cloud KMS behältst du den aktuellen KEK als `kek_previous`, während die Secrets umziehen, indem du sein Secret über das App-Modul weitergibst, mit `secret_files = { MY_KEK_PREVIOUS_FILE = "my-kek" }`; führe `my kek rewrap` über [die Konsole](#the-console) aus und entferne ihn dann, wenn `my kek status` keine `local:`-Schlüssel mehr zählt. Behalte den KEK so lange, wie du Datenbank-Backups von vor dem Rewrap aufbewahrst.
+Folge [Zwischen dem lokalen KEK und einem KMS wechseln](key-management.md#move-between-the-local-kek-and-a-kms). Vom Secret zu Cloud KMS behalte den aktuellen KEK als `kek_previous`, während die Secrets umziehen: Füge `secrets = ["kek_previous"]` hinzu und befülle das Secret `my-kek-previous` mit dem aktuellen KEK. Führe `my kek rewrap` über [die Konsole](#the-console) aus und entferne ihn dann, wenn `my kek status` keine `local:`-Schlüssel mehr zählt. Behalte den KEK, solange du Datenbank-Backups von vor dem Rewrap behältst.
 
-Auf einer neuen Server ohne Daten muss nichts umziehen.
+Auf einer neuen Instanz ohne Daten muss nichts umziehen.
 
-<!-- source: limits 5bd276dd3a89 -->
+<!-- source: limits 3ff113a57279 -->
 ## Limits
 
-- **Uploads**: Cloud Run weist eine HTTP/1-Anfrage über 32 MiB ab, und der Server spricht HTTP/1.1. Das Beispiel setzt daher `MY_MEDIA_MAX_AV_BYTES` auf 30 MiB, gegenüber dem Standard von 100 MiB, damit ein größerer Upload die eigene Antwort des Servers bekommt.
+- **Uploads**: Cloud Run weist eine HTTP/1-Anfrage über 32 MiB ab, und der Server spricht HTTP/1.1. Das Modul setzt daher `MY_MEDIA_MAX_AV_BYTES` auf 30 MiB, gegenüber dem Standard von 100 MiB, damit ein größerer Upload die eigene Antwort des Servers bekommt.
 - **Streams**: Das Request-Timeout, standardmäßig 15 Minuten, beendet einen offenen Stream, und der Client verbindet sich erneut.
-- **Client-Adressen**: Die Ratenbegrenzungen stützen sich auf `MY_TRUSTED_PROXIES`, das das App-Modul aus dem setzt, was das `ingress`-Modul zurückgibt. Kein Dokument, das wir gelesen haben, sagt, was Cloud Run bei einer direkten Anfrage zu `X-Forwarded-For` hinzufügt oder welche Peer-Adresse ein Container sieht, und der Container-Vertrag sagt zu beidem nichts, daher ist `169.254.0.0/16` eine Annahme. Die dokumentierte Form des externen Load Balancers ist `[<supplied>,]<client-ip>,<lb-ip>`. Prüfe die Adressen in den ersten Request-Logs: Eine Client-IP, die eine `169.254`-Adresse oder eine Google-Adresse ist, bedeutet, dass die Einstellung für dein Projekt falsch ist.
+- **Client-Adressen**: Die Ratenbegrenzungen stützen sich auf `MY_TRUSTED_PROXIES`, das das Modul aus dem Ingress setzt. Kein Dokument, das wir gelesen haben, sagt, was Cloud Run bei einer direkten Anfrage zu `X-Forwarded-For` hinzufügt oder welche Peer-Adresse ein Container sieht, und der Container-Vertrag sagt zu beidem nichts, daher ist `169.254.0.0/16` eine Annahme. Die dokumentierte Form des externen Load Balancers ist `[<supplied>,]<client-ip>,<lb-ip>`. Prüfe die Adressen in den ersten Request-Logs: Eine Client-IP, die eine `169.254`-Adresse oder eine Google-Adresse ist, bedeutet, dass die Einstellung für dein Projekt falsch ist.
 - **Öffentlicher Zugriff**: Der Dienst gewährt `roles/run.invoker` an `allUsers`, was eine Organisationsrichtlinie zur domänenbeschränkten Freigabe abweist. Ein solches Projekt braucht eine Ausnahme.
 
-<!-- source: costs 1ab8d07f6847 -->
+<!-- source: costs b8be3997d723 -->
 ## Kosten
 
 Ein Server kostet Geld. Diese Zahlen sind ein Anhaltspunkt dafür, was dich erwartet und wo Sorgfalt sie senkt, keine Grenzen, an die sich die Bereitstellung hält. Es sind ungefähre Listenpreise für eine Region, von 2026-10 und 2026-11. Prüfe sie auf den Preisseiten von [Cloud Run](https://cloud.google.com/run/pricing) und [Neon](https://neon.com/pricing). Compute ist pro Rechnungskonto bis zu 180.000 vCPU-Sekunden und 360.000 GiB-Sekunden im Monat kostenlos.
@@ -386,7 +388,7 @@ Ein Server kostet Geld. Diese Zahlen sind ein Anhaltspunkt dafür, was dich erwa
 | Teil | Leerlauf | Was dazukommt |
 | --- | --- | --- |
 | Load Balancer | Etwa 18 $ im Monat, auf der Preisseite nicht bestätigt | Eine Gebühr pro GB; siehe [Wie der Traffic den Dienst erreicht](#how-traffic-reaches-the-service) |
-| Neon, im Launch-Tarif | Etwa 19 $ im Monat, mit dem Standard-Tick | Speicher zu 0,35 $ pro GB-Monat. `db-gcp-cloud-sql` hat stattdessen feste Kosten von etwa 9,40 $ im Monat, für eine kleinere Maschine: Seine README hat die Aufschlüsselung |
+| Neon, im Launch-Tarif | Etwa 19 $ im Monat, mit dem Standard-Tick | Speicher zu 0,35 $ pro GB-Monat. `database.kind = cloud-sql` hat stattdessen feste Kosten von etwa 9,40 $ im Monat, für eine kleinere Maschine |
 | Cloud Run | 0 $: min instances ist 0, und die CPU wird nur während Anfragen abgerechnet | Jeder offene Stream hält eine Instanz in Rechnung; siehe unten |
 | Cloud Tasks | 0 $ | 1 Million Operationen frei, danach 0,40 $ pro Million. Ein Job braucht etwa 2 |
 | Cloud Scheduler | 0 $: 3 Jobs frei pro Rechnungskonto | 0,10 $ pro Job darüber |
@@ -396,13 +398,13 @@ Ein Server kostet Geld. Diese Zahlen sind ein Anhaltspunkt dafür, was dich erwa
 
 **Der Tick hält Neon wach.** Jeder Tick liest und schreibt die Datenbank, und Neon stoppt eine Compute-Instanz erst nach 5 Minuten ohne Aktivität, daher stoppt sie mit dem Standard `* * * * *` nie. Das sind 730 Stunden im Monat oder 182,5 CU-Stunden bei 0,25 CU, was die 19 $ oben ergibt. Der Tick bleibt bei jeder Minute, damit periodische Jobs pünktlich laufen und ein verlorenes Weck-Signal bald wieder aufgeholt wird.
 
-**Ein offener Stream hält eine Instanz in Rechnung.** Bei Abrechnung nach Anfragen wird eine Instanz abgerechnet, solange sie irgendeine Anfrage bearbeitet, und die Echtzeit-Aktualisierungen sind eine lange Anfrage. Ein Client, der seinen Stream den ganzen Monat offen hält, kostet eine Instanz rund um die Uhr: etwa 60 $ im Monat bei 1 vCPU und 512 MiB, nach dem Freikontingent. Mehr Streams teilen sich die Server, bis `concurrency`. Wenn Streams die meiste Zeit offen bleiben, vergleiche mit der Abrechnung nach Serveren oder mit einer kleinen VM und [Docker Compose](deploy-docker-compose.md).
+**Ein offener Stream hält eine Instanz in Rechnung.** Bei Abrechnung nach Anfragen wird eine Instanz abgerechnet, solange sie irgendeine Anfrage bearbeitet, und die Echtzeit-Aktualisierungen sind eine lange Anfrage. Ein Client, der seinen Stream den ganzen Monat offen hält, kostet eine Instanz rund um die Uhr: etwa 60 $ im Monat bei 1 vCPU und 512 MiB, nach dem Freikontingent. Mehr Streams teilen sich die Instanz, bis `concurrency`. Wenn Streams die meiste Zeit offen bleiben, vergleiche mit der Abrechnung nach Instanzen oder mit einer kleinen VM und [Docker Compose](deploy-docker-compose.md).
 
-<!-- source: where-care-reduces-it 5711f378aadb -->
+<!-- source: where-care-reduces-it 28bfc2e5ffcc -->
 ### Wo Sorgfalt die Kosten senkt
 
-- **Das Domain-Mapping** anstelle des Load Balancers nimmt die 18 $ weg, mit [den Abstrichen oben](#how-traffic-reaches-the-service). Es eignet sich, um eine Bereitstellung auszuprobieren.
-- **Der Free-Tarif von Neon** nimmt die 19 $ weg, und ein kleiner Server kann darauf laufen, mit diesen Abstrichen:
-  - Er erlaubt 100 CU-Stunden im Monat, die der Standard-Tick nach etwa 17 Tagen aufbraucht. Bleib darin mit einem längeren Zeitplan, etwa `tick_schedule = "*/10 * * * *"`: höchstens die Hälfte der Zeit wach, etwa 91 CU-Stunden, bevor irgendetwas anderes sie weckt. Periodische Jobs laufen dann bis zu 10 Minuten zu spät, und ein verlorenes Weck-Signal wird später aufgeholt.
-  - Ein föderierter Server empfängt rund um die Uhr Auslieferungen, die auch die Datenbank wecken, sodass ein ausgelasteter Server ihm unabhängig vom Zeitplan entwächst.
-  - Er fasst 1 GB pro Projekt und einen 6-Stunden-Verlauf zum Wiederherstellen, und seine Compute-Instanz stoppt nach 5 Minuten Leerlauf immer, sodass die erste Anfrage danach auf sie wartet.
+- **Das Domain-Mapping** anstelle des Load Balancers nimmt die 18 $ weg, mit [den Abstrichen oben](#how-traffic-reaches-the-service). Es eignet sich zum Ausprobieren einer Bereitstellung.
+- **Der Free-Tarif von Neon** nimmt die 19 $ weg, und eine kleine Instanz kann darauf laufen, mit diesen Abstrichen:
+  - Er erlaubt 100 CU-Stunden im Monat, die der Standard-Tick nach etwa 17 Tagen verbraucht. Bleibe darunter mit einem längeren Zeitplan, etwa `queue = { tick_schedule = "*/10 * * * *" }`: höchstens die halbe Zeit wach, etwa 91 CU-Stunden, bevor irgendetwas anderes sie weckt. Periodische Jobs laufen dann bis zu 10 Minuten zu spät, und ein verlorenes Weck-Signal wird später aufgeholt.
+  - Ein föderierter Server empfängt rund um die Uhr Zustellungen, die auch die Datenbank wecken, sodass eine ausgelastete Instanz ihn unabhängig vom Zeitplan überschreitet.
+  - Er fasst 1 GB pro Projekt und einen 6-Stunden-Verlauf zum Wiederherstellen, und seine Compute-Instanz stoppt immer nach 5 Minuten Leerlauf, sodass die erste Anfrage danach auf sie wartet.

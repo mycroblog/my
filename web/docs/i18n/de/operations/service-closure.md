@@ -1,9 +1,12 @@
-<!-- source: closing-the-service 30c438995ba1 -->
-# Den Dienst einstellen
+<!-- source: closing-the-service cf650f5a468f -->
+# Den Dienst schließen
 
-Was du der Reihe nach tust, wenn du den Betrieb des Servers beendest: Nutzer ihre Daten mitnehmen lassen, die Konten löschen, die auf anderen Servern bestehen bleiben,
-dann den Server stoppen und auf eine statische Abschlussseite umstellen.
-Jeder Befehl ist ausführlicher in [Administratoren und Rollen](admin-cli.md#announcing-the-end-of-the-service) beschrieben.
+Was du der Reihe nach tust, wenn du den Server nicht mehr betreibst: Nutzern erlauben, ihre Daten mitzunehmen, die Konten löschen, die auf anderen Servern übrig bleiben,
+dann den Server anhalten und auf eine statische Abschlussseite umschalten.
+Jeder Befehl ist ausführlicher unter [Administratoren und Rollen](admin-cli.md#announcing-the-end-of-the-service) beschrieben.
+Im Web-Client erledigt **Administration > Server schließen** dasselbe für alle mit `manage_service_closure`: Es kündigt die
+Schließung an, ändert ihre Termine oder zieht sie zurück; sobald das Schließdatum verstrichen ist, zeigt **Prüfen und schließen**, was `check` zeigt,
+und schließt den Server, nachdem du seine Domain eingetippt hast; danach zeigt es den Zustellfortschritt, den `status` zeigt.
 
 <!-- source: the-sequence 4557c35b6851 -->
 ## Der Ablauf
@@ -103,37 +106,37 @@ Auch nach Abschluss der Zustellung läuft der Server geschlossen bis `export_unt
 Der Server löscht nie von selbst Daten, er läuft also über die Frist hinaus weiter, bis du ihn stoppst.
 Wenn du die Datensätze unter Aufbewahrungssperren (§3) noch nicht exportiert hast, tu es jetzt.
 
-<!-- source: 6-switching-to-the-static-page 9795c9aea7ae -->
-## 6. Auf die statische Seite umstellen
+<!-- source: 6-switching-to-the-static-page e1102fb5f56f -->
+## 6. Auf die statische Seite umschalten
 
-Exportiere nach der Export-Frist die Abschlussseite. **Das liest die DB, führe es also aus, bevor du `my serve` stoppst und die DB verwirfst.**
+Exportiere nach Ablauf der Export-Frist die Abschlussseite. **Das liest die Datenbank, führe es also aus, bevor du `my serve` anhältst und die Datenbank verwirfst.**
 
 ```sh
 my admin closure export-html -out ./closure             # all locales; index.html starts from the instance's default locale
 my admin closure export-html -out ./closure -lang ja,en # set the locales and the order in index.html
 ```
 
-- Was es schreibt:
-  - `<dir>/<locale>.html` und `<dir>/index.html`, die alle Locales der Reihe nach auflistet. Sie verwenden dieselbe Vorlage und dasselbe CSS wie die Wartungsseite (`my maintenance export`) und zeigen
-    den Servernamen (`maintenance_server_name`, sonst den Servernamen, sonst den Hostnamen), das Abschlussdatum, die Nachricht des Betreibers aus der Ankündigung und einen Link zur Statusseite (`status_page_url`).
-    Das CSS ist nur inline, es gibt keine Skripte oder externen Ressourcen, und die CSP steht in einem `<meta>`-Tag. Überschreibungen der Themenfarben sind eingebaut.
-  - Beispiele für die Front-End-Konfiguration `nginx.conf`, `Caddyfile` und `cloudfront-function.js`. Jedes gibt `410` ohne Body für die Pfade der Föderation und der Discovery (`/ap/*`, `/inbox`, `/.well-known/webfinger`,
-    `/.well-known/host-meta`, `/.well-known/host-meta.json`, `/.well-known/nodeinfo`, `/nodeinfo/*`) und für Profile (`/@*`) zurück,
-    und liefert für jeden anderen Pfad die Seite der ersten Sprache in `Accept-Language` (oder `index.html`, wenn es keine gibt).
+- Was er schreibt:
+  - `<dir>/<locale>.html` und `<dir>/index.html`, die alle Sprachen der Reihe nach auflistet. Sie verwenden dieselbe Vorlage und dasselbe CSS wie die Wartungsseite (`my maintenance export`) und zeigen
+    den Servernamen (`maintenance_server_name`, sonst den Instanznamen, sonst den Hostnamen), das Schließdatum, die Nachricht des Betreibers aus der Ankündigung und einen Link zur Statusseite (`status_page_url`).
+    Das CSS ist nur inline, es gibt keine Skripte oder externen Ressourcen, und die CSP steht in einem `<meta>`-Tag. Die Farbüberschreibungen des veröffentlichten Designs sind eingebaut.
+  - Konfigurationsbeispiele für das Frontend: `nginx.conf`, `Caddyfile` und `cloudfront-function.js`. Jedes liefert `410` ohne Body für die Föderations- und Discovery-Pfade (`/ap/*`, `/inbox`, `/.well-known/webfinger`,
+    `/.well-known/host-meta`, `/.well-known/host-meta.json`, `/.well-known/nodeinfo`, `/nodeinfo/*`) und für Profile (`/@*`),
+    und für jeden anderen Pfad die Seite der ersten Sprache in `Accept-Language` (oder `index.html`, wenn es keine gibt).
     Eine Sprache erreicht die Seite der Locale, in der die App sie anzeigen würde: `zh`, `zh-SG` und `zh-Hans` erhalten `zh-CN.html`, und `zh-Hant`, `zh-HK` und `zh-MO` erhalten `zh-TW.html`.
-- Der Befehl lehnt ab, wenn der Server nicht geschlossen ist (Exit-Code 1). Vor `delivery_completed` warnt er, dass Zustellungen weiterlaufen (und schreibt die Dateien trotzdem).
+- Der Befehl verweigert, wenn der Server nicht geschlossen ist (Exit-Code 1). Vor `delivery_completed` warnt er, dass Zustellungen weiterlaufen (und schreibt die Dateien trotzdem).
 
-Stelle das Front-End um. Lege nur die Seiten (`*.html`) an den öffentlichen Ort und passe den Hostnamen, das Verzeichnis und die Zertifikatspfade im Beispiel an deine Umgebung an.
+Schalte das Frontend um. Lege nur die Seiten (`*.html`) an den öffentlichen Ort und passe Hostname, Verzeichnis und Zertifikatspfade im Beispiel an deine Umgebung an.
 
-| Front-End | So richtest du es ein |
+| Frontend | So richtest du es ein |
 | --- | --- |
-| nginx | Lege die Seiten in `/srv/closure` ab und binde `nginx.conf` aus dem `http`-Block ein. Die Seiten werden auch mit `410` ausgeliefert |
-| Caddy | Lege die Seiten in `/srv/closure` ab und verwende das `Caddyfile`. Caddy besorgt das Zertifikat, und die Seiten werden auch mit `410` ausgeliefert |
-| CloudFront | Lege die Seiten direkt unter einen S3-Bucket, mache diesen Bucket zum Origin des Standard-Cache-Behaviors und verknüpfe `cloudfront-function.js` als CloudFront Function für Viewer Requests (`cloudfront-js-2.0`). Nimm `Accept-Language` in den Cache-Schlüssel der Cache-Richtlinie auf. Die Seiten werden mit `200` ausgeliefert (eine Viewer-Request-Funktion kann den Status der Antwort des Origins nicht ändern) |
+| nginx | Lege die Seiten in `/srv/closure` und binde `nginx.conf` aus dem `http`-Block ein. Die Seiten werden ebenfalls mit `410` ausgeliefert |
+| Caddy | Lege die Seiten in `/srv/closure` und verwende das `Caddyfile`. Caddy besorgt das Zertifikat, und die Seiten werden ebenfalls mit `410` ausgeliefert |
+| CloudFront | Lege die Seiten direkt unter einen S3-Bucket, mache diesen Bucket zum Origin des Standard-Cache-Behaviors und verknüpfe `cloudfront-function.js` als CloudFront Function für Viewer-Requests (`cloudfront-js-2.0`). Nimm `Accept-Language` in den Cache-Key der Cache-Policy auf. Die Seiten werden mit `200` ausgeliefert (eine Viewer-Request-Funktion kann den Status der Antwort des Origins nicht ändern) |
 
-Prüfe nach dem Umstellen, dass `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` `410` zurückgibt und
-dass `curl -i https://social.example/` die Abschlussseite zurückgibt. Stoppe dann `my serve` und die Worker.
-Für die Verfügbarkeitsüberwachung stoppst du entweder die Health-Check-Monitore oder richtest sie auf die Abschlussseite.
+Prüfe nach dem Umschalten, dass `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` `410` zurückgibt und
+dass `curl -i https://social.example/` die Abschlussseite liefert. Halte dann `my serve` und die Worker an.
+Beende für die Verfügbarkeitsüberwachung entweder die Health-Check-Monitore oder richte sie auf die Abschlussseite.
 
 <!-- source: 7-discarding-the-db-blobs-and-backups c7c55aac56e0 -->
 ## 7. DB, Blobs und Backups verwerfen

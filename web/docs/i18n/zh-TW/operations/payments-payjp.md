@@ -49,20 +49,20 @@ PAY.JP 有 API v1 和 v2。v2 還沒有定期扣款 API，所以伺服器使用 
 - **爭議**：PAY.JP 只會在爭議開啟時送出事件。每次對帳也會讀取以你勝訴作結的爭議（狀態為 `cancel`），並記錄付款交易本身沒有回報的退單取消。未產生退單就結束的爭議（查詢）不會記錄任何東西。
 - **退款**：請在 PAY.JP 儀表板中退還小費。全額退款和退單會與小費一起記錄；部分退款則只記錄在收入中。
 
-<!-- source: card-data-and-pci-dss 7be9976efb0b -->
-## 信用卡資料與 PCI DSS
+<!-- source: card-data-and-pci-dss c29c39d7a69c -->
+## 卡片資料與 PCI DSS
 
-卡號、有效期限和安全碼只會在 PAY.JP 的 iframe（由 payjp.js 顯示）內輸入。這台伺服器的頁面和指令碼從不接觸它們。伺服器只會收到 payjp.js 建立的權杖 ID，以及 3-D Secure 所需的持卡人姓名和電子郵件地址。
-伺服器只儲存 PAY.JP 的物件 ID（`cus_`、`sub_`、`ch_`、Plan ID、事件 ID，以及小費的 Checkout Session、PaymentFlow、退款與爭議）、金額、期間和狀態。小費的信用卡是在 PAY.JP 自己的頁面上輸入，而這台伺服器從不提供該頁面。它不儲存卡號、末四碼或有效期限（信用卡頁面只會從 PAY.JP 讀取末四碼、有效期限和客戶的電子郵件地址並顯示出來）。Webhook 的內容和 PAY.JP 的回應，不會保存在日誌或資料庫中。
+卡號、有效期限和安全碼只會在 payjp.js 顯示的 PAY.JP iframe 內輸入。本伺服器的頁面和指令碼不會接觸到它們。伺服器只會收到 payjp.js 建立的權杖 ID，以及 3-D Secure 所需的持卡人姓名和電子郵件地址。
+伺服器只儲存 PAY.JP 物件的 ID（`cus_`、`sub_`、`ch_`、方案 ID、事件 ID，以及贊助的 Checkout Session、PaymentFlow、退款和爭議）、金額、期間和狀態。贊助用的卡片是在 PAY.JP 自己的頁面上輸入的，本伺服器從不提供該頁面。它不會儲存卡號、末四碼或有效期限（卡片頁面只會從 PAY.JP 讀取末四碼、有效期限和客戶的電子郵件地址並顯示出來）。Webhook 內文和 PAY.JP 的回應既不會記錄在日誌中，也不會存入資料庫。
 
-付款頁面是從這台伺服器的來源提供的，所以在建置時已考量 PCI DSS v4 對付款頁面指令碼的管理（要求 6.4.3）和竄改偵測（要求 11.6.1）。
+付款頁面由本伺服器的來源提供，因此它是依照 PCI DSS v4 對付款頁面指令碼的管理（要求 6.4.3）和竄改偵測（要求 11.6.1）來建置的。
 
-- 頁面只會載入 `https://js.pay.jp/v2/pay.js`，以及一個嵌入在頁面中、帶有 nonce 的小型指令碼。它既不包含網頁用戶端的套件，也不包含任何分析或廣告指令碼。
-- 頁面一律帶有自己的 Content-Security-Policy（`script-src` 只允許 nonce 和 `https://js.pay.jp`，`frame-src` 只允許 `https://js.pay.jp` 和 `https://api.pay.jp`，`form-action 'self'`，`frame-ancestors 'none'`）、`Referrer-Policy: no-referrer`、`Cache-Control: no-store` 和 `X-Content-Type-Options: nosniff`。沒有任何設定可以變更 CSP。
-- 範本和指令碼嵌入在伺服器的二進位檔中，執行期間無法變更。表單的送出只接受來自同一來源的請求。
+- 這個頁面是網頁用戶端的一部分，內建於伺服器的執行檔中：它從本伺服器載入網頁用戶端自己的指令碼（每個都附有 Subresource Integrity），以及由 PAY.JP 提供並更新的 `https://js.pay.jp/v2/pay.js`。它不會載入任何分析或廣告指令碼。
+- 每個版本都附有 `payment-scripts.json`，也就是頁面載入的每一個指令碼的清單：網頁用戶端的每個指令碼及其雜湊值，以及 payjp.js。這個頁面與網頁用戶端的其他部分共用指令碼，所以清單每個版本都會不同；請保存你所執行版本的清單。如果建置的清單與它的指令碼不符，伺服器會拒絕啟動。
+- 頁面一律帶有自己的 Content-Security-Policy（`script-src` 只允許本伺服器和 `https://js.pay.jp`，`frame-src` 只允許 `https://js.pay.jp` 和 `https://api.pay.jp`，`form-action 'self'`，`frame-ancestors 'none'`）、`Referrer-Policy: no-referrer`、`Cache-Control: no-store` 和 `X-Content-Type-Options: nosniff`。沒有任何設定可以變更 CSP。表單只接受來自同一來源的送出。
 
-因此，營運者的適用範圍預期是將付款輸入交由 PAY.JP 的 iframe 處理的商家（SAQ A）。請依照 PAY.JP 的指引和各信用卡品牌的要求，確認適用的範圍和自我評估問卷的類型。
-確認時，保存以下各點的記錄會有幫助：付款頁面的 URL（`/payments/pages/payjp/checkout` 和 `/portal`）、頁面載入的指令碼清單（上述兩個）、頁面的 CSP，以及連到伺服器的流量使用 TLS（反向代理的設定）。
+因此，營運者的範圍預期等同於把付款輸入交給 PAY.JP iframe 的商家（SAQ A）。請對照 PAY.JP 的指引和你的信用卡品牌的要求，確認適用的範圍和自我評估問卷的類型。
+這麼做時，建議保存這些要點的記錄：付款頁面的 URL（`/payments/pages/payjp/checkout` 和 `/portal`）、頁面載入的指令碼清單（該版本的 `payment-scripts.json`）、頁面的 CSP，以及連到伺服器的流量使用 TLS（反向代理的設定）。
 
 <!-- source: 1-prepare-the-payjp-account b01b53a61e40 -->
 ## 1. 準備 PAY.JP 帳號

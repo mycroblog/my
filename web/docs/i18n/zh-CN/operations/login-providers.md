@@ -1,8 +1,12 @@
-<!-- source: external-login-providers 48a582ab87ec -->
+<!-- source: external-login-providers e0088b122632 -->
 # 外部登录提供方
 
-外部登录提供方让用户可以用他们在别处拥有的账号登录：OpenID Connect 提供方（Google Workspace、Microsoft Entra ID、Keycloak 等）、GitHub、Discord，或某一台 Mastodon 服务器。你可以在拥有服务器配置的主机上用 `my login-provider` 命令设置提供方，也可以通过管理 API（`/api/v1/admin/login_providers`）设置，这需要 `manage_login_providers` 权限，只有内置的
-`admin` 角色拥有该权限。该命令在任何管理员能够登录之前就可以使用，因此你可以用它完成首次设置。在 Web 客户端中，拥有该权限的管理员使用管理菜单中的“登录提供方”。列表显示每个提供方的类型、状态以及是否允许注册；“添加提供方”会打开用于创建提供方的表单。选择某个提供方会打开它的页面，页面上显示其回调 URL 以及复制该 URL 的按钮、关联的用户数量，你也可以在这里修改其设置、为其设置新的 client secret、启用、停用和删除它。
+外部登录提供方让用户可以用他们在别处拥有的账号登录：OpenID Connect 提供方（Google Workspace、Microsoft Entra ID、Keycloak 等）、GitHub、Discord，或某一台 Mastodon 服务器。
+你可以在拥有服务器配置的主机上用 `my login-provider` 命令设置提供方，也可以通过管理 API（`/api/v1/admin/login_providers`）设置，这需要 `manage_login_providers` 权限，只有内置的
+`admin` 角色拥有该权限。该命令在任何管理员能够登录之前就可以使用，因此你可以用它完成首次设置。
+在 Web 客户端中，拥有该权限的管理员使用管理菜单中的“登录提供方”。列表显示每个提供方的类型、状态、已关联的用户数量以及是否允许注册；
+在开启[仅允许使用登录提供方登录](#limit-sign-in-to-login-providers)期间，列表上方会有一段相应的摘要；“添加登录提供方”会打开用于创建提供方的表单。
+选择某个提供方会打开它的页面，页面上显示其回调 URL 以及复制该 URL 的按钮；你可以在这里修改其设置、启用或停用它、为其设置新的 client secret（这些都用同一个按钮保存），也可以删除它，删除时需要输入它的名称加以确认。
 
 <!-- source: what-external-sign-in-does 25fa37e22a50 -->
 ## 外部登录的作用

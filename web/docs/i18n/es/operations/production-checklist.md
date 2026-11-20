@@ -72,14 +72,21 @@ por ejemplo como un paso del despliegue antes de que la nueva versión reciba tr
 - **Detalles**: [ejecutar el servidor](running.md) (los endpoints de federación y cómo servir los identificadores desde otro dominio),
   [`host`](../reference/configuration.md#host) y [`account_domain`](../reference/configuration.md#account_domain).
 
-<!-- source: reachable-over-https b7513cc3534f -->
+<!-- source: reachable-over-https 20f0b0b9a2d9 -->
 ### Accesible por `https`
 
-- **Por qué**: otros servidores obtienen los ids en `https://<host>/` por el puerto 443, y los navegadores envían las cookies de inicio de sesión solo por `https`.
+- **Por qué**: otros servidores obtienen los ids en `https://<host>/` en el puerto 443, y los navegadores envían las cookies de inicio de sesión solo por `https`.
 - **Verifica**: `curl -sI https://<host>/health/live` responde `200` desde fuera de tu red con un certificado válido para `host`,
-  y `my config check` no informa de ningún error sobre `web_origin`. `http://<host>/` redirige a `https`, algo que hace el proxy inverso,
-  balanceador de carga o CDN delante del servidor (con Docker Compose, la capa `compose.caddy.yaml` es un proxy así).
-- **Detalles**: [ejecutar el servidor](running.md), [`web_origin`](../reference/configuration.md#web_origin).
+  y `my config check` no informa de ningún error sobre `web_origin`, `tls`, `tls_acme_agree_terms` ni `tls_cert_file`. `curl -sI http://<host>/` responde `301`
+  a `https://<host>/`. O bien el proxy inverso, el balanceador de carga o la CDN delante del servidor termina TLS y redirige
+  (con Docker Compose, la capa `compose.caddy.yaml` es uno de esos proxies), o lo hace el propio servidor. Con `tls = acme`,
+  `my tls status` muestra un certificado para `host` (y para el host de `web_origin` cuando difiere) cuyo emisor no es
+  uno de pruebas: `tls_acme_directory` no está definido o nombra un directorio de producción. Pon una alerta sobre su caducidad y sobre los pedidos
+  fallidos ([alertas](alerts.md#mytlscertificateexpiring)). Con
+  `tls = files`, `my config check` avisa cuando quedan menos de 14 días al certificado, y lo que lo renueve debe
+  mantener `tls_cert_file` y `tls_key_file` al día.
+- **Detalles**: [ejecutar el servidor](running.md), [servir HTTPS desde el servidor](running.md#serving-https-from-the-server),
+  [`web_origin`](../reference/configuration.md#web_origin), [`tls`](../reference/configuration.md#tls).
 
 <!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### Inaccesible esquivando el CDN

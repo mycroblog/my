@@ -7,7 +7,7 @@ and its own public posts reach further. An instance that does not join a relay g
 
 Use "Relays" in the admin area (`/admin/relays`). It requires the permission `manage_settings`, which the built-in `admin` role has.
 "Join a relay" opens the form that registers one. The list shows each relay's state and what it brought in during the last 24
-hours; choosing a relay opens its page, with its addresses and the button that leaves it, or, once it was left or rejected
+hours; choosing a relay opens its page, with its addresses and the button that leaves it, or, once the server left it or it rejected
 the server, the buttons that join it again and delete it. Leaving and deleting ask first.
 The CLI is `my admin relay` (`my admin relay -help`):
 
@@ -32,7 +32,7 @@ but nothing is sent to or received from that relay, and the admin area says so i
 
 ## What the server sends
 
-- Only the creation, edit and deletion of local **public** (`public`) posts are sent. Posts that are `unlisted`, followers-only, direct or local-only (`local`), and boosts, are never sent.
+- Only the creation, edit and deletion of local **public** (`public`) posts are sent. Posts that are `unlisted`, followers-only, direct or for neighbors (`local`), and boosts, are never sent.
   To keep a post off relays, post it as `unlisted` or `local`. There is no per-user opt-out.
 - The documents of public posts carry a Linked Data Signature (`RsaSignature2017`), so that Mastodon and Misskey can accept posts that a relay passes on unchanged.
 - The number of deliveries grows by the number of joined relays times the number of public posts (deliveries to a relay are merged into one).

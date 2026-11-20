@@ -5,12 +5,12 @@
 
 robots.txt 和 meta 標籤只是聲明，爬蟲可能遵守也可能不遵守；它們並不是技術上的封鎖。如果需要封鎖，請使用 WAF 或速率限制。
 
-<!-- source: settings 13dfb1b04948 -->
+<!-- source: settings 470e02c5f395 -->
 ## 設定
 
 | 範圍 | 設定 | 變更位置 | 未設定時 |
 | --- | --- | --- | --- |
-| 伺服器 | `search_indexing`（`allow` / `deny`） | 管理介面伺服器設定中「搜尋與爬蟲」頁面的「搜尋引擎與 AI」區塊、`my instance set`、`PATCH /api/v1/admin/settings`（[實例設定](instance-settings.md)） | `deny` |
+| 伺服器 | `search_indexing`（`allow` / `deny`） | 管理介面伺服器設定中「搜尋與爬蟲」頁面的「搜尋引擎」和「AI」區塊、`my instance set`、`PATCH /api/v1/admin/settings`（[實例設定](instance-settings.md)） | `deny` |
 | 伺服器 | `ai_usage`（`allow` / `deny_training` / `deny`） | 同上 | `deny` |
 | 伺服器 | `indexable_default`（新帳號的 `indexable`） | 同上 | `false` |
 | 伺服器 | `security_contact`（回報弱點的聯絡方式） | 同上 | 空白（不提供 `security.txt`） |
@@ -18,7 +18,8 @@ robots.txt 和 meta 標籤只是聲明，爬蟲可能遵守也可能不遵守；
 | 個人 | `ai_opt_out`（拒絕 AI 訓練與使用） | 同上 | `false` |
 
 - 頁面的聲明採用伺服器設定與頁面擁有者設定中較嚴格的一方。個人無法允許比伺服器更多的事。
-- 只有在 `search_indexing = allow` 的伺服器上、`indexable = true` 的帳號，其個人檔案和 `public` 貼文才會告知搜尋引擎可以建立索引。想要被搜尋到的伺服器，要同時變更 `search_indexing` 和 `indexable_default`。在你變更 `indexable_default` 之前就已註冊的人，在他們自己選擇 `indexable` 之前不會被納入。
+- 只有在 `search_indexing = allow` 的伺服器上、`indexable = true` 的帳號，其個人檔案和 `public` 貼文才會告知搜尋引擎可以建立索引。
+  想要被搜尋到的伺服器，要同時變更 `search_indexing` 和 `indexable_default`。在你變更 `indexable_default` 之前就已註冊的人，在他們自己選擇 `indexable` 之前不會被納入。
 - 變更後的設定會在 `/robots.txt`、頁面和媒體回應中生效，不需要重新啟動。
 
 <!-- source: what-the-server-returns 31584e03601b -->

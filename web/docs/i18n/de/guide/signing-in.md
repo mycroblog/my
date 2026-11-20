@@ -5,17 +5,17 @@ So erstellst du ein Konto auf einem mycroblog-Server, also einem Server, auf dem
 bestimmen diese, was ein Server anbietet (wer sich registrieren darf, welche Timelines Besuchende lesen können, ob der Sprachchat aktiviert ist). Die Seite
 „Info“ des Servers und die Dokumente, die er bei der Registrierung verlinkt, nennen seine Regeln; diese Anleitung beschreibt nur, wie sich `my` verhält.
 
-<!-- source: creating-an-account 965073ac4cf5 -->
+<!-- source: creating-an-account 6f66cdf29cd2 -->
 ## Ein Konto erstellen
 
 Wähle in der Navigation „Registrieren“ (oder auf der Anmeldeseite „Konto erstellen“). Das Formular fragt nach:
 
-- **Benutzername**: Buchstaben (a-z), Ziffern und Unterstriche. Dein Handle ist `@username@this-server`, und den Benutzernamen kannst du später nicht mehr ändern.
-- **E-Mail-Adresse**: Mit ihr meldest du dich an.
-- **Passwort**: Das Formular zeigt unter dem Feld die erlaubte Länge.
+- **Benutzername**: Buchstaben (a-z), Ziffern und Unterstriche. Dein Handle ist `@username@this-server`, und du kannst den Benutzernamen später nicht ändern.
+- **E-Mail-Adresse**: Damit meldest du dich an.
+- **Passwort**: Das Formular zeigt die erlaubte Länge unter dem Feld.
 - **Einladungscode**, wenn der Server einen verlangt oder akzeptiert.
 - **Warum möchtest du beitreten? (optional)**, wenn der Server neue Konten prüft.
-- Ein Kästchen, mit dem du bestätigst, dass du die Nutzungsbedingungen und Richtlinien des Servers gelesen hast, wenn der Server welche veröffentlicht.
+- Ein Kästchen, mit dem du bestätigst, dass du die Bedingungen und Richtlinien des Servers gelesen hast, wenn der Server welche veröffentlicht.
 
 Was davon du siehst, hängt davon ab, wie der Server neue Konten annimmt:
 
@@ -23,18 +23,16 @@ Was davon du siehst, hängt davon ab, wie der Server neue Konten annimmt:
 | --- | --- |
 | Ist offen | Registriere dich. Ein Einladungscode ist optional. |
 | Prüft neue Konten | Registriere dich und sage, warum du beitreten möchtest. Ein Moderator genehmigt das Konto, bevor du es nutzen kannst. Mit einem Einladungscode kannst du das Konto sofort nutzen. |
-| Nimmt nur auf Einladung auf | Gib den Einladungscode ein, den du erhalten hast, oder öffne den Einladungslink, der ihn einträgt. |
+| Nimmt nur Einladungen an | Gib den Einladungscode ein, den du erhalten hast, oder öffne den Einladungslink, der ihn einträgt. |
 | Ist geschlossen | Die Seite sagt, dass der Server keine neuen Konten annimmt. |
-| Registriert nur über Anmeldeanbieter | Du registrierst dich statt mit einem Passwort bei einem Anbieter, den der Server anbietet (zum Beispiel „Mit GitHub anmelden“). |
+| Registriert nur über Anmeldeanbieter | Du registrierst dich bei einem Anbieter, den der Server anbietet (zum Beispiel „Mit GitHub anmelden“), statt mit einem Passwort. |
 
-Wenn der Server E-Mails versendet, schickt er dir einen Link zum Bestätigen deiner E-Mail-Adresse. Öffne ihn und wähle „E-Mail-Adresse bestätigen“.
+Sendet der Server E-Mails, schickt er einen Link zur Bestätigung deiner E-Mail-Adresse. Öffne ihn und wähle „E-Mail-Adresse bestätigen“.
 Solange das Konto nicht genehmigt und die Adresse nicht bestätigt ist, kannst du dich anmelden, siehst aber nur, worauf du wartest
 („Dein Konto ist noch nicht bereit“).
 
-Nach der Registrierung kannst du auf einer Willkommensseite einen Avatar und einen Anzeigenamen wählen („Weiter“ speichert sie, „Später“ überspringt das).
-Deine Home-Timeline zeigt dann eine Checkliste „Erste Schritte“: „Profil einrichten“, „Jemandem folgen“ und „Ersten Beitrag verfassen“.
-„Diese Schritte ausblenden“ schließt sie in diesem Browser. „Vorgeschlagene Konten“ listet Personen auf, denen du folgen kannst, außer auf einem Server
-mit nur einer Person, wo stattdessen „Personen finden“ die Suche öffnet.
+Nach der Registrierung fragt ein Willkommensschritt nach einem Anzeigenamen und einem Avatar, beides optional („Vorerst überspringen“); solange du niemandem folgst, zeigt deine
+Startseite dann Personen, die der Server vorschlägt, falls er welche vorschlägt.
 
 <!-- source: signing-in fcfbfa76f1d0 -->
 ## Anmelden
@@ -60,15 +58,21 @@ Nach dem Anmelden siehst du möglicherweise statt der App eine Seite:
 - Dein Konto ist von einem Moderator eingeschränkt. Die Seite listet die geltenden Maßnahmen auf und lässt dich einmal Einspruch einlegen („Einspruch gegen diese Maßnahme einlegen“). Dieselben Maßnahmen stehen in den Einstellungen unter „Kontostatus“.
 - Du hast das Konto deaktiviert. „Konto reaktivieren“ holt es bis zum Datum der Löschung zurück; „Konto löschen“ löscht es sofort.
 
-<!-- source: signing-out fb81956ae999 -->
+<!-- source: signing-out 053a33c01d8e -->
 ## Abmelden
 
-Wähle „Abmelden“ im Bereich „Konto“ der App. Die Seite „Angemeldete Browser“ der Einstellungen listet die Browser auf,
-die bei deinem Konto angemeldet sind, und meldet sie ab.
+Wähle „Abmelden …“, die letzte Zeile der Einstellungen, und bestätige mit „Abmelden“. Das meldet diesen Browser ab; deine anderen
+Browser und Apps bleiben angemeldet. „Angemeldete Browser“ unter „Sicherheit“ in den Einstellungen listet die Browser auf, die in deinem Konto angemeldet
+sind, und meldet sie ab.
 
-<!-- source: settings 35cf43b05962 -->
+<!-- source: settings 4cd29f4ed978 -->
 ## Einstellungen
 
-Die Einstellungen sind gegliedert in „Profil und Community“, „Anzeige und Benachrichtigungen“, „Beziehungen“, „Sicherheit“, „Apps“
-und „Konto und Daten“. Unter „Sicherheit“ verwaltest du dein Passwort, die Zwei-Faktor-Authentifizierung, Passkeys, verknüpfte Konten
-und angemeldete Browser.
+„Einstellungen“ in der Navigation öffnet die Einstellungen. Sie enthalten „Profil“, das ändert, wie dein Konto aussieht und wo
+es gefunden wird; „Anzeige und Verfassen“; „Benachrichtigungen“; „Beziehungen“, das die Konten auflistet, die du sperrst und stummschaltest, die
+Server, die du stummschaltest, und die Hashtags, denen du folgst, jeweils mit der Schaltfläche, die es rückgängig macht; „Stichwortfilter“, das deine
+Filter auflistet und hinzufügt, ändert und löscht; „Sicherheit“, wo du dein Passwort, deine Passkeys, die Zwei-Faktor-Authentifizierung, verknüpfte Konten und angemeldete Browser
+verwaltest; „Apps“, das die Apps auflistet, denen du erlaubt hast, dein Konto zu nutzen,
+die du widerrufen kannst, und die Apps, die du registriert hast; „Einladungen“, wenn du Einladungen erstellen kannst, was Einladungslinks erstellt
+und widerruft; und „Konto und Daten“, das „Kontostatus“, deine Daten und Beiträge sowie den Umzug, die Deaktivierung oder
+das Löschen des Kontos enthält ([Dein Konto umziehen](moving-your-account.md)).

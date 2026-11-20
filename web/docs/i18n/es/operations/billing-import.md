@@ -1,32 +1,33 @@
-<!-- source: importing-cloud-usage-costs 401e74fb1de0 -->
-# Importación de los costos de uso de la nube
+<!-- source: importing-cloud-usage-costs 3d538f79c09b -->
+# Importar los costes de uso de la nube
 
-El servidor importa cada 24 horas los cargos de uso de los proveedores indicados en la configuración [`billing_sources`](../reference/configuration.md#billing_sources), o de [un plugin](#a-plugin-billing_sources--plugin) para un proveedor del que no tiene adaptador, y los suma a los costos de la instancia. El valor predeterminado está vacío, lo que no importa nada.
+El servidor importa los cargos de uso de los proveedores enumerados en el ajuste [`billing_sources`](../reference/configuration.md#billing_sources), o de [un plugin](#a-plugin-billing_sources--plugin) para un proveedor del que no tiene adaptador, cada 24 horas y los añade a los costes de la instancia. El valor predeterminado está vacío, lo que no importa nada.
 Importa los cargos del mes de facturación actual y del anterior (hasta el día 15 del mes, o hasta que el mes anterior sea definitivo), como una línea por servicio y tipo de cargo (uso, crédito, reembolso, impuesto, soporte, tarifa, otro).
-Hasta que el proveedor cierra un mes, los valores se registran como estimaciones; después de cerrarlo, como definitivos; y cuando un valor cambia una vez definitivo, como una corrección. Los registros del pasado nunca se reescriben.
-El estado de las importaciones (el último éxito, el tipo del último fallo y el número de solicitudes de este mes) se muestra en la página de costos de la administración y con `GET /api/v1/admin/billing_imports`.
-Las métricas cuentan cada intento por origen, resultado y tipo de fallo (`my.billing.imports`) e informan de los orígenes cuyo intento más reciente falló (`my.billing.import.failing`);
-[Alertas y guía de actuación](alerts.md#mybillingimportfailing) describe la alerta sobre ellas.
+Hasta que el proveedor cierra un mes, los valores se registran como estimaciones; cuando lo cierra, como definitivos; y cuando un valor cambia después de ser definitivo, como una corrección. Los registros del pasado nunca se reescriben.
+El estado de las importaciones (el último éxito, el tipo del último fallo y el número de solicitudes de este mes) se muestra en la página «Importaciones de facturación» de «Costes e ingresos» en la administración (`/admin/finance/imports`), que también enumera cada mes de facturación como estimado, definitivo o corregido, con «Importar ahora», y mediante `GET /api/v1/admin/billing_imports`.
+Las métricas cuentan cada intento por fuente, resultado y tipo de fallo (`my.billing.imports`) e informan de las fuentes cuyo último intento falló (`my.billing.import.failing`);
+[Alertas y runbook](alerts.md#mybillingimportfailing) tiene la alerta sobre ellas.
 
-Para AWS y Google Cloud, la configuración de este servidor no guarda credenciales. Da al entorno de ejecución lo que lee la cadena de credenciales predeterminada del SDK de cada proveedor (para AWS, el rol de ejecución, las variables de entorno o los archivos de credenciales compartidos; para Google Cloud, las Application Default Credentials).
-Cloudflare no tiene una cadena así, por lo que su importación lee un token de API de [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare).
+Para AWS y Google Cloud, no se guardan credenciales en la configuración de este servidor. Da al entorno de ejecución lo que lee la cadena de credenciales predeterminada del SDK de cada proveedor (para AWS, el rol de ejecución, las variables de entorno o los archivos de credenciales compartidos; para Google Cloud, las Application Default Credentials).
+Cloudflare no tiene tal cadena, así que su importación lee un token de API de [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare).
 
-<!-- source: with-the-opentofu-modules 56be0b668f32 -->
+<!-- source: with-the-opentofu-modules a8e849af2fcd -->
 ## Con los módulos de OpenTofu
 
-Los módulos [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) y [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) definen `billing_sources` y hacen las partes de esta guía que permite la API de un proveedor. `billing-gcp` solo funciona con el módulo de aplicación de Google Cloud, así que en AWS los módulos importan únicamente los costos de AWS. `billing-aws` funciona con los módulos de aplicación de AWS y con el de Cloud Run, donde ambos pueden estar en `backends`. Ninguno se ha aplicado todavía en una cuenta real.
+En Google Cloud, la sección `billing` de [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) fija `billing_sources = gcp` y hace las partes de esta guía que permite la API del proveedor, con `billing_account_id`, `method` (`bigquery` o `budget`) y `dataset_location`. Importa solo los costes de Google Cloud. En AWS, el módulo [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) del ejemplo de AWS hace lo mismo para los costes de AWS. Ninguno se ha aplicado todavía en una cuenta real.
 
 | Paso de esta guía | Con los módulos |
 | --- | --- |
-| La política de IAM y el rol de «Llamada desde Cloud Run con identidad web» | `billing-aws` |
-| Activar Cost Explorer, Linked Account Access y las etiquetas de asignación de costos | A mano, en la consola de AWS |
-| El conjunto de datos de la exportación y los roles de «Roles de IAM» | `billing-gcp` |
+| La política IAM de AWS | `billing-aws` |
+| Activar Cost Explorer, Linked Account Access, las etiquetas de asignación de costes | A mano, en la consola de AWS |
+| El dataset de la exportación y los roles de «Roles de IAM» | La sección `billing` |
 | Activar la exportación («Standard usage cost») | A mano, en la consola de Google Cloud, con un rol en la cuenta de facturación |
-| El tema y la suscripción pull de un presupuesto, y el rol de suscriptor | `billing-gcp` con `method = "budget"` |
-| Crear el presupuesto y conectarlo al tema | A mano, en la consola de Google Cloud, con un rol en la cuenta de facturación |
-| Activar la API de BigQuery o de Pub/Sub | A mano, como en [Despliegue en Cloud Run](deploy-cloud-run.md#1-enable-the-apis) |
-| Cloudflare | No con estos módulos. Define `MY_BILLING_SOURCES`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID` y `MY_BILLING_CLOUDFLARE_API_TOKEN` (desde un secreto) como para un plugin |
-| Un plugin | No con estos módulos. Sin ningún módulo de facturación en `backends`, define `MY_BILLING_SOURCES = plugin` y la configuración de [el plugin](#a-plugin-billing_sources--plugin) en el `env` del módulo de aplicación; junto a un módulo de facturación, el módulo de aplicación rechaza `MY_BILLING_SOURCES` en `env`, así que añade un backend propio que devuelva `billing_sources = ["plugin"]` ([los campos de un backend](../../deploy/opentofu/README.md)) |
+| El topic y la suscripción pull de un presupuesto, y el rol de suscriptor | La sección `billing` con `method = "budget"` |
+| Crear el presupuesto y conectarlo al topic | A mano, en la consola de Google Cloud, con un rol en la cuenta de facturación |
+| Activar la API de BigQuery o Pub/Sub | A mano, como en [Desplegar en Cloud Run](deploy-cloud-run.md#1-enable-the-apis) |
+| Los costes de AWS en Cloud Run | No con `mycroblog-gcp`. Crea a mano el rol de [Llamar desde Cloud Run con identidad web](#calling-from-cloud-run-with-web-identity) y define `billing_sources = aws` y `billing_aws_role_arn` en `settings`, sin la sección `billing` |
+| Cloudflare | No con estos módulos. En Cloud Run, sin la sección `billing`, define `billing_sources`, `billing_cloudflare_account_id` en `settings` y `billing_cloudflare_api_token` en `secrets`, como para un plugin |
+| Un plugin | No con estos módulos. En Cloud Run, sin la sección `billing`, define `billing_sources = plugin` y los ajustes de [el plugin](#a-plugin-billing_sources--plugin) en `settings`. Junto a la sección `billing`, el módulo rechaza `billing_sources` en `settings` |
 
 <!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS (`billing_sources = aws`)
@@ -310,11 +311,11 @@ El servidor lee el uso facturable de una cuenta de Cloudflare: los cargos de uso
 Los suma por producto (`R2`, `Workers`, `D1`) en meses naturales UTC, de modo que cada producto es una línea de uso al mes. El uso dentro de una franja gratuita también se importa, con valor 0.
 Solo una cuenta facturada por pago por uso tiene estos datos; una cuenta con contrato Enterprise falla con `not_enabled`.
 
-<!-- source: what-it-does-not-import 2028c00feb4d -->
+<!-- source: what-it-does-not-import 6281b674b2b7 -->
 ### Lo que no importa
 
-El uso facturable de Cloudflare contiene solo cargos de uso. Los planes y complementos con tarifa fija (Pro, Business, Workers Paid y similares), los impuestos y los créditos no están en él, así que los costos muestran solo la parte de uso de la factura.
-Añade las tarifas fijas como costos propios en la página de costos, o impórtalas desde [un plugin](#a-plugin-billing_sources--plugin).
+El uso facturable de Cloudflare contiene solo cargos de uso. Los planes y complementos con tarifa fija (Pro, Business, Workers Paid y similares), los impuestos y los créditos no están en él, así que los costes muestran solo la parte de uso de la factura.
+Añade las tarifas fijas como costes propios en la página «Costes» de «Costes e ingresos» (`/admin/finance/costs`), o impórtalas desde [un plugin](#a-plugin-billing_sources--plugin).
 
 <!-- source: billing-cycles-and-final-months 155b8bff8c5f -->
 ### Ciclos de facturación y meses definitivos
@@ -352,10 +353,10 @@ Da a la importación un token propio. El servidor nunca lee `CLOUDFLARE_API_TOKE
 
 Reintentar no puede arreglar un fallo que no sea `throttled` ni `unavailable`, así que el servidor lo registra y se detiene, y la importación programada del día siguiente lo intenta de nuevo.
 
-<!-- source: a-plugin-billing_sources--plugin 7589c3333153 -->
+<!-- source: a-plugin-billing_sources--plugin 563b0ca17827 -->
 ## Un plugin (`billing_sources = plugin`)
 
-Para un proveedor del que el servidor no tiene adaptador, como Azure, Hetzner o Sakura, ejecuta un [plugin](plugins.md) del tipo `billing` y deja que lea los datos del proveedor. El servidor tiene un único origen `plugin`. Un plugin con varios proveedores los agrega por sí mismo y los distingue por los nombres de sus servicios.
+Para un proveedor del que el servidor no tiene adaptador, como Azure, Hetzner o Sakura, ejecuta un [plugin](plugins.md) del tipo `billing` y deja que lea los datos del proveedor. El servidor tiene una sola fuente `plugin`. Un plugin con varios proveedores los agrega por sí mismo y los distingue por los nombres de sus servicios.
 
 ```toml
 billing_sources = "plugin"
@@ -364,14 +365,14 @@ plugin_billing_location = "Europe/Berlin"
 plugin_billing_provider = "Hetzner"
 ```
 
-Los tres valores de configuración son obligatorios con este origen, y el servidor arranca sin llamar al plugin, incluso cuando este está caído.
+Los tres ajustes son obligatorios con esta fuente, y el servidor arranca sin llamar al plugin, incluso cuando está caído.
 
 - `plugin_billing_location` es la zona horaria que delimita los meses de facturación del plugin.
-- `plugin_billing_provider` es el nombre del proveedor en los totales, en la página de costos y en el registro de auditoría.
+- `plugin_billing_provider` es el nombre del proveedor en los totales, en la página de importaciones de facturación y en el registro de auditoría.
 
-El servidor pide al plugin el mes actual y, como con los demás orígenes, el anterior hasta el día 15 o hasta que sea definitivo. Los límites de los demás orígenes no se aplican: `max_requests` es `2147483647`, lo que significa sin límite, y el plugin decide lo que puede gastar. Informa de las solicitudes y de los bytes que se le facturaron, que el servidor registra y muestra.
+El servidor pide al plugin el mes actual y, como con las otras fuentes, el anterior hasta el día 15 o hasta que sea definitivo. Los topes de las otras fuentes no se aplican: `max_requests` es `2147483647`, lo que significa sin tope, y el plugin decide lo que puede gastar. Informa de las solicitudes y de los bytes por los que se le facturó, que el servidor registra y muestra.
 
-El tipo admite TCP sin cifrar, con una advertencia al arrancar, ya que solo transporta costos. Un token de portador requiere `https://` o un socket Unix: consulta [el destino de un plugin](plugins.md#the-destination).
+El tipo permite TCP sin cifrar, con una advertencia al arrancar, ya que solo transporta costes. Un token bearer necesita `https://` o un socket Unix: consulta [el destino de un plugin](plugins.md#the-destination).
 
 <!-- source: the-call 6a2bcce82ab2 -->
 ### La llamada

@@ -3,22 +3,34 @@
 
 Les webhooks envoient les signalements, les demandes d’inscription, les créations de comptes et les modifications de profil, les mesures de modération, les contestations, les mesures sur les domaines, les publications publiques locales et les actions de gestion des émojis personnalisés vers un relais Slack ou Discord, un système de tickets ou un outil d’automatisation comme n8n. Un serveur sans webhook configuré ne stocke aucune ligne supplémentaire et n’exécute aucune tâche supplémentaire. Ce que reçoit un destinataire (en-têtes, signature, événements, corps) est décrit dans la [référence des webhooks](../reference/webhooks.md).
 
-<!-- source: set-up-a-webhook c8a80bc40038 -->
+<!-- source: set-up-a-webhook 20c889b84876 -->
 ## Configurer un webhook
 
-Toute personne disposant de la permission `manage_webhooks` peut configurer des webhooks sur l’écran d’administration « Webhooks » (`/admin/webhooks`). Le rôle intégré `admin` la possède. « Ajouter un webhook » ouvre le formulaire ; choisir un webhook dans la liste ouvre sa page, où vous le modifiez, le testez, l’activez, le désactivez et le supprimez, lui donnez un nouveau secret et consultez ses livraisons.
+Toute personne ayant la permission `manage_webhooks` peut configurer des webhooks sur l’écran d’administration « Webhooks » (`/admin/webhooks`).
+Le rôle intégré `admin` l’a. « Configurer un webhook » ouvre le formulaire ; choisir un webhook dans la liste ouvre sa page, où
+vous le testez, le désactivez et le réactivez, le modifiez, voyez ses livraisons des 14 derniers jours et en renvoyez une, lui donnez un nouveau
+secret et le supprimez après avoir saisi le nom d’hôte de son URL. La page indique lorsque les livraisons échouent de façon répétée, et lorsque le
+serveur a désactivé le webhook. L’historique affiche l’événement de chaque livraison, son état, ses tentatives et sa dernière tentative, ainsi que le corps
+qu’il a envoyé, qui peut contenir des données personnelles et n’est montré qu’à une personne qui a aussi la permission dont son événement a besoin (ci-dessous).
 
-1. Créez un webhook avec une URL de destination, une description et les événements auxquels s’abonner. Chaque événement exige aussi sa propre permission en plus de `manage_webhooks` : `manage_reports` pour les signalements, `manage_accounts` pour les inscriptions, les comptes, les mesures de modération et les contestations, `manage_domains` pour les mesures sur les domaines, `manage_custom_emojis` pour les émojis personnalisés, et `manage_errors` pour les groupes d’erreurs.
+1. Créez un webhook avec une URL de destination, une description et les événements auxquels s’abonner. Chaque événement exige aussi sa propre
+   permission en plus de `manage_webhooks` : `manage_reports` pour les signalements, `manage_accounts` pour les inscriptions, les comptes,
+   les mesures de modération et les contestations, `manage_domains` pour les actions de domaine, `manage_custom_emojis` pour les émojis personnalisés, et
+   `manage_errors` pour les groupes d’erreurs.
    Les publications publiques n’exigent aucune permission supplémentaire. Vous ne pouvez pas sélectionner un événement dont vous n’avez pas la permission.
-2. Le secret (`whsec_...`) n’est affiché qu’une fois, à la création du webhook. Configurez-le chez le destinataire. Il ne peut pas être affiché à nouveau.
+2. Le secret (`whsec_...`) est affiché une seule fois, à la création du webhook. Définissez-le sur le récepteur. Il ne peut pas être affiché de nouveau.
 3. Sur la page du webhook, choisissez « Envoyer un test » pour envoyer `webhook.test`, et vérifiez dans ses livraisons qu’il est bien arrivé.
 
-La création, la modification, la suppression, l’activation, la désactivation et le renouvellement du secret d’un webhook sont consignés dans le journal d’audit. La cible est affichée sous la forme de la description et du nom d’hôte de l’URL ; l’URL elle-même n’est pas consignée.
+La création, la modification, la suppression, l’activation, la désactivation et le renouvellement du secret d’un webhook sont enregistrés dans le journal d’audit.
+La cible est affichée sous la forme de la description et du nom d’hôte de l’URL ; l’URL elle-même n’est pas enregistrée.
 
-<!-- source: rotate-the-secret 928c62f87538 -->
+<!-- source: rotate-the-secret fc0bedd73653 -->
 ## Renouveler le secret
 
-« Nouveau secret » crée un nouveau secret et l’affiche une seule fois. Pendant les 24 heures suivantes, les messages sont aussi signés avec l’ancien secret (`webhook-signature` contient deux signatures), ce qui vous permet de faire passer le destinataire au nouveau secret durant cette fenêtre. Les secrets sont scellés avec `kernel.Sealer` avant d’être stockés dans la base de données ; la clé est la [KEK](key-management.md).
+« Créer un nouveau secret » crée un nouveau secret et l’affiche une seule fois. Pendant les 24 heures suivantes, les messages sont aussi signés avec l’ancien secret
+(`webhook-signature` porte deux signatures), de sorte que vous pouvez faire passer le récepteur au nouveau secret dans cette fenêtre.
+Les secrets sont scellés avec `kernel.Sealer` avant d’être stockés dans la base de données ; la clé est la
+[KEK](key-management.md).
 
 <!-- source: failures-and-redelivery 65aba0d2089e -->
 ## Échecs et nouvelles livraisons

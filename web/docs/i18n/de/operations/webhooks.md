@@ -6,29 +6,32 @@ Domain-Maßnahmen, lokale öffentliche Beiträge und Verwaltungsaktionen für ei
 oder ein Automatisierungswerkzeug wie n8n. Ein Server ohne konfigurierte Webhooks speichert keine zusätzlichen Zeilen und führt keine zusätzlichen Jobs aus.
 Was ein Empfänger erhält (Header, Signatur, Ereignisse, Body), beschreibt die [Webhook-Referenz](../reference/webhooks.md).
 
-<!-- source: set-up-a-webhook c8a80bc40038 -->
+<!-- source: set-up-a-webhook 20c889b84876 -->
 ## Einen Webhook einrichten
 
-Jeder mit der Berechtigung `manage_webhooks` kann Webhooks im Admin-Screen „Webhooks“ (`/admin/webhooks`) einrichten.
-Die eingebaute Rolle `admin` hat sie. „Webhook hinzufügen“ öffnet das Formular; die Wahl eines Webhooks in der Liste öffnet seine Seite, wo du ihn
-änderst, testest, aktivierst, deaktivierst und löschst, ihm ein neues Secret gibst und seine Zustellungen siehst.
+Wer die Berechtigung `manage_webhooks` hat, kann Webhooks auf dem Admin-Bildschirm „Webhooks“ (`/admin/webhooks`) einrichten.
+Die eingebaute Rolle `admin` hat sie. „Einen Webhook einrichten“ öffnet das Formular; wenn du in der Liste einen Webhook auswählst, öffnet sich seine Seite, auf der
+du ihn testest, aus- und einschaltest, änderst, seine Zustellungen der letzten 14 Tage siehst und eine erneut sendest, ihm ein neues
+Secret gibst und ihn löschst, nachdem du den Hostnamen seiner URL eingetippt hast. Die Seite sagt, wenn Zustellungen immer wieder fehlschlagen und wenn der
+Server den Webhook ausgeschaltet hat. Der Verlauf zeigt Ereignis, Status, Versuche und letzten Versuch jeder Zustellung sowie den Body,
+den sie gesendet hat; er kann personenbezogene Daten enthalten und wird nur jemandem gezeigt, der auch die Berechtigung hat, die sein Ereignis braucht (siehe unten).
 
-1. Lege einen Webhook mit einer Ziel-URL, einer Beschreibung und den Ereignissen an, die er abonniert. Jedes Ereignis braucht außerdem seine eigene
-   Berechtigung neben `manage_webhooks`: `manage_reports` für Meldungen, `manage_accounts` für Registrierungen, Konten,
-   Moderationsmaßnahmen und Einsprüche, `manage_domains` für Domain-Maßnahmen, `manage_custom_emojis` für eigene Emojis und
+1. Lege einen Webhook mit einer Ziel-URL, einer Beschreibung und den Ereignissen an, die er abonniert. Jedes Ereignis braucht neben `manage_webhooks` auch seine eigene
+   Berechtigung: `manage_reports` für Meldungen, `manage_accounts` für Registrierungen, Konten,
+   Moderationsmaßnahmen und Einsprüche, `manage_domains` für Domain-Aktionen, `manage_custom_emojis` für eigene Emojis und
    `manage_errors` für Fehlergruppen.
-   Öffentliche Beiträge brauchen keine zusätzliche Berechtigung. Ein Ereignis, dessen Berechtigung dir fehlt, kannst du nicht auswählen.
-2. Das Secret (`whsec_...`) wird einmal gezeigt, wenn der Webhook angelegt wird. Setze es beim Empfänger. Es lässt sich nicht erneut anzeigen.
-3. Wähle auf der Seite des Webhooks „Test senden“, um `webhook.test` zu senden, und prüfe in seinen Zustellungen, dass er angekommen ist.
+   Öffentliche Beiträge brauchen keine zusätzliche Berechtigung. Ein Ereignis, für dessen Berechtigung dir fehlt, kannst du nicht auswählen.
+2. Das Secret (`whsec_...`) wird einmal angezeigt, wenn der Webhook angelegt wird. Setze es beim Empfänger. Es kann nicht erneut angezeigt werden.
+3. Wähle auf der Seite des Webhooks „Test senden“, um `webhook.test` zu senden, und prüfe in seinen Zustellungen, dass es angekommen ist.
 
-Das Anlegen, Ändern, Löschen, Aktivieren, Deaktivieren und Rotieren des Secrets eines Webhooks wird im Audit-Log festgehalten.
-Das Ziel wird als Beschreibung und Hostname der URL gezeigt; die URL selbst wird nicht festgehalten.
+Anlegen, Ändern, Löschen, Einschalten, Ausschalten und das Erneuern des Secrets eines Webhooks werden im Audit-Log festgehalten.
+Das Ziel wird als Beschreibung und Hostname der URL angezeigt; die URL selbst wird nicht aufgezeichnet.
 
-<!-- source: rotate-the-secret 928c62f87538 -->
-## Das Secret rotieren
+<!-- source: rotate-the-secret fc0bedd73653 -->
+## Das Secret erneuern
 
-„Neues Secret“ erzeugt ein neues Secret und zeigt es einmal. Während der nächsten 24 Stunden werden Nachrichten auch mit dem alten Secret signiert
-(`webhook-signature` trägt zwei Signaturen), sodass du den Empfänger in diesem Fenster auf das neue Secret umstellen kannst.
+„Neues Secret erzeugen“ erzeugt ein neues Secret und zeigt es einmal an. In den nächsten 24 Stunden werden Nachrichten auch mit dem alten Secret signiert
+(`webhook-signature` trägt zwei Signaturen), sodass du den Empfänger in diesem Zeitfenster auf das neue Secret umstellen kannst.
 Secrets werden mit `kernel.Sealer` versiegelt, bevor sie in der Datenbank gespeichert werden; der Schlüssel ist der
 [KEK](key-management.md).
 

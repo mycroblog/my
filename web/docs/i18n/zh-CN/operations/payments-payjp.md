@@ -34,18 +34,18 @@ PAY.JP 有 API v1 和 v2。v2 还没有定期扣款 API，因此服务器使用 
 - **争议**：PAY.JP 只会在争议开始时发送事件。每次对账还会读取以对你有利告终的争议（状态为 `cancel`），并记录付款交易本身没有报告的拒付撤销。未产生拒付而结束的争议（咨询）不会记录任何内容。
 - **退款**：请在 PAY.JP 控制台中为打赏退款。全额退款和拒付会与该打赏一起记录；部分退款只记入收入。
 
-<!-- source: card-data-and-pci-dss 7be9976efb0b -->
+<!-- source: card-data-and-pci-dss c29c39d7a69c -->
 ## 银行卡数据与 PCI DSS
 
 卡号、有效期和安全码只在 payjp.js 显示的 PAY.JP iframe 中输入。这台服务器的页面和脚本从不接触它们。服务器只接收 payjp.js 创建的令牌 ID，以及 3-D Secure 所需的持卡人姓名和电子邮件地址。服务器只保存 PAY.JP 的对象 ID（`cus_`、`sub_`、`ch_`、Plan ID、事件 ID，以及打赏的 Checkout Session、PaymentFlow、退款和争议）、金额、周期和状态。打赏的银行卡在 PAY.JP 自己的页面上输入，这台服务器从不提供该页面。它不保存卡号、卡号后四位或有效期（银行卡页面只是从 PAY.JP 读取卡号后四位、有效期和客户的电子邮件地址并显示出来）。webhook 的正文和 PAY.JP 的响应既不保存在日志中，也不保存在数据库中。
 
 付款页面由这台服务器的源提供，因此在构建时考虑了 PCI DSS v4 对付款页面脚本的管理（要求 6.4.3）和篡改检测（要求 11.6.1）。
 
-- 页面只加载 `https://js.pay.jp/v2/pay.js` 和一段嵌入在页面中、带有 nonce 的小脚本。页面既不包含 Web 客户端的打包文件，也不包含任何分析或广告脚本。
-- 页面始终带有自己的 Content-Security-Policy（`script-src` 只有 nonce 和 `https://js.pay.jp`，`frame-src` 只有 `https://js.pay.jp` 和 `https://api.pay.jp`，`form-action 'self'`，`frame-ancestors 'none'`）、`Referrer-Policy: no-referrer`、`Cache-Control: no-store` 和 `X-Content-Type-Options: nosniff`。没有任何设置可以更改 CSP。
-- 模板和脚本嵌入在服务器的二进制文件中，运行时无法更改。只接受来自同源的表单提交。
+- 页面是 Web 客户端的一部分，构建进服务器的二进制文件：它从这台服务器加载 Web 客户端自己的脚本（每个都带有子资源完整性 Subresource Integrity），以及由 PAY.JP 提供并更新的 `https://js.pay.jp/v2/pay.js`。页面不加载任何分析或广告脚本。
+- 每个发布版本都附带 `payment-scripts.json`，即页面加载的所有脚本的列表：Web 客户端的每个脚本及其哈希，以及 payjp.js。页面与 Web 客户端的其余部分共用脚本，因此这份列表每个版本都会变化；请保留你所运行版本的列表。如果某个构建的列表与它的脚本不一致，服务器会拒绝启动。
+- 页面始终带有自己的 Content-Security-Policy（`script-src` 只有这台服务器和 `https://js.pay.jp`，`frame-src` 只有 `https://js.pay.jp` 和 `https://api.pay.jp`，`form-action 'self'`，`frame-ancestors 'none'`）、`Referrer-Policy: no-referrer`、`Cache-Control: no-store` 和 `X-Content-Type-Options: nosniff`。没有任何设置可以更改 CSP。只接受来自同源的表单提交。
 
-因此，运营者的适用范围预计是把付款输入交给 PAY.JP iframe 的商户（SAQ A）。请根据 PAY.JP 的指引和各卡组织的要求，确认适用的范围和自我评估问卷的类型。确认时，记录以下几点会有帮助：付款页面的 URL（`/payments/pages/payjp/checkout` 和 `/portal`）、页面加载的脚本列表（上述两个）、页面的 CSP，以及到服务器的通信使用 TLS（反向代理的配置）。
+因此，运营者的适用范围预计是把付款输入交给 PAY.JP iframe 的商户（SAQ A）。请根据 PAY.JP 的指引和各卡组织的要求，确认适用的范围和自我评估问卷的类型。确认时，记录以下几点会有帮助：付款页面的 URL（`/payments/pages/payjp/checkout` 和 `/portal`）、页面加载的脚本列表（该版本的 `payment-scripts.json`）、页面的 CSP，以及到服务器的通信使用 TLS（反向代理的配置）。
 
 <!-- source: 1-prepare-the-payjp-account b01b53a61e40 -->
 ## 1. 准备 PAY.JP 账户

@@ -49,7 +49,7 @@ promtool test rules alerts.test.yml
 
 [`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) 是基于同一组 Prometheus 指标的 Grafana 仪表盘：请求速率、状态码和延迟；任务运行次数、各任务类型的 worker 耗时和队列；投递、收件箱活动和远程服务器；以及每个进程的 CPU 和内存。在 Grafana 中导入它（**Dashboards** → **New** → **Import**），并选择你的 Prometheus 数据源；它的 **Job** 变量用于选择抓取任务（默认是 `my`）。
 
-<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
+<!-- source: google-cloud-cloud-run addd07c417a9 -->
 ### Google Cloud（Cloud Run）
 
 在 `metrics_exporter = none` 时，请用 Cloud Run 和 Cloud Logging 已有的数据来构建告警：
@@ -61,9 +61,9 @@ promtool test rules alerts.test.yml
 - **数据库**：Cloud SQL 的磁盘使用率和连接数指标，或你的数据库提供商的用量告警。
 - **成本**：带有告警阈值的 Cloud Billing 预算（[成本和预算](#cost-and-budget)）。
 
-模块 [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) 会以下表中的名称把它们创建为策略，并列出它以不同方式覆盖或无法表达的每一项告警。它从未被应用过。只有流量才会产生的指标，在缩容到零的服务上会有空缺，因此针对其缺失的告警会误报；能发现空闲状态下服务器已挂掉的，是它的可用性检查。
+[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) 的 `monitoring` 部分会以下表中的名称把它们创建为策略，[其背后模块的 README](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) 列出了它以不同方式覆盖或无法表达的每一项告警。它从未被应用过。只有流量才会产生的指标，在缩容到零的服务上会有空缺，因此针对其缺失的告警会误报；能发现空闲状态下服务器已挂掉的，是它的可用性检查。
 
-<!-- source: aws-ecs 609e5bf632ef -->
+<!-- source: aws-ecs ce4eac5fd50d -->
 ### AWS ECS
 
 使用 `metrics_exporter = emf` 时，CloudWatch Logs 会把服务器的日志行转换为命名空间 `metrics_emf_namespace` 中的指标，使用带点号的名称（`my.job.duration`、`my.queue.oldest_ready_age`）。请求和任务耗时指标来自请求和任务的日志行，维度是你在 `metrics_emf_dimensions` 中列出的标签；要对失败的任务告警，请包含 `my.outcome`，要对 5xx 告警，请包含 `http.response.status_code`。实例级仪表（队列、媒体、数据库大小、远程服务器、账单导入、快照）由周期性的快照任务写入。Go 运行时指标（`go.*`）不会以 EMF 写入；请改用 ECS 服务的 CPU 和内存指标。
@@ -74,9 +74,9 @@ promtool test rules alerts.test.yml
 - **邮件**（`mail = ses`）：CloudWatch 中的 SES 信誉指标（退信率和投诉率）。
 - **费用**：带有告警的 AWS Budgets 预算（[费用和预算](#cost-and-budget)）。
 
-模块 [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) 会以下表中的名称把这些创建为告警，列表相同。该模块从未实际应用过。
+[`mycroblog-aws`](../../deploy/opentofu/README.md#sections) 的 `monitoring` 部分会以下表中的名称把这些创建为告警，[其背后模块的 README](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) 的列表相同。它从未被应用过。
 
-<!-- source: the-alerts d76842ca02b8 -->
+<!-- source: the-alerts afb87d0111fd -->
 ## 告警列表
 
 严重程度：**page** = 立即处理，**ticket** = 在工作时间处理。规则列中的“–”表示目前还没有对应的指标；请按说明进行检查。
@@ -110,17 +110,19 @@ promtool test rules alerts.test.yml
 | 资源 | [`MyMediaStorageLarge`](#mymediastoragelarge) | `my_media_stored_bytes` | 超过你规划的大小（示例为 50 GiB），持续 1 小时 | ticket | 上传量增长；需要升级套餐或提高预算 |
 | 邮件 | [`MyEmailFailing`](#myemailfailing) | 邮件任务中 `my_outcome="dead"` 的 `my_job_duration_seconds_count` | 一小时内出现任何一个 | ticket | SMTP 或 SES 设置错误、账号被停用或超出配额、地址被永久拒绝 |
 | 邮件 | [`MyEmailRetrying`](#myemailretrying) | 同上，`my_outcome="retry"` | 超过运行次数的 50%，持续 15 分钟 | ticket | 无法访问邮件服务器或其拒绝登录、发送速率限制 |
+| TLS | [`MyTLSCertificateExpiring`](#mytlscertificateexpiring) | `my_tls_certificate_expiry_seconds` | 任一进程中低于 7 天，持续 15 分钟 | page | 续期已失败数周、进程没有加载已续期的证书、没有任何东西为证书文件续期 |
+| TLS | [`MyTLSOrdersFailing`](#mytlsordersfailing) | `my_tls_order_consecutive_failures` | 3 次或更多，持续 5 分钟 | ticket | DNS 不再指向服务器、80 和 443 端口被阻止、证书颁发机构的速率限制或故障 |
 | 费用 | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 为 1，持续 6 小时 | ticket | 缺少权限、未设置账单导出、达到请求上限、服务商不可用 |
 | 费用 | 超出预算 | – | – | – | 流量、存储或配置错误导致费用超出计划（[见下文](#cost-and-budget)） |
 
-<!-- source: where-to-look b9e94304077f -->
+<!-- source: where-to-look 988be973ea5b -->
 ## 查看哪里
 
 下面的运维手册条目中，大多会再次用到这些工具。
 
 - **任务页面**（管理 → 任务，`/admin/jobs`，需要 `manage_jobs`）：按状态（排队中、运行中、重试中、失败）和类型统计的数量，以及等待最久的任务；它的 **任务** 页面（`/admin/jobs/list`）列出某一状态的任务，每个任务的页面有它最近的错误和未成功的尝试。待处理的任务只会列出保存在数据库中的队列的（`queue = db` 和 `cloudtasks`）；失败的任务和尝试则会列出所有队列的。
 - **`my job` 命令**，在具有服务器配置的主机上运行（`queue = db` 和 `cloudtasks`）：`my job list` 按最新在前列出失败的任务；`my job retry <id>...` 把它们放回队列；`my job delete <id>...` 丢弃它们。任务可以安全地重新运行。
-- **远程服务器页面**（审核 → 远程服务器，`/moderation/instances`，需要 `manage_domains`）：投递未能到达的服务器，以及投递已暂停的服务器，并附有原因和时间。“恢复投递”会把服务器重新标为可用。
+- **远程服务器页面**（审核 → 远程服务器，`/moderation/instances`，需要 `manage_domains`）：投递未能到达的服务器，以及投递已暂停的服务器，并附有原因和时间。“恢复投递”会把服务器重新标为可用。“打开服务器”会按域名打开任意服务器的页面，无论它是否在列表中。
 - **日志**：标准错误上的 JSON 行。每个 HTTP 请求以一行 `msg` 为 `http request` 的日志结束，每次任务运行以一行 `msg` 为 `job` 的日志结束（成功为 `INFO`，重试为 `WARN`，彻底失败的任务为 `ERROR`，并带有 `error`、`job_id` 和 `my.job.type`）。请求内部的日志行带有它的 `request_id`，客户端看到的是 `X-Request-Id`。
   - `federation.deliver` 一次运行的日志行还会说明投递去了哪里以及结果如何：`my.delivery.domain`（远程服务器的域名）、`activity.type`（例如 `Create`）、`my.delivery.outcome`（`succeeded`、`retryable_failure`、`permanent_failure` 或 `skipped`），以及 `http.response.status_code`（收件箱的响应，在它没有响应或没有发送任何内容时不存在）。`my.outcome` 仍是这次任务运行的结果。该日志行从不写出发送者、活动或收件箱 URL。Cloud Logging：`jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
   - Docker Compose：`docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
@@ -489,21 +491,52 @@ Go 运行时使用了超过 90% 的 `GOMEMLIMIT`。接近上限时，垃圾回�
 
 导入的费用和本月至今的估算值显示在“管理 → 费用 → 账单导入”中。失败的导入会记录在那里，并由下一次每日导入重试；[`MyBillingImportFailing`](#mybillingimportfailing) 会在当月数据过时之前通知你。
 
-<!-- source: mybillingimportfailing da997f400ac4 -->
+<!-- source: mybillingimportfailing fc199aaa760f -->
 ### MyBillingImportFailing
 
 某个账单来源的使用费用最近一次导入失败，并且 6 小时内没有后续导入成功。导入每天运行一次；限流和不可用会在数小时内重试，其他失败则等待第二天的导入，因此在此之前费用页面显示的是较旧的数据。
 
 检查：
 
-- “管理 → 费用 → 账单导入”：该来源的最后一次导入及其错误。
+- “管理 → 费用和收入 → 账单导入”：该来源的最后一次导入及其错误。
 - 按 `error_type` 统计的 `my_billing_imports_total{my_outcome="failed"}`，或 `msg` 为 `billing import failed` 的 `WARN` 日志行，其中带有 `source` 和 `error_kind`。[导入云使用费用](billing-import.md)列出了各种类型及其修复方法。
 
 处理：
 
-- 修复原因（权限、账单导出、请求上限），然后在“管理 → 费用 → 账单导入”中点击“立即导入”，而不必等到第二天。
+- 修复原因（权限、账单导出、请求上限），然后在“管理 → 费用和收入 → 账单导入”中点击“立即导入”，而不必等到第二天。
 
 如果没有 Prometheus（Cloud Run 上使用 `metrics_exporter = none`），请改为针对 `billing import failed` 行创建基于日志的告警。
+
+<!-- source: mytlscertificateexpiring 04321a12c086 -->
+### MyTLSCertificateExpiring
+
+某个进程提供的证书将在 7 天内过期。在 `tls = acme` 时，服务器会在证书还剩约三分之一有效期时（即过期前数周）为它续期，所以这意味着续期已经失败了很长时间，或者进程没有加载已续期的证书。在 `tls = files` 时，则意味着没有任何东西为这些文件续期。
+
+检查：
+
+- `instance` 标签：如果其他进程为同一主机提供了更新的证书，就只有这个进程还留着旧证书。
+- `my tls status`：该主机的当前证书、它何时续期，以及最近的订单及其错误。
+- 带有原因的日志行 `the TLS certificate could not be obtained`。
+
+处理：
+
+- 修复订单失败的原因（见 [MyTLSOrdersFailing](#mytlsordersfailing)），然后运行 `my tls renew -host <host>` 立即下单，而不必等到下一次下单。
+- 如果某个进程留着旧证书，而数据库里已有更新的证书，它会在 5 分钟内加载；如果没有，请重启它。
+- 在 `tls = files` 时，请用写入这些文件的工具（certbot）为它们续期；服务器会在一分钟内加载。
+
+<!-- source: mytlsordersfailing a344584cde47 -->
+### MyTLSOrdersFailing
+
+某个主机证书的最近 3 次或更多订单都没有拿到证书。第三次失败之后，服务器会在订单之间先等待 100 分钟，再等待一天，以便保持在证书颁发机构的限制之内。当前的证书在此期间继续使用。
+
+检查：
+
+- `my tls status`：失败次数以及每个订单的错误。出现 `rejectedIdentifier`、`dns`、`connection` 或 `unauthorized` 错误，表示证书颁发机构无法通过该名称访问到服务器；`rateLimited` 表示达到了它的限制。
+- 该 `host` 解析到了服务器，并且 443 和 80 端口可以从互联网访问。
+
+处理：
+
+- 修复原因，然后运行 `my tls renew -host <host>`：它会立即下单，无需等待。
 
 <!-- source: telling-users-about-an-incident e8cb0ca13fe8 -->
 ## 向用户通报故障

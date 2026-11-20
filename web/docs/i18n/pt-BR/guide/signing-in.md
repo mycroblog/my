@@ -6,37 +6,34 @@ pelos seus próprios operadores, então o que um servidor oferece (quem pode se 
 visitantes podem ler, se o chat de voz está ativo) depende deles. A página “Sobre” do servidor e os documentos que ele
 linka no cadastro informam as regras dele; este guia descreve apenas como o `my` se comporta.
 
-<!-- source: creating-an-account 965073ac4cf5 -->
+<!-- source: creating-an-account 6f66cdf29cd2 -->
 ## Criando uma conta
 
-Escolha “Cadastrar-se” na navegação (ou “Criar conta” na página de login). O formulário pede:
+Escolha “Cadastrar-se” na navegação (ou “Criar uma conta” na página de entrada). O formulário pede:
 
-- **Nome de usuário**: letras (a-z), dígitos e sublinhados. Seu identificador é `@username@this-server`, e você não pode alterar o nome de usuário depois.
+- **Nome de usuário**: letras (a-z), dígitos e sublinhados. Seu identificador é `@username@this-server`, e você não pode mudar o nome de usuário depois.
 - **Endereço de e-mail**: você entra com ele.
 - **Senha**: o formulário mostra o tamanho permitido abaixo do campo.
 - **Código de convite**, quando o servidor pede um ou aceita um.
-- **Por que você quer entrar? (opcional)**, quando o servidor analisa novas contas.
-- Uma caixa para confirmar que você leu os termos e as políticas do servidor, quando ele publica algum.
+- **Por que você quer entrar? (opcional)**, quando o servidor analisa as contas novas.
+- Uma caixa para confirmar que você leu os termos e as políticas do servidor, quando o servidor publica algum.
 
-Quais desses campos você vê depende de como o servidor aceita novas contas:
+Quais desses campos você vê depende de como o servidor aceita contas novas:
 
 | O servidor | O que você faz |
 | --- | --- |
-| Está aberto | Cadastre-se. O código de convite é opcional. |
-| Analisa novas contas | Cadastre-se e diga por que quer entrar. Um moderador aprova a conta antes que você possa usá-la. Um código de convite permite usar a conta na hora. |
-| Aceita somente convites | Informe o código de convite que você recebeu, ou abra o link do convite, que já o preenche. |
-| Está fechado | A página informa que o servidor não está aceitando novas contas. |
-| Faz cadastro somente por provedores de login | Você se cadastra com um provedor que o servidor oferece (por exemplo, “Entrar com GitHub”) em vez de usar senha. |
+| É aberto | Cadastre-se. Um código de convite é opcional. |
+| Analisa as contas novas | Cadastre-se e diga por que quer entrar. Um moderador aprova a conta antes de você poder usá-la. Um código de convite permite usar a conta na hora. |
+| Aceita apenas convites | Informe o código de convite que você recebeu, ou abra o link de convite, que o preenche. |
+| É fechado | A página diz que o servidor não está aceitando contas novas. |
+| Registra apenas por provedores de login | Você se cadastra com um provedor que o servidor oferece (por exemplo “Entrar com GitHub”) em vez de uma senha. |
 
-Se o servidor envia e-mails, ele envia um link para confirmar seu endereço de e-mail. Abra o link e escolha “Confirmar e-mail”.
-Enquanto a conta não for aprovada e o endereço não for confirmado, você pode entrar, mas só vê o que está esperando
+Se o servidor envia e-mail, ele envia um link para confirmar seu endereço de e-mail. Abra-o e escolha “Confirmar endereço de e-mail”.
+Até a conta ser aprovada e o endereço ser confirmado, você pode entrar, mas só vê o que está esperando
 (“Sua conta ainda não está pronta”).
 
-Depois do cadastro, uma página de boas-vindas permite escolher um avatar e um nome de exibição (“Continuar” salva os dois;
-“Depois” pula essa etapa). Sua linha do tempo inicial então mostra uma lista “Primeiros passos” com “Configure seu perfil”,
-“Siga alguém” e “Escreva sua primeira publicação”. “Ocultar estas etapas” fecha a lista naquele navegador. “Contas
-sugeridas” lista pessoas que você pode seguir, exceto em um servidor de uma única pessoa, onde “Encontrar pessoas” abre
-a busca.
+Depois do cadastro, uma etapa de boas-vindas pede um nome de exibição e um avatar, ambos opcionais (“Pular por enquanto”); enquanto você não segue ninguém, sua
+linha do tempo inicial mostra as pessoas que o servidor sugere, se ele sugerir alguma.
 
 <!-- source: signing-in fcfbfa76f1d0 -->
 ## Entrando
@@ -63,15 +60,21 @@ Depois de entrar, você pode ver uma página no lugar do aplicativo:
 - Sua conta está restrita por um moderador. A página lista as ações em vigor e permite contestar uma vez (“Contestar esta ação”). As mesmas ações aparecem em “Situação da conta” nas configurações.
 - Você desativou a conta. “Reativar sua conta” a traz de volta até a data em que ela seria excluída; “Excluir conta” a exclui na hora.
 
-<!-- source: signing-out fb81956ae999 -->
+<!-- source: signing-out 053a33c01d8e -->
 ## Saindo
 
-Escolha “Sair” na seção “Conta” do aplicativo. A página “Navegadores conectados” das configurações lista os navegadores
-conectados à sua conta e os desconecta.
+Escolha “Sair…”, a última linha das configurações, e confirme com “Sair”. Isso encerra a sessão deste navegador; seus outros
+navegadores e apps continuam conectados. “Navegadores conectados”, em “Segurança” nas configurações, lista os navegadores conectados
+à sua conta e encerra a sessão deles.
 
-<!-- source: settings 35cf43b05962 -->
+<!-- source: settings 4cd29f4ed978 -->
 ## Configurações
 
-As configurações estão agrupadas em “Perfil e comunidade”, “Exibição e notificações”, “Relacionamentos”, “Segurança”,
-“Apps” e “Conta e dados”. Em “Segurança” você gerencia sua senha, a autenticação em dois fatores, as passkeys, as contas
-vinculadas e os navegadores conectados.
+“Configurações” na navegação abre as configurações. Elas reúnem “Perfil”, que muda a aparência da sua conta e onde
+ela é encontrada; “Exibição e publicação”; “Notificações”; “Relacionamentos”, que lista as contas que você bloqueia e silencia, os
+servidores que você silencia e as hashtags que você segue, cada uma com o botão que desfaz a ação; “Filtros de palavras-chave”, que lista seus
+filtros e os adiciona, altera e exclui; “Segurança”, onde você gerencia sua senha, passkeys, autenticação
+em dois fatores, contas vinculadas e navegadores conectados; “Apps”, que lista os apps que você autorizou a usar sua conta,
+que você pode revogar, e os apps que você registrou; “Convites”, quando você pode criar convites, que cria links de convite
+e os revoga; e “Conta e dados”, que reúne “Status da conta”, seus dados e publicações, e a mudança, a desativação ou a
+exclusão da conta ([Mudando sua conta](moving-your-account.md)).

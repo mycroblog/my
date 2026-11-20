@@ -6,82 +6,85 @@ avec le reste du fediverse via ActivityPub ; `my` est son logiciel serveur, un
 de tâches, le client web et les commandes qui s’en occupent. Cette page présente de quoi se compose un serveur, ce que
 vous choisissez par la configuration, comment un petit serveur devient un grand serveur, et où lire ensuite.
 
-<!-- source: what-a-server-is-made-of 1210fe6ac0c4 -->
-## De quoi se compose un serveur
+<!-- source: what-a-server-is-made-of 51fb6c4e4a24 -->
+## De quoi un serveur est fait
 
 ![L’architecture d’un serveur mycroblog : les clients atteignent les processus my en HTTPS ; les processus utilisent les composants choisis par la configuration et les services extérieurs au serveur que vous activez. Les sections ci-dessous décrivent chaque composant.](images/architecture.svg)
 
-De haut en bas du schéma :
+Du haut du schéma vers le bas :
 
 - **Qui se connecte.** Les personnes utilisent le client web dans leur navigateur (il peut être installé comme une application), les applications et les bots utilisent
-  l’API cliente, et les autres serveurs du fediverse remettent et récupèrent des publications via ActivityPub. Tous atteignent le serveur en
+  l’API cliente, et les autres serveurs du fédivers livrent et récupèrent des publications via ActivityPub. Tous atteignent le serveur en
   HTTPS.
-- **Devant le serveur.** `my` parle en HTTP simple : un proxy inverse ou un répartiteur de charge termine donc le HTTPS devant lui.
-  Un CDN devant les fichiers média est facultatif.
-- **Les processus `my`.** Chaque processus exécute `my serve`, et son [`role`](../reference/configuration.md#role) indique ce qu’il
-  exécute : `web` le serveur HTTP, `worker` le worker de tâches, qui distribue les publications, récupère des données auprès d’autres serveurs, envoie des e-mails,
-  traite les médias et exécute les tâches périodiques, et `all`, la valeur par défaut, les deux dans un même processus.
+- **Devant le serveur.** Par défaut, `my` parle en HTTP simple ; un proxy inverse ou un répartiteur de charge termine donc le HTTPS devant lui.
+  Sur une seule machine, `my` peut servir lui-même le HTTPS à la place ([servir le HTTPS depuis le serveur](running.md#serving-https-from-the-server)).
+  Un CDN devant les fichiers de médias est facultatif.
+- **Les processus `my`.** Chaque processus exécute `my serve`, et son [`role`](../reference/configuration.md#role) dit ce qu’il
+  exécute : `web` le serveur HTTP, `worker` le worker de jobs, qui livre les publications, récupère des données d’autres serveurs, envoie des e-mails,
+  traite les médias et exécute les jobs périodiques, et `all`, la valeur par défaut, les deux dans un seul processus.
 - **Les composants que vous choisissez.** Chaque composant au milieu du schéma a un paramètre qui choisit son adaptateur, listé dans
   [la section suivante](#parts-you-choose-by-configuration).
-- **Les services extérieurs au serveur.** CAPTCHA, chat vocal, paiements, plugins et import des coûts cloud restent chacun désactivés
-  tant que vous ne les configurez pas ; le serveur appelle alors le service que vous indiquez.
+- **Les services extérieurs au serveur.** Le CAPTCHA, le chat vocal, les paiements, les plugins et l’import des coûts du cloud restent chacun désactivés
+  tant que vous ne les configurez pas, et le serveur appelle alors le service que vous nommez.
 
-<!-- source: parts-you-choose-by-configuration de382d807c25 -->
-## Les éléments que vous choisissez par la configuration
+<!-- source: parts-you-choose-by-configuration 34d13fdad524 -->
+## Les composants que vous choisissez par la configuration
 
-Chaque élément est un réglage de la [référence de configuration](../reference/configuration.md), défini dans un fichier TOML ou sous forme de variable d’environnement (`MY_` suivi de la clé en majuscules, par exemple `MY_DATABASE`). La première option de chaque liste est la valeur par défaut.
-Lorsqu’un élément conserve des données, choisissez-le avant le premier démarrage : les données ne se déplacent pas d’elles-mêmes lorsque le réglage change.
+Chaque composant est un paramètre de la [référence de la configuration](../reference/configuration.md), défini dans un fichier TOML ou comme une
+variable d’environnement (`MY_` et la clé en majuscules, comme `MY_DATABASE`). La première option de chaque liste est la valeur par défaut.
+Lorsqu’un composant conserve des données, choisissez-le avant le premier démarrage : les données ne se déplacent pas d’elles-mêmes lorsque le paramètre change.
 
-| Élément | Réglage | Options | À lire ensuite |
+| Composant | Paramètre | Options | À lire ensuite |
 | --- | --- | --- | --- |
-| Base de données | [`database`](../reference/configuration.md#database) | `sqlite` (un fichier), `postgres` (PostgreSQL et les services compatibles) | [Base de données](database.md), [sauvegarde](backup.md) |
-| File de tâches | [`queue`](../reference/configuration.md#queue) | `db` (une table de la base de données), `inline` (exécute chaque tâche immédiatement dans le même processus, pour les tests et le développement), `cloudtasks` (Google Cloud Tasks réveille le serveur pour chaque tâche ; exige PostgreSQL) | [La file de tâches](running.md#the-job-queue-and-failed-dead-jobs) |
-| Magasin clé-valeur, pour les caches et les limites de débit | [`kv`](../reference/configuration.md#kv) | `db` (une table de la base de données), `memory` (chaque processus pour lui-même), `valkey` (Valkey ou un autre serveur au protocole Redis, partagé par tous les processus) | [`kv`](../reference/configuration.md#kv) |
-| Stockage des médias | [`blob`](../reference/configuration.md#blob) | `fs` (un répertoire), `s3` (Amazon S3, Cloudflare R2, MinIO, Garage et d’autres magasins compatibles S3), `gcs` (Google Cloud Storage) | [Fichiers Docker Compose](running.md#docker-compose-files), [sauvegarde des médias](backup.md#media-in-a-bucket) |
+| Base de données | [`database`](../reference/configuration.md#database) | `sqlite` (un fichier), `postgres` (PostgreSQL et services compatibles) | [Base de données](database.md), [sauvegarde](backup.md) |
+| File de jobs | [`queue`](../reference/configuration.md#queue) | `db` (une table dans la base de données), `inline` (exécute chaque job aussitôt dans le même processus, pour les tests et le développement), `cloudtasks` (Google Cloud Tasks réveille le serveur pour chaque job ; exige PostgreSQL) | [La file de jobs](running.md#the-job-queue-and-failed-dead-jobs) |
+| Magasin clé-valeur, pour les caches, les limites de débit et les réponses conservées un jour pour les écritures renvoyées | [`kv`](../reference/configuration.md#kv) | `db` (une table dans la base de données), `memory` (chaque processus de son côté), `valkey` (Valkey ou un autre serveur au protocole Redis, partagé par tous les processus) | [`kv`](../reference/configuration.md#kv) |
+| Stockage des médias | [`blob`](../reference/configuration.md#blob) | `fs` (un répertoire), `s3` (Amazon S3, Cloudflare R2, MinIO, Garage et autres stockages compatibles S3), `gcs` (Google Cloud Storage) | [Fichiers Docker Compose](running.md#docker-compose-files), [sauvegarder les médias](backup.md#media-in-a-bucket) |
 | Traitement des médias | [`media_image`](../reference/configuration.md#media_image), [`media_video`](../reference/configuration.md#media_video), [`media_audio`](../reference/configuration.md#media_audio), un pour chaque type de fichier | `native` (dans le serveur), `plugin` (un plugin à vous convertit les fichiers de ce type) | [Convertir des médias](plugins.md#converting-media) |
-| Flux en temps réel entre les processus | [`stream`](../reference/configuration.md#stream) | `hub` (à l’intérieur d’un seul processus), `postgres` (`LISTEN` / `NOTIFY`), `valkey`, `sns` (Amazon SNS et SQS), `pubsub` (Google Cloud Pub/Sub) | [`stream`](../reference/configuration.md#stream) |
+| Flux en temps réel entre les processus | [`stream`](../reference/configuration.md#stream) | `hub` (dans un seul processus), `postgres` (`LISTEN` / `NOTIFY`), `valkey`, `sns` (Amazon SNS et SQS), `pubsub` (Google Cloud Pub/Sub) | [`stream`](../reference/configuration.md#stream) |
 | Gestionnaire de clés, qui chiffre les clés privées des comptes | [`key_manager`](../reference/configuration.md#key_manager) | `local` (une clé de chiffrement de clés que vous conservez), `gcpkms` (Google Cloud KMS), `awskms` (AWS KMS), `plugin` | [Gérer la clé](key-management.md) |
 | E-mail | [`mail`](../reference/configuration.md#mail) | `none`, `smtp`, `ses` (Amazon SES), `plugin` | [Envoyer des e-mails](email.md) |
 | CAPTCHA | [`captcha`](../reference/configuration.md#captcha) | `none`, `turnstile` (Cloudflare Turnstile), `hcaptcha`, `recaptcha` (Google reCAPTCHA v2) | [CAPTCHA](captcha.md) |
-| Chat vocal | [`voice`](../reference/configuration.md#voice) | `off`, `p2p` (de navigateur à navigateur, avec TURN depuis `voice_turn` : `none`, `coturn` ou `cloudflare`), `livekit`, `sora` | [Chat vocal](voice.md) |
-| Paiements de soutien | [`payments`](../reference/configuration.md#payments) | `none`, `stripe`, `payjp` (PAY.JP) | [Soutiens](supporters.md), [Stripe](payments-stripe.md), [PAY.JP](payments-payjp.md) |
+| Chat vocal | [`voice`](../reference/configuration.md#voice) | `off`, `p2p` (de navigateur à navigateur, avec TURN depuis `voice_turn` : `none`, `coturn` ou `cloudflare`), `livekit`, `sora` | [Chat vocal](voice.md) |
+| Paiements des soutiens | [`payments`](../reference/configuration.md#payments) | `none`, `stripe`, `payjp` (PAY.JP) | [Soutiens](supporters.md), [Stripe](payments-stripe.md), [PAY.JP](payments-payjp.md) |
 | Plugins | `plugin_<kind>_address` | aucun par défaut ; une adresse pour chaque type : `translator`, `search`, `billing`, `mailer`, `media_image`, `media_video`, `media_audio`, `key_manager`, et les hooks de décision `inbound.status`, `local.status`, `inbound.follow`, `signup.check`, `media.check`, `inbound.actor`, `local.profile` | [Plugins](plugins.md), [hooks de décision](decision-hooks.md) |
-| Traduction des publications | `translator_<provider>_*`, [`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | aucun (seulement la traduction propre au navigateur) ; `libretranslate`, `deepl`, `google` (Google Cloud Translation), `aws` (Amazon Translate), ou un plugin à vous devant le service que vous choisissez | [Traduire les publications](translation.md), [un plugin de traduction](plugins.md#translating-posts) |
-| Recherche plein texte des publications | [`search`](../reference/configuration.md#search) | `none` ; ou `elasticsearch`, `opensearch` ou `meilisearch` ([moteurs de recherche](search-engines.md)) ; ou `plugin`, un plugin à vous devant un autre moteur | [Recherche plein texte](search.md), [un plugin de recherche](plugins.md#searching-posts) |
+| Traduction des publications | `translator_<provider>_*`, [`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | aucune (seulement la traduction propre au navigateur) ; `libretranslate`, `deepl`, `google` (Google Cloud Translation), `aws` (Amazon Translate), ou un plugin à vous devant le service que vous choisissez | [Traduire des publications](translation.md), [un plugin de traduction](plugins.md#translating-posts) |
+| Recherche en texte intégral des publications | [`search`](../reference/configuration.md#search) | `none` ; ou `elasticsearch`, `opensearch` ou `meilisearch` ([moteurs de recherche](search-engines.md)) ; ou `plugin`, un plugin à vous devant un autre moteur | [Recherche en texte intégral](search.md), [un plugin de recherche](plugins.md#searching-posts) |
 | CDN pour les médias | [`media_origin`](../reference/configuration.md#media_origin) | non défini (le serveur sert les médias depuis sa propre origine), ou l’origine de votre CDN | [Servir les médias par un CDN](cdn.md) |
-| Coûts du cloud | [`billing_sources`](../reference/configuration.md#billing_sources) | aucun, ou n’importe lequel de `aws` (AWS Cost Explorer), `gcp` (l’export de facturation ou le budget de Google Cloud), `cloudflare` (les frais d’utilisation de Cloudflare), `plugin` | [Importer les coûts du cloud](billing-import.md) |
+| Coûts du cloud | [`billing_sources`](../reference/configuration.md#billing_sources) | aucun, ou l’un quelconque de `aws` (AWS Cost Explorer), `gcp` (l’export de facturation ou le budget de Google Cloud), `cloudflare` (les frais d’utilisation de Cloudflare), `plugin` | [Importer les coûts du cloud](billing-import.md) |
 | Métriques | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`, `prometheus`, `otlp` (OpenTelemetry), `emf` (CloudWatch) | [Métriques](running.md#metrics), [alertes](alerts.md) |
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
-| Rapports d’erreurs | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (uniquement la ligne de journal et les groupes d’erreurs), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Rapports d’erreurs](error-reporting.md) |
+| Signalements d’erreurs | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (la ligne de journal et les groupes d’erreurs seulement), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Signalement des erreurs](error-reporting.md) |
 
 Le binaire publié et l’image de conteneur contiennent tous les adaptateurs du tableau.
 
-`my config check` signale d’un coup tous les problèmes de la configuration, avant que vous démarriez le serveur ([liste de contrôle de production](production-checklist.md)).
+`my config check` signale d’un coup tous les problèmes de la configuration, avant que vous démarriez le serveur
+([liste de contrôle de production](production-checklist.md)).
 
-<!-- source: from-a-small-server-to-a-large-one 42bbd3f2a76e -->
-## D’un petit serveur à un grand serveur
+<!-- source: from-a-small-server-to-a-large-one 2f46b66f047c -->
+## D’un petit serveur à un grand
 
-![Trois étapes d’un petit serveur à un grand serveur : un processus sur SQLite et le système de fichiers, puis PostgreSQL et un stockage objet derrière un CDN, puis des processus web et worker séparés avec un broker de flux. La liste ci-dessous décrit chaque étape.](images/growth.svg)
+![Trois étapes d’un petit serveur à un grand : un processus sur SQLite et le système de fichiers, puis PostgreSQL et le stockage objet derrière un CDN, puis des processus web et worker séparés avec un courtier de flux. La liste ci-dessous décrit chaque étape.](images/growth.svg)
 
-1. **Commencer petit.** Un processus avec `role = all`, sur SQLite, avec les médias sur le système de fichiers et les valeurs par défaut pour le
-   reste : la file et le magasin clé-valeur dans la base de données, et le flux en temps réel à l’intérieur du processus. Les fichiers
-   Docker Compose de `deploy/docker` démarrent cette configuration sur une seule machine ([déployer avec Docker Compose](deploy-docker-compose.md)).
-   Elle convient à un serveur personnel ou petit. `stream = hub` n’atteint que le processus dans lequel il s’exécute : cette configuration reste donc à un seul
-   processus.
+1. **Commencer petit.** Un processus avec `role = all`, sur SQLite, avec les médias sur le système de fichiers et les valeurs par défaut pour
+   le reste : la file et le magasin clé-valeur dans la base de données, et le flux en temps réel dans le processus. Les fichiers Docker
+   Compose de `deploy/docker` démarrent cette configuration sur une machine ([déployer avec Docker Compose](deploy-docker-compose.md)).
+   Elle convient à un serveur personnel ou petit. `stream = hub` n’atteint que le processus dans lequel il s’exécute ; cette configuration reste donc à un
+   seul processus.
 2. **Sortir les données.** PostgreSQL pour la base de données, un bucket compatible S3 ou Google Cloud Storage pour les médias,
    et un CDN devant les médias. Le serveur reste un seul processus, mais il ne dépend plus d’un seul disque, et les
-   processus de l’étape suivante peuvent partager les données. Décidez-le avant le premier démarrage si possible : déplacer ensuite les données
-   de SQLite et du système de fichiers est un chantier à part ([ce qu’il faut sauvegarder](backup.md#what-to-back-up) liste
+   processus de l’étape suivante peuvent partager les données. Décidez-le avant le premier démarrage si vous le pouvez : déplacer ensuite les données
+   de SQLite et du système de fichiers est un travail à part ([ce qu’il faut sauvegarder](backup.md#what-to-back-up) liste
    ce qui doit être déplacé).
-3. **Passer à l’échelle.** Exécutez des processus avec `role = web` pour les requêtes et `role = worker` pour les tâches, autant que chacun
-   en demande, et répartissez les workers par type de tâche ([répartir les workers](running.md#splitting-workers-by-job-type)).
-   Avec plus d’un processus, le flux en temps réel a besoin d’un broker qui atteint tous les processus (`postgres`, `valkey`,
-   `sns` ou `pubsub`), et le magasin clé-valeur doit être partagé (`db` ou `valkey`), puisque `memory` garde séparées les limites
-   de débit de chaque processus. La file de tâches reste dans
+3. **Monter en charge.** Exécutez des processus avec `role = web` pour les requêtes et `role = worker` pour les jobs, autant que chacun
+   en exige, et répartissez les workers par type de job ([répartir les workers](running.md#splitting-workers-by-job-type)).
+   Avec plus d’un processus, le flux en temps réel a besoin d’un courtier qui atteint tous les processus (`postgres`, `valkey`,
+   `sns` ou `pubsub`), et le magasin clé-valeur doit être partagé (`db` ou `valkey`), car `memory` garde séparées les limites de
+   débit et les réponses aux écritures renvoyées de chaque processus. La file de jobs reste dans
    PostgreSQL, ou passe à Google Cloud Tasks ([Cloud Tasks](running.md#cloud-tasks)).
 
-Le [déploiement sur Cloud Run](deploy-cloud-run.md) est un exemple de configuration située entre la deuxième et la troisième étape :
-`role = all` sur Cloud Run, PostgreSQL sur Neon, les médias dans Cloud Storage, Cloud Tasks pour les tâches et Pub/Sub pour le
+Le [déploiement sur Cloud Run](deploy-cloud-run.md) est un exemple de configuration entre la deuxième et la troisième étape :
+`role = all` sur Cloud Run, PostgreSQL sur Neon, les médias dans Cloud Storage, Cloud Tasks pour les jobs et Pub/Sub pour le
 flux, sans aucune instance en cours d’exécution tant que personne n’utilise le serveur.
 
 <!-- source: where-to-go-next 2f1d25c01f8a -->

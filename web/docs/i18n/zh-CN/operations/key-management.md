@@ -3,28 +3,40 @@
 
 服务器用一把密钥加密密钥（KEK）加密它保存在数据库中的机密，而这把 KEK 本身从不存入数据库。本页介绍如何生成、保管、备份和轮换 KEK，如何改为把它放在 KMS 中，以及 KEK 丢失或泄露时该怎么办。所有设置都列在[配置参考](../reference/configuration.md)中。
 
-<!-- source: how-it-works 37074c6237d0 -->
+<!-- source: how-it-works 92f093e9e7ca -->
 ## 工作原理
 
-![密钥层级：密钥加密密钥保存在 key_manager 指定的位置，从不进入数据库；它包裹为每个机密生成的数据加密密钥，再由数据加密密钥加密机密；数据库在五个加密列中保存密钥 ID、被包裹的数据加密密钥和加密后的机密。下面的列表逐层说明。](images/key-hierarchy.svg)
+![密钥层级：密钥加密密钥保存在 key_manager 指定的位置，从不进入数据库；它包裹为每个机密生成的数据加密密钥，再由数据加密密钥加密机密；数据库在七个加密列中保存密钥 ID、被包裹的数据加密密钥和加密后的机密。下面的列表逐层说明。](images/key-hierarchy.svg)
 
-- 存入数据库的机密（例如 actor 的私钥）使用为每个机密生成的数据加密密钥（DEK），以 AES-256-GCM 加密。DEK 由 **密钥加密密钥（KEK）** 包裹后，和密文存放在一起（信封加密）。
+- 存入数据库的机密（例如 actor 的私钥）使用为每个机密生成的数据加密密钥（DEK），以 AES-256-GCM 加密。
+  DEK 由 **密钥加密密钥（KEK）** 包裹后，和密文存放在一起（信封加密）。
 - KEK 不存入数据库，因此仅凭泄露的数据库转储无法得到这些机密。
-- 每段密文都带有包裹其 DEK 的 KEK 的**密钥 ID**。在 `key_manager = local` 时，密钥 ID 是 `local:` 加上由 KEK 推导出的 16 位十六进制数，因此同一把 KEK 总是得到同一个 ID。你无需分配 ID。
+- 每段密文都带有包裹其 DEK 的 KEK 的**密钥 ID**。在 `key_manager = local` 时，密钥 ID 是 `local:` 加上由 KEK 推导出的 16 位十六进制数，
+  因此同一把 KEK 总是得到同一个 ID。你无需分配 ID。
 - 密文绑定到它所在的行 ID 和列名。把它复制到其他行或列后将无法解密。
-- 加密列（名称与 `my kek status` 的输出一致）有：`local_account_private_keys.private_key_enc`（actor 的私钥）、`totp_enrollments.secret_enc`（双重验证的密钥）、`login_provider_secrets.sealed_secret`（登录提供方的客户端密钥）、`webhook_secrets.sealed_secret`（Webhook 签名密钥）和 `instance_secrets.sealed_secret`（媒体代理签名密钥）。
+- 加密列（名称与 `my kek status` 的输出一致）有：`local_account_private_keys.private_key_enc`（actor 的私钥）、
+  `totp_enrollments.secret_enc`（双重验证的密钥）、`login_provider_secrets.sealed_secret`（登录提供方的客户端密钥）、
+  `webhook_secrets.sealed_secret`（Webhook 签名密钥）、`instance_secrets.sealed_secret`（媒体代理签名密钥和幂等性指纹的密钥）、
+  `tls_acme_accounts.sealed_private_key`（服务器自己获取证书时 ACME 账号的密钥），以及
+  `tls_certificates.sealed_private_key`（这些证书的密钥）。
 - 通行密钥登录或通过外部提供方登录时的状态也以同样方式加密，但不会存储：由浏览器保管，最长 30 分钟。
-- 媒体代理 URL 的签名密钥（HMAC-SHA256）是服务器首次启动时生成的随机密钥，和其他机密一样加密后存入数据库。轮换 KEK 时它不会改变，因此媒体代理 URL 在轮换前后都能正常使用；`my kek rewrap` 会把它和其他机密一起重新包裹。
-- `key_manager` 可以是 `local`（默认，使用 `kek` 设置）、`gcpkms`（KEK 保存在 Google Cloud KMS 中，参见 [Google Cloud KMS](#google-cloud-kms)）、`awskms`（KEK 保存在 AWS KMS 中，参见 [AWS KMS](#aws-kms)）或 `plugin`（KEK 由你自己的程序保管，参见[插件](#a-plugin)）。
+- 媒体代理 URL 的签名密钥（HMAC-SHA256）是服务器首次启动时生成的随机密钥，和其他机密一样加密后存入数据库。
+  轮换 KEK 时它不会改变，因此媒体代理 URL 在轮换前后都能正常使用；`my kek rewrap` 会把它和其他机密一起重新包裹。
+- `key_manager` 可以是 `local`（默认，使用 `kek` 设置）、`gcpkms`（KEK 保存在 Google Cloud KMS 中，参见 [Google Cloud KMS](#google-cloud-kms)）、
+  `awskms`（KEK 保存在 AWS KMS 中，参见 [AWS KMS](#aws-kms)）或 `plugin`（KEK 由你自己的程序保管，参见[插件](#a-plugin)）。
 
-<!-- source: what-happens-if-you-lose-the-kek 76126b09f09c -->
+<!-- source: what-happens-if-you-lose-the-kek d148ff0dedcc -->
 ## 丢失 KEK 会怎样
 
-没有 KEK，即使恢复了数据库也无法解密 actor 的私钥。私钥一旦丢失，其他服务器就无法再验证该 actor 的签名，**该 actor 在联邦宇宙中的身份也随之失效**（关注者关系无法迁移）。请像对待数据库一样谨慎对待 KEK。
+没有 KEK，即使恢复了数据库也无法解密 actor 的私钥。私钥一旦丢失，其他服务器就无法再验证该 actor 的签名，
+**该 actor 在联邦宇宙中的身份也随之失效**（关注者关系无法迁移）。请像对待数据库一样谨慎对待 KEK。
 
 ![丢失 KEK 后会失去什么：在没有 KEK 的情况下恢复后，所有未加密的内容仍可读取，所有加密的值都无法解开，actor 失去身份。下面的段落说明了同样的内容。](images/kek-loss.svg)
 
-未加密的内容仍可读取：帖子、账号、关注关系和数据库中的其他内容，以及存储中的媒体文件。所有加密的值都会以 `unknown key-encryption key` 错误失败：actor 的私钥、双重验证的密钥、登录提供方的客户端密钥、Webhook 签名密钥和媒体代理签名密钥。如果设置了另一把 KEK 来代替包裹这些机密的那一把，或者包裹它们的 KMS 密钥或插件密钥被停用或销毁，也会发生同样的情况。
+未加密的内容仍可读取：帖子、账号、关注关系和数据库中的其他内容，以及存储中的媒体文件。
+所有加密的值都会以 `unknown key-encryption key` 错误失败：actor 的私钥、双重验证的密钥、
+登录提供方的客户端密钥、Webhook 签名密钥、媒体代理签名密钥，以及服务器自己获取的证书的密钥。
+如果设置了另一把 KEK 来代替包裹这些机密的那一把，或者包裹它们的 KMS 密钥或插件密钥被停用或销毁，也会发生同样的情况。
 
 <!-- source: generate-a-kek 44b338b7440b -->
 ## 生成 KEK

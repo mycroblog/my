@@ -71,14 +71,20 @@ my config check -instance  # also the instance settings in the database
 - **詳細**: [サーバーの運用](running.md)（連合のエンドポイントと、別のドメインからのハンドルの配信）、
   [`host`](../reference/configuration.md#host) と [`account_domain`](../reference/configuration.md#account_domain)。
 
-<!-- source: reachable-over-https b7513cc3534f -->
+<!-- source: reachable-over-https 20f0b0b9a2d9 -->
 ### `https` で届くこと
 
 - **理由**: ほかのサーバーは id を `https://<host>/` のポート 443 で取得し、ブラウザーはログインの Cookie を `https` でだけ送ります。
 - **確認**: ネットワークの外から `curl -sI https://<host>/health/live` を実行すると、`host` に有効な証明書で `200` が返り、
-  `my config check` が `web_origin` についてのエラーを報告しないこと。`http://<host>/` は `https` にリダイレクトされます。これはサーバーの前にある
-  リバースプロキシ、ロードバランサー、CDN が行います（Docker Compose では、レイヤー `compose.caddy.yaml` がそうしたプロキシです）。
-- **詳細**: [サーバーの運用](running.md)、[`web_origin`](../reference/configuration.md#web_origin)。
+  `my config check` が `web_origin`、`tls`、`tls_acme_agree_terms`、`tls_cert_file` についてのエラーを報告しないこと。`curl -sI http://<host>/` は
+  `https://<host>/` への `301` を返します。サーバーの前にあるリバースプロキシ、ロードバランサー、CDN が TLS を終端してリダイレクトするか
+  （Docker Compose では、レイヤー `compose.caddy.yaml` がそうしたプロキシです）、サーバー自身が行います。`tls = acme` なら、
+  `my tls status` が `host`（`web_origin` のホストが異なる場合はそのホストも）の証明書を表示し、その発行者がステージング用でないこと。
+  つまり `tls_acme_directory` が未設定か、本番のディレクトリを指していることです。有効期限と、失敗した発行（order）にはアラートを設定してください
+  （[アラート](alerts.md#mytlscertificateexpiring)）。`tls = files` なら、証明書の残りが 14 日を切ると `my config check` が警告します。
+  証明書を更新する仕組みは、`tls_cert_file` と `tls_key_file` を最新に保つ必要があります。
+- **詳細**: [サーバーの運用](running.md)、[サーバーからの HTTPS 配信](running.md#serving-https-from-the-server)、
+  [`web_origin`](../reference/configuration.md#web_origin)、[`tls`](../reference/configuration.md#tls)。
 
 <!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### CDN を迂回して届かないこと

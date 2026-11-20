@@ -5,22 +5,22 @@ O que o servidor informa aos mecanismos de busca e aos rastreadores de IA, as co
 
 robots.txt e as meta tags são declarações que os rastreadores podem ou não respeitar; elas não são um bloqueio técnico. Se você precisa bloquear, use um WAF ou limitação de taxa.
 
-<!-- source: settings 13dfb1b04948 -->
+<!-- source: settings 470e02c5f395 -->
 ## Configurações
 
 | Escopo | Configuração | Onde alterar | Quando não definida |
 | --- | --- | --- | --- |
-| Servidor | `search_indexing` (`allow` / `deny`) | A seção "Mecanismos de busca e IA" da página "Busca e rastreadores" das configurações administrativas do servidor, `my instance set`, `PATCH /api/v1/admin/settings` ([Configurações da instância](instance-settings.md)) | `deny` |
-| Servidor | `ai_usage` (`allow` / `deny_training` / `deny`) | O mesmo | `deny` |
-| Servidor | `indexable_default` (o `indexable` das contas novas) | O mesmo | `false` |
-| Servidor | `security_contact` (para onde reportar vulnerabilidades) | O mesmo | Vazio (nenhum `security.txt` é servido) |
-| Pessoa | `indexable` (aparecer na busca) | "Mecanismos de busca e IA" nas configurações de perfil, `PATCH /api/v1/accounts/update_credentials` | `indexable_default` no cadastro |
-| Pessoa | `ai_opt_out` (recusar treinamento e uso por IA) | O mesmo | `false` |
+| Servidor | `search_indexing` (`allow` / `deny`) | As seções “Mecanismos de busca” e “IA” na página “Busca e rastreadores” das configurações do servidor na administração, `my instance set`, `PATCH /api/v1/admin/settings` ([Configurações da instância](instance-settings.md)) | `deny` |
+| Servidor | `ai_usage` (`allow` / `deny_training` / `deny`) | Igual | `deny` |
+| Servidor | `indexable_default` (o `indexable` das contas novas) | Igual | `false` |
+| Servidor | `security_contact` (onde relatar vulnerabilidades) | Igual | Vazio (nenhum `security.txt` é servido) |
+| Pessoa | `indexable` (aparecer na busca) | “Mecanismos de busca e IA” nas configurações do perfil, `PATCH /api/v1/accounts/update_credentials` | `indexable_default` no cadastro |
+| Pessoa | `ai_opt_out` (recusar o treinamento e o uso por IA) | Igual | `false` |
 
-- A declaração de uma página é a mais restritiva entre a configuração do servidor e a configuração do dono da página. Uma pessoa não pode permitir mais do que o servidor permite.
+- A declaração de uma página é a mais restritiva entre a configuração do servidor e a do dono da página. Uma pessoa não pode permitir mais do que o servidor permite.
 - Os mecanismos de busca são informados de que podem indexar apenas os perfis e as publicações `public` de contas com `indexable = true`, em um servidor com `search_indexing = allow`.
-  Um servidor que quer ser pesquisável altera os dois: `search_indexing` e `indexable_default`. Pessoas que se cadastraram antes de você alterar `indexable_default` não são incluídas até escolherem `indexable` por conta própria.
-- Uma configuração alterada passa a valer em `/robots.txt` e nas respostas de páginas e mídia sem reiniciar o servidor.
+  Um servidor que quer ser encontrado na busca altera tanto `search_indexing` quanto `indexable_default`. Quem se cadastrou antes de você alterar `indexable_default` não é incluído até escolher `indexable` por conta própria.
+- Uma configuração alterada passa a valer em `/robots.txt`, nas páginas e nas respostas de mídia sem reiniciar.
 
 <!-- source: what-the-server-returns 31584e03601b -->
 ## O que o servidor retorna

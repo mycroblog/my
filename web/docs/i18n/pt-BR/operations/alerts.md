@@ -63,94 +63,96 @@ a taxa de requisições, os códigos de status e a latência; as execuções de 
 e os servidores remotos; e a CPU e a memória de cada processo. Importe-o no Grafana (**Dashboards** → **New** → **Import**) e escolha a sua
 fonte de dados do Prometheus; a variável **Job** dele seleciona o job de coleta (`my` por padrão).
 
-<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
+<!-- source: google-cloud-cloud-run addd07c417a9 -->
 ### Google Cloud (Cloud Run)
 
-Com `metrics_exporter = none`, monte os alertas a partir do que o Cloud Run e o Cloud Logging já têm:
+Com `metrics_exporter = none`, crie os alertas a partir do que o Cloud Run e o Cloud Logging já têm:
 
-- **Erros e latência de HTTP**: a contagem de requisições do Cloud Run por classe de código de resposta e a métrica de latência de requisições do serviço.
-- **Erros**: as linhas `error report` vão para o Error Reporting, que as agrupa e pode avisar você sobre erros novos e recorrentes ([Relatório de erros](error-reporting.md#google-cloud-cloud-run)).
+- **Erros HTTP e latência**: a contagem de requisições do Cloud Run por classe de código de resposta e a métrica de latência de requisições do serviço.
+- **Erros**: as linhas `error report` vão para o Error Reporting, que as agrupa e pode notificar você sobre erros novos e recorrentes ([Relatório de erros](error-reporting.md#google-cloud-cloud-run)).
 - **Jobs e requisições**: o servidor grava uma linha de log por requisição HTTP (`msg` = `http request`) e por execução de job (`msg` = `job`), com os
   mesmos rótulos das métricas. Crie métricas baseadas em logs a partir delas, por exemplo um contador de `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   para jobs com falha, ou uma distribuição de `jsonPayload.duration_seconds` filtrada por `jsonPayload."my.surface"="client_api"` para a latência.
-- **Fila acumulada e armazenamento**: a cada 15 minutos o job `metrics.snapshot` grava uma linha (`msg` = `metrics snapshot`) com os valores de toda a instância,
-  como `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size` e `my.media.stored_bytes`. Crie métricas baseadas em logs a partir dos campos dela;
-  uma lacuna nessas linhas significa que o tick ou a fila parou. A métrica de profundidade de fila do Cloud Tasks conta os sinais que aguardam entrega.
+- **Acúmulo na fila e armazenamento**: a cada 15 minutos o job `metrics.snapshot` grava uma linha (`msg` = `metrics snapshot`) com os valores
+  da instância inteira, como `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size` e `my.media.stored_bytes`. Crie métricas baseadas em logs a partir dos campos dela;
+  uma lacuna nessas linhas significa que o tick ou a fila parou. A métrica de profundidade da fila do Cloud Tasks conta os sinais que aguardam entrega.
 - **Banco de dados**: as métricas de utilização de disco e de conexões do Cloud SQL, ou os alertas de uso do seu provedor de banco de dados.
 - **Custo**: um orçamento do Cloud Billing com limites de alerta ([Custo e orçamento](#cost-and-budget)).
 
-O módulo [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) cria esses itens como políticas com os nomes da tabela abaixo, e lista cada alerta que cobre de outra forma ou que não consegue expressar. Ele nunca foi aplicado. Uma métrica que só o tráfego produz tem lacunas em um serviço que escala a zero, então um alerta sobre a ausência dela dispara por engano; a verificação de disponibilidade é o que percebe um servidor ocioso que morreu.
+A seção `monitoring` do [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) cria esses itens como políticas com os nomes da tabela abaixo, e [o README do módulo por trás dela](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) lista cada alerta que ela cobre de outra forma ou não consegue expressar. Ela nunca foi aplicada. Uma métrica que só o tráfego produz tem lacunas em um serviço que escala a zero, então um alerta sobre a ausência dela dispara em falso; a verificação de disponibilidade dela é o que percebe um servidor ocioso que morreu.
 
-<!-- source: aws-ecs 609e5bf632ef -->
+<!-- source: aws-ecs ce4eac5fd50d -->
 ### AWS ECS
 
 Com `metrics_exporter = emf`, o CloudWatch Logs transforma as linhas do servidor em métricas no namespace `metrics_emf_namespace`, com os nomes
 com pontos (`my.job.duration`, `my.queue.oldest_ready_age`). As métricas de duração de requisições e de jobs vêm das linhas de log de requisições e de jobs, e as
-dimensões são os rótulos que você lista em `metrics_emf_dimensions`; inclua `my.outcome` para alarmar sobre jobs com falha e `http.response.status_code`
-para alarmar sobre 5xx. Os gauges de toda a instância (fila, mídia, tamanho do banco de dados, servidores remotos, importações de cobrança, snapshot) são gravados pelo job periódico de snapshot. As métricas do runtime do Go (`go.*`)
-não são gravadas em EMF; use no lugar delas as métricas de CPU e memória do serviço ECS.
+dimensões são os rótulos que você lista em `metrics_emf_dimensions`; inclua `my.outcome` para criar alarmes de jobs com falha e `http.response.status_code`
+para criar alarmes de 5xx. Os medidores da instância inteira (fila, mídia, tamanho do banco de dados, servidores remotos, importações de cobrança, snapshot) são gravados pelo job periódico de snapshot. As métricas do runtime do Go (`go.*`)
+não são gravadas em EMF; use no lugar as métricas de CPU e de memória do serviço do ECS.
 
-- **Erros de HTTP**: as métricas de 5xx e de contagem de requisições do Application Load Balancer.
-- **Fila acumulada**: `my.queue.oldest_ready_age`, que o job de snapshot grava.
+- **Erros HTTP**: as métricas de 5xx e de contagem de requisições do Application Load Balancer.
+- **Acúmulo na fila**: `my.queue.oldest_ready_age`, que o job de snapshot grava.
 - **Banco de dados**: as métricas de armazenamento e de conexões do RDS ou do Aurora, ou os alertas de uso do seu provedor de banco de dados.
-- **E-mail** (`mail = ses`): as métricas de reputação do SES (taxas de rejeição e de reclamação) no CloudWatch.
+- **E-mail** (`mail = ses`): as métricas de reputação do SES (taxas de bounce e de reclamação) no CloudWatch.
 - **Custo**: um orçamento do AWS Budgets com alertas ([Custo e orçamento](#cost-and-budget)).
 
-O módulo [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) cria esses itens como alarmes com os nomes da tabela abaixo, com a mesma lista. Ele nunca foi aplicado.
+A seção `monitoring` do [`mycroblog-aws`](../../deploy/opentofu/README.md#sections) cria esses itens como alarmes com os nomes da tabela abaixo, e [o README do módulo por trás dela](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) traz a mesma lista. Ela nunca foi aplicada.
 
-<!-- source: the-alerts d76842ca02b8 -->
+<!-- source: the-alerts afb87d0111fd -->
 ## Os alertas
 
-Severidade: **page** = agir agora, **ticket** = durante o horário comercial. “–” na coluna de regra significa que ainda não há métrica para ela; verifique-a como descrito.
+Gravidade: **page** = agir agora, **ticket** = durante o horário de expediente. “–” na coluna de regra significa que ainda não há métrica para isso; verifique como descrito.
 
-| Área | Alerta | Sinal | Limite | Severidade | Causas prováveis |
+| Área | Alerta | Sinal | Limite | Gravidade | Causas prováveis |
 | --- | --- | --- | --- | --- | --- |
 | Fila | [`MyQueueBacklog`](#myqueuebacklog) | `my_queue_oldest_ready_age_seconds` | acima de 5 min por 10 min | ticket | Poucos workers para um pico (uma publicação popular, um relay), jobs lentos, um worker que parou |
-| Fila | [`MyQueueStalled`](#myqueuestalled) | `my_queue_oldest_ready_age_seconds` | acima de 30 min por 5 min | page | Nenhum worker em execução (travou, não foi implantado, só `role = web`), nenhum worker executa um tipo de job, workers presos no banco de dados |
+| Fila | [`MyQueueStalled`](#myqueuestalled) | `my_queue_oldest_ready_age_seconds` | acima de 30 min por 5 min | page | Nenhum worker em execução (caiu, não foi implantado, apenas `role = web`), nenhum worker executa um tipo de job, workers travados no banco de dados |
 | Fila | [`MyDeadJobsIncreasing`](#mydeadjobsincreasing) | `delta(my_queue_dead[1h])` | acima de 10 por hora por 15 min | ticket | Um bug em um job, um adaptador mal configurado (e-mail, blob, cobrança), um serviço remoto que recusa |
 | Fila | [`MyMetricsSnapshotStale`](#mymetricssnapshotstale) | `my_metrics_snapshot_age_seconds` | parte da fila acima de 5 min, parte dos totais acima de 1 h, por 15 min | ticket | O armazenamento KV está inacessível, as consultas ao banco de dados do snapshot falham ou excedem o tempo |
-| Federação | [`MyDeliveryFailuresHigh`](#mydeliveryfailureshigh) | `my_delivery_attempts_total` com `my_outcome` `retry` ou `failed` | acima de 50% das tentativas por 30 min | ticket | Muitos seguidores em servidores fora do ar, um servidor grande fora do ar, problema na rede de saída |
-| Federação | [`MyDeliveryAllFailing`](#mydeliveryallfailing) | igual | acima de 95% das tentativas por 15 min | page | Rede de saída ou DNS com defeito, egress bloqueado, chaves ou `host` do servidor incorretos |
-| Federação | [`MyRemoteServersPaused`](#myremoteserverspaused) | `my_federation_instances{my_federation_instance_state="unavailable"}` | 5 a mais que um dia antes | ticket | Servidores que foram desativados ou que bloqueiam este, um problema de rede deste lado que durou dias |
-| Federação | [`MyInboxRejectionsHigh`](#myinboxrejectionshigh) | `my_inbox_activities_total{my_outcome="rejected"}` | acima de 25% dos POSTs por 30 min | ticket | Falha na verificação de assinatura (diferença de relógio, falha ao buscar chaves), um spammer ou um domínio suspenso tentando de novo, limites de taxa |
-| Federação | [`MyInboxSignatureFailures`](#myinboxsignaturefailures) | `my_inbox_activities_total{my_inbox_rejection="signature"}` | acima de 10% dos POSTs por 30 min | ticket | O relógio do servidor está errado, a busca das chaves dos remetentes falha, um servidor que trocou de chaves |
+| Federação | [`MyDeliveryFailuresHigh`](#mydeliveryfailureshigh) | `my_delivery_attempts_total` com `my_outcome` `retry` ou `failed` | acima de 50% das tentativas por 30 min | ticket | Muitos seguidores em servidores fora do ar, um servidor grande fora do ar, problemas na rede de saída |
+| Federação | [`MyDeliveryAllFailing`](#mydeliveryallfailing) | igual | acima de 95% das tentativas por 15 min | page | Rede de saída ou DNS com defeito, egress bloqueado, as chaves ou o `host` do servidor errados |
+| Federação | [`MyRemoteServersPaused`](#myremoteserverspaused) | `my_federation_instances{my_federation_instance_state="unavailable"}` | 5 a mais que um dia antes | ticket | Servidores que encerraram ou bloqueiam este, um problema de rede deste lado que durou dias |
+| Federação | [`MyInboxRejectionsHigh`](#myinboxrejectionshigh) | `my_inbox_activities_total{my_outcome="rejected"}` | acima de 25% dos POSTs por 30 min | ticket | Verificação de assinatura falhando (desvio de relógio, busca de chaves falhando), um spammer ou um domínio suspenso tentando de novo, limites de taxa |
+| Federação | [`MyInboxSignatureFailures`](#myinboxsignaturefailures) | `my_inbox_activities_total{my_inbox_rejection="signature"}` | acima de 10% dos POSTs por 30 min | ticket | O relógio do servidor está errado, a busca das chaves dos remetentes falha, um servidor que trocou as chaves |
 | Federação | [`MyInboxErrors`](#myinboxerrors) | `my_inbox_activities_total{my_outcome="error"}` | acima de 5% dos POSTs por 15 min | ticket | O banco de dados falhando, um bug na caixa de entrada |
-| Erros | [`MyErrorReportsIncreasing`](#myerrorreportsincreasing) | `my_errors_reported_total` | acima de 10 em 15 min e 3 × a média do dia anterior, por 15 min | ticket | Um bug novo vindo de uma versão, uma dependência que falha de um jeito novo, uma configuração quebrada |
+| Erros | [`MyErrorReportsIncreasing`](#myerrorreportsincreasing) | `my_errors_reported_total` | acima de 10 em 15 min e 3 × a média do dia anterior, por 15 min | ticket | Um bug novo de uma versão, uma dependência que falha de um jeito novo, uma configuração quebrada |
 | HTTP | [`MyHTTPErrorsHigh`](#myhttperrorshigh) | 5xx de `http_server_request_duration_seconds_count` | acima de 5% por 10 min | page | O banco de dados ou o KV fora do ar, uma versão ruim, o modo de manutenção |
 | HTTP | [`MyHTTPErrorsElevated`](#myhttperrorselevated) | igual | acima de 1% por 30 min | ticket | Uma rota com falha, um adaptador que falha de vez em quando |
-| HTTP | [`MyAPILatencyHigh`](#myapilatencyhigh) | p95 da API de cliente (streaming excluído) | acima de 300 ms por 30 min | ticket | Banco de dados saturado ou distante, uma consulta lenta, pouca CPU, cold starts |
-| Recursos | [`MyTargetDown`](#mytargetdown) | `up{job="my"}` | 0 por 5 min | page | O processo está fora do ar, em loop de falhas ou no modo de manutenção; o caminho da coleta está quebrado |
+| HTTP | [`MyAPILatencyHigh`](#myapilatencyhigh) | p95 da API do cliente (streaming de fora) | acima de 300 ms por 30 min | ticket | Banco de dados saturado ou distante, uma consulta lenta, pouca CPU, cold starts |
+| Recursos | [`MyTargetDown`](#mytargetdown) | `up{job="my"}` | 0 por 5 min | page | O processo caiu, está em loop de falhas ou no modo de manutenção; o caminho de coleta está quebrado |
 | Recursos | [`MyNotReady`](#mynotready) | `my_readiness_failures_total` | qualquer aumento por 5 min | page | O banco de dados está inacessível, ou o esquema não foi aplicado |
-| Recursos | [`MyProcessRestarting`](#myprocessrestarting) | `resets(process_uptime_seconds[1h])` | 3 reinícios em uma hora | ticket | Encerrado por falta de memória (OOM), um panic, uma sonda de liveness falhando |
+| Recursos | [`MyProcessRestarting`](#myprocessrestarting) | `resets(process_uptime_seconds[1h])` | 3 reinícios em uma hora | ticket | Encerrado por memória (OOM), um panic, uma sonda de vivacidade falhando |
 | Recursos | [`MyMemoryNearLimit`](#mymemorynearlimit) | `go_memory_used_bytes` / `go_memory_limit_bytes` | acima de 90% por 15 min | ticket | `GOMEMLIMIT` baixo demais para a carga, muitos streams abertos, um vazamento |
 | Recursos | [`MyDBPoolSaturated`](#mydbpoolsaturated) | `db_client_connection_count{db_client_connection_state="used"}` / `db_client_connection_max` | acima de 90% por 15 min | ticket | Pool pequeno demais para o tráfego, consultas lentas segurando conexões |
 | Recursos | [`MyDBPoolWaiting`](#mydbpoolwaiting) | `db_client_connection_wait_time_seconds_total`, `db_client_connection_timeouts_total` | espera acima de 0,5 s por segundo, ou qualquer timeout, por 10 min | ticket | Igual ao anterior; o limite de conexões do próprio banco de dados foi atingido |
 | Recursos | [`MyDatabaseStorageLarge`](#mydatabasestoragelarge) | `my_db_size_bytes` | acima do limite do seu plano menos uma margem (exemplo 8 GiB) por 1 h | ticket | Crescimento de publicações e de conteúdo remoto em cache; hora de aumentar o plano ou reduzir a retenção |
 | Recursos | [`MyFileDescriptorsNearLimit`](#myfiledescriptorsnearlimit) | `process_unix_file_descriptor_count` / `my_process_file_descriptor_limit` | acima de 80% por 15 min | ticket | Muitos streams e conexões abertos, um `ulimit -n` baixo |
 | Recursos | [`MyAdapterErrors`](#myadaptererrors) | `my_adapter_operation_duration_seconds_count{my_outcome="error"}` | acima de 5% das operações de um adaptador por 15 min | ticket | Valkey, o diretório de blobs ou o backend de streams falhando |
-| Recursos | [`MyRemoteMediaCacheOverLimit`](#myremotemediacacheoverlimit) | `my_media_stored_bytes{my_media_origin="remote_cache"}` | acima de 1,2 × `remote_media_cache_max_bytes` por 3 h | ticket | A limpeza por hora não é executada ou falha |
-| Recursos | [`MyMediaStorageLarge`](#mymediastoragelarge) | `my_media_stored_bytes` | acima do tamanho planejado (exemplo 50 GiB) por 1 h | ticket | Crescimento de uploads; hora de aumentar o plano ou o orçamento |
-| E-mail | [`MyEmailFailing`](#myemailfailing) | `my_job_duration_seconds_count` dos jobs de e-mail com `my_outcome="dead"` | qualquer um em uma hora | ticket | Configurações de SMTP ou SES incorretas, uma conta suspensa ou sem cota, endereços recusados em definitivo |
+| Recursos | [`MyRemoteMediaCacheOverLimit`](#myremotemediacacheoverlimit) | `my_media_stored_bytes{my_media_origin="remote_cache"}` | acima de 1,2 × `remote_media_cache_max_bytes` por 3 h | ticket | A limpeza de hora em hora não executa ou falha |
+| Recursos | [`MyMediaStorageLarge`](#mymediastoragelarge) | `my_media_stored_bytes` | acima do tamanho planejado (exemplo 50 GiB) por 1 h | ticket | Crescimento de envios; hora de aumentar o plano ou o orçamento |
+| E-mail | [`MyEmailFailing`](#myemailfailing) | `my_job_duration_seconds_count` dos jobs de e-mail com `my_outcome="dead"` | qualquer um em uma hora | ticket | Configurações de SMTP ou SES erradas, uma conta suspensa ou sem cota, endereços recusados definitivamente |
 | E-mail | [`MyEmailRetrying`](#myemailretrying) | igual, `my_outcome="retry"` | acima de 50% das execuções por 15 min | ticket | O servidor de e-mail está inacessível ou recusa o login, um limite de taxa de envio |
+| TLS | [`MyTLSCertificateExpiring`](#mytlscertificateexpiring) | `my_tls_certificate_expiry_seconds` | menos de 7 dias em qualquer processo por 15 min | page | Renovações falhando há semanas, um processo que não carrega o certificado renovado, arquivos de certificado que nada renova |
+| TLS | [`MyTLSOrdersFailing`](#mytlsordersfailing) | `my_tls_order_consecutive_failures` | 3 ou mais por 5 min | ticket | O DNS não aponta mais para o servidor, portas 80 e 443 bloqueadas, os limites de taxa ou uma indisponibilidade da autoridade certificadora |
 | Custo | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 por 6 h | ticket | Permissões ausentes, a exportação de cobrança não configurada, o limite de requisições atingido, o provedor indisponível |
-| Custo | Orçamento excedido | – | – | – | Tráfego, armazenamento ou uma configuração incorreta custando mais que o planejado ([abaixo](#cost-and-budget)) |
+| Custo | Orçamento excedido | – | – | – | Tráfego, armazenamento ou uma configuração errada custando mais que o planejado ([abaixo](#cost-and-budget)) |
 
-<!-- source: where-to-look b9e94304077f -->
+<!-- source: where-to-look 988be973ea5b -->
 ## Onde procurar
 
-Estas ferramentas aparecem em quase todas as entradas do runbook abaixo.
+Estas ferramentas voltam na maioria das entradas do runbook abaixo.
 
-- **A tela de jobs** (Administração → Jobs, `/admin/jobs`, exige `manage_jobs`): as contagens por estado (na fila, em execução, em nova tentativa, com falha) e por tipo, e
-  o job mais antigo à espera; a página **Jobs** (`/admin/jobs/list`) lista os jobs de um estado, e a página de cada job mostra seu último erro e as tentativas que não deram certo. Os jobs pendentes só são listados para as filas mantidas no banco de dados
-  (`queue = db` e `cloudtasks`); jobs com falha e tentativas são listados para todas as filas.
+- **A tela de jobs** (Administração → Jobs, `/admin/jobs`, exige `manage_jobs`): as contagens por estado (na fila, em execução, em nova tentativa, com falha) e por tipo e
+  o job mais antigo em espera; a página **Jobs** (`/admin/jobs/list`) lista os jobs de um estado, e a página de cada job tem o último erro e as tentativas que não tiveram sucesso. Os jobs pendentes são listados apenas para as filas mantidas no banco de dados
+  (`queue = db` e `cloudtasks`); os jobs e as tentativas com falha são listados para todas as filas.
 - **O comando `my job`** em um host que tem a configuração do servidor (`queue = db` e `cloudtasks`):
-  `my job list` lista os jobs com falha, do mais novo para o mais antigo; `my job retry <id>...` os devolve à fila; `my job delete <id>...` os descarta.
+  `my job list` lista os jobs com falha, os mais novos primeiro; `my job retry <id>...` os coloca de volta na fila; `my job delete <id>...` os descarta.
   É seguro executar os jobs de novo.
-- **A tela de servidores remotos** (Moderação → Servidores remotos, `/moderation/instances`, exige `manage_domains`): os servidores que as entregas não conseguiram alcançar,
-  e aqueles cujas entregas estão pausadas, com o motivo e o momento. “Retomar entregas” marca um servidor como disponível de novo.
-- **Os logs**: linhas JSON na saída de erro padrão. Cada requisição HTTP termina com uma linha cujo `msg` é `http request`, e cada execução de job com uma linha cujo `msg` é `job`
-  (`INFO` para sucesso, `WARN` para nova tentativa, `ERROR` para um job que falhou em definitivo, com `error`, `job_id` e `my.job.type`).
-  As linhas dentro de uma requisição trazem seu `request_id`, que o cliente vê como `X-Request-Id`.
+- **A tela de servidores remotos** (Moderação → Servidores remotos, `/moderation/instances`, exige `manage_domains`): os servidores que as entregas não conseguiram alcançar
+  e aqueles cujas entregas estão pausadas, com o motivo e quando. “Retomar as entregas” marca um servidor como disponível de novo. “Abrir um servidor” abre a página de qualquer servidor pelo domínio dele, listado ou não.
+- **Os logs**: linhas JSON na saída de erro padrão. Cada requisição HTTP termina com uma linha cujo `msg` é `http request`, cada execução de job com uma linha cujo `msg` é `job`
+  (`INFO` para sucesso, `WARN` para nova tentativa, `ERROR` para um job que falhou definitivamente, com `error`, `job_id` e `my.job.type`).
+  As linhas dentro de uma requisição trazem o `request_id` dela, que o cliente vê como `X-Request-Id`.
   - A linha de uma execução de `federation.deliver` também diz para onde a entrega foi e como terminou: `my.delivery.domain` (o domínio do servidor remoto),
     `activity.type` (por exemplo `Create`), `my.delivery.outcome` (`succeeded`, `retryable_failure`, `permanent_failure` ou `skipped`) e
     `http.response.status_code` (a resposta da caixa de entrada, ausente quando ela não deu nenhuma ou nada foi enviado). `my.outcome` continua sendo o resultado da execução do job.
@@ -159,9 +161,9 @@ Estas ferramentas aparecem em quase todas as entradas do runbook abaixo.
   - Docker Compose: `docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights: ``filter msg = "job" and `my.outcome` = "dead"``
-- **Relatórios de erro**: as linhas `error report` e a tela de Erros (Administração → Erros, `/admin/errors`, exige `manage_errors`) ([Relatório de erros](error-reporting.md)).
-- **Traces**, quando `traces_exporter = otlp`: as linhas de log trazem `trace_id`; abra-o no seu backend de traces para ver onde uma requisição lenta gastou seu tempo.
-- **O modo de manutenção** ([Manutenção](maintenance.md)): responde a toda requisição com uma página de manutenção e não toca em nenhum adaptador. Use-o enquanto você repara o banco de dados
+- **Relatórios de erros**: as linhas `error report` e a tela Erros (Administração → Erros, `/admin/errors`, exige `manage_errors`) ([Relatório de erros](error-reporting.md)).
+- **Traces**, quando `traces_exporter = otlp`: as linhas de log trazem `trace_id`; abra-o no seu backend de traces para ver onde uma requisição lenta gastou o tempo dela.
+- **O modo de manutenção** ([Manutenção](maintenance.md)): responde a toda requisição com uma página de manutenção e não toca em nenhum adaptador. Use-o enquanto você conserta o banco de dados
   ou o armazenamento KV.
 
 <!-- source: runbook e60e811fcff0 -->
@@ -553,23 +555,59 @@ O servidor não alerta sobre custo. Defina um orçamento com alertas no provedor
 As cobranças importadas e a estimativa do mês até hoje aparecem em Administração → Custos → Importações de cobrança. As importações com falha são registradas ali e repetidas pela próxima importação diária;
 [`MyBillingImportFailing`](#mybillingimportfailing) avisa você antes que os números do mês fiquem desatualizados.
 
-<!-- source: mybillingimportfailing da997f400ac4 -->
+<!-- source: mybillingimportfailing fc199aaa760f -->
 ### MyBillingImportFailing
 
-A importação mais recente das cobranças de uso de uma fonte de cobrança falhou, e nenhuma importação posterior teve sucesso por 6 horas. As importações rodam uma vez por dia; limitação de taxa e
-indisponibilidade são repetidas em poucas horas, e as outras falhas esperam a importação do dia seguinte, então a tela de custos mostra números mais antigos até lá.
+A importação mais recente dos custos de uso de uma fonte de cobrança falhou, e nenhuma importação posterior teve sucesso em 6 horas. As importações rodam uma vez por dia; a limitação de taxa e
+a indisponibilidade são repetidas em poucas horas, e as outras falhas esperam a importação do dia seguinte, então a tela de custos mostra números mais antigos até lá.
 
 Verifique:
 
-- Administração → Custos → Importações de cobrança: a última importação da fonte e seu erro.
+- Administração → Custos → Importações de cobrança: a última importação da fonte e o erro dela.
 - `my_billing_imports_total{my_outcome="failed"}` por `error_type`, ou a linha de log `WARN` cujo `msg` é `billing import failed`, com `source` e
-  `error_kind`. [Importar cobranças de uso de nuvem](billing-import.md) lista os tipos e como corrigir cada um.
+  `error_kind`. [Importando custos de uso da nuvem](billing-import.md) lista os tipos e como corrigir cada um.
 
 Corrija:
 
-- Corrija a causa (permissões, a exportação de cobrança, o limite de requisições) e então pressione “Importar agora” em Administração → Custos → Importações de cobrança em vez de esperar o dia seguinte.
+- Corrija a causa (permissões, a exportação de cobrança, o limite de requisições) e depois pressione “Importar agora” em Administração → Custos e receitas → Importações de cobrança em vez de esperar o dia seguinte.
 
-Sem o Prometheus (Cloud Run com `metrics_exporter = none`), crie no lugar disso um alerta baseado em logs sobre a linha `billing import failed`.
+Sem Prometheus (Cloud Run com `metrics_exporter = none`), crie no lugar um alerta baseado em logs sobre a linha `billing import failed`.
+
+<!-- source: mytlscertificateexpiring 04321a12c086 -->
+### MyTLSCertificateExpiring
+
+Um processo serve um certificado que expira em até 7 dias. Com `tls = acme`, o servidor renova um certificado quando resta cerca de um terço da
+vida dele, semanas antes de expirar, então isso significa que as renovações falharam por muito tempo, ou que o processo não carregou o certificado
+renovado. Com `tls = files`, significa que nada renovou os arquivos.
+
+Verifique:
+
+- O rótulo `instance`: quando outros processos servem um certificado mais recente para o mesmo host, apenas este processo manteve o antigo.
+- `my tls status`: o certificado atual do host, quando ele é renovado e os últimos pedidos com seus erros.
+- As linhas de log `the TLS certificate could not be obtained` com o motivo.
+
+Corrija:
+
+- Corrija a causa dos pedidos com falha (veja [MyTLSOrdersFailing](#mytlsordersfailing)) e depois execute `my tls renew -host <host>` para pedir na hora
+  em vez de esperar o próximo pedido.
+- Um processo que mantém um certificado antigo enquanto o banco de dados guarda um mais novo o carrega em até 5 minutos; reinicie-o se não carregar.
+- Com `tls = files`, renove os arquivos com a ferramenta que os grava (certbot); o servidor os carrega em até um minuto.
+
+<!-- source: mytlsordersfailing a344584cde47 -->
+### MyTLSOrdersFailing
+
+Os últimos 3 ou mais pedidos do certificado de um host não obtiveram nenhum. Depois da terceira falha, o servidor espera 100 minutos e depois um dia
+entre os pedidos, para ficar dentro dos limites da autoridade certificadora. O certificado atual continua em serviço nesse meio tempo.
+
+Verifique:
+
+- `my tls status`: as falhas e o erro de cada pedido. Um erro `rejectedIdentifier`, `dns`, `connection` ou `unauthorized` significa que a
+  autoridade certificadora não conseguiu alcançar o servidor pelo nome dele; `rateLimited` significa que os limites dela foram atingidos.
+- Que `host` resolve para o servidor e que as portas 443 e 80 estão acessíveis pela internet.
+
+Corrija:
+
+- Corrija a causa e depois execute `my tls renew -host <host>`: ele pede na hora, sem esperar.
 
 <!-- source: telling-users-about-an-incident e8cb0ca13fe8 -->
 ## Avisar os usuários sobre um incidente

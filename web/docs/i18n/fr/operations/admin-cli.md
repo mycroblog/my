@@ -1,7 +1,7 @@
-<!-- source: administrators-and-roles 1baeba6d67b4 -->
+<!-- source: administrators-and-roles f6df0418210b -->
 # Administrateurs et rôles
 
-Comment créer le premier administrateur, gérer les rôles en ligne de commande, annoncer et mener à bien la fin du service, retraiter les images téléversées, reconstruire l’index de recherche et exporter la page de maintenance.
+Comment créer le premier administrateur, gérer les rôles en ligne de commande, annoncer et mener à bien la fin du service, retraiter des images téléversées, reconstruire l’index de recherche, gérer les certificats TLS que le serveur sert lui-même, et exporter la page de maintenance.
 
 <!-- source: prerequisites b7ae62128809 -->
 ## Prérequis
@@ -10,7 +10,7 @@ Comment créer le premier administrateur, gérer les rôles en ligne de commande
 - Le schéma est appliqué à la base de données (`my schema apply` ; consultez [database.md](database.md)).
 - `host` et `account_domain` sont définitifs. La première commande qui utilise la base de données les enregistre, et toute commande ultérieure refuse de s’exécuter lorsque la configuration diffère (consultez [Paramètres que vous ne pouvez plus modifier ensuite](production-checklist.md#settings-you-cannot-change-later)).
 
-<!-- source: creating-an-administrator e5fec2e3d287 -->
+<!-- source: creating-an-administrator 9be8b2ee8d85 -->
 ## Créer un administrateur
 
 ```sh
@@ -19,15 +19,15 @@ my admin create -username alice -email alice@example.com
 
 - Depuis un terminal, la commande demande deux fois le mot de passe, sans l’afficher.
 - Lorsque l’entrée standard n’est pas un terminal, la première ligne de l’entrée standard est le mot de passe (par exemple `my admin create ... < password.txt`).
-  Le mot de passe ne peut pas être donné en argument de ligne de commande ni en variable d’environnement, car ceux-ci se retrouvent dans les listes de processus et l’historique du shell.
-- Lorsqu’une commande ponctuelle n’a ni terminal ni entrée standard, comme une [tâche Cloud Run](deploy-cloud-run.md#7-create-the-first-administrator), ajoutez `-password-link`. La commande ne lit alors aucun mot de passe : elle en définit un aléatoire que personne ne connaît et affiche un lien après la ligne `created admin`, qui permet de définir le mot de passe une seule fois, pendant une heure, comme `my admin account password-reset-link` (le journal d’audit l’enregistre sous `password_reset_link_issued`).
-  Quiconque peut lire la sortie de la commande peut utiliser le lien, et sur une telle plateforme cette sortie reste dans les journaux de la plateforme jusqu’à ce que le lien soit utilisé ou expire. Ouvrez le lien immédiatement. S’il expire, émettez-en un autre avec `my admin account password-reset-link @alice`. Si l’émission du lien échoue, l’administrateur existe déjà : la commande l’indique et se termine avec le code 1, et la même commande donne un nouveau lien.
-- Un mot de passe comporte de 8 à 128 caractères. Il n’apparaît jamais dans la sortie, les journaux ni les messages d’erreur.
-- Une seule transaction crée l’utilisateur, le mot de passe, l’adresse e-mail principale, le compte local (avec ses clés) et l’attribution du rôle `admin` (sans attributeur, ce qui signifie la CLI).
+  Le mot de passe ne peut pas être donné comme argument de ligne de commande ni comme variable d’environnement, car ceux-ci se retrouvent dans les listes de processus et dans l’historique du shell.
+- Lorsqu’une commande ponctuelle n’a ni terminal ni entrée standard, comme un [job Cloud Run](deploy-cloud-run.md#7-create-the-first-administrator), ajoutez `-password-link`. La commande ne lit alors aucun mot de passe : elle en définit un aléatoire que personne ne connaît et affiche un lien après la ligne `created admin`, qui définit le mot de passe une seule fois, pendant une heure, comme `my admin account password-reset-link` (le journal d’audit l’enregistre sous `password_reset_link_issued`).
+  Quiconque peut lire la sortie de la commande peut utiliser le lien, et sur une telle plateforme cette sortie reste dans les journaux de la plateforme jusqu’à ce que le lien soit utilisé ou expire. Ouvrez le lien immédiatement. S’il expire, émettez-en un autre avec `my admin account password-reset-link @alice`. Si l’émission du lien échoue, l’administrateur existe déjà : la commande le dit et se termine avec le code 1, et la même commande donne un nouveau lien.
+- Un mot de passe compte de 8 à 128 caractères. Il n’apparaît jamais dans la sortie, les journaux ni un message d’erreur.
+- Une seule transaction crée l’utilisateur, le mot de passe, l’adresse e-mail principale, le compte local (avec ses clés) et l’attribution du rôle `admin` (sans attributeur, ce qui désigne la CLI).
   Les rôles intégrés sont d’abord créés s’ils manquent.
 - En cas de succès, la commande affiche `created admin @alice@<account_domain> (user <id>, account <id>)` et se termine avec le code 0.
 - Sur un [serveur d’une seule personne](instance-settings.md#one-person-server), la commande ne crée aucun compte et se termine avec le code 1.
-  Tant que [la connexion est limitée aux fournisseurs de connexion](login-providers.md#limit-sign-in-to-login-providers), elle avertit aussi que le mot de passe ne permet pas de se connecter jusqu’à la fin de la limite.
+  Tant que [la connexion est limitée aux fournisseurs de connexion](login-providers.md#limit-sign-in-to-login-providers), elle avertit aussi que le mot de passe ne peut pas servir à se connecter avant la fin de cette limite.
 
 <!-- source: running-it-again 197692f7f103 -->
 ## Relancer la commande
@@ -37,13 +37,14 @@ my admin create -username alice -email alice@example.com
 - Une exécution échouée n’écrit rien ; vous pouvez donc corriger la cause et relancer la même commande.
 - Le code de sortie 2 signale une erreur d’utilisation.
 
-<!-- source: granting-and-revoking-roles a8783994c097 -->
-## Accorder et révoquer des rôles
+<!-- source: granting-and-revoking-roles 83f3a38172a4 -->
+## Attribuer et révoquer des rôles
 
-Les rôles regroupent des permissions. Les rôles intégrés sont `admin` (`position` 1000, toutes les permissions) et `moderator` (`position` 100, avec `manage_reports`, `manage_accounts` et `view_audit`).
+Les rôles contiennent des permissions. Les rôles intégrés sont `admin` (`position` 1000, toutes les permissions) et
+`moderator` (`position` 100, avec `manage_reports`, `manage_accounts` et `view_audit`).
 `my serve` vérifie les rôles intégrés à chaque démarrage (dans un processus de n’importe quel `role`), et `my admin role` les vérifie à chaque exécution.
 Chacun crée ce qui manque et donne à `admin` toutes les permissions de la version en cours d’exécution.
-Lorsqu’une mise à niveau ajoute une permission, aucune étape manuelle n’est nécessaire. Un `moderator` conserve les permissions et la position que l’administrateur a définies.
+Lorsqu’une mise à niveau ajoute une permission, aucune étape manuelle n’est nécessaire. Un `moderator` conserve les permissions et la position définies par l’administrateur.
 
 ```sh
 my admin role list                 # each role's position, permissions (grouped as moderation, server administration, and member features), and holders
@@ -55,17 +56,44 @@ my admin role revoke alice moderator
 - Les permissions appartiennent à l’un de trois groupes.
   - Modération : `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit`.
   - Administration du serveur : `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers`.
-  - Fonctionnalités des membres : `view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`, `create_articles`, `create_events`.
+  - Fonctions des membres : `view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`, `create_articles`, `create_events`.
 
-  `list` affiche une colonne par groupe (`MODERATION`, `SERVER`, `MEMBER`). Le client web affiche « Modération » et « Administration » pour les deux premiers groupes et ne compte les fonctionnalités des membres dans aucun des deux (voir [moderation.md](moderation.md)).
+  `list` affiche une colonne par groupe (`MODERATION`, `SERVER`, `MEMBER`). Le client web affiche « Modération » et « Administration » pour les deux premiers groupes et ne compte les fonctions des membres dans aucun des deux (voir [moderation.md](moderation.md)).
 - Un changement prend effet à la prochaine requête de l’utilisateur. Les notifications destinées aux modérateurs vont aux personnes qui détiennent la permission au moment où la notification est créée.
-- Les attributions et les révocations sont écrites dans le journal d’audit sous les noms `role_granted` et `role_revoked` (type de cible `role`). L’acteur d’une opération de la CLI est `cli` (`my admin audit list -target-kind role`).
-- Accorder un rôle que l’utilisateur possède déjà, ou révoquer un rôle qu’il ne possède pas, ne change ni n’enregistre rien.
-- Le dernier détenteur de `admin` ne peut pas le perdre (code de sortie 1). Accordez d’abord `admin` à un autre utilisateur.
-- L’API d’administration est `GET /api/v1/admin/roles`, `GET /api/v1/admin/accounts/{id}/roles` et `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`, et elle exige la permission `manage_roles`.
-  Par l’API, vous ne pouvez pas accorder ni révoquer un rôle supérieur à la `position` la plus élevée parmi vos propres rôles (403). Révoquer le dernier `admin` renvoie 409.
-- Le personnel n’agit que sur les rangs inférieurs. Par l’API, les mesures de modération et leur levée, le jugement des contestations, la levée des suppressions d’e-mail, la révélation des données privées d’un compte, l’émission d’un lien de réinitialisation du mot de passe et la suppression de l’authentification à deux facteurs exigent que la `position` la plus élevée parmi vos rôles soit supérieure à celle de chacun des rôles de la cible ; un rang supérieur ou égal, y compris pour votre propre compte, renvoie 403. Un modérateur ne peut pas agir sur un administrateur, et un administrateur ne peut pas agir sur un autre. Ces commandes (`my admin account ...`) n’ont pas une telle limite ; utilisez-les lorsque des administrateurs sont en désaccord.
-- L’unique administrateur ne peut pas être verrouillé ni retiré : `disable_login`, `suspend` et `ban` sur lui sont refusés, par l’API (409) et par ces commandes (code de sortie 1), et il ne peut pas supprimer son propre compte (409). Un autre détenteur de `admin` ne compte que tant qu’il peut se connecter : pas après avoir supprimé son compte, ni tant qu’il est suspendu, banni ou sous `disable_login`.
+- Les attributions et les révocations sont écrites dans le journal d’audit sous `role_granted` et `role_revoked` (type de cible `role`). L’acteur d’une opération en CLI est `cli` (`my admin audit list -target-kind role`).
+- Attribuer un rôle que l’utilisateur a déjà, ou en révoquer un qu’il n’a pas, ne change ni n’enregistre rien.
+- Le dernier titulaire de `admin` ne peut pas le perdre (code de sortie 1). Attribuez d’abord `admin` à un autre utilisateur.
+- L’écran d’administration « Rôles » (`/admin/roles`) liste tous les rôles et permet de les créer, de les modifier et de les supprimer : la page d’un rôle définit sa
+  place, ses permissions et son badge. Il ne propose que ce que les règles ci-dessous autorisent : une place au plus égale à celle de votre rôle le plus élevé,
+  les permissions que vous détenez (les autres permissions d’un rôle sont nommées et conservées), uniquement le badge de `admin`, et aucune suppression
+  de `admin` ou `moderator`. Supprimer un rôle demande de saisir son nom. Les rôles d’une formule sont définis à partir de la formule.
+- L’API d’administration comprend `GET /api/v1/admin/roles`, `GET /api/v1/admin/accounts/{id}/roles` et `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`, et elle exige la permission `manage_roles`.
+  Par l’API, vous ne pouvez pas attribuer ni révoquer un rôle supérieur à la `position` la plus élevée de vos propres rôles (403). Révoquer le dernier `admin` renvoie 409.
+- Le personnel n’agit que sur les rangs inférieurs. Par l’API, les actions de modération et leur levée, la décision sur les contestations, la levée des suppressions d’e-mail, la révélation des données privées d’un compte, l’émission d’un lien de réinitialisation du mot de passe et le retrait de l’authentification à deux facteurs exigent que la `position` la plus élevée de vos rôles soit supérieure à celle de chaque rôle de la cible ; un rang supérieur ou égal, y compris votre propre compte, renvoie 403. Un modérateur ne peut pas agir sur un administrateur, et un administrateur ne peut pas agir sur un autre. Ces commandes (`my admin account ...`) n’ont pas une telle limite : utilisez-les lorsque des administrateurs sont en désaccord.
+- Le seul administrateur ne peut être ni verrouillé ni retiré : `disable_login`, `suspend` et `ban` sont refusés à son encontre, par l’API (409) et par ces commandes (code de sortie 1), et il ne peut pas supprimer son propre compte (409). Un autre titulaire de `admin` ne compte que tant qu’il peut se connecter : pas après avoir supprimé son compte, ni lorsqu’il est suspendu, banni ou sous `disable_login`.
+
+<!-- source: tls-certificates 76e79e7fd3c0 -->
+## Certificats TLS
+
+`my tls` gère les certificats d’un serveur qui sert lui-même le HTTPS (`tls = acme` ou `tls = files` ; voir
+[Servir le HTTPS depuis le serveur](running.md#serving-https-from-the-server)).
+
+```sh
+my tls status                                          # each host: certificate, renewal, failures, latest orders
+my tls renew -host social.example                      # order a certificate now, without waiting
+my tls revoke -host social.example -reason key_compromise  # replace, then revoke the current certificate
+```
+
+- `status` affiche, pour chaque hôte, le certificat actuel (numéro de série, émetteur, expiration), la date de son renouvellement, le nombre de commandes
+  consécutives qui n’ont obtenu aucun certificat, et les dernières commandes avec leurs erreurs. Avec `tls = files`, il affiche le
+  certificat de `tls_cert_file` ; avec `tls = off`, il le dit.
+- `renew` et `revoke` exigent `tls = acme`, le serveur en cours d’exécution (il répond aux vérifications de l’autorité de certification) et un
+  `kv` autre que `memory`. Ils se terminent avec le code 1 lorsqu’ils échouent, lorsqu’un autre processus commande à ce moment le certificat de
+  l’hôte, et avec `tls = files` ou `tls = off`.
+- `-reason` vaut `key_compromise` lorsque la clé privée peut être connue d’autres personnes, sinon `superseded` ou `operator`.
+  `revoke` se termine avec le code 0 et affiche un avertissement lorsqu’il a révoqué le certificat mais n’a pas pu commander son remplaçant.
+
+[Commandes et métriques](running.md#commands-and-metrics) explique ce que chacune fait aux processus en cours d’exécution.
 
 <!-- source: announcing-the-end-of-the-service e1c40ec145f0 -->
 ## Annoncer la fin du service
@@ -156,12 +184,12 @@ my search status               # the backend and the progress and failures of th
 
 Relancez `my search rebuild` pour reprendre une reconstruction interrompue. Elle repart de la dernière publication traitée et ne vide pas de nouveau l’index. Tant qu’une reconstruction est inachevée, l’autre mode est refusé avec le code de sortie 1. [Recherche plein texte des publications](search.md) indique quand utiliser chacun.
 
-<!-- source: exporting-the-maintenance-page 1756fcf1e02e -->
+<!-- source: exporting-the-maintenance-page c0661d4bb0d0 -->
 ## Exporter la page de maintenance
 
 `my maintenance export` écrit la page du mode maintenance sous forme de HTML statique,
-afin qu’un répartiteur de charge, un CDN ou un reverse proxy la serve tant que `my serve` lui-même ne peut pas s’exécuter (une image en cours de remplacement, une révision qui ne démarre pas).
-Elle utilise le même modèle que le mode maintenance ; les deux affichent donc les mêmes mots et le même aspect.
+pour qu’un répartiteur de charge, un CDN ou un proxy inverse la serve pendant que `my serve` lui-même ne peut pas s’exécuter (une image en cours de remplacement, une révision qui ne démarre pas).
+Elle utilise le même modèle que le mode maintenance, de sorte que les deux affichent les mêmes mots et la même apparence.
 
 ```sh
 my maintenance export -out ./maintenance -lang en,ja            # reads the database for at most 5 seconds
@@ -169,11 +197,11 @@ my maintenance export -out ./maintenance -lang en,ja -offline   # the configurat
 ```
 
 - Sortie : `<dir>/<locale>.html` pour chaque locale de `-lang`, pour les frontaux qui choisissent une page selon `Accept-Language`,
-  et `<dir>/index.html` avec toutes les locales l’une après l’autre, pour ceux qui ne le peuvent pas.
+  et `<dir>/index.html` avec toutes les locales les unes après les autres, pour ceux qui ne le peuvent pas.
   Les pages ont du CSS en ligne, aucun script et aucune ressource externe ; leur Content-Security-Policy se trouve dans un élément `<meta>`.
-- Textes : les paramètres `maintenance_server_name`, `maintenance_message`, `maintenance_until` et `status_page_url`
-  ([référence de configuration](../reference/configuration.md)).
-- Sans `-offline`, elle lit aussi le nom du serveur (lorsque `maintenance_server_name` n’est pas défini), sa locale par défaut (lorsque `-lang` n’est pas donné)
-  et les surcharges de jetons de son thème. Lorsque la base de données ne peut pas être lue,
+- Mots : les paramètres `maintenance_server_name`, `maintenance_message`, `maintenance_until` et `status_page_url`
+  ([référence de la configuration](../reference/configuration.md)).
+- Sans `-offline`, elle lit aussi le nom de l’instance (lorsque `maintenance_server_name` n’est pas défini), sa locale par défaut (lorsque `-lang` n’est pas donné),
+  et les surcharges de jetons de son thème publié. Lorsque la base de données ne peut pas être lue,
   elle affiche un avertissement, écrit les pages à partir de la configuration et du thème par défaut, et se termine avec le code 0.
-- Relancez-la chaque fois que ces paramètres ou le thème changent, et avant chaque maintenance, afin que les pages du frontal restent à jour.
+- Exécutez-la de nouveau chaque fois que ces paramètres ou le thème changent, et avant chaque maintenance, afin que les pages du frontal restent à jour.

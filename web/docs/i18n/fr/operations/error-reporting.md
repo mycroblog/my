@@ -43,23 +43,27 @@ Ses champs, et ce que fait le nettoyage sur eux, sont décrits dans [Exécuter l
 
 Aucune autre ligne ne porte de pile.
 
-<!-- source: google-cloud-cloud-run 925c99683713 -->
+<!-- source: google-cloud-cloud-run a263d8621ca1 -->
 ### Google Cloud (Cloud Run)
 
-Cloud Error Reporting lit la ligne sans aucune configuration et liste les erreurs dans la console sous Error Reporting. C’est gratuit ; vous ne payez que Cloud Logging.
+Cloud Error Reporting lit la ligne sans aucune configuration et liste les erreurs dans la console sous Error Reporting. Il est gratuit ; vous ne payez que Cloud Logging.
 
-- Il groupe les erreurs par le type et les premières trames de la pile. Il ne peut pas utiliser l’empreinte du serveur : un groupe d’Error Reporting peut donc différer d’un groupe de l’écran d’administration.
-- Il conserve les groupes 30 jours, et vous notifie des nouvelles erreurs et des erreurs résolues qui se reproduisent, au plus 20 notifications par heure pour le projet. Configurez son canal de notification dans la console Google Cloud.
-- Pour retrouver ce qui s’est passé autour d’un rapport, recherchez dans Cloud Logging `jsonPayload."request_id"="<id>"`, ou la même chose avec `trace_id`.
+- Il regroupe les erreurs par type et par premiers cadres de la pile. Il ne peut pas utiliser l’empreinte du serveur ; un groupe dans Error Reporting peut donc différer d’un groupe dans l’écran d’administration.
+- Il conserve les groupes pendant 30 jours, et vous notifie des nouvelles erreurs et des erreurs résolues qui se reproduisent, au plus 20 notifications par heure pour le projet. Configurez son canal de notification dans la console Google Cloud.
+- Pour trouver ce qui s’est passé autour d’un signalement, cherchez dans Cloud Logging `jsonPayload."request_id"="<id>"`, ou la même chose avec `trace_id`.
 
-<!-- source: aws 6ca6594afd7e -->
+Avec le module OpenTofu [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections), la section `observability` envoie les signalements ici par défaut (`errors = "error-reporting"`) : elle active l’API Error Reporting et laisse `errors_exporter` à `none`.
+
+<!-- source: aws bc7e48e1321b -->
 ### AWS
 
 CloudWatch Logs lit la ligne comme du JSON simple.
 
-- Activez la détection d’anomalies de journaux pour le groupe de journaux. Elle signale un motif de ligne jamais vu auparavant et peut déclencher une alarme vers SNS. Elle ne lit que les 1 500 premiers caractères d’une ligne, ce qui explique que `message` soit le dernier champ. Elle ne conserve pas d’état « résolu ».
-- Pour compter les rapports, créez un filtre de métrique comme `{ $.msg = "error report" }`. N’utilisez aucune dimension tirée de `my.error.fingerprint` : chaque valeur d’une dimension est facturée comme une métrique à part entière. `my.error.source` et `my.error.kind` sont sûrs.
-- Retrouvez le contexte avec Logs Insights : ``filter `request_id` = "<id>"``.
+- Activez la détection d’anomalies de journaux pour le groupe de journaux. Elle signale un motif de ligne jamais vu auparavant et peut déclencher une alarme vers SNS. Elle ne lit que les 1 500 premiers caractères d’une ligne, ce pourquoi `message` est le dernier champ. Elle ne conserve pas d’état « résolu ».
+- Pour compter les signalements, créez un filtre de métrique tel que `{ $.msg = "error report" }`. N’utilisez aucune dimension tirée de `my.error.fingerprint` : chaque valeur d’une dimension est facturée comme une métrique à part. `my.error.source` et `my.error.kind` sont sans risque.
+- Trouvez le contexte avec Logs Insights : ``filter `request_id` = "<id>"``.
+
+Avec le module OpenTofu [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws), la section `observability` conserve les signalements dans CloudWatch Logs par défaut (`errors = "cloudwatch"`), avec `errors_exporter` à `none`. La détection d’anomalies de journaux reste une étape qui vous incombe.
 
 <!-- source: self-hosted 90de7a419474 -->
 ### Auto-hébergé
@@ -74,17 +78,26 @@ Pour des notifications qui n’exigent aucun service extérieur, utilisez l’é
 Le serveur compte les rapports par empreinte dans la base de données. Cela n’exige aucun paramètre ni service supplémentaire, et écrit peu : le premier rapport d’une empreinte est écrit immédiatement, et les suivants sont additionnés en mémoire et écrits une fois par minute. Un arrêt brutal du processus peut perdre les compteurs de la dernière minute ; les lignes de journal ne sont pas perdues ainsi.
 Les compteurs de plus de 90 jours sont supprimés chaque jour. Si c’est la base de données qui a échoué, le rapport reste uniquement dans la ligne de journal.
 
-<!-- source: the-administration-screen 09092782a7c1 -->
+<!-- source: the-administration-screen e7dacd037150 -->
 ### L’écran d’administration
 
 Les personnes dont le rôle a `manage_errors` (le rôle intégré `admin` l’a) voient « Erreurs » dans le menu d’administration (`/admin/errors`).
 
-- La liste affiche les groupes, les groupes ouverts par défaut. Filtrez par état (ouvert, résolu, en sourdine, tous les états) et par source (le serveur, le client web). Chaque ligne indique le type d’erreur, l’endroit où elle s’est produite, les premières lignes du message, les compteurs des dernières 24 heures et des 7 derniers jours, ainsi que la première et la dernière date et version.
-- La page d’un groupe affiche la dernière occurrence (date, version, rôle du processus, ID de requête, ID de trace, les types, le message et la pile), les occurrences par heure sur les 90 derniers jours, et l’historique de ses changements d’état. L’ID de requête et l’ID de trace ont un bouton « Copier » : collez-les dans votre recherche de journaux.
-- « Marquer comme résolue » sert pour une erreur que vous avez corrigée. Si elle se reproduit sur une autre version du serveur, le groupe se rouvre et notifie de nouveau. La même erreur sur la version qui a été résolue est seulement comptée, afin que les dernières requêtes de l’ancienne version ne le rouvrent pas.
-- « Mettre en sourdine » continue de compter mais n’envoie ni notification ni événement de webhook. « Retirer la sourdine » rouvre le groupe.
+- La liste affiche les groupes, les ouverts par défaut, les plus récemment vus d’abord. Filtrez par état (ouvert, résolu, en sourdine, tous les états) et par source (le serveur, le client web). Chaque ligne affiche la première ligne du message, où il s’est produit, les nombres des dernières 24 heures et des 7 derniers jours, la date de la dernière occurrence et son état.
+- La page d’un groupe commence par ce que vous pouvez faire dans son état (« Résoudre » et « Mettre en sourdine » pour un groupe ouvert, « Mettre en sourdine » pour un groupe résolu, « Réactiver » pour un groupe en sourdine). Elle affiche les faits du groupe (où, le message, la première et la dernière date et version, l’empreinte), ses nombres des dernières 24 heures et des 7 derniers jours, la dernière occurrence (date, version, rôle du processus, les types, l’ID de requête et l’ID de trace, et la pile), les occurrences par heure sur les 90 derniers jours, les plus récentes d’abord, et l’historique de ses changements d’état. L’empreinte, l’ID de requête, l’ID de trace et la pile ont un bouton de copie : collez les ID dans votre recherche de journaux.
+- « Résoudre » sert pour une erreur que vous avez corrigée. Si elle se reproduit sur une autre version du serveur, le groupe se rouvre et notifie de nouveau. La même erreur sur la version qui a été résolue est seulement comptée, de sorte que les dernières requêtes de l’ancienne version ne le rouvrent pas.
+- « Mettre en sourdine » continue de compter mais n’envoie aucune notification ni aucun événement de webhook. « Réactiver » rouvre le groupe.
 
-Les mêmes actions sont disponibles via `GET /api/v1/admin/error_groups` et `POST /api/v1/admin/error_groups/{id}/resolve` (`/mute`, `/unmute`).
+Les mêmes actions sont disponibles sous la forme `GET /api/v1/admin/error_groups` et `POST /api/v1/admin/error_groups/{id}/resolve` (`/mute`, `/unmute`).
+
+<!-- source: ux-measurements 2edcd05329e6 -->
+## Mesures d’expérience utilisateur
+
+Le client web envoie des échantillons de sa rapidité de réponse à `POST /api/v1/client_measurements` sur votre propre serveur, de la même façon que ses erreurs : le temps qu’un écran met à apparaître (LCP) et à répondre à un appui (INP) sur chaque route, ses images longues, chaque navigation par type, chaque action par son ID (`post.reply`), ainsi que le temps d’aller-retour, la gigue et la perte de paquets des appels vocaux. Un échantillon ne nomme que la route, le type, l’action ou le transport de l’appel ; il ne porte aucun compte, aucune adresse ni aucune URL. Le serveur répond `204` à tout et accepte au plus 10 requêtes par minute d’une même adresse IP.
+Le serveur compte les échantillons par heure dans la base de données, en écrivant une fois par minute, et les supprime après 30 jours. `GET /api/v1/admin/ux_measurements` (`manage_errors`) additionne les dernières 24 heures, ou `hours` jusqu’à 720, avec le 75e centile de chaque nom ; les métriques `my.ux.duration` et `my.ux.call.packet_loss` exportent les mêmes échantillons ([Métriques](running.md#metrics)). Chaque type conserve ses 200 premiers noms dans un processus ; les suivants sont comptés comme `other`.
+La fonction est désactivée par défaut ; le paramètre d’instance `ux_measurement` l’active, et tant qu’elle est désactivée le serveur ne prend aucun échantillon ([Paramètres de l’instance](instance-settings.md)). Lorsqu’elle est activée, seule une part des sessions de navigateur envoie des échantillons, 10 % sauf si `ux_measurement_share` en définit une autre, chaque session étant tirée une fois au démarrage du client web.
+
+Les personnes dont le rôle a `manage_errors` voient « Mesures d’expérience utilisateur » dans le menu d’administration (`/admin/ux-measurements`). Choisissez les dernières 24 heures, 7 jours ou 30 jours ; chaque métrique qui a des échantillons a un tableau de ses noms avec leurs échantillons et le 75e centile et, pour LCP et INP, la part des échantillons bons et mauvais (dans les 2,5 s et au-delà de 4 s pour LCP, dans les 200 ms et au-delà de 500 ms pour INP), un 75e centile au-delà du seuil de « bon » étant signalé. « Mesurer le client web », sous les tableaux, est le paramètre `ux_measurement`, que seules les personnes dont le rôle a aussi `manage_settings` modifient à cet endroit, avec son propre « Enregistrer ».
 
 <!-- source: notifications-and-webhooks 99836c7f02ec -->
 ### Notifications et webhooks
@@ -124,7 +137,7 @@ Le serveur limite ce qu’il envoie pour que le service ne soit pas inondé :
 
 Surveillez le compteur `my.errors.exported` : `my.outcome` vaut `success`, `dropped` (au-delà d’une limite, la file était pleine, ou le service a demandé de ralentir) ou `failed` (le service était injoignable ou a refusé le rapport) ([Exécuter le serveur](running.md#metrics)).
 
-<!-- source: sentry-glitchtip-and-datadog 12c935ec3c05 -->
+<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
 ### Sentry, GlitchTip et Datadog
 
 ```sh
@@ -132,11 +145,19 @@ MY_ERRORS_EXPORTER=sentry
 MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; the DSN is a secret
 ```
 
-Le serveur parle lui-même le protocole Sentry : aucun SDK Sentry n’intervient et aucune variable d’environnement `SENTRY_*` n’est lue. Il définit l’empreinte, de sorte que le service groupe par elle, ainsi que les tags `service` (`my`), `my.role`, `my.error.where` et `error.fingerprint`. La version est celle du serveur et l’environnement est `errors_environment`.
+Avec les modules OpenTofu, laissez les erreurs de la section `observability` aux paramètres, et le module crée pour vous le secret du DSN à remplir, que sa sortie `secrets_to_fill` liste :
+
+```hcl
+  observability = { errors = "settings" }
+  settings      = { errors_exporter = "sentry" }
+  secrets       = ["errors_sentry_dsn"]
+```
+
+Le serveur parle lui-même le protocole Sentry ; aucun SDK Sentry n’intervient et aucune variable d’environnement `SENTRY_*` n’est lue. Il définit l’empreinte, afin que le service regroupe selon elle, et les étiquettes `service` (`my`), `my.role`, `my.error.where` et `error.fingerprint`. La version publiée est la version du serveur et l’environnement est `errors_environment`.
 
 - **Sentry** (hébergé ou auto-hébergé) : copiez le DSN depuis les clés client du projet.
-- **GlitchTip** : copiez le DSN du projet. Il est open source et tourne sur un petit serveur. Vérifiez quelles règles d’alerte votre version propose pour les problèmes nouveaux et récurrents.
-- **Datadog Error Tracking** : utilisez le DSN Sentry de votre site Datadog, `https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`. Datadog exige le tag `service`, que le serveur définit toujours. Datadog stocke ces événements comme des journaux et les groupe dans Error Tracking. Si vous envoyez plutôt la ligne de journal à Datadog avec un agent ou un forwarder (Error Tracking for Logs), la pile se trouve dans `message` ; associez-la à `error.stack` avec un pipeline de journaux, faute de quoi Datadog ne la voit pas comme une pile. L’exporteur `sentry` n’exige aucune correspondance de ce type.
+- **GlitchTip** : copiez le DSN du projet. Il est open source et fonctionne sur un petit serveur. Vérifiez quelles règles d’alerte votre version propose pour les problèmes nouveaux et récurrents.
+- **Datadog Error Tracking** : utilisez le DSN Sentry de votre site Datadog, `https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`. Datadog exige l’étiquette `service`, que le serveur définit toujours. Datadog stocke ces événements comme des journaux et les regroupe dans Error Tracking. Si vous envoyez plutôt la ligne de journal à Datadog avec un agent ou un redirecteur (Error Tracking for Logs), la pile se trouve dans `message` ; associez-la à `error.stack` avec un pipeline de journaux, faute de quoi Datadog ne la voit pas comme une pile. L’exportateur `sentry` n’a besoin d’aucune association de ce genre.
 
 <!-- source: otlp-backends fe964b8f1b2c -->
 ### Backends OTLP

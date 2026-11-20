@@ -10,42 +10,43 @@ Hay dos herramientas:
 - **La página exportada** (`my maintenance export`). HTML estático de la misma plantilla, para que la sirva un balanceador de carga, una CDN o un proxy inverso
   cuando `my serve` no puede ejecutarse en absoluto (una imagen que se está reemplazando, una revisión que no arranca). Consulta [Exportar la página de mantenimiento](admin-cli.md#exporting-the-maintenance-page).
 
-<!-- source: what-the-maintenance-mode-answers 13edbbd09e33 -->
+<!-- source: what-the-maintenance-mode-answers 800ed13d3906 -->
 ## Qué responde el modo de mantenimiento
 
 El proceso lee solo la dirección de escucha, `host`, `account_domain`, `web_origin`, los proxies (`trusted_proxies`, `trusted_proxy_header`),
-la [comprobación de origen](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) (`origin_secret`, `origin_secret_previous`, `origin_secret_header`), `status_page_url` y las configuraciones `maintenance_*` ([referencia de configuración](../reference/configuration.md)).
-Las configuraciones de la base de datos, la cola, el almacén de blobs, el KV, el correo y el stream no se leen ni se comprueban, así que pueden ser erróneos o inaccesibles mientras tanto.
-Sea cual sea el `role`, sirve solo HTTP: sin trabajos, sin trabajos periódicos, sin broker de stream.
+la [comprobación de origen](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) (`origin_secret`, `origin_secret_previous`, `origin_secret_header`), `status_page_url` y los ajustes `maintenance_*` ([referencia de configuración](../reference/configuration.md)).
+Los ajustes de la base de datos, la cola, el almacén de blobs, el KV, el correo y el stream no se leen ni se comprueban, así que pueden ser incorrectos o inaccesibles mientras tanto.
+Sea cual sea el `role`, sirve solo HTTP: sin jobs, sin jobs periódicos, sin broker de streams. También sirve HTTP sin cifrar diga lo que diga `tls`,
+en `listen` o en su valor predeterminado `:8080` ([servir HTTPS desde el servidor](running.md#serving-https-from-the-server)).
 `my config check -maintenance` comprueba exactamente lo que lee el modo de mantenimiento.
 
-Con [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) definido, una solicitud que necesita la cabecera y no la tiene recibe el `403` de esa comprobación en lugar de lo que indica la tabla siguiente.
+Con [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) definido, una solicitud que necesita la cabecera y no la tiene recibe el `403` de esa comprobación en lugar de lo de la tabla de abajo.
 
 | Solicitud | Estado | Cuerpo |
 | --- | --- | --- |
 | `GET /healthz`, `GET /readyz`, `GET /health/live`, `GET /health/ready` | `200` | `{"status":"maintenance"}` |
 | `GET /api/v1/instance/health` | `503` | `{"status":"maintenance"}` |
-| El resto de la API de cliente (`/api/*`) y los endpoints de OAuth que responden JSON | `503` | `application/problem+json` de tipo `/api/v1/problems/maintenance`, con `message`, `until` y `status_page_url` cuando está definido |
+| El resto de la API de cliente (`/api/*`) y los endpoints OAuth que responden JSON | `503` | `application/problem+json` del tipo `/api/v1/problems/maintenance`, con `message`, `until` y `status_page_url` cuando están definidos |
 | ActivityPub (por ruta, `Accept` o `Content-Type`), WebFinger, host-meta, NodeInfo, los webhooks de pago, las llamadas de Cloud Tasks y Cloud Scheduler (`/_internal/*`) | `503` | `{"error":"maintenance"}` |
 | Cualquier otra cosa (páginas, el cliente web, sus recursos, envíos de formularios) | `503` | La página de mantenimiento, o el problema cuando `Accept` pide JSON |
 
-Cada respuesta lleva `Retry-After` y `Cache-Control: no-store`. `Retry-After` cuenta los segundos hasta `maintenance_until` mientras esa fecha esté por llegar
-(como máximo 86 400), y en caso contrario es `maintenance_retry_after` (una duración de Go, `10m` de forma predeterminada).
+Toda respuesta tiene `Retry-After` y `Cache-Control: no-store`. `Retry-After` cuenta los segundos hasta `maintenance_until` mientras está por delante
+(como máximo 86 400), y es `maintenance_retry_after` (una duración de Go, `10m` por defecto) en otro caso.
 
 La página y el problema muestran:
 
-| Configuración | Se muestra como |
+| Ajuste | Se muestra como |
 | --- | --- |
-| `maintenance_server_name` | El nombre del servidor. El nombre de host si no está definido (el nombre propio de la instancia está en la base de datos) |
-| `maintenance_message` | Un aviso en texto plano, de 2000 caracteres como máximo, igual en todos los idiomas |
-| `maintenance_until` | Cuándo se espera que termine el trabajo (RFC 3339). La página lo muestra en UTC; el cliente web, en la zona horaria del usuario |
+| `maintenance_server_name` | El nombre del servidor. El nombre de host cuando no está definido (el nombre propio de la instancia está en la base de datos) |
+| `maintenance_message` | Un aviso en texto plano, de como máximo 2000 caracteres, igual en todos los idiomas |
+| `maintenance_until` | Cuándo se espera que termine el trabajo (RFC 3339). La página lo muestra en UTC; el cliente web en la zona horaria del usuario |
 | `status_page_url` | Un enlace a la página de estado ([Monitorización](monitoring.md#a-status-page)) |
 
-Las configuraciones `maintenance_*` pueden quedar definidas durante el funcionamiento normal: solo se usan mientras `maintenance` es true.
-Los textos de la página siguen `Accept-Language` (inglés en caso contrario).
+Los ajustes `maintenance_*` pueden quedar definidos durante el funcionamiento normal: solo se usan mientras `maintenance` es true.
+Las palabras de la página siguen `Accept-Language` (inglés en otro caso).
 
 El cliente web muestra un aviso de mantenimiento a pantalla completa cuando la API responde con el problema de mantenimiento,
-mantiene la sesión iniciada del usuario y reintenta después de `Retry-After`.
+mantiene la sesión del usuario iniciada y reintenta tras `Retry-After`.
 
 <!-- source: how-long a7b6a44f0269 -->
 ## Cuánto tiempo
@@ -108,10 +109,10 @@ Las páginas de error de los front ends que siguen responden a los errores del s
 (`502` y `504`, y el `503` propio del balanceador de carga donde no hay ningún backend sano), o activa la regla solo mientras `my serve` no pueda ejecutarse:
 una regla sobre cada `503` también reemplazaría las respuestas propias del modo de mantenimiento, como el problema que leen la API de cliente y el cliente web.
 
-<!-- source: cloud-run b728619281de -->
+<!-- source: cloud-run 8bed844981b6 -->
 ### Cloud Run
 
-Despliega una revisión nueva con la variable y quítala después:
+Despliega una revisión nueva con la variable, y quítala después:
 
 ```sh
 gcloud run services update my --region=asia-northeast1 \
@@ -119,12 +120,15 @@ gcloud run services update my --region=asia-northeast1 \
 gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE,MY_MAINTENANCE_UNTIL
 ```
 
+Con el módulo de OpenTofu, defínelo en su lugar en el bloque, como `settings = { maintenance = "true" }`, y aplica, ya que el siguiente apply restablece
+lo que dice el bloque: [Desplegar en Cloud Run](deploy-cloud-run.md#the-maintenance-mode) lo explica en torno a una actualización.
+
 Cuando Cloud Run está expuesto directamente, sin balanceador de carga, no hay nada delante de él, así que el modo de mantenimiento es la única herramienta.
 
 **Cuando `my serve` no puede ejecutarse** detrás de un Application Load Balancer externo global: sube el `index.html` exportado a un bucket de Cloud Storage
-añadido como bucket de backend, y añade una política de respuesta de error personalizada que responda con él a los `502` y `504` del backend, con `overrideResponseCode: 503`.
+añadido como backend bucket, y añade una política de respuesta de error personalizada que responda con él a los `502` y `504` del backend y con `overrideResponseCode: 503`.
 Solo el Application Load Balancer externo global tiene respuestas de error personalizadas (no los regionales ni los clásicos), y la política se aplica solo
-a las respuestas del backend, no a las que genera el propio Google Front End. Esta vía no puede enviar `Retry-After`: las cabeceras personalizadas de la fuente del error no se añaden.
+a las respuestas del backend, no a las que Google Front End genera por sí mismo. Esta ruta no puede enviar `Retry-After`: las cabeceras personalizadas de la fuente del error no se añaden.
 
 ```yaml
 # Part of the URL map (gcloud compute url-maps import).
@@ -136,21 +140,22 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-<!-- source: aws-ecs 8c6aa496b517 -->
+<!-- source: aws-ecs afc0ba5adee4 -->
 ### AWS ECS
 
 Registra una revisión de la definición de tarea del servicio con `MY_MAINTENANCE=true` en el entorno del contenedor, actualiza el servicio a ella
-y haz lo mismo sin la variable después. Con los módulos de OpenTofu, `deploy/opentofu/upgrade.sh --platform aws-ecs --maintenance`
-cambia el servicio al modo de mantenimiento antes de una actualización, y lo devuelve con la nueva revisión.
+y haz lo mismo sin la variable después. Con el módulo de OpenTofu, defínelo en su lugar en el bloque, como `settings = { maintenance = "true" }`,
+y aplica, ya que el siguiente apply restablece lo que dice el bloque: en torno a una actualización, aplica el modo, luego la versión nueva y luego el bloque sin él,
+como hace [Desplegar en Cloud Run](deploy-cloud-run.md#the-maintenance-mode).
 
 **Cuando `my serve` no puede ejecutarse** detrás de CloudFront: sube el `index.html` exportado a un bucket de S3 que sea un segundo origen
-(la página de error no puede venir del origen que falla), y añade respuestas de error personalizadas para `502` y `504` (y `503` solo mientras `my serve` no pueda ejecutarse)
+(la página de error no puede venir del origen que falla), y añade respuestas de error personalizadas para `502` y `504` (y `503` solo mientras `my serve` no puede ejecutarse)
 con `ResponsePagePath: /maintenance/index.html` y `ResponseCode: 503`.
-CloudFront puede añadir `Retry-After` mediante una política de cabeceras de respuesta con una cabecera personalizada, pero la política se aplica a cada respuesta del comportamiento de caché,
-así que adjúntala solo durante el mantenimiento y sepárala después.
+CloudFront puede añadir `Retry-After` mediante una política de cabeceras de respuesta con una cabecera personalizada, pero la política se aplica a todas las respuestas del comportamiento de caché,
+así que adjúntala solo para el mantenimiento y sepárala después.
 
-La respuesta fija de un Application Load Balancer no puede llevar la página exportada: su cuerpo es de 1024 caracteres como máximo y no define cabeceras como `Retry-After`.
-Úsala solo para un texto corto y el estado:
+La respuesta fija de un Application Load Balancer no puede llevar la página exportada: su cuerpo tiene como máximo 1024 caracteres y no define cabeceras como `Retry-After`.
+Úsala solo para un texto breve y el estado:
 
 ```json
 {
@@ -163,7 +168,7 @@ La respuesta fija de un Application Load Balancer no puede llevar la página exp
 }
 ```
 
-Sin `Retry-After`, los demás servidores reintentan según su propio calendario, que la ventana anterior ya contempla.
+Sin `Retry-After`, otros servidores reintentan según su propio calendario, que la ventana de arriba ya contempla.
 
 <!-- source: docker-compose d564c0b39ae8 -->
 ### Docker Compose
