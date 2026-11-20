@@ -175,10 +175,6 @@
     "defaultMessage": "{action, select, mute {ミュート} unmute {ミュートの解除} block {ブロック} unblock {ブロックの解除} remove_follower {フォロワーからの削除} notify {通知の設定} note {メモの保存} mute_server {サーバーのミュート} list_add {リストへの追加} list_remove {リストから外すこと} other {サーバーのミュートの解除}}を完了できませんでした。",
     "description": "The notice at the bottom of the page when the reader's action on an account, from its profile or a post's menu, got no answer from the server (the network), beside Try again: muting or unmuting it, blocking or unblocking it, removing it from their followers, being notified of its new posts or not, saving their private note on it, muting or unmuting its server, putting it in one of their lists or taking it out. action is which of them."
   },
-  "profile.follows_more": {
-    "defaultMessage": "さらに表示",
-    "description": "The button under an account's list of follows or followers that loads the next accounts."
-  },
   "profile.note": {
     "defaultMessage": "非公開のメモ",
     "description": "The name of the box where the reader writes their private note on an account, for assistive technology."

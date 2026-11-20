@@ -5,7 +5,7 @@
 // follow at a row's end, from the reader's relationship with it.
 
 import { AccountRow as Row, Avatar, Button, StateText, useLocale } from "@my/design-system";
-import { useRef, type ReactNode } from "react";
+import { useRef, type ReactNode, type Ref } from "react";
 import { stringsIn } from "./locale";
 import { accountPath } from "./paths";
 import { EmojiText } from "./post-content";
@@ -88,16 +88,18 @@ export function AccountFollow({
 
 /**
  * An account on a row of its own, what the reader may do with it at the end; `heading` makes its name the heading of
- * the screen it heads.
+ * the screen it heads; `itemRef` the ref of the row, for a list that grows under Show more.
  */
 export function AccountLine({
   account,
   end,
   heading = false,
+  itemRef,
 }: {
   account: PostAccount;
   end?: ReactNode;
   heading?: boolean;
+  itemRef?: Ref<HTMLDivElement> | undefined;
 }) {
   return (
     <Row
@@ -107,6 +109,7 @@ export function AccountLine({
       href={accountPath(account)}
       end={end}
       heading={heading}
+      itemRef={itemRef}
     />
   );
 }

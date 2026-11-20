@@ -7,17 +7,9 @@
     "defaultMessage": "ルームを読み込んでいます…",
     "description": "In place of the list of voice chat rooms while the first of them load."
   },
-  "voice.rooms_loading_more": {
-    "defaultMessage": "続きのルームを読み込んでいます…",
-    "description": "Under the voice chat rooms while more load."
-  },
   "voice.rooms_failed": {
     "defaultMessage": "ルームを読み込めませんでした。",
     "description": "In place of the list of voice chat rooms when they could not be loaded, beside a button to try again."
-  },
-  "voice.rooms_failed_more": {
-    "defaultMessage": "続きのルームを読み込めませんでした。",
-    "description": "Under the voice chat rooms when more could not be loaded, beside a button to try again."
   },
   "voice.rooms_empty": {
     "defaultMessage": "いま開いているルームはありません。参加できるルームが開くと、ここに表示されます。",
@@ -226,10 +218,6 @@
   "voice.end_open": {
     "defaultMessage": "ルームを開く",
     "description": "The action of the toast that says why the reader is no longer in a voice chat room: it opens the room's page, which says it again."
-  },
-  "voice.rooms_more": {
-    "defaultMessage": "さらに表示",
-    "description": "The button under the voice chat rooms that loads the next of them."
   },
   "voice.self": {
     "defaultMessage": "あなた",
@@ -482,10 +470,6 @@
   "voice.invitations.failed": {
     "defaultMessage": "招待を読み込めませんでした。",
     "description": "In place of the invitations of a voice chat room when they could not be loaded, beside a button to try again."
-  },
-  "voice.invitations.failed_more": {
-    "defaultMessage": "続きの招待を読み込めませんでした。",
-    "description": "Under the invitations of a voice chat room when more could not be loaded, beside a button to try again."
   },
   "voice.invitations.none": {
     "defaultMessage": "まだ誰も招待していません。招待された人がここに表示されます。",

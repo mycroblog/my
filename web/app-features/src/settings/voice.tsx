@@ -7,15 +7,15 @@
 import { voiceRoomPath } from "@my/app-components";
 import { useVoiceHistory, voiceHistoryQuery, type AppData, type VoiceRoomHistoryEntry } from "@my/app-data";
 import {
-  Box,
-  Button,
-  FeedNotice,
   SettingsEmpty,
   SettingsList,
   SettingsListRow,
   SettingsScreen,
   SettingsSection,
+  ShowMore,
+  useAddedFocus,
   useLocale,
+  type AddedFocus,
 } from "@my/design-system";
 import { stringsIn } from "../locale";
 import type { SettingsEntryProps } from "./entries";
@@ -29,7 +29,7 @@ export async function loadVoiceSettings(data: AppData): Promise<void> {
 }
 
 /** A room the reader hosted: its name, when it opened, and when and why it ended, or that it is open. */
-function Hosted({ room, t }: { room: VoiceRoomHistoryEntry; t: T }) {
+function Hosted({ room, itemRef, t }: { room: VoiceRoomHistoryEntry; itemRef: ReturnType<AddedFocus["item"]>; t: T }) {
   const { hour } = useDates();
   const open = room.ended_at === undefined;
   return (
@@ -46,6 +46,7 @@ function Hosted({ room, t }: { room: VoiceRoomHistoryEntry; t: T }) {
             ]),
       ]}
       href={open ? voiceRoomPath(room.id) : undefined}
+      itemRef={itemRef}
     />
   );
 }
@@ -55,6 +56,7 @@ export function VoiceSettings({ back }: SettingsEntryProps) {
   const { t } = stringsIn(useLocale().locale);
   const list = useVoiceHistory();
   const read = list.items.length > 0 || list.status === "success";
+  const added = useAddedFocus(list.items.length);
   return (
     <SettingsScreen
       icon="room"
@@ -72,31 +74,17 @@ export function VoiceSettings({ back }: SettingsEntryProps) {
             <SettingsEmpty>{t("settings.voice.none")}</SettingsEmpty>
           ) : (
             <SettingsList label={t("settings.voice.hosted")}>
-              {list.items.map((room) => (
-                <Hosted key={room.id} room={room} t={t} />
+              {list.items.map((room, i) => (
+                <Hosted key={room.id} room={room} itemRef={added.item(i)} t={t} />
               ))}
             </SettingsList>
           )}
-          {list.failedNextPage ? (
-            <FeedNotice
-              alert
-              action={
-                <Button size="timeline" touch onPress={list.fetchNextPage}>
-                  {t("settings.retry")}
-                </Button>
-              }
-            >
-              {t("settings.voice.failed_more")}
-            </FeedNotice>
-          ) : (
-            list.hasNextPage && (
-              <Box>
-                <Button size="timeline" touch busy={list.isFetchingNextPage} onPress={list.fetchNextPage}>
-                  {t("voice.rooms_more")}
-                </Button>
-              </Box>
-            )
-          )}
+          <ShowMore
+            more={list.hasNextPage}
+            busy={list.isFetchingNextPage}
+            failed={list.failedNextPage}
+            onPress={added.press(list.fetchNextPage)}
+          />
         </SettingsSection>
       )}
     </SettingsScreen>

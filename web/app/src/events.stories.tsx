@@ -7,6 +7,8 @@
 // start, with its room open, and with a room that could not open; cancelled; ended; one the reader does not see; its
 // page loading, failing, with long names, and for a visitor; and the ways in: the profile of an organizer with their
 // upcoming events, and the reminders in the settings, loading and failing.
+// More of the upcoming events, an event's attendees and its invitations than a page holds, before and after Show more
+// (pages.samples.ts, `more`).
 
 //
 // And for the organizer (#3238): the list without Create an event, the form that creates one (and its address for a
@@ -18,6 +20,7 @@
 import { scenario, type FakeEventPlan } from "@my/e2e/fake";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
+import { manyAttending, manyEvents } from "./pages.samples";
 
 const meta = {
   title: "Events",
@@ -35,6 +38,10 @@ export const EventsLoading: Story = { parameters: screen({ at: "/events", state:
 export const EventsError: Story = { parameters: screen({ at: "/events", state: "error" }) };
 /** A visitor: the list asks them to sign in. */
 export const EventsVisitor: Story = { parameters: screen({ at: "/events", signedOut: true }) };
+/** More upcoming events than a page holds: Show more under the nearest twenty. */
+export const EventsMany: Story = { parameters: screen({ at: "/events", server: manyEvents }) };
+/** The same after Show more: the later events under the nearest twenty, and no Show more. */
+export const EventsManyMore: Story = { parameters: screen({ at: "/events", server: manyEvents, more: true }) };
 
 /**
  * An event the reader goes to, approved: its time in the reader's zone and in Paris, its places shown (a link that
@@ -139,6 +146,22 @@ export const EditCancelled: Story = {
 };
 /** The invitations of an event the reader co-organizes: one, with Revoke, and the search of who to invite. */
 export const Invitations: Story = { parameters: screen({ at: "/events/{event:bread-class}/invitations" }) };
+/** More invitations than a page holds: Show more under the first twenty. */
+export const InvitationsMany: Story = {
+  parameters: screen({ at: "/events/{event:bread-class}/invitations", server: manyAttending }),
+};
+/** The same after Show more: the rest under the first twenty, and no Show more. */
+export const InvitationsManyMore: Story = {
+  parameters: screen({ at: "/events/{event:bread-class}/invitations", server: manyAttending, more: true }),
+};
+/** An event more people go to than a page holds: Show more under the first twenty attendees. */
+export const AttendeesMany: Story = {
+  parameters: screen({ at: "/events/{event:bread-class}", server: manyAttending }),
+};
+/** The same after Show more: the rest under the first twenty, and no Show more. */
+export const AttendeesManyMore: Story = {
+  parameters: screen({ at: "/events/{event:bread-class}", server: manyAttending, more: true }),
+};
 /** None yet. */
 export const InvitationsNone: Story = { parameters: screen({ at: "/events/{event:photo-walk}/invitations" }) };
 /** The invitations' address of an event the reader does not organize. */

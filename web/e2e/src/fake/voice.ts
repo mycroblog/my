@@ -65,6 +65,18 @@ export type FakeVoice = {
   readonly entryOf: (id: string) => Schema<"VoiceRoomEntry"> | undefined;
 };
 
+/**
+ * More of the lists the voice operations page, past a page of the server's: `rooms` more open rooms (copies of the
+ * fake's second, named Open room 1, 2, …, after the others), `history` more rooms the reader hosted (ended, older than
+ * the others), and the accounts of `invited` (usernames of this server) invited as listeners to each room the reader
+ * hosts, the oldest invitation first.
+ */
+export type FakeVoiceMany = {
+  readonly rooms?: number;
+  readonly history?: number;
+  readonly invited?: readonly string[];
+};
+
 /** Why the fake refuses to open a room, as the server's problem types name it. */
 export type FakeVoiceOpenRefusal = "not-eligible" | "too-many-rooms" | "hosting-elsewhere";
 
@@ -88,6 +100,10 @@ export type VoiceContext = {
   readonly history: Schema<"VoiceRoomHistoryEntry">[];
   /** Why the server refuses every opening of a room; none by default. */
   readonly openRefusal?: FakeVoiceOpenRefusal | undefined;
+  /** More rooms, hosted rooms and invitations than a page holds; none by default. */
+  readonly many?: FakeVoiceMany | undefined;
+  /** The account of the person of `username` of this server; undefined for none. */
+  readonly accountByName: (username: string) => Schema<"Account"> | undefined;
   /** A new ID, for a room or an invitation, newer than every one before. */
   readonly newId: () => string;
   /** The account of `id`, of this server or another; undefined for none. */
@@ -125,6 +141,36 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
   const endedRooms = new Map<string, string>([[c.ended.id, c.ended.name]]);
 
   const roomOf = (id: string) => c.rooms.find((r) => r.id === id);
+
+  // The lists made longer than a page (`many`).
+  const model = c.rooms[1] ?? c.rooms[0];
+  if (model !== undefined)
+    for (let i = 0; i < (c.many?.rooms ?? 0); i++)
+      c.rooms.push({ ...model, id: c.newId(), name: `Open room ${String(i + 1)}` });
+  const lastHosted = c.history.at(-1);
+  for (let i = 0; i < (c.many?.history ?? 0); i++) {
+    const opened = Date.parse(lastHosted?.opened_at ?? new Date().toISOString()) - (i + 1) * 24 * 60 * 60_000;
+    c.history.push({
+      id: c.newId(),
+      name: `Evening room ${String(i + 1)}`,
+      opened_at: new Date(opened).toISOString(),
+      ended_at: new Date(opened + 60 * 60_000).toISOString(),
+      end_reason: "host",
+    });
+  }
+  for (const room of c.rooms.filter((r) => r.host.id === c.viewer().id))
+    for (const username of c.many?.invited ?? []) {
+      const account = c.accountByName(username);
+      if (account === undefined) continue;
+      const invitation: Schema<"VoiceRoomInvitation"> = {
+        id: c.newId(),
+        account,
+        role: "listener",
+        invited_by_id: c.viewer().id,
+        invited_at: new Date().toISOString(),
+      };
+      invitations.push({ room: room.id, invitation, revoked: false });
+    }
   const grant = (): Schema<"VoiceGrant"> => ({
     kind: "p2p",
     options: {},

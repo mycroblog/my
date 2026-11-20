@@ -79,7 +79,7 @@ test("In the period paid asks for the totals by the day each payment was made, a
   });
 });
 
-test("Earlier months shows the six before, Later months comes back, and the focus stays on the way", async () => {
+test("Earlier months shows the six before, and Later months comes back, then disabled in its place", async () => {
   const app = await renderApp("/about/costs", { finance: published });
   await totals("month");
   await app.user.click(main().getByRole("button", { name: "Earlier months" }));
@@ -92,11 +92,9 @@ test("Earlier months shows the six before, Later months comes back, and the focu
   await waitFor(async () => {
     expect(heads(await totals("month"))[0]).toStartWith(monthBack(0));
   });
-  // Later is gone with the latest periods shown: the focus is on Earlier.
-  expect(main().queryByRole("button", { name: "Later months" })).toBeNull();
-  await waitFor(() => {
-    expect(app.focused()).toBe(main().getByRole("button", { name: "Earlier months" }));
-  });
+  // Later stays where it stood with the latest periods shown, disabled; Earlier beside it.
+  expect(main().getByRole<HTMLButtonElement>("button", { name: "Later months" }).disabled).toBe(true);
+  expect(main().getByRole<HTMLButtonElement>("button", { name: "Earlier months" }).disabled).toBe(false);
 });
 
 test("a server that publishes nothing says so, and is asked for no totals", async () => {

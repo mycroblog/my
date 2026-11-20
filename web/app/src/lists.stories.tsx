@@ -5,9 +5,11 @@
 // them (#3124) is the parts' own, in the design system's List management: a list refused at the limit of lists, its
 // name in its field, its deletion asked, an account added to its members and refused at the limit of members, and Add
 // to list on a profile.
+// More of a list's members than a page holds, before and after Show more (pages.samples.ts, `more`).
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
+import { manyMembers } from "./pages.samples";
 
 const index = "/lists";
 const list = "list:0";
@@ -46,5 +48,9 @@ export const Members: Story = { parameters: screen({ at: "members:0" }) };
 export const MembersEmpty: Story = { parameters: screen({ at: "members:0", state: "empty" }) };
 export const MembersLoading: Story = { parameters: screen({ at: "members:0", state: "loading" }) };
 export const MembersFailed: Story = { parameters: screen({ at: "members:0", state: "error" }) };
+/** More members than a page holds: Show more under the first twenty. */
+export const MembersMany: Story = { parameters: screen({ at: "members:0", server: manyMembers }) };
+/** The same after Show more: the rest under the first twenty, and no Show more. */
+export const MembersManyMore: Story = { parameters: screen({ at: "members:0", server: manyMembers, more: true }) };
 /** The members of the list whose name runs long. */
 export const MembersLongName: Story = { parameters: screen({ at: "members:2" }) };

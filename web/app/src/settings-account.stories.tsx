@@ -12,6 +12,7 @@
 // appeal because the time has passed, where Send appeal ends the form: the appeal's status says so with the way to the
 // moderators, and what was written stays to be copied; on one that never answers, where Send appeal stays busy; and an
 // address that names no action.
+// More of the past actions than a page holds, before and after Show more (pages.samples.ts, `more`).
 
 import type { FakeOptions } from "@my/e2e/fake";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -161,6 +162,8 @@ export const Status: Story = { parameters: screen({ at: status }) };
 export const StatusSeveral: Story = { parameters: screen({ at: status, server: several }) };
 /** Twenty-four past actions: the first page of them, and Show more. */
 export const StatusPastMany: Story = { parameters: screen({ at: status, server: manyPast }) };
+/** The same after Show more: the older past actions under the first twenty, and no Show more. */
+export const StatusPastManyMore: Story = { parameters: screen({ at: status, server: manyPast, more: true }) };
 /** No action ever: each list says what would stand there. */
 export const StatusEmpty: Story = { parameters: screen({ at: status, server: { settings: { moderation: [] } } }) };
 /** Account status while the actions are on their way. */

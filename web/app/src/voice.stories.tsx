@@ -12,10 +12,13 @@
 // the room just opened, a room hosted with others in it, a hand let speak, a co-host named, the room handed over, its
 // settings and invitations (and their addresses for a reader who does not host it), and the rooms one hosted in the
 // settings.
+// More of the open rooms, the invitations of the reader's room and the rooms they hosted than a page holds, before and
+// after Show more (pages.samples.ts, `more`).
 
 import { PreviewStill } from "@my/design-system/preview";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
+import { manyVoice } from "./pages.samples";
 
 const meta = {
   title: "Voice chat rooms",
@@ -31,6 +34,10 @@ export const Rooms: Story = {};
 export const RoomsEmpty: Story = { parameters: screen({ at: "/voice", state: "empty" }) };
 export const RoomsLoading: Story = { parameters: screen({ at: "/voice", state: "loading" }) };
 export const RoomsError: Story = { parameters: screen({ at: "/voice", state: "error" }) };
+/** More open rooms than a page holds: Show more under the first twenty. */
+export const RoomsMany: Story = { parameters: screen({ at: "/voice", server: manyVoice }) };
+/** The same after Show more: the rest under the first twenty, and no Show more. */
+export const RoomsManyMore: Story = { parameters: screen({ at: "/voice", server: manyVoice, more: true }) };
 /** A visitor: the list asks them to sign in. */
 export const RoomsVisitor: Story = { parameters: screen({ at: "/voice", signedOut: true }) };
 
@@ -179,6 +186,14 @@ export const Invitations: Story = {
 export const Invited: Story = {
   parameters: screen({ at: "/voice/{room:2}/invitations", joined: { room: 2, steps: ["invited"] } }),
 };
+/** More invitations than a page holds: Show more under the oldest twenty. */
+export const InvitedMany: Story = {
+  parameters: screen({ at: "/voice/{room:2}/invitations", joined: { room: 2 }, server: manyVoice }),
+};
+/** The same after Show more: the rest under the oldest twenty, and no Show more. */
+export const InvitedManyMore: Story = {
+  parameters: screen({ at: "/voice/{room:2}/invitations", joined: { room: 2 }, server: manyVoice, more: true }),
+};
 /** The invitations' address of a room the reader neither hosts nor co-hosts. */
 export const InvitationsNotHost: Story = {
   parameters: screen({ at: "/voice/{room:0}/invitations", joined: { room: 0 } }),
@@ -189,3 +204,9 @@ export const History: Story = { parameters: screen({ at: "/settings/voice", join
 export const HistoryEmpty: Story = { parameters: screen({ at: "/settings/voice", state: "empty" }) };
 export const HistoryLoading: Story = { parameters: screen({ at: "/settings/voice", state: "loading" }) };
 export const HistoryError: Story = { parameters: screen({ at: "/settings/voice", state: "error" }) };
+/** More hosted rooms than a page holds: Show more under the newest twenty. */
+export const HistoryMany: Story = { parameters: screen({ at: "/settings/voice", server: manyVoice }) };
+/** The same after Show more: the older rooms under the newest twenty, and no Show more. */
+export const HistoryManyMore: Story = {
+  parameters: screen({ at: "/settings/voice", server: manyVoice, more: true }),
+};

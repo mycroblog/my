@@ -28,11 +28,13 @@ import {
   PanelDialog,
   RelativeTime,
   Row,
+  ShowMore,
   Spoken,
   Stack,
   StateText,
   TextButton,
   TextField,
+  useAddedFocus,
   useLocale,
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState } from "react";
@@ -95,6 +97,8 @@ export type ReportPosts = {
   more: boolean;
   /** The older posts are being read. */
   loadingMore: boolean;
+  /** The older posts asked for could not be read; those read before stay. */
+  failedMore: boolean;
   onMore: () => void;
   onRetry: () => void;
 };
@@ -191,6 +195,8 @@ function Posts({
   const id = useId();
   const max = reportPanelLimits.posts;
   const heading = t("report.posts");
+  // The first post Show more added takes the focus, its checkbox.
+  const added = useAddedFocus(posts.items.length);
   return (
     <Stack gap="entry-line">
       <GroupHeading>{heading}</GroupHeading>
@@ -203,7 +209,11 @@ function Posts({
           multiple
           describedBy={`${id}-hint`}
           disabled={disabled}
-          items={posts.items.map((post) => ({ key: post.id, label: <PostChoice post={post} t={t} /> }))}
+          items={posts.items.map((post, i) => ({
+            key: post.id,
+            label: <PostChoice post={post} t={t} />,
+            ref: added.item(i),
+          }))}
           chosen={posts.items.flatMap((post, i) => (draft.posts.includes(post.id) ? [i] : []))}
           onChange={(chosen) => {
             const ids = chosen.flatMap((i) => posts.items[i]?.id ?? []);
@@ -223,18 +233,19 @@ function Posts({
           {t("report.posts_none")}
         </Box>
       )}
-      {posts.status === "error" && (
+      {posts.status === "error" && !posts.failedMore && (
         <Row wrap align="baseline" gapX="entry-caption">
           <Box as="p">{t("report.posts_failed")}</Box>
           <TextButton onPress={posts.onRetry}>{t("report.retry")}</TextButton>
         </Row>
       )}
-      {posts.more && posts.status !== "error" && (
-        <Box>
-          <Button size="timeline" busy={posts.loadingMore} onPress={posts.onMore}>
-            {t("report.posts_more")}
-          </Button>
-        </Box>
+      {posts.status !== "pending" && (
+        <ShowMore
+          more={posts.more}
+          busy={posts.loadingMore}
+          failed={posts.failedMore}
+          onPress={added.press(posts.onMore)}
+        />
       )}
     </Stack>
   );

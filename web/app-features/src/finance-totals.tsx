@@ -27,15 +27,13 @@ import {
 } from "@my/app-data";
 import {
   Box,
-  Button,
   dateFormat,
   FeedNotice,
   FinanceRow,
   FinanceTable,
   GroupHeading,
-  Row,
+  Pager,
   SegmentChoice,
-  Spoken,
   Stack,
   TextButton,
   useLocale,
@@ -45,7 +43,7 @@ import {
   type FinanceColumn,
   type FinanceFigure,
 } from "@my/design-system";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { stringsIn } from "./locale";
 
 export type T = ReturnType<typeof stringsIn>["t"];
@@ -312,52 +310,32 @@ export function FinanceChoices({ view, about = true }: { view: FinanceView; abou
 }
 
 /**
- * The way to the periods before those shown, and back to the later ones up to today's; the page's one polite live
- * region after them, which says what the window shows once the reader changed it. Later goes once the window ends
- * with today's period, the focus then on Earlier.
+ * The way to the periods before those shown (Earlier, as the pager's Next) and back to the later ones up to today's
+ * (Later, disabled once the window ends with today's period); after them, which periods are shown, written in the
+ * reader's locale, the pager's live region saying it again whenever the reader changed the window.
  */
 export function FinancePages({ view }: { view: FinanceView }) {
   const { t, locale } = useFinanceStrings();
-  const pages = useRef<HTMLDivElement>(null);
-  const refocus = useRef(false);
-  useEffect(() => {
-    if (!refocus.current || view.offset !== 0) return;
-    refocus.current = false;
-    pages.current?.querySelector("button")?.focus();
-  }, [view.offset]);
   const latest = view.periods[0];
   const oldest = view.periods.at(-1);
   return (
-    <>
-      <div ref={pages}>
-        <Row wrap justify="center" gap="entry-caption">
-          <Button size="target" onPress={view.earlier}>
-            {t("finance.earlier", { granularity: view.granularity })}
-          </Button>
-          {view.offset > 0 && (
-            <Button
-              size="target"
-              onPress={() => {
-                refocus.current = view.offset === 1;
-                view.later();
-              }}
-            >
-              {t("finance.later", { granularity: view.granularity })}
-            </Button>
-          )}
-        </Row>
-      </div>
-      <div role="status">
-        {view.changes > 0 && latest !== undefined && oldest !== undefined && (
-          <Spoken key={view.changes}>
+    <Pager
+      periods={view.granularity}
+      previous={view.offset > 0 ? { onPress: view.later } : undefined}
+      next={{ onPress: view.earlier }}
+      position={
+        latest !== undefined &&
+        oldest !== undefined && (
+          // A new node for each change, so that the live region says it again when only how payments count changed.
+          <span key={view.changes}>
             {t("finance.showing", {
               from: periodName(t, locale, view.granularity, oldest),
               to: periodName(t, locale, view.granularity, latest),
             })}
-          </Spoken>
-        )}
-      </div>
-    </>
+          </span>
+        )
+      }
+    />
   );
 }
 

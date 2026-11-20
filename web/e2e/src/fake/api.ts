@@ -74,7 +74,7 @@ import { financeHandlers, type FakeFinanceOptions } from "./finance";
 import { financeAdminHandlers, type FakeFinanceAdmin, type FakeFinanceAdminOptions } from "./finance-admin";
 import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
 import { supportersAdminHandlers, type FakeSupportersAdmin, type FakeSupportersAdminOptions } from "./supporters-admin";
-import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
+import { voiceHandlers, type FakeVoice, type FakeVoiceMany, type FakeVoiceOpenRefusal } from "./voice";
 import { adminHandlers, type FakeAdmin, type FakeAdminOptions } from "./admin-settings";
 import { closureHandlers, type FakeClosureOptions } from "./closure";
 import { themeHandlers, type FakeThemeOptions } from "./theme";
@@ -307,6 +307,8 @@ export type FakeOptions = {
   voiceStarters?: "everyone" | "permitted";
   /** Why the server refuses every opening of a room: the reader may not, too many are open, or they host another. */
   voiceOpen?: FakeVoiceOpenRefusal;
+  /** More open rooms, rooms the reader hosted, and invitations to the reader's room than a page holds. */
+  voiceMany?: FakeVoiceMany;
   /**
    * Who may create events (the instance setting `event_creators`): every local account by default, or only those
    * whose roles have `create_events` (`permitted`), as the admin's do.
@@ -442,6 +444,8 @@ export type FakeOptions = {
    * of kiri@far.example, and a follow of kobo@bread.example, the newest first; accepting or dismissing them is kept.
    */
   held?: boolean;
+  /** With `held`, a follow of each of these people held back too, older than the others: more than a page of accounts. */
+  heldFrom?: readonly string[];
   /**
    * Web Push (FR-206): the server sends it (its application key), and the reader has no subscription until they
    * register one; none by default, as a server without a VAPID key.
@@ -2420,6 +2424,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       },
     ],
     openRefusal: o.voiceOpen,
+    many: o.voiceMany,
+    accountByName: (username) => (local(username) ? accountOf(username) : undefined),
     newId: () => idAt(Date.now(), 31_000 + (voiceIds += 1)),
     accountById: (id) => {
       const username = usernameOf.get(id);
@@ -2780,6 +2786,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     hold("kiri@far.example", "favourite", 20, 0, about);
     hold("kiri@far.example", "boost", 45, 1, about);
     hold("kobo@bread.example", "follow", 90, 2);
+    (o.heldFrom ?? []).forEach((from, i) => {
+      hold(from, "follow", 120 + i * 10, 3 + i);
+    });
   }
   const heldRequestOf = (username: string): Schema<"NotificationRequest"> => {
     const list = held.get(username) ?? [];

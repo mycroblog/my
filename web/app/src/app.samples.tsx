@@ -79,6 +79,11 @@ export type Fake = {
   /** A newer build of the app waits (the service worker's), which a toast offers. */
   updateReady?: boolean;
   /**
+   * Show more pressed once under each list the screen reads by pages: the list holds its second page, where the fake
+   * has one.
+   */
+  more?: boolean;
+  /**
    * Next pressed once under the screen's list that pages by Previous and Next, once its first page is in: the list at
    * its second page, the address with it.
    */
@@ -311,6 +316,23 @@ function StoryApp(props: Fake & { stream: Stream | undefined }) {
 }
 
 /**
+ * Reads the second page of each list of `data` read by pages, once its first is in, as Show more pressed once does:
+ * the next page asked of the query as its observer asks it.
+ */
+function readSecondPages(data: AppData) {
+  const asked = new Set<string>();
+  data.queryClient.getQueryCache().subscribe(({ query }) => {
+    const pages: unknown = query.state.data;
+    if (query.state.status !== "success" || asked.has(query.queryHash)) return;
+    if (pages === null || typeof pages !== "object" || !("pages" in pages) || !Array.isArray(pages.pages)) return;
+    if (pages.pages.length !== 1 || !("getNextPageParam" in query.options)) return;
+    asked.add(query.queryHash);
+    // A list with no next page keeps the page it holds, asking nothing.
+    void query.fetch(undefined, { meta: { fetchMore: { direction: "forward" } } }).catch(() => undefined);
+  });
+}
+
+/**
  * Presses Next under the screen's paged list once it shows, when `next`: the last pager of the page
  * (`[data-pager]`, the design system's), which is the list's where a window of periods stands over it.
  */
@@ -341,6 +363,7 @@ function StoryPage({
   call = false,
   joined,
   updateReady = false,
+  more = false,
   next = false,
   stream,
   onRestart,
@@ -376,6 +399,7 @@ function StoryPage({
         else void router.navigate({ href });
       },
     });
+    if (more) readSecondPages(data);
     return { fake, data, router, watch };
   });
   useEffect(

@@ -169,7 +169,7 @@ describe("for an account that may create invites", () => {
     const { fake, user } = await invitesRead({ invites: "many" });
     const held = await heldInvites(fake);
     const asked = fake.script("GET /invites", { fail: 500, times: 1 });
-    const notRead = "The rest of this list could not be loaded.";
+    const notRead = "The rest of the list could not be loaded.";
     const more = within(section("Your invites")).getByRole("button", { name: "Show more" });
 
     await user.click(more);

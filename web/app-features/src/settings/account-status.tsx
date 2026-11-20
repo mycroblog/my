@@ -15,15 +15,15 @@
 import { ownModerationActionsQuery, useOwnModerationActions, type AppData, type ModerationAction } from "@my/app-data";
 import {
   BackButton,
-  Button,
-  Row,
   SettingsEmpty,
   SettingsList,
   SettingsListRow,
   SettingsScreen,
   SettingsSection,
-  Stack,
+  ShowMore,
+  useAddedFocus,
   useLocale,
+  type AddedFocus,
 } from "@my/design-system";
 import { stringsIn } from "../locale";
 import { moderationActionPath } from "./account";
@@ -85,12 +85,22 @@ function appealLine(action: ModerationAction, date: (at: string) => string, t: T
   });
 }
 
-/** The rows of `actions`, each the door to its action's screen. */
-function ActionList({ label, actions, t }: { label: string; actions: readonly ModerationAction[]; t: T }) {
+/** The rows of `actions`, each the door to its action's screen; `item` the refs of a list that grows. */
+function ActionList({
+  label,
+  actions,
+  item,
+  t,
+}: {
+  label: string;
+  actions: readonly ModerationAction[];
+  item?: AddedFocus["item"] | undefined;
+  t: T;
+}) {
   const date = useMoment(false);
   return (
     <SettingsList label={label}>
-      {actions.map((action) => (
+      {actions.map((action, i) => (
         <SettingsListRow
           key={action.id}
           title={action.kind_label}
@@ -98,6 +108,7 @@ function ActionList({ label, actions, t }: { label: string; actions: readonly Mo
           facts={[endsLine(action, date, t)]}
           standing={appealLine(action, date, t)}
           href={moderationActionPath(action.id)}
+          itemRef={item?.(i)}
         />
       ))}
     </SettingsList>
@@ -109,6 +120,8 @@ export function AccountStatusScreen({ onBack }: { onBack: () => void }) {
   const { t, lang } = stringsIn(useLocale().locale);
   const active = useOwnModerationActions(true);
   const all = useOwnModerationActions();
+  const past = all.items.filter((action) => action.state !== "active");
+  const added = useAddedFocus(past.length);
   const words = useStatusWords();
   const title = t("settings.account.status");
   const back = <BackButton onPress={onBack}>{t("settings.entry.account")}</BackButton>;
@@ -134,10 +147,8 @@ export function AccountStatusScreen({ onBack }: { onBack: () => void }) {
       />
     );
   const count = (n: number) => (n === 0 ? undefined : new Intl.NumberFormat(lang).format(n));
-  const past = all.items.filter((action) => action.state !== "active");
   const activeHeading = t("settings.account.actions.active");
   const pastHeading = t("settings.account.actions.past");
-  const failedMore = all.failedNextPage && all.hasNextPage && !all.isFetchingNextPage;
   return (
     <SettingsScreen sub title={title} back={back}>
       <SettingsSection heading={activeHeading} count={active.hasNextPage ? undefined : count(active.items.length)}>
@@ -149,21 +160,16 @@ export function AccountStatusScreen({ onBack }: { onBack: () => void }) {
       </SettingsSection>
       <SettingsSection heading={pastHeading} count={all.hasNextPage ? undefined : count(past.length)}>
         {past.length > 0 ? (
-          <ActionList label={pastHeading} actions={past} t={t} />
+          <ActionList label={pastHeading} actions={past} item={added.item} t={t} />
         ) : (
           !all.hasNextPage && <SettingsEmpty>{t("settings.account.actions.past.empty")}</SettingsEmpty>
         )}
-        {all.hasNextPage && (
-          <Stack gap="screen-row-gap">
-            {failedMore && <SettingsEmpty>{t("settings.account.actions.failed_more")}</SettingsEmpty>}
-            <Row justify="start">
-              {/* One button, which stays as its name changes, and the focus with it: Show more, then Try again. */}
-              <Button size="timeline" touch busy={all.isFetchingNextPage} onPress={all.fetchNextPage}>
-                {t(failedMore ? "settings.retry" : "settings.account.actions.more")}
-              </Button>
-            </Row>
-          </Stack>
-        )}
+        <ShowMore
+          more={all.hasNextPage}
+          busy={all.isFetchingNextPage}
+          failed={all.failedNextPage}
+          onPress={added.press(all.fetchNextPage)}
+        />
       </SettingsSection>
     </SettingsScreen>
   );

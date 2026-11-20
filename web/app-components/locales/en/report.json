@@ -55,10 +55,6 @@
     "defaultMessage": "{count, plural, =0 {Choose up to {max} posts. None chosen yet.} one {Choose up to {max} posts. # chosen.} other {Choose up to {max} posts. # chosen.}}",
     "description": "Under the heading of the posts to include in a report: how many may be chosen ({max}, 20) and how many are ({count})."
   },
-  "report.posts_more": {
-    "defaultMessage": "Show older posts",
-    "description": "The button under the account's posts in the report panel that shows older posts to choose from."
-  },
   "report.posts_loading": {
     "defaultMessage": "Loading posts…",
     "description": "Said in the place of the account's posts in the report panel while they load."

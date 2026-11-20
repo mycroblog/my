@@ -76,6 +76,7 @@ function usePosts(subject: ReportSubject) {
     status: list.status,
     more: list.hasNextPage,
     loadingMore: list.isFetchingNextPage,
+    failedMore: list.failedNextPage,
     onMore: list.fetchNextPage,
     onRetry: list.refetch,
   };

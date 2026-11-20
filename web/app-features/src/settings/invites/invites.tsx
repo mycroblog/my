@@ -14,15 +14,15 @@
 
 import { loadOwnInvites, useOwnInvites, type AppData } from "@my/app-data";
 import {
-  Button,
   LinkButton,
-  Row,
   SettingsEmpty,
   SettingsList,
   SettingsListRow,
   SettingsNote,
   SettingsScreen,
   SettingsSection,
+  ShowMore,
+  useAddedFocus,
   useLocale,
 } from "@my/design-system";
 import { stringsIn } from "../../locale";
@@ -41,6 +41,7 @@ export function InvitesSettings({ back }: SettingsEntryProps) {
   const factsOf = useInviteFacts();
   const list = useOwnInvites();
   const { limits, usable, canCreate, items } = list;
+  const added = useAddedFocus(items.length);
   const title = t("settings.entry.invites");
   if (limits === undefined || usable === undefined || canCreate === undefined)
     return (
@@ -55,8 +56,6 @@ export function InvitesSettings({ back }: SettingsEntryProps) {
   /** How many more invites the reader can create before they have as many usable ones as the server allows. */
   const left = Math.max(0, limits.max_active - usable);
   const may = canCreate && left > 0;
-  /** The next, older invites were asked for and could not be read: said under the ones held, with the way to ask again. */
-  const failedMore = list.failedNextPage && list.hasNextPage && !list.isFetchingNextPage;
   const create = (
     <LinkButton size="timeline" href={invitesPaths.create}>
       {t("settings.invites.create")}
@@ -85,7 +84,7 @@ export function InvitesSettings({ back }: SettingsEntryProps) {
           </SettingsEmpty>
         ) : (
           <SettingsList label={t("settings.invites.own")}>
-            {items.map((invite) => {
+            {items.map((invite, i) => {
               const { works, state, more } = factsOf(invite);
               return (
                 <SettingsListRow
@@ -95,20 +94,18 @@ export function InvitesSettings({ back }: SettingsEntryProps) {
                   inactive={!works}
                   facts={[state, ...more]}
                   href={invitesPaths.invite(invite.id)}
+                  itemRef={added.item(i)}
                 />
               );
             })}
           </SettingsList>
         )}
-        {failedMore && <SettingsEmpty>{t("settings.invites.failed_more")}</SettingsEmpty>}
-        {list.hasNextPage && (
-          <Row justify="start">
-            {/* One button, which stays as its name changes, and the focus with it: Show more, then Try again. */}
-            <Button size="timeline" busy={list.isFetchingNextPage} onPress={list.fetchNextPage}>
-              {t(failedMore ? "settings.retry" : "settings.invites.more")}
-            </Button>
-          </Row>
-        )}
+        <ShowMore
+          more={list.hasNextPage}
+          busy={list.isFetchingNextPage}
+          failed={list.failedNextPage}
+          onPress={added.press(list.fetchNextPage)}
+        />
       </SettingsSection>
     </SettingsScreen>
   );

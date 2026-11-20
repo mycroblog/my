@@ -111,17 +111,9 @@
     "defaultMessage": "{dates} (今日まで)",
     "description": "Under this week in the finance totals' table: its dates ({dates}, a range such as Nov 16 – 22) and that its figures are up to today."
   },
-  "finance.earlier": {
-    "defaultMessage": "{granularity, select, week {前の週} month {前の月} other {前の年}}",
-    "description": "The button under the finance totals that shows the periods before those shown ({granularity}: week, month or year)."
-  },
-  "finance.later": {
-    "defaultMessage": "{granularity, select, week {次の週} month {次の月} other {次の年}}",
-    "description": "The button under the finance totals that shows the periods after those shown, up to today's ({granularity}: week, month or year)."
-  },
   "finance.showing": {
     "defaultMessage": "{from}から{to}までを表示しています。",
-    "description": "Said to assistive technology after the reader changed the period, how payments count, or moved to earlier or later periods: the first and last periods shown ({from}, {to}: a week, a month or a year as the table heads them)."
+    "description": "After Earlier and Later under the finance totals, muted, and said to assistive technology again after the reader changed the period, how payments count, or moved to earlier or later periods: the first and last periods shown ({from}, {to}: a week, a month or a year as the table heads them)."
   },
   "finance.breakdown": {
     "defaultMessage": "{period}の事業者ごとの内訳",

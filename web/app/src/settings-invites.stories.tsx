@@ -11,6 +11,7 @@
 // alone reaches is the parts' own, in the design system's Settings parts: a value shown to copy and what came of
 // copying it (its Codes to keep), a form's refusal before its button (its Submit bar), and the confirmation before
 // something ends (Dialog).
+// More of the invites than a page holds, before and after Show more (pages.samples.ts, `more`).
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
@@ -35,6 +36,10 @@ export const NoInvites: Story = { parameters: screen({ at: invites, server: { ac
 export const AtCap: Story = { parameters: screen({ at: invites, server: { access: { invites: "at-cap" } } }) };
 /** More invites than a page of the list holds: Show more under the first twenty. */
 export const Many: Story = { parameters: screen({ at: invites, server: { access: { invites: "many" } } }) };
+/** The same after Show more: the older invites under the first twenty, and no Show more. */
+export const ManyMore: Story = {
+  parameters: screen({ at: invites, server: { access: { invites: "many" } }, more: true }),
+};
 /** The entry while what it shows loads. */
 export const Loading: Story = { parameters: screen({ at: invites, state: "loading" }) };
 /** The entry when what it shows could not be read: it says so, with the way to try again. */

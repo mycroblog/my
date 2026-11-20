@@ -530,7 +530,7 @@ describe("the whole list", () => {
 
   test("Show more that fails keeps the rows and says once, above its button, that the rest could not be loaded; the button, now Try again, keeps the focus, and its next press reads the rest", async () => {
     const on = await whole("blocked", serverOf({ blocked: 22 }));
-    const rest = "The rest of this list could not be loaded.";
+    const rest = "The rest of the list could not be loaded.";
     const asked = () => on.requests.filter((r) => r.startsWith("GET /blocks"));
     const failing = on.fake.script("GET /blocks", { fail: 500 });
     const more = screen.getByRole("button", { name: "Show more" });

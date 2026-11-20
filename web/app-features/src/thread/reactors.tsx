@@ -16,7 +16,7 @@ import {
   type AppData,
   type Status,
 } from "@my/app-data";
-import { BackButton, FeedNotice, Fold, ScreenStack, TextButton, useLocale } from "@my/design-system";
+import { BackButton, FeedNotice, ScreenStack, ShowMore, TextButton, useAddedFocus, useLocale } from "@my/design-system";
 import { useEffect, useRef } from "react";
 import { stringsIn } from "../locale";
 
@@ -55,6 +55,7 @@ export function ReactorList({ id, emoji, onBack }: { id: string; emoji: string; 
   const { t } = stringsIn(useLocale().locale);
   const { status, failed } = useStatus(id);
   const list = useStatusReactors(id, emoji);
+  const added = useAddedFocus(list.items.length);
   const gone = useStatusGone(id);
   const left = useRef(false);
   useEffect(() => {
@@ -73,33 +74,29 @@ export function ReactorList({ id, emoji, onBack }: { id: string; emoji: string; 
     );
   const reaction = status.reactions.find((r) => r.name === emoji) ?? { name: emoji, count: list.items.length };
   const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("thread.retry")}</TextButton>;
-  const failedMore = list.status === "success" && list.error !== null && !list.isFetchingNextPage;
   const end =
     list.status === "pending" ? (
       <FeedNotice>{t("thread.reactors_loading")}</FeedNotice>
-    ) : list.status === "error" ? (
+    ) : list.status === "error" && !list.failedNextPage ? (
       <FeedNotice alert action={retry(list.refetch)}>
         {t("thread.reactors_failed")}
       </FeedNotice>
-    ) : list.isFetchingNextPage ? (
-      <FeedNotice>{t("thread.reactors_loading_more")}</FeedNotice>
-    ) : failedMore && list.hasNextPage ? (
-      <FeedNotice alert action={retry(list.fetchNextPage)}>
-        {t("thread.reactors_failed_more")}
-      </FeedNotice>
     ) : list.items.length === 0 ? (
       <FeedNotice>{t("thread.reactors_empty")}</FeedNotice>
-    ) : list.hasNextPage ? (
-      <Fold>
-        <TextButton onPress={list.fetchNextPage}>{t("thread.reactors_more")}</TextButton>
-      </Fold>
-    ) : undefined;
+    ) : (
+      <ShowMore
+        more={list.hasNextPage}
+        busy={list.isFetchingNextPage}
+        failed={list.failedNextPage}
+        onPress={added.press(list.fetchNextPage)}
+      />
+    );
   return (
     <ScreenStack>
       {back}
       <ReactorsTitle reaction={reaction} count={reaction.count} />
-      {list.items.map((r) => (
-        <AccountLine key={r.account.id} account={r.account} />
+      {list.items.map((r, i) => (
+        <AccountLine key={r.account.id} account={r.account} itemRef={added.item(i)} />
       ))}
       {end}
     </ScreenStack>

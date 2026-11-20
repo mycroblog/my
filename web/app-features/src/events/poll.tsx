@@ -28,9 +28,9 @@ import {
 import {
   Box,
   Button,
-  ConfirmDialog,
   CandidateRow,
   CandidateTable,
+  ConfirmDialog,
   Disclosure,
   EventTime,
   FeedNotice,
@@ -44,14 +44,16 @@ import {
   RowItem,
   RowList,
   SaveState,
+  ShowMore,
   Stack,
+  useAddedFocus,
   useLocale,
   useTimeZone,
   type Answer,
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import { useGone } from "./manage";
-import { DateField, MoreOf, Retry, type T } from "./parts";
+import { DateField, Retry, type T } from "./parts";
 import type { Say } from "./places";
 
 /** What the organizers confirm before it is done to a date: confirming it, or withdrawing it. */
@@ -341,6 +343,7 @@ function AddDate({
 /** Who answered a date, each way: read while it is open. */
 function Ballots({ event, candidate, t }: { event: ServerEvent; candidate: EventCandidate; t: T }) {
   const list = useEventBallots(event.id, candidate.id);
+  const added = useAddedFocus(list.items.length);
   if (list.status === "pending") return <FeedNotice start>{t("events.ballots_loading")}</FeedNotice>;
   if (list.items.length === 0)
     return list.status === "error" ? (
@@ -359,7 +362,7 @@ function Ballots({ event, candidate, t }: { event: ServerEvent; candidate: Event
             <GroupHeading>{t("events.vote_group", { vote, count: of(vote).length })}</GroupHeading>
             <RowList label={t("events.vote_group", { vote, count: of(vote).length })}>
               {of(vote).map((b) => (
-                <RowItem key={b.account.id}>
+                <RowItem key={b.account.id} itemRef={added.item(list.items.indexOf(b))}>
                   <AccountLine account={b.account} />
                 </RowItem>
               ))}
@@ -367,7 +370,12 @@ function Ballots({ event, candidate, t }: { event: ServerEvent; candidate: Event
           </Stack>
         ),
       )}
-      <MoreOf list={list} t={t} />
+      <ShowMore
+        more={list.hasNextPage}
+        busy={list.isFetchingNextPage}
+        failed={list.failedNextPage}
+        onPress={added.press(list.fetchNextPage)}
+      />
     </Stack>
   );
 }

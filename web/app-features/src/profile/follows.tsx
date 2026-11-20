@@ -18,7 +18,16 @@ import {
   type AppData,
   type FollowsList,
 } from "@my/app-data";
-import { BackButton, FeedNotice, Fold, ScreenStack, TabRow, TextButton, useLocale } from "@my/design-system";
+import {
+  BackButton,
+  FeedNotice,
+  ScreenStack,
+  ShowMore,
+  TabRow,
+  TextButton,
+  useAddedFocus,
+  useLocale,
+} from "@my/design-system";
 import { FollowOf } from "../account-follow";
 import { stringsIn } from "../locale";
 
@@ -37,39 +46,43 @@ export async function loadFollows(data: AppData, acct: string, list: FollowsList
   ]).catch(() => undefined);
 }
 
-/** The rows of the list, then its line: loading, failed, empty, kept from the reader, or the fold of more. */
+/** The rows of the list, then its line (loading, failed, empty, kept from the reader), or Show more. */
 function Rows({ account, list, t }: { account: Account; list: FollowsList; t: T }) {
   const follows = useAccountFollows(account.id, list);
+  const added = useAddedFocus(follows.items.length);
   const viewer = useViewer()?.id;
   const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("profile.retry")}</TextButton>;
   const failed = list === "followers" ? "profile.followers_failed" : "profile.following_failed";
   const loading = list === "followers" ? "profile.followers_loading" : "profile.following_loading";
-  const failedMore = follows.status === "success" && follows.error !== null && !follows.isFetchingNextPage;
   const end = follows.hidden ? (
     // The server does not say whether the owner shows the list to their followers or to nobody: one line, true of
     // both for a reader it keeps the list from.
     <FeedNotice start>{t("profile.follows_hidden_private", { name: nameOf(account) })}</FeedNotice>
-  ) : follows.status === "pending" || follows.isFetchingNextPage ? (
+  ) : follows.status === "pending" ? (
     <FeedNotice start>{t(loading)}</FeedNotice>
-  ) : follows.status === "error" ? (
+  ) : follows.status === "error" && !follows.failedNextPage ? (
     <FeedNotice start alert action={retry(follows.refetch)}>
-      {t(failed)}
-    </FeedNotice>
-  ) : failedMore && follows.hasNextPage ? (
-    <FeedNotice start alert action={retry(follows.fetchNextPage)}>
       {t(failed)}
     </FeedNotice>
   ) : follows.items.length === 0 ? (
     <FeedNotice start>{t(list === "followers" ? "profile.followers_empty" : "profile.following_empty")}</FeedNotice>
-  ) : follows.hasNextPage ? (
-    <Fold>
-      <TextButton onPress={follows.fetchNextPage}>{t("profile.follows_more")}</TextButton>
-    </Fold>
-  ) : undefined;
+  ) : (
+    <ShowMore
+      more={follows.hasNextPage}
+      busy={follows.isFetchingNextPage}
+      failed={follows.failedNextPage}
+      onPress={added.press(follows.fetchNextPage)}
+    />
+  );
   return (
     <ScreenStack busy={follows.status === "pending"}>
-      {follows.items.map((a) => (
-        <AccountLine key={a.id} account={a} end={a.id === viewer ? undefined : <FollowOf account={a} />} />
+      {follows.items.map((a, i) => (
+        <AccountLine
+          key={a.id}
+          account={a}
+          end={a.id === viewer ? undefined : <FollowOf account={a} />}
+          itemRef={added.item(i)}
+        />
       ))}
       {end}
     </ScreenStack>

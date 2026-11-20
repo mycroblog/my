@@ -48,19 +48,20 @@ import {
   Box,
   Button,
   FeedNotice,
-  Row,
+  SettingsAccountItem,
   SettingsEmpty,
   SettingsList,
-  SettingsAccountItem,
   SettingsListRow,
   SettingsScreen,
   SettingsSection,
+  ShowMore,
   Stack,
   TextLink,
+  useAddedFocus,
   useLocale,
   type SettingsRowResult,
 } from "@my/design-system";
-import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type ReactNode, type RefCallback } from "react";
 import { stringsIn } from "../locale";
 import type { SettingsEntryProps } from "./entries";
 import { ReadingNotice, useMoment } from "./parts";
@@ -113,6 +114,8 @@ type RowState = {
   readonly busy: boolean;
   readonly result: SettingsRowResult | undefined;
   readonly remove: (removal: Removal) => void;
+  /** The ref of its row, for a list that grows under Show more. */
+  readonly itemRef: RefCallback<HTMLElement> | undefined;
 };
 
 /**
@@ -213,7 +216,7 @@ function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { ca
   }
   const door = capped && (listed.length > most || items.hasNextPage);
   const shown = door ? listed.slice(0, few) : listed;
-  const failedMore = items.failedNextPage && items.hasNextPage && !items.isFetchingNextPage;
+  const added = useAddedFocus(shown.length);
   const retry = (onPress: () => void) => (
     <Button size="timeline" touch onPress={onPress}>
       {t("settings.retry")}
@@ -235,6 +238,7 @@ function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { ca
               {row(item, {
                 busy: busy.has(key),
                 result: kept.get(key)?.result,
+                itemRef: capped ? undefined : added.item(at),
                 remove: (removal) => {
                   remove(key, item, at, removal);
                 },
@@ -245,23 +249,20 @@ function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { ca
       </SettingsList>
     );
   const all = t("settings.relationships.all", { list });
-  const more = capped
-    ? door && (
-        <SettingsList label={all}>
-          <SettingsListRow title={all} href={relationshipListPath(list)} />
-        </SettingsList>
-      )
-    : items.hasNextPage && (
-        <Stack gap="screen-row-gap">
-          {failedMore && <SettingsEmpty>{t("settings.relationships.failed_more")}</SettingsEmpty>}
-          <Row justify="start">
-            {/* One button, which stays as its name changes, and the focus with it: Show more, then Try again. */}
-            <Button size="timeline" touch busy={items.isFetchingNextPage} onPress={items.fetchNextPage}>
-              {t(failedMore ? "settings.retry" : "settings.relationships.more")}
-            </Button>
-          </Row>
-        </Stack>
-      );
+  const more = capped ? (
+    door && (
+      <SettingsList label={all}>
+        <SettingsListRow title={all} href={relationshipListPath(list)} />
+      </SettingsList>
+    )
+  ) : (
+    <ShowMore
+      more={items.hasNextPage}
+      busy={items.isFetchingNextPage}
+      failed={items.failedNextPage}
+      onPress={added.press(items.fetchNextPage)}
+    />
+  );
   return (
     <SettingsSection
       heading={heading}
@@ -327,6 +328,7 @@ function Blocked({ items, capped, t }: SectionProps<Account>) {
             account={<AccountLine account={account} />}
             label={name}
             result={state.result}
+            itemRef={state.itemRef}
             end={
               <RemoveButton
                 label={t("settings.relationships.unblock")}
@@ -383,6 +385,7 @@ function Muted({ items, capped, t }: SectionProps<MutedAccount>) {
             label={name}
             note={muteCovers(mute, ends, t)}
             result={state.result}
+            itemRef={state.itemRef}
             end={
               <RemoveButton
                 label={t("settings.relationships.unmute")}
@@ -411,6 +414,7 @@ function Servers({ items, capped, t }: SectionProps<string>) {
         <SettingsListRow
           title={domain}
           result={state.result}
+          itemRef={state.itemRef}
           end={
             <RemoveButton
               label={t("settings.relationships.unmute")}
@@ -439,6 +443,7 @@ function Hashtags({ items, capped, t }: SectionProps<FollowedHashtag>) {
           icon="hashtag"
           title={tag.name}
           result={state.result}
+          itemRef={state.itemRef}
           end={
             <RemoveButton
               label={t("settings.relationships.unfollow")}
