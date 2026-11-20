@@ -24,10 +24,10 @@ my admin relay delete <relay id>                                  # delete a rel
 
 受到域名处置（`suspend`）的服务器，不能登记它的中继。如果已加入的中继所在的服务器后来被暂停，状态不会改变，但不再向该中继发送任何内容，也不再从它接收任何内容，管理区域会在该中继的状态中说明这一点。
 
-<!-- source: what-the-server-sends 1db52c508f9c -->
+<!-- source: what-the-server-sends c55ab0a5b079 -->
 ## 服务器发送的内容
 
-- 只发送本站**公开**（`public`）帖子的创建、编辑和删除。设为 `unlisted`、仅关注者、私信或仅本站（`local`）的帖子，以及转发，都不会发送。要让某条帖子不进入中继，请将它发布为 `unlisted` 或 `local`。没有按用户退出的选项。
+- 只发送本站**公开**（`public`）帖子的创建、编辑和删除。设为 `unlisted`、仅关注者、私信或邻里（`local`）的帖子，以及转发，都不会发送。要让某条帖子不进入中继，请将它发布为 `unlisted` 或 `local`。没有按用户退出的选项。
 - 公开帖子的文档带有 Linked Data Signature（`RsaSignature2017`），因此 Mastodon 和 Misskey 能接受中继原样转交的帖子。
 - 投递次数会增加“已加入的中继数 × 公开帖子数”（发往同一中继的投递会合并为一次）。
 
