@@ -7,10 +7,6 @@
     "defaultMessage": "Appeals",
     "description": "The name of the moderators' queue of appeals of actions, in the list at /moderation and as the title of its screen. Read by moderators."
   },
-  "staff_accounts.entry.appeals.hint": {
-    "defaultMessage": "Appeals of actions: uphold or overturn the action",
-    "description": "The line under Appeals in the list at /moderation. Read by moderators."
-  },
   "staff_accounts.entry.appeals.count": {
     "defaultMessage": "{count, plural, one {# appeal waits} other {# appeals wait}}",
     "description": "For assistive technology, the badge at the end of Appeals at /moderation: how many appeals wait for a decision. Read by moderators."
@@ -18,10 +14,6 @@
   "staff_accounts.entry.registrations": {
     "defaultMessage": "Registrations",
     "description": "The name of the screen of registrations that wait for approval, in the list at /moderation and as its title. Read by moderators."
-  },
-  "staff_accounts.entry.registrations.hint": {
-    "defaultMessage": "Sign-ups that wait for approval",
-    "description": "The line under Registrations in the list at /moderation. Read by moderators."
   },
   "staff_accounts.entry.registrations.count": {
     "defaultMessage": "{count, plural, one {# registration waits} other {# registrations wait}}",
@@ -31,33 +23,17 @@
     "defaultMessage": "Automated reviews",
     "description": "The name of the screen of the decision hooks' decisions, in the list at /moderation and as its title. Read by moderators."
   },
-  "staff_accounts.entry.hook_decisions.hint": {
-    "defaultMessage": "What external reviews stopped, flagged or could not check",
-    "description": "The line under Automated reviews in the list at /moderation. Read by moderators."
-  },
   "staff_accounts.entry.accounts": {
     "defaultMessage": "Accounts",
     "description": "The name of the search of accounts, in the list at /moderation and as the title of its screen. Read by moderators."
-  },
-  "staff_accounts.entry.accounts.hint": {
-    "defaultMessage": "Find an account to review it or act on it",
-    "description": "The line under Accounts in the list at /moderation. Read by moderators."
   },
   "staff_accounts.entry.signup_blocks": {
     "defaultMessage": "Sign-up blocks",
     "description": "The name of the screen of blocks on sign-ups by email domain, email address or IP range, in the list at /moderation and as its title. Read by moderators."
   },
-  "staff_accounts.entry.signup_blocks.hint": {
-    "defaultMessage": "Sign-ups refused or held for approval by email or IP",
-    "description": "The line under Sign-up blocks in the list at /moderation. Read by moderators."
-  },
   "staff_accounts.entry.invites": {
     "defaultMessage": "Invites",
     "description": "The name of the screen of every invite of the server, in the list at /moderation and as its title. Read by moderators."
-  },
-  "staff_accounts.entry.invites.hint": {
-    "defaultMessage": "Every invite, who created it, and how it was used",
-    "description": "The line under Invites in the list at /moderation. Read by moderators."
   },
   "staff_accounts.forbidden": {
     "defaultMessage": "Your account's permissions no longer open this screen.",
@@ -784,7 +760,7 @@
     "description": "The column of an appeal's state, in a table of appeals. Read by moderators."
   },
   "staff_accounts.appeals.empty.pending": {
-    "defaultMessage": "No appeal waits for a decision. An appeal comes here when a user appeals an action.",
+    "defaultMessage": "No appeal waits for a decision.",
     "description": "In place of the table of appeals when none waits. Read by moderators."
   },
   "staff_accounts.appeals.empty.filtered": {
@@ -960,7 +936,7 @@
     "description": "In the reason column of a registration whose person gave none. Read by moderators."
   },
   "staff_accounts.registrations.empty": {
-    "defaultMessage": "No registration waits for approval. A sign-up comes here while registrations need approval, or when a sign-up block holds it.",
+    "defaultMessage": "No registration waits for approval.",
     "description": "In place of the table of registrations when none waits. Read by moderators."
   },
   "staff_accounts.registrations.loading": {
@@ -1384,7 +1360,7 @@
     "description": "For assistive technology, the name of the counts of each hook's decisions of the last 7 days. Read by moderators."
   },
   "staff_accounts.decisions.no_hooks": {
-    "defaultMessage": "No automated review has a plugin. Its decisions come here once one has.",
+    "defaultMessage": "No automated review has a plugin.",
     "description": "At /moderation/hook-decisions when no decision hook has a plugin. Read by moderators."
   },
   "staff_accounts.decisions.filters": {

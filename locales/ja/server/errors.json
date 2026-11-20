@@ -520,7 +520,7 @@
     "description": "Detail of the HTTP 422 API error when a post quotes a post whose quote policy or visibility does not let the user quote it."
   },
   "errors.status.quote_remote_audience": {
-    "defaultMessage": "ほかのサーバーの投稿を引用するときは、見られる人を「公開」か「ひかえめな公開」にしてください。",
+    "defaultMessage": "ほかのサーバーの投稿を引用するときは、見られる人を「公開」か「ひっそり公開」にしてください。",
     "description": "Detail of the HTTP 422 API error when a post whose visibility keeps it from other servers quotes a post from another server."
   },
   "errors.status.reply_not_found": {
@@ -936,7 +936,7 @@
     "description": "API error detail for HTTP 422 when an administrator turns on the instance setting single_user: how many local accounts the server has. {count} is that number."
   },
   "errors.status.local_unavailable": {
-    "defaultMessage": "一人のためのサーバーでは、ローカル限定で投稿できません。見られる人を変えてください。",
+    "defaultMessage": "一人のためのサーバーでは、「ご近所」で投稿できません。見られる人を変えてください。",
     "description": "API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only."
   },
   "errors.interaction_request.answered": {

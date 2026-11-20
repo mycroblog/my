@@ -26,11 +26,11 @@ export class AnnouncementsAdmin {
       .getByRole("link", { name: /^Admin(?: .+)?$/ });
   }
 
-  /** The root's link to the announcements, with its hint. */
+  /** The root's link to the announcements. */
   get entry(): Locator {
     return this.main
       .getByRole("navigation", { name: "Administration screens", exact: true })
-      .getByRole("link", { name: /^Announcements .+$/ });
+      .getByRole("link", { name: "Announcements", exact: true });
   }
 
   /** Opens the form of a new announcement from the list. */

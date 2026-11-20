@@ -24,8 +24,8 @@ test("an administrator records a monthly cost, revises its price from a date, an
     .getByRole("link", { name: "Admin", exact: true })
     .click();
   const main = page.getByRole("main");
-  await main.getByRole("link", { name: /^Costs and income .+$/ }).click();
-  await main.getByRole("link", { name: /^Costs .+$/ }).click();
+  await main.getByRole("link", { name: "Costs and income", exact: true }).click();
+  await main.getByRole("link", { name: "Costs", exact: true }).click();
   await main.getByRole("link", { name: "Record a cost", exact: true }).click();
 
   // The form: what is paid for, to whom, monthly through 2020, in euros: periods and a currency that no other spec

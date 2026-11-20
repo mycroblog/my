@@ -288,9 +288,9 @@ describe("the words", () => {
     expect(writes(form)).toEqual([]);
   });
 
-  test("with its last word removed, where the list would be says that the filter has no words yet, and Add a word brings a row back", async () => {
+  test("with its last word removed, where the list would be says that the filter has no words, and Add a word brings a row back", async () => {
     const form = await filterForm();
-    const none = "This filter has no words yet. Add a word or phrase for it to match.";
+    const none = "This filter has no words.";
     expect(section("Words").queryAllByText(none)).toHaveLength(0);
 
     await form.user.click(removeWord(1));

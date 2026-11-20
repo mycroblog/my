@@ -25,8 +25,8 @@ test("an administrator creates a supporter plan on a role of its own, then retir
     .getByRole("link", { name: "Admin", exact: true })
     .click();
   const main = page.getByRole("main");
-  await main.getByRole("link", { name: /^Supporters .+$/ }).click();
-  await main.getByRole("link", { name: /^Plans(?: .+)?$/ }).click();
+  await main.getByRole("link", { name: "Supporters", exact: true }).click();
+  await main.getByRole("link", { name: "Plans", exact: true }).click();
   await main.getByRole("link", { name: "Create a plan", exact: true }).click();
 
   // The form: the role among those a plan can be on, the terms, then Create the plan.

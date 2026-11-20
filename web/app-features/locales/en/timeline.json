@@ -40,7 +40,7 @@
     "description": "The notice at the bottom of the page when following a hashtag, or unfollowing it, got no answer from the server (the network), beside Try again. The button stays as it was. follow is follow or unfollow; name is the hashtag without #."
   },
   "timeline.tag_empty": {
-    "defaultMessage": "No posts with #{name} yet. Posts with #{name} that reach this server show here.",
+    "defaultMessage": "No posts with #{name} yet.",
     "description": "In place of a hashtag's posts when it has none. name is the hashtag without #."
   },
   "timeline.lists": {
@@ -60,7 +60,7 @@
     "description": "In place of the reader's lists when fetching them failed; a retry action follows it."
   },
   "timeline.lists_empty": {
-    "defaultMessage": "No lists yet. Your lists show here, each with the posts of its members.",
+    "defaultMessage": "No lists yet.",
     "description": "In place of the reader's lists when they have made none."
   },
   "timeline.list_members": {
@@ -88,7 +88,7 @@
     "description": "In place of a list's screen when the server has no such list: the reader deleted it, on this or another device."
   },
   "timeline.list_empty": {
-    "defaultMessage": "No posts from this list's members yet. When they post, their posts show here.",
+    "defaultMessage": "No posts from this list's members yet.",
     "description": "In place of a list's posts when its members have none."
   },
   "timeline.retry": {
@@ -100,7 +100,7 @@
     "description": "The name of the column of the posts the reader bookmarked, for assistive technology."
   },
   "timeline.bookmarks_empty": {
-    "defaultMessage": "No bookmarks yet. Posts you bookmark show here.",
+    "defaultMessage": "No bookmarks yet.",
     "description": "In place of the reader's bookmarks when they have none."
   },
   "timeline.list_new": {
@@ -176,7 +176,7 @@
     "description": "The name, for assistive technology, of the button of a member of a list that takes it out of the list; it holds the button's visible word (timeline.list_remove). name is the member's display name."
   },
   "timeline.list_members_empty": {
-    "defaultMessage": "No one in this list yet. Add accounts you follow to read their posts here.",
+    "defaultMessage": "No one in this list yet.",
     "description": "In place of a list's members when it has none."
   },
   "timeline.list_members_limit": {

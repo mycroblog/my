@@ -118,8 +118,6 @@ export type StaffEntry = {
   readonly icon: IconName;
   /** Its name, in the root and as the title of its screen (staff.entry.<path>). */
   readonly name: MessageId;
-  /** What its screen holds, the line under its name in the root (staff.entry.<path>.hint). */
-  readonly hint: MessageId;
   /** How many things wait there for the reader, the badge at the row's end, and its words; none without it. */
   readonly count?: { readonly of: (facts: StaffFacts) => number | undefined; readonly words: MessageId };
   /** Whether the server offers it at all (none on a one-person server); offered where left out. */
@@ -139,7 +137,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_reports",
     icon: "report",
     name: "staff.entry.reports",
-    hint: "staff.entry.reports.hint",
     count: { of: (facts) => facts.openReports, words: "staff.entry.reports.count" },
     Screen: ReportQueueScreen,
     load: (data, search) => loadReportQueue(data, queueOf(search)),
@@ -154,7 +151,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_settings",
     icon: "settings",
     name: "staff.entry.settings",
-    hint: "staff.entry.settings.hint",
     Screen: AdminSettingsScreen,
   },
   {
@@ -164,7 +160,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_settings",
     icon: "file",
     name: "staff.entry.documents",
-    hint: "staff.entry.documents.hint",
     Screen: AdminDocumentsScreen,
   },
   {
@@ -174,7 +169,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_rules",
     icon: "list",
     name: "staff.entry.rules",
-    hint: "staff.entry.rules.hint",
     Screen: AdminRulesScreen,
     load: (data) => loadRules(data),
   },
@@ -185,7 +179,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_settings",
     icon: "translate",
     name: "staff.entry.translation",
-    hint: "staff.entry.translation.hint",
     Screen: () => <TranslationSettingsScreen />,
     load: (data) => loadTranslationSettings(data),
   },
@@ -196,7 +189,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_settings",
     icon: "federated",
     name: "staff.entry.relays",
-    hint: "staff.entry.relays.hint",
     Screen: AdminRelaysScreen,
     load: (data) => loadRelays(data),
   },
@@ -207,7 +199,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_login_providers",
     icon: "signIn",
     name: "staff.entry.login_providers",
-    hint: "staff.entry.login_providers.hint",
     Screen: AdminLoginProvidersScreen,
     load: (data) => loadLoginProviders(data),
   },
@@ -218,7 +209,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_oauth_apps",
     icon: "apps",
     name: "staff.entry.oauth_apps",
-    hint: "staff.entry.oauth_apps.hint",
     Screen: AdminOAuthAppsScreen,
     load: (data, search) => loadOAuthApps(data, search),
   },
@@ -232,7 +222,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_settings",
     icon: "theme",
     name: "staff.entry.theme",
-    hint: "staff.entry.theme.hint",
     Screen: AdminThemeScreen,
     load: (data) => loadTheme(data),
   },
@@ -243,7 +232,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_service_closure",
     icon: "closure",
     name: "staff.entry.closure",
-    hint: "staff.entry.closure.hint",
     Screen: AdminClosureScreen,
     load: (data) => loadClosure(data),
   },
@@ -258,7 +246,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_finance",
     icon: "finance",
     name: "staff_finance.entry",
-    hint: "staff_finance.entry.hint",
     Screen: FinanceAdminScreen,
   },
   {
@@ -270,7 +257,6 @@ export const staffEntries: readonly StaffEntry[] = [
     permission: "manage_supporters",
     icon: "funding",
     name: "staff_supporters.entry",
-    hint: "staff_supporters.entry.hint",
     Screen: SupportersAdminScreen,
     load: loadSupportersAdmin,
   },

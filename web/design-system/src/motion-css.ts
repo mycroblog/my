@@ -63,10 +63,10 @@ export const transitionRules: Rules = {
   "@keyframes my-fade-in": { from: { opacity: "0" } },
   "@keyframes my-fade-out": { to: { opacity: "0" } },
   [`${during("replace")}::view-transition-old(screen)`]: {
-    animation: "var(--transition-replace) linear both my-fade-out",
+    animation: "var(--transition-replace) var(--transition-ease-crossfade) both my-fade-out",
   },
   [`${during("replace")}::view-transition-new(screen)`]: {
-    animation: "var(--transition-replace) linear both my-fade-in",
+    animation: "var(--transition-replace) var(--transition-ease-crossfade) both my-fade-in",
   },
   "@media (prefers-reduced-motion: reduce)": {
     "::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*)": { animation: "none !important" },

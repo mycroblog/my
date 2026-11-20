@@ -139,7 +139,7 @@ const words = {
     about: "このサーバーについて",
     audienceMenu: "見られる人と返信できる人",
     audience: "見られる人",
-    visibilities: ["公開", "ひかえめな公開", "フォロワー限定", "ダイレクト"],
+    visibilities: ["公開", "ひっそり公開", "フォロワーのみ", "ダイレクト"],
     interactions: "返信・ブースト・引用できる人",
     interactBy: ["誰でも", "フォロワー", "自分だけ"],
     visibility: "見られる人",

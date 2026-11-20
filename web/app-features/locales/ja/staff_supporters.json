@@ -3,10 +3,6 @@
     "defaultMessage": "サポーター",
     "description": "Name of the administration screen of the supporter plans, tips and subscriptions, at /admin/supporters, and its title."
   },
-  "staff_supporters.entry.hint": {
-    "defaultMessage": "プラン・チップ・加入・決済の事業者",
-    "description": "Line under Supporters in the list of administration screens at /admin."
-  },
   "staff_supporters.back.program": {
     "defaultMessage": "サポーター",
     "description": "The way back, over a screen under Supporters, to the first page of Supporters in the administration."
@@ -38,10 +34,6 @@
   "staff_supporters.plans": {
     "defaultMessage": "プラン",
     "description": "Name of the list of supporter plans in the administration, the link to it, and its screen's title."
-  },
-  "staff_supporters.plans.count": {
-    "defaultMessage": "{count, plural, other {使用中のプラン # 件}}",
-    "description": "Line under Plans on the first page of Supporters: how many plans are not retired."
   },
   "staff_supporters.plans.loading": {
     "defaultMessage": "プランを読み込んでいます…",
@@ -87,10 +79,6 @@
     "defaultMessage": "加入",
     "description": "Name of the list of subscriptions to the supporter plans in the administration, the link to it, and its screen's title."
   },
-  "staff_supporters.subscriptions.hint": {
-    "defaultMessage": "加入者と加入の解約",
-    "description": "Line under Subscriptions on the first page of Supporters."
-  },
   "staff_supporters.subscriptions.loading": {
     "defaultMessage": "加入を読み込んでいます…",
     "description": "While the subscriptions are read."
@@ -120,7 +108,7 @@
     "description": "The option of the state filter that shows every state."
   },
   "staff_supporters.subscriptions.empty": {
-    "defaultMessage": "まだ加入はありません。プランに加入した人がここに表示されます。",
+    "defaultMessage": "まだ加入はありません。",
     "description": "In the place of the subscriptions while there is none."
   },
   "staff_supporters.subscriptions.empty.filtered": {

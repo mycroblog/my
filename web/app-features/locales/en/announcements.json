@@ -20,7 +20,7 @@
     "description": "What the list of announcements says under them when more could not be loaded, beside a button to try again."
   },
   "announcements.empty": {
-    "defaultMessage": "No announcements yet. When the server's administrators post one, it shows here.",
+    "defaultMessage": "No announcements yet.",
     "description": "What the list of announcements says when the server has made none."
   },
   "announcements.unread": {

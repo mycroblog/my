@@ -924,8 +924,8 @@ var definitions = []Definition{
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPolls, "false", "the posts with a poll"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepArticles, "true", "the articles"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPublic, "false", "the public posts"),
-	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepLocal, "false", "the local-only posts"),
-	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepUnlisted, "false", "the unlisted posts"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepLocal, "false", "the posts for neighbors"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepUnlisted, "false", "the quiet public posts"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPrivate, "false", "the followers-only posts"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepDirect, "true", "the direct posts"),
 	{
@@ -958,7 +958,7 @@ var definitions = []Definition{
 	},
 	{
 		Key: SettingSingleUser, Kind: KindBool, Default: "false",
-		Doc: "Whether the server is a one-person server: registration stays closed, the local and federated timelines, invites, the review of registrations, the sign-up blocks, and the suggestions of accounts are off, and new posts cannot be local. It can be turned on only while exactly one local account exists (FR-811, ADR-0152).",
+		Doc: "Whether the server is a one-person server: registration stays closed, the local and federated timelines, invites, the review of registrations, the sign-up blocks, and the suggestions of accounts are off, and new posts cannot be for neighbors. It can be turned on only while exactly one local account exists (FR-811, ADR-0152).",
 	},
 	{
 		Key: SettingMaxDrafts, Kind: KindInt, Default: "100", Min: 1, Max: MaxDraftLimit,
