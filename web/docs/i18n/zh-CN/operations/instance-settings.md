@@ -394,7 +394,7 @@ my instance rule list                                  # active rules (-all incl
 - 管理 API 是 `/api/v1/admin/link_card_domains`（列出、设置；对域名发送 `DELETE` 即可移除），需要角色权限 `manage_settings`。一个服务器最多保存 1,000 条规则，每条的备注最多 5,000 个字符。
 - 每次更改都会记录在审计日志中（`link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`）。
 
-<!-- source: theme 98c2eee35f30 -->
+<!-- source: theme 1ada01b2db2e -->
 ## 主题
 
 服务器范围的主题是一组对 Web 客户端设计令牌的覆盖，每种颜色都有浅色和深色两个值。它适用于每位访问者的 Web 客户端，也适用于服务器自己渲染的页面（登录、注册、条款等）。没有自定义 CSS。
@@ -406,7 +406,7 @@ my instance rule list                                  # active rules (-all incl
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | 颜色 | 浅色和深色各一个 `#rrggbb` |
   | `font-sans-override`, `font-mono-override` | 字体族 | 字体族名称，以逗号分隔（最多 30 个），不能包含 `sans-serif` 这样的通用字体族；名称中含有以数字开头的单词时要加引号，例如 `"M PLUS 1p"` |
   | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | 长度 | `0` 或 rem / px，0.625rem 到 3rem |
-  | 上述四个令牌各自的 `text-*--line-height` | 数字 | 1 到 2.5 |
+  | 上述七个令牌各自的 `text-*--line-height` | 数字 | 1 到 2.5 |
   | `radius-control`, `radius-overlay` | 长度 | 0 到 2rem |
   | `duration-spin` | 时长 | ms / s，0 到 1000ms |
 
