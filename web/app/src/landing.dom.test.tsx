@@ -23,7 +23,7 @@ test("a visitor at the server's address sees its landing page, with the way to a
   expect(name.textContent).not.toBe(fakeHost);
   expect(app.title()).toBe(name.textContent);
   expect(
-    within(screen.getByRole("region", { name: "Your account" })).getByRole("link", { name: "Create an account" }),
+    within(screen.getByRole("region", { name: "Account" })).getByRole("link", { name: "Create an account" }),
   ).toBeDefined();
   expect(places().getByRole("link", { name: "Read the local timeline" })).toBeDefined();
   expect(places().queryByRole("link", { name: "Read the federated timeline" })).toBeNull();
@@ -45,7 +45,7 @@ test("a visitor goes on from the landing page to the local timeline", async () =
 test("a server closed to new accounts says so before Sign in, which no other part of the page repeats", async () => {
   await renderApp("/", { ...server, registrations: "closed" });
 
-  const account = screen.getByRole("region", { name: "Your account" });
+  const account = screen.getByRole("region", { name: "Account" });
   const note = within(account).getByText("This server is not accepting new accounts.");
   const signIn = within(account).getByRole("link", { name: "Sign in" });
   expect(note.compareDocumentPosition(signIn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -36,7 +36,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Open: Story = {};
 export const Approval: Story = { args: { server: { registrations: "approval" } } };
-/** Invite only: Sign up with an invite is the primary action. */
+/** Invite only: Create an account with an invite is the primary action. */
 export const Invite: Story = { args: { server: { registrations: "invite" } } };
 /** Closed to new accounts: it says so first, and Sign in is the primary action. */
 export const Closed: Story = { args: { server: { registrations: "closed" } } };

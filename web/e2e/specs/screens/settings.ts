@@ -147,7 +147,7 @@ export class Landing {
 
   /** The account's part of the page. */
   get account(): Locator {
-    return this.page.getByRole("region", { name: "Your account", exact: true });
+    return this.page.getByRole("region", { name: "Account", exact: true });
   }
 
   /** The way to the registration screen, in the account's part, while the server takes new accounts from anyone. */

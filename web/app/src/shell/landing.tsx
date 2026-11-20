@@ -151,8 +151,8 @@ function Counts() {
 }
 
 /**
- * The account's part: Create an account (or Sign up with an invite) and the line on what an account takes, while the
- * server takes new accounts, Sign in standing at the head of the page; else that it takes none, then Sign in.
+ * The account's part: Create an account (or Create an account with an invite) and the line on what an account takes,
+ * while the server takes new accounts, Sign in standing at the head of the page; else that it takes none, then Sign in.
  */
 function Account({ instance }: { instance: Instance }) {
   const t = useStrings();
