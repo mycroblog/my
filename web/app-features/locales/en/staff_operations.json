@@ -24,7 +24,7 @@
     "description": "The name of the screen of how fast the web client responds, in the list at /admin and as its title. Read by administrators."
   },
   "staff_operations.entry.ux_measurements.hint": {
-    "defaultMessage": "How fast the web client responds to its readers",
+    "defaultMessage": "How fast the web client responds",
     "description": "The line under UX measurements in the list at /admin. Read by administrators."
   },
   "staff_operations.entry.link_card_domains": {
@@ -96,7 +96,7 @@
     "description": "The column of the table of jobs by type: since when the type has kept a due job waiting. Read by administrators."
   },
   "staff_operations.queue.empty": {
-    "defaultMessage": "No jobs wait, run or failed.",
+    "defaultMessage": "No jobs are queued, running or failed.",
     "description": "In the place of the table of jobs by type when the queue has none. Read by administrators."
   },
   "staff_operations.queue.unlisted": {
@@ -160,7 +160,7 @@
     "description": "In the place of the list of jobs when it could not be loaded, before Try again. Read by administrators."
   },
   "staff_operations.jobs.empty": {
-    "defaultMessage": "No jobs wait or run.",
+    "defaultMessage": "No jobs are queued or running.",
     "description": "In the place of the list of jobs when no job is pending, with no filter. Read by administrators."
   },
   "staff_operations.jobs.empty.filtered": {
@@ -344,7 +344,7 @@
     "description": "In the place of an error group's screen when it could not be loaded, before Try again. Read by administrators."
   },
   "staff_operations.error_groups.missing": {
-    "defaultMessage": "This address names no error group.",
+    "defaultMessage": "There is no error group at this address.",
     "description": "In the place of an error group's screen when the server has none of its ID, before the link to the list. Read by administrators."
   },
   "staff_operations.error_groups.facts": {
@@ -472,12 +472,12 @@
     "description": "When and on which version of the server an error group first or last happened. Read by administrators."
   },
   "staff_operations.ux.window": {
-    "defaultMessage": "Window",
-    "description": "The heading of the choice of the window of the UX measurements, and the choice's name. Read by administrators."
+    "defaultMessage": "Period",
+    "description": "The heading of the choice of the period the UX measurements sum, and the choice's name. Read by administrators."
   },
   "staff_operations.ux.window.choice": {
     "defaultMessage": "{hours, select, 24 {Last 24 hours} 168 {Last 7 days} other {Last 30 days}}",
-    "description": "An option of the window of the UX measurements. Read by administrators."
+    "description": "An option of the period the UX measurements sum, up to now. Read by administrators."
   },
   "staff_operations.ux.since": {
     "defaultMessage": "Since {date}",
@@ -496,8 +496,8 @@
     "description": "Under the window's choice while the setting that measures the web client is off. Read by administrators."
   },
   "staff_operations.ux.empty": {
-    "defaultMessage": "No samples in this window.",
-    "description": "Under the window's choice when measuring is on and the window has no sample. Read by administrators."
+    "defaultMessage": "No samples in this period.",
+    "description": "Under the period's choice when measuring is on and the period has no sample. Read by administrators."
   },
   "staff_operations.ux.name": {
     "defaultMessage": "{metric, select, transition {Kind} press {Action} call_rtt {Transport} call_jitter {Transport} call_packet_loss {Transport} other {Route}}",
@@ -520,8 +520,8 @@
     "description": "The column of the share of samples over the last band's value, and a 75th percentile past every bound. Read by administrators."
   },
   "staff_operations.ux.metric": {
-    "defaultMessage": "{metric, select, lcp {Screen shown (LCP)} inp {Response to a press (INP)} long_frame {Long frames} transition {Navigations} press {Actions} call_rtt {Call round trip} call_jitter {Call jitter} other {Call packet loss}}",
-    "description": "The heading of a metric's table of the UX measurements, and the table's name. Read by administrators."
+    "defaultMessage": "{metric, select, lcp {Time for a screen to appear (LCP)} inp {Time to answer a press (INP)} long_frame {Long frames} transition {Time to navigate} press {Time to answer an action} call_rtt {Call round-trip time} call_jitter {Call jitter} other {Call packet loss}}",
+    "description": "The heading of a metric's table of the UX measurements, and the table's name: what is measured, with the web's name of the metric where it has one (LCP, INP). Read by administrators."
   },
   "staff_operations.link_cards.loading": {
     "defaultMessage": "Loading the rules…",

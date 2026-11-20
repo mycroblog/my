@@ -28,11 +28,11 @@
     "description": "The line under UX measurements in the list at /admin. Read by administrators."
   },
   "staff_operations.entry.link_card_domains": {
-    "defaultMessage": "リンクカードのドメイン",
+    "defaultMessage": "リンクのカードのドメイン",
     "description": "The name of the screen of the rules of the link card crawler per domain, in the list at /admin and as its title. Read by administrators."
   },
   "staff_operations.entry.link_card_domains.hint": {
-    "defaultMessage": "リンクカードのために何も取得しない、または画像を取得しないドメイン",
+    "defaultMessage": "リンクのカードのために、何も取得しない、または画像を取得しないドメイン",
     "description": "The line under Link card domains in the list at /admin. Read by administrators."
   },
   "staff_operations.forbidden": {
@@ -188,7 +188,7 @@
     "description": "For assistive technology, the facts of a job. Read by administrators."
   },
   "staff_operations.job.created": {
-    "defaultMessage": "作成",
+    "defaultMessage": "作成日時",
     "description": "The term of when a job was created. Read by administrators."
   },
   "staff_operations.job.worker": {
@@ -284,7 +284,7 @@
     "description": "What reported the errors of a group. Also a filter's option. Read by administrators."
   },
   "staff_operations.error_groups.source.any": {
-    "defaultMessage": "両方の報告元",
+    "defaultMessage": "両方の発生元",
     "description": "The source filter's option of error groups of the server and of the web client. Read by administrators."
   },
   "staff_operations.error_groups.filters": {
@@ -300,15 +300,15 @@
     "description": "The column of an error group's state, the state filter's name and the term of its state. Read by administrators."
   },
   "staff_operations.error_groups.column.source": {
-    "defaultMessage": "報告元",
+    "defaultMessage": "発生元",
     "description": "The source filter's name and the term of what reported an error group. Read by administrators."
   },
   "staff_operations.error_groups.column.day": {
-    "defaultMessage": "24 時間",
+    "defaultMessage": "直近 24 時間",
     "description": "The column and the row of an error group's occurrences in the last 24 hours. Read by administrators."
   },
   "staff_operations.error_groups.column.week": {
-    "defaultMessage": "7 日間",
+    "defaultMessage": "直近 7 日間",
     "description": "The column and the row of an error group's occurrences in the last 7 days. Read by administrators."
   },
   "staff_operations.error_groups.column.seen": {
@@ -316,7 +316,7 @@
     "description": "The column and the term of when an error group last happened. Read by administrators."
   },
   "staff_operations.error_groups.table": {
-    "defaultMessage": "エラーのグループ",
+    "defaultMessage": "エラーグループ",
     "description": "For assistive technology, the table of error groups at /admin/errors. Read by administrators."
   },
   "staff_operations.error_groups.loading": {
@@ -344,7 +344,7 @@
     "description": "In the place of an error group's screen when it could not be loaded, before Try again. Read by administrators."
   },
   "staff_operations.error_groups.missing": {
-    "defaultMessage": "このアドレスのエラーのグループはありません。",
+    "defaultMessage": "このアドレスのエラーグループはありません。",
     "description": "In the place of an error group's screen when the server has none of its ID, before the link to the list. Read by administrators."
   },
   "staff_operations.error_groups.facts": {
@@ -356,7 +356,7 @@
     "description": "The term of when an error group entered its state. Read by administrators."
   },
   "staff_operations.error_groups.resolved_version": {
-    "defaultMessage": "解決した版",
+    "defaultMessage": "解決したバージョン",
     "description": "The term of the server's version a resolved error group was resolved with. Read by administrators."
   },
   "staff_operations.error_groups.kind": {
@@ -380,11 +380,11 @@
     "description": "The term of when and on which version an error group first happened. Read by administrators."
   },
   "staff_operations.error_groups.fingerprint": {
-    "defaultMessage": "指紋",
+    "defaultMessage": "フィンガープリント",
     "description": "The term of an error group's fingerprint, the same in the logs and the exporters. Read by administrators."
   },
   "staff_operations.error_groups.counts": {
-    "defaultMessage": "発生の数",
+    "defaultMessage": "発生件数",
     "description": "The heading of an error group's occurrences of the last 24 hours and 7 days, and their table's name for assistive technology. Read by administrators."
   },
   "staff_operations.error_groups.counts.period": {
@@ -404,7 +404,7 @@
     "description": "The term of when an error's latest occurrence happened. Read by administrators."
   },
   "staff_operations.error_groups.sample.version": {
-    "defaultMessage": "版",
+    "defaultMessage": "バージョン",
     "description": "The term and the column of the server's version an occurrence happened on. Read by administrators."
   },
   "staff_operations.error_groups.sample.role": {
@@ -432,7 +432,7 @@
     "description": "The heading of the hours an error group happened in, the newest first, and their table's name. Read by administrators."
   },
   "staff_operations.error_groups.hours.hour": {
-    "defaultMessage": "時間",
+    "defaultMessage": "時刻",
     "description": "The head of the rows of the table of an error group's hours: the hour's start. Read by administrators."
   },
   "staff_operations.error_groups.hours.empty": {
@@ -448,15 +448,15 @@
     "description": "In the place of an error group's history when it has always been open. Read by administrators."
   },
   "staff_operations.error_groups.event": {
-    "defaultMessage": "{kind, select, resolved {{actor, select, cli {コマンドラインで解決にしました} other {管理者が解決にしました}}} regressed {別の版で再び発生しました} muted {{actor, select, cli {コマンドラインでミュートしました} other {管理者がミュートしました}}} other {{actor, select, cli {コマンドラインでミュートを外しました} other {管理者がミュートを外しました}}}}",
+    "defaultMessage": "{kind, select, resolved {{actor, select, cli {コマンドラインで解決にしました} other {管理者が解決にしました}}} regressed {別のバージョンで再発しました} muted {{actor, select, cli {コマンドラインでミュートしました} other {管理者がミュートしました}}} other {{actor, select, cli {コマンドラインでミュートを解除しました} other {管理者がミュートを解除しました}}}}",
     "description": "An entry of an error group's history: who changed its state, or that it happened again on another version after it was resolved. Read by administrators."
   },
   "staff_operations.error_groups.event.version": {
-    "defaultMessage": "版 {version}",
+    "defaultMessage": "バージョン {version}",
     "description": "The muted line under an entry of an error group's history: the version it names. Read by administrators."
   },
   "staff_operations.error_groups.act": {
-    "defaultMessage": "{act, select, resolve {解決にする} mute {ミュート} other {ミュートを外す}}",
+    "defaultMessage": "{act, select, resolve {解決にする} mute {ミュート} other {ミュートを解除}}",
     "description": "The buttons of an error group: mark it resolved, mute it, or unmute it. Read by administrators."
   },
   "staff_operations.error_groups.done": {
@@ -468,16 +468,16 @@
     "description": "What a button of an error group that failed says, in its screen. Read by administrators."
   },
   "staff_operations.error_groups.seen_on": {
-    "defaultMessage": "{date} (版 {version})",
+    "defaultMessage": "{date} (バージョン {version})",
     "description": "When and on which version of the server an error group first or last happened. Read by administrators."
   },
   "staff_operations.ux.window": {
     "defaultMessage": "期間",
-    "description": "The heading of the choice of the window of the UX measurements, and the choice's name. Read by administrators."
+    "description": "The heading of the choice of the period the UX measurements sum, and the choice's name. Read by administrators."
   },
   "staff_operations.ux.window.choice": {
-    "defaultMessage": "{hours, select, 24 {24 時間} 168 {7 日間} other {30 日間}}",
-    "description": "An option of the window of the UX measurements. Read by administrators."
+    "defaultMessage": "{hours, select, 24 {直近 24 時間} 168 {直近 7 日間} other {直近 30 日間}}",
+    "description": "An option of the period the UX measurements sum, up to now. Read by administrators."
   },
   "staff_operations.ux.since": {
     "defaultMessage": "{date} から",
@@ -497,7 +497,7 @@
   },
   "staff_operations.ux.empty": {
     "defaultMessage": "この期間のサンプルはありません。",
-    "description": "Under the window's choice when measuring is on and the window has no sample. Read by administrators."
+    "description": "Under the period's choice when measuring is on and the period has no sample. Read by administrators."
   },
   "staff_operations.ux.name": {
     "defaultMessage": "{metric, select, transition {種類} press {操作} call_rtt {通信の方式} call_jitter {通信の方式} call_packet_loss {通信の方式} other {ルート}}",
@@ -520,8 +520,8 @@
     "description": "The column of the share of samples over the last band's value, and a 75th percentile past every bound. Read by administrators."
   },
   "staff_operations.ux.metric": {
-    "defaultMessage": "{metric, select, lcp {画面の表示 (LCP)} inp {操作への応答 (INP)} long_frame {長いフレーム} transition {画面の移動} press {操作} call_rtt {通話の往復時間} call_jitter {通話のジッタ} other {通話のパケットロス}}",
-    "description": "The heading of a metric's table of the UX measurements, and the table's name. Read by administrators."
+    "defaultMessage": "{metric, select, lcp {画面が表示されるまでの時間 (LCP)} inp {押してから応答するまでの時間 (INP)} long_frame {長いフレーム} transition {画面の移動にかかる時間} press {操作に応答するまでの時間} call_rtt {通話の往復時間} call_jitter {通話のジッタ} other {通話のパケットロス}}",
+    "description": "The heading of a metric's table of the UX measurements, and the table's name: what is measured, with the web's name of the metric where it has one (LCP, INP). Read by administrators."
   },
   "staff_operations.link_cards.loading": {
     "defaultMessage": "ルールを読み込んでいます…",
@@ -544,7 +544,7 @@
     "description": "In the place of the list of rules when there is none. Read by administrators."
   },
   "staff_operations.link_cards.mode": {
-    "defaultMessage": "{mode, select, no_fetch {取得しない} other {画像だけ取得しない}}",
+    "defaultMessage": "{mode, select, no_fetch {取得を止める} other {画像だけ止める}}",
     "description": "What the crawler does not do on a rule's domain: fetch anything, or fetch images. Read by administrators."
   },
   "staff_operations.link_cards.mode.about": {
