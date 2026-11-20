@@ -284,8 +284,8 @@
     "description": "Fact of a billing source that reads BigQuery or a plugin: the bytes billed this UTC month. Read by administrators."
   },
   "staff_finance.publication": {
-    "defaultMessage": "Publication",
-    "description": "Name of the screen of what the server publishes of its finance, at /admin/finance/publication, and its title."
+    "defaultMessage": "What to publish",
+    "description": "Name of the screen of what the server publishes of its finance, at /admin/finance/publication, and its title. Read by administrators."
   },
   "staff_finance.publication.loading": {
     "defaultMessage": "Loading what is published…",

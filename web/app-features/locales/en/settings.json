@@ -36,7 +36,7 @@
     "description": "An entry of the settings menu, and the title of its page, where the reader chooses what notifies them and how."
   },
   "settings.entry.relationships": {
-    "defaultMessage": "Relationships",
+    "defaultMessage": "Blocks, mutes, and hashtags",
     "description": "An entry of the settings menu, and the title of its page, which lists the accounts the reader blocked or muted, the servers they muted, and the hashtags they follow."
   },
   "settings.entry.filters": {
@@ -64,15 +64,15 @@
     "description": "What the count at the end of an entry of the settings menu means, for assistive technology, read after the entry's name: how many things on its page wait for the reader (a moderation action to read, an export ready to download). count is that number, 1 or more."
   },
   "settings.entry.voice": {
-    "defaultMessage": "Voice chat",
+    "defaultMessage": "Voice chats you hosted",
     "description": "An entry of the settings menu, and the title of its page, which lists the voice chat rooms the reader hosted."
   },
   "settings.entry.events": {
-    "defaultMessage": "Events",
+    "defaultMessage": "Event reminders",
     "description": "The entry of the settings of events (the reminders before them), in the settings' menu and as its screen's title."
   },
   "settings.entry.supporter": {
-    "defaultMessage": "Supporter",
+    "defaultMessage": "Supporter plans and tips",
     "description": "The entry of the settings of the reader's support of the server (their subscription, tips, the supporters list), in the settings' menu and as its screen's title."
   },
   "settings.entry.custom_emojis": {
@@ -928,7 +928,7 @@
     "description": "The button at the end of the heading of a keyword filter's words, or under the sentence of an empty list, that adds a field for one more word or phrase."
   },
   "settings.filters.words.empty": {
-    "defaultMessage": "This filter has no words yet. Add a word or phrase for it to match.",
+    "defaultMessage": "This filter has no words.",
     "description": "In place of a keyword filter's words when the reader removed every one; Add a word follows it."
   },
   "settings.filters.words.missing": {

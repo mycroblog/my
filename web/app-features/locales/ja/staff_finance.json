@@ -284,8 +284,8 @@
     "description": "Fact of a billing source that reads BigQuery or a plugin: the bytes billed this UTC month. Read by administrators."
   },
   "staff_finance.publication": {
-    "defaultMessage": "公開の範囲",
-    "description": "Name of the screen of what the server publishes of its finance, at /admin/finance/publication, and its title."
+    "defaultMessage": "公開する内容",
+    "description": "Name of the screen of what the server publishes of its finance, at /admin/finance/publication, and its title. Read by administrators."
   },
   "staff_finance.publication.loading": {
     "defaultMessage": "公開の範囲を読み込んでいます…",

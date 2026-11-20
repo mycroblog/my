@@ -348,7 +348,7 @@
     "description": "The row over the notifications that counts the follow requests and opens their screen. count is how many."
   },
   "notifications.follow_requests_empty": {
-    "defaultMessage": "No one is asking to follow you.",
+    "defaultMessage": "No follow requests.",
     "description": "In place of the follow requests when there are none."
   },
   "notifications.follow_requests_loading": {

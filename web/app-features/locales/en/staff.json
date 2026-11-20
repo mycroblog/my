@@ -68,7 +68,7 @@
     "description": "The name of the screen of the instance's rules, in the list at /admin and as the title of its screen. Read by administrators."
   },
   "staff.entry.translation": {
-    "defaultMessage": "Translation",
+    "defaultMessage": "Post translation",
     "description": "The name of the screen of the settings of post translation, in the list at /admin and as the title of its screen. Read by administrators."
   },
   "staff.entry.relays": {

@@ -132,7 +132,7 @@
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
   "staff_settings.topic.content": {
-    "defaultMessage": "Posts and features",
+    "defaultMessage": "Posts, timelines, and events",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
   "staff_settings.topic.federation": {
@@ -156,7 +156,7 @@
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
   "staff_settings.topic.records": {
-    "defaultMessage": "Appeals and records",
+    "defaultMessage": "Appeals and record keeping",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
   "staff_settings.group.server": {
@@ -1568,7 +1568,7 @@
     "description": "The heading of the list of OAuth apps. Read by administrators."
   },
   "staff_settings.apps.empty": {
-    "defaultMessage": "No app here.",
+    "defaultMessage": "No apps.",
     "description": "In place of the list of OAuth apps while it shows none. Read by administrators."
   },
   "staff_settings.apps.registration": {
