@@ -132,12 +132,13 @@ function Html({ under, children }: { under: string; children: ReactNode }) {
 /**
  * `wanted` once the strings of every package are read in it; until then the locale shown before (`first` on the first
  * render), so that the screen redraws in a new language only once its strings are there, never in their keys or in en
- * meanwhile. A locale whose strings fail to load stays unshown.
+ * meanwhile. A locale whose strings fail to load stays unshown. React Compiler keeps what `hasStrings` said until
+ * `wanted` changes, so a load that ends says so in the state (`loaded`), which the render reads.
  */
 function useLoadedLocale(wanted: string, first: string): string {
-  const ready = hasStrings(wanted);
+  const [loaded, setLoaded] = useState<string | undefined>(undefined);
+  const ready = loaded === wanted || hasStrings(wanted);
   const [shown, setShown] = useState(() => (ready ? wanted : first));
-  const [, setLoaded] = useState<string | undefined>(undefined);
   if (ready && shown !== wanted) setShown(wanted);
   useEffect(() => {
     if (ready) return;
