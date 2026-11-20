@@ -429,7 +429,7 @@ my instance set domain_actions_rationale_visibility signed_in
 - For an action with `-obfuscate` (`obfuscate`), the middle half of the domain's characters (other than dots) is replaced with `*` (`bad.example` becomes `bad.*****le`).
   Anyone can compare the SHA-256 of a domain they know to check whether it is an obfuscated one.
 - `reject_media`, `reject_reports` and `force_sensitive` actions, and lifted or expired actions, are not published.
-- The web client's instance information page (`https://<host>/about`) shows this list under the same settings. With `off` the section is not shown, and with `users` people who are not signed in see a note that only signed-in users can see it.
+- The web client's instance information page (`https://<host>/about`) shows this list under the same settings. With `off` the section is not shown, and with `signed_in` people who are not signed in see a note that only signed-in users can see it.
 
 ## Refetching remote posts
 

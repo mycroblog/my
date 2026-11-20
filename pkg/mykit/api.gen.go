@@ -12660,6 +12660,12 @@ type Instance struct {
 	// Domain The domain that serves the instance.
 	Domain string `json:"domain"`
 
+	// DomainActionsVisibility Who may read the list of moderated domains (`GET /instance/domain_actions`), the instance
+	// setting `domain_actions_visibility`: `off`, nobody (the list is a 404); `signed_in`, the
+	// users signed in to this server; `everyone`, anonymous visitors included. The about page shows
+	// the list only when it lets the viewer read it.
+	DomainActionsVisibility InstanceAudience `json:"domain_actions_visibility"`
+
 	// EventCreators Who may create events: `everyone` (every local user who is not limited) or `permitted`
 	// (only the users whose roles have `create_events`).
 	EventCreators InstanceEventCreators `json:"event_creators"`
@@ -27130,9 +27136,9 @@ type ClientInterface interface {
 	// ListInstanceDomainActions List the domains that the instance moderates
 	//
 	// The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
-	// setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
-	// `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
-	// token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
+	// setting `domain_actions_visibility`, which `GET /instance` gives, decides who may read it:
+	// `off` makes it a 404, `signed_in` a 401 `/api/v1/problems/unauthenticated` for a request
+	// without an access token, and `everyone` serves everyone. The setting `domain_actions_rationale_visibility`
 	// decides, in the same way, who gets each action's public comment. The moderators'
 	// private notes are never listed.
 	//
@@ -38762,9 +38768,9 @@ func (c *Client) GetInstanceDocument(ctx context.Context, kind InstanceDocumentK
 // ListInstanceDomainActions List the domains that the instance moderates
 //
 // The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
-// setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
-// `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
-// token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
+// setting `domain_actions_visibility`, which `GET /instance` gives, decides who may read it:
+// `off` makes it a 404, `signed_in` a 401 `/api/v1/problems/unauthenticated` for a request
+// without an access token, and `everyone` serves everyone. The setting `domain_actions_rationale_visibility`
 // decides, in the same way, who gets each action's public comment. The moderators'
 // private notes are never listed.
 //
@@ -69482,9 +69488,9 @@ type ClientWithResponsesInterface interface {
 	// ListInstanceDomainActionsWithResponse List the domains that the instance moderates
 	//
 	// The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
-	// setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
-	// `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
-	// token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
+	// setting `domain_actions_visibility`, which `GET /instance` gives, decides who may read it:
+	// `off` makes it a 404, `signed_in` a 401 `/api/v1/problems/unauthenticated` for a request
+	// without an access token, and `everyone` serves everyone. The setting `domain_actions_rationale_visibility`
 	// decides, in the same way, who gets each action's public comment. The moderators'
 	// private notes are never listed.
 	//
@@ -110565,9 +110571,9 @@ func (c *ClientWithResponses) GetInstanceDocumentWithResponse(ctx context.Contex
 // ListInstanceDomainActionsWithResponse List the domains that the instance moderates
 //
 // The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
-// setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
-// `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
-// token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
+// setting `domain_actions_visibility`, which `GET /instance` gives, decides who may read it:
+// `off` makes it a 404, `signed_in` a 401 `/api/v1/problems/unauthenticated` for a request
+// without an access token, and `everyone` serves everyone. The setting `domain_actions_rationale_visibility`
 // decides, in the same way, who gets each action's public comment. The moderators'
 // private notes are never listed.
 //

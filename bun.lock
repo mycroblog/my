@@ -273,6 +273,19 @@
         "@types/bun": "1.4.4",
       },
     },
+    "web/mail": {
+      "name": "@my/mail",
+      "dependencies": {
+        "@my/design-tokens": "workspace:*",
+        "react": "19.3.1",
+        "react-dom": "19.3.1",
+      },
+      "devDependencies": {
+        "@types/bun": "1.4.4",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
+      },
+    },
     "web/platform": {
       "name": "@my/platform",
       "devDependencies": {
@@ -879,6 +892,8 @@
     "@my/i18n": ["@my/i18n@workspace:web/i18n"],
 
     "@my/i18n-tools": ["@my/i18n-tools@workspace:tools/i18n"],
+
+    "@my/mail": ["@my/mail@workspace:web/mail"],
 
     "@my/platform": ["@my/platform@workspace:web/platform"],
 

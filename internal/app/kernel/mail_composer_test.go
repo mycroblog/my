@@ -35,18 +35,18 @@ func TestMailComposerHTML(t *testing.T) {
 	for _, want := range []string{
 		`<html lang="en" dir="ltr"`,
 		"<title>Reset your password for Example</title>",
-		">Someone asked to reset the password.</div>",
-		">The link works for 15 minutes, once.</div>",
+		">Someone asked to reset the password.</td>",
+		">The link works for 15 minutes, once.</td>",
 		`href="https://social.example/auth/reset?token=x"`,
 		"Set a new password",
-		">Example</div>",
+		">Example</td>",
 		`href="https://social.example"`,
-		">Contact: admin@social.example</div>",
-		">You get this email because someone asked at social.example.</div>",
+		">Contact: admin@social.example</td>",
+		">You get this email because someone asked at social.example.</td>",
 		// Light and dark, and Outlook's layout in its conditional comments.
 		"color-scheme: light dark",
 		"@media (prefers-color-scheme: dark)",
-		"<!--[if mso | IE]>",
+		"<!--[if mso]>",
 		"direction:ltr",
 		"text-align:left",
 	} {
@@ -78,7 +78,7 @@ func TestMailComposerHTMLLogo(t *testing.T) {
 	html = composeHTML(t, site, words{}, htmlDraft())
 	for _, want := range []string{
 		`class="mail-logo-light"`,
-		`<img src="https://social.example/brand/r2/logo-dark-mail.png" width="192" height="48" alt="Example &#34;&amp;&#34; Co" class="mail-logo-dark" style="display: none;`,
+		`<img src="https://social.example/brand/r2/logo-dark-mail.png" width="192" height="48" alt="Example &#34;&amp;&#34; Co" class="mail-logo-dark" style="display:none`,
 	} {
 		if !strings.Contains(html, want) {
 			t.Errorf("the HTML lacks %s:\n%s", want, html)
@@ -140,7 +140,7 @@ func TestMailComposerHTMLLinksHTTPSOnly(t *testing.T) {
 		if n := strings.Count(html, "href="); n != 0 {
 			t.Errorf("%s: HTML has %d links", u, n)
 		}
-		if strings.Contains(strings.ToLower(html), `href="javascript:`) || !strings.Contains(html, ">Open</div>") {
+		if strings.Contains(strings.ToLower(html), `href="javascript:`) || !strings.Contains(html, ">Open</td>") {
 			t.Errorf("%s: HTML = %s", u, html)
 		}
 	}
@@ -158,7 +158,7 @@ func TestMailComposerHTMLUnsubscribe(t *testing.T) {
 	// A link that is not https is text.
 	d.UnsubscribeURL = "http://social.example/mail/unsubscribe?token=t"
 	html = composeHTML(t, htmlSite, words{}, d)
-	if !strings.Contains(html, ">Stop these emails: http://social.example/mail/unsubscribe?token=t</div>") ||
+	if !strings.Contains(html, ">Stop these emails: http://social.example/mail/unsubscribe?token=t</td>") ||
 		strings.Contains(html, `href="http://social.example/mail`) {
 		t.Error("HTML links to an unsubscribe URL that is not https")
 	}
@@ -180,5 +180,60 @@ func TestMailComposerHTMLRightToLeft(t *testing.T) {
 	m, err := kernel.MailComposer{Site: htmlSite}.Compose(htmlDraft())
 	if err != nil || !strings.Contains(m.HTML, `<html lang="en" dir="ltr"`) {
 		t.Errorf("Compose without words = %v", err)
+	}
+}
+
+// themed is a palette whose every color is its own, so that each shows where it lands.
+func themed(prefix string) kernel.MailPalette {
+	return kernel.MailPalette{
+		Backdrop: prefix + "001", Surface: prefix + "002", Text: prefix + "003", MutedText: prefix + "004",
+		Accent: prefix + "005", OnAccent: prefix + "006", AccentText: prefix + "007", Rule: prefix + "008",
+	}
+}
+
+// TestMailComposerHTMLColors checks that the site's colors are the HTML's: the light ones inline,
+// and the dark ones in the stylesheet of the dark color scheme.
+func TestMailComposerHTMLColors(t *testing.T) {
+	site := htmlSite
+	site.Colors = kernel.MailColors{Light: themed("#aaa"), Dark: themed("#bbb")}
+	html := composeHTML(t, site, words{}, htmlDraft())
+	for _, want := range []string{
+		`class="mail-backdrop" style="background-color:#aaa001"`,
+		"background-color:#aaa002",
+		"color:#aaa003",
+		"color:#aaa004",
+		"background-color:#aaa005;color:#aaa006",
+		"color:#aaa007",
+		"border-top:1px solid #aaa008",
+		".mail-backdrop { background-color: #bbb001 !important; }",
+		".mail-card { background-color: #bbb002 !important; }",
+		".mail-text { color: #bbb003 !important; }",
+		".mail-muted { color: #bbb004 !important; }",
+		".mail-button { background-color: #bbb005 !important; color: #bbb006 !important; }",
+		".mail-link { color: #bbb007 !important; }",
+		".mail-rule { border-top-color: #bbb008 !important; }",
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("HTML has no %q", want)
+		}
+	}
+}
+
+// TestMailComposerHTMLColorsEscaped checks that a color that is no CSS value cannot end the
+// declaration, the style attribute, or the stylesheet.
+func TestMailComposerHTMLColorsEscaped(t *testing.T) {
+	bad := `red;}</style><script>alert(1)</script><style>`
+	site := htmlSite
+	site.Colors = kernel.MailColors{Light: themed("#aaa"), Dark: themed("#bbb")}
+	site.Colors.Light.Surface, site.Colors.Dark.Surface = bad, bad
+	site.Colors.Light.Text = `#fff" onload="alert(1)`
+	html := composeHTML(t, site, words{}, htmlDraft())
+	for _, raw := range []string{"<script>", "</style><script", "</style><style", `" onload=`, "red;}"} {
+		if strings.Contains(html, raw) {
+			t.Errorf("HTML has %q unescaped", raw)
+		}
+	}
+	if !strings.Contains(html, "ZgotmplZ") {
+		t.Error("html/template did not refuse a color that is no CSS value")
 	}
 }

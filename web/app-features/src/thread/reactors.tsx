@@ -4,9 +4,11 @@
 // reacted with it, each a link to that emoji's list (WhoReacted of @my/app-components), from the newest reactions the
 // server answers; and that list on a screen of its own, under a button back to the post, titled by the emoji and how
 // many reacted with it, the accounts newest first a row each, then a line that they load, that they failed (with a
-// retry), that there are none, or a fold that shows more while more follow.
+// retry), that there are none, or a fold that shows more while more follow. A post not there reads as not found, as
+// on its own page.
 
 import { AccountLine, ReactorsTitle, WhoReacted, type Reactors } from "@my/app-components";
+import { ProblemError } from "@mycroblog/mykit";
 import {
   statusQuery,
   statusReactorsQuery,
@@ -53,7 +55,7 @@ export function PostReactors({ status }: { status: Status }) {
  */
 export function ReactorList({ id, emoji, onBack }: { id: string; emoji: string; onBack: () => void }) {
   const { t } = stringsIn(useLocale().locale);
-  const { status, failed } = useStatus(id);
+  const { status, error, refetch } = useStatus(id);
   const list = useStatusReactors(id, emoji);
   const added = useAddedFocus(list.items.length);
   const gone = useStatusGone(id);
@@ -65,15 +67,24 @@ export function ReactorList({ id, emoji, onBack }: { id: string; emoji: string; 
     onBack();
   }, [gone, onBack]);
   const back = <BackButton onPress={onBack}>{t("thread.reactors_back")}</BackButton>;
+  const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("thread.retry")}</TextButton>;
+  const missing = error instanceof ProblemError && (error.status === 404 || error.status === 410);
   if (status === undefined)
     return (
       <ScreenStack>
         {back}
-        {failed ? <FeedNotice alert>{t("thread.failed")}</FeedNotice> : <FeedNotice>{t("thread.loading")}</FeedNotice>}
+        {error === null ? (
+          <FeedNotice>{t("thread.loading")}</FeedNotice>
+        ) : missing ? (
+          <FeedNotice>{t("thread.not_found")}</FeedNotice>
+        ) : (
+          <FeedNotice alert action={retry(refetch)}>
+            {t("thread.failed")}
+          </FeedNotice>
+        )}
       </ScreenStack>
     );
   const reaction = status.reactions.find((r) => r.name === emoji) ?? { name: emoji, count: list.items.length };
-  const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("thread.retry")}</TextButton>;
   const end =
     list.status === "pending" ? (
       <FeedNotice>{t("thread.reactors_loading")}</FeedNotice>

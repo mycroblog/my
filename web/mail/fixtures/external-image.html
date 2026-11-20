@@ -1,0 +1,8 @@
+<!-- Breaks "external": an image of the layout's own, and a background image, besides the logo. -->
+<!doctype html>
+<html lang="{{.Lang}}" dir="{{.Dir}}"><head><title>{{.Subject}}</title><style>
+:root { color-scheme: light dark; supported-color-schemes: light dark; }
+@media (prefers-color-scheme: dark) {
+  .mail-text { color: {{$.Colors.Dark.Text}} !important; }
+}
+</style></head><body><table><tbody><tr><td background="https://cdn.example/bg.png" style="background-image:url(https://cdn.example/bg.png)"><img src="https://cdn.example/spacer.gif" alt="">Hello</td></tr></tbody></table></body></html>

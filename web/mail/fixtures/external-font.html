@@ -1,0 +1,5 @@
+<!-- Breaks "external": a web font, by a stylesheet link and by @font-face. -->
+<!doctype html>
+<html lang="{{.Lang}}" dir="{{.Dir}}"><head><link rel="stylesheet" href="https://fonts.example/css?family=Inter"><style>
+@font-face { font-family: Inter; src: url(https://fonts.example/inter.woff2); }
+</style></head><body><table><tbody><tr><td style="font-family:Inter">Hello</td></tr></tbody></table></body></html>

@@ -117,7 +117,7 @@
   },
   "app.signed_out_screen": {
     "defaultMessage": "ログインすると、この画面が表示されます。",
-    "description": "What a screen that needs a session (the notifications, a post, a profile) says to a reader who is not signed in, beside the sign-in link."
+    "description": "What a screen that needs a session (the notifications, the bookmarks, the settings) says to a reader who is not signed in, beside the sign-in link; a profile, its follow lists, a post and who reacted to it show to a visitor instead."
   },
   "app.moderation": {
     "defaultMessage": "モデレーション",
@@ -402,6 +402,10 @@
   "app.finance_public": {
     "defaultMessage": "運営の費用と収入",
     "description": "The heading of the page of the server's published costs and income, which anyone can read."
+  },
+  "app.about": {
+    "defaultMessage": "{name} について",
+    "description": "The heading of the server's about page, and the document's title; {name} is the server's name."
   },
   "app.supporters": {
     "defaultMessage": "サポーター",
