@@ -944,7 +944,7 @@
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under a delivery with no attempt yet. Read by moderators."
   },
   "staff_domains.delivery.masked": {
-    "defaultMessage": "{mask, select, private {フォロワー限定の投稿について} direct {ダイレクトメッセージについて} local {ローカル限定の投稿について} approves_followers {フォロワーを承認するアカウントのフォローについて} other {削除されたものについて}}のため、送信者・アクティビティ・inbox を伏せています",
+    "defaultMessage": "{mask, select, private {フォロワーのみの投稿について} direct {ダイレクトメッセージについて} local {ご近所向けの投稿について} approves_followers {フォロワーを承認するアカウントのフォローについて} other {削除されたものについて}}のため、送信者・アクティビティ・inbox を伏せています",
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under a masked delivery, why it is masked. Read by moderators."
   },
   "staff_domains.delivery.reveal.audited": {

@@ -128,15 +128,15 @@
     "description": "What the visibility glyph of a public post says, beside its time."
   },
   "post.visibility.local": {
-    "defaultMessage": "ローカル限定",
-    "description": "What the visibility glyph of a local post says, beside its time: on its server's local timeline, and outside its server to the author's followers alone."
+    "defaultMessage": "ご近所",
+    "description": "What the visibility glyph of a post for neighbors says, beside its time: people on its server, and the author's followers on other servers. The composer's name for it (compose.visibility.local)."
   },
   "post.visibility.unlisted": {
-    "defaultMessage": "ひかえめな公開",
+    "defaultMessage": "ひっそり公開",
     "description": "What the visibility glyph of a public post kept out of the public timelines says, beside its time."
   },
   "post.visibility.private": {
-    "defaultMessage": "フォロワー限定",
+    "defaultMessage": "フォロワーのみ",
     "description": "What the visibility glyph of a post for its author's followers alone says, beside its time."
   },
   "post.visibility.direct": {
