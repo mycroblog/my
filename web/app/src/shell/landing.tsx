@@ -42,14 +42,6 @@ import { useLandingSamples } from "./landing-samples";
 import { pageServer, wordmark } from "./pages";
 import { placesFor, type Place } from "./places";
 
-/**
- * Which of the two parts the software tells the operator shows: how the fediverse works, and what this server offers
- * its members. Both by default; each its own instance setting.
- */
-export type LandingParts = { readonly fediverse: boolean; readonly features: boolean };
-
-const everyPart: LandingParts = { fediverse: true, features: true };
-
 /** What the account part of the landing page offers in a registration mode. */
 export type AccountOffer = {
   /** The words of the primary action that asks for an account, if the visitor may ask for one; else signing in is. */
@@ -185,18 +177,19 @@ function Account({ instance }: { instance: Instance }) {
 }
 
 /**
- * What the software tells of itself, each part the operator shows: the fediverse, its figure over its sentence; and
- * what a member can do here, a sample of each.
+ * What the software tells of itself, each part the operator shows (the instance settings
+ * `landing_fediverse_explanation` and `landing_features`): the fediverse, its figure over its sentence; and what a
+ * member can do here, a sample of each.
  */
-function Tells({ instance, parts }: { instance: Instance; parts: LandingParts }) {
+function Tells({ instance }: { instance: Instance }) {
   const t = useStrings();
   const fediverse = useId();
   const offers = useId();
   const samples = useLandingSamples(instance.domain);
-  const features = parts.features ? landingFeatures(instance) : [];
+  const features = instance.landing_features ? landingFeatures(instance) : [];
   return (
     <>
-      {parts.fediverse && (
+      {instance.landing_fediverse_explanation && (
         <LandingSection id={fediverse} heading={t("app.landing_fediverse_heading")}>
           <FediverseFigure />
           <FormText>{t("app.landing_fediverse", { domain: instance.domain })}</FormText>
@@ -234,12 +227,9 @@ function Places({ instance }: { instance: Instance }) {
  */
 export function Landing({
   serverName,
-  parts = everyPart,
 }: {
   /** The server's name, which stands for it until the instance answered. */
   serverName: string;
-  /** The parts the software tells that the operator shows. */
-  parts?: LandingParts | undefined;
 }) {
   const t = useStrings();
   const instance = useInstance();
@@ -279,7 +269,7 @@ export function Landing({
     >
       {instance !== undefined && (
         <>
-          <Tells instance={instance} parts={parts} />
+          <Tells instance={instance} />
           <Places instance={instance} />
         </>
       )}

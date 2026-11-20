@@ -10,22 +10,22 @@ import { StillMotion } from "@my/design-system/samples";
 import { fakeHost } from "@my/e2e/fake";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { VisitorPart, type Fake } from "./app.samples";
-import { Landing, type LandingParts } from "./shell/landing";
+import { Landing } from "./shell/landing";
 
-type Args = { server?: Fake["server"]; parts?: LandingParts; still?: boolean };
+type Args = { server?: Fake["server"]; still?: boolean };
 
 const meta = {
   title: "Landing",
   tags: ["themes"],
   parameters: { screen: true, layout: "fullscreen" },
-  render: ({ server, parts, still = false }: Args, { id }) => (
+  render: ({ server, still = false }: Args, { id }) => (
     <VisitorPart key={id} server={server}>
       {still ? (
         <StillMotion>
-          <Landing serverName={fakeHost} parts={parts} />
+          <Landing serverName={fakeHost} />
         </StillMotion>
       ) : (
-        <Landing serverName={fakeHost} parts={parts} />
+        <Landing serverName={fakeHost} />
       )}
     </VisitorPart>
   ),
@@ -41,7 +41,9 @@ export const Invite: Story = { args: { server: { registrations: "invite" } } };
 /** Closed to new accounts: it says so first, and Sign in is the primary action. */
 export const Closed: Story = { args: { server: { registrations: "closed" } } };
 /** The operator hides both parts the software tells: the fediverse, and what the server offers. */
-export const ExplanationsHidden: Story = { args: { parts: { fediverse: false, features: false } } };
+export const ExplanationsHidden: Story = {
+  args: { server: { landing: { fediverseExplanation: false, features: false } } },
+};
 /** The instance setting `public_counts` off: no counts. */
 export const CountsHidden: Story = { args: { server: { publicCounts: false } } };
 export const LongSummary: Story = { args: { server: { longSummary: true } } };

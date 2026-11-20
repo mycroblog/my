@@ -623,6 +623,14 @@
     "defaultMessage": "Show the server's numbers",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
+  "staff_settings.setting.landing_fediverse_explanation": {
+    "defaultMessage": "Explain how the fediverse works",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.landing_features": {
+    "defaultMessage": "Show the features that are on",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
   "staff_settings.setting.featured_accounts": {
     "defaultMessage": "Suggested accounts",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."

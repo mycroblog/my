@@ -283,6 +283,11 @@ export type FakeOptions = {
    * and when it started, by default; none while the instance setting `public_counts` is off (`false`).
    */
   publicCounts?: boolean;
+  /**
+   * The parts of the landing page the software tells of itself: how the fediverse works (the instance setting
+   * `landing_fediverse_explanation`) and what this server offers (`landing_features`), each shown unless `false`.
+   */
+  landing?: { fediverseExplanation?: boolean; features?: boolean };
   /** The closure of the service: announced, or the server closed. */
   closure?: "announced" | "closed";
   /** The closure as its administrators run it (closure.ts): its date passed, a short notice, delivered, warnings. */
@@ -2234,6 +2239,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ai_usage: o.crawlers?.ai ?? "allow",
     ux_measurement: o.uxMeasurement === true,
     ux_measurement_share: o.uxMeasurementShare ?? 10,
+    landing_fediverse_explanation: o.landing?.fediverseExplanation !== false,
+    landing_features: o.landing?.features !== false,
     ...finance.instance,
     ...supporting.instance,
     voice_enabled: o.voiceOff !== true,
@@ -2640,6 +2647,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(o.translation?.browser === true ? { translation_browser: "true" } : {}),
       ...(o.translation?.reports === true ? { translation_reports_to_server: "true" } : {}),
       ...(o.uxMeasurement === true ? { ux_measurement: "true" } : {}),
+      ...(o.landing?.fediverseExplanation === false ? { landing_fediverse_explanation: "false" } : {}),
+      ...(o.landing?.features === false ? { landing_features: "false" } : {}),
       ...(o.uxMeasurementShare === undefined ? {} : { ux_measurement_share: String(o.uxMeasurementShare) }),
     },
     texts: {
