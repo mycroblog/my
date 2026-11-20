@@ -1,0 +1,254 @@
+{
+  "emoji_own.loading": {
+    "defaultMessage": "カスタム絵文字を読み込んでいます…",
+    "description": "On a page of the settings' Custom emoji while the reader's emoji and requests are read."
+  },
+  "emoji_own.failed": {
+    "defaultMessage": "カスタム絵文字を読み込めませんでした。",
+    "description": "On a page of the settings' Custom emoji when they could not be read, before Try again."
+  },
+  "emoji_own.missing": {
+    "defaultMessage": "このアドレスにあなたの絵文字はありません。削除された可能性があります。",
+    "description": "At /settings/custom-emojis/{id} for an emoji that is not one the reader made, before the link back."
+  },
+  "emoji_own.all": {
+    "defaultMessage": "自分のカスタム絵文字",
+    "description": "The link back to /settings/custom-emojis under the sentence that an address names no emoji of the reader's."
+  },
+  "emoji_own.month": {
+    "defaultMessage": "今月",
+    "description": "The heading of the section of what the reader used of their monthly limit of requests for new emoji."
+  },
+  "emoji_own.quota.used": {
+    "defaultMessage": "今月申請できる {limit} 個のうち、{used} 個を申請しました。",
+    "description": "In This month: the approved and pending requests for new emoji the reader made this month (UTC), out of their limit."
+  },
+  "emoji_own.quota.unlimited": {
+    "defaultMessage": "今月は {used} 個の絵文字を申請しました。月ごとの上限はありません。",
+    "description": "In This month, for a reader with no monthly limit."
+  },
+  "emoji_own.quota.pending": {
+    "defaultMessage": "{count, plural, other {そのうち # 個が審査を待っています。}}",
+    "description": "In This month: how many of the requests counted still wait for an administrator."
+  },
+  "emoji_own.quota.resets": {
+    "defaultMessage": "{date}に数え直します。絵文字を削除しても、申請できる数は戻りません。",
+    "description": "In This month: the day the count of requests starts again, and that deleting an emoji does not lower it."
+  },
+  "emoji_own.quota.reached": {
+    "defaultMessage": "今月申請できる絵文字はすべて申請しました。{date}から、また申請できます。",
+    "description": "In the place of Request an emoji once the reader reached their monthly limit, with the day it starts again."
+  },
+  "emoji_own.request.new": {
+    "defaultMessage": "絵文字を申請",
+    "description": "The button that opens the form of a new request for a custom emoji, and the title of that form."
+  },
+  "emoji_own.request.emoji": {
+    "defaultMessage": "新しい絵文字",
+    "description": "The heading of the section of a new request's shortcode and image."
+  },
+  "emoji_own.request.send": {
+    "defaultMessage": "申請する",
+    "description": "The button of the submit bar of a new request for a custom emoji."
+  },
+  "emoji_own.request.limit": {
+    "defaultMessage": "今月申請できる絵文字はすべて申請済みのため、送られていません。",
+    "description": "Beside Send request when the server refused it at the monthly limit."
+  },
+  "emoji_own.request.state": {
+    "defaultMessage": "{state, select, pending {審査待ち} approved {承認されました} rejected {承認されませんでした} withdrawn {取り下げました} lapsed {絵文字が削除されたため無効} other {{state}}}",
+    "description": "Where a request of the reader's stands, the line under its shortcode."
+  },
+  "emoji_own.request.asked": {
+    "defaultMessage": "{date}に申請",
+    "description": "A fact of a request of the reader's: the day they made it."
+  },
+  "emoji_own.request.reason": {
+    "defaultMessage": "理由: {reason}",
+    "description": "A fact of a request that was not approved: the reason the administrator wrote."
+  },
+  "emoji_own.request.withdraw": {
+    "defaultMessage": "取り下げる",
+    "description": "The button of a waiting request that withdraws it, freeing its shortcode."
+  },
+  "emoji_own.request.withdrawn": {
+    "defaultMessage": "{shortcode} の申請を取り下げました。",
+    "description": "In Your requests once one was withdrawn (its shortcode between colons)."
+  },
+  "emoji_own.request.decided": {
+    "defaultMessage": "この申請はその間に決定されたため、取り下げられていません。",
+    "description": "In Your requests when a withdrawal came after an administrator decided the request."
+  },
+  "emoji_own.request.withdraw_failed": {
+    "defaultMessage": "申請は取り下げられていません。接続を確かめて、もう一度試してください。",
+    "description": "In Your requests when a withdrawal failed."
+  },
+  "emoji_own.shortcode": {
+    "defaultMessage": "ショートコード",
+    "description": "The field of the shortcode of a requested emoji, which texts write between colons."
+  },
+  "emoji_own.shortcode.rule": {
+    "defaultMessage": "英字 (A〜Z、a〜z)・数字・_ で 2〜30 文字。大文字と小文字は区別され、あとから変えられません。",
+    "description": "Under the shortcode of a requested emoji: the rule its value follows, also when it was refused."
+  },
+  "emoji_own.shortcode.taken": {
+    "defaultMessage": "このショートコードはこのサーバーの絵文字が使っているか、すでにだれかが申請しています。別のものにしてください。",
+    "description": "Under the shortcode of a request the server refused because it is taken or reserved."
+  },
+  "emoji_own.image": {
+    "defaultMessage": "画像",
+    "description": "The field of a requested emoji's image."
+  },
+  "emoji_own.image.hint": {
+    "defaultMessage": "PNG・GIF・WebP。長いほうの辺が 1024 ピクセルまで。",
+    "description": "Under the image field of a request: what the server takes."
+  },
+  "emoji_own.image.choose": {
+    "defaultMessage": "画像を選ぶ",
+    "description": "The button of the image field of a request that opens the file picker."
+  },
+  "emoji_own.image.another": {
+    "defaultMessage": "別の画像を選ぶ",
+    "description": "The button of the image field of a request once one is picked."
+  },
+  "emoji_own.image.none": {
+    "defaultMessage": "画像が選ばれていません",
+    "description": "In the place of the file's name in the image field of a request while none is picked."
+  },
+  "emoji_own.image.missing": {
+    "defaultMessage": "絵文字の画像を選んでください。",
+    "description": "Under the image field of a request when Send request was pressed without one."
+  },
+  "emoji_own.image.format": {
+    "defaultMessage": "PNG・GIF・WebP の画像を選んでください。",
+    "description": "Under the image field of a request when the server refused the file's format."
+  },
+  "emoji_own.image.too_large": {
+    "defaultMessage": "このファイルは、サーバーが絵文字に受け付ける大きさを超えています。小さいものを選んでください。",
+    "description": "Under the image field of a request when the file is over the server's size limit."
+  },
+  "emoji_own.image.too_big": {
+    "defaultMessage": "長いほうの辺が 1024 ピクセルまでの画像を選んでください。",
+    "description": "Under the image field of a request when the image is too wide or tall."
+  },
+  "emoji_own.image.failed": {
+    "defaultMessage": "画像を読み込めませんでした。別の画像を選ぶか、もう一度試してください。",
+    "description": "Under the image field of a request when the upload could not be processed."
+  },
+  "emoji_own.requests": {
+    "defaultMessage": "申請",
+    "description": "The heading of the section of the reader's requests for custom emoji."
+  },
+  "emoji_own.requests.empty": {
+    "defaultMessage": "まだ絵文字を申請していません。申請とその結果はここに表示されます。",
+    "description": "In Your requests while the reader made none."
+  },
+  "emoji_own.emojis": {
+    "defaultMessage": "自分の絵文字",
+    "description": "The heading of the section of the custom emoji the reader made."
+  },
+  "emoji_own.emojis.empty": {
+    "defaultMessage": "まだ絵文字はありません。申請が承認されると作られ、ここで変えられます。",
+    "description": "In Your emoji while the reader made none."
+  },
+  "emoji_own.emoji.category": {
+    "defaultMessage": "カテゴリ: {category}",
+    "description": "A fact of one of the reader's emoji: its category in the picker."
+  },
+  "emoji_own.emoji.aliases": {
+    "defaultMessage": "別名 {aliases}",
+    "description": "A fact of one of the reader's emoji: its aliases, each between colons."
+  },
+  "emoji_own.emoji.hidden": {
+    "defaultMessage": "ピッカーに出さない",
+    "description": "A fact of one of the reader's emoji that the picker does not offer, though texts can use it."
+  },
+  "emoji_own.emoji.disabled": {
+    "defaultMessage": "無効",
+    "description": "At the end of the row of one of the reader's emoji that an administrator disabled."
+  },
+  "emoji_own.emoji.disabled.about": {
+    "defaultMessage": "管理者がこの絵文字を無効にしました。どこでも :shortcode: の文字のままです。",
+    "description": "On the page of one of the reader's emoji that an administrator disabled."
+  },
+  "emoji_own.emoji": {
+    "defaultMessage": "絵文字",
+    "description": "The heading of the section of the image of one of the reader's emoji."
+  },
+  "emoji_own.no_image": {
+    "defaultMessage": "画像なし",
+    "description": "In the place of the image of one of the reader's emoji when it cannot be shown."
+  },
+  "emoji_own.picker": {
+    "defaultMessage": "ピッカー",
+    "description": "The heading of the section of one of the reader's emoji's category, aliases and whether the picker offers it."
+  },
+  "emoji_own.category": {
+    "defaultMessage": "カテゴリ",
+    "description": "The field of the category of one of the reader's emoji; empty for none."
+  },
+  "emoji_own.category.rule": {
+    "defaultMessage": "{max} 文字までにしてください。",
+    "description": "Under the category of one of the reader's emoji when it is too long."
+  },
+  "emoji_own.aliases": {
+    "defaultMessage": "別名",
+    "description": "The field of the other names of one of the reader's emoji, which the picker finds it by."
+  },
+  "emoji_own.aliases.hint": {
+    "defaultMessage": "スペースで区切ります。",
+    "description": "Under the aliases of one of the reader's emoji."
+  },
+  "emoji_own.aliases.rule": {
+    "defaultMessage": "別名は {max} 個までで、それぞれ英字・数字・_ で 2〜30 文字にしてください。",
+    "description": "Under the aliases when one breaks the rules of a shortcode or there are too many."
+  },
+  "emoji_own.visible": {
+    "defaultMessage": "ピッカーに出す",
+    "description": "The setting of whether the emoji picker offers one of the reader's emoji."
+  },
+  "emoji_own.visible.value": {
+    "defaultMessage": "{value, select, true {オン} other {オフ}}",
+    "description": "A value of whether the picker offers one of the reader's emoji: on or off, as the administrators' screen says it."
+  },
+  "emoji_own.save": {
+    "defaultMessage": "保存",
+    "description": "The button of the submit bar of one of the reader's emoji."
+  },
+  "emoji_own.save.refused": {
+    "defaultMessage": "保存されていません。示した箇所を直して、もう一度試してください。",
+    "description": "Beside Save or Send request when a field was refused, which is marked under it."
+  },
+  "emoji_own.save.failed": {
+    "defaultMessage": "保存されていません。接続を確かめて、もう一度試してください。",
+    "description": "Beside Save or Send request when it failed with no field named."
+  },
+  "emoji_own.delete": {
+    "defaultMessage": "絵文字の削除",
+    "description": "The heading of the last section of one of the reader's emoji, apart, which deletes it."
+  },
+  "emoji_own.delete.about": {
+    "defaultMessage": "使っていた投稿とプロフィールは :shortcode: の文字で表示され、今月申請できる数も戻りません。取り消せません。",
+    "description": "Under the heading of the section that deletes one of the reader's emoji."
+  },
+  "emoji_own.delete.press": {
+    "defaultMessage": "削除",
+    "description": "The button that deletes one of the reader's emoji, and the confirmation of its question."
+  },
+  "emoji_own.delete.title": {
+    "defaultMessage": "{shortcode} を削除しますか？",
+    "description": "The question before deleting one of the reader's emoji (its shortcode between colons)."
+  },
+  "emoji_own.delete.text": {
+    "defaultMessage": "絵文字とその画像は完全に削除されます。取り消せません。",
+    "description": "Under the question before deleting one of the reader's emoji."
+  },
+  "emoji_own.delete.cancel": {
+    "defaultMessage": "削除しない",
+    "description": "The button that closes the question before deleting one of the reader's emoji, keeping it."
+  },
+  "emoji_own.more.failed": {
+    "defaultMessage": "一覧の続きを読み込めませんでした。「さらに表示」でもう一度試してください。",
+    "description": "On the reader's custom emoji screen, over Show more, when the next page of their emoji or requests could not be read."
+  }
+}

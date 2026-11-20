@@ -1,0 +1,298 @@
+{
+  "staff_roles.entry": {
+    "defaultMessage": "ロール",
+    "description": "The name of the screen of the roles and their permissions, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_roles.entry.hint": {
+    "defaultMessage": "だれが何をできるか、そのバッジ",
+    "description": "The line under Roles in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff_roles.loading": {
+    "defaultMessage": "ロールを読み込んでいます…",
+    "description": "On a screen of roles while the roles are read. Read by administrators."
+  },
+  "staff_roles.failed": {
+    "defaultMessage": "ロールを読み込めませんでした。",
+    "description": "On a screen of roles when the roles could not be read, before Try again. Read by administrators."
+  },
+  "staff_roles.missing": {
+    "defaultMessage": "このアドレスのロールはありません。削除された可能性があります。",
+    "description": "At /admin/roles/{key} for a key no role has, before the link to all roles. Read by administrators."
+  },
+  "staff_roles.all": {
+    "defaultMessage": "すべてのロール",
+    "description": "The link to /admin/roles under the sentence that an address names no role. Read by administrators."
+  },
+  "staff_roles.list.count": {
+    "defaultMessage": "{count, plural, other {ロール # 件}}",
+    "description": "The heading of the list of every role at /admin/roles: how many there are. Read by administrators."
+  },
+  "staff_roles.add": {
+    "defaultMessage": "ロールを追加",
+    "description": "The button at the end of the heading of the roles that opens the form of a new role. Read by administrators."
+  },
+  "staff_roles.row.place": {
+    "defaultMessage": "位置 {position}",
+    "description": "A fact of a role in a list: its place among the roles, a number from 0 to 1000; a higher one outranks a lower one. Read by administrators."
+  },
+  "staff_roles.row.permissions": {
+    "defaultMessage": "{count, plural, =0 {権限なし} other {権限 # 個}}",
+    "description": "A fact of a role in the list of roles: how many permissions it grants. Read by administrators."
+  },
+  "staff_roles.row.badge": {
+    "defaultMessage": "バッジ: {label}",
+    "description": "A fact of a role in the list of roles: the label of its badge, as the staff wrote it. Read by administrators."
+  },
+  "staff_roles.state.above": {
+    "defaultMessage": "あなたより上",
+    "description": "At the end of a role's row: the role is above the reader's highest role, so they cannot change, grant or revoke it. Read by administrators."
+  },
+  "staff_roles.state.plan": {
+    "defaultMessage": "プランのロール",
+    "description": "At the end of a role's row: a supporter plan grants the role, so its plan, not the reader, sets it. Read by administrators."
+  },
+  "staff_roles.state.builtin": {
+    "defaultMessage": "組み込み",
+    "description": "At the end of a role's row: one of the server's own roles (admin, moderator), which cannot be deleted. Read by administrators."
+  },
+  "staff_roles.fixed.above": {
+    "defaultMessage": "このロールはあなたのいちばん高いロール ({key}) より上にあるため、変えられません。",
+    "description": "On the page of a role above the reader's highest role (its key, as written), under what the role is. Read by administrators."
+  },
+  "staff_roles.fixed.admin": {
+    "defaultMessage": "管理者のロールはいつもすべての権限といちばん高い位置を持ちます。変えられるのはバッジだけです。",
+    "description": "On the page of the built-in admin role, under what it is. Read by administrators."
+  },
+  "staff_roles.fixed.plan": {
+    "defaultMessage": "このロールはサポーターのプランが付けます。位置と権限はプランから変えてください。",
+    "description": "On the page of a role a supporter plan grants, under what it is. Read by administrators."
+  },
+  "staff_roles.permission": {
+    "defaultMessage": "{permission, select, manage_reports {通報の対応} manage_accounts {アカウントのモデレーション} manage_domains {ほかのサーバーのモデレーション} manage_rules {ルールの編集} manage_settings {サーバーの設定} manage_roles {ロールの管理} manage_invites {招待の管理} view_audit {監査ログの閲覧} manage_jobs {ジョブの管理} manage_login_recovery {ログインの復旧} manage_custom_emojis {カスタム絵文字の管理} manage_webhooks {webhook の管理} manage_announcements {お知らせの作成} manage_finance {会計の管理} view_finance {会計の閲覧} manage_supporters {サポーターのプランの管理} create_custom_emojis {カスタム絵文字の申請} manage_oauth_apps {OAuth のアプリの管理} manage_service_closure {閉鎖の予告} start_voice_rooms {通話のルームを開く} manage_errors {エラーの対応} manage_login_providers {ログインプロバイダーの管理} create_invites {招待の作成} keep_posts_longer {投稿を長く残す} create_articles {記事の作成} create_events {イベントの作成} other {{permission}}}",
+    "description": "The name of a permission a role grants, as a checkbox of a role's form and in a list of them. Read by administrators."
+  },
+  "staff_roles.role": {
+    "defaultMessage": "ロール",
+    "description": "The heading of the section of a role's name and place, on a role's page and the form of a new one. Read by administrators."
+  },
+  "staff_roles.key": {
+    "defaultMessage": "名前",
+    "description": "The field of a new role's name, its key, which never changes later. Read by administrators."
+  },
+  "staff_roles.key.rule": {
+    "defaultMessage": "小文字の英字 (a〜z) ・数字・_・- で 1〜64 文字。あとから変えられません。",
+    "description": "Under the name of a new role: the rule its value follows, also when it was refused. Read by administrators."
+  },
+  "staff_roles.key.taken": {
+    "defaultMessage": "{key} という名前のロールがすでにあります。別の名前にしてください。",
+    "description": "Under the name of a new role when another role has it. Read by administrators."
+  },
+  "staff_roles.position": {
+    "defaultMessage": "位置",
+    "description": "The field of a role's place among the roles, a number. Read by administrators."
+  },
+  "staff_roles.position.about": {
+    "defaultMessage": "{min}〜{max}。位置の高いロールが低いロールより上になります。",
+    "description": "Under the place of a role: the numbers the reader may give it (up to their own highest role; for a role with staff permissions, above the supporter plans' roles) and what the place means. Read by administrators."
+  },
+  "staff_roles.position.rule": {
+    "defaultMessage": "位置は 0〜{max} から選んでください。",
+    "description": "Under the place of a role when the server refused it. Read by administrators."
+  },
+  "staff_roles.position.reach": {
+    "defaultMessage": "位置は 0〜{max} から選んでください。自分のいちばん高いロールより上にはできません。",
+    "description": "Under the place of a role when it is empty or above what the reader may give. Read by administrators."
+  },
+  "staff_roles.position.plans": {
+    "defaultMessage": "スタッフの権限を持つロールは、サポーターのプランのロールより上に置きます。位置は {min} 以上にしてください。",
+    "description": "Under the place of a role with staff permissions (or a built-in role) when it is at or below the highest place of a supporter plan's role. Read by administrators."
+  },
+  "staff_roles.permissions": {
+    "defaultMessage": "権限",
+    "description": "The heading of the section of a role's permissions, a checkbox each. Read by administrators."
+  },
+  "staff_roles.permissions.fixed": {
+    "defaultMessage": "このロールは{names}も持ちます。あなたが持たない権限なので、そのまま残ります。",
+    "description": "Under the checkboxes of a role's permissions: the permissions the role grants that the reader lacks, as a list. Read by administrators."
+  },
+  "staff_roles.permissions.refused": {
+    "defaultMessage": "この権限は保存できませんでした。確かめて、もう一度保存してください。",
+    "description": "Under the first permission of a role's form when the server refused the permissions with no list of which. Read by administrators."
+  },
+  "staff_roles.permissions.missing": {
+    "defaultMessage": "{names}はあなたのロールにもう含まれないため、付け外しできません。その変更を元に戻して、もう一度保存してください。",
+    "description": "Under the first permission of a role's form when the server refused a change of permissions the reader no longer holds (a list). Read by administrators."
+  },
+  "staff_roles.facts.permissions": {
+    "defaultMessage": "権限: {names}",
+    "description": "On the page of a role the reader cannot change: the permissions it grants, as a list. Read by administrators."
+  },
+  "staff_roles.facts.no_permissions": {
+    "defaultMessage": "権限はありません。",
+    "description": "On the page of a role the reader cannot change, for one with no permission. Read by administrators."
+  },
+  "staff_roles.badge": {
+    "defaultMessage": "バッジ",
+    "description": "The heading of the section of a role's badge. Read by administrators."
+  },
+  "staff_roles.badge.about": {
+    "defaultMessage": "1 行で {max} 文字まで。空にするとバッジなし。",
+    "description": "Under the heading of a role's badge: the rule of its label. Read by administrators."
+  },
+  "staff_roles.badge.label": {
+    "defaultMessage": "ラベル",
+    "description": "The field of the label of a role's badge. Read by administrators."
+  },
+  "staff_roles.badge.label.rule": {
+    "defaultMessage": "1 行で {max} 文字までにしてください。",
+    "description": "Under the label of a role's badge when it is too long or has a line break. Read by administrators."
+  },
+  "staff_roles.badge.color": {
+    "defaultMessage": "色",
+    "description": "The choice of the color of a role's badge, with the badge as it shows under it. Read by administrators."
+  },
+  "staff_roles.badge.color.name": {
+    "defaultMessage": "{color, select, neutral {グレー} red {赤} orange {オレンジ} yellow {黄} green {緑} teal {青緑} blue {青} purple {紫} pink {ピンク} other {{color}}}",
+    "description": "A color a role's badge may take, in the choice of its color. Read by administrators."
+  },
+  "staff_roles.badge.color.refused": {
+    "defaultMessage": "この色は使えません。別の色を選んでください。",
+    "description": "Under the color of a role's badge when the server refused it. Read by administrators."
+  },
+  "staff_roles.save": {
+    "defaultMessage": "保存",
+    "description": "The button of the submit bar of a role's form. Read by administrators."
+  },
+  "staff_roles.create": {
+    "defaultMessage": "ロールを作成",
+    "description": "The button of the submit bar of a new role's form. Read by administrators."
+  },
+  "staff_roles.new": {
+    "defaultMessage": "新しいロール",
+    "description": "The title of the form of a new role, at /admin/roles/new. Read by administrators."
+  },
+  "staff_roles.save.refused": {
+    "defaultMessage": "保存されていません。示した箇所を直して、もう一度保存してください。",
+    "description": "Beside Save when the server or the form refused a field of a role, which is marked under it. Read by administrators."
+  },
+  "staff_roles.save.failed": {
+    "defaultMessage": "保存されていません。接続を確かめて、もう一度試してください。",
+    "description": "Beside Save of a role's form when the save failed with no field named. Read by administrators."
+  },
+  "staff_roles.save.builtin": {
+    "defaultMessage": "管理者のロールの権限と位置は変えられません。保存されていません。",
+    "description": "Beside Save of a role's form when the server refused a change of a built-in role. Read by administrators."
+  },
+  "staff_roles.save.plan": {
+    "defaultMessage": "このロールはサポーターのプランが付けるため、位置と権限はプランから変わります。保存されていません。",
+    "description": "Beside Save of a role's form when the server refused a change that would break a supporter plan's role. Read by administrators."
+  },
+  "staff_roles.save.forbidden": {
+    "defaultMessage": "あなたのロールではこの操作ができなくなりました。ページを再読み込みして、できることを確かめてください。",
+    "description": "Beside a role's Save, or in a section of an account's roles, when the server refused the reader the change (403). Read by administrators."
+  },
+  "staff_roles.delete": {
+    "defaultMessage": "ロールの削除",
+    "description": "The heading of the last section of a role's page, apart, which deletes it. Read by administrators."
+  },
+  "staff_roles.delete.about": {
+    "defaultMessage": "削除できるのは、だれも持っていないロールだけです。",
+    "description": "Under the heading of the section that deletes a role. Read by administrators."
+  },
+  "staff_roles.delete.press": {
+    "defaultMessage": "削除",
+    "description": "The button that deletes a role, and the confirmation of its question. Read by administrators."
+  },
+  "staff_roles.delete.title": {
+    "defaultMessage": "ロール {key} を削除しますか？",
+    "description": "The question before deleting a role (its key, as written). Read by administrators."
+  },
+  "staff_roles.delete.text": {
+    "defaultMessage": "ロールとそのバッジは完全に削除されます。削除するには名前を入力してください。",
+    "description": "Under the question before deleting a role, over the field of its name to type. Read by administrators."
+  },
+  "staff_roles.delete.cancel": {
+    "defaultMessage": "削除しない",
+    "description": "The button that closes the question before deleting a role, keeping it. Read by administrators."
+  },
+  "staff_roles.delete.held": {
+    "defaultMessage": "このロールを持つ人がいるため、削除されていません。先にその人たちから外してください。",
+    "description": "In the section that deletes a role when the server refused it because users hold it. Read by administrators."
+  },
+  "staff_roles.delete.failed": {
+    "defaultMessage": "ロールは削除されていません。接続を確かめて、もう一度試してください。",
+    "description": "In the section that deletes a role when the deletion failed for another reason. Read by administrators."
+  },
+  "staff_roles.irreversible": {
+    "defaultMessage": "取り消せません。",
+    "description": "The mark beside the button that deletes a role. Read by administrators."
+  },
+  "staff_roles.account": {
+    "defaultMessage": "ロール",
+    "description": "The heading of the section of an account's Management screen that lists the roles it holds, with Grant and Revoke. Read by administrators."
+  },
+  "staff_roles.account.none": {
+    "defaultMessage": "この人はロールを持っていません。",
+    "description": "In the section of an account's roles while it holds none. Read by administrators."
+  },
+  "staff_roles.account.none_to_grant": {
+    "defaultMessage": "ほかに付けられるロールはありません。",
+    "description": "In the section of an account's roles, in the place of Grant, when the reader may grant none of the roles it lacks. Read by administrators."
+  },
+  "staff_roles.account.grant_role": {
+    "defaultMessage": "付けるロール",
+    "description": "The choice of a role to grant to an account, beside Grant. Read by administrators."
+  },
+  "staff_roles.account.grant": {
+    "defaultMessage": "付ける",
+    "description": "The button that grants the chosen role to an account. Read by administrators."
+  },
+  "staff_roles.account.revoke": {
+    "defaultMessage": "外す",
+    "description": "The button of a role an account holds that takes it from the account. Read by administrators."
+  },
+  "staff_roles.account.granted": {
+    "defaultMessage": "{handle} に {key} を付けました。",
+    "description": "In the section of an account's roles once a role (its key, as written) was granted to the account (its handle). Read by administrators."
+  },
+  "staff_roles.account.revoked": {
+    "defaultMessage": "{handle} から {key} を外しました。",
+    "description": "In the section of an account's roles once a role (its key) was revoked from the account (its handle). Read by administrators."
+  },
+  "staff_roles.account.grant_failed": {
+    "defaultMessage": "{key} は付けられていません。接続を確かめて、もう一度試してください。",
+    "description": "In the section of an account's roles when granting a role (its key) failed. Read by administrators."
+  },
+  "staff_roles.account.revoke_failed": {
+    "defaultMessage": "{key} は外されていません。接続を確かめて、もう一度試してください。",
+    "description": "In the section of an account's roles when revoking a role (its key) failed. Read by administrators."
+  },
+  "staff_roles.account.plan": {
+    "defaultMessage": "{key} はサポーターのプランが付けるロールのため、プランへの加入で付き、加入の終了で外れます。",
+    "description": "In the section of an account's roles when the server refused to grant or revoke a plan's role (its key). Read by administrators."
+  },
+  "staff_roles.account.last_admin": {
+    "defaultMessage": "このサーバーの管理者はこの人だけなので、外せません。先にほかの人に付けてください。",
+    "description": "In the section of an account's roles when the server refused to revoke admin from its only holder. Read by administrators."
+  },
+  "staff_roles.account.own.title": {
+    "defaultMessage": "自分から {key} を外しますか？",
+    "description": "The question before the reader revokes a role (its key) from their own account. Read by administrators."
+  },
+  "staff_roles.account.own.text": {
+    "defaultMessage": "このロールでできることができなくなり、付け直す権限もなくなるかもしれません。",
+    "description": "Under the question before the reader revokes a role from their own account. Read by administrators."
+  },
+  "staff_roles.account.own.cancel": {
+    "defaultMessage": "外さない",
+    "description": "The button that closes the question before the reader revokes a role from themselves, keeping it. Read by administrators."
+  },
+  "staff_roles.account.role": {
+    "defaultMessage": "ロール",
+    "description": "The heading of the column of role names in the table of the roles an account holds, on its Management page. Read by administrators."
+  },
+  "staff_roles.account.act": {
+    "defaultMessage": "変更",
+    "description": "The heading of the column of Revoke buttons (or why a role cannot be revoked) in the table of an account's roles. Read by administrators."
+  }
+}

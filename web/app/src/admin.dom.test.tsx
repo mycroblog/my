@@ -603,9 +603,13 @@ const everyEntry = [
   "/admin/translation",
   "/admin/theme",
   "/admin/closure",
+  "/admin/roles",
+  "/admin/announcements",
+  "/admin/custom-emojis",
   "/admin/relays",
   "/admin/login-providers",
   "/admin/oauth-apps",
+  "/admin/webhooks",
 ];
 
 for (const [permission, entries, address, read] of [

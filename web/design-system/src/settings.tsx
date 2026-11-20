@@ -787,6 +787,7 @@ export function SettingsListRow({
   facts,
   standing,
   state,
+  mark,
   href,
   end,
   result,
@@ -808,6 +809,11 @@ export function SettingsListRow({
    */
   standing?: string | undefined;
   state?: string | undefined;
+  /**
+   * Where a record stands, as the staff's and the reader's lists of records mark it (a `StateMark`: pending, approved),
+   * in the place of `state` and in its own look: one look for a state on every list.
+   */
+  mark?: ReactNode;
   href?: string | undefined;
   end?: ReactNode;
   result?: SettingsRowResult | undefined;
@@ -822,12 +828,14 @@ export function SettingsListRow({
       {title}
     </bdi>
   );
-  const stated = state !== undefined && (
+  const stated = (state !== undefined || mark !== undefined) && (
     <>
       {" "}
-      <Box as="span" words className={s.state()}>
-        {state}
-      </Box>
+      {mark ?? (
+        <Box as="span" words className={s.state()}>
+          {state}
+        </Box>
+      )}
     </>
   );
   // Its parts are a space apart in what assistive technology reads of the row, which no box of it shows.
@@ -839,7 +847,7 @@ export function SettingsListRow({
         </Row>
       )}
       <Stack as="span" grow>
-        {facts === undefined || state === undefined ? (
+        {facts === undefined || stated === false ? (
           named
         ) : (
           <Row as="span" wrap align="baseline" justify="between" gap="screen-tabs-gap">

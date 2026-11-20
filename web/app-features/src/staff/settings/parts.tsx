@@ -85,8 +85,21 @@ export function LeaveDialog({ leaving }: { leaving: { readonly onStay: () => voi
   );
 }
 
-/** A value to pass on (a callback URL), named `label`, with the button that copies it and what came of copying. */
-export function CopyValue({ label, value, copy }: { label: string; value: string; copy: string }): ReactNode {
+/**
+ * A value to pass on (a callback URL, a link, a secret shown once), named `label`, with the button that copies it and
+ * what came of copying; `primary` where copying it is what the screen is for (a link to hand over, a secret).
+ */
+export function CopyValue({
+  label,
+  value,
+  copy,
+  primary = false,
+}: {
+  label: string;
+  value: string;
+  copy: string;
+  primary?: boolean | undefined;
+}): ReactNode {
   const { t } = useStaffStrings();
   const [copied, setCopied] = useState<boolean>();
   return (
@@ -95,6 +108,7 @@ export function CopyValue({ label, value, copy }: { label: string; value: string
       values={[value]}
       action={
         <Button
+          {...(primary ? { kind: "primary" as const } : {})}
           size="timeline"
           onPress={() => {
             void copyText(value).then(setCopied);

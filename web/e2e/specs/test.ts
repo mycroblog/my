@@ -7,9 +7,10 @@
 // - `fresh` makes what a test changes, new on every run of it (src/fresh.ts), so that the specs pass in any order and
 //   with `--repeat-each`: a test that follows, favourites, accepts or posts acts on its own subjects, never on the
 //   scenario's people and posts, which every test reads.
-//   - `fresh.person({ locked?, totp?, follows?, followedBy?, followsVisibility? })` a new person with a password, a
+//   - `fresh.person({ locked?, totp?, follows?, followedBy?, followsVisibility?, role? })` a new person with a password, a
 //     display name unique to them ("Fresh 1a2b3c4d") and a username `fresh_…`, locked or not, following and followed
-//     by the people given (each follow accepted), who shows their lists of follows to `followsVisibility`. With
+//     by the people given (each follow accepted), who shows their lists of follows to `followsVisibility`, holding the
+//     role `role: { key, permissions }` (made once by the scenario's administrator, then granted) where given. With
 //     `totp: true` it enables two-factor authentication last and returns `totp: { secret, step }`: sign them in on the
 //     screen with `totpCode(p.totp.secret, { avoidStep: p.totp.step })`.
 //   - `fresh.post(author, { text, visibility?, image?, images?, files?, sensitive?, spoiler?, poll?, language?,

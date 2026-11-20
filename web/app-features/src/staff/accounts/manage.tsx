@@ -4,7 +4,8 @@
 // addresses it signed up and signed in from, shown on demand alone, which the server records each time, with the
 // accounts that used the same addresses and the way to those of the same email domain; the suppression of its email,
 // lifted; and, for a holder of `manage_login_recovery`, a password reset link to hand over, shown once, and removing
-// two-factor authentication, each asked first. For a remote account, refetching its posts from its server
+// two-factor authentication, each asked first; for a holder of `manage_roles`, the roles it holds, granted and revoked
+// (server/account-roles.tsx). For a remote account, refetching its posts from its server
 // (`manage_domains`). Each section shows only to the reader whose permissions it needs.
 
 import { moderatedAccountPath, sentenceHandleOf } from "@my/app-components";
@@ -34,7 +35,9 @@ import {
 import { useState, type ReactNode } from "react";
 import { staffEntryPath, staffHref } from "../entries";
 import { Titled, useMoment, useStaffStrings } from "../parts";
-import { AccountStateMark, CopyValue, refusalWords, useSaid } from "./parts";
+import { CopyValue } from "../settings/parts";
+import { AccountStateMark, refusalWords, useSaid } from "./parts";
+import { AccountRoles } from "../server/account-roles";
 import { emailDomainSearch } from "./search";
 
 /** The sections of Management the reader's permissions show for `account`. */
@@ -47,6 +50,9 @@ export function ManagePage({ account }: { account: ModeratedAccountDetail }): Re
       {account.local && <PrivateData account={account} />}
       {account.local && account.email_suppression !== undefined && <EmailSuppression account={account} say={say} />}
       {account.local && permissions.includes("manage_login_recovery") && <LoginRecovery account={account} say={say} />}
+      {account.local && permissions.includes("manage_roles") && (
+        <AccountRoles accountId={account.id} handle={sentenceHandleOf(account.account)} say={say} />
+      )}
       {!account.local && permissions.includes("manage_domains") && <Refetch account={account} say={say} />}
     </ScreenStack>
   );
@@ -289,6 +295,7 @@ function LoginRecovery({ account, say }: { account: ModeratedAccountDetail; say:
         ) : (
           <Stack gap="entry-line">
             <CopyValue
+              primary
               label={t("staff_accounts.recovery.link.value")}
               value={link.url}
               copy={t("staff_accounts.recovery.link.copy")}

@@ -123,6 +123,14 @@
     "defaultMessage": "加入・チップ・サポーターの一覧",
     "description": "Under Supporter in the settings' menu: what its screen holds."
   },
+  "settings.entry.custom_emojis": {
+    "defaultMessage": "カスタム絵文字",
+    "description": "An entry of the settings menu, and the title of its page, where the reader asks for custom emoji of this server and keeps the ones they made."
+  },
+  "settings.entry.custom_emojis.hint": {
+    "defaultMessage": "絵文字の申請と自分の絵文字",
+    "description": "The line under Custom emoji in the settings menu: what its page holds."
+  },
   "settings.sign_out": {
     "defaultMessage": "ログアウト…",
     "description": "The last row of the settings menu, apart from its groups: it signs this browser out, after a confirmation (settings.sign_out.title)."

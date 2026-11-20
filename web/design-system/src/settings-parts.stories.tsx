@@ -9,7 +9,7 @@
 // asks the reader to authenticate again, by each proof, with no way to prove it, and in flight; a setting that cannot
 // be changed now, with its reason; a number field given a number outside what it takes; what the reader copies and
 // keeps (recovery codes shown once, before and after copying; a secret of a server's length, which wraps in its box);
-// a text field among the rows of a section, its name in the rows' own look;
+// a text field among the rows of a section, its name in the rows' own look; rows of records marked by where they stand;
 // the key of an authenticator app as a QR code and as text; rows that say what is known of each thing, one fact a
 // line, under what came of a change in their section and over a sentence of the section with the links to where the
 // reader acts on it; and the facts a section states, which are not pressed.
@@ -22,6 +22,7 @@ import { ReauthDialog } from "./dialog";
 import { NumberField, Select } from "./field";
 import { FormAlert, TextField } from "./form-page";
 import { Stack } from "./layout";
+import { StateMark } from "./records";
 import { SaveState } from "./save-state";
 import {
   CopyBlock,
@@ -909,6 +910,38 @@ function Working() {
   );
 }
 
+/** Rows of records (a reader's requests), each marked by where it stands, as every list of records marks it. */
+function MarkedRows() {
+  const ja = new Intl.Locale(useLocale().locale).language === "ja";
+  const rows: [string, "pending" | "resolved" | "failed", string, string][] = ja
+    ? [
+        [":sparkle_cat:", "pending", "審査待ち", "11月18日に申請"],
+        [":tea_time:", "resolved", "承認済み", "11月2日に申請"],
+        [":blobheart:", "failed", "断った", "10月28日に申請"],
+      ]
+    : [
+        [":sparkle_cat:", "pending", "Waiting for review", "Asked Nov 18"],
+        [":tea_time:", "resolved", "Approved", "Asked Nov 2"],
+        [":blobheart:", "failed", "Declined", "Asked Oct 28"],
+      ];
+  return (
+    <Column>
+      <SettingsSection heading={ja ? "申請" : "Requests"}>
+        <SettingsList label={ja ? "申請" : "Requests"}>
+          {rows.map(([title, state, words, asked]) => (
+            <SettingsListRow
+              key={title}
+              title={title}
+              facts={[asked]}
+              mark={<StateMark state={state}>{words}</StateMark>}
+            />
+          ))}
+        </SettingsList>
+      </SettingsSection>
+    </Column>
+  );
+}
+
 const meta = { title: "Settings parts", tags: ["themes"] } satisfies Meta;
 export default meta;
 
@@ -953,3 +986,5 @@ export const RefusedValues: Story = { render: () => <Refused /> };
 export const NumberOutOfRange: Story = { render: () => <NumberRange /> };
 /** A text field among the rows of a section: its name in the rows' look. */
 export const TextAmongSettingRows: Story = { render: () => <TextAmongRows /> };
+/** Rows of records marked by where they stand, with the mark every list of records uses. */
+export const RowsMarkedByState: Story = { render: () => <MarkedRows /> };
