@@ -7,12 +7,14 @@
 // composes, so that the workspace's dependency graph names every package a story can change
 // (scripts/changed-contexts.sh, the stories context). Tailwind builds the stylesheet of @my/design-system without
 // its own optimizer, for the browsers of light-dark() (ADR-0110 §14), and the condition @mycroblog/source reads
-// @mycroblog/mykit (under @my/app-data) from its sources, as the app's Vite configuration does.
+// @mycroblog/mykit (under @my/app-data) from its sources, as the app's Vite configuration does. A change to a design
+// token reloads the theme (themeReload of @my/design-system).
 
 import tailwindcss from "@tailwindcss/vite";
 import type { StorybookConfig } from "@storybook/react-vite";
 import react from "@vitejs/plugin-react";
 import { defaultClientConditions, mergeConfig } from "vite";
+import { themeReload } from "@my/design-system/theme-reload";
 
 const web = (dir: string) => `../../${dir}/src`;
 
@@ -30,7 +32,7 @@ const config: StorybookConfig = {
   typescript: { reactDocgen: false },
   viteFinal: (vite) =>
     mergeConfig(vite, {
-      plugins: [react(), tailwindcss({ optimize: false })],
+      plugins: [react(), tailwindcss({ optimize: false }), themeReload()],
       resolve: { conditions: ["@mycroblog/source", ...defaultClientConditions] },
       build: { cssTarget: ["chrome123", "firefox120", "safari17.5"] },
     }),

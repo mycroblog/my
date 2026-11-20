@@ -50,8 +50,9 @@ type shellData struct {
 	HasIcon, HasAppleTouchIcon bool
 	// HasThemeScript reports whether the build has theme.js, which applies the stored color theme.
 	HasThemeScript bool
-	// ViteClient is the Vite client script of a dev server, empty in production.
-	ViteClient string
+	// DevScripts are the scripts of a Vite dev server that run before the entry (devScripts), none
+	// in production.
+	DevScripts []string
 	Entry      entryTags
 	// Config is a struct, not a string: html/template encodes it as JSON in the data block and
 	// escapes what could end the script element.
@@ -158,8 +159,8 @@ const shellSource = `<!doctype html>
 <link rel="modulepreload" href="{{.}}">
 {{- end}}
 <script type="application/json" id="config">{{.Config}}</script>
-{{- if .ViteClient}}
-<script type="module" src="{{.ViteClient}}"></script>
+{{- range .DevScripts}}
+<script type="module" src="{{.}}"></script>
 {{- end}}
 {{- if .Entry.Script}}
 <script type="module" src="{{.Entry.Script}}"></script>
