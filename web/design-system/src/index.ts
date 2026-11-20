@@ -20,7 +20,7 @@ export {
   type LinkButtonProps,
   type TextButtonProps,
 } from "./button";
-export { Badge, Chip, ChipLink, ChipRow, type ChipProps } from "./chip";
+export { Badge, Chip, ChipLink, ChipRow, type BadgeHue, type ChipProps } from "./chip";
 export { BannerHead } from "./banner-head";
 export { QuietLink } from "./quiet-link";
 export {

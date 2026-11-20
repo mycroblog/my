@@ -57,6 +57,21 @@ export const Badges: Story = {
   ),
 };
 
+/** A role's badges in each of their fixed hues, the label in its text color on its tint, in either scheme. */
+export const BadgeHues: Story = {
+  render: () => (
+    <Column>
+      <Row wrap gap="screen-name-gap">
+        {(["neutral", "red", "orange", "yellow", "green", "teal", "blue", "purple", "pink"] as const).map((hue) => (
+          <Badge key={hue} hue={hue}>
+            {`Community lead · ${hue}`}
+          </Badge>
+        ))}
+      </Row>
+    </Column>
+  ),
+};
+
 /** A quiet link in the text's color and in the muted one. */
 export const Quiet: Story = {
   render: () => (

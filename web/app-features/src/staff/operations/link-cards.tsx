@@ -72,7 +72,7 @@ export function LinkCardRulesScreen(): ReactNode {
     return (
       <SettingsScreen
         sub
-        icon="link"
+        icon="linkCards"
         title={title}
         notice={
           <ScreenNotice
@@ -88,7 +88,7 @@ export function LinkCardRulesScreen(): ReactNode {
     );
   const rules = read.rules;
   return (
-    <SettingsScreen sub icon="link" title={title}>
+    <SettingsScreen sub icon="linkCards" title={title}>
       <SettingsSection
         heading={t("staff_operations.link_cards.list")}
         count={String(rules.length)}
@@ -341,7 +341,7 @@ export function NewLinkCardRuleScreen({ go, onUnsaved, leaving }: AdminSubProps)
     <>
       <SettingsScreen
         sub
-        icon="link"
+        icon="linkCards"
         title={t("staff_operations.link_cards.new")}
         back={<BackToRules go={go} />}
         foot={<RuleBar sent={f.sent} busy={f.busy} onSave={save} label={t("staff_operations.link_cards.add")} />}
@@ -396,7 +396,7 @@ function RuleForm({ rule, go, onUnsaved, leaving }: AdminSubProps & { rule: Link
     <>
       <SettingsScreen
         sub
-        icon="link"
+        icon="linkCards"
         title={rule.domain}
         back={<BackToRules go={go} />}
         // What ends the rule stands last and apart, after the form and its Save.
@@ -459,7 +459,7 @@ export function LinkCardRuleScreen({ domain, ...sub }: AdminSubProps & { domain:
     return (
       <SettingsScreen
         sub
-        icon="link"
+        icon="linkCards"
         title={t("staff_operations.entry.link_card_domains")}
         back={<BackToRules go={sub.go} />}
         notice={

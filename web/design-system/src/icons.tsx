@@ -92,6 +92,7 @@ import {
   IconLink,
   IconLinkOff,
   IconLoader2,
+  IconLayoutCards,
   IconListDetails,
   IconLock,
   IconLockOpen,
@@ -349,6 +350,7 @@ export const icons = {
   errors: { off: IconBug },
   jobs: { off: IconStack2 },
   measurements: { off: IconGauge },
+  linkCards: { off: IconLayoutCards },
   // The reader's supporter subscription: a payment that failed, the subscription ended, its plan retired.
   paymentFailed: { off: IconCreditCardOff },
   supportEnded: { off: IconHeartBroken },

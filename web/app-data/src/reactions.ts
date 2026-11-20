@@ -19,6 +19,21 @@ export function customEmojisQuery({ queries }: AppData) {
   return queries.queryOptions("get", "/custom_emojis");
 }
 
+/**
+ * Reads the picker's custom emoji again after a write that changes them, past the browser's cache: the server answers
+ * the list `private, max-age=60`, which a plain read again would take from the cache for up to a minute.
+ */
+export async function refreshCustomEmojis(data: AppData): Promise<void> {
+  const { queryKey } = customEmojisQuery(data);
+  await data.queryClient
+    .query({
+      queryKey,
+      queryFn: async ({ signal }) => (await data.api.GET("/custom_emojis", { cache: "no-cache", signal })).data,
+      staleTime: 0,
+    })
+    .catch(() => undefined);
+}
+
 /** The custom emoji of the picker; empty until the server answered, and when it failed. */
 export function useCustomEmojis(): readonly PickerCustomEmoji[] {
   return useQuery(customEmojisQuery(useAppData())).data?.items ?? [];

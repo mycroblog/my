@@ -133,6 +133,7 @@ export function HookAppealsRoute() {
       <HookAppealsScreen
         search={search}
         onSearch={onSearch}
+        go={go}
         onBack={() => {
           go(staffEntryPath("moderation", "hook-decisions"));
         }}

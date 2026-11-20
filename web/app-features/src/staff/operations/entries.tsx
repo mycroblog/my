@@ -25,7 +25,7 @@ export const operationEntries: readonly StaffEntry[] = [
     area: "admin",
     group: "connections",
     permission: "manage_settings",
-    icon: "link",
+    icon: "linkCards",
     name: "staff_operations.entry.link_card_domains",
     hint: "staff_operations.entry.link_card_domains.hint",
     Screen: LinkCardRulesScreen,

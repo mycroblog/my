@@ -39,6 +39,7 @@ export function JobListRoute({ signedIn }: { signedIn: boolean }) {
         <JobListScreen
           search={address.search}
           onSearch={address.onSearch}
+          go={address.go}
           onBack={() => {
             go(jobQueuePath);
           }}

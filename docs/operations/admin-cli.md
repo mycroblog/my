@@ -58,6 +58,10 @@ my admin role revoke alice moderator
 - Grants and revocations are written to the audit log as `role_granted` and `role_revoked` (target kind `role`). The actor of a CLI operation is `cli` (`my admin audit list -target-kind role`).
 - Granting a role the user already has, or revoking one they do not have, changes and records nothing.
 - The last holder of `admin` cannot lose it (exit code 1). Grant `admin` to another user first.
+- The admin screen "Roles" (`/admin/roles`) lists every role and creates, changes and deletes them: a role's page sets its
+  place, its permissions and its badge. It offers only what the rules below allow: a place no higher than your highest
+  role, the permissions you hold (the others a role has are named and kept), only the badge of `admin`, and no deletion
+  of `admin` or `moderator`. Deleting a role asks for its name typed. The roles of a plan are set from the plan.
 - The admin API is `GET /api/v1/admin/roles`, `GET /api/v1/admin/accounts/{id}/roles`, and `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`, and it needs the permission `manage_roles`.
   Through the API, you cannot grant or revoke a role above the highest `position` among your own roles (403). Revoking the last `admin` returns 409.
 - Staff act only on lower ranks. Through the API, moderation actions and lifting them, deciding appeals, lifting email suppressions, revealing an account's private data, issuing a password reset link, and removing two-factor authentication need the highest `position` among your roles to be above that of every role of the target; a higher or equal rank, your own account included, returns 403. A moderator cannot act on an administrator, and one administrator cannot act on another. These commands (`my admin account ...`) have no such limit, so use them when administrators disagree.

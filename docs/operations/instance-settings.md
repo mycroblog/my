@@ -691,9 +691,10 @@ Notes and actors you send.
 - Deletion cannot be undone. Emoji in past posts turn back into text too, and registering the same shortcode again makes a
   different emoji. Images that federated servers copied cannot be deleted.
 - The admin screen ("Custom emoji", `/admin/custom-emojis`), the client API (`/api/v1/admin/custom_emojis`), and the CLI do the
-  same things. On the screen, "Register a custom emoji" opens the registration form (`/admin/custom-emojis/new`), and choosing
-  an emoji in the list opens its page (`/admin/custom-emojis/{id}`), where you change its settings, replace its image, enable or
-  disable it, delete it, or copy one of another server; the list itself enables and disables an emoji with one press. The admin screen and the client API need the role permission `manage_custom_emojis` (only the built-in `admin`
+  same things. On the screen, "Register an emoji" opens the registration form (`/admin/custom-emojis/new`), which warns
+  about an image over 100 KiB, and choosing an emoji in the list opens its page (`/admin/custom-emojis/{id}`), where you enable
+  or disable it, replace its image, change its category, aliases and picker visibility, delete it after typing its shortcode,
+  or copy one of another server. The admin screen and the client API need the role permission `manage_custom_emojis` (only the built-in `admin`
   has it). Registering, copying, replacing the image, changing settings and aliases, enabling and disabling, and deleting are
   recorded in the audit log (target `custom_emoji`) whichever way they are done (an operation from the CLI is recorded as a CLI
   operation).
@@ -716,7 +717,8 @@ my admin emoji requests reject [-reason <text>] <request id>                    
 
 - A user with the role permission `create_custom_emojis` (a user feature) can request the creation of an emoji from "Custom
   emoji" in the settings (`/settings/custom-emojis`), change the aliases, category, and picker visibility of emoji they
-  created, and delete them. Replacing an image is also a request. A request appears nowhere (picker, posts, reactions,
+  created, and delete them; the page shows how many requests they have left this month. Replacing an image is also a
+  request, made with the client API (`POST /api/v1/custom_emoji_requests`, `kind` `image`); the settings page does not offer it. A request appears nowhere (picker, posts, reactions,
   federation) until someone with `manage_custom_emojis` approves it. Approve or reject it on the "Requests" page of "Custom
   emoji" on the admin screen (`/admin/custom-emojis/requests`), with the client API (`/api/v1/admin/custom_emoji_requests`), or with the CLI above. People with
   `manage_custom_emojis` are notified of a request (`admin_custom_emoji_request`), and the requester is notified of the

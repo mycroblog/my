@@ -1,0 +1,254 @@
+{
+  "emoji_own.loading": {
+    "defaultMessage": "Loading your custom emoji…",
+    "description": "On a page of the settings' Custom emoji while the reader's emoji and requests are read."
+  },
+  "emoji_own.failed": {
+    "defaultMessage": "Your custom emoji could not be loaded.",
+    "description": "On a page of the settings' Custom emoji when they could not be read, before Try again."
+  },
+  "emoji_own.missing": {
+    "defaultMessage": "There is no emoji of yours at this address. It may have been deleted.",
+    "description": "At /settings/custom-emojis/{id} for an emoji that is not one the reader made, before the link back."
+  },
+  "emoji_own.all": {
+    "defaultMessage": "Your custom emoji",
+    "description": "The link back to /settings/custom-emojis under the sentence that an address names no emoji of the reader's."
+  },
+  "emoji_own.month": {
+    "defaultMessage": "This month",
+    "description": "The heading of the section of what the reader used of their monthly limit of requests for new emoji."
+  },
+  "emoji_own.quota.used": {
+    "defaultMessage": "You asked for {used} of the {limit} emoji you may ask for this month.",
+    "description": "In This month: the approved and pending requests for new emoji the reader made this month (UTC), out of their limit."
+  },
+  "emoji_own.quota.unlimited": {
+    "defaultMessage": "You asked for {used} emoji this month. There is no monthly limit for you.",
+    "description": "In This month, for a reader with no monthly limit."
+  },
+  "emoji_own.quota.pending": {
+    "defaultMessage": "{count, plural, one {# of them waits for a decision.} other {# of them wait for a decision.}}",
+    "description": "In This month: how many of the requests counted still wait for an administrator."
+  },
+  "emoji_own.quota.resets": {
+    "defaultMessage": "The count starts again on {date}. Deleting an emoji gives no request back.",
+    "description": "In This month: the day the count of requests starts again, and that deleting an emoji does not lower it."
+  },
+  "emoji_own.quota.reached": {
+    "defaultMessage": "You asked for every emoji you may this month. You can ask again from {date}.",
+    "description": "In the place of Request an emoji once the reader reached their monthly limit, with the day it starts again."
+  },
+  "emoji_own.request.new": {
+    "defaultMessage": "Request an emoji",
+    "description": "The button that opens the form of a new request for a custom emoji, and the title of that form."
+  },
+  "emoji_own.request.emoji": {
+    "defaultMessage": "New emoji",
+    "description": "The heading of the section of a new request's shortcode and image."
+  },
+  "emoji_own.request.send": {
+    "defaultMessage": "Send request",
+    "description": "The button of the submit bar of a new request for a custom emoji."
+  },
+  "emoji_own.request.limit": {
+    "defaultMessage": "You asked for every emoji you may this month, so nothing was sent.",
+    "description": "Beside Send request when the server refused it at the monthly limit."
+  },
+  "emoji_own.request.state": {
+    "defaultMessage": "{state, select, pending {Waiting for a decision} approved {Approved} rejected {Not approved} withdrawn {Withdrawn} lapsed {No longer valid: the emoji was deleted} other {{state}}}",
+    "description": "Where a request of the reader's stands, the line under its shortcode."
+  },
+  "emoji_own.request.asked": {
+    "defaultMessage": "Asked {date}",
+    "description": "A fact of a request of the reader's: the day they made it."
+  },
+  "emoji_own.request.reason": {
+    "defaultMessage": "Reason: {reason}",
+    "description": "A fact of a request that was not approved: the reason the administrator wrote."
+  },
+  "emoji_own.request.withdraw": {
+    "defaultMessage": "Withdraw",
+    "description": "The button of a waiting request that withdraws it, freeing its shortcode."
+  },
+  "emoji_own.request.withdrawn": {
+    "defaultMessage": "You withdrew the request for {shortcode}.",
+    "description": "In Your requests once one was withdrawn (its shortcode between colons)."
+  },
+  "emoji_own.request.decided": {
+    "defaultMessage": "This request was decided meanwhile, so it was not withdrawn.",
+    "description": "In Your requests when a withdrawal came after an administrator decided the request."
+  },
+  "emoji_own.request.withdraw_failed": {
+    "defaultMessage": "The request was not withdrawn. Check your connection and try again.",
+    "description": "In Your requests when a withdrawal failed."
+  },
+  "emoji_own.shortcode": {
+    "defaultMessage": "Shortcode",
+    "description": "The field of the shortcode of a requested emoji, which texts write between colons."
+  },
+  "emoji_own.shortcode.rule": {
+    "defaultMessage": "2 to 30 letters (A to Z, a to z), digits and _. Case matters, and it cannot be changed later.",
+    "description": "Under the shortcode of a requested emoji: the rule its value follows, also when it was refused."
+  },
+  "emoji_own.shortcode.taken": {
+    "defaultMessage": "An emoji of this server has this shortcode, or someone asked for it already. Choose another.",
+    "description": "Under the shortcode of a request the server refused because it is taken or reserved."
+  },
+  "emoji_own.image": {
+    "defaultMessage": "Image",
+    "description": "The field of a requested emoji's image."
+  },
+  "emoji_own.image.hint": {
+    "defaultMessage": "A PNG, GIF or WebP, no more than 1,024 pixels on its longer side.",
+    "description": "Under the image field of a request: what the server takes."
+  },
+  "emoji_own.image.choose": {
+    "defaultMessage": "Choose an image",
+    "description": "The button of the image field of a request that opens the file picker."
+  },
+  "emoji_own.image.another": {
+    "defaultMessage": "Choose another",
+    "description": "The button of the image field of a request once one is picked."
+  },
+  "emoji_own.image.none": {
+    "defaultMessage": "No image chosen",
+    "description": "In the place of the file's name in the image field of a request while none is picked."
+  },
+  "emoji_own.image.missing": {
+    "defaultMessage": "Choose the image of the emoji.",
+    "description": "Under the image field of a request when Send request was pressed without one."
+  },
+  "emoji_own.image.format": {
+    "defaultMessage": "Choose a PNG, GIF or WebP image.",
+    "description": "Under the image field of a request when the server refused the file's format."
+  },
+  "emoji_own.image.too_large": {
+    "defaultMessage": "This file is larger than the server takes for an emoji. Choose a smaller one.",
+    "description": "Under the image field of a request when the file is over the server's size limit."
+  },
+  "emoji_own.image.too_big": {
+    "defaultMessage": "Choose an image no more than 1,024 pixels on its longer side.",
+    "description": "Under the image field of a request when the image is too wide or tall."
+  },
+  "emoji_own.image.failed": {
+    "defaultMessage": "The image could not be read. Choose another or try again.",
+    "description": "Under the image field of a request when the upload could not be processed."
+  },
+  "emoji_own.requests": {
+    "defaultMessage": "Your requests",
+    "description": "The heading of the section of the reader's requests for custom emoji."
+  },
+  "emoji_own.requests.empty": {
+    "defaultMessage": "You have not asked for an emoji yet. Your requests and their decisions show here.",
+    "description": "In Your requests while the reader made none."
+  },
+  "emoji_own.emojis": {
+    "defaultMessage": "Your emoji",
+    "description": "The heading of the section of the custom emoji the reader made."
+  },
+  "emoji_own.emojis.empty": {
+    "defaultMessage": "You have no emoji yet. An approved request makes one, which you can change here.",
+    "description": "In Your emoji while the reader made none."
+  },
+  "emoji_own.emoji.category": {
+    "defaultMessage": "Category: {category}",
+    "description": "A fact of one of the reader's emoji: its category in the picker."
+  },
+  "emoji_own.emoji.aliases": {
+    "defaultMessage": "Also {aliases}",
+    "description": "A fact of one of the reader's emoji: its aliases, each between colons."
+  },
+  "emoji_own.emoji.hidden": {
+    "defaultMessage": "Not in the picker",
+    "description": "A fact of one of the reader's emoji that the picker does not offer, though texts can use it."
+  },
+  "emoji_own.emoji.disabled": {
+    "defaultMessage": "Disabled",
+    "description": "At the end of the row of one of the reader's emoji that an administrator disabled."
+  },
+  "emoji_own.emoji.disabled.about": {
+    "defaultMessage": "An administrator disabled this emoji: its :shortcode: stays text everywhere.",
+    "description": "On the page of one of the reader's emoji that an administrator disabled."
+  },
+  "emoji_own.emoji": {
+    "defaultMessage": "Emoji",
+    "description": "The heading of the section of the image of one of the reader's emoji."
+  },
+  "emoji_own.no_image": {
+    "defaultMessage": "No image",
+    "description": "In the place of the image of one of the reader's emoji when it cannot be shown."
+  },
+  "emoji_own.picker": {
+    "defaultMessage": "In the picker",
+    "description": "The heading of the section of one of the reader's emoji's category, aliases and whether the picker offers it."
+  },
+  "emoji_own.category": {
+    "defaultMessage": "Category",
+    "description": "The field of the category of one of the reader's emoji; empty for none."
+  },
+  "emoji_own.category.rule": {
+    "defaultMessage": "Write up to {max} characters.",
+    "description": "Under the category of one of the reader's emoji when it is too long."
+  },
+  "emoji_own.aliases": {
+    "defaultMessage": "Aliases",
+    "description": "The field of the other names of one of the reader's emoji, which the picker finds it by."
+  },
+  "emoji_own.aliases.hint": {
+    "defaultMessage": "Separate them with spaces.",
+    "description": "Under the aliases of one of the reader's emoji."
+  },
+  "emoji_own.aliases.rule": {
+    "defaultMessage": "Write up to {max} aliases, each 2 to 30 letters, digits and _.",
+    "description": "Under the aliases when one breaks the rules of a shortcode or there are too many."
+  },
+  "emoji_own.visible": {
+    "defaultMessage": "Offer it in the picker",
+    "description": "The setting of whether the emoji picker offers one of the reader's emoji."
+  },
+  "emoji_own.visible.value": {
+    "defaultMessage": "{value, select, true {On} other {Off}}",
+    "description": "A value of whether the picker offers one of the reader's emoji: on or off, as the administrators' screen says it."
+  },
+  "emoji_own.save": {
+    "defaultMessage": "Save",
+    "description": "The button of the submit bar of one of the reader's emoji."
+  },
+  "emoji_own.save.refused": {
+    "defaultMessage": "Nothing was saved. Fix what is marked and try again.",
+    "description": "Beside Save or Send request when a field was refused, which is marked under it."
+  },
+  "emoji_own.save.failed": {
+    "defaultMessage": "Nothing was saved. Check your connection and try again.",
+    "description": "Beside Save or Send request when it failed with no field named."
+  },
+  "emoji_own.delete": {
+    "defaultMessage": "Delete the emoji",
+    "description": "The heading of the last section of one of the reader's emoji, apart, which deletes it."
+  },
+  "emoji_own.delete.about": {
+    "defaultMessage": "Posts and profiles that used it show its :shortcode: as text, and no request of this month comes back. This cannot be undone.",
+    "description": "Under the heading of the section that deletes one of the reader's emoji."
+  },
+  "emoji_own.delete.press": {
+    "defaultMessage": "Delete",
+    "description": "The button that deletes one of the reader's emoji, and the confirmation of its question."
+  },
+  "emoji_own.delete.title": {
+    "defaultMessage": "Delete {shortcode}?",
+    "description": "The question before deleting one of the reader's emoji (its shortcode between colons)."
+  },
+  "emoji_own.delete.text": {
+    "defaultMessage": "The emoji and its images are deleted for good. This cannot be undone.",
+    "description": "Under the question before deleting one of the reader's emoji."
+  },
+  "emoji_own.delete.cancel": {
+    "defaultMessage": "Keep the emoji",
+    "description": "The button that closes the question before deleting one of the reader's emoji, keeping it."
+  },
+  "emoji_own.more.failed": {
+    "defaultMessage": "The rest of the list could not be loaded. Try again with Show more.",
+    "description": "On the reader's custom emoji screen, over Show more, when the next page of their emoji or requests could not be read."
+  }
+}
