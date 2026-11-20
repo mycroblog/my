@@ -21,14 +21,17 @@ properties:
     type: string
     format: date-time
   sign_ins:
-    description: The newest 20 sign-ins within the retention, newest first.
+    description: |
+      The newest 20 sign-ins within the retention, newest first; `GET .../sign_ins` pages
+      through them all.
     type: array
     items:
       $ref: ./AdminAccountSignIn.yaml
   same_ip_accounts:
     description: |
       For each IP address of `sign_ins` and `registration_ip`, newest first, up to 20
-      other accounts that registered or signed in from it, newest first.
+      other accounts that registered or signed in from it, newest first; `GET
+      .../same_ip_accounts` pages through them all.
     type: array
     items:
       $ref: ./AdminSameIpAccounts.yaml

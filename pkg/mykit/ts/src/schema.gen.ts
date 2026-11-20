@@ -7945,7 +7945,8 @@ export interface paths {
          * @description An account as the moderators see it: its state, the restrictions of its own
          *     actions, and, for a local account, its registration, whether its email address is
          *     verified, and its roles, with its newest 20 actions and, for a viewer who also has the
-         *     `manage_reports` permission, its newest 20 reports. The email address and the IP
+         *     `manage_reports` permission, its newest 20 reports (`GET /admin/reports?target_account_id=`
+         *     pages through them all). The email address and the IP
          *     addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
          *     Needs the `manage_accounts` permission.
          */
@@ -7970,7 +7971,8 @@ export interface paths {
         /**
          * Show the email address and the IP addresses of a local account
          * @description The primary email address of a local account, where it registered and its newest 20
-         *     sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
+         *     sign-ins came from, and up to 20 other accounts per IP address that used the same one;
+         *     `GET .../sign_ins` and `GET .../same_ip_accounts` page through the rest. Each call is recorded in the audit log as `revealed_private_data` before
          *     anything is returned; it changes nothing else. IP addresses are kept for the retention
          *     of the sign-in and registration origins only. A remote account or the
          *     instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
@@ -7978,6 +7980,59 @@ export interface paths {
          *     `manage_accounts` permission.
          */
         post: operations["revealAdminAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/accounts/{id}/sign_ins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List where the sign-ins of a local account came from
+         * @description The sign-ins of a local account within the retention of the sign-in origins, newest first,
+         *     with their IP addresses: the whole list that `POST .../reveal` starts with its newest 20.
+         *     Each call is recorded in the audit log as `revealed_private_data` before anything is
+         *     returned, as the reveal is. A remote account or the instance actor is a 422 naming `id`. An
+         *     unknown account is a 404. A local account whose roles do not rank below the user's, the
+         *     user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
+         *     `manage_accounts` permission.
+         */
+        get: operations["listAdminAccountSignIns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/accounts/{id}/same_ip_accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the other accounts that used an IP address of a local account
+         * @description The other local accounts that registered or signed in from `ip`, newest first: the whole
+         *     list of which `POST .../reveal` shows 20 per IP address. The account itself is left out. A
+         *     page may be shorter than `limit` and still have a `next_cursor`. Each call is recorded in
+         *     the audit log as `revealed_private_data` before anything is returned, as the reveal is. An
+         *     `ip` that is not an IP address is a 400 naming `ip`. A remote account or the instance actor
+         *     is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank
+         *     below the user's, the user's own included, is a 403
+         *     `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
+         */
+        get: operations["listAdminAccountSameIPAccounts"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -10825,11 +10880,15 @@ export interface components {
              * @description When the account registered from `registration_ip`; omitted with it.
              */
             registered_at?: string;
-            /** @description The newest 20 sign-ins within the retention, newest first. */
+            /**
+             * @description The newest 20 sign-ins within the retention, newest first; `GET .../sign_ins` pages
+             *     through them all.
+             */
             sign_ins: components["schemas"]["AdminAccountSignIn"][];
             /**
              * @description For each IP address of `sign_ins` and `registration_ip`, newest first, up to 20
-             *     other accounts that registered or signed in from it, newest first.
+             *     other accounts that registered or signed in from it, newest first; `GET
+             *     .../same_ip_accounts` pages through them all.
              */
             same_ip_accounts: components["schemas"]["AdminSameIpAccounts"][];
         };
@@ -11094,6 +11153,10 @@ export interface components {
             /** Format: date-time */
             signed_in_at: string;
         };
+        /** @description A page of the sign-ins of an account, newest first. */
+        AdminAccountSignInPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["AdminAccountSignIn"][];
+        };
         /**
          * @description The state of an account, the first that applies: `deleted` (deleted here or on its
          *     server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
@@ -11232,7 +11295,7 @@ export interface components {
          * @description The kind of an audited operation, each on one kind of target. On an `account`:
          *     `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
          *     `revealed_private_data` (a moderator was shown the account's email address and IP
-         *     addresses), `two_factor_disabled` (an administrator removed the account's two-factor
+         *     addresses, a page of its sign-ins, or a page of the accounts that shared an IP address), `two_factor_disabled` (an administrator removed the account's two-factor
          *     authentication), `password_reset_link_issued` (an administrator issued a link that sets
          *     a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
          *     suppression of the primary email address of the account's user), `account_moved` (a limited
@@ -28012,6 +28075,11 @@ export interface operations {
                  */
                 assignee?: string;
                 /**
+                 * @description Keep only the reports about this account, local or remote. An account that no report is
+                 *     about gives an empty page.
+                 */
+                target_account_id?: components["schemas"]["Id"];
+                /**
                  * @description `newest` (the default) lists the most recently filed report first; `oldest` lists the
                  *     report that has waited longest first. The cursor continues the page in the same order.
                  */
@@ -29193,6 +29261,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminAccountPrivateData"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listAdminAccountSignIns: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the account, local or remote. */
+                id: components["parameters"]["AdminAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of sign-ins. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAccountSignInPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listAdminAccountSameIPAccounts: {
+        parameters: {
+            query: {
+                /** @description The IP address, as `sign_ins` or `registration_ip` of the reveal give it. */
+                ip: string;
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the account, local or remote. */
+                id: components["parameters"]["AdminAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of accounts. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAccountPage"];
                 };
             };
             default: components["responses"]["Problem"];

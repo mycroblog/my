@@ -32,6 +32,14 @@ get:
       schema:
         type: string
         minLength: 1
+    - name: target_account_id
+      in: query
+      required: false
+      description: |
+        Keep only the reports about this account, local or remote. An account that no report is
+        about gives an empty page.
+      schema:
+        $ref: ../components/schemas/Id.yaml
     - name: order
       in: query
       required: false
