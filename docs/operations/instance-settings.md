@@ -385,7 +385,7 @@ While it is on:
   `/api/v1/problems/single-user-mode`.
 - **No new local posts.** On a server of one person, a post for "Neighbors" reaches nobody but the followers, so a new
   post cannot be local: the client API answers `422` and leaves it out of what an account may post. A default visibility
-  of "Neighbors" reads as "Followers" and cannot be saved, and a voice chat room for the people of this server announces
+  of "Neighbors" reads as "Followers only" and cannot be saved, and a voice chat room for the people of this server announces
   itself in a post for the followers. Posts that are already local stay local.
 - **The server says what it is.** `single_user` in `GET /api/v1/instance` is `true`, with the effective registration mode
   and timelines and the operator's account as `single_user_account`, and NodeInfo answers `openRegistrations: false` with
