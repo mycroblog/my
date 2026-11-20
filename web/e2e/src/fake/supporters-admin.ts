@@ -87,6 +87,8 @@ const holds = (s: State) => s === "active" || s === "canceling" || s === "past_d
 /** The handlers of the administrators' supporter program, and what a story does with them. */
 export function supportersAdminHandlers(c: SupportersAdminContext): {
   handlers: Handlers;
+  /** The roles its plans are on, where the fake is asked for this administration (`supportersAdmin`); else none. */
+  roles: Handlers;
   admin: FakeSupportersAdmin;
 } {
   const o: FakeSupportersAdminOptions = c.options ?? {};
@@ -388,14 +390,11 @@ export function supportersAdminHandlers(c: SupportersAdminContext): {
       return { status: 200, body: tips() };
     },
 
-    "GET /admin/roles": (): Answer<"GET /admin/roles"> => ({
-      status: 200,
-      body: { items: roles.toSorted((a, b) => b.position - a.position) },
-    }),
-
     "GET /admin/supporter_plans": (): Answer<"GET /admin/supporter_plans"> => ({
       status: 200,
-      body: { items: plans.toSorted((a, b) => a.rank - b.rank).map(counted) },
+      // A fake not asked for this administration (`supportersAdmin`) has no plan, so that what reads the plans
+      // elsewhere (the administration of roles, whose rights name the plans' roles) meets none of these.
+      body: { items: c.options === undefined ? [] : plans.toSorted((a, b) => a.rank - b.rank).map(counted) },
     }),
     "POST /admin/supporter_plans": ({ body }): Answer<"POST /admin/supporter_plans"> => {
       if (!configured)
@@ -514,6 +513,15 @@ export function supportersAdminHandlers(c: SupportersAdminContext): {
 
   return {
     handlers,
+    roles:
+      c.options === undefined
+        ? {}
+        : {
+            "GET /admin/roles": (): Answer<"GET /admin/roles"> => ({
+              status: 200,
+              body: { items: roles.toSorted((a, b) => b.position - a.position) },
+            }),
+          },
     admin: {
       planId: (key) => keyed[key]?.id ?? "none",
       subscriptionId: (key) => byKey.get(key)?.id ?? "none",

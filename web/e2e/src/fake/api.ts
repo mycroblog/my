@@ -3919,6 +3919,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     // ---- The administration of roles, custom emoji, announcements and webhooks ----------------------------------------
 
     ...staffServer.handlers,
+    // The roles a story of the supporters' administration names its plans on (supporters-admin.ts), where it asks
+    // for that administration; the administration of roles' own (staff-roles.ts) everywhere else.
+    ...supportersAdmin.roles,
     // ---- The administration's settings, texts, rules, relays, login providers and OAuth apps -------------------------
 
     ...administered.handlers,
