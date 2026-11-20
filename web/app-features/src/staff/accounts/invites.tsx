@@ -40,17 +40,8 @@ import {
 import { useId, useRef, useState, type ReactNode } from "react";
 import type { StaffAddress } from "../entries";
 import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
-import {
-  CopyValue,
-  cursorOf,
-  LabelledSelect,
-  lengthOptions,
-  Pages,
-  refusalWords,
-  secondsOf,
-  useEnd,
-  useSaid,
-} from "./parts";
+import { CopyValue } from "../settings/parts";
+import { cursorOf, LabelledSelect, lengthOptions, Pages, refusalWords, secondsOf, useEnd, useSaid } from "./parts";
 
 /** The address of the list of invites. */
 const invitesPath = "/moderation/invites";
@@ -242,7 +233,12 @@ export function NewInviteScreen({ onBack }: { onBack: () => void }): ReactNode {
         <ScreenTitle back={back} ref={titleRef}>
           {t("staff_accounts.invites.made")}
         </ScreenTitle>
-        <CopyValue label={t("staff_accounts.invites.link")} value={made.url} copy={t("staff_accounts.invites.copy")} />
+        <CopyValue
+          primary
+          label={t("staff_accounts.invites.link")}
+          value={made.url}
+          copy={t("staff_accounts.invites.copy")}
+        />
         <FactList
           label={t("staff_accounts.invites.made")}
           items={[

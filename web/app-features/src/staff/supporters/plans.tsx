@@ -17,7 +17,7 @@ import {
   planRefusal,
   useAdminPlan,
   useAdminPlans,
-  useAdminRoles,
+  usePlanRoleList,
   usePermissions,
   usePlanActions,
   refusal,
@@ -257,7 +257,7 @@ function PlanForm({
   const { t } = useStaffStrings();
   const actions = usePlanActions();
   const readsRoles = usePermissions().includes("manage_roles");
-  const roles = useAdminRoles(plan === undefined && readsRoles);
+  const roles = usePlanRoleList(plan === undefined && readsRoles);
   const ids = {
     role: useId(),
     name: useId(),

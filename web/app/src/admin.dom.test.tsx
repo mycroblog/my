@@ -601,9 +601,13 @@ const everyEntry = [
   "/admin/documents",
   "/admin/rules",
   "/admin/translation",
+  "/admin/roles",
+  "/admin/announcements",
+  "/admin/custom-emojis",
   "/admin/relays",
   "/admin/login-providers",
   "/admin/oauth-apps",
+  "/admin/webhooks",
   "/admin/finance",
   "/admin/supporters",
 ];

@@ -126,7 +126,13 @@ export function filtered(search: StaffSearch, change: StaffSearch): StaffSearch 
 }
 
 /** Previous and Next under a list, along the pages of the address of `address`, Next to the page of `next`. */
-export function Pages({ address, next }: { address: StaffAddress; next: string | undefined }) {
+export function Pages({
+  address,
+  next,
+}: {
+  address: Pick<StaffAddress, "search" | "onSearch">;
+  next: string | undefined;
+}) {
   const { search, onSearch } = address;
   const trail = trailOf(search);
   const previous = trail.at(-1);

@@ -10,6 +10,7 @@ import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { answered, oneRead, type OneRead } from "./finance-admin";
+import { adminRolesQuery, type AdminRole } from "./admin-roles";
 import { instanceQuery } from "./instance";
 import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
@@ -38,8 +39,6 @@ export type AdminSubscription = Schemas["AdminSupporterSubscription"];
 export type SubscriptionState = Schemas["SupporterSubscriptionState"];
 /** The state of the payment provider: its mode, its webhooks, its last reconciliation. */
 export type PaymentStatus = Schemas["PaymentStatus"];
-/** A role, as a holder of `manage_roles` reads it. */
-export type AdminRole = Schemas["AdminRole"];
 
 /** The states of a subscription, those that hold the plan's role first. */
 export const subscriptionStates = [
@@ -252,18 +251,8 @@ export async function loadAdminPlans(data: AppData): Promise<void> {
   await data.queryClient.query(adminPlansQuery(data)).catch(() => undefined);
 }
 
-/** The roles, as a holder of `manage_roles` reads them. */
-export function adminRolesQuery({ queries }: AppData) {
-  return queries.queryOptions("get", "/admin/roles");
-}
-
-/** Reads the roles, for a route's loader. */
-export async function loadAdminRoles(data: AppData): Promise<void> {
-  await data.queryClient.query(adminRolesQuery(data)).catch(() => undefined);
-}
-
-/** The roles, for a holder of `manage_roles`; nothing is read while `enabled` is false. */
-export function useAdminRoles(enabled = true): SupporterRead<readonly AdminRole[]> {
+/** The roles a new plan may be on, for a holder of `manage_roles`; nothing is read while `enabled` is false. */
+export function usePlanRoleList(enabled = true): SupporterRead<readonly AdminRole[]> {
   const read = oneRead(useQuery({ ...adminRolesQuery(useAppData()), enabled }));
   return { ...read, value: read.value?.items };
 }

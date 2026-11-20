@@ -12,10 +12,7 @@ import {
   type AccountActionKind,
   type ModeratedAccountState,
 } from "@my/app-data";
-import { copyText } from "@my/platform";
 import {
-  Button,
-  CopyBlock,
   FieldError,
   FieldLabel,
   Select,
@@ -24,10 +21,10 @@ import {
   type RecordState,
   type SelectOption,
 } from "@my/design-system";
-import { useId, useState } from "react";
+import { useId } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 
-export { cursorOf, filtered, Pages, useSaid } from "../parts";
+export { cursorOf, filtered, Pages, Section, useSaid } from "../parts";
 
 /** What the reader is told of a refused write of theirs, by what the server's problem means. */
 export function refusalWords(t: T, error: unknown): string {
@@ -132,33 +129,6 @@ export function lengthOptions(t: T): SelectOption[] {
 
 /** The seconds of a choice of `lengthOptions`; undefined for until lifted. */
 export const secondsOf = (days: string): number | undefined => (days === "0" ? undefined : Number(days) * 86_400);
-
-/**
- * A value the reader copies and passes on (a password reset link, an invite's link), named `label`, with the button
- * that copies it, named `copy`, the screen's primary action, and what came of copying.
- */
-export function CopyValue({ label, value, copy }: { label: string; value: string; copy: string }) {
-  const { t } = useStaffStrings();
-  const [copied, setCopied] = useState<boolean>();
-  return (
-    <CopyBlock
-      label={label}
-      values={[value]}
-      action={
-        <Button
-          kind="primary"
-          size="timeline"
-          onPress={() => {
-            void copyText(value).then(setCopied);
-          }}
-        >
-          {copy}
-        </Button>
-      }
-      result={copied === undefined ? undefined : t(copied ? "staff_accounts.copied" : "staff_accounts.copy_failed")}
-    />
-  );
-}
 
 /**
  * The handle a staff screen names the account of `id` by, from what `useStaffAccounts` read: while it is read, the

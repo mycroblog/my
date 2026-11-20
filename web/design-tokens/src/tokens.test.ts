@@ -8,6 +8,8 @@ import {
   color,
   contrast,
   content,
+  badgeColor,
+  badgeContrastPairs,
   contrastPairs,
   control,
   dialog,
@@ -41,6 +43,16 @@ describe("contrastPairs", () => {
     for (const scheme of ["light", "dark"] as const) {
       test(`${fg} on ${bg} reaches ${minimum}:1 in ${scheme}`, () => {
         expect(contrast(color[fg][scheme], color[bg][scheme])).toBeGreaterThanOrEqual(minimum);
+      });
+    }
+  }
+});
+
+describe("badgeContrastPairs", () => {
+  for (const { fg, bg, minimum } of badgeContrastPairs) {
+    for (const scheme of ["light", "dark"] as const) {
+      test(`${fg} on ${bg} reaches ${minimum}:1 in ${scheme}`, () => {
+        expect(contrast(badgeColor[fg][scheme], badgeColor[bg][scheme])).toBeGreaterThanOrEqual(minimum);
       });
     }
   }
