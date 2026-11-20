@@ -96,7 +96,7 @@ function KeptValue({ fact, termId }: { fact: Fact; termId: string }) {
   const s = facts();
   const { lang } = useReader(undefined);
   const strings = stringsIn(lang);
-  const value = useRef<HTMLSpanElement>(null);
+  const value = useRef<HTMLElement>(null);
   const [asked, setAsked] = useState(false);
   const shown = fact.value !== undefined && fact.value !== null;
   useEffect(() => {
@@ -108,9 +108,10 @@ function KeptValue({ fact, termId }: { fact: Fact; termId: string }) {
         <Row as="span" inline rigid className={s.eye()}>
           <Icon name="revealed" place="caption" />
         </Row>
-        <span ref={value} tabIndex={asked ? -1 : undefined} className={s.revealed()}>
-          {shownValue(fact.value)}
-        </span>
+        {/* The value itself takes the focus: the element that holds its text, isolated left to right. */}
+        <bdi ref={value} dir="ltr" tabIndex={asked ? -1 : undefined} className={s.revealed()}>
+          {typeof fact.value === "string" ? codeRuns(fact.value) : fact.value}
+        </bdi>
       </Row>
     );
   return (

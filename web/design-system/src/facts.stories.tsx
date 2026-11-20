@@ -154,7 +154,7 @@ export const WithActions: Story = {
   ),
 };
 
-/** The registration in a column narrower than a phone's (a detail inside a log's entry): each term over its value. */
+/** The registration in a column of a phone's width or narrower (a detail inside a log's entry): each term over its value. */
 export const NarrowColumn: Story = {
   render: () => (
     <div style={{ maxWidth: rem(208), padding: rem(16) }}>
