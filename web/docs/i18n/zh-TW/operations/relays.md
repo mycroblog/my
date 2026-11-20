@@ -31,10 +31,10 @@ my admin relay delete <relay id>                                  # delete a rel
 你無法登錄受到網域處置（`suspend`）的伺服器上的中繼站。如果已加入的中繼站所在的伺服器之後被停權，狀態不會改變，
 但伺服器不會再與該中繼站互相傳送任何內容，管理區也會在該中繼站的狀態中說明這一點。
 
-<!-- source: what-the-server-sends 1db52c508f9c -->
+<!-- source: what-the-server-sends c55ab0a5b079 -->
 ## 伺服器送出的內容
 
-- 只會送出本站**公開**（`public`）貼文的建立、編輯與刪除。`unlisted`、僅追蹤者、私訊或僅限本站（`local`）的貼文，以及轉發，一律不會送出。若不想讓貼文進入中繼站，請以 `unlisted` 或 `local` 發布。沒有個別使用者選擇退出的設定。
+- 只會送出本站**公開**（`public`）貼文的建立、編輯與刪除。`unlisted`、僅追蹤者、私訊或鄰里（`local`）的貼文，以及轉發，一律不會送出。若不想讓貼文進入中繼站，請以 `unlisted` 或 `local` 發布。沒有個別使用者選擇退出的設定。
 - 公開貼文的文件帶有 Linked Data Signature（`RsaSignature2017`），讓 Mastodon 和 Misskey 能接受由中繼站原封不動轉送的貼文。
 - 傳送次數會增加「已加入的中繼站數量 × 公開貼文數量」（對同一個中繼站的傳送會合併為一次）。
 
