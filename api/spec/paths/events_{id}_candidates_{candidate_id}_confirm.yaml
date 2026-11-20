@@ -16,6 +16,8 @@ post:
   tags: [events]
   security:
     - oauth2: ["write:events"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The event.

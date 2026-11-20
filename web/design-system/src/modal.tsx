@@ -6,7 +6,8 @@
 // then `shown`; `hidden` again as it leaves): the backdrop fades in its blurred dim by opacity alone, and the panel
 // rises by opacity and a transform, in a modal's time and easing, from the same frame. A modal leaves the same way back,
 // in the easing of what leaves, and unmounts when it ends; it leaves only where its caller renders it in a
-// `ModalPresence`. With reduced motion it is there at once and gone at once.
+// `ModalPresence`. With reduced motion it is there at once and gone at once. Motion runs with the features of its
+// animations alone (`domMin`), none of its gestures, layout or drag, which the modals do not use.
 //
 // It is React Aria's modal, built from its hooks: React Aria Components' `ModalOverlay` is not used, because it mounts
 // its overlay hidden (`useEnterAnimation`: opacity 0, clipped) and reveals it through `runAfterKeyboard`, which, on a
@@ -21,15 +22,7 @@
 // frames of a page, which read the viewport.
 
 import { transition } from "@my/design-tokens";
-import {
-  AnimatePresence,
-  domAnimation,
-  LazyMotion,
-  m,
-  useIsPresent,
-  useReducedMotion,
-  type Variants,
-} from "motion/react";
+import { AnimatePresence, domMin, LazyMotion, m, useIsPresent, useReducedMotion, type Variants } from "motion/react";
 import { useRef, type ReactNode } from "react";
 import { DismissButton, Overlay } from "react-aria/Overlay";
 import { useModalOverlay } from "react-aria/useModalOverlay";
@@ -205,7 +198,7 @@ export function ModalLayer({
   const { modalProps } = useModalOverlay({ isDismissable: true, isKeyboardDismissDisabled: ownEscape }, state, ref);
   return (
     <Overlay isExiting={!present}>
-      <LazyMotion features={domAnimation} strict>
+      <LazyMotion features={domMin} strict>
         <ModalFrame place={place} backdrop={dim} idle={idle || !present} states={modalStates(reduced)}>
           <div {...modalProps} ref={ref} className="contents">
             <DismissButton onDismiss={onDismiss} />

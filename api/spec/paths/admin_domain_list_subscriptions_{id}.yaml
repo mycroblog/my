@@ -25,6 +25,8 @@ patch:
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -55,6 +57,7 @@ delete:
       description: Lift the actions the subscription issued.
       schema:
         type: boolean
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The subscription is deleted.

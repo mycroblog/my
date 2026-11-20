@@ -19,6 +19,10 @@
 // that the oauth2 security scheme declares. An admin operation (admin:read or admin:write)
 // names the permission of the user's roles that its handler checks with x-permission, which
 // lets a token of that permission's scope call it (ADR-0090 §17).
+//
+// Every write (POST, PUT, PATCH, DELETE) takes the Idempotency-Key header, or says with
+// x-no-idempotency-key why it takes none (its answer carries a secret or a payment provider's URL
+// that the server does not keep, or each call must reach the audit log); the Server keeps the answers of the operations that take it (idempotency.go).
 package main
 
 import (
@@ -57,6 +61,8 @@ type access struct {
 	// permission is the operation's x-permission: the permission of the user's roles that it
 	// needs.
 	permission string
+	// idempotent is true when the operation takes the Idempotency-Key header.
+	idempotent bool
 }
 
 // deprecation is the schedule of a deprecated operation: the Deprecation header carries
@@ -151,6 +157,46 @@ func firstPartyOnly(raw any) (bool, error) {
 	return v, nil
 }
 
+// noIdempotencyKeyExtension says why a write takes no Idempotency-Key:
+//
+//	x-no-idempotency-key: The answer carries the client secret, which the server does not keep.
+const noIdempotencyKeyExtension = "x-no-idempotency-key"
+
+// idempotencyKeyHeader is the header parameter that makes a write safe to send again.
+const idempotencyKeyHeader = "Idempotency-Key"
+
+// idempotency reads whether the operation of method takes the Idempotency-Key header, and
+// checks that a write takes it or says why with x-no-idempotency-key, and that no other
+// operation says so.
+func idempotency(method string, op *openapi3.Operation) (bool, error) {
+	takes := false
+	for _, p := range op.Parameters {
+		if p.Value != nil && p.Value.In == openapi3.ParameterInHeader && p.Value.Name == idempotencyKeyHeader {
+			takes = true
+		}
+	}
+	raw, exempt := op.Extensions[noIdempotencyKeyExtension]
+	write := slices.Contains([]string{"POST", "PUT", "PATCH", "DELETE"}, strings.ToUpper(method))
+	switch {
+	case exempt && (!write || takes):
+		return false, fmt.Errorf("%s is only for a write that takes no %s", noIdempotencyKeyExtension, idempotencyKeyHeader)
+	case exempt:
+		var why string
+		switch r := raw.(type) {
+		case string:
+			why = r
+		case json.RawMessage:
+			_ = json.Unmarshal(r, &why)
+		}
+		if strings.TrimSpace(why) == "" {
+			return false, fmt.Errorf("%s says why, as a string", noIdempotencyKeyExtension)
+		}
+	case write && !takes:
+		return false, fmt.Errorf("a write takes the %s header (../components/parameters/IdempotencyKey.yaml), or says why not with %s", idempotencyKeyHeader, noIdempotencyKeyExtension)
+	}
+	return takes, nil
+}
+
 func main() {
 	out := flag.String("o", "", "output file")
 	flag.Parse()
@@ -222,6 +268,10 @@ func operations(doc *openapi3.T) (map[string]access, error) {
 					errs = append(errs, fmt.Errorf("%s %s (%s): %s needs the scope admin:read or admin:write", method, path, op.OperationID, permissionExtension))
 					continue
 				}
+			}
+			if a.idempotent, err = idempotency(method, op); err != nil {
+				errs = append(errs, fmt.Errorf("%s %s (%s): %w", method, path, op.OperationID, err))
+				continue
 			}
 			rawSunset, hasSunset := op.Extensions[sunsetExtension]
 			switch {
@@ -316,6 +366,9 @@ func render(ops map[string]access) ([]byte, error) {
 		}
 		if a.permission != "" {
 			fields = append(fields, "Permission: "+strconv.Quote(a.permission))
+		}
+		if a.idempotent {
+			fields = append(fields, "Idempotent: true")
 		}
 		if a.deprecation != nil {
 			fields = append(fields, fmt.Sprintf("Deprecated: %d, Sunset: %d", a.deprecation.deprecated.Unix(), a.deprecation.sunset.Unix()))

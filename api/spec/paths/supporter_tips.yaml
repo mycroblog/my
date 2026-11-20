@@ -20,6 +20,7 @@ post:
   tags: [supporters]
   security:
     - oauth2: ["write:supporters"]
+  x-no-idempotency-key: The answer carries the payment provider's checkout URL, which is not kept; starting again continues the open tip.
   requestBody:
     required: true
     content:

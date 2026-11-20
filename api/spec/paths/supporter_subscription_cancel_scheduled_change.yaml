@@ -9,6 +9,8 @@ post:
   tags: [supporters]
   security:
     - oauth2: ["write:supporters"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The subscription without the scheduled change.

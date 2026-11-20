@@ -10,6 +10,8 @@ post:
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The room with the user's hand raised.
@@ -30,6 +32,8 @@ delete:
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The room with the user's hand down.

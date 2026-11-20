@@ -75,8 +75,10 @@ export type ArticleDraft = {
   readonly scheduledAt?: string | undefined;
   /** Its last schedule failed: the time it was for and why it was not published (ADR-0156 §8). */
   readonly failure?: { readonly publishAt: string; readonly reason: DraftFailureReason } | undefined;
-  /** The Idempotency-Key of its publication, the same for every attempt. */
+  /** What the Idempotency-Key of its publication is made from (postKey). */
   readonly key: string;
+  /** How many of its writes the server answered without publishing it: each one renews the key (postKey). */
+  readonly answers?: number | undefined;
 };
 
 /** An article's visibility from a post's: `direct`, which an article never is, is followers-only. */

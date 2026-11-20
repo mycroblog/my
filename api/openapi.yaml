@@ -24,6 +24,9 @@ info:
       all its users (the `client` policy). Past a limit the answer is 429 with `Retry-After`.
       The fields are left out while the server cannot read its limits, which then let requests
       through.
+    - Every write (`POST`, `PUT`, `PATCH`, `DELETE`) takes an `Idempotency-Key`, with which
+      a request whose answer did not arrive is sent again and carried out once. The few
+      whose answer carries a secret take none (`x-no-idempotency-key` says why).
     - This document is served at `GET /openapi.yaml`, without a limit or a token.
     - IDs are UUIDv7 strings. Collections use keyset pagination: pass the `next_cursor` of a
       page as `cursor` to get the next page.
@@ -232,6 +235,8 @@ paths:
       security:
         - oauth2:
             - write:custom_emojis
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -258,6 +263,8 @@ paths:
       security:
         - oauth2:
             - write:custom_emojis
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The emoji is deleted.
@@ -312,6 +319,8 @@ paths:
       security:
         - oauth2:
             - write:custom_emojis
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -341,6 +350,8 @@ paths:
       security:
         - oauth2:
             - write:custom_emojis
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/CustomEmojiRequest'
@@ -720,6 +731,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -778,6 +791,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -810,6 +825,7 @@ paths:
             type: string
             minLength: 1
             maxLength: 2048
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AccountAliasList'
@@ -849,6 +865,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -911,6 +929,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -949,6 +969,8 @@ paths:
       security:
         - oauth2:
             - read:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1008,6 +1030,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1061,6 +1085,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1114,6 +1140,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1169,6 +1197,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1225,6 +1255,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1299,6 +1331,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1342,6 +1376,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1394,6 +1430,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1420,6 +1458,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The move is canceled.
@@ -1477,6 +1517,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1512,6 +1554,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1542,6 +1586,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           description: The verification email is queued.
@@ -1592,6 +1638,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           description: The export, being built.
@@ -1735,6 +1783,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1771,6 +1821,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1827,6 +1879,7 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      x-no-idempotency-key: The answer carries the new TOTP secret, which the server does not keep to send again.
       responses:
         '200':
           description: The new secret.
@@ -1855,6 +1908,7 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      x-no-idempotency-key: The answer carries the recovery codes, which the server does not keep to send again.
       requestBody:
         required: true
         content:
@@ -1888,6 +1942,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1920,6 +1976,7 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      x-no-idempotency-key: The answer carries the recovery codes, which the server does not keep to send again.
       requestBody:
         required: true
         content:
@@ -1979,6 +2036,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -2025,6 +2084,7 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      x-no-idempotency-key: The answer carries a one-time registration token; start a new registration instead.
       requestBody:
         required: true
         content:
@@ -2059,6 +2119,7 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      x-no-idempotency-key: The answer carries a one-time confirmation token; start a new confirmation instead.
       responses:
         '200':
           description: The options of the confirmation.
@@ -2092,6 +2153,7 @@ paths:
           description: The ID of the passkey.
           schema:
             $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The passkey is removed.
@@ -2146,6 +2208,7 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      x-no-idempotency-key: The answer carries a one-time start URL; start a new link instead.
       requestBody:
         required: true
         content:
@@ -2188,6 +2251,7 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      x-no-idempotency-key: The answer carries a one-time start URL; start a new confirmation instead.
       requestBody:
         required: true
         content:
@@ -2230,6 +2294,7 @@ paths:
           description: The ID of the link.
           schema:
             $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The account is unlinked.
@@ -2275,6 +2340,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: Every other browser is signed out.
@@ -2304,6 +2371,7 @@ paths:
           description: The ID of the session (the `id` of a browser session).
           schema:
             $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The browser is signed out.
@@ -2358,6 +2426,7 @@ paths:
           description: The ID of the app (the `id` of an authorized app).
           schema:
             $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The app is revoked.
@@ -2409,6 +2478,7 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      x-no-idempotency-key: The answer carries the client secret, which the server does not keep to send again.
       requestBody:
         required: true
         content:
@@ -2459,6 +2529,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -2483,6 +2555,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The app is deleted.
@@ -2505,6 +2579,7 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      x-no-idempotency-key: The answer carries the client secret, which the server does not keep to send again.
       responses:
         '200':
           description: The new secret.
@@ -2536,6 +2611,7 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      x-no-idempotency-key: The answer carries the tokens, which the server does not keep to send again.
       requestBody:
         content:
           application/json:
@@ -2775,6 +2851,7 @@ paths:
             - write:blocks
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -2793,6 +2870,7 @@ paths:
             - write:blocks
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -2821,6 +2899,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -2843,6 +2922,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -2961,6 +3041,7 @@ paths:
             - write:mutes
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -2983,6 +3064,7 @@ paths:
             - write:mutes
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -3004,6 +3086,7 @@ paths:
             - write:accounts
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -3026,6 +3109,7 @@ paths:
             - write:accounts
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -3045,6 +3129,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -3069,6 +3154,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -3087,6 +3173,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -3164,6 +3251,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -3181,6 +3269,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -3233,6 +3322,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The request, answered.
@@ -3257,6 +3348,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The request, answered.
@@ -3334,6 +3427,8 @@ paths:
       security:
         - oauth2:
             - write:mutes
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -3371,6 +3466,7 @@ paths:
             type: string
             minLength: 1
             maxLength: 253
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The domain is not muted.
@@ -3403,6 +3499,8 @@ paths:
       security:
         - oauth2:
             - write:follows
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -3443,6 +3541,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/ListId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -3467,6 +3566,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/ListId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The list is deleted.
@@ -3513,6 +3613,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ListId'
         - $ref: '#/components/parameters/ListAccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The account is in the list.
@@ -3532,6 +3633,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ListId'
         - $ref: '#/components/parameters/ListAccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The account is not in the list.
@@ -3568,6 +3670,8 @@ paths:
       security:
         - oauth2:
             - write:media
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -3630,6 +3734,8 @@ paths:
       security:
         - oauth2:
             - write:media
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -3713,6 +3819,7 @@ paths:
           description: The ID of the action.
           schema:
             $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -3788,6 +3895,7 @@ paths:
             - write:statuses
       parameters:
         - $ref: '#/components/parameters/HookDecisionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -3888,6 +3996,8 @@ paths:
       security:
         - oauth2:
             - write:notifications
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -3956,6 +4066,7 @@ paths:
           description: The ID of the notification.
           schema:
             $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The notification is dismissed.
@@ -4080,6 +4191,7 @@ paths:
             - write:notifications
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The request is accepted.
@@ -4100,6 +4212,7 @@ paths:
             - write:notifications
       parameters:
         - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The request is dismissed.
@@ -4145,6 +4258,8 @@ paths:
       security:
         - oauth2:
             - push
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4172,6 +4287,8 @@ paths:
       security:
         - oauth2:
             - push
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The grant has no subscription.
@@ -4315,6 +4432,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4353,6 +4472,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4413,6 +4534,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4457,6 +4580,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/DraftId'
         - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4481,6 +4605,7 @@ paths:
             - write:statuses
       parameters:
         - $ref: '#/components/parameters/DraftId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The draft is deleted.
@@ -4506,6 +4631,7 @@ paths:
             - write:statuses
       parameters:
         - $ref: '#/components/parameters/DraftId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4528,6 +4654,7 @@ paths:
             - write:statuses
       parameters:
         - $ref: '#/components/parameters/DraftId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Draft'
@@ -4549,6 +4676,7 @@ paths:
             - write:statuses
       parameters:
         - $ref: '#/components/parameters/DraftId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '201':
           description: The posted status.
@@ -4707,6 +4835,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4737,6 +4867,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The status is deleted.
@@ -4754,6 +4886,8 @@ paths:
       security:
         - oauth2:
             - write:bookmarks
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4768,6 +4902,8 @@ paths:
       security:
         - oauth2:
             - write:bookmarks
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4792,6 +4928,8 @@ paths:
       security:
         - oauth2:
             - write:mutes
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4809,6 +4947,8 @@ paths:
       security:
         - oauth2:
             - write:mutes
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4829,6 +4969,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4843,6 +4985,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4893,6 +5037,8 @@ paths:
       security:
         - oauth2:
             - write:favourites
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4907,6 +5053,8 @@ paths:
       security:
         - oauth2:
             - write:favourites
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4953,6 +5101,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4967,6 +5117,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4991,6 +5143,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -5020,6 +5174,8 @@ paths:
       security:
         - oauth2:
             - write:favourites
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -5040,6 +5196,8 @@ paths:
       security:
         - oauth2:
             - write:favourites
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -5116,6 +5274,8 @@ paths:
       security:
         - oauth2:
             - read:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -5151,6 +5311,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -5209,6 +5371,8 @@ paths:
       security:
         - oauth2:
             - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The approval is revoked.
@@ -5405,6 +5569,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/HashtagName'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Hashtag'
@@ -5421,6 +5586,7 @@ paths:
             - write:follows
       parameters:
         - $ref: '#/components/parameters/HashtagName'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Hashtag'
@@ -5469,6 +5635,8 @@ paths:
       security:
         - oauth2:
             - write:filters
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -5511,6 +5679,7 @@ paths:
             - write:filters
       parameters:
         - $ref: '#/components/parameters/KeywordFilterId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -5533,6 +5702,7 @@ paths:
             - write:filters
       parameters:
         - $ref: '#/components/parameters/KeywordFilterId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The filter is deleted.
@@ -5569,6 +5739,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -5777,6 +5949,7 @@ paths:
             - write:statuses
       parameters:
         - $ref: '#/components/parameters/ConversationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/Conversation'
@@ -5799,6 +5972,7 @@ paths:
             - write:statuses
       parameters:
         - $ref: '#/components/parameters/ConversationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The conversation is hidden.
@@ -5852,6 +6026,8 @@ paths:
       security:
         - oauth2:
             - write:reports
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -5938,6 +6114,7 @@ paths:
             - write:notifications
       parameters:
         - $ref: '#/components/parameters/AnnouncementId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The announcement, read.
@@ -6280,6 +6457,7 @@ paths:
       security:
         - oauth2:
             - write:supporters
+      x-no-idempotency-key: The answer carries the payment provider's checkout URL, which is not kept; starting again continues the open checkout.
       requestBody:
         required: true
         content:
@@ -6312,6 +6490,8 @@ paths:
       security:
         - oauth2:
             - write:supporters
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The subscription as it is now, or none.
@@ -6346,6 +6526,8 @@ paths:
       security:
         - oauth2:
             - write:supporters
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -6377,6 +6559,8 @@ paths:
       security:
         - oauth2:
             - write:supporters
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The subscription after the cancellation.
@@ -6401,6 +6585,8 @@ paths:
       security:
         - oauth2:
             - write:supporters
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The subscription after the resumption.
@@ -6426,6 +6612,8 @@ paths:
       security:
         - oauth2:
             - write:supporters
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The subscription without the scheduled change.
@@ -6452,6 +6640,7 @@ paths:
       security:
         - oauth2:
             - write:supporters
+      x-no-idempotency-key: The answer carries the payment provider's portal URL, which is not kept; open it again instead.
       responses:
         '200':
           description: The portal to open.
@@ -6488,6 +6677,7 @@ paths:
       security:
         - oauth2:
             - write:supporters
+      x-no-idempotency-key: The answer carries the payment provider's checkout URL, which is not kept; starting again continues the open tip.
       requestBody:
         required: true
         content:
@@ -6587,6 +6777,7 @@ paths:
       security:
         - oauth2:
             - write:voice
+      x-no-idempotency-key: The answer carries a media grant, which the server does not keep to send again.
       requestBody:
         required: true
         content:
@@ -6643,6 +6834,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -6672,6 +6865,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The room ended.
@@ -6695,6 +6890,7 @@ paths:
       security:
         - oauth2:
             - write:voice
+      x-no-idempotency-key: The answer carries a media grant, which the server does not keep to send again.
       responses:
         '200':
           description: The room and the new session.
@@ -6740,6 +6936,7 @@ paths:
           schema:
             type: boolean
             default: false
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The user left the room.
@@ -6762,6 +6959,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -6789,6 +6988,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -6824,6 +7025,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The room with the user as a speaker.
@@ -6847,6 +7050,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The room with the user as a listener.
@@ -6873,6 +7078,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The room with the user's hand raised.
@@ -6895,6 +7102,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The room with the user's hand down.
@@ -6923,6 +7132,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The room after the removal.
@@ -6951,6 +7162,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The room after the grant.
@@ -6974,6 +7187,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The room after the revocation.
@@ -7001,6 +7216,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The room with the participant's hand down.
@@ -7028,6 +7245,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The participant is muted.
@@ -7052,6 +7271,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The room with the new co-host.
@@ -7075,6 +7296,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The room without the co-host.
@@ -7132,6 +7355,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7167,6 +7392,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The invitation is revoked.
@@ -7267,6 +7494,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7295,6 +7524,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7323,6 +7554,7 @@ paths:
       security:
         - oauth2:
             - write:voice
+      x-no-idempotency-key: The answer carries a media grant, which the server does not keep to send again.
       requestBody:
         required: true
         content:
@@ -7359,6 +7591,8 @@ paths:
       security:
         - oauth2:
             - write:voice
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7475,6 +7709,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7533,6 +7769,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7601,6 +7839,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -7638,6 +7878,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7703,6 +7945,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The attendee.
@@ -7726,6 +7970,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The attendee.
@@ -7782,6 +8028,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7816,6 +8064,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: Done.
@@ -7840,6 +8090,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The event.
@@ -7863,6 +8115,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The event.
@@ -7917,6 +8171,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7954,6 +8210,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: Done.
@@ -7977,6 +8235,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -8046,6 +8306,8 @@ paths:
       security:
         - oauth2:
             - write:events
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The event.
@@ -8085,6 +8347,8 @@ paths:
       tags:
         - client-errors
       security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -8117,6 +8381,8 @@ paths:
       tags:
         - client-errors
       security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -8294,6 +8560,7 @@ paths:
           description: The ID of the dead job.
           schema:
             $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           description: The job is enqueued.
@@ -8403,6 +8670,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/InstanceDomain'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminInstanceHealth'
@@ -8480,6 +8748,7 @@ paths:
       security:
         - oauth2:
             - admin:read
+      x-no-idempotency-key: Every call must reach the permission check and the audit log; a repeat changes nothing.
       parameters:
         - $ref: '#/components/parameters/InstanceDomain'
         - $ref: '#/components/parameters/DeliveryId'
@@ -8606,6 +8875,7 @@ paths:
           description: The billing source.
           schema:
             $ref: '#/components/schemas/BillingSourceName'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           description: The import is queued.
@@ -8655,6 +8925,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -8699,6 +8971,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/CostItemId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -8725,6 +8998,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/CostItemId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The item is deleted.
@@ -8746,6 +9020,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/CostItemId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -8774,6 +9049,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/CostItemId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -9000,6 +9276,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -9146,6 +9424,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/HookDecisionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The decision with its cancellation.
@@ -9229,6 +9508,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AppealId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminHookAppeal'
@@ -9252,6 +9532,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AppealId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminHookAppeal'
@@ -9341,6 +9622,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/ErrorGroup'
@@ -9360,6 +9643,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/ErrorGroup'
@@ -9379,6 +9664,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/ErrorGroup'
@@ -9437,6 +9724,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/DomainActionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminDomainAction'
@@ -9547,6 +9835,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/ReportId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminReportDetail'
@@ -9567,6 +9856,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/ReportId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminReportDetail'
@@ -9587,6 +9877,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/ReportId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -9614,6 +9905,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/ReportId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -9641,6 +9933,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/ReportId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminReportDetail'
@@ -9668,6 +9961,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/ReportId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -9706,6 +10000,8 @@ paths:
       security:
         - oauth2:
             - admin:read
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -9760,6 +10056,8 @@ paths:
       security:
         - oauth2:
             - admin:read
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -9795,6 +10093,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/VoiceRoomId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         content:
           application/json:
@@ -9823,6 +10122,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         content:
           application/json:
@@ -9905,6 +10205,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AdminAccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -9954,6 +10255,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AccountActionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -10013,6 +10315,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10059,6 +10363,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/RuleId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10086,6 +10391,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/RuleId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10113,6 +10419,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/RuleId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminRule'
@@ -10171,6 +10478,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10219,6 +10528,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AnnouncementId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10245,6 +10555,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AnnouncementId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The draft is deleted.
@@ -10267,6 +10578,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AnnouncementId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminAnnouncement'
@@ -10288,6 +10600,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AnnouncementId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminAnnouncement'
@@ -10341,6 +10654,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10399,6 +10714,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminTheme'
@@ -10422,6 +10739,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminTheme'
@@ -10478,6 +10797,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10523,6 +10844,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10555,6 +10878,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The built-in images are in use.
@@ -10630,6 +10955,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10676,6 +11003,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10705,6 +11034,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The emoji is deleted.
@@ -10727,6 +11058,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/CustomEmojiId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminCustomEmoji'
@@ -10748,6 +11080,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/CustomEmojiId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminCustomEmoji'
@@ -10770,6 +11103,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/CustomEmojiId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -10806,6 +11140,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/CustomEmojiId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         content:
           application/json:
@@ -10874,6 +11209,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminCustomEmojiRequest'
@@ -10902,6 +11239,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -10972,6 +11311,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/InstanceTextKey'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -11165,6 +11505,7 @@ paths:
       security:
         - oauth2:
             - admin:read
+      x-no-idempotency-key: Every call must reach the permission check and the audit log; a repeat changes nothing.
       parameters:
         - $ref: '#/components/parameters/AdminAccountId'
       responses:
@@ -11276,6 +11617,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AdminAccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The two-factor authentication is removed.
@@ -11302,6 +11644,7 @@ paths:
       security:
         - oauth2:
             - admin:write
+      x-no-idempotency-key: The answer carries a one-time reset link, which the server does not keep to send again.
       parameters:
         - $ref: '#/components/parameters/AdminAccountId'
       responses:
@@ -11337,6 +11680,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AdminAccountId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The suppression is lifted.
@@ -11377,6 +11721,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -11414,6 +11760,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -11441,6 +11789,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The role is deleted.
@@ -11489,6 +11839,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AdminAccountId'
         - $ref: '#/components/parameters/RoleKey'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminRoleList'
@@ -11514,6 +11865,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AdminAccountId'
         - $ref: '#/components/parameters/RoleKey'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminRoleList'
@@ -11596,6 +11948,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AppealId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -11628,6 +11981,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/AppealId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -11693,6 +12047,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/RegistrationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         content:
           application/json:
@@ -11725,6 +12080,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/RegistrationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         content:
           application/json:
@@ -11801,6 +12157,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -11852,6 +12210,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/SignupBlockId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminSignupBlock'
@@ -11883,6 +12242,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -11994,6 +12355,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -12032,6 +12395,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -12093,6 +12458,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -12135,6 +12502,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -12167,6 +12536,7 @@ paths:
           description: Lift the actions the subscription issued.
           schema:
             type: boolean
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The subscription is deleted.
@@ -12187,6 +12557,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/DomainListSubscriptionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           description: The fetch is queued.
@@ -12269,6 +12640,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/DomainListSubscriptionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -12296,6 +12668,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/DomainListSubscriptionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -12352,6 +12725,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -12470,6 +12845,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -12524,6 +12901,7 @@ paths:
             type: string
             minLength: 1
             maxLength: 253
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The domain has no allow.
@@ -12592,6 +12970,8 @@ paths:
       security:
         - oauth2:
             - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -12626,6 +13006,7 @@ paths:
             - write:accounts
       parameters:
         - $ref: '#/components/parameters/InviteId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/OwnInvite'
@@ -12683,6 +13064,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -12713,6 +13096,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/InviteId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminInvite'
@@ -12756,6 +13140,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -12781,6 +13167,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminServiceClosure'
@@ -12824,6 +13212,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -12888,6 +13278,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/OAuthClientId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminOAuthClient'
@@ -12910,6 +13301,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/OAuthClientId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminOAuthClient'
@@ -12959,6 +13351,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -13003,6 +13397,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The host is allowed.
@@ -13050,6 +13446,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -13095,6 +13493,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -13120,6 +13520,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The login provider is deleted.
@@ -13141,6 +13543,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/LoginProviderId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminLoginProvider'
@@ -13164,6 +13567,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/LoginProviderId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminLoginProvider'
@@ -13186,6 +13590,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/LoginProviderId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -13243,6 +13648,7 @@ paths:
       security:
         - oauth2:
             - admin:write
+      x-no-idempotency-key: The answer carries the signing secret, which the server does not keep to send again.
       requestBody:
         required: true
         content:
@@ -13295,6 +13701,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -13321,6 +13729,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The webhook is deleted.
@@ -13343,6 +13753,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/WebhookId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminWebhook'
@@ -13365,6 +13776,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/WebhookId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminWebhook'
@@ -13385,6 +13797,7 @@ paths:
       security:
         - oauth2:
             - admin:write
+      x-no-idempotency-key: The answer carries the signing secret, which the server does not keep to send again.
       parameters:
         - $ref: '#/components/parameters/WebhookId'
       responses:
@@ -13416,6 +13829,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/WebhookId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           $ref: '#/components/responses/AdminWebhookDelivery'
@@ -13473,6 +13887,7 @@ paths:
           description: The ID of the delivery.
           schema:
             $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           $ref: '#/components/responses/AdminWebhookDelivery'
@@ -13528,6 +13943,7 @@ paths:
             type: string
             minLength: 1
             maxLength: 253
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The domain has no rule.
@@ -13557,6 +13973,7 @@ paths:
             type: string
             minLength: 1
             maxLength: 253
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -13645,6 +14062,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -13676,6 +14095,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: The relay is deleted.
@@ -13700,6 +14121,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/RelayId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminRelay'
@@ -13724,6 +14146,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/RelayId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminRelay'
@@ -13755,6 +14178,7 @@ paths:
           description: The ID of the remote post.
           schema:
             $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           description: The refetch is queued.
@@ -13783,6 +14207,7 @@ paths:
           description: The ID of the remote account.
           schema:
             $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           description: The refetch is queued.
@@ -13806,6 +14231,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/InstanceDomain'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           description: The refetch is queued.
@@ -13855,6 +14281,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '202':
           description: The reconciliation is queued.
@@ -13892,6 +14320,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -13938,6 +14368,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -13989,6 +14421,8 @@ paths:
       security:
         - oauth2:
             - admin:write
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -14019,6 +14453,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/SupporterPlanId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -14049,6 +14484,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/SupporterPlanId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           $ref: '#/components/responses/AdminSupporterPlan'
@@ -14137,6 +14573,7 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/SupporterSubscriptionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: The subscription after it ended.
@@ -14440,9 +14877,15 @@ components:
       name: Idempotency-Key
       in: header
       description: |
-        A key the client chooses per new status; a retry with the same key returns the status
-        posted with it instead of posting again. A key longer than 256 characters, or one
-        that is not UTF-8 without U+0000, is a 422.
+        A key the client chooses per request, which makes the request safe to send again. Within
+        24 hours, a request with a key that the same sign-in of the user in the same client (an
+        anonymous client: the same address) already sent to the operation gets the first answer
+        again instead of being carried out again. The same key with another request (another
+        path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+        while the first request is still being carried out is a 409
+        `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+        or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+        256 characters, or one that is not UTF-8 without U+0000, is a 422.
       required: false
       schema:
         type: string
@@ -27589,6 +28032,11 @@ components:
           use the app (registration pending or rejected, email unverified, the account
           deactivated or deleted, or a moderation action that disables its login). The user
           can still sign in to the server's sign-in page, which says why.
+        - `/api/v1/problems/idempotency-key-reused` (422): the `Idempotency-Key` was sent to the
+          operation with another request in the last 24 hours. Choose a new key for a new request.
+        - `/api/v1/problems/idempotency-key-in-use` (409): the request with this
+          `Idempotency-Key` is still being carried out. Send it again after `Retry-After` for its
+          answer.
         - `/api/v1/problems/blocking` (409): the viewer blocks the account, which keeps them
           from following it. Unblock it first.
         - `/api/v1/problems/federation-restricted` (403): the instance's federation mode

@@ -32,8 +32,7 @@ function nameOf(blob: Blob, name: string | undefined, fallback: string): string 
 /**
  * Uploads a media file (uploadMedia) as multipart/form-data. The answer is the file in its current state, usually
  * processing: poll `GET /media/{id}` until it is ready or failed. A Blob can be read again, so the upload is sent
- * again after a 401 like any other request; it is not retried after a 429 or 503, as POST /media takes no
- * Idempotency-Key.
+ * again like any other write: after a 401, and with its Idempotency-Key after a 429, a 503, or no answer.
  */
 export async function uploadMedia(
   api: Api,

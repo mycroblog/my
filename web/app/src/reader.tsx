@@ -6,7 +6,8 @@
 // does not know. Without a session both follow the browser. The browser's locale is the one of the I18nProvider the
 // app is placed under, which the entry resolves (locale.ts); its zone is the platform's. Everything under the Reader
 // reads the locale from the I18nProvider it places and the zone from its TimeZoneProvider, so a choice the reader
-// changes shows at once, without a reload; the <html> carries the locale and its direction.
+// changes shows without a reload, as soon as the strings of a new language are loaded (strings.ts), which the screen
+// keeps the language it had until then; the <html> carries the locale and its direction.
 //
 // Until the preferences are read, the app shows what the account had chosen when this device last read them, kept on
 // the device (ADR-0028 §18): the first paint is in the account's language, not in the browser's and then the
@@ -34,6 +35,7 @@ import { I18nProvider, TimeZoneProvider, timeZoneName, useLocale } from "@my/des
 import { readDeviceValue, writeDeviceValue } from "@my/platform";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { inCatalog } from "./locale";
+import { hasStrings, loadStrings } from "./strings";
 
 /** What an account chose in place of the browser's: a locale (a BCP 47 tag), a time zone (an IANA name). */
 type Choice = { readonly locale?: string | undefined; readonly timeZone?: string | undefined };
@@ -65,6 +67,15 @@ function keptChoice(): Kept | undefined {
     timeZone: "timeZone" in kept && typeof kept.timeZone === "string" ? kept.timeZone : undefined,
   };
 }
+
+/**
+ * The locale the account chose when this device last read its preferences, kept on the device, which the app shows
+ * until they are read again: the entry loads its strings before the first paint. None where nothing is kept.
+ */
+export const keptLocale = (): string | undefined => {
+  const locale = keptChoice()?.locale;
+  return locale === undefined ? undefined : inCatalog(locale);
+};
 
 /** Keeps `choice` on the device, or forgets what is kept when it chooses nothing (or is null). */
 function keepChoice(choice: Kept | null): void {
@@ -119,6 +130,33 @@ function Html({ under, children }: { under: string; children: ReactNode }) {
 }
 
 /**
+ * `wanted` once the strings of every package are read in it; until then the locale shown before (`first` on the first
+ * render), so that the screen redraws in a new language only once its strings are there, never in their keys or in en
+ * meanwhile. A locale whose strings fail to load stays unshown. React Compiler keeps what `hasStrings` said until
+ * `wanted` changes, so a load that ends says so in the state (`loaded`), which the render reads.
+ */
+function useLoadedLocale(wanted: string, first: string): string {
+  const [loaded, setLoaded] = useState<string | undefined>(undefined);
+  const ready = loaded === wanted || hasStrings(wanted);
+  const [shown, setShown] = useState(() => (ready ? wanted : first));
+  if (ready && shown !== wanted) setShown(wanted);
+  useEffect(() => {
+    if (ready) return;
+    let live = true;
+    loadStrings(wanted).then(
+      () => {
+        if (live) setLoaded(wanted);
+      },
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [wanted, ready]);
+  return ready ? wanted : shown;
+}
+
+/**
  * Shows `children` in the reader's language and time zone: with a session (`signedIn`), the account's choices, else
  * the browser's. `unasked`: there is no session because the server could not say whether there is one, so what the
  * device keeps of the reader stays. It is placed under the I18nProvider of the browser's locale and the
@@ -149,8 +187,9 @@ export function Reader({
   }, [signedIn, unasked, preferences, account, kept]);
   useBrowserKept(saved, browser);
   const chosen = choice.locale === undefined ? undefined : inCatalog(choice.locale);
+  const locale = useLoadedLocale(chosen ?? browser, browser);
   return (
-    <I18nProvider locale={chosen ?? browser}>
+    <I18nProvider locale={locale}>
       <TimeZoneProvider timeZone={choice.timeZone}>
         <Html under={browser}>{children}</Html>
       </TimeZoneProvider>

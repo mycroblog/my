@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -240,6 +242,46 @@ func TestScreenShowsTheServer(t *testing.T) {
 			if got := text(data, key); got != want {
 				t.Errorf("GET %s: %s = %q, want %q", path, key, got, want)
 			}
+		}
+	}
+}
+
+// hintRecorder records the 103 Early Hints responses of a handler apart from its final response.
+type hintRecorder struct {
+	*httptest.ResponseRecorder
+	hints []http.Header
+}
+
+func (r *hintRecorder) WriteHeader(code int) {
+	if code == http.StatusEarlyHints {
+		r.hints = append(r.hints, r.Header().Clone())
+		return
+	}
+	r.ResponseRecorder.WriteHeader(code)
+}
+
+// TestScreenLinks checks that a screen carries the entry's Link headers, and that only with
+// EarlyHints a GET first gets a 103 that carries them alone.
+func TestScreenLinks(t *testing.T) {
+	links := []string{"</assets/auth.css>; rel=preload; as=style", "</assets/auth.js>; rel=preload; as=script; crossorigin"}
+	for _, early := range []bool{false, true} {
+		h := newEntryServer(t, authpages.Options{Entry: authpages.Entry{
+			Script: "/assets/auth.js", Stylesheets: []string{"/assets/auth.css"}, Links: links, EarlyHints: early,
+		}})
+		rec := &hintRecorder{ResponseRecorder: httptest.NewRecorder()}
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "https://social.example"+authpages.PathSignIn, nil))
+		if rec.Code != http.StatusOK || !slices.Equal(rec.Header().Values("Link"), links) {
+			t.Errorf("early %v: sign-in = %d with Link %q, want 200 with %q", early, rec.Code, rec.Header().Values("Link"), links)
+		}
+		want := 0
+		if early {
+			want = 1
+		}
+		if len(rec.hints) != want {
+			t.Fatalf("early %v: %d 103s, want %d", early, len(rec.hints), want)
+		}
+		if early && !reflect.DeepEqual(rec.hints[0], http.Header{"Link": links}) {
+			t.Errorf("103 headers = %v, want the links alone", rec.hints[0])
 		}
 	}
 }

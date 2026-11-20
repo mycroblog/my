@@ -12,6 +12,7 @@ post:
   tags: [two_factor]
   security:
     - oauth2: ["write:accounts"]
+  x-no-idempotency-key: The answer carries the recovery codes, which the server does not keep to send again.
   requestBody:
     required: true
     content:

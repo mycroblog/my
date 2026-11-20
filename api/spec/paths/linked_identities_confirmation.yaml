@@ -20,6 +20,7 @@ post:
   tags: [linked_identities]
   security:
     - oauth2: ["write:accounts"]
+  x-no-idempotency-key: The answer carries a one-time start URL; start a new confirmation instead.
   requestBody:
     required: true
     content:

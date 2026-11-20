@@ -38,6 +38,7 @@ post:
   tags: [admin-server]
   security:
     - oauth2: ["admin:write"]
+  x-no-idempotency-key: The answer carries the signing secret, which the server does not keep to send again.
   requestBody:
     required: true
     content:

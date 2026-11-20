@@ -530,6 +530,11 @@ type responseWriter struct {
 }
 
 func (w *responseWriter) WriteHeader(status int) {
+	// An informational response (103 Early Hints) comes before the response, whose status is recorded.
+	if status >= 100 && status < 200 && status != http.StatusSwitchingProtocols {
+		w.ResponseWriter.WriteHeader(status)
+		return
+	}
 	if !w.wroteHeader && status == http.StatusInternalServerError && w.databaseBusy != nil && w.databaseBusy() {
 		status = http.StatusServiceUnavailable
 		w.Header().Set("Retry-After", strconv.Itoa(int(kernel.DatabaseBusyRetryAfter.Seconds())))

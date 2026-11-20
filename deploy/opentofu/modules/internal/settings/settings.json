@@ -1179,6 +1179,10 @@
     "env": "MY_VOICE_TURN_CREDENTIAL_TTL",
     "secret": false
   },
+  "web_early_hints": {
+    "env": "MY_WEB_EARLY_HINTS",
+    "secret": false
+  },
   "web_origin": {
     "env": "MY_WEB_ORIGIN",
     "secret": false

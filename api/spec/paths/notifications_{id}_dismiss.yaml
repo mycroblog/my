@@ -15,6 +15,7 @@ post:
       description: The ID of the notification.
       schema:
         $ref: ../components/schemas/Id.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The notification is dismissed.

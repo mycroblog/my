@@ -15,6 +15,8 @@ post:
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The room with the new co-host.
@@ -36,6 +38,8 @@ delete:
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The room without the co-host.

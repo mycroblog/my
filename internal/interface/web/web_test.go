@@ -146,6 +146,10 @@ func TestAuthEntry(t *testing.T) {
 	want := web.Entry{
 		Script: "/assets/auth-FFFF.js", Stylesheets: []string{"/assets/auth-GGGG.css", "/assets/shared-DDDD.css"},
 		Preloads: []string{"/assets/shared-BBBB.js"},
+		Links: []string{
+			"</assets/auth-GGGG.css>; rel=preload; as=style", "</assets/shared-DDDD.css>; rel=preload; as=style",
+			"</assets/auth-FFFF.js>; rel=preload; as=script; crossorigin",
+		},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("AuthEntry() = %+v, want %+v", got, want)
@@ -572,5 +576,88 @@ func TestShellCSPMediaOrigin(t *testing.T) {
 	}
 	if _, err := web.New(web.Options{Host: "social.example", Build: fakeBuild(), MediaOrigin: "media.example"}); err == nil {
 		t.Error("New accepted a media origin without a scheme")
+	}
+}
+
+// hintRecorder records the 103 Early Hints responses of a handler apart from its final response.
+type hintRecorder struct {
+	*httptest.ResponseRecorder
+	hints []http.Header
+}
+
+func (r *hintRecorder) WriteHeader(code int) {
+	if code == http.StatusEarlyHints {
+		r.hints = append(r.hints, r.Header().Clone())
+		return
+	}
+	r.ResponseRecorder.WriteHeader(code)
+}
+
+// serveHints answers req and returns its final response and the headers of each 103 before it.
+func serveHints(mux http.Handler, req *http.Request) (*httptest.ResponseRecorder, []http.Header) {
+	rec := &hintRecorder{ResponseRecorder: httptest.NewRecorder()}
+	mux.ServeHTTP(rec, req)
+	return rec.ResponseRecorder, rec.hints
+}
+
+// TestLinksAndEarlyHints checks that the shell names its stylesheets and its entry script in Link
+// headers, the same URLs as its tags, and that only with EarlyHints a GET over HTTP/1.1 first gets a
+// 103 that carries those links alone.
+func TestLinksAndEarlyHints(t *testing.T) {
+	want := []string{
+		"</assets/index-CCCC.css>; rel=preload; as=style",
+		"</assets/shared-DDDD.css>; rel=preload; as=style",
+		"</assets/index-AAAA.js>; rel=preload; as=script; crossorigin",
+	}
+	_, off := newHandler(t, web.Options{})
+	rec, hints := serveHints(off, httptest.NewRequest(http.MethodGet, "/home", nil))
+	if rec.Code != http.StatusOK || len(hints) != 0 {
+		t.Fatalf("GET /home without early hints = %d after %d 103s, want 200 after none", rec.Code, len(hints))
+	}
+	if got := rec.Header().Values("Link"); !reflect.DeepEqual(got, want) {
+		t.Errorf("Link = %q, want %q", got, want)
+	}
+	body := rec.Body.String()
+	for _, tag := range []string{
+		`<link rel="stylesheet" href="/assets/index-CCCC.css">`,
+		`<link rel="stylesheet" href="/assets/shared-DDDD.css">`,
+		`<script type="module" src="/assets/index-AAAA.js"></script>`,
+	} {
+		if !strings.Contains(body, tag) {
+			t.Errorf("shell lacks %s, which its Link headers hint", tag)
+		}
+	}
+
+	_, on := newHandler(t, web.Options{EarlyHints: true})
+	rec, hints = serveHints(on, httptest.NewRequest(http.MethodGet, "/@alice", nil))
+	if rec.Code != http.StatusOK || len(hints) != 1 {
+		t.Fatalf("GET /@alice with early hints = %d after %d 103s, want 200 after one", rec.Code, len(hints))
+	}
+	if !reflect.DeepEqual(hints[0], http.Header{"Link": want}) {
+		t.Errorf("103 headers = %v, want the links alone", hints[0])
+	}
+	if got := rec.Header().Values("Link"); !reflect.DeepEqual(got, want) {
+		t.Errorf("Link after the 103 = %q, want %q", got, want)
+	}
+	if rec.Header().Get("Content-Security-Policy") == "" {
+		t.Error("the shell lost its Content-Security-Policy to the 103")
+	}
+
+	head := httptest.NewRequest(http.MethodHead, "/home", nil)
+	old := httptest.NewRequest(http.MethodGet, "/home", nil)
+	old.Proto, old.ProtoMajor, old.ProtoMinor = "HTTP/1.0", 1, 0
+	for name, req := range map[string]*http.Request{"HEAD": head, "HTTP/1.0": old} {
+		rec, hints := serveHints(on, req)
+		if len(hints) != 0 || !reflect.DeepEqual(rec.Header().Values("Link"), want) {
+			t.Errorf("%s: %d 103s and Link %q, want none and the links", name, len(hints), rec.Header().Values("Link"))
+		}
+	}
+	if _, hints := serveHints(on, httptest.NewRequest(http.MethodGet, "/sw.js", nil)); len(hints) != 0 {
+		t.Error("a file of the build got a 103")
+	}
+
+	_, dev := newHandler(t, web.Options{DevViteOrigin: "http://localhost:5173", EarlyHints: true})
+	if rec, hints := serveHints(dev, httptest.NewRequest(http.MethodGet, "/home", nil)); len(hints) != 0 || rec.Header().Get("Link") != "" {
+		t.Errorf("with a dev server: %d 103s and Link %q, want none", len(hints), rec.Header().Values("Link"))
 	}
 }

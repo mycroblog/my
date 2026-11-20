@@ -17543,6 +17543,11 @@ export interface components {
          *       use the app (registration pending or rejected, email unverified, the account
          *       deactivated or deleted, or a moderation action that disables its login). The user
          *       can still sign in to the server's sign-in page, which says why.
+         *     - `/api/v1/problems/idempotency-key-reused` (422): the `Idempotency-Key` was sent to the
+         *       operation with another request in the last 24 hours. Choose a new key for a new request.
+         *     - `/api/v1/problems/idempotency-key-in-use` (409): the request with this
+         *       `Idempotency-Key` is still being carried out. Send it again after `Retry-After` for its
+         *       answer.
          *     - `/api/v1/problems/blocking` (409): the viewer blocks the account, which keeps them
          *       from following it. Unblock it first.
          *     - `/api/v1/problems/federation-restricted` (403): the instance's federation mode
@@ -20582,9 +20587,15 @@ export interface components {
         /** @description The ID of the decision. */
         HookDecisionId: components["schemas"]["Id"];
         /**
-         * @description A key the client chooses per new status; a retry with the same key returns the status
-         *     posted with it instead of posting again. A key longer than 256 characters, or one
-         *     that is not UTF-8 without U+0000, is a 422.
+         * @description A key the client chooses per request, which makes the request safe to send again. Within
+         *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+         *     anonymous client: the same address) already sent to the operation gets the first answer
+         *     again instead of being carried out again. The same key with another request (another
+         *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+         *     while the first request is still being carried out is a 409
+         *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+         *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+         *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
          */
         IdempotencyKey: string;
         /**
@@ -20750,7 +20761,20 @@ export interface operations {
     deleteOwnCustomEmoji: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji. */
                 id: components["parameters"]["CustomEmojiId"];
@@ -20772,7 +20796,20 @@ export interface operations {
     updateOwnCustomEmoji: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji. */
                 id: components["parameters"]["CustomEmojiId"];
@@ -20820,7 +20857,20 @@ export interface operations {
     createCustomEmojiRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -20838,7 +20888,20 @@ export interface operations {
     withdrawCustomEmojiRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji request. */
                 id: components["parameters"]["CustomEmojiRequestId"];
@@ -21124,7 +21187,20 @@ export interface operations {
     updateAccountCredentials: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21163,7 +21239,20 @@ export interface operations {
     addAccountAlias: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21183,7 +21272,20 @@ export interface operations {
                 /** @description The `uri` of the alias, as `GET /accounts/aliases` lists it. */
                 uri: string;
             };
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21218,7 +21320,20 @@ export interface operations {
     updatePreferences: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21266,7 +21381,20 @@ export interface operations {
     updateAutoDeletePolicy: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21292,7 +21420,20 @@ export interface operations {
     previewAutoDeletePolicy: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21340,7 +21481,20 @@ export interface operations {
     updateBadgeChoice: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the role whose badge it is. */
                 role_id: components["parameters"]["BadgeRoleId"];
@@ -21391,7 +21545,20 @@ export interface operations {
     updateNotificationSettings: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21439,7 +21606,20 @@ export interface operations {
     updateNotificationPolicy: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21487,7 +21667,20 @@ export interface operations {
     updateEventReminders: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21535,7 +21728,20 @@ export interface operations {
     updateSupporterListing: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21583,7 +21789,20 @@ export interface operations {
     deactivateOwnAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21609,7 +21828,20 @@ export interface operations {
     deleteOwnAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21632,7 +21864,20 @@ export interface operations {
     moveOwnAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21655,7 +21900,20 @@ export interface operations {
     cancelOwnAccountMove: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21696,7 +21954,20 @@ export interface operations {
     changePassword: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21719,7 +21990,20 @@ export interface operations {
     removePassword: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21742,7 +22026,20 @@ export interface operations {
     resendVerificationEmail: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21783,7 +22080,20 @@ export interface operations {
     requestDataExport: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21884,7 +22194,20 @@ export interface operations {
     startDataImport: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -21910,7 +22233,20 @@ export interface operations {
     previewDataImport: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -22006,7 +22342,20 @@ export interface operations {
     disableTotp: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -22080,7 +22429,20 @@ export interface operations {
     createPasskey: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -22154,7 +22516,20 @@ export interface operations {
     deletePasskey: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the passkey. */
                 id: components["schemas"]["Id"];
@@ -22250,7 +22625,20 @@ export interface operations {
     unlinkIdentity: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the link. */
                 id: components["schemas"]["Id"];
@@ -22294,7 +22682,20 @@ export interface operations {
     revokeOtherSessions: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -22313,7 +22714,20 @@ export interface operations {
     revokeSession: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the session (the `id` of a browser session). */
                 id: components["schemas"]["Id"];
@@ -22357,7 +22771,20 @@ export interface operations {
     revokeAuthorizedApp: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the app (the `id` of an authorized app). */
                 id: components["schemas"]["Id"];
@@ -22443,7 +22870,20 @@ export interface operations {
     deleteOAuthApp: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the OAuth app (not its `client_id`). */
                 id: components["parameters"]["OAuthAppId"];
@@ -22465,7 +22905,20 @@ export interface operations {
     updateOAuthApp: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the OAuth app (not its `client_id`). */
                 id: components["parameters"]["OAuthAppId"];
@@ -22655,7 +23108,20 @@ export interface operations {
     blockAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22671,7 +23137,20 @@ export interface operations {
     unblockAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22687,7 +23166,20 @@ export interface operations {
     followAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22707,7 +23199,20 @@ export interface operations {
     unfollowAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22797,7 +23302,20 @@ export interface operations {
     muteAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22817,7 +23335,20 @@ export interface operations {
     unmuteAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22833,7 +23364,20 @@ export interface operations {
     setAccountNote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22853,7 +23397,20 @@ export interface operations {
     deleteAccountNote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22869,7 +23426,20 @@ export interface operations {
     removeFollower: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22885,7 +23455,20 @@ export interface operations {
     subscribeAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22901,7 +23484,20 @@ export interface operations {
     unsubscribeAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22971,7 +23567,20 @@ export interface operations {
     acceptFollowRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -22987,7 +23596,20 @@ export interface operations {
     rejectFollowRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -23031,7 +23653,20 @@ export interface operations {
     acceptInteractionRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the interaction request. */
                 id: components["parameters"]["InteractionRequestId"];
@@ -23055,7 +23690,20 @@ export interface operations {
     rejectInteractionRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the interaction request. */
                 id: components["parameters"]["InteractionRequestId"];
@@ -23133,7 +23781,20 @@ export interface operations {
     muteDomain: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -23159,7 +23820,20 @@ export interface operations {
     unmuteDomain: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The muted domain, such as `mastodon.example`. */
                 domain: string;
@@ -23194,7 +23868,20 @@ export interface operations {
     createList: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -23227,7 +23914,20 @@ export interface operations {
     deleteList: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the list. */
                 id: components["parameters"]["ListId"];
@@ -23249,7 +23949,20 @@ export interface operations {
     updateList: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the list. */
                 id: components["parameters"]["ListId"];
@@ -23290,7 +24003,20 @@ export interface operations {
     addListAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the list. */
                 id: components["parameters"]["ListId"];
@@ -23314,7 +24040,20 @@ export interface operations {
     removeListAccount: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the list. */
                 id: components["parameters"]["ListId"];
@@ -23338,7 +24077,20 @@ export interface operations {
     uploadMedia: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -23389,7 +24141,20 @@ export interface operations {
     updateMedia: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the media file. */
                 id: components["schemas"]["Id"];
@@ -23447,7 +24212,20 @@ export interface operations {
     appealModerationAction: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the action. */
                 id: components["schemas"]["Id"];
@@ -23501,7 +24279,20 @@ export interface operations {
     appealHookDecision: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the decision. */
                 id: components["parameters"]["HookDecisionId"];
@@ -23581,7 +24372,20 @@ export interface operations {
     updateNotificationMarker: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -23632,7 +24436,20 @@ export interface operations {
     dismissNotification: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the notification. */
                 id: components["schemas"]["Id"];
@@ -23758,7 +24575,20 @@ export interface operations {
     acceptNotificationRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -23780,7 +24610,20 @@ export interface operations {
     dismissNotificationRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The account ID. */
                 id: components["parameters"]["AccountId"];
@@ -23824,7 +24667,20 @@ export interface operations {
     putPushSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -23850,7 +24706,20 @@ export interface operations {
     deletePushSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -23902,9 +24771,15 @@ export interface operations {
             query?: never;
             header?: {
                 /**
-                 * @description A key the client chooses per new status; a retry with the same key returns the status
-                 *     posted with it instead of posting again. A key longer than 256 characters, or one
-                 *     that is not UTF-8 without U+0000, is a 422.
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
@@ -23936,9 +24811,15 @@ export interface operations {
             query?: never;
             header?: {
                 /**
-                 * @description A key the client chooses per new status; a retry with the same key returns the status
-                 *     posted with it instead of posting again. A key longer than 256 characters, or one
-                 *     that is not UTF-8 without U+0000, is a 422.
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
@@ -23968,7 +24849,20 @@ export interface operations {
     previewArticle: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -23994,7 +24888,20 @@ export interface operations {
     editArticle: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24051,7 +24958,20 @@ export interface operations {
     createDraft: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -24091,6 +25011,18 @@ export interface operations {
                  *     overwrites one made on another; read the draft again and merge. Without it, the save is a 428.
                  */
                 "If-Match"?: components["parameters"]["IfMatch"];
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path: {
                 /** @description The ID of the draft. */
@@ -24111,7 +25043,20 @@ export interface operations {
     deleteDraft: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the draft. */
                 id: components["parameters"]["DraftId"];
@@ -24133,7 +25078,20 @@ export interface operations {
     scheduleDraft: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the draft. */
                 id: components["parameters"]["DraftId"];
@@ -24153,7 +25111,20 @@ export interface operations {
     unscheduleDraft: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the draft. */
                 id: components["parameters"]["DraftId"];
@@ -24169,7 +25140,20 @@ export interface operations {
     publishDraft: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the draft. */
                 id: components["parameters"]["DraftId"];
@@ -24265,7 +25249,20 @@ export interface operations {
     editStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24294,7 +25291,20 @@ export interface operations {
     deleteStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24316,7 +25326,20 @@ export interface operations {
     bookmarkStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24332,7 +25355,20 @@ export interface operations {
     unbookmarkStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24348,7 +25384,20 @@ export interface operations {
     muteStatusThread: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24364,7 +25413,20 @@ export interface operations {
     unmuteStatusThread: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24380,7 +25442,20 @@ export interface operations {
     boostStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24396,7 +25471,20 @@ export interface operations {
     unboostStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24437,7 +25525,20 @@ export interface operations {
     favouriteStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24453,7 +25554,20 @@ export interface operations {
     unfavouriteStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24494,7 +25608,20 @@ export interface operations {
     pinStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24510,7 +25637,20 @@ export interface operations {
     unpinStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24526,7 +25666,20 @@ export interface operations {
     voteInPoll: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24546,7 +25699,20 @@ export interface operations {
     reactToStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24566,7 +25732,20 @@ export interface operations {
     unreactToStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24617,7 +25796,20 @@ export interface operations {
     translateStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24646,7 +25838,20 @@ export interface operations {
     setStatusInteractionPolicy: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24687,7 +25892,20 @@ export interface operations {
     revokeStatusQuoteApproval: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the status. */
                 id: components["parameters"]["StatusId"];
@@ -24822,7 +26040,20 @@ export interface operations {
     followTag: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /**
                  * @description The hashtag, with or without a leading `#` (`%23`), matched under NFKC and lowercase: letters,
@@ -24843,7 +26074,20 @@ export interface operations {
     unfollowTag: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /**
                  * @description The hashtag, with or without a leading `#` (`%23`), matched under NFKC and lowercase: letters,
@@ -24890,7 +26134,20 @@ export interface operations {
     createKeywordFilter: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -24923,7 +26180,20 @@ export interface operations {
     deleteKeywordFilter: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the keyword filter. */
                 id: components["parameters"]["KeywordFilterId"];
@@ -24945,7 +26215,20 @@ export interface operations {
     updateKeywordFilter: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the keyword filter. */
                 id: components["parameters"]["KeywordFilterId"];
@@ -24978,7 +26261,20 @@ export interface operations {
     setFeaturedTags: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -25137,7 +26433,20 @@ export interface operations {
     markConversationRead: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /**
                  * @description The ID of the conversation. The ID of a conversation that was merged into another, once a
@@ -25156,7 +26465,20 @@ export interface operations {
     hideConversation: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /**
                  * @description The ID of the conversation. The ID of a conversation that was merged into another, once a
@@ -25208,7 +26530,20 @@ export interface operations {
     createReport: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -25281,7 +26616,20 @@ export interface operations {
     markAnnouncementRead: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the announcement. */
                 id: components["parameters"]["AnnouncementId"];
@@ -25488,7 +26836,20 @@ export interface operations {
     syncOwnSupporterSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -25510,7 +26871,20 @@ export interface operations {
     changeOwnSupporterSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -25536,7 +26910,20 @@ export interface operations {
     cancelOwnSupporterSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -25558,7 +26945,20 @@ export interface operations {
     resumeOwnSupporterSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -25580,7 +26980,20 @@ export interface operations {
     cancelOwnSupporterScheduledChange: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -25755,7 +27168,20 @@ export interface operations {
     endVoiceRoom: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -25777,7 +27203,20 @@ export interface operations {
     updateVoiceRoom: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -25838,7 +27277,20 @@ export interface operations {
                 /** @description Whether the host ends the room on leaving. */
                 end?: boolean;
             };
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -25860,7 +27312,20 @@ export interface operations {
     sendVoiceHeartbeat: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -25886,7 +27351,20 @@ export interface operations {
     handOverVoiceRoom: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -25915,7 +27393,20 @@ export interface operations {
     becomeVoiceSpeaker: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -25940,7 +27431,20 @@ export interface operations {
     becomeVoiceListener: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -25965,7 +27469,20 @@ export interface operations {
     raiseVoiceHand: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -25990,7 +27507,20 @@ export interface operations {
     lowerVoiceHand: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26015,7 +27545,20 @@ export interface operations {
     removeVoiceParticipant: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26042,7 +27585,20 @@ export interface operations {
     grantVoiceSpeaking: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26069,7 +27625,20 @@ export interface operations {
     revokeVoiceSpeaking: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26096,7 +27665,20 @@ export interface operations {
     dismissVoiceHand: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26123,7 +27705,20 @@ export interface operations {
     muteVoiceParticipant: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26147,7 +27742,20 @@ export interface operations {
     assignVoiceCohost: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26174,7 +27782,20 @@ export interface operations {
     removeVoiceCohost: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26231,7 +27852,20 @@ export interface operations {
     inviteToVoiceRoom: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26260,7 +27894,20 @@ export interface operations {
     revokeVoiceInvitation: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26316,7 +27963,20 @@ export interface operations {
     sendVoiceSignal: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26342,7 +28002,20 @@ export interface operations {
     setVoiceMic: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26397,7 +28070,20 @@ export interface operations {
     reactInVoiceRoom: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -26504,7 +28190,20 @@ export interface operations {
     createEvent: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -26555,7 +28254,20 @@ export interface operations {
     updateEvent: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26611,7 +28323,20 @@ export interface operations {
     cancelEvent: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26640,7 +28365,20 @@ export interface operations {
     answerEvent: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26699,7 +28437,20 @@ export interface operations {
     approveEventAttendee: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26726,7 +28477,20 @@ export interface operations {
     revokeEventAttendeeApproval: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26783,7 +28547,20 @@ export interface operations {
     inviteToEvent: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26812,7 +28589,20 @@ export interface operations {
     revokeEventInvitation: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26836,7 +28626,20 @@ export interface operations {
     assignEventCoorganizer: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26863,7 +28666,20 @@ export interface operations {
     removeEventCoorganizer: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26915,7 +28731,20 @@ export interface operations {
     addEventCandidate: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26944,7 +28773,20 @@ export interface operations {
     withdrawEventCandidate: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -26968,7 +28810,20 @@ export interface operations {
     voteEventCandidate: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -27033,7 +28888,20 @@ export interface operations {
     confirmEventCandidate: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -27060,7 +28928,20 @@ export interface operations {
     reportClientError: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -27083,7 +28964,20 @@ export interface operations {
     reportClientMeasurements: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -27214,7 +29108,20 @@ export interface operations {
     retryAdminJob: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the dead job. */
                 id: components["schemas"]["Id"];
@@ -27317,7 +29224,20 @@ export interface operations {
     markInstanceAvailable: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /**
                  * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
@@ -27463,7 +29383,20 @@ export interface operations {
     runBillingImport: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The billing source. */
                 source: components["schemas"]["BillingSourceName"];
@@ -27512,7 +29445,20 @@ export interface operations {
     createCostItem: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -27545,7 +29491,20 @@ export interface operations {
     deleteCostItem: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the cost item. */
                 id: components["parameters"]["CostItemId"];
@@ -27567,7 +29526,20 @@ export interface operations {
     updateCostItem: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the cost item. */
                 id: components["parameters"]["CostItemId"];
@@ -27587,7 +29559,20 @@ export interface operations {
     reviseCostItemPrice: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the cost item. */
                 id: components["parameters"]["CostItemId"];
@@ -27607,7 +29592,20 @@ export interface operations {
     setCostItemEnd: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the cost item. */
                 id: components["parameters"]["CostItemId"];
@@ -27754,7 +29752,20 @@ export interface operations {
     createDomainAction: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -27867,7 +29878,20 @@ export interface operations {
     overrideHookDecision: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the decision. */
                 id: components["parameters"]["HookDecisionId"];
@@ -27937,7 +29961,20 @@ export interface operations {
     upholdHookAppeal: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the appeal. */
                 id: components["parameters"]["AppealId"];
@@ -27953,7 +29990,20 @@ export interface operations {
     overturnHookAppeal: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the appeal. */
                 id: components["parameters"]["AppealId"];
@@ -28025,7 +30075,20 @@ export interface operations {
     resolveErrorGroup: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the error group. */
                 id: components["parameters"]["ErrorGroupId"];
@@ -28041,7 +30104,20 @@ export interface operations {
     muteErrorGroup: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the error group. */
                 id: components["parameters"]["ErrorGroupId"];
@@ -28057,7 +30133,20 @@ export interface operations {
     unmuteErrorGroup: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the error group. */
                 id: components["parameters"]["ErrorGroupId"];
@@ -28098,7 +30187,20 @@ export interface operations {
     liftDomainAction: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the domain action. */
                 id: components["parameters"]["DomainActionId"];
@@ -28177,7 +30279,20 @@ export interface operations {
     assignReportToSelf: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the report. */
                 id: components["parameters"]["ReportId"];
@@ -28193,7 +30308,20 @@ export interface operations {
     unassignReport: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the report. */
                 id: components["parameters"]["ReportId"];
@@ -28209,7 +30337,20 @@ export interface operations {
     resolveReport: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the report. */
                 id: components["parameters"]["ReportId"];
@@ -28229,7 +30370,20 @@ export interface operations {
     addReportNote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the report. */
                 id: components["parameters"]["ReportId"];
@@ -28249,7 +30403,20 @@ export interface operations {
     reopenReport: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the report. */
                 id: components["parameters"]["ReportId"];
@@ -28265,7 +30432,20 @@ export interface operations {
     forwardReport: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the report. */
                 id: components["parameters"]["ReportId"];
@@ -28285,7 +30465,20 @@ export interface operations {
     translateReportComment: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the report. */
                 id: components["parameters"]["ReportId"];
@@ -28314,7 +30507,20 @@ export interface operations {
     translateReportedStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the report. */
                 id: components["parameters"]["ReportId"];
@@ -28345,7 +30551,20 @@ export interface operations {
     endVoiceRoomAsModerator: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the voice chat room. */
                 id: components["parameters"]["VoiceRoomId"];
@@ -28371,7 +30590,20 @@ export interface operations {
     cancelEventAsModerator: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the event. */
                 id: components["parameters"]["EventId"];
@@ -28429,7 +30661,20 @@ export interface operations {
     createAccountAction: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the account, local or remote. */
                 id: components["parameters"]["AdminAccountId"];
@@ -28465,7 +30710,20 @@ export interface operations {
     liftAccountAction: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the account action. */
                 id: components["parameters"]["AccountActionId"];
@@ -28510,7 +30768,20 @@ export interface operations {
     createInstanceRule: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -28543,7 +30814,20 @@ export interface operations {
     updateInstanceRule: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the rule. */
                 id: components["parameters"]["RuleId"];
@@ -28563,7 +30847,20 @@ export interface operations {
     moveInstanceRule: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the rule. */
                 id: components["parameters"]["RuleId"];
@@ -28583,7 +30880,20 @@ export interface operations {
     retireInstanceRule: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the rule. */
                 id: components["parameters"]["RuleId"];
@@ -28628,7 +30938,20 @@ export interface operations {
     createAdminAnnouncement: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -28661,7 +30984,20 @@ export interface operations {
     updateAdminAnnouncement: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the announcement. */
                 id: components["parameters"]["AnnouncementId"];
@@ -28681,7 +31017,20 @@ export interface operations {
     deleteAdminAnnouncement: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the announcement. */
                 id: components["parameters"]["AnnouncementId"];
@@ -28703,7 +31052,20 @@ export interface operations {
     publishAdminAnnouncement: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the announcement. */
                 id: components["parameters"]["AnnouncementId"];
@@ -28719,7 +31081,20 @@ export interface operations {
     withdrawAdminAnnouncement: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the announcement. */
                 id: components["parameters"]["AnnouncementId"];
@@ -28748,7 +31123,20 @@ export interface operations {
     setAdminThemeDraft: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -28788,7 +31176,20 @@ export interface operations {
     publishAdminTheme: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -28802,7 +31203,20 @@ export interface operations {
     restoreAdminTheme: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -28838,7 +31252,20 @@ export interface operations {
     sanitizeAdminBrand: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -28865,7 +31292,20 @@ export interface operations {
     setAdminBrand: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description Which brand image. */
                 kind: components["parameters"]["BrandKind"];
@@ -28895,7 +31335,20 @@ export interface operations {
     clearAdminBrand: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description Which brand image. */
                 kind: components["parameters"]["BrandKind"];
@@ -28950,7 +31403,20 @@ export interface operations {
     createCustomEmoji: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -28984,7 +31450,20 @@ export interface operations {
     deleteCustomEmoji: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji. */
                 id: components["parameters"]["CustomEmojiId"];
@@ -29007,7 +31486,20 @@ export interface operations {
     updateCustomEmoji: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji. */
                 id: components["parameters"]["CustomEmojiId"];
@@ -29028,7 +31520,20 @@ export interface operations {
     enableCustomEmoji: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji. */
                 id: components["parameters"]["CustomEmojiId"];
@@ -29044,7 +31549,20 @@ export interface operations {
     disableCustomEmoji: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji. */
                 id: components["parameters"]["CustomEmojiId"];
@@ -29060,7 +31578,20 @@ export interface operations {
     replaceCustomEmojiImage: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji. */
                 id: components["parameters"]["CustomEmojiId"];
@@ -29081,7 +31612,20 @@ export interface operations {
     copyCustomEmoji: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji. */
                 id: components["parameters"]["CustomEmojiId"];
@@ -29131,7 +31675,20 @@ export interface operations {
     approveCustomEmojiRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji request. */
                 id: components["parameters"]["CustomEmojiRequestId"];
@@ -29149,7 +31706,20 @@ export interface operations {
     rejectCustomEmojiRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the custom emoji request. */
                 id: components["parameters"]["CustomEmojiRequestId"];
@@ -29193,7 +31763,20 @@ export interface operations {
     setInstanceText: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The key of the text. */
                 key: components["parameters"]["InstanceTextKey"];
@@ -29403,7 +31986,20 @@ export interface operations {
     disableAdminAccountTwoFactor: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the account, local or remote. */
                 id: components["parameters"]["AdminAccountId"];
@@ -29450,7 +32046,20 @@ export interface operations {
     liftAdminAccountEmailSuppression: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the account, local or remote. */
                 id: components["parameters"]["AdminAccountId"];
@@ -29485,7 +32094,20 @@ export interface operations {
     createRole: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -29503,7 +32125,20 @@ export interface operations {
     deleteRole: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The key of the role, such as `moderator`. */
                 role: components["parameters"]["RoleKey"];
@@ -29526,7 +32161,20 @@ export interface operations {
     updateRole: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The key of the role, such as `moderator`. */
                 role: components["parameters"]["RoleKey"];
@@ -29563,7 +32211,20 @@ export interface operations {
     grantAccountRole: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the account, local or remote. */
                 id: components["parameters"]["AdminAccountId"];
@@ -29581,7 +32242,20 @@ export interface operations {
     revokeAccountRole: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the account, local or remote. */
                 id: components["parameters"]["AdminAccountId"];
@@ -29644,7 +32318,20 @@ export interface operations {
     overturnAppeal: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the appeal. */
                 id: components["parameters"]["AppealId"];
@@ -29664,7 +32351,20 @@ export interface operations {
     upholdAppeal: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the appeal. */
                 id: components["parameters"]["AppealId"];
@@ -29711,7 +32411,20 @@ export interface operations {
     approveRegistration: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the registration. */
                 id: components["parameters"]["RegistrationId"];
@@ -29731,7 +32444,20 @@ export interface operations {
     rejectRegistration: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the registration. */
                 id: components["parameters"]["RegistrationId"];
@@ -29782,7 +32508,20 @@ export interface operations {
     createSignupBlock: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -29815,7 +32554,20 @@ export interface operations {
     liftSignupBlock: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the sign-up block. */
                 id: components["parameters"]["SignupBlockId"];
@@ -29831,7 +32583,20 @@ export interface operations {
     importSignupBlocks: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -29906,7 +32671,20 @@ export interface operations {
     previewDomainBlockImport: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -29932,7 +32710,20 @@ export interface operations {
     importDomainBlocks: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -29985,7 +32776,20 @@ export interface operations {
     createDomainListSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30021,7 +32825,20 @@ export interface operations {
                 /** @description Lift the actions the subscription issued. */
                 lift_actions?: boolean;
             };
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the subscription to a domain block list. */
                 id: components["parameters"]["DomainListSubscriptionId"];
@@ -30043,7 +32860,20 @@ export interface operations {
     updateDomainListSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the subscription to a domain block list. */
                 id: components["parameters"]["DomainListSubscriptionId"];
@@ -30063,7 +32893,20 @@ export interface operations {
     fetchDomainListSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the subscription to a domain block list. */
                 id: components["parameters"]["DomainListSubscriptionId"];
@@ -30140,7 +32983,20 @@ export interface operations {
     acceptDomainListDrafts: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the subscription to a domain block list. */
                 id: components["parameters"]["DomainListSubscriptionId"];
@@ -30160,7 +33016,20 @@ export interface operations {
     rejectDomainListDrafts: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the subscription to a domain block list. */
                 id: components["parameters"]["DomainListSubscriptionId"];
@@ -30193,7 +33062,20 @@ export interface operations {
     updateInstanceSettings: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30282,7 +33164,20 @@ export interface operations {
     createDomainAllow: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30318,7 +33213,20 @@ export interface operations {
     removeDomainAllow: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The canonical domain of the allow. */
                 domain: string;
@@ -30367,7 +33275,20 @@ export interface operations {
     createOwnInvite: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30385,7 +33306,20 @@ export interface operations {
     revokeOwnInvite: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the invite. */
                 id: components["parameters"]["InviteId"];
@@ -30428,7 +33362,20 @@ export interface operations {
     createInvite: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30445,7 +33392,20 @@ export interface operations {
     revokeInvite: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the invite. */
                 id: components["parameters"]["InviteId"];
@@ -30474,7 +33434,20 @@ export interface operations {
     announceServiceClosure: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30491,7 +33464,20 @@ export interface operations {
     withdrawServiceClosure: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30517,7 +33503,20 @@ export interface operations {
     closeService: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30563,7 +33562,20 @@ export interface operations {
     disableOAuthClient: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the OAuth client (not its `client_id`). */
                 id: components["parameters"]["OAuthClientId"];
@@ -30579,7 +33591,20 @@ export interface operations {
     enableOAuthClient: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the OAuth client (not its `client_id`). */
                 id: components["parameters"]["OAuthClientId"];
@@ -30622,7 +33647,20 @@ export interface operations {
     denyOAuthClientHost: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30658,7 +33696,20 @@ export interface operations {
     allowOAuthClientHost: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The denied host, in lowercase and without a port. */
                 host: components["parameters"]["OAuthClientHost"];
@@ -30702,7 +33753,20 @@ export interface operations {
     createLoginProvider: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -30736,7 +33800,20 @@ export interface operations {
     deleteLoginProvider: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the login provider. */
                 id: components["parameters"]["LoginProviderId"];
@@ -30758,7 +33835,20 @@ export interface operations {
     updateLoginProvider: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the login provider. */
                 id: components["parameters"]["LoginProviderId"];
@@ -30779,7 +33869,20 @@ export interface operations {
     enableLoginProvider: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the login provider. */
                 id: components["parameters"]["LoginProviderId"];
@@ -30795,7 +33898,20 @@ export interface operations {
     disableLoginProvider: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the login provider. */
                 id: components["parameters"]["LoginProviderId"];
@@ -30811,7 +33927,20 @@ export interface operations {
     rotateLoginProviderSecret: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the login provider. */
                 id: components["parameters"]["LoginProviderId"];
@@ -30897,7 +34026,20 @@ export interface operations {
     deleteWebhook: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the webhook. */
                 id: components["parameters"]["WebhookId"];
@@ -30919,7 +34061,20 @@ export interface operations {
     updateWebhook: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the webhook. */
                 id: components["parameters"]["WebhookId"];
@@ -30940,7 +34095,20 @@ export interface operations {
     enableWebhook: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the webhook. */
                 id: components["parameters"]["WebhookId"];
@@ -30956,7 +34124,20 @@ export interface operations {
     disableWebhook: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the webhook. */
                 id: components["parameters"]["WebhookId"];
@@ -30997,7 +34178,20 @@ export interface operations {
     testWebhook: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the webhook. */
                 id: components["parameters"]["WebhookId"];
@@ -31043,7 +34237,20 @@ export interface operations {
     redeliverWebhookDelivery: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the webhook. */
                 id: components["parameters"]["WebhookId"];
@@ -31083,7 +34290,20 @@ export interface operations {
     setLinkCardDomainRule: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The domain, a host without a scheme, path, or port; it also covers its subdomains. */
                 domain: string;
@@ -31112,7 +34332,20 @@ export interface operations {
     removeLinkCardDomainRule: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The canonical domain of the rule. */
                 domain: string;
@@ -31178,7 +34411,20 @@ export interface operations {
     createRelay: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -31196,7 +34442,20 @@ export interface operations {
     deleteRelay: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the relay. */
                 id: components["parameters"]["RelayId"];
@@ -31219,7 +34478,20 @@ export interface operations {
     followRelay: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the relay. */
                 id: components["parameters"]["RelayId"];
@@ -31236,7 +34508,20 @@ export interface operations {
     unfollowRelay: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the relay. */
                 id: components["parameters"]["RelayId"];
@@ -31253,7 +34538,20 @@ export interface operations {
     refetchStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the remote post. */
                 id: components["schemas"]["Id"];
@@ -31275,7 +34573,20 @@ export interface operations {
     refetchAccountStatuses: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the remote account. */
                 id: components["schemas"]["Id"];
@@ -31297,7 +34608,20 @@ export interface operations {
     refetchInstanceStatuses: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /**
                  * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
@@ -31344,7 +34668,20 @@ export interface operations {
     runPaymentReconciliation: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -31376,7 +34713,20 @@ export interface operations {
     setSupporterProgram: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -31406,7 +34756,20 @@ export interface operations {
     setSupporterTips: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -31446,7 +34809,20 @@ export interface operations {
     createSupporterPlan: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -31464,7 +34840,20 @@ export interface operations {
     updateSupporterPlan: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the supporter plan. */
                 id: components["parameters"]["SupporterPlanId"];
@@ -31485,7 +34874,20 @@ export interface operations {
     retireSupporterPlan: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the supporter plan. */
                 id: components["parameters"]["SupporterPlanId"];
@@ -31557,7 +34959,20 @@ export interface operations {
     endSupporterSubscription: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 /** @description The ID of the subscription. */
                 id: components["parameters"]["SupporterSubscriptionId"];

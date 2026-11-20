@@ -15,6 +15,8 @@ put:
   tags: [admin-server]
   security:
     - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -38,6 +40,8 @@ delete:
   tags: [admin-server]
   security:
     - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/AdminServiceClosure.yaml

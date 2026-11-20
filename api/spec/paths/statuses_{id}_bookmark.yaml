@@ -8,6 +8,8 @@ post:
   tags: [statuses]
   security:
     - oauth2: ["write:bookmarks"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/StatusAfterAction.yaml
@@ -20,6 +22,8 @@ delete:
   tags: [statuses]
   security:
     - oauth2: ["write:bookmarks"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/StatusAfterAction.yaml

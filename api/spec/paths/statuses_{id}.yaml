@@ -39,6 +39,8 @@ put:
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -67,6 +69,8 @@ delete:
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The status is deleted.

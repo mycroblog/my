@@ -11,6 +11,7 @@ post:
     - oauth2: ["write:notifications"]
   parameters:
     - $ref: ../components/parameters/AnnouncementId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The announcement, read.

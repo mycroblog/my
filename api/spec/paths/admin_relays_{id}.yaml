@@ -14,6 +14,8 @@ delete:
   tags: [admin-server]
   security:
     - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The relay is deleted.

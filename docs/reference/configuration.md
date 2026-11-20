@@ -57,6 +57,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`maintenance_until`](#maintenance_until) | `MY_MAINTENANCE_UNTIL` | none | no | no |
 | [`maintenance_retry_after`](#maintenance_retry_after) | `MY_MAINTENANCE_RETRY_AFTER` | `10m` | no | no |
 | [`web_origin`](#web_origin) | `MY_WEB_ORIGIN` | `https://{host}` | no | no |
+| [`web_early_hints`](#web_early_hints) | `MY_WEB_EARLY_HINTS` | `false` | no | no |
 | [`role`](#role) | `MY_ROLE` | `all` | no | no |
 | [`worker_job_types`](#worker_job_types) | `MY_WORKER_JOB_TYPES` | none | no | no |
 | [`worker_job_types_except`](#worker_job_types_except) | `MY_WORKER_JOB_TYPES_EXCEPT` | none | no | no |
@@ -434,6 +435,19 @@ Origin (`scheme://host[:port]`) of the web client. The client API allows only th
 - Environment variable: `MY_WEB_ORIGIN`
 - Default: `https://{host}`
 - Required: no
+
+### `web_early_hints`
+
+Whether the web client's pages (the app and the sign-in screens) are preceded by a `103 Early Hints` response that names the stylesheets and scripts the page loads, so that the browser fetches them while the server prepares the page. The pages carry the same `Link` headers either way. Turn it on only when every proxy in front passes a 103 on: a Google Cloud external Application Load Balancer fails the request instead ([web client](../operations/running.md#web-client)).
+
+- Environment variable: `MY_WEB_EARLY_HINTS`
+- Default: `false`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `false` | No 103; the `Link` headers come with the page. |
+| `true` | A 103 with the `Link` headers before each page. |
 
 ### `role`
 

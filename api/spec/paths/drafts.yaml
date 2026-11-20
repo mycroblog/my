@@ -36,6 +36,8 @@ post:
   tags: [drafts]
   security:
     - oauth2: ["write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

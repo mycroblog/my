@@ -13,6 +13,7 @@ post:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/RelayId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/AdminRelay.yaml
@@ -35,6 +36,7 @@ delete:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/RelayId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/AdminRelay.yaml

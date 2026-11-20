@@ -6,15 +6,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"regexp"
 	"runtime"
 	"slices"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -329,7 +327,10 @@ func TestAcceptsIdempotencyKey(t *testing.T) {
 	}{
 		{http.MethodPost, "/api/v1/statuses", true},
 		{http.MethodGet, "/api/v1/statuses", false},
-		{http.MethodPost, "/api/v1/statuses/x/favourite", false},
+		{http.MethodPost, "/api/v1/statuses/x/favourite", true},
+		{http.MethodDelete, "/api/v1/statuses/x", true},
+		{http.MethodPost, "/api/v1/oauth_apps", false},
+		{http.MethodPost, "/api/v1/oauth_apps/x/tokens", false},
 		{http.MethodPost, "/statuses", false},
 	} {
 		if got := acceptsIdempotencyKey(tc.method, tc.path, APIBasePath); got != tc.want {
@@ -341,67 +342,51 @@ func TestAcceptsIdempotencyKey(t *testing.T) {
 	}
 }
 
-// TestIdempotencyKeyOperationsMatchGenerated keeps idempotencyKeyOperations equal to the operations whose
-// generated request builder sets the Idempotency-Key header, that is, those whose spec takes it.
+// TestIdempotencyKeyOperationsMatchGenerated keeps acceptsIdempotencyKey equal to the operations whose spec takes
+// the Idempotency-Key header, and writesWithoutIdempotencyKey equal to the writes whose spec does not. It reads the
+// spec from the types of the TypeScript package (ts/src/schema.gen.ts), which are generated from it as it is: the
+// overlay of api.gen.go removes the header from the generated methods.
 func TestIdempotencyKeyOperationsMatchGenerated(t *testing.T) {
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "api.gen.go", nil, 0)
+	src, err := os.ReadFile("ts/src/schema.gen.ts")
 	if err != nil {
-		t.Fatal(err)
+		t.Skip("the TypeScript types are not beside the module:", err)
 	}
-	var generated []string
-	for _, decl := range f.Decls {
-		fn, ok := decl.(*ast.FuncDecl)
-		if !ok || fn.Recv != nil || !strings.HasPrefix(fn.Name.Name, "New") || !strings.HasSuffix(fn.Name.Name, "RequestWithBody") && !strings.HasSuffix(fn.Name.Name, "Request") {
-			continue
-		}
-		var method, path string
-		setsKey := false
-		ast.Inspect(fn.Body, func(n ast.Node) bool {
-			call, ok := n.(*ast.CallExpr)
-			if !ok {
-				return true
-			}
-			switch callName(call.Fun) {
-			case "fmt.Sprintf":
-				if lit, ok := call.Args[0].(*ast.BasicLit); ok && path == "" {
-					path, _ = strconv.Unquote(lit.Value)
-				}
-			case "http.NewRequest", "http.NewRequestWithContext":
-				for _, a := range call.Args {
-					if s, ok := a.(*ast.SelectorExpr); ok && strings.HasPrefix(s.Sel.Name, "Method") {
-						method = strings.ToUpper(strings.TrimPrefix(s.Sel.Name, "Method"))
-					}
-				}
-			case "req.Header.Set":
-				if lit, ok := call.Args[0].(*ast.BasicLit); ok && lit.Value == strconv.Quote(idempotencyKeyHeader) {
-					setsKey = true
-				}
-			}
-			return true
-		})
-		if setsKey {
-			generated = append(generated, method+" "+strings.ReplaceAll(path, "%s", "*"))
+	schema := string(src)
+	start, pathsStart, pathsEnd := strings.Index(schema, "\nexport interface operations {"), strings.Index(schema, "\nexport interface paths {"), strings.Index(schema, "\nexport type webhooks")
+	if start < 0 || pathsStart < 0 || pathsEnd < pathsStart {
+		t.Fatal("schema.gen.ts has no operations or paths interface")
+	}
+	// The operations whose header parameters have Idempotency-Key, by operationId.
+	operations := schema[start:]
+	withKey := map[string]bool{}
+	header := regexp.MustCompile(`(?ms)^ {12}header\?: \{\n(.*?)^ {12}\};$`)
+	for _, m := range regexp.MustCompile(`(?ms)^ {4}(\w+): \{\n(.*?)^ {4}\};$`).FindAllStringSubmatch(operations, -1) {
+		if h := header.FindStringSubmatch(m[2]); h != nil && strings.Contains(h[1], `"Idempotency-Key"`) {
+			withKey[m[1]] = true
 		}
 	}
-	var listed []string
-	for _, op := range idempotencyKeyOperations {
+	// The method and path of each operation, from the paths interface.
+	paths := schema[pathsStart:pathsEnd]
+	param := regexp.MustCompile(`\{[^}]+\}`)
+	opRe := regexp.MustCompile(`(?m)^ {8}(get|put|post|delete|patch|head|options): operations\["(\w+)"\];$`)
+	var without, listed []string
+	for _, m := range regexp.MustCompile(`(?ms)^ {4}"([^"]+)": \{\n(.*?)^ {4}\};$`).FindAllStringSubmatch(paths, -1) {
+		for _, op := range opRe.FindAllStringSubmatch(m[2], -1) {
+			method, takes := strings.ToUpper(op[1]), withKey[op[2]]
+			if got := acceptsIdempotencyKey(method, APIBasePath+param.ReplaceAllString(m[1], "x"), APIBasePath); got != takes {
+				t.Errorf("acceptsIdempotencyKey(%s %s) = %v, but the spec takes the key: %v", method, m[1], got, takes)
+			}
+			if isWrite(method) && !takes {
+				without = append(without, method+" "+param.ReplaceAllString(m[1], "*"))
+			}
+		}
+	}
+	for _, op := range writesWithoutIdempotencyKey {
 		listed = append(listed, op.method+" "+op.path)
 	}
-	slices.Sort(generated)
+	slices.Sort(without)
 	slices.Sort(listed)
-	if len(generated) == 0 || !slices.Equal(generated, listed) {
-		t.Errorf("operations that take Idempotency-Key: api.gen.go has %v, idempotencyKeyOperations %v", generated, listed)
+	if len(withKey) == 0 || !slices.Equal(without, listed) {
+		t.Errorf("writes without Idempotency-Key: the spec has %v, writesWithoutIdempotencyKey %v", without, listed)
 	}
-}
-
-// callName is the dotted name of a call's function, such as "req.Header.Set".
-func callName(e ast.Expr) string {
-	switch e := e.(type) {
-	case *ast.Ident:
-		return e.Name
-	case *ast.SelectorExpr:
-		return callName(e.X) + "." + e.Sel.Name
-	}
-	return ""
 }

@@ -47,6 +47,7 @@ post:
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
+  x-no-idempotency-key: The answer carries a media grant, which the server does not keep to send again.
   requestBody:
     required: true
     content:
