@@ -37,7 +37,7 @@ import { tv } from "tailwind-variants/lite";
 import { Button, ButtonBase, LinkButton, TextButton } from "./button";
 import { ChoiceMark } from "./choice";
 import { Icon, type IconName } from "./icons";
-import { CodeText } from "./code-text";
+import { codeRuns } from "./code-text";
 import { Box, Pin, Row, Spoken, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
@@ -158,6 +158,11 @@ export type RecordRow<K extends string = string> = {
   id: string;
   head: string;
   caption?: string | undefined;
+  /**
+   * The caption is copied or compared character by character (an address, as a fact of its record's page shows it): in
+   * the code's face, breaking after a slash rather than inside a word.
+   */
+  captionCode?: boolean | undefined;
   href?: string | undefined;
   cells: Partial<Record<K, ReactNode>>;
   /** Its head and its caption are code (a job's type, an error's message and route): in the code's face. */
@@ -387,6 +392,7 @@ const table = tv({
     plain: "font-label",
     // Under the head, wrapping as its column allows: it asks the column for no width of its own.
     caption: "text-caption text-muted-text [contain:inline-size] [overflow-wrap:break-word]",
+    captionCode: "font-mono",
     factName: "text-caption text-muted-text whitespace-nowrap",
     fact: "[overflow-wrap:break-word]",
     figure: "tabular-nums",
@@ -844,7 +850,13 @@ function Record<K extends string>({
           )}
           {row.caption !== undefined && (
             <span className={s.caption()}>
-              {code ? <CodeText>{row.caption}</CodeText> : <bdi dir="auto">{row.caption}</bdi>}
+              {code || row.captionCode === true ? (
+                <bdi dir="ltr" className={s.captionCode()}>
+                  {codeRuns(row.caption)}
+                </bdi>
+              ) : (
+                <bdi dir="auto">{row.caption}</bdi>
+              )}
             </span>
           )}
         </Stack>

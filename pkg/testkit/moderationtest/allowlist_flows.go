@@ -202,4 +202,8 @@ func moderationAllowlist(t *testing.T, e *moderationEnv) {
 	if impact, err := svc.FederationScopeImpact(ctx); err != nil || impact.Follows != 0 || impact.Scope != moderation.ScopeOpen {
 		t.Errorf("FederationScopeImpact without the graph = %+v, %v; want nothing counted under open", impact, err)
 	}
+	// Without the graph, what a suspension would end is unknown, not zero.
+	if impact, err := svc.DomainSuspendImpact(ctx, "quiet.example"); !errors.Is(err, appmoderation.ErrUnsupportedAction) {
+		t.Errorf("DomainSuspendImpact without the graph = %+v, %v; want ErrUnsupportedAction", impact, err)
+	}
 }

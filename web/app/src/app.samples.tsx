@@ -51,7 +51,8 @@ export type Fake = {
    * an appeal, a registration, a decision of a hook and its appeal, a sign-up block, an invite: accounts.ts),
    * `{ops:job:dead-email}` and `{ops:error:panic}` of the operations' job and error group of that key (operations.ts),
    * `{server:webhook:alerts}` of the fake's thing of that
-   * area and key in the administration (`emoji`, `request`, `announcement`, `webhook`),
+   * area and key in the administration (`emoji`, `request`, `announcement`, `webhook`), `{domain:action:spam}` and `{domain:list:shared}` of the fake's
+   * domain action and block-list subscription of that key,
    * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
    * `members:<index>` of its members, `filter:<index>` of the editor of the reader's keyword filter at that index,
    * `action:<index>` of the moderators' action on the reader's account at that index (newest first),
@@ -215,7 +216,10 @@ function pathOf(fake: FakeApi, at: string): string {
       )
       .replace(/\{account:([\w@.-]+)\}/g, (_, username: string) => fake.accountId(username))
       .replace(/\{moderated:([\w:-]+)\}/g, (_, key: string) => fake.moderation.id(key))
-      .replace(/\{ops:((?:job|error):[\w-]+)\}/g, (_, key: string) => fake.operations.id(key));
+      .replace(/\{ops:((?:job|error):[\w-]+)\}/g, (_, key: string) => fake.operations.id(key))
+      .replace(/\{domain:(action|list):([\w-]+)\}/g, (_, kind: "action" | "list", key: string) =>
+        fake.domains.id(kind, key),
+      );
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));

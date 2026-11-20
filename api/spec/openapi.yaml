@@ -758,6 +758,8 @@ paths:
     $ref: ./paths/admin_signup_blocks_{id}_lift.yaml
   /admin/signup_blocks/import:
     $ref: ./paths/admin_signup_blocks_import.yaml
+  /admin/domain_actions/impact:
+    $ref: ./paths/admin_domain_actions_impact.yaml
   /admin/domain_actions/export:
     $ref: ./paths/admin_domain_actions_export.yaml
   /admin/domain_actions/import/preview:
@@ -1895,6 +1897,8 @@ components:
       $ref: ./components/schemas/DomainMute.yaml
     DomainMutePage:
       $ref: ./components/schemas/DomainMutePage.yaml
+    DomainSuspendImpact:
+      $ref: ./components/schemas/DomainSuspendImpact.yaml
     EditStatusRequest:
       $ref: ./components/schemas/EditStatusRequest.yaml
     EnableTotpRequest:

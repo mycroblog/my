@@ -37,6 +37,7 @@ import { AdminSettingsScreen } from "./settings/screen";
 import { loadTranslationSettings, TranslationSettingsScreen } from "./settings/translation";
 import { accountEntries, accountGroups } from "./accounts/entries";
 import { operationEntries, operationGroups } from "./operations/entries";
+import { domainEntries, domainGroups } from "./domains/entries";
 import { AdminClosureScreen, loadClosure } from "./closure/screen";
 import { AdminThemeScreen, loadTheme } from "./theme/screen";
 
@@ -53,6 +54,7 @@ export const staffGroups = [
   { id: "connections", area: "admin", heading: "staff.group.connections" },
   ...accountGroups,
   ...operationGroups,
+  ...domainGroups,
 ] as const satisfies readonly { id: string; area: StaffArea; heading: MessageId }[];
 type StaffGroupId = (typeof staffGroups)[number]["id"];
 
@@ -232,6 +234,7 @@ export const staffEntries: readonly StaffEntry[] = [
   ...serverEntries,
   ...accountEntries,
   ...operationEntries,
+  ...domainEntries,
 ];
 
 /**

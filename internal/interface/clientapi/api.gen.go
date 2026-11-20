@@ -11117,6 +11117,20 @@ type DomainMutePage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
+// DomainSuspendImpact What a `suspend` of a domain would end now: the accepted follows, in both
+// directions, between the local accounts and the accounts of the domain and its subdomains.
+// The suspension ends them for good, and each local user who loses one is notified.
+type DomainSuspendImpact struct {
+	// Domain The domain counted for, normalized.
+	Domain string `json:"domain"`
+
+	// Follows How many follows would end.
+	Follows int `json:"follows"`
+
+	// LocalAccounts How many local accounts would lose a follow.
+	LocalAccounts int `json:"local_accounts"`
+}
+
 // Draft A draft of a post or of an article (`article`), saved on the server so that the user goes on
 // writing it on another device, and publishes it at once or at a chosen time. Only the user reads
 // it; it is never federated.
@@ -18645,6 +18659,12 @@ type ListDomainActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// GetDomainSuspendImpactParams defines parameters for GetDomainSuspendImpact.
+type GetDomainSuspendImpactParams struct {
+	// Domain The domain to count for; its subdomains are counted with it.
+	Domain string `form:"domain" json:"domain"`
+}
+
 // ListDomainListSubscriptionsParams defines parameters for ListDomainListSubscriptions.
 type ListDomainListSubscriptionsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -20076,6 +20096,9 @@ type ServerInterface interface {
 	// ExportDomainBlocks Export the domain actions as Mastodon's domain block CSV
 	// (GET /admin/domain_actions/export)
 	ExportDomainBlocks(w http.ResponseWriter, r *http.Request)
+	// GetDomainSuspendImpact Count what suspending a domain would end
+	// (GET /admin/domain_actions/impact)
+	GetDomainSuspendImpact(w http.ResponseWriter, r *http.Request, params GetDomainSuspendImpactParams)
 	// ImportDomainBlocks Import the chosen rows of a Mastodon domain block CSV
 	// (POST /admin/domain_actions/import)
 	ImportDomainBlocks(w http.ResponseWriter, r *http.Request)
@@ -24004,6 +24027,39 @@ func (siw *ServerInterfaceWrapper) ExportDomainBlocks(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ExportDomainBlocks(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDomainSuspendImpact operation middleware
+func (siw *ServerInterfaceWrapper) GetDomainSuspendImpact(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetDomainSuspendImpactParams
+
+	// ------------- Required query parameter "domain" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "domain", r.URL.Query(), &params.Domain, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "domain"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domain", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDomainSuspendImpact(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -35230,6 +35286,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/signup_blocks/{id}", wrapper.GetSignupBlock)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/signup_blocks/{id}/lift", wrapper.LiftSignupBlock)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/signup_blocks/import", wrapper.ImportSignupBlocks)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/domain_actions/impact", wrapper.GetDomainSuspendImpact)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/domain_actions/export", wrapper.ExportDomainBlocks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/domain_actions/import/preview", wrapper.PreviewDomainBlockImport)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/domain_actions/import", wrapper.ImportDomainBlocks)
@@ -41179,6 +41236,68 @@ type ExportDomainBlocksdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response ExportDomainBlocksdefaultApplicationProblemPlusJSONResponse) VisitExportDomainBlocksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDomainSuspendImpactRequestObject struct {
+	Params GetDomainSuspendImpactParams
+}
+
+type GetDomainSuspendImpactResponseObject interface {
+	VisitGetDomainSuspendImpactResponse(w http.ResponseWriter) error
+}
+
+type GetDomainSuspendImpact200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetDomainSuspendImpact200JSONResponse struct {
+	Body    DomainSuspendImpact
+	Headers GetDomainSuspendImpact200ResponseHeaders
+}
+
+func (response GetDomainSuspendImpact200JSONResponse) VisitGetDomainSuspendImpactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDomainSuspendImpactdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetDomainSuspendImpactdefaultApplicationProblemPlusJSONResponse) VisitGetDomainSuspendImpactResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -64049,6 +64168,9 @@ type StrictServerInterface interface {
 	// ExportDomainBlocks Export the domain actions as Mastodon's domain block CSV
 	// (GET /admin/domain_actions/export)
 	ExportDomainBlocks(ctx context.Context, request ExportDomainBlocksRequestObject) (ExportDomainBlocksResponseObject, error)
+	// GetDomainSuspendImpact Count what suspending a domain would end
+	// (GET /admin/domain_actions/impact)
+	GetDomainSuspendImpact(ctx context.Context, request GetDomainSuspendImpactRequestObject) (GetDomainSuspendImpactResponseObject, error)
 	// ImportDomainBlocks Import the chosen rows of a Mastodon domain block CSV
 	// (POST /admin/domain_actions/import)
 	ImportDomainBlocks(ctx context.Context, request ImportDomainBlocksRequestObject) (ImportDomainBlocksResponseObject, error)
@@ -67756,6 +67878,32 @@ func (sh *strictHandler) ExportDomainBlocks(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ExportDomainBlocksResponseObject); ok {
 		if err := validResponse.VisitExportDomainBlocksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDomainSuspendImpact operation middleware
+func (sh *strictHandler) GetDomainSuspendImpact(w http.ResponseWriter, r *http.Request, params GetDomainSuspendImpactParams) {
+	var request GetDomainSuspendImpactRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDomainSuspendImpact(ctx, request.(GetDomainSuspendImpactRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDomainSuspendImpact")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDomainSuspendImpactResponseObject); ok {
+		if err := validResponse.VisitGetDomainSuspendImpactResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

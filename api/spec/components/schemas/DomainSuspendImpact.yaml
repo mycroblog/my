@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What a `suspend` of a domain would end now: the accepted follows, in both
+  directions, between the local accounts and the accounts of the domain and its subdomains.
+  The suspension ends them for good, and each local user who loses one is notified.
+type: object
+required: [domain, follows, local_accounts]
+properties:
+  domain:
+    description: The domain counted for, normalized.
+    type: string
+  follows:
+    description: How many follows would end.
+    type: integer
+    minimum: 0
+  local_accounts:
+    description: How many local accounts would lose a follow.
+    type: integer
+    minimum: 0
