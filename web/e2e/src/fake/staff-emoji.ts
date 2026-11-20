@@ -28,6 +28,11 @@ export type FakeEmojiOptions = {
   readonly limit?: number | "none";
   /** There is no emoji and no request at all. */
   readonly none?: boolean;
+  /**
+   * The reader made this many more emoji (`own_01` and on, a day apart before the others) and this many more requests
+   * (`ask_01` and on, rejected, before this month's), so that their own lists run past a page.
+   */
+  readonly many?: number;
 };
 
 const hour = 3_600_000;
@@ -139,6 +144,20 @@ export function emojiHandlers(c: StaffServerContext): {
         remote("deals.example", "spam_logo", 30, { ...imageOf("sparkle"), state: "disabled" }),
         remote("rejected-media.example", "hidden_media", 40),
       ];
+  const many = none ? 0 : (c.options?.emoji?.many ?? 0);
+  for (let i = 0; i < many; i += 1)
+    emojis.push(
+      emoji({
+        shortcode: `own_${String(i + 1).padStart(2, "0")}`,
+        local: true,
+        ...imageOf("sparkle"),
+        state: "enabled",
+        visible_in_picker: true,
+        aliases: [],
+        created_at: at(s - (500 + i) * day),
+        by: c.viewer,
+      }),
+    );
   emojis.sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   let requested = 0;
@@ -192,6 +211,19 @@ export function emojiHandlers(c: StaffServerContext): {
           decided_at: at(s - 8 * day),
         }),
       ];
+  for (let i = 0; i < many; i += 1) {
+    const n = String(i + 1).padStart(2, "0");
+    requests.push(
+      request(`ask-${n}`, c.viewer, {
+        state: "rejected",
+        shortcode: `ask_${n}`,
+        ...imageOf("teacup"),
+        reason: "Too close to an emoji the server has.",
+        created_at: at(s - (60 + i) * day),
+        decided_at: at(s - (59 + i) * day),
+      }),
+    );
+  }
   requests.sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   /** Whether the person of `username` may create emoji now: not kai, whose role was revoked since. */
