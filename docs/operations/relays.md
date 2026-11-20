@@ -7,7 +7,7 @@ and its own public posts reach further. An instance that does not join a relay g
 
 Use "Relays" in the admin area (`/admin/relays`). It requires the permission `manage_settings`, which the built-in `admin` role has.
 "Join a relay" opens the form that registers one. The list shows each relay's state and what it brought in during the last 24
-hours; choosing a relay opens its page, with its addresses and the button that leaves it, or, once it was left or rejected
+hours; choosing a relay opens its page, with its addresses and the button that leaves it, or, once the server left it or it rejected
 the server, the buttons that join it again and delete it. Leaving and deleting ask first.
 The CLI is `my admin relay` (`my admin relay -help`):
 
