@@ -49,11 +49,11 @@ expect "the tokens" "$fake design-system design-tokens mail" web/design-tokens/s
 expect "the email layout, which nothing depends on" "mail" web/mail/src/frame.tsx
 expect "the design system" "$parts" web/design-system/src/button.tsx
 expect "the shared components" "app app-components app-features" web/app-components/src/index.ts
-expect "the platform" "app app-data app-features platform" web/platform/src/index.ts
+expect "the platform, which the lab probe of @my/e2e reads" "$fake platform" web/platform/src/index.ts
 expect "the audio of calls" "app app-features rtc" web/rtc/src/index.ts
 expect "the server data" "app app-data app-features" web/app-data/src/index.ts
 expect "the features" "app app-features" web/app-features/src/index.ts
-expect "two packages add up" "app app-components app-data app-features design-system platform" web/design-system/src/button.tsx web/platform/src/index.ts
+expect "two packages add up" "$fake design-system platform" web/design-system/src/button.tsx web/platform/src/index.ts
 
 # What a test depends on outside the layers, as its package's manifest declares it.
 expect "the fake API" "$fake" web/e2e/src/fake/api.ts
