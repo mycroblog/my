@@ -909,9 +909,10 @@ export function WidgetSlot({
 
 const bare = tv({
   slots: {
+    // Its line is as tall as the field: a field cuts what reaches under a shorter line (the tail of a g).
     dateTime: [
       "box-border h-control-form rounded-control border-0 bg-surface-raised px-control-timeline-inline",
-      "font-sans text-body text-text tabular-nums outline-hidden [color-scheme:inherit] focus-visible:shadow-focus",
+      "font-sans text-body leading-(--control-form-height) text-text tabular-nums outline-hidden [color-scheme:inherit] focus-visible:shadow-focus",
       // On a raised surface (a section of a settings screen), it takes the page's surface, as a text field does.
       "[[data-surface-raised]_&]:bg-surface",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",

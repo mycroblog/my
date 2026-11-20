@@ -20,10 +20,11 @@ const field = tv({
     hidden: "sr-only",
     hint: "text-caption text-muted-text [word-break:auto-phrase]",
     glyph: "pointer-events-none text-muted-text",
+    // Its line is as tall as the field: a field cuts what reaches under a shorter line (the tail of a g).
     input: [
       "box-border h-control-form appearance-none rounded-control border-0 bg-surface-raised font-sans",
       "ps-search-field-start pe-control-form",
-      "text-body text-text outline-hidden focus-visible:shadow-focus [&::-webkit-search-cancel-button]:appearance-none",
+      "text-body leading-(--control-form-height) text-text outline-hidden focus-visible:shadow-focus [&::-webkit-search-cancel-button]:appearance-none",
       "placeholder:text-muted-text",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
       "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
