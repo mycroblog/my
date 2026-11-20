@@ -49,10 +49,10 @@ curl -H 'Accept: application/activity+json' http://localhost:8080/ap/actors/<the
 - 登录 cookie 带有 `Secure` 属性。Chrome 和 Firefox 在 `http://localhost` 上接受它；Safari（WebKit）不接受，所以在本地请使用 Chrome 或 Firefox。
 - 帖子正文中话题标签和提及的链接使用 `https://`，因为它们是联邦使用的 URL。
 
-<!-- source: going-public be2475df6407 -->
+<!-- source: going-public a59510155d91 -->
 ## 对外公开
 
-- 把 `.env` 中的 `MY_HOST` 设为你真实的域名，删除 `MY_WEB_ORIGIN`（它默认为 `https://{MY_HOST}`），并在服务器前面终止 TLS：叠加文件 `compose.caddy.yaml` 会为此运行 Caddy（[Docker Compose 文件](running.md#docker-compose-files)）。`MY_HOST` 在首次启动时存入数据库，之后无法更改。
+- 把 `.env` 中的 `MY_HOST` 设为你真实的域名，删除 `MY_WEB_ORIGIN`（它默认为 `https://{MY_HOST}`），并在服务器前面终止 TLS：叠加文件 `compose.caddy.yaml` 会为此运行 Caddy（[Docker Compose 文件](running.md#docker-compose-files)），也可以让服务器自己提供 HTTPS（[由服务器提供 HTTPS](running.md#serving-https-from-the-server)）。`MY_HOST` 在首次启动时存入数据库，之后无法更改。
 - 如果服务器在你自己的反向代理之后，请在 `.env` 中设置 `MY_TRUSTED_PROXIES`，让登录等操作的速率限制按客户端 IP 生效，而不是作用于代理（[`trusted_proxies`](../reference/configuration.md#trusted_proxies)）。
 - 在向用户开放服务器之前，请逐项检查[生产环境检查清单](production-checklist.md)。
 - `docker compose down` 会停止整个栈。`down -v` 还会删除数据卷。

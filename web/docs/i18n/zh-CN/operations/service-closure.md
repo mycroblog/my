@@ -1,7 +1,7 @@
-<!-- source: closing-the-service 30c438995ba1 -->
+<!-- source: closing-the-service cf650f5a468f -->
 # 关闭服务
 
-本文按顺序说明停止运营服务器时要做的事：先让用户把数据带走，再删除仍留在其他服务器上的账号，然后停止服务器，切换到静态的关闭页面。各条命令的详细说明见[管理员与角色](admin-cli.md#announcing-the-end-of-the-service)。
+本文按顺序说明停止运营服务器时要做的事：先让用户把数据带走，再删除仍留在其他服务器上的账号，然后停止服务器，切换到静态的关闭页面。各条命令的详细说明见[管理员与角色](admin-cli.md#announcing-the-end-of-the-service)。在网页客户端中，拥有 `manage_service_closure` 的人可以在**管理 > 服务关闭**中完成同样的操作：宣布关闭、更改关闭日期或撤回；关闭日期过后，**检查并关闭**会显示 `check` 所显示的内容，并在你输入服务器域名后关闭服务器；此后它会显示 `status` 所显示的投递进度。
 
 <!-- source: the-sequence 4557c35b6851 -->
 ## 整体流程
@@ -88,7 +88,7 @@ my admin closure status
 
 即使投递已经完成，服务器也会以关闭状态继续运行到 `export_until`，并继续为用户提供导出。服务器从不自行删除数据，所以过了截止日期也会一直运行，直到你停止它。如果你还没有导出保留义务冻结所涉及的记录（§3），现在就导出。
 
-<!-- source: 6-switching-to-the-static-page 9795c9aea7ae -->
+<!-- source: 6-switching-to-the-static-page e1102fb5f56f -->
 ## 6. 切换到静态页面
 
 导出截止日期过后，导出关闭页面。**这一步会读取数据库，因此请在停止 `my serve` 并丢弃数据库之前运行它。**
@@ -99,7 +99,7 @@ my admin closure export-html -out ./closure -lang ja,en # set the locales and th
 ```
 
 - 它会写出：
-  - `<dir>/<locale>.html` 和 `<dir>/index.html`，后者按顺序列出所有语言。它们使用与维护页面（`my maintenance export`）相同的模板和 CSS，并显示服务器名称（`maintenance_server_name`，否则是实例名称，再否则是主机名）、关闭日期、公告中运营者的消息，以及指向状态页面的链接（`status_page_url`）。CSS 仅为内联，没有脚本或外部资源，CSP 位于一个 `<meta>` 标签中。主题颜色的覆盖会被一并写入。
+  - `<dir>/<locale>.html` 和 `<dir>/index.html`，后者按顺序列出所有语言。它们使用与维护页面（`my maintenance export`）相同的模板和 CSS，并显示服务器名称（`maintenance_server_name`，否则是实例名称，再否则是主机名）、关闭日期、公告中运营者的消息，以及指向状态页面的链接（`status_page_url`）。CSS 仅为内联，没有脚本或外部资源，CSP 位于一个 `<meta>` 标签中。已发布主题的颜色覆盖会被一并写入。
   - 前端配置示例 `nginx.conf`、`Caddyfile` 和 `cloudfront-function.js`。对于联邦和发现路径（`/ap/*`、`/inbox`、`/.well-known/webfinger`、`/.well-known/host-meta`、`/.well-known/host-meta.json`、`/.well-known/nodeinfo`、`/nodeinfo/*`）以及个人资料（`/@*`），它们各自返回不带正文的 `410`；对于其他每个路径，则返回 `Accept-Language` 中第一种语言的页面（如果没有，则返回 `index.html`）。某种语言会到达应用会为它显示的语言环境的页面：`zh`、`zh-SG` 和 `zh-Hans` 得到 `zh-CN.html`，而 `zh-Hant`、`zh-HK` 和 `zh-MO` 得到 `zh-TW.html`。
 - 如果服务器尚未关闭，该命令会拒绝执行（退出码 1）。在 `delivery_completed` 之前，它会警告投递仍在继续（并且仍会写出这些文件）。
 

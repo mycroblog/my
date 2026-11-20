@@ -53,14 +53,16 @@
 
 通过环境变量或文件（`MY_MAIL_SMTP_PASSWORD` 或 `MY_MAIL_SMTP_PASSWORD_FILE`）传递密钥。不要把它们写进配置文件。
 
-<!-- source: amazon-ses-api 1cef4371e61c -->
+<!-- source: amazon-ses-api f2d42a2b8b19 -->
 ### Amazon SES（API）
 
-在 AWS 上运行时，`mail = ses` 使用 SES v2 API。凭证来自 AWS SDK 的默认凭证链（ECS 的任务角色、环境变量、共享配置文件），因此无需配置任何密钥。
+在 AWS 上运行时，`mail = ses` 使用 SES v2 API。凭证来自 AWS SDK 的默认链（ECS 的任务角色、环境变量、共享配置文件），因此无需配置任何密钥。
 
-1. 在 SES 中把 `mail_from` 的域名验证为身份（identity），并启用 Easy DKIM（见下文）。
-2. 申请生产访问权限以脱离沙盒。在沙盒中只能发送到已验证的地址。
-3. 为执行角色授予对 `mail_from` 的身份（如果使用配置集，还包括该配置集）的 `ses:SendEmail` 权限。
+1. 在 SES 中，把 `mail_from` 的域名验证为身份，并启用 Easy DKIM（见下文）。
+2. 申请生产访问权限以离开沙盒。在沙盒中只能向已验证的地址发送。
+3. 允许执行角色对 `mail_from` 的身份（如果使用了配置集，还包括该配置集）执行 `ses:SendEmail`。
+
+[通过 Amazon SES 发送电子邮件](email-ses.md)逐步介绍了记录、沙盒、生产访问权限的申请，以及 AWS 的 OpenTofu 模块替你完成了其中哪些部分。
 
 ```sh
 MY_MAIL=ses
@@ -69,7 +71,7 @@ MY_MAIL_SES_REGION=ap-northeast-1          # the region where you verified the i
 MY_MAIL_SES_CONFIGURATION_SET=my-events    # optional; a configuration set with event destinations
 ```
 
-设置了 `mail_ses_configuration_set` 时，每封邮件都使用该配置集。SES 会用它自己的值覆盖邮件的 `Message-ID` 和 `Date`。SES 从不在发送时同步拒绝收件人。它会接受发往账号抑制列表中地址的邮件，然后不投递，退信稍后以通知（SNS）的形式到达。要记录退信和投诉，请按下文设置让 SES 通知通过 SNS 送达。
+设置了 `mail_ses_configuration_set` 时，每封邮件都使用该配置集。SES 会用它自己的值覆盖邮件的 `Message-ID` 和 `Date`。SES 在发送时从不同步拒绝收件人。对于账号抑制列表中的地址，它会接受发送请求，然后不予投递，退信稍后才会以通知（SNS）的形式到达。要记录退信和投诉，请按下文设置，让 SES 通知通过 SNS 到达。
 
 <!-- source: a-plugin-mail--plugin 65b46feaf1cf -->
 ### 插件（`mail = plugin`）
@@ -289,13 +291,13 @@ List-Unsubscribe=One-Click`（RFC 8058）。邮件客户端的“退订”按钮
 - **事务性邮件无法退订。** 退订验证、重置和密码修改通知，会让与安全相关的通知无法送达。这些邮件也不带上述邮件头。
 - 用户也可以在设置的 **通知** 页面切换同一个设置。
 
-<!-- source: the-html-version 2ca008b1a48a -->
+<!-- source: the-html-version fc06d2fa37c4 -->
 ## HTML 版本
 
-每封邮件都是 `multipart/alternative`，以 `text/plain` 和 `text/html`（均为 UTF-8）提供相同的内容。在 `development` 配置下使用 `mail = none` 时，只有文本版本会写入日志。
+每封邮件都是 `multipart/alternative`，内容相同，分别是 `text/plain` 和 `text/html`（均为 UTF-8）。在 `development` 配置下使用 `mail = none` 时，只有文本版本会写入日志。
 
-- 有一个统一的外层布局，包含段落、按钮和签名（服务器名称、URL、联系方式、发送这封邮件的原因，以及退订链接）。`<html lang dir>` 取自收件人的语言区域，`ar` 等语言会从右到左排版。
-- 不加载任何外部字体或样式表。颜色使用默认的设计令牌，浅色和深色跟随 `color-scheme` 和 `prefers-color-scheme`。管理员对主题的覆盖设置不影响邮件。
-- 不加载任何图片，但设置了实例自己的徽标时除外（[徽标和图标](instance-settings.md#logo-and-icon)）：此时 HTML 版本以徽标开头（`https://<host>/brand/...`，在跟随深色配色方案的邮件客户端中改为深色徽标），所有收件人使用同一个 URL，因此不会透露是谁打开了邮件。不加载外部图片的客户端会显示服务器名称（图片的替代文本）。没有徽标，或服务器 URL 不是 `https` 时，邮件中没有图片。
-- 只有 `https` URL 会变成链接。当 URL 是 `http` 时，例如在 `web_origin` 为 `http://{host}` 的开发环境中，URL 会以文本形式写出，而不是按钮或退订链接，签名中的服务器 URL 也会省略。
-- 布局内置于二进制文件中，因此服务器运行时不会执行任何 JavaScript。
+- 只有一个外层布局，包含段落、按钮和签名（服务器名称、URL、联系方式、发送这封邮件的原因，以及退订链接）。`<html lang dir>` 取自收件人的语言环境，`ar` 等语言会从右到左排版。
+- 它不加载外部字体或样式表，使用系统字体。颜色取自已发布的[主题](instance-settings.md#theme)（没有主题时使用默认的设计令牌），浅色和深色跟随 `color-scheme` 和 `prefers-color-scheme`。
+- 它不加载图片，除非实例设置了自己的徽标（[徽标和图标](instance-settings.md#logo-and-icon)）：这时 HTML 版本以徽标开头（`https://<host>/brand/...`；在邮件客户端采用深色配色时则使用深色徽标），所有收件人的 URL 都相同，因此无法得知谁打开了邮件。不加载外部图片的客户端会显示服务器名称（图片的替代文字）。没有徽标，或服务器 URL 不是 `https` 时，邮件中没有图片。
+- 只有 `https` 的 URL 会成为链接。当 URL 是 `http` 时（例如 `web_origin` 为 `http://{host}` 的开发环境），该 URL 会以文本写出，而不是按钮或退订链接，签名中的服务器 URL 也会省略。
+- 布局是二进制文件的一部分，因此服务器在运行时不会执行任何 JavaScript。

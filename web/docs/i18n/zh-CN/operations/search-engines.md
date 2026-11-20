@@ -185,7 +185,7 @@ Kuromoji 把日语拆分为其词典中的词，并把每个词还原为原形�
 
 `search = opensearch` 把索引保存在你运行的 OpenSearch 集群中，或 Amazon OpenSearch Service 的域中。服务器与集群的 REST API 通信。它管理索引的字段和它发送的查询，其余部分可以由你管理：分析器、分片、副本和其他任何索引设置。没有你自己的设置时，它使用 OpenSearch 内置的分析器，无需任何插件。
 
-<!-- source: setting-it-up-1 11097d66bccc -->
+<!-- source: setting-it-up-1 43f90813166b -->
 ### 设置
 
 1. 运行 OpenSearch 2 或 3。一个节点就足以开始；服务器只会访问你提供的地址。
@@ -194,6 +194,8 @@ Kuromoji 把日语拆分为其词典中的词，并把每个词还原为原形�
    - 使用安全插件时，通过 [`search_opensearch_username`](../reference/configuration.md#search_opensearch_username) 和 [`search_opensearch_password`](../reference/configuration.md#search_opensearch_password) 指定一个用户，以 HTTP Basic 认证发送。当集群不在同一台主机上，也不在你信任的私有网络中时，请使用 `https`。该用户需要能够创建名称以 [`search_opensearch_index`](../reference/configuration.md#search_opensearch_index) 开头的索引、读取其映射并删除它们，管理该别名，以及读取、写入和删除其中的文档。
    - 在使用 IAM 访问策略的 Amazon OpenSearch Service 上，把 [`search_opensearch_aws_signing`](../reference/configuration.md#search_opensearch_aws_signing) 设为 `es`，这会用 AWS Signature Version 4 为每个请求签名。凭据来自 AWS SDK 的默认链（执行角色、环境、共享文件），区域来自 [`search_opensearch_aws_region`](../reference/configuration.md#search_opensearch_aws_region) 或 `AWS_REGION`。该角色需要对该域拥有 `es:ESHttpGet`、`es:ESHttpPost`、`es:ESHttpPut` 和 `es:ESHttpDelete` 权限。启用了精细访问控制并使用内部主用户的域，则改用用户名和密码。
    - 不支持 Amazon OpenSearch Serverless：它没有按查询删除的功能，而移除某个作者或某个可见范围的帖子需要这一功能。
+
+   在 AWS 上使用 OpenTofu 模块 [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) 时，对于你在部署所在区域中创建的域，`search` 部分会完成第 2 步和第 3 步：`search = { domain_name = "my-search" }` 会读取该域的端点和区域，允许任务的角色对其执行这四个 `es:ESHttp*` 操作，并设置 `search`、`search_opensearch_url` 和签名；用 `index` 可以指定另一个别名。对于位于 VPC 中的域，`security_group_ids` 指定任务要加入的安全组，该域的安全组需要放行这些安全组。域本身、它的访问策略，以及在使用精细访问控制时，任务角色到 OpenSearch 角色的映射，仍由你负责。
 4. 可选：用设置文件[调整分析](#tuning-the-analysis-of-opensearch)。
 5. 启动服务器。它会在启动时创建索引，无法访问集群或无法创建索引时拒绝启动。
 6. 运行 `my search rebuild`，索引已有的帖子（[重建索引](search.md#rebuilding-the-index)）。

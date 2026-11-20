@@ -5,12 +5,12 @@
 
 robots.txt 和 meta 标签只是一种声明，爬虫可能遵守，也可能不遵守，它们并不能在技术上阻止访问。如果需要阻止，请使用 WAF 或速率限制。
 
-<!-- source: settings 13dfb1b04948 -->
+<!-- source: settings 470e02c5f395 -->
 ## 设置
 
 | 范围 | 设置 | 修改位置 | 未设置时 |
 | --- | --- | --- | --- |
-| 服务器 | `search_indexing`（`allow` / `deny`） | 管理后台服务器设置中“搜索与爬虫”页面的“搜索引擎与 AI”部分、`my instance set`、`PATCH /api/v1/admin/settings`（[实例设置](instance-settings.md)） | `deny` |
+| 服务器 | `search_indexing`（`allow` / `deny`） | 管理后台服务器设置中“搜索与爬虫”页面的“搜索引擎”和“AI”部分、`my instance set`、`PATCH /api/v1/admin/settings`（[实例设置](instance-settings.md)） | `deny` |
 | 服务器 | `ai_usage`（`allow` / `deny_training` / `deny`） | 同上 | `deny` |
 | 服务器 | `indexable_default`（新账号的 `indexable`） | 同上 | `false` |
 | 服务器 | `security_contact`（报告漏洞的联系方式） | 同上 | 空（不提供 `security.txt`） |
@@ -18,7 +18,8 @@ robots.txt 和 meta 标签只是一种声明，爬虫可能遵守，也可能不
 | 个人 | `ai_opt_out`（拒绝 AI 训练和使用） | 同上 | `false` |
 
 - 页面的声明取服务器设置和页面所有者设置中更严格的一方。个人不能允许超出服务器所允许的范围。
-- 只有在 `search_indexing = allow` 的服务器上，`indexable = true` 的账号的个人资料和 `public` 帖子才会被告知搜索引擎可以收录。希望能被搜索到的服务器需要同时修改 `search_indexing` 和 `indexable_default`。在你修改 `indexable_default` 之前注册的用户，只有在自己选择 `indexable` 后才会被包含在内。
+- 只有在 `search_indexing = allow` 的服务器上，`indexable = true` 的账号的个人资料和 `public` 帖子才会被告知搜索引擎可以收录。
+  希望能被搜索到的服务器需要同时修改 `search_indexing` 和 `indexable_default`。在你修改 `indexable_default` 之前注册的用户，只有在自己选择 `indexable` 后才会被包含在内。
 - 修改后的设置无需重启即可在 `/robots.txt`、页面和媒体响应中生效。
 
 <!-- source: what-the-server-returns 31584e03601b -->

@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## 键
 
-<!-- source: settings-one-key-one-value a3d12269943c -->
+<!-- source: settings-one-key-one-value d7de299cd54d -->
 ### 设置（一个键对应一个值）
 
 | 键 | 类型 | 默认值 | 说明 |
@@ -83,13 +83,14 @@
 | `link_cards` | `true` / `false` | `true` | 是否为帖子中的链接显示卡片。为 `true` 时，服务器会获取链接的页面来生成卡片。为 `false` 时，服务器停止获取，并隐藏已经生成的卡片。如果只想对部分域名停止，参见[链接卡片域名](#link-card-domains) |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | 获取链接卡片时是否跳过 `robots.txt`。为 `false` 时，服务器遵守被链接网站的 `robots.txt`，因此禁止 `my-linkcard` 或 `*` 的网站不会得到卡片（[链接预览](link-previews.md#cards-of-links-in-posts)）。`/about/crawler` 会告诉被链接的网站它是什么。为 `true` 时，服务器既不获取也不使用 `robots.txt`，被链接的网站也就无法再用它拒绝这些获取；服务器仍以 `my-linkcard` 自称。只有在缺失的卡片过多时才开启它。开启期间生成的卡片，会在关闭后的下一次重新获取时检查。无论哪种情况，页面的指令和链接卡片域名都会生效 |
 | `ux_measurement` | `true` / `false` | `false` | Web 客户端是否发送其响应速度的样本，以及本服务器是否保存这些样本（[UX 测量](error-reporting.md#ux-measurements)）。样本不含账号、地址或 URL。为 `false` 时，服务器不采集任何样本，`GET /api/v1/instance` 中的 `ux_measurement` 会告诉客户端不要发送 |
+| `ux_measurement_share` | 整数 1-100（百分比） | `10` | 在 `ux_measurement` 为 `true` 时，其 Web 客户端发送样本的浏览器会话所占的比例。每个会话只在 Web 客户端启动时抽取一次；小型服务器可以用 `100` 测量每个会话 |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | 是否接受 Client ID Metadata Document 客户端。为 `true` 时，对于 `client_id` 是 `https` URL 的授权请求，服务器会获取该 URL 上的元数据并将其视为客户端（无需事先注册）。获取不跟随重定向，最多读取 5 KB，并按照响应的缓存指令最多复用 24 小时。为 `false` 时，服务器停止获取，并拒绝这些客户端的授权请求、令牌交换和刷新 |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | 公开多少运营成本（在 `/admin/finance/costs` 记录，在 `/admin/finance/publication` 设置）。`private`：不公开任何内容（`GET /api/v1/instance/cost_totals` 为 404）。`totals`：只公开每个周期和每种货币的合计。`breakdown`：公开合计以及按服务商和类别的明细，在信息页面（`/about` 和 `/about/costs`）和 API 中向所有人显示。`breakdown` 会暴露你在哪个服务商（例如哪家云）上运行。无论哪个级别，项目名称、备注和单笔付款都不公开。公开截至并包括今天（UTC）所在周期的数据 |
 | `finance_viewer_item_names` | `true` / `false` | `false` | 拥有权限 `view_finance` 的用户能否在财务界面（`/finance`、`GET /api/v1/finance/cost_totals`）上看到成本项目名称和导入成本的服务名称。无论此设置如何，合计以及按服务商和类别的明细总是显示 |
 | `finance_viewer_item_memos` | `true` / `false` | `false` | 拥有 `view_finance` 的用户能否在财务界面上看到成本项目的备注。只要名称或备注的设置之一为 `true`，每个周期就会显示项目行（服务商、类别、该周期的金额，以及已启用的名称和备注）。拥有 `manage_finance` 的人无论如何都能看到全部内容 |
 | `finance_viewer_income` | `totals` / `plans` | `totals` | 拥有 `view_finance` 的用户只能看到收入合计（`totals`），还是还能看到每个方案的订阅人数（`plans`）。每个方案的金额和付款人永远不会显示。如果 `income_visibility` 为 `plans`，无论此值如何都会显示公开的人数。收入可以在 Web 客户端的财务界面（`/finance`）和 `GET /api/v1/finance/income_totals` 中查看 |
 | `income_visibility` | `private` / `totals` / `plans` | `private` | 公开多少支持者收入（扣除支付服务商手续费后的金额）。它与 `finance_visibility` 分开选择。`private`：不公开任何内容（`GET /api/v1/instance/income_totals` 为 404）。`totals`：只公开每个周期和每种货币的收入合计。`plans`：还向所有人显示每个方案当前的订阅人数。对于订阅人数很少的方案，人数可能让人猜出谁在订阅。只有当此值和 `finance_visibility` 都不是 `private` 时才显示结余（收入减去成本）；否则结余会暴露你隐藏的那一方。无论哪个级别，单笔付款、订阅者、每个方案的金额、总额和手续费都不公开。公开截至并包括今天（UTC）所在周期的数据 |
-| `funding_meter_visibility` | `off` / `percent` / `amounts` | `off` | 募资进度条公开什么：本月的收入（扣除支付服务商手续费后）距离每月目标还有多远，显示在关于页面、支持者列表（`/about/supporters`）和 `GET /api/v1/instance`（`funding_meter`）中。它与目标一起在 `/admin/finance/publication` 中设置，该页面会停用被当前可见性设置排除的选项并说明原因。`off`：什么都不公开。`percent`：只有百分比（向下取整到 1%）、本月是否已经覆盖，以及目标中是否包含估算的成本。只有在 `finance_visibility` 和 `income_visibility` 都是 `private` 时才能选择。`amounts`：还包括收入和目标。只有在两者都不是 `private` 时才能选择。当只公开了其中一个时，无法显示进度条：已公开的金额和百分比会泄露被隐藏的那一方。更改任一可见性而使所选值不再被允许时，进度条会变为 `off`，这一更改会像其他任何更改一样被记录和审计。月份是包含今天（UTC）的日历月，并且只有目标币种的收入才会计入 |
+| `funding_meter_visibility` | `off` / `percent` / `amounts` | `off` | 募资进度条公开什么：本月的收入（扣除支付服务商手续费后）距离每月目标还有多远，显示在关于页面、支持者列表（`/about/supporters`）和 `GET /api/v1/instance`（`funding_meter`）中。它与目标一起在 `/admin/finance/publication` 中设置，该页面只提供当前可见性设置允许的选项并说明原因。`off`：什么都不公开。`percent`：只有百分比（向下取整到 1%）、本月是否已经覆盖，以及目标中是否包含估算的成本。只有在 `finance_visibility` 和 `income_visibility` 都是 `private` 时才能选择。`amounts`：还包括收入和目标。只有在两者都不是 `private` 时才能选择。当只公开了其中一个时，无法显示进度条：已公开的金额和百分比会泄露被隐藏的那一方。更改任一可见性而使所选值不再被允许时，进度条会变为 `off`，这一更改会像其他任何更改一样被记录和审计。月份是包含今天（UTC）的日历月，并且只有目标币种的收入才会计入 |
 | `funding_meter_target_amount` | 大于零的小数，或留空 | 空 | 募资进度条的每月目标，以 `funding_meter_target_currency` 的主单位表示（`1650` 日元，`12.50` 美元），小数位数不超过该币种所有的位数。留空：目标是本月的成本，这要求成本使用同一种币种；在成本使用多种币种或为零的月份，不显示进度条 |
 | `funding_meter_target_currency` | ISO 4217 代码，或留空 | 空 | `funding_meter_target_amount` 的币种，例如 `JPY`。留空：本月成本的币种 |
 | `funding_meter_rail` | `true` / `false` | `false` | 当 `funding_meter_visibility` 不是 `off` 时，Web 客户端除了关于页面之外，是否还在宽布局的右栏显示募资进度条 |
@@ -99,6 +100,8 @@
 | `voice_public_summary` | `true` / `false` | `false` | 对于可见范围为 `local` 的语音聊天房间，其页面是否向未登录本服务器的访客和远程用户显示房间的名称、简介、主持人以及是否仍在进行，并在链接预览中显示。参与者永远不会显示。为 `false` 时，这些访客只能看到该房间面向本服务器的本站用户 |
 | `event_creators` | `everyone` / `permitted` | `everyone` | 谁可以创建活动（[活动](#events)）。`everyone`：每位未被封禁或限制的已登录本站用户。`permitted`：只有拥有权限 `create_events` 的人，默认只有内置的 `admin` 角色拥有它，支持者方案的角色也可以拥有它 |
 | `public_counts` | `true` / `false` | `true` | 首页（`/`，未登录时）和 `GET /api/v1/instance/overview` 是否显示服务器有多少成员、其用户在最近 7 天中每天发布了多少公开帖子，以及服务器何时启动。只统计本服务器用户的公开帖子；数字每隔几分钟刷新一次。为 `false` 时，API 会省略它们 |
+| `landing_fediverse_explanation` | `true` / `false` | `true` | 首页（`/`，未登录时）是否说明联邦宇宙如何运作：这里的账号可以关注其他服务器上的人，也可以被他们关注 |
+| `landing_features` | `true` / `false` | `true` | 首页是否展示本服务器上软件的功能，并为每个已开启的功能（语音房间、活动、文章、搜索、翻译、支持者）附上示例 |
 | `featured_accounts` | 最多 20 个本站账号的用户名，以空格或逗号分隔（留空 = 无） | 空 | 关注推荐中最先显示的账号，按此顺序排列，排在本服务器最近发帖的人之前。如果账号的所有者关闭了“推荐我的账号，并允许通过部分名称找到它”，该账号不会被推荐。参见[账号推荐](#suggestions-of-accounts) |
 | `login_providers_only` | `true` / `false` | `false` | 在至少启用了一个登录服务时，是否将注册和登录限制为只能通过登录服务：密码和通行密钥不再能登录，没有关联服务商的用户在会话结束后无法再次登录。没有启用任何服务商时它不生效。`my instance set` 会输出有多少活跃用户没有关联到已启用的服务商。参见[将登录限制为登录服务](login-providers.md#limit-sign-in-to-login-providers)。 |
 | `invite_creators` | `everyone` / `permitted` | `permitted` | 除了拥有 `manage_invites` 的工作人员之外，谁能创建自己的邀请（[成员邀请](registration.md#member-invites)）。`everyone`：每个未被封禁或限制的已登录本站用户。`permitted`：只有拥有权限 `create_invites` 的人；默认只有内置的 `admin` 角色拥有该权限，支持者方案的角色也可以拥有。在 `approval` 模式下，可用的邀请会立即批准新用户，因此 `everyone` 会让每个用户都能跳过审核 |
@@ -204,7 +207,7 @@
 - 每位用户每小时最多创建 10 个活动，每个活动每小时最多发出 100 份邀请。
 - 用户可以举报活动，审核员可以取消活动；封禁或删除主办者会取消该主办者尚未开始的活动（[审核](moderation.md#events)）。谁回复了、谁受到邀请，会在活动结束后保留 `event_records_retention_days`，对其候选日期的投票也是如此。
 
-<!-- source: texts-one-key-one-value c639fc7dfe23 -->
+<!-- source: texts-one-key-one-value cc74b8e2bdda -->
 ### 文本（一个键对应一个值）
 
 | 键 | 限制 | 说明 |
@@ -221,7 +224,7 @@
 - 每个文本只有一个值。管理员用自己喜欢的任意语言写一次，所有语言区域的读者看到的都是同一个值；其他语言的读者依靠机器翻译等方式阅读。管理字段的标签和说明与其他界面文本一样会翻译成查看者的语言；只有管理员所写的值不会翻译。
 - 服务器不知道文本的语言，因此 Web 客户端和服务器渲染的界面在输出文本时使用 `dir="auto"` 和 `lang=""`（HTML 中表示未知语言的值），而不是继承界面的语言。
 - 将文本设为空会删除它。
-- 除了 CLI，还可以在 Web 客户端的管理界面上更改文本（名称、简短介绍和简介在“服务器设置”的“常规”页面 `/admin/settings`；服务条款在“条款和政策”的第一页 `/admin/documents`，隐私政策在 `/admin/documents/privacy-policy`，销售者信息披露等在 `/admin/documents/commerce-disclosure`），也可以通过客户端 API 更改（`GET /api/v1/admin/instance_texts`、`PUT /api/v1/admin/instance_texts/{key}`）。两者都需要角色权限 `manage_settings`，更改会记录在审计日志中（`text_changed`）。
+- 除了 CLI，还可以在 Web 客户端的管理界面上更改文本（名称、简短介绍和简介在“服务器设置”的“常规”页面 `/admin/settings/general`；服务条款在 `/admin/documents/terms`，隐私政策在 `/admin/documents/privacy-policy`，销售者信息披露在 `/admin/documents/commerce-disclosure`，它们各是“条款和政策”（`/admin/documents`）的一个页面），也可以通过客户端 API 更改（`GET /api/v1/admin/instance_texts`、`PUT /api/v1/admin/instance_texts/{key}`）。两者都需要角色权限 `manage_settings`，更改会记录在审计日志中（`text_changed`）。
 
 <!-- source: terms-and-privacy-policy 82e7bc325cf1 -->
 ### 服务条款与隐私政策
@@ -241,7 +244,7 @@
 - 名称在所有语言区域中都相同。没有名称时，会改为显示域名（`host`）。
 - 更改从下一个请求开始生效，无需重启。在管理界面保存后，已打开的 Web 客户端的标签页标题和侧边栏会随之更新。
 
-<!-- source: contact-and-thumbnail 71513ab82d51 -->
+<!-- source: contact-and-thumbnail 0c0f6038fb4e -->
 ### 联系方式与缩略图
 
 运营者的联系方式（`contact_account`、`contact_email`）和代表实例的图片（`thumbnail` 以及文本 `thumbnail_alt`）会出现在以下位置。未设置的项目不会出现。
@@ -250,12 +253,12 @@
 - `GET /api/v1/instance` 中的 `contact`（`account` 和 `email`）和 `thumbnail`（`url`、`width`、`height`、`alt`）。
 - NodeInfo 中的 `metadata`：遵循 Misskey 惯例的 `maintainer`（`name` 是联系账号的昵称，没有昵称时为其用户名；`email` 是 `contact_email`），遵循 Pleroma 和 Akkoma 惯例的 `staffAccounts`（联系账号的 actor ID），`thumbnail`（`url` 和 `alt`），以及来自简短介绍 `short_description` 的 `nodeDescription`。
 
-联系账号被封禁或删除时，不会显示该账号，只显示电子邮件地址。可以在 Web 客户端管理界面的“常规”页面（“服务器设置”，`/admin/settings`）更改它们，也可以使用 CLI 或客户端 API。
+联系账号被封禁或删除时，不会显示该账号，只显示电子邮件地址。可以在 Web 客户端管理界面的“常规”页面（“服务器设置”，`/admin/settings/general`）更改它们，也可以使用 CLI 或客户端 API。
 
-<!-- source: one-person-server 6ba524c58a4f -->
+<!-- source: one-person-server ed3ac66244d6 -->
 ### 个人服务器
 
-只属于运营者一个人、作为运营者在联邦宇宙中的个人家园的服务器，就是个人服务器：开启 `single_user` 即可。在 Web 客户端中，管理员可以在**服务器设置**的**注册**页面通过**设为个人服务器**开启或关闭它；当服务器有多个本站账号时，该处会说明服务器拒绝的原因。
+只属于运营者一个人、作为运营者在联邦宇宙中的个人家园的服务器，就是个人服务器：开启 `single_user` 即可。在 Web 客户端中，管理员可以在**服务器设置**的**注册**页面通过**个人服务器**开启或关闭它；当服务器有多个本站账号时，该处会说明服务器拒绝的原因。
 
 ```sh
 my instance set single_user true
@@ -326,27 +329,27 @@ my admin federation sever -direction both
 - 只有当前模式发送该方向时，才会向远程一方发送 `Reject`（`in`）或 `Undo`（`out`）。在不发送该方向的模式下（例如 `off`），关注只在本站一侧结束，不会通知远程一方。
 - 可以安全地重复运行。它会在标准输出中打印所结束的关注数。
 
-<!-- source: admin-screens-and-the-client-api 887d153efcf9 -->
+<!-- source: admin-screens-and-the-client-api d5fece23283e -->
 ## 管理界面与客户端 API
 
 CLI 能更改的每项设置，也都可以在 Web 客户端的管理界面上或通过客户端 API 更改。两者都需要角色权限 `manage_settings`（只有内置的 `admin` 角色拥有）。与 CLI 一样，更改会保存为修订版本，并按键记录在审计日志中（`setting_changed`，对象是该设置，操作者是该用户）。可以在审核界面（“审计日志”，`/moderation/audit-log`）查看审计日志。
 
-- **Web 客户端**（“服务器设置”，`/admin/settings`）：该界面每个主题一个页面，链接列在标题下方。每个页面有一个表单和一个保存按钮，保存时只发送你在该页面上更改的内容；其他页面上的设置保持不变。
+- **Web 客户端**（“服务器设置”，`/admin/settings`）：该界面按分组列出每个主题的页面。每个页面有一个表单和一个保存按钮，保存时只发送你在该页面上更改的内容；其他页面上的设置保持不变。如果一个选项的各个取值差别很大，保存之前会在它下面说明每个取值的作用；数字被拒绝时会说明它的范围。
 
   | 页面 | 分区与设置 |
   | --- | --- |
-  | 常规（`/admin/settings`） | 名称、介绍（`name`、`short_description`、`description`）；联系方式与缩略图（`contact_account`、`contact_email`、`thumbnail` 以及文本 `thumbnail_alt`） |
-  | 图标与徽标（`/admin/settings/branding`） | 图标、徽标以及用于深色背景的徽标，各自用自己的按钮保存（[徽标与图标](#logo-and-icon)） |
-  | 注册（`/admin/settings/registration`） | 注册（`registration_mode`、`login_providers_only`）；成员邀请（`invite_creators`、`member_invite_max_active`、`member_invite_max_uses`、`member_invite_max_lifetime_seconds`）；应用（`user_app_registration`、`oauth_metadata_document_clients`、`dynamic_client_registration`） |
-  | 内容（`/admin/settings/content`） | 语言（`default_locale`，从应用支持的语言中选择）；时间线（`local_timeline_visibility`、`federated_timeline_visibility`）；帖子（`require_media_description`）；落地页（`public_counts`）；推荐账号（`featured_accounts`） |
-  | 帖子删除（`/admin/settings/auto-delete`） | 新账号的默认设置（`auto_delete_default_*` 设置）；上限（`auto_delete_max_age_days`、`auto_delete_max_allow_*` 设置、`auto_delete_max_kept_pins`、`auto_delete_grace_days`）。保存开启或收紧（天数更少、例外或置顶更少）的上限之前会先进行确认，因为它会通知新受其约束的账号（[帖子保留的上限](#a-maximum-for-keeping-posts)） |
-  | 联邦（`/admin/settings/federation`） | 联邦（`federation_mode`、`federation_scope`（保存 `allowlist` 时会先显示此次切换将结束的关注并要求确认，请参阅[只与被允许的服务器联邦](moderation.md#federating-only-with-allowed-servers)）、`authorized_fetch`、`remote_media_policy`、`remote_media_cache_ttl_seconds`（从 1 小时、1 天、7 天、30 天或 365 天中选择）、`link_cards`、`link_cards_ignore_robots_txt`）；已限制和已封禁的服务器（`domain_actions_visibility`、`domain_actions_rationale_visibility`）；外部审查（`hook_*` 设置，参见[决策钩子](decision-hooks.md)） |
-  | 搜索与爬虫（`/admin/settings/discovery`） | 搜索引擎与 AI（`search_indexing`、`indexable_default`、`ai_usage`、`security_contact`）；帖子搜索（`search_visibilities`，仅在服务器具备全文搜索时） |
-  | 语音聊天（`/admin/settings/voice`） | `voice_room_starters`、`voice_public_summary`、`voice_participants_retention_days`；只有服务器提供语音聊天时才会列出该页面 |
+  | 常规（`/admin/settings/general`） | 名称与介绍（`name`、`short_description`、`description`）；语言（`default_locale`，从应用支持的语言中选择）；联系方式（`contact_account`、`contact_email`）；图片（`thumbnail` 以及文本 `thumbnail_alt`，`preview_image` 以及文本 `preview_image_alt`） |
+  | 图标与徽标（`/admin/settings/branding`） | 图标、徽标以及用于深色背景的徽标（[徽标与图标](#logo-and-icon)） |
+  | 注册（`/admin/settings/registration`） | 谁可以注册（`registration_mode`，每种方式都附有说明）；个人服务器（`single_user`）；成员邀请（`invite_creators`、`member_invite_max_active`、`member_invite_max_uses`、以小时为单位的 `member_invite_max_lifetime_seconds`）；仅限登录服务（`login_providers_only`，保存前会先确认，并说明有多少活跃用户将无法再登录，以及你自己是否在其中）；应用（`user_app_registration`、`dynamic_client_registration`、`oauth_metadata_document_clients`、`oauth_client_rate_limits`）。在个人服务器上，注册和成员邀请这两个分区会说明不会有其他人注册 |
+  | 帖子与功能（`/admin/settings/content`） | 帖子（`max_status_length`、`require_media_description`）；时间线（`local_timeline_visibility`、`federated_timeline_visibility`）；链接卡片（`link_cards`、`link_cards_ignore_robots_txt`）；草稿和定时帖子（`max_drafts`、`max_scheduled_posts`、`max_scheduled_posts_per_day`、`scheduled_post_min_lead_minutes`、`scheduled_post_max_lead_days`）；文章（`article_authoring`、`max_article_bytes`、`max_article_images`）；活动（`event_creators`、`event_records_retention_days`）；首页与推荐（`public_counts`、`landing_fediverse_explanation`、`landing_features`、`featured_accounts`） |
+  | 语音聊天（`/admin/settings/voice`） | 谁可以开启房间（`voice_room_starters`）；房间（`voice_public_summary`、`voice_participants_retention_days`） |
+  | 帖子删除（`/admin/settings/auto-delete`） | 新账号的默认设置（`auto_delete_default_*` 设置）；面向所有人的上限（`auto_delete_max_age_days`、`auto_delete_grace_days`、`auto_delete_max_allow_*` 设置、`auto_delete_max_kept_pins`）。保存开启或缩短的上限之前会先进行确认（[帖子保留的上限](#a-maximum-for-keeping-posts)） |
+  | 联邦（`/admin/settings/federation`） | 方向（`federation_mode`）；服务器（`federation_scope`：保存 `allowlist` 时会先显示此次切换将结束的关注并要求确认，请参阅[只与被允许的服务器联邦](moderation.md#federating-only-with-allowed-servers)）；签名获取（`authorized_fetch`）；来自其他服务器的媒体（`remote_media_policy`、以分钟为单位的 `remote_media_cache_ttl_seconds`、以 MiB 为单位的 `remote_media_cache_max_bytes`）；来自其他服务器的帖子（`remote_status_retention_days`、`remote_status_max_retention_days`、`relay_status_retention_days`）；受审核处理的服务器（`domain_actions_visibility`、`domain_actions_rationale_visibility`） |
+  | 搜索与爬虫（`/admin/settings/discovery`） | 搜索引擎（`search_indexing`、`indexable_default`）；安全联系方式（`security_contact`）；AI（`ai_usage`）；全文搜索（`search_visibilities`） |
+  | 外部审查（`/admin/settings/hooks`） | 每个决策钩子各有一个分区：它的模式（只有在不是 `off` 之后才提供 `enforce`）、其插件出错时它如何处理，以及它的其他设置；决策记录（`hook_decisions_retention_days`）。参见[决策钩子](decision-hooks.md) |
+  | 申诉与记录（`/admin/settings/records`） | 申诉（`appeal_window_days`）；记录保留（`session_origins_retention_days`、`registration_origins_retention_days`、`reports_retention_days`、`moderation_actions_retention_days`、`audit_log_retention_days`） |
 
-  在“常规”页面上，选择图片时就会上传，保存时它才成为缩略图。谁能查看运营成本、收入和支持者列表，在“财务”和“支持者”界面上设置。
-
-  `max_status_length`、`preview_image`、`appeal_window_days`、各保留期限（`*_retention_days`）、`remote_media_cache_max_bytes` 和 `oauth_client_rate_limits` 不会出现在界面上；请使用 CLI 或客户端 API 更改它们。翻译的设置有自己的界面，见下文。
+  在“常规”页面上，图片会在保存时上传，并在那时成为缩略图或链接预览图。谁能查看运营成本、收入和支持者列表，在“成本与收入”和“支持者”界面上设置。翻译的设置有自己的界面，见下文。
 - **Web 客户端**（“翻译”，`/admin/translation`）：本服务器拥有的服务商、它们的顺序以及每个服务商可以接收的内容，浏览器翻译，每月上限，以及翻译保留多久，并显示本月已发送的字符数和缓存命中率。每个服务器进程最多每分钟一次将其缓存命中数计入命中率，因此最新的请求可能需要一分钟才会显示，而停止的进程可能会留下最后一分钟未计入。在启用服务器端服务商之前，请更新你的隐私政策（[模板](privacy-policy-template.md#the-services-you-choose)）：发送给服务商的文本无法收回。服务商的 API 密钥和[翻译插件](plugins.md#translating-posts)的地址保存在[部署配置](../reference/configuration.md)中；任何设置和客户端 API 的任何响应都不包含它们。
 - **翻译上限。** 计数的是发送的字符数，以码位计：代替提及、链接等的标记不计入，服务器已保存的翻译、已经是读者语言的帖子以及浏览器翻译也不计入。每次调用服务商都会计数，包括失败的调用，因为服务商可能已经收到了文本，所以这个数字可能与服务商计费的数字不同。超过上限时，请求会以 `429` 被拒绝，不会调用任何服务商；此时如果你允许、且浏览器能翻译该帖子，Web 客户端会使用读者浏览器的翻译。月份按 UTC 计算。
 - **客户端 API**：`GET /api/v1/admin/settings` 返回每项设置的当前值、默认值、是否已设置，以及类型和可接受的值（选项或范围）。`PATCH /api/v1/admin/settings` 用 `{"values": {"<key>": "<value>", ...}}` 一并更改多项设置。所有值都是字符串，与 CLI 一样经过规范化后存储。只要有一个键未知或有一个值无效，就会返回指明该键的 422，不会有任何更改。更改的键会在同一个事务中记录为修订版本并写入审计日志。
@@ -373,7 +376,7 @@ my instance rule list                                  # active rules (-all incl
 - 在 Web 客户端的管理界面（“规则”，`/admin/rules`，`manage_rules`）上，列表按顺序显示生效中的规则，用“上移”和“下移”调整顺序；列表上方的筛选器可以改为显示已停用的规则。“添加规则”会打开一个填写句子和补充说明的页面。选择一条规则的句子即可打开它的页面，在那里编辑它或停用它（经过确认对话框之后）。每次更改都会记录在审计日志中（`rule_added`、`rule_revised`、`rule_moved`、`rule_retired`）。
 - 退出码与设置相同（0 表示成功，1 表示值被拒绝或数据库错误，2 表示参数错误）。
 
-<!-- source: link-card-domains c8f674387fa8 -->
+<!-- source: link-card-domains 1b8839ab9f1d -->
 ## 链接卡片域名
 
 帖子的链接卡片（`link_cards`）来自一个爬虫：服务器获取被链接的页面及其图片。一条规则会在某个域名及其子域名上停止这个爬虫，而不影响该域名的其他任何方面。规则有两种模式之一。规则是运营者的选择，它在被链接网站自己拒绝的内容之外额外生效（[链接预览](link-previews.md#cards-of-links-in-posts)）。
@@ -387,11 +390,11 @@ my instance rule list                                  # active rules (-all incl
 - 规则涵盖该域名及其子域名，图片会同时按页面的主机和图片的主机进行检查。涵盖某个主机的每条规则都会生效，因此子域名上的规则不会放宽其父域名上的规则。域名的写法和规范化方式与域名措施相同：不带协议和端口的主机名，国际化域名可以使用任意写法。
 - 更改立即生效，也作用于服务器已有的卡片；在停止图片期间，这些卡片的代理图片也会停止提供。
 - 移除规则后，服务器已有的卡片会恢复原样。被跳过的链接会在下次有帖子需要时获得卡片；不会批量重新获取。在停止图片期间重新获取的卡片，直到下一次重新获取之前都不带图片。
-- 在 Web 客户端的管理界面（“链接卡片域名”，`/admin/link-card-domains`，`manage_settings`）上，“添加规则”可以设置一条带备注的规则。列表每页显示 40 条规则，可以按域名搜索；选择一个域名会打开其规则的页面，在那里更改模式和备注，或移除规则（经过确认对话框之后）。
+- 在 Web 客户端的管理界面（“链接卡片域名”，`/admin/link-card-domains`，`manage_settings`）上，“添加规则”可以设置一条带模式和备注的规则，并会拒绝已经有规则的域名，同时附上指向该规则的链接。列表按域名显示规则，每次 40 条，可以用“显示更多”继续；选择一个域名会打开其规则的页面，在那里更改模式和备注，或移除规则（经过确认对话框之后）。
 - 管理 API 是 `/api/v1/admin/link_card_domains`（列出、设置；对域名发送 `DELETE` 即可移除），需要角色权限 `manage_settings`。一个服务器最多保存 1,000 条规则，每条的备注最多 5,000 个字符。
 - 每次更改都会记录在审计日志中（`link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`）。
 
-<!-- source: theme d3ebe5db33cb -->
+<!-- source: theme 98c2eee35f30 -->
 ## 主题
 
 服务器范围的主题是一组对 Web 客户端设计令牌的覆盖，每种颜色都有浅色和深色两个值。它适用于每位访问者的 Web 客户端，也适用于服务器自己渲染的页面（登录、注册、条款等）。没有自定义 CSS。
@@ -402,17 +405,18 @@ my instance rule list                                  # active rules (-all incl
   | --- | --- | --- |
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | 颜色 | 浅色和深色各一个 `#rrggbb` |
   | `font-sans-override`, `font-mono-override` | 字体族 | 字体族名称，以逗号分隔（最多 30 个），不能包含 `sans-serif` 这样的通用字体族；名称中含有以数字开头的单词时要加引号，例如 `"M PLUS 1p"` |
-  | `text-tagline`, `text-title`, `text-body`, `text-caption` | 长度 | `0` 或 rem / px，0.625rem 到 3rem |
+  | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | 长度 | `0` 或 rem / px，0.625rem 到 3rem |
   | 上述四个令牌各自的 `text-*--line-height` | 数字 | 1 到 2.5 |
   | `radius-control`, `radius-overlay` | 长度 | 0 到 2rem |
   | `duration-spin` | 时长 | ms / s，0 到 1000ms |
 
 - Web 客户端用自带的字体绘制文字：表情符号用 Noto Color Emoji，拉丁字母、希腊字母和西里尔字母用 Noto Sans，其余文字用与文本语言相应字形的 Noto Sans CJK。`font-sans-override`（正文）和 `font-mono-override`（代码）中的字体紧排在表情符号字体之后，你的字体所缺少的字符由 Web 客户端的字体绘制。主题不能替换这些字体。
 - 你把一组设置保存为草稿，预览之后再发布；发布之前，生效的主题不会变。每次保存都会替换整个草稿，每次发布都是一个新的修订。恢复会再次发布当前这组之前生效的那一组，草稿保持不变。
+- 在 Web 客户端中，**管理 > 主题**会显示草稿和生效的主题。“编辑草稿”会分别显示浅色和深色下的每种颜色，以及它所构成的每一对颜色的对比度，低于最低要求的一对不会被保存。“预览”会在你浏览器标签页的每个界面上显示草稿，直到你再次按下它；其他人看不到。“发布”和“恢复上一个主题”也在同一个界面上。图标和徽标在**服务器设置 > 图标与徽标**中。
 - 保存和发布时，服务器会检查值的形式和范围，以及每一对颜色令牌的对比度（你没有覆盖的令牌使用默认值；浅色和深色下都要达到 WCAG 2.2 AA）。只要有一项检查不通过，就不会保存或发布任何内容。
 - 如果新版本重命名或淘汰了某个令牌，或者某个覆盖的值不再适合该令牌，升级不会因此失败。该覆盖仍保留在已保存的设置中，但不再生效：管理 API 会把它列在 `stale_tokens` 下，`my instance theme get` 会指出它的名称，下次保存草稿时会将它丢弃。
 - 已发布修订的样式表通过 `/theme/{revision ID}.css` 提供（`immutable`，长期缓存）。HTML 外壳有共享缓存（60 秒加 300 秒的重新验证），所以发布之后需要几分钟才会传到所有人。已经打开的页面在重新加载之前保持旧的外观。
-- 外壳中的 `<meta name="theme-color">`（浅色和深色）以及 Web App Manifest 的 `theme_color` / `background_color`（浅色）取主题的 `color-surface` 的值。无论主题如何，电子邮件都使用令牌的默认颜色。
+- 外壳中的 `<meta name="theme-color">`（浅色和深色）以及 Web App Manifest 的 `theme_color` / `background_color`（浅色）取主题的 `color-surface` 的值。此后服务器发送的每封电子邮件的 HTML 版本，都使用已发布主题的颜色（浅色和深色）；草稿永远不会传到电子邮件中。
 - 发布一组不含任何令牌的设置，会把主题重置为默认，样式表也不再加载。
 - 你可以用客户端 API 和 CLI 更改它。客户端 API 需要角色权限 `manage_settings`：`GET /api/v1/admin/theme` 读取草稿和生效的设置，`PUT /api/v1/admin/theme/draft` 保存草稿，`GET /api/v1/admin/theme/draft/stylesheet` 返回草稿的样式表以供预览，`POST /api/v1/admin/theme/publish` 和 `POST /api/v1/admin/theme/restore` 负责发布。发布会记录在审计日志中（`setting_changed`，目标为 `theme`）。
 
@@ -433,7 +437,7 @@ echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # ba
 }
 ```
 
-<!-- source: logo-and-icon a2d23def322b -->
+<!-- source: logo-and-icon 1269b80d7ad5 -->
 ## 徽标与图标
 
 除了缩略图和预览图之外，实例还可以拥有自己的图标、徽标和深色徽标，每个都以一个 SVG 上传。在设置之前使用内置的 mycroblog 图片，清除后也会恢复为内置图片。
@@ -451,7 +455,7 @@ echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # ba
   'unsafe-inline'; sandbox` 和 `X-Content-Type-Options: nosniff`，因此即使单独打开，它也不会运行或加载任何内容。较早修订版本的文件会保留，因此已发送的电子邮件仍然保有其徽标。
 - 设置了图标后，HTML 外壳会链接其 PNG 网站图标、SVG 以及 180 px 的 `apple-touch-icon`，Web App Manifest 按顺序列出其 512 px、192 px、可遮罩和 SVG 图标（其他联邦宇宙服务器会将第一个作为本服务器的图标），`/apple-touch-icon.png` 返回 180 px 版本。外壳的 ETag 会随图片变化，外壳的共享缓存与主题一样会持续几分钟。在 Android 上，已安装的应用会在 Chrome 下次检查 manifest 时获取新图标；在桌面上，应用会保持旧图标，直到重新安装。
 - `GET /api/v1/instance` 返回 `icon`、`logo` 和 `logo_dark`，包含 SVG 的 URL、每个 PNG 版本的 URL 和尺寸以及修订版本；使用内置图片时会省略相应项。
-- 在 Web 客户端的**服务器设置** > **图标与徽标**（`/admin/settings/branding`，角色权限 `manage_settings`）中设置它们。为图标、徽标或深色背景的徽标选择一个 SVG 文件：服务器检查它，浏览器绘制 PNG 版本，表单会预览它们（浏览器标签页、主屏幕、应用图标、浅色和深色背景上的电子邮件，以及链接预览），并列出服务器移除的内容。如果服务器拒绝该文件，原因和修正方法会显示在按钮下方。图标的不透明版本的背景色也在那里设置。**保存**会发送 SVG 及每个 PNG 版本；**使用内置图标**、**使用内置徽标**和**移除深色背景徽标**会清除它们。Web 客户端会保留已显示过的图片以供离线使用。
+- 在 Web 客户端的**服务器设置** > **图标与徽标**（`/admin/settings/branding`，角色权限 `manage_settings`）中设置它们。为图标、徽标或深色背景的徽标选择一个 SVG 文件：服务器会立即检查它，表单会按服务器将保存的样子显示它，并列出服务器移除的内容。如果服务器拒绝该文件，原因和修正方法会显示在它下方。图标的不透明版本的背景色也在那里设置。**保存**会在浏览器中绘制 PNG 版本，并将选择的每张图片连同它们一起发送；**使用内置图片**会在保存时让图片恢复为内置的图片。Web 客户端会保留已显示过的图片以供离线使用。
 - 客户端 API 可以做同样的事，需要角色权限 `manage_settings`：`POST /api/v1/admin/instance/brand/sanitize` 检查一个 SVG，并返回清理后的 SVG 以及需要绘制的 PNG 版本（不保存任何内容），`PUT /api/v1/admin/instance/brand/{icon|logo|logo_dark}` 保存 SVG 及每个 PNG 版本（`multipart/form-data`，每个版本一个部分），对同一路径发送 `DELETE` 会清除其中一个，`GET /api/v1/admin/instance/brand` 返回当前的图片以及图标的背景色。每次更改都会保存为修订版本（`instance_brand_revisions`）并记录在审计日志中（`setting_changed`，对象为 `brand_icon`、`brand_logo` 或 `brand_logo_dark`）。
 - CLI 不能设置它们，因为 PNG 版本由客户端绘制，但它可以显示它们，并清除损坏的图片：
 
@@ -460,7 +464,7 @@ my instance brand show          # each image with its revision, when and by whom
 my instance brand clear icon    # back to the built-in icon (also logo, logo_dark)
 ```
 
-<!-- source: custom-emoji 5e0ddb3251cf -->
+<!-- source: custom-emoji 852330f1cc29 -->
 ## 自定义表情
 
 当有人在帖子的正文或内容警告中，或在昵称、简介或个人资料字段中写下 `:shortcode:` 时，本站的自定义表情会显示为图片。它们也会通过你发送的 Note 和 actor 的 `Emoji` 标签传到 Mastodon、Misskey、GoToSocial 和 Akkoma。
@@ -470,7 +474,7 @@ my instance brand clear icon    # back to the built-in icon (also logo, logo_dar
 - 已停用的表情不会出现在任何地方（帖子、个人资料、联邦、选择器），`:shortcode:` 会重新显示为文本。设置为在选择器中隐藏的表情只是不出现在选择器中，仍然可以通过手写使用。来自其他服务器的表情只能停用，或复制为本服务器的表情。
 - 复制会在与媒体代理相同的限制下获取其他服务器表情的图片（不会从带有 `reject_media` 的域名获取图片），执行与上面相同的检查，并将其注册为新的本站表情。短代码为原表情的短代码或你指定的短代码。图片会缩小到 256 px 的框内，无法获取或未通过检查的图片不会留下任何内容。
 - 删除无法撤销。过去帖子中的表情也会变回文本，再次注册相同的短代码会得到一个不同的表情。联邦服务器已复制的图片无法删除。
-- 管理界面（“自定义表情”，`/admin/custom-emojis`）、客户端 API（`/api/v1/admin/custom_emojis`）和 CLI 可以做同样的事。在界面上，“注册自定义表情”会打开注册表单（`/admin/custom-emojis/new`），在列表中选择一个表情会打开它的页面（`/admin/custom-emojis/{id}`），在那里可以更改其设置、替换其图片、启用或停用、删除它，或复制其他服务器的表情；列表本身可以一键启用和停用表情。管理界面和客户端 API 需要角色权限 `manage_custom_emojis`（只有内置的 `admin` 拥有）。注册、复制、替换图片、更改设置和别名、启用和停用以及删除，无论以何种方式进行，都会记录在审计日志中（对象为 `custom_emoji`）（来自 CLI 的操作记录为 CLI 操作）。
+- 管理界面（“自定义表情”，`/admin/custom-emojis`）、客户端 API（`/api/v1/admin/custom_emojis`）和 CLI 可以做同样的事。在界面上，“注册表情”会打开注册表单（`/admin/custom-emojis/new`），其中会对超过 100 KiB 的图片给出警告；在列表中选择一个表情会打开它的页面（`/admin/custom-emojis/{id}`），在那里可以启用或停用、替换其图片、更改其分类、别名和在选择器中的可见性、输入其短代码后删除它，或复制其他服务器的表情。管理界面和客户端 API 需要角色权限 `manage_custom_emojis`（只有内置的 `admin` 拥有）。注册、复制、替换图片、更改设置和别名、启用和停用以及删除，无论以何种方式进行，都会记录在审计日志中（对象为 `custom_emoji`）（来自 CLI 的操作记录为 CLI 操作）。
 
 ```sh
 my admin emoji create -shortcode blobcat -category Cats -alias neko blobcat.png   # register one
@@ -488,7 +492,7 @@ my admin emoji requests approve <request id>                                    
 my admin emoji requests reject [-reason <text>] <request id>                      # reject a request (the requester sees the reason)
 ```
 
-- 拥有角色权限 `create_custom_emojis`（一项用户功能）的用户可以在设置的“自定义表情”（`/settings/custom-emojis`）中申请创建表情，更改自己所创建表情的别名、分类和在选择器中的可见性，也可以删除它们。替换图片也是一种申请。申请在拥有 `manage_custom_emojis` 的人批准之前不会出现在任何地方（选择器、帖子、回应、联邦）。可以在管理界面“自定义表情”的“请求”页面（`/admin/custom-emojis/requests`）、通过客户端 API（`/api/v1/admin/custom_emoji_requests`）或使用上面的 CLI 批准或拒绝它。拥有 `manage_custom_emojis` 的人会收到申请的通知（`admin_custom_emoji_request`），申请人会收到批准或拒绝的通知。申请、撤回、批准和拒绝都会记录在审计日志中（对象为 `custom_emoji_request`）。
+- 拥有角色权限 `create_custom_emojis`（一项用户功能）的用户可以在设置的“自定义表情”（`/settings/custom-emojis`）中申请创建表情，更改自己所创建表情的别名、分类和在选择器中的可见性，也可以删除它们；该页面会显示他们本月还剩多少次申请。替换图片也是一种申请，通过客户端 API 提出（`POST /api/v1/custom_emoji_requests`，`kind` 为 `image`）；设置页面不提供它。申请在拥有 `manage_custom_emojis` 的人批准之前不会出现在任何地方（选择器、帖子、回应、联邦）。可以在管理界面“自定义表情”的“请求”页面（`/admin/custom-emojis/requests`）、通过客户端 API（`/api/v1/admin/custom_emoji_requests`）或使用上面的 CLI 批准或拒绝它。拥有 `manage_custom_emojis` 的人会收到申请的通知（`admin_custom_emoji_request`），申请人会收到批准或拒绝的通知。申请、撤回、批准和拒绝都会记录在审计日志中（对象为 `custom_emoji_request`）。
 - 待处理的创建申请会预留其短代码。在待处理的申请被拒绝或撤回之前，不能用相同的短代码申请或注册。已批准表情的图片会作为实例 actor 的上传进行复制，因此即使申请人的账号被删除，它也会保留。
 - 创建者只有在持有 `create_custom_emojis` 期间才能更改自己的表情。角色被移除后，表情仍会保留。无论创建者是谁，管理员都可以更改和删除每个表情。
 - 当角色来自支持者方案时，用户每月可以创建的表情数量受方案的每月表情上限限制。它统计用户在当前日历月（UTC）内提交的、已批准或待处理的创建申请；被拒绝和已撤回的申请不计入，删除表情也不会腾出名额。申请计入其提交的月份，即使它在下个月才被批准。计数在每月第一天的 00:00 UTC 重置，设置页面会以用户自己的时区告知重置时间。替换表情的图片以及管理员注册的表情不计入。管理员手动分配的角色，以及禁用了支持者功能的服务器，没有上限。

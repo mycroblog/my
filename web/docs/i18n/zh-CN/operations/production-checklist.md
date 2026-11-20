@@ -50,12 +50,12 @@ my config check -instance  # also the instance settings in the database
 - **验证**：`my config check` 会显示 `host` 和 `account_domain`，并报告其他服务器无法访问的域名。当它们与数据库中的值不同时，`my config check -instance` 也会失败，并且不记录任何内容。使用单独的用户名域名时，`curl -sI "https://<account_domain>/.well-known/webfinger?resource=acct:<user>@<account_domain>"` 会以 `301` 重定向到 `https://<host>/.well-known/webfinger?...`。
 - **详情**：[运行服务器](running.md)（联邦端点，以及从另一个域名提供用户名），[`host`](../reference/configuration.md#host) 和 [`account_domain`](../reference/configuration.md#account_domain)。
 
-<!-- source: reachable-over-https b7513cc3534f -->
+<!-- source: reachable-over-https 20f0b0b9a2d9 -->
 ### 可通过 `https` 访问
 
 - **原因**：其他服务器会通过 443 端口在 `https://<host>/` 获取 id，而浏览器只会通过 `https` 发送登录 cookie。
-- **验证**：从你的网络之外执行 `curl -sI https://<host>/health/live` 返回 `200`，且证书对 `host` 有效，并且 `my config check` 没有报告关于 `web_origin` 的错误。`http://<host>/` 会重定向到 `https`，这由服务器前面的反向代理、负载均衡器或 CDN 完成（在 Docker Compose 中，层 `compose.caddy.yaml` 就是这样一个代理）。
-- **详情**：[运行服务器](running.md)、[`web_origin`](../reference/configuration.md#web_origin)。
+- **验证**：从你的网络之外执行 `curl -sI https://<host>/health/live` 返回 `200`，且证书对 `host` 有效，并且 `my config check` 没有报告关于 `web_origin`、`tls`、`tls_acme_agree_terms` 或 `tls_cert_file` 的错误。`curl -sI http://<host>/` 返回 `301`，重定向到 `https://<host>/`。要么由服务器前面的反向代理、负载均衡器或 CDN 终止 TLS 并完成重定向（在 Docker Compose 中，层 `compose.caddy.yaml` 就是这样一个代理），要么由服务器自己完成。使用 `tls = acme` 时，`my tls status` 会显示 `host`（以及 `web_origin` 的主机，当它与前者不同时）的证书，其签发者不是测试环境的签发者：`tls_acme_directory` 未设置，或指向正式环境的目录。请对证书到期和申请失败设置告警（[告警](alerts.md#mytlscertificateexpiring)）。使用 `tls = files` 时，证书的剩余有效期少于 14 天，`my config check` 会发出警告，而负责续期的任何机制都必须让 `tls_cert_file` 和 `tls_key_file` 保持最新。
+- **详情**：[运行服务器](running.md)、[由服务器提供 HTTPS](running.md#serving-https-from-the-server)、[`web_origin`](../reference/configuration.md#web_origin)、[`tls`](../reference/configuration.md#tls)。
 
 <!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### 无法绕过 CDN 访问

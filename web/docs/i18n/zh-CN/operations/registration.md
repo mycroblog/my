@@ -18,10 +18,10 @@
 
 以下各节说明每个步骤。
 
-<!-- source: the-sign-up-page 111fbe5ecf64 -->
+<!-- source: the-sign-up-page 9a7c6e5bdf58 -->
 ## 注册页面
 
-用户在 `https://<host>/auth/sign_up` 上用用户名、邮箱地址和密码注册，除非[注册仅限登录提供方](#registration-limited-to-login-providers)。注册后，该浏览器会立即登录。该页面无需 JavaScript 即可使用，并且和登录页面一样，受 CSRF 令牌和拒绝跨源请求的保护。如果你选择用 CAPTCHA 防范机器人，注册和登录页面会显示其组件，并需要 JavaScript（[CAPTCHA](captcha.md)）。
+用户在 `https://<host>/auth/sign_up` 上用用户名、邮箱地址和密码注册，除非[注册仅限登录提供方](#registration-limited-to-login-providers)。注册后，该浏览器会立即登录。和登录页面一样，它受 CSRF 令牌和拒绝跨源请求的保护。如果你选择用 CAPTCHA 防范机器人，注册和登录页面会显示其组件，并需要 JavaScript（[CAPTCHA](captcha.md)）。
 
 注册模式是实例设置 `registration_mode`。可以用 CLI 选择，也可以在 Web 客户端中“服务器设置”的“注册”页面（`/admin/settings/registration`）上选择（[实例设置](instance-settings.md)）。更改从下一次注册起生效。在服务器宣布关闭期间以及关闭之后，无论设置如何，注册都视为 `closed`（[管理 CLI](admin-cli.md#announcing-the-end-of-the-service)）。在[单人服务器](instance-settings.md#one-person-server)上也是如此：那里同样不提供邀请、注册审查和注册屏蔽，并且没有任何方式可以创建账号，包括 `my admin create`。
 
@@ -81,7 +81,7 @@ my instance set registration_mode invite
 - 已登录的用户可以在设置的“密码”中输入当前密码来更改密码（每个用户每小时最多输错 5 次）。
 - 重置或更改密码会撤销该用户的其他会话和应用令牌（在设置中更改时，只保留进行更改的那个应用）。通行密钥和双重验证保持不变。等待输入双重验证码的登录，以及尚未完成的应用授权，也会失效：用户需要重新开始。在 `mail = smtp` 时，服务器还会给用户发邮件，告知密码已更改。
 
-<!-- source: invite-codes 441b486504dd -->
+<!-- source: invite-codes 4d49dd1f0927 -->
 ## 邀请码
 
 邀请在 `open`、`approval` 和 `invite` 模式下有效。工作人员的邀请通过下面的 CLI、审核界面和管理员 API 创建；成员也可以创建自己的邀请（[成员邀请](#member-invites)）。在 `closed` 模式下，无法创建邀请，也没有任何邀请有效。
@@ -98,22 +98,22 @@ my invite revoke <code>
 - 邀请码匹配时忽略大小写、空格和连字符。
 - 即使多人同时注册，邀请码也绝不会被使用超过其限制（`invite_redemptions` 上有唯一约束）。
 - 已撤销、已过期或已用完的邀请码都会给出相同的错误（邀请不可用）。
-- 除了 CLI，你还可以在 Web 客户端的审核界面（“邀请”，`/moderation/invites`）以及通过客户端 API（`GET` / `POST /api/v1/admin/invites` 和 `POST /api/v1/admin/invites/{id}/revoke`）创建、列出和撤销邀请。两者都需要角色权限 `manage_invites`（内置的 `moderator` 没有该权限，所以若要委派这件事，请创建一个带有该权限的角色并授予它）。自行发放邀请的服务会使用范围为 `admin:manage_invites` 的令牌调用同一个 API（[让另一个服务使用管理员 API](moderation.md#letting-another-service-use-the-admin-api)）。列表上的“创建邀请”会打开表单（`/moderation/invites/new`），其中会显示新邀请的邀请码和注册链接。列表可以让你复制可用邀请的链接并撤销它。
+- 除了 CLI，你还可以在 Web 客户端的审核界面（“邀请”，`/moderation/invites`）以及通过客户端 API（`GET` / `POST /api/v1/admin/invites` 和 `POST /api/v1/admin/invites/{id}/revoke`）创建、列出和撤销邀请。两者都需要角色权限 `manage_invites`（内置的 `moderator` 没有该权限，所以若要委派这件事，请创建一个带有该权限的角色并授予它）。自行发放邀请的服务会使用范围为 `admin:manage_invites` 的令牌调用同一个 API（[让另一个服务使用管理员 API](moderation.md#letting-another-service-use-the-admin-api)）。列表上的“创建邀请”会打开表单（`/moderation/invites/new`），其中会显示新邀请的邀请码和注册链接。列表会显示每个邀请的邀请码、创建者、有多少人用它注册、截止时间和状态；选中邀请后选择“撤销”，会先要求确认。
 - 列表会显示每一个邀请，包括工作人员的和成员的，以及谁创建了它（`created_by`）和创建方式（`creator_kind`：`staff` 或 `member`）。拥有 `manage_invites` 的人可以撤销其中任何一个。
 - 审核界面中账号的审查页面（`GET /api/v1/admin/accounts/{id}`，权限 `manage_accounts`）会显示该账号注册时使用的邀请，以及谁创建了它，也就是邀请该用户的人。
 - 无论是从界面、API 还是 CLI，创建和撤销邀请都会记录在审计日志中（`invite_created`、`invite_revoked`）。目标名称是邀请码的前 4 个字符（`ABCD…`）；完整的邀请码不会复制到审计日志中。撤销已经撤销的邀请不会改变任何内容，因此不会记录。
 
-<!-- source: member-invites db3bff74ed69 -->
+<!-- source: member-invites 85edfb5c0806 -->
 ## 成员邀请
 
-除员工外，成员也可以创建自己的邀请。谁可以创建由实例设置 `invite_creators` 决定（[实例设置](instance-settings.md)）：
+除工作人员外，成员也可以创建自己的邀请。谁可以创建由实例设置 `invite_creators` 决定（[实例设置](instance-settings.md)）：
 
 - `permitted`（默认）：只有角色拥有 `create_invites` 权限的用户。默认只有内置的 `admin` 角色拥有该权限。你可以把它加到手动授予的角色中，或者加到[支持者方案](supporters.md)的角色中，让支持者可以邀请他人。
 - `everyone`：所有已登录的本站用户。
 
-无论哪种方式，账号被封禁或受限、或者注册未获批准的用户都无法创建邀请；注册模式为 `closed` 时，任何人都无法创建。拥有 `manage_invites` 的人仍可以继续创建员工邀请，下文的限制都不适用于员工邀请。
+无论哪种方式，账号被封禁或受限、或者注册未获批准的用户都无法创建邀请；注册模式为 `closed` 时，任何人都无法创建。拥有 `manage_invites` 的人仍可以继续创建工作人员的邀请，下文的限制都不适用于这些邀请。
 
-成员可以在 Web 客户端的设置（“你的邀请”，`/settings/invites`）中，或者通过客户端 API（`GET` / `POST /api/v1/invites` 和 `POST /api/v1/invites/{id}/revoke`），创建、列出、复制和撤销自己的邀请。设置中只会为当前可以创建邀请的用户列出该页面；不能再创建邀请的用户仍可以通过地址打开它，复制和撤销自己创建的邀请。列表会显示每个邀请是可用、已撤销、已过期、已用完，还是因为创建者不能再邀请而不可用。
+成员可以在 Web 客户端的设置（“邀请”，`/settings/invites`）中，或者通过客户端 API（`GET` / `POST /api/v1/invites` 和 `POST /api/v1/invites/{id}/revoke`），创建、列出和撤销自己的邀请，并复制可用邀请的链接。设置中只会为当前可以创建邀请的用户列出该页面；不能再创建邀请的用户仍可以通过地址打开它，页面会说明原因，用户可以在那里撤销自己创建的邀请。列表会显示每个邀请是可用、已撤销、已过期、已用完，还是因为创建者不能再邀请而不可用。
 
 以下限制同样是实例设置，只适用于成员邀请。管理员可以在服务器设置的“注册”页面（`/admin/settings/registration`）上的“成员邀请”中更改它们以及 `invite_creators`：
 
@@ -130,7 +130,7 @@ my invite revoke <code>
 
 在 `approval` 模式下，可用的邀请会让新用户直接获批：邀请人代替了审核员的审查。因此在 `invite_creators = everyone` 时，每个用户都可以不经审查放人进来，这会削弱审批模式的作用。如果你依赖审查，请保持 `permitted`，并只把 `create_invites` 授予你信任的人，或者把 `member_invite_max_active` 和 `member_invite_max_uses` 设得较低。
 
-<!-- source: approving-and-rejecting e68676f67aab -->
+<!-- source: approving-and-rejecting 34e7c6193247 -->
 ## 批准与拒绝
 
 ```sh
@@ -145,6 +145,7 @@ my registration reject -note "spam" bob
 - 退出代码 2 表示参数错误。
 
 同样的决定也可以在管理页面（客户端 API）中作出。所有操作都需要 `manage_accounts` 权限。
+在 Web 客户端中，“审核 → 注册”（`/moderation/registrations`）会列出等待审批的注册，以及它们的邮箱地址、是否已确认和加入理由；选中它们后选择“批准”或“拒绝”，会先要求确认，并可以给审核员留下备注。单人服务器不显示该页面。
 
 | 操作 | 作用 |
 | --- | --- |

@@ -8,10 +8,14 @@
 - **维护模式**（`maintenance = true`、`MY_MAINTENANCE=true` 或 `my serve -maintenance`）。`my serve` 启动时不打开任何适配器，对每个请求都返回 `503`、`Retry-After` 以及各客户端都能理解的响应。只要 `my serve` 本身能够运行，就使用它。
 - **导出的页面**（`my maintenance export`）。由同一模板生成的静态 HTML，供负载均衡器、CDN 或反向代理在 `my serve` 完全无法运行时（例如正在替换镜像，或者某个修订版本无法启动）提供。参见[导出维护页面](admin-cli.md#exporting-the-maintenance-page)。
 
-<!-- source: what-the-maintenance-mode-answers 13edbbd09e33 -->
+<!-- source: what-the-maintenance-mode-answers 800ed13d3906 -->
 ## 维护模式的响应
 
-该进程只读取监听地址、`host`、`account_domain`、`web_origin`、代理（`trusted_proxies`、`trusted_proxy_header`）、[源站检查](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)（`origin_secret`、`origin_secret_previous`、`origin_secret_header`）、`status_page_url` 以及 `maintenance_*` 设置（[配置参考](../reference/configuration.md)）。数据库、队列、blob 存储、KV、邮件和流的设置既不会被读取也不会被检查，因此在此期间它们可以是错误的或无法访问的。无论 `role` 是什么，它都只提供 HTTP：没有任务、没有周期性任务、没有流代理。`my config check -maintenance` 恰好检查维护模式所读取的内容。
+该进程只读取监听地址、`host`、`account_domain`、`web_origin`、代理（`trusted_proxies`、`trusted_proxy_header`）、[源站检查](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)（`origin_secret`、`origin_secret_previous`、`origin_secret_header`）、`status_page_url` 以及 `maintenance_*` 设置（[配置参考](../reference/configuration.md)）。
+数据库、队列、blob 存储、KV、邮件和流的设置既不会被读取也不会被检查，因此在此期间它们可以是错误的或无法访问的。
+无论 `role` 是什么，它都只提供 HTTP：没有任务、没有周期性任务、没有流代理。无论 `tls` 如何设置，它也只提供纯 HTTP，
+监听在 `listen` 或其默认值 `:8080` 上（[由服务器直接提供 HTTPS](running.md#serving-https-from-the-server)）。
+`my config check -maintenance` 恰好检查维护模式所读取的内容。
 
 设置了 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 时，需要该请求头却没有带的请求，会得到该检查的 `403`，而不是下表中的响应。
 
@@ -23,7 +27,8 @@
 | ActivityPub（按路径、`Accept` 或 `Content-Type`）、WebFinger、host-meta、NodeInfo、支付 webhook、Cloud Tasks 和 Cloud Scheduler 的调用（`/_internal/*`） | `503` | `{"error":"maintenance"}` |
 | 其他一切（页面、Web 客户端、它的资源、表单提交） | `503` | 维护页面，或者在 `Accept` 要求 JSON 时返回上述问题文档 |
 
-每个响应都带有 `Retry-After` 和 `Cache-Control: no-store`。当 `maintenance_until` 还在未来时，`Retry-After` 是距离它的秒数（最多 86,400），否则是 `maintenance_retry_after`（一个 Go 时长，默认 `10m`）。
+每个响应都带有 `Retry-After` 和 `Cache-Control: no-store`。当 `maintenance_until` 还在未来时，`Retry-After` 是距离它的秒数
+（最多 86,400），否则是 `maintenance_retry_after`（一个 Go 时长，默认 `10m`）。
 
 页面和问题文档会显示：
 
@@ -34,9 +39,11 @@
 | `maintenance_until` | 预计工作结束的时间（RFC 3339）。页面以 UTC 显示它；Web 客户端按用户的时区显示 |
 | `status_page_url` | 指向状态页面的链接（[监控](monitoring.md#a-status-page)） |
 
-`maintenance_*` 设置可以在正常运行期间一直保持设置：它们只在 `maintenance` 为 true 时才会使用。页面的文字遵循 `Accept-Language`（否则为英文）。
+`maintenance_*` 设置可以在正常运行期间一直保持设置：它们只在 `maintenance` 为 true 时才会使用。
+页面的文字遵循 `Accept-Language`（否则为英文）。
 
-当 API 返回维护问题时，Web 客户端会显示全屏的维护通知，保持用户的登录状态，并在 `Retry-After` 之后重试。
+当 API 返回维护问题时，Web 客户端会显示全屏的维护通知，
+保持用户的登录状态，并在 `Retry-After` 之后重试。
 
 <!-- source: how-long a7b6a44f0269 -->
 ## 时长
@@ -83,7 +90,7 @@
 
 下文中前端的错误页面，会用导出的页面来响应服务器的错误。只匹配服务器未运行时的错误（`502` 和 `504`，以及负载均衡器在没有健康后端时自己返回的 `503`），或者只在 `my serve` 无法运行期间启用该规则：对所有 `503` 生效的规则也会替换维护模式自己的响应，例如客户端 API 和 Web 客户端读取的 problem 响应。
 
-<!-- source: cloud-run b728619281de -->
+<!-- source: cloud-run 8bed844981b6 -->
 ### Cloud Run
 
 用该变量部署新修订版本，之后再删除它：
@@ -94,9 +101,15 @@ gcloud run services update my --region=asia-northeast1 \
 gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE,MY_MAINTENANCE_UNTIL
 ```
 
+使用 OpenTofu 模块时，改为在代码块中设置，即 `settings = { maintenance = "true" }`，然后应用，因为下一次应用会还原代码块中写的内容：
+[在 Cloud Run 上部署](deploy-cloud-run.md#the-maintenance-mode)介绍了升级前后的做法。
+
 如果 Cloud Run 不经负载均衡器直接公开，它前面就没有任何东西，因此维护模式是唯一的工具。
 
-**`my serve` 无法运行时**，如果它位于全球外部应用负载均衡器之后：把导出的 `index.html` 上传到作为后端存储桶添加的 Cloud Storage 存储桶，并添加自定义错误响应策略，用它来响应后端的 `502` 和 `504`，并设置 `overrideResponseCode: 503`。只有全球外部应用负载均衡器支持自定义错误响应（区域级和传统版都不支持），并且该策略只适用于来自后端的响应，不适用于 Google Front End 自己生成的响应。这种方式无法发送 `Retry-After`：错误来源的自定义头部不会被添加。
+**`my serve` 无法运行时**，如果它位于全球外部应用负载均衡器之后：把导出的 `index.html` 上传到作为后端存储桶添加的 Cloud Storage 存储桶，
+并添加自定义错误响应策略，用它来响应后端的 `502` 和 `504`，并设置 `overrideResponseCode: 503`。
+只有全球外部应用负载均衡器支持自定义错误响应（区域级和传统版都不支持），并且该策略只适用于来自后端的响应，
+不适用于 Google Front End 自己生成的响应。这种方式无法发送 `Retry-After`：错误来源的自定义头部不会被添加。
 
 ```yaml
 # Part of the URL map (gcloud compute url-maps import).
@@ -108,15 +121,21 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-<!-- source: aws-ecs 8c6aa496b517 -->
+<!-- source: aws-ecs afc0ba5adee4 -->
 ### AWS ECS
 
-在容器的环境中加入 `MY_MAINTENANCE=true`，为服务的任务定义注册一个修订版本，并把服务更新到该版本；维护结束后，以不带该变量的方式再做一次。使用 OpenTofu 模块时，`deploy/opentofu/upgrade.sh --platform aws-ecs --maintenance`
-会在升级之前把服务切换到维护模式，并用新修订版本切换回来。
+在容器的环境中加入 `MY_MAINTENANCE=true`，为服务的任务定义注册一个修订版本，并把服务更新到该版本；维护结束后，以不带该变量的方式再做一次。
+使用 OpenTofu 模块时，改为在代码块中设置，即 `settings = { maintenance = "true" }`，然后应用，因为下一次应用会还原代码块中写的内容：升级前后，先应用维护模式，再应用新版本，最后应用不带它的代码块，
+做法与[在 Cloud Run 上部署](deploy-cloud-run.md#the-maintenance-mode)相同。
 
-**`my serve` 无法运行时**，如果它位于 CloudFront 之后：把导出的 `index.html` 上传到作为第二个源的 S3 存储桶（错误页面不能来自出错的源），并为 `502` 和 `504`（以及只在 `my serve` 无法运行期间的 `503`）添加自定义错误响应，设置 `ResponsePagePath: /maintenance/index.html` 和 `ResponseCode: 503`。CloudFront 可以通过带自定义头部的响应头策略添加 `Retry-After`，但该策略适用于缓存行为的所有响应，因此只在维护期间附加它，之后再解除。
+**`my serve` 无法运行时**，如果它位于 CloudFront 之后：把导出的 `index.html` 上传到作为第二个源的 S3 存储桶
+（错误页面不能来自出错的源），并为 `502` 和 `504`（以及只在 `my serve` 无法运行期间的 `503`）添加自定义错误响应，
+设置 `ResponsePagePath: /maintenance/index.html` 和 `ResponseCode: 503`。
+CloudFront 可以通过带自定义头部的响应头策略添加 `Retry-After`，但该策略适用于缓存行为的所有响应，
+因此只在维护期间附加它，之后再解除。
 
-应用负载均衡器的固定响应无法承载导出的页面：其正文最多 1,024 个字符，并且不设置 `Retry-After` 等头部。只用它返回简短的文字和状态：
+应用负载均衡器的固定响应无法承载导出的页面：其正文最多 1,024 个字符，并且不设置 `Retry-After` 等头部。
+只用它返回简短的文字和状态：
 
 ```json
 {
