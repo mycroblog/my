@@ -199,6 +199,10 @@
     "defaultMessage": "As last saved.",
     "description": "Under the heading of what readers see of an announcement. Read by administrators."
   },
+  "staff_announcements.preview.about_draft": {
+    "defaultMessage": "As last saved, if it were published now.",
+    "description": "Under the heading of what readers see of a draft announcement, which shows it as its page would if it were published now (its date is today's or the start of its window). Read by administrators."
+  },
   "staff_announcements.withdraw": {
     "defaultMessage": "Withdraw the announcement",
     "description": "The heading of the last section of an announcement's page, apart, which withdraws it. Read by administrators."
@@ -226,6 +230,38 @@
   "staff_announcements.withdraw.failed": {
     "defaultMessage": "The announcement was not withdrawn. Check your connection and try again.",
     "description": "In the section that withdraws an announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.delete": {
+    "defaultMessage": "Delete the draft",
+    "description": "The heading of the section of a draft announcement's page that deletes it. Read by administrators."
+  },
+  "staff_announcements.delete.about": {
+    "defaultMessage": "Readers have not seen it yet. It leaves the list of announcements, and only its title stays in the audit log.",
+    "description": "Under the heading of the section that deletes a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.press": {
+    "defaultMessage": "Delete",
+    "description": "The button that deletes a draft announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.delete.title": {
+    "defaultMessage": "Delete this draft?",
+    "description": "The question before deleting a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.cancel": {
+    "defaultMessage": "Keep it",
+    "description": "The button that closes the question before deleting a draft announcement, keeping it. Read by administrators."
+  },
+  "staff_announcements.delete.text": {
+    "defaultMessage": "Its text is gone, and only its title stays in the audit log. This cannot be undone.",
+    "description": "Under the question before deleting a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.failed": {
+    "defaultMessage": "The draft was not deleted. Check your connection and try again.",
+    "description": "In the section that deletes a draft announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.delete.published": {
+    "defaultMessage": "The draft was not deleted: it was published meanwhile.",
+    "description": "In the section that withdraws an announcement, once a Delete of it as a draft was refused because someone published it meanwhile (409); the page then shows it published. Read by administrators."
   },
   "staff_announcements.irreversible": {
     "defaultMessage": "This cannot be undone.",

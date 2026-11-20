@@ -587,7 +587,28 @@ func instanceRepoAnnouncements(t *testing.T, r *instanceRepo) {
 		if cerr == nil && (len(changes) != 4 || changes[3].AnnouncementID != withdrawn.ID || changes[3].State != instance.AnnouncementWithdrawn) {
 			t.Errorf("ListAnnouncementStateChanges = %+v; want the four changes oldest first", changes)
 		}
-		return errors.Join(err, herr, rerr, cerr, r.i.DeleteAllAnnouncementHeads(ctx, tx))
+		return errors.Join(err, herr, rerr, cerr)
+	})
+
+	// A deleted draft: its state change is kept, its head deleted, and it is found nowhere.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.i.InsertAnnouncementStateChange(ctx, tx, instance.AnnouncementStateChange{
+			ID: r.ids.NewID(), AnnouncementID: draft.ID, State: instance.AnnouncementDeleted, ChangedByUserID: testkit.NamedID("admin"), ChangedAt: now,
+		}), r.i.DeleteAnnouncementHead(ctx, tx, draft.ID))
+	})
+	_, err = r.i.FindAnnouncement(ctx, draft.ID)
+	wantNotFound(t, "FindAnnouncement(deleted)", err)
+	if got, err := r.i.ListAnnouncements(ctx, false); err != nil || !slices.Equal(ids(got), []string{withdrawn.ID, ended.ID, scheduled.ID, showing.ID}) {
+		t.Errorf("ListAnnouncements after a deletion = %v, %v; want every one but the deleted draft", ids(got), err)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		_, aerr := r.i.Announcement(ctx, tx, draft.ID)
+		wantNotFound(t, "Announcement(deleted)", aerr)
+		changes, cerr := r.i.ListAnnouncementStateChanges(ctx, tx)
+		if cerr == nil && (len(changes) != 5 || changes[4].AnnouncementID != draft.ID || changes[4].State != instance.AnnouncementDeleted) {
+			t.Errorf("ListAnnouncementStateChanges = %+v; want the deletion last", changes)
+		}
+		return errors.Join(cerr, r.i.DeleteAllAnnouncementHeads(ctx, tx))
 	})
 	if got, err := r.i.ListAnnouncements(ctx, false); err != nil || len(got) != 0 {
 		t.Errorf("ListAnnouncements after DeleteAllAnnouncementHeads = %v, %v; want none", ids(got), err)

@@ -18,6 +18,9 @@ INSERT INTO announcement_heads (announcement_id, revision_id, state, published_a
 ON CONFLICT (announcement_id) DO UPDATE SET
   revision_id = excluded.revision_id, state = excluded.state, published_at = excluded.published_at;
 
+-- name: DeleteAnnouncementHead :exec
+DELETE FROM announcement_heads WHERE announcement_id = $1;
+
 -- name: DeleteAllAnnouncementHeads :exec
 DELETE FROM announcement_heads;
 
