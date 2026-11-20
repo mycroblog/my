@@ -36,7 +36,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), the question before withdrawing the announcement. Read by administrators."
   },
   "staff_closure.withdraw.text": {
-    "defaultMessage": "The server runs on as before, and every user gets a notification. The sign-ups rejected and the supporter subscriptions ended stay so.",
+    "defaultMessage": "The server runs on as before, and every user gets a notification and an email. Refused sign-ups and ended supporter subscriptions stay as they are.",
     "description": "On the closure's screen of the administration (/admin/closure), what follows withdrawing the announcement. Read by administrators."
   },
   "staff_closure.short_notice": {
@@ -72,7 +72,7 @@
     "description": "On the check before closing the server (/admin/closure/close), the question before closing the server ({domain}, the server's domain, typed to confirm). Read by administrators."
   },
   "staff_closure.close.text": {
-    "defaultMessage": "Users can only sign in and export their data until {date}. About {deletes, number} deliveries delete every account on the other servers. This cannot be undone.",
+    "defaultMessage": "Users can only sign in and export their data until {date}. About {deletes, number} deliveries ask the other servers to delete this server's accounts. This cannot be undone.",
     "description": "On the check before closing the server (/admin/closure/close), what follows closing the server ({date}, the export deadline; {deletes}, a number). Read by administrators."
   },
   "staff_closure.closed": {
@@ -84,7 +84,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), what remains of the service once the server is closed. Read by administrators."
   },
   "staff_closure.progress": {
-    "defaultMessage": "Deleting the accounts on other servers",
+    "defaultMessage": "Deleting the accounts, here and on other servers",
     "description": "On the closure's screen of the administration (/admin/closure), the heading of the progress of the delivery of the deletion of every local account. Read by administrators."
   },
   "staff_closure.progress.accounts": {
@@ -132,7 +132,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), the term of where the closure stands. Read by administrators."
   },
   "staff_closure.fact.closes": {
-    "defaultMessage": "Closes",
+    "defaultMessage": "Closing date",
     "description": "On the closure's screen of the administration (/admin/closure), the term of the closing date and time. Read by administrators."
   },
   "staff_closure.fact.closed": {
@@ -140,7 +140,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), the term of when the server was closed. Read by administrators."
   },
   "staff_closure.fact.export_until": {
-    "defaultMessage": "Export until",
+    "defaultMessage": "Export deadline",
     "description": "On the closure's screen of the administration (/admin/closure), the term of the last moment the users can export their data. Read by administrators."
   },
   "staff_closure.fact.announced": {
@@ -152,7 +152,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), the term of the operator's message to the users. Read by administrators."
   },
   "staff_closure.irreversible": {
-    "defaultMessage": "Closing ends the service for good. This cannot be undone.",
+    "defaultMessage": "Closing ends the service. This cannot be undone.",
     "description": "On the check before closing the server (/admin/closure/close), the mark beside Close the server. Read by administrators."
   },
   "staff_closure.form.dates": {
@@ -200,7 +200,7 @@
     "description": "On the form of the closure's announcement (/admin/closure/announcement), the question before announcing the closure. Read by administrators."
   },
   "staff_closure.ask.announce.text": {
-    "defaultMessage": "Every user gets a notification and an email. Sign-ups and invites stop, waiting sign-ups are rejected, and supporter subscriptions end at the end of their period. Withdrawing the closure does not undo these.",
+    "defaultMessage": "Every user gets a notification and an email. Sign-ups and invites stop, waiting sign-ups are refused, and supporter subscriptions end at the end of their period. Withdrawing the closure does not undo these.",
     "description": "On the form of the closure's announcement (/admin/closure/announcement), what follows announcing the closure. Read by administrators."
   },
   "staff_closure.ask.change.title": {

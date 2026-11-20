@@ -8,7 +8,7 @@
     "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the accent color, the fill of the primary button and the text on it. Read by administrators."
   },
   "staff_theme.section.surfaces": {
-    "defaultMessage": "Surfaces",
+    "defaultMessage": "Backgrounds",
     "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the background colors (the page, sections, controls, hovered and pressed). Read by administrators."
   },
   "staff_theme.section.fonts": {
@@ -76,23 +76,23 @@
     "description": "On the theme editor of the administration (/admin/theme/draft), what the text on accent color colors, under its name. Read by administrators."
   },
   "staff_theme.token.color_surface": {
-    "defaultMessage": "Surface",
+    "defaultMessage": "Page background",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the page's background color. Read by administrators."
   },
   "staff_theme.token.color_surface.about": {
-    "defaultMessage": "The page behind everything.",
+    "defaultMessage": "Behind everything else.",
     "description": "On the theme editor of the administration (/admin/theme/draft), what the surface color colors, under its name. Read by administrators."
   },
   "staff_theme.token.color_surface_hover.about": {
-    "defaultMessage": "A control without a surface of its own, hovered and pressed.",
+    "defaultMessage": "Rows, tabs and plain buttons on the page, hovered and pressed.",
     "description": "On the theme editor of the administration (/admin/theme/draft), what the hovered and pressed surface colors color, under the hovered one's name. Read by administrators."
   },
   "staff_theme.token.color_surface_raised": {
-    "defaultMessage": "Raised surface",
+    "defaultMessage": "Fields and buttons",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of sections, buttons and fields. Read by administrators."
   },
   "staff_theme.token.color_surface_raised.about": {
-    "defaultMessage": "Sections, buttons and fields.",
+    "defaultMessage": "Also boxed sections.",
     "description": "On the theme editor of the administration (/admin/theme/draft), what the raised surface color colors, under its name. Read by administrators."
   },
   "staff_theme.token.font_sans_override": {
@@ -152,19 +152,19 @@
     "description": "On the theme editor of the administration (/admin/theme/draft), in a refusal, the name of a token the app does not know (one a newer server added). Read by administrators."
   },
   "staff_theme.token.color_surface_hover": {
-    "defaultMessage": "Surface, hovered",
+    "defaultMessage": "Page background, hovered",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a control without a surface under the pointer. Read by administrators."
   },
   "staff_theme.token.color_surface_pressed": {
-    "defaultMessage": "Surface, pressed",
+    "defaultMessage": "Page background, pressed",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a control without a surface while pressed. Read by administrators."
   },
   "staff_theme.token.color_surface_raised_hover": {
-    "defaultMessage": "Raised surface, hovered",
+    "defaultMessage": "Fields and buttons, hovered",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a button or a field under the pointer. Read by administrators."
   },
   "staff_theme.token.color_surface_raised_pressed": {
-    "defaultMessage": "Raised surface, pressed",
+    "defaultMessage": "Buttons, pressed",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a button while pressed. Read by administrators."
   },
   "staff_theme.token.text_headline": {
@@ -184,7 +184,7 @@
     "description": "On the theme editor of the administration (/admin/theme/draft), under a field whose value the server refused as out of its bounds ({min}, {max}). Read by administrators."
   },
   "staff_theme.error.contrast": {
-    "defaultMessage": "Nothing was saved. {token} on {background} is {ratio}:1 in {scheme, select, light {light} other {dark}} and needs {minimum}:1.",
+    "defaultMessage": "Nothing was saved. {token} on {background} is {ratio}:1 in {scheme, select, light {light} other {dark}} and needs {minimum}:1. Change one of the two colors.",
     "description": "On the theme editor of the administration (/admin/theme/draft), beside Save when the server refused the draft for a pair under its minimum contrast ({token} and {background}, the colors' names; {ratio} and {minimum}, numbers). Read by administrators."
   },
   "staff_theme.error.invalid": {

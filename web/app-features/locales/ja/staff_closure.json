@@ -36,7 +36,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), the question before withdrawing the announcement. Read by administrators."
   },
   "staff_closure.withdraw.text": {
-    "defaultMessage": "サーバーはこれまでどおり動き、すべての人に通知が届きます。拒否した登録と終えたサポーターの加入はそのままです。",
+    "defaultMessage": "サーバーはこれまでどおり動き、すべての人に通知とメールが届きます。断った登録と終えたサポーターの加入は、そのままです。",
     "description": "On the closure's screen of the administration (/admin/closure), what follows withdrawing the announcement. Read by administrators."
   },
   "staff_closure.short_notice": {
@@ -72,7 +72,7 @@
     "description": "On the check before closing the server (/admin/closure/close), the question before closing the server ({domain}, the server's domain, typed to confirm). Read by administrators."
   },
   "staff_closure.close.text": {
-    "defaultMessage": "利用者は {date} までログインしてデータをエクスポートすることだけができます。約 {deletes, number} 件の配送で、ほかのサーバーにあるすべてのアカウントを削除します。取り消せません。",
+    "defaultMessage": "利用者は {date} までログインしてデータをエクスポートすることだけができます。約 {deletes, number} 件の配送で、このサーバーのアカウントの削除をほかのサーバーに依頼します。取り消せません。",
     "description": "On the check before closing the server (/admin/closure/close), what follows closing the server ({date}, the export deadline; {deletes}, a number). Read by administrators."
   },
   "staff_closure.closed": {
@@ -84,7 +84,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), what remains of the service once the server is closed. Read by administrators."
   },
   "staff_closure.progress": {
-    "defaultMessage": "ほかのサーバーでのアカウントの削除",
+    "defaultMessage": "アカウントの削除 (このサーバーとほかのサーバー)",
     "description": "On the closure's screen of the administration (/admin/closure), the heading of the progress of the delivery of the deletion of every local account. Read by administrators."
   },
   "staff_closure.progress.accounts": {
@@ -104,7 +104,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries not attempted yet or to be attempted again. Read by administrators."
   },
   "staff_closure.progress.refused": {
-    "defaultMessage": "拒否された",
+    "defaultMessage": "拒否",
     "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries refused for good. Read by administrators."
   },
   "staff_closure.progress.skipped": {
@@ -124,7 +124,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), under the progress once every delivery has ended. Read by administrators."
   },
   "staff_closure.state": {
-    "defaultMessage": "{state, select, none {予告なし} announced {予告中} closed {閉鎖、配送中} other {閉鎖、配送済み}}",
+    "defaultMessage": "{state, select, none {予告なし} announced {予告中} closed {閉鎖、配送中} other {閉鎖、配送は終了}}",
     "description": "On the closure's screen of the administration (/admin/closure), where the closure stands. Read by administrators."
   },
   "staff_closure.fact.state": {
@@ -152,7 +152,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), the term of the operator's message to the users. Read by administrators."
   },
   "staff_closure.irreversible": {
-    "defaultMessage": "閉鎖するとサービスは二度と再開できません。取り消せません。",
+    "defaultMessage": "閉鎖するとサービスは終わります。取り消せません。",
     "description": "On the check before closing the server (/admin/closure/close), the mark beside Close the server. Read by administrators."
   },
   "staff_closure.form.dates": {
@@ -200,7 +200,7 @@
     "description": "On the form of the closure's announcement (/admin/closure/announcement), the question before announcing the closure. Read by administrators."
   },
   "staff_closure.ask.announce.text": {
-    "defaultMessage": "すべての人に通知とメールが届きます。登録と招待は止まり、承認待ちの登録は拒否され、サポーターの加入は期間の終わりで終わります。予告を取り消しても、これらは元に戻りません。",
+    "defaultMessage": "すべての人に通知とメールが届きます。登録と招待を止め、承認待ちの登録を断り、サポーターの加入はそれぞれの期間の終わりに終えます。予告を取り消しても、これらは元に戻りません。",
     "description": "On the form of the closure's announcement (/admin/closure/announcement), what follows announcing the closure. Read by administrators."
   },
   "staff_closure.ask.change.title": {
