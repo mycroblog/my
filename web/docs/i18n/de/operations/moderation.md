@@ -610,7 +610,7 @@ Neue Meldungen, Registrierungen, die auf Genehmigung warten, und Einsprüche err
 `GET /api/v1/admin/counts` liefert die Zahl der offenen Meldungen (`open_reports`, braucht `manage_reports`), die Zahl der Registrierungen, die auf Genehmigung warten (`pending_registrations`), und die Zahl der Einsprüche, die auf Prüfung warten (`pending_appeals`) (beide brauchen `manage_accounts`), die Zahl der Anfragen für eigene Emojis, die auf eine Entscheidung warten (`pending_custom_emoji_requests`, braucht `manage_custom_emojis`), und die Zahl der offenen Fehlergruppen, neu, wieder aufgetreten oder wieder aktiviert (`open_error_groups`, braucht `manage_errors`).
 Dinge, für die dir die Berechtigung fehlt, werden nicht geliefert.
 
-<!-- source: audit-log 4d53a2539898 -->
+<!-- source: audit-log 8334cc0280f5 -->
 ## Audit-Log
 
 Operationen von Moderatoren und Administratoren werden je eine Zeile im Audit-Log (`audit_log_entries`) in derselben Transaktion wie die Operation festgehalten.

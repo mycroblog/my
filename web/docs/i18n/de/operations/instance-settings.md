@@ -370,7 +370,7 @@ und der Text `thumbnail_alt`), erscheinen an den folgenden Stellen. Was nicht ge
 Ist das Kontaktkonto gesperrt oder gelöscht, wird das Konto nicht angezeigt, sondern nur die E-Mail-Adresse.
 Ändere sie auf der Seite „Allgemein“ des Admin-Bildschirms des Webclients („Servereinstellungen“, `/admin/settings/general`) oder mit der CLI oder der Client-API.
 
-<!-- source: one-person-server 275b5c1d39fa -->
+<!-- source: one-person-server 1bd8fd4f6da5 -->
 ### Ein-Personen-Server
 
 Ein Server, der nur seinem Betreiber gehört, das eigene Zuhause des Betreibers im Fediverse, ist ein Ein-Personen-Server: Schalte `single_user` ein. Im Webclient
@@ -401,7 +401,7 @@ Solange er eingeschaltet ist:
   `/api/v1/problems/single-user-mode`.
 - **Keine neuen lokalen Beiträge.** Auf einem Server für eine Person erreicht ein Beitrag für „Nachbarn“ nur die Follower, daher kann ein neuer
   Beitrag nicht lokal sein: Die Client-API antwortet mit `422` und lässt es aus dem weg, was ein Konto veröffentlichen darf. Eine Standard-Sichtbarkeit
-  von „Nachbarn“ gilt als „Follower“ und lässt sich nicht speichern, und ein Sprachchat-Raum für die Personen dieses Servers kündigt
+  von „Nachbarn“ gilt als „Nur Follower“ und lässt sich nicht speichern, und ein Sprachchat-Raum für die Personen dieses Servers kündigt
   sich in einem Beitrag für die Follower an. Beiträge, die bereits lokal sind, bleiben lokal.
 - **Der Server sagt, was er ist.** `single_user` in `GET /api/v1/instance` ist `true`, mit dem wirksamen Registrierungsmodus
   und den Timelines sowie dem Konto des Betreibers als `single_user_account`, und NodeInfo antwortet mit `openRegistrations: false` und
