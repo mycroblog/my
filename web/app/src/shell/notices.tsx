@@ -8,6 +8,7 @@
 
 import { accountMovePath, dataExportPath } from "@my/app-components";
 import { useServerActions, useServerState, useStatusPageUrl, useThemePreview, type Instance } from "@my/app-data";
+import { usePassed } from "@my/app-features";
 import { dateFormat, FrameBanner, FrameBanners, Toast, useLocale, useTimeZone } from "@my/design-system";
 import { takeUpdate } from "@my/platform";
 import { useStrings } from "../locale";
@@ -24,6 +25,8 @@ export function ServerBanners({ instance }: { instance: Instance | undefined }) 
   const statusPage = useStatusPageUrl();
   const preview = useThemePreview().on;
   const closure = instance?.closure?.state === "announced" ? instance.closure : undefined;
+  // Its tense turns as the closing date passes, on a screen left open as much as on the next read of the instance.
+  const due = usePassed(closure?.closes_at);
   if (closure === undefined && connection === "online" && !preview) return null;
   const date = (iso: string) => dateFormat(locale, timeZone, { dateStyle: "long" }).format(new Date(iso));
   const status =
@@ -39,7 +42,7 @@ export function ServerBanners({ instance }: { instance: Instance | undefined }) 
             { href: accountMovePath, label: t("app.closure_move") },
           ]}
         >
-          {t(Date.parse(closure.closes_at) <= Date.now() ? "app.closure_notice_due" : "app.closure_notice", {
+          {t(due ? "app.closure_notice_due" : "app.closure_notice", {
             closes: date(closure.closes_at),
             until: date(closure.export_until),
           })}

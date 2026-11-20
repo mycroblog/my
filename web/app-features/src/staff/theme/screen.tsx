@@ -83,6 +83,17 @@ type Said =
     }
   | undefined;
 
+/** What a press of the screen said, with the way to the draft where the draft is where to put it right. */
+function SaidWords({ said }: { said: NonNullable<Said> }): ReactNode {
+  const { t } = useStaffStrings();
+  if (said.fix !== true) return said.words;
+  return (
+    <>
+      {said.words} <TextLink href={themeDraftPath}>{t("staff_theme.edit")}</TextLink>
+    </>
+  );
+}
+
 /** The theme: the draft and its actions, the theme in effect and its restore, and the way to the brand images. */
 export function AdminThemeScreen(): ReactNode {
   const { t, locale } = useStaffStrings();
@@ -128,7 +139,7 @@ export function AdminThemeScreen(): ReactNode {
           // A set that no longer meets a rule (the defaults its pairs are checked with changed in an upgrade) is put
           // right in the draft; trying again would be refused again.
           ...(themeErrorsOf(error) !== undefined
-            ? { words: t("staff_theme.invalid", { what }), fix: what === "publish" }
+            ? { words: t("staff_theme.invalid", { what }), fix: true }
             : {
                 words: t(
                   what === "restore" && themeNothingThere(error)
@@ -188,17 +199,7 @@ export function AdminThemeScreen(): ReactNode {
           </LinkButton>
         </Row>
         <SettingsResult>
-          {said?.section === "draft" ? (
-            said.fix === true ? (
-              <>
-                {said.words} <TextLink href={themeDraftPath}>{t("staff_theme.edit")}</TextLink>
-              </>
-            ) : (
-              said.words
-            )
-          ) : preview.on ? (
-            t("staff_theme.preview.on")
-          ) : undefined}
+          {said?.section === "draft" ? <SaidWords said={said} /> : preview.on ? t("staff_theme.preview.on") : undefined}
         </SettingsResult>
       </SettingsSection>
       <SettingsSection heading={t("staff_theme.published")}>
@@ -228,7 +229,7 @@ export function AdminThemeScreen(): ReactNode {
             </Button>
           </Row>
         )}
-        <SettingsResult>{said?.section === "published" ? said.words : undefined}</SettingsResult>
+        <SettingsResult>{said?.section === "published" ? <SaidWords said={said} /> : undefined}</SettingsResult>
       </SettingsSection>
       <SettingsSection heading={t("staff_theme.elsewhere")}>
         <SettingsList label={t("staff_theme.elsewhere")}>

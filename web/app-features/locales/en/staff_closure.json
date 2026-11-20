@@ -123,13 +123,13 @@
     "defaultMessage": "Deliveries done",
     "description": "On the closure's screen of the administration (/admin/closure), the name of the meter of the deliveries of the deletion of the accounts that were accepted, of all of them. Read by administrators."
   },
-  "staff_closure.progress.delivered": {
-    "defaultMessage": "{succeeded, number} of {all, number} delivered",
-    "description": "On the closure's screen of the administration (/admin/closure), under the meter: the deliveries accepted of all the deliveries of the deletion of the accounts (numbers). Read by administrators."
-  },
   "staff_closure.progress.undelivered": {
     "defaultMessage": "Not delivered",
     "description": "On the closure's screen of the administration (/admin/closure), the heading over the deliveries that failed: refused, skipped, out of attempts. Read by administrators."
+  },
+  "staff_closure.progress.ended": {
+    "defaultMessage": "{ended, number} of {all, number} ended: {succeeded, number} delivered, {failed, number} not delivered",
+    "description": "On the closure's screen of the administration (/admin/closure), under the meter of the deliveries of the deletion of the accounts: those ended of all, and of them those delivered and those not delivered (numbers). Read by administrators."
   },
   "staff_closure.state": {
     "defaultMessage": "{state, select, due {Closing date passed} other {Announced}}",

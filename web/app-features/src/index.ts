@@ -242,6 +242,7 @@ export { ThemeDraftScreen, useThemeDraftTitle } from "./staff/theme/draft";
 export { ClosureAnnouncementScreen, useClosureAnnouncementTitle } from "./staff/closure/announce";
 export { ClosureCloseScreen, loadClosureClose, useClosureCloseTitle } from "./staff/closure/close";
 export { loadClosure } from "./staff/closure/screen";
+export { usePassed } from "./staff/closure/passed";
 export { loadTheme } from "./staff/theme/screen";
 export {
   accountPagePath,

@@ -123,13 +123,13 @@
     "defaultMessage": "済んだ配送",
     "description": "On the closure's screen of the administration (/admin/closure), the name of the meter of the deliveries of the deletion of the accounts that were accepted, of all of them. Read by administrators."
   },
-  "staff_closure.progress.delivered": {
-    "defaultMessage": "{all, number} 件中 {succeeded, number} 件を配送",
-    "description": "On the closure's screen of the administration (/admin/closure), under the meter: the deliveries accepted of all the deliveries of the deletion of the accounts (numbers). Read by administrators."
-  },
   "staff_closure.progress.undelivered": {
     "defaultMessage": "配送できなかったもの",
     "description": "On the closure's screen of the administration (/admin/closure), the heading over the deliveries that failed: refused, skipped, out of attempts. Read by administrators."
+  },
+  "staff_closure.progress.ended": {
+    "defaultMessage": "{all, number} 件中 {ended, number} 件が終了 (配送 {succeeded, number} 件、配送できず {failed, number} 件)",
+    "description": "On the closure's screen of the administration (/admin/closure), under the meter of the deliveries of the deletion of the accounts: those ended of all, and of them those delivered and those not delivered (numbers). Read by administrators."
   },
   "staff_closure.state": {
     "defaultMessage": "{state, select, due {閉鎖日を過ぎました} other {予告中}}",

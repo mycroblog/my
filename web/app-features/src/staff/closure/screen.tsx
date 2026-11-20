@@ -82,7 +82,10 @@ function closureFacts(t: T, moment: (iso: string) => string, closure: AdminClosu
   ];
 }
 
-/** How far the closure's deliveries have gone: those done of all, the accounts and the work left, then those that failed. */
+/**
+ * How far the closure's deliveries have gone: those ended of all (delivered and not), the accounts and the work left,
+ * then those not delivered, by why.
+ */
 function Progress({ closure }: { closure: AdminClosure }) {
   const { t } = useStaffStrings();
   const progress = closure.progress;
@@ -98,10 +101,16 @@ function Progress({ closure }: { closure: AdminClosure }) {
   const count = (n: number) => t("staff_closure.check.count", { count: n });
   return (
     <SettingsSection heading={t("staff_closure.progress")}>
+      {/* The deliveries ended, delivered or not, of all: full once every one has ended. */}
       <Meter
-        value={all === 0 ? 0 : succeeded / all}
+        value={all === 0 ? 0 : (all - pending) / all}
         label={t("staff_closure.progress.meter")}
-        caption={t("staff_closure.progress.delivered", { succeeded, all })}
+        caption={t("staff_closure.progress.ended", {
+          ended: all - pending,
+          all,
+          succeeded,
+          failed: refused + skipped + dead,
+        })}
       />
       <FactList
         label={t("staff_closure.progress")}

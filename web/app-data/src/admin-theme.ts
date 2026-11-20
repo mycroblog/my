@@ -7,6 +7,7 @@
 // visitor loads (`Instance.theme`), so it reads the instance again.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
+import { useSyncExternalStore } from "react";
 import type { AppData } from "./app-data";
 import { instanceQuery } from "./instance";
 import { useAppData } from "./provider";
@@ -86,8 +87,30 @@ export function useAdminThemeWrites(): AdminThemeWrites {
 /** The key of what the cache keeps of the draft's stylesheet, by the draft's ID. */
 const draftStylesheetKey = ["admin-theme-draft-stylesheet"] as const;
 
-/** Whether the reader previews the draft in this tab, which the cache keeps for the session's screens. */
-const previewKey = ["admin-theme-preview"] as const;
+/**
+ * Whether the reader previews the draft, kept for the session's data (one a tab): a value of its own, not a query of
+ * the cache, which a session's end clears and which a query with initial data then filled again under every observer.
+ */
+type PreviewSwitch = { on: boolean; readonly heard: Set<() => void> };
+const previews = new WeakMap<AppData, PreviewSwitch>();
+
+/** The switch of the preview of `data`'s session. */
+function previewOf(data: AppData): PreviewSwitch {
+  let found = previews.get(data);
+  if (found === undefined) {
+    found = { on: false, heard: new Set() };
+    previews.set(data, found);
+  }
+  return found;
+}
+
+/** Turns the preview of `data`'s session on or off, and tells every screen that shows it. */
+function setPreview(data: AppData, on: boolean): void {
+  const preview = previewOf(data);
+  if (preview.on === on) return;
+  preview.on = on;
+  for (const hear of preview.heard) hear();
+}
 
 /** The preview of the draft: whether it is on, the stylesheet to lay over the page while it is, and the switches. */
 export type ThemePreview = {
@@ -105,14 +128,17 @@ export type ThemePreview = {
  */
 export function useThemePreview(): ThemePreview {
   const data = useAppData();
-  const { queryClient } = data;
-  const on = useQuery({
-    queryKey: previewKey,
-    queryFn: () => false,
-    initialData: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
-  }).data;
+  const preview = previewOf(data);
+  const on = useSyncExternalStore(
+    (hear) => {
+      preview.heard.add(hear);
+      return () => {
+        preview.heard.delete(hear);
+      };
+    },
+    () => preview.on,
+    () => false,
+  );
   const draft = useQuery({ ...adminThemeQuery(data), enabled: on }).data?.draft;
   const stylesheet = useQuery({
     queryKey: [...draftStylesheetKey, draft?.id ?? ""],
@@ -127,10 +153,10 @@ export function useThemePreview(): ThemePreview {
     on,
     stylesheet: on ? stylesheet : undefined,
     start: () => {
-      queryClient.setQueryData(previewKey, true);
+      setPreview(data, true);
     },
     stop: () => {
-      queryClient.setQueryData(previewKey, false);
+      setPreview(data, false);
     },
   };
 }
