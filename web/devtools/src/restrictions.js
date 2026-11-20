@@ -6,9 +6,10 @@
 //
 // - layer-imports: a layer imports only the layers below it (§3): design-tokens ← design-system ← app-components ←
 //   app-features ← app, with app-data beside app-components, under app-features, and platform and rtc under app-data;
-//   @my/i18n reaches the app alone. The layer of a file is the package of web/ it is in. It sees `import`, `export …
-//   from` and `import()` of a package of the workspace by its name, and a relative path into another package of
-//   web/ (web/brand, which holds files and no package, is open to all). A story (`*.stories.tsx`) and a sample module
+//   @my/i18n reaches the app alone. @my/mail, the layout of the emails that Bun renders into a Go template (ADR-0086
+//   §2), stands on design-tokens alone, and no layer imports it. The layer of a file is the package of web/ it is in.
+//   It sees `import`, `export … from` and `import()` of a package of the workspace by its name, and a relative path
+//   into another package of web/ (web/brand, which holds files and no package, is open to all). A story (`*.stories.tsx`) and a sample module
 //   beside it (`*.samples.ts(x)`), which only the Storybook host loads, may also import @my/e2e/fake, the fake API
 //   (ADR-0171 §5), and @my/devtools/options, the live options the decider picks from (ADR-0168 §1), and nothing else
 //   of either package. A test (`*.test.ts(x)`) and a module of a
@@ -312,6 +313,7 @@ function create(context) {
 /** Each layer of the web client, by its directory under web/, and the layers below it, which it may import. */
 const BELOW = {
   "design-tokens": [],
+  mail: ["design-tokens"],
   "design-system": ["design-tokens"],
   "app-components": ["design-system", "design-tokens"],
   platform: [],

@@ -123,16 +123,22 @@ export const offeredPermissionsAt = (rights: RoleRights, key: string, position: 
     (p) => isMemberPermission(p) || builtinRoles.has(key) || position === null || position >= lowestStaffPlace(rights),
   );
 
+/**
+ * Whether a supporter plan grants `role`, which its plan manages: as the role says, or as the plans the reader reads say.
+ */
+export const grantedByPlan = (role: AdminRole, rights: RoleRights): boolean =>
+  role.supporter_plan !== undefined || rights.planRoles.has(role.id);
+
 /** Whether `role` is at or below the reader's highest role: theirs to change, grant and revoke, the rest aside. */
 export const withinReach = (role: AdminRole, rights: RoleRights): boolean => role.position <= rights.top;
 
 /** Whether the reader may change the place and the permissions of `role` (not its badge alone). */
 export const mayReshape = (role: AdminRole, rights: RoleRights): boolean =>
-  withinReach(role, rights) && role.key !== "admin" && !rights.planRoles.has(role.id);
+  withinReach(role, rights) && role.key !== "admin" && !grantedByPlan(role, rights);
 
 /** Whether the reader may delete `role`: not a built-in one, nor a plan's, and within their reach. */
 export const mayDelete = (role: AdminRole, rights: RoleRights): boolean =>
-  withinReach(role, rights) && !builtinRoles.has(role.key) && !rights.planRoles.has(role.id);
+  withinReach(role, rights) && !builtinRoles.has(role.key) && !grantedByPlan(role, rights);
 
 /** The highest position the reader may give a role: below `admin`, and no higher than their own highest role. */
 export const highestPlace = (rights: RoleRights): number => Math.min(roleLimits.position, rights.top);
@@ -142,13 +148,11 @@ export const highestPlace = (rights: RoleRights): number => Math.min(roleLimits.
  * reader lacks.
  */
 export const mayGrant = (role: AdminRole, rights: RoleRights): boolean =>
-  withinReach(role, rights) &&
-  !rights.planRoles.has(role.id) &&
-  role.permissions.every((p) => rights.permissions.has(p));
+  withinReach(role, rights) && !grantedByPlan(role, rights) && role.permissions.every((p) => rights.permissions.has(p));
 
 /** Whether the reader may revoke `role` from an account: within their reach, and not a plan's. */
 export const mayRevoke = (role: AdminRole, rights: RoleRights): boolean =>
-  withinReach(role, rights) && !rights.planRoles.has(role.id);
+  withinReach(role, rights) && !grantedByPlan(role, rights);
 
 /** The permissions a role holds that the reader may not take from it, in the server's order. */
 export const fixedPermissions = (role: AdminRole, rights: RoleRights): readonly Permission[] =>

@@ -32,15 +32,36 @@ type Roles interface {
 	DeleteRole(ctx context.Context, key, byUserID string) error
 }
 
-// newAdminRole presents a role with its permissions.
-func newAdminRole(r appidentity.RoleWithPermissions) AdminRole {
+// newAdminRole presents a role with its permissions and the plan that grants it, from plans by
+// role ID (rolePlans).
+func newAdminRole(r appidentity.RoleWithPermissions, plans map[string]AdminRoleSupporterPlan) AdminRole {
 	item := AdminRole{
 		Id: r.ID, Key: r.Key, Position: r.Position, Permissions: make([]Permission, len(r.Permissions)), Badge: newRoleBadge(r.Badge),
 	}
 	for i, p := range r.Permissions {
 		item.Permissions[i] = Permission(p)
 	}
+	if plan, ok := plans[r.ID]; ok {
+		item.SupporterPlan = &plan
+	}
 	return item
+}
+
+// rolePlans returns the supporter plans by the ID of the role they grant (one role is the role of
+// one plan at most), and none where the supporter program is not configured.
+func (s *Server) rolePlans(ctx context.Context) (map[string]AdminRoleSupporterPlan, error) {
+	if s.o.Supporters == nil {
+		return nil, nil
+	}
+	plans, err := s.o.Supporters.Plans(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the supporter plans of the roles: %w", err)
+	}
+	out := make(map[string]AdminRoleSupporterPlan, len(plans))
+	for _, p := range plans {
+		out[p.RoleID] = AdminRoleSupporterPlan{Id: p.ID, Name: p.Revision.Name, Retired: p.Retired}
+	}
+	return out, nil
 }
 
 // roleList presents the user's current roles with their permissions, highest first.
@@ -61,12 +82,16 @@ func (s *Server) roleList(ctx context.Context, userID string) (AdminRoleListJSON
 		}
 		keep = func(id string) bool { return ids[id] }
 	}
+	plans, err := s.rolePlans(ctx)
+	if err != nil {
+		return AdminRoleListJSONResponse{}, err
+	}
 	list := AdminRoleList{Items: []AdminRole{}}
 	for _, r := range all {
 		if !keep(r.ID) {
 			continue
 		}
-		list.Items = append(list.Items, newAdminRole(r))
+		list.Items = append(list.Items, newAdminRole(r, plans))
 	}
 	cache := cacheNoStore
 	return AdminRoleListJSONResponse{Body: list, Headers: AdminRoleListResponseHeaders{CacheControl: &cache}}, nil

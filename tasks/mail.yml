@@ -1,15 +1,34 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The previews and golden files of the emails (ADR-0086). The HTML layout is the committed Go html/template
-# internal/app/kernel/mail_frame.gen.html, which Go embeds (ADR-0081).
+# The layout, previews and golden files of the emails (ADR-0086). The HTML layout is written in React in web/mail
+# and rendered by Bun into the committed Go html/template internal/app/kernel/mail_frame.gen.html, which Go embeds
+# (ADR-0081); the tests of web/mail fail when it is stale or breaks the rules of an email's HTML.
 version: "3"
 
 tasks:
+  frame:
+    desc: Regenerate internal/app/kernel/mail_frame.gen.html from the React layout of web/mail, refusing a layout that breaks the rules of an email's HTML (commit the result)
+    deps: [":web:install"]
+    sources: [web/mail/src/*.ts, web/mail/src/*.tsx, web/design-tokens/src/tokens.ts]
+    generates: [internal/app/kernel/mail_frame.gen.html]
+    cmds:
+      - bun web/mail/src/frame.tsx
+
   preview:
     desc: Write every email, rendered from sample inputs in en, ja, zh-CN, zh-TW, es, pt-BR, de, fr, en-XA, and ar-XB, to .tmp/mail/preview/ and print the path of its index.html (no database, server, or mail server)
     deps: [":i18n:gen"]
     cmds:
       - go run ./scripts/mail-preview -out .tmp/mail/preview
+
+  # The Mailpit of the root compose.yaml, alone (docker:mailpit) or with the rest (docker compose up), keeps its CA in
+  # /certs; the sender verifies Mailpit's certificate against it.
+  mailpit:
+    desc: Send every email, rendered from sample inputs in en and the right-to-left ar-XB, light and dark, to the running development Mailpit (scripts/task.sh docker:mailpit), whose UI at http://127.0.0.1:8025 shows them
+    deps: [":i18n:gen"]
+    cmds:
+      - mkdir -p .tmp/mail
+      - docker compose cp mailpit:/certs/ca.pem .tmp/mail/mailpit-ca.pem
+      - go run ./scripts/mail-preview -smtp 127.0.0.1:{{.MAILPIT_SMTP_PORT | default "1025"}} -ca .tmp/mail/mailpit-ca.pem -locales en,ar-XB
 
   preview-watch:
     desc: Run mail:preview, then again whenever the layout, the locale catalogs, or the Go code change (reload index.html to see the change)

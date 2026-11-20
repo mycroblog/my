@@ -3,6 +3,7 @@
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import { themeReload } from "@my/design-system/theme-reload";
 import react from "@vitejs/plugin-react";
 import { defaultClientConditions, defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
@@ -39,7 +40,8 @@ const server = process.env["MY_SERVER"] ?? "https://my.localhost";
 // which fails the build on a function it skips. The routes of src/routes compile into src/routeTree.gen.ts, which
 // scripts/routes.ts also writes with the same options, each route's components in a chunk of their own; TanStack
 // Router's plugin comes before React's. Tailwind builds the stylesheet of @my/design-system without its own optimizer,
-// for the browsers of light-dark() (ADR-0025 §1). The licenses/ of the build holds the notices of the npm packages and,
+// for the browsers of light-dark() (ADR-0025 §1), and on the dev server a change to a design token reloads its theme
+// (themeReload of @my/design-system). The licenses/ of the build holds the notices of the npm packages and,
 // through vite-plugins/licenses.ts, of the Unicode emoji data and the emoji and text fonts, each slice of which is an
 // asset of its own. The condition @mycroblog/source reads @mycroblog/mykit (under @my/app-data) from its sources, which
 // need no build. The Service Worker, sw/sw.ts, is built with the app's precache manifest into sw.js at the build's
@@ -52,6 +54,7 @@ export default defineConfig({
     reactCompiler(),
     bundledLicenses(licenseFiles),
     tailwindcss({ optimize: false }),
+    themeReload(),
     // The Service Worker (ADR-0028 §3): sw/sw.ts, built by vite-plugin-pwa's injectManifest with the precache manifest of
     // this build (https://vite-pwa-org.netlify.app/guide/inject-manifest.html) into sw.js at the build's root. Go writes
     // the Web App Manifest and the HTML, so the plugin writes neither and registers nothing: the app registers the

@@ -175,6 +175,9 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	}
 	// Who may read the supporter list of GET /instance/supporters (ADR-0070 §13).
 	out.SupporterListVisibility = InstanceAudience(settings.SupporterListVisibility())
+	// Who may read the moderated domains of GET /instance/domain_actions (FR-718), so that the
+	// about page shows the list without asking for it.
+	out.DomainActionsVisibility = InstanceAudience(settings.DomainActionsVisibility())
 	// Whether the supporter program shows its plans (ADR-0072 §2).
 	if s.o.Supporters != nil {
 		enabled, err := s.o.Supporters.Enabled(ctx)

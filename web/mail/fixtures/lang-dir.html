@@ -1,0 +1,8 @@
+<!-- Breaks "lang-dir": <html> has a lang and no dir. -->
+<!doctype html>
+<html lang="{{.Lang}}"><head><title>{{.Subject}}</title><style>
+:root { color-scheme: light dark; supported-color-schemes: light dark; }
+@media (prefers-color-scheme: dark) {
+  .mail-text { color: {{$.Colors.Dark.Text}} !important; }
+}
+</style></head><body><table><tbody><tr><td style="color:#111111">Hello</td></tr></tbody></table></body></html>

@@ -1,0 +1,2 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠", "docs/adr/0059-design-tokens-and-instance-theme.md"]

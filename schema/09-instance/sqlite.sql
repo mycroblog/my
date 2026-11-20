@@ -253,12 +253,12 @@ CREATE TABLE announcement_revisions (
   CHECK (starts_at IS NULL OR ends_at IS NULL OR ends_at > starts_at)
 ) STRICT;
 
--- Event: an announcement was published or withdrawn; a withdrawal is for good.
--- changed_by_user_id is NULL for the CLI.
+-- Event: an announcement was published or withdrawn, or a draft deleted; a withdrawal and a
+-- deletion are for good, and a deleted draft has no head. changed_by_user_id is NULL for the CLI.
 CREATE TABLE announcement_state_changes (
   id TEXT NOT NULL PRIMARY KEY,
   announcement_id TEXT NOT NULL,
-  state TEXT NOT NULL CHECK (state IN ('published', 'withdrawn')),
+  state TEXT NOT NULL CHECK (state IN ('published', 'withdrawn', 'deleted')),
   changed_by_user_id TEXT,
   changed_at INTEGER NOT NULL
 ) STRICT;

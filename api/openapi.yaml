@@ -470,9 +470,9 @@ paths:
       summary: List the domains that the instance moderates
       description: |
         The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
-        setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
-        `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
-        token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
+        setting `domain_actions_visibility`, which `GET /instance` gives, decides who may read it:
+        `off` makes it a 404, `signed_in` a 401 `/api/v1/problems/unauthenticated` for a request
+        without an access token, and `everyone` serves everyone. The setting `domain_actions_rationale_visibility`
         decides, in the same way, who gets each action's public comment. The moderators'
         private notes are never listed.
       tags:
@@ -10540,6 +10540,27 @@ paths:
           $ref: '#/components/responses/AdminAnnouncement'
         default:
           $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteAdminAnnouncement
+      x-permission: manage_announcements
+      summary: Delete a draft announcement
+      description: |
+        Deletes a draft, which no user ever saw: it is found nowhere after, a 404 like an unknown
+        ID. The audit log records `announcement_deleted` with its title. An announcement that was
+        published is a 409: withdraw it instead. Needs the `manage_announcements` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/AnnouncementId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '204':
+          description: The draft is deleted.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/announcements/{id}/publish:
     post:
       operationId: publishAdminAnnouncement
@@ -17640,9 +17661,9 @@ components:
         endpoint answered 410 Gone or kept failing), `webhook_secret_rotated`; the label is its
         description and the host name of its URL, never the URL. On an `announcement`:
         `announcement_created`, `announcement_updated` (its text or window),
-        `announcement_published`, `announcement_withdrawn`; the label is the first line of its
-        text. On an `invite`: `invite_created`, `invite_revoked`; the label is the first
-        characters of its code, never the whole code. On a `relay`: `relay_added`,
+        `announcement_published`, `announcement_withdrawn`, `announcement_deleted` (a draft); the
+        label is the first line of its text. On an `invite`: `invite_created`, `invite_revoked`;
+        the label is the first characters of its code, never the whole code. On a `relay`: `relay_added`,
         `relay_followed`, `relay_unfollowed`, `relay_removed`, and `relay_accepted`,
         `relay_rejected` (by the `remote` relay); the label is its URL. The refetch of remote
         posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
@@ -17738,6 +17759,7 @@ components:
         - announcement_updated
         - announcement_published
         - announcement_withdrawn
+        - announcement_deleted
         - invite_created
         - invite_revoked
         - relay_added
@@ -19978,6 +20000,11 @@ components:
         badge:
           description: The badge of the role, which its holders may show on their profile; omitted when it has none.
           $ref: '#/components/schemas/RoleBadge'
+        supporter_plan:
+          description: |
+            The supporter plan that grants the role, which only its subscriptions grant and revoke;
+            omitted for a role that no plan grants. A role is the role of one plan at most.
+          $ref: '#/components/schemas/AdminRoleSupporterPlan'
     AdminRoleList:
       description: Roles, highest position first.
       type: object
@@ -19988,6 +20015,22 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AdminRole'
+    AdminRoleSupporterPlan:
+      description: The supporter plan that grants a role to its subscribers, and so manages it.
+      type: object
+      required:
+        - id
+        - name
+        - retired
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          description: The name of the plan in its current terms.
+          type: string
+        retired:
+          description: Whether the plan is retired, which keeps the role of the subscriptions it still has.
+          type: boolean
     AdminRule:
       description: |
         A rule of the instance. Its ID stays the same across revisions, so reports keep
@@ -21272,6 +21315,13 @@ components:
         created_at:
           type: string
           format: date-time
+        request_body:
+          description: |
+            The body of the request that every attempt sent, byte for byte as the receiver got it: a
+            JSON document, which can carry personal data (an applicant's email address, a report's
+            comment). It is kept as long as the delivery, 14 days. Omitted where the reader lacks the
+            permission that subscribing to its event needs besides `manage_webhooks`.
+          type: string
     AdminWebhookDeliveryPage:
       description: A page of the deliveries of a webhook, newest first.
       allOf:
@@ -24811,6 +24861,7 @@ components:
         - supporters_enabled
         - tips_enabled
         - supporter_list_visibility
+        - domain_actions_visibility
         - voice_enabled
         - voice_room_starters
         - event_creators
@@ -24906,6 +24957,13 @@ components:
             their amounts (`GET /instance/tip_amounts`) and the tips show only then.
           type: boolean
         supporter_list_visibility:
+          $ref: '#/components/schemas/InstanceAudience'
+        domain_actions_visibility:
+          description: |
+            Who may read the list of moderated domains (`GET /instance/domain_actions`), the instance
+            setting `domain_actions_visibility`: `off`, nobody (the list is a 404); `signed_in`, the
+            users signed in to this server; `everyone`, anonymous visitors included. The about page shows
+            the list only when it lets the viewer read it.
           $ref: '#/components/schemas/InstanceAudience'
         external_reviews:
           description: |

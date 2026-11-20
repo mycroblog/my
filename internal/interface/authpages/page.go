@@ -28,9 +28,10 @@ type Entry struct {
 	Script string
 	// Stylesheets are the CSS of the entry and of its static imports, and Preloads those imports.
 	Stylesheets, Preloads []string
-	// ViteClient is the client script of a Vite dev server, and DevOrigin that server's origin,
-	// which the screens' policy then allows; both empty in production.
-	ViteClient, DevOrigin string
+	// DevScripts are the scripts of a Vite dev server that run before Script, and DevOrigin that
+	// server's origin, which the screens' policy then allows; both empty in production.
+	DevScripts []string
+	DevOrigin  string
 }
 
 // The screens, the screen field of the data that tells the entry which one to render.
@@ -160,7 +161,7 @@ var shellTemplate = template.Must(template.New("auth").Funcs(template.FuncMap{
 {{- range .Entry.Preloads}}
 <link rel="modulepreload" href="{{.}}">
 {{- end}}
-{{- with .Entry.ViteClient}}
+{{- range .Entry.DevScripts}}
 <script type="module" src="{{.}}"></script>
 {{- end}}
 {{- with .Entry.Script}}

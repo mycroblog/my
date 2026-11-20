@@ -78,6 +78,7 @@ func TestGetInstance(t *testing.T) {
 		FinanceVisibility:       clientapi.FinanceVisibilityPrivate,
 		IncomeVisibility:        clientapi.IncomeVisibilityPrivate,
 		SupporterListVisibility: clientapi.InstanceAudienceOff,
+		DomainActionsVisibility: clientapi.InstanceAudienceOff,
 		VoiceRoomStarters:       clientapi.InstanceVoiceRoomStartersPermitted,
 		// Unset, every local user may create events (ADR-0161 §3).
 		EventCreators:  clientapi.InstanceEventCreatorsEveryone,

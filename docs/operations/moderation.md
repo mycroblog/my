@@ -429,7 +429,7 @@ my instance set domain_actions_rationale_visibility signed_in
 - For an action with `-obfuscate` (`obfuscate`), the middle half of the domain's characters (other than dots) is replaced with `*` (`bad.example` becomes `bad.*****le`).
   Anyone can compare the SHA-256 of a domain they know to check whether it is an obfuscated one.
 - `reject_media`, `reject_reports` and `force_sensitive` actions, and lifted or expired actions, are not published.
-- The web client's instance information page (`https://<host>/about`) shows this list under the same settings. With `off` the section is not shown, and with `users` people who are not signed in see a note that only signed-in users can see it.
+- The web client's instance information page (`https://<host>/about`) shows this list under the same settings. With `off` the section is not shown, and with `signed_in` people who are not signed in see a note that only signed-in users can see it.
 
 ## Refetching remote posts
 
@@ -608,7 +608,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `hook_decision` | `hook_decision_applied` (the server acted on an external review's verdict and left state; the actor is the system), `hook_decision_overridden` (a moderator cancelled the decision, also by overturning its appeal), `hook_appeal_upheld` (a moderator upheld the appeal of a refused post, and the decision stays) |
 | `custom_emoji` | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` (registering a custom emoji, replacing its image, copying an emoji from another server, changing, enabling, disabling and deleting it) |
 | `webhook` | `webhook_created`, `webhook_updated`, `webhook_deleted`, `webhook_enabled`, `webhook_disabled`, `webhook_secret_rotated` (creating, changing, deleting, enabling and disabling a webhook, and regenerating its secret) |
-| `announcement` | `announcement_created`, `announcement_updated`, `announcement_published`, `announcement_withdrawn` (creating, changing, publishing and withdrawing an announcement) |
+| `announcement` | `announcement_created`, `announcement_updated`, `announcement_published`, `announcement_withdrawn`, `announcement_deleted` (creating, changing, publishing and withdrawing an announcement, and deleting a draft) |
 | `invite` | `invite_created`, `invite_revoked` (creating and revoking an invite; the target name is the first 4 characters of the code) |
 | `billing_source` | `billing_import_queued` (a billing import was started by hand; the target name is the provider's name) |
 | `cost_item` | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_deleted` (registering a cost, changing its name and the like, revising its amount, changing its end date, and deleting it; the target name is the item's name) |

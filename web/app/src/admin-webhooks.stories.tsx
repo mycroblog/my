@@ -5,11 +5,13 @@
 // works, one failing now, one the server turned off after its deliveries kept failing, one an administrator turned
 // off), none, loading, failing, and the address for a moderator, whose permissions do not open it. The form of a new
 // one, for the administrator and for a community lead (`lead`: no `manage_domains`, so the servers' events are left
-// out too). A webhook of each state with its deliveries; the lead on a webhook that receives an event they may not
-// handle, shown with no form; loading, failing, and an address that names none. The views of a secret shown once (a new
+// out too). A webhook of each state with its deliveries, and one with what each delivery sent shown; the lead on a
+// webhook that receives an event they may not handle, shown with no form, and what its delivery of that event sent not
+// shown to them; loading, failing, and an address that names none. The views of a secret shown once (a new
 // webhook's, a new secret) follow a press: the app opens them through the feature's specimen (`WebhookSecretSpecimen`).
 
 import { WebhookSecretSpecimen } from "@my/app-features";
+import { PreviewExpanded } from "@my/design-system/preview";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta, type Fake } from "./app.samples";
 
@@ -66,6 +68,11 @@ export const NewWebhookForALead: Story = {
 export const Webhook: Story = {
   parameters: asAdmin("/admin/webhooks/{server:webhook:alerts}"),
 };
+/** The same webhook with what each delivery sent shown under it, laid out as JSON, and the button that copies it. */
+export const WebhookDeliveryBodies: Story = {
+  parameters: asAdmin("/admin/webhooks/{server:webhook:alerts}"),
+  render: (args, context) => <PreviewExpanded>{screenMeta.render(args, context)}</PreviewExpanded>,
+};
 /** The same webhook with Show more pressed once under its deliveries, two a page: all four, and Show more gone. */
 export const WebhookMore: Story = {
   parameters: asAdmin("/admin/webhooks/{server:webhook:alerts}", { server: { staffPage: 2 }, more: true }),
@@ -84,7 +91,8 @@ export const WebhookOff: Story = {
 };
 /**
  * The lead on a webhook that receives a server's moderation, whose permission they lack: what it is and receives, and
- * why they cannot change it, with no form; its test, its state, its secret and Delete are still theirs.
+ * why they cannot change it, with no form; its test, its state, its secret and Delete are still theirs; what its
+ * delivery of a server's moderation sent is not shown to them, and the row says why.
  */
 export const WebhookForALead: Story = {
   parameters: asLead("/admin/webhooks/{server:webhook:chat}"),

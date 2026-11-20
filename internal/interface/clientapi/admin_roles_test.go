@@ -13,8 +13,10 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	appsupporters "github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/supporters"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 )
 
@@ -140,11 +142,14 @@ func (f *fakeRoles) HasPermission(ctx context.Context, userID string, p identity
 const roleRemoteAccountID = "01890a5d-ac96-774b-bcce-b302099a8070"
 
 // newRolesEnv is newAuthEnv with the role operations: alice is the only admin, bob holds no
-// role, and a remote account exists.
-func newRolesEnv(t *testing.T) (*authEnv, *fakeRoles) {
+// role, and a remote account exists. The options of more change the server after that.
+func newRolesEnv(t *testing.T, more ...func(*clientapi.Options)) (*authEnv, *fakeRoles) {
 	t.Helper()
 	f := &fakeRoles{held: map[string][]string{userOf(aliceAccountID): {identity.RoleAdmin}}}
 	e := newAuthEnv(t, func(o *clientapi.Options) {
+		for _, m := range more {
+			defer m(o)
+		}
 		o.Permissions = f
 		o.Roles = f
 		accounts := o.Accounts.(fakeAccounts)
@@ -282,5 +287,50 @@ func TestRoleProblems(t *testing.T) {
 	}
 	if len(f.changes) != 0 {
 		t.Errorf("changes = %q, want none", f.changes)
+	}
+}
+
+// rolePlans is the supporter program of a server whose plans grant roles: only Plans answers.
+type rolePlans struct {
+	clientapi.Supporters
+	plans []appsupporters.PlanView
+}
+
+func (f rolePlans) Plans(context.Context) ([]appsupporters.PlanView, error) { return f.plans, nil }
+
+func TestRolesNameTheSupporterPlanThatGrantsThem(t *testing.T) {
+	const planID = "01890a5d-ac96-774b-bcce-b302099a5101"
+	plan := appsupporters.PlanView{PlanRecord: appsupporters.PlanRecord{
+		Plan:     supporters.Plan{ID: planID, RoleID: fakeRoleIDs[identity.RoleModerator], Currency: "JPY"},
+		Revision: supporters.PlanRevision{PlanID: planID, PlanTerms: supporters.PlanTerms{Name: "Patron"}},
+		Retired:  true,
+	}}
+	e, _ := newRolesEnv(t, func(o *clientapi.Options) { o.Supporters = rolePlans{plans: []appsupporters.PlanView{plan}} })
+	want := map[string]*clientapi.AdminRoleSupporterPlan{
+		identity.RoleAdmin:     nil,
+		identity.RoleModerator: {Id: planID, Name: "Patron", Retired: true},
+	}
+	check := func(what string, roles []clientapi.AdminRole) {
+		t.Helper()
+		for _, r := range roles {
+			if w, ok := want[r.Key]; !ok || !reflect.DeepEqual(r.SupporterPlan, w) {
+				t.Errorf("%s: the plan of %s = %+v, want %+v", what, r.Key, r.SupporterPlan, w)
+			}
+		}
+	}
+	check("list", decodeJSON[clientapi.AdminRoleList](t, e.admin(t, http.MethodGet, "/admin/roles", "admin-read", nil)).Items)
+	check("account", decodeJSON[clientapi.AdminRoleList](t, e.admin(t, http.MethodGet, "/admin/accounts/"+aliceAccountID+"/roles", "admin-read", nil)).Items)
+	res := e.send(t, http.MethodPatch, "/admin/roles/moderator", "admin", `{"badge":{"label":"Patron","color":"yellow"}}`)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("change the badge = %d %+v", res.StatusCode, decodeProblem(t, res))
+	}
+	check("update", []clientapi.AdminRole{decodeJSON[clientapi.AdminRole](t, res)})
+
+	// A server without the supporter program names no plan.
+	bare, _ := newRolesEnv(t)
+	for _, r := range decodeJSON[clientapi.AdminRoleList](t, bare.admin(t, http.MethodGet, "/admin/roles", "admin-read", nil)).Items {
+		if r.SupporterPlan != nil {
+			t.Errorf("without the program, the plan of %s = %+v, want none", r.Key, r.SupporterPlan)
+		}
 	}
 }

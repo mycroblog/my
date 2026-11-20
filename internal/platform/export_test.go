@@ -51,3 +51,6 @@ func SupporterMailbox(ctx context.Context, a *App, accountID string) (string, bo
 	box, ok, err := supporterUsers{a}.SupporterMailbox(ctx, accountID)
 	return box.EmailAddressID, ok, err
 }
+
+// MailSite returns the instance as the emails that a sends name it, with its theme's colors.
+func MailSite(ctx context.Context, a *App) kernel.MailSite { return a.mailSite(ctx) }

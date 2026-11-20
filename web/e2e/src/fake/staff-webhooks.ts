@@ -7,7 +7,7 @@
 // succeeded, one that waits and one that keeps failing; `chat`, enabled and failing now; `archive`, which the server
 // disabled after its deliveries kept failing; `old`, which an administrator disabled. A secret is `whsec_` and the
 // base64 of 32 bytes, as the server makes it; a test adds a delivery that waits, and a redelivery puts one back to
-// waiting.
+// waiting. Each delivery carries the body it sent, which a reader who lacks the permission of its event is not given.
 
 import { page } from "./common";
 import type { StaffServerContext } from "./staff-server";
@@ -48,6 +48,11 @@ function secret(): string {
 
 const hour = 3_600_000;
 
+/** The body a message of `event` sends, as the server lays it out: its type, when, and what the admin API says of it. */
+function bodyOf(event: Schema<"WebhookMessageType">, when: string, data: Record<string, unknown>): string {
+  return JSON.stringify({ type: event, timestamp: when, data });
+}
+
 export function webhookHandlers(c: StaffServerContext): {
   handlers: Handlers;
   id: (key: string) => string;
@@ -58,17 +63,22 @@ export function webhookHandlers(c: StaffServerContext): {
   const webhooks: Webhook[] = [];
   const deliveries = new Map<string, Delivery[]>();
   let made = 0;
-  const add = (key: string, w: Omit<Webhook, "id">, list: Omit<Delivery, "id" | "message_id">[]) => {
+  const add = (
+    key: string,
+    w: Omit<Webhook, "id">,
+    list: (Omit<Delivery, "id" | "message_id" | "request_body"> & { readonly data?: Record<string, unknown> })[],
+  ) => {
     const n = webhooks.length;
     const id = c.idAt(Date.parse(w.created_at), 80_000 + n);
     keyed.set(key, id);
     webhooks.push({ ...w, id });
     deliveries.set(
       id,
-      list.map((d, i) => ({
+      list.map(({ data, ...d }, i) => ({
         ...d,
         id: c.idAt(Date.parse(d.created_at), 81_000 + n * 100 + i),
         message_id: c.idAt(Date.parse(d.created_at), 82_000 + n * 100 + i),
+        request_body: bodyOf(d.event_type, d.created_at, data ?? { endpoint_id: id }),
       })),
     );
   };
@@ -106,6 +116,7 @@ export function webhookHandlers(c: StaffServerContext): {
       [
         {
           event_type: "custom_emoji.updated",
+          data: { id: "0192b3c4-5d6e-7f80-9a1b-2c3d4e5f6071", shortcode: "blobcat_wave", category: "Blobs" },
           status: "failing",
           attempts: 8,
           last_attempt: {
@@ -132,12 +143,23 @@ export function webhookHandlers(c: StaffServerContext): {
       [
         {
           event_type: "report.created",
+          data: {
+            id: "0192b3c4-5d6e-7f80-9a1b-2c3d4e5f6072",
+            category: "spam",
+            comment: "The same link in every reply, again and again.",
+          },
           status: "pending",
           attempts: 0,
           created_at: at(s - 0.1 * hour),
         },
         {
           event_type: "registration.pending",
+          data: {
+            id: "0192b3c4-5d6e-7f80-9a1b-2c3d4e5f6073",
+            username: "kenji",
+            email: "kenji@mail.example",
+            reason: "A friend here told me about the reading group.",
+          },
           status: "failing",
           attempts: 3,
           last_attempt: {
@@ -150,6 +172,7 @@ export function webhookHandlers(c: StaffServerContext): {
         },
         {
           event_type: "report.resolved",
+          data: { id: "0192b3c4-5d6e-7f80-9a1b-2c3d4e5f6074", category: "violation", action_taken: true },
           status: "succeeded",
           attempts: 1,
           last_attempt: {
@@ -192,6 +215,7 @@ export function webhookHandlers(c: StaffServerContext): {
       [
         {
           event_type: "status.created",
+          data: { id: "0192b3c4-5d6e-7f80-9a1b-2c3d4e5f6075", visibility: "public", content: "<p>Good morning!</p>" },
           status: "failing",
           attempts: 7,
           last_attempt: {
@@ -200,6 +224,19 @@ export function webhookHandlers(c: StaffServerContext): {
             attempted_at: at(s - 0.5 * hour),
           },
           created_at: at(s - 26 * hour),
+        },
+        {
+          event_type: "domain_moderation_action.created",
+          data: { id: "0192b3c4-5d6e-7f80-9a1b-2c3d4e5f6076", domain: "spam.example", severity: "suspend" },
+          status: "succeeded",
+          attempts: 1,
+          last_attempt: {
+            outcome: "succeeded",
+            status_code: 200,
+            duration_ms: 210,
+            attempted_at: at(s - 30 * hour),
+          },
+          created_at: at(s - 30 * hour),
         },
       ],
     );
@@ -217,6 +254,13 @@ export function webhookHandlers(c: StaffServerContext): {
       ...(missing === undefined ? {} : { missing_permissions: [...missing] }),
     });
   const found = (id: string) => webhooks.find((w) => w.id === id);
+  /** A delivery as the reader is given it: without its body where they lack the permission of its event. */
+  const shown = (d: Delivery): Delivery => {
+    const need = d.event_type === "webhook.test" ? undefined : needed(d.event_type);
+    if (need === undefined || c.permissions().includes(need)) return structuredClone(d);
+    const { request_body: _, ...rest } = structuredClone(d);
+    return rest;
+  };
   /** What is wrong with a URL, a description or events, as the server checks them; none for valid ones. */
   const check = (url?: string, description?: string, events?: readonly Event[]) => {
     if (url !== undefined) {
@@ -263,6 +307,7 @@ export function webhookHandlers(c: StaffServerContext): {
       status: "pending",
       attempts: 0,
       created_at: at(Date.now()),
+      request_body: bodyOf(event, at(Date.now()), { endpoint_id: id }),
     };
     deliveries.set(id, [d, ...(deliveries.get(id) ?? [])]);
     return d;
@@ -360,20 +405,21 @@ export function webhookHandlers(c: StaffServerContext): {
       if (found(params.id) === undefined) return c.notFound();
       return {
         status: 202,
-        body: structuredClone(newDelivery(params.id, "webhook.test")),
+        body: shown(newDelivery(params.id, "webhook.test")),
       };
     },
     "GET /admin/webhooks/{id}/deliveries": ({ params, query }) => {
       if (!allowed()) return forbidden();
       if (found(params.id) === undefined) return c.notFound();
-      return { status: 200, body: structuredClone(page(deliveries.get(params.id) ?? [], query).body) };
+      const listed = page(deliveries.get(params.id) ?? [], query).body;
+      return { status: 200, body: { ...listed, items: listed.items.map(shown) } };
     },
     "POST /admin/webhooks/{id}/deliveries/{delivery_id}/redeliver": ({ params }) => {
       if (!allowed()) return forbidden();
       const d = deliveries.get(params.id)?.find((x) => x.id === params.delivery_id);
       if (d === undefined) return c.notFound();
       d.status = "pending";
-      return { status: 202, body: structuredClone(d) };
+      return { status: 202, body: shown(d) };
     },
   };
   return { handlers, id: (key) => keyed.get(key) ?? "none" };

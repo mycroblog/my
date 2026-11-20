@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "//": "The layout of the emails (src/, rendered by Bun at build time into a Go template) and its tests (on Bun).",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["bun"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}
