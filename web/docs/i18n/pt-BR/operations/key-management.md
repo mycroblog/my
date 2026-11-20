@@ -5,38 +5,40 @@ O servidor criptografa os segredos que guarda no banco de dados com uma chave de
 Esta página explica como gerar, armazenar, fazer backup e rotacionar a KEK, como mantê-la em um KMS e o que fazer se ela for perdida ou vazar.
 A [referência de configuração](../reference/configuration.md) lista todas as configurações.
 
-<!-- source: how-it-works 37074c6237d0 -->
+<!-- source: how-it-works 92f093e9e7ca -->
 ## Como funciona
 
-![A hierarquia de chaves: a chave de criptografia de chaves, mantida onde key_manager indicar e nunca no banco de dados, envolve uma chave de criptografia de dados criada para cada segredo, que criptografa o segredo; o banco de dados guarda o ID da chave, a chave de criptografia de dados envolvida e o segredo criptografado em cinco colunas seladas. A lista abaixo descreve cada camada.](images/key-hierarchy.svg)
+![A hierarquia de chaves: a chave de criptografia de chaves, mantida onde key_manager indica e nunca no banco de dados, envolve uma chave de criptografia de dados feita para cada segredo, que criptografa o segredo; o banco de dados guarda o ID da chave, a chave de criptografia de dados envolvida e o segredo criptografado em sete colunas seladas. A lista abaixo descreve cada camada.](images/key-hierarchy.svg)
 
-- Os segredos armazenados no banco de dados, como as chaves privadas dos atores, são criptografados com AES-256-GCM usando uma chave de criptografia de dados (DEK) gerada para cada segredo.
-  A DEK é envolvida por uma **chave de criptografia de chaves (KEK)** e armazenada ao lado do texto cifrado (envelope encryption).
-- A KEK não é armazenada no banco de dados, então um dump vazado do banco de dados, sozinho, não expõe os segredos.
-- Cada texto cifrado carrega o **ID da chave** da KEK que envolveu sua DEK. Com `key_manager = local`, o ID da chave é `local:` seguido de 16 dígitos hexadecimais derivados da KEK,
-  então a mesma KEK sempre gera o mesmo ID. Você nunca atribui IDs.
-- Um texto cifrado fica vinculado ao ID da linha e ao nome da coluna em que é armazenado. Copiá-lo para outra linha ou coluna o torna impossível de decifrar.
+- Os segredos guardados no banco de dados, como as chaves privadas dos atores, são criptografados com AES-256-GCM usando uma chave de criptografia de dados (DEK) gerada para cada segredo.
+  A DEK é envolvida com uma **chave de criptografia de chaves (KEK)** e guardada junto ao texto cifrado (envelope encryption).
+- A KEK não é guardada no banco de dados, então um dump vazado do banco de dados sozinho não expõe os segredos.
+- Cada texto cifrado traz o **ID da chave** da KEK que envolveu a DEK dele. Com `key_manager = local`, o ID da chave é `local:` seguido de 16 dígitos hexadecimais derivados da KEK,
+  então a mesma KEK sempre dá o mesmo ID. Você nunca atribui IDs.
+- Um texto cifrado fica vinculado ao ID da linha e ao nome da coluna em que é guardado. Copiá-lo para outra linha ou coluna o torna impossível de descriptografar.
 - As colunas seladas, com os nomes que `my kek status` imprime, são `local_account_private_keys.private_key_enc` (chaves privadas dos atores),
-  `totp_enrollments.secret_enc` (segredos da autenticação de dois fatores), `login_provider_secrets.sealed_secret` (segredos de cliente dos provedores de login),
-  `webhook_secrets.sealed_secret` (segredos de assinatura de webhooks) e `instance_secrets.sealed_secret` (a chave de assinatura do proxy de mídia).
-- O estado de um login com passkey ou de um login por meio de um provedor externo é selado da mesma forma, mas não é armazenado: o navegador o guarda por no máximo 30 minutos.
-- A chave de assinatura (HMAC-SHA256) das URLs do proxy de mídia é uma chave aleatória que o servidor gera na primeira inicialização e armazena no banco de dados, criptografada como os outros segredos.
-  Ela não muda quando você rotaciona a KEK, então as URLs do proxy de mídia continuam funcionando durante as rotações, e `my kek rewrap` a reenvolve junto com os outros segredos.
+  `totp_enrollments.secret_enc` (segredos da autenticação em dois fatores), `login_provider_secrets.sealed_secret` (segredos de cliente dos provedores de login),
+  `webhook_secrets.sealed_secret` (segredos de assinatura dos webhooks), `instance_secrets.sealed_secret` (a chave de assinatura do proxy de mídia e a chave das impressões digitais de idempotência),
+  `tls_acme_accounts.sealed_private_key` (as chaves das contas ACME quando o servidor obtém os próprios certificados) e
+  `tls_certificates.sealed_private_key` (as chaves desses certificados).
+- O estado de um login com passkey ou de um login por um provedor externo é selado do mesmo modo, mas não é guardado: o navegador o mantém por no máximo 30 minutos.
+- A chave de assinatura (HMAC-SHA256) das URLs do proxy de mídia é uma chave aleatória que o servidor gera na primeira inicialização e guarda no banco de dados, criptografada como os outros segredos.
+  Ela não muda quando você troca a KEK, então as URLs do proxy de mídia continuam funcionando entre as trocas, e `my kek rewrap` a envolve de novo junto com os outros segredos.
 - `key_manager` é `local` (o padrão: usa a configuração `kek`), `gcpkms` (a KEK fica no Google Cloud KMS; veja [Google Cloud KMS](#google-cloud-kms)),
   `awskms` (a KEK fica no AWS KMS; veja [AWS KMS](#aws-kms)) ou `plugin` (a KEK fica com um programa seu; veja [Um plugin](#a-plugin)).
 
-<!-- source: what-happens-if-you-lose-the-kek 76126b09f09c -->
+<!-- source: what-happens-if-you-lose-the-kek d148ff0dedcc -->
 ## O que acontece se você perder a KEK
 
-Sem a KEK, restaurar o banco de dados não permite decifrar as chaves privadas dos atores. Depois que uma chave privada é perdida, outros servidores não conseguem mais verificar as assinaturas desse ator,
-e **a identidade do ator no fediverso é quebrada** (as relações com os seguidores não podem ser transferidas). Trate a KEK com o mesmo cuidado que o banco de dados.
+Sem a KEK, restaurar o banco de dados não permite descriptografar as chaves privadas dos atores. Quando uma chave privada se perde, outros servidores não conseguem mais verificar as assinaturas desse ator,
+e **a identidade do ator no fediverso fica quebrada** (os relacionamentos dos seguidores não podem ser levados adiante). Trate a KEK com o mesmo cuidado que o banco de dados.
 
-![O que se perde com a KEK: depois de uma restauração sem ela, tudo o que não está selado continua legível, todo valor selado falha ao abrir e os atores perdem sua identidade. O parágrafo abaixo diz o mesmo.](images/kek-loss.svg)
+![O que se perde com a KEK: depois de uma restauração sem ela, tudo o que não é selado continua legível, todo valor selado falha ao abrir e os atores perdem a identidade. O parágrafo abaixo diz o mesmo.](images/kek-loss.svg)
 
-O que não está selado continua legível: publicações, contas, seguidores e o restante do banco de dados, além dos arquivos de mídia no armazenamento.
-Todo valor selado falha com um erro `unknown key-encryption key`: as chaves privadas dos atores, os segredos da autenticação de dois fatores,
-os segredos de cliente dos provedores de login, os segredos de assinatura de webhooks e a chave de assinatura do proxy de mídia.
-O mesmo acontece quando outra KEK é configurada no lugar daquela que envolveu os segredos, ou quando a chave do KMS ou a chave do plugin que os envolveu é desativada ou destruída.
+O que não é selado continua legível: publicações, contas, seguimentos e o restante do banco de dados, e os arquivos de mídia no armazenamento.
+Todo valor selado falha com o erro `unknown key-encryption key`: as chaves privadas dos atores, os segredos da autenticação em dois fatores,
+os segredos de cliente dos provedores de login, os segredos de assinatura dos webhooks, a chave de assinatura do proxy de mídia e as chaves dos certificados que o próprio servidor obteve.
+O mesmo acontece quando outra KEK é definida no lugar da que envolveu os segredos, ou quando a chave do KMS ou a chave do plugin que os envolveu é desativada ou destruída.
 
 <!-- source: generate-a-kek 44b338b7440b -->
 ## Gerar uma KEK

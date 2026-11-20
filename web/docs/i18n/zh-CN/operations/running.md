@@ -3,7 +3,7 @@
 
 本文介绍如何启动和停止服务器、获取镜像，以及在运行期间监控它：指标、追踪、任务队列和健康检查。
 
-<!-- source: start-the-server ea157fe28b0d -->
+<!-- source: start-the-server 5faa7632b863 -->
 ## 启动服务器
 
 ```sh
@@ -13,7 +13,7 @@ my serve          # start according to the configured role (-config <file> reads
 my version        # print the version of the binary
 ```
 
-`my serve` 会校验配置，构建数据库、任务队列和密钥管理的适配器，并在 `listen` 上接受 HTTP 请求。它在那里使用不带 TLS 的普通 HTTP/1.1：请在前面放置一个反向代理或负载均衡器，由它终结 HTTPS（以及面向客户端的 HTTP/2 或 HTTP/3），再通过 HTTP/1.1 转发。实时更新（`GET /api/v1/streaming`、本站时间线和联邦时间线的流，以及语音聊天房间的流）是长时间保持的响应，每 30 秒（语音房间为 15 秒）发送一次心跳注释，空闲时也保持打开。代理不得缓冲这些响应（nginx：服务器会发送 `X-Accel-Buffering: no`），并且它的空闲超时或读取超时必须长于心跳间隔。它不会应用 schema，也不会运行数据升级步骤：请在启动前先运行 `my schema apply`，再运行 `my db upgrade`（参见[数据库](database.md)；升级时会在[升级](database.md#upgrading)的步骤中运行这两者）。在 `my db upgrade` 记录该版本的每个步骤之前，`/readyz` 会返回 `503`。在 Docker Compose 部署（`deploy/docker/compose.yaml`；参见[使用 Docker Compose 部署](deploy-docker-compose.md)）中，一次性的 `schema` 和 `upgrade` 服务会在服务器启动前分别运行 `my schema apply` 和 `my db upgrade`。如果 schema 尚未应用，进程仍会启动，就绪检查返回 503，并且在 schema 就位之前不提供其他任何服务。
+`my serve` 会校验配置，构建数据库、任务队列和密钥管理的适配器，并在 `listen` 上接受 HTTP 请求。默认的 `tls = off` 时，它在那里使用普通 HTTP/1.1：请在前面放置一个反向代理或负载均衡器，由它终结 HTTPS（以及面向客户端的 HTTP/2 或 HTTP/3），再通过 HTTP/1.1 转发。要在没有代理的情况下提供 HTTPS，参见[由服务器提供 HTTPS](#serving-https-from-the-server)。实时更新（`GET /api/v1/streaming`、本站时间线和联邦时间线的流，以及语音聊天房间的流）是长时间保持的响应，每 30 秒（语音房间为 15 秒）发送一次心跳注释，空闲时也保持打开。代理不得缓冲这些响应（nginx：服务器会发送 `X-Accel-Buffering: no`），并且它的空闲超时或读取超时必须长于心跳间隔。它不会应用 schema，也不会运行数据升级步骤：请在启动前先运行 `my schema apply`，再运行 `my db upgrade`（参见[数据库](database.md)；升级时会在[升级](database.md#upgrading)的步骤中运行这两者）。在 `my db upgrade` 记录该版本的每个步骤之前，`/readyz` 会返回 `503`。在 Docker Compose 部署（`deploy/docker/compose.yaml`；参见[使用 Docker Compose 部署](deploy-docker-compose.md)）中，一次性的 `schema` 和 `upgrade` 服务会在服务器启动前分别运行 `my schema apply` 和 `my db upgrade`。如果 schema 尚未应用，进程仍会启动，就绪检查返回 503，并且在 schema 就位之前不提供其他任何服务。
 
 第一个使用数据库的 `my serve` 或 `my` 命令会把 `host` 和 `account_domain` 记录到数据库中。当配置与记录的值不同时，`my serve` 会记录 `start failed` 日志并附上两组值，然后以退出码 1 退出，命令也会输出同样的错误。例外是不做检查的 `my schema apply` 和 `my db backup`，以及不读取数据库的维护模式。`my config check -instance` 和 `my db upgrade -check` 会检查，但不记录任何内容。启动时无法读取数据库的进程，在能够读取之前不会就绪；在此之前它不运行任何任务，并对除健康检查（`/healthz`、`/readyz`、`/health/live`、`/health/ready`、`/api/v1/instance/health`）以外的所有请求返回带 `Retry-After` 的 `503`。在 `my schema apply` 之前启动的服务器也是如此。如果之后它发现值不同，就会以同样的错误停止。
 
@@ -70,7 +70,7 @@ my version        # print the version of the binary
 
 当 `metrics_exporter = emf` 时，这两行本身就是 EMF 行。`http request` 行携带 `http.server.request.duration` 的值，`job` 行携带 `my.job.duration` 和 `my.job.wait` 的值（键以指标命名），另外还有 `_aws` 指令、`service.name`、`service.version` 和 `my.role`。这三个指标不会写在其他任何行上。你在 `metrics_emf_dimensions` 中选择的字段按 EMF 的要求以字符串写入（例如维度 `http.response.status_code` 为 `"200"`）。日志写入标准错误，其他 EMF 行写入标准输出。ECS 的 `awslogs` 日志驱动会把两者都发送到 CloudWatch Logs，因此会从两者中提取指标。
 
-<!-- source: docker-compose-files df45a902f45b -->
+<!-- source: docker-compose-files 9f0633524036 -->
 ## Docker Compose 文件
 
 `deploy/docker/` 中存放着部署实例所需的文件。`compose.yaml` 可以单独运行，其他文件叠加在它之上。
@@ -102,11 +102,103 @@ cp example.env .env
 - 服务器以用户 `65532` 运行，而 Compose 会按文件原有的权限挂载它，因此该文件必须对其他用户可读。请把它放在只有你能进入的目录中，就像 `example.env` 中的命令那样。
 - 其他密钥以环境变量的形式传入容器。如果想改为以文件形式传入，请在你自己的 `compose.override.yaml` 中用 secret 挂载它，并设置其 `<NAME>_FILE`，就像 `compose.yaml` 对密钥所做的那样。
 - `.env` 中含有机密信息：执行 `chmod 600 .env`，并在备份中保留一份副本。
-- `MY_LISTEN` 保持为 `:8080`，因为这些文件连接的是该端口。
+- `MY_LISTEN` 保持为 `:8080`，因为这些文件连接的是该端口，除非由服务器自己提供 HTTPS（[由服务器提供 HTTPS](#serving-https-from-the-server)）。
 
 **使用 Caddy 的 TLS。** 把 `MY_HOST` 设置为 DNS 指向这台机器的域名，并确保 80 和 443 端口可从互联网访问，然后从 `.env` 中删除 `MY_WEB_ORIGIN`。Caddy 会在第一次请求时自行获取并续期证书。服务器信任来自 Docker 默认地址池的 `X-Forwarded-For`；如果你的地址池不同，请设置 `MY_TRUSTED_PROXIES`。
 
 **内置的 Garage。** 配合 `COMPOSE_PROFILES=garage` 使用 `compose.s3.yaml` 时，需要 `example.env` 顶部列出的那些值。一次性服务 `garage-init` 会在每次 `up` 时准备存储。它只留在 Compose 网络内部，因为媒体由服务器自己提供。一个节点就是一块磁盘：请备份卷 `garage` 或存储桶（[备份](backup.md#media-in-a-bucket)）。
+
+<!-- source: serving-https-from-the-server 45ec9231a41e -->
+## 由服务器提供 HTTPS
+
+`my` 可以自己提供 HTTPS，这样一台小机器只需一个二进制文件、一个域名以及 80 和 443 端口，就能运行整个服务器，而不需要反向代理。使用 `tls = acme` 时，它会从 Let's Encrypt 这样的 ACME 证书颁发机构获取证书。使用 `tls = files` 时，它会提供你给出的证书和密钥，由你用 certbot 之类的其他工具保持更新。
+
+```sh
+MY_TLS=acme
+MY_TLS_ACME_AGREE_TERMS=true            # you agree to the terms of service of the certificate authority
+# MY_TLS_ACME_EMAIL=ops@social.example  optional contact of the account
+# MY_LISTEN=:443          the default with tls other than off
+# MY_TLS_HTTP_LISTEN=:80  the default; empty opens no port 80
+```
+
+```sh
+MY_TLS=files
+MY_TLS_CERT_FILE=/etc/letsencrypt/live/social.example/fullchain.pem
+MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
+```
+
+- **端口。** 服务器在 `listen` 上提供 HTTPS（`tls` 不为 `off` 时默认为 `:443`）。在 `tls_http_listen`（默认 `:80`）上，它会用 `301` 把 `GET` 和 `HEAD` 请求重定向到 `https` 上的同一路径，并对其他所有方法返回 `400`，这样就不会有请求体以明文传输。
+- **主机。** 服务器为 `host` 提供服务；当 `web_origin` 的主机与之不同时，也为它提供服务。对任何其他名称的握手都会因没有证书而失败，也绝不会让服务器去申请证书。
+- **连接。** TLS 1.2 或更高版本，使用 Go 默认的密码套件，支持 HTTP/2 和 HTTP/1.1，请求头最多 64 KiB，一个 HTTP/2 连接上最多 100 个并发流。超时与普通 HTTP 相同。服务器仍会给每个响应添加 `Strict-Transport-Security`（[安全响应头](#security-headers)）。
+- **角色。** 只有 `web` 和 `all` 角色会以 TLS 监听。`worker` 在 `listen`（默认 `:8080`）上以普通 HTTP 提供健康检查，且不会打开 80 端口。
+- **客户端地址。** 前面没有代理时，连接的对端就是客户端：请让 `trusted_proxies` 保持为空。只有当前面的 CDN 通过 `https` 连接服务器时才设置它。
+- **维护模式。** `my serve -maintenance` 既不读取 `tls`，也不读取证书，并在 `listen`（除非你设置了，否则为 `:8080`）上以普通 HTTP 响应，因此在它运行期间，请让 `MY_LISTEN` 和防火墙指向该端口，或者为维护保留一个反向代理。
+
+<!-- source: certificates-from-an-acme-certificate-authority 52037a75d641 -->
+### 来自 ACME 证书颁发机构的证书
+
+使用 `tls = acme` 时，服务器会向 `tls_acme_directory` 处的证书颁发机构（默认是 Let's Encrypt）为自己每个还没有证书的主机申请证书。
+
+- **开始之前。** `host` 必须是指向服务器的 DNS 名称，并且 443 和 80 端口必须能从互联网访问：证书颁发机构会通过连接该名称来检查服务器是否控制着它。验证请求会发到 `listen`（TLS-ALPN-01 质询）或 `tls_http_listen`（HTTP-01 质询），因此 `tls_http_listen` 为空时，只开放 443 端口也能工作。不支持通配符证书，也不支持通过 DNS 记录验证。
+- **首次启动。** 服务器不等待证书就开始监听，然后再去申请。在某个主机拿到证书之前，对它的握手会失败；使用 Let's Encrypt 时，首批证书通常在一分钟内签发。日志会为每个主机写下 `obtained a TLS certificate`，申请失败时则写下 `the TLS certificate could not be obtained` 并附上原因。
+- **续期。** 服务器在证书颁发机构为每个证书建议的时间续期（ACME Renewal Information）：它在建议的时间窗口内随机选一个时间，只选一次，窗口不变时就一直沿用，并按该机构 `Retry-After` 所说的时间再次询问，至少每 12 小时一次，这样必须提前更换证书的机构就能移动这个窗口。如果机构没有提供这样的窗口，服务器会在证书有效期的三分之二之后续期；有效期不足 10 天的证书则在一半之后续期。续期时会告诉机构它替换的是哪一个证书，这样就不会计入 Let's Encrypt 的速率限制。当前证书在续期之前一直继续使用，续期失败时的等待方式与首次申请相同。
+- **申请失败。** 某个主机的申请失败后，服务器会先等待再进行同一主机的下一次申请：第一次失败后等 1 分钟，第二次后等 10 分钟，第三次后等 100 分钟，之后是一天，以便保持在证书颁发机构的限制之内。等待时间保存在数据库中，重启后仍然有效。请修复原因（DNS、防火墙、端口），等待结束后就会发出下一次申请。
+- **保存位置。** 与证书颁发机构的账号、证书以及每次申请的记录都保存在数据库中；私钥与其他机密一样，用密钥加密密钥封存（[密钥管理](key-management.md)）。数据库备份包含它们，重启后的服务器会立即提供已保存的证书，而不需要重新申请。更换密钥加密密钥会重新包装它们，不会申请新证书。
+- **多个进程。** 共享数据库和 `kv` 存储的进程会相互协调：一个进程为某个主机申请证书，其他进程等待，之后再加载它；证书颁发机构连接到哪个进程，哪个进程就回答它的验证。请使用 `kv = db` 或 `kv = valkey`；除非由一个进程运行全部内容（`role = all`），否则会拒绝 `kv = memory`。获取证书的进程通过 [`stream`](../reference/configuration.md#stream) 代理通知其他进程，它们会在几秒内开始使用它；因此每个 `tls = acme` 的 `web` 进程都会一直监听该代理。使用 `stream = hub` 时，或者通知丢失时，每个进程仍然会每 5 分钟从数据库读取一次当前证书，证书到达续期时间后则每分钟一次，所以续期会在旧证书过期之前很久就传到它们。
+- **配置档。** `tls_acme_profile` 选择证书颁发机构提供的某个配置档，例如 Let's Encrypt 的 `shortlived`。留空则采用其默认值。更改配置档后，下一次续期会采用它，而且它带来的证书即使比被替换的证书更早过期，也会被使用。
+
+要在不消耗 Let's Encrypt 生产环境限制的情况下试用，请先从它的测试（staging）环境开始：它签发浏览器不信任的证书，限制则高得多：
+
+```sh
+MY_TLS_ACME_DIRECTORY=https://acme-staging-v02.api.letsencrypt.org/directory
+```
+
+等日志显示已获取证书，并且 `curl -kv https://social.example/` 显示的证书来自 `(STAGING)` 之后，请删除该设置并重启。服务器会在生产环境注册一个新账号并在那里申请证书；测试环境的证书仍保存在数据库中，不会再被使用。
+
+<!-- source: certificates-from-files 35f16ea23b33 -->
+### 来自文件的证书
+
+使用 `tls = files` 时，`tls_cert_file` 先放服务器的证书，再放它的中间证书（certbot 的 `fullchain.pem`）；`tls_key_file` 放它的密钥。证书必须覆盖 `host`；当 `web_origin` 的主机与之不同且证书覆盖它时，该证书也会用于它。
+
+服务器每分钟查看一次两个文件的修改时间，任何一个变化时就重新加载，无需重启。如果证书和密钥暂时不匹配（新证书先于新密钥到达），会继续使用之前的证书，直到下一次检查，日志会说明原因。
+
+<!-- source: commands-and-metrics de97a3993e6b -->
+### 命令与指标
+
+`my tls` 用服务器的配置显示并控制证书，可以在任何能连到数据库的机器上运行（[管理 CLI](admin-cli.md#tls-certificates)）：
+
+```sh
+my tls status                                          # each host: certificate, renewal, latest orders
+my tls renew -host social.example                      # order now, without waiting
+my tls revoke -host social.example -reason key_compromise
+```
+
+- **`status`** 为每个主机显示当前证书（序列号、颁发者和到期时间）、它何时续期（证书颁发机构的窗口，或根据其有效期推算出的时间）、连续多少次申请没有获得证书，以及最近的申请及其错误。使用 `tls = files` 时，它显示 `tls_cert_file` 的证书。
+- **`renew`** 立即申请证书，跳过续期时间和申请失败后的等待：修复申请失败的原因后运行一次。运行中的服务器会回答证书颁发机构的验证，因此它必须在运行，它的各个进程会在几秒内开始使用新证书，使用 `stream = hub` 时则在 5 分钟内。
+- **`revoke`** 先申请一个替换当前证书的证书，然后请证书颁发机构吊销当前证书并记录下来；每个进程会在几秒内停止使用被吊销的证书，使用 `stream = hub` 时则在 5 分钟内。私钥可能已被他人知晓时，使用 `key_compromise`，否则使用 `superseded` 或 `operator`。当无法申请替换证书时，吊销仍会进行：进程会使用该主机之前的证书（如果它没有被吊销），否则什么也不提供，直到服务器获取到新证书。
+- `renew` 和 `revoke` 需要 `tls = acme` 以及 `memory` 以外的 `kv`，因为证书颁发机构所连接的进程要从 `kv` 存储中读取对其验证的回答。使用 `tls = files` 时它们会被拒绝：请用写入这些文件的工具来续期或吊销证书。
+
+设置了 [`metrics_exporter`](#metrics) 后，请对 `my.tls.certificate.expiry` 低于 7 天，以及 `my.tls.order.consecutive_failures` 达到 3 或更多设置告警（[告警](alerts.md#mytlscertificateexpiring)）：续期失败会在证书到期前数周就显现出来。
+
+<!-- source: checks-and-running-it 983028d27675 -->
+### 检查与运行
+
+使用 `tls = acme` 时，`my config check` 会把以下情况报告为错误：未同意条款，`host` 是 IP 地址、`localhost` 或不含点的名称，`tls_acme_directory` 不是 `https` URL，以及 `kv = memory` 而 `role` 不是 `all`。使用 `tls = files` 时，它会把证书或密钥无法读取、密钥与证书不匹配、证书不覆盖 `host`、已过期或尚未生效报告为错误，并在剩余不足 14 天时发出警告。当 `trusted_proxies` 已设置而 `tls` 不是 `off` 时，它会发出警告。使用 `tls = off` 时，如果 `listen` 是非回环地址上的 80 或 443 端口，它会发出警告，因为看起来前面没有任何东西在终结 TLS；当这样的服务器（`trusted_proxies` 为空）收到来自非回环地址的普通 HTTP 请求时，服务器每次启动会记录一次同样的警告。
+
+**systemd。** 1024 以下的端口需要 root 以外的用户拥有一项能力（capability）。请只把它授予该服务，不要授予其他内容：
+
+```ini
+[Service]
+User=my
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+```
+
+使用 `tls = files` 时，该用户还需要能读取证书文件。使用 certbot 时，它的 `live` 和 `archive` 目录只有 root 可读：请让该服务所在的组能够访问（对目录执行 `chgrp` 和 `chmod g+rx`，对密钥执行 `g+r`），或者在部署钩子中把文件复制到服务可读取的目录。
+
+**Docker。** Docker 20.10 及更高版本允许容器无需 capability 就打开 1024 以下的端口，因此镜像可以直接使用。镜像设置了 `MY_LISTEN=:8080`，所以请在 `.env` 中设置 `MY_LISTEN=:443`，并在 `compose.override.yaml` 中发布两个端口（`ports: ["80:80", "443:443"]`）。使用 `tls = files` 时，请把证书文件以只读方式挂载到 `MY_TLS_CERT_FILE` 和 `MY_TLS_KEY_FILE` 所指的位置；服务器以用户 `65532` 运行，该用户必须能够读取它们。使用 `tls = acme` 时无需挂载任何内容：证书在数据库中。请不要使用 `compose.caddy.yaml`，它会占用同样的端口。这不适用于 `network_mode: host`：此时容器共享机器的网络，需要与容器外的服务相同的 capability。
+
+**与 Caddy 比较。** 由 `my` 提供 HTTPS 意味着放弃 HTTP/3、响应压缩（服务器发送的网页客户端文件是压缩的，其他内容都不压缩）、它自己的访问日志（服务器的 `http request` 日志行仍然保留），以及通过 DNS 验证的证书（包括通配符证书）。如果你需要其中任何一项，请使用 `compose.caddy.yaml` 或其他代理。
 
 <!-- source: get-the-image 89a97ed4f1d2 -->
 ## 获取镜像
@@ -182,7 +274,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 确保垃圾邮件过滤不会丢弃索取请求。
 - 使用你愿意公开的地址：任何人都能在信息页面、首页和 NodeInfo 中看到它。
 
-<!-- source: metrics 77e2cbc5a0f6 -->
+<!-- source: metrics 000df571a6a0 -->
 ## 指标
 
 设置 `metrics_exporter`（默认 `none`）用于导出服务指标。相关设置见[配置参考](../reference/configuration.md)。
@@ -205,6 +297,8 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.move.activities` | Counter | `my.outcome`（`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon`：收到的 `Move` 是否被记录，以及被丢弃的原因） |
 | `my.delivery.attempts` | Counter | `my.outcome`（`success` / `retry` / `gone` / `failed`；`gone` 包括 410，以及因对方服务器不可用或被停用而跳过的投递） |
 | `my.delivery.duration` | Histogram，秒 | `my.outcome` |
+| `my.ux.duration` | Histogram，秒 | `my.ux.metric`（`lcp` / `inp` / `long_frame` / `transition` / `press` / `call_rtt` / `call_jitter`）、`my.ux.name`（路由、交互种类、操作或通话传输方式；[UX 测量](error-reporting.md#ux-measurements)） |
+| `my.ux.call.packet_loss` | Histogram，百分比 | `my.ux.name`（通话传输方式） |
 | `my.plugin.failures` | Counter | `my.plugin.kind`（一种[插件](plugins.md)）、`my.plugin.code`（失败的 Connect 代码） |
 | `my.plugin.slot_wait` | Histogram，秒 | `my.plugin.kind`（某次调用在该种类同时运行的调用中等待轮到自己的时长） |
 | `my.hook.decisions` | Counter | `hook`、`mode`、`outcome`（[决策钩子](decision-hooks.md)记录的决策） |
@@ -215,8 +309,10 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.link_card.host_pauses` | Counter | `http.response.status_code`（`429` / `503`）。对某个主机的链接卡片抓取每暂停一次计一次；参见[链接预览](link-previews.md#limits-per-host) |
 | `my.translation.requests` | Counter | `my.outcome`（`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`）。每次请求翻译查看者可见的帖子，或审核员请求翻译举报中的帖子或评论，计一次：由作者本人的文字、保留的译文或提供方作答，或者因没有可接收该帖子的提供方、达到每月上限、没有提供方能翻译该语言，或没有提供方返回可用的译文而被拒绝。 |
 | `my.translation.characters` | Counter | `my.provider`（翻译提供方的 ID）。发送给提供方的帖子和举报评论的字符数，不含标记，包括失败的调用。[每月上限](instance-settings.md#admin-screens-and-the-client-api)统计的就是它，它可能与提供方计费的数量不同 |
+| `my.translation.lock_waits` | Counter | 无。每个等待另一个正在把同一帖子翻译成同一语言的请求、而不是去询问提供方的请求计一次 |
 | `my.timeline.delivery.lag` | Histogram，秒 | 无（从本站帖子创建到写入主页时间线并通知到流的时间） |
 | `my.stream.connections` | UpDownCounter | `my.stream.kind`（`user`，`timeline` 表示本站时间线和联邦时间线的流，`voice` 表示语音聊天房间的流） |
+| `my.stream.signals` | Counter | `my.stream.kind`（`user` / `timeline`）。每个已打开的流处理的信号计一次，无论它是否向客户端发送了内容 |
 | `my.accounts.registered` | Counter | 无 |
 | `my.statuses.created` | Counter | `my.visibility` |
 | `my.billing.imports` | Counter | `my.billing.source`（`aws` / `gcp` / `plugin`）、`my.outcome`（`success` / `failed`）、`error.type`（仅在 `failed` 时：失败的种类，与[导入云用量费用](billing-import.md)中相同）。每次尝试都计入，包括重试和等待下一次每日导入的失败 |
@@ -233,10 +329,14 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.federation.instances` | Gauge | `my.federation.instance.state`（`available`：投递仍会发往、但自上次响应以来至少有一天失败过的服务器；`unavailable`：投递已暂停的服务器） |
 | `my.metrics.snapshot.age` | Gauge，秒 | `my.metrics.snapshot.part`（`queue` / `totals`） |
 | `my.errors.reported` | Counter | `my.error.source`（`server` / `web`）、`my.error.kind`（`panic` / `error`）。每份[错误报告](#error-reports)计一次 |
+| `my.tls.certificate.expiry` | Gauge，秒 | `host`（使用 `tls = acme` 或 `tls = files` 时，该进程为自己某个主机提供的证书距离到期的时间；每个进程各自报告，因此仍在使用旧证书的进程会显现出来。参见[命令与指标](#commands-and-metrics)） |
+| `my.tls.order.attempts` | Counter | `host`、`result`（`issued` / `failed`）。每次向 ACME 证书颁发机构申请证书计一次，按发出申请的进程统计，包括 `my tls renew` 和 `my tls revoke` |
+| `my.tls.order.consecutive_failures` | Gauge | `host`（自该主机当前证书以来没有获得证书的申请次数：决定下一次申请前等待多久的计数） |
+| `my.tls.rounds` | Counter | 无。证书管理器每对它使用 `tls = acme` 的主机处理一轮计一次；计数不再增长说明管理器已停止 |
 
 健康检查（`/healthz`、`/readyz`、`/health/live`、`/health/ready`）不会被统计。任何标签都不包含远程域名、账号、URL 或客户端 IP。`my.queue.*`、`my.instance.*`、`my.media.stored_bytes`、`my.db.size`、`my.federation.instances` 和 `my.billing.import.failing` 是整个实例的值：每个进程都从保存在键值存储中的同一份快照报告相同的值。
 
-<!-- source: system-metrics dad53f84ee0a -->
+<!-- source: system-metrics 973069859f11 -->
 ### 系统指标
 
 关于进程、Go 运行时以及与资源的连接的指标，通过同一个 `metrics_exporter` 导出。容器的 CPU、内存、实例数和入站请求交给平台的指标；这些指标覆盖的是平台看不到的进程内部的饱和情况。不要用它们来触发扩缩容；请把它们用于告警和估算实例数上限。
@@ -261,6 +361,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `http.client.request.duration` | Histogram，秒 | `my.http.purpose`（`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`）、`http.request.method`、`my.http.status_class`（`2xx` 等）、`error.type`（`forbidden_destination` 表示被 SSRF 防护拒绝） |
 | `http.client.open_connections` | UpDownCounter | 无 |
 | `my.readiness.failures` | Counter | 无 |
+| `my.readiness.shared` | Counter | 无。每个直接采用了已在运行的检查结果、而没有自己发起检查的就绪请求计一次 |
 | `my.http.origin_refused` | Counter | 无。每个因未经过 CDN 而被拒绝的请求计一次（[`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)）。对源站地址的探测会让它缓慢增长；如果它在流量停止的同时猛增，说明 CDN 不再发送该请求头。维护模式不统计任何内容，因此只有它的访问日志会显示这些请求 |
 
 - Go 运行时指标（`go.*`）只由 `prometheus` 和 `otlp` 导出。使用 `emf` 时，一个定期快照任务会写入进程和连接池的 Gauge 以及 Observable Counter。
@@ -313,15 +414,33 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 在每个被记录的请求或任务结束时，`unit` 会在返回前把到目前为止的 span 刷新到 sidecar。为了让 sidecar 在没有分配 CPU 时也能发送它们，启用追踪的环境请使用基于实例的计费。
 - 成本是 sidecar 的资源和 span 的数量（Cloud Trace 的价格）。请用 `traces_sample_ratio` 选择比例。
 
-<!-- source: aws-ecs 52fa09412f20 -->
+<!-- source: aws-ecs cc7dd1ec1e83 -->
 ### AWS ECS
 
-要发送到 X-Ray，请在任务定义中以 sidecar 容器的方式运行 **AWS Distro for OpenTelemetry（ADOT）Collector**。服务器不具备 SigV4 签名能力；由 Collector 签名并发送到 X-Ray 的 OTLP 端点（`https://xray.<region>.amazonaws.com/v1/traces`）。
+要发送到 X-Ray，请在每个任务中以 sidecar 容器的方式运行 **AWS Distro for OpenTelemetry（ADOT）Collector**。服务器不具备 SigV4 签名能力；由 Collector 用任务角色签名并发送到 X-Ray。[OpenTofu 部署](../../deploy/opentofu/README.md#sections-of-mycroblog-aws)的 `mycroblog-aws` 模块默认就会完成这一切（`observability.traces = "x-ray"`）；本节其余内容适用于你自己的任务定义。
 
-- 服务器：`MY_TRACES_EXPORTER=otlp`、`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`。在 Collector 的配置中，用 `otlp` 接收器在 `localhost:4318` 上接收，并用使用 `sigv4auth` 扩展的 `otlphttp` 导出器发送到 X-Ray。
-- 请授予任务角色写入 X-Ray 的权限。
-- 成本是 sidecar 在任务资源中所占的部分，以及 X-Ray 记录的追踪数量（每月前 100,000 条免费）。
+- 服务器：`MY_TRACES_EXPORTER=otlp`、`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces`，以及默认的 `MY_TRACES_FLUSH=batch`，因为进程会一直运行。
+- Collector：使用固定版本的镜像，例如 `public.ecr.aws/aws-observability/aws-otel-collector:v0.50.0`，其配置放在变量 `AOT_CONFIG_CONTENT` 中：一个通过 HTTP 在 `127.0.0.1:4318` 上接收的 `otlp` 接收器，以及 `awsxray` 导出器。X-Ray 的 OTLP 端点（`https://xray.<region>.amazonaws.com/v1/traces`，通过带有 `sigv4auth` 扩展的 `otlphttp` 导出器）也可以使用，但需要为该账号开启 CloudWatch Transaction Search。
+- 请授予任务角色 `xray:PutTraceSegments`，`awsxray` 导出器用它来写入。服务器自己对追踪采样，因此 Collector 不需要 X-Ray 的采样规则。
+- 请给 Collector 分配任务的一部分资源：`mycroblog-aws` 给它 32 个 CPU 单位和 128 MiB，其余给服务器，并把 `GOMEMLIMIT` 设为该余量的 90%。请让服务器的容器依赖 Collector 的启动，这样 Collector 会在服务器之后停止，并接收到最后的 span。
+- 成本是 sidecar 在任务资源中所占的部分，以及 X-Ray 记录的追踪数量（每月前 100,000 条免费）。默认的 `traces_sample_ratio` 为 0.01，在每天 100,000 个请求的情况下，每月大约记录 30,000 条追踪。
 
+<!-- source: profiles e3f49c0becf3 -->
+## 性能剖析
+
+[系统指标](#system-metrics)说明进程用了多少内存和 CPU；Go 运行时的 profile 则说明是什么在使用它们。`pprof_listen` 指定一个监听器的地址，该监听器在 `/debug/pprof/` 下提供 profile，对每种 `role` 都有效。它默认为空，即不打开监听器。
+
+```sh
+MY_PPROF_LISTEN=127.0.0.1:6060 my serve
+
+go tool pprof -sample_index=inuse_space http://127.0.0.1:6060/debug/pprof/heap   # what holds the heap now
+go tool pprof -sample_index=alloc_space http://127.0.0.1:6060/debug/pprof/heap   # what has allocated since the start
+go tool pprof 'http://127.0.0.1:6060/debug/pprof/profile?seconds=30'             # where the CPU goes, for 30 seconds
+curl 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1'                       # every goroutine, by where it waits
+curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '               # the runtime's memory statistics
+```
+
+监听器没有认证，profile 会暴露进程的内部细节，而且采集一次会消耗 CPU：请让它保持在回环地址上，并通过隧道访问（`ssh -L 6060:127.0.0.1:6060 <host>`、`kubectl port-forward`），用完后取消设置。堆 profile 只覆盖 Go 堆。进程的常驻内存还包括已读取的二进制文件页面、栈和运行时自身的结构；这些可以从内存统计中看到。mutex 和 block profile 是空的：服务器不对它们采样。
 <!-- source: stop-the-server 37d4c0cc3d97 -->
 ## 停止服务器
 
@@ -335,16 +454,16 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 
 对数据库、键值存储或队列进行操作时，请以维护模式（`MY_MAINTENANCE=true`）重新启动，而不是停止服务器。参见[维护](maintenance.md)。
 
-<!-- source: the-job-queue-and-failed-dead-jobs 55023b12a1aa -->
+<!-- source: the-job-queue-and-failed-dead-jobs 1fd5aaccbff5 -->
 ## 任务队列与失败（dead）的任务
 
 [任务](../reference/jobs.md)列出了每种任务类型：它做什么、由什么启动、如何重试，以及再次运行会产生什么效果。
 
 管理后台的任务页面（`/admin/jobs`，权限 `manage_jobs`）有三个页面：
 
-- **队列状态**（`/admin/jobs`）：每种状态以及每种类型和状态的数量、每种类型让任务等待多久，以及等待最久的任务已等待的时长。
-- **任务列表**（`/admin/jobs/list`）：处于某一状态（待处理、等待中、运行中、重试中、失败）的任务表格，分页显示，包括类型、状态、计划运行或失败的时间以及尝试次数。失败的任务有“再次运行”。
-- **单个任务**（`/admin/jobs/<id>`，从表格中的类型进入）：任务的全部信息、最后一次错误、键和载荷、未成功尝试的历史（每次尝试的结果、错误、worker 以及开始和结束时间），失败的任务还有“再次运行”。
+- **队列状态**（`/admin/jobs`）：首先是失败任务的数量，并附有指向它们的链接；每种状态（排队中、运行中、等待重试、失败）的数量，每个都通向处于该状态的任务；等待最久的到期任务已等待的时长；以及一张按类型和状态统计数量的表，并显示每种类型让任务等待多久。
+- **任务列表**（`/admin/jobs/list`）：尚未结束（排队中、运行中、等待重试）的任务，或处于某一状态、属于某一类型的任务，分页显示，包括类型、尝试次数、到期或失败的时间、状态，以及最后一次错误的第一行。
+- **单个任务**（`/admin/jobs/<id>`，从列表中的类型进入）：失败的任务有**再次运行**，它会先询问，因为一次运行可能会重复该任务在失败之前已经做过的事；任务的全部信息，其中 ID 和键各带一个复制按钮；最后一次错误和载荷，各带一个复制按钮；一张未成功尝试的表，最新的在前（结果、结束时间、worker 和错误）；以及指向同类型任务的链接。
 
 管理 API 为 `GET /api/v1/admin/queue`、`GET /api/v1/admin/jobs?state=&type=`、`GET /api/v1/admin/jobs/{id}`、`GET /api/v1/admin/jobs/{id}/attempts` 和 `POST /api/v1/admin/jobs/{id}/retry`。已完成的任务不再位于队列中，因此找不到它的页面。
 
@@ -418,7 +537,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 管理后台的任务页面会按类型显示同样的等待时长。设置了其中一项的 worker 也不会处理根本没有处理程序的类型的任务（在指标中计入 `other`），因此如果没有不带设置的 worker，这样的任务会一直等待，而不会成为 dead 任务。
 
-<!-- source: running-several-jobs-at-once 91e5181261b2 -->
+<!-- source: running-several-jobs-at-once 2a1137a12e8f -->
 ### 同时运行多个任务
 
 [`worker_job_concurrency`](../reference/configuration.md#worker_job_concurrency) 设置一个进程同时运行多少个任务，范围为 1 到 128。它适用于 `queue = db`；使用 Cloud Tasks 时由平台决定。默认一次运行一个任务，设置为 1 时效果相同。
@@ -427,8 +546,8 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 请注意以下限制：
 
-- **数据库连接**：一个任务在被领取、执行自身工作和记录结果时都需要连接。使用 `database = postgres` 时，该设置必须小于连接池的最大值，否则服务器不会启动。最大值是 `database_url` 中的 `pool_max_conns`，默认为 4 与 CPU 数量中的较大者，因此在你调高它之前，一个 vCPU 只允许 3。请确认你的数据库或连接池代理能接受所有进程的连接。
-- **SQLite**：它一次只写一个事务。超过 32 时服务器会记录警告；在一次本地测试中，SQLite 在 128 时比在 32 时运行得更慢。
+- **数据库连接**：一个任务在被领取、执行自身工作和记录结果时都需要连接。该设置必须小于连接池的最大值，否则服务器不会启动。最大值是 `database_url` 中的 `pool_max_conns`，默认为 4 与 CPU 数量中的较大者，因此在你调高它之前，一个 vCPU 只允许 3。请确认你的数据库或连接池代理能接受所有进程的连接。
+- **SQLite**：它一次只写一个事务，在一次本地测试中，它在 128 时比在 32 时运行得更慢。
 - **CPU 密集型任务**：槽位共享一个进程的 CPU 和内存。`media.process` 默认会在一半 CPU 数量的限制下等待轮到自己，而这段等待计入任务 5 分钟的租约，因此塞满 `media.process` 的进程可能超出租约并重新开始。请为这类任务分配槽位较少的进程。
 - **每次一个服务器**：一个进程与任意单个主机最多建立 8 个连接，因此无论有多少槽位，一个进程向单个服务器投递的速度都不会超过 8 个连接所允许的速度。如果大多数投递都发往少数几个大型服务器，增加进程有用，而增加槽位没用。
 - **卡住的服务器会占用槽位**：等待缓慢服务器的槽位无法用于其他任务，因此请把投递与电子邮件和通知分开。
@@ -563,7 +682,7 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 
 每个响应都带有 `Strict-Transport-Security`、`X-Content-Type-Options`、`Referrer-Policy`、`Permissions-Policy`、`Cross-Origin-Opener-Policy`、`Cross-Origin-Resource-Policy: same-site` 和 `X-Frame-Options`，对于不是文档的响应，还带有 `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'`。对于需要其他值的响应（例如 ActivityPub JSON 和公开媒体），处理程序会覆盖这些值。`Permissions-Policy` 禁止摄像头、地理位置、支付和 USB。它也禁止麦克风，但语音聊天开启时（`voice` 不是 `off`）除外：此时它只允许服务器自身源的页面使用麦克风（`microphone=(self)`），以便浏览器能在通话中说话。网页客户端的 HTML 会得到一个不使用 nonce 的文档 CSP（`script-src 'self'` 等）。它要求使用 Trusted Types（`require-trusted-types-for 'script'`），并把可以创建的策略限制为客户端的两个（`trusted-types my-server-sanitized-html my-service-worker`）。
 
-<!-- source: web-client f35b79dd2cc3 -->
+<!-- source: web-client 0a0b62acc010 -->
 ## 网页客户端
 
 `role` 为 `web` 或 `all` 的进程会提供嵌入在二进制文件中的网页客户端。
@@ -579,6 +698,12 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 
 - `/api`、`/oauth`、`/auth`、`/.well-known`、`/nodeinfo`、`/ap`、`/media`、`/uploads`、`/theme`（服务器主题的样式表）和 `/licenses` 下的路径，以及 `/robots.txt`，永远不会返回外壳；如果没有其他路由匹配，它们会返回 404 problem。
 - 外壳在 ActivityPub 内容协商之后提供。用 ActivityPub 的 `Accept` 请求外壳路径会返回 404（帖子页面会重定向，见下文）。外壳总是带有 `Vary: Accept`。如果在前面放置 CDN，请把 `Accept` 的种类（ActivityPub 或 HTML）加入缓存键，或者把外壳、`/ap/*` 和 `/@*` 排除在缓存之外。只让 CDN 提供 `/assets/*`。
+- 构建中的文本文件（脚本、样式表、SVG 图像、许可证声明）只以压缩形式嵌入。接受 Brotli 的请求会得到带 `Content-Encoding: br` 的文件，接受 gzip 的请求得到带 `Content-Encoding: gzip` 的文件，其他请求则得到解压后的文件，并且始终带有 `Vary: Accept-Encoding`，每种编码各有一个 ETag。前面的代理不需要为它们另做压缩，CDN 则必须在 `/assets/*` 的缓存键中保留 `Vary: Accept-Encoding`（或编码）。
+- 外壳和登录界面带有 `Link` 头，指出页面最先加载的样式表和入口脚本，Cloudflare 这样的 CDN（其 Early Hints 功能）可以据此生成它自己的 early hints。设置 [`web_early_hints`](../reference/configuration.md#web_early_hints) = `true` 时，服务器还会先用 `103 Early Hints` 响应把它们发出去，让浏览器在服务器准备页面的同时就开始获取这些文件。它默认关闭，因为无法透传 103 的代理可能会让请求失败：
+  - Google Cloud 的外部应用负载均衡器会返回 502 或 503（`backend_interim_response_not_supported`）：在它后面请保持关闭，Cloud Run 部署就是这样做的。
+  - nginx 从 1.29.0 起可以透传它，需要设置 `early_hints`。
+  - Caddy 的 `reverse_proxy` 会透传它；在 2.8 之前的版本中，`encode` 指令会丢弃它。
+  - 浏览器只对它们导航到的页面使用 103，而 Chrome 和 Edge 只在 HTTP/2 和 HTTP/3 上使用。
 - 不含网页客户端构建的二进制文件（直接 `go build`，没有先构建客户端）会在启动时记录警告，并提供一个不含脚本的外壳。
 
 <!-- source: federation-endpoints 7aaee8c9da42 -->

@@ -13,6 +13,8 @@ func TestSignalRoundTrips(t *testing.T) {
 		{Kind: KindHomeEntry, EntryID: "0199f0a8-0000-7000-8000-000000000001"},
 		{Kind: KindHomeEntry, EntryID: "0199f0a8-0000-7000-8000-000000000001", AuthorAccountID: "0199f0a8-0000-7000-8000-000000000002"},
 		{Kind: KindNotifications, AccountID: "0199f0a8-0000-7000-8000-000000000002"},
+		{Kind: KindNotificationsRead, AccountID: "0199f0a8-0000-7000-8000-000000000002"},
+		{Kind: KindNotificationsRead, AccountID: "0199f0a8-0000-7000-8000-000000000002", NotificationID: "0199f0a8-0000-7000-8000-000000000007"},
 		{Kind: KindConversation, AccountID: "0199f0a8-0000-7000-8000-000000000002", ConversationID: "0199f0a8-0000-7000-8000-000000000005"},
 		{Kind: KindAnnouncement, AnnouncementID: "0199f0a8-0000-7000-8000-000000000003"},
 		{Kind: KindPublicEntry, EntryID: "0199f0a8-0000-7000-8000-000000000004", OnLocal: true, OnFederated: true},

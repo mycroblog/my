@@ -20,30 +20,29 @@
 
 分配、备注、通知和申诉都留在本服务器上；只有右栏中的活动会离开它。
 
-<!-- source: moderation-and-server-administration-in-the-web-client d7c65fc5b3d0 -->
+<!-- source: moderation-and-server-administration-in-the-web-client 035f2c60c4a9 -->
 ## Web 客户端中的审核与服务器管理
 
 Web 客户端把工作人员界面分成两组。只有角色至少拥有某一组中一项权限的人，导航中才会显示“审核”和“管理”。没有权限的人在每个界面上只会看到原因，服务器也会拒绝他们的请求。
 
 | 组 | 权限 | 界面 |
 | --- | --- | --- |
-| 审核（`/moderation`） | `manage_reports`、`manage_accounts`、`manage_domains`、`manage_invites`、`view_audit` | 举报（`/moderation/reports`）、申诉（`/moderation/appeals`）、账号（`/moderation/accounts`）、注册（`/moderation/registrations`）、注册屏蔽（`/moderation/signup-blocks`）、邀请（`/moderation/invites`）、域名操作（`/moderation/domain-actions`）、远程服务器（`/moderation/instances`）、审计日志（`/moderation/audit-log`） |
-| 服务器管理（`/admin`） | `manage_settings`、`manage_rules`、`manage_roles`、`manage_jobs`、`manage_login_recovery`、`manage_custom_emojis`、`manage_webhooks`、`manage_announcements`、`manage_finance`、`manage_oauth_apps`、`manage_service_closure`、`manage_errors`、`manage_login_providers` | 服务器设置（`/admin/settings`）、规则（`/admin/rules`）、条款和政策（`/admin/documents`）、任务队列和失败的任务（`/admin/jobs`）、自定义表情（`/admin/custom-emojis`）、公告（`/admin/announcements`）、Webhook（`/admin/webhooks`）、费用和账单导入（`/admin/finance`，`manage_finance`）。`manage_login_recovery`（登录恢复：移除双重验证和签发密码重置链接）和 `manage_roles`（授予和撤销账号的角色）显示为账号“管理”页面（`/moderation/accounts/{id}/manage`，还需要 `manage_accounts`）中的区块 |
+| 审核（`/moderation`） | `manage_reports`、`manage_accounts`、`manage_domains`、`manage_invites`、`view_audit` | 举报（`/moderation/reports`）、申诉（`/moderation/appeals`）、注册（`/moderation/registrations`）、自动审查（`/moderation/hook-decisions`）、账号（`/moderation/accounts`）、注册屏蔽（`/moderation/signup-blocks`）、邀请（`/moderation/invites`）、域名操作（`/moderation/domain-actions`）、远程服务器（`/moderation/instances`）、审计日志（`/moderation/audit-log`） |
+| 服务器管理（`/admin`） | `manage_settings`、`manage_rules`、`manage_roles`、`manage_jobs`、`manage_login_recovery`、`manage_custom_emojis`、`manage_webhooks`、`manage_announcements`、`manage_finance`、`manage_supporters`、`manage_oauth_apps`、`manage_service_closure`、`manage_errors`、`manage_login_providers` | 服务器设置（`/admin/settings`）、规则（`/admin/rules`）、条款和政策（`/admin/documents`）、链接卡片域名（`/admin/link-card-domains`）、任务队列和失败的任务（`/admin/jobs`）、错误（`/admin/errors`，`manage_errors`）、UX 测量（`/admin/ux-measurements`，`manage_errors`）、自定义表情（`/admin/custom-emojis`）、公告（`/admin/announcements`）、Webhook（`/admin/webhooks`）、费用和收入（`/admin/finance`，`manage_finance`）、支持者（`/admin/supporters`，`manage_supporters`）。`manage_login_recovery`（登录恢复：移除双重验证和签发密码重置链接）和 `manage_roles`（授予和撤销账号的角色）显示为账号“管理”页面（`/moderation/accounts/{id}/manage`，还需要 `manage_accounts`）中的区块 |
 
 - “审核”上的徽章是待处理举报、等待批准的注册和等待审核的申诉的总数（[审核员的通知和待处理数量](#notifications-for-moderators-and-the-pending-counts)）。“管理”不显示数量。
-- 每一组都以概览页打开；各个界面在旁边的菜单中。审核概览为你的角色可计数的每个队列（待处理举报、等待批准的注册、等待裁决的申诉）各显示一个卡片，每个卡片链接到对应队列；还有一个卡片显示最早的待处理举报已等待多久（链接到按最早排序的举报列表）；并从整个队列中列出应优先处理的待处理举报：违法内容优先，其次是等待最久的，同时显示每条已等待多久以及由谁处理。举报列表可以按状态、类别和负责人（你自己或无人）筛选，并按最新或最早排序；筛选条件保存在页面地址中。管理概览显示服务器的健康状况：失败的任务、任务队列中最早的任务已等待多久，以及未处理的错误；每个卡片链接到对应界面，需要关注时会加以标记。
+- 每一组都以一个列表打开，其中列出你的角色权限所能打开的各个界面，每项附有一行说明其内容，队列还会显示有多少事项在等待（举报统计待处理的举报，申诉统计等待审核的申诉，注册统计等待批准的注册，自定义表情统计等待审核的请求，错误统计未处理的错误）；如果一组中没有任何界面对你开放，则会说明原因。你的角色无法打开的界面的地址会这样说明，并附上指向该组列表的链接。
 - 内置的 `moderator` 只有 `manage_reports`、`manage_accounts` 和 `view_audit`，看不到“管理”。它也看不到域名操作和远程服务器界面（`manage_domains`），所以要委派这些工作，请创建拥有该权限的角色并授予它（[授予和撤销角色](admin-cli.md#granting-and-revoking-roles)）。
-- 无论属于哪一组，管理 API 的路径都是 `/api/v1/admin/...`，scope 也都是同一对 `admin:read` / `admin:write`。在 API 参考中，各组以标签区分（`admin-moderation`、`admin-server`）。
-  服务器之外的服务可以改用权限 scope 来调用某一项权限的操作（[让另一个服务使用管理 API](#letting-another-service-use-the-admin-api)）。
+- 无论属于哪一组，管理 API 的路径都是 `/api/v1/admin/...`，scope 也都是同一对 `admin:read` / `admin:write`。在 API 参考中，各组以标签区分（`admin-moderation`、`admin-server`）。服务器之外的服务可以改用权限 scope 来调用某一项权限的操作（[让另一个服务使用管理 API](#letting-another-service-use-the-admin-api)）。
 - 还有第三组权限“用户功能”（`view_finance`、`create_custom_emojis`、`start_voice_rooms`、`create_invites`、`keep_posts_longer`、`create_articles`、`create_events`），它不属于工作人员界面。只拥有这些权限的人既看不到“审核”也看不到“管理”，拥有 `view_finance` 的人会在导航中“设置”之后看到“财务”（`/finance`）。它的 API 位于用户命名空间（`GET /api/v1/finance/cost_totals` 和 `GET /api/v1/finance/income_totals`，scope 为 `read:finance`），不需要 `admin:*` scope。显示的内容由[实例设置](instance-settings.md)中的 `finance_viewer_*` 决定。
 
-<!-- source: letting-another-service-use-the-admin-api 6c266c1e1111 -->
+<!-- source: letting-another-service-use-the-admin-api d767e08e639c -->
 ### 让另一个服务使用管理 API
 
 你在服务器旁边运行的服务（例如发放邀请或记录成本的服务），无需插件就可以为某一项权限调用管理 API。
 
 1. 为该服务注册一个账号，并授予它一个只包含该服务所需权限的角色（对于邀请，是带有 `manage_invites` 的角色；[授予和撤销角色](admin-cli.md#granting-and-revoking-roles)）。
-2. 以该账号登录，在**设置 → 你的应用**中注册一个应用，其 scope 包含权限 scope，即 `admin:` 加上权限：`admin:manage_invites`。
+2. 以该账号登录，在**设置 → 应用 → 你的应用**中注册一个应用，其 scope 包含权限 scope，即 `admin:` 加上权限：`admin:manage_invites`。
 3. 从该应用为该账号签发一个带有该 scope 的令牌，并把访问令牌和刷新令牌交给该服务。
 
 - 该令牌只能访问它的 scope 所指名的权限对应的操作，并且只有在该账号的角色仍然拥有这些权限时才有效；审计日志会把它的所作所为记为该账号的操作。
@@ -122,7 +121,7 @@ my admin account action lift -reason "appealed" <action id>
 
 审核员在账号列表中会看到 `deactivated` 状态（`state=deactivated`），并且仍可以查看关于该账号的举报并对其采取操作。审核操作不会改变删除日期，但 `ban` 例外，它会用自己的日期替换：此后用户无法重新激活。账号停用期间，封禁不会向其他服务器发送任何内容，用户重新激活后封禁仍然有效。以下情况下用户不能停用账号：审核使其无法登录时、已安排删除时、已迁移后、注册正在等待审核时、付费订阅仍在进行时（包括设为当期结束时终止的订阅），或者它是唯一能够登录的管理员时。已停用的管理员不算作能够登录的管理员。如果某个已停用管理员的日期到了，而没有其他管理员能够登录，每小时运行的任务不会删除该账号，并记录一条警告。那位管理员也已无法登录，所以请用 `my admin create` 创建另一个管理员；之后的下一次运行就会删除该账号。
 
-<!-- source: appeals 8a6f1b4c288d -->
+<!-- source: appeals 3366a552f16e -->
 ## 申诉
 
 本站用户可以对针对自己的操作提出申诉。审核员审查申诉，维持（`uphold`）或推翻（`overturn`）原操作。
@@ -133,7 +132,7 @@ my admin appeal uphold -reason "The posts were spam." <appeal id>
 my admin appeal overturn -reason "Sorry, our mistake." <appeal id>
 ```
 
-用户通过 `POST /api/v1/moderation/actions/{id}/appeal`（scope 为 `write:accounts`，请求体为 `{"text": "..."}`）申诉。处于 `disable_login`、`suspend` 或 `ban` 下的用户无法获取访问令牌，需通过登录页面上每个操作对应的表单申诉（`POST /auth/appeal`）。当[登录仅限登录提供方](login-providers.md#limit-sign-in-to-login-providers)时，这类用户只能通过已关联的提供方到达该表单。对于可以申诉的操作，页面显示表单和截止日期；对于已申诉的操作，显示申诉内容和结果；对于已过截止日期或无法申诉的操作，显示原因。申诉被驳回时会显示理由。管理 API 中：`GET /api/v1/admin/appeals`（用 `state` 筛选）、`GET .../{id}`，以及 `POST .../{id}/uphold` 和 `POST .../{id}/overturn`（请求体 `{"public_reason": "..."}` 可选）。它们需要 `manage_accounts` 权限。
+用户通过 `POST /api/v1/moderation/actions/{id}/appeal`（scope 为 `write:accounts`，请求体为 `{"text": "..."}`）申诉。处于 `disable_login`、`suspend` 或 `ban` 下的用户无法获取访问令牌，需通过登录页面上每个操作对应的表单申诉（`POST /auth/appeal`）。当[登录仅限登录提供方](login-providers.md#limit-sign-in-to-login-providers)时，这类用户只能通过已关联的提供方到达该表单。对于可以申诉的操作，页面显示表单和截止日期；对于已申诉的操作，显示申诉内容和结果；对于已过截止日期或无法申诉的操作，显示原因。申诉被驳回时会显示理由。管理 API 中：`GET /api/v1/admin/appeals`（用 `state` 筛选）、`GET .../{id}`，以及 `POST .../{id}/uphold` 和 `POST .../{id}/overturn`（请求体 `{"public_reason": "..."}` 可选）。它们需要 `manage_accounts` 权限。在 Web 客户端中，“审核”→“申诉”（`/moderation/appeals`）会列出等待审查的申诉或全部申诉；申诉页面（`/moderation/appeals/{id}`）显示用户所写的内容和该操作，以及要告知用户的理由，还有“维持”和“推翻”，两者都会先询问确认。
 
 - 每个操作只能申诉一次，文本为 1 到 2,000 个字符。截止日期为操作后实例设置 `appeal_window_days` 指定的天数（默认 180 天，范围 20 到 365；见[实例设置](instance-settings.md)）。对已过截止日期的操作申诉以及第二次申诉会返回 `422`（`/api/v1/problems/appeal-window-closed` 和 `/api/v1/problems/already-appealed`）。
 - `ban` 可以在账号被删除之前申诉（操作后 30 天，如果 `appeal_window_days` 的截止日期更早则以其为准）。对已删除账号的 `ban` 申诉会返回 `422`（`/api/v1/problems/not-appealable`）。已解除或已到期的操作在截止日期内仍可申诉。
@@ -142,29 +141,29 @@ my admin appeal overturn -reason "Sorry, our mistake." <appeal id>
 - 推翻 `ban` 还会在同一事务中取消已安排的账号删除（审计日志记录 `account_deletion_canceled`），结束封禁，并向其他服务器发送包含原始个人资料的 `Update`。被撤销的会话和令牌不会恢复，所以用户需要重新登录。如果账号在审查前已被删除，则无法推翻（`422`，`/api/v1/problems/not-appealable`；仍可以维持）。
 - 审查只进行一次。以相同结果再次审查不会改变任何东西，以相反结果审查会返回 `409`（`/api/v1/problems/appeal-decided`）。
 
-<!-- source: account-management 99149899a198 -->
+<!-- source: account-management aa223fe467e1 -->
 ## 账号管理
 
 搜索账号、查看其详情以及显示 IP 地址和邮箱地址都通过管理 API 完成，需要 `manage_accounts` 权限。
 
 在 Web 客户端中，一个账号有三个页面，页面标题下方有它们之间的链接：
 
-- **审核**（`/moderation/accounts/{id}`）：账号的状态和限制、新操作的表单、针对它的最新操作及其理由，以及它最新的 20 条举报。更早的举报只在举报列表（`/moderation/reports`）中，该列表无法按账号筛选。
-- **操作**（`/moderation/accounts/{id}/actions`）：针对该账号的所有操作，分页显示，生效中的操作带有“解除”。每个操作都会打开自己的页面（`/moderation/accounts/{id}/actions/{action id}`），显示其全部详情。
-- **管理**（`/moderation/accounts/{id}/manage`，仅限本站账号）：账号的角色（`manage_roles`）、邮件发送抑制、移除双重验证和签发密码重置链接（`manage_login_recovery`），以及邮箱和 IP 地址。每个区块只对拥有相应权限的人显示。
+- **审核**（`/moderation/accounts/{id}`）：账号的状态和限制、它的注册信息以及邀请它的人、新操作的表单（从举报中通过“对此账号采取行动”打开时，表单还会提供针对该举报中帖子的操作，并且该操作会处理这条举报）、针对它的最新操作及其理由（可能还有更多时，会有指向其“操作”页面的“全部操作”），以及它的举报，按从新到旧排列，其余的在“显示更多”之下。
+- **操作**（`/moderation/accounts/{id}/actions`）：针对该账号的所有操作，或只看生效中的操作，分页显示。每个操作都会打开自己的页面（`/moderation/accounts/{id}/actions/{action id}`），显示其全部详情；操作生效期间，页面上有“解除”，并附上给审核员看的理由。封禁的页面没有“解除”：只有推翻它的申诉才能撤销它。
+- **管理**（`/moderation/accounts/{id}/manage`）：对本站账号，包括它的角色（`manage_roles`）、邮件发送抑制、移除双重验证和签发密码重置链接（`manage_login_recovery`），以及它的邮箱和 IP 地址（只有点击“显示”之后才会显示），还有它的登录记录和使用过相同 IP 地址的账号，每个列表都按从新到旧排列，其余的在“显示更多”之下（每次点击读取一页，并记录在审计日志中），以及指向相同邮箱域名账号的链接；对远程账号，则是从它的服务器重新获取它的帖子（`manage_domains`）。每个区块只对拥有相应权限的人显示。
 
 工作人员只能对级别更低的人采取行动：发起或解除操作、裁决申诉、解除邮件发送抑制、显示私密数据、签发密码重置链接以及移除双重验证，都要求你的角色中最高的 `position` 高于目标每个角色的级别。对级别更高或相同的人（包括你自己的账号）执行这些操作会返回 `403`，问题类型为 `/api/v1/problems/target-outranks-actor`，所以审核员不能封禁管理员，管理员之间也不能互相封禁。`my admin` 命令没有这一限制。使唯一能够登录的管理员无法登录的操作（`disable_login`、`suspend`、`ban`）无论由谁发起都会被拒绝，该管理员也不能删除自己的账号（`409`，`/api/v1/problems/last-administrator`）。角色见 [admin-cli.md](admin-cli.md)。
 
 - `GET /api/v1/admin/accounts` 按从新到旧的顺序返回本站和远程账号（不包括实例 Actor）。可以按用户名前缀（`username`）、域名（`domain`）、本站或远程（`origin`）、状态（`state`）筛选；对本站账号，还可以按邮箱地址（`email`）、邮箱域名（`email_domain`）以及注册或登录时使用的 IP 地址（`ip`）筛选。`email`、`email_domain` 和 `ip` 只能指定其中一个。列表不包含 IP 地址和邮箱地址。
 - 状态取以下列表中第一个适用的：`deleted`、`suspended`（`suspend`、`ban`）、`disabled`（`disable_login`）、`rejected` 和 `pending`（注册审核）、`limited`（`limit`）、`active`。状态和限制（`restrictions`）只来自针对该账号本身的操作，不包括域名操作。
-- `GET /api/v1/admin/accounts/{id}` 返回状态和限制；对本站账号，还返回注册申请和审核、邮箱确认、角色，以及按从新到旧排列的最多 20 条操作和举报。
-- `POST /api/v1/admin/accounts/{id}/reveal` 返回本站账号的邮箱地址、注册和登录时的 IP 地址与 User-Agent（20 条，从新到旧），以及使用过相同 IP 地址的其他账号（每个 IP 地址最多 20 个）。每次调用都会在审计日志中记录 `revealed_private_data`，只有成功写入记录时才会返回数据。IP 地址会在保留期（默认 180 天）后删除，所以无法显示更早的登录来源。
-- `GET /api/v1/admin/accounts/{id}` 中的 `two_factor_enabled` 表示本站账号的用户是否使用双重验证（TOTP）。同时丢失了身份验证器应用和恢复码的用户，在你用 `POST /api/v1/admin/accounts/{id}/two_factor/disable` 移除双重验证后，就可以只用密码登录。只有拥有 `manage_login_recovery` 权限的用户才能执行此操作，默认只有内置的管理员角色拥有该权限（它属于服务器管理；Web 客户端只向这些人显示该区块）。移除会在审计日志中记录 `two_factor_disabled`。移除之前，请通过邮件等其他途径确认对方是账号的所有者。如果没有其他管理员的管理员丢失了它，运营者可以用 CLI 命令 `my admin account disable-two-factor @alice` 移除（审计日志中的执行者为 CLI）。
+- `GET /api/v1/admin/accounts/{id}` 返回状态和限制；对本站账号，还返回注册申请和审核、邮箱确认、角色，以及按从新到旧排列的最多 20 条操作和举报。`GET /api/v1/admin/reports?target_account_id={id}` 可以分页读取关于某个账号的全部举报。
+- `POST /api/v1/admin/accounts/{id}/reveal` 返回本站账号的邮箱地址、注册和登录时的 IP 地址与 User-Agent（20 条，从新到旧），以及使用过相同 IP 地址的其他账号（每个 IP 地址最多 20 个）。`GET /api/v1/admin/accounts/{id}/sign_ins` 和 `GET /api/v1/admin/accounts/{id}/same_ip_accounts?ip=` 可以分页读取其全部内容。这三者的每次调用都会在审计日志中记录 `revealed_private_data`，只有成功写入记录时才会返回数据。IP 地址会在保留期（默认 180 天）后删除，所以无法显示更早的登录来源。
+- `two_factor_enabled`（在 `GET /api/v1/admin/accounts/{id}` 中）表示本站账号的用户是否使用双重验证（TOTP）。同时丢失了身份验证器应用和恢复码的用户，在你用 `POST /api/v1/admin/accounts/{id}/two_factor/disable` 移除双重验证后，就可以只用密码登录。只有拥有 `manage_login_recovery` 权限的用户才能执行此操作，默认只有内置的管理员角色拥有该权限（它属于服务器管理；Web 客户端只向这些人显示该区块）。移除会在审计日志中记录 `two_factor_disabled`。移除之前，请通过邮件等其他途径确认对方是账号的所有者。如果没有其他管理员的管理员丢失了它，运营者可以用 CLI 命令 `my admin account disable-two-factor @alice` 移除（审计日志中的执行者为 CLI）。
 - 在会发送邮件的服务器上，忘记密码的用户可以在登录页面通过“忘记密码？”收到一封邮件，其中包含设置新密码的链接。对于不发送邮件的服务器（`mail = none`），或者邮件无法送达的用户，由管理员签发链接并交给对方。在管理界面中，通过账号“管理”页面（`/moderation/accounts/{id}/manage`，`POST /api/v1/admin/accounts/{id}/password_reset_link`）上的“重置密码”签发。只有拥有与移除双重验证相同权限 `manage_login_recovery` 的用户才能签发，默认只有内置的管理员角色拥有该权限（持有链接的人就能进入账号，所以审核员的 `manage_accounts` 不够）。签发的链接只在当场显示一次，可以复制。服务器只保存链接的哈希值，所以之后无法再查看；需要时请重新签发。当没有可用的管理员或管理界面不可用时，运营者可以用 CLI 命令 `my admin account password-reset-link @alice` 签发（审计日志中的执行者为 CLI）。当[登录仅限登录提供方](login-providers.md#limit-sign-in-to-login-providers)时，两种方式仍会签发链接，并提示在该限制结束前链接无效。链接有效期为 1 小时且只能使用一次，如果之后通过其他途径更改了密码，链接也会失效。两种签发方式都会在审计日志中记录 `password_reset_link_issued`。任何持有链接的人都可以设置密码，所以请通过邮件等其他途径确认对方身份，并只把链接交给本人。设置新密码会撤销该用户的所有会话和应用令牌。通行密钥和双重验证保持不变。
-- `GET /api/v1/admin/accounts/{id}` 中的 `email_suppression` 表示已停止向本站账号的主邮箱地址发送邮件。`hard_bounce`（收件地址不存在）会停止除确认邮件外的所有邮件，`complaint`（被举报为垃圾邮件）只停止通知和公告邮件。密码重置邮件也会停止，所以需要时请签发上述链接并交给对方。当用户请求确认邮件并再次确认地址后，硬退信造成的抑制会解除。当你确认可以正常发送（例如用户修复了邮箱）后，用 `POST /api/v1/admin/accounts/{id}/email_suppression/lift`（权限为 `manage_accounts`）解除。这会在审计日志中记录 `email_suppression_lifted`。
+- `email_suppression`（在 `GET /api/v1/admin/accounts/{id}` 中）表示已停止向本站账号的主邮箱地址发送邮件。`hard_bounce`（收件地址不存在）会停止除确认邮件外的所有邮件，`complaint`（被举报为垃圾邮件）只停止通知和公告邮件。密码重置邮件也会停止，所以需要时请签发上述链接并交给对方。当用户请求确认邮件并再次确认地址后，硬退信造成的抑制会解除。当你确认可以正常发送（例如用户修复了邮箱）后，用 `POST /api/v1/admin/accounts/{id}/email_suppression/lift`（权限为 `manage_accounts`）解除。这会在审计日志中记录 `email_suppression_lifted`。
 - 一次搜索为了填满一页最多读取 400 个账号。匹配的账号较少时，即使页面很短甚至为空，也可能带有 `next_cursor`，所以请继续读取。
 
-<!-- source: domain-actions 13dd3d4d3a0f -->
+<!-- source: domain-actions d71386f1cd2d -->
 ## 域名操作
 
 | 类型 | 效果 |
@@ -182,9 +181,9 @@ my admin domain list -active
 my admin domain lift <action id>
 ```
 
-管理 API 中：`POST /api/v1/admin/domain_actions`（请求体包含 `domain`、`kind`、`public_comment`、`private_note`、`obfuscate` 和以秒为单位的 `expires_in`）、`GET /api/v1/admin/domain_actions`（用 `domain` 和 `active` 筛选）、`GET .../{id}`，以及 `POST .../{id}/lift`。
+管理 API 中：`POST /api/v1/admin/domain_actions`（请求体包含 `domain`、`kind`、`public_comment`、`private_note`、`obfuscate` 和以秒为单位的 `expires_in`）、`GET /api/v1/admin/domain_actions`（用 `domain` 和 `active` 筛选）、`GET .../{id}`、`POST .../{id}/lift`，以及 `GET .../impact?domain=`，它会统计对该域名执行 `suspend` 将结束的关注数量。
 
-在 Web 客户端中，打开“审核”→“域名操作”（`/moderation/domain-actions`）。列表显示每个操作的域名、类型、状态和结束时间，可以只看生效中的或查看全部；“新操作”会打开表单（`/moderation/domain-actions/new`），选择某个域名会打开该操作的页面，其中显示备注和日期，可以用“解除”结束它。远程服务器页面上的“域名操作”链接只列出该域名的操作，在那里点击“新操作”会打开已填好域名的表单。
+在 Web 客户端中，打开“审核”→“域名操作”（`/moderation/domain-actions`）。列表显示每个操作的域名、公开理由、类型、结束时间和状态，可以只看生效中的或查看全部，可以看所有域名的，也可以只看你搜索的那一个域名的；“新操作”会打开表单（`/moderation/domain-actions/new`），选择某个域名会打开该操作的页面，其中显示理由和日期，可以用“解除”结束它。`suspend` 会先询问确认：确认框会说明它将永久结束本站用户与该域名账号之间的多少个关注，并要求你输入该域名。远程服务器页面上的“域名操作”链接只列出该域名的操作，在那里点击“新操作”会打开已填好域名的表单。
 
 - 域名会规范化为 IDNA A-label 后记录（小写，无末尾的点）。`例え.jp` 和 `xn--r8jz45g.jp` 是同一个域名。
 - 操作也适用于子域名（对 `spam.example` 的操作同样适用于 `a.spam.example`）。
@@ -193,7 +192,7 @@ my admin domain lift <action id>
 - 解除只会移除该操作的限制。同一域名上的其他操作保持不变。解除已解除的操作不会改变任何东西。
 - 列表按从新到旧排列，`-active`（`active=true`）只显示生效中的操作。
 
-<!-- source: importing-and-exporting-mastodon-csv ba9ed39bd32e -->
+<!-- source: importing-and-exporting-mastodon-csv f9b0965f8f91 -->
 ### 导入和导出 Mastodon CSV
 
 你可以使用 Mastodon 域名屏蔽的 CSV 格式（`#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`）与 Mastodon 互相传递域名操作列表。你可以导入 Mastodon 导出的 CSV，Mastodon 也可以导入本服务器导出的 CSV。
@@ -204,20 +203,20 @@ my admin domain import domain_blocks.csv                       # only shows what
 my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 ```
 
-管理 API 中：`GET /api/v1/admin/domain_actions/export`（`text/csv`）、`POST .../import/preview`（请求体包含 `csv`），以及 `POST .../import`（请求体包含 `blocks`，即选中的行，以及 `private_note`）。本服务器自身域名的行会被跳过（`own_domain`），对自身域名的域名操作会被拒绝。在 Web 客户端中，打开“审核”→“域名操作”并选择“Mastodon 的 CSV”（`/moderation/domain-actions/import`）：“导出 CSV”会保存文件，导入时会先预览粘贴或选择的文件，再导入你保留的行。
+管理 API 中：`GET /api/v1/admin/domain_actions/export`（`text/csv`）、`POST .../import/preview`（请求体包含 `csv`）和 `POST .../import`（请求体包含 `blocks`，即所选的行，以及 `private_note`）。本服务器自己域名的行会被跳过（`own_domain`），也不允许对它执行域名操作。在 Web 客户端中，打开“审核”→“域名操作”并选择“Mastodon 的 CSV”（`/moderation/domain-actions/import`）：“保存为 CSV”会保存文件，导入则会先预览所选的文件，再导入你保留的行；其中的 `suspend` 会先询问确认。
 
-| CSV 行 | 本服务器上的操作 |
+| CSV 行 | 在本服务器上的操作 |
 | --- | --- |
 | `#severity` 为 `suspend`（或为空） | `suspend` |
 | `#severity` 为 `silence` | `limit` |
 | `#severity` 为 `noop` | 无 |
-| `#reject_media` / `#reject_reports` 为 true | 分别追加 `reject_media` / `reject_reports` |
+| `#reject_media` / `#reject_reports` 为 true | 分别添加 `reject_media` / `reject_reports` |
 
-- 导入分两步。先在预览中确认每一行会发起哪些操作，选择要保留的行，然后导入（在加上 `-apply` 之前，CLI 不会做任何更改；`-only` 按域名选择行）。
-- 如果某行的域名或其上级域名已有同类型的生效中操作，该行不会发起该类型（如果所有类型都已存在，则为“已应用”）。同一域名的第二行、无效的行以及不会发起任何操作的行（只有 `noop`）也会被跳过。再次导入同一个 CSV 不会增加操作。
-- 没有 `#domain` 表头的 CSV 会被当作每行一个域名的列表读取，每个域名都会被施加 `suspend`（与 Mastodon 相同）。一次导入最多 5,000 行。
-- 导入的操作持续到“被解除为止”，并带有该行的公开备注和模糊化设置，以及你填写的私密备注。它们与逐个发起的操作一样出现在审计日志中（通过 API 时执行者为操作的人，通过 CLI 时为 `cli`）。
-- 导出时，每个域名对应一行，包含生效中的操作。有 `suspend` 的域名导出为 `suspend`，有 `limit` 的导出为 `silence`，两者都没有的导出为 `noop`。只有 `force_sensitive`（Mastodon 的域名屏蔽没有此项）的域名不会导出。私密备注和结束时间不会导出。
+- 导入分两步。先在预览中查看每一行会发起哪些操作，选出要保留的行，然后再导入（CLI 在你加上 `-apply` 之前不会改变任何东西，`-only` 按域名选择行）。
+- 如果某一行的域名或其父域名已经有同类型且生效中的操作，该行就不会再发起这个类型（如果每个类型都已存在，则为“已应用”）。同一域名的第二行、无效的行，以及不会发起任何操作的行（只有 `noop`）也会被跳过。再次导入同一个 CSV 不会增加操作。
+- 没有 `#domain` 标题行的 CSV 会被当作每行一个域名的列表读取，每个域名都会得到 `suspend`（与 Mastodon 相同）。一次导入最多 5,000 行。
+- 导入的操作持续到“解除为止”，并带有该行的公开备注和混淆设置，以及你提供的私有备注。它们在审计日志中的显示方式与逐个发起的操作相同（API 的执行者是本人，CLI 的执行者是 `cli`）。
+- 导出时，对每个生效中操作所涉及的域名写一行。有 `suspend` 的域名得到 `suspend`，有 `limit` 的得到 `silence`，两者都没有的得到 `noop`。只有 `force_sensitive` 的域名（Mastodon 的域名屏蔽没有这一项）不会被导出。私有备注和结束时间不会被导出。
 
 <!-- source: subscribing-to-blocklists d49a93c3c44f -->
 ### 订阅屏蔽列表
@@ -270,7 +269,7 @@ my admin domain subscription remove [-lift-actions] <subscription id>
 - 解除操作不会恢复被切断的关注。用户需要重新关注。
 - 再次处理同一个操作（例如任务重新运行时）不会再增加关系切断记录或通知。
 
-<!-- source: federating-only-with-allowed-servers 042f518cd527 -->
+<!-- source: federating-only-with-allowed-servers 84209876856e -->
 ### 只与被允许的服务器联邦
 
 实例设置 `federation_scope` 决定本服务器与哪些服务器联邦：`open`（默认）与所有没有被域名操作封禁的服务器联邦，`allowlist` 则只与允许列表上的域名及其子域名联邦，适用于只与自己认识的服务器通信的组织或个人服务器。
@@ -305,25 +304,25 @@ my admin federation scope open
 - 切换回 `open`，或再次允许该域名，不会恢复已被切断的关注。用户需要重新关注。
 - 当它已经是 `allowlist` 时再次设置 `allowlist`，不会再切断任何关注。
 
-在 Web 客户端中，打开审核 → 域名操作并选择“已允许的域名”（`/moderation/domain-actions/allowed`），即可查看、添加和移除允许项；移除时会先询问，因为在 `federation_scope` 为 `allowlist` 时，这会切断与该域名的联系。设置本身是服务器设置的联邦页面（`/admin/settings/federation`，需要权限 `manage_settings`）上的“联邦范围”：选择“仅限已允许的域名”并保存，会显示切换将结束的关注、会失去关注的本站用户，以及关注最多的服务器，并且只有在你确认之后才会保存。
+在 Web 客户端中，打开“审核”→“域名操作”并选择“已允许的域名”（`/moderation/domain-actions/allowed`），即可查看、添加和移除允许项；移除时会先询问确认，因为在 `federation_scope` 为 `allowlist` 时，这会切断与该域名的联系。设置本身是服务器设置的联邦页面（`/admin/settings/federation`，需要权限 `manage_settings`）上的“服务器”：选择“仅限已允许的服务器”并保存，会显示切换将结束的关注、会失去关注的本站账号，以及关注最多的服务器，并且只有在你确认之后才会保存。
 
 添加和移除允许项会记录在审计日志中（`domain_allow_added` 和 `domain_allow_removed`），而切换则是 `federation_scope` 的 `setting_changed`。
 
-<!-- source: publishing-the-domains-you-act-on b647d2c8c84c -->
+<!-- source: publishing-the-domains-you-act-on e8402b3a2c93 -->
 ### 公开你采取操作的域名
 
-你可以通过 `GET /api/v1/instance/domain_actions` 公开生效中的 `limit` 和 `suspend` 操作。实例设置 `domain_actions_visibility`（`off` / `signed_in` / `everyone`，默认 `off`）决定谁能看到列表，`domain_actions_rationale_visibility`（取值相同，默认 `off`）决定谁能看到公开备注（[实例设置](instance-settings.md)）。
+你可以通过 `GET /api/v1/instance/domain_actions` 公开生效中的 `limit` 和 `suspend` 操作。实例设置 `domain_actions_visibility`（`off` / `signed_in` / `everyone`，默认 `off`）决定谁能看到这个列表，`domain_actions_rationale_visibility`（取值相同，默认 `off`）决定谁能看到公开备注（[实例设置](instance-settings.md)）。
 
 ```sh
 my instance set domain_actions_visibility signed_in
 my instance set domain_actions_rationale_visibility signed_in
 ```
 
-- 设为 `off` 时 API 返回 `404`；设为 `signed_in` 时，对不带访问令牌的请求返回 `401`。
-- 每个操作一条记录，按从新到旧排列。每条记录包含域名、域名的 SHA-256（十六进制）和类型，对有权查看的人还包含公开备注。私密备注永远不会返回。
-- 对于带 `-obfuscate`（`obfuscate`）的操作，域名中间一半的字符（点除外）会被替换为 `*`（`bad.example` 变为 `bad.*****le`）。任何人都可以比对自己已知域名的 SHA-256，检查它是否就是被模糊化的那个域名。
-- `reject_media`、`reject_reports` 和 `force_sensitive` 操作，以及已解除或已到期的操作都不会公开。
-- Web 客户端的实例信息页面（`https://<host>/about`）按相同的设置显示此列表。设为 `off` 时不显示该部分；设为 `users` 时，未登录的人会看到一条说明，告知只有已登录用户才能查看。
+- 设为 `off` 时 API 返回 `404`；设为 `signed_in` 时，不带访问令牌的请求会得到 `401`。
+- 每个操作对应一个条目，按从新到旧排列。条目包含域名、域名的 SHA-256（十六进制）和类型，以及允许查看的人可以看到的公开备注。私有备注从不返回。
+- 对带有 `-obfuscate`（`obfuscate`）的操作，域名中间一半的字符（点除外）会被替换为 `*`（`bad.example` 变成 `bad.*****le`）。任何人都可以拿自己所知域名的 SHA-256 来比对，以确认这是否是被混淆的那个域名。
+- `reject_media`、`reject_reports` 和 `force_sensitive` 操作，以及已解除或已到期的操作，都不会公开。
+- Web 客户端的实例信息页面（`https://<host>/about`）会在相同的设置下显示这个列表。设为 `off` 时不显示该部分；设为 `signed_in` 时，未登录的人会看到一条说明，告知只有已登录的用户才能看到。
 
 <!-- source: refetching-remote-posts 883740b40c9a -->
 ## 重新获取远程帖子
@@ -344,10 +343,10 @@ my admin refetch domain remote.example
 - 不会从带有 `suspend` 的域名获取，也不会从因投递失败而处于 `unavailable` 的域名获取。同一 URI 的获取失败会被记住 1 小时，在此期间的重新获取不会去获取它。
 - 你的请求会在审计日志中记录为 `status_refetch_queued`、`account_statuses_refetch_queued` 或 `domain_statuses_refetch_queued`。
 
-<!-- source: checking-what-reached-a-remote-server b659a7421ff9 -->
+<!-- source: checking-what-reached-a-remote-server 6c1ec9c8cef1 -->
 ## 检查已送达远程服务器的内容
 
-当用户询问某条帖子、某次关注或某个接受是否已送达另一台服务器时，请用管理 API 列出向该服务器的投递。它会按最新在前显示向该服务器某个收件箱发送某个活动的每一次投递，包括每次尝试以及该服务器的回应，已成功的投递也在其中。它需要 `manage_domains` 权限。在 Web 客户端中，远程服务器页面（`/moderation/instances/{domain}`）的**投递**部分会显示同样的列表，带有按**活动 ID** 和**本站账号**筛选的功能，每个被遮蔽的投递上还有**显示被遮蔽的字段**；该页面会在这些操作运行之前说明其中哪些会被记录在审计日志中。
+当用户询问某条帖子、某次关注或某个接受是否已送达另一台服务器时，请用管理 API 列出向该服务器的投递。它会按最新在前显示向该服务器某个收件箱发送某个活动的每一次投递，包括每次尝试以及该服务器的回应，已成功的投递也在其中。它需要 `manage_domains` 权限。在 Web 客户端中，远程服务器页面（`/moderation/instances/{domain}`）的**投递**部分会显示同样的列表，带有按**活动 ID** 和**本站账号**筛选的功能，被遮蔽的投递在**详情**下的每个隐藏字段上还有**显示**；该页面会在这些操作运行之前说明其中哪些会被记录在审计日志中。远程服务器列表只显示投递曾经失败的服务器。要打开其他任何服务器，请在列表上方的**打开服务器**中输入它的域名、其上的某个用户名或其上的某个 URL，或者使用远程账号的“审核”页面或关于远程账号的举报页面上的**打开该账号所在的服务器**，也可以使用审计日志中关于某个域名的条目里的域名。
 
 ```sh
 curl -H "Authorization: Bearer $TOKEN" \
@@ -369,7 +368,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 共享收件箱不指明收件人，并且始终会显示；尝试的错误中被遮蔽的个人收件箱显示为 `[masked]`。被遮蔽投递的类型、时间和每次尝试都会显示，因此你仍然可以看到它是否送达了该服务器。若要查看某次投递被遮蔽的字段，请使用 `POST /api/v1/admin/instances/{domain}/deliveries/{id}/reveal`；每次调用都会在任何内容被显示之前，在审计日志中记为 `delivery_revealed`。
 
-<!-- source: reports 8b0684a0561c -->
+<!-- source: reports 5791186f6b24 -->
 ## 举报
 
 从其他服务器收到的举报（`Flag`）以待处理（`open`）状态进入举报列表。
@@ -385,6 +384,8 @@ my admin report reopen <report id>
 my admin report forward -comment "Spam account, see the linked posts" <report id>
 ```
 
+在 Web 客户端中，**审核 → 举报**（`/moderation/reports`）会按最新在前列出待处理的举报，显示每条举报的提交者、类别、时间和处理人。它的筛选条件（状态、类别和处理人：你自己或无人）和排序（列**提交时间**：最新在前或等待最久在前）会保留在页面地址中，**上一页**和**下一页**用于翻页。举报页面（`/moderation/reports/{id}`）显示它的状态、类别、被引用的规则（后来已停用的规则会注明）、提交者和处理人、是否已发送到该账号所在的服务器，以及该账号还有多少其他举报和操作；然后是账号、说明、被举报的帖子（已删除的帖子会显示删除时间）、语音聊天房间中发生的事或活动的更改，以及备注。从 `wide` 起，你所来自的那页列表会显示在它旁边。**分配给我**和**取消分配**、**处理**（**已采取行动**或**无需采取行动**）和**重新打开**在标题下方，**添加备注**在备注下方。
+
 管理 API 中：`GET /api/v1/admin/reports`（用 `state`、`category` 和 `assignee` 筛选，负责人可以是 `me`、`none` 或本站账号的 ID；`order=oldest` 会把等待最久的举报排在最前，而不是最新的）、`GET .../{id}`、`POST .../{id}/assign_to_self`、`POST .../{id}/unassign`、`POST .../{id}/resolve`（请求体 `{"outcome": "actioned" | "dismissed"}`）、`POST .../{id}/notes`（请求体 `{"body": "..."}`）、`POST .../{id}/reopen` 和 `POST .../{id}/forward`（请求体 `{"comment": "..."}`，可选）。
 
 - 分配（`assign`）只能分配给角色拥有 `manage_reports` 的本站用户。在管理 API 中只能分配给你自己。
@@ -392,10 +393,10 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 - 当你从举报发起操作（操作的 `report_id` / `-report`）时，举报会在同一次操作中以 `actioned` 处理完毕。
 - 备注（`note`）是只有审核员能看到的内部备注，最多 2,000 个字符。它既不会显示给目标，也不会显示给举报者。备注无法编辑或删除。
 - 重新打开（`reopen`）会把已处理的举报放回 `open`（分配保持不变）。待处理的举报不能重新打开（管理 API 中返回 `409`）。
-- 转发（`forward`，举报详情中的按钮 **转发到对方服务器**）会把关于其他服务器上账号的举报发送给该服务器，形式是由你的实例 actor 发出的 `Flag`，其中包含该账号以及仍然存在的被举报帖子。它携带的唯一文本，是你在转发时写给对方审核员的内容（`-comment`、管理 API 中的 `comment`，或举报页面上的 **给对方审核员的文本**；最多 1,000 个字符，默认没有）。举报者的说明和[外部审查](#reports-that-an-external-review-filed)的备注永远不会通过这种方式离开你的服务器，举报者的任何信息也不会被发送。举报者在提交时选择转发的举报已经立即发出，并带有举报者的说明。转发适用于在本服务器上提交的、尚未转发的举报，无论是由人还是由[外部审查](#reports-that-an-external-review-filed)提交，也无论处于待处理还是已处理状态；从其他服务器收到的举报和关于语音聊天房间或活动的举报不能转发（管理 API 中返回 `409` `report-not-forwardable`，举报详情中不显示按钮）。一条举报只发送一次：再次转发（无论文本如何），或者转发举报者在提交时已转发过的举报，都不会改变任何东西。管理 API 中的 `forwarded` 表示是否已发送，`forwardable` 表示现在能否发送。
+- 转发（`forward`，举报页面末尾的**发送到对方服务器…**，会先询问确认）会把关于其他服务器上账号的举报发送给该服务器，形式是由你的实例 actor 发出的 `Flag`，其中包含该账号以及仍然存在的被举报帖子。它携带的唯一文本，是你在转发时写给对方审核员的内容（`-comment`、管理 API 中的 `comment`，或举报页面上的**给对方审核员的文本**；最多 1,000 个字符，默认没有）。举报者的说明和[外部审查](#reports-that-an-external-review-filed)的备注永远不会通过这种方式离开你的服务器，举报者的任何信息也不会被发送。举报者在提交时选择转发的举报会立即发出，并带有举报者的说明。转发适用于在本服务器上提交的举报，无论是由人提交还是由[外部审查](#reports-that-an-external-review-filed)提交，无论待处理还是已处理，只要尚未转发过；从其他服务器收到的举报，以及关于语音聊天房间或活动的举报，都不能转发（管理 API 返回 `409` `report-not-forwardable`，举报详情中也不显示按钮）。一条举报只会发送一次：再次转发它（无论带什么文本），或者转发举报者在提交时已选择转发的举报，都不会改变任何东西。管理 API 中的 `forwarded` 表示它是否已发送，`forwardable` 表示你现在是否可以发送。
 - 举报详情（`show`、`GET .../{id}`）按从旧到新的顺序返回备注，以及关于目标的其他举报数量和针对目标的操作数量（包括已解除和已到期的）。列表不返回备注。
 - 分配、处理、重新打开、备注和转发都以事件形式保存（`report_assignments`、`report_resolutions`、`report_reopenings`、`report_notes`、`report_forwards`），`report_states` 保存当前状态。
-- 审核员可以在举报页面上翻译被举报的帖子和举报者的说明，也可以使用 `POST .../{id}/statuses/{status_id}/translation` 和 `POST .../{id}/comment/translation`（请求体 `{"target_language": "en"}`）。只有当[实例设置](instance-settings.md) `translation_reports_to_server` 开启时，文本才会发送给翻译服务商，而且只会发送给获准处理该帖子可见范围的服务商：审核员的访问权限不会放宽任何限制，所以私信帖子只会发送给获准处理 `direct` 的服务商，说明则按 `private` 计算。说明的翻译不会保存，已删除帖子的翻译也不会保存，字符数只计入服务器的每月限额。当 `translation_browser` 开启时，浏览器内置的翻译可用于举报，不受 `translation_reports_to_server` 的影响。
+- 审核员可以在举报页面上翻译被举报的帖子和举报者的说明，也可以使用 `POST .../{id}/statuses/{status_id}/translation` 和 `POST .../{id}/comment/translation`（请求体 `{"target_language": "en"}`）。只有当[实例设置](instance-settings.md) `translation_reports_to_server` 开启时，文本才会发送给翻译服务商，而且只会发送给获准处理该帖子可见范围的服务商：审核员的访问权限不会放宽任何限制，所以私信帖子只会发送给获准处理 `direct` 的服务商，说明则按 `private` 计算。说明的翻译不会保存，已删除帖子的翻译也不会保存，字符数只计入服务器的每月限额。当 `translation_browser` 开启时，浏览器内置的翻译可以处理被举报的帖子，不受 `translation_reports_to_server` 的影响；说明没有标明语言，只能由服务器翻译。
 - 举报者能看到的目标内容，与他们平时能看到的该账号内容相同：当该账号被封禁或屏蔽了举报者时，举报仍会列出，但不显示该账号。审核员总能看到完整的目标。
 - 本站举报者会在第一次处理时收到通知（`report_resolved`）。重新打开后再次处理不会增加通知。举报者可以用 `GET /api/v1/reports` 列出自己的举报，只能看到每条是待处理还是已处理。结果、采取的操作、给目标的理由以及负责人都不会显示。
 
@@ -404,22 +405,22 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 
 回答 `flag` 的[决策钩子](decision-hooks.md)会以你的实例 actor 作为举报者提交举报。举报会注明这一点：管理 API 和 `report.created` webhook 中的 `hook_origin`、举报详情中的一行说明，以及 `my admin report show` 中的 `automated`。它的说明是插件的备注，类别来自理由。提交时不会转发，处理时也不通知任何人。当目标在其他服务器上时，你可以自己转发（`forward`）：插件的备注留在你的服务器上，只有你写的文本会发出。取消该决策不会改变举报。
 
-<!-- source: voice-chat-rooms 7fd142752b07 -->
+<!-- source: voice-chat-rooms d2dd76116ac4 -->
 ### 语音聊天房间
 
 - 本站用户可以举报自己能看到的、正在进行的语音聊天房间（`POST /api/v1/reports`，带 `voice_room_id`，并将 `account_id` 设为房间的主持人）。举报的目标是当时的主持人，并指向当时的房间设置（名称和描述）。它不指向任何帖子，也永远不会转发到其他服务器。
 - 举报详情（`GET /api/v1/admin/reports/{id}`）会显示房间（`voice_room`）：其设置的每次更改、谁参与过以及何时离开、谁被移出，以及房间如何结束。参与者的记录在房间结束后保留 90 天（`voice_participants_retention_days`），并且只要有举报指向该房间就会一直保留（[记录保留](#record-retention-and-holds)）。没有录音，也没有文字聊天，所以这些记录是唯一的证据。
-- 拥有 `manage_reports` 的人可以用 `POST /api/v1/admin/voice_rooms/{id}/end`（请求体 `{"reason": "..."}`，可选，最多 500 个字符）为所有参与者结束正在进行的房间。理由只供审核员查看；参与者只能看到房间已结束。语音聊天关闭时也能使用，审计日志会记录 `voice_room_ended`。
+- 拥有 `manage_reports` 的人可以用 `POST /api/v1/admin/voice_rooms/{id}/end`（请求体 `{"reason": "..."}`，可选，最多 500 个字符）为所有参与者结束正在进行的房间。理由只供审核员查看；参与者只能看到房间已结束。语音聊天关闭时也能使用，审计日志会记录 `voice_room_ended`。在 Web 客户端中，正在进行的房间的举报页面上有“结束房间”，会先询问确认，并附有理由。
 
-<!-- source: events d37a09a66811 -->
+<!-- source: events cbc3e19bfdb6 -->
 ### 活动
 
 - 本站用户可以举报自己能看到的活动，包括已取消的活动（带有 `event_id` 的 `POST /api/v1/reports`，并把 `account_id` 设为该活动的主办者）。该举报以主办者为目标，并指向举报者所见的活动设置（标题、描述和地点）。仍在为日期投票的活动，可以像其他任何活动一样被举报和取消。它不指向任何帖子，也从不转发到其他服务器。
 - 举报详情（`GET /api/v1/admin/reports/{id}`）会显示该活动（`event`）：它的日期、是否以及如何被取消，以及其设置的每一次更改（最旧在前），包括它的所有地点，也包括只有已获批准的参加者才能看到的地点。`reported_revision_id` 是举报者所见的版本，因此举报之后更改的标题或地址仍然摆在你面前。
-- 拥有 `manage_reports` 的人可以用 `POST /api/v1/admin/events/{id}/cancel` 取消活动（请求体 `{"reason": "..."}`，可选，最多 500 个字符）。该理由会与取消一起显示给所有能看到该活动的人。回复了参加或可能参加的用户以及受邀的用户会收到通知，与主办者自己取消时相同，审计日志会记录 `event_cancelled`。已经取消的活动会返回 `409` `event-closed`。
+- 拥有 `manage_reports` 的人可以用 `POST /api/v1/admin/events/{id}/cancel` 取消活动（请求体 `{"reason": "..."}`，可选，最多 500 个字符）。该理由会与取消一起显示给所有能看到该活动的人。回复了参加或可能参加的用户以及受邀的用户会收到通知，与主办者自己取消时相同，审计日志会记录 `event_cancelled`。已经取消的活动会返回 `409` `event-closed`。在 Web 客户端中，活动的举报页面上有“取消活动”，会先询问确认，并附有理由。
 - 封禁或删除主办者会取消该主办者尚未开始的活动，包括仍在为日期投票的活动（`gathering.cancel_organized`），并通知它们的参加者。这些取消不会指明是谁取消的，解除封禁也不会恢复它们。已经开始的活动不会被取消。
 
-<!-- source: notifications-for-moderators-and-the-pending-counts a9a32ea8cccb -->
+<!-- source: notifications-for-moderators-and-the-pending-counts 0d1c327abe83 -->
 ## 审核员的通知和待处理数量
 
 新的举报、等待批准的注册和申诉会以应用内通知的形式送达拥有相应权限的人。
@@ -433,14 +434,13 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `admin_error_group` | 当服务器或 Web 客户端报告了新类型的错误，或者已解决的错误组在另一个服务器版本上再次出现时 | 角色拥有 `manage_errors` 的人 |
 | `admin_domain_list_failing` | 当订阅的屏蔽列表的获取连续第三次失败时 | 角色拥有 `manage_domains` 的人 |
 
-- `admin_error_group` 对整个服务器每小时最多送达 10 次。该小时内其余的会合并为一条通知，说明还有多少个错误组。已静音的错误组从不通知。Web 客户端为未登录访客报告的错误，只有在某个已登录用户的浏览器也报告了它之后才会通知，其再次出现不会通知任何人。错误组通过 `GET /api/v1/admin/error_groups` 读取，并通过
-  `POST /api/v1/admin/error_groups/{id}/resolve`（`/mute`、`/unmute`）解决、静音或取消静音，这些都需要 `manage_errors`。
+- `admin_error_group` 对整个服务器每小时最多送达 10 次。该小时内其余的会合并为一条通知，说明还有多少个错误组。已静音的错误组从不通知。Web 客户端为未登录访客报告的错误，只有在某个已登录用户的浏览器也报告了它之后才会通知，其再次出现不会通知任何人。错误组通过 `GET /api/v1/admin/error_groups` 读取，并通过 `POST /api/v1/admin/error_groups/{id}/resolve`（`/mute`、`/unmute`）解决、静音或取消静音，这些都需要 `manage_errors`。
 - 谁会收到通知，取决于创建通知时其拥有的权限。之后失去权限的人，在其列表和未读数中将不再看到该类通知。如果权限恢复，又会重新看到。
-- 上述每类通知也会通过邮件发送，默认开启。每个人可以在设置的 **通知** 页面（Web 客户端中为 `/settings/notifications`）分别开关每类通知的应用内通知和邮件，该页面只列出其角色会收到的类型。在应用内关闭的类型不会为其创建，所以既不会推送也不会发送邮件；`GET /api/v1/admin/counts` 的数量不会改变，因为它统计的是举报、注册和申诉本身。除了待处理举报的数量，还会返回最早的待处理举报的提交时间（`oldest_open_report_filed_at`）。服务器在记录通知的同一事务中将邮件任务加入队列，任务在提交后立即发送邮件，不会等待通知被阅读。如果在发送时此人已失去权限或已关闭该类邮件，或者其主邮箱地址未经确认或邮件已被停止发送，则什么也不会发送。邮件只包含通知的类型和指向通知界面的链接，不包含举报或账号的任何内容。邮件中的退订链接只关闭该类邮件。当 `mail = none` 时，不发送任何邮件，`GET /api/v1/instance` 中的 `sends_email` 为 `false`。
+- 上述每类通知也会通过邮件发送，默认开启。每个人可以在设置的**通知**页面（Web 客户端中为 `/settings/notifications`）分别开关每类通知的应用内通知和邮件，该页面只列出其角色会收到的类型。在应用内关闭的类型不会为其创建，所以既不会推送也不会发送邮件；`GET /api/v1/admin/counts` 的数量不会改变，因为它统计的是举报、注册和申诉本身。除了待处理举报的数量，还会返回最早的待处理举报的提交时间（`oldest_open_report_filed_at`）。服务器在记录通知的同一事务中将邮件任务加入队列，任务在提交后立即发送邮件，不会等通知被阅读。如果到发送时，此人已失去权限，或已关闭该类通知的邮件，或其主邮箱地址未确认或发往该地址的邮件已被停止，则不会发送任何内容。邮件只包含通知的类型和指向通知界面的链接，不包含举报或账号的任何内容。其中的退订链接只会关闭该类通知的邮件。如果 `mail = none`，则不发送邮件，`GET /api/v1/instance` 中的 `sends_email` 为 `false`。
 
-`GET /api/v1/admin/counts` 返回待处理举报数（`open_reports`，需要 `manage_reports`）、等待批准的注册数（`pending_registrations`）和等待审核的申诉数（`pending_appeals`）（两者都需要 `manage_accounts`）。你没有权限的项目不会返回。
+`GET /api/v1/admin/counts` 返回待处理举报数（`open_reports`，需要 `manage_reports`）、等待批准的注册数（`pending_registrations`）和等待审核的申诉数（`pending_appeals`）（两者都需要 `manage_accounts`）、等待决定的自定义表情请求数（`pending_custom_emoji_requests`，需要 `manage_custom_emojis`），以及未处理的错误组数，即新出现的、复发的或取消静音的错误组（`open_error_groups`，需要 `manage_errors`）。你没有权限的项目不会返回。
 
-<!-- source: audit-log e8f33b4d2da4 -->
+<!-- source: audit-log 8334cc0280f5 -->
 ## 审计日志
 
 审核员和管理员的操作会在与操作相同的事务中，以每次一行的形式记录到审计日志（`audit_log_entries`）中。失败的操作和没有改变任何东西的操作不会记录：解除已解除的操作、处理已处理的举报、分配给相同的负责人、停用已停用的规则、移动到相同的位置、授予用户已有的角色，以及撤销用户没有的角色。
@@ -460,7 +460,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `hook_decision` | `hook_decision_applied`（服务器根据外部审查的结论采取了行动并留下了状态；执行者为系统）、`hook_decision_overridden`（审核员取消了该决策，包括通过推翻其申诉）、`hook_appeal_upheld`（审核员维持了对被拒帖子的申诉，决策保持不变） |
 | `custom_emoji` | `custom_emoji_created`、`custom_emoji_image_replaced`、`custom_emoji_copied`、`custom_emoji_updated`、`custom_emoji_enabled`、`custom_emoji_disabled`、`custom_emoji_deleted`（注册自定义表情、替换其图片、从其他服务器复制表情，以及更改、启用、停用和删除表情） |
 | `webhook` | `webhook_created`、`webhook_updated`、`webhook_deleted`、`webhook_enabled`、`webhook_disabled`、`webhook_secret_rotated`（创建、更改、删除、启用和停用 webhook，以及重新生成其密钥） |
-| `announcement` | `announcement_created`、`announcement_updated`、`announcement_published`、`announcement_withdrawn`（创建、更改、发布和撤回公告） |
+| `announcement` | `announcement_created`、`announcement_updated`、`announcement_published`、`announcement_withdrawn`、`announcement_deleted`（创建、更改、发布和撤回公告，以及删除草稿） |
 | `invite` | `invite_created`、`invite_revoked`（创建和撤销邀请；目标名称为邀请码的前 4 个字符） |
 | `billing_source` | `billing_import_queued`（手动开始了账单导入；目标名称为服务商名称） |
 | `cost_item` | `cost_item_created`、`cost_item_relabeled`、`cost_item_price_revised`、`cost_item_end_changed`、`cost_item_deleted`（登记费用、更改其名称等、修改其金额、更改其结束日期，以及删除费用；目标名称为费用项名称） |
@@ -469,7 +469,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `supporter_subscription` | `supporter_subscription_ended`（管理员立即结束了某个订阅；目标名称为方案名称和用户的用户名） |
 | `custom_emoji_request` | `custom_emoji_request_submitted`、`custom_emoji_request_withdrawn`、`custom_emoji_request_approved`、`custom_emoji_request_rejected`（提交、撤回、批准和拒绝自定义表情请求；目标名称为 `:shortcode:`） |
 | `payment_provider` | `payment_reconcile_queued`（手动开始了与支付服务商的对账；目标名称为服务商名称） |
-| `oauth_client` | `oauth_client_disabled`、`oauth_client_enabled`（停用 OAuth 客户端和撤销停用；停用会撤销其所有令牌；目标名称为客户端名称和 `client_id`） |
+| `oauth_client` | `oauth_client_disabled`、`oauth_client_enabled`（停用和启用 OAuth 客户端；停用会撤销其所有令牌；目标名称为客户端名称和 `client_id`） |
 | `oauth_client_host` | `oauth_client_host_denied`、`oauth_client_host_allowed`（拒绝 Client ID Metadata Document 主机和撤销拒绝；拒绝会撤销该主机上客户端的令牌；目标名称为主机） |
 | `instance` | `service_closure_announced`、`service_closure_withdrawn`、`service_closure_closed`、`service_closure_delivery_completed`（公告关闭服务或更改日期、撤回公告、关闭，以及完成关闭的投递；目标名称为 `service_closure`） |
 | `voice_room` | `voice_room_ended`（审核员结束了正在进行的语音聊天房间；目标名称为房间 ID，因为名称会在写下它的账号被抹除时消失；举报详情会显示名称） |
@@ -488,6 +488,7 @@ my admin audit list -target-kind domain -target-id spam.example
 ```
 
 管理 API 中：`GET /api/v1/admin/audit_log`（用 `actor_account_id`、`action`、`target_kind` 和 `target_id` 筛选）。它需要 `view_audit` 权限。
+在 Web 客户端中，打开“审核”→“审计日志”（`/moderation/audit-log`）：每个条目读起来像一句“谁对什么做了什么”，按从新到旧排列，人和目标都链接到各自的界面。可以按操作者（你自己，或某个条目的“此人的其他操作”中的那个人）、目标类型再到操作类型，以及某一个目标（某个条目的“对此的其他操作”）来筛选。
 
 - 每一行包含执行者（`user` 时为用户，CLI 时为 `cli`）、操作、目标类型和 ID、目标的显示名称、原始记录的 ID 以及时间。目标 ID 是账号、举报、申诉、用户、规则、角色或注册屏蔽的 ID；对于域名操作为域名；对于设置和文本为键名。
 - 目标的显示名称（`@alice`、`@bob@example.com`、域名、设置键名、规则的文本；对于文本为其键名，对于角色为其键名和用户的用户名，对于注册屏蔽为其类型和值）是记录时复制的，所以目标消失后仍然可读。API 的每一行还会返回目标是否仍然存在（`target_exists`），对于已消失的账号、举报、申诉和注册屏蔽为 `false`。对于已消失的目标，Web 审计日志只显示显示名称，不带链接。

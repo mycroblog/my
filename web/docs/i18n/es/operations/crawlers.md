@@ -5,22 +5,22 @@ Qué comunica el servidor a los motores de búsqueda y a los rastreadores de IA,
 
 robots.txt y las metaetiquetas son declaraciones que los rastreadores pueden respetar o no; no son un bloqueo técnico. Si necesitas bloquear, usa un WAF o limitación de frecuencia.
 
-<!-- source: settings 13dfb1b04948 -->
-## Configuración
+<!-- source: settings 470e02c5f395 -->
+## Ajustes
 
-| Ámbito | Configuración | Dónde cambiarlo | Si no se define |
+| Ámbito | Ajuste | Dónde cambiarlo | Si no está definido |
 | --- | --- | --- | --- |
-| Servidor | `search_indexing` (`allow` / `deny`) | La sección «Motores de búsqueda e IA» de la página «Búsqueda y rastreadores» de la configuración del servidor en administración, `my instance set`, `PATCH /api/v1/admin/settings` ([Configuración de la instancia](instance-settings.md)) | `deny` |
+| Servidor | `search_indexing` (`allow` / `deny`) | Las secciones «Motores de búsqueda» e «IA» de la página «Búsqueda y rastreadores» de los ajustes del servidor de administración, `my instance set`, `PATCH /api/v1/admin/settings` ([Ajustes de la instancia](instance-settings.md)) | `deny` |
 | Servidor | `ai_usage` (`allow` / `deny_training` / `deny`) | Igual | `deny` |
 | Servidor | `indexable_default` (el `indexable` de las cuentas nuevas) | Igual | `false` |
-| Servidor | `security_contact` (dónde notificar vulnerabilidades) | Igual | Vacío (no se sirve `security.txt`) |
-| Persona | `indexable` (aparecer en la búsqueda) | «Motores de búsqueda e IA» en la configuración del perfil, `PATCH /api/v1/accounts/update_credentials` | `indexable_default` en el registro |
+| Servidor | `security_contact` (dónde informar de vulnerabilidades) | Igual | Vacío (no se sirve `security.txt`) |
+| Persona | `indexable` (aparecer en la búsqueda) | «Motores de búsqueda e IA» en los ajustes del perfil, `PATCH /api/v1/accounts/update_credentials` | `indexable_default` en el registro |
 | Persona | `ai_opt_out` (rechazar el entrenamiento y el uso por IA) | Igual | `false` |
 
-- La declaración de una página es la más estricta entre la configuración del servidor y la configuración del propietario de la página. Una persona no puede permitir más de lo que permite el servidor.
-- Se indica a los motores de búsqueda que solo pueden indexar los perfiles y las publicaciones `public` de cuentas con `indexable = true`, en un servidor con `search_indexing = allow`.
-  Un servidor que quiere ser localizable por la búsqueda cambia tanto `search_indexing` como `indexable_default`. Las personas que se registraron antes de que cambiaras `indexable_default` no se incluyen hasta que elijan `indexable` por sí mismas.
-- Un cambio de configuración surte efecto en `/robots.txt`, en las páginas y en las respuestas de contenido multimedia sin reiniciar.
+- La declaración de una página es la más estricta entre el ajuste del servidor y el ajuste del titular de la página. Una persona no puede permitir más de lo que permite el servidor.
+- A los motores de búsqueda se les dice que pueden indexar solo los perfiles y las publicaciones `public` de las cuentas con `indexable = true`, en un servidor con `search_indexing = allow`.
+  Un servidor que quiere ser encontrable cambia tanto `search_indexing` como `indexable_default`. Las personas que se registraron antes de que cambiaras `indexable_default` no se incluyen hasta que elijan `indexable` por sí mismas.
+- Un ajuste cambiado surte efecto en `/robots.txt`, en las páginas y en las respuestas de multimedia sin reiniciar.
 
 <!-- source: what-the-server-returns 31584e03601b -->
 ## Qué devuelve el servidor

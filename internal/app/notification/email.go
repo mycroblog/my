@@ -18,10 +18,10 @@ import (
 // The emails of the ordinary notifications and of the moderation notices (ADR-0086 §11): when a
 // projector creates a notification whose group the recipient gets by email, the same
 // transaction enqueues JobNotificationEmail to run notification.EmailDelay later. The job sends
-// one email of the notification only when, by then, the notification is still unread (newer
-// than the read marker and not dismissed), still shown (as a Web Push message checks it), and
-// the recipient still gets its group by email; it goes to the verified primary address unless
-// that address is suppressed (ADR-0086 §5). The moderator notifications are emailed at once
+// one email of the notification only when, by then, the notification is still unread
+// (notification.ReadMarker.Unread) and not dismissed, still shown (as a Web Push message checks
+// it), and the recipient still gets its group by email; it goes to the verified primary address
+// unless that address is suppressed (ADR-0086 §5). The moderator notifications are emailed at once
 // instead (moderators.go).
 
 // JobNotificationEmail is the job that sends the email of one notification once it stayed
@@ -90,7 +90,8 @@ func (m *EmailScheduler) enqueueAll(ctx context.Context, tx uow.Tx, ns []notific
 // *Service implements it.
 type EmailNotifications interface {
 	PushNotifications
-	ReadMarker(ctx context.Context, accountID string) (notification.ReadMarker, error)
+	// Unread reports whether the notification is unread (notification.ReadMarker.Unread).
+	Unread(ctx context.Context, accountID, id string) (bool, error)
 	EmailEnabled(ctx context.Context, accountID string, t notification.Type) (bool, error)
 }
 
@@ -145,8 +146,8 @@ func sendNotificationEmail(ctx context.Context, d EmailDeps, run queue.Job, job 
 	if on, err := d.Notifications.EmailEnabled(ctx, job.AccountID, job.Type); err != nil || !on {
 		return err
 	}
-	marker, err := d.Notifications.ReadMarker(ctx, job.AccountID)
-	if err != nil || marker.LastReadID >= job.NotificationID {
+	unread, err := d.Notifications.Unread(ctx, job.AccountID, job.NotificationID)
+	if err != nil || !unread {
 		return err // read since
 	}
 	shown, err := stillShown(ctx, d.Notifications, d.Audience, job)

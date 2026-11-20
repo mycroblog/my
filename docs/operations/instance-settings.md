@@ -383,9 +383,9 @@ While it is on:
 - **What a community needs is hidden.** The local and federated timelines and their streams, the suggestions of accounts,
   the invites of users and of administrators, the review of registrations, and the sign-up blocks answer `404` with the type
   `/api/v1/problems/single-user-mode`.
-- **No new local posts.** On a server of one person, a post for "This server" reaches nobody but the followers, so a new
+- **No new local posts.** On a server of one person, a post for "Neighbors" reaches nobody but the followers, so a new
   post cannot be local: the client API answers `422` and leaves it out of what an account may post. A default visibility
-  of "This server" reads as "Followers" and cannot be saved, and a voice chat room for the people of this server announces
+  of "Neighbors" reads as "Followers only" and cannot be saved, and a voice chat room for the people of this server announces
   itself in a post for the followers. Posts that are already local stay local.
 - **The server says what it is.** `single_user` in `GET /api/v1/instance` is `true`, with the effective registration mode
   and timelines and the operator's account as `single_user_account`, and NodeInfo answers `openRegistrations: false` with
@@ -394,7 +394,7 @@ While it is on:
   of its one account, with the way to sign in and links to the about page, the terms of service, and the privacy policy
   that the server publishes. The web client hides what the server does not offer, from its navigation, menus, and
   administration screens: the local and federated timelines, signing up, suggested accounts, invites, the review of
-  registrations, the sign-up blocks, the visibility "This server", and the settings of registration, invites, the public
+  registrations, the sign-up blocks, the visibility "Neighbors", and the settings of registration, invites, the public
   timelines, the landing page, and suggested accounts.
 
 Federation, moderation, the full-text search, the supporter program, the documents, and the admin screens work as on any
@@ -568,7 +568,7 @@ There is no custom CSS.
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | color | `#rrggbb` for light and for dark |
   | `font-sans-override`, `font-mono-override` | font family | Family names, comma-separated (at most 30), with no generic family such as `sans-serif`; quote a name with a word that starts with a digit, such as `"M PLUS 1p"` |
   | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | length | `0` or rem / px, 0.625rem to 3rem |
-  | `text-*--line-height` of the same four | number | 1 to 2.5 |
+  | `text-*--line-height` of the same seven | number | 1 to 2.5 |
   | `radius-control`, `radius-overlay` | length | 0 to 2rem |
   | `duration-spin` | duration | ms / s, 0 to 1000ms |
 

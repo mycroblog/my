@@ -21,7 +21,7 @@ import (
 func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository, pushes notification.PushRepository) error {
 	a.Notifications = notification.NewService(notification.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs, Staff: moderatorStaff{a}, Announcements: a.Instance,
-		Filters: notificationFilters{a},
+		Filters: notificationFilters{a}, Stream: lateStreams{a},
 		// The supporter row of the settings is offered while the program is on; the supporters
 		// module is built after this one.
 		SupportersEnabled: func(ctx context.Context) (bool, error) {

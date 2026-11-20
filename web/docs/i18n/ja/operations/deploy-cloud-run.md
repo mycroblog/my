@@ -1,70 +1,69 @@
-<!-- source: deploying-on-cloud-run 9d2acbfd443c -->
+<!-- source: deploying-on-cloud-run 7728d9a37c56 -->
 # Cloud Run へのデプロイ
 
-[`deploy/opentofu`](../../deploy/opentofu/README.md) の OpenTofu のモジュールを使って、Google Cloud で `my` を動かす方法です。Cloud Run、Cloud Tasks、Cloud Scheduler、Cloud Storage、Pub/Sub を使い、データベースには Neon の PostgreSQL を使い、グローバル外部アプリケーションロードバランサーの後ろに置きます。誰も使っていない間、サービスはインスタンスを 1 つも動かしません。ただし、毎分サーバーを起こすティックだけは例外です。サーバーにはお金がかかります。ストレージ、通信量、開いているストリームの分を除いて月におよそ $37 を見込み、工夫で減らせるところは[費用](#costs)を読んでください。
+OpenTofu のモジュール [`mycroblog-gcp`](../../deploy/opentofu/README.md) で、Google Cloud 上に `my` を動かす方法を説明します。使うのは Cloud Run、Cloud Tasks、Cloud Scheduler、Cloud Storage、Pub/Sub で、PostgreSQL のデータベースは Neon に置き、グローバル外部アプリケーションロードバランサーの後ろに構成します。誰も使っていないあいだはインスタンスが 1 つも動きません。ただし、サーバーを毎分起こす tick だけは動きます。サーバーには費用がかかります。ストレージ、トラフィック、開いたままのストリームを除いて月に約 $37 を見込んでください。工夫で減らせる部分は[費用](#costs)に書いてあります。
 
-モジュールには OpenTofu 1.11 以降が必要です。Terraform はサポートしていません。
+モジュールには OpenTofu 1.11 以降が必要です。Terraform には対応していません。
 
-<!-- source: what-it-creates c95687df197f -->
+<!-- source: what-it-creates cae1e55a1722 -->
 ## 作られるもの
 
-| 部品 | モジュール | リソース |
+`mycroblog-gcp` の 1 つのブロックで、これらすべてが作られます。表の各行はモジュールのセクションで、既定値がこのガイドでデプロイするものです。ほかの種類は[モジュールの README](../../deploy/opentofu/README.md#sections)にあります。
+
+| 部分 | セクション | リソース |
 | --- | --- | --- |
-| サーバー | `app-gcp-cloud-run` | `role = all` の Cloud Run サービス、マイグレーションのジョブ、必要な間だけのコンソールのジョブ、サービスアカウント、公開アクセス |
-| トラフィック | `ingress-gcp-load-balancer`、または `ingress-gcp-domain-mapping` か `ingress-cloudflare-app`、加えて任意で `ingress-cloudflare-media` | 証明書付きのグローバル外部アプリケーションロードバランサー、またはドメインマッピング、または Cloudflare と、メディア用のホスト |
-| ジョブ | `queue-gcp-cloud-tasks` | Cloud Tasks のキュー、Cloud Scheduler のジョブ、サーバーを呼び出すサービスアカウント |
-| メディア | `blob-gcp-gcs` | 非公開のバケット |
-| リアルタイムの更新 | `stream-gcp-pubsub` | トピックとカスタムロール。サブスクリプションはサーバーが自分で作成・削除します |
-| データベース | `db-external` | なし。データベースは手で作ります |
-| メール | `mail-smtp` | なし。どの SMTP サービスでもかまいません |
-| シークレット | `secrets-gcp-secret-manager` | あなたが値を入れるデータベースの URL と SMTP のパスワードのシークレット、生成される VAPID キー |
-| KEK | `kek-gcp-secret-manager` または `kek-gcp-kms` | ファイルとしてマウントされる生成済みのシークレット、または Cloud KMS の鍵 |
+| サーバー | `service`、`jobs` | `role = all` の Cloud Run サービス、マイグレーションのジョブ、必要なあいだだけのコンソールのジョブ、サービスアカウント、公開アクセス |
+| トラフィック | `ingress` | 証明書付きのグローバル外部アプリケーションロードバランサー。ほかの種類はドメインマッピングと Cloudflare で、Cloudflare のメディアホストはどの種類とも併用できます |
+| ジョブ | `queue` | Cloud Tasks のキュー、Cloud Scheduler のジョブ、サーバーを呼び出すサービスアカウント |
+| メディア | `media` | 非公開のバケット |
+| リアルタイム更新 | `stream` | トピックとカスタムロール。サブスクリプションはサーバー自身が作成し、削除します |
+| データベース | `database` | その URL のシークレット。データベースは手作業で作ります |
+| メール | `mail` | SMTP パスワードのシークレット。SMTP サービスならどれでも使えます |
+| シークレット | | 生成される VAPID 鍵と、あなたにしか入れられない値のための空のシークレット |
+| KEK | `kek` | ファイルとしてマウントされる、生成されたシークレット。もう一つの種類は Cloud KMS です |
+| メトリクス、トレース、エラー | `observability` | Cloud Run が送る情報を読む、Cloud Monitoring、Cloud Trace、Error Reporting の API |
 
-シークレットの値が OpenTofu のプランや状態に入ることはありません。ほかから来る値はあなたが自分で追加し、KEK と VAPID キーはデプロイが書き込み専用の属性を通して生成します。
+シークレットの値が OpenTofu のプランやステートに現れることはありません。ほかから持ってくる値はあなたが自分で追加し、KEK と VAPID 鍵はモジュールが書き込み専用の属性で生成します。
 
-<!-- source: before-you-start 4c624a6b7316 -->
+<!-- source: before-you-start 10846ce6f3b1 -->
 ## 始める前に
 
-- `tofu` 1.11 以降、`gcloud`、`jq`。
-- このインスタンスだけに使う、課金が有効な Google Cloud のプロジェクトと、そのプロジェクトでオーナーのロールをもつアカウント。
-- [`host`](../reference/configuration.md#host) のためのドメイン。あとから変えられません。[あとから変えられない設定](production-checklist.md#settings-you-cannot-change-later)を読んでください。
-- [リリース](running.md#get-the-image)にある `my` のバージョン。`latest` タグはありません。
+- 適用を行う場所に `tofu` 1.11 以降、`gcloud`、`jq`。バージョンが変わる適用では、その場所から `gcloud` を通してマイグレーションが実行されます。
+- 課金を有効にした、このインスタンス専用の Google Cloud プロジェクトと、そのプロジェクトのオーナーのロールを持つアカウント。
+- [`host`](../reference/configuration.md#host) に使うドメイン。あとから変えられません。[あとから変えられない設定](production-checklist.md#settings-you-cannot-change-later)を読んでください。
+- [リリース](running.md#get-the-image)の `my` のバージョン。`latest` タグはありません。
 
 <!-- source: first-deployment 996fcc6eb35e -->
 ## 最初のデプロイ
 
-<!-- source: 1-enable-the-apis 2d9c831fb77d -->
+<!-- source: 1-enable-the-apis c7f2ef4a9ee9 -->
 ### 1. API を有効にする
 
 ```sh
 gcloud services enable --project="$PROJECT" run.googleapis.com cloudtasks.googleapis.com cloudscheduler.googleapis.com \
   pubsub.googleapis.com secretmanager.googleapis.com storage.googleapis.com iam.googleapis.com \
-  iamcredentials.googleapis.com cloudresourcemanager.googleapis.com logging.googleapis.com compute.googleapis.com
+  iamcredentials.googleapis.com cloudresourcemanager.googleapis.com logging.googleapis.com compute.googleapis.com \
+  monitoring.googleapis.com
 ```
 
-`compute.googleapis.com` はロードバランサーのためのものです。
+`compute.googleapis.com` はロードバランサー用です。
 
-<!-- source: 2-create-the-database-on-neon 139308cfc452 -->
+<!-- source: 2-create-the-database-on-neon ca5f51e8979e -->
 ### 2. Neon にデータベースを作る
 
-Launch プランを見込んでください。既定のティックでは、コンピュートが止まることはありません。Free プランでも動きますが、[費用](#costs)に書いたトレードオフがあります。
+Launch プランを見込んでください。既定の tick では、コンピュートが止まることがありません。Free プランでも動きますが、[費用](#costs)に書いたトレードオフがあります。
 
-方法は 2 つあり、例では 1 つ目を使います。
+Neon のコンソールで、Cloud Run のリージョンに近いリージョンにプロジェクトを作り、その接続文字列をコピーします。モジュールはこれを作らないので、パスワードが OpenTofu のステートに入りません。プロジェクトには 2 つの接続文字列があり、デプロイではそれぞれを使うべき場所で使います。
 
-- **`db-external` を使って手で作る。** Neon のコンソールで、Cloud Run のリージョンに近いリージョンにプロジェクトを作り、その接続文字列をコピーします。パスワードは OpenTofu の状態に入りません。
-- **[`db-neon`](../../deploy/opentofu/modules/internal/db-neon/README.md) を使う。** プロジェクトを作り、URL をシークレットに書き込んでくれます。**このときデータベースのパスワードは状態に入ります。** またプロバイダーはメンテナンスされていません。それが何を意味するかはその README にあり、`main.tf` の `db` ブロックのコメントに差し替え方があります。
+- **ダイレクト**のもの（`-pooler` のないホスト）は必須です。マイグレーションのジョブとコンソールは常にこちらを使います。`my schema apply` はセッションレベルのロックを持ちますが、トランザクションモードのプーラーはそれを保てないためです。
+- **プール**のもの（`-pooler` のあるホスト）は、サービス用の任意のものです。Neon のプーラーはサーバーに必要なことを処理できます。[コネクションプーラー経由](database.md#through-a-connection-pooler)を参照してください。`database = { pooled = true }` を設定すると、モジュールがそのための 2 つ目のシークレットを作ります。
 
-プロジェクトには 2 つの接続文字列があり、デプロイはそれぞれを適した場所で使います。
+プールの文字列がなければ、サービスもダイレクトのものを使い、データベースの接続数の上限の範囲で動きます。その上限は `service.max_instances` で抑えられます。Cloud Run のインスタンスが同時に受ける 80 リクエストのために、インスタンスあたり 4 という既定のプールを増やすには、サービスが使う文字列に `pool_max_conns` を足します。例: `postgres://...-pooler...neon.tech/neondb?sslmode=require&pool_max_conns=8`。[データベース接続の待機](running.md#waiting-for-a-database-connection)を参照してください。
 
-- **直接接続**のもの（ホストに `-pooler` が付かないもの）は必須です。マイグレーションのジョブとコンソールは常にこれを使います。`my schema apply` はセッション単位のロックを保持し、トランザクションモードのプーラーではそれが保たれないからです。
-- **プール接続**のもの（ホストに `-pooler` が付くもの）は任意で、サービス用です。Neon のプーラーはサーバーが必要とするものを扱えます。[接続プーラーを通す](database.md#through-a-connection-pooler)を参照してください。専用のシークレットに入れて `db` モジュールの `pooled_url_secret_id` に渡し、そのシークレットを `secrets` モジュールの `referenced` に加えます。
-
-プール接続の文字列がなければ、サービスも直接接続のものを使い、データベースの接続数の上限に従います。その数は app モジュールの `max_instances` で抑えられます。Cloud Run のインスタンスが同時に受ける 80 件のリクエストのために、インスタンスあたり既定で 4 のプールを増やすには、サービスが使う文字列に `pool_max_conns` を加えます。たとえば `postgres://...-pooler...neon.tech/neondb?sslmode=require&pool_max_conns=8` です。[データベースの接続を待つ](running.md#waiting-for-a-database-connection)を参照してください。
-
-<!-- source: 3-copy-the-example-and-set-the-variables 3abe6b730543 -->
+<!-- source: 3-copy-the-example-and-set-the-variables 1b99f37cb3a7 -->
 ### 3. 例をコピーして変数を設定する
 
-デプロイするリリースから、プロバイダーのロックファイルも含めて、空のディレクトリにコピーしたものから始めます。
+デプロイするリリースから、プロバイダーのロックファイルを含めて、空のディレクトリにコピーして始めます。
 
 ```sh
 VERSION=v0.1.0
@@ -76,90 +75,74 @@ cd my-deployment
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-**`ref` をそのリリースにします。** `main.tf` のどのモジュールブロックも `?ref=` でリリースを指定しており、安定版のリリースのコピーではすでに正しくなっています。プレリリースでは自分で設定してください: `sed -i "s/?ref=[^&]*/?ref=$VERSION/" main.tf`。モジュールはそれを含む最初のリリースからしか存在しないので、それより前のタグにはコピーする例がありません。`ref` と `image` には同じリリースを指定し、このディレクトリは残しておいてください。あなたの状態と設定が入っています。
+`main.tf` は `google` プロバイダーと 1 つのブロック `module "mycroblog"` です。**`ref` をそのリリースにしてください。** ブロックは `?ref=` でリリースを指していて、安定版のリリースのコピーなら最初から正しくなっています。サーバーのイメージも同じリリースなので、`ref` だけで動くものが決まります。プレリリースでは両方を自分で設定します。`sed -i "s/?ref=[^&]*/?ref=$VERSION/" main.tf` と、ブロックに `image = { version = "0.1.0-rc.4" }`（先頭の `v` を除いたバージョン）です。プレリリースのモジュールは、自分のイメージを既定にしないためです。モジュールはそれを含む最初のリリースからしか存在しないので、それより前のタグにはコピーする例がありません。このディレクトリは残しておいてください。ステートと設定がここにあります。
 
-`terraform.tfvars` を埋めます。`mail_from`、`mail_smtp_host`、`mail_smtp_port`（既定は 587。Google Cloud は外向きのポート 25 をブロックします）、`mail_smtp_username` で[メール](email.md)を設定します。`env` と `secret_env` には、[設定リファレンス](../reference/configuration.md)のそのほかの設定項目を、それぞれ値とシークレットの ID で指定します。2 か所で指定した設定項目があるとプランが失敗します。
+`terraform.tfvars` を埋めます。`mail_from`、`mail_smtp_host`、`mail_smtp_username` は[メール](email.md)の設定で、Google Cloud は外向きのポート 25 を塞いでいるため、ポートは 587 です。ほかを変えるには、`ingress = { kind = "domain-mapping" }` のように、`main.tf` のブロックにそのセクションを足します。すべてのセクションと、それが拒むものは[モジュールの README](../../deploy/opentofu/README.md#sections)にあります。
 
-メールを送らないなら、`main.tf` から `mail` モジュールとそのシークレットを削除します。`mail` は `none` のままになります。その前に[登録にとってそれが何を意味するか](production-checklist.md#email)を読んでください。
+`settings` には、[設定リファレンス](../reference/configuration.md)のほかの設定をキーで渡せます。`secrets` にはシークレットな設定のキーを渡せて、それぞれに値を入れるための空のシークレットが作られます。セクションやモジュールが設定するキーはプランが失敗し、`listen` のように Cloud Run ではモジュールが受け付けないキーも失敗します。エラーが理由を説明します。ハンドルに別のドメインを使うなら、[`account_domain`](../reference/configuration.md#account_domain) をいま `settings = { account_domain = "example.org" }` のように決めてください。
 
-ハンドルに別のドメインを使うなら、[`account_domain`](../reference/configuration.md#account_domain) をいま `env` の `MY_ACCOUNT_DOMAIN` として決めてください。
+**ステート**は既定ではこのディレクトリに残ります。シークレットの値は入っていませんが、何を作ったかを示す唯一の記録です。複数人で運用するなら、`backend "gcs"` ブロックでバケットに置いてください。
 
-**状態**は既定ではこのディレクトリに置かれます。シークレットの値は含みませんが、何が作られたかの唯一の記録です。複数の人が運用するなら、`backend "gcs"` ブロックでバケットに置いてください。
+<!-- source: 4-create-the-secrets-and-add-their-values 51cddae33ec9 -->
+### 4. シークレットを作り値を追加する
 
-<!-- source: 4-create-the-secrets-and-add-their-values f94fd484e28f -->
-### 4. シークレットを作り、値を追加する
-
-次のコマンドでシークレットを作り、KEK と VAPID キーを生成します。
+シークレットを作り、KEK と VAPID 鍵を生成します。
 
 ```sh
 tofu init
-tofu apply -target=module.secrets -target=module.kek
+tofu apply -target=module.mycroblog.module.secrets -target=module.mycroblog.module.kek_secret_manager
 ```
 
-`tofu init` は、次の手順で使う `upgrade.sh` と `console.sh` もそのリリースのものを取得します。
+`tofu init` は、そのリリースのスクリプトも取得します。適用が実行する `migrate.sh` と、あとの手順で使う `console.sh` です。
 
 ```sh
-SCRIPTS=.terraform/modules/app/deploy/opentofu
+SCRIPTS=.terraform/modules/mycroblog/deploy/opentofu
 ```
 
-**いますぐ KEK をコピーし**、そのコピーはデータベースとは別の場所、たとえばパスワードマネージャーに保管してください。KEK がないと[バックアップ](backup.md)を復元できず、アカウントの鍵が失われます。VAPID キーも同じようにしてください。これを失うと、すべての Web Push の購読が終わります。
+**いますぐ KEK をコピー**して、データベースとは別の場所、たとえばパスワードマネージャーに保管してください。これがないと[バックアップ](backup.md)を復元できず、アカウントの鍵が失われます。コマンドは `tofu output kek` で確認できます。VAPID 鍵も同じようにしてください。失うと、すべての Web Push の購読が終わります。
 
 ```sh
 gcloud secrets versions access latest --secret=my-kek --project="$PROJECT"
 gcloud secrets versions access latest --secret=my-vapid-key --project="$PROJECT"
 ```
 
-次に、ほかから来る値を追加します。シークレットを読めないインスタンスは起動しないので、アプリより前に追加してください。
+次に、ほかから持ってくる値を追加します。`tofu output secrets_to_fill` は、モジュールが空のまま作った各シークレットについて、何を入れるかと追加するコマンドを一覧にします。読めないシークレットがあるインスタンスは起動しないので、サービスより前に追加してください。
 
 ```sh
 printf '%s' 'postgres://...' | gcloud secrets versions add my-database-url --project="$PROJECT" --data-file=- # the direct string
 printf '%s' '<the SMTP password>' | gcloud secrets versions add my-smtp-password --project="$PROJECT" --data-file=-
 ```
 
-KEK は、`MY_KEK_FILE` で指定されるマウントされたファイルとしてサーバーに届きます。ほかのものはインスタンスの起動時に解決される環境変数なので、新しいバージョンは次のインスタンスから有効になります。確実にするには新しいリビジョンをデプロイしてください。
+KEK は `MY_KEK_FILE` が指す、マウントされたファイルとしてサーバーに届きます。ほかは、インスタンスの起動時に解決される環境変数なので、新しいバージョンは次のインスタンスから有効になります。確実にするには、新しいリビジョンをデプロイしてください。
 
-**OpenTofu が KEK を生成するのは 1 回だけで、二度と生成しません。** シークレットとそのバージョンには `prevent_destroy` が付いており、新しい値を書き込むことになるバージョン番号はモジュールの中で固定されています。これを変えないでください。新しいランダムな KEK になると、古い KEK で暗号化したものがすべて読めなくなります。ローテーションするには [KEK をローテーションする](key-management.md#rotate-the-kek)に従い、新しい値は `gcloud secrets versions add` で追加します。そこで追加したものを OpenTofu は追跡しません。
+**OpenTofu が KEK を生成するのは一度だけで、二度とありません。** シークレットとそのバージョンには `prevent_destroy` があり、新しい値を書き込むバージョン番号はモジュールの中で固定されています。KEK を新しい乱数にすると、古い KEK で暗号化されたものがすべて読めなくなるからです。ローテーションするには[KEK のローテーション](key-management.md#rotate-the-kek)に従い、新しい値を `gcloud secrets versions add` で追加します。そこで追加したものを OpenTofu は追跡しません。
 
-最初から KEK を Cloud KMS に置くには、`main.tf` の `kek` ブロックをそのコメントのとおりに置き換え、`cloudkms.googleapis.com` を有効にします。自分の KEK や VAPID キーを持ち込むには、この手順の前に、`kek` モジュールに `create = false` を設定するか、`generate_p256_keys` からその鍵を削除します。ほかで作ったシークレットに必要なのはその ID だけです。app モジュールの `secret_env` か、それを使うモジュールに渡してください。
+最初から KEK を Cloud KMS に置くには、この手順の前に `kek = { kind = "kms" }` を設定し、`kek_secret_manager` の代わりに `module.mycroblog.module.kek_kms` を対象にして、`cloudkms.googleapis.com` を有効にします。
 
-<!-- source: 5-create-what-the-migration-needs 006a5b44f702 -->
-### 5. マイグレーションに必要なものを作る
-
-サービスの起動プローブは `/health/ready` を待ちますが、これはスキーマができるまで `503` を返すので、スキーマを先に作る必要があります。マイグレーションのジョブと、それが依存するものを作ります。サーバーの設定がロードバランサーのアドレスを指定しているので、そのアドレスも含まれます。
-
-```sh
-tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
-```
-
-<!-- source: 6-apply-the-schema 2946ca18d263 -->
-### 6. スキーマを適用する
-
-```sh
-"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.1.0 --migrate-only
-```
-
-`my config check`、`my db upgrade -check`、`my schema apply`、`my db upgrade` を、それぞれジョブの実行として行い、最初に失敗したところで止まります。データベースを使う最初のコマンドが、`host` と `account_domain` をデータベースに記録します。
-
-<!-- source: 7-create-the-rest 368abac4aa08 -->
-### 7. 残りを作る
+<!-- source: 5-apply 2076866c0f3b -->
+### 5. 適用する
 
 ```sh
 tofu apply
 ```
 
-<!-- source: 8-point-the-domain-at-the-load-balancer 7e54edc163b2 -->
-### 8. ドメインをロードバランサーに向ける
+これで残りがすべて作られます。順序はサービスの起動プローブが必要とするものです。プローブは `/health/ready` を待ち、スキーマができるまでそれは `503` を返します。まずマイグレーションのジョブが、依存するものとともに作られます。その中にはロードバランサーのアドレスも含まれます。サーバーの設定がそれを名指すためです。次に、適用はジョブの実行として `my upgrade` を、あなたのマシンから `gcloud` を通して実行し、終わるのを待ちます。実行されるのは `my config check`、`my db upgrade -check`、`my schema apply`、`my db upgrade` で、最初に失敗したところで止まります。その出力は適用の出力に表示されます。データベースを使う最初のコマンドが、`host` と `account_domain` をそこに記録します。サービスが作られるのはそのあとです。
 
-`tofu output dns_records` は、`host` からロードバランサーのアドレスへの `A` レコードを 1 つ表示します。これを DNS プロバイダーに追加してください。そのプロバイダーに独自のプロキシがあるなら、このレコードでは無効にしておきます。
+マイグレーションが失敗すると、適用はサービスの前で止まります。原因（多くは値のないシークレット）を直して、もう一度 `tofu apply` を実行してください。マイグレーションがもう一度実行されます。
 
-証明書は Google マネージドで、DNS がそのアドレスを指してから初めて有効になり、それには時間がかかることがあります。それまでは `https://{host}` が TLS のエラーで失敗するので、連合もブラウザもまだサーバーに届きません。ほかにこれを待つものはありません。Cloud Tasks と Cloud Scheduler は、サービスの既定の `run.app` の URL、`https://<service>-<project number>.<region>.run.app` を呼び出します。**既定の URL を無効にしないでください。** 無効にするとジョブが止まります。その URL はインターネットからのリクエストを拒否し、Cloud Run がこの 2 つを内部からのものとして扱うのは、同じプロジェクトからでその URL に来たときだけで、カスタムドメインに来たときではありません。
+<!-- source: 6-point-the-domain-at-the-load-balancer c81cc51be2af -->
+### 6. ドメインをロードバランサーに向ける
 
-ほかに選べるものについては[トラフィックがサービスに届く経路](#how-traffic-reaches-the-service)を参照してください。
+`tofu output dns_records` は、`host` からロードバランサーのアドレスへの `A` レコードを 1 つ一覧にします。DNS プロバイダーで追加してください。そのプロバイダーに独自のプロキシがあるなら、このレコードではオフにしてください。
 
-<!-- source: 9-create-the-first-administrator c5b03212fb36 -->
-### 9. 最初の管理者を作る
+証明書は Google が管理し、DNS がそのアドレスを指してから有効になるので、時間がかかることがあります。それまで `https://{host}` は TLS エラーになるため、連合もブラウザーもまだサーバーに届きません。ほかにそれを待つものはありません。Cloud Tasks と Cloud Scheduler は、サービスの既定の `run.app` URL、`https://<service>-<project number>.<region>.run.app` を呼びます。**既定の URL を無効にしないでください。** ジョブが止まります。その URL はインターネットからのリクエストを拒みます。Cloud Run がこの 2 つを内部からとみなすのは、同じプロジェクトからで、その URL に対してだけであり、カスタムドメインではそうならないためです。
 
-Cloud Run のジョブには端末も標準入力もないので、`my admin create` はパスワードを読み込む代わりに、パスワードを設定するリンクを表示します。[コンソール](#the-console)を有効にして、次を実行します。
+ほかに選べるものは[トラフィックがサービスに届く経路](#how-traffic-reaches-the-service)を参照してください。
+
+<!-- source: 7-create-the-first-administrator 19137d6d01f0 -->
+### 7. 最初の管理者を作る
+
+Cloud Run のジョブには端末も標準入力もないので、`my admin create` はパスワードを読み取る代わりに、パスワードを設定するリンクを表示します。[コンソール](#the-console)をオンにして、次を実行します。
 
 ```sh
 tofu apply -var console_enabled=true
@@ -167,17 +150,17 @@ tofu output -json console | "$SCRIPTS/console.sh" admin create -username alice -
 tofu apply -var console_enabled=false
 ```
 
-すぐにリンクを開いてパスワードを設定してください。リンクは 1 時間の間、1 回だけ使えます。**それまでリンクは Cloud Logging に残り**、プロジェクトのログを読める人なら誰でも使えます。期限が切れたら、コンソールから `my admin account password-reset-link @alice` を実行します。そのあと二要素認証を有効にしてください。
+リンクをすぐに開いて、パスワードを設定してください。リンクは 1 回だけ、1 時間のあいだ使えます。**それまでは Cloud Logging に残る**ので、プロジェクトのログを読める人なら誰でも使えます。期限が切れたら、コンソールで `my admin account password-reset-link @alice` を実行してください。そのあと、二要素認証をオンにします。
 
-<!-- source: 10-go-through-the-checklist 90add86e4288 -->
-### 10. チェックリストを確認する
+<!-- source: 8-go-through-the-checklist e7fe33d10e80 -->
+### 8. チェックリストを確認する
 
-[本番運用のチェックリスト](production-checklist.md)を確認します。まず[メール](production-checklist.md#email)、つまり `mail_from` のドメインの SPF、DKIM、DMARC から始めてください。
+[本番運用前のチェックリスト](production-checklist.md)を確認してください。最初は[メール](production-checklist.md#email)で、`mail_from` のドメインの SPF、DKIM、DMARC です。
 
-<!-- source: the-console 5aebf704c6d7 -->
+<!-- source: the-console 52df6f8c43ac -->
 ## コンソール
 
-コンソールは、サービスのイメージ、設定、シークレットで `my` のコマンドを 1 つ実行します。`console_enabled` が有効な間だけ存在するので、終わったら無効にしてください。
+コンソールは、サービスと同じイメージ、設定、シークレットで、`my` のコマンドを 1 つ実行します。`console_enabled` がオンのあいだだけ存在するので、終わったらオフにしてください。
 
 ```sh
 tofu apply -var console_enabled=true
@@ -185,99 +168,124 @@ tofu output -json console | "$SCRIPTS/console.sh" instance set registration_mode
 tofu apply -var console_enabled=false
 ```
 
-`console.sh` はコマンドの終了を待ち、その出力と終了コードを表示し、その終了コードで終わります。ジョブの出力は Cloud Logging に送られるので、`roles/logging.viewer` が必要です。`image` の値にかかわらず、サービスが動かしているイメージを使います。
+`console.sh` はコマンドを待ち、その出力と終了コードを表示して、そのコードで終了します。ジョブの出力は Cloud Logging に送られるので、`roles/logging.viewer` が必要です。使うイメージはサービスが動かしているものです。マイグレーションで止まったアップグレードのあとなら、データベースがまだ合っている前のリリースです。
 
-コマンドには標準入力も端末もないので、そこからパスワードやファイルを読み込むコマンドはこの方法では実行できません。表示したものはログに残るので、そこに書かれては困る出力をするコマンドは実行しないでください。
+コマンドには標準入力も端末もないので、そこからパスワードやファイルを読むコマンドは、この方法では実行できません。出力はログに残るので、ログに書きたくない出力のコマンドは実行しないでください。
 
-<!-- source: upgrading 31acbd137681 -->
+<!-- source: upgrading fe1bed77d3af -->
 ## アップグレード
 
-まず[アップグレード](database.md#upgrading)とリリースノートを読み、マイナーバージョンを 1 つずつ上げてください。
+先に[アップグレード](database.md#upgrading)とリリースノートを読み、マイナーバージョンを 1 つずつ上げてください。アップグレードは新しいリリースの適用です。プランには、すべてのサービスとジョブが新しいイメージを使う様子が表示され、適用はそのどれかが配信を始める前にマイグレーションを実行します。
 
 ```sh
-# 1. Back up the database while nothing writes. Use pg_dump or a Neon branch (see Backup and restore).
-gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --update-env-vars=MY_MAINTENANCE=true
+# 1. Back up the database while nothing writes: see "The maintenance mode" below, and Backup and restore.
 pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
 
-# 2. Read the SQL it would run. This changes nothing but the image of the migration job.
-"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --plan
+# 2. Name the new release in main.tf, as ?ref=v0.2.0, and fetch it.
+tofu init
 
-# 3. Upgrade. These scripts are of the release your modules name, which is enough: they only run gcloud and my.
-"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --maintenance
+# 3. Read the plan, then apply it.
+tofu plan
+tofu apply
 ```
 
-スクリプトは次のことを行い、最初に失敗した手順で止まります。
+イメージは `ref` が指すリリースなので、`ref` を変えることがアップグレードのすべてです。適用する前にプランを読んでください。新しいリリースのモジュールが、リソースも変えることがあります。適用は次を行い、最初に失敗した手順で止まります。
 
-1. `--maintenance` を付けると、サービスを[メンテナンスモード](maintenance.md)に切り替えます。
-2. マイグレーションのジョブに新しいイメージを与えます。
-3. `my config check`、`my db upgrade -check`、`my schema apply`、`my db upgrade` を、それぞれ前のものを待ってから実行します。
-4. メンテナンスモードを外した新しいリビジョンをデプロイします。新しいリビジョンは、起動プローブが `/health/ready` で成功したときにだけトラフィックを受けます。
+1. マイグレーションとコンソールのジョブに新しいイメージを渡し、サービスが依存しないプランの残りも適用します。
+2. 適用を行う場所から、マイグレーションのジョブの実行として `my upgrade` を実行し、終わるのを待ちます。実行されるのは `my config check`、`my db upgrade -check`、`my schema apply`、`my db upgrade` です。その出力は適用の出力に表示されます。
+3. 各ワーカーの新しいリビジョンを、続いてサービスの新しいリビジョンをデプロイします。リビジョンがトラフィックを受けるのは、起動プローブが `/health/ready` で通ったときだけです。
 
-`--maintenance` を付けないと、手順 2 と 3 の間も古いリビジョンが配信を続けますが、それが[動作する保証はありません](database.md#the-server-during-an-upgrade)。リリースノートで求められたときは `--allow-destructive` を加えます。[本番運用のチェックリスト](production-checklist.md#operations)が勧めるとおり、`--image ghcr.io/mycroblog/my:0.2.0@sha256:...` でダイジェストを固定してください。
+**適用を行う場所**には、`gcloud` と `jq`、そしてジョブを実行してそのログを読める認証情報（`roles/run.developer` と `roles/logging.viewer`。オーナーに含まれます）が必要です。適用する CI のジョブも同じです。
 
-そのあと、`terraform.tfvars` の `image` を同じ値に、`main.tf` の `ref` を同じリリースにして、`tofu init` と `tofu plan` を実行します。適用する前にそのプランを読んでください。新しいリリースのモジュールはリソースを変えることがあります。`tofu apply` は既存のサービスやジョブのイメージを決して変えないので、`image` を忘れても害はありませんが、新しいジョブや作り直したサービスはその値から始まります。
+**手順が失敗したとき**は、サービスは元のリビジョンのままで、リリースノートかマイグレーションの出力に理由が書かれています。原因を直して、同じバージョンのままもう一度 `tofu apply` を実行してください。マイグレーションがもう一度実行され、完了した手順にはやることが残っていません。中断された適用や、接続が切れた適用は、実行を Cloud Run 上に走らせたままにします。次の適用は、自分の実行を始める前に、それが終わるのを待ちます。スキーマが変わったあとで戻すには、バックアップを復元してください。[ロールバック](database.md#rolling-back)を参照してください。前のバージョンでの適用は、そのリリースが新しいスキーマを拒むので、マイグレーションで止まり、どのサービスも変えません。
 
-**手順が失敗したとき**、サービスは元のリビジョンのままで、求めていればメンテナンスモードのままです。原因を直してスクリプトをもう一度実行してください。手順は繰り返しても安全です。`my schema apply` がまだ実行されていないときに、アップグレードせずにメンテナンスモードを抜けるには、次を実行します。
+リリース候補を試すとき、またはより新しいモジュールのもとで以前のリリースのイメージを保つときは、バージョンを自分で設定します。これはリリースの `v` を除いた、イメージのタグです。
+
+```hcl
+  image = { version = "0.2.0-rc.1" }
+```
+
+<!-- source: checking-the-sql-first 9ff10080c36d -->
+### 先に SQL を確認する
+
+プランにはマイグレーションの SQL が表示されません。適用の前にそれを読むには、マイグレーションのジョブだけに新しいイメージを渡し、そこで何も変更しない `my upgrade -dry-run` を実行します。
 
 ```sh
-gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE
+tofu apply -target='module.mycroblog.module.app.google_cloud_run_v2_job.one_off["migrate"]'
+gcloud run jobs execute my-migrate --project="$PROJECT" --region=asia-northeast1 --args=upgrade,-dry-run --wait
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="my-migrate"' --project="$PROJECT" \
+  --freshness=1h --format='value(textPayload)' --order=asc
 ```
 
-スキーマが変わったあとで戻すには、バックアップを復元します。[ロールバック](database.md#rolling-back)を参照してください。
+<!-- source: destructive-changes 5b3fdea90a55 -->
+### 破壊的な変更
 
-<!-- source: monitoring-and-alerts 771c3c53cc30 -->
+リリースノートが `-allow-destructive` を求めているときは、そのバージョンをブロックに書きます。
+
+```hcl
+  upgrade = { allow_destructive_for = "0.3.0" }
+```
+
+`my upgrade` に `-allow-destructive` が渡されるのはそのバージョンの適用のときだけなので、値を残したままにしても、あとのリリースでデータが削除されることはありません。
+
+<!-- source: pinning-the-image-by-digest b31962ecc908 -->
+### ダイジェストでイメージを固定する
+
+[本番運用前のチェックリスト](production-checklist.md#operations)は、リリースノートにあるダイジェストの使用を勧めています。
+
+```hcl
+  image = { digest = "sha256:..." }
+```
+
+ダイジェストは、隣のタグが何であれ、1 つのイメージを指します。そのため `ref` と同じ編集で変えてください。前のリリースのダイジェストが残っていると、新しいバージョンのもとでもそのリリースのイメージのままになります。
+
+<!-- source: the-maintenance-mode 518e9aa176c0 -->
+### メンテナンスモード
+
+[メンテナンスモード](maintenance.md)には 3 回の適用が必要です。サービスがアップグレードの前と後で変わるためです。ブロックの設定に追加して適用し、バックアップを取り、`ref` を上げて適用し、それから取り除いて適用します。
+
+```hcl
+  settings = { maintenance = "true" }
+```
+
+これがないと、マイグレーションのあいだも古いリビジョンが配信を続けますが、それは[動くことが保証されていません](database.md#the-server-during-an-upgrade)。`gcloud` で手作業で変えた設定は残りません。次の適用が、ブロックに書かれたものに戻します。
+
+<!-- source: monitoring-and-alerts 930234cd0dde -->
 ## 監視とアラート
 
-モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) は、`/health/live` の稼働時間チェック、[ランブック](alerts.md)の名前を付けたアラートポリシー、メールでの通知を追加します。このモジュールはまだ一度も適用されたことがないので、チェックを失敗させて一度試してください。先に `monitoring.googleapis.com` を有効にし、チェックにかかる費用をその README で読んでください。各実行はインスタンスを起こし、チェックを `/health/ready` に向けるとデータベースも起こすので、[ティックのトレードオフ](#costs)に上乗せされます。
+モジュールは、`/health/live` の稼働チェック、ログベースのメトリクス、[Runbook](alerts.md) の名前を持つアラートポリシーを追加します。通知は `monitoring.notification_emails`（例では `alert_emails`）のアドレスか、`notification_channels` のチャネルに届きます。この入力に既定値はありません。通知する相手を指定するか、`monitoring = null` にして全部を除いてください。まだ一度も適用されていないので、一度チェックを失敗させて試してください。チェックは実行のたびにインスタンスを起こすので、[tick のトレードオフ](#costs)に加わります。その頻度が `uptime_period` で、既定は 15 分です。
 
-<!-- source: changing-a-backend ef4660f60191 -->
+<!-- source: changing-a-backend c20598caf230 -->
 ## バックエンドを変える
 
-`main.tf` のモジュールのブロックを置き換えます。app モジュールはブロックが返すものをそのまま受け取るので、ほかは何も変わりません。データベースを変えるときは、新しいデータベースは空なので、データの移行も必要です。手順は [`db-gcp-cloud-sql`](../../deploy/opentofu/modules/internal/db-gcp-cloud-sql/README.md#coming-from-db-external) にあります。たとえば、自分のデータベースを使うなら次のようにします。
+そのセクションの `kind` を変えます。各 kind は、サーバーに必要なものを設定し、何が変わるかはプランが示します。データベースを変えるときは、新しいものは空なので、データも移すことになります。古いものの[バックアップ](backup.md)を取り、何も書き込まれていないあいだに新しいものへ復元してください。たとえば、Neon の代わりに Cloud SQL を使うなら次のようにします。
 
 ```hcl
-module "db" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/db-external?ref=v0.1.0&depth=1"
-
-  url_secret_id = "another-database-url"
-}
+  database = { kind = "cloud-sql" }
 ```
 
-Google Cloud の外のストアを使うなら、`blob` ブロックを、S3 互換のサービスなら [`blob-s3`](../../deploy/opentofu/modules/internal/blob-s3/README.md) に、または [`blob-cloudflare-r2`](../../deploy/opentofu/modules/internal/blob-cloudflare-r2/README.md) に置き換えます。
+Google Cloud の外のストアを使うには、`media.kind` を `s3`（`endpoint` を指定した S3 互換のサービス）か `r2`（`cloudflare.account_id` を指定）にします。どちらも、`secrets_to_fill` が一覧にするシークレットからアクセスキーを読みます。
 
-<!-- source: when-you-need-a-network fb392704a1e7 -->
+<!-- source: when-you-need-a-network 0a4359c002ed -->
 ## ネットワークが必要なとき
 
-このガイドではネットワークは必要ありません。Neon、Cloud Tasks、Cloud Storage、Pub/Sub にはどれもサービス自身の ID でインターネット越しに接続するので、Cloud Run は何にもアタッチせず、支払うものも管理するものもありません。
+このガイドには不要です。Neon、Cloud Tasks、Cloud Storage、Pub/Sub はすべて、サービス自身の ID でインターネット経由で届くので、Cloud Run は何にも接続せず、支払うものも面倒を見るものもありません。
 
-ネットワークが必要になるのは、プライベートアドレスしかもたない Memorystore をデプロイに加えるときや、Cloud SQL に公開アドレスの代わりにプライベートアドレスを与えるときです。[`network-gcp-vpc`](../../deploy/opentofu/modules/internal/network-gcp-vpc/README.md) を加えるか、手持ちの VPC を[同じ形](../../deploy/opentofu/README.md#the-network-on-google-cloud)のオブジェクトとして記述し、同じものをアプリと、それを受け取る各モジュールに渡します。
+必要になるのは、デプロイに Memorystore を入れるときです。Memorystore にはプライベートアドレスしかありません。また、Cloud SQL にパブリックアドレスの代わりにプライベートアドレスを与えるときも必要です。`network = { kind = "vpc" }` でネットワークが作られ、`network = { kind = "existing", ... }` は既存の VPC に接続します。その VPC は `network`、`subnetwork`、`private_services_range`、`memorystore_connection_policy` で指定します。
 
 ```hcl
-module "network" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/network-gcp-vpc?ref=v0.1.0&depth=1"
-
-  project_id = var.project_id
-  region     = var.region
-}
-
-module "kv" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/kv-gcp-memorystore?ref=v0.1.0&depth=1"
-
-  project_id = var.project_id
-  region     = var.region
-  network    = module.network
-}
+  network = { kind = "vpc" }
+  kv      = { kind = "memorystore" }
 ```
 
-アプリにも `network = module.network` を与え、その `backends` に `module.kv` を加えます。ネットワークを通るのはプライベートな範囲だけなので、サービスはこれまでどおりインターネットに接続でき、Cloud NAT は不要です。プライベートアドレス上のバックエンドに対してアプリが別のネットワークにある、またはネットワークがないと、プランが失敗します。先に Service Networking と Network Connectivity の API、そして Compute Engine の API を有効にしてください。ネットワークはインスタンスのコールドスタートを長くします。[プライベートネットワークが加えるもの](../../deploy/opentofu/modules/internal/kv-gcp-memorystore/README.md#what-the-private-network-adds)を読んでください。
+ネットワークを通るのはプライベートの範囲だけなので、サービスはこれまでどおり、Cloud NAT なしでインターネットに出ます。`nat = true` にすると、代わりにすべてが Cloud NAT を通り、送信元アドレスが固定されます。先に Service Networking API、Network Connectivity API、Compute Engine API を有効にしてください。ネットワークはインスタンスのコールドスタートを遅くし、Memorystore はサーバーがアイドルのあいだも課金されます。
 
-<!-- source: splitting-jobs-into-workers ed661aede0a3 -->
+<!-- source: splitting-jobs-into-workers 831929244c6d -->
 ## ジョブをワーカーに分ける
 
-ある種類のジョブがほかを足止めしているときは、その種類に専用のサービスを与えます。何を分けるかは、[ジョブの種類ごとにワーカーを分ける](running.md#splitting-workers-by-job-type)にあるとおり、メトリクスから決めます。1 つの値をキューとアプリに渡し、すべてのキュー、URL、ルート、設定はそのキーから作られるので、それらを自分で書くことはありません。
+ある種類のジョブがほかを遅らせるときは、それに専用のサービスを与えます。何を分けるかは、[ジョブの種類でワーカーを分ける](running.md#splitting-workers-by-job-type)にあるとおり、メトリクスから決めます。値は `workers` の 1 つで、サービス、キュー、監視に渡されます。キュー、URL、ルート、設定はすべてそのキーから作られるので、自分で書くものはありません。
 
 ```hcl
-locals {
   workers = {
     delivery = {
       job_types     = ["federation.fanout", "federation.deliver"]
@@ -285,15 +293,13 @@ locals {
       concurrency   = 16
     }
   }
-}
 ```
 
-`queue` ブロックと `app` ブロックに `workers = local.workers` を設定します。一緒にしておくべき種類を分けた場合や、キューとアプリに異なる値を与えた場合は、プランが拒否します。また、すべてのプロセスに届くブローカーが必要で、`stream-gcp-pubsub` はそれに当たります。`monitoring-gcp` を使うなら、同じ値をそれにも渡します。
+一緒にしておくべき種類を分けるプランは拒否されます。また、すべてのプロセスに届くブローカーが必要で、`stream.kind = pubsub` がそれにあたります。
 
-そのページにある 2 つのよくある構成は次のようになります。配送がほかを遅らせないようにするには、上の値を使います。メールと通知を速く保つには次のようにします。
+そのページにある 2 つのよくある構成は、次のようになります。配信がほかを遅らせないようにするには、上の値を使います。メールと通知を速く保つには次のようにします。
 
 ```hcl
-locals {
   workers = {
     notify = {
       job_types = [
@@ -306,51 +312,47 @@ locals {
       max_instances = 10
     }
   }
-}
 ```
 
-そのページにあるとおり、設定していない機能の種類は除いてください。サーバーが登録していない種類があると起動が止まり、プランからはそれがどれかがわかりません。`workers` を使うと、これらの種類のタスクは専用のキューに送られるので、既定のサービスが空いていてもこれらの種類を手伝うことはありません。
+そのページにあるとおり、設定していない機能の種類は外してください。サーバーが登録していない種類があると起動が止まり、プランはそれがどれか見分けられません。`workers` があると、これらの種類のタスクは専用のキューに入るので、既定のサービスが空いていても手伝いません。
 
-すべてのフィールドと、ワーカーがアプリから何を受け継ぐかは[契約](../../deploy/opentofu/README.md#workers)にあります。ワーカーのサービスは外部からのトラフィックを受けません。`upgrade.sh` は、マイグレーションのあと、既定のサービスの前に各ワーカーを更新し、そのために何かを指示する必要はありません。止まるのは手順が失敗したときだけです。ワーカーはそれぞれサービスの分の費用がかかることがあり、そのインスタンスの接続はデータベースの上限に数えられます。
+各ワーカーは `job_types` と、`min_instances`、`max_instances`、`cpu`、`memory_mib`、`concurrency`、`max_concurrent_dispatches`、`max_dispatches_per_second` を取ります。名指ししなかったものは、サービスかキューの値になります。ワーカーのサービスは外からのトラフィックを受けません。アップグレードでは、各ワーカーがマイグレーションのあと、既定のサービスの前に移され、それを知らせるものはありません。止まるのは手順が失敗したときだけです。各ワーカーにはサービスと同じ費用がかかりえて、そのインスタンスの接続はデータベースの上限に数えられます。
 
-<!-- source: how-traffic-reaches-the-service d1e6d0ed195b -->
+<!-- source: how-traffic-reaches-the-service 156fc6f76743 -->
 ## トラフィックがサービスに届く経路
 
-これは `main.tf` の `ingress` ブロックで決まります。例では本番向けのロードバランサーを使います。その隣のコメントには、デプロイを安く試すためのドメインマッピングがあります。差し替えるには、そのブロックと `app` ブロックの `service_ingress` を変えます。2 つが食い違っていればプランが知らせます。
+これは `ingress.kind` で決まります。既定はロードバランサーで、本番向けです。ドメインマッピングは、デプロイを安く試すためのものです。`ingress = { kind = "domain-mapping" }` を設定します。
 
-| | `ingress-gcp-load-balancer`（例） | `ingress-gcp-domain-mapping` |
+| | `load-balancer`（既定） | `domain-mapping` |
 | --- | --- | --- |
-| 月額料金 | 転送ルールにおよそ $18、加えて GB ごとの料金。[料金のページ](https://cloud.google.com/vpc/network-pricing)を確認してください。この金額はそこでは確認できませんでした | なし |
-| 位置づけ | Google Cloud が推奨する方法 | レイテンシのため Google Cloud が本番には推奨していないプレビューの機能 |
-| リージョン | どこでも | `asia-northeast1`、`us-central1` ほか少数 |
-| DNS | `tofu output dns_records` に出る `A` レコード | 同じ出力が一覧にするレコード |
-| 証明書 | Google マネージド。DNS がアドレスを指すと有効になります | Google マネージド。最長 24 時間 |
-| ドメインの所有権 | DNS のほかには何も不要 | 適用する前に、あなたと、適用するほかのすべてのアカウントが[確認済みの所有者](https://cloud.google.com/run/docs/mapping-custom-domains)である必要があります |
-| `run.app` の URL | インターネットからは拒否されるので、誰もロードバランサーを迂回できません | 誰でも到達できます。ドメインマッピングはヘッダーを加えられないので、オリジンは開いたままです |
+| 月額 | 転送ルールで約 $18 に、GB あたりの料金が加わります。[料金のページ](https://cloud.google.com/vpc/network-pricing)で確認してください。この金額はそこでは確認できませんでした | なし |
+| 位置づけ | Google Cloud が推奨する方法 | レイテンシーのため、Google Cloud が本番には勧めていない Preview の機能 |
+| リージョン | すべて | `asia-northeast1`、`us-central1`、ほか数か所 |
+| DNS | `tofu output dns_records` の `A` レコード | 同じ出力が一覧にするレコード |
+| 証明書 | Google が管理。DNS がそのアドレスを指すと有効になります | Google が管理。最大 24 時間 |
+| ドメインの所有権 | DNS のほかには何も不要 | あなたと、適用するほかのすべてのアカウントが、適用する前に[確認済みの所有者](https://cloud.google.com/run/docs/mapping-custom-domains)になっている必要があります |
+| `run.app` URL | インターネットからは拒否されるので、ロードバランサーを迂回できません | 誰でも届きます。ドメインマッピングはヘッダーを足せないので、オリジンは開いたままです |
 | `MY_TRUSTED_PROXIES` | `169.254.0.0/16` とロードバランサーのアドレス | `169.254.0.0/16` |
-| `app` ブロックの `service_ingress` | `internal-and-load-balancer`。`ingress` ブロックと食い違うとプランが失敗します | `all` |
 
-Cloud Tasks と Cloud Scheduler はどちらも通らず、既定の `run.app` の URL を直接呼び出します。
+Cloud Tasks と Cloud Scheduler は、どちらも経由せず、既定の `run.app` URL を直接呼びます。
 
-サービス自身の URL を使う場合や、CDN などほかのものを前に置く場合は、`ingress` ブロックと `backends` にあるその行を削除し、`service_ingress` は必要な値のままにしておきます。これは常にあなたが明示的に選ぶもので、`all` にすると `run.app` の URL が誰にでも開かれます。`env` の `MY_TRUSTED_PROXIES` には、サーバーに接続してくるものを設定します。前に何を置いても、`https://{host}` で応答しなければなりません。
-
-<!-- source: cloudflare eac845a03464 -->
+<!-- source: cloudflare e55e367a0064 -->
 ### Cloudflare
 
-`ingress-cloudflare-app` は、すべてのキャッシュをバイパスして `host` の前に Cloudflare を置きます。`ingress-cloudflare-media` は、どの ingress とも並べて、キャッシュするメディア用のホストを追加します。先に各モジュールの README を読んでください（[app](../../deploy/opentofu/modules/internal/ingress-cloudflare-app/README.md)、[media](../../deploy/opentofu/modules/internal/ingress-cloudflare-media/README.md)）。トークンは `CLOUDFLARE_API_TOKEN` に入れます。これらのモジュールは、モックのプロバイダーでしか動かしたことがありません。
+`ingress = { kind = "cloudflare" }` は、すべてのキャッシュを回避して `host` の前に Cloudflare を置きます。`ingress.media_host` は、どの種類とも併用できる、キャッシュされるメディアホストを追加します。どちらも `cloudflare = { zone_id = "..." }` が必要で、トークンは `CLOUDFLARE_API_TOKEN` に入れます。どちらもモックしたプロバイダーでしか動かしていません。
 
-- **プランによってオリジンが決まります。** Cloud Run は `Host` でルーティングし、Cloudflare が Host ヘッダーの上書きを提供しているのは Enterprise プランだけです。それ以外のプランでは `*.run.app` のオリジンでプランが失敗するので、オリジン自身があなたのホストを受け付ける必要があります。そのホストの `ingress-gcp-domain-mapping` を `backends` の外に置いておき、`origin_host = "ghs.googlehosted.com"` を設定します。ホストごとに専用のマッピングが必要です。プロキシの後ろでその証明書が発行・更新されるかは確認されていないので、`proxied = false` から始めてください。
-- **ヘッダーでオリジンを閉じます。** `ingress-cloudflare-app` はリクエストヘッダーを変換するルールを加え、サーバーはそのヘッダーのないリクエストを `403` で拒否します。例外はヘルスチェックと、トークンを確認するジョブ自身の `POST` です。そのため、誰も `run.app` の URL を通って Cloudflare を迂回できず、呼び出し側が自分の Cloudflare Worker から、レート制限が見るクライアントのアドレスを選ぶこともできません。
-- **値は状態に入ります。** Cloudflare のプロバイダーには、ルールのヘッダーの値を書き込み専用にする形がありません。`openssl rand -hex 32` で値を生成し、`gcloud secrets versions add` でシークレットに追加し、同じ値を `TF_VAR_origin_secret` で渡し、状態は非公開にしておきます。ローテーションの方法は [CDN のガイド](cdn.md#rotate-the-value)にあります。
-- **レコードがプロキシされていない間は、何もヘッダーを加えない**ので、サーバーはヘルスチェック以外のすべてを拒否します。ドメインマッピングの証明書のために `proxied = false` にしているなら、シークレットはそのあとで設定してください。
-- **ダッシュボードで Bot Fight Mode を無効にしてください。** これはゾーン全体にかかり、どのルールでも飛ばせません。そして `/ap/`、`/.well-known/`、`/api/` へのチャレンジは連合を壊します。ほかのサーバーはブラウザではないからです。ジョブは Cloudflare を通りません。モジュールはチャレンジを加えず、Browser Integrity Check を無効にしますが、Bot Fight Mode は管理しません。同じ理由で「I'm Under Attack」も有効にしないでください。
-- **Email Address Obfuscation は有効のままで構いません。** これは HTML の中のメールアドレスを `[email protected]` に書き換え、それを元に戻すスクリプトを加えますが、サーバーの Content-Security-Policy はそのスクリプトを拒否します。確認のメールの送り先を伝えるページなど、サーバー自身のページは、アドレスに手を加えられないよう、内容に印を付けています。
-- `http://` をリダイレクトしたいなら、**ダッシュボードで Always Use HTTPS を有効にしてください。** これはゾーン全体にかかるので、モジュールはあなたに任せています。
-- **タイムアウト**: オリジンが 125 秒間何も送らないと、Cloudflare は `524` を返します。ジョブは `run.app` の URL を直接呼び出すので影響を受けません。ストリームは 30 秒ごとにハートビートを送り、900 秒のアイドルの上限を下回ります。通常のプロキシされたホストでストリームがバッファリングされるかは確認されていません。
-- **アップロード**: Free と Pro では 100 MB で、Cloud Run の 32 MiB より大きいので、上限は Cloud Run の 32 MiB のままです。
-- **動画**: Cloudflare の規約では、Free、Pro、Business で動画や不釣り合いな量の大きなファイルを配信することが制限されており、Cloudflare がそのコンテンツをリダイレクトしたり、ほかの措置をとったりすることがあります。メディア用のホストで動画をキャッシュする前に、このことを判断してください。
+- **オリジンはプランで決まります。** Cloud Run は `Host` でルーティングしますが、Cloudflare が Host ヘッダーの上書きを提供するのは Enterprise プランだけです。ほかのプランでは、オリジンが自分でそのホストを受け付ける必要があるため、モジュールは各ホストのドメインマッピングを作り、Cloudflare はそれに接続します。上の表のトレードオフがあります。その証明書がプロキシの後ろで発行され、更新されるかは確認できていないので、`cloudflare.proxied = false` で始めてください。Enterprise プランでは `cloudflare.host_header_override = true` にすると、ドメインマッピングなしで `run.app` URL に接続します。
+- **ヘッダーがオリジンを閉じます。** モジュールはリクエストヘッダーを変換するルールを追加し、サーバーは、ヘルスチェックと、トークンを確認するジョブ自身の `POST` を除いて、ヘッダーのないリクエストを `403` で拒否します。そのため `run.app` URL を通って Cloudflare を迂回することはできず、呼び出し側の Cloudflare Worker が、レート制限に見えるクライアントのアドレスを選ぶこともできません。
+- **値はステートに入ります。** モジュールがそれを生成してシークレット `my-origin-secret` に書き込みますが、Cloudflare プロバイダーにはルールのヘッダー値の書き込み専用の形式がないので、ステートは非公開にしてください。ローテーションの仕組みは [CDN のガイド](cdn.md#rotate-the-value)にあります。
+- **レコードがプロキシされていないあいだは、何もヘッダーを足しません。** そのためサーバーはヘルスチェック以外をすべて拒否します。ドメインマッピングの証明書のために `proxied = false` にしたときは、証明書が有効になってからプロキシをオンにしてください。
+- **Bot Fight Mode はオフにしてください。** これはゾーン全体に及び、どのルールでも飛ばせません。`/ap/`、`/.well-known/`、`/api/` へのチャレンジは、ほかのサーバーがブラウザーではないため、連合を壊します。ジョブは Cloudflare を通りません。モジュールはチャレンジを追加せず、Browser Integrity Check をオフにしますが、Bot Fight Mode は管理しません。同じ理由で「I'm Under Attack」もオンにしないでください。
+- **Email Address Obfuscation はオンのままで構いません。** これは HTML 中のメールアドレスを `[email protected]` に書き換えて、元に戻すスクリプトを足しますが、サーバーの Content-Security-Policy がそのスクリプトを拒否します。確認メールの送信先を伝えるページなど、サーバー自身のページは、アドレスに手を加えないよう内容に印を付けています。
+- **Always Use HTTPS** は、`http://` をリダイレクトしたいならダッシュボードでオンにしてください。ゾーン全体に及ぶので、モジュールはあなたに任せています。
+- **タイムアウト**: オリジンが 125 秒間何も送らないと、Cloudflare は `524` を返します。ジョブは `run.app` URL を直接呼ぶので影響を受けません。ストリームは 30 秒ごとにハートビートを送り、900 秒のアイドル上限より短くなっています。通常のプロキシされたホストで Cloudflare がストリームをバッファするかどうかは確認できていません。
+- **アップロード**: Free と Pro では 100 MB で、Cloud Run の 32 MiB より大きいため、32 MiB が上限のままです。
+- **動画**: Cloudflare の規約は、Free、Pro、Business で動画や大きなファイルを不釣り合いに多く配信することを制限しており、コンテンツをリダイレクトするなどの措置を取ることがあります。メディアホストで動画をキャッシュする前に、これを判断してください。
 
-**削除したファイルはキャッシュに残ります。** メディア用のホストはサーバーの `Cache-Control` に従うので、削除したローカルのファイルは最長 1 年、リモートのものは `remote_media_cache_ttl_seconds` の間、見え続けることがあります。サーバーはキャッシュをパージしません。何かを消さなければならないときは、ダッシュボードの **Caching > Configuration > Custom Purge** で手動でパージするか、次を実行します。
+**削除したファイルはキャッシュに残ります。** メディアホストはサーバーの `Cache-Control` に従うので、削除したローカルのファイルは最大 1 年、リモートのファイルは `remote_media_cache_ttl_seconds` のあいだ見えたままになることがあります。サーバーはこれをパージしません。何かを消す必要があるときは、ダッシュボードの **Caching > Configuration > Custom Purge** か、次のコマンドで手作業でパージしてください。
 
 ```sh
 curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
@@ -359,50 +361,50 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
   -d '{"files": ["https://media.example.org/media/<path>"]}'
 ```
 
-プロキシの URL はクエリ文字列に `sig` を含み、それもキャッシュされるものの一部なので、URL 全体を指定してください。
+プロキシの URL はクエリ文字列に `sig` を持ち、それもキャッシュされるものの一部なので、URL 全体を指定してください。
 
-<!-- source: changing-the-kek-backend c5e918ea5c81 -->
+<!-- source: changing-the-kek-backend b1e8cbb9ccfb -->
 ## KEK のバックエンドを変える
 
-`kek` ブロックの置き換えは `main.tf` の 1 つのブロックですが、データのあるインスタンスでは簡単にはいきません。データベースには現在の鍵で包んだシークレットがあり、その鍵を失ったインスタンスはそれを読めなくなります。そしてすべてのアカウントの鍵がその中に含まれます。
+`kek.kind` を変えるのは `main.tf` の 1 行ですが、データのあるインスタンスでは無料ではありません。データベースには現在の鍵で包まれたシークレットが入っていて、鍵を失ったインスタンスはそれを読めなくなり、すべてのアカウントの鍵もその中にあります。
 
-[ローカルの KEK と KMS の間を移行する](key-management.md#move-between-the-local-kek-and-a-kms)に従ってください。シークレットから Cloud KMS に移るときは、シークレットが移る間、現在の KEK を `kek_previous` として残しておきます。そのために、`secret_files = { MY_KEK_PREVIOUS_FILE = "my-kek" }` で app モジュールを通してそのシークレットを渡します。[コンソール](#the-console)から `my kek rewrap` を実行し、`my kek status` が `local:` の鍵を数えなくなったら削除します。KEK は、再ラップより前のデータベースのバックアップを保管している間は残しておいてください。
+[ローカルの KEK と KMS の間で移す](key-management.md#move-between-the-local-kek-and-a-kms)に従ってください。シークレットから Cloud KMS へ移すときは、シークレットを移すあいだ、現在の KEK を `kek_previous` として残します。`secrets = ["kek_previous"]` を追加し、シークレット `my-kek-previous` に現在の KEK を入れます。[コンソール](#the-console)で `my kek rewrap` を実行し、`my kek status` が `local:` の鍵を数えなくなったら取り除きます。再ラップより前のデータベースのバックアップを持っているあいだは、KEK も保管しておいてください。
 
-データのない新しいインスタンスでは、何も移す必要はありません。
+データのない新しいインスタンスでは、移すものはありません。
 
-<!-- source: limits 5bd276dd3a89 -->
+<!-- source: limits 3ff113a57279 -->
 ## 制限
 
-- **アップロード**: Cloud Run は 32 MiB を超える HTTP/1 のリクエストを拒否し、サーバーは HTTP/1.1 を話します。そのため例では、大きなアップロードにサーバー自身の応答が返るよう、`MY_MEDIA_MAX_AV_BYTES` を既定の 100 MiB ではなく 30 MiB に設定しています。
-- **ストリーム**: リクエストのタイムアウト（既定は 15 分）で開いているストリームが終わり、クライアントは接続し直します。
-- **クライアントのアドレス**: レート制限は `MY_TRUSTED_PROXIES` に頼っており、app モジュールは `ingress` モジュールが返すものからそれを設定します。直接のリクエストに対して Cloud Run が `X-Forwarded-For` に何を加えるか、コンテナからどんな相手のアドレスが見えるかは、私たちが読んだどの文書にも書かれておらず、コンテナの契約にもどちらも書かれていないので、`169.254.0.0/16` は推測です。外部ロードバランサーについて文書化されている形式は `[<supplied>,]<client-ip>,<lb-ip>` です。最初のリクエストのログでアドレスを確認してください。クライアントの IP が `169.254` のアドレスや Google のアドレスなら、その設定はあなたのプロジェクトには合っていません。
-- **公開アクセス**: サービスは `allUsers` に `roles/run.invoker` を付与しますが、ドメイン制限共有の組織ポリシーはこれを拒否します。そのようなプロジェクトには例外が必要です。
+- **アップロード**: Cloud Run は 32 MiB を超える HTTP/1 のリクエストを拒否し、サーバーは HTTP/1.1 で話します。そのためモジュールは `MY_MEDIA_MAX_AV_BYTES` を、既定の 100 MiB ではなく 30 MiB にして、それより大きなアップロードにはサーバー自身が応答するようにしています。
+- **ストリーム**: リクエストのタイムアウト（既定で 15 分）で開いたストリームが終わり、クライアントは再接続します。
+- **クライアントのアドレス**: レート制限は、モジュールがイングレスから設定する `MY_TRUSTED_PROXIES` に頼っています。直接のリクエストに Cloud Run が `X-Forwarded-For` に何を足すのか、コンテナがどのピアアドレスを見るのかを書いた、私たちの読んだ文書はなく、コンテナの契約もどちらにも触れていないので、`169.254.0.0/16` は推測です。外部ロードバランサーの文書化された形式は `[<supplied>,]<client-ip>,<lb-ip>` です。最初のリクエストのログでアドレスを確認してください。クライアント IP が `169.254` のアドレスや Google のアドレスなら、その設定はあなたのプロジェクトでは間違っています。
+- **公開アクセス**: サービスは `allUsers` に `roles/run.invoker` を与えますが、ドメイン制限共有の組織ポリシーはこれを拒否します。そのようなプロジェクトには例外が必要です。
 
-<!-- source: costs 1ab8d07f6847 -->
+<!-- source: costs b8be3997d723 -->
 ## 費用
 
-サーバーにはお金がかかります。ここの金額は、何を見込めばよいか、どこで工夫すれば減らせるかの目安で、デプロイがこれに収まることを保証するものではありません。1 つのリージョンについての 2026-10 と 2026-11 時点のおおよその定価です。[Cloud Run](https://cloud.google.com/run/pricing) と [Neon](https://neon.com/pricing) の料金のページで確認してください。コンピュートは、請求先アカウントごとに月 180,000 vCPU 秒と 360,000 GiB 秒まで無料です。
+サーバーには費用がかかります。ここの数字は、何を見込むか、どこで工夫すれば減らせるかの目安であり、デプロイが守る上限ではありません。2026-10 と 2026-11 時点の、1 つのリージョンのおおよその定価です。[Cloud Run](https://cloud.google.com/run/pricing) と [Neon](https://neon.com/pricing) の料金のページで確認してください。コンピュートは、請求アカウントごとに月 180,000 vCPU 秒と 360,000 GiB 秒まで無料です。
 
-| 部品 | アイドル時 | 増える要因 |
+| 部分 | アイドル時 | 増える要因 |
 | --- | --- | --- |
-| ロードバランサー | 月およそ $18（料金のページでは確認できていません） | GB ごとの料金。[トラフィックがサービスに届く経路](#how-traffic-reaches-the-service)を参照 |
-| Neon の Launch プラン | 既定のティックで月およそ $19 | ストレージは GB 月あたり $0.35。代わりに `db-gcp-cloud-sql` を使うと、より小さなマシンで月およそ $9.40 の固定費になります。内訳はその README にあります |
-| Cloud Run | $0。最小インスタンス数は 0 で、CPU はリクエストの間だけ課金されます | 開いているストリームはそれぞれインスタンスを課金状態に保ちます。下を参照 |
-| Cloud Tasks | $0 | 100 万オペレーションまで無料、その後は 100 万あたり $0.40。ジョブ 1 件でおよそ 2 オペレーション |
-| Cloud Scheduler | $0。請求先アカウントごとに 3 ジョブまで無料 | それを超えるとジョブあたり $0.10 |
-| Cloud Storage | 月 GiB あたりおよそ $0.02 | 5 GiB の無料枠は `us-east1`、`us-west1`、`us-central1` だけ。メディアは Cloud Run を通って出ていきます |
-| Pub/Sub | $0。10 GiB まで無料 | ストリームが開いている間だけ |
-| Secret Manager | 数セント | 少数のバージョンは無料、その後はバージョンあたり数セント |
+| ロードバランサー | 月に約 $18。料金のページでは確認できていません | GB あたりの料金。[トラフィックがサービスに届く経路](#how-traffic-reaches-the-service)を参照 |
+| Neon の Launch プラン | 既定の tick で月に約 $19 | ストレージは GB・月あたり $0.35。代わりに `database.kind = cloud-sql` にすると、小さなマシンで固定費は月に約 $9.40 |
+| Cloud Run | $0。min instances は 0 で、CPU はリクエスト中だけ課金されます | 開いたストリームごとにインスタンスが課金されます。下を参照 |
+| Cloud Tasks | $0 | 100 万オペレーションまで無料、以降は 100 万あたり $0.40。ジョブ 1 つで約 2 オペレーション |
+| Cloud Scheduler | $0。請求アカウントごとに 3 ジョブまで無料 | それを超えるとジョブあたり $0.10 |
+| Cloud Storage | 月に 1 GiB あたり約 $0.02 | 5 GiB が無料なのは `us-east1`、`us-west1`、`us-central1` だけ。メディアは Cloud Run を通して出ます |
+| Pub/Sub | $0。10 GiB まで無料 | ストリームが開いているあいだだけ |
+| Secret Manager | 数セント | 数バージョンまで無料、以降はバージョンあたり数セント |
 
-**ティックが Neon を起こし続けます。** ティックのたびにデータベースを読み書きし、Neon がコンピュートを止めるのは 5 分間アクティビティがなかったときだけなので、既定の `* * * * *` ではコンピュートが止まることはありません。月 730 時間、0.25 CU で 182.5 CU 時間となり、これが上の $19 です。ティックが毎分のままなのは、定期ジョブを時間どおりに実行し、失われた起動の合図をすぐに取り戻すためです。
+**tick が Neon を起こし続けます。** tick は毎回データベースを読み書きし、Neon がコンピュートを止めるのは 5 分間アクティビティがないときだけなので、既定の `* * * * *` ではコンピュートが止まりません。月に 730 時間、0.25 CU で 182.5 CU 時間になり、これが上の $19 です。定期ジョブが時間どおりに動き、失われた起こす合図がすぐ回復されるよう、tick は毎分のままです。
 
-**開いているストリームはインスタンスを課金状態に保ちます。** リクエストベースの課金では、インスタンスは何かのリクエストを処理している間課金され、リアルタイムの更新は 1 つの長いリクエストです。1 か月中ストリームを開いたままにするクライアントが 1 つあると、インスタンス 1 つ分が 24 時間かかります。無料枠を除いて、1 vCPU と 512 MiB で月およそ $60 です。ほかのストリームは `concurrency` まで同じインスタンスを共有します。ストリームがほとんどの時間開いているなら、インスタンスベースの課金や、小さな VM と [Docker Compose](deploy-docker-compose.md) の構成と比べてください。
+**開いたストリームはインスタンスを課金させ続けます。** リクエストベースの課金では、インスタンスは何かのリクエストを処理しているあいだ課金され、リアルタイム更新は 1 本の長いリクエストです。ストリームを 1 か月開いたままにするクライアントが 1 つあると、インスタンス 1 つが 24 時間分かかります。無料枠のあとで、1 vCPU と 512 MiB なら月に約 $60 です。ストリームが増えると、`concurrency` までは同じインスタンスを共有します。ストリームがほとんどずっと開いているなら、インスタンスベースの課金や、小さな VM と [Docker Compose](deploy-docker-compose.md) と比べてください。
 
-<!-- source: where-care-reduces-it 5711f378aadb -->
-### 工夫で減らせるところ
+<!-- source: where-care-reduces-it 28bfc2e5ffcc -->
+### 工夫で減らせる部分
 
-- ロードバランサーの代わりに**ドメインマッピング**を使うと、[上に書いたトレードオフ](#how-traffic-reaches-the-service)はありますが、$18 がなくなります。デプロイを試すのに向いています。
-- **Neon の Free プラン**を使うと $19 がなくなり、小さなインスタンスならそれで動かせますが、次のトレードオフがあります。
-  - 月 100 CU 時間までで、既定のティックではおよそ 17 日で使い切ります。`tick_schedule = "*/10 * * * *"` のように間隔を長くすれば枠内に収まり、ほかに何も起こさなければ、起きている時間は最大で半分、およそ 91 CU 時間になります。その場合、定期ジョブは最大 10 分遅れて実行され、失われた起動の合図を取り戻すのも遅くなります。
-  - 連合するサーバーは 24 時間配送を受け取り、それもデータベースを起こすので、忙しいインスタンスはスケジュールにかかわらず Free プランでは足りなくなります。
-  - プロジェクトあたり 1 GB と、復元に使える 6 時間の履歴があり、コンピュートはアイドルが 5 分続くと必ず止まるので、そのあとの最初のリクエストはその起動を待ちます。
+- **ドメインマッピング**をロードバランサーの代わりに使うと $18 がなくなりますが、[上のトレードオフ](#how-traffic-reaches-the-service)があります。デプロイを試すのに向いています。
+- **Neon の Free プラン**で $19 がなくなり、小さなインスタンスならそれで動かせますが、次のトレードオフがあります。
+  - 月に 100 CU 時間までで、既定の tick なら約 17 日で使い切ります。`queue = { tick_schedule = "*/10 * * * *" }` のように、間隔の長いスケジュールにすれば収まります。ほかが起こす前の時点で、起きている時間は最大でも半分、約 91 CU 時間です。そのぶん定期ジョブは最大 10 分遅れて動き、失われた起こす合図の回復も遅くなります。
+  - 連合するサーバーは配信を 1 日中受け取り、それがデータベースも起こすので、忙しいインスタンスはどんなスケジュールでも枠を超えます。
+  - 1 プロジェクトあたり 1 GB で、復元できる履歴は 6 時間です。コンピュートは 5 分アイドルになると必ず止まるので、そのあとの最初のリクエストはその起動を待ちます。

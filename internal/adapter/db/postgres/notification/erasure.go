@@ -29,9 +29,12 @@ func (r *Repository) EraseNotificationsOf(ctx context.Context, tx uow.Tx, accoun
 	most := int64(len(list))
 	if len(list) > 0 {
 		ids := list
-		if err := postgres.RunSteps(ctx, ids, "erase notifications", q.EraseNotificationDismissals, q.EraseNotificationFilterings, q.EraseNotifications); err != nil {
+		if err := postgres.RunSteps(ctx, ids, "erase notifications", q.EraseNotificationDismissals, q.EraseNotificationReads, q.EraseNotificationFilterings, q.EraseNotifications); err != nil {
 			return 0, err
 		}
+	}
+	if err := q.EraseNotificationReadsOf(ctx, accountID); err != nil {
+		return 0, postgres.Wrap(err, "erase notification reads")
 	}
 	if err := q.EraseNotificationReadMarker(ctx, accountID); err != nil {
 		return 0, postgres.Wrap(err, "erase notification read marker")
@@ -87,7 +90,7 @@ func (r *Repository) EraseStatusNotifications(ctx context.Context, tx uow.Tx, st
 		return err
 	}
 	err = postgres.RunSteps(ctx, ids, "erase notifications of statuses",
-		q.EraseNotificationDismissalsOfStatuses, q.EraseNotificationFilteringsOfStatuses, q.EraseNotificationsOfStatuses, q.EraseDeletedStatusesOfStatuses)
+		q.EraseNotificationDismissalsOfStatuses, q.EraseNotificationReadsOfStatuses, q.EraseNotificationFilteringsOfStatuses, q.EraseNotificationsOfStatuses, q.EraseDeletedStatusesOfStatuses)
 	if err != nil || len(pairs) == 0 {
 		return err
 	}

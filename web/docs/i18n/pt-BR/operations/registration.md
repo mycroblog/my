@@ -30,17 +30,17 @@ Do topo do diagrama para baixo:
 
 As seções abaixo descrevem cada etapa.
 
-<!-- source: the-sign-up-page 111fbe5ecf64 -->
+<!-- source: the-sign-up-page 9a7c6e5bdf58 -->
 ## A página de cadastro
 
 Os usuários se cadastram em `https://<host>/auth/sign_up` com um nome de usuário, um endereço de e-mail e uma senha, a menos que o [cadastro esteja limitado a provedores de login](#registration-limited-to-login-providers).
-Depois do cadastro, aquele navegador já fica com login feito.
-A página funciona sem JavaScript e, como a página de login, é protegida por um token CSRF e pela recusa de solicitações de origem cruzada.
-Quando você escolhe o CAPTCHA para proteção contra bots, as páginas de cadastro e de login mostram o widget dele e exigem JavaScript ([CAPTCHA](captcha.md)).
+Depois do cadastro, esse navegador fica conectado na hora.
+Como a página de login, ela é protegida por um token CSRF e pela rejeição de requisições de origem cruzada.
+Quando você escolhe um CAPTCHA para proteção contra bots, as páginas de cadastro e de login mostram o widget dele e precisam de JavaScript ([CAPTCHA](captcha.md)).
 
-O modo de cadastro é a configuração de instância `registration_mode`. Escolha-o pela CLI ou, no cliente web, na página “Cadastro” de “Configurações do servidor” (`/admin/settings/registration`) ([configurações da instância](instance-settings.md)). Uma mudança vale a partir do próximo cadastro.
-Enquanto o servidor anuncia o encerramento e depois que ele se encerra, o cadastro é tratado como `closed`, seja qual for a configuração ([CLI de administração](admin-cli.md#announcing-the-end-of-the-service)).
-O mesmo vale para um [servidor de uma pessoa só](instance-settings.md#one-person-server), onde convites, a análise de cadastros e os bloqueios de cadastro também não são oferecidos, e nenhum meio cria uma conta, `my admin create` inclusive.
+O modo de cadastro é a configuração da instância `registration_mode`. Escolha-o com a CLI ou no cliente web, na página “Cadastro” de “Configurações do servidor” (`/admin/settings/registration`) ([configurações da instância](instance-settings.md)). Uma mudança vale a partir do próximo cadastro.
+Enquanto o servidor anuncia o encerramento e depois que ele encerra, o cadastro é tratado como `closed`, diga o que disser a configuração ([CLI de administração](admin-cli.md#announcing-the-end-of-the-service)).
+O mesmo vale em um [servidor de uma só pessoa](instance-settings.md#one-person-server), onde convites, a análise de cadastros e os bloqueios de cadastro também não são oferecidos, e nenhum meio cria uma conta, `my admin create` inclusive.
 
 ```sh
 my instance set registration_mode invite
@@ -49,33 +49,33 @@ my instance set registration_mode invite
 | Modo | Página | Estado logo após o cadastro |
 | --- | --- | --- |
 | `open` | Qualquer pessoa pode se cadastrar; um código de convite é opcional | Aprovado, exceto com `mail = none`, em que aguarda a aprovação de um moderador (veja abaixo). Um convite não muda nada além de registrar quem convidou o usuário |
-| `approval` (padrão) | Também pergunta “Por que você quer participar?” (opcional, até 1.000 caracteres); um código de convite é opcional | Aguardando aprovação; aprovado de imediato com um convite utilizável |
+| `approval` (padrão) | Também pergunta “Por que você quer entrar?” (opcional, até 1.000 caracteres); um código de convite é opcional | Aguardando aprovação; aprovado na hora com um convite utilizável |
 | `invite` | Um código de convite é obrigatório | Aprovado |
-| `closed` | Apenas informa que o cadastro não é aceito | Nenhum |
+| `closed` | Apenas diz que o cadastro não é aceito | Nenhum |
 
 - Em todos os modos, exceto `closed`, a página tem um campo de código de convite, preenchido a partir do link de um convite (`?invite=<code>`). Um código que não funciona (desconhecido, revogado, expirado, esgotado ou de um membro que não pode mais convidar) é recusado em todos os modos, não ignorado, para que um código digitado errado não passe despercebido.
 - Um bloqueio de cadastro que exige aprovação mantém um cadastro aguardando aprovação mesmo com um convite ([bloqueios de cadastro](#sign-up-blocks)).
-- Com um plugin definido para o hook de decisão [`signup.check`](decision-hooks.md#sign-ups), um cadastro sem convite também é analisado por esse plugin depois do CAPTCHA e dos bloqueios, e ele pode retê-lo para aprovação ou recusá-lo.
+- Com um plugin definido para o gancho de decisão [`signup.check`](decision-hooks.md#sign-ups), um cadastro sem convite também é analisado por esse plugin depois do CAPTCHA e dos bloqueios, e ele pode retê-lo para aprovação ou recusá-lo.
 
-- Os cadastros da mesma rede (endereço IP; `/64` para IPv6) são limitados a 5 a cada 30 minutos. Acima disso, o servidor retorna `429` com `Retry-After`.
-- Se o nome de usuário ou o endereço de e-mail já estiver em uso, a página mostra um erro naquele campo e não grava nada (um convite também não é consumido).
-- Quando você configura [provedores de login externos](login-providers.md) (OpenID Connect, GitHub, Discord ou Mastodon) e deixa novos usuários se cadastrarem com um deles, as páginas de login e de cadastro mostram um botão para cada provedor ativado, com o nome de exibição do provedor exatamente como você o digitou (um provedor GitHub mostra “Entrar com GitHub” e um provedor Discord, “Entrar com Discord”, no idioma do visitante).
-  Quem tem uma conta no provedor que não está vinculada a um usuário deste servidor recebe o mesmo formulário de cadastro sem o campo de senha, e o novo usuário faz login apenas com o provedor.
-  O modo de cadastro, o código de convite, o motivo, o CAPTCHA, os bloqueios de cadastro, `signup.check` e o limite por rede valem como no formulário com senha; no modo `closed`, ou quando o provedor não permite cadastros, a página de login informa que nenhuma conta está vinculada.
-  Um endereço que o provedor marca como verificado (`email_verified`; no GitHub, o endereço principal quando verificado; no Discord, o endereço quando o Discord o marca como verificado) é confirmado de imediato se o usuário o mantiver; qualquer outro endereço, e todo endereço de um usuário que se cadastra com um servidor Mastodon, que não informa nenhum, é confirmado por e-mail como descrito abaixo.
+- Os cadastros de uma mesma rede (endereço IP; `/64` para IPv6) são limitados a 5 a cada 30 minutos. Além disso o servidor retorna `429` com `Retry-After`.
+- Se o nome de usuário ou o endereço de e-mail já está em uso, a página mostra um erro nesse campo e não grava nada (um convite também não é consumido).
+- Quando você configura [provedores de login externos](login-providers.md) (OpenID Connect, GitHub, Discord ou Mastodon) e deixa novos usuários se cadastrarem com um, as páginas de login e de cadastro mostram um botão para cada provedor ativado, rotulado com o nome de exibição do provedor exatamente como você o digitou (um provedor GitHub mostra “Entrar com GitHub”, e um Discord “Entrar com Discord”, no idioma do visitante).
+  Quem tem uma conta no provedor que não está vinculada a um usuário deste servidor recebe o mesmo formulário de cadastro sem o campo de senha, e o novo usuário entra apenas com o provedor.
+  O modo de cadastro, o código de convite, o motivo, o CAPTCHA, os bloqueios de cadastro, `signup.check` e o limite por rede se aplicam como no formulário de senha; no modo `closed`, ou quando o provedor não permite cadastros, a página de login diz que nenhuma conta está vinculada.
+  Um endereço que o provedor marca como verificado (`email_verified`; no GitHub, o endereço principal quando verificado; no Discord, o endereço quando o Discord o marca como verificado) é confirmado na hora se o usuário o mantém; qualquer outro endereço, e todo endereço de um usuário que se cadastra com um servidor Mastodon, que não fornece nenhum, é confirmado por e-mail como abaixo.
   Um endereço de e-mail que corresponde a um usuário existente nunca vincula esse usuário: o formulário diz que o endereço já está em uso.
-  Um usuário com autenticação de dois fatores ainda digita o código depois de fazer login com um provedor.
-  Um provedor GitHub pede ao GitHub o escopo `user:email` e também `read:org` quando você lista Organizations permitidas; o servidor então verifica a cada login que o usuário pertence a uma delas e, caso contrário, recusa o login. Registre `https://<host>/auth/external/<provider ID>/callback` como a URL de callback do seu app OAuth do GitHub.
-  Um provedor Discord pede ao Discord os escopos `identify` e `email` e também `guilds` quando você lista servidores permitidos; o servidor então verifica a cada login que o usuário pertence a um deles. Registre a mesma URL de callback no seu aplicativo Discord.
-- Um usuário com login feito vincula uma conta em um provedor em “Contas vinculadas” nas configurações, depois de confirmar com a senha, uma chave de acesso ou outra conta vinculada, e somente para provedores que permitem vínculos.
-  O navegador precisa estar com login feito nas páginas de login como o mesmo usuário; caso contrário, o servidor pede que ele faça login primeiro.
-  Uma conta em um provedor que outro usuário vincula é recusada, e um usuário vincula no máximo uma conta por provedor.
-  Um usuário pode desvincular uma conta, a menos que seja a última forma de fazer login (sem senha, sem chave de acesso e sem outra conta vinculada).
-- Um usuário sem senha e sem chaves de acesso confirma as operações que normalmente as exigem (definir uma senha, adicionar uma chave de acesso, excluir ou mover a conta, vincular outra conta) fazendo login novamente em um provedor vinculado.
-  Pede-se a um provedor OpenID Connect que autentique o usuário de novo (`max_age=0` e `prompt=login`), e uma autenticação anterior é recusada.
-  A confirmação vale uma vez, apenas para aquela operação, dentro de 10 minutos; fazer login com uma conta que não é a vinculada conta como uma tentativa errada, sob o mesmo limite de uma senha errada.
-- A cada cadastro e login, o servidor registra o endereço IP do cliente (e, no login, o User-Agent). Os registros são removidos automaticamente após 180 dias
-  (as configurações de instância `session_origins_retention_days` e `registration_origins_retention_days`, no mínimo 90 dias). Os registros de uma conta sob retenção legal são mantidos ([retenção de registros e retenções legais](moderation.md#record-retention-and-holds)).
+  Um usuário com autenticação em dois fatores ainda digita o código depois de entrar com um provedor.
+  Um provedor GitHub pede ao GitHub o escopo `user:email`, e também `read:org` quando você lista Organizations permitidas; o servidor então verifica a cada login que o usuário pertence a uma delas e recusa o login caso contrário. Registre `https://<host>/auth/external/<provider ID>/callback` como a URL de callback do seu app OAuth do GitHub.
+  Um provedor Discord pede ao Discord os escopos `identify` e `email`, e também `guilds` quando você lista servidores permitidos; o servidor então verifica a cada login que o usuário pertence a um deles. Registre a mesma URL de callback no seu aplicativo do Discord.
+- Um usuário conectado vincula uma conta de um provedor em “Contas vinculadas” nas configurações, depois de confirmar com a senha, uma passkey ou outra conta vinculada, e apenas para provedores que permitem vínculos.
+  O navegador precisa estar conectado nas páginas de login como o mesmo usuário; caso contrário o servidor pede para entrar primeiro.
+  Uma conta de um provedor que outro usuário vincula é recusada, e um usuário vincula no máximo uma conta por provedor.
+  Um usuário pode desvincular uma conta, a menos que ela seja a última forma de entrar (sem senha, sem passkey e sem outra conta vinculada).
+- Um usuário sem senha e sem passkeys confirma as operações que de outro modo as pedem (definir uma senha, adicionar uma passkey, excluir ou mover a conta, vincular outra conta) entrando de novo em um provedor vinculado.
+  Um provedor OpenID Connect é solicitado a autenticar o usuário de novo (`max_age=0` e `prompt=login`), e uma autenticação anterior é recusada.
+  A confirmação vale uma vez, apenas para essa operação, em até 10 minutos; entrar com uma conta que não é a vinculada conta como uma tentativa errada, contra o mesmo limite de uma senha errada.
+- Em todo cadastro e login, o servidor registra o endereço IP do cliente (e, no login, o User-Agent). Os registros são removidos automaticamente após 180 dias
+  (as configurações da instância `session_origins_retention_days` e `registration_origins_retention_days`, de no mínimo 90 dias). Os registros de uma conta sob retenção legal são mantidos ([retenção de registros e retenções legais](moderation.md#record-retention-and-holds)).
   Informe esse prazo de retenção na sua política de privacidade ([modelo de política de privacidade](privacy-policy-template.md)).
 
 <!-- source: when-a-user-can-use-the-app 317d6d8b7688 -->
@@ -127,11 +127,11 @@ Enquanto a configuração de instância `login_providers_only` se aplicar, os li
   Um login que aguarda o código de dois fatores e uma autorização de app ainda não concluída também deixam de funcionar: o usuário os inicia de novo.
   Com `mail = smtp`, o servidor também envia um e-mail ao usuário avisando que a senha mudou.
 
-<!-- source: invite-codes 441b486504dd -->
+<!-- source: invite-codes 4d49dd1f0927 -->
 ## Códigos de convite
 
-Os convites funcionam nos modos `open`, `approval` e `invite`. Os convites da equipe são criados com a CLI, as telas de moderação e a API de administração abaixo; os membros também podem criar os próprios convites ([convites dos membros](#member-invites)).
-No modo `closed`, nenhum convite pode ser criado e nenhum funciona.
+Os convites funcionam nos modos `open`, `approval` e `invite`. Os convites da equipe são feitos com a CLI, as telas de moderação e a API de administração abaixo; os membros também podem fazer os próprios convites ([convites de membros](#member-invites)).
+No modo `closed` nenhum convite pode ser criado e nenhum funciona.
 
 ```sh
 my invite create                          # single use, expires in 7 days
@@ -142,57 +142,57 @@ my invite revoke <code>
 ```
 
 - `create` imprime o código (16 caracteres) e o link para a página de cadastro com o código preenchido (`https://<host>/auth/sign_up?invite=<code>`).
-- Os códigos são comparados ignorando maiúsculas e minúsculas, espaços e hífens.
+- Os códigos são comparados ignorando maiúsculas e minúsculas, espaços e hifens.
 - Mesmo quando várias pessoas se cadastram ao mesmo tempo, um código nunca é usado além do seu limite (uma restrição de unicidade em `invite_redemptions`).
-- Um código revogado, expirado ou esgotado dá sempre o mesmo erro (um convite inutilizável).
-- Além da CLI, você pode criar, listar e revogar convites nas telas de Moderação do cliente web (“Convites”, `/moderation/invites`) e pela API de cliente
-  (`GET` / `POST /api/v1/admin/invites` e `POST /api/v1/admin/invites/{id}/revoke`). Ambos exigem a permissão de função `manage_invites`
-  (a função integrada `moderator` não a tem; para delegar isso, crie uma função com essa permissão e conceda-a).
-  Um serviço que distribui convites por conta própria chama a mesma API com um token do escopo `admin:manage_invites` ([deixar outro serviço usar a API de administração](moderation.md#letting-another-service-use-the-admin-api)).
-  “Criar um convite” na lista abre o formulário (`/moderation/invites/new`), que mostra o código e o link de cadastro do novo convite.
-  A lista permite copiar o link de um convite utilizável e revogá-lo.
+- Um código revogado, expirado ou esgotado dá o mesmo erro (um convite inutilizável).
+- Além da CLI, você pode criar, listar e revogar convites nas telas de Moderação do cliente web (“Convites”, `/moderation/invites`) e pela API do cliente
+  (`GET` / `POST /api/v1/admin/invites` e `POST /api/v1/admin/invites/{id}/revoke`). Ambos exigem a permissão de papel `manage_invites`
+  (o `moderator` embutido não a tem, então, para delegar isso, crie um papel com essa permissão e conceda-o).
+  Um serviço que distribui convites por conta própria chama a mesma API com um token do escopo `admin:manage_invites` ([permitindo que outro serviço use a API de administração](moderation.md#letting-another-service-use-the-admin-api)).
+  “Criar um convite”, na lista, abre o formulário (`/moderation/invites/new`), que mostra o código e o link de cadastro do novo convite.
+  A lista mostra o código de cada convite, quem o criou, quantos se cadastraram com ele, o término e o estado; escolha convites e escolha “Revogar”, que pede confirmação antes.
 - A lista mostra todos os convites, os da equipe e os dos membros, com quem os criou (`created_by`) e como (`creator_kind`: `staff` ou `member`). Quem tem `manage_invites` pode revogar qualquer um deles.
-- A página Análise da conta nas telas de moderação (`GET /api/v1/admin/accounts/{id}`, permissão `manage_accounts`) mostra o convite com o qual a conta se cadastrou e quem o criou, a pessoa que convidou o usuário.
-- Criar e revogar um convite fica registrado no registro de auditoria (`invite_created`, `invite_revoked`), seja pela tela, pela API ou pela CLI. O nome do alvo são os 4 primeiros caracteres do código (`ABCD…`); o código completo não é copiado para o registro de auditoria.
+- A página Análise da conta nas telas de moderação (`GET /api/v1/admin/accounts/{id}`, permissão `manage_accounts`) mostra o convite com que a conta se cadastrou e quem o criou, a pessoa que convidou o usuário.
+- Criar e revogar um convite fica registrado no log de auditoria (`invite_created`, `invite_revoked`) pela tela, pela API e pela CLI igualmente. O nome do alvo são os 4 primeiros caracteres do código (`ABCD…`); o código completo não é copiado para o log de auditoria.
   Revogar um convite já revogado não muda nada, então não é registrado.
 
-<!-- source: member-invites db3bff74ed69 -->
-## Convites dos membros
+<!-- source: member-invites 85edfb5c0806 -->
+## Convites de membros
 
 Os membros podem criar convites próprios, além da equipe.
-Quem pode é definido pela configuração de instância `invite_creators` ([configurações da instância](instance-settings.md)):
+Quem pode é a configuração da instância `invite_creators` ([configurações da instância](instance-settings.md)):
 
-- `permitted` (padrão): somente os usuários cujas funções têm a permissão `create_invites`. Apenas a função integrada `admin` a tem por padrão. Você pode adicioná-la a uma função que conceda manualmente, ou à função de um [plano de apoiador](supporters.md), para que os apoiadores possam convidar pessoas.
-- `everyone`: todo usuário local com login feito.
+- `permitted` (padrão): apenas os usuários cujos papéis têm a permissão `create_invites`. Apenas o papel `admin` embutido a tem por padrão. Você pode adicioná-la a um papel que concede manualmente, ou ao papel de um [plano de apoiador](supporters.md), para que os apoiadores possam convidar pessoas.
+- `everyone`: todo usuário local conectado.
 
-Em qualquer dos casos, um usuário cuja conta está suspensa ou limitada, ou cujo cadastro não foi aprovado, não pode criar convites, e ninguém pode enquanto o modo de cadastro for `closed`.
-Quem tem `manage_invites` continua criando convites da equipe, aos quais nenhum dos limites abaixo se aplica.
+De qualquer modo, um usuário cuja conta está suspensa ou limitada, ou cujo cadastro não foi aprovado, não pode criar convites, e ninguém pode enquanto o modo de cadastro é `closed`.
+Quem tem `manage_invites` continua fazendo convites da equipe, aos quais nenhum dos limites abaixo se aplica.
 
-Um membro cria, lista, copia e revoga os próprios convites nas configurações do cliente web (“Seus convites”, `/settings/invites`), ou pela API de cliente (`GET` / `POST /api/v1/invites` e `POST /api/v1/invites/{id}/revoke`).
-As configurações listam a página apenas para um usuário que pode criar convites agora; um usuário que não pode mais ainda a abre pelo endereço dela para copiar e revogar os convites que criou.
-A lista diz, para cada convite, se ele é utilizável, foi revogado, expirou, está esgotado ou é inutilizável porque o seu criador não pode mais convidar.
+Um membro cria, lista e revoga os próprios convites, e copia o link de um convite utilizável, nas configurações do cliente web (“Convites”, `/settings/invites`), ou pela API do cliente (`GET` / `POST /api/v1/invites` e `POST /api/v1/invites/{id}/revoke`).
+As configurações listam a página apenas para um usuário que pode criar convites agora; um usuário que não pode ainda a abre pelo endereço dela, onde ela diz o motivo, para revogar os convites que fez.
+A lista diz, para cada convite, se ele é utilizável, revogado, expirado, esgotado ou inutilizável enquanto o criador não pode criar convites.
 
-Os limites, que também são configurações de instância, valem apenas para os convites dos membros.
-Os administradores alteram esses limites, e `invite_creators`, em “Convites dos membros” na página “Cadastro” das configurações do servidor (`/admin/settings/registration`):
+Os limites, também configurações da instância, se aplicam apenas aos convites de membros.
+Os administradores os alteram, e `invite_creators`, em “Convites de membros” na página “Cadastro” das configurações do servidor (`/admin/settings/registration`):
 
-| Configuração | Significado | Padrão | Intervalo |
+| Configuração | Significado | Padrão | Faixa |
 | --- | --- | --- | --- |
 | `member_invite_max_active` | Quantos convites utilizáveis (não revogados, expirados nem esgotados) um membro pode ter ao mesmo tempo | `5` | 0-100 (0: os membros não podem criar convites) |
 | `member_invite_max_uses` | Quantas pessoas podem se cadastrar com um convite | `10` | 1-1.000 |
 | `member_invite_max_lifetime_seconds` | Por quanto tempo um convite pode funcionar, em segundos | `2592000` (30 dias) | 3.600 (1 hora) a 31.536.000 (365 dias) |
 
-- Um membro escolhe os usos e a validade dentro dos limites; sem escolha, um convite permite 1 cadastro e funciona por 7 dias (ou menos, quando um limite é menor). Não é possível criar um convite sem limite de usos ou de tempo.
-- Reduzir um limite não altera os convites existentes; ele vale para o próximo convite criado.
+- Um membro escolhe os usos e a validade dentro dos limites; sem escolha, um convite permite 1 cadastro e funciona por 7 dias (ou menos, quando um limite é menor). Um convite sem limite de usos ou de tempo não pode ser criado.
+- Reduzir um limite não altera os convites existentes; ele se aplica ao próximo convite criado.
 - Todo cadastro com o convite de um membro verifica se o criador ainda pode criar convites. Quando o criador perdeu `create_invites` (por exemplo, o plano dele terminou), `invite_creators` voltou a `permitted`, ou a conta foi suspensa, limitada ou excluída, o convite não funciona e a página de cadastro diz que ele não é válido.
   O convite em si não é alterado, então ele volta a funcionar, dentro da validade, quando o criador puder convidar de novo.
-- A criação e a revogação feitas por um membro ficam registradas no registro de auditoria como `invite_created` e `invite_revoked`, com o membro como autor.
+- Criar e revogar de um membro ficam registrados no log de auditoria como `invite_created` e `invite_revoked`, com o membro como autor.
 
-No modo `approval`, um convite utilizável aprova o novo usuário de imediato: quem o convidou substitui a análise dos moderadores.
-Com `invite_creators = everyone`, todo usuário pode, portanto, deixar pessoas entrarem sem análise, o que enfraquece o modo de aprovação.
-Se você conta com a análise, mantenha `permitted` e dê `create_invites` apenas a pessoas de confiança, ou mantenha `member_invite_max_active` e `member_invite_max_uses` baixos.
+No modo `approval`, um convite utilizável aprova o novo usuário na hora: quem o convidou substitui a análise dos moderadores.
+Com `invite_creators = everyone`, todo usuário pode portanto deixar pessoas entrarem sem análise, o que enfraquece o modo de aprovação.
+Se você depende da análise, mantenha `permitted` e dê `create_invites` apenas a pessoas em quem confia, ou mantenha `member_invite_max_active` e `member_invite_max_uses` baixos.
 
-<!-- source: approving-and-rejecting e68676f67aab -->
-## Aprovação e rejeição
+<!-- source: approving-and-rejecting 34e7c6193247 -->
+## Aprovando e rejeitando
 
 ```sh
 my registration list                      # waiting for approval (longest wait first); shows the reason and whether the email is confirmed
@@ -202,19 +202,20 @@ my registration reject -note "spam" bob
 ```
 
 - O argumento é o nome de usuário de uma conta local (o `@` inicial pode ser omitido).
-- Somente cadastros que aguardam aprovação podem ser decididos. Para um cadastro já decidido, ou um usuário criado sem a página de cadastro (`my admin create`), o comando não muda nada e termina com o código 1.
-- O código de saída 2 indica um argumento errado.
+- Apenas os cadastros que aguardam aprovação podem ser decididos. Para um cadastro já decidido, ou um usuário criado sem a página de cadastro (`my admin create`), o comando não muda nada e termina com o código 1.
+- O código de saída 2 significa um argumento errado.
 
-As mesmas decisões podem ser tomadas nas telas de administração (a API de cliente). Todas exigem a permissão `manage_accounts`.
+As mesmas decisões podem ser tomadas nas telas de administração (a API do cliente). Todas exigem a permissão `manage_accounts`.
+No cliente web, Moderação → Cadastros (`/moderation/registrations`) lista os cadastros que aguardam aprovação com o endereço de e-mail, se ele está confirmado e o motivo para entrar; escolha-os e escolha “Aprovar” ou “Rejeitar”, que pede confirmação antes, com uma nota para os moderadores. Um servidor de uma só pessoa não a mostra.
 
 | Operação | O que faz |
 | --- | --- |
-| `GET /api/v1/admin/registrations` | Cadastros aguardando aprovação (os que esperam há mais tempo primeiro). Retorna o ID do cadastro, o motivo para participar, o endereço de e-mail e se ele está confirmado, e a conta local |
-| `POST /api/v1/admin/registrations/{id}/approve` | Aprova. O corpo `{"note": "..."}` é opcional. A resposta mostra a nota como `decision_note`, e uma resposta sobre um cadastro já decidido não traz o endereço de e-mail |
+| `GET /api/v1/admin/registrations` | Cadastros aguardando aprovação (mais antigos primeiro). Retorna o ID do cadastro, o motivo para entrar, o endereço de e-mail e se ele está confirmado, e a conta local |
+| `POST /api/v1/admin/registrations/{id}/approve` | Aprova. O corpo `{"note": "..."}` é opcional. A resposta mostra a nota como `decision_note`, e uma resposta sobre um cadastro decidido não tem endereço de e-mail |
 | `POST /api/v1/admin/registrations/{id}/reject` | Rejeita. O corpo é o mesmo de `approve` |
 
-- Este é o mesmo caso de uso da CLI, e ele registra a decisão em `registration_decisions` e no registro de auditoria (`registration_approved`, `registration_rejected`). O autor de uma decisão pela CLI é `cli`; o autor de uma decisão pela API é o moderador que decidiu.
-- Decidir um cadastro já decidido não muda nada e retorna o estado atual (se duas pessoas decidem ao mesmo tempo, só uma decisão é registrada). Um usuário criado sem a página de cadastro retorna 404.
+- Este é o mesmo caso de uso da CLI, e ele registra a decisão em `registration_decisions` e no log de auditoria (`registration_approved`, `registration_rejected`). O autor de uma decisão da CLI é `cli`; o autor de uma decisão da API é o moderador que decidiu.
+- Decidir um cadastro já decidido não muda nada e retorna o estado atual (se duas pessoas decidem ao mesmo tempo, apenas uma decisão é registrada). Um usuário criado sem a página de cadastro dá 404.
 
 <!-- source: sign-up-blocks b70eb18cd52f -->
 ## Bloqueios de cadastro

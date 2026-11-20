@@ -3,7 +3,7 @@
 
 本頁說明如何啟動和停止伺服器、取得其映像檔，以及在執行期間監看它：指標、追蹤、任務佇列和健康檢查。
 
-<!-- source: start-the-server ea157fe28b0d -->
+<!-- source: start-the-server 5faa7632b863 -->
 ## 啟動伺服器
 
 ```sh
@@ -13,13 +13,13 @@ my serve          # start according to the configured role (-config <file> reads
 my version        # print the version of the binary
 ```
 
-`my serve` 會驗證設定，建立資料庫、任務佇列和金鑰管理的轉接器，並在 `listen` 上接受 HTTP。它在那裡使用不含 TLS 的純 HTTP/1.1：請在前端放置反向代理或負載平衡器，由它終止 HTTPS（並為用戶端提供 HTTP/2 或 HTTP/3），再以 HTTP/1.1 轉送。即時更新（`GET /api/v1/streaming`、本站與聯邦時間軸的串流，以及語音聊天室的串流）是長時間持續的回應，每 30 秒（語音聊天室為 15 秒）傳送一次心跳註解，並在閒置時保持開啟。代理不得緩衝這些回應（nginx：伺服器會傳送 `X-Accel-Buffering: no`），而且它的閒置或讀取逾時必須比心跳間隔長。它不會套用結構描述，也不會執行資料升級步驟：請在啟動前依序執行 `my schema apply` 和 `my db upgrade`（請參閱[資料庫](database.md)；升級時會在[升級](database.md#upgrading)的流程中執行這兩者）。在 `my db upgrade` 記錄該版本的每個步驟之前，`/readyz` 都會回應 `503`。在 Docker Compose 配置中（`deploy/docker/compose.yaml`；請參閱[用 Docker Compose 部署](deploy-docker-compose.md)），一次性的 `schema` 和 `upgrade` 服務會在伺服器啟動前分別執行 `my schema apply` 和 `my db upgrade`。如果尚未套用結構描述，程序仍會啟動，但就緒檢查會回傳 503，在結構描述就緒之前，它不會提供其他任何服務。
+`my serve` 會驗證設定，建立資料庫、任務佇列和金鑰管理的轉接器，並在 `listen` 上接受 HTTP。在預設的 `tls = off` 時，它在那裡使用純 HTTP/1.1：請在前端放置反向代理或負載平衡器，由它終止 HTTPS（並為用戶端提供 HTTP/2 或 HTTP/3），再以 HTTP/1.1 轉送。若要不用代理直接提供 HTTPS，請參閱[由伺服器提供 HTTPS](#serving-https-from-the-server)。即時更新（`GET /api/v1/streaming`、本站與聯邦時間軸的串流，以及語音聊天室的串流）是長時間持續的回應，每 30 秒（語音聊天室為 15 秒）傳送一次心跳註解，並在閒置時保持開啟。代理不得緩衝這些回應（nginx：伺服器會傳送 `X-Accel-Buffering: no`），而且它的閒置或讀取逾時必須比心跳間隔長。它不會套用結構描述，也不會執行資料升級步驟：請在啟動前依序執行 `my schema apply` 和 `my db upgrade`（請參閱[資料庫](database.md)；升級時會在[升級](database.md#upgrading)的流程中執行這兩者）。在 `my db upgrade` 記錄該版本的每個步驟之前，`/readyz` 都會回應 `503`。在 Docker Compose 配置中（`deploy/docker/compose.yaml`；請參閱[用 Docker Compose 部署](deploy-docker-compose.md)），一次性的 `schema` 和 `upgrade` 服務會在伺服器啟動前分別執行 `my schema apply` 和 `my db upgrade`。如果尚未套用結構描述，程序仍會啟動，但就緒檢查會回傳 503，在結構描述就緒之前，它不會提供其他任何服務。
 
 第一個使用資料庫的 `my serve` 或 `my` 指令會把 `host` 和 `account_domain` 記錄到資料庫中。當設定與記錄的值不同時，`my serve` 會以兩組值記錄 `start failed`，並以代碼 1 結束，其他指令也會顯示相同的錯誤。例外是不做檢查的 `my schema apply` 和 `my db backup`，以及不讀取資料庫的維護模式。`my config check -instance` 和 `my db upgrade -check` 會檢查，但不會記錄任何東西。啟動時無法讀取資料庫的程序，在能夠讀取之前都不會就緒；在那之前，它不會執行任何任務，並對健康檢查（`/healthz`、`/readyz`、`/health/live`、`/health/ready`、`/api/v1/instance/health`）以外的所有請求以 `503` 附 `Retry-After` 回應。在 `my schema apply` 之前啟動的伺服器也是如此。如果它之後發現值不同，就會以相同的錯誤停止。
 
 在 `production` 設定檔中，`my config check` 還會檢查有效的設定是否適合正式環境的實例：錯誤（例如其他伺服器無法連線的 `host`，或不是隨機的 KEK）會讓它以 1 結束，而警告（例如 `mail = none`）則不會。`my serve` 啟動時會把兩者都記錄為警告，但仍會啟動，所以請把 `my config check` 當作部署的一個步驟來執行。[正式環境檢查清單](production-checklist.md)列出了這些檢查，以及上線前需要手動確認的事項。
 
-| `role` | HTTP | 任務任務程序 |
+| `role` | HTTP | 任務工作程序 |
 | --- | --- | --- |
 | `all`（預設） | 所有路由 | 執行 |
 | `web` | 所有路由 | 不執行 |
@@ -70,7 +70,7 @@ my version        # print the version of the binary
 
 使用 `metrics_exporter = emf` 時，這兩行本身就是 EMF 行。`http request` 行帶有 `http.server.request.duration` 的值，`job` 行帶有 `my.job.duration` 和 `my.job.wait` 的值（鍵以指標命名），另外還有 `_aws` 指示詞、`service.name`、`service.version` 和 `my.role`。這三個指標不會寫在其他任何行上。你在 `metrics_emf_dimensions` 中選擇的欄位會依 EMF 的要求以字串寫入（例如維度 `http.response.status_code` 為 `"200"`）。日誌輸出到標準錯誤，其他 EMF 行則輸出到標準輸出。ECS 的 `awslogs` 日誌驅動程式會把兩者都送到 CloudWatch Logs，所以會從兩者擷取指標。
 
-<!-- source: docker-compose-files df45a902f45b -->
+<!-- source: docker-compose-files 9f0633524036 -->
 ## Docker Compose 檔案
 
 `deploy/docker/` 存放部署實例所需的檔案。`compose.yaml` 可以單獨執行，其他檔案則疊加在它之上。
@@ -101,11 +101,103 @@ cp example.env .env
 - 伺服器以使用者 `65532` 執行，而 Compose 會以檔案原有的權限掛載它，所以這個檔案必須讓其他使用者可以讀取。請把它放在只有你能進入的目錄中，就像 `example.env` 中的指令那樣。
 - 其他機密會以環境變數的形式傳給容器。若要改以檔案傳遞，請在你自己的 `compose.override.yaml` 中以 secret 掛載它，並設定其 `<NAME>_FILE`，就像 `compose.yaml` 對金鑰所做的那樣。
 - `.env` 包含機密：請執行 `chmod 600 .env`，並與備份一起保留一份副本。
-- `MY_LISTEN` 維持 `:8080`，因為這些檔案會連線到那個連接埠。
+- `MY_LISTEN` 維持 `:8080`，因為這些檔案會連線到那個連接埠，除非伺服器自己提供 HTTPS（[由伺服器提供 HTTPS](#serving-https-from-the-server)）。
 
 **使用 Caddy 的 TLS**。把 `MY_HOST` 設為 DNS 指向這台機器的網域，讓連接埠 80 和 443 能從網際網路連線，並從 `.env` 中移除 `MY_WEB_ORIGIN`。Caddy 會在第一個請求時自行取得並更新憑證。伺服器會信任來自 Docker 預設位址集區的 `X-Forwarded-For`；如果你的位址集區不同，請設定 `MY_TRUSTED_PROXIES`。
 
 **內附的 Garage**。搭配 `COMPOSE_PROFILES=garage` 的 `compose.s3.yaml` 需要 `example.env` 開頭所列的值。一次性的服務 `garage-init` 會在每次 `up` 時準備儲存空間。它只在 Compose 網路內部運作，因為媒體由伺服器自己提供。一個節點就是一顆硬碟：請備份磁碟區 `garage` 或儲存貯體（[備份](backup.md#media-in-a-bucket)）。
+
+<!-- source: serving-https-from-the-server 45ec9231a41e -->
+## 由伺服器提供 HTTPS
+
+`my` 可以自己提供 HTTPS，讓小型機器只靠一個二進位檔、一個網域和連接埠 80 與 443 就能執行整個伺服器，不需要反向代理。使用 `tls = acme` 時，它會向 Let's Encrypt 等 ACME 憑證授權單位取得憑證。使用 `tls = files` 時，它會提供你準備的憑證和金鑰，並由 certbot 等其他工具負責更新。
+
+```sh
+MY_TLS=acme
+MY_TLS_ACME_AGREE_TERMS=true            # you agree to the terms of service of the certificate authority
+# MY_TLS_ACME_EMAIL=ops@social.example  optional contact of the account
+# MY_LISTEN=:443          the default with tls other than off
+# MY_TLS_HTTP_LISTEN=:80  the default; empty opens no port 80
+```
+
+```sh
+MY_TLS=files
+MY_TLS_CERT_FILE=/etc/letsencrypt/live/social.example/fullchain.pem
+MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
+```
+
+- **連接埠**。伺服器在 `listen` 上提供 HTTPS（`tls` 不是 `off` 時，預設為 `:443`）。在 `tls_http_listen`（預設為 `:80`）上，它會把 `GET` 和 `HEAD` 請求以 `301` 導向同一路徑的 `https` 位址，並對其他所有方法回應 `400`，讓請求內文不會以明文傳送。
+- **主機**。伺服器提供 `host`，以及與之不同時的 `web_origin` 的主機。對其他任何名稱的交握都會因為沒有憑證而失敗，也絕不會讓伺服器去申請憑證。
+- **連線**。TLS 1.2 或更新版本，使用 Go 預設的加密套件，支援 HTTP/2 和 HTTP/1.1，請求標頭最多 64 KiB，HTTP/2 連線最多 100 個並行串流。逾時與純 HTTP 相同。伺服器仍會在每個回應加上 `Strict-Transport-Security`（[安全性標頭](#security-headers)）。
+- **角色**。只有 `web` 和 `all` 角色會以 TLS 監聽。`worker` 在 `listen`（預設為 `:8080`）上以純 HTTP 提供健康檢查，並且不開啟連接埠 80。
+- **用戶端位址**。前面沒有代理時，連線的對端就是用戶端：請讓 `trusted_proxies` 保持空白。只有前面的 CDN 以 `https` 連線到伺服器時才設定它。
+- **維護模式**。`my serve -maintenance` 既不讀取 `tls`，也不讀取憑證，並在 `listen`（除非你另外設定，否則為 `:8080`）上以純 HTTP 回應，所以維護期間請把 `MY_LISTEN` 和防火牆指向該連接埠，或保留一個反向代理供維護使用。
+
+<!-- source: certificates-from-an-acme-certificate-authority 52037a75d641 -->
+### 來自 ACME 憑證授權單位的憑證
+
+使用 `tls = acme` 時，伺服器會向 `tls_acme_directory` 的憑證授權單位（預設為 Let's Encrypt），為每個尚無憑證的主機申請憑證。
+
+- **開始之前**。`host` 必須是指向此伺服器的 DNS 名稱，且連接埠 443 和 80 必須能從網際網路連線：憑證授權單位會連線過來，以確認伺服器控制該名稱。它會在 `listen`（TLS-ALPN-01 驗證）或 `tls_http_listen`（HTTP-01 驗證）上回應，所以即使 `tls_http_listen` 為空，只靠連接埠 443 仍可運作。不提供萬用字元憑證，也不提供透過 DNS 記錄進行的驗證。
+- **第一次啟動**。伺服器不會等待憑證就開始監聽，然後才申請憑證。在主機取得憑證之前，對它的交握會失敗；使用 Let's Encrypt 時，第一批憑證通常在一分鐘內就會取得。每個主機取得憑證時，日誌會顯示 `obtained a TLS certificate`；申請失敗時，會顯示 `the TLS certificate could not be obtained` 和原因。
+- **更新**。伺服器會在憑證授權單位建議的時間更新每張憑證（ACME Renewal Information）：它會在建議的時段內隨機挑選一個時間，在該時段不變的期間保留這個時間，並依授權單位的 `Retry-After` 所說的時間再次詢問，至少每 12 小時一次，讓必須提早更換憑證的授權單位可以移動這個時段。授權單位沒有提供這種時段時，伺服器會在憑證有效期間的三分之二之後更新，有效期不到 10 天的憑證則在一半之後更新。更新時會告訴授權單位它取代的是哪張憑證，這樣就不受 Let's Encrypt 的速率限制影響。目前的憑證會一直使用到更新完成，更新失敗時的等待方式與第一次申請相同。
+- **申請失敗**。申請失敗後，伺服器會等待一段時間才對同一主機再次申請：第一次失敗後等 1 分鐘，第二次後等 10 分鐘，第三次後等 100 分鐘，之後等一天，以便維持在憑證授權單位的限制之內。等待時間保存在資料庫中，重新啟動後仍然有效。請修正原因（DNS、防火牆、連接埠），等待結束後就會送出下一次申請。
+- **保存位置**。與憑證授權單位的帳號、憑證，以及每次申請的記錄都保存在資料庫中；私密金鑰和其他機密一樣，以金鑰加密金鑰封存（[金鑰管理](key-management.md)）。資料庫備份包含這些內容，重新啟動的伺服器會立即提供已儲存的憑證，不必重新申請。更換金鑰加密金鑰會重新包裝它們，但不會申請新的憑證。
+- **多個程序**。共用資料庫和 `kv` 儲存的程序會彼此協調：一個程序為主機申請憑證，其他程序等待後再載入，而憑證授權單位連線到哪個程序，就由哪個程序回應它的驗證。請使用 `kv = db` 或 `kv = valkey`；除非只有一個程序執行所有工作（`role = all`），否則會拒絕 `kv = memory`。取得憑證的程序會透過 [`stream`](../reference/configuration.md#stream) 中介者通知其他程序，它們會在幾秒內開始提供該憑證；因此每個 `tls = acme` 的 `web` 程序都會持續監聽中介者。使用 `stream = hub`，或通知遺失時，每個程序仍會每 5 分鐘從資料庫讀取目前的憑證，而憑證到了更新時間後則每分鐘讀取一次，所以更新會在舊憑證到期前很早就傳到各程序。
+- **設定檔**。`tls_acme_profile` 會挑選憑證授權單位提供的設定檔，例如 Let's Encrypt 的 `shortlived`。留空則採用它的預設。變更設定檔後，下一次更新會依照新的設定檔，而它帶來的憑證即使比被取代的憑證更早到期，也會被使用。
+
+若想在不耗用 Let's Encrypt 正式環境限制的情況下試用，請先使用它的測試環境，它會簽發瀏覽器不信任的憑證，但限制高得多：
+
+```sh
+MY_TLS_ACME_DIRECTORY=https://acme-staging-v02.api.letsencrypt.org/directory
+```
+
+當日誌顯示已取得憑證，且 `curl -kv https://social.example/` 顯示來自 `(STAGING)` 的憑證後，請移除該設定並重新啟動。伺服器會在正式環境註冊新的帳號並在那裡申請憑證；測試環境的憑證會留在資料庫中，不再被使用。
+
+<!-- source: certificates-from-files 35f16ea23b33 -->
+### 來自檔案的憑證
+
+使用 `tls = files` 時，`tls_cert_file` 先放伺服器的憑證，再放它的中繼憑證（certbot 的 `fullchain.pem`）；`tls_key_file` 放它的金鑰。憑證必須涵蓋 `host`；當 `web_origin` 的主機不同且憑證涵蓋它時，也會用來提供該主機。
+
+伺服器每分鐘檢查這兩個檔案的修改時間，其中任何一個變更就重新載入，不需要重新啟動。尚未相符的一組檔案（新的憑證卻還是舊的金鑰）會讓先前的憑證繼續使用到下一次檢查，日誌會說明原因。
+
+<!-- source: commands-and-metrics de97a3993e6b -->
+### 指令與指標
+
+`my tls` 使用伺服器的設定顯示並控制憑證，可以在任何連得到資料庫的機器上執行（[管理 CLI](admin-cli.md#tls-certificates)）：
+
+```sh
+my tls status                                          # each host: certificate, renewal, latest orders
+my tls renew -host social.example                      # order now, without waiting
+my tls revoke -host social.example -reason key_compromise
+```
+
+- **`status`** 會顯示每個主機目前的憑證（序號、簽發者和到期時間）、更新的時間（憑證授權單位的時段，或依其有效期間推算的時間）、連續幾次申請都沒有取得憑證，以及最近的申請和它們的錯誤。使用 `tls = files` 時，它會顯示 `tls_cert_file` 的憑證。
+- **`renew`** 會立即申請憑證，略過更新時間和申請失敗後的等待：修正申請失敗的原因後執行一次。執行中的伺服器會回應憑證授權單位的驗證，所以它必須在執行，而它的各個程序會在幾秒內提供新的憑證，使用 `stream = hub` 時則在 5 分鐘內。
+- **`revoke`** 會先申請一張取代目前憑證的憑證，再請憑證授權單位撤銷目前的憑證並記錄下來；每個程序會在幾秒內停止提供被撤銷的憑證，使用 `stream = hub` 時則在 5 分鐘內。私密金鑰可能已被他人得知時，請使用 `key_compromise`；其他情況使用 `superseded` 或 `operator`。無法申請替代憑證時，撤銷仍會進行：程序會提供該主機先前未被撤銷的憑證，若沒有，則在伺服器取得新憑證之前什麼都不提供。
+- `renew` 和 `revoke` 需要 `tls = acme` 和 `memory` 以外的 `kv`，因為憑證授權單位連線到的程序要從 `kv` 儲存讀取其驗證的答案。使用 `tls = files` 時會被拒絕：請用寫入這些檔案的工具來更新或撤銷憑證。
+
+設定 [`metrics_exporter`](#metrics) 後，請對 `my.tls.certificate.expiry` 低於 7 天，以及 `my.tls.order.consecutive_failures` 達 3 或以上設定警示（[警示](alerts.md#mytlscertificateexpiring)）：更新失敗會在憑證到期前數週就顯現出來。
+
+<!-- source: checks-and-running-it 983028d27675 -->
+### 檢查與執行方式
+
+使用 `tls = acme` 時，`my config check` 會把未同意條款、`host` 是 IP 位址、`localhost` 或沒有點的名稱、`tls_acme_directory` 不是 `https` URL，以及 `kv = memory` 搭配 `all` 以外的 `role`，回報為錯誤。使用 `tls = files` 時，它會把讀不到的憑證或金鑰、與憑證不相符的金鑰、沒有涵蓋 `host` 的憑證、已過期或尚未生效的憑證回報為錯誤，剩餘不到 14 天時則發出警告。當 `tls` 不是 `off` 而設定了 `trusted_proxies` 時，它會發出警告。使用 `tls = off` 時，若 `listen` 是非 loopback 位址上的連接埠 80 或 443，它會發出警告，因為前面似乎沒有任何元件終止 TLS；當這樣的伺服器在 `trusted_proxies` 為空的情況下，收到來自非 loopback 位址的純 HTTP 請求時，伺服器每次啟動也會記錄一次相同的警告。
+
+**systemd**。root 以外的使用者要使用 1024 以下的連接埠需要一項能力（capability）。只把它授予服務，不要授予其他任何東西：
+
+```ini
+[Service]
+User=my
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+```
+
+使用 `tls = files` 時，該使用者還需要讀取憑證檔案的權限。使用 certbot 時，它的 `live` 和 `archive` 目錄只有 root 能讀取：請讓服務所屬的群組可以存取（對目錄執行 `chgrp` 和 `chmod g+rx`，對金鑰執行 `g+r`），或在部署掛鉤中把檔案複製到服務可以讀取的目錄。
+
+**Docker**。Docker 20.10 和更新版本允許容器不需要 capability 就能開啟 1024 以下的連接埠，所以映像檔可以直接使用。映像檔設定了 `MY_LISTEN=:8080`，所以請在 `.env` 中設定 `MY_LISTEN=:443`，並在 `compose.override.yaml` 中發布兩個連接埠（`ports: ["80:80", "443:443"]`）。使用 `tls = files` 時，請把憑證檔案以唯讀方式掛載到 `MY_TLS_CERT_FILE` 和 `MY_TLS_KEY_FILE` 所指的位置；伺服器以使用者 `65532` 執行，該使用者必須能讀取它們。使用 `tls = acme` 時沒有東西需要掛載：憑證都在資料庫中。請不要使用 `compose.caddy.yaml`，它會佔用相同的連接埠。這不適用於 `network_mode: host`，此時容器共用機器的網路，需要與容器外的服務相同的 capability。
+
+**與 Caddy 比較**。由 `my` 提供 HTTPS 就沒有 HTTP/3、回應壓縮（伺服器會傳送已壓縮的網頁用戶端檔案，其餘一概不壓縮）、自己的存取日誌（伺服器的 `http request` 日誌行仍然存在），也沒有透過 DNS 驗證的憑證，包括萬用字元憑證。需要其中任何一項時，請繼續使用 `compose.caddy.yaml` 或其他代理。
 
 <!-- source: get-the-image 89a97ed4f1d2 -->
 ## 取得映像檔
@@ -181,7 +273,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 確認垃圾郵件過濾不會擋掉索取請求。
 - 使用你願意公開的地址：任何人都能在資訊頁面、入口頁面和 NodeInfo 中看到它。
 
-<!-- source: metrics 77e2cbc5a0f6 -->
+<!-- source: metrics 000df571a6a0 -->
 ## 指標
 
 設定 `metrics_exporter`（預設 `none`）會匯出服務指標。相關設定請參閱[設定參考](../reference/configuration.md)。
@@ -204,6 +296,8 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.move.activities` | 計數器 | `my.outcome`（`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon`：收到的 `Move` 是否已記錄，以及被捨棄的原因） |
 | `my.delivery.attempts` | 計數器 | `my.outcome`（`success` / `retry` / `gone` / `failed`；`gone` 包括 410，以及因伺服器無法使用或已停權而略過的傳送） |
 | `my.delivery.duration` | 直方圖，秒 | `my.outcome` |
+| `my.ux.duration` | 直方圖，秒 | `my.ux.metric`（`lcp` / `inp` / `long_frame` / `transition` / `press` / `call_rtt` / `call_jitter`）、`my.ux.name`（路由、互動種類、動作或通話傳輸方式；[UX 量測](error-reporting.md#ux-measurements)） |
+| `my.ux.call.packet_loss` | 直方圖，百分比 | `my.ux.name`（通話傳輸方式） |
 | `my.plugin.failures` | 計數器 | `my.plugin.kind`（[外掛](plugins.md)的種類）、`my.plugin.code`（失敗的 Connect 代碼） |
 | `my.plugin.slot_wait` | 直方圖，秒 | `my.plugin.kind`（呼叫在同時執行的同種類呼叫中等待輪到自己的時間） |
 | `my.hook.decisions` | 計數器 | `hook`、`mode`、`outcome`（[決策掛鉤](decision-hooks.md)所記錄的決策） |
@@ -213,9 +307,11 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.job.wait` | 直方圖，秒 | `my.job.type` |
 | `my.link_card.host_pauses` | 計數器 | `http.response.status_code`（`429` / `503`）。每次暫停從某個主機擷取連結卡片時計一次；請參閱[連結預覽](link-previews.md#limits-per-host) |
 | `my.translation.requests` | 計數器 | `my.outcome`（`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`）。每次請求翻譯檢視者可以看到的貼文，或版主要求翻譯檢舉的貼文或留言時計一次：由作者自己的文字、保留的翻譯或服務提供者回答，或因沒有服務提供者可以接收該貼文、已達每月上限、沒有服務提供者支援該語言，或沒有服務提供者傳回可用的翻譯而拒絕。 |
+| `my.translation.lock_waits` | 計數器 | 無。每個等待另一個正在把同一則貼文翻譯成同一種語言的請求、而不是去詢問服務提供者的請求計一次 |
 | `my.translation.characters` | 計數器 | `my.provider`（翻譯服務提供者的 ID）。傳送給服務提供者的貼文和檢舉留言的字元數，不含標記，包括失敗的呼叫。這就是[每月上限](instance-settings.md#admin-screens-and-the-client-api)所計算的數量，可能與服務提供者的計費不同 |
 | `my.timeline.delivery.lag` | 直方圖，秒 | 無（從本站貼文建立到寫入首頁時間軸並通知串流的時間） |
 | `my.stream.connections` | UpDownCounter | `my.stream.kind`（`user`；`timeline` 表示本站與聯邦時間軸的串流；`voice` 表示語音聊天室的串流） |
+| `my.stream.signals` | 計數器 | `my.stream.kind`（`user` / `timeline`）。每個已開啟的串流處理過的訊號計一次，不論是否傳送了任何東西給用戶端 |
 | `my.accounts.registered` | 計數器 | 無 |
 | `my.statuses.created` | 計數器 | `my.visibility` |
 | `my.billing.imports` | 計數器 | `my.billing.source`（`aws` / `gcp` / `plugin`）、`my.outcome`（`success` / `failed`）、`error.type`（僅在 `failed` 時：失敗的種類，如[匯入雲端使用費用](billing-import.md)所述）。每次嘗試都會計入，包括重試和等待下一次每日匯入的失敗 |
@@ -232,10 +328,14 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.federation.instances` | 量測計 | `my.federation.instance.state`（`available`：仍會傳送到、但自上次回應以來至少有一天失敗的伺服器；`unavailable`：傳送已暫停的伺服器） |
 | `my.metrics.snapshot.age` | 量測計，秒 | `my.metrics.snapshot.part`（`queue` / `totals`） |
 | `my.errors.reported` | 計數器 | `my.error.source`（`server` / `web`）、`my.error.kind`（`panic` / `error`）。每份[錯誤回報](#error-reports)計一次 |
+| `my.tls.certificate.expiry` | 量測計，秒 | `host`（使用 `tls = acme` 或 `tls = files` 時，此程序為其某個主機所提供的憑證距離到期的時間；每個程序回報自己的值，所以留著舊憑證的程序會顯現出來。請參閱[指令與指標](#commands-and-metrics)） |
+| `my.tls.order.attempts` | 計數器 | `host`、`result`（`issued` / `failed`）。每次向 ACME 憑證授權單位申請憑證計一次，由提出申請的程序計入，包括 `my tls renew` 和 `my tls revoke` |
+| `my.tls.order.consecutive_failures` | 量測計 | `host`（自該主機目前的憑證以來都沒有取得憑證的申請次數：決定下次申請前等待時間的次數） |
+| `my.tls.rounds` | 計數器 | 無。憑證管理員對使用 `tls = acme` 的各主機每巡視一輪計一次；數字停止增加就表示管理員已停止 |
 
 健康檢查（`/healthz`、`/readyz`、`/health/live`、`/health/ready`）不會被量測。任何標籤都不包含遠端網域、帳號、URL 或用戶端 IP。`my.queue.*`、`my.instance.*`、`my.media.stored_bytes`、`my.db.size`、`my.federation.instances` 和 `my.billing.import.failing` 是整個實例的值：每個程序都會從保存在鍵值儲存中的同一份快照回報相同的值。
 
-<!-- source: system-metrics dad53f84ee0a -->
+<!-- source: system-metrics 973069859f11 -->
 ### 系統指標
 
 關於程序、Go 執行階段以及與資源之連線的指標，會透過同一個 `metrics_exporter` 匯出。容器的 CPU、記憶體、執行個體數和輸入請求交給平台的指標；這些指標涵蓋的是平台看不到的程序內部飽和狀態。不要用它們來觸發擴展；請把它們用於警示和估算執行個體數上限。
@@ -260,6 +360,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `http.client.request.duration` | 直方圖，秒 | `my.http.purpose`（`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`）、`http.request.method`、`my.http.status_class`（`2xx` 等）、`error.type`（`forbidden_destination` 表示被 SSRF 防護拒絕） |
 | `http.client.open_connections` | UpDownCounter | 無 |
 | `my.readiness.failures` | 計數器 | 無 |
+| `my.readiness.shared` | 計數器 | 無。每個沒有另外啟動檢查、而是採用已在執行的檢查結果的就緒請求計一次 |
 | `my.http.origin_refused` | 計數器 | 無。每個因為沒有經過 CDN 而被拒絕的請求計一次（[`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)）。對來源位址的探測會讓它緩慢增加；如果在流量停止的同時它突然跳升，就表示 CDN 不再傳送該標頭。維護模式不會量測任何東西，所以只有它的存取日誌會顯示這些請求 |
 
 - Go 執行階段指標（`go.*`）只由 `prometheus` 和 `otlp` 匯出。使用 `emf` 時，定期的快照任務會寫入程序和連線池的量測計與 Observable Counter。
@@ -312,14 +413,33 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 在每個被記錄的請求或任務結束時，`unit` 會在返回之前把目前為止的 span 清出到 sidecar。為了讓 sidecar 能在沒有分配 CPU 時傳送它們，啟用追蹤的配置請使用以執行個體計費的方式。
 - 費用是 sidecar 的資源以及 span 的數量（Cloud Trace 定價）。請以 `traces_sample_ratio` 選擇比率。
 
-<!-- source: aws-ecs 52fa09412f20 -->
+<!-- source: aws-ecs cc7dd1ec1e83 -->
 ### AWS ECS
 
-若要傳送到 X-Ray，請在任務中以 sidecar 容器執行 **AWS Distro for OpenTelemetry（ADOT）Collector**。伺服器沒有 SigV4 簽章功能；由 Collector 簽章並傳送到 X-Ray 的 OTLP 端點（`https://xray.<region>.amazonaws.com/v1/traces`）。
+若要傳送到 X-Ray，請在每個任務中以 sidecar 容器執行 **AWS Distro for OpenTelemetry（ADOT）Collector**。伺服器沒有 SigV4 簽章功能；由 Collector 以任務角色簽章並傳送到 X-Ray。[OpenTofu 部署](../../deploy/opentofu/README.md#sections-of-mycroblog-aws)的 `mycroblog-aws` 模組預設就會完成這一切（`observability.traces = "x-ray"`）；本節其餘部分適用於你自己的任務定義。
 
-- 伺服器：`MY_TRACES_EXPORTER=otlp`、`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`。在 Collector 的設定中，以 `otlp` 接收器在 `localhost:4318` 上接收，並以使用 `sigv4auth` 擴充功能的 `otlphttp` 匯出器傳送到 X-Ray。
-- 授予任務角色寫入 X-Ray 的權限。
-- 費用是 sidecar 在任務資源中所佔的份額，以及 X-Ray 記錄的追蹤數量（每月前 100,000 筆免費）。
+- 伺服器：`MY_TRACES_EXPORTER=otlp`、`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces`，以及預設的 `MY_TRACES_FLUSH=batch`，因為程序會持續執行。
+- Collector：使用固定版本的映像檔，例如 `public.ecr.aws/aws-observability/aws-otel-collector:v0.50.0`，設定放在變數 `AOT_CONFIG_CONTENT` 中：以 HTTP 在 `127.0.0.1:4318` 上接收的 `otlp` 接收器，以及 `awsxray` 匯出器。X-Ray 的 OTLP 端點（`https://xray.<region>.amazonaws.com/v1/traces`，透過使用 `sigv4auth` 擴充功能的 `otlphttp` 匯出器）也可以，但帳號需要開啟 CloudWatch Transaction Search。
+- 授予任務角色 `xray:PutTraceSegments`，`awsxray` 匯出器會用它寫入。伺服器自己對追蹤取樣，所以 Collector 不需要 X-Ray 的取樣規則。
+- 分一部分任務資源給 Collector：`mycroblog-aws` 給它 32 個 CPU 單位和 128 MiB，其餘給伺服器，並把 `GOMEMLIMIT` 設為其餘資源的 90%。讓伺服器的容器依賴 Collector 的啟動，這樣 Collector 會在伺服器之後才停止，並收到最後的 span。
+- 費用是 sidecar 在任務資源中所佔的份額，以及 X-Ray 記錄的追蹤數量（每月前 100,000 筆免費）。預設的 `traces_sample_ratio` 為 0.01，每天 100,000 個請求大約會記錄每月 30,000 筆追蹤。
+
+<!-- source: profiles e3f49c0becf3 -->
+## 效能剖析
+
+[系統指標](#system-metrics)說明程序使用了多少記憶體和 CPU；Go 執行階段的剖析（profile）則說明是什麼在使用它們。`pprof_listen` 指定一個監聽器的位址，該監聽器在 `/debug/pprof/` 下提供剖析資料，適用於每種 `role`。預設為空，也就是不開啟監聽器。
+
+```sh
+MY_PPROF_LISTEN=127.0.0.1:6060 my serve
+
+go tool pprof -sample_index=inuse_space http://127.0.0.1:6060/debug/pprof/heap   # what holds the heap now
+go tool pprof -sample_index=alloc_space http://127.0.0.1:6060/debug/pprof/heap   # what has allocated since the start
+go tool pprof 'http://127.0.0.1:6060/debug/pprof/profile?seconds=30'             # where the CPU goes, for 30 seconds
+curl 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1'                       # every goroutine, by where it waits
+curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '               # the runtime's memory statistics
+```
+
+這個監聽器沒有驗證，剖析資料會顯示程序的內部，而且取得剖析會消耗 CPU：請讓它只在 loopback 上，並透過通道連線（`ssh -L 6060:127.0.0.1:6060 <host>`、`kubectl port-forward`），用完後取消設定。堆積剖析只涵蓋 Go 的堆積。程序的常駐記憶體還包含已讀入的二進位檔分頁、堆疊和執行階段自己的結構；這些請看記憶體統計。mutex 和 block 剖析是空的：伺服器不對它們取樣。
 
 <!-- source: stop-the-server 37d4c0cc3d97 -->
 ## 停止伺服器
@@ -334,16 +454,16 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 
 若要對資料庫、鍵值儲存或佇列進行作業，請改以維護模式（`MY_MAINTENANCE=true`）重新啟動，而不是停止。請參閱[維護](maintenance.md)。
 
-<!-- source: the-job-queue-and-failed-dead-jobs 55023b12a1aa -->
+<!-- source: the-job-queue-and-failed-dead-jobs 1fd5aaccbff5 -->
 ## 任務佇列與失敗（dead）的任務
 
 [任務](../reference/jobs.md)列出了每種任務類型：它做什麼、由什麼啟動、如何重試，以及重新執行時會發生什麼事。
 
-管理介面的任務頁面（`/admin/jobs`，權限 `manage_jobs`）有三個頁面：
+管理介面的任務頁面（管理 → 任務，`/admin/jobs`，權限 `manage_jobs`）有三個頁面：
 
-- **佇列狀態**（`/admin/jobs`）：各狀態、各類型與狀態的數量，各類型讓任務等待的時間，以及最舊的等待中任務已等待的時間。
-- **任務**（`/admin/jobs/list`）：某個狀態（待處理、等待中、執行中、等待重試、失敗）的任務表格，分頁顯示，包含類型、狀態、排定或失敗的時間，以及嘗試次數。失敗的任務有 **重新執行**。
-- **單一任務**（`/admin/jobs/<id>`，從表格中的類型進入）：任務的所有資訊、最後一次錯誤、鍵和酬載、未成功嘗試的記錄（每次嘗試的結果、錯誤、任務程序，以及開始和結束時間），以及失敗任務的 **重新執行**。
+- **佇列狀態**（`/admin/jobs`）：首先是失敗的任務數，附有連結；接著是各狀態（待處理、執行中、等待重試、失敗）的數量，每一項都連到該狀態的任務；最舊的到期任務已等待多久；以及依類型和狀態列出數量的表格，並顯示每種類型讓任務等待的時間。
+- **任務清單**（`/admin/jobs/list`）：尚未完成（待處理、執行中、等待重試）的任務，或某一個狀態、某一種類型的任務，分頁顯示，包含類型、嘗試次數、到期或失敗的時間、狀態，以及最後一次錯誤的第一行。
+- **單一任務**（`/admin/jobs/<id>`，從清單中的類型進入）：失敗任務的 **重新執行**，它會先詢問，因為重新執行可能會重複任務在失敗前已做的事；任務的所有資訊，其 ID 和鍵各附複製按鈕；最後一次錯誤和酬載，各附複製按鈕；未成功嘗試的表格，最新的在前（結果、結束時間、任務程序和錯誤）；以及連到同類型任務的連結。
 
 管理 API 為 `GET /api/v1/admin/queue`、`GET /api/v1/admin/jobs?state=&type=`、`GET /api/v1/admin/jobs/{id}`、`GET /api/v1/admin/jobs/{id}/attempts` 和 `POST /api/v1/admin/jobs/{id}/retry`。已完成的任務不再位於佇列中，所以找不到它的頁面。
 
@@ -417,7 +537,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 管理介面的任務頁面會依類型顯示相同的等待時間。設定了其中一項的任務程序也不會處理完全沒有處理常式之類型的任務（它在指標中計入 `other`），所以如果沒有不帶設定的任務程序，這種任務會一直等待，而不會變成 dead 任務。
 
-<!-- source: running-several-jobs-at-once 91e5181261b2 -->
+<!-- source: running-several-jobs-at-once 2a1137a12e8f -->
 ### 同時執行多個任務
 
 [`worker_job_concurrency`](../reference/configuration.md#worker_job_concurrency) 設定一個程序同時執行多少個任務，範圍為 1 到 128。它適用於 `queue = db`；使用 Cloud Tasks 時由平台決定。預設是一次一個任務，設為 1 的行為也相同。
@@ -426,8 +546,8 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 請記住以下限制：
 
-- **資料庫連線**：任務在被取得、執行自己的任務以及記錄結果時都需要連線。使用 `database = postgres` 時，這個設定必須低於連線池的上限，否則伺服器不會啟動。上限是 `database_url` 中的 `pool_max_conns`，預設為 4 和 CPU 數之中較大者，所以在你調高之前，一個 vCPU 允許 3。請確認你的資料庫或連線池管理工具能接受所有程序的連線。
-- **SQLite**：它一次只寫入一個交易。超過 32 時伺服器會記錄警告，在一項本機測試中，SQLite 在 128 時比 32 時還慢。
+- **資料庫連線**：任務在被取得、執行自己的任務以及記錄結果時都需要連線。這個設定必須低於連線池的上限，否則伺服器不會啟動。上限是 `database_url` 中的 `pool_max_conns`，預設為 4 和 CPU 數之中較大者，所以在你調高之前，一個 vCPU 允許 3。請確認你的資料庫或連線池管理工具能接受所有程序的連線。
+- **SQLite**：它一次只寫入一個交易。在一項本機測試中，它在 128 時比 32 時還慢。
 - **耗用大量 CPU 的任務**：槽位共用一個程序的 CPU 和記憶體。`media.process` 預設會在 CPU 數一半的上限下等待輪到自己，而等待時間會計入任務 5 分鐘的租約，所以充滿 `media.process` 的程序可能會超過租約而重新開始。請讓這類任務使用槽位較少的程序。
 - **一次一台伺服器**：一個程序對任何一個主機最多建立 8 個連線，所以無論有多少槽位，一個程序對單一伺服器的傳送速度都不會超過 8 個連線所允許的速度。在大部分傳送都送往少數大型伺服器的情況下，增加程序有幫助，增加槽位則沒有。
 - **卡住的伺服器會佔住槽位**：等待緩慢伺服器的槽位無法供其他任務使用，所以請把傳送與電子郵件和通知分開。
@@ -556,7 +676,7 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 
 每個回應都帶有 `Strict-Transport-Security`、`X-Content-Type-Options`、`Referrer-Policy`、`Permissions-Policy`、`Cross-Origin-Opener-Policy`、`Cross-Origin-Resource-Policy: same-site` 和 `X-Frame-Options`，而非文件的回應還帶有 `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'`。對於需要其他值的回應（例如 ActivityPub JSON 和公開媒體），處理常式會覆寫這些標頭。`Permissions-Policy` 會拒絕相機、地理位置、付款和 USB。它也會拒絕麥克風，但語音聊天開啟時（`voice` 不是 `off`）除外：這時它只允許伺服器自身來源的頁面使用麥克風（`microphone=(self)`），讓瀏覽器能在通話中發言。網頁用戶端的 HTML 會取得不使用 nonce 的文件 CSP（`script-src 'self'` 等）。它要求 Trusted Types（`require-trusted-types-for 'script'`），並把可以建立的政策限制為用戶端的兩個（`trusted-types my-server-sanitized-html my-service-worker`）。
 
-<!-- source: web-client f35b79dd2cc3 -->
+<!-- source: web-client 0a0b62acc010 -->
 ## 網頁用戶端
 
 `role` 為 `web` 或 `all` 的程序會提供嵌入在二進位檔中的網頁用戶端。
@@ -572,6 +692,12 @@ gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_C
 
 - `/api`、`/oauth`、`/auth`、`/.well-known`、`/nodeinfo`、`/ap`、`/media`、`/uploads`、`/theme`（伺服器佈景主題的樣式表）和 `/licenses` 底下的路徑，以及 `/robots.txt`，絕不會回傳外殼；如果沒有其他路由符合，它們會回傳 404 問題文件。
 - 外殼會在 ActivityPub 內容協商之後提供。以 ActivityPub 的 `Accept` 請求外殼路徑會回傳 404（貼文頁面會重新導向，如下所述）。外殼一律帶有 `Vary: Accept`。在前端放置 CDN 時，請把 `Accept` 的種類（ActivityPub 或 HTML）納入快取鍵，或把外殼、`/ap/*` 和 `/@*` 排除在快取之外。只從 CDN 提供 `/assets/*`。
+- 建置中的文字檔（指令碼、樣式表、SVG 圖片、授權聲明）只以壓縮形式嵌入。接受 Brotli 的請求會以 `Content-Encoding: br` 取得它們，接受 gzip 的請求以 `Content-Encoding: gzip` 取得，其他請求則取得解壓縮後的內容，一律帶有 `Vary: Accept-Encoding`，並為每種編碼提供 ETag。前面的代理不需要為它們另行壓縮，而 CDN 必須在 `/assets/*` 的快取鍵中保留 `Vary: Accept-Encoding`（或編碼）。
+- 外殼和登入畫面帶有 `Link` 標頭，指名頁面最先載入的樣式表和進入點指令碼，Cloudflare 等 CDN（其 Early Hints 功能）可以據此自行產生 early hints。設定 [`web_early_hints`](../reference/configuration.md#web_early_hints) = `true` 時，伺服器也會先以 `103 Early Hints` 回應傳送它們，讓瀏覽器在伺服器準備頁面的同時就擷取檔案。預設為關閉，因為無法轉送 103 的代理可能會讓請求失敗：
+  - Google Cloud 的外部應用程式負載平衡器會回應 502 或 503（`backend_interim_response_not_supported`）：在它後面請保持關閉，如 Cloud Run 部署所做的那樣。
+  - nginx 從 1.29.0 起會轉送，需設定 `early_hints`。
+  - Caddy 的 `reverse_proxy` 會轉送；`encode` 指令在 2.8 之前的版本會丟棄它。
+  - 瀏覽器只對它們導覽的頁面使用 103，而 Chrome 和 Edge 只在 HTTP/2 和 HTTP/3 上使用。
 - 沒有包含網頁用戶端而建置的二進位檔（單純執行 `go build`，而沒有先建置用戶端）會在啟動時記錄警告，並提供不含指令碼的外殼。
 
 <!-- source: federation-endpoints 7aaee8c9da42 -->

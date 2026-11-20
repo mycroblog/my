@@ -3,48 +3,62 @@
 
 Du kannst dein Konto auf ein anderes Konto umziehen, auf demselben oder auf einem anderen Server. Deine Follower folgen dem neuen Konto, und das alte Konto weist darauf hin, dass es umgezogen ist. Dasselbe funktioniert in die andere Richtung, wenn du von einem anderen Server auf diesen Server umziehst.
 
-<!-- source: what-moves-and-what-stays 321714556a43 -->
+<!-- source: what-moves-and-what-stays a45d57421940 -->
 ## Was umzieht und was bleibt
 
-| Zieht um | Bleibt auf dem alten Konto |
+| Zieht um | Bleibt beim alten Konto |
 | --- | --- |
-| Deine Follower | Deine Beiträge, die Konten, denen du folgst, deine Blockierungen, Stummschaltungen und Lesezeichen |
+| Deine Follower | Deine Beiträge, die Konten, denen du folgst, deine Sperren, Stummschaltungen und Lesezeichen |
 
-![Links das alte Konto, rechts das neue Konto: ein Alias, der Umzug, deine Follower, die zum neuen Konto wechseln, und was auf dem alten Konto bleibt. Die Liste unten sagt dasselbe.](images/account-move.svg)
+![Links das alte Konto, rechts das neue Konto: ein Alias, der Umzug, deine Follower, die zum neuen Konto wechseln, und was beim alten Konto bleibt. Die Liste unten sagt dasselbe.](images/account-move.svg)
 
 Von oben nach unten im Diagramm:
 
-1. **Alias hinzufügen.** Füge auf dem neuen Konto das alte Konto unter „Aliase“ hinzu.
-2. **Konto umziehen.** Wähle auf dem alten Konto „Konto umziehen“ und nenne das neue Konto.
-3. **Was umzieht.** Deine Follower folgen dem neuen Konto. Das alte Konto zeigt „Dein Konto ist umgezogen“: Du kannst dich dort weiterhin anmelden, lesen und deine Daten exportieren.
-4. **Was hier bleibt.** Deine Beiträge, die Konten und Hashtags, denen du folgst, sowie deine Blockierungen, Stummschaltungen und Lesezeichen bleiben auf dem alten Konto. Deine Beiträge ziehen nicht um. Den Rest nimmst du selbst mit: Exportiere deine Follows, gefolgten Hashtags, Blockierungen, Stummschaltungen und Lesezeichen mit „Import und Export“ auf dem alten Konto als CSV-Dateien und importiere sie auf dem neuen ([Follows mitnehmen](#taking-your-follows-with-you)).
+1. **Einen Alias hinzufügen.** Füge im neuen Konto das alte Konto unter „Aliasse“ hinzu.
+2. **Konto umziehen.** Wähle im alten Konto „Konto umziehen“ und nenne das neue Konto.
+3. **Was umzieht.** Deine Follower folgen dem neuen Konto. Das alte Konto sagt „Dieses Konto ist umgezogen nach …“: Du kannst dich dort weiterhin anmelden, lesen und deine Daten exportieren.
+4. **Was hier bleibt.** Deine Beiträge, die Konten und Hashtags, denen du folgst, und deine Sperren, Stummschaltungen und Lesezeichen bleiben beim alten Konto. Deine Beiträge ziehen nicht um. Nimm den Rest als CSV-Dateien mit, mit „Exportieren“ im alten Konto und „Importieren“ im neuen ([deine Folgen mitnehmen](#taking-your-follows-with-you)).
 
-<!-- source: moving-from-this-account 7836944c7996 -->
+<!-- source: moving-from-this-account 8470ed8a1f13 -->
 ## Von diesem Konto umziehen
 
-1. Füge auf dem neuen Konto dieses Konto als Alias hinzu: „Aliase“ unter „Konto und Daten“ in den Einstellungen, mit „Alias hinzufügen“. Die Seite zum Umzug zeigt die Adresse dieses Kontos, die du dort einträgst.
-2. Öffne auf diesem Konto „Konto umziehen“ unter „Konto und Daten“ in den Einstellungen. Gib den Handle des neuen Kontos ein (einen Handle wie `@name@example.com` oder die Adresse des Kontos) und wähle „Weiter“.
-3. Der Client zeigt, was umzieht und was bleibt. Gib zur Bestätigung dein Passwort ein (oder bestätige, wenn du kein Passwort hast, mit einem Passkey oder indem du dich erneut bei einem verknüpften Anbieter anmeldest) und wähle „Konto umziehen“.
+1. Füge im neuen Konto dieses Konto als Alias hinzu: „Aliasse“ unter „Konto und Daten“ in den Einstellungen, unter „Alias hinzufügen“. „Konto umziehen“ zeigt das Handle dieses Kontos, das du dort eingibst.
+2. Öffne in diesem Konto „Konto umziehen“ unter „Konto und Daten“ in den Einstellungen, was sagt, was umzieht und was bleibt. Gib unter „Konto, zu dem du umziehst“ das Handle des neuen Kontos (wie `@name@example.com`) oder die Adresse seines Profils ein und wähle „Konto umziehen“.
+3. Bestätige, dass du es bist, mit deinem Passwort, einem Passkey oder einem verknüpften Anbieter. Ein Umzug, den der Server ablehnt, nennt den Grund.
 
 Nach dem Umzug gilt für das alte Konto:
 
-- Es zeigt „Dein Konto ist umgezogen“. Du kannst dich weiterhin anmelden, lesen, deine Daten exportieren und das Konto löschen, aber du kannst nicht posten, boosten, reagieren, folgen oder abstimmen.
-- Sein Profil zeigt, dass es auf das neue Konto umgezogen ist.
+- Es sagt, wohin es umgezogen ist, auf dieser Seite und auf seinem Profil. Du kannst dich weiterhin anmelden, lesen, deine Daten exportieren und das Konto löschen, aber nicht beitragen, boosten, reagieren, folgen oder abstimmen.
 - Es kann 30 Tage lang nicht erneut umziehen.
 
-„Umzug abbrechen“ bringt das alte Konto zurück: Es kann wieder posten und folgen, und andere Server werden darüber informiert. Follower, die bereits umgezogen sind, bleiben beim neuen Konto.
+„Umzug abbrechen“ auf derselben Seite holt das alte Konto zurück: Es kann wieder Beiträge verfassen und folgen, und andere Server
+werden informiert. Follower, die schon umgezogen sind, bleiben beim neuen Konto.
 
-<!-- source: moving-to-this-account adb43ba4eef3 -->
-## Auf dieses Konto umziehen
+<!-- source: deactivating-or-deleting-this-account 599007a2d409 -->
+## Dieses Konto deaktivieren oder löschen
 
-Füge das Konto, von dem du umziehst, unter „Aliase“ in den Einstellungen dieses Kontos als Alias hinzu („Alias hinzufügen“). Ein Alias allein ändert nichts; er erlaubt dem anderen Konto lediglich, seine Follower zu dir umzuziehen. Du kannst nur wenige Aliase haben, und „Entfernen“ löscht einen.
+Unter „Konto und Daten“ in den Einstellungen blendet „Konto deaktivieren“ das Konto aus und meldet dich überall ab: Melde dich
+bis zu dem Datum, das die Seite nennt, wieder an, um es zurückzuholen, sonst wird es dann gelöscht. „Konto löschen“ löscht es sofort und
+endgültig. „Exportiere“ vorher deine Daten.
 
-<!-- source: taking-your-follows-with-you 8109773a2d6a -->
-## Follows mitnehmen
+<!-- source: moving-to-this-account 4b769e76357c -->
+## Zu diesem Konto umziehen
 
-„Import und Export“ unter „Konto und Daten“ in den Einstellungen exportiert und importiert CSV-Dateien in dem Format, das Mastodon verwendet. Du kannst „Follows“, „Gefolgte Hashtags“, „Blockierte Konten“, „Stummgeschaltete Konten“, „Stummgeschaltete Domains“ und „Lesezeichen“ exportieren und auf dem neuen Konto importieren. Mastodon kennt keine Datei mit gefolgten Hashtags, deshalb importiert diese Datei nur ein Server, auf dem dieselbe Software läuft wie auf diesem. „Zusammenführen“ behält, was du hast, und fügt hinzu, was die Datei auflistet; „Überschreiben“ macht die Liste genau zu dem, was die Datei auflistet. Konten und Beiträge auf anderen Servern werden im Hintergrund nachgeschlagen, was eine Weile dauern kann.
+Füge das Konto, von dem du umziehst, als Alias unter „Aliasse“ in den Einstellungen dieses Kontos hinzu („Alias hinzufügen“). Ein Alias allein
+ändert nichts; er erlaubt dem anderen Konto nur, seine Follower zu dir umzuziehen. Du kannst 5 Aliasse haben, und
+„Entfernen“ löscht einen.
 
-„Archiv und Löschung“ erstellt ein ZIP-Archiv deiner Beiträge, deines Profils, deiner Stichwortfilter sowie deiner Follows, gefolgten Hashtags, Blockierungen, Stummschaltungen, stummgeschalteten Domains und Lesezeichen.
+<!-- source: taking-your-follows-with-you 09ca5e285436 -->
+## Deine Folgen mitnehmen
+
+„Exportieren“ und „Importieren“ unter „Konto und Daten“ in den Einstellungen exportieren und importieren CSV-Dateien im Format, das Mastodon verwendet.
+Du kannst „Folgt“, „Gefolgte Hashtags“, „Gesperrte Konten“, „Stummgeschaltete Konten“, „Stummgeschaltete Server“ und „Lesezeichen“ exportieren und
+im neuen Konto importieren. Mastodon hat keine Datei für gefolgte Hashtags, daher importiert diese Datei nur ein Server, der dieselbe Software wie
+dieser ausführt. „Zusammenführen“ behält, was du hast, und fügt hinzu, was die Datei auflistet; „Ersetzen“ macht die Liste genau zu dem, was die Datei
+auflistet. „Vorschau“ zeigt, was eine Datei bewirken würde, bevor du „Importieren“ wählst; der Import läuft dann im Hintergrund.
+
+„Archiv anfordern“ unter „Exportieren“ bereitet ein ZIP-Archiv deiner Beiträge, deines Profils, deiner Stichwortfilter, deiner privaten Notizen und deiner
+Folgen, gefolgten Hashtags, Sperren, Stummschaltungen, stummgeschalteten Server und Lesezeichen vor, das du dort herunterlädst, sobald es bereit ist.
 
 <!-- source: when-an-account-you-follow-moves 81ab63afe43d -->
 ## Wenn ein Konto, dem du folgst, umzieht

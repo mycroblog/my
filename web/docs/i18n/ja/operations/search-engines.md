@@ -185,7 +185,7 @@ Kuromoji は日本語を辞書の単語に分け、それぞれを基本形に�
 
 `search = opensearch` は、自分で動かす OpenSearch クラスター、または Amazon OpenSearch Service のドメインにインデックスを保持します。サーバーはクラスターの REST API と通信します。インデックスのフィールドと送るクエリはサーバーが管理し、残り（アナライザー、シャード、レプリカ、そのほかのインデックスの設定）は自分で管理できます。自分の設定がなければ、OpenSearch に組み込みのアナライザーを使い、プラグインは必要ありません。
 
-<!-- source: setting-it-up-1 11097d66bccc -->
+<!-- source: setting-it-up-1 43f90813166b -->
 ### 設定する
 
 1. OpenSearch 2 または 3 を動かします。始めるには 1 ノードで足ります。サーバーは指定したアドレスにしかアクセスしません。
@@ -194,6 +194,8 @@ Kuromoji は日本語を辞書の単語に分け、それぞれを基本形に�
    - セキュリティプラグインがあるなら、[`search_opensearch_username`](../reference/configuration.md#search_opensearch_username) と [`search_opensearch_password`](../reference/configuration.md#search_opensearch_password) でユーザーを指定します。これは HTTP Basic 認証で送られます。クラスターが同じホストや信頼できるプライベートネットワークにないときは `https` を使ってください。ユーザーには、名前が [`search_opensearch_index`](../reference/configuration.md#search_opensearch_index) で始まるインデックスの作成、マッピングの読み取り、削除、そのエイリアスの管理、そのドキュメントの読み取り、書き込み、削除の権限が必要です。
    - IAM のアクセスポリシーを使う Amazon OpenSearch Service では、[`search_opensearch_aws_signing`](../reference/configuration.md#search_opensearch_aws_signing) を `es` に設定します。すべてのリクエストが AWS Signature Version 4 で署名されます。認証情報は AWS SDK の既定のチェーン（実行ロール、環境変数、共有ファイル）から、リージョンは [`search_opensearch_aws_region`](../reference/configuration.md#search_opensearch_aws_region) または `AWS_REGION` から取得します。ロールには、ドメインに対する `es:ESHttpGet`、`es:ESHttpPost`、`es:ESHttpPut`、`es:ESHttpDelete` が必要です。きめ細かなアクセス制御と内部マスターユーザーを使うドメインでは、代わりにユーザーとパスワードを使います。
    - Amazon OpenSearch Serverless には対応していません。投稿者や公開範囲ごとに投稿を取り除くのに必要な delete by query がないためです。
+
+   OpenTofu モジュール [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) を使う AWS では、デプロイと同じリージョンに作ったドメインについて、セクション `search` が手順 2 と 3 を行います。`search = { domain_name = "my-search" }` と書くと、ドメインのエンドポイントとリージョンを読み取り、タスクのロールにそのドメインへの `es:ESHttp*` の 4 つのアクションを許可し、`search`、`search_opensearch_url`、署名を設定します。別のエイリアスを使うときは `index` を指定します。VPC 内のドメインでは、`security_group_ids` にタスクが参加するセキュリティグループを指定し、ドメインのセキュリティグループがそれを許可します。ドメイン、そのアクセスポリシー、そしてきめ細かなアクセス制御を使う場合のタスクのロールと OpenSearch のロールの対応付けは、引き続きご自身で管理します。
 4. 必要なら、設定ファイルで[解析を調整](#tuning-the-analysis-of-opensearch)します。
 5. サーバーを起動します。サーバーは起動時にインデックスを作成し、クラスターに到達できないときやインデックスを作成できないときは起動を拒否します。
 6. `my search rebuild` を実行して、すでにある投稿をインデックスします（[インデックスの再構築](search.md#rebuilding-the-index)）。

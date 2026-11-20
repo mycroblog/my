@@ -12,7 +12,8 @@
 // in the seed's order; in the scenario a person of another server is the fake's own, since the seed's server federates
 // with none, one of them moved, and so is a person of this server who deactivated their account. The writes (a post, a
 // boost, a follow, a block, a mute, a private note, being notified of a person's posts, a follower removed, a server
-// muted as ADR-0013 §30 hides it, the answers of follow requests, the read marker, the announcements read, the
+// muted as ADR-0013 §30 hides it, the answers of follow requests, the read marker and the notifications read past it,
+// the announcements read, the
 // conversations of the direct messages read and hidden, the reader's bookmarks, the threads they mute and followed
 // hashtags, the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft
 // published, the reader's articles posted and edited, the images they upload, their preferences, their profile, and
@@ -99,6 +100,8 @@ import { createRouter, exact, type Answer, type Handlers, type Refusal, type Rou
 type Account = Schema<"Account">;
 type Status = Schema<"Status">;
 type Notification = Schema<"Notification">;
+/** A notification as the fake keeps it: whether it is read is the marker's and the reads', told as it is answered. */
+type Kept = Omit<Notification, "read">;
 type Draft = Schema<"Draft">;
 type MediaAttachment = Schema<"MediaAttachment">;
 
@@ -757,6 +760,8 @@ function wire(event: FakeStreamEvent): [string, unknown] {
       return ["announcement", event.announcement];
     case "notification_requests":
       return ["notification_requests", event.summary];
+    case "notifications_read":
+      return ["notifications_read", event.read];
     default:
       return [event.type, { id: event.id }];
   }
@@ -1634,9 +1639,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   type NotificationType = Schema<"NotificationType">;
   /** What a notification is about, beside who sent it. */
-  type About = Omit<Notification, "id" | "type" | "created_at" | "account">;
+  type About = Omit<Kept, "id" | "type" | "created_at" | "account">;
   const newestFirst = (a: { id: string }, b: { id: string }) => (b.id > a.id ? 1 : -1);
-  const notifications: Notification[] = [];
+  const notifications: Kept[] = [];
   const notify = (step: number, type: NotificationType, from: string, more: About = {}) => {
     if (from === viewer || hidden(from)) return;
     const at = timeOf(step);
@@ -1997,7 +2002,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   // The reader read all but the newest, three unless the options say how many.
   const unreadAtStart = o.unreadNotifications ?? 3;
   let lastRead = notifications[unreadAtStart]?.id;
-  const unreadCount = () => notifications.filter((n) => lastRead === undefined || n.id > lastRead).length;
+  // The notifications read on their own past the marker, until the marker passes them.
+  let readPast = new Set<string>();
+  // Unread: newer than the marker and not read on its own, as the server defines it.
+  const unread = (id: string) => (lastRead === undefined || id > lastRead) && !readPast.has(id);
+  const withRead = (n: Kept): Notification => ({ ...n, read: !unread(n.id) });
+  const unreadCount = () => notifications.filter((n) => unread(n.id)).length;
 
   // ---- The shell: the instance, the reader's rights, what is around them --------------------------------------------
 
@@ -2804,7 +2814,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   let dismissFailures = o.dismissFails === true ? 1 : 0;
 
   // With `held`, the notifications the policy holds back, by the account that sent them, the newest account first.
-  const held = new Map<string, Notification[]>();
+  const held = new Map<string, Kept[]>();
   if (o.held === true) {
     const own = posts.find((p) => p.author === viewer);
     const about: About = own === undefined ? {} : { status: statusOf(own) };
@@ -2833,7 +2843,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       id: idOf(username),
       account: accountOf(username),
       notifications_count: list.length,
-      ...(list[0] === undefined ? {} : { last_notification: list[0] }),
+      ...(list[0] === undefined ? {} : { last_notification: withRead(list[0]) }),
     });
   };
 
@@ -2966,15 +2976,15 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
    * among the notifications; none once the post is deleted, or while a filter hides it. Its announcement is as the
    * reader sees it now, read once they marked it read.
    */
-  const notificationNow = (n: Notification): Notification[] => {
+  const notificationNow = (n: Kept): Notification[] => {
     const told = n.announcement;
     if (told !== undefined) {
       const key = seed.announcements.find((a) => announcementId(a.key) === told.id)?.key;
-      return [key === undefined ? n : { ...n, announcement: announcementOf(key) }];
+      return [key === undefined ? withRead(n) : { ...withRead(n), announcement: announcementOf(key) }];
     }
-    if (n.status === undefined) return [n];
+    if (n.status === undefined) return [withRead(n)];
     const [now] = judged(current(n.status), "notifications");
-    return now === undefined ? [] : [{ ...n, status: now }];
+    return now === undefined ? [] : [{ ...withRead(n), status: now }];
   };
 
   /** The source of the seed's post `p` of the reader's own, as they wrote it. */
@@ -3784,9 +3794,20 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       notifications.splice(at, 1);
       return { status: 204 };
     },
+    "POST /notifications/{id}/read": ({ params }) => {
+      if (!notifications.some((n) => n.id === params.id)) return notFound();
+      if (unread(params.id)) readPast = new Set([...readPast, params.id]);
+      // The reader's other tabs and devices hear of it, as the server tells them.
+      send({ type: "notifications_read", read: { ...markerNow(), id: params.id } });
+      return { status: 204 };
+    },
     "GET /notifications/marker": () => ({ status: 200, body: markerNow() }),
     "PUT /notifications/marker": ({ body }) => {
-      if (lastRead === undefined || body.last_read_id > lastRead) lastRead = body.last_read_id;
+      const moved = lastRead === undefined || body.last_read_id > lastRead;
+      if (moved) lastRead = body.last_read_id;
+      const at = lastRead ?? body.last_read_id;
+      readPast = new Set([...readPast].filter((id) => id > at));
+      if (moved) send({ type: "notifications_read", read: markerNow() });
       return { status: 200, body: markerNow() };
     },
     "GET /notifications/requests/summary": () => {
@@ -3808,7 +3829,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     "GET /notifications/requests/{id}/notifications": ({ params, query }) => {
       const username = heldFrom(params.id);
       if (username === undefined) return notFound();
-      return { status: 200, body: page(held.get(username) ?? [], query).body };
+      return { status: 200, body: page((held.get(username) ?? []).map(withRead), query).body };
     },
     "POST /notifications/requests/{id}/accept": ({ params }) => {
       const username = heldFrom(params.id);
@@ -4267,6 +4288,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       id: idAt(at, 900_000 + added),
       type: "favourite",
       created_at: new Date(at).toISOString(),
+      read: false,
       account: accountOf(from),
       ...(own === undefined ? {} : { status: statusOf(own) }),
     });

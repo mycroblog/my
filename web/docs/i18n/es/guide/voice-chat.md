@@ -26,33 +26,36 @@ Si se interrumpe tu conexión, la llamada muestra «Reconectando…». Una llama
 misma sala desde otro dispositivo, cuando un anfitrión te expulsa, o cuando tú y el anfitrión o un coanfitrión se
 bloquean mutuamente.
 
-<!-- source: starting-a-room 9a2c5bc39c3c -->
+<!-- source: starting-a-room 05c5660e3c16 -->
 ## Abrir una sala
 
-«Abrir una sala» aparece para las personas a las que los operadores del servidor permiten ser anfitrionas de salas. El formulario pide:
+«Abrir una sala», al final de la lista de salas, aparece para las personas a las que los operadores del servidor permiten abrir salas.
+El formulario pide:
 
-- **Nombre** y, opcionalmente, un **Icono** y una **Descripción**.
-- **Etiquetas**: la sala se muestra en las páginas de sus etiquetas.
-- **Quién puede ver y unirse**: «Todos los de este servidor», «Seguidores del anfitrión», «Personas a las que sigue el anfitrión», «Seguidores mutuos del anfitrión» o «Solo personas invitadas».
-- **Quién puede hablar sin pedirlo**: «Todos los que se unen», «Seguidores del anfitrión», «Personas a las que sigue el anfitrión», «Seguidores mutuos del anfitrión» o «Solo las personas a las que los anfitriones dejan hablar».
-- **Publicar sobre la sala**: una publicación con el enlace a la sala, visible para todos en este servidor o solo para tus seguidores.
-  En un servidor de una sola persona, la publicación sobre una sala para todos en este servidor es para tus seguidores.
+- **Nombre**, y un **Icono** y una **Descripción** opcionales.
+- **Etiquetas**: la sala aparece en las páginas de sus etiquetas.
+- **Quién puede ver la sala**: «Todas las personas de este servidor», «Tus seguidores», «Las personas a las que sigues», «Las personas a las que sigues y que te siguen» o «Solo las personas invitadas».
+- **Quién puede hablar sin pedirlo**: «Todas las personas de la sala», «Tus seguidores», «Las personas a las que sigues», «Las personas a las que sigues y que te siguen» o «Solo las personas autorizadas a hablar».
+- **Publicación de inicio**: una publicación con el enlace a la sala, para todas las personas de este servidor o solo para tus seguidores, que se ofrece
+  para una sala que alguno de ellos puede ver. Su texto empieza con el nombre de la sala y puedes cambiarlo.
+  En un servidor de una sola persona, la publicación sobre una sala para todas las personas de este servidor es para tus seguidores.
 
-«Abrir la sala» la abre. «Cambiar la configuración de la sala» la edita más tarde, e «Invitar» te permite invitar a una persona de tu
-servidor como oyente o como orador; recibe una notificación y puede ver la sala desde entonces. «Compartir» copia el enlace.
+«Abrir y unirse» abre la sala y entras en ella como su anfitrión. «Gestionar la sala», en la parte superior de la sala, lleva a
+«Ajustes de la sala», que la edita más adelante, y a «Invitaciones», donde invitas a una persona de tu servidor como oyente o como
+orador; recibe una notificación y puede ver la sala desde ese momento, hasta que revoques la invitación.
 
-<!-- source: hosting 3e89a2d62c4a -->
-## Ser anfitrión
+<!-- source: hosting d93d94c73f3a -->
+## Anfitrión
 
-Un anfitrión y los coanfitriones gestionan la sala. «Manos levantadas» lista las personas que piden hablar («Permitir» o
-«Descartar»). El menú de un participante ofrece «Dejar hablar», «Quitar la palabra», «Desactivar micrófono», «Sacar de
-la sala», «Nombrar coanfitrión» y «Nombrar anfitrión». Una persona a la que expulsas no puede volver a ver la sala ni
-unirse a ella.
+Un anfitrión y los coanfitriones gestionan la sala. Al seleccionar a un participante se abre lo que puedes hacer con él: «Dejar que hable»
+(que también responde a una mano levantada) o «Rechazar la mano levantada», «Convertir en oyente», «Desactivar su micrófono» y
+«Quitar de la sala…»; el anfitrión también tiene «Convertir en coanfitrión», «Quitar como coanfitrión» y «Convertir en anfitrión…». Una persona que quitas
+no puede volver a ver ni a unirse a la sala. Los coanfitriones también invitan a personas; solo el anfitrión cambia los ajustes o termina la sala.
 
-Cuando el anfitrión se va, elige quién gestiona la sala después de él, o «Terminar la sala para todos». Una sala también
-termina cuando todos se van, cuando el anfitrión se desconecta, cuando llega al límite de tiempo del servidor o cuando
-un moderador la termina. «Historial de chat de voz», en «Visualización y notificaciones» de la configuración, lista las
-salas de las que fuiste anfitrión y por qué terminó cada una.
+Cuando el anfitrión se va mientras hay otras personas en la sala, estas eligen quién será el siguiente anfitrión, o «Terminar la sala para todos». «Terminar
+la sala…» en «Gestionar la sala», o al final de «Ajustes de la sala», la termina para todos a la vez. Una sala también termina cuando
+todas las personas se van, cuando el anfitrión se desconecta, cuando alcanza el límite de tiempo del servidor o cuando un moderador la
+termina. «Chat de voz» en la configuración enumera las salas que has abierto, cuándo se abrió y terminó cada una, y por qué.
 
 <!-- source: notifications 85197d3e939c -->
 ## Notificaciones

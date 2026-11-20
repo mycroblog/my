@@ -144,6 +144,16 @@ func TestClientAPINotifications(t *testing.T) {
 	if m := marker(send(http.MethodGet, "/api/v1/notifications/marker", "")); m.LastReadId != nil || m.UnreadCount != 2 {
 		t.Errorf("marker = %+v, want 2 unread", m)
 	}
+	// The favourite, read while the older follow is unread, stays read on the next list.
+	if res := send(http.MethodPost, "/api/v1/notifications/"+fav.Id+"/read", ""); res.StatusCode != http.StatusNoContent {
+		t.Fatalf("read the favourite = %d, want 204", res.StatusCode)
+	}
+	if page := list("/api/v1/notifications"); len(page.Items) != 2 || !page.Items[0].Read || page.Items[1].Read {
+		t.Errorf("notifications after reading the favourite = %+v, want it read and the follow not", page)
+	}
+	if m := marker(send(http.MethodGet, "/api/v1/notifications/marker", "")); m.LastReadId != nil || m.UnreadCount != 1 {
+		t.Errorf("marker after reading the favourite = %+v, want 1 unread", m)
+	}
 	if m := marker(send(http.MethodPut, "/api/v1/notifications/marker", `{"last_read_id":"`+fav.Id+`"}`)); m.LastReadId == nil || *m.LastReadId != fav.Id || m.UnreadCount != 0 {
 		t.Errorf("marker after reading all = %+v", m)
 	}

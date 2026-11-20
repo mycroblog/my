@@ -1,0 +1,62 @@
+name: UI preview cleanup
+
+# Deletes the Previews pr-<number> of the UI preview's Worker my-ui whose pull requests are closed or merged
+# (ADR-0165 §2), with `scripts/ui-preview.sh cleanup`: it lists the Previews of the Worker through the Cloudflare API
+# and asks GitHub for the state of each pull request. It runs when a pull request closes, and once every 24 hours and
+# on demand for any it missed. pull_request_target, the schedule, and workflow_dispatch all run main's workflow and
+# script in the environment `doc-site` (deployment refs: main and the tags v*), which holds the secret
+# CLOUDFLARE_API_TOKEN and the variable CLOUDFLARE_ACCOUNT_ID. It never checks out or downloads anything of a pull
+# request, and the token of GitHub reads pull requests only. Run it with the input `dry-run` to list what it would
+# delete without deleting anything.
+
+on:
+  pull_request_target:
+    types: [closed]
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: List the Previews it would delete without deleting them
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: ui-preview-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    # The environment admits main's ref, which pull_request_target has for a pull request into main; the schedule
+    # deletes the Previews of the others.
+    if: github.event_name != 'pull_request_target' || github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: doc-site
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      # Wrangler runs on Bun (ADR-0025 §10). The job installs no package of the workspace, so it restores no cache.
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+        with:
+          restore: "false"
+      - name: Install wrangler
+        run: scripts/ui-preview.sh install
+      - name: Delete the Previews of closed pull requests
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          UI_PREVIEW_WORK: ${{ runner.temp }}/ui-preview
+          DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: scripts/ui-preview.sh cleanup

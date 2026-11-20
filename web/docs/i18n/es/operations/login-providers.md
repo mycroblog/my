@@ -1,15 +1,17 @@
-<!-- source: external-login-providers 48a582ab87ec -->
-# Proveedores externos de inicio de sesión
+<!-- source: external-login-providers e0088b122632 -->
+# Proveedores de inicio de sesión externos
 
-Un proveedor externo de inicio de sesión permite a los usuarios iniciar sesión con una cuenta que tienen en otro sitio: un proveedor
-OpenID Connect (Google Workspace, Microsoft Entra ID, Keycloak y similares), GitHub, Discord o un servidor de Mastodon.
-Los proveedores se configuran con el comando `my login-provider` en un host que tenga la configuración del servidor, o mediante la
+Un proveedor de inicio de sesión externo permite a los usuarios iniciar sesión con una cuenta que tienen en otro lugar: un proveedor OpenID Connect
+(Google Workspace, Microsoft Entra ID, Keycloak y similares), GitHub, Discord o un servidor de Mastodon.
+Configuras los proveedores con el comando `my login-provider` en un host que tenga la configuración del servidor, o mediante la
 API de administración (`/api/v1/admin/login_providers`) con el permiso `manage_login_providers`, que solo tiene el rol integrado
-`admin`. El comando funciona antes de que ningún administrador pueda iniciar sesión, así que sirve para la configuración inicial.
+`admin`. El comando funciona antes de que ningún administrador pueda iniciar sesión, así que puedes usarlo para la primera configuración.
 En el cliente web, los administradores con ese permiso usan «Proveedores de inicio de sesión» en el menú de administración. La lista
-muestra el tipo de cada proveedor, su estado y si permite registrarse; «Añadir un proveedor» abre el formulario que crea uno.
-Al elegir un proveedor se abre su página, que muestra su URL de retorno con un botón que la copia y cuántos usuarios están
-vinculados, y desde donde cambias sus configuraciones, le das un nuevo secreto de cliente, lo activas, lo desactivas y lo eliminas.
+muestra el tipo de cada proveedor, su estado, cuántos usuarios están vinculados y si se permite el registro, bajo un resumen del
+[límite a los proveedores de inicio de sesión](#limit-sign-in-to-login-providers) mientras está activado; «Añadir un proveedor de inicio de sesión» abre el formulario que
+crea uno. Al elegir un proveedor se abre su página, que muestra su URL de callback con un botón que la copia, y donde
+cambias sus ajustes, lo activas o desactivas y le das un secreto de cliente nuevo, todo guardado con un solo botón, y lo eliminas, lo que
+pide escribir su nombre.
 
 <!-- source: what-external-sign-in-does 25fa37e22a50 -->
 ## Qué hace el inicio de sesión externo

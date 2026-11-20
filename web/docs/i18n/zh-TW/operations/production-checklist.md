@@ -50,12 +50,21 @@ my config check -instance  # also the instance settings in the database
 - **確認**：`my config check` 會顯示 `host` 和 `account_domain`，並回報其他伺服器無法連到的網域。當它們與資料庫中的值不同時，`my config check -instance` 也會失敗，而且不會記錄任何東西。使用另外的帳號名稱網域時，`curl -sI "https://<account_domain>/.well-known/webfinger?resource=acct:<user>@<account_domain>"` 會以 `301` 回應，導向 `https://<host>/.well-known/webfinger?...`。
 - **詳細說明**：[執行伺服器](running.md)（聯邦端點，以及從另一個網域提供帳號名稱）、[`host`](../reference/configuration.md#host) 和 [`account_domain`](../reference/configuration.md#account_domain)。
 
-<!-- source: reachable-over-https b7513cc3534f -->
+<!-- source: reachable-over-https 20f0b0b9a2d9 -->
 ### 可透過 `https` 連線
 
-- **原因**：其他伺服器會在 443 埠取得位於 `https://<host>/` 的 id，而瀏覽器只會透過 `https` 傳送登入 cookie。
-- **驗證**：`curl -sI https://<host>/health/live` 從你的網路外部回應 `200`，且憑證對 `host` 有效，而 `my config check` 沒有回報任何關於 `web_origin` 的錯誤。`http://<host>/` 會重新導向到 `https`，這由伺服器前面的反向代理、負載平衡器或 CDN 負責（使用 Docker Compose 時，`compose.caddy.yaml` 這一層就是這樣的代理）。
-- **詳細說明**：[執行伺服器](running.md)、[`web_origin`](../reference/configuration.md#web_origin)。
+- **原因**：其他伺服器會在 443 埠取得 `https://<host>/` 上的 ID，而瀏覽器只會透過 `https` 傳送登入 cookie。
+- **驗證**：從你的網路外部執行 `curl -sI https://<host>/health/live` 會回應 `200`，且憑證對 `host` 有效，
+  `my config check` 也沒有回報關於 `web_origin`、`tls`、`tls_acme_agree_terms` 或 `tls_cert_file` 的錯誤。`curl -sI http://<host>/` 會回應 `301`
+  並導向 `https://<host>/`。伺服器前方的反向代理、負載平衡器或 CDN 負責終結 TLS 並重新導向
+  （使用 Docker Compose 時，`compose.caddy.yaml` 這一層就是這樣的代理），或者由伺服器自己來做。使用 `tls = acme` 時，
+  `my tls status` 會顯示 `host` 的憑證（當 `web_origin` 的主機不同時，也會顯示它的憑證），且簽發者不是
+  測試用的：`tls_acme_directory` 未設定，或指定的是正式環境的目錄。請對它的到期和失敗的
+  申請設定警示（[警示](alerts.md#mytlscertificateexpiring)）。使用
+  `tls = files` 時，憑證剩餘不到 14 天，`my config check` 會發出警告，而負責更新它的機制必須
+  讓 `tls_cert_file` 和 `tls_key_file` 保持最新。
+- **詳細資料**：[執行伺服器](running.md)、[由伺服器提供 HTTPS](running.md#serving-https-from-the-server)、
+  [`web_origin`](../reference/configuration.md#web_origin)、[`tls`](../reference/configuration.md#tls)。
 
 <!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### 無法繞過 CDN 連線

@@ -3,10 +3,10 @@
 
 Webhook 会把举报、注册申请、账号创建和个人资料变更、管理操作、申诉、域名操作、本站的公开帖子以及自定义表情的管理操作，发送到 Slack 或 Discord 的中继、工单系统，或者 n8n 等自动化工具。没有配置任何 Webhook 的服务器不会存储额外的行，也不会运行额外的任务。接收方会收到什么（头部、签名、事件、正文）见 [Webhook 参考](../reference/webhooks.md)。
 
-<!-- source: set-up-a-webhook c8a80bc40038 -->
+<!-- source: set-up-a-webhook 20c889b84876 -->
 ## 设置 Webhook
 
-拥有 `manage_webhooks` 权限的人都可以在管理页面“Webhook”（`/admin/webhooks`）中设置 Webhook。内置的 `admin` 角色拥有该权限。“添加 Webhook”会打开表单；在列表中选择一个 Webhook 会打开它的页面，你可以在那里修改、测试、启用、停用和删除它，为它生成新密钥，并查看它的投递记录。
+拥有 `manage_webhooks` 权限的人都可以在管理页面“Webhook”（`/admin/webhooks`）中设置 Webhook。内置的 `admin` 角色拥有该权限。“设置 Webhook”会打开表单；在列表中选择一个 Webhook 会打开它的页面，你可以在那里测试它、停用和启用它、修改它、查看它最近 14 天的投递记录并重新发送其中一条、为它生成新密钥，以及输入其 URL 的主机名后删除它。当投递持续失败，以及服务器停用了该 Webhook 时，页面会说明。投递记录会显示每次投递的事件、状态、尝试次数和最后一次尝试，以及发送的正文；正文可能包含个人数据，只会显示给同时拥有其事件所需权限的人（见下文）。
 
 1. 创建 Webhook，填写目标 URL、说明以及要订阅的事件。除了 `manage_webhooks` 之外，每个事件还需要各自的权限：举报需要 `manage_reports`；注册、账号、管理操作和申诉需要 `manage_accounts`；域名操作需要 `manage_domains`；自定义表情需要 `manage_custom_emojis`；错误组需要 `manage_errors`。公开帖子不需要额外权限。你无法选择自己缺少相应权限的事件。
 2. 密钥（`whsec_...`）只在创建 Webhook 时显示一次。请把它设置到接收方。之后无法再次显示。
@@ -14,10 +14,10 @@ Webhook 会把举报、注册申请、账号创建和个人资料变更、管理
 
 Webhook 的创建、修改、删除、启用、停用和密钥轮换都会记录在审计日志中。目标显示为说明和 URL 的主机名；URL 本身不会被记录。
 
-<!-- source: rotate-the-secret 928c62f87538 -->
+<!-- source: rotate-the-secret fc0bedd73653 -->
 ## 轮换密钥
 
-“新密钥”会创建新密钥并显示一次。在接下来的 24 小时内，消息也会用旧密钥签名（`webhook-signature` 带有两个签名），因此你可以在这段时间内把接收方切换到新密钥。密钥在存入数据库之前会用 `kernel.Sealer` 加密；所用的密钥是
+“生成新密钥”会创建新密钥并显示一次。在接下来的 24 小时内，消息也会用旧密钥签名（`webhook-signature` 带有两个签名），因此你可以在这段时间内把接收方切换到新密钥。密钥在存入数据库之前会用 `kernel.Sealer` 加密；所用的密钥是
 [KEK](key-management.md)。
 
 <!-- source: failures-and-redelivery 65aba0d2089e -->

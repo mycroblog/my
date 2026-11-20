@@ -50,12 +50,21 @@ Exécutez `my config check` dans le même environnement que le serveur (mêmes v
 - **Vérifier** : `my config check` affiche `host` et `account_domain` et signale un domaine que les autres serveurs ne peuvent pas joindre. `my config check -instance` échoue aussi lorsqu’ils diffèrent des valeurs de la base de données, et n’enregistre rien. Avec un domaine d’identifiants distinct, `curl -sI "https://<account_domain>/.well-known/webfinger?resource=acct:<user>@<account_domain>"` répond `301` vers `https://<host>/.well-known/webfinger?...`.
 - **Détails** : [exécuter le serveur](running.md) (les points de terminaison de fédération et la publication des identifiants depuis un autre domaine), [`host`](../reference/configuration.md#host) et [`account_domain`](../reference/configuration.md#account_domain).
 
-<!-- source: reachable-over-https b7513cc3534f -->
-### Joignable en `https`
+<!-- source: reachable-over-https 20f0b0b9a2d9 -->
+### Accessible en `https`
 
-- **Pourquoi** : les autres serveurs récupèrent les identifiants à `https://<host>/` sur le port 443, et les navigateurs n’envoient les cookies de connexion qu’en `https`.
-- **Vérifier** : `curl -sI https://<host>/health/live` répond `200` depuis l’extérieur de votre réseau avec un certificat valide pour `host`, et `my config check` ne signale aucune erreur à propos de `web_origin`. `http://<host>/` redirige vers `https`, ce que fait le proxy inverse, le répartiteur de charge ou le CDN placé devant le serveur (avec Docker Compose, la couche `compose.caddy.yaml` est un tel proxy).
-- **Détails** : [exécuter le serveur](running.md), [`web_origin`](../reference/configuration.md#web_origin).
+- **Pourquoi** : les autres serveurs récupèrent les ID à `https://<host>/` sur le port 443, et les navigateurs n’envoient les cookies de connexion qu’en `https`.
+- **Vérifier** : `curl -sI https://<host>/health/live` répond `200` depuis l’extérieur de votre réseau avec un certificat valide pour `host`,
+  et `my config check` ne signale aucune erreur à propos de `web_origin`, `tls`, `tls_acme_agree_terms` ou `tls_cert_file`. `curl -sI http://<host>/` répond `301`
+  vers `https://<host>/`. Soit le proxy inverse, le répartiteur de charge ou le CDN placé devant le serveur termine le TLS et redirige
+  (avec Docker Compose, la couche `compose.caddy.yaml` est un tel proxy), soit le serveur le fait lui-même. Avec `tls = acme`,
+  `my tls status` affiche un certificat pour `host` (et pour l’hôte de `web_origin` lorsqu’il diffère) dont l’émetteur n’est pas
+  un émetteur de test : `tls_acme_directory` n’est pas défini ou nomme un répertoire de production. Mettez en place une alerte sur son expiration et sur les
+  commandes en échec ([alertes](alerts.md#mytlscertificateexpiring)). Avec
+  `tls = files`, `my config check` avertit lorsqu’il reste moins de 14 jours au certificat, et ce qui le renouvelle doit
+  tenir `tls_cert_file` et `tls_key_file` à jour.
+- **Détails** : [exécuter le serveur](running.md), [servir le HTTPS depuis le serveur](running.md#serving-https-from-the-server),
+  [`web_origin`](../reference/configuration.md#web_origin), [`tls`](../reference/configuration.md#tls).
 
 <!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### Non joignable en contournant le CDN

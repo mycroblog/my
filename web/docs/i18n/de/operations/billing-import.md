@@ -1,32 +1,33 @@
-<!-- source: importing-cloud-usage-costs 401e74fb1de0 -->
+<!-- source: importing-cloud-usage-costs 3d538f79c09b -->
 # Cloud-Nutzungskosten importieren
 
 Der Server importiert alle 24 Stunden die Nutzungsentgelte der Anbieter, die in der Einstellung [`billing_sources`](../reference/configuration.md#billing_sources) aufgeführt sind, oder bei einem Anbieter, für den er keinen Adapter hat, von [einem Plugin](#a-plugin-billing_sources--plugin) und fügt sie den Kosten der Instanz hinzu. Der Standard ist leer, was nichts importiert.
 Er importiert die Entgelte des aktuellen und des vorigen Abrechnungsmonats (bis zum 15. des Monats oder bis der vorige Monat endgültig ist), als eine Zeile pro Dienst und Entgeltart (Nutzung, Gutschrift, Erstattung, Steuer, Support, Gebühr, Sonstiges).
 Bis der Anbieter einen Monat abschließt, werden die Werte als Schätzungen erfasst; nach dem Abschluss als endgültig; und ändert sich ein Wert, nachdem er endgültig ist, als Korrektur. Datensätze der Vergangenheit werden nie umgeschrieben.
-Der Zustand der Importe (der letzte Erfolg, die Art des letzten Fehlers und die Zahl der Anfragen in diesem Monat) wird auf der Kostenseite der Administration und von `GET /api/v1/admin/billing_imports` angezeigt.
+Der Zustand der Importe (der letzte Erfolg, die Art des letzten Fehlers und die Zahl der Anfragen in diesem Monat) wird auf der Seite „Abrechnungsimporte“ unter „Kosten und Einnahmen“ in der Administration (`/admin/finance/imports`) angezeigt, die auch jeden Abrechnungsmonat als geschätzt, endgültig oder korrigiert auflistet, mit „Jetzt importieren“, sowie von `GET /api/v1/admin/billing_imports`.
 Die Metriken zählen jeden Versuch nach Quelle, Ergebnis und Fehlerart (`my.billing.imports`) und melden die Quellen, deren neuester Versuch fehlgeschlagen ist (`my.billing.import.failing`);
 [Alarme und Runbook](alerts.md#mybillingimportfailing) hat den Alarm dazu.
 
 Für AWS und Google Cloud werden in der Konfiguration dieses Servers keine Zugangsdaten gehalten. Gib der Laufzeitumgebung das, was die Standard-Credential-Chain des SDK jedes Anbieters liest (bei AWS die Ausführungsrolle, Umgebungsvariablen oder gemeinsame Credential-Dateien; bei Google Cloud Application Default Credentials).
 Cloudflare hat keine solche Chain, daher liest sein Import ein API-Token aus [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare).
 
-<!-- source: with-the-opentofu-modules 56be0b668f32 -->
+<!-- source: with-the-opentofu-modules a8e849af2fcd -->
 ## Mit den OpenTofu-Modulen
 
-Die Module [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) und [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) setzen `billing_sources` und erledigen die Teile dieser Anleitung, die die API eines Anbieters erlaubt. `billing-gcp` funktioniert nur mit dem App-Modul von Google Cloud, daher importieren auf AWS die Module nur die Kosten von AWS. `billing-aws` funktioniert mit den App-Modulen von AWS und mit dem von Cloud Run, wo beide in den `backends` stehen können. Keines wurde bisher auf einem echten Konto angewendet.
+Auf Google Cloud setzt der Abschnitt `billing` von [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) `billing_sources = gcp` und erledigt die Teile dieser Anleitung, die die API des Anbieters erlaubt, mit `billing_account_id`, `method` (`bigquery` oder `budget`) und `dataset_location`. Er importiert nur die Kosten von Google Cloud. Auf AWS tut das Modul [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) des AWS-Beispiels dasselbe für die Kosten von AWS. Keines wurde bisher auf einem echten Konto angewendet.
 
 | Schritt in dieser Anleitung | Mit den Modulen |
 | --- | --- |
-| Die IAM-Richtlinie und die Rolle von „Calling from Cloud Run with web identity“ | `billing-aws` |
+| Die IAM-Richtlinie von AWS | `billing-aws` |
 | Cost Explorer, Linked Account Access und Cost-Allocation-Tags aktivieren | Von Hand, in der AWS-Konsole |
-| Das Dataset des Exports und die Rollen von „IAM roles“ | `billing-gcp` |
+| Das Dataset des Exports und die Rollen von „IAM roles“ | Der Abschnitt `billing` |
 | Den Export aktivieren („Standard usage cost“) | Von Hand, in der Google-Cloud-Konsole, mit einer Rolle auf dem Rechnungskonto |
-| Das Topic und die Pull-Subscription eines Budgets sowie die Subscriber-Rolle | `billing-gcp` mit `method = "budget"` |
+| Das Topic und die Pull-Subscription eines Budgets sowie die Subscriber-Rolle | Der Abschnitt `billing` mit `method = "budget"` |
 | Das Budget erstellen und mit dem Topic verbinden | Von Hand, in der Google-Cloud-Konsole, mit einer Rolle auf dem Rechnungskonto |
 | Die BigQuery- oder Pub/Sub-API aktivieren | Von Hand, wie unter [Auf Cloud Run bereitstellen](deploy-cloud-run.md#1-enable-the-apis) |
-| Cloudflare | Nicht durch diese Module. Setze `MY_BILLING_SOURCES`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID` und `MY_BILLING_CLOUDFLARE_API_TOKEN` (aus einem Secret) wie bei einem Plugin |
-| Ein Plugin | Nicht durch diese Module. Setze ohne Billing-Modul in den `backends` `MY_BILLING_SOURCES = plugin` und die Einstellungen [des Plugins](#a-plugin-billing_sources--plugin) im `env` des App-Moduls; neben einem Billing-Modul lehnt das App-Modul `MY_BILLING_SOURCES` im `env` ab, füge also ein eigenes Backend hinzu, das `billing_sources = ["plugin"]` zurückgibt ([die Felder eines Backends](../../deploy/opentofu/README.md)) |
+| Die Kosten von AWS auf Cloud Run | Nicht durch `mycroblog-gcp`. Erstelle die Rolle von [Calling from Cloud Run with web identity](#calling-from-cloud-run-with-web-identity) von Hand und setze `billing_sources = aws` und `billing_aws_role_arn` in `settings`, ohne den Abschnitt `billing` |
+| Cloudflare | Nicht durch diese Module. Setze auf Cloud Run ohne den Abschnitt `billing` `billing_sources` und `billing_cloudflare_account_id` in `settings` und `billing_cloudflare_api_token` in `secrets`, wie bei einem Plugin |
+| Ein Plugin | Nicht durch diese Module. Setze auf Cloud Run ohne den Abschnitt `billing` `billing_sources = plugin` und die Einstellungen [des Plugins](#a-plugin-billing_sources--plugin) in `settings`. Neben dem Abschnitt `billing` lehnt das Modul `billing_sources` in `settings` ab |
 
 <!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS (`billing_sources = aws`)
@@ -310,11 +311,11 @@ Der Server liest die abrechenbare Nutzung eines Cloudflare-Kontos: die Nutzungse
 Er summiert sie nach Produkt (`R2`, `Workers`, `D1`) in UTC-Kalendermonate, sodass jedes Produkt eine Nutzungszeile pro Monat ist. Auch Nutzung innerhalb eines Freikontingents wird importiert, mit 0.
 Nur ein nutzungsabhängig abgerechnetes Konto hat diese Daten; ein Konto mit Enterprise-Vertrag schlägt mit `not_enabled` fehl.
 
-<!-- source: what-it-does-not-import 2028c00feb4d -->
+<!-- source: what-it-does-not-import 6281b674b2b7 -->
 ### Was nicht importiert wird
 
-Die abrechenbare Nutzung von Cloudflare enthält nur Nutzungsentgelte. Tarife und Add-ons mit fester Gebühr (Pro, Business, Workers Paid und dergleichen), Steuern und Gutschriften sind nicht darin, sodass die Kosten nur den Nutzungsteil der Rechnung zeigen.
-Füge die festen Gebühren auf der Kostenseite als eigene Kosten hinzu oder importiere sie von [einem Plugin](#a-plugin-billing_sources--plugin).
+Die abrechenbare Nutzung von Cloudflare enthält nur Nutzungsentgelte. Tarife und Add-ons mit einer festen Gebühr (Pro, Business, Workers Paid und dergleichen), Steuern und Gutschriften sind nicht darin, daher zeigen die Kosten nur den Nutzungsanteil der Rechnung.
+Füge die festen Gebühren als eigene Kosten auf der Seite „Kosten“ unter „Kosten und Einnahmen“ (`/admin/finance/costs`) hinzu oder importiere sie von [einem Plugin](#a-plugin-billing_sources--plugin).
 
 <!-- source: billing-cycles-and-final-months 155b8bff8c5f -->
 ### Abrechnungszyklen und endgültige Monate
@@ -352,10 +353,10 @@ Gib dem Import ein eigenes Token. Der Server liest nie `CLOUDFLARE_API_TOKEN`, d
 
 Eine Wiederholung kann keinen anderen Fehler als `throttled` und `unavailable` beheben, daher erfasst der Server ihn und hält an, und der geplante Import des nächsten Tages versucht es erneut.
 
-<!-- source: a-plugin-billing_sources--plugin 7589c3333153 -->
+<!-- source: a-plugin-billing_sources--plugin 563b0ca17827 -->
 ## Ein Plugin (`billing_sources = plugin`)
 
-Für einen Anbieter, für den der Server keinen Adapter hat, wie Azure, Hetzner oder Sakura, betreibe ein [Plugin](plugins.md) der Art `billing` und lass es die Daten des Anbieters lesen. Der Server hat eine `plugin`-Quelle. Ein Plugin mit mehreren Anbietern aggregiert sie selbst und unterscheidet sie an den Namen seiner Dienste.
+Für einen Anbieter, für den der Server keinen Adapter hat, etwa Azure, Hetzner oder Sakura, betreibe ein [Plugin](plugins.md) der Art `billing` und lass es die Daten des Anbieters lesen. Der Server hat eine einzige Quelle `plugin`. Ein Plugin mit mehreren Anbietern aggregiert sie selbst und unterscheidet sie an den Namen seiner Dienste.
 
 ```toml
 billing_sources = "plugin"
@@ -367,11 +368,11 @@ plugin_billing_provider = "Hetzner"
 Die drei Einstellungen sind bei dieser Quelle erforderlich, und der Server startet, ohne das Plugin aufzurufen, auch wenn es ausgefallen ist.
 
 - `plugin_billing_location` ist die Zeitzone, die die Abrechnungsmonate des Plugins abgrenzt.
-- `plugin_billing_provider` ist der Name des Anbieters in den Summen, auf der Kostenseite und im Audit-Log.
+- `plugin_billing_provider` ist der Name des Anbieters in den Summen, auf der Seite der Abrechnungsimporte und im Audit-Log.
 
-Der Server fragt das Plugin nach dem laufenden Monat und, wie bei den anderen Quellen, nach dem vorherigen bis zum 15. oder bis er endgültig ist. Die Limits der anderen Quellen gelten nicht: `max_requests` ist `2147483647`, was kein Limit bedeutet, und das Plugin entscheidet, was es ausgeben darf. Es meldet die Anfragen und die Bytes, die ihm berechnet wurden, was der Server erfasst und anzeigt.
+Der Server fragt das Plugin nach dem aktuellen Monat und, wie bei den anderen Quellen, nach dem vorigen bis zum 15. oder bis er endgültig ist. Die Limits der anderen Quellen gelten nicht: `max_requests` ist `2147483647`, was kein Limit bedeutet, und das Plugin entscheidet, was es ausgeben darf. Es meldet die Anfragen und die Bytes, die ihm berechnet wurden, die der Server erfasst und anzeigt.
 
-Die Art erlaubt einfaches TCP, mit einer Warnung beim Start, da sie nur Kosten trägt. Ein Bearer-Token braucht `https://` oder einen Unix-Socket: siehe [das Ziel eines Plugins](plugins.md#the-destination).
+Die Art erlaubt einfaches TCP, mit einer Warnung beim Start, da sie nur Kosten überträgt. Ein Bearer-Token braucht `https://` oder einen Unix-Socket: siehe [das Ziel eines Plugins](plugins.md#the-destination).
 
 <!-- source: the-call 6a2bcce82ab2 -->
 ### Der Aufruf

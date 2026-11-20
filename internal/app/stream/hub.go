@@ -148,9 +148,9 @@ func remove(m map[string]map[*subscription]struct{}, key string, s *subscription
 	}
 }
 
-// Publish implements Publisher. A signal of KindNotifications or KindConversation goes to the
-// account subscriptions of its account, one of KindHomeEntry or KindAnnouncement to every account
-// subscription, one of KindPublicEntry to the timeline subscriptions of the timelines it names,
+// Publish implements Publisher. A signal of KindNotifications, KindNotificationsRead, or
+// KindConversation goes to the account subscriptions of its account, one of KindHomeEntry or
+// KindAnnouncement to every account subscription, one of KindPublicEntry to the timeline subscriptions of the timelines it names,
 // one of KindStatusDeleted to every account and timeline subscription, and a voice signal to the subscriptions of its room. An internal signal (Kind.IsInternal) goes
 // to none.
 func (h *Hub) Publish(e Event) {
@@ -160,7 +160,7 @@ func (h *Hub) Publish(e Event) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	switch {
-	case e.Kind == KindNotifications, e.Kind == KindConversation:
+	case e.Kind == KindNotifications, e.Kind == KindNotificationsRead, e.Kind == KindConversation:
 		h.deliverLocked(h.byAccount[e.AccountID], e)
 	case e.Kind == KindPublicEntry:
 		if e.OnLocal {
@@ -259,7 +259,7 @@ type subscription struct {
 // or direct messages of its account, and a room subscription no voice signal for another session.
 func (s *subscription) wants(e Event) bool {
 	switch e.Kind {
-	case KindNotifications, KindConversation:
+	case KindNotifications, KindNotificationsRead, KindConversation:
 		return s.timeline == ""
 	case KindVoiceSignal:
 		return e.To == "" || e.To == s.session

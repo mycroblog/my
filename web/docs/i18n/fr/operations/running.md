@@ -3,7 +3,7 @@
 
 Comment démarrer et arrêter le serveur, obtenir son image et le surveiller pendant son fonctionnement : métriques, traces, file de tâches et contrôles de santé.
 
-<!-- source: start-the-server ea157fe28b0d -->
+<!-- source: start-the-server 5faa7632b863 -->
 ## Démarrer le serveur
 
 ```sh
@@ -13,39 +13,41 @@ my serve          # start according to the configured role (-config <file> reads
 my version        # print the version of the binary
 ```
 
-`my serve` valide la configuration, construit les adaptateurs de base de données, de file de tâches et de gestion des clés, et accepte du HTTP sur `listen`.
-Il parle du HTTP/1.1 simple, sans TLS : placez devant un proxy inverse ou un répartiteur de charge qui termine le HTTPS (et le HTTP/2 ou le HTTP/3 pour les clients) et transmet en HTTP/1.1.
-Les mises à jour en temps réel (`GET /api/v1/streaming`, les flux des fils local et fédéré, et les flux des salons de chat vocal) sont des réponses de longue durée qui envoient un commentaire de présence toutes les 30 secondes (15 pour un salon vocal) et restent ouvertes lorsqu’elles sont inactives.
+`my serve` valide la configuration, construit les adaptateurs de base de données, de file de jobs et de gestion des clés, et accepte le HTTP sur `listen`.
+Avec `tls = off`, la valeur par défaut, il y parle en HTTP/1.1 simple : placez devant lui un proxy inverse ou un répartiteur de charge qui termine le HTTPS (et le HTTP/2 ou HTTP/3 pour les clients) et transmet en HTTP/1.1.
+Pour servir le HTTPS sans proxy, voir [Servir le HTTPS depuis le serveur](#serving-https-from-the-server).
+Les mises à jour en temps réel (`GET /api/v1/streaming`, les flux des fils local et fédéré, et les flux des salons de chat vocal) sont des réponses de longue durée qui envoient un commentaire de présence toutes les 30 secondes (15 pour un salon vocal) et restent ouvertes tant qu’elles sont inactives.
 Le proxy ne doit pas mettre ces réponses en mémoire tampon (nginx : le serveur envoie `X-Accel-Buffering: no`), et son délai d’inactivité ou de lecture doit être plus long que l’intervalle de présence.
-Il n’applique pas le schéma ni n’exécute les étapes de mise à niveau des données : exécutez `my schema apply` puis `my db upgrade` avant de démarrer (voir [Base de données](database.md) ; les mises à niveau exécutent les deux dans le cadre de [Mise à niveau](database.md#upgrading)). Tant que `my db upgrade` n’a pas enregistré chaque étape de la version, `/readyz` répond `503`.
-Dans l’installation Docker Compose (`deploy/docker/compose.yaml` ; voir [Déployer avec Docker Compose](deploy-docker-compose.md)), les services ponctuels `schema` et `upgrade` exécutent `my schema apply` et `my db upgrade` avant le démarrage du serveur.
-Si le schéma n’est pas appliqué, le processus démarre tout de même et la disponibilité renvoie 503, et il ne sert rien d’autre tant que le schéma n’est pas là.
+Il n’applique pas le schéma ni n’exécute les étapes de mise à niveau des données : exécutez `my schema apply` puis `my db upgrade` avant de démarrer (voir [Base de données](database.md) ; les mises à niveau exécutent les deux dans le cadre de [Mettre à niveau](database.md#upgrading)). Tant que `my db upgrade` n’a pas enregistré chaque étape de la version, `/readyz` répond `503`.
+Dans la configuration Docker Compose (`deploy/docker/compose.yaml` ; voir [Déployer avec Docker Compose](deploy-docker-compose.md)), les services ponctuels `schema` et `upgrade` exécutent `my schema apply` et `my db upgrade` avant le démarrage du serveur.
+Si le schéma n’est pas appliqué, le processus démarre quand même et la disponibilité renvoie 503, et il ne sert rien d’autre tant que le schéma n’est pas là.
 
-Le premier `my serve` ou la première commande `my` qui utilise la base de données y enregistre `host` et `account_domain`. Lorsque la configuration diffère des valeurs enregistrées, `my serve` journalise `start failed` avec les deux paires de valeurs et se termine avec le code 1, et les commandes affichent la même erreur. Les exceptions sont `my schema apply` et `my db backup`, qui ne vérifient pas, et le mode de maintenance, qui ne lit pas la base de données. `my config check -instance` et `my db upgrade -check` vérifient mais n’enregistrent rien.
-Un processus qui n’a pas pu lire la base de données à son démarrage n’est pas prêt tant qu’il ne le peut pas, et d’ici là il n’exécute aucune tâche et répond `503` avec `Retry-After` à toute requête sauf les vérifications d’état (`/healthz`, `/readyz`, `/health/live`, `/health/ready`, `/api/v1/instance/health`). C’est aussi ce que fait un serveur démarré avant `my schema apply`. S’il trouve ensuite des valeurs différentes, il s’arrête avec la même erreur.
+Le premier `my serve` ou la première commande `my` qui utilise la base de données y enregistre `host` et `account_domain`. Lorsque la configuration diffère des valeurs enregistrées, `my serve` journalise `start failed` avec les deux paires de valeurs et se termine avec le code 1, et les commandes affichent la même erreur. Les exceptions sont `my schema apply` et `my db backup`, qui ne vérifient pas, et le mode maintenance, qui ne lit pas la base de données. `my config check -instance` et `my db upgrade -check` vérifient mais n’enregistrent rien.
+Un processus qui n’a pas pu lire la base de données à son démarrage n’est pas prêt tant qu’il ne le peut pas, et d’ici là il n’exécute aucun job et répond `503` avec `Retry-After` à chaque requête sauf les vérifications de santé (`/healthz`, `/readyz`, `/health/live`, `/health/ready`, `/api/v1/instance/health`). C’est aussi ce que fait un serveur démarré avant `my schema apply`. S’il trouve ensuite des valeurs différentes, il s’arrête avec la même erreur.
 
-Dans le profil `production`, `my config check` vérifie aussi que les réglages valides conviennent à une instance de production : les erreurs, telles qu’un `host` que les autres serveurs ne peuvent pas joindre ou une KEK qui n’est pas aléatoire, le font se terminer avec 1, et les avertissements, tels que `mail = none`, non.
-`my serve` journalise les deux comme des avertissements au démarrage mais démarre tout de même ; exécutez donc `my config check` comme étape du déploiement.
-La [liste de contrôle de production](production-checklist.md) énumère les vérifications et ce qu’il faut contrôler à la main avant la mise en service.
+Dans le profil `production`, `my config check` vérifie aussi que les paramètres valides conviennent à une instance de production : les erreurs, comme un `host` que les autres serveurs ne peuvent pas atteindre ou une KEK qui n’est pas aléatoire, le font se terminer avec 1, et les avertissements, comme `mail = none`, non.
+`my serve` journalise les deux comme des avertissements au démarrage mais démarre quand même ; exécutez donc `my config check` dans le cadre du déploiement.
+La [liste de contrôle de production](production-checklist.md) liste les vérifications et ce qu’il faut vérifier à la main avant la mise en service.
 
-| `role` | HTTP | Worker de tâches |
+| `role` | HTTP | Worker de jobs |
 | --- | --- | --- |
 | `all` (par défaut) | Toutes les routes | S’exécute |
 | `web` | Toutes les routes | Ne s’exécute pas |
-| `worker` | Vérifications d’état uniquement (pour les sondes de la plateforme) | S’exécute |
+| `worker` | Vérifications de santé uniquement (pour les sondes de la plateforme) | S’exécute |
 
-Les journaux vont vers la sortie d’erreur standard au format JSON Lines. Chaque ligne a `level` (`DEBUG`, `INFO`, `WARN`, `ERROR`) et `severity`, le même niveau sous la forme que lit Cloud Logging (`DEBUG`, `INFO`, `WARNING`, `ERROR`, et `CRITICAL` pour une erreur qui arrête le processus).
+Les journaux vont sur l’erreur standard en JSON Lines. Chaque ligne a `level` (`DEBUG`, `INFO`, `WARN`, `ERROR`) et `severity`, le même niveau sous la forme que lit Cloud Logging (`DEBUG`, `INFO`, `WARNING`, `ERROR`, et `CRITICAL` pour une erreur qui arrête le processus).
 Les journaux écrits pendant le traitement d’une requête portent un `request_id`, et le même ID est renvoyé dans l’en-tête de réponse `X-Request-Id`.
-Si le `X-Request-Id` de la requête compte au plus 128 caractères parmi des lettres, des chiffres et `-_.:`, il est utilisé tel quel, comme l’ID attribué par un répartiteur de charge.
-Les journaux à l’intérieur d’une trace (requêtes et tâches) portent aussi `trace_id` et `span_id` (voir [Traces](#traces)).
+Si le `X-Request-Id` de la requête compte au plus 128 caractères parmi les lettres, les chiffres et `-_.:`, il est utilisé tel quel, comme l’ID attribué par un répartiteur de charge.
+Les journaux à l’intérieur d’une trace (requêtes et jobs) portent aussi `trace_id` et `span_id` (voir [Traces](#traces)).
 
-Chaque requête HTTP et chaque exécution de tâche écrit une ligne lorsqu’elle se termine. La ligne a les mêmes noms et valeurs que les libellés des [métriques](#metrics) ci-dessous ; sur Cloud Run avec `metrics_exporter = none`, vous pouvez donc construire des métriques basées sur les journaux Cloud Logging (compteurs et distributions) à partir de ces lignes.
+Chaque requête HTTP et chaque exécution de job écrit une ligne à sa fin. La ligne a les mêmes noms et valeurs que les étiquettes des [métriques](#metrics) ci-dessous ;
+sur Cloud Run avec `metrics_exporter = none`, vous pouvez donc construire à partir de ces lignes des métriques basées sur les journaux de Cloud Logging (compteurs et distributions).
 
 | Ligne (`msg`) | Champs |
 | --- | --- |
-| `http request` (`INFO` ; les vérifications d’état utilisent `DEBUG`) | `http.request.method`, `http.route`, `my.surface` et `http.response.status_code` (un nombre) ont les mêmes valeurs que les libellés de `http.server.request.duration`. Aussi `duration_seconds` (un nombre de secondes), `url.path` (le chemin sans la chaîne de requête), `http.response.body.size` et `request_id`. `http.route` et `my.surface` sont absents pour les requêtes qui n’ont atteint aucune route (vérifications d’état, requêtes refusées avant le routage), et la métrique ne les compte pas. Une requête dont le client est parti avant que le serveur puisse répondre a le statut `499` au lieu d’un 5xx, sauf si un gestionnaire a paniqué ; le client n’a rien reçu, ce n’est donc pas compté comme une erreur du serveur |
-| `job` (`INFO` en cas de succès et pour `postponed`, `WARN` pour `retry`, `ERROR` pour `dead`) | `my.job.type` et `my.outcome` ont les mêmes valeurs que les libellés de `my.job.duration`. Aussi `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt`, et `error` en cas d’échec |
-| `error report` (`ERROR` ; `CRITICAL` pour un échec qui arrête le processus) | Une ligne par erreur signalée ([Rapports d’erreurs](#error-reports)) |
+| `http request` (`INFO` ; les vérifications de santé utilisent `DEBUG`) | `http.request.method`, `http.route`, `my.surface` et `http.response.status_code` (un nombre) ont les mêmes valeurs que les étiquettes de `http.server.request.duration`. Aussi `duration_seconds` (un nombre de secondes), `url.path` (le chemin sans la chaîne de requête), `http.response.body.size` et `request_id`. `http.route` et `my.surface` sont absents pour les requêtes qui n’ont atteint aucune route (vérifications de santé, requêtes refusées avant le routage), et la métrique ne les compte pas. Une requête dont le client est parti avant que le serveur puisse répondre a l’état `499` au lieu d’un 5xx, sauf si un gestionnaire a paniqué ; le client n’a rien reçu, ce qui ne compte donc pas comme une erreur du serveur |
+| `job` (`INFO` en cas de succès et pour `postponed`, `WARN` pour `retry`, `ERROR` pour `dead`) | `my.job.type` et `my.outcome` ont les mêmes valeurs que les étiquettes de `my.job.duration`. Aussi `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt`, et `error` en cas d’échec |
+| `error report` (`ERROR` ; `CRITICAL` pour un échec qui arrête le processus) | Une ligne par erreur signalée ([Signalements d’erreurs](#error-reports)) |
 
 <!-- source: error-reports a81ecfe83871 -->
 ### Rapports d’erreurs
@@ -86,23 +88,23 @@ Les champs utilisés comme libellés ne prennent leurs valeurs que dans un ensem
 Avec `metrics_exporter = emf`, ces deux lignes sont les lignes EMF elles-mêmes. La ligne `http request` porte la valeur de `http.server.request.duration`, et la ligne `job` porte les valeurs de `my.job.duration` et `my.job.wait` (clés nommées d’après les métriques), plus la directive `_aws`, `service.name`, `service.version` et `my.role`. Ces trois métriques ne sont écrites sur aucune autre ligne. Les champs que vous choisissez dans `metrics_emf_dimensions` sont écrits sous forme de chaînes, comme l’exige EMF (par exemple la dimension `http.response.status_code` vaut `"200"`).
 Les journaux vont vers la sortie d’erreur standard et les autres lignes EMF vers la sortie standard. Le pilote de journaux `awslogs` d’ECS envoie les deux à CloudWatch Logs ; les métriques sont donc extraites des deux.
 
-<!-- source: docker-compose-files df45a902f45b -->
+<!-- source: docker-compose-files 9f0633524036 -->
 ## Fichiers Docker Compose
 
-`deploy/docker/` contient ce qui déploie un serveur. `compose.yaml` s’exécute seul, et les autres fichiers s’y superposent.
+`deploy/docker/` contient ce qui déploie une instance. `compose.yaml` s’exécute seul, et les autres fichiers s’empilent par-dessus.
 
 | Fichier | Ajoute | À utiliser lorsque |
 | --- | --- | --- |
-| `compose.yaml` | Le serveur et ses services de base de données ponctuels, sur SQLite et des fichiers de médias dans le volume `data` | Toujours |
+| `compose.yaml` | Le serveur et ses services ponctuels de base de données, sur SQLite et des fichiers de médias dans le volume `data` | Toujours |
 | `compose.postgres.yaml` | PostgreSQL dans un conteneur, dans le volume `postgres` | Vous voulez PostgreSQL sur cette machine. Pour un serveur PostgreSQL ailleurs, omettez-le et définissez `MY_DATABASE` et `MY_DATABASE_URL` dans `.env` |
-| `compose.s3.yaml` | Les médias dans un bucket compatible S3 ; avec `COMPOSE_PROFILES=garage`, aussi un magasin [Garage](https://garagehq.deuxfleurs.fr/) à un nœud dans le volume `garage` | Les médias dépassent un disque, ou vous voulez les placer dans un bucket. Sans le profil, le magasin est l’externe des paramètres `MY_BLOB_S3_*` |
+| `compose.s3.yaml` | Les médias dans un bucket compatible S3 ; avec `COMPOSE_PROFILES=garage` aussi un stockage [Garage](https://garagehq.deuxfleurs.fr/) à un nœud dans le volume `garage` | Les médias dépassent un disque, ou vous les voulez dans un bucket. Sans le profil, le stockage est l’externe défini par les paramètres `MY_BLOB_S3_*` |
 | `compose.caddy.yaml` | Caddy, avec des certificats TLS sur les ports 80 et 443 | `MY_HOST` est un domaine public et rien d’autre ne termine le TLS sur cette machine |
-| `compose.build.yaml` | Construit l’image à partir d’un checkout | Vous exécutez votre propre build |
+| `compose.build.yaml` | Construit l’image à partir d’une copie du dépôt | Vous exécutez votre propre construction |
 
 Choisissez la base de données et le stockage des médias avant le premier démarrage : les données ne se déplacent pas d’elles-mêmes lorsque les fichiers changent
-([Sauvegarde](backup.md) indique ce qui doit être déplacé).
+([Sauvegarder](backup.md) montre ce qui doit être déplacé).
 
-**Superposez les fichiers** avec des options `-f` dans cet ordre, ou nommez-les une fois dans `.env`, afin que chaque commande `docker compose` ultérieure
+**Empilez les fichiers** avec des options `-f` dans cet ordre, ou nommez-les une fois dans `.env`, afin que chaque commande `docker compose` ultérieure
 (`exec`, `logs`, `pull`, et celles des autres guides) utilise les mêmes fichiers :
 
 ```sh
@@ -114,27 +116,196 @@ cp example.env .env
 Un fichier nommé `compose.override.yaml` dans le répertoire n’est lu que lorsque ni `-f` ni `COMPOSE_FILE` ne nomment de fichiers. Avec
 eux, listez-le aussi.
 
-**Paramètres.** Copiez `example.env` vers `.env`. Compose lit `.env` pour remplir les variables de ses fichiers, et transmet tout le
-fichier aux conteneurs du serveur ; chaque paramètre de la [référence de configuration](../reference/configuration.md) fonctionne donc en
-étant défini là. Le modèle les liste tous, avec une phrase pour chacun.
+**Paramètres.** Copiez `example.env` vers `.env`. Compose lit `.env` pour renseigner les variables de ses fichiers, et transmet tout le
+fichier aux conteneurs du serveur ; chaque paramètre de la [référence de la configuration](../reference/configuration.md) fonctionne donc
+en étant défini à cet endroit. Le modèle les liste tous, avec une phrase pour chacun.
 
 - La clé de chiffrement de clés reste hors de `.env`, dans le fichier `secrets/kek`, et les conteneurs la lisent comme le secret Docker
   `/run/secrets/my_kek`, de sorte qu’elle ne devient jamais une variable d’environnement. Une ligne `MY_KEK` dans `.env` arrête le serveur, qui
-  refuse `MY_KEK` et `MY_KEK_FILE` ensemble ([gestion de la clé](key-management.md)).
+  refuse `MY_KEK` et `MY_KEK_FILE` ensemble ([gérer la clé](key-management.md)).
 - Le serveur s’exécute sous l’utilisateur `65532`, et Compose monte le fichier avec les permissions qu’il a ; le fichier doit donc être
-  lisible par les autres. Gardez-le dans un répertoire où vous seul pouvez entrer, comme le font les commandes de `example.env`.
-- Les autres secrets parviennent aux conteneurs sous forme de variables d’environnement. Pour en transmettre un sous forme de fichier, montez-le avec un secret
-  dans un `compose.override.yaml` qui vous appartient et définissez son `<NAME>_FILE`, comme le fait `compose.yaml` pour la clé.
-- `.env` contient des secrets : `chmod 600 .env`, et gardez-en une copie avec vos sauvegardes.
-- `MY_LISTEN` reste `:8080`, puisque les fichiers se connectent à ce port.
+  lisible par d’autres. Conservez-le dans un répertoire que vous seul pouvez ouvrir, comme le font les commandes de `example.env`.
+- Les autres secrets parviennent aux conteneurs sous forme de variables d’environnement. Pour en passer un sous forme de fichier à la place, montez-le avec un secret
+  dans un `compose.override.yaml` à vous et définissez son `<NAME>_FILE`, comme `compose.yaml` le fait pour la clé.
+- `.env` contient des secrets : `chmod 600 .env`, et conservez-en une copie avec vos sauvegardes.
+- `MY_LISTEN` reste `:8080`, puisque les fichiers se connectent à ce port, sauf si le serveur sert lui-même le HTTPS
+  ([Servir le HTTPS depuis le serveur](#serving-https-from-the-server)).
 
-**TLS avec Caddy.** Définissez `MY_HOST` sur un domaine dont le DNS pointe vers la machine, avec les ports 80 et 443 joignables depuis
-Internet, et retirez `MY_WEB_ORIGIN` de `.env`. Caddy obtient et renouvelle le certificat de lui-même à la première requête.
+**TLS avec Caddy.** Définissez `MY_HOST` sur un domaine dont le DNS pointe vers la machine, avec les ports 80 et 443 accessibles depuis
+Internet, et retirez `MY_WEB_ORIGIN` de `.env`. Caddy obtient et renouvelle le certificat tout seul à la première requête.
 Le serveur fait confiance au `X-Forwarded-For` des plages d’adresses par défaut de Docker ; définissez `MY_TRUSTED_PROXIES` si les vôtres diffèrent.
 
-**Le Garage intégré.** `compose.s3.yaml` avec `COMPOSE_PROFILES=garage` nécessite les valeurs que `example.env` liste en haut.
-Le service ponctuel `garage-init` prépare le magasin à chaque `up`. Il reste à l’intérieur du réseau Compose, puisque le serveur
-sert lui-même les médias. Un nœud est un disque : sauvegardez le volume `garage` ou le bucket ([Sauvegarde](backup.md#media-in-a-bucket)).
+**Le Garage inclus.** `compose.s3.yaml` avec `COMPOSE_PROFILES=garage` a besoin des valeurs que `example.env` liste en tête.
+Le service ponctuel `garage-init` prépare le stockage à chaque `up`. Il reste à l’intérieur du réseau Compose, puisque le serveur
+sert lui-même les médias. Un nœud, c’est un disque : sauvegardez le volume `garage` ou le bucket ([Sauvegarder](backup.md#media-in-a-bucket)).
+
+<!-- source: serving-https-from-the-server 45ec9231a41e -->
+## Servir le HTTPS depuis le serveur
+
+`my` peut servir lui-même le HTTPS, de sorte qu’une petite machine exécute tout le serveur sous forme d’un seul binaire avec un domaine et les ports 80 et 443,
+sans proxy inverse. Avec `tls = acme`, il obtient ses certificats auprès d’une autorité de certification ACME comme Let’s
+Encrypt. Avec `tls = files`, il sert un certificat et une clé que vous fournissez et que vous tenez à jour avec un autre outil, comme
+certbot.
+
+```sh
+MY_TLS=acme
+MY_TLS_ACME_AGREE_TERMS=true            # you agree to the terms of service of the certificate authority
+# MY_TLS_ACME_EMAIL=ops@social.example  optional contact of the account
+# MY_LISTEN=:443          the default with tls other than off
+# MY_TLS_HTTP_LISTEN=:80  the default; empty opens no port 80
+```
+
+```sh
+MY_TLS=files
+MY_TLS_CERT_FILE=/etc/letsencrypt/live/social.example/fullchain.pem
+MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
+```
+
+- **Ports.** Le serveur sert le HTTPS sur `listen` (`:443` par défaut dès que `tls` n’est pas `off`). Sur `tls_http_listen` (`:80`
+  par défaut), il redirige par `301` les requêtes `GET` et `HEAD` vers le même chemin en `https`, et répond `400` à toute autre
+  méthode, de sorte qu’aucun corps de requête ne circule en clair.
+- **Hôtes.** Le serveur sert `host`, et l’hôte de `web_origin` lorsqu’il diffère. Une négociation pour tout autre nom
+  échoue sans certificat, et ne fait jamais commander un certificat au serveur.
+- **Connexions.** TLS 1.2 ou ultérieur avec les suites de chiffrement par défaut de Go, HTTP/2 et HTTP/1.1, au plus 64 KiB d’en-têtes
+  de requête, et au plus 100 flux concurrents sur une connexion HTTP/2. Les délais sont ceux du HTTP simple. Le serveur
+  ajoute toujours `Strict-Transport-Security` à chaque réponse ([En-têtes de sécurité](#security-headers)).
+- **Rôles.** Seuls les rôles `web` et `all` écoutent avec TLS. Un `worker` sert ses vérifications de santé en HTTP simple sur
+  `listen` (`:8080` par défaut) et n’ouvre pas de port 80.
+- **Adresses des clients.** Sans proxy devant, le pair de la connexion est le client : laissez `trusted_proxies` vide.
+  Ne le définissez que lorsqu’un CDN placé devant se connecte au serveur en `https`.
+- **Mode maintenance.** `my serve -maintenance` ne lit ni `tls` ni les certificats et répond en HTTP simple sur
+  `listen` (`:8080` sauf si vous le définissez) ; dirigez donc `MY_LISTEN` et votre pare-feu vers ce port pendant son exécution, ou conservez un
+  proxy inverse pour la maintenance.
+
+<!-- source: certificates-from-an-acme-certificate-authority 52037a75d641 -->
+### Certificats d’une autorité de certification ACME
+
+Avec `tls = acme`, le serveur commande un certificat pour chacun de ses hôtes qui n’en a pas, auprès de l’autorité de certification
+à `tls_acme_directory` (Let’s Encrypt par défaut).
+
+- **Avant de commencer.** `host` doit être un nom DNS qui pointe vers le serveur, et les ports 443 et 80 doivent être accessibles depuis
+  Internet : l’autorité de certification vérifie que le serveur contrôle le nom en s’y connectant. Il répond sur
+  `listen` (le défi TLS-ALPN-01) ou sur `tls_http_listen` (le défi HTTP-01) ; un `tls_http_listen` vide
+  fonctionne donc avec le seul port 443. Les certificats génériques et la validation par enregistrements DNS ne sont pas disponibles.
+- **Premier démarrage.** Le serveur commence à écouter sans attendre de certificat, puis les commande. Tant qu’un hôte n’a pas son
+  certificat, une négociation pour lui échoue ; avec Let’s Encrypt, les premiers certificats arrivent généralement en moins d’une minute. Le journal
+  indique `obtained a TLS certificate` pour chaque hôte, et `the TLS certificate could not be obtained` avec la raison lorsqu’une
+  commande échoue.
+- **Renouvellements.** Le serveur renouvelle chaque certificat à l’heure que l’autorité de certification suggère pour lui (ACME Renewal
+  Information) : il choisit une fois une heure aléatoire dans la fenêtre suggérée, la conserve tant que la fenêtre reste, et redemande
+  comme l’indique le `Retry-After` de l’autorité, au moins toutes les 12 heures, de sorte qu’une autorité qui doit remplacer des certificats
+  plus tôt puisse déplacer la fenêtre. Lorsque l’autorité ne propose pas une telle fenêtre, le serveur renouvelle après les deux tiers de la
+  durée de vie du certificat, ou après la moitié pour un certificat valable moins de 10 jours. Un renouvellement indique à
+  l’autorité quel certificat il remplace, ce qui le maintient hors des limites de débit de Let’s Encrypt. Le certificat actuel
+  reste en service jusqu’à l’arrivée de son renouvellement, et un renouvellement qui échoue attend comme une première commande.
+- **Commandes en échec.** Après une commande en échec, le serveur attend avant la suivante pour le même hôte : 1 minute après le
+  premier échec, 10 minutes après le deuxième, 100 minutes après le troisième, puis un jour, afin de rester dans les
+  limites de l’autorité de certification. L’attente est conservée dans la base de données et survit aux redémarrages. Corrigez la cause (DNS, pare-feu,
+  port) et la commande suivante part à la fin de l’attente.
+- **Où ils sont conservés.** Le compte auprès de l’autorité de certification, les certificats et l’enregistrement de chaque commande
+  sont conservés dans la base de données ; les clés privées sont scellées avec la clé de chiffrement de clés, comme les autres secrets
+  ([gestion des clés](key-management.md)). Une sauvegarde de la base de données les inclut, et un serveur redémarré sert les
+  certificats stockés aussitôt, sans commander. Changer la clé de chiffrement de clés les ré-enveloppe ; cela ne commande pas de nouveaux
+  certificats.
+- **Plusieurs processus.** Les processus qui partagent la base de données et le magasin `kv` se coordonnent : l’un commande le certificat d’
+  un hôte pendant que les autres attendent puis le chargent, et le processus auquel l’autorité de certification se connecte répond à sa
+  vérification. Utilisez `kv = db` ou `kv = valkey` ; `kv = memory` est refusé sauf si un seul processus exécute tout (`role = all`).
+  Le processus qui obtient un certificat en informe les autres par le courtier [`stream`](../reference/configuration.md#stream), et ils le servent en
+  quelques secondes ; chaque processus `web` avec `tls = acme` reste donc à l’écoute du courtier. Avec `stream = hub`, ou lorsqu’un
+  avis est perdu, chaque processus relit quand même les certificats actuels dans la base de données toutes les 5 minutes, et chaque
+  minute une fois que son certificat a atteint son heure de renouvellement, de sorte qu’un renouvellement les atteint bien avant l’expiration de l’ancien certificat.
+- **Profils.** `tls_acme_profile` choisit un profil que l’autorité de certification propose, comme `shortlived` chez Let’s
+  Encrypt. Vide, il prend sa valeur par défaut. Après un changement de profil, le prochain renouvellement le suit, et le certificat qu’il apporte
+  est servi même s’il expire avant celui qu’il remplace.
+
+Pour l’essayer sans dépenser les limites de l’environnement de production de Let’s Encrypt, commencez avec son environnement de test (staging),
+qui émet des certificats auxquels les navigateurs ne font pas confiance, sous des limites bien plus élevées :
+
+```sh
+MY_TLS_ACME_DIRECTORY=https://acme-staging-v02.api.letsencrypt.org/directory
+```
+
+Une fois que le journal indique que les certificats ont été obtenus et que `curl -kv https://social.example/` montre un certificat issu de
+`(STAGING)`, retirez le paramètre et redémarrez. Le serveur enregistre un nouveau compte auprès de l’environnement de production et
+y commande ses certificats ; ceux du test restent dans la base de données et ne sont plus servis.
+
+<!-- source: certificates-from-files 35f16ea23b33 -->
+### Certificats issus de fichiers
+
+Avec `tls = files`, `tls_cert_file` contient d’abord le certificat du serveur, puis ses intermédiaires (le `fullchain.pem` de certbot) ; `tls_key_file` contient sa clé. Le certificat doit couvrir `host`, et il sert aussi l’hôte de
+`web_origin` lorsqu’il diffère et que le certificat le couvre.
+
+Le serveur regarde chaque minute les dates de modification des deux fichiers et les recharge lorsque l’un change, sans
+redémarrage. Une paire qui ne correspond pas encore (un nouveau certificat avant sa nouvelle clé) maintient le certificat précédent en
+service jusqu’à la vérification suivante, et le journal en indique la raison.
+
+<!-- source: commands-and-metrics de97a3993e6b -->
+### Commandes et métriques
+
+`my tls` affiche et contrôle les certificats avec la configuration du serveur, depuis toute machine qui atteint la
+base de données (la [CLI d’administration](admin-cli.md#tls-certificates)) :
+
+```sh
+my tls status                                          # each host: certificate, renewal, latest orders
+my tls renew -host social.example                      # order now, without waiting
+my tls revoke -host social.example -reason key_compromise
+```
+
+- **`status`** affiche, pour chaque hôte, le certificat actuel (son numéro de série, son émetteur et son expiration), la date de son renouvellement (la
+  fenêtre de l’autorité de certification, ou l’heure dérivée de sa durée de vie), le nombre de commandes consécutives qui n’en ont obtenu aucun, et
+  les dernières commandes avec leurs erreurs. Avec `tls = files`, il affiche le certificat de `tls_cert_file`.
+- **`renew`** commande un certificat maintenant, en ignorant l’heure de renouvellement et l’attente après des commandes en échec : exécutez-le une fois que vous
+  avez corrigé la cause des commandes en échec. Le serveur en cours d’exécution répond à la vérification de l’autorité de certification ; il doit donc être
+  démarré, et ses processus servent le nouveau certificat en quelques secondes, ou en 5 minutes avec `stream = hub`.
+- **`revoke`** commande d’abord un certificat qui remplace l’actuel, puis demande à l’autorité de certification de révoquer
+  l’actuel et l’enregistre ; chaque processus cesse de servir le certificat révoqué en quelques secondes, ou en 5
+  minutes avec `stream = hub`. Utilisez `key_compromise` lorsque la clé privée peut être connue d’autres personnes, `superseded` ou
+  `operator` sinon. Lorsque le remplaçant ne peut pas être commandé, la révocation a quand même lieu : les processus servent le
+  certificat précédent de l’hôte s’il n’est pas révoqué, ou rien jusqu’à ce que le serveur en obtienne un nouveau.
+- `renew` et `revoke` exigent `tls = acme` et un `kv` autre que `memory`, puisque les processus auxquels l’autorité de certification
+  se connecte lisent les réponses à ses vérifications dans le magasin `kv`. Avec `tls = files`, ils sont refusés : renouvelez
+  ou révoquez le certificat avec l’outil qui écrit les fichiers.
+
+Avec [`metrics_exporter`](#metrics) défini, mettez en place une alerte sur `my.tls.certificate.expiry` sous 7 jours et sur
+`my.tls.order.consecutive_failures` de 3 ou plus ([alertes](alerts.md#mytlscertificateexpiring)) : un renouvellement en échec se voit
+des semaines avant l’expiration du certificat.
+
+<!-- source: checks-and-running-it 983028d27675 -->
+### Vérifications et exécution
+
+`my config check` signale, avec `tls = acme`, des conditions non acceptées, un `host` qui est une adresse IP, `localhost`,
+ou un nom sans point, un `tls_acme_directory` qui n’est pas une URL `https`, et `kv = memory` avec un `role` autre que
+`all`, comme des erreurs. Avec `tls = files`, il signale comme des erreurs un certificat ou une clé illisible, une clé qui ne correspond pas au
+certificat, et un certificat qui ne couvre pas `host`, a expiré ou n’est pas encore valide, et avertit lorsqu’il reste
+moins de 14 jours. Il avertit lorsque `trusted_proxies` est défini avec `tls` autre que `off`. Avec `tls = off`, il avertit
+lorsque `listen` est le port 80 ou 443 sur une adresse autre que loopback, puisque rien ne semble terminer le TLS devant le
+serveur ; le serveur journalise le même avertissement une fois par démarrage lorsqu’un tel serveur, avec `trusted_proxies` vide, reçoit une requête HTTP simple
+d’une adresse autre que loopback.
+
+**systemd.** Les ports inférieurs à 1024 exigent une capacité pour un utilisateur autre que root. Donnez-la au service et à rien d’autre :
+
+```ini
+[Service]
+User=my
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+```
+
+Avec `tls = files`, l’utilisateur doit aussi pouvoir lire les fichiers de certificat. Avec certbot, ses répertoires `live` et `archive`
+ne sont lisibles que par root : donnez au groupe du service l’accès (`chgrp` et `chmod g+rx` sur les répertoires, `g+r` sur
+les clés), ou copiez les fichiers dans un hook de déploiement vers un répertoire que le service lit.
+
+**Docker.** Docker 20.10 et les versions ultérieures laissent un conteneur ouvrir des ports inférieurs à 1024 sans capacité, de sorte que l’image fonctionne telle
+quelle. L’image définit `MY_LISTEN=:8080` ; définissez donc `MY_LISTEN=:443` dans `.env`, et publiez les deux ports dans un
+`compose.override.yaml` (`ports: ["80:80", "443:443"]`). Avec `tls = files`, montez les fichiers de certificat en lecture seule
+là où pointent `MY_TLS_CERT_FILE` et `MY_TLS_KEY_FILE` ; le serveur s’exécute sous l’utilisateur `65532`, qui doit pouvoir les lire.
+Avec `tls = acme`, il n’y a rien à monter : les certificats vivent dans la base de données.
+Omettez `compose.caddy.yaml`, qui prendrait les mêmes ports. Cela ne vaut pas avec `network_mode: host`, où
+le conteneur partage le réseau de la machine et a besoin de la même capacité qu’un service hors conteneur.
+
+**Comparé à Caddy.** Servir le HTTPS depuis `my` renonce au HTTP/3, à la compression des réponses (le serveur envoie les fichiers du
+client web compressés et ne compresse rien d’autre), à un journal d’accès propre (les lignes de journal `http request` du serveur subsistent), et aux certificats validés par
+DNS, y compris les certificats génériques. Conservez `compose.caddy.yaml`, ou un autre proxy, lorsque vous avez besoin de l’un d’eux.
 
 <!-- source: get-the-image 89a97ed4f1d2 -->
 ## Obtenir l’image
@@ -215,96 +386,105 @@ Si vous exécutez une version officielle non modifiée, gardez la valeur par dé
 - Assurez-vous que le filtrage antispam ne supprime pas les demandes.
 - Utilisez une adresse que vous acceptez de rendre publique : n’importe qui peut la voir sur la page d’informations, sur la page d’accueil et dans NodeInfo.
 
-<!-- source: metrics 77e2cbc5a0f6 -->
+<!-- source: metrics 000df571a6a0 -->
 ## Métriques
 
-Le réglage `metrics_exporter` (`none` par défaut) exporte les métriques du service. Ses réglages associés se trouvent dans la [référence de configuration](../reference/configuration.md).
+Le paramètre `metrics_exporter` (par défaut `none`) exporte les métriques du service. Ses paramètres associés se trouvent dans la [référence de la configuration](../reference/configuration.md).
 
-| `metrics_exporter` | Chemin | Convient à |
+| `metrics_exporter` | Chemin | Adapté à |
 | --- | --- | --- |
-| `none` | Rien n’est exporté. L’instrumentation ne coûte presque rien. Les valeurs de toute l’instance vont tout de même dans une ligne de journal `metrics snapshot` toutes les 15 minutes | Cloud Run (utilisez plutôt les métriques de la plateforme et les métriques basées sur les journaux) |
-| `prometheus` | `GET /metrics` sur `metrics_listen` (`127.0.0.1:9464` par défaut). C’est un écouteur distinct du `listen` public, sans authentification, et il fonctionne pour chaque `role` | Auto-hébergement (collecté par un serveur compatible Prometheus ou KEDA) |
-| `otlp` | Envoyé à un OpenTelemetry Collector par OTLP/HTTP. La destination provient des variables d’environnement OTel standard telles que `OTEL_EXPORTER_OTLP_ENDPOINT` | Installations où vous pouvez exécuter un collecteur |
-| `emf` | Lignes JSON CloudWatch Embedded Metric Format. Les métriques de requêtes et de tâches voyagent sur les lignes de clôture ci-dessus ; les autres sont écrites sur la sortie standard, une ligne par ensemble de libellés, à la fin d’une requête ou d’une tâche | AWS ECS |
+| `none` | Rien n’est exporté. L’instrumentation ne coûte presque rien. Les valeurs de toute l’instance vont quand même dans une ligne de journal `metrics snapshot` toutes les 15 minutes | Cloud Run (utilisez plutôt les métriques de la plateforme et les métriques basées sur les journaux) |
+| `prometheus` | `GET /metrics` sur `metrics_listen` (par défaut `127.0.0.1:9464`). C’est un écouteur distinct du `listen` public, sans authentification, qui s’exécute pour chaque `role` | Auto-hébergé (collecté par un serveur compatible Prometheus ou KEDA) |
+| `otlp` | Envoyé à un OpenTelemetry Collector via OTLP/HTTP. La destination provient des variables d’environnement OTel standard comme `OTEL_EXPORTER_OTLP_ENDPOINT` | Les configurations où vous pouvez exécuter un collecteur |
+| `emf` | Lignes JSON au format CloudWatch Embedded Metric Format. Les métriques de requêtes et de jobs voyagent sur les lignes de journal de fin ci-dessus ; les autres sont écrites sur la sortie standard, une ligne par ensemble d’étiquettes, à la fin d’une requête ou d’un job | AWS ECS |
 
 Les métriques sont listées ci-dessous. Dans Prometheus, `.` dans un nom devient `_` et un suffixe d’unité (`_seconds`, et `_total` pour un compteur) est ajouté.
 
-| Métrique | Type | Libellés |
+| Métrique | Type | Étiquettes |
 | --- | --- | --- |
-| `http.server.request.duration` | Histogramme, secondes | `http.request.method`, `http.route` (le chemin du motif de route ; `other` lorsqu’aucun ne correspond), `http.response.status_code`, `my.surface` (`client_api` / `admin` / `activitypub` / `oauth` / `media` / `web` / `payments` / `voice` / `queue`) |
+| `http.server.request.duration` | Histogramme, secondes | `http.request.method`, `http.route` (le chemin du motif de route ; `other` si aucun ne correspond), `http.response.status_code`, `my.surface` (`client_api` / `admin` / `activitypub` / `oauth` / `media` / `web` / `payments` / `voice` / `queue`) |
 | `http.server.active_requests` | UpDownCounter | `my.surface` |
-| `my.inbox.activities` | Compteur | `activity.type` (un type d’Activity connu, ou `other`), `my.outcome` (`accepted` / `duplicate` / `rejected` / `ignored` / `error`), `my.inbox.rejection` (uniquement avec `rejected` : `signature` pour une signature ou une preuve d’intégrité manquante, invalide ou qui ne se vérifie pas, ou dont la clé n’a pas pu être récupérée ; `suspended` pour un domaine suspendu ; `federation_off` ; `rate_limited` ; `invalid` pour une activité sans `id`, `type`, `actor` ou `object` valide) |
-| `my.relay.activities` | Compteur | `my.outcome` (`admitted` / `over_limit` / `restricted` / `not_receiving` : si une activité portée par un relais a été ingérée, et pourquoi elle a été écartée ; voir [Relais de fédération](relays.md)) |
-| `my.move.activities` | Compteur | `my.outcome` (`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon` : si un `Move` reçu a été enregistré, et pourquoi il a été écarté) |
-| `my.delivery.attempts` | Compteur | `my.outcome` (`success` / `retry` / `gone` / `failed` ; `gone` couvre un 410 et les envois ignorés parce que le serveur est indisponible ou suspendu) |
+| `my.inbox.activities` | Compteur | `activity.type` (un type d’Activity connu, ou `other`), `my.outcome` (`accepted` / `duplicate` / `rejected` / `ignored` / `error`), `my.inbox.rejection` (uniquement avec `rejected` : `signature` pour une signature ou une preuve d’intégrité absente, invalide ou qui ne se vérifie pas, ou dont la clé n’a pas pu être récupérée ; `suspended` pour un domaine suspendu ; `federation_off` ; `rate_limited` ; `invalid` pour une activité sans `id`, `type`, `actor` ou `object` valide) |
+| `my.relay.activities` | Compteur | `my.outcome` (`admitted` / `over_limit` / `restricted` / `not_receiving` : si une activité transportée par un relais a été ingérée, et pourquoi elle a été abandonnée ; voir [Relais de fédération](relays.md)) |
+| `my.move.activities` | Compteur | `my.outcome` (`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon` : si un `Move` reçu a été enregistré, et pourquoi il a été abandonné) |
+| `my.delivery.attempts` | Compteur | `my.outcome` (`success` / `retry` / `gone` / `failed` ; `gone` couvre un 410 et les livraisons ignorées parce que le serveur est indisponible ou suspendu) |
 | `my.delivery.duration` | Histogramme, secondes | `my.outcome` |
+| `my.ux.duration` | Histogramme, secondes | `my.ux.metric` (`lcp` / `inp` / `long_frame` / `transition` / `press` / `call_rtt` / `call_jitter`), `my.ux.name` (la route, le type d’interaction, l’action ou le transport de l’appel ; [Mesures d’expérience utilisateur](error-reporting.md#ux-measurements)) |
+| `my.ux.call.packet_loss` | Histogramme, pourcentage | `my.ux.name` (le transport de l’appel) |
 | `my.plugin.failures` | Compteur | `my.plugin.kind` (un type de [plugin](plugins.md)), `my.plugin.code` (le code Connect de l’échec) |
 | `my.plugin.slot_wait` | Histogramme, secondes | `my.plugin.kind` (combien de temps un appel a attendu son tour parmi les appels de ce type qui s’exécutent en même temps) |
 | `my.hook.decisions` | Compteur | `hook`, `mode`, `outcome` (les décisions qu’un [hook de décision](decision-hooks.md) a enregistrées) |
 | `my.hook.failures` | Compteur | `hook`, `outcome` (`timeout`, `error`, `invalid` ou `breaker_open`) |
 | `my.hook.duration` | Histogramme | `hook` (secondes par appel du plugin) |
-| `my.job.duration` | Histogramme, secondes | `my.job.type` (un type de tâche enregistré, ou `other`), `my.outcome` (`success` / `retry` / `dead` / `postponed` : `postponed` est une exécution qui n’a fait aucun travail et n’utilise aucune des tentatives de la tâche, comme une récupération de carte de lien qui attend son hôte) |
+| `my.job.duration` | Histogramme, secondes | `my.job.type` (un type de job enregistré, ou `other`), `my.outcome` (`success` / `retry` / `dead` / `postponed` : `postponed` est une exécution qui n’a fait aucun travail et n’utilise aucune des tentatives du job, comme la récupération d’une carte de lien qui attend son hôte) |
 | `my.job.wait` | Histogramme, secondes | `my.job.type` |
-| `my.link_card.host_pauses` | Compteur | `http.response.status_code` (`429` / `503`). Un par pause des récupérations de cartes de liens depuis un hôte ; voir [Aperçus de liens](link-previews.md#limits-per-host) |
-| `my.translation.requests` | Compteur | `my.outcome` (`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`). Un par demande de traduction d’une publication que le lecteur peut voir, ou de la publication ou du commentaire d’un signalement qu’un modérateur demande : satisfaite à partir des propres mots de l’auteur, d’une traduction conservée ou par un fournisseur, ou refusée parce qu’aucun fournisseur ne peut recevoir la publication, qu’une limite mensuelle est atteinte, qu’aucun fournisseur ne traduit la langue, ou qu’aucun fournisseur n’a renvoyé de traduction exploitable. |
-| `my.translation.characters` | Compteur | `my.provider` (l’ID d’un fournisseur de traduction). Les caractères des publications et des commentaires de signalements envoyés au fournisseur, sans les marqueurs, y compris les appels qui échouent. C’est ce que comptent les [limites mensuelles](instance-settings.md#admin-screens-and-the-client-api), et cela peut différer de ce que facture le fournisseur |
-| `my.timeline.delivery.lag` | Histogramme, secondes | Aucun (de la création d’une publication locale à son écriture dans les fils d’accueil et à la notification aux flux) |
+| `my.link_card.host_pauses` | Compteur | `http.response.status_code` (`429` / `503`). Un par pause des récupérations de cartes de lien auprès d’un hôte ; voir [Aperçus de liens](link-previews.md#limits-per-host) |
+| `my.translation.requests` | Compteur | `my.outcome` (`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`). Un par demande de traduction d’une publication que le spectateur peut voir, ou de la publication ou du commentaire d’un signalement qu’un modérateur demande : satisfaite à partir des propres mots de l’auteur, d’une traduction conservée ou d’un fournisseur, ou refusée parce qu’aucun fournisseur ne peut recevoir la publication, qu’une limite mensuelle est atteinte, qu’aucun fournisseur ne traduit la langue, ou qu’aucun fournisseur n’a renvoyé de traduction utilisable. |
+| `my.translation.lock_waits` | Compteur | Aucune. Une par demande qui a attendu une autre demande traduisant la même publication dans la même langue, au lieu de solliciter un fournisseur |
+| `my.translation.characters` | Compteur | `my.provider` (l’ID d’un fournisseur de traduction). Les caractères des publications et des commentaires de signalements envoyés au fournisseur, sans marqueurs, y compris les appels qui échouent. C’est ce que comptent les [limites mensuelles](instance-settings.md#admin-screens-and-the-client-api), et cela peut différer de ce que le fournisseur facture |
+| `my.timeline.delivery.lag` | Histogramme, secondes | Aucune (de la création d’une publication locale à son écriture dans les fils d’accueil et à la notification aux flux) |
 | `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`, `timeline` pour les flux des fils local et fédéré, `voice` pour les flux des salons de chat vocal) |
-| `my.accounts.registered` | Compteur | Aucun |
+| `my.stream.signals` | Compteur | `my.stream.kind` (`user` / `timeline`). Un par signal qu’un flux ouvert a traité, qu’il ait ou non envoyé quelque chose au client |
+| `my.accounts.registered` | Compteur | Aucune |
 | `my.statuses.created` | Compteur | `my.visibility` |
-| `my.billing.imports` | Compteur | `my.billing.source` (`aws` / `gcp` / `plugin`), `my.outcome` (`success` / `failed`), `error.type` (uniquement avec `failed` : le type d’échec, comme dans [Importer les coûts d’utilisation du cloud](billing-import.md)). Chaque tentative compte, y compris les nouvelles tentatives et les échecs qui attendent l’import quotidien suivant |
-| `my.supporter.tip_checkouts` | Compteur | `my.outcome` (`started` / `rate_limited` / `paid` / `expired`). Un par démarrage d’un pourboire qui a obtenu la page du prestataire, par démarrage que les limites ont refusé, et par pourboire payé ou terminé impayé ; voir [pourboires](supporters.md#tips) pour les alertes qu’il alimente |
-| `my.voice.turn.credentials` | Compteur | `my.voice.turn` (`coturn` / `cloudflare`), `my.outcome` (`issued` / `reused` / `failed`). Un par identifiant TURN qu’un participant à un chat vocal a demandé en rejoignant un salon ou en renouvelant sa connexion : `reused` signifie que des identifiants Cloudflare émis plus tôt pour la même connexion ont été renvoyés, et `failed` que Cloudflare n’a pas pu être joint ou a refusé ; le participant a donc reçu une erreur et n’a pas pu se connecter |
-| `my.errors.exported` | Compteur | `my.outcome` (`success` / `dropped` / `failed` : un par rapport d’erreur pour le service de `errors_exporter`. `dropped` signifie que le rapport n’a pas été envoyé parce que 1 000 rapports attendaient déjà ou que le service a demandé au serveur de ralentir, et le serveur attend aussi longtemps que le service le demande avant de renvoyer ; `failed` signifie que le service n’a pas pu être joint ou a refusé le rapport. Un rapport est envoyé une fois et jamais réessayé, et les rapports qui attendent encore 2 secondes après le début d’un arrêt sont perdus) |
-| `my.queue.ready` | Jauge | `my.job.type` (le nombre de tâches exécutables dans la file de la base de données) |
-| `my.queue.oldest_ready_age` | Jauge, secondes | `my.job.type` (depuis combien de temps la plus ancienne tâche exécutable de chaque type dans la file de la base de données attend ; un type sans tâche exécutable n’a pas de valeur) |
-| `my.queue.dead` | Jauge | Aucun |
-| `my.instance.users`, `my.instance.statuses` | Jauge | Aucun (le nombre d’utilisateurs locaux et de publications, comme dans NodeInfo) |
+| `my.billing.imports` | Compteur | `my.billing.source` (`aws` / `gcp` / `plugin`), `my.outcome` (`success` / `failed`), `error.type` (uniquement avec `failed` : le type d’échec, comme dans [Importer les frais d’utilisation du cloud](billing-import.md)). Chaque tentative compte, y compris les nouvelles tentatives et les échecs qui attendent l’import quotidien suivant |
+| `my.supporter.tip_checkouts` | Compteur | `my.outcome` (`started` / `rate_limited` / `paid` / `expired`). Un par démarrage d’un pourboire qui a obtenu la page du fournisseur, par démarrage que les limites ont refusé, et par pourboire payé ou terminé sans paiement ; voir [pourboires](supporters.md#tips) pour les alertes qu’il sert |
+| `my.voice.turn.credentials` | Compteur | `my.voice.turn` (`coturn` / `cloudflare`), `my.outcome` (`issued` / `reused` / `failed`). Un par identifiant TURN qu’un participant à un chat vocal a demandé en rejoignant un salon ou en renouvelant sa connexion : `reused` signifie que des identifiants Cloudflare émis plus tôt pour la même connexion ont été renvoyés, et `failed` que Cloudflare n’a pas pu être joint ou a refusé, de sorte que le participant a reçu une erreur et n’a pas pu se connecter |
+| `my.errors.exported` | Compteur | `my.outcome` (`success` / `dropped` / `failed` : un par signalement d’erreur pour le service de `errors_exporter`. `dropped` signifie que le signalement n’a pas été envoyé parce que 1 000 signalements attendaient déjà ou que le service a demandé au serveur de ralentir, et le serveur attend aussi longtemps que le service le demande avant de renvoyer ; `failed` signifie que le service n’a pas pu être joint ou a refusé le signalement. Un signalement est envoyé une fois et jamais réessayé, et les signalements encore en attente 2 secondes après le début d’un arrêt sont perdus) |
+| `my.queue.ready` | Jauge | `my.job.type` (le nombre de jobs exécutables dans la file de la base de données) |
+| `my.queue.oldest_ready_age` | Jauge, secondes | `my.job.type` (depuis combien de temps attend le plus ancien job exécutable de chaque type dans la file de la base de données ; un type sans job exécutable n’a pas de valeur) |
+| `my.queue.dead` | Jauge | Aucune |
+| `my.instance.users`, `my.instance.statuses` | Jauge | Aucune (les nombres d’utilisateurs locaux et de publications, comme dans NodeInfo) |
 | `my.media.stored_bytes` | Jauge, octets | `my.media.origin` (`local` / `remote_cache`) |
-| `my.db.size` | Jauge, octets | Aucun (la taille de la base de données : `pg_database_size` pour PostgreSQL ; le fichier de la base de données sans son journal d’écriture anticipée pour SQLite) |
-| `my.billing.import.failing` | Jauge | `my.billing.source` (1 lorsque l’import le plus récent de la source a échoué, 0 sinon) |
-| `my.federation.instances` | Jauge | `my.federation.instance.state` (`available` : serveurs auxquels les envois vont toujours mais qui ont échoué au moins un jour depuis leur dernière réponse ; `unavailable` : serveurs dont les envois sont suspendus) |
+| `my.db.size` | Jauge, octets | Aucune (la taille de la base de données : `pg_database_size` pour PostgreSQL ; le fichier de la base de données sans son journal d’écriture anticipée pour SQLite) |
+| `my.billing.import.failing` | Jauge | `my.billing.source` (1 lorsque le dernier import de la source a échoué, 0 sinon) |
+| `my.federation.instances` | Jauge | `my.federation.instance.state` (`available` : les serveurs auxquels les livraisons vont encore mais qui ont échoué au moins un jour depuis leur dernière réponse ; `unavailable` : les serveurs dont les livraisons sont suspendues) |
 | `my.metrics.snapshot.age` | Jauge, secondes | `my.metrics.snapshot.part` (`queue` / `totals`) |
-| `my.errors.reported` | Compteur | `my.error.source` (`server` / `web`), `my.error.kind` (`panic` / `error`). Un par [rapport d’erreur](#error-reports) |
+| `my.errors.reported` | Compteur | `my.error.source` (`server` / `web`), `my.error.kind` (`panic` / `error`). Un par [signalement d’erreur](#error-reports) |
+| `my.tls.certificate.expiry` | Jauge, secondes | `host` (le temps restant avant l’expiration du certificat que ce processus sert pour l’un de ses hôtes, avec `tls = acme` ou `tls = files` ; chaque processus signale le sien, de sorte qu’un processus resté avec un ancien certificat se voit. Voir [Commandes et métriques](#commands-and-metrics)) |
+| `my.tls.order.attempts` | Compteur | `host`, `result` (`issued` / `failed`). Un par commande d’un certificat auprès de l’autorité de certification ACME, par le processus qui l’a passée, `my tls renew` et `my tls revoke` compris |
+| `my.tls.order.consecutive_failures` | Jauge | `host` (les commandes depuis le certificat actuel de l’hôte qui n’en ont obtenu aucun : le nombre qui fixe l’attente avant la commande suivante) |
+| `my.tls.rounds` | Compteur | Aucune. Un par tour du gestionnaire de certificats sur ses hôtes avec `tls = acme` ; un nombre qui cesse de croître signifie que le gestionnaire s’est arrêté |
 
-Les vérifications d’état (`/healthz`, `/readyz`, `/health/live`, `/health/ready`) ne sont pas mesurées. Aucun libellé ne contient de domaine distant, de compte, d’URL ni d’IP cliente.
-`my.queue.*`, `my.instance.*`, `my.media.stored_bytes`, `my.db.size`, `my.federation.instances` et `my.billing.import.failing` sont des valeurs pour l’ensemble de l’instance : chaque processus rapporte la même valeur à partir d’un instantané conservé dans le magasin clé-valeur.
+Les vérifications de santé (`/healthz`, `/readyz`, `/health/live`, `/health/ready`) ne sont pas mesurées. Aucune étiquette ne contient de domaine distant, de compte, d’URL ni d’IP de client.
+`my.queue.*`, `my.instance.*`, `my.media.stored_bytes`, `my.db.size`, `my.federation.instances` et `my.billing.import.failing` sont des valeurs pour toute l’instance : chaque processus signale la même valeur à partir d’un instantané conservé dans le magasin clé-valeur.
 
-<!-- source: system-metrics dad53f84ee0a -->
+<!-- source: system-metrics 973069859f11 -->
 ### Métriques système
 
-Les métriques du processus, du runtime Go et des connexions aux ressources sont exportées par le même `metrics_exporter`.
-Le CPU des conteneurs, la mémoire, le nombre d’instances et les requêtes entrantes sont laissés aux métriques de la plateforme ; celles-ci couvrent la saturation à l’intérieur du processus, que la plateforme ne peut pas voir.
+Les métriques sur le processus, le runtime Go et les connexions aux ressources sont exportées par le même `metrics_exporter`.
+Le CPU des conteneurs, la mémoire, le nombre d’instances et les requêtes entrantes sont laissés aux métriques de la plateforme ; celles-ci couvrent la saturation à l’intérieur du processus que la plateforme ne peut pas voir.
 Ne les utilisez pas pour déclencher la mise à l’échelle ; utilisez-les pour les alertes et pour estimer le plafond d’instances.
 
-| Métrique | Type | Libellés |
+| Métrique | Type | Étiquettes |
 | --- | --- | --- |
 | `go.memory.used`, `go.memory.limit`, `go.memory.gc.goal` | Jauge, octets | Seul `go.memory.used` a `go.memory.type` (`stack` / `other`). `go.memory.limit` n’apparaît que lorsque `GOMEMLIMIT` est défini |
-| `go.memory.allocated`, `go.memory.allocations` | Compteur | Aucun |
-| `go.goroutine.count`, `go.processor.limit`, `go.config.gogc` | Jauge | Aucun |
-| `go.schedule.duration`, `go.memory.gc.pause.duration` | Histogramme, secondes | Aucun (l’attente entre le moment où une goroutine devient exécutable et celui où elle s’exécute, et les pauses du GC) |
-| `go.memory.gc.cycles` | Compteur | Aucun |
+| `go.memory.allocated`, `go.memory.allocations` | Compteur | Aucune |
+| `go.goroutine.count`, `go.processor.limit`, `go.config.gogc` | Jauge | Aucune |
+| `go.schedule.duration`, `go.memory.gc.pause.duration` | Histogramme, secondes | Aucune (l’attente entre le moment où une goroutine devient exécutable et son exécution, et les pauses du GC) |
+| `go.memory.gc.cycles` | Compteur | Aucune |
 | `process.cpu.time` | Compteur observable, secondes (total depuis le démarrage) | `cpu.mode` (`user` / `system`) |
-| `process.memory.usage` | Jauge, octets | Aucun (mémoire résidente, RSS) |
-| `process.unix.file_descriptor.count`, `my.process.file_descriptor.limit` | Jauge | Aucun (descripteurs de fichiers ouverts et la limite) |
-| `process.uptime` | Jauge, secondes | Aucun |
+| `process.memory.usage` | Jauge, octets | Aucune (mémoire résidente, RSS) |
+| `process.unix.file_descriptor.count`, `my.process.file_descriptor.limit` | Jauge | Aucune (les descripteurs de fichiers ouverts et la limite) |
+| `process.uptime` | Jauge, secondes | Aucune |
 | `db.client.connection.count` | Jauge | `db.client.connection.pool.name` (`postgres` / `sqlite`), `db.client.connection.state` (`idle` / `used`) |
 | `db.client.connection.max` | Jauge | `db.client.connection.pool.name` |
 | `db.client.connection.wait_time`, `my.db.client.connection.waits`, `db.client.connection.timeouts` | Compteur observable (total depuis le démarrage ; secondes ou nombre) | `db.client.connection.pool.name`. `timeouts` n’existe que pour PostgreSQL |
 | `my.adapter.operation.duration` | Histogramme, secondes | `my.adapter` (`queue.db` / `kv.db` / `kv.memory` / `kv.valkey` / `stream.<stream>` / `blob.fs`), `my.operation`, `my.outcome` (`success` / `error`) |
 | `my.adapter.connections` | UpDownCounter | `my.adapter` (connexions `valkey`, et abonnés `stream.<stream>`) |
 | `my.adapter.reconnects` | Compteur | `my.adapter` |
-| `http.client.request.duration` | Histogramme, secondes | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`), `http.request.method`, `my.http.status_class` (`2xx` et ainsi de suite), `error.type` (`forbidden_destination` est un refus de la protection SSRF) |
-| `http.client.open_connections` | UpDownCounter | Aucun |
-| `my.readiness.failures` | Compteur | Aucun |
-| `my.http.origin_refused` | Compteur | Aucun. Un par requête refusée parce qu’elle n’est pas passée par le CDN ([`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)). Les sondes de l’adresse de l’origine le font augmenter lentement ; un bond pendant que le trafic s’arrête signifie que le CDN n’envoie plus l’en-tête. Le mode de maintenance ne mesure rien ; seul son journal d’accès les montre |
+| `http.client.request.duration` | Histogramme, secondes | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`), `http.request.method`, `my.http.status_class` (`2xx` et ainsi de suite), `error.type` (`forbidden_destination` est un refus par la protection SSRF) |
+| `http.client.open_connections` | UpDownCounter | Aucune |
+| `my.readiness.failures` | Compteur | Aucune |
+| `my.readiness.shared` | Compteur | Aucune. Un par requête de disponibilité qui a repris le résultat d’une vérification déjà en cours au lieu d’en démarrer une |
+| `my.http.origin_refused` | Compteur | Aucune. Un par requête refusée parce qu’elle n’est pas passée par le CDN ([`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)). Les sondes de l’adresse de l’origine le font augmenter lentement ; un bond alors que le trafic s’arrête signifie que le CDN n’envoie plus l’en-tête. Le mode maintenance ne mesure rien, de sorte que seul son journal d’accès les montre |
 
-- Les métriques du runtime Go (`go.*`) ne sont exportées que par `prometheus` et `otlp`. Avec `emf`, une tâche d’instantané périodique écrit les jauges et les compteurs observables du processus et du pool de connexions.
-- Les attentes du pool et le temps CPU sont des compteurs observables : le pool et le noyau conservent des totaux depuis le démarrage, qui sont lus au moment de la collecte. Dans Prometheus, ce sont des compteurs `_total` (comme `process_cpu_time_seconds_total`), dans OTLP ce sont des sommes monotones, et leur croissance se voit avec le `rate()` de PromQL.
+- Les métriques du runtime Go (`go.*`) ne sont exportées que par `prometheus` et `otlp`. Avec `emf`, un job d’instantané périodique écrit les jauges du processus et du pool de connexions ainsi que les compteurs observables.
+- Les attentes du pool et le temps CPU sont des compteurs observables : le pool et le noyau conservent des totaux depuis le démarrage, et ils sont lus au moment de la collecte. Dans Prometheus, ce sont des compteurs `_total` (comme `process_cpu_time_seconds_total`), dans OTLP ce sont des sommes monotones, et vous voyez leur croissance avec `rate()` de PromQL.
   `emf` n’a pas de compteurs totaux ; il écrit donc l’augmentation depuis l’écriture précédente (additionnez-les avec la statistique Sum de CloudWatch).
-- Le `claim` de la file n’est mesuré que lorsqu’il prend une tâche ou échoue. L’interrogation d’un worker en attente n’enregistre rien.
-- `db.client.connection.pending_requests` n’est pas exporté : les statistiques de pgx et de `database/sql` ne indiquent pas combien sont en attente ; le nombre et la durée des attentes en tiennent donc lieu.
-- Alertez sur le ratio de la somme de `go.memory.used` à `go.memory.limit`, et sur la croissance de `db.client.connection.wait_time` (la limite du pool est atteinte).
+- Le `claim` de la file n’est mesuré que lorsqu’il prend un job ou échoue. L’interrogation d’un worker en attente n’enregistre rien.
+- `db.client.connection.pending_requests` n’est pas exporté : les statistiques de pgx et de `database/sql` ne signalent pas combien attendent ; le nombre et la durée des attentes en tiennent donc lieu.
+- Mettez en place une alerte sur le rapport entre la somme de `go.memory.used` et `go.memory.limit`, et sur la croissance de `db.client.connection.wait_time` (la limite du pool est atteinte).
 
 <!-- source: memory-limit-gomemlimit 8ea44722eefd -->
 ### Limite de mémoire (`GOMEMLIMIT`)
@@ -356,14 +536,36 @@ Pour envoyer les spans de l’application à Cloud Trace, exécutez un **OpenTel
 - À la fin de chaque requête ou tâche enregistrée, `unit` vide les spans accumulés vers le sidecar avant de retourner. Pour que le sidecar puisse les envoyer alors qu’aucun processeur n’est alloué, utilisez la facturation par instance pour une configuration avec traces activées.
 - Le coût est celui des ressources du sidecar et du volume de spans (tarifs de Cloud Trace). Choisissez le ratio avec `traces_sample_ratio`.
 
-<!-- source: aws-ecs 52fa09412f20 -->
+<!-- source: aws-ecs cc7dd1ec1e83 -->
 ### AWS ECS
 
-Pour envoyer vers X-Ray, exécutez l’**AWS Distro for OpenTelemetry (ADOT) Collector** comme conteneur sidecar dans la tâche. Le serveur n’a pas de signature SigV4 ; le Collector signe et envoie au point de terminaison OTLP de X-Ray (`https://xray.<region>.amazonaws.com/v1/traces`).
+Pour envoyer vers X-Ray, exécutez le **AWS Distro for OpenTelemetry (ADOT) Collector** comme conteneur sidecar dans chaque tâche. Le serveur n’a pas de signature SigV4 ; le Collector signe avec le rôle de la tâche et envoie vers X-Ray. Le module `mycroblog-aws` du [déploiement OpenTofu](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) fait tout cela par défaut (`observability.traces = "x-ray"`) ; le reste de cette section s’adresse à une définition de tâche à vous.
 
-- Serveur : `MY_TRACES_EXPORTER=otlp`, `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`. Dans la configuration du Collector, recevez avec un récepteur `otlp` sur `localhost:4318` et envoyez à X-Ray avec un exportateur `otlphttp` qui utilise l’extension `sigv4auth`.
-- Accordez au rôle de la tâche la permission d’écrire dans X-Ray.
-- Le coût est la part du sidecar dans les ressources de la tâche, et le nombre de traces que X-Ray enregistre (les 100 000 premières par mois sont gratuites).
+- Serveur : `MY_TRACES_EXPORTER=otlp`, `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces`, et la valeur par défaut `MY_TRACES_FLUSH=batch`, puisque le processus reste actif.
+- Collector : une image épinglée par version, comme `public.ecr.aws/aws-observability/aws-otel-collector:v0.50.0`, avec sa configuration dans la variable `AOT_CONFIG_CONTENT` : un récepteur `otlp` sur HTTP à `127.0.0.1:4318` et l’exportateur `awsxray`. Le point de terminaison OTLP de X-Ray (`https://xray.<region>.amazonaws.com/v1/traces`, par un exportateur `otlphttp` avec l’extension `sigv4auth`) fonctionne aussi, mais exige que CloudWatch Transaction Search soit activé pour le compte.
+- Accordez au rôle de la tâche `xray:PutTraceSegments`, avec lequel l’exportateur `awsxray` écrit. Le serveur échantillonne lui-même les traces ; le Collector n’a donc besoin d’aucune règle d’échantillonnage de X-Ray.
+- Donnez au Collector une part de la tâche : `mycroblog-aws` lui donne 32 unités de CPU et 128 MiB, et le reste au serveur, avec `GOMEMLIMIT` à 90 % de ce reste. Faites dépendre le conteneur du serveur du démarrage de celui du Collector, afin que le Collector s’arrête après le serveur et reçoive ses derniers spans.
+- Le coût est la part du sidecar dans les ressources de la tâche, et le nombre de traces qu’enregistre X-Ray (les 100 000 premières par mois sont gratuites). La valeur par défaut `traces_sample_ratio` de 0,01 enregistre environ 30 000 traces par mois pour 100 000 requêtes par jour.
+
+<!-- source: profiles e3f49c0becf3 -->
+## Profils
+
+Les [métriques système](#system-metrics) disent combien de mémoire et de CPU un processus utilise ; un profil du runtime Go dit ce qui les utilise.
+`pprof_listen` nomme l’adresse d’un écouteur qui sert les profils sous `/debug/pprof/`, pour chaque `role`. Il est vide par défaut, ce qui n’ouvre aucun écouteur.
+
+```sh
+MY_PPROF_LISTEN=127.0.0.1:6060 my serve
+
+go tool pprof -sample_index=inuse_space http://127.0.0.1:6060/debug/pprof/heap   # what holds the heap now
+go tool pprof -sample_index=alloc_space http://127.0.0.1:6060/debug/pprof/heap   # what has allocated since the start
+go tool pprof 'http://127.0.0.1:6060/debug/pprof/profile?seconds=30'             # where the CPU goes, for 30 seconds
+curl 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1'                       # every goroutine, by where it waits
+curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '               # the runtime's memory statistics
+```
+
+L’écouteur n’a pas d’authentification, un profil montre l’intérieur du processus, et en prendre un coûte du CPU : gardez-le sur loopback et atteignez-le par un tunnel (`ssh -L 6060:127.0.0.1:6060 <host>`, `kubectl port-forward`), puis désactivez-le lorsque vous avez terminé.
+Le profil du tas ne couvre que le tas Go. La mémoire résidente du processus contient aussi les pages du binaire qui ont été lues, les piles et les propres structures du runtime ; les statistiques de mémoire les donnent.
+Les profils de mutex et de blocage sont vides : le serveur ne les échantillonne pas.
 
 <!-- source: stop-the-server 37d4c0cc3d97 -->
 ## Arrêter le serveur
@@ -381,28 +583,28 @@ La ligne de journal `serve failed` nomme la tâche, et le processus se termine a
 
 Pour un travail sur la base de données, le magasin clé-valeur ou la file, redémarrez en mode maintenance (`MY_MAINTENANCE=true`) plutôt que de l’arrêter. Consultez [Maintenance](maintenance.md).
 
-<!-- source: the-job-queue-and-failed-dead-jobs 55023b12a1aa -->
-## La file de tâches et les tâches échouées (mortes)
+<!-- source: the-job-queue-and-failed-dead-jobs 1fd5aaccbff5 -->
+## La file de jobs et les jobs en échec (morts)
 
-[Tâches](../reference/jobs.md) liste chaque type de tâche : ce qu’elle fait, ce qui la déclenche, comment elle est retentée et ce que fait son exécution répétée.
+[Jobs](../reference/jobs.md) liste chaque type de job : ce qu’il fait, ce qui le déclenche, comment il réessaie et ce que fait son ré-exécution.
 
-La page d’administration des tâches (`/admin/jobs`, permission `manage_jobs`) comporte trois pages :
+La page d’administration des jobs (Administration → Jobs, `/admin/jobs`, permission `manage_jobs`) comporte trois pages :
 
-- **État de la file** (`/admin/jobs`) : le nombre par état et par type et état, combien de temps chaque type fait attendre une tâche, et depuis combien de temps attend la plus ancienne tâche en attente.
-- **Tâches** (`/admin/jobs/list`) : un tableau des tâches dans un état (en attente, en attente d’exécution, en cours, en attente de nouvelle tentative, échouée), une page à la fois, avec le type, l’état, l’heure prévue ou d’échec et le nombre de tentatives. Les tâches échouées ont **Relancer**.
-- **Une tâche** (`/admin/jobs/<id>`, depuis le type dans le tableau) : tous les faits de la tâche, sa dernière erreur, ses clés et sa charge utile, l’historique des tentatives infructueuses (résultat, erreur, worker, et heures de début et de fin de chaque tentative), et **Relancer** pour une tâche échouée.
+- **État de la file** (`/admin/jobs`) : d’abord combien de jobs ont échoué, avec un lien vers eux ; le nombre par état (en file, en cours, en attente de nouvelle tentative, en échec), chacun menant aux jobs de cet état ; depuis combien de temps attend le plus ancien job dû ; et un tableau des nombres par type et par état avec le temps pendant lequel chaque type fait attendre un job.
+- **Liste des jobs** (`/admin/jobs/list`) : les jobs qui ne sont pas terminés (en file, en cours, en attente de nouvelle tentative), ou d’un état, et d’un type, une page à la fois, avec le type, le nombre de tentatives, l’heure à laquelle il est dû ou a échoué, l’état et la première ligne de la dernière erreur.
+- **Un job** (`/admin/jobs/<id>`, depuis le type dans la liste) : **Exécuter de nouveau** pour un job en échec, qui demande d’abord confirmation, car une exécution peut répéter ce que le job a fait avant d’échouer ; chaque fait du job, son ID et ses clés chacun avec un bouton de copie ; sa dernière erreur et sa charge utile, chacune avec un bouton de copie ; un tableau des tentatives infructueuses, les plus récentes d’abord (résultat, heure de fin, worker et erreur) ; et un lien vers les jobs de son type.
 
-L’API d’administration est `GET /api/v1/admin/queue`, `GET /api/v1/admin/jobs?state=&type=`, `GET /api/v1/admin/jobs/{id}`, `GET /api/v1/admin/jobs/{id}/attempts` et `POST /api/v1/admin/jobs/{id}/retry`.
-Une tâche terminée n’est plus dans la file ; sa page est donc introuvable.
+L’API d’administration comprend `GET /api/v1/admin/queue`, `GET /api/v1/admin/jobs?state=&type=`, `GET /api/v1/admin/jobs/{id}`, `GET /api/v1/admin/jobs/{id}/attempts` et `POST /api/v1/admin/jobs/{id}/retry`.
+Un job terminé n’est plus dans la file ; sa page est donc introuvable.
 
-- Les tâches en attente, en cours d’exécution et en attente de nouvelle tentative ne peuvent être listées que pour les files dont le serveur détient les tâches : `queue = db`, `queue = cloudtasks` (les tâches sont aussi dans la base de données) et `queue = inline`. Les tâches échouées et l’historique des tentatives se trouvent dans la base de données de l’application pour toutes les files ; elles peuvent donc toujours être listées.
-- L’historique des tentatives ne conserve que les tentatives infructueuses (les nouvelles tentatives et la tentative qui a finalement échoué). Suivez une exécution réussie via la ligne de journal structurée `job` (qui porte `job_id`).
-  L’historique est supprimé par le nettoyage horaire une fois que `job_attempt_retention` (30 jours par défaut ; consultez le [paramètre](../reference/configuration.md#job_attempt_retention)) s’est écoulé depuis la fin de la tentative.
-  L’historique ne contient ni charge utile ni journal de gestionnaire, et un message d’erreur est tronqué à ses 2 000 premiers octets. Les gestionnaires de tâches gardent les adresses e-mail, les adresses IP, les jetons et les corps de publications hors des messages d’erreur.
-  Pour une vue limitée aux types de tâches d’e-mail, consultez [Envoi d’e-mails](email.md).
+- Les jobs en attente, en cours et en attente de nouvelle tentative ne peuvent être listés que pour les files dont le serveur détient les jobs : `queue = db`, `queue = cloudtasks` (les jobs sont aussi dans la base de données) et `queue = inline`. Les jobs en échec et l’historique des tentatives se trouvent dans la base de données de l’application pour toutes les files, et peuvent donc toujours être listés.
+- L’historique des tentatives ne conserve que les tentatives infructueuses (les nouvelles tentatives et la tentative qui a finalement échoué). Suivez une exécution réussie par la ligne de journal structurée `job` (qui porte `job_id`).
+  L’historique est supprimé par le nettoyage horaire une fois que `job_attempt_retention` (30 jours par défaut ; voir le [paramètre](../reference/configuration.md#job_attempt_retention)) s’est écoulé depuis la fin de la tentative.
+  L’historique ne contient ni charge utile ni journal de gestionnaire, et un message d’erreur est tronqué à ses 2 000 premiers octets. Les gestionnaires de jobs tiennent les adresses e-mail, les adresses IP, les jetons et les corps de publications hors des messages d’erreur.
+  Pour une vue limitée aux types de jobs d’e-mail, voir [Envoyer des e-mails](email.md).
 
-Une tâche dont le gestionnaire a décidé qu’elle a échoué définitivement, et une tâche qui a épuisé ses nouvelles tentatives, devient une tâche morte dans la file de la base de données (`queue = db` et `queue = cloudtasks`).
-`my job` les liste, les relance et les supprime. L’état « Échec » de la page des tâches et l’API d’administration peuvent aussi les lister et les relancer.
+Un job dont le gestionnaire a décidé qu’il avait échoué définitivement, et un job qui a épuisé ses nouvelles tentatives, devient un job mort dans la file de la base de données (`queue = db` et `queue = cloudtasks`).
+`my job` les liste, les relance et les supprime. L’état « En échec » de la page des jobs et l’API d’administration peuvent aussi les lister et les relancer.
 
 ```sh
 my job list                  # newest failures first: ID, type, run count, time of failure, last error (-limit sets the count, default 50)
@@ -411,10 +613,10 @@ my job delete <id> [<id>...] # remove without running
 my job types                 # print every job type of this release
 ```
 
-- Si une tâche ayant la même clé d’idempotence attend déjà, cette tâche tient lieu de celle qui est relancée. Les gestionnaires de tâches sont idempotents ; remettre la même tâche en file un nombre quelconque de fois est donc sans danger.
-- Un ID inconnu est affiché et la commande se termine avec le code 1 ; les autres ID sont tout de même traités. Le code de sortie 2 signale une erreur d’utilisation.
-- Une tâche morte que personne ne relance est supprimée par le nettoyage horaire une fois que `dead_job_retention` (30 jours par défaut ; consultez le [paramètre](../reference/configuration.md#dead_job_retention)) s’est écoulé depuis l’échec.
-- Les tâches mortes de `queue = inline` vivent dans la mémoire du processus du serveur ; `my job` ne peut donc pas les gérer (code de sortie 1).
+- Si un job avec la même clé d’idempotence est déjà en attente, ce job tient lieu de celui qui est relancé. Les gestionnaires de jobs sont idempotents ; remettre le même job en file un nombre quelconque de fois est donc sans risque.
+- Un ID inconnu est affiché et la commande se termine avec le code 1 ; les autres ID sont quand même traités. Le code de sortie 2 signifie une erreur d’utilisation.
+- Un job mort que personne ne relance est supprimé par le nettoyage horaire une fois que `dead_job_retention` (30 jours par défaut ; voir le [paramètre](../reference/configuration.md#dead_job_retention)) s’est écoulé depuis l’échec.
+- Les jobs morts de `queue = inline` vivent dans la mémoire du processus du serveur ; `my job` ne peut donc pas les gérer (code de sortie 1).
 
 <!-- source: splitting-workers-by-job-type 89ced36a3c80 -->
 ### Répartir les workers par type de tâche
@@ -469,26 +671,26 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 La page d’administration des tâches montre la même attente par type. Un worker doté de l’un des paramètres laisse aussi de côté une tâche dont le type n’a aucun gestionnaire (elle compte sous `other` dans la métrique) ; sans worker dépourvu de paramètre, une telle tâche attend donc au lieu de devenir une tâche morte.
 
-<!-- source: running-several-jobs-at-once 91e5181261b2 -->
-### Exécuter plusieurs tâches à la fois
+<!-- source: running-several-jobs-at-once 2a1137a12e8f -->
+### Exécuter plusieurs jobs à la fois
 
-[`worker_job_concurrency`](../reference/configuration.md#worker_job_concurrency) définit combien de tâches un processus exécute à la fois, de 1 à 128. Il fonctionne avec `queue = db` ; avec Cloud Tasks, la plateforme en décide. La valeur par défaut est une tâche à la fois, et un paramètre de 1 se comporte de la même manière.
+[`worker_job_concurrency`](../reference/configuration.md#worker_job_concurrency) définit combien de jobs un processus exécute à la fois, de 1 à 128. Il fonctionne avec `queue = db` ; avec Cloud Tasks, c’est la plateforme qui en décide. La valeur par défaut est un job à la fois, et une valeur de 1 se comporte de même.
 
-Augmentez-le pour les tâches qui passent leur temps à attendre d’autres serveurs, comme `federation.deliver`. Elles utilisent peu de mémoire et peu de connexions à la base de données par tâche ; un seul processus fait donc le travail de plusieurs : lors d’un test local où une tâche n’attendait qu’une réponse pendant 200 ms, un processus avec 32 emplacements égalait 32 processus d’un emplacement chacun, en utilisant une petite partie de la mémoire. Ces tâches ne faisaient rien d’autre ; mesurez donc votre propre serveur. Associez-le à `worker_job_types`, et donnez à chaque type de tâche un processus avec son propre nombre.
+Augmentez-le pour les jobs qui passent leur temps à attendre d’autres serveurs, comme `federation.deliver`. Ceux-ci utilisent peu de mémoire et peu de connexions à la base de données par job, de sorte qu’un processus fait le travail de beaucoup : dans un test local où un job n’attendait qu’une réponse de 200 ms, un processus avec 32 emplacements égalait 32 processus à un emplacement chacun, en utilisant une petite part de la mémoire. Ces jobs ne faisaient rien d’autre ; mesurez donc votre propre instance. Associez-le à `worker_job_types`, et donnez à chaque type de job un processus avec son propre nombre.
 
 Gardez ces limites à l’esprit :
 
-- **Connexions à la base de données** : une tâche a besoin d’une connexion pour être réclamée, pour son propre travail et pour enregistrer son résultat. Avec `database = postgres`, le paramètre doit être inférieur au maximum du pool, faute de quoi le serveur ne démarre pas. Le maximum est `pool_max_conns` dans `database_url`, par défaut le plus grand de 4 et du nombre de processeurs ; un vCPU en autorise donc 3 tant que vous ne l’augmentez pas. Vérifiez que votre base de données ou votre gestionnaire de connexions accepte les connexions de tous vos processus.
-- **SQLite** : il écrit une transaction à la fois. Au-delà de 32, le serveur consigne un avertissement, et lors d’un test local SQLite était plus lent à 128 qu’à 32.
-- **Tâches gourmandes en processeur** : les emplacements partagent le processeur et la mémoire d’un processus. `media.process` attend son tour à une limite de la moitié des processeurs par défaut, et l’attente compte dans le bail de 5 minutes de la tâche ; un processus rempli de `media.process` peut donc dépasser le bail et recommencer. Donnez à de telles tâches un processus avec peu d’emplacements.
-- **Un serveur à la fois** : un processus établit au plus 8 connexions vers un même hôte ; un processus ne remet donc à un serveur donné pas plus vite que ne le permettent 8 connexions, quel que soit son nombre d’emplacements. Lorsque la plupart des remises vont à quelques grands serveurs, davantage de processus aident là où davantage d’emplacements ne le font pas.
-- **Un serveur bloqué retient des emplacements** : les emplacements qui attendent un serveur lent ne sont pas libres pour d’autres tâches ; séparez donc les remises des e-mails et des notifications.
-- **Les déploiements consomment des tentatives** : lorsque le serveur s’arrête, les tâches encore en cours après `ShutdownTimeout` (25 secondes par défaut) sont annulées, et chaque tâche annulée consomme une tentative. Plus les emplacements exécutent de tâches lentes, plus chaque déploiement consomme de tentatives. Une tâche annulée dont le résultat n’est pas enregistré à temps attend l’expiration de son bail avant de s’exécuter de nouveau.
-- **Un plantage emporte tous les emplacements** : si le processus manque de mémoire, toutes ses tâches attendent l’expiration de leurs baux.
+- **Connexions à la base de données** : un job a besoin d’une connexion pour être réclamé, pour son propre travail et pour enregistrer son résultat. Le paramètre doit être inférieur au maximum du pool, sinon le serveur ne démarre pas. Le maximum est `pool_max_conns` dans `database_url`, par défaut le plus grand de 4 et du nombre de CPU, si bien qu’un vCPU en autorise 3 tant que vous ne l’augmentez pas. Vérifiez que votre base de données ou votre pooler de connexions accepte les connexions de tous vos processus.
+- **SQLite** : il n’écrit qu’une transaction à la fois, et dans un test local il était plus lent à 128 qu’à 32.
+- **Jobs gourmands en CPU** : les emplacements se partagent le CPU et la mémoire d’un seul processus. `media.process` attend son tour à une limite de la moitié des CPU par défaut, et l’attente compte dans le bail de 5 minutes du job ; un processus plein de `media.process` peut donc dépasser le bail et recommencer. Donnez à de tels jobs un processus avec peu d’emplacements.
+- **Un serveur à la fois** : un processus établit au plus 8 connexions vers un même hôte ; un processus ne livre donc pas à un seul serveur plus vite que 8 connexions le permettent, quel que soit son nombre d’emplacements. Là où la plupart des livraisons vont vers quelques gros serveurs, davantage de processus aident là où davantage d’emplacements n’aident pas.
+- **Un serveur bloqué retient des emplacements** : les emplacements qui attendent un serveur lent ne sont pas libres pour d’autres jobs ; gardez donc les livraisons séparées des e-mails et des notifications.
+- **Les déploiements consomment des tentatives** : lorsque le serveur s’arrête, les jobs encore en cours après `ShutdownTimeout` (25 secondes par défaut) sont annulés, et chaque job annulé consomme une tentative. Plus il y a d’emplacements qui exécutent des jobs lents, plus chaque déploiement consomme de tentatives. Un job annulé dont le résultat n’est pas enregistré à temps attend l’expiration de son bail avant de s’exécuter de nouveau.
+- **Un plantage emporte tous les emplacements** : si le processus manque de mémoire, tous ses jobs attendent l’expiration de leurs baux.
 
-Pour décider s’il faut l’augmenter, lisez `my.job.wait` par `my.job.type` : si les tâches d’un type attendent longtemps alors que `my.job.duration` est surtout du temps passé à attendre d’autres serveurs et que le processeur et la mémoire restent bas, davantage d’emplacements devraient aider. Si les attentes restent élevées après l’avoir augmenté, examinez les connexions à la base de données et la limite par hôte ci-dessus avant de l’augmenter de nouveau.
+Pour décider d’augmenter, lisez `my.job.wait` par `my.job.type` : si les jobs d’un type attendent longtemps alors que `my.job.duration` est surtout du temps passé à attendre d’autres serveurs et que le CPU et la mémoire restent bas, davantage d’emplacements devraient aider. Si les attentes restent élevées après l’augmentation, regardez les connexions à la base de données et la limite par hôte ci-dessus avant d’augmenter de nouveau.
 
-Tant qu’aucune tâche n’est due, un emplacement interroge et les autres attendent ; un processus inactif coûte donc à la base de données ce que coûte un processus à une seule tâche.
+Tant qu’aucun job n’est dû, un emplacement interroge et les autres attendent ; un processus inactif coûte donc à la base de données ce que coûte un processus à un seul job.
 
 <!-- source: waiting-for-a-database-connection f481d577ea58 -->
 ### Attendre une connexion à la base de données
@@ -637,25 +839,33 @@ il autorise alors le microphone uniquement pour les pages de l’origine propre 
 Le HTML du client web reçoit une CSP de document qui n’utilise pas de nonce (`script-src 'self'`, etc.).
 Elle exige Trusted Types (`require-trusted-types-for 'script'`) et limite les politiques pouvant être créées aux deux du client (`trusted-types my-server-sanitized-html my-service-worker`).
 
-<!-- source: web-client f35b79dd2cc3 -->
+<!-- source: web-client 0a0b62acc010 -->
 ## Client web
 
 Un processus dont le `role` est `web` ou `all` sert le client web intégré au binaire.
 
 | Chemin | Contenu | `Cache-Control` |
 | --- | --- | --- |
-| Tout `GET` qu’aucune autre route ne reconnaît (`/`, `/@alice`, `/@alice/status/{id}`, `/settings`, etc.) | La coquille HTML de la SPA. Les paramètres du serveur sont transmis dans `<script type="application/json" id="config">` | `public, max-age=60, stale-while-revalidate=300`, ETag |
-| `GET /assets/*` | Fichiers de build avec des noms hachés | `public, max-age=31536000, immutable`, ETag |
-| `GET /manifest.webmanifest` | Le manifeste de l’application web construit à partir des paramètres du serveur | `public, max-age=60, stale-while-revalidate=300`, ETag |
-| `GET /sw.js`, `/icon.svg` et les autres fichiers directement sous le build | Servis tels quels | `no-cache`, ETag |
-| `GET /licenses/*` | Les licences de ce que le build embarque (avis des paquets npm, et `LICENSE-Unicode.txt` et `OFL.txt` pour les données embarquées non npm). Servies en `text/plain; charset=utf-8` quelle que soit l’extension | `no-cache`, ETag |
-| `GET /robots.txt`, `/.well-known/tdmrep.json`, `/.well-known/security.txt` | Construits à partir des paramètres du serveur (consultez [Moteurs de recherche et robots d’IA](crawlers.md)) | `public, max-age=3600`, ETag |
+| Tout `GET` qu’aucune autre route ne reconnaît (`/`, `/@alice`, `/@alice/status/{id}`, `/settings`, etc.) | La coquille HTML de la SPA. Les paramètres de l’instance sont transmis dans `<script type="application/json" id="config">` | `public, max-age=60, stale-while-revalidate=300`, ETag |
+| `GET /assets/*` | Fichiers de construction avec des noms hachés | `public, max-age=31536000, immutable`, ETag |
+| `GET /manifest.webmanifest` | Le manifeste de l’application web construit à partir des paramètres de l’instance | `public, max-age=60, stale-while-revalidate=300`, ETag |
+| `GET /sw.js`, `/icon.svg` et les autres fichiers directement sous la construction | Servis tels quels | `no-cache`, ETag |
+| `GET /licenses/*` | Les licences de ce que la construction embarque (avis des paquets npm, et `LICENSE-Unicode.txt` et `OFL.txt` pour les données non npm embarquées). Servis en `text/plain; charset=utf-8` quelle que soit l’extension | `no-cache`, ETag |
+| `GET /robots.txt`, `/.well-known/tdmrep.json`, `/.well-known/security.txt` | Construits à partir des paramètres de l’instance (voir [Moteurs de recherche et robots d’IA](crawlers.md)) | `public, max-age=3600`, ETag |
 
 - Les chemins sous `/api`, `/oauth`, `/auth`, `/.well-known`, `/nodeinfo`, `/ap`, `/media`, `/uploads`, `/theme` (la feuille de style du thème du serveur) et `/licenses`, ainsi que `/robots.txt`, ne renvoient jamais la coquille ; si aucune autre route ne correspond, ils renvoient un problème 404.
-- La coquille est servie après la négociation de contenu ActivityPub. Demander un chemin de la coquille avec un `Accept` ActivityPub renvoie 404 (les pages de publications redirigent, comme décrit plus bas).
+- La coquille est servie après la négociation de contenu ActivityPub. Demander un chemin de coquille avec un `Accept` ActivityPub renvoie 404 (les pages de publication redirigent, comme décrit ci-dessous).
   La coquille porte toujours `Vary: Accept`. Lorsque vous placez un CDN devant, incluez le type d’`Accept` (ActivityPub ou HTML) dans la clé de cache, ou excluez du cache la coquille, `/ap/*` et `/@*`.
-  Ne servez que `/assets/*` depuis le CDN.
-- Un binaire compilé sans le client web (un simple `go build`, sans construire d’abord le client) consigne un avertissement au démarrage et sert une coquille sans scripts.
+  Ne servez par le CDN que `/assets/*`.
+- Les fichiers texte de la construction (scripts, feuilles de style, images SVG, avis de licence) sont intégrés compressés uniquement. Une requête qui accepte Brotli les reçoit avec `Content-Encoding: br`, une qui accepte gzip avec `Content-Encoding: gzip`, et toute autre requête les reçoit décompressés, toujours avec `Vary: Accept-Encoding` et un ETag pour chaque encodage.
+  Un proxy placé devant n’a besoin d’aucune compression propre pour eux, et un CDN doit conserver `Vary: Accept-Encoding` (ou l’encodage) dans sa clé de cache pour `/assets/*`.
+- La coquille et les écrans de connexion portent des en-têtes `Link` qui nomment les feuilles de style et le script d’entrée que la page charge en premier, à partir desquels un CDN comme Cloudflare (sa fonction Early Hints) peut produire ses propres indications précoces.
+  Avec [`web_early_hints`](../reference/configuration.md#web_early_hints) = `true`, le serveur les envoie aussi en premier dans une réponse `103 Early Hints`, afin que le navigateur récupère les fichiers pendant que le serveur prépare la page. Il est désactivé par défaut, car un proxy qui ne sait pas transmettre un 103 peut faire échouer la requête :
+  - Un Application Load Balancer externe de Google Cloud répond 502 ou 503 (`backend_interim_response_not_supported`) : laissez-le désactivé derrière un tel répartiteur, comme le fait le déploiement Cloud Run.
+  - nginx le transmet à partir de la 1.29.0, avec `early_hints` défini.
+  - Le `reverse_proxy` de Caddy le transmet ; une directive `encode` l’abandonne dans les versions antérieures à la 2.8.
+  - Les navigateurs n’utilisent un 103 que pour une page vers laquelle ils naviguent, et Chrome et Edge seulement via HTTP/2 et HTTP/3.
+- Un binaire construit sans le client web (un simple `go build`, sans construire d’abord le client) journalise un avertissement au démarrage et sert une coquille sans scripts.
 
 <!-- source: federation-endpoints 7aaee8c9da42 -->
 ## Points de terminaison de fédération

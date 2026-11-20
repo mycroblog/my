@@ -3,28 +3,28 @@
 
 伺服器會用一把金鑰加密金鑰（KEK）加密它存放在資料庫中的機密，而這把 KEK 本身絕不會存放在資料庫裡。本頁說明如何產生、保管、備份和輪替 KEK，如何改為把它保存在 KMS 中，以及 KEK 遺失或外洩時該怎麼做。[設定參考](../reference/configuration.md)列出了所有設定。
 
-<!-- source: how-it-works 37074c6237d0 -->
+<!-- source: how-it-works 92f093e9e7ca -->
 ## 運作方式
 
-![金鑰階層：金鑰加密金鑰保存在 key_manager 指定的位置，絕不放在資料庫中；它包裝為每個機密產生的資料加密金鑰，再由資料加密金鑰加密機密。資料庫在五個密封欄位中保存金鑰 ID、包裝後的資料加密金鑰和加密後的機密。下方的清單說明每一層。](images/key-hierarchy.svg)
+![金鑰階層：金鑰加密金鑰保存在 key_manager 指定的位置，絕不放在資料庫中；它包裝為每個機密產生的資料加密金鑰，再由資料加密金鑰加密機密。資料庫在七個密封欄位中保存金鑰 ID、包裝後的資料加密金鑰和加密後的機密。下方的清單說明每一層。](images/key-hierarchy.svg)
 
 - 存放在資料庫中的機密（例如 actor 的私鑰）會以 AES-256-GCM 加密，使用的是為每個機密產生的資料加密金鑰（DEK）。DEK 會用 **金鑰加密金鑰（KEK）** 包裝後，與密文存放在一起（信封加密）。
 - KEK 不存放在資料庫中，所以光是資料庫傾印外洩，並不會讓機密曝光。
 - 每份密文都帶有包裝其 DEK 的 KEK 的 **金鑰 ID**。使用 `key_manager = local` 時，金鑰 ID 是 `local:` 加上由 KEK 推導出的 16 位十六進位數字，所以同一把 KEK 永遠得到同一個 ID。你不需要自行指定 ID。
 - 密文會綁定它所存放的列 ID 和欄位名稱。把它複製到其他列或欄位後就無法解密。
-- 密封欄位（名稱依 `my kek status` 的輸出）有：`local_account_private_keys.private_key_enc`（actor 的私鑰）、`totp_enrollments.secret_enc`（兩步驟驗證的密鑰）、`login_provider_secrets.sealed_secret`（登入服務提供者的用戶端密鑰）、`webhook_secrets.sealed_secret`（Webhook 簽章密鑰），以及 `instance_secrets.sealed_secret`（媒體代理的簽章金鑰）。
+- 密封欄位（名稱依 `my kek status` 的輸出）有：`local_account_private_keys.private_key_enc`（actor 的私鑰）、`totp_enrollments.secret_enc`（兩步驟驗證的密鑰）、`login_provider_secrets.sealed_secret`（登入服務提供者的用戶端密鑰）、`webhook_secrets.sealed_secret`（Webhook 簽章密鑰）、`instance_secrets.sealed_secret`（媒體代理的簽章金鑰，以及冪等性指紋的金鑰）、`tls_acme_accounts.sealed_private_key`（伺服器自行取得憑證時，ACME 帳號的金鑰），以及 `tls_certificates.sealed_private_key`（這些憑證的金鑰）。
 - 通行金鑰登入或透過外部服務提供者登入的狀態也以同樣方式密封，但不會存放：由瀏覽器保存，最多 30 分鐘。
 - 媒體代理 URL 的簽章金鑰（HMAC-SHA256）是伺服器第一次啟動時產生的隨機金鑰，會像其他機密一樣加密後存放在資料庫中。輪替 KEK 時它不會改變，所以媒體代理 URL 在輪替前後都能繼續使用，而 `my kek rewrap` 會把它與其他機密一起重新包裝。
 - `key_manager` 可以是 `local`（預設：使用 `kek` 設定）、`gcpkms`（KEK 留在 Google Cloud KMS 中；請參閱 [Google Cloud KMS](#google-cloud-kms)）、`awskms`（KEK 留在 AWS KMS 中；請參閱 [AWS KMS](#aws-kms)），或 `plugin`（KEK 由你自己的程式保管；請參閱[外掛](#a-plugin)）。
 
-<!-- source: what-happens-if-you-lose-the-kek 76126b09f09c -->
+<!-- source: what-happens-if-you-lose-the-kek d148ff0dedcc -->
 ## 遺失 KEK 會發生什麼事
 
 沒有 KEK，即使還原了資料庫，也無法解密 actor 的私鑰。私鑰一旦遺失，其他伺服器就再也無法驗證該 actor 的簽章，**這個 actor 在聯邦宇宙中的身分就會毀損**（追蹤者的關係無法轉移）。請像對待資料庫一樣慎重地對待 KEK。
 
 ![遺失 KEK 會失去什麼：在沒有 KEK 的情況下還原之後，所有未密封的內容仍然可以讀取，每個密封的值都無法開啟，actor 也會失去身分。下方的段落說明相同的內容。](images/kek-loss.svg)
 
-未密封的內容仍然可以讀取：貼文、帳號、追蹤關係以及資料庫的其他部分，還有儲存空間中的媒體檔案。每個密封的值都會以 `unknown key-encryption key` 錯誤失敗：actor 的私鑰、兩步驟驗證的密鑰、登入服務提供者的用戶端密鑰、Webhook 簽章密鑰，以及媒體代理的簽章金鑰。如果設定了另一把 KEK 來取代包裝這些機密的那一把，或包裝它們的 KMS 金鑰或外掛的金鑰被停用或銷毀，也會發生同樣的情況。
+未密封的內容仍然可以讀取：貼文、帳號、追蹤關係以及資料庫的其他部分，還有儲存空間中的媒體檔案。每個密封的值都會以 `unknown key-encryption key` 錯誤失敗：actor 的私鑰、兩步驟驗證的密鑰、登入服務提供者的用戶端密鑰、Webhook 簽章密鑰、媒體代理的簽章金鑰，以及伺服器自行取得之憑證的金鑰。如果設定了另一把 KEK 來取代包裝這些機密的那一把，或包裝它們的 KMS 金鑰或外掛的金鑰被停用或銷毀，也會發生同樣的情況。
 
 <!-- source: generate-a-kek 44b338b7440b -->
 ## 產生 KEK

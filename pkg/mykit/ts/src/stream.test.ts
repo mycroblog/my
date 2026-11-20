@@ -84,6 +84,7 @@ describe("runStream", () => {
           'event: announcement_removed\ndata: {"id":"a2"}\n\n',
           'event: delete\ndata: {"id":"s0"}\n\n',
           'event: notification_requests\ndata: {"accounts_count":1,"notifications_count":3}\n\n',
+          'event: notifications_read\ndata: {"last_read_id":"n0","unread_count":2,"id":"n1"}\n\n',
           'event: poll\ndata: {"id":"p1"}\ndata: more\n\n',
           "event: update\ndata: not json\n\n",
         ]),
@@ -103,9 +104,10 @@ describe("runStream", () => {
       "announcement_removed",
       "delete",
       "notification_requests",
+      "notifications_read",
       "unknown",
     ]);
-    const [update, listUpdate, notification, conversation, announcement, removed, deleted, requests, unknown] =
+    const [update, listUpdate, notification, conversation, announcement, removed, deleted, requests, read, unknown] =
       r.events;
     if (update?.type === "update") expect(update.status.id).toBe("s1");
     if (listUpdate?.type === "list_update") {
@@ -118,6 +120,7 @@ describe("runStream", () => {
     expect(removed).toEqual({ type: "announcement_removed", id: "a2" });
     expect(deleted).toEqual({ type: "delete", id: "s0" });
     expect(requests).toEqual({ type: "notification_requests", summary: { accounts_count: 1, notifications_count: 3 } });
+    expect(read).toEqual({ type: "notifications_read", read: { last_read_id: "n0", unread_count: 2, id: "n1" } });
     expect(unknown).toEqual({ type: "unknown", event: "poll", data: '{"id":"p1"}\nmore' });
     // The update whose data is no JSON is skipped and reported, and the stream goes on.
     expect(r.errors).toHaveLength(1);

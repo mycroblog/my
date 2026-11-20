@@ -131,7 +131,7 @@ Der Verarbeitungsjob wartet bis zu `plugin_media_check_timeout` auf das Plugin (
 Emojis von einem anderen Server oder das Genehmigen einer Emoji-Anfrage verarbeitet das Bild, während der Moderator wartet, dieses Warten
 geht also zu seinen Lasten.
 
-<!-- source: sign-ups be7ddf1149a9 -->
+<!-- source: sign-ups c67c61b5e627 -->
 ## Registrierungen
 
 `signup.check` läuft bei Registrierungen über die Registrierungsseite und über einen Login-Anbieter, nach dem CAPTCHA und der
@@ -143,7 +143,7 @@ Die Antworten wirken wie die der Sperrliste, wenn der Hook durchsetzt:
 
 - `require_approval` lässt die Registrierung unter **Moderation** > **Registrierungen** warten, wie es eine Sperre mit demselben Schweregrad
   tut, in jedem Registrierungsmodus. Genehmige oder lehne sie dort ab: Das Aufheben der Entscheidung ändert die Registrierung nicht.
-- `reject` bewirkt nichts, bis du `hook_signup_check_reject` einschaltest (**Servereinstellungen** > **Föderation** > **Externe Prüfung**, standardmäßig
+- `reject` bewirkt nichts, bis du `hook_signup_check_reject` einschaltest (**Servereinstellungen** > **Externe Prüfung**, standardmäßig
   aus). Solange es aus ist, wird ein `reject` in `observe` verzeichnet, da es nichts stoppt, und die Registrierung geht weiter. Ist es
   an, sieht die antragstellende Person denselben festen Text wie bei einer Sperre („Dieser Server kann diese Registrierung nicht annehmen.“). Es wird kein Konto
   geschrieben, das Aufheben einer solchen Entscheidung ändert also nur ihren Datensatz, und die Person registriert sich erneut.
@@ -191,7 +191,7 @@ und er sie erneut sendet.
 Das Aufheben eines `drop` von `inbound.actor` ruft das Konto erneut von seinem Server ab, der das Profil speichert, das er jetzt ausliefert,
 ohne das Plugin aufzurufen, wenn es das verworfene ist, und der danach fragt, wenn es sich seither geändert hat.
 
-<!-- source: local-posts 37ba27537191 -->
+<!-- source: local-posts a7f29a329b2f -->
 ## Lokale Beiträge
 
 `local.status` prüft einen Beitrag eines Kontos auf deinem Server, bevor der Server ihn erstellt, und jede Bearbeitung davon, bevor der
@@ -201,7 +201,7 @@ Beitrag immer durch (`pass` ist sein einziges Fehlschlagsverhalten), und das War
 
 Was er sendet und wann:
 
-- Nur die Beiträge von Konten, die jünger sind als `hook_local_status_account_age_days` (**Servereinstellungen** > **Föderation** >
+- Nur die Beiträge von Konten, die jünger sind als `hook_local_status_account_age_days` (**Servereinstellungen** >
   **Externe Prüfung**, standardmäßig 7 Tage; `0` sendet die Beiträge jedes Kontos). Neue Konten sind die Quelle der meisten Spams, und etablierte
   Konten werden nicht gesendet.
 - Nur `public`-, `local`- und `unlisted`-Beiträge. `private`- und `direct`-Beiträge werden nie gesendet.
@@ -213,7 +213,7 @@ Was er sendet und wann:
 - Eine Bearbeitung wird auf dieselbe Weise gesendet, mit dem Beitrag, wie er bearbeitet wurde, für dieselben Konten: die innerhalb von
   `hook_local_status_account_age_days`. Ihr Schlüssel ist die ID des Beitrags, `#` und die ID der neuen Revision, sodass jede Bearbeitung ein
   eigener Gegenstand ist.
-- Das Starten eines Voice-Chat-Raums erstellt seinen ersten Beitrag ohne diesen Hook.
+- Das Starten eines Sprachchat-Raums erstellt seinen ersten Beitrag ohne diesen Hook.
 
 Wenn er durchsetzt, lehnt `reject` den Beitrag ab, und nichts wird gespeichert. Der Autor sieht festen Text („Dieser Beitrag wurde nicht veröffentlicht.“)
 und eine Möglichkeit zum Einspruch; nie den Grund oder die Notiz. `flag` lässt den Beitrag durch und erstellt eine Meldung dazu, gegen seinen
@@ -245,7 +245,7 @@ Notiz. Ein Erstanbieter-Client liest den Stand eines Einspruchs mit `GET /api/v1
 Ein Konto, das ein aufgehobener Einspruch aus dem Hook genommen hat, bleibt draußen, bis das Konto gelöscht wird. Wird es später
 übernommen, prüft `local.status` es nicht mehr.
 
-<!-- source: local-profiles dbafa1545e2a -->
+<!-- source: local-profiles 83ef61114409 -->
 ## Lokale Profile
 
 `local.profile` prüft eine Änderung des Profils eines Kontos auf deinem Server, bevor der Server sie speichert. Der Inhaber wartet
@@ -255,7 +255,7 @@ transaktion.
 
 Was er sendet und wann:
 
-- Nur die Änderungen von Konten, die jünger sind als `hook_local_profile_account_age_days` (**Servereinstellungen** > **Föderation** >
+- Nur die Änderungen von Konten, die jünger sind als `hook_local_profile_account_age_days` (**Servereinstellungen** >
   **Externe Prüfung**, standardmäßig 7 Tage; `0` sendet die jedes Kontos).
 - Nur eine Änderung dessen, was der Hook sieht: der Anzeigename, die Bio, die Profilfelder, der Avatar oder der Header. Eine Änderung,
   die das Konto nur sperrt (locked) oder seine Auffindbarkeitseinstellungen ändert, wird nicht gesendet.
@@ -270,11 +270,11 @@ Wenn er durchsetzt, lehnt `reject` nur diese Änderung ab: Das Profil bleibt, wi
 und erneut speichern. `flag` speichert die Änderung und erstellt eine Meldung zum Konto, die keinen Beitrag nennt; Melder,
 Kategorie und Kommentar sind die der [Meldung zu einem Beitrag](#what-inboundstatus-reviews).
 
-<!-- source: modes 6133f824d202 -->
+<!-- source: modes 712db07d039e -->
 ## Modi
 
 Jeder Hook hat einen Modus, eine [Servereinstellung](instance-settings.md) (`hook_inbound_status_mode` und so weiter), die du unter
-**Servereinstellungen** > **Föderation** > **Externe Prüfung** änderst. Änderungen kommen als `setting_changed` ins Audit-Log.
+**Servereinstellungen** > **Externe Prüfung** änderst, wo `enforce` erst angeboten wird, wenn der Modus nicht `off` ist. Änderungen kommen als `setting_changed` ins Audit-Log.
 
 | Modus | Was er tut |
 | --- | --- |

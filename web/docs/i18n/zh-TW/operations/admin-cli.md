@@ -1,7 +1,7 @@
-<!-- source: administrators-and-roles 1baeba6d67b4 -->
+<!-- source: administrators-and-roles f6df0418210b -->
 # 管理員與角色
 
-本頁說明如何建立第一位管理員、從命令列管理角色、公告並執行服務終止、重新處理上傳的圖片、重建搜尋索引，以及匯出維護頁面。
+本頁說明如何建立第一位管理員、從命令列管理角色、公告並執行服務終止、重新處理上傳的圖片、重建搜尋索引、處理伺服器自行提供的 TLS 憑證，以及匯出維護頁面。
 
 <!-- source: prerequisites b7ae62128809 -->
 ## 事前準備
@@ -10,7 +10,7 @@
 - 結構描述（schema）已套用到資料庫（`my schema apply`；請參閱 [database.md](database.md)）。
 - `host` 和 `account_domain` 已經確定。第一個使用資料庫的指令會記錄這兩個值，之後只要設定不同，每個指令都會拒絕執行（請參閱[之後無法變更的設定](production-checklist.md#settings-you-cannot-change-later)）。
 
-<!-- source: creating-an-administrator e5fec2e3d287 -->
+<!-- source: creating-an-administrator 9be8b2ee8d85 -->
 ## 建立管理員
 
 ```sh
@@ -32,7 +32,7 @@ my admin create -username alice -email alice@example.com
 - 失敗的執行不會寫入任何東西，所以你可以排除原因後再執行同一個指令。
 - 結束代碼 2 表示用法錯誤。
 
-<!-- source: granting-and-revoking-roles a8783994c097 -->
+<!-- source: granting-and-revoking-roles 83f3a38172a4 -->
 ## 授予與撤銷角色
 
 角色包含權限。內建角色有 `admin`（`position` 為 1000，擁有所有權限）和 `moderator`（`position` 為 100，擁有 `manage_reports`、`manage_accounts` 和 `view_audit`）。
@@ -57,6 +57,7 @@ my admin role revoke alice moderator
 - 授予與撤銷會以 `role_granted` 和 `role_revoked`（目標種類為 `role`）寫入稽核紀錄。CLI 操作的執行者是 `cli`（`my admin audit list -target-kind role`）。
 - 授予使用者已有的角色，或撤銷他沒有的角色，不會變更也不會記錄任何東西。
 - `admin` 的最後一位持有者不能失去它（結束碼 1）。請先將 `admin` 授予另一位使用者。
+- 管理畫面「角色」（`/admin/roles`）會列出所有角色，並可建立、變更和刪除角色：角色的頁面可設定它的位置、權限和徽章。它只提供下列規則允許的選項：不高於你最高角色的位置、你自己持有的權限（角色擁有的其他權限會列出名稱並保留）、只有 `admin` 的徽章，以及不能刪除 `admin` 或 `moderator`。刪除角色時需要輸入它的名稱。方案的角色由方案設定。
 - 管理 API 是 `GET /api/v1/admin/roles`、`GET /api/v1/admin/accounts/{id}/roles`，以及 `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`，且需要 `manage_roles` 權限。
   透過 API，你不能授予或撤銷高於你自己所有角色中最高 `position` 的角色（403）。撤銷最後一個 `admin` 會回傳 409。
 - 工作人員只能對較低的層級採取行動。透過 API，審核動作與解除這些動作、裁決申訴、解除電子郵件抑制、揭露帳號的私人資料、發出密碼重設連結，以及移除雙重驗證，都要求你的角色中最高的 `position` 高於目標的每一個角色；較高或相等的層級（包括你自己的帳號）會回傳 403。版主不能對管理員採取行動，一位管理員也不能對另一位管理員採取行動。這些指令（`my admin account ...`）沒有這樣的限制，所以在管理員之間意見不合時請使用它們。
@@ -142,17 +143,36 @@ my search status               # the backend and the progress and failures of th
 
 再次執行 `my search rebuild` 可以繼續已停止的重建。它會從最後處理的貼文接著進行，不會再次清空索引。有一個重建尚未完成時，另一種模式會被拒絕，並以結束代碼 1 結束。[貼文的全文搜尋](search.md)說明了各自的使用時機。
 
-<!-- source: exporting-the-maintenance-page 1756fcf1e02e -->
+<!-- source: tls-certificates 76e79e7fd3c0 -->
+## TLS 憑證
+
+`my tls` 處理自己提供 HTTPS 的伺服器（`tls = acme` 或 `tls = files`；請參閱[由伺服器提供 HTTPS](running.md#serving-https-from-the-server)）的憑證。
+
+```sh
+my tls status                                          # each host: certificate, renewal, failures, latest orders
+my tls renew -host social.example                      # order a certificate now, without waiting
+my tls revoke -host social.example -reason key_compromise  # replace, then revoke the current certificate
+```
+
+- `status` 會顯示每個主機目前的憑證（序號、簽發者、到期日）、何時更新、連續有多少次申請沒有取得憑證，以及最近的申請與其錯誤。在 `tls = files` 下，它會顯示 `tls_cert_file` 的憑證；在 `tls = off` 下，它會說明這一點。
+- `renew` 和 `revoke` 需要 `tls = acme`、執行中的伺服器（它會回應憑證授權單位的檢查），以及不是 `memory` 的 `kv`。它們失敗時、當時有另一個程序正在申請該主機的憑證時，以及在 `tls = files` 或 `tls = off` 下，都會以結束碼 1 結束。
+- 私密金鑰可能已被他人得知時，`-reason` 為 `key_compromise`，否則為 `superseded` 或 `operator`。`revoke` 已撤銷憑證但無法申請替代的憑證時，會以結束碼 0 結束並印出警告。
+
+[指令與指標](running.md#commands-and-metrics)說明各指令對執行中程序的影響。
+
+<!-- source: exporting-the-maintenance-page c0661d4bb0d0 -->
 ## 匯出維護頁面
 
-`my maintenance export` 會將維護模式的頁面寫成靜態 HTML，讓負載平衡器、CDN 或反向代理在 `my serve` 本身無法執行時（正在替換映像檔、某個修訂版本無法啟動）提供。它使用與維護模式相同的範本，所以兩者顯示的文字和外觀相同。
+`my maintenance export` 會將維護模式的頁面寫成靜態 HTML，讓負載平衡器、CDN 或反向代理在 `my serve` 本身無法執行時（正在替換映像檔、某個修訂版本無法啟動）提供。
+它使用與維護模式相同的範本，所以兩者顯示的文字和外觀相同。
 
 ```sh
 my maintenance export -out ./maintenance -lang en,ja            # reads the database for at most 5 seconds
 my maintenance export -out ./maintenance -lang en,ja -offline   # the configuration and the default theme only
 ```
 
-- 輸出：`-lang` 的每個語系一個 `<dir>/<locale>.html`，供依 `Accept-Language` 選擇頁面的前端使用；以及依序包含所有語系的 `<dir>/index.html`，供無法這樣選擇的前端使用。這些頁面使用內嵌 CSS，沒有指令碼，也沒有外部資源；其 Content-Security-Policy 寫在 `<meta>` 元素中。
+- 輸出：`-lang` 的每個語系一個 `<dir>/<locale>.html`，供依 `Accept-Language` 選擇頁面的前端使用；以及依序包含所有語系的 `<dir>/index.html`，供無法這樣選擇的前端使用。
+  這些頁面使用內嵌 CSS，沒有指令碼，也沒有外部資源；其 Content-Security-Policy 寫在 `<meta>` 元素中。
 - 文字：設定 `maintenance_server_name`、`maintenance_message`、`maintenance_until` 和 `status_page_url`（[設定參考](../reference/configuration.md)）。
-- 未加上 `-offline` 時，它還會讀取實例的名稱（`maintenance_server_name` 未設定時）、預設語系（未指定 `-lang` 時），以及主題的 token 覆寫值。無法讀取資料庫時，它會印出警告，以設定和預設主題寫出頁面，並以 0 結束。
+- 未加上 `-offline` 時，它還會讀取實例的名稱（`maintenance_server_name` 未設定時）、預設語系（未指定 `-lang` 時），以及已發布主題的 token 覆寫值。無法讀取資料庫時，它會印出警告，以設定和預設主題寫出頁面，並以 0 結束。
 - 每當這些設定或主題變更時，以及每次維護之前，請再次執行，讓前端中的頁面保持最新。

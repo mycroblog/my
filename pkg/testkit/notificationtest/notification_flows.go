@@ -16,6 +16,7 @@ import (
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
+	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -54,7 +55,8 @@ type NotificationFactory func(t *testing.T, opts uow.Options) NotificationHarnes
 // hide_notifications, also those notified before the block or mute, which a lifted block or
 // mute shows again; notifying of a source with unsolicited_reach only the accounts that follow
 // it; leaving out notifications about deleted statuses; listing with a type filter and keyset paging; the read marker,
-// unread count, and dismissals; and the moderator notifications of the first open report of an
+// unread count, and dismissals; the notifications read on their own past the marker, which
+// stay read until the marker passes them; and the moderator notifications of the first open report of an
 // account, of a pending registration, and of an appeal, to the holders of the permission they
 // need, emailed by a job to those who get them by email, and left out once the permission is
 // gone; the decision on an appeal to the account that appealed; the notification settings, their
@@ -84,6 +86,7 @@ func NotificationFlows(t *testing.T, newHarness NotificationFactory) {
 		{"LeavesOutDeletedStatuses", notificationDeletedStatuses},
 		{"ListsWithTypesAndPages", notificationLists},
 		{"TracksReadMarkersAndDismissals", notificationReads},
+		{"ReadsNotificationsOutOfOrder", notificationReadsOutOfOrder},
 		{"NotifiesModerators", notificationModerators},
 		{"NotifiesModeratorsOfLimitedMoves", notificationLimitedMoves},
 		{"NotifiesAppeals", notificationAppeals},
@@ -120,8 +123,9 @@ type notificationEnv struct {
 	reach        *contractReach
 	// only holds just the notification projectors, for projecting an event again.
 	only *uow.Projectors
-	// signals records the stream signals of the committed events.
+	// signals records the stream signals of the committed events; reads, those of the reads.
 	signals *recordedSignals
+	reads   *recordedReads
 	// staff stands in for the roles and addresses of the moderators and users; outbox keeps the
 	// email jobs that the projectors enqueue.
 	staff  *stubStaff
@@ -176,10 +180,35 @@ func newNotificationEnv(t *testing.T, newHarness NotificationFactory) *notificat
 		UnitOfWork: nh.UnitOfWork, Statuses: nh.Statuses, Interactions: nh.Interactions,
 		Accounts: ae.Accounts, Relationships: e.graph, Clock: ae.Clock, IDs: ae.IDs, Host: testkit.ContractHost,
 	})
+	e.reads = &recordedReads{}
 	e.svc = appnotification.NewService(appnotification.Deps{
-		UnitOfWork: nh.UnitOfWork, Repository: nh.Notifications, Clock: ae.Clock, IDs: ae.IDs, Staff: e.staff,
+		UnitOfWork: nh.UnitOfWork, Repository: nh.Notifications, Clock: ae.Clock, IDs: ae.IDs, Staff: e.staff, Stream: e.reads,
 	})
 	return e
+}
+
+// recordedReads is a stream.Publisher that keeps the signals of the reads.
+type recordedReads struct {
+	mu     sync.Mutex
+	events []stream.Event
+}
+
+// Publish implements stream.Publisher.
+func (r *recordedReads) Publish(e stream.Event) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if e.Kind == stream.KindNotificationsRead {
+		r.events = append(r.events, e)
+	}
+}
+
+// take returns the signals of the reads since the last take.
+func (r *recordedReads) take() []stream.Event {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := r.events
+	r.events = nil
+	return out
 }
 
 func (e *notificationEnv) user(t *testing.T, username string) string {
@@ -611,6 +640,85 @@ func notificationReads(t *testing.T, e *notificationEnv) {
 	if n, err := e.svc.UnreadCount(ctx, bob, false); err != nil || n != 1 {
 		t.Errorf("UnreadCount(bob) = %d, %v; want 1", n, err)
 	}
+}
+
+func notificationReadsOutOfOrder(t *testing.T, e *notificationEnv) {
+	ctx := t.Context()
+	alice, bob, carol, dave := e.user(t, "alice"), e.user(t, "bob"), e.user(t, "carol"), e.user(t, "dave")
+	e.follow(t, bob, alice)
+	e.follow(t, carol, alice)
+	e.follow(t, dave, alice)
+	e.follow(t, alice, bob)
+	ns := e.list(t, alice) // dave, carol, bob: newest first
+	newest, middle, oldest := ns[0].ID, ns[1].ID, ns[2].ID
+	other := e.list(t, bob)[0]
+
+	checkRead := func(want map[string]bool) {
+		t.Helper()
+		got, err := e.svc.ReadOf(ctx, alice, []string{newest, middle, oldest})
+		if err != nil || !reflect.DeepEqual(got, want) {
+			t.Errorf("ReadOf = %v, %v; want %v", got, err, want)
+		}
+		for id, read := range want {
+			if unread, err := e.svc.Unread(ctx, alice, id); err != nil || unread == read {
+				t.Errorf("Unread(%s) = %v, %v; want %v", id, unread, err, !read)
+			}
+		}
+	}
+	checkRead(map[string]bool{newest: false, middle: false, oldest: false})
+	e.reads.take()
+
+	// The newest, read while the older ones are unread, stays read; once is enough. Each read
+	// reaches alice's streams.
+	for range 2 {
+		if err := e.svc.ReadOne(ctx, alice, newest); err != nil {
+			t.Fatalf("ReadOne(newest) = %v", err)
+		}
+	}
+	want := stream.Event{Kind: stream.KindNotificationsRead, AccountID: alice, NotificationID: newest}
+	if got := e.reads.take(); !reflect.DeepEqual(got, []stream.Event{want, want}) {
+		t.Errorf("signals of ReadOne = %+v, want two of %+v", got, want)
+	}
+	checkRead(map[string]bool{newest: true, middle: false, oldest: false})
+	e.checkUnread(t, alice, 2)
+	if m, err := e.svc.ReadMarker(ctx, alice); err != nil || m.LastReadID != "" {
+		t.Errorf("ReadMarker after ReadOne = %+v, %v; want it not to move", m, err)
+	}
+	if err := e.svc.ReadOne(ctx, alice, other.ID); !errors.Is(err, appnotification.ErrNotFound) {
+		t.Errorf("ReadOne(bob's) = %v, want ErrNotFound", err)
+	}
+	if err := e.svc.ReadOne(ctx, alice, e.IDs.NewID()); !errors.Is(err, appnotification.ErrNotFound) {
+		t.Errorf("ReadOne(missing) = %v, want ErrNotFound", err)
+	}
+	if got := e.reads.take(); len(got) != 0 {
+		t.Errorf("signals of refused reads = %+v, want none", got)
+	}
+	e.checkUnread(t, bob, 1)
+
+	// The marker passes the oldest: the newest stays read, the middle unread. The marker that
+	// moved reaches alice's streams; one that does not move, nothing.
+	if _, err := e.svc.MarkRead(ctx, alice, oldest); err != nil {
+		t.Fatalf("MarkRead(oldest) = %v", err)
+	}
+	if _, err := e.svc.MarkRead(ctx, alice, oldest); err != nil {
+		t.Fatalf("MarkRead(oldest) again = %v", err)
+	}
+	if got, want := e.reads.take(), []stream.Event{{Kind: stream.KindNotificationsRead, AccountID: alice}}; !reflect.DeepEqual(got, want) {
+		t.Errorf("signals of MarkRead = %+v, want %+v", got, want)
+	}
+	checkRead(map[string]bool{newest: true, middle: false, oldest: true})
+	e.checkUnread(t, alice, 1)
+	// Reading one the marker passed changes nothing.
+	if err := e.svc.ReadOne(ctx, alice, oldest); err != nil {
+		t.Errorf("ReadOne(behind the marker) = %v", err)
+	}
+	e.checkUnread(t, alice, 1)
+	// The marker at the newest passes all of them, and the newest stays read.
+	if _, err := e.svc.MarkRead(ctx, alice, newest); err != nil {
+		t.Fatalf("MarkRead(newest) = %v", err)
+	}
+	checkRead(map[string]bool{newest: true, middle: true, oldest: true})
+	e.checkUnread(t, alice, 0)
 }
 
 func (e *notificationEnv) checkListed(t *testing.T, accountID, id string, want bool) {

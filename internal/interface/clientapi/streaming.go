@@ -84,7 +84,8 @@ func (s *Server) registerStreaming(r Router) {
 // data a Notification), conversations of the direct messages (event conversation, data a
 // Conversation), announcements (event announcement, data an Announcement, and event
 // announcement_removed, data its ID), the counts of the notification requests when they
-// change (event notification_requests, data a NotificationRequestSummary), and the deletions of
+// change (event notification_requests, data a NotificationRequestSummary), the reads of the
+// notifications on a device (event notifications_read, data a NotificationsRead), and the deletions of
 // the statuses that the viewer may have seen (event delete, data the status's ID). The stream subscribes to the signals of stream.Subscriber and reads
 // each change back through the use cases, as the viewer would see it in the home timeline or
 // the notification list. It ends when the client goes, the subscription ends (the broker shuts
@@ -285,6 +286,8 @@ func (st *streamState) handle(ctx context.Context, e stream.Event) error {
 			return err
 		}
 		return st.notificationRequests(ctx)
+	case stream.KindNotificationsRead:
+		return st.notificationsRead(ctx, e.NotificationID)
 	case stream.KindConversation:
 		return st.conversation(ctx, e)
 	case stream.KindAnnouncement:
@@ -479,6 +482,34 @@ func (st *streamState) notifications(ctx context.Context) error {
 			return nil
 		}
 	}
+}
+
+// notificationsRead sends that the viewer read notifications on a device (event
+// notifications_read, data a NotificationsRead): the marker and the unread count as the viewer's
+// token reads them, with id, the notification read on its own, when it is one the viewer's list
+// shows ("" when the marker moved).
+func (st *streamState) notificationsRead(ctx context.Context, id string) error {
+	v := st.viewer
+	m, err := st.s.o.Notifications.ReadMarker(ctx, v.AccountID)
+	if err != nil {
+		return fmt.Errorf("the notification marker of %s: %w", v.AccountID, err)
+	}
+	marker, err := st.s.newNotificationMarker(ctx, v, m)
+	if err != nil {
+		return err
+	}
+	out := NotificationsRead{LastReadId: marker.LastReadId, UnreadCount: marker.UnreadCount}
+	if id != "" {
+		_, err := st.s.o.Notifications.Get(ctx, v.AccountID, id, !v.FirstParty)
+		if errors.Is(err, appnotification.ErrNotFound) {
+			return nil // nothing this viewer lists changed
+		}
+		if err != nil {
+			return fmt.Errorf("notification %s of %s: %w", id, v.AccountID, err)
+		}
+		out.Id = &id
+	}
+	return st.event("notifications_read", out)
 }
 
 // notificationRequests sends the counts of the viewer's notification requests (event

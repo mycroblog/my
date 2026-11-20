@@ -5,38 +5,40 @@ El servidor cifra los secretos que guarda en la base de datos con una clave de c
 Esta página explica cómo generar, guardar, respaldar y rotar la KEK, cómo mantenerla en un KMS en su lugar y qué hacer si se pierde o se filtra.
 La [referencia de configuración](../reference/configuration.md) enumera todos las configuraciones.
 
-<!-- source: how-it-works 37074c6237d0 -->
+<!-- source: how-it-works 92f093e9e7ca -->
 ## Cómo funciona
 
-![La jerarquía de claves: la clave de cifrado de claves, guardada donde indica key_manager y nunca en la base de datos, envuelve una clave de cifrado de datos creada para cada secreto, que cifra el secreto; la base de datos guarda el ID de la clave, la clave de cifrado de datos envuelta y el secreto cifrado en cinco columnas selladas. La lista siguiente describe cada capa.](images/key-hierarchy.svg)
+![La jerarquía de claves: la clave de cifrado de claves, que se guarda donde dice key_manager y nunca en la base de datos, envuelve una clave de cifrado de datos creada para cada secreto, que cifra el secreto; la base de datos contiene el ID de la clave, la clave de cifrado de datos envuelta y el secreto cifrado en siete columnas selladas. La lista de abajo describe cada capa.](images/key-hierarchy.svg)
 
-- Los secretos guardados en la base de datos, como las claves privadas de los actores, se cifran con AES-256-GCM usando una clave de cifrado de datos (DEK) generada para cada secreto.
-  La DEK se envuelve con una **clave de cifrado de claves (KEK)** y se guarda junto al texto cifrado (cifrado de sobre).
-- La KEK no se guarda en la base de datos, así que un volcado filtrado de la base de datos por sí solo no expone los secretos.
+- Los secretos almacenados en la base de datos, como las claves privadas de los actores, se cifran con AES-256-GCM usando una clave de cifrado de datos (DEK) generada para cada secreto.
+  La DEK se envuelve con una **clave de cifrado de claves (KEK)** y se almacena junto al texto cifrado (cifrado de sobre).
+- La KEK no se almacena en la base de datos, así que un volcado filtrado de la base de datos por sí solo no expone los secretos.
 - Cada texto cifrado lleva el **ID de clave** de la KEK que envolvió su DEK. Con `key_manager = local`, el ID de clave es `local:` seguido de 16 dígitos hexadecimales derivados de la KEK,
-  de modo que la misma KEK da siempre el mismo ID. Nunca asignas los ID.
-- Un texto cifrado queda vinculado al ID de fila y al nombre de columna donde se guarda. Copiarlo a otra fila o columna lo hace imposible de descifrar.
+  así que la misma KEK siempre da el mismo ID. Nunca asignas los ID.
+- Un texto cifrado está ligado al ID de fila y al nombre de columna donde se almacena. Copiarlo a otra fila o columna lo vuelve imposible de descifrar.
 - Las columnas selladas, con los nombres que imprime `my kek status`, son `local_account_private_keys.private_key_enc` (claves privadas de los actores),
-  `totp_enrollments.secret_enc` (secretos de la autenticación en dos factores), `login_provider_secrets.sealed_secret` (secretos de cliente de los proveedores de inicio de sesión),
-  `webhook_secrets.sealed_secret` (secretos de firma de webhooks) e `instance_secrets.sealed_secret` (la clave de firma del proxy de medios).
-- El estado de un inicio de sesión con passkey o mediante un proveedor externo se sella de la misma manera pero no se guarda: el navegador lo conserva durante 30 minutos como máximo.
-- La clave de firma (HMAC-SHA256) de las URL del proxy de medios es una clave aleatoria que el servidor genera en su primer arranque y guarda en la base de datos, cifrada como los demás secretos.
-  No cambia al rotar la KEK, de modo que las URL del proxy de medios siguen funcionando a través de las rotaciones, y `my kek rewrap` la vuelve a envolver junto con los demás secretos.
-- `key_manager` es `local` (el valor por defecto: usa la configuración `kek`), `gcpkms` (la KEK permanece en Google Cloud KMS; consulta [Google Cloud KMS](#google-cloud-kms)),
+  `totp_enrollments.secret_enc` (secretos de la autenticación en dos pasos), `login_provider_secrets.sealed_secret` (secretos de cliente de los proveedores de inicio de sesión),
+  `webhook_secrets.sealed_secret` (secretos de firma de los webhooks), `instance_secrets.sealed_secret` (la clave de firma del proxy de multimedia y la clave de las huellas de idempotencia),
+  `tls_acme_accounts.sealed_private_key` (las claves de las cuentas ACME cuando el servidor obtiene sus propios certificados) y
+  `tls_certificates.sealed_private_key` (las claves de esos certificados).
+- El estado de un inicio de sesión con passkey o mediante un proveedor externo se sella de la misma manera pero no se almacena: el navegador lo conserva como máximo 30 minutos.
+- La clave de firma (HMAC-SHA256) de las URL del proxy de multimedia es una clave aleatoria que el servidor genera en su primer arranque y almacena en la base de datos, cifrada como los demás secretos.
+  No cambia cuando rotas la KEK, así que las URL del proxy de multimedia siguen funcionando durante las rotaciones, y `my kek rewrap` la vuelve a envolver con los demás secretos.
+- `key_manager` es `local` (el valor predeterminado: usa el ajuste `kek`), `gcpkms` (la KEK permanece en Google Cloud KMS; consulta [Google Cloud KMS](#google-cloud-kms)),
   `awskms` (la KEK permanece en AWS KMS; consulta [AWS KMS](#aws-kms)) o `plugin` (la KEK permanece en un programa tuyo; consulta [Un plugin](#a-plugin)).
 
-<!-- source: what-happens-if-you-lose-the-kek 76126b09f09c -->
-## Qué ocurre si pierdes la KEK
+<!-- source: what-happens-if-you-lose-the-kek d148ff0dedcc -->
+## Qué pasa si pierdes la KEK
 
-Sin la KEK, restaurar la base de datos no te permite descifrar las claves privadas de los actores. Una vez perdida una clave privada, los demás servidores ya no pueden verificar las firmas de ese actor,
-y **la identidad del actor en el fediverso queda rota** (las relaciones de los seguidores no se pueden trasladar). Trata la KEK con el mismo cuidado que la base de datos.
+Sin la KEK, restaurar la base de datos no te permite descifrar las claves privadas de los actores. Una vez perdida una clave privada, otros servidores ya no pueden verificar las firmas de ese actor,
+y **la identidad del actor en el fediverso se rompe** (las relaciones de los seguidores no pueden trasladarse). Trata la KEK con el mismo cuidado que la base de datos.
 
-![Lo que se pierde con la KEK: tras una restauración sin ella, todo lo que no está sellado sigue siendo legible, todo valor sellado falla al abrirse y los actores pierden su identidad. El párrafo siguiente dice lo mismo.](images/kek-loss.svg)
+![Qué se pierde con la KEK: tras una restauración sin ella, todo lo que no está sellado sigue siendo legible, todo valor sellado falla al abrirse y los actores pierden su identidad. El párrafo de abajo dice lo mismo.](images/kek-loss.svg)
 
 Lo que no está sellado sigue siendo legible: las publicaciones, las cuentas, los seguimientos y el resto de la base de datos, y los archivos multimedia del almacenamiento.
-Todo valor sellado falla con un error `unknown key-encryption key`: las claves privadas de los actores, los secretos de la autenticación en dos factores,
-los secretos de cliente de los proveedores de inicio de sesión, los secretos de firma de webhooks y la clave de firma del proxy de medios.
-Lo mismo ocurre cuando se define otra KEK en lugar de la que envolvió los secretos, o cuando la clave del KMS o la clave del plugin que los envolvió está desactivada o destruida.
+Todo valor sellado falla con un error `unknown key-encryption key`: las claves privadas de los actores, los secretos de la autenticación en dos pasos,
+los secretos de cliente de los proveedores de inicio de sesión, los secretos de firma de los webhooks, la clave de firma del proxy de multimedia y las claves de los certificados que el servidor obtuvo por sí mismo.
+Lo mismo ocurre cuando se define otra KEK en lugar de la que envolvió los secretos, o cuando la clave de KMS o la clave del plugin que los envolvió está desactivada o destruida.
 
 <!-- source: generate-a-kek 44b338b7440b -->
 ## Generar una KEK

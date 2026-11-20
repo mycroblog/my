@@ -62,7 +62,7 @@ die Anfragerate, die Statuscodes und die Latenz; die Job-Läufe, die Worker-Zeit
 und entfernte Server; sowie CPU und Speicher jedes Prozesses. Importiere es in Grafana (**Dashboards** → **New** → **Import**) und wähle deine
 Prometheus-Datenquelle; seine Variable **Job** wählt den Scrape-Job (standardmäßig `my`).
 
-<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
+<!-- source: google-cloud-cloud-run addd07c417a9 -->
 ### Google Cloud (Cloud Run)
 
 Baue die Alarme mit `metrics_exporter = none` aus dem, was Cloud Run und Cloud Logging bereits haben:
@@ -78,9 +78,9 @@ Baue die Alarme mit `metrics_exporter = none` aus dem, was Cloud Run und Cloud L
 - **Datenbank**: die Metriken zu Festplattenauslastung und Verbindungen von Cloud SQL oder die Nutzungsalarme deines Datenbankanbieters.
 - **Kosten**: ein Cloud-Billing-Budget mit Alarmschwellen ([Kosten und Budget](#cost-and-budget)).
 
-Das Modul [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) erzeugt diese als Richtlinien mit den Namen aus der Tabelle unten und listet jeden Alarm auf, den es anders abdeckt oder nicht ausdrücken kann. Es wurde noch nie angewendet. Eine Metrik, die nur Traffic erzeugt, hat bei einem Dienst, der auf null skaliert, Lücken, daher löst ein Alarm auf ihr Ausbleiben fälschlich aus; seine Uptime-Prüfung ist es, die einen toten, untätigen Server bemerkt.
+Der Abschnitt `monitoring` von [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) erzeugt diese als Richtlinien mit den Namen aus der Tabelle unten, und [die README des Moduls dahinter](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) listet jeden Alarm auf, den es anders abdeckt oder nicht ausdrücken kann. Er wurde noch nie angewendet. Eine Metrik, die nur Traffic erzeugt, hat bei einem Dienst, der auf null skaliert, Lücken, daher löst ein Alarm auf ihr Ausbleiben fälschlich aus; seine Uptime-Prüfung ist es, die einen toten, untätigen Server bemerkt.
 
-<!-- source: aws-ecs 609e5bf632ef -->
+<!-- source: aws-ecs ce4eac5fd50d -->
 ### AWS ECS
 
 Mit `metrics_exporter = emf` macht CloudWatch Logs aus den Zeilen des Servers Metriken im Namespace `metrics_emf_namespace`, mit den Namen mit Punkten
@@ -95,9 +95,9 @@ werden nicht in EMF geschrieben; nutze stattdessen die CPU- und Speichermetriken
 - **E-Mail** (`mail = ses`): die SES-Reputationsmetriken (Bounce- und Beschwerderaten) in CloudWatch.
 - **Kosten**: ein AWS-Budgets-Budget mit Alarmen ([Kosten und Budget](#cost-and-budget)).
 
-Das Modul [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) erzeugt diese als Alarme mit den Namen aus der Tabelle unten, mit derselben Liste. Es wurde noch nie angewendet.
+Der Abschnitt `monitoring` von [`mycroblog-aws`](../../deploy/opentofu/README.md#sections) erzeugt diese als Alarme mit den Namen aus der Tabelle unten, und [die README des Moduls dahinter](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) hat dieselbe Liste. Er wurde noch nie angewendet.
 
-<!-- source: the-alerts d76842ca02b8 -->
+<!-- source: the-alerts afb87d0111fd -->
 ## Die Alarme
 
 Schweregrad: **page** = sofort handeln, **ticket** = während der Arbeitszeit. „–“ in der Regelspalte bedeutet, dass es dafür noch keine Metrik gibt; prüfe es wie beschrieben.
@@ -131,10 +131,12 @@ Schweregrad: **page** = sofort handeln, **ticket** = während der Arbeitszeit. �
 | Ressourcen | [`MyMediaStorageLarge`](#mymediastoragelarge) | `my_media_stored_bytes` | über deiner geplanten Größe (Beispiel 50 GiB) für 1 Std. | ticket | Wachstum der Uploads; Zeit, den Tarif oder das Budget zu erhöhen |
 | E-Mail | [`MyEmailFailing`](#myemailfailing) | `my_job_duration_seconds_count` der E-Mail-Jobs mit `my_outcome="dead"` | irgendeiner in einer Stunde | ticket | Falsche SMTP- oder SES-Einstellungen, ein gesperrtes Konto oder aufgebrauchtes Kontingent, dauerhaft abgelehnte Adressen |
 | E-Mail | [`MyEmailRetrying`](#myemailretrying) | dasselbe, `my_outcome="retry"` | über 50 % der Läufe für 15 Min. | ticket | Der Mailserver ist nicht erreichbar oder lehnt die Anmeldung ab, ein Limit der Senderate |
+| TLS | [`MyTLSCertificateExpiring`](#mytlscertificateexpiring) | `my_tls_certificate_expiry_seconds` | unter 7 Tagen in irgendeinem Prozess für 15 Min. | page | Erneuerungen scheitern seit Wochen, ein Prozess, der das erneuerte Zertifikat nicht lädt, Zertifikatsdateien, die nichts erneuert |
+| TLS | [`MyTLSOrdersFailing`](#mytlsordersfailing) | `my_tls_order_consecutive_failures` | 3 oder mehr für 5 Min. | ticket | DNS zeigt nicht mehr auf den Server, die Ports 80 und 443 sind blockiert, die Limits oder ein Ausfall der Zertifizierungsstelle |
 | Kosten | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 für 6 Std. | ticket | Fehlende Berechtigungen, der Billing-Export ist nicht eingerichtet, das Anfragelimit ist erreicht, der Anbieter ist nicht verfügbar |
 | Kosten | Budget überschritten | – | – | – | Traffic, Speicher oder eine Fehlkonfiguration kosten mehr als geplant ([unten](#cost-and-budget)) |
 
-<!-- source: where-to-look b9e94304077f -->
+<!-- source: where-to-look 988be973ea5b -->
 ## Wo du nachsehen kannst
 
 Diese Werkzeuge kehren in den meisten der folgenden Runbook-Einträge wieder.
@@ -146,10 +148,10 @@ Diese Werkzeuge kehren in den meisten der folgenden Runbook-Einträge wieder.
   `my job list` listet die fehlgeschlagenen Jobs auf, die neuesten zuerst; `my job retry <id>...` stellt sie zurück in die Queue; `my job delete <id>...` verwirft sie.
   Jobs können gefahrlos erneut laufen.
 - **Der Bildschirm für entfernte Server** (Moderation → Entfernte Server, `/moderation/instances`, braucht `manage_domains`): die Server, die Zustellungen nicht erreichen konnten,
-  und jene, deren Zustellungen pausiert sind, mit Grund und Zeitpunkt. „Zustellungen fortsetzen“ markiert einen Server wieder als verfügbar.
+  und jene, deren Zustellungen pausiert sind, mit Grund und Zeitpunkt. „Zustellungen fortsetzen“ markiert einen Server wieder als verfügbar. „Server öffnen“ öffnet die Seite eines beliebigen Servers anhand seiner Domain, ob aufgelistet oder nicht.
 - **Die Logs**: JSON-Zeilen auf der Standardfehlerausgabe. Jede HTTP-Anfrage endet mit einer Zeile, deren `msg` `http request` ist, jeder Job-Lauf mit einer Zeile, deren `msg` `job` ist
   (`INFO` bei Erfolg, `WARN` bei einer Wiederholung, `ERROR` bei einem Job, der endgültig fehlgeschlagen ist, mit `error`, `job_id` und `my.job.type`).
-  Zeilen innerhalb einer Anfrage tragen deren `request_id`, die der Client als `X-Request-Id` sieht.
+  Zeilen innerhalb einer Anfrage tragen ihre `request_id`, die der Client als `X-Request-Id` sieht.
   - Die Zeile eines Laufs von `federation.deliver` sagt außerdem, wohin die Zustellung ging und wie sie endete: `my.delivery.domain` (die Domain des entfernten Servers),
     `activity.type` (zum Beispiel `Create`), `my.delivery.outcome` (`succeeded`, `retryable_failure`, `permanent_failure` oder `skipped`) und
     `http.response.status_code` (die Antwort der Inbox, nicht vorhanden, wenn sie keine gab oder nichts gesendet wurde). `my.outcome` bleibt das Ergebnis des Job-Laufs.
@@ -552,23 +554,59 @@ Der Server alarmiert nicht bei Kosten. Lege beim Anbieter, der die Kosten als Er
 Die importierten Kosten und die Schätzung für den laufenden Monat erscheinen unter Administration → Kosten → Billing-Importe. Fehlgeschlagene Importe werden dort festgehalten und vom nächsten täglichen Import wiederholt;
 [`MyBillingImportFailing`](#mybillingimportfailing) sagt dir Bescheid, bevor die Zahlen des Monats veralten.
 
-<!-- source: mybillingimportfailing da997f400ac4 -->
+<!-- source: mybillingimportfailing fc199aaa760f -->
 ### MyBillingImportFailing
 
-Der neueste Import der Nutzungskosten einer Billing-Quelle ist fehlgeschlagen, und seit 6 Stunden war kein späterer Import erfolgreich. Importe laufen einmal am Tag; Drosselung und
-Nichtverfügbarkeit werden innerhalb von Stunden wiederholt, die anderen Fehler warten auf den Import des nächsten Tages, daher zeigt der Kostenbildschirm bis dahin ältere Zahlen.
+Der neueste Import der Nutzungsentgelte einer Billing-Quelle ist fehlgeschlagen, und seit 6 Stunden war kein späterer Import erfolgreich. Importe laufen einmal am Tag; Drosselung und
+Nichtverfügbarkeit werden innerhalb von Stunden wiederholt, und die anderen Fehler warten auf den Import des nächsten Tages, daher zeigt der Kostenbildschirm bis dahin ältere Zahlen.
 
-Prüfen:
+Prüfe:
 
-- Administration → Kosten → Billing-Importe: den letzten Import der Quelle und seinen Fehler.
+- Administration → Kosten → Abrechnungsimporte: der letzte Import der Quelle und sein Fehler.
 - `my_billing_imports_total{my_outcome="failed"}` nach `error_type` oder die `WARN`-Logzeile, deren `msg` `billing import failed` ist, mit `source` und
-  `error_kind`. [Nutzungskosten der Cloud importieren](billing-import.md) listet die Arten auf und wie man jede behebt.
+  `error_kind`. [Cloud-Nutzungsentgelte importieren](billing-import.md) listet die Arten auf und wie du jede behebst.
 
-Beheben:
+Behebe:
 
-- Behebe die Ursache (Berechtigungen, der Billing-Export, das Anfragelimit) und drücke dann „Jetzt importieren“ unter Administration → Kosten → Billing-Importe, statt auf den nächsten Tag zu warten.
+- Behebe die Ursache (Berechtigungen, den Billing-Export, das Anfragelimit) und drücke dann „Jetzt importieren“ unter Administration → Kosten und Einnahmen → Abrechnungsimporte, statt auf den Import des nächsten Tages zu warten.
 
-Ohne Prometheus (Cloud Run mit `metrics_exporter = none`) lege stattdessen einen logbasierten Alarm auf die Zeile `billing import failed` an.
+Ohne Prometheus (Cloud Run mit `metrics_exporter = none`) erstelle stattdessen einen logbasierten Alarm auf die Zeile `billing import failed`.
+
+<!-- source: mytlscertificateexpiring 04321a12c086 -->
+### MyTLSCertificateExpiring
+
+Ein Prozess liefert ein Zertifikat aus, das innerhalb von 7 Tagen abläuft. Mit `tls = acme` erneuert der Server ein Zertifikat, wenn noch etwa ein Drittel seiner
+Laufzeit übrig ist, Wochen vor dem Ablauf; das bedeutet also, dass die Erneuerungen seit langer Zeit fehlschlagen oder der Prozess das erneuerte
+Zertifikat nicht geladen hat. Mit `tls = files` bedeutet es, dass nichts die Dateien erneuert hat.
+
+Prüfe:
+
+- Das Label `instance`: Wenn andere Prozesse ein späteres Zertifikat für denselben Host ausliefern, hat nur dieser Prozess das alte behalten.
+- `my tls status`: das aktuelle Zertifikat des Hosts, wann es erneuert wird, und die letzten Bestellungen mit ihren Fehlern.
+- Die Logzeilen `the TLS certificate could not be obtained` mit dem Grund.
+
+Behebe:
+
+- Behebe die Ursache der fehlgeschlagenen Bestellungen (siehe [MyTLSOrdersFailing](#mytlsordersfailing)) und führe dann `my tls renew -host <host>` aus, um sofort zu bestellen,
+  statt auf die nächste Bestellung zu warten.
+- Ein Prozess, der ein altes Zertifikat behält, während die Datenbank ein neueres hält, lädt es innerhalb von 5 Minuten; starte ihn neu, wenn er es nicht tut.
+- Erneuere mit `tls = files` die Dateien mit dem Werkzeug, das sie schreibt (certbot); der Server lädt sie innerhalb einer Minute.
+
+<!-- source: mytlsordersfailing a344584cde47 -->
+### MyTLSOrdersFailing
+
+Die letzten 3 oder mehr Bestellungen des Zertifikats eines Hosts haben keines erbracht. Nach dem dritten Fehlschlag wartet der Server zwischen den Bestellungen 100 Minuten, dann einen Tag,
+damit er innerhalb der Limits der Zertifizierungsstelle bleibt. Das aktuelle Zertifikat bleibt währenddessen in Betrieb.
+
+Prüfe:
+
+- `my tls status`: die Fehlschläge und den Fehler jeder Bestellung. Ein Fehler `rejectedIdentifier`, `dns`, `connection` oder `unauthorized` bedeutet, dass die
+  Zertifizierungsstelle den Server unter seinem Namen nicht erreichen konnte; `rateLimited` bedeutet, dass ihre Limits erreicht wurden.
+- Dass `host` auf den Server auflöst und dass die Ports 443 und 80 aus dem Internet erreichbar sind.
+
+Behebe:
+
+- Behebe die Ursache und führe dann `my tls renew -host <host>` aus: Es bestellt sofort, ohne zu warten.
 
 <!-- source: telling-users-about-an-incident e8cb0ca13fe8 -->
 ## Nutzer über einen Vorfall informieren

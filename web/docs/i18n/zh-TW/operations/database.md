@@ -74,7 +74,14 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 3882f4bb0751 -->
+<!-- source: the-connection-pool 94890eb11897 -->
+## 連線池
+
+PostgreSQL 的連線池遵循 `database_url` 的 `pool_*` 參數：`pool_max_conns`（預設為 4 與 CPU 數量中較大的一個）與 `pool_min_conns`（沒有請求時仍保留的連線數），並由 `pool_max_conn_idle_time`（30 分鐘）關閉其餘的連線。如果實例的請求間隔很長，請設定 `pool_min_conns`，否則每個請求都要開啟一條連線。
+
+SQLite 也接受 `pool_max_conns`（預設值相同），以及 `pool_max_idle_conns`，也就是它最多保留的閒置連線數。它是上限，而不是像 `pool_min_conns` 那樣的下限（預設為全部保留，也不會因時間而關閉任何連線，所以閒置的實例能立即回應）。新的連線在第一次查詢之前會先解析結構描述，這就是連線池要保留連線的原因。
+
+<!-- source: upgrading c07691f9e9ac -->
 ## 升級
 
 升級到新版本時，一律使用**新**版本的伺服器映像檔，依下列順序執行這些步驟：
@@ -86,6 +93,20 @@ docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db
 5. **啟動新的伺服器。** 在該版本的每個資料升級步驟都被記錄之前，它會在 `/readyz` 回應 `503`，並記錄缺少的步驟。
 
 `my serve` 從不執行 `my db upgrade -check`、`my schema apply` 或 `my db upgrade`；它們都是一次性的任務。對同一個資料庫一次只能執行其中一個。
+
+<!-- source: running-the-steps-in-one-job f249b58d8047 -->
+### 在一個任務中執行這些步驟
+
+`my upgrade` 會在 `my config check` 的檢查之後，於同一個程序中執行步驟 2 到 4，讓單一的一次性任務（Cloud Run 任務的一次執行、ECS 任務、Kubernetes Job）就能完成整個遷移：
+
+1. `my config check`
+2. `my db upgrade -check`
+3. `my schema apply`，若給 `my upgrade` 指定了 `-allow-destructive`，這裡也會帶上
+4. `my db upgrade`
+
+它會在第一個失敗的步驟停下，並以該步驟的結束碼結束；之後的步驟不會執行。每個步驟都會印出一行標明它的訊息（例如 `==> my schema apply`），接著是該指令的輸出，因此任務的日誌會顯示它停在哪裡。修正原因之後再次執行 `my upgrade`：已完成的步驟會發現沒有剩下的事要做。`-config <file>` 會傳給每個步驟。
+
+`my upgrade -dry-run` 會執行 `my config check`、`my db upgrade -check` 與 `my schema apply -dry-run`，不會變更任何東西：請在升級之前閱讀它印出的 SQL。如同步驟 1，請在 `my upgrade` 之前備份資料庫；它不會切換到維護模式，也不會啟動伺服器。
 
 大多數版本不會新增資料升級步驟：`my db upgrade -check` 會輸出 `ok: the database can be upgraded to this release`，而在已記錄先前版本步驟的資料庫上，`my db upgrade` 會輸出 `ok: no data upgrade step to run`。新的資料庫會在第一次 `my db upgrade` 時記錄該版本的所有步驟，沒有任何東西需要改寫。兩者還是都要執行，這樣流程就不必仰賴閱讀每一份版本說明。
 版本說明的**升級**一節會列出每個版本的步驟。
@@ -185,10 +206,10 @@ kubectl rollout status deployment/my
 
 若 Job 失敗，`kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check`（或 `-c schema`、`-c upgrade`）會顯示原因，而 Deployment 會維持在舊的映像檔。若在磁碟區上使用 SQLite，請在 Job 中掛載同一個磁碟區，並先停止 Deployment 的 Pod：SQLite 只接受一個寫入者。
 
-<!-- source: cloud-run a6c3de3c814f -->
+<!-- source: cloud-run 9e7486b6a4af -->
 ### Cloud Run
 
-使用 OpenTofu 模組時，[在 Cloud Run 上部署](deploy-cloud-run.md#upgrading)中的指令碼會執行這些步驟。手動進行時：
+使用 OpenTofu 模組時，升級就是套用新版本：它會在服務換用新映像檔之前，於遷移任務中執行 `my upgrade`，失敗時就停在那裡：請參閱[在 Cloud Run 上部署](deploy-cloud-run.md#upgrading)。手動進行時：
 
 Cloud Run 任務各自只執行一個容器，因此請為每個步驟建立一個任務，並以 `--wait` 依序執行，任務失敗時它也會失敗。請給這些任務與服務相同的環境變數與密鑰。
 

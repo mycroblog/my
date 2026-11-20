@@ -5,38 +5,40 @@ Le serveur chiffre les secrets qu’il conserve dans la base de données avec un
 Cette page explique comment générer, stocker, sauvegarder et renouveler la KEK, comment la conserver dans un KMS à la place, et que faire si elle est perdue ou divulguée.
 La [référence de configuration](../reference/configuration.md) liste tous les paramètres.
 
-<!-- source: how-it-works 37074c6237d0 -->
-## Fonctionnement
+<!-- source: how-it-works 92f093e9e7ca -->
+## Comment cela fonctionne
 
-![La hiérarchie des clés : la clé de chiffrement de clés, conservée là où key_manager l’indique et jamais dans la base de données, enveloppe une clé de chiffrement de données créée pour chaque secret, qui chiffre le secret ; la base de données contient l’ID de clé, la clé de chiffrement de données enveloppée et le secret chiffré dans cinq colonnes scellées. La liste ci-dessous décrit chaque couche.](images/key-hierarchy.svg)
+![La hiérarchie des clés : la clé de chiffrement de clés, conservée là où key_manager l’indique et jamais dans la base de données, enveloppe une clé de chiffrement de données créée pour chaque secret, qui chiffre le secret ; la base de données contient l’ID de clé, la clé de chiffrement de données enveloppée et le secret chiffré dans sept colonnes scellées. La liste ci-dessous décrit chaque couche.](images/key-hierarchy.svg)
 
 - Les secrets stockés dans la base de données, comme les clés privées des acteurs, sont chiffrés avec AES-256-GCM à l’aide d’une clé de chiffrement de données (DEK) générée pour chaque secret.
   La DEK est enveloppée avec une **clé de chiffrement de clés (KEK)** et stockée à côté du texte chiffré (chiffrement par enveloppe).
-- La KEK n’est pas stockée dans la base de données ; un export de la base de données divulgué ne suffit donc pas à exposer les secrets.
+- La KEK n’est pas stockée dans la base de données ; une copie de la base de données qui fuite ne suffit donc pas à exposer les secrets.
 - Chaque texte chiffré porte l’**ID de clé** de la KEK qui a enveloppé sa DEK. Avec `key_manager = local`, l’ID de clé est `local:` suivi de 16 chiffres hexadécimaux dérivés de la KEK,
   de sorte que la même KEK donne toujours le même ID. Vous n’attribuez jamais d’ID.
 - Un texte chiffré est lié à l’ID de ligne et au nom de colonne où il est stocké. Le copier dans une autre ligne ou colonne le rend indéchiffrable.
 - Les colonnes scellées, nommées comme les affiche `my kek status`, sont `local_account_private_keys.private_key_enc` (clés privées des acteurs),
-  `totp_enrollments.secret_enc` (secrets d’authentification à deux facteurs), `login_provider_secrets.sealed_secret` (secrets client des fournisseurs de connexion),
-  `webhook_secrets.sealed_secret` (secrets de signature des webhooks) et `instance_secrets.sealed_secret` (la clé de signature du proxy de médias).
-- L’état d’une connexion par clé d’accès ou par un fournisseur externe est scellé de la même façon mais n’est pas stocké : le navigateur le conserve pendant 30 minutes au plus.
+  `totp_enrollments.secret_enc` (secrets d’authentification à deux facteurs), `login_provider_secrets.sealed_secret` (secrets clients des fournisseurs de connexion),
+  `webhook_secrets.sealed_secret` (secrets de signature des webhooks), `instance_secrets.sealed_secret` (la clé de signature du proxy de médias et la clé des empreintes d’idempotence),
+  `tls_acme_accounts.sealed_private_key` (les clés des comptes ACME lorsque le serveur obtient ses propres certificats) et
+  `tls_certificates.sealed_private_key` (les clés de ces certificats).
+- L’état d’une connexion par clé d’accès ou par un fournisseur externe est scellé de la même façon mais n’est pas stocké : le navigateur le conserve au plus 30 minutes.
 - La clé de signature (HMAC-SHA256) des URL du proxy de médias est une clé aléatoire que le serveur génère à son premier démarrage et stocke dans la base de données, chiffrée comme les autres secrets.
-  Elle ne change pas lorsque vous renouvelez la KEK ; les URL du proxy de médias continuent donc de fonctionner d’une rotation à l’autre, et `my kek rewrap` la ré-enveloppe avec les autres secrets.
-- `key_manager` vaut `local` (la valeur par défaut : il utilise le paramètre `kek`), `gcpkms` (la KEK reste dans Google Cloud KMS ; voir [Google Cloud KMS](#google-cloud-kms)),
+  Elle ne change pas lorsque vous renouvelez la KEK, de sorte que les URL du proxy de médias continuent de fonctionner au fil des rotations, et `my kek rewrap` la ré-enveloppe avec les autres secrets.
+- `key_manager` vaut `local` (la valeur par défaut : elle utilise le paramètre `kek`), `gcpkms` (la KEK reste dans Google Cloud KMS ; voir [Google Cloud KMS](#google-cloud-kms)),
   `awskms` (la KEK reste dans AWS KMS ; voir [AWS KMS](#aws-kms)) ou `plugin` (la KEK reste auprès d’un programme à vous ; voir [Un plugin](#a-plugin)).
 
-<!-- source: what-happens-if-you-lose-the-kek 76126b09f09c -->
+<!-- source: what-happens-if-you-lose-the-kek d148ff0dedcc -->
 ## Que se passe-t-il si vous perdez la KEK
 
-Sans la KEK, restaurer la base de données ne vous permet pas de déchiffrer les clés privées des acteurs. Une fois une clé privée perdue, les autres serveurs ne peuvent plus vérifier les signatures de cet acteur,
-et **l’identité de l’acteur dans le fédivers est rompue** (les relations d’abonnement ne peuvent pas être reportées). Traitez la KEK avec le même soin que la base de données.
+Sans la KEK, restaurer la base de données ne permet pas de déchiffrer les clés privées des acteurs. Une fois une clé privée perdue, les autres serveurs ne peuvent plus vérifier les signatures de cet acteur,
+et **l’identité de l’acteur dans le fédivers est rompue** (les relations d’abonnement ne peuvent pas être reprises). Traitez la KEK avec le même soin que la base de données.
 
-![Ce qui est perdu avec la KEK : après une restauration sans elle, tout ce qui n’est pas scellé reste lisible, chaque valeur scellée ne peut pas être ouverte, et les acteurs perdent leur identité. Le paragraphe ci-dessous dit la même chose.](images/kek-loss.svg)
+![Ce qui est perdu avec la KEK : après une restauration sans elle, tout ce qui n’est pas scellé reste lisible, chaque valeur scellée ne s’ouvre pas, et les acteurs perdent leur identité. Le paragraphe ci-dessous dit la même chose.](images/kek-loss.svg)
 
-Ce qui n’est pas scellé reste lisible : les publications, les comptes, les abonnements et le reste de la base de données, ainsi que les fichiers médias dans le stockage.
-Chaque valeur scellée échoue avec une erreur `unknown key-encryption key` : les clés privées des acteurs, les secrets d’authentification à deux facteurs,
-les secrets client des fournisseurs de connexion, les secrets de signature des webhooks et la clé de signature du proxy de médias.
-La même chose se produit lorsqu’une autre KEK est définie à la place de celle qui a enveloppé les secrets, ou lorsque la clé KMS ou la clé du plugin qui les a enveloppés est désactivée ou détruite.
+Ce qui n’est pas scellé reste lisible : les publications, les comptes, les abonnements et le reste de la base de données, ainsi que les fichiers de médias du stockage.
+Chaque valeur scellée échoue avec une erreur `unknown key-encryption key` : les clés privées des acteurs, les secrets d’authentification à deux facteurs,
+les secrets clients des fournisseurs de connexion, les secrets de signature des webhooks, la clé de signature du proxy de médias et les clés des certificats que le serveur a obtenus lui-même.
+Il en va de même lorsqu’une autre KEK est définie à la place de celle qui a enveloppé les secrets, ou lorsque la clé KMS ou la clé du plugin qui les a enveloppés est désactivée ou détruite.
 
 <!-- source: generate-a-kek 44b338b7440b -->
 ## Générer une KEK

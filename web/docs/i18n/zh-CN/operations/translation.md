@@ -61,7 +61,7 @@ my instance set translation_provider_visibilities 'deepl=public|local|unlisted|p
 
 **署名。** DeepL 的条款要求在每条译文旁显示其名称或标志。Web 客户端会在每条来自 DeepL 的译文旁显示“DeepL”以及指向 `https://www.deepl.com` 的链接，因此你无需另外添加。
 
-<!-- source: google-cloud-translation e351f57274b0 -->
+<!-- source: google-cloud-translation ab42392ab00c -->
 ## Google Cloud Translation
 
 [Cloud Translation](https://cloud.google.com/translate) 的服务商 ID 是 `google`。服务器使用通用翻译模型调用它的 `TranslateText` 方法，并以 HTML 形式发送文本，使提及、链接以及其他必须保持原样的部分回到原位。
@@ -71,6 +71,14 @@ my instance set translation_provider_visibilities 'deepl=public|local|unlisted|p
 3. 把 `MY_TRANSLATOR_GOOGLE_PROJECT` 设为项目 ID。`MY_TRANSLATOR_GOOGLE_LOCATION` 默认为 `global`；也可以指定 Cloud Translation 中提供通用模型的其他位置，例如 `us-central1`。
 4. 重启服务器，并把 `google` 加入实例设置 `translation_providers`。
 
+在 Google Cloud 上使用 OpenTofu 模块 [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) 时，`translation` 部分会完成前三步，应用后服务会重启：
+
+```hcl
+  translation = {}   # or { project_id = "other-project", location = "us-central1" }
+```
+
+它会在部署所在的项目（或 `project_id`）中启用该 API，在那里为服务的服务账号授予 `roles/cloudtranslate.user`，并设置 `translator_google_project` 和 `translator_google_location`。然后把 `google` 加入 `translation_providers`。
+
 与它使用的其他 Google Cloud 服务一样，服务器使用应用默认凭据（Application Default Credentials）进行认证：在 Cloud Run 上使用该服务的服务账号；在其他环境中使用 `GOOGLE_APPLICATION_CREDENTIALS` 指定的密钥文件。不使用 API 密钥。服务器启动时不会发出任何调用，因此缺少 API 或角色只会在读者请求翻译时才暴露出来：此时服务器会尝试下一个服务商，没有剩余服务商时，读者会看到翻译失败。Google 报告项目达到配额或速率限制时，也会转到下一个服务商。
 
 Google 在每月免费额度之后按发送的字符收费；请参阅 [Cloud Translation 价格](https://cloud.google.com/translate/pricing)。服务器自身的每月限额也会计算字符数，但与 Google 的计费方式并不完全相同，因此请同时在 Cloud Billing 中设置预算提醒。
@@ -79,7 +87,7 @@ Google [声明](https://cloud.google.com/translate/data-usage)它只为提供翻
 
 Google 的[署名要求](https://cloud.google.com/translate/attribution)要求把译文标示为机器翻译，并在旁边显示链接到 `https://translate.google.com` 的“powered by Google Translate”徽标。Web 客户端会在此服务商的每条译文旁显示名称“Google Translate”以及该链接。Google 只以下载形式提供徽标图片，因此服务器不会为此服务商向客户端提供标志；请确认读者看到的内容符合 Google 对你的实例的要求。
 
-<!-- source: amazon-translate a6cd83df7ef1 -->
+<!-- source: amazon-translate b7aa8e79d2d7 -->
 ## Amazon Translate
 
 Amazon Translate 的服务商 ID 是 `aws`。与其他 AWS 服务一样，服务器使用 AWS SDK 默认凭据链中的凭据调用它的 `TranslateText` 操作：任务或实例的执行角色、环境变量 `AWS_ACCESS_KEY_ID` 和 `AWS_SECRET_ACCESS_KEY`，或共享凭据文件。服务器的配置中不需要任何密钥。
@@ -87,6 +95,8 @@ Amazon Translate 的服务商 ID 是 `aws`。与其他 AWS 服务一样，服务
 1. 为服务器运行时使用的角色或用户授予 IAM 权限 `translate:TranslateText`。对于语言未知的帖子，Amazon Translate 会使用 Amazon Comprehend 检测语言；AWS 针对 Amazon Translate 的托管策略会同时授予 `comprehend:DetectDominantLanguage`，因此也请授予该权限。
 2. 把 `translator_aws_region`（`MY_TRANSLATOR_AWS_REGION`）设为 Amazon Translate 所在的区域，例如 `us-east-1`。检测语言还需要该区域同时提供 Amazon Comprehend。
 3. 重启服务器，然后通过 `translation_providers = aws` 启用该服务商，可以单独使用，也可以按你的偏好与其他服务商排列顺序（参见[实例设置](instance-settings.md)）。
+
+在 AWS 上使用 OpenTofu 模块 [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) 时，`translation` 部分会完成前两步：`translation = {}` 会允许任务的角色执行这两个操作，并把 `translator_aws_region` 设为部署所在的区域，或你给出的 `region`。然后启用该服务商。
 
 Amazon Translate 按发送的字符收费，前 12 个月有免费套餐（[价格](https://aws.amazon.com/translate/pricing/)）。服务器只发送帖子中的文字：提及、话题标签、链接和代码留在服务器上，每一项都以 HTML 标记中的简短占位符代替。请把 `translation_user_monthly_characters` 和 `translation_server_monthly_characters` 的每月限额控制在你愿意支付的范围内。
 

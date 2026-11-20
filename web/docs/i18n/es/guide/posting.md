@@ -1,13 +1,13 @@
 <!-- source: posting-and-choosing-who-sees-a-post 5c4adb3025f6 -->
 # Publicar y elegir quién ve una publicación
 
-<!-- source: writing-a-post b3b7ce030983 -->
+<!-- source: writing-a-post 5f24a2f4b092 -->
 ## Escribir una publicación
 
 Elige «Escribir una publicación» para abrir el formulario «Nueva publicación». Escribe en «Tu publicación» y elige «Publicar». El formulario muestra cuántos
 caracteres te quedan. Además del texto puedes:
 
-- Adjuntar imágenes, video o audio con «Añadir imágenes, video o audio». Describe cada archivo adjunto para las personas que no pueden verlo u oírlo; algunos servidores exigen una descripción para cada archivo adjunto. La ubicación y otros metadatos se eliminan de los archivos.
+- Adjuntar imágenes, video o audio con «Añadir imágenes, video o audio». Describe cada archivo adjunto para las personas que no pueden verlo u oírlo; algunos servidores exigen una descripción para cada archivo adjunto, y «Exigir descripciones de los archivos multimedia», en los ajustes de «Visualización y publicación», lo exige de tus propias publicaciones. La ubicación y otros metadatos se eliminan de los archivos.
 - «Añadir una encuesta», con opciones y una duración, y las opciones «Permitir elegir varias opciones» y «Ocultar los votos hasta que termine la encuesta».
 - «Añadir una advertencia de contenido». Los lectores ven primero la advertencia y eligen «Mostrar contenido».
 - Elegir «Ocultar las imágenes hasta que los lectores las muestren» para marcar el contenido multimedia como sensible.
@@ -40,117 +40,113 @@ Cuando una publicación programada no puede publicarse a su hora, por ejemplo po
 entre tus borradores con el motivo, y recibes una notificación que lleva a tus borradores, para que puedas corregirla y
 programarla de nuevo.
 
-<!-- source: who-can-see-a-post 267cf73d0612 -->
+<!-- source: who-can-see-a-post be247913f548 -->
 ## Quién puede ver una publicación
 
-El botón «Visibilidad» del formulario abre «¿Quién puede ver esta publicación?» para esa publicación. El valor
-predeterminado de las publicaciones nuevas es la opción «Quién ve tus publicaciones de forma predeterminada», en
-«Visualización, publicación y cronologías» de la configuración.
+La herramienta «Quién puede verla» del formulario abre las opciones para esa publicación. El valor predeterminado de las publicaciones nuevas es «Quién puede verla»
+en «Publicaciones nuevas», dentro de los ajustes de «Visualización y publicación».
 
 | Opción | Quién puede verla |
 | --- | --- |
-| Pública | Cualquiera, aquí y en otros servidores. Aparece en las cronologías públicas. |
-| Este servidor | Las personas que han iniciado sesión en este servidor y tus seguidores de otros servidores. Aparece en la cronología local de este servidor. |
-| No listada | Cualquiera que tenga el enlace, pero no aparece en las cronologías públicas. |
-| Seguidores | Solo tus seguidores y las personas que mencionas. |
-| Personas mencionadas | Solo las personas que mencionas. |
+| Pública | Cualquiera, aquí y en otros servidores. Aparece en las cronologías públicas y en las etiquetas. |
+| Vecinos | Las personas que han iniciado sesión en este servidor y tus seguidores de otros servidores. Aparece en la cronología local de este servidor. |
+| Pública discreta | Cualquiera que tenga el enlace o tu perfil, pero no aparece en las cronologías públicas ni en las etiquetas. |
+| Solo seguidores | Solo tus seguidores y las personas que mencionas. |
+| Directa | Solo las personas que mencionas. |
 
-![Quién puede ver una publicación en este servidor y en otros servidores, para cada una de las cinco visibilidades. La lista de abajo dice lo mismo.](images/visibility.svg)
+![Quién puede ver una publicación en este servidor y en otros servidores, para cada una de las cinco opciones. La lista de abajo dice lo mismo.](images/visibility.svg)
 
 Fila por fila, primero en este servidor y después en otros servidores:
 
 - **Pública**: cualquiera, también quienes no han iniciado sesión, y la publicación aparece en las cronologías local y federada. En otros servidores cualquiera puede leerla, y se envía a tus seguidores y a las personas que mencionas.
-- **Este servidor**: las personas que han iniciado sesión en este servidor, y la publicación aparece en la cronología local. Otros servidores la reciben solo para tus seguidores allí, que la ven como una publicación de «Seguidores»; no se envía a nadie más.
-- **No listada**: cualquiera que tenga el enlace, pero la publicación no aparece en las cronologías públicas. También en otros servidores, cualquiera que tenga el enlace puede leerla, y se envía a tus seguidores y a las personas que mencionas.
-- **Seguidores**: tus seguidores y las personas que mencionas, en este servidor y en otros servidores.
-- **Personas mencionadas**: solo las personas que mencionas, en este servidor y en otros servidores.
+- **Vecinos**: las personas que han iniciado sesión en este servidor, y la publicación aparece en la cronología local. Otros servidores la reciben solo para tus seguidores allí, que la ven como una publicación de «Solo seguidores»; no se envía a nadie más.
+- **Pública discreta**: cualquiera que tenga el enlace o tu perfil, pero la publicación no aparece en las cronologías públicas ni en las etiquetas. También en otros servidores, cualquiera que tenga el enlace puede leerla, y se envía a tus seguidores y a las personas que mencionas.
+- **Solo seguidores**: tus seguidores y las personas que mencionas, en este servidor y en otros servidores.
+- **Directa**: solo las personas que mencionas, en este servidor y en otros servidores.
 
-En un servidor de una sola persona, donde nadie más ha iniciado sesión, «Este servidor» significa lo mismo que
-«Seguidores»: las publicaciones nuevas no pueden tenerla, y un valor predeterminado de «Este servidor» funciona como
-«Seguidores». El menú de visibilidad y el valor predeterminado de «Visualización, publicación y cronologías» la omiten, y una
-respuesta a una publicación de «Este servidor» es para «Seguidores». Las publicaciones que ya la tienen la conservan.
+En un servidor de una sola persona, donde nadie más ha iniciado sesión, «Vecinos» significa lo mismo que «Solo seguidores»: las publicaciones nuevas
+no pueden tenerla, y un valor predeterminado de «Vecinos» funciona como «Solo seguidores». «Quién puede verla» y el valor predeterminado de los ajustes
+la omiten, y una respuesta a una publicación para vecinos es de «Solo seguidores». Las publicaciones que ya la tienen la conservan.
 
 Un bloqueo siempre se impone: quien te bloquea, o a quien bloqueas, no ve tu publicación, sea cual sea la opción que
 hayas elegido.
 
-<!-- source: this-server d39e8d3e2df6 -->
-### «Este servidor»
+<!-- source: neighbors 2581a57320f5 -->
+### «Vecinos»
 
-Una publicación con la visibilidad «Este servidor» se queda en tu servidor. Las personas que no han iniciado sesión en
-él no pueden leerla, ni siquiera con el enlace, y nunca aparece en la cronología federada. Otros servidores la reciben
-solo para tus seguidores allí, y se la muestran a esos seguidores como una publicación solo para seguidores.
+Una publicación para vecinos se queda en tu servidor. Las personas que no han iniciado sesión en él no pueden leerla, ni siquiera con el
+enlace, y nunca aparece en la cronología federada. Otros servidores la reciben solo para tus seguidores allí, y
+se la muestran a esos seguidores como una publicación solo para seguidores.
 
-- Si mencionas a alguien de otro servidor que no te sigue, no recibe la publicación, y tus seguidores de allí ven la mención como un simple enlace. El formulario te avisa de ello.
-- Las cuentas de tu servidor pueden impulsar una publicación de «Este servidor», y el impulso solo se muestra en este servidor.
-- Una respuesta a una publicación de «Este servidor» empieza también como «Este servidor»; puedes cambiarlo.
+- Si mencionas a alguien de otro servidor que no te sigue, esa persona no recibe la publicación, y tus seguidores allí ven la mención como un enlace sin más. El formulario te lo advierte.
+- Las cuentas de tu servidor pueden impulsar una publicación para vecinos, y el impulso se muestra solo en este servidor.
+- Una respuesta a una publicación para vecinos empieza también como «Vecinos»; puedes cambiarla.
 
-<!-- source: other-things-to-know 59d77fd8017f -->
+<!-- source: other-things-to-know b36265de1760 -->
 ### Otras cosas que conviene saber
 
-- No puedes cambiar la visibilidad de una publicación después de publicarla. Cuando editas una publicación, la visibilidad y la publicación a la que responde se mantienen.
-- Un moderador puede limitar el alcance con el que publica una cuenta. El formulario dice entonces «Ahora tu cuenta puede publicar como máximo con la visibilidad …» y una opción más amplia se publica con el nivel más amplio permitido.
-- Cualquiera que pueda ver una publicación pública, de «Este servidor» o no listada puede impulsarla. Solo tú puedes impulsar tus propias publicaciones de «Seguidores», y solo tus seguidores ven ese impulso. Las publicaciones de «Personas mencionadas» no se pueden impulsar.
-- El autor de una publicación puede elegir quién puede responderle y quién puede impulsarla; las publicaciones de algunos otros servidores también llevan esa opción. Una respuesta o un impulso fuera de ella se rechaza, con un mensaje como «El autor de esta publicación no te permite responderle.». El autor, las personas que menciona la publicación y el autor de la publicación a la que responde siempre pueden responder.
-- El autor también puede permitir que algunas personas respondan o impulsen solo cuando él lo apruebe. Esa respuesta o ese impulso espera: recibes una notificación («… ha pedido responder a tu publicación») y permanece fuera de tu publicación hasta que lo apruebes. Una respuesta en espera de otro servidor no aparece en la conversación bajo tu publicación ni en su recuento de respuestas; sigue apareciendo en el perfil de su autor y en su propia página. Un impulso en espera no se cuenta. Aprobarlo lo añade a tu publicación; rechazarlo lo mantiene fuera, y se avisa al otro servidor en ambos casos.
-- Una respuesta o un impulso de otro servidor que queda del todo fuera de tu opción se mantiene fuera de tu publicación del mismo modo y no te notifica nada.
-- Cuando respondes a una publicación, o la impulsas, cuyo autor aprueba a mano las respuestas o los impulsos, la tuya espera esa aprobación. Hasta entonces, solo tú ves tu respuesta, bajo la publicación y en su propia página, marcada como en espera; los demás no ven nada de ella, y no se envía nada a otros servidores. Tu impulso no se realiza hasta que se aprueba. Recibes una notificación cuando el autor lo aprueba o lo rechaza («… ha aprobado tu respuesta, impulso o cita»). Eliminar una respuesta en espera, o deshacer un impulso en espera, retira la solicitud.
+- No puedes cambiar quién puede ver una publicación después de publicarla. Una edición conserva quién puede verla y la publicación a la que responde.
+- Un moderador puede limitar el alcance de las publicaciones de una cuenta. El formulario dice entonces «Tu cuenta puede publicar como máximo con alcance ...» y una opción más amplia se publica con el alcance más amplio permitido.
+- Cualquiera que pueda ver una publicación «Pública», «Vecinos» o «Pública discreta» puede impulsarla. Solo tú puedes impulsar tus propias publicaciones «Solo seguidores», y solo tus seguidores ven ese impulso. Las publicaciones «Directa» no se pueden impulsar.
+- El autor de una publicación puede elegir quién puede responderle y quién puede impulsarla; las publicaciones de algunos otros servidores también llevan esa elección. Una respuesta o un impulso fuera de ella se rechaza, con un mensaje como «El autor de esta publicación no te permite responderle.». El autor, las personas que la publicación menciona y el autor de la publicación a la que responde siempre pueden responder.
+- El autor también puede permitir que algunas personas respondan o impulsen solo cuando él lo apruebe. Una respuesta o impulso así espera: se te notifica («... ha pedido responder a tu publicación»), y no aparece en tu publicación hasta que lo apruebes. Una respuesta en espera de otro servidor no está en la conversación bajo tu publicación ni en su recuento de respuestas; sigue apareciendo en el perfil de su autor y en su propia página. Un impulso en espera no se cuenta. Aprobarlo lo añade a tu publicación; rechazarlo lo mantiene fuera, y se avisa al otro servidor en ambos casos.
+- Una respuesta o un impulso de otro servidor que queda del todo fuera de tu elección se mantiene fuera de tu publicación de la misma manera, y no te notifica nada.
+- Cuando respondes a una publicación o la impulsas y su autor aprueba a mano las respuestas o los impulsos, el tuyo espera esa aprobación. Hasta entonces, solo tú ves tu respuesta, bajo la publicación y en su propia página, marcada como «Esperando aprobación»; las demás personas no ven nada de ella, y no se envía nada a otros servidores. Tu impulso no se hace hasta que se aprueba. Se te notifica cuando el autor lo aprueba o lo rechaza («... ha aprobado tu respuesta, impulso o cita»). Eliminar una respuesta en espera, o deshacer un impulso en espera, retira la solicitud.
 
-<!-- source: who-can-reply-boost-and-quote e207d9971532 -->
+<!-- source: who-can-reply-boost-and-quote 5d5ece5f0cb2 -->
 ## Quién puede responder, impulsar y citar
 
-El botón «Quién puede responder, impulsar y citar» entre las herramientas del formulario abre las opciones de esa publicación. Para cada una de
-las respuestas, los impulsos y las citas, elige quién puede hacerlo de una vez: «Cualquiera», «Seguidores y personas que menciones», «Personas que
-menciones» o «Solo tú». Debajo de cada una, «Los demás pueden responder con tu aprobación» (y lo mismo para impulsos y citas) permite que
-todos los demás lo pidan en lugar de ser rechazados. Cuando una opción admite a menos que cualquiera, el formulario muestra el resultado sobre sus
-herramientas, por ejemplo «Respuestas: Cualquiera. Impulsos: Solo tú. Citas: Cualquiera.», antes de que publiques.
+«Quién puede responder, impulsar y citar», en el menú «Quién puede verla», abre las opciones para esa publicación, cada una con su valor,
+por ejemplo «Quién puede impulsar: Seguidores, otras personas con tu aprobación». Para cada una de las respuestas, los impulsos y las citas, elige
+quién puede hacerlo de inmediato: «Cualquiera», «Seguidores», «Personas que mencionas» o «Solo tú». Debajo de cada una, «Permitir a otras personas con tu
+aprobación» deja que todas las demás lo soliciten en lugar de ser rechazadas.
 
-- Las personas que menciona una publicación siempre pueden responderle. Una publicación de «Seguidores» solo puedes impulsarla y citarla tú, y una de «Personas mencionadas» nadie, elijas lo que elijas.
-- Los valores predeterminados de las publicaciones nuevas están en «Quién puede responder, impulsar y citar tus publicaciones nuevas» dentro de «Visualización, publicación y cronologías» en los ajustes.
-- Las solicitudes que esperan tu respuesta están en «Solicitudes de aprobación» en los ajustes, junto a «Solicitudes de seguimiento»; la notificación de cada una enlaza allí con «Revisar las solicitudes». «Aprobar» añade la respuesta, el impulso o la cita a tu publicación, y la conversación bajo ella muestra de inmediato una respuesta aprobada; «Rechazar» la mantiene fuera.
-- En la publicación de otra persona, «Responder» no se muestra y «Impulsar» no se puede pulsar cuando su autor no te lo permite. Cuando el autor los aprueba a mano, el formulario lo indica antes de que respondas, y después de impulsar, la publicación dice «Tu impulso espera la aprobación del autor.»
+- Las personas que una publicación menciona siempre pueden responderle. Una publicación «Solo seguidores» solo puedes impulsarla y citarla tú, y una publicación «Directa» nadie, elijas lo que elijas.
+- Los valores predeterminados de las publicaciones nuevas, con las mismas opciones, están en «Quién puede responder, impulsar y citar», dentro de los ajustes de «Visualización y publicación».
+- Las solicitudes que te esperan se enumeran en «Esperando aprobación», que abre la fila de arriba de las notificaciones. «Aprobar» añade la respuesta, el impulso o la cita a tu publicación, y la conversación bajo ella muestra de inmediato una respuesta aprobada; «Rechazar» la mantiene fuera.
+- En la publicación de otra persona, «Responder» no se muestra y «Impulsar» no se puede pulsar cuando su autor no te lo permite. Cuando el autor los aprueba a mano, el formulario lo dice antes de que respondas, y después de impulsar, la publicación dice «Impulso esperando aprobación».
 
-<!-- source: after-posting 8668eb1a5211 -->
+<!-- source: after-posting e11fd06a76e8 -->
 ## Después de publicar
 
-Bajo una publicación encuentras «Responder», «Impulsar», «Citar», «Favorito», «Reaccionar» y «Más». «Más» tiene «Copiar enlace»,
-«Abrir la página original» (para una publicación de otro servidor), «Compartir» y «Marcador»; tus marcadores están en la página
-«Marcadores», y solo tú los ves. En tu propia publicación tiene además «Editar» (no en una publicación con encuesta),
-«Eliminar y volver a redactar…» y «Eliminar…». Ambas eliminaciones piden confirmación antes. «Eliminar…» borra la publicación para
-todos, junto con sus impulsos y favoritos; «Eliminar y volver a redactar…» hace lo mismo y abre el formulario con su texto, sus
-imágenes y su encuesta como una publicación nueva.
+Bajo una publicación encuentras «Responder», «Impulsar», «Citar», «Favorito», «Reaccionar» y «Más». «Más» tiene «Copiar el enlace», «Abrir la
+página original» (para una publicación de otro servidor), «Compartir» y «Marcador»; tus marcadores están en la página «Marcadores»,
+y solo tú los ves. En tu propia publicación también tiene «Editar» (no para una publicación con encuesta), «Eliminar y reescribir…» y
+«Eliminar…». Ambas eliminaciones preguntan antes. «Eliminar…» quita la publicación para todos, junto con sus impulsos y favoritos;
+«Eliminar y reescribir…» hace lo mismo y abre el formulario con su texto, imágenes y encuesta como una publicación nueva.
 
-Una publicación editada muestra «· editada» después de su hora; selecciónalo para abrir «Historial de ediciones», con la versión más
-reciente primero y los cambios marcados.
+Una publicación editada muestra «· editada» después de su hora; púlsala para abrir «Historial de ediciones», con la versión más reciente primero y los
+cambios marcados.
 
 Una encuesta admite un voto, o varios cuando su autor lo permite: elige y luego «Votar». Los resultados se muestran cuando has votado o
-la encuesta ha terminado, y a su autor en cualquier momento. «Reaccionar» abre un selector de emojis (búsqueda, categorías, tono de piel y
-los emojis personalizados de este servidor); cada persona da a una publicación un favorito o una reacción. En la página propia de la
-publicación, un emoji enumera quién reaccionó con él. El formulario también tiene un botón «Añadir emoji».
+la encuesta ha terminado, y a su autor en cualquier momento. «Reaccionar» abre un selector de emoji (búsqueda, categorías, tono de piel y los emoji
+personalizados de este servidor); cada persona da a una publicación un favorito o una reacción. En la página propia de la publicación, un emoji enumera
+quién reaccionó con él. El formulario también tiene un botón «Añadir emoji».
 
 Una publicación en un idioma distinto del tuyo tiene «Traducir» cuando el servidor tiene un servicio de traducción o tu navegador puede
-traducir; «Mostrar original» vuelve al texto original. Tras una advertencia de contenido, la línea está en la banda de la advertencia. Si el
-servidor envía el texto de las publicaciones a un servicio de traducción, el selector de visibilidad te dice para qué opciones.
+traducir; «Mostrar el original» vuelve atrás. Tras una advertencia de contenido, la línea queda en la banda de la advertencia. Si el servidor envía
+el texto de las publicaciones a un servicio de traducción, «Quién puede verla» te dice para qué opciones.
 
-Las imágenes, los GIF, los vídeos y el audio se muestran en la publicación. Selecciona una imagen para abrir el visor: desliza o usa las
-flechas, haz zoom y lee su descripción. El contenido multimedia marcado como sensible permanece oculto bajo una línea como «Imagen
-sensible», hasta que eliges «Mostrar». Un enlace en una publicación se muestra como una tarjeta.
+Las imágenes, GIF, video y audio se muestran en la publicación. Pulsa una imagen para abrir el visor: desliza o usa las flechas, amplía y
+lee su descripción. El contenido multimedia marcado como sensible permanece oculto bajo una línea como «Imagen sensible», hasta que eliges «Mostrar». Un enlace en una
+publicación se muestra como una tarjeta.
 
-<!-- source: writing-an-article 0dfa0a80bb8e -->
+<!-- source: writing-an-article 3bc498986329 -->
 ## Escribir un artículo
 
-«Escribir un artículo» bajo el formulario de nueva publicación abre el editor de artículos, una página propia. Dale al artículo un título, un
+«Escribir un artículo», bajo el formulario de publicación nueva, abre el editor de artículos, una página propia. Dale al artículo un título, un
 resumen si quieres (si lo dejas vacío, se genera con el comienzo del cuerpo), una imagen de portada con su descripción y el
 cuerpo, escrito en Markdown: `#` inicia un encabezado, `**text**` es negrita, y «Negrita» y «Enlace» sobre el cuerpo hacen lo mismo con
 el texto que seleccionas (Ctrl+B y Ctrl+K, o Cmd en un Mac). Suelta o pega imágenes en el cuerpo, o elígelas con «Añadir
 imágenes»: cada una se sube y se coloca donde está el cursor como `![](media:…)`; escribe su descripción entre los corchetes.
-Solo las imágenes que subes se muestran en un artículo; una imagen de otra dirección se convierte en un enlace con su descripción.
+Solo se muestran en un artículo las imágenes que subes; una imagen de otra dirección se convierte en un enlace con su descripción.
 
-- Las etiquetas van en su propio campo, separadas por espacios; el artículo aparece listado bajo ellas, y un `#` en el cuerpo sigue siendo texto. Las menciones en el cuerpo enlazan a las personas, pero no las notifican.
-- «Vista previa» muestra el artículo tal como lo verán los lectores, renderizado por el servidor exactamente como se publicará, con el tamaño del cuerpo y el número de sus imágenes frente a los límites de este servidor.
-- «Marcar como sensible» muestra primero a los lectores el título y el resumen y pliega la portada y el cuerpo. Un artículo no puede ser solo para «Personas mencionadas».
-- Mientras escribes, el artículo se guarda como borrador cada vez que haces una pausa («Borrador guardado»), así que se abre en cualquier dispositivo desde «Borradores y publicaciones programadas», donde «Editar» lo devuelve al editor. Si el borrador se cambió en otro dispositivo entretanto, no se sobrescribe nada: tu texto permanece en el editor, y «Guardar como borrador nuevo» lo conserva como otro borrador.
-- «Publicar» publica el artículo ahora y abre su página; «Programar» lo publica a la hora que elijas, como en una publicación.
-- Para cambiar un artículo que publicaste, elige «Editar» en su menú «Más acciones». El editor se abre con lo que escribiste; «Guardar cambios» lo reemplaza, y la versión anterior permanece en su «Historial de ediciones». La visibilidad de un artículo no cambia.
+- Las etiquetas van en su propio campo, separadas por espacios; el artículo aparece listado bajo ellas, y un `#` en el cuerpo sigue siendo texto. Las menciones en el cuerpo enlazan a las personas pero no les envían notificación.
+- «Vista previa» muestra el artículo tal como lo verán los lectores, generado por el servidor exactamente como se publicará, con el tamaño del cuerpo y el número de sus imágenes frente a los límites de este servidor.
+- «Marcar como sensible» muestra primero a los lectores el título y el resumen y pliega la portada y el cuerpo. Un artículo no puede ser «Directa».
+- Mientras escribes, el artículo se guarda como borrador cada vez que haces una pausa («Borrador guardado»), así que se abre en cualquier dispositivo desde «Borradores y publicaciones programadas», donde «Editar» lo devuelve al editor. Si el borrador se cambió entretanto en otro dispositivo, no se sobrescribe nada: tu texto permanece en el editor, y «Guardar como borrador nuevo» lo conserva como otro borrador.
+- «Publicar» publica el artículo ahora y abre su página; «Programar» lo publica a la hora que elijas, como una publicación.
+- Para cambiar un artículo que publicaste, elige «Editar» en su menú «Más acciones». El editor se abre con lo que escribiste; «Guardar los cambios» lo reemplaza, y la versión anterior permanece en su «Historial de ediciones». Quién puede ver un artículo no cambia.
 
 Un servidor puede permitir que solo algunas personas escriban artículos nuevos; entonces «Escribir un artículo» no se muestra a las demás, que aún pueden
 editar los artículos que publicaron.
@@ -168,36 +164,35 @@ sensible» muestra su portada, y en su página «Mostrar el artículo» muestra 
 enumera solo los artículos de esa persona, los más recientes primero; para alguien de otro servidor, solo los artículos que este servidor ha
 recibido.
 
-<!-- source: direct-messages 59062702f4be -->
+<!-- source: direct-messages e262b7a83b69 -->
 ## Mensajes directos
 
-«Mensajes directos» en la navegación reúne tus publicaciones de «Personas mencionadas» y las que recibes, una fila por
-conversación, con la que tiene la publicación más reciente primero. Cada fila muestra quién participa en la conversación, cuándo se escribió su publicación más reciente y el comienzo de
-esa publicación. El número junto a «Mensajes directos» es cuántas conversaciones tienen una publicación que aún no has
-leído; cada una de ellas tiene un punto antes de sus nombres.
+«Mensajes directos», en la navegación, reúne tus publicaciones «Directa» y las que recibes, una fila por
+conversación, con la que tiene la publicación más reciente primero. Cada fila muestra quién está en la conversación, cuándo se escribió su publicación
+más reciente y el comienzo de esa publicación. El número junto a «Mensajes directos» es cuántas conversaciones tienen una publicación que
+aún no has leído; cada una tiene un punto antes de sus nombres.
 
-Elige el comienzo de una publicación para abrir el hilo de la conversación; esto marca la conversación como leída en todos tus dispositivos. Una
-respuesta a una publicación de «Personas mencionadas» es siempre también de «Personas mencionadas», así que no llega a nadie a quien no llegara la conversación. En
-los teléfonos, «Mensajes directos» está en «Menú», a menos que lo muevas a la barra de pestañas en «Visualización, publicación y cronologías» dentro de
-los ajustes.
+Pulsa el comienzo de una publicación para abrir el hilo de la conversación; esto marca la conversación como leída en todos tus dispositivos. Una
+respuesta a una publicación «Directa» también es siempre «Directa», así que no llega a nadie a quien no llegara la conversación. En
+los teléfonos, «Mensajes directos» está en «Menú».
 
-<!-- source: deleting-old-posts-automatically e581c8d27380 -->
+<!-- source: deleting-old-posts-automatically ab68788c9a84 -->
 ## Eliminar publicaciones antiguas automáticamente
 
-«Eliminar publicaciones antiguas» en los ajustes elimina tus publicaciones cuando son más antiguas que la edad que elijas, como si las hubieras
-eliminado tú mismo: desaparecen aquí y de los servidores a los que se enviaron, y no se pueden restaurar. Las publicaciones que conservas
-(fijadas, marcadas o favoritas tuyas, con contenido multimedia o una encuesta, artículos, de ciertas visibilidades, o con muchos impulsos o
+«Eliminar publicaciones antiguas automáticamente», en «Cuenta y datos» de la configuración, elimina tus publicaciones cuando son más antiguas que
+la edad que eliges, como si las hubieras eliminado tú: desaparecen aquí y de los servidores a los que se enviaron, y no se pueden restaurar. Las publicaciones que conservas
+(fijadas, con marcador o favorito tuyo, con contenido multimedia o encuesta, artículos, por quién puede verlas, o con muchos impulsos o
 favoritos) permanecen. Tus impulsos de publicaciones de otras personas nunca se eliminan. El servidor comprueba cada hora y elimina como
 máximo 100 de tus publicaciones cada vez, así que muchas publicaciones antiguas tardan varias horas en desaparecer.
 
-Una cuenta nueva empieza con los ajustes que el servidor eligió para las cuentas nuevas; desde entonces son tuyos y puedes
+Una cuenta nueva empieza con los ajustes que el servidor eligió para las cuentas nuevas; desde entonces son tuyos, y puedes
 cambiarlos como cualquier otro ajuste.
 
-Un servidor también puede conservar las publicaciones como máximo cierto número de días. La página «Acerca de» del servidor lo indica antes de que te registres. Bajo ese
-máximo, la eliminación automática está siempre activada para ti, la edad que elijas no puede ser mayor que el máximo, y solo se pueden conservar
-los tipos de publicaciones que el servidor permite (de forma predeterminada solo las fijadas, así que tus artículos también se eliminan
-a menos que el servidor permita conservarlos). Algunos servidores permiten que ciertas personas conserven sus publicaciones más tiempo, por ejemplo como ventaja de un plan de mecenas.
+Un servidor también puede conservar las publicaciones durante un máximo de días. La página «Acerca de» del servidor lo dice antes de que te registres. Con ese
+máximo, la eliminación automática siempre está activada para ti, la edad que eliges no puede ser mayor que el máximo, y solo se pueden conservar los
+tipos de publicaciones que el servidor permite (por defecto solo las publicaciones fijadas, así que tus artículos también se eliminan
+salvo que el servidor permita conservarlos). Algunos servidores permiten que algunas personas conserven sus publicaciones más tiempo, por ejemplo como ventaja de un plan de mecenas.
 
 Cuando un máximo empieza a aplicarse a ti (el servidor lo introduce o lo reduce, o pierdes el derecho a conservar publicaciones más tiempo),
-recibes una notificación, y un correo salvo que lo hayas desactivado, que indica desde cuándo se aplica. Hasta entonces tus propios
-ajustes siguen vigentes. La página de ajustes muestra la fecha y, con su vista previa, cuáles de tus publicaciones se eliminarán entonces.
+recibes una notificación, que lleva a esa página, y un correo, salvo que lo hayas desactivado, que dice desde cuándo se aplica.
+Hasta entonces tus ajustes siguen vigentes. La página muestra la fecha y, en «Publicaciones que se eliminarían», cuántas se eliminan entonces.

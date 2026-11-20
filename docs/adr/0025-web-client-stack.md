@@ -256,4 +256,4 @@ ESLint は 1 回に約 50 秒かかり、CI の web ジョブで最も長い手�
 - TypeScript 7.1 の API が出たときに、openapi-typescript が対応する時期
 - jsdom のテストの MSW は Bun の `fetch` を横取りしない: `msw/experimental` の fetch の interceptor で受ける。だめなら Bun で動く別のライブラリを探す。
 - Oxlint の RuleTester は Bun を拒む: 独自の規則を Bun で試せる別の lint か、禁止規則を Oxlint の CLI の出力で確かめるかを比べる。
-- Wrangler は Bun を対応外とする: `bunx --bun wrangler deploy` で配置できるか。
+- Wrangler は Bun を対応外とするが、`bunx --bun wrangler` で配置する（#2954）: `deploy --dry-run` は通った。実際の配置と Preview は CI で確かめる。

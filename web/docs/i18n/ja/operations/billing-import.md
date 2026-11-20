@@ -1,32 +1,33 @@
-<!-- source: importing-cloud-usage-costs 401e74fb1de0 -->
+<!-- source: importing-cloud-usage-costs 3d538f79c09b -->
 # クラウドの利用料金の取り込み
 
 サーバーは、設定 [`billing_sources`](../reference/configuration.md#billing_sources) に並べた事業者の利用料金を、またはアダプターを持たない事業者については [プラグイン](#a-plugin-billing_sources--plugin) の利用料金を、24 時間ごとに取り込み、インスタンスの費用に加えます。既定値は空で、何も取り込みません。
 取り込むのは当月と前月（月の 15 日まで、または前月が確定するまで）の請求月の料金で、サービスと料金の種類（利用、クレジット、返金、税、サポート、手数料、その他）ごとに 1 行になります。
 事業者が月を締めるまでは値を見積もりとして記録し、締めたあとは確定として記録します。確定後に値が変わったときは訂正として記録します。過去の記録を書き換えることはありません。
-取り込みの状態（最後に成功した日時、最後の失敗の種類、今月のリクエスト数）は、管理画面の費用のページと `GET /api/v1/admin/billing_imports` で確認できます。
+取り込みの状態（最後に成功した日時、最後の失敗の種類、今月のリクエスト数）は、管理画面の「費用と収入」の「利用料金の取り込み」のページ（`/admin/finance/imports`）と `GET /api/v1/admin/billing_imports` で確認できます。このページには、請求月ごとの見積もり・確定・訂正の別と「今すぐ取り込む」もあります。
 メトリクスは、すべての試行を取り込み元・結果・失敗の種類ごとに数え（`my.billing.imports`）、最新の試行が失敗した取り込み元を報告します（`my.billing.import.failing`）。
 これらに対するアラートは [アラートとランブック](alerts.md#mybillingimportfailing) にあります。
 
 AWS と Google Cloud では、このサーバーの設定に認証情報を保持しません。各事業者の SDK の既定の認証情報チェーンが読み取るものを実行環境に与えてください（AWS では実行ロール、環境変数、または共有の認証情報ファイル。Google Cloud では Application Default Credentials）。
 Cloudflare にはそのようなチェーンがないので、Cloudflare の取り込みは [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare) から API トークンを読み取ります。
 
-<!-- source: with-the-opentofu-modules 56be0b668f32 -->
+<!-- source: with-the-opentofu-modules a8e849af2fcd -->
 ## OpenTofu のモジュールを使う
 
-モジュール [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) と [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) は、`billing_sources` を設定し、このガイドの手順のうち事業者の API で行える部分を行います。`billing-gcp` は Google Cloud のアプリのモジュールとだけ組み合わせられるため、AWS ではモジュールが取り込むのは AWS の費用だけです。`billing-aws` は AWS のアプリのモジュールとも Cloud Run のアプリのモジュールとも組み合わせられ、Cloud Run では両方を `backends` に置けます。どちらのモジュールも、実際のアカウントにはまだ適用されていません。
+Google Cloud では、[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) の `billing` セクションが `billing_sources = gcp` を設定し、このガイドの手順のうち事業者の API で行える部分を、`billing_account_id`、`method`（`bigquery` または `budget`）、`dataset_location` で行います。取り込むのは Google Cloud の費用だけです。AWS では、AWS の例のモジュール [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) が、AWS の費用について同じことを行います。どちらも、実際のアカウントにはまだ適用されていません。
 
 | このガイドの手順 | モジュールを使う場合 |
 | --- | --- |
-| IAM のポリシーと、「Cloud Run から Web ID で呼び出す」のロール | `billing-aws` |
+| AWS の IAM のポリシー | `billing-aws` |
 | Cost Explorer、Linked Account Access、コスト配分タグを有効にする | 手作業で、AWS のコンソールから |
-| エクスポートのデータセットと、「IAM のロール」のロール | `billing-gcp` |
+| エクスポートのデータセットと、「IAM のロール」のロール | `billing` セクション |
 | エクスポート（「Standard usage cost」）を有効にする | 手作業で、Google Cloud のコンソールから、請求先アカウントのロールを持って |
-| 予算のトピックと pull サブスクリプション、およびサブスクライバーのロール | `method = "budget"` を指定した `billing-gcp` |
+| 予算のトピックと pull サブスクリプション、およびサブスクライバーのロール | `method = "budget"` を指定した `billing` セクション |
 | 予算を作成してトピックにつなぐ | 手作業で、Google Cloud のコンソールから、請求先アカウントのロールを持って |
 | BigQuery または Pub/Sub の API を有効にする | 手作業で、[Cloud Run へのデプロイ](deploy-cloud-run.md#1-enable-the-apis) のとおりに |
-| Cloudflare | これらのモジュールでは行いません。プラグインの場合と同じように、`MY_BILLING_SOURCES`、`MY_BILLING_CLOUDFLARE_ACCOUNT_ID`、`MY_BILLING_CLOUDFLARE_API_TOKEN`（シークレットから）を設定します |
-| プラグイン | これらのモジュールでは行いません。`backends` に利用料金のモジュールがないときは、アプリのモジュールの `env` に `MY_BILLING_SOURCES = plugin` と [プラグイン](#a-plugin-billing_sources--plugin) の設定を指定します。利用料金のモジュールと並べるときは、アプリのモジュールが `env` の `MY_BILLING_SOURCES` を拒否するため、`billing_sources = ["plugin"]` を返す独自のバックエンドを追加します（[バックエンドのフィールド](../../deploy/opentofu/README.md)） |
+| Cloud Run での AWS の費用 | `mycroblog-gcp` では行いません。[Cloud Run から Web ID で呼び出す](#calling-from-cloud-run-with-web-identity)のロールを手作業で作り、`billing` セクションを使わずに `settings` で `billing_sources = aws` と `billing_aws_role_arn` を設定します |
+| Cloudflare | これらのモジュールでは行いません。Cloud Run では、`billing` セクションを使わずに、プラグインの場合と同じように、`settings` で `billing_sources` と `billing_cloudflare_account_id` を、`secrets` で `billing_cloudflare_api_token` を設定します |
+| プラグイン | これらのモジュールでは行いません。Cloud Run では、`billing` セクションを使わずに、`settings` で `billing_sources = plugin` と[プラグイン](#a-plugin-billing_sources--plugin)の設定を指定します。`billing` セクションと並べると、モジュールは `settings` の `billing_sources` を拒否します |
 
 <!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS (`billing_sources = aws`)
@@ -310,11 +311,11 @@ push ではなく pull を使うため、通知がサーバー（たとえば Cl
 これを製品（`R2`、`Workers`、`D1`）ごとに UTC の暦月へ合計するので、各製品は 1 か月に利用の 1 行になります。無料枠の範囲内の利用も、0 として取り込みます。
 このデータがあるのは、従量課金のアカウントだけです。Enterprise の契約のアカウントでは `not_enabled` で失敗します。
 
-<!-- source: what-it-does-not-import 2028c00feb4d -->
+<!-- source: what-it-does-not-import 6281b674b2b7 -->
 ### 取り込まないもの
 
 Cloudflare の課金対象の利用量に含まれるのは、利用料金だけです。固定料金のプランとアドオン（Pro、Business、Workers Paid など）、税、クレジットは含まれないので、費用に表示されるのは請求書のうち利用の部分だけです。
-固定料金は、費用のページで自分の費用として加えるか、[プラグイン](#a-plugin-billing_sources--plugin) から取り込んでください。
+固定料金は、「費用と収入」の「費用」のページ（`/admin/finance/costs`）で自分の費用として加えるか、[プラグイン](#a-plugin-billing_sources--plugin) から取り込んでください。
 
 <!-- source: billing-cycles-and-final-months 155b8bff8c5f -->
 ### 請求サイクルと確定した月
@@ -352,7 +353,7 @@ API の上限は、ユーザーごとに 5 分あたり 1,200 リクエストで
 
 `throttled` と `unavailable` 以外の失敗は再試行しても直らないため、サーバーは記録して止まり、翌日の定期の取り込みがもう一度試みます。
 
-<!-- source: a-plugin-billing_sources--plugin 7589c3333153 -->
+<!-- source: a-plugin-billing_sources--plugin 563b0ca17827 -->
 ## プラグイン (`billing_sources = plugin`)
 
 Azure、Hetzner、さくらなど、サーバーがアダプターを持たない事業者については、種類 `billing` の [プラグイン](plugins.md) を動かし、事業者のデータを読ませます。サーバーが持つ `plugin` の取り込み元は 1 つです。複数の事業者を扱うプラグインは、自分でそれらを集約し、サービスの名前で区別します。
@@ -367,7 +368,7 @@ plugin_billing_provider = "Hetzner"
 この取り込み元では 3 つの設定が必須です。サーバーはプラグインを呼び出さずに起動するため、プラグインが停止していても起動します。
 
 - `plugin_billing_location` は、プラグインの請求月を区切るタイムゾーンです。
-- `plugin_billing_provider` は、合計、費用のページ、監査ログに表示する事業者の名前です。
+- `plugin_billing_provider` は、合計、利用料金の取り込みのページ、監査ログに表示する事業者の名前です。
 
 サーバーはプラグインに当月を、またほかの取り込み元と同じく前月を 15 日まで、または確定するまで問い合わせます。ほかの取り込み元の上限は適用されません。`max_requests` は `2147483647` で上限なしを意味し、いくら使ってよいかはプラグインが決めます。プラグインは請求されたリクエストとバイト数を報告し、サーバーはそれを記録して表示します。
 

@@ -1,7 +1,10 @@
-<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 2c065ac1d2fb -->
+<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 5931f1f78fe3 -->
 # 用 CAPTCHA 防范机器人（Turnstile / hCaptcha / reCAPTCHA）
 
-CAPTCHA 默认关闭：设置 [`captcha`](../reference/configuration.md#captcha) 为 `none`。此时登录、注册和重置密码页面无需 JavaScript 即可使用，也不会向第三方发送任何数据。选择一个 CAPTCHA 服务后，该服务的组件会出现在三个表单上：登录（`/auth/sign_in`）、注册（`/auth/sign_up`）和申请重置密码链接（`/auth/forgot_password`，仅限会发送邮件的服务器）。服务器通过该服务的 siteverify API 验证组件生成的令牌。无法只保护其中一部分表单。
+CAPTCHA 默认关闭：设置 [`captcha`](../reference/configuration.md#captcha) 为 `none`。此时登录、注册和重置密码页面不会向第三方发送任何数据。
+选择一个 CAPTCHA 服务后，该服务的组件会出现在三个表单上：登录（`/auth/sign_in`）、注册（`/auth/sign_up`）和申请重置密码链接
+（`/auth/forgot_password`，仅限会发送邮件的服务器）。服务器通过该服务的 siteverify API 验证组件生成的令牌。
+无法只保护其中一部分表单。
 
 <!-- source: choosing-a-service 22ddd3cc639f -->
 ## 选择服务
@@ -65,21 +68,25 @@ MY_CAPTCHA_SECRET_KEY_FILE=/run/secrets/my_captcha_secret_key
 
 超出每月 10,000 次评估的免费额度后，reCAPTCHA 的 siteverify **总是验证成功**（因此在这段时间内 CAPTCHA 不提供任何保护）。服务器无法察觉超额，请在 Google Cloud 控制台中查看用量。
 
-<!-- source: pages-and-content-security-policy b0cf9741b2ce -->
+<!-- source: pages-and-content-security-policy 666bab0dd33b -->
 ## 页面与 Content-Security-Policy
 
-- 组件的语言跟随页面的语言区域，主题跟随浏览器的配色方案（浅色或深色）。Turnstile 组件自行跟随配色方案。hCaptcha 和 reCAPTCHA 则根据浏览器发送的客户端提示 `Sec-CH-Prefers-Color-Scheme` 选择主题；不发送该提示的浏览器使用浅色主题。
-- 页面会在组件旁说明由哪个服务进行验证、该服务会收到 IP 地址和浏览器信息，并链接到该服务的隐私政策（hCaptcha 和 reCAPTCHA 还会链接到其条款）。对于 reCAPTCHA，这同时也是 Google 要求展示的声明：“This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.”
-- 在不支持 JavaScript 的浏览器中，`<noscript>` 消息会说明验证需要 JavaScript。无法完成 CAPTCHA 的用户既不能注册也不能登录，你只能通过其他方式帮助他们，例如用 `my admin create` 创建账号，或暂时设置 `captcha = none`。
-- 启用 CAPTCHA 时，`Content-Security-Policy`（CSP）只在登录、注册和申请重置密码页面上放宽。绝不会添加 `'unsafe-inline'` 和 `'unsafe-eval'`。Web 客户端、客户端 API、授权同意页面、邮箱确认等其他页面的 CSP 不变。
+- 组件的语言跟随页面的语言，主题跟随浏览器的配色方案（浅色或深色）。
+  Turnstile 组件自己跟随配色方案。hCaptcha 和 reCAPTCHA 则根据浏览器发送的客户端提示 `Sec-CH-Prefers-Color-Scheme` 选择；不发送该提示的浏览器会得到浅色主题。
+- 组件旁边，页面会说明由哪个服务执行检查、该服务会收到 IP 地址和浏览器信息，并附上该服务的隐私政策链接
+  （hCaptcha 和 reCAPTCHA 还有服务条款链接）。对于 reCAPTCHA，这同时也是 Google 要求的那句话：“This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.”
+- 无法通过 CAPTCHA 的用户既不能注册，也不能登录，
+  你只能用其他方式帮助他们，例如用 `my admin create` 创建账号，或暂时设置 `captcha = none`。
+- 启用 CAPTCHA 期间，`Content-Security-Policy`（CSP）只在登录、注册和申请重置密码的页面上放宽。`'unsafe-inline'` 和 `'unsafe-eval'` 从不会被加入。
+  Web 客户端、客户端 API、授权确认页面、邮件确认页面和其他页面的 CSP 不会改变。
 
-| `captcha` | 添加的来源 |
+| `captcha` | 加入的来源 |
 | --- | --- |
 | `turnstile` | `script-src`、`frame-src`：`https://challenges.cloudflare.com` |
 | `hcaptcha` | `script-src`、`frame-src`、`style-src`、`connect-src`：`https://hcaptcha.com`、`https://*.hcaptcha.com` |
 | `recaptcha` | `script-src`：`https://www.google.com/recaptcha/`、`https://www.gstatic.com/recaptcha/`；`frame-src`：`https://www.google.com/recaptcha/`、`https://recaptcha.google.com/recaptcha/`；`connect-src`：`https://www.google.com/recaptcha/` |
 
-如果服务器前面的反向代理或 CDN 会覆盖 CSP，请为这三个页面添加相同的来源。
+如果服务器前面的反向代理或 CDN 会覆盖 CSP，请为这三个页面加入同样的来源。
 
 <!-- source: what-to-write-in-the-privacy-policy d601071ebd4c -->
 ## 隐私政策中要写什么

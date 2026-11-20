@@ -7,36 +7,38 @@ y cómo distinguir el modo de mantenimiento ([Mantenimiento](maintenance.md)) de
 
 Los datos de terceros que aparecen abajo llevan la fecha en que se confirmaron y su fuente. Los servicios cambian sus planes y sus pantallas; comprueba la página enlazada antes de fiarte de un límite.
 
-<!-- source: which-url-to-monitor 1c5761757c52 -->
+<!-- source: which-url-to-monitor 643ea5375522 -->
 ## Qué URL monitorizar
 
-| Ruta | Para | Toca la base de datos | En modo de mantenimiento |
+| Ruta | Para | Toca la BD | En el modo de mantenimiento |
 | --- | --- | --- | --- |
 | `GET /api/v1/instance/health` | Monitores de disponibilidad, páginas de estado, el cliente web | Como máximo una vez cada 60 s por proceso | `503` con `Retry-After` y `{"status":"maintenance"}` |
-| `GET /healthz`, `GET /health/live` | La sonda de vida (liveness) de la plataforma | Nunca | `200` `{"status":"maintenance"}` |
-| `GET /readyz`, `GET /health/ready` | La sonda de disponibilidad (readiness) del balanceador de carga o de Kubernetes | En cada petición (las peticiones simultáneas comparten una comprobación) | `200` `{"status":"maintenance"}` |
+| `GET /healthz`, `GET /health/live` | La sonda de liveness de la plataforma | Nunca | `200` `{"status":"maintenance"}` |
+| `GET /readyz`, `GET /health/ready` | La sonda de readiness del balanceador de carga o de Kubernetes | En cada solicitud (las solicitudes concurrentes comparten una comprobación) | `200` `{"status":"maintenance"}` |
 
-Apunta el monitor externo a **`/api/v1/instance/health`**, no a `/readyz` (`/health/ready`): consulta la base de datos en cada petición,
+Apunta el monitor externo a **`/api/v1/instance/health`**, no a `/readyz` (`/health/ready`): consulta la base de datos en cada solicitud,
 así que un monitor con un intervalo corto mantiene despierta una base de datos que escala a cero. Las sondas son para tu plataforma.
-Los módulos [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) y [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) comprueban `/health/live` (`monitoring-gcp`) o `/readyz` (`monitoring-aws`) desde el monitor propio de la plataforma con un intervalo largo, y sus README indican cuánto cuesta.
+La sección `monitoring` de [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) comprueba `/health/live` en Google Cloud, y la de [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) comprueba `/readyz`, cada una desde el propio monitor de la plataforma con un intervalo largo: su `uptime_period` es lo que eso cuesta, ya que cada comprobación despierta una instancia.
+
+Adónde van las métricas, trazas e informes de errores del propio servidor lo decide la sección `observability` de los mismos módulos, que `monitoring` lee. Por defecto envía cada uno a la plataforma: en Google Cloud las métricas a Cloud Monitoring, las trazas de solicitudes a Cloud Trace y los informes de errores a Error Reporting, los tres a partir de lo que Cloud Run les envía, con sus API activadas; en AWS las métricas a CloudWatch en Embedded Metric Format, los informes de errores a CloudWatch Logs y las trazas a X-Ray, mediante un colector que se ejecuta junto al servidor en cada tarea ([trazas en AWS ECS](running.md#aws-ecs)). `monitoring` necesita allí las métricas: rechaza `observability.metrics = "settings"`, que deja `metrics_exporter` a la entrada `settings`.
 
 Respuestas de `/api/v1/instance/health` (sin autenticación, `Cache-Control: no-store`):
 
 | Estado | HTTP | Cuerpo |
 | --- | --- | --- |
 | Sano | `200` | `{"status":"ok","checked_at":"<RFC 3339>"}` |
-| No disponible (la base de datos no es alcanzable o no se ha aplicado el esquema) | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
+| No disponible (la base de datos es inalcanzable o el esquema no está aplicado) | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
 | Modo de mantenimiento | `503` con `Retry-After` | `{"status":"maintenance"}` |
 
-`/healthz` y `/readyz` responden `200` con `{"status":"ok"}` cuando todo está sano, y `/readyz` responde `503` con un documento de problema cuando la base de datos no está lista. `/health/live` y `/health/ready` son las mismas comprobaciones con otros nombres.
+`/healthz` y `/readyz` responden `200` con `{"status":"ok"}` cuando están sanos, y `/readyz` responde `503` con un documento de problema cuando la base de datos no está lista. `/health/live` y `/health/ready` son las mismas comprobaciones con otros nombres.
 
-**En Cloud Run, llama a las rutas que no terminan en `z`.** Cloud Run reserva algunas rutas que terminan en `z` y las responde con su propio `404` antes de que una solicitud llegue al contenedor: `/healthz` es una de ellas, y nada garantiza que `/readyz` siga respondiendo. Desde fuera de un despliegue de Cloud Run (un monitor de disponibilidad, `curl`), usa `/health/live`, `/health/ready` o `/api/v1/instance/health`. Las sondas del propio contenedor no se ven afectadas.
-El cuerpo nunca incluye un motivo, un nombre de host ni una versión. La causa está en el registro del servidor.
+**En Cloud Run, llama a las rutas que no terminan en `z`.** Cloud Run reserva algunas rutas que terminan en `z` y las responde con su propio `404` antes de que una solicitud llegue al contenedor: `/healthz` es una, y nada promete que `/readyz` siga respondiendo. Desde fuera de un despliegue de Cloud Run (un monitor de disponibilidad, `curl`), usa `/health/live`, `/health/ready` o `/api/v1/instance/health`. Las sondas del propio contenedor no se ven afectadas.
+El cuerpo nunca lleva un motivo, un nombre de host ni una versión. La causa está en el registro del servidor.
 
-`checked_at` es el momento de la comprobación en la que se basa la respuesta. El servidor ejecuta la comprobación de la base de datos como máximo una vez por minuto y por proceso y reutiliza el resultado,
-así que un monitor que consulta con más frecuencia que cada 60 s ve el mismo `checked_at` y no gana nada. Con varios procesos, cada uno ejecuta su propia comprobación.
+`checked_at` es la hora de la comprobación en la que se basa la respuesta. El servidor ejecuta la comprobación de la base de datos como máximo una vez por minuto por proceso y reutiliza el resultado,
+así que un monitor que sondea con más frecuencia que cada 60 s ve el mismo `checked_at` y no gana nada. Con varios procesos, cada uno ejecuta su propia comprobación.
 
-Con [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) definido, estas tres rutas siguen respondiendo sin el encabezado, así que no muestran que la CDN lo haya perdido. Monitoriza también una página a través de la CDN, como `https://<host>/about`, si un monitor es tu primera señal de problemas.
+Con [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) definido, estas tres rutas siguen respondiendo sin la cabecera, así que no muestran que la CDN la perdió. Monitoriza también una página a través de la CDN, como `https://<host>/about`, si un monitor es tu primera señal de problemas.
 
 <!-- source: keep-the-monitoring-cheap d7956dee97ca -->
 ## Mantener barata la monitorización

@@ -1,4 +1,4 @@
-<!-- source: external-login-providers 48a582ab87ec -->
+<!-- source: external-login-providers e0088b122632 -->
 # Externe Anmeldeanbieter
 
 Ein externer Anmeldeanbieter lässt Nutzer sich mit einem Konto anmelden, das sie anderswo haben: ein OpenID-Connect-Anbieter
@@ -7,9 +7,11 @@ Du richtest Anbieter mit dem Befehl `my login-provider` auf einem Host ein, der 
 Admin-API (`/api/v1/admin/login_providers`) mit der Berechtigung `manage_login_providers`, die nur die eingebaute Rolle
 `admin` hat. Der Befehl funktioniert, bevor sich ein Administrator anmelden kann, du kannst ihn also für die erste Einrichtung verwenden.
 Im Webclient nutzen Administratoren mit dieser Berechtigung „Anmeldeanbieter“ im Administrationsmenü. Die Liste
-zeigt für jeden Anbieter die Art, den Zustand und ob die Registrierung erlaubt ist; „Anbieter hinzufügen“ öffnet das Formular, das einen erstellt.
-Wenn du einen Anbieter auswählst, öffnet sich seine Seite, die seine Callback-URL mit einer Schaltfläche zum Kopieren zeigt, dazu, wie viele Nutzer
-verknüpft sind, und auf der du seine Einstellungen änderst, ihm ein neues Client-Secret gibst, ihn aktivierst, deaktivierst und löschst.
+zeigt für jeden Anbieter die Art, den Zustand, wie viele Nutzer verknüpft sind und ob die Registrierung erlaubt ist, unter einer Zusammenfassung der
+[Beschränkung der Anmeldung auf Anmeldeanbieter](#limit-sign-in-to-login-providers), solange sie eingeschaltet ist; „Anbieter hinzufügen“ öffnet das Formular, das einen erstellt.
+Wenn du einen Anbieter auswählst, öffnet sich seine Seite, die seine Callback-URL mit einer Schaltfläche zum Kopieren zeigt und auf der du
+seine Einstellungen änderst, ihn aktivierst oder deaktivierst und ihm ein neues Client-Secret gibst, alles mit einer Schaltfläche gespeichert, und ihn löschst, was
+verlangt, dass du seinen Namen eintippst.
 
 <!-- source: what-external-sign-in-does 25fa37e22a50 -->
 ## Was die externe Anmeldung tut

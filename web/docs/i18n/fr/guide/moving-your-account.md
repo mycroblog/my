@@ -5,51 +5,62 @@ Vous pouvez migrer votre compte vers un autre compte, sur le même serveur ou su
 compte, et l’ancien compte indique qu’il a migré. Cela fonctionne aussi dans l’autre sens, lorsque vous arrivez sur ce
 serveur depuis un autre.
 
-<!-- source: what-moves-and-what-stays 321714556a43 -->
-## Ce qui migre et ce qui reste
+<!-- source: what-moves-and-what-stays a45d57421940 -->
+## Ce qui déménage et ce qui reste
 
-| Ce qui migre | Ce qui reste sur l’ancien compte |
+| Déménage | Reste sur l’ancien compte |
 | --- | --- |
 | Vos abonnés | Vos publications, les comptes que vous suivez, vos blocages, vos mises en sourdine et vos marque-pages |
 
-![L’ancien compte à gauche et le nouveau à droite : un alias, la migration, vos abonnés qui passent au nouveau compte, et ce qui reste sur l’ancien compte. La liste ci-dessous dit la même chose.](images/account-move.svg)
+![L’ancien compte à gauche et le nouveau compte à droite : un alias, le déménagement, vos abonnés qui passent au nouveau compte, et ce qui reste sur l’ancien compte. La liste ci-dessous dit la même chose.](images/account-move.svg)
 
-Du haut du schéma vers le bas :
+De haut en bas du schéma :
 
 1. **Ajouter un alias.** Sur le nouveau compte, ajoutez l’ancien compte sous « Alias ».
-2. **Migrer le compte.** Sur l’ancien compte, choisissez « Migrer le compte » et indiquez le nouveau compte.
-3. **Ce qui migre.** Vos abonnés suivent le nouveau compte. L’ancien compte affiche « Votre compte a migré » : vous pouvez toujours vous y connecter, lire et exporter vos données.
-4. **Ce qui reste ici.** Vos publications, les comptes et les hashtags que vous suivez, ainsi que vos blocages, vos mises en sourdine et vos marque-pages restent sur l’ancien compte. Vos publications ne migrent pas. Emportez le reste vous-même : exportez vos abonnements, hashtags suivis, blocages, mises en sourdine et marque-pages sous forme de fichiers CSV avec « Import et export » sur l’ancien compte, puis importez-les sur le nouveau ([emporter vos abonnements](#taking-your-follows-with-you)).
+2. **Déménager le compte.** Sur l’ancien compte, choisissez « Déménager le compte » et nommez le nouveau compte.
+3. **Ce qui déménage.** Vos abonnés suivent le nouveau compte. L’ancien compte indique « Ce compte a déménagé vers … » : vous pouvez toujours vous y connecter, lire et exporter vos données.
+4. **Ce qui reste ici.** Vos publications, les comptes et les hashtags que vous suivez, ainsi que vos blocages, mises en sourdine et marque-pages restent sur l’ancien compte. Vos publications ne déménagent pas. Emportez le reste sous forme de fichiers CSV, avec « Exporter » sur l’ancien compte et « Importer » sur le nouveau ([emporter vos abonnements](#taking-your-follows-with-you)).
 
-<!-- source: moving-from-this-account 7836944c7996 -->
-## Migrer depuis ce compte
+<!-- source: moving-from-this-account 8470ed8a1f13 -->
+## Déménager depuis ce compte
 
-1. Sur le nouveau compte, ajoutez ce compte comme alias : « Alias », sous « Compte et données » dans les paramètres, avec « Ajouter un alias ». La page de migration affiche l’adresse de ce compte, que vous saisissez à cet endroit.
-2. Sur ce compte, ouvrez « Migrer le compte » sous « Compte et données » dans les paramètres. Saisissez l’identifiant du nouveau compte (un identifiant tel que `@name@example.com`, ou l’adresse du compte) et choisissez « Continuer ».
-3. Le client indique ce qui migre et ce qui reste. Saisissez votre mot de passe pour confirmer (ou, si vous n’en avez pas, confirmez avec une clé d’accès, ou en vous reconnectant auprès d’un fournisseur lié) et choisissez « Migrer le compte ».
+1. Sur le nouveau compte, ajoutez ce compte comme alias : « Alias », sous « Compte et données » dans les paramètres, puis « Ajouter un alias ». « Déménager le compte » affiche l’identifiant de ce compte à y saisir.
+2. Sur ce compte, ouvrez « Déménager le compte » sous « Compte et données » dans les paramètres, qui indique ce qui déménage et ce qui reste. Sous « Compte vers lequel vous déménagez », saisissez l’identifiant du nouveau compte (par exemple `@name@example.com`) ou l’adresse de son profil, puis choisissez « Déménager le compte ».
+3. Confirmez que c’est bien vous avec votre mot de passe, une clé d’accès ou un fournisseur lié. Un déménagement que le serveur refuse en indique la raison.
 
-Après la migration, l’ancien compte :
+Après le déménagement, l’ancien compte :
 
-- Affiche « Votre compte a migré ». Vous pouvez toujours vous connecter, lire, exporter vos données et supprimer le compte, mais vous ne pouvez plus publier, booster, réagir, suivre ni voter.
-- Est présenté sur son profil comme ayant migré vers le nouveau compte.
-- Ne peut plus migrer pendant 30 jours.
+- Indique où il a déménagé, sur cette page et sur son profil. Vous pouvez toujours vous y connecter, lire, exporter vos données et supprimer le compte, mais pas publier, booster, réagir, suivre ni voter.
+- Ne peut pas déménager de nouveau pendant 30 jours.
 
-« Annuler la migration » rétablit l’ancien compte : il peut de nouveau publier et suivre, et les autres serveurs en sont
-informés. Les abonnés qui ont déjà migré restent avec le nouveau compte.
+« Annuler le déménagement », sur la même page, rétablit l’ancien compte : il peut de nouveau publier et suivre, et les autres serveurs en sont
+informés. Les abonnés qui ont déjà déménagé restent avec le nouveau compte.
 
-<!-- source: moving-to-this-account adb43ba4eef3 -->
-## Migrer vers ce compte
+<!-- source: deactivating-or-deleting-this-account 599007a2d409 -->
+## Désactiver ou supprimer ce compte
 
-Ajoutez le compte depuis lequel vous migrez comme alias sous « Alias » dans les paramètres de ce compte (« Ajouter un alias »). Un alias seul
-ne change rien : il permet seulement à l’autre compte de migrer ses abonnés vers vous. Vous ne pouvez avoir que quelques alias, et
-« Supprimer » en supprime un.
+Sous « Compte et données » dans les paramètres, « Désactiver le compte » masque le compte et vous déconnecte partout : reconnectez-vous
+avant la date indiquée par la page pour le rétablir, faute de quoi il est supprimé à cette date. « Supprimer le compte » le supprime aussitôt et
+définitivement. « Exportez » d’abord vos données.
 
-<!-- source: taking-your-follows-with-you 8109773a2d6a -->
+<!-- source: moving-to-this-account 4b769e76357c -->
+## Déménager vers ce compte
+
+Ajoutez le compte depuis lequel vous déménagez comme alias sous « Alias » dans les paramètres de ce compte (« Ajouter un alias »). Un alias seul
+ne change rien ; il permet seulement à l’autre compte de déménager ses abonnés vers vous. Vous pouvez avoir 5 alias, et
+« Retirer » en supprime un.
+
+<!-- source: taking-your-follows-with-you 09ca5e285436 -->
 ## Emporter vos abonnements
 
-« Import et export », sous « Compte et données » dans les paramètres, exporte et importe des fichiers CSV au format utilisé par Mastodon. Vous pouvez exporter « Abonnements », « Hashtags suivis », « Comptes bloqués », « Comptes en sourdine », « Domaines en sourdine » et « Marque-pages », puis les importer sur le nouveau compte. Mastodon n’a pas de fichier de hashtags suivis ; seul un serveur qui exécute le même logiciel que celui-ci importe donc ce fichier. « Fusionner » conserve ce que vous avez et ajoute ce que le fichier liste ; « Remplacer » fait de la liste exactement ce que le fichier liste. Les comptes et les publications sur d’autres serveurs sont recherchés en arrière-plan, ce qui peut prendre un certain temps.
+« Exporter » et « Importer », sous « Compte et données » dans les paramètres, exportent et importent des fichiers CSV au format utilisé par Mastodon.
+Vous pouvez exporter « Abonnements », « Hashtags suivis », « Comptes bloqués », « Comptes en sourdine », « Serveurs en sourdine » et « Marque-pages », et
+les importer sur le nouveau compte. Mastodon n’a pas de fichier de hashtags suivis : seul un serveur qui exécute le même logiciel que
+celui-ci importe ce fichier. « Fusionner » conserve ce que vous avez et ajoute ce que liste le fichier ; « Remplacer » rend la liste identique à ce que
+liste le fichier. « Aperçu » montre ce qu’un fichier ferait avant que vous ne choisissiez « Importer » ; l’import s’exécute ensuite en arrière-plan.
 
-« Archive et suppression » prépare une archive ZIP de vos publications, de votre profil, de vos filtres de mots-clés, ainsi que de vos abonnements, hashtags suivis, blocages, mises en sourdine, domaines en sourdine et marque-pages.
+« Demander une archive », sous « Exporter », prépare une archive ZIP de vos publications, de votre profil, de vos filtres de mots-clés, de vos notes privées, ainsi que de vos
+abonnements, hashtags suivis, blocages, mises en sourdine, serveurs en sourdine et marque-pages, à télécharger à cet endroit une fois prête.
 
 <!-- source: when-an-account-you-follow-moves 81ab63afe43d -->
 ## Quand un compte que vous suivez migre

@@ -1,30 +1,31 @@
-<!-- source: importing-cloud-usage-costs 401e74fb1de0 -->
+<!-- source: importing-cloud-usage-costs 3d538f79c09b -->
 # 导入云服务使用费用
 
 服务器每 24 小时导入一次设置 [`billing_sources`](../reference/configuration.md#billing_sources) 中所列服务商的使用费用（对于服务器没有适配器的服务商，则通过[插件](#a-plugin-billing_sources--plugin)导入），并把它们加入实例的费用。默认值为空，即不导入任何内容。
 它导入当前账单月和上一个账单月的费用（上一个月导入到当月 15 日为止，或直到上一个月的费用确定为止），每项服务和每种费用类型（使用费、抵扣额、退款、税费、支持费、手续费、其他）各占一行。
 在服务商结算某个月之前，数值记录为估算值；结算之后记录为确定值；确定之后数值如果发生变化，则记录为更正。过去的记录从不被改写。
-导入的状态（最近一次成功、最近一次失败的类型以及本月的请求数）显示在管理界面的费用页面上，也可以通过 `GET /api/v1/admin/billing_imports` 获取。
+导入的状态（最近一次成功、最近一次失败的类型以及本月的请求数）显示在管理界面“费用和收入”的“账单导入”页面（`/admin/finance/imports`）上，该页面还会把每个账单月列为估算、确定或已更正，并提供“立即导入”；也可以通过 `GET /api/v1/admin/billing_imports` 获取。
 指标按来源、结果和失败类型统计每次尝试（`my.billing.imports`），并报告最近一次尝试失败的来源（`my.billing.import.failing`）；[告警与处置手册](alerts.md#mybillingimportfailing)中有针对它们的告警。
 
 对于 AWS 和 Google Cloud，本服务器的配置中不保存任何凭据。请为运行环境提供各服务商 SDK 的默认凭据链所读取的内容（AWS 为执行角色、环境变量或共享凭据文件；Google Cloud 为应用默认凭据）。Cloudflare 没有这样的凭据链，因此它的导入会从 [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare) 读取 API 令牌。
 
-<!-- source: with-the-opentofu-modules 56be0b668f32 -->
+<!-- source: with-the-opentofu-modules a8e849af2fcd -->
 ## 使用 OpenTofu 模块
 
-模块 [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) 和 [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) 会设置 `billing_sources`，并完成本指南中服务商 API 允许自动完成的部分。`billing-gcp` 只能与 Google Cloud 的应用模块一起使用，因此在 AWS 上，这些模块只导入 AWS 的费用。`billing-aws` 可以与 AWS 的应用模块以及 Cloud Run 的应用模块一起使用，在后者中两个模块可以同时放在 `backends` 里。两个模块都尚未在真实账号上应用过。
+在 Google Cloud 上，[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) 的 `billing` 部分会设置 `billing_sources = gcp`，并通过 `billing_account_id`、`method`（`bigquery` 或 `budget`）和 `dataset_location` 完成本指南中服务商 API 允许自动完成的部分。它只导入 Google Cloud 的费用。在 AWS 上，AWS 示例中的模块 [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) 对 AWS 的费用做同样的事。两者都尚未在真实账号上应用过。
 
 | 本指南中的步骤 | 使用模块时 |
 | --- | --- |
-| IAM 策略，以及“Calling from Cloud Run with web identity”中的角色 | `billing-aws` |
+| AWS 的 IAM 策略 | `billing-aws` |
 | 启用 Cost Explorer、Linked Account Access、成本分配标签 | 在 AWS 控制台中手动完成 |
-| 导出所用的数据集，以及“IAM roles”中的角色 | `billing-gcp` |
+| 导出所用的数据集，以及“IAM roles”中的角色 | `billing` 部分 |
 | 启用导出（“Standard usage cost”） | 在 Google Cloud 控制台中手动完成，需要结算账号上的角色 |
-| 预算的主题和拉取订阅，以及订阅者角色 | `billing-gcp`，设置 `method = "budget"` |
+| 预算的主题和拉取订阅，以及订阅者角色 | `billing` 部分，设置 `method = "budget"` |
 | 创建预算并将其连接到主题 | 在 Google Cloud 控制台中手动完成，需要结算账号上的角色 |
 | 启用 BigQuery 或 Pub/Sub API | 手动完成，方法同[在 Cloud Run 上部署](deploy-cloud-run.md#1-enable-the-apis) |
-| Cloudflare | 这些模块不负责。像插件一样设置 `MY_BILLING_SOURCES`、`MY_BILLING_CLOUDFLARE_ACCOUNT_ID` 和 `MY_BILLING_CLOUDFLARE_API_TOKEN`（来自机密） |
-| 插件 | 这些模块不负责。`backends` 中没有账单模块时，在应用模块的 `env` 中设置 `MY_BILLING_SOURCES = plugin` 以及[插件](#a-plugin-billing_sources--plugin)的各项设置；与账单模块同时使用时，应用模块会拒绝 `env` 中的 `MY_BILLING_SOURCES`，因此请自行添加一个返回 `billing_sources = ["plugin"]` 的后端（[后端的字段](../../deploy/opentofu/README.md)） |
+| Cloud Run 上 AWS 的费用 | `mycroblog-gcp` 不负责。请手动创建[通过 Web 身份从 Cloud Run 调用](#calling-from-cloud-run-with-web-identity)中的角色，并在 `settings` 中设置 `billing_sources = aws` 和 `billing_aws_role_arn`，不使用 `billing` 部分 |
+| Cloudflare | 这些模块不负责。在 Cloud Run 上，不使用 `billing` 部分，像插件一样在 `settings` 中设置 `billing_sources` 和 `billing_cloudflare_account_id`，在 `secrets` 中设置 `billing_cloudflare_api_token` |
+| 插件 | 这些模块不负责。在 Cloud Run 上，不使用 `billing` 部分，在 `settings` 中设置 `billing_sources = plugin` 以及[插件](#a-plugin-billing_sources--plugin)的各项设置。与 `billing` 部分同时使用时，该模块会拒绝 `settings` 中的 `billing_sources` |
 
 <!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS（`billing_sources = aws`）
@@ -285,10 +286,10 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 
 服务器会读取 Cloudflare 账号的可计费用量：其按量付费产品（例如 R2、Workers 和 D1）的使用费用，每个指标每天一条记录。它按产品（`R2`、`Workers`、`D1`）把这些记录汇总到 UTC 日历月中，因此每个产品每月是一行使用费。免费额度内的用量也会导入，数值为 0。只有按量付费的账号才有这些数据；Enterprise 合同账号会以 `not_enabled` 失败。
 
-<!-- source: what-it-does-not-import 2028c00feb4d -->
+<!-- source: what-it-does-not-import 6281b674b2b7 -->
 ### 不导入的内容
 
-Cloudflare 的可计费用量只包含使用费。带固定费用的套餐和附加组件（Pro、Business、Workers Paid 等）、税费和抵扣额都不在其中，因此费用页面只显示账单中的使用费部分。请在费用页面上把固定费用作为你自己的费用添加，或者通过[插件](#a-plugin-billing_sources--plugin)导入。
+Cloudflare 的可计费用量只包含使用费。带固定费用的套餐和附加组件（Pro、Business、Workers Paid 等）、税费和抵扣额都不在其中，因此费用只显示账单中的使用费部分。请在“费用和收入”的“费用”页面（`/admin/finance/costs`）上把固定费用作为你自己的费用添加，或者通过[插件](#a-plugin-billing_sources--plugin)导入。
 
 <!-- source: billing-cycles-and-final-months 155b8bff8c5f -->
 ### 账单周期和确定的月份
@@ -323,7 +324,7 @@ Cloudflare 不对其 API 收费，因此服务器不对请求设置上限。一�
 
 除 `throttled` 和 `unavailable` 之外，重试无法修复其他失败，因此服务器会记录它并停止，第二天的定时导入会再次尝试。
 
-<!-- source: a-plugin-billing_sources--plugin 7589c3333153 -->
+<!-- source: a-plugin-billing_sources--plugin 563b0ca17827 -->
 ## 插件（`billing_sources = plugin`）
 
 对于服务器没有适配器的服务商（例如 Azure、Hetzner 或 Sakura），请运行一个 `billing` 类型的[插件](plugins.md)，由它读取服务商的数据。服务器只有一个 `plugin` 来源。涉及多个服务商的插件需要自行汇总，并通过服务名称加以区分。
@@ -338,7 +339,7 @@ plugin_billing_provider = "Hetzner"
 使用这个来源时，这三项设置都是必需的；服务器启动时不会调用插件，即使插件没有运行也能启动。
 
 - `plugin_billing_location` 是划分插件账单月的时区。
-- `plugin_billing_provider` 是在合计、费用页面和审计日志中显示的服务商名称。
+- `plugin_billing_provider` 是在合计、账单导入页面和审计日志中显示的服务商名称。
 
 服务器向插件请求当前月份；与其他来源一样，还会请求上一个月，直到 15 日或直到其确定为止。其他来源的限额不适用：`max_requests` 为 `2147483647`，表示没有限额，由插件决定可以花费多少。插件会报告它被计费的请求数和字节数，服务器会记录并显示它们。
 

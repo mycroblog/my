@@ -129,6 +129,7 @@ export const idempotencyKeyOperations: readonly { readonly method: string; reado
   { method: "POST", path: "/hook_decisions/{id}/appeal" },
   { method: "PUT", path: "/notifications/marker" },
   { method: "POST", path: "/notifications/{id}/dismiss" },
+  { method: "POST", path: "/notifications/{id}/read" },
   { method: "POST", path: "/notifications/requests/{id}/accept" },
   { method: "POST", path: "/notifications/requests/{id}/dismiss" },
   { method: "PUT", path: "/push/subscription" },

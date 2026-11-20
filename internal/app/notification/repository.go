@@ -59,8 +59,12 @@ type Repository interface {
 	// there is one that is not dismissed.
 	DismissByDedupeKey(ctx context.Context, tx uow.Tx, recipientAccountID, dedupeKey string, at time.Time) error
 	// AdvanceReadMarker sets the account's marker to m.LastReadID unless it is already there or
-	// past it, and reports whether it moved.
+	// past it, and reports whether it moved. It deletes the account's reads (InsertRead) up to
+	// and including m.LastReadID either way, which the marker now covers.
 	AdvanceReadMarker(ctx context.Context, tx uow.Tx, m notification.ReadMarker) (bool, error)
+	// InsertRead records that the account read its notification notificationID on its own;
+	// recording it again, or one that the account's marker is at or past, writes nothing.
+	InsertRead(ctx context.Context, tx uow.Tx, accountID, notificationID string) error
 	// SaveNotificationSettings stores the account's choices of settings (FR-210), replacing an
 	// earlier choice of the same group and channel, as chosen at at.
 	SaveNotificationSettings(ctx context.Context, tx uow.Tx, settings []notification.Setting, at time.Time) error
@@ -126,8 +130,13 @@ type Repository interface {
 	// as in ListNotifications with hidden.
 	NotificationListed(ctx context.Context, recipientAccountID, id string, hidden Hidden, now time.Time) (bool, error)
 	// CountNotificationsAfter counts the recipient's visible notifications, as in
-	// ListNotifications with hidden, whose ID is greater than after ("" counts them all).
+	// ListNotifications with hidden, whose ID is greater than after ("" counts them all) and that
+	// the recipient did not read on its own (InsertRead): with the marker as after, the unread
+	// ones of notification.ReadMarker.Unread.
 	CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden Hidden, now time.Time) (int64, error)
+	// ReadAmong returns those of ids that the account read on its own (InsertRead), in order of
+	// ID.
+	ReadAmong(ctx context.Context, accountID string, ids []string) ([]string, error)
 	// UnreadNotificationStatuses returns the status of each of the newest limit notifications that
 	// CountNotificationsAfter counts and that have a status, once per notification, newest first.
 	UnreadNotificationStatuses(ctx context.Context, recipientAccountID, after string, hidden Hidden, now time.Time, limit int) ([]string, error)

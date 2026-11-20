@@ -34,7 +34,7 @@ Vom oberen Rand des Diagramms nach unten:
 
 Zuweisungen, Notizen, Benachrichtigungen und Einsprüche bleiben auf diesem Server; nur die Aktivitäten in der rechten Spalte verlassen ihn.
 
-<!-- source: moderation-and-server-administration-in-the-web-client d7c65fc5b3d0 -->
+<!-- source: moderation-and-server-administration-in-the-web-client 035f2c60c4a9 -->
 ## Moderation und Serveradministration im Web-Client
 
 Der Web-Client teilt die Bildschirme für das Personal in zwei.
@@ -42,13 +42,12 @@ Die Navigation zeigt „Moderation“ und „Administration“ nur Leuten, deren
 
 | Gruppe | Berechtigungen | Bildschirme |
 | --- | --- | --- |
-| Moderation (`/moderation`) | `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit` | Meldungen (`/moderation/reports`), Einsprüche (`/moderation/appeals`), Konten (`/moderation/accounts`), Registrierungen (`/moderation/registrations`), Registrierungssperren (`/moderation/signup-blocks`), Einladungen (`/moderation/invites`), Domain-Maßnahmen (`/moderation/domain-actions`), Entfernte Server (`/moderation/instances`), Audit-Log (`/moderation/audit-log`) |
-| Serveradministration (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers` | Servereinstellungen (`/admin/settings`), Regeln (`/admin/rules`), Bedingungen und Richtlinien (`/admin/documents`), die Job-Queue und fehlgeschlagene Jobs (`/admin/jobs`), Eigene Emojis (`/admin/custom-emojis`), Ankündigungen (`/admin/announcements`), Webhooks (`/admin/webhooks`), Kosten und Billing-Import (`/admin/finance`, `manage_finance`). `manage_login_recovery` (Login-Wiederherstellung: Zwei-Faktor-Authentifizierung entfernen und einen Link zum Zurücksetzen des Passworts ausstellen) und `manage_roles` (die Rollen eines Kontos vergeben und entziehen) erscheinen als Abschnitte der Verwaltungsseite eines Kontos (`/moderation/accounts/{id}/manage`, die außerdem `manage_accounts` braucht) |
+| Moderation (`/moderation`) | `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit` | Meldungen (`/moderation/reports`), Einsprüche (`/moderation/appeals`), Registrierungen (`/moderation/registrations`), Automatische Prüfungen (`/moderation/hook-decisions`), Konten (`/moderation/accounts`), Registrierungssperren (`/moderation/signup-blocks`), Einladungen (`/moderation/invites`), Domain-Maßnahmen (`/moderation/domain-actions`), Entfernte Server (`/moderation/instances`), Audit-Log (`/moderation/audit-log`) |
+| Serveradministration (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers` | Servereinstellungen (`/admin/settings`), Regeln (`/admin/rules`), Bedingungen und Richtlinien (`/admin/documents`), Link-Karten-Domains (`/admin/link-card-domains`), die Job-Queue und fehlgeschlagene Jobs (`/admin/jobs`), Fehler (`/admin/errors`, `manage_errors`), UX-Messungen (`/admin/ux-measurements`, `manage_errors`), Eigene Emojis (`/admin/custom-emojis`), Ankündigungen (`/admin/announcements`), Webhooks (`/admin/webhooks`), Kosten und Einnahmen (`/admin/finance`, `manage_finance`), Unterstützer (`/admin/supporters`, `manage_supporters`). `manage_login_recovery` (Login-Wiederherstellung: Zwei-Faktor-Authentifizierung entfernen und einen Link zum Zurücksetzen des Passworts ausstellen) und `manage_roles` (die Rollen eines Kontos vergeben und entziehen) erscheinen als Abschnitte der Verwaltungsseite eines Kontos (`/moderation/accounts/{id}/manage`, die außerdem `manage_accounts` braucht) |
 
 - Das Badge an „Moderation“ ist die Summe der offenen Meldungen, der Registrierungen, die auf Genehmigung warten, und der Einsprüche, die auf Prüfung warten ([Benachrichtigungen für Moderatoren und die ausstehenden Zähler](#notifications-for-moderators-and-the-pending-counts)). „Administration“ zeigt keinen Zähler.
-- Jede Gruppe öffnet sich auf einer Übersicht; die Bildschirme selbst stehen im Menü daneben. Die Moderationsübersicht hat für jede Warteschlange, die deine Rolle zählt, eine Kachel (offene Meldungen, Registrierungen, die auf Genehmigung warten, Einsprüche, die auf eine Entscheidung warten), jede ein Link zu ihrer Warteschlange, eine Kachel damit, wie lange die älteste offene Meldung gewartet hat (ein Link zur Meldungsliste, die älteste zuerst), und listet die offenen Meldungen auf, die zuerst zu bearbeiten sind, aus der ganzen Warteschlange: zuerst rechtswidrige Inhalte, dann die, die am längsten gewartet haben, mit der Wartezeit jeder einzelnen und wer sie bearbeitet.
-  Die Meldungsliste filtert nach Zustand, Kategorie und Zuständigem (du oder niemand) und listet die neueste oder die älteste zuerst auf; die Filter bleiben in der Adresse der Seite.
-  Die Administrationsübersicht zeigt den Zustand des Servers: die fehlgeschlagenen Jobs, wie lange die Job-Queue ihren ältesten Job hat warten lassen und die offenen Fehler, jede Kachel ein Link zu ihrem Bildschirm und markiert, wenn sie Aufmerksamkeit braucht.
+- Jede Gruppe öffnet sich auf einer Liste ihrer Bildschirme, die die Berechtigungen deiner Rolle öffnen, jeder mit einer Zeile dazu, was er enthält, und bei einer Warteschlange damit, wie viele Dinge dort warten (Meldungen zählt die offenen Meldungen, Einsprüche die auf Prüfung wartenden, Registrierungen die auf Genehmigung wartenden, Eigene Emojis die auf Prüfung wartenden Anfragen, Fehler die offenen Fehler); eine Gruppe, von deren Bildschirmen dir keiner offensteht, sagt, warum.
+  Die Adresse eines Bildschirms, den deine Rolle nicht öffnet, sagt das ebenfalls, mit einem Link zur Liste der Gruppe.
 - Der eingebaute `moderator` hat nur `manage_reports`, `manage_accounts` und `view_audit` und sieht „Administration“ nicht. Er sieht auch die Bildschirme Domain-Maßnahmen und Entfernte Server (`manage_domains`) nicht,
   erstelle also, um diese zu delegieren, eine Rolle mit dieser Berechtigung und vergib sie ([Rollen vergeben und entziehen](admin-cli.md#granting-and-revoking-roles)).
 - Die Pfade der Admin-API bleiben `/api/v1/admin/...`, unabhängig von der Gruppe, und die Scopes sind dasselbe Paar `admin:read` / `admin:write`. Die Gruppen sind in der API-Referenz durch Tags getrennt (`admin-moderation`, `admin-server`).
@@ -57,13 +56,13 @@ Die Navigation zeigt „Moderation“ und „Administration“ nur Leuten, deren
   und für jemanden mit `view_finance` zeigt die Navigation „Finanzen“ (`/finance`) nach den Einstellungen.
   Ihre API liegt im Nutzer-Namespace (`GET /api/v1/finance/cost_totals` und `GET /api/v1/finance/income_totals`, Scope `read:finance`) und braucht keinen `admin:*`-Scope. Was sie zeigt, wird durch `finance_viewer_*` in den [Instanzeinstellungen](instance-settings.md) festgelegt.
 
-<!-- source: letting-another-service-use-the-admin-api 6c266c1e1111 -->
+<!-- source: letting-another-service-use-the-admin-api d767e08e639c -->
 ### Einen anderen Dienst die Admin-API nutzen lassen
 
 Ein Dienst, den du neben dem Server betreibst, etwa einer, der Einladungen verteilt oder Kosten erfasst, kann die Admin-API für eine Berechtigung ohne Plugin aufrufen.
 
 1. Registriere ein Konto für den Dienst und gib ihm eine Rolle mit nur den Berechtigungen, die der Dienst braucht (für Einladungen eine Rolle mit `manage_invites`; [Rollen vergeben und entziehen](admin-cli.md#granting-and-revoking-roles)).
-2. Registriere, angemeldet als dieses Konto, in **Einstellungen → Deine Apps** eine App, deren Scopes den Berechtigungs-Scope enthalten, `admin:` und die Berechtigung: `admin:manage_invites`.
+2. Registriere, angemeldet als dieses Konto, in **Einstellungen → Apps → Deine Apps** eine App, deren Scopes den Berechtigungs-Scope enthalten, `admin:` und die Berechtigung: `admin:manage_invites`.
 3. Stelle dem Konto von der App aus ein Token mit diesem Scope aus und gib dem Dienst das Zugriffstoken und das Refresh-Token.
 
 - Das Token erreicht nur die Operationen der Berechtigungen, die seine Scopes nennen, und nur, solange die Rollen des Kontos sie behalten; das Audit-Log erfasst, was es tut, als Aktionen des Kontos.
@@ -165,11 +164,11 @@ das Datum eines deaktivierten Administrators verstreicht, während sich kein and
 Konto nicht und protokolliert eine Warnung. Dieser Administrator kann sich ebenfalls nicht mehr anmelden, lege also einen weiteren Administrator mit
 `my admin create` an; der nächste Lauf löscht dann das Konto.
 
-<!-- source: appeals 8a6f1b4c288d -->
+<!-- source: appeals 3366a552f16e -->
 ## Einsprüche
 
 Ein lokaler Nutzer kann gegen eine Maßnahme gegen ihn Einspruch einlegen.
-Ein Moderator prüft den Einspruch und bestätigt entweder die Maßnahme (`uphold`) oder hebt sie auf (`overturn`).
+Ein Moderator prüft den Einspruch und bestätigt ihn entweder (`uphold`) oder hebt die Maßnahme auf (`overturn`).
 
 ```sh
 my admin appeal list -state pending
@@ -177,75 +176,76 @@ my admin appeal uphold -reason "The posts were spam." <appeal id>
 my admin appeal overturn -reason "Sorry, our mistake." <appeal id>
 ```
 
-Der Nutzer legt Einspruch ein mit `POST /api/v1/moderation/actions/{id}/appeal` (Scope `write:accounts`, Body `{"text": "..."}`).
-Ein Nutzer unter `disable_login`, `suspend` oder `ban` kann keinen Access-Token erhalten und legt Einspruch über das Formular je Maßnahme auf der Anmeldeseite ein (`POST /auth/appeal`).
-Solange [die Anmeldung auf Login-Anbieter beschränkt ist](login-providers.md#limit-sign-in-to-login-providers), erreicht ein solcher Nutzer das Formular nur über einen verknüpften Anbieter.
-Die Seite zeigt das Formular und die Frist für eine Maßnahme, gegen die Einspruch möglich ist, den Inhalt und das Ergebnis für eine Maßnahme, gegen die schon Einspruch eingelegt wurde, und den Grund für eine Maßnahme, deren Frist verstrichen ist oder gegen die kein Einspruch möglich ist. Bei einem abgelehnten Einspruch zeigt sie den Grund.
+Der Nutzer legt den Einspruch mit `POST /api/v1/moderation/actions/{id}/appeal` ein (Scope `write:accounts`, Body `{"text": "..."}`).
+Ein Nutzer unter `disable_login`, `suspend` oder `ban` bekommt kein Zugriffstoken und legt den Einspruch über das Formular je Maßnahme auf der Anmeldeseite ein (`POST /auth/appeal`).
+Solange die [Anmeldung auf Login-Anbieter beschränkt ist](login-providers.md#limit-sign-in-to-login-providers), erreicht ein solcher Nutzer das Formular nur über einen verknüpften Anbieter.
+Die Seite zeigt das Formular und die Frist bei einer Maßnahme, gegen die Einspruch möglich ist, den Inhalt und das Ergebnis bei einer Maßnahme, gegen die schon Einspruch eingelegt wurde, und den Grund bei einer Maßnahme, deren Frist abgelaufen ist oder gegen die kein Einspruch möglich ist. Bei einem abgelehnten Einspruch zeigt sie den Grund.
 In der Admin-API: `GET /api/v1/admin/appeals` (filtere mit `state`), `GET .../{id}` sowie `POST .../{id}/uphold` und `POST .../{id}/overturn` (der Body `{"public_reason": "..."}` ist optional). Sie brauchen die Berechtigung `manage_accounts`.
+Im Web-Client listet Moderation → Einsprüche (`/moderation/appeals`) die Einsprüche, die auf Prüfung warten, oder alle auf; die Seite eines Einspruchs (`/moderation/appeals/{id}`) zeigt, was der Nutzer geschrieben hat, und die Maßnahme, mit dem Grund, der dem Nutzer mitgeteilt wird, und „Bestätigen“ und „Aufheben“, jeweils mit vorheriger Rückfrage.
 
-- Gegen eine Maßnahme kann einmal Einspruch eingelegt werden, und der Text hat 1 bis 2.000 Zeichen. Die Frist ist die Zahl der Tage der Server-Einstellung `appeal_window_days` nach der Maßnahme (Standard 180 Tage, 20 bis 365; siehe [Server-Einstellungen](instance-settings.md)).
+- Gegen eine Maßnahme kann einmal Einspruch eingelegt werden, und der Text hat 1 bis 2.000 Zeichen. Die Frist ist die Zahl der Tage in der Instanzeinstellung `appeal_window_days` nach der Maßnahme (Standard 180 Tage, 20 bis 365; siehe [Instanzeinstellungen](instance-settings.md)).
   Eine Maßnahme nach Fristablauf und ein zweiter Einspruch ergeben `422` (`/api/v1/problems/appeal-window-closed` und `/api/v1/problems/already-appealed`).
-- Gegen einen `ban` kann Einspruch eingelegt werden, bis das Konto gelöscht ist (30 Tage nach der Maßnahme, oder bis zur Frist von `appeal_window_days`, falls diese kürzer ist). Ein `ban` eines gelöschten Kontos ergibt `422` (`/api/v1/problems/not-appealable`). Gegen eine aufgehobene oder abgelaufene Maßnahme kann innerhalb der Frist weiterhin Einspruch eingelegt werden.
-- Wenn ein Nutzer Einspruch einlegt, erhalten Leute mit `manage_accounts` eine Benachrichtigung (`admin_appeal`). Wenn er geprüft ist, erhält der Nutzer eine Benachrichtigung (`appeal_decided`) und kann das Ergebnis und `public_reason` sehen. Der Prüfer wird nicht gezeigt.
-- Das Aufheben hebt die Maßnahme in derselben Transaktion auf (dieselbe Wirkung wie `lift`, mit leerem Aufhebungsgrund). Das Aufheben von `delete_statuses` bringt die gelöschten Beiträge nicht zurück. Eine Maßnahme, die vor der Prüfung schon aufgehoben war, bleibt, wie sie ist.
-- Das Aufheben eines `ban` bricht außerdem das geplante Löschen des Kontos in derselben Transaktion ab (das Audit-Log hält `account_deletion_canceled` fest), beendet die Sperre und sendet das `Update` mit dem ursprünglichen Profil an andere Server. Widerrufene Sitzungen und Token kommen nicht zurück, der Nutzer meldet sich also erneut an.
-  Wurde das Konto vor der Prüfung gelöscht, kann die Maßnahme nicht aufgehoben werden (`422`, `/api/v1/problems/not-appealable`; sie zu bestätigen ist weiterhin möglich).
-- Eine Prüfung geschieht einmal. Eine erneute Prüfung mit demselben Ergebnis ändert nichts, und das gegenteilige Ergebnis ergibt `409` (`/api/v1/problems/appeal-decided`).
+- Gegen einen `ban` kann Einspruch eingelegt werden, bis das Konto gelöscht ist (30 Tage nach der Maßnahme oder bis zur Frist von `appeal_window_days`, wenn diese kürzer ist). Ein `ban` eines gelöschten Kontos ergibt `422` (`/api/v1/problems/not-appealable`). Gegen eine aufgehobene oder abgelaufene Maßnahme kann innerhalb der Frist weiterhin Einspruch eingelegt werden.
+- Wenn ein Nutzer Einspruch einlegt, erhalten Leute mit `manage_accounts` eine Benachrichtigung (`admin_appeal`). Wenn er geprüft ist, erhält der Nutzer eine Benachrichtigung (`appeal_decided`) und kann das Ergebnis und `public_reason` sehen. Der Prüfer wird nicht angezeigt.
+- Das Aufheben hebt die Maßnahme in derselben Transaktion auf (dieselbe Wirkung wie `lift`, mit leerem Aufhebungsgrund). Das Aufheben von `delete_statuses` bringt die gelöschten Beiträge nicht zurück. Eine Maßnahme, die schon vor der Prüfung aufgehoben war, bleibt, wie sie ist.
+- Das Aufheben eines `ban` bricht in derselben Transaktion auch das geplante Löschen des Kontos ab (das Audit-Log erfasst `account_deletion_canceled`), beendet die Sperre und sendet das ursprüngliche Profil-`Update` an andere Server. Widerrufene Sitzungen und Token kommen nicht zurück, der Nutzer meldet sich also erneut an.
+  Wurde das Konto vor der Prüfung gelöscht, lässt sich der Einspruch nicht aufheben (`422`, `/api/v1/problems/not-appealable`; Bestätigen ist weiterhin möglich).
+- Eine Prüfung geschieht einmal. Eine erneute Prüfung mit demselben Ergebnis ändert nichts, und das entgegengesetzte Ergebnis ergibt `409` (`/api/v1/problems/appeal-decided`).
 
-<!-- source: account-management 99149899a198 -->
+<!-- source: account-management aa223fe467e1 -->
 ## Kontoverwaltung
 
 Konten suchen, ihre Details ansehen und IP-Adressen und E-Mail-Adressen offenlegen geschieht über die Admin-API und braucht die Berechtigung `manage_accounts`.
 
-Im Web-Client hat ein Konto drei Seiten, mit Links dazwischen unter dem Seitentitel:
+Im Web-Client hat ein Konto drei Seiten, mit Links zwischen ihnen unter dem Seitentitel:
 
-- **Prüfung** (`/moderation/accounts/{id}`): der Status und die Einschränkungen des Kontos, das Formular für eine neue Maßnahme, die neuesten Maßnahmen dagegen mit ihren Begründungen und seine neuesten 20 Meldungen. Ältere Meldungen stehen nur in der Meldungsliste (`/moderation/reports`), die keinen Filter nach Konto hat.
-- **Maßnahmen** (`/moderation/accounts/{id}/actions`): jede Maßnahme gegen das Konto, eine Seite nach der anderen, mit „Aufheben“ für die geltenden. Jede Maßnahme öffnet ihre eigene Seite (`/moderation/accounts/{id}/actions/{action id}`) mit allen Details.
-- **Verwaltung** (`/moderation/accounts/{id}/manage`, nur lokale Konten): die Rollen des Kontos (`manage_roles`), seine E-Mail-Unterdrückung, das Entfernen der Zwei-Faktor-Authentifizierung und das Ausstellen eines Links zum Zurücksetzen des Passworts (`manage_login_recovery`) sowie seine E-Mail- und IP-Adressen. Jeder Abschnitt erscheint nur Leuten mit der entsprechenden Berechtigung.
+- **Prüfung** (`/moderation/accounts/{id}`): der Zustand und die Einschränkungen des Kontos, seine Registrierung und wer es eingeladen hat, das Formular für eine neue Maßnahme (von einer Meldung aus mit „Gegen dieses Konto vorgehen“ geöffnet, bietet das Formular auch die Maßnahmen gegen die Beiträge der Meldung an, und die Maßnahme schließt die Meldung ab), die neuesten Maßnahmen dagegen mit ihren Gründen, mit „Alle Maßnahmen“ zu seiner Seite Maßnahmen, wenn es mehr geben kann, und seine Meldungen, die neuesten zuerst, der Rest unter „Mehr anzeigen“.
+- **Maßnahmen** (`/moderation/accounts/{id}/actions`): jede Maßnahme gegen das Konto oder die wirksamen, jeweils eine Seite. Jede Maßnahme öffnet ihre eigene Seite (`/moderation/accounts/{id}/actions/{action id}`) mit allen Details und, solange sie wirksam ist, „Aufheben“ mit einem Grund für die Moderatoren. Die Seite eines Bans hat kein „Aufheben“: Nur das Aufheben seines Einspruchs macht ihn rückgängig.
+- **Verwaltung** (`/moderation/accounts/{id}/manage`): bei einem lokalen Konto seine Rollen (`manage_roles`), seine E-Mail-Sperre, das Entfernen der Zwei-Faktor-Authentifizierung und das Ausstellen eines Links zum Zurücksetzen des Passworts (`manage_login_recovery`) sowie seine E-Mail- und IP-Adressen, die erst nach „Anzeigen“ erscheinen, mit seinen Anmeldungen und den Konten, die dieselben IP-Adressen verwendet haben, jede Liste mit den neuesten zuerst und dem Rest unter „Mehr anzeigen“ (jedes Drücken liest eine Seite und wird im Audit-Log festgehalten), und einem Link zu denen mit derselben E-Mail-Domain; bei einem entfernten Konto das erneute Abrufen seiner Beiträge von seinem Server (`manage_domains`). Jeder Abschnitt erscheint nur Leuten mit der dazugehörigen Berechtigung.
 
-Das Team handelt nur gegenüber niedrigeren Rängen: Eine Maßnahme zu ergreifen oder aufzuheben, über einen Einspruch zu entscheiden, eine E-Mail-Unterdrückung aufzuheben, private Daten offenzulegen, einen Link zum Zurücksetzen des Passworts auszustellen und die Zwei-Faktor-Authentifizierung zu entfernen verlangt, dass die höchste `position` unter deinen Rollen über der jeder Rolle des Ziels liegt.
-Ein höherer oder gleicher Rang, dein eigenes Konto eingeschlossen, ergibt `403` mit dem Problem-Typ `/api/v1/problems/target-outranks-actor`, sodass ein Moderator keinen Administrator bannen kann und ein Administrator keinen anderen.
-Die `my admin`-Befehle haben keine solche Grenze.
-Eine Maßnahme, die den einzigen Administrator, der sich anmelden kann, an der Anmeldung hindert (`disable_login`, `suspend`, `ban`), wird abgelehnt, wer auch immer sie ergreift, und dieser Administrator kann sein eigenes Konto nicht löschen (`409` mit `/api/v1/problems/last-administrator`). Die Rollen stehen in [admin-cli.md](admin-cli.md).
+Das Personal handelt nur gegen niedrigere Ränge: Eine Maßnahme zu ergreifen oder aufzuheben, über einen Einspruch zu entscheiden, eine E-Mail-Sperre aufzuheben, private Daten offenzulegen, einen Link zum Zurücksetzen des Passworts auszustellen und die Zwei-Faktor-Authentifizierung zu entfernen setzt voraus, dass die höchste `position` unter deinen Rollen über der jeder Rolle des Ziels liegt.
+Ein höherer oder gleicher Rang, dein eigenes Konto eingeschlossen, ergibt `403` mit dem Problemtyp `/api/v1/problems/target-outranks-actor`, sodass ein Moderator keinen Administrator bannen kann und ein Administrator keinen anderen. Die Befehle `my admin` haben keine solche Grenze.
+Eine Maßnahme, die den einzigen Administrator, der sich anmelden kann, an der Anmeldung hindert (`disable_login`, `suspend`, `ban`), wird abgelehnt, wer auch immer sie ergreift, und dieser Administrator kann sein eigenes Konto nicht löschen (`409` mit `/api/v1/problems/last-administrator`). Zu den Rollen siehe [admin-cli.md](admin-cli.md).
 
-- `GET /api/v1/admin/accounts` liefert lokale und entfernte Konten, neueste zuerst (der Server-Actor ist ausgeschlossen).
-  Du kannst nach Nutzernamen-Präfix (`username`), Domain (`domain`), lokal oder entfernt (`origin`), Status (`state`) und, bei lokalen Konten, nach E-Mail-Adresse (`email`), E-Mail-Domain (`email_domain`) und der IP-Adresse der Registrierung oder Anmeldung (`ip`) filtern.
+- `GET /api/v1/admin/accounts` liefert lokale und entfernte Konten, die neuesten zuerst (der Instanz-Actor ist ausgenommen).
+  Du kannst nach Benutzernamen-Präfix (`username`), Domain (`domain`), lokal oder entfernt (`origin`), Zustand (`state`) und bei lokalen Konten nach E-Mail-Adresse (`email`), E-Mail-Domain (`email_domain`) und der IP-Adresse der Registrierung oder Anmeldung (`ip`) filtern.
   Du kannst nur eines von `email`, `email_domain` und `ip` angeben. Die Liste enthält keine IP-Adressen oder E-Mail-Adressen.
-- Der Status ist der erste zutreffende aus dieser Liste: `deleted`, `suspended` (`suspend`, `ban`), `disabled` (`disable_login`), `rejected` und `pending` (Registrierungsprüfung), `limited` (`limit`), `active`.
-  Der Status und die Einschränkungen (`restrictions`) stammen nur aus Maßnahmen gegen das Konto selbst und enthalten keine Domain-Maßnahmen.
-- `GET /api/v1/admin/accounts/{id}` liefert den Status und die Einschränkungen und, für ein lokales Konto, den Registrierungsantrag und die Prüfung, die E-Mail-Bestätigung, die Rollen und bis zu 20 Maßnahmen und Meldungen, neueste zuerst.
-- `POST /api/v1/admin/accounts/{id}/reveal` liefert die E-Mail-Adresse eines lokalen Kontos, die IP-Adressen und User-Agents von Registrierung und Anmeldungen (20 Einträge, neueste zuerst) und andere Konten, die dieselbe IP-Adresse verwendet haben (bis zu 20 pro IP-Adresse).
-  Jeder Aufruf hält `revealed_private_data` im Audit-Log fest, und die Daten werden nur geliefert, wenn der Eintrag geschrieben werden konnte. IP-Adressen werden nach der Aufbewahrungsfrist entfernt (standardmäßig 180 Tage), sodass ältere Anmeldeherkünfte nicht gezeigt werden können.
+- Der Zustand ist der erste zutreffende aus dieser Liste: `deleted`, `suspended` (`suspend`, `ban`), `disabled` (`disable_login`), `rejected` und `pending` (Registrierungsprüfung), `limited` (`limit`), `active`.
+  Der Zustand und die Einschränkungen (`restrictions`) stammen nur aus Maßnahmen gegen das Konto selbst und enthalten keine Domain-Maßnahmen.
+- `GET /api/v1/admin/accounts/{id}` liefert den Zustand und die Einschränkungen und bei einem lokalen Konto den Registrierungsantrag und die Prüfung, die E-Mail-Bestätigung, die Rollen und bis zu 20 Maßnahmen und Meldungen, die neuesten zuerst. `GET /api/v1/admin/reports?target_account_id={id}` blättert durch alle Meldungen über ein Konto.
+- `POST /api/v1/admin/accounts/{id}/reveal` liefert die E-Mail-Adresse eines lokalen Kontos, die IP-Adressen und User-Agents von Registrierung und Anmeldungen (20 Einträge, die neuesten zuerst) und andere Konten, die dieselbe IP-Adresse verwendet haben (bis zu 20 je IP-Adresse).
+  `GET /api/v1/admin/accounts/{id}/sign_ins` und `GET /api/v1/admin/accounts/{id}/same_ip_accounts?ip=` blättern durch alle davon.
+  Jeder Aufruf dieser drei hält `revealed_private_data` im Audit-Log fest, und die Daten werden nur geliefert, wenn der Eintrag geschrieben werden konnte. IP-Adressen werden nach der Aufbewahrungsfrist (standardmäßig 180 Tage) entfernt, sodass ältere Herkünfte von Anmeldungen nicht gezeigt werden können.
 - `two_factor_enabled` in `GET /api/v1/admin/accounts/{id}` zeigt, ob der Nutzer eines lokalen Kontos die Zwei-Faktor-Authentifizierung (TOTP) verwendet.
   Ein Nutzer, der sowohl die Authenticator-App als auch die Wiederherstellungscodes verloren hat, kann sich allein mit dem Passwort anmelden, sobald du die Zwei-Faktor-Authentifizierung mit `POST /api/v1/admin/accounts/{id}/two_factor/disable` entfernst.
-  Das können nur Nutzer mit der Berechtigung `manage_login_recovery`, und standardmäßig hat nur die eingebaute Administratorrolle sie (sie gehört zur Serveradministration; der Web-Client zeigt den Abschnitt nur ihnen).
-  Das Entfernen hält `two_factor_disabled` im Audit-Log fest. Prüfe auf einem anderen Weg, etwa per E-Mail, dass die Person die Inhaberin des Kontos ist, bevor du sie entfernst.
-  Wenn ein Administrator ohne weiteren Administrator sie verloren hat, entfernt der Betreiber sie mit dem CLI-Befehl `my admin account disable-two-factor @alice` (der Akteur im Audit-Log ist die CLI).
-- Auf einem Server, der E-Mails sendet, erhält ein Nutzer, der das Passwort vergessen hat, über „Passwort vergessen?“ auf der Anmeldeseite einen per E-Mail gesendeten Link, um ein neues zu setzen.
-  Für einen Server, der keine E-Mails sendet (`mail = none`), oder einen Nutzer, den die E-Mail nicht erreicht, stellt ein Administrator den Link aus und übergibt ihn.
-  In den Admin-Screens stellst du ihn mit „Passwort zurücksetzen“ auf der Verwaltungsseite des Kontos aus (`/moderation/accounts/{id}/manage`, `POST /api/v1/admin/accounts/{id}/password_reset_link`).
-  Nur Nutzer mit derselben Berechtigung wie für das Entfernen der Zwei-Faktor-Authentifizierung, `manage_login_recovery`, können ihn ausstellen, und standardmäßig hat nur die eingebaute Administratorrolle sie (wer den Link besitzt, kommt in das Konto, daher genügt das `manage_accounts` eines Moderators nicht).
-  Der ausgestellte Link wird einmal an Ort und Stelle gezeigt und lässt sich kopieren. Der Server speichert nur einen Hash des Links, du kannst ihn also später nicht sehen; stelle ihn erneut aus, wenn du ihn brauchst.
-  Wenn kein Administrator verfügbar ist oder die Admin-Screens nicht, stellt der Betreiber ihn mit dem CLI-Befehl `my admin account password-reset-link @alice` aus (der Akteur im Audit-Log ist die CLI).
-  Solange [die Anmeldung auf Login-Anbieter beschränkt ist](login-providers.md#limit-sign-in-to-login-providers), stellen beide den Link weiterhin aus und sagen, dass er nicht funktioniert, bis die Beschränkung endet.
-  Der Link funktioniert 1 Stunde lang und einmal und hört auf zu funktionieren, wenn sich das Passwort danach auf einem anderen Weg ändert. Beide Wege des Ausstellens halten `password_reset_link_issued` im Audit-Log fest.
-  Jeder, der den Link besitzt, kann das Passwort setzen, prüfe die Person also auf einem anderen Weg wie E-Mail und gib den Link nur ihr.
-  Das Setzen des neuen Passworts widerruft alle Sitzungen und App-Token des Nutzers. Passkeys und Zwei-Faktor-Authentifizierung bleiben.
-- `email_suppression` in `GET /api/v1/admin/accounts/{id}` zeigt, dass das Senden an die primäre Adresse eines lokalen Kontos gestoppt ist.
-  Ein `hard_bounce` (das Ziel existiert nicht) stoppt alle E-Mails außer der Bestätigungs-E-Mail, und ein `complaint` (als Spam gemeldet) stoppt nur Benachrichtigungs- und Ankündigungs-E-Mails. E-Mails zum Zurücksetzen des Passworts stoppen ebenfalls, stelle also den obigen Link aus und übergib ihn bei Bedarf.
-  Wenn der Nutzer eine Bestätigungs-E-Mail anfordert und die Adresse erneut bestätigt, wird die Hard-Bounce-Unterdrückung aufgehoben.
-  Wenn du geprüft hast, dass das Senden in Ordnung ist, etwa weil der Nutzer das Postfach repariert hat, hebst du sie mit `POST /api/v1/admin/accounts/{id}/email_suppression/lift` auf (Berechtigung `manage_accounts`). Das hält `email_suppression_lifted` im Audit-Log fest.
-- Eine Suche liest bis zu 400 Konten, um eine Seite zu füllen. Wenn wenige Konten passen, kann auch eine kurze oder leere Seite `next_cursor` tragen, lies also weiter.
+  Das können nur Nutzer mit der Berechtigung `manage_login_recovery`, und standardmäßig hat nur die eingebaute Administrator-Rolle sie (sie gehört zur Serveradministration; der Web-Client zeigt den Abschnitt nur ihnen).
+  Das Entfernen hält `two_factor_disabled` im Audit-Log fest. Überprüfe auf anderem Weg, etwa per E-Mail, dass die Person die Inhaberin des Kontos ist, bevor du sie entfernst.
+  Wenn ein Administrator, neben dem es keinen anderen Administrator gibt, sie verloren hat, entfernt der Betreiber sie mit dem CLI-Befehl `my admin account disable-two-factor @alice` (der Akteur im Audit-Log ist die CLI).
+- Auf einem Server, der Mail versendet, erhält ein Nutzer, der das Passwort vergessen hat, über „Passwort vergessen?“ auf der Anmeldeseite einen Link per E-Mail, um ein neues festzulegen.
+  Bei einem Server, der keine Mail versendet (`mail = none`), oder einem Nutzer, den die Mail nicht erreicht, stellt ein Administrator den Link aus und übergibt ihn.
+  Stelle ihn in den Admin-Bildschirmen mit „Passwort zurücksetzen“ auf der Verwaltungsseite des Kontos (`/moderation/accounts/{id}/manage`, `POST /api/v1/admin/accounts/{id}/password_reset_link`) aus.
+  Nur Nutzer mit derselben Berechtigung wie für das Entfernen der Zwei-Faktor-Authentifizierung, `manage_login_recovery`, können ihn ausstellen, und standardmäßig hat nur die eingebaute Administrator-Rolle sie (wer den Link besitzt, kann in das Konto gelangen, das `manage_accounts` eines Moderators reicht also nicht).
+  Der ausgestellte Link wird einmal an Ort und Stelle gezeigt und lässt sich kopieren. Der Server speichert nur einen Hash des Links, du kannst ihn also später nicht sehen; stelle ihn bei Bedarf erneut aus.
+  Wenn kein Administrator verfügbar ist oder die Admin-Bildschirme es nicht sind, stellt der Betreiber ihn mit dem CLI-Befehl `my admin account password-reset-link @alice` aus (der Akteur im Audit-Log ist die CLI).
+  Solange die [Anmeldung auf Login-Anbieter beschränkt ist](login-providers.md#limit-sign-in-to-login-providers), stellen beide den Link weiterhin aus und sagen, dass er erst funktioniert, wenn die Beschränkung endet.
+  Der Link gilt 1 Stunde und einmal und wird ungültig, wenn das Passwort danach auf anderem Weg geändert wird. Beide Arten des Ausstellens halten `password_reset_link_issued` im Audit-Log fest.
+  Jeder, der den Link besitzt, kann das Passwort festlegen. Überprüfe die Person also auf anderem Weg, etwa per E-Mail, und gib den Link nur ihr.
+  Das Festlegen des neuen Passworts widerruft alle Sitzungen und App-Token des Nutzers. Passkeys und die Zwei-Faktor-Authentifizierung bleiben.
+- `email_suppression` in `GET /api/v1/admin/accounts/{id}` zeigt, dass das Senden an die Hauptadresse eines lokalen Kontos gestoppt ist.
+  Ein `hard_bounce` (das Ziel existiert nicht) stoppt alle Mails außer der Bestätigungsmail, und eine `complaint` (als Spam gemeldet) stoppt nur Benachrichtigungs- und Ankündigungsmails. Auch Mails zum Zurücksetzen des Passworts werden gestoppt, stelle also bei Bedarf den Link oben aus und übergib ihn.
+  Wenn der Nutzer eine Bestätigungsmail anfordert und die Adresse erneut bestätigt, wird die Sperre nach einem Hard Bounce aufgehoben.
+  Wenn du überprüft hast, dass das Senden in Ordnung ist, etwa weil der Nutzer das Postfach repariert hat, hebst du sie mit `POST /api/v1/admin/accounts/{id}/email_suppression/lift` auf (Berechtigung `manage_accounts`). Das hält `email_suppression_lifted` im Audit-Log fest.
+- Eine Suche liest bis zu 400 Konten, um eine Seite zu füllen. Wenn wenige Konten passen, kann selbst eine kurze oder leere Seite `next_cursor` tragen, lies also weiter.
 
-<!-- source: domain-actions 13dd3d4d3a0f -->
+<!-- source: domain-actions d71386f1cd2d -->
 ## Domain-Maßnahmen
 
 | Art | Wirkung |
 | --- | --- |
-| `suspend` | Stoppt alle Zustellung, jedes Abrufen und Empfangen (das Empfangen ergibt `403`, bevor die Signatur geprüft wird). Bestehende Konten und Beiträge werden aus Timelines und Profilen verborgen. Trennt Follows zwischen lokalen Nutzern und den Konten der Domain in beide Richtungen (an die andere Seite wird nichts gesendet) |
+| `suspend` | Stoppt jede Zustellung, jeden Abruf und jeden Empfang (der Empfang ergibt `403`, bevor die Signatur geprüft wird). Bestehende Konten und Beiträge werden aus Timelines und Profilen verborgen. Trennt Follows zwischen lokalen Nutzern und den Konten der Domain in beide Richtungen (der anderen Seite wird nichts gesendet) |
 | `limit` | Hält Beiträge aus den öffentlichen Timelines und der Suche heraus und erzeugt keine Benachrichtigungen für Nutzer, die dem Konto nicht folgen |
 | `reject_media` | Ruft keine Medien ab |
-| `reject_reports` | Verwirft Meldungen (`Flag`) der Domain |
+| `reject_reports` | Verwirft Meldungen (`Flag`) von der Domain |
 | `force_sensitive` | Zeigt Medien als sensibel |
 
 ```sh
@@ -256,23 +256,25 @@ my admin domain lift <action id>
 ```
 
 In der Admin-API: `POST /api/v1/admin/domain_actions` (der Body hat `domain`, `kind`, `public_comment`, `private_note`, `obfuscate` und `expires_in` in Sekunden),
-`GET /api/v1/admin/domain_actions` (filtere mit `domain` und `active`), `GET .../{id}` und `POST .../{id}/lift`.
+`GET /api/v1/admin/domain_actions` (filtere mit `domain` und `active`), `GET .../{id}`, `POST .../{id}/lift`
+und `GET .../impact?domain=`, das die Follows zählt, die ein `suspend` der Domain beenden würde.
 
-Öffne im Web-Client Moderation → Domain-Maßnahmen (`/moderation/domain-actions`). Die Liste zeigt Domain, Art, Status und Ende jeder Maßnahme, die geltenden oder alle;
-„Neue Maßnahme“ öffnet das Formular (`/moderation/domain-actions/new`), und die Wahl einer Domain öffnet die Seite der Maßnahme mit ihren Kommentaren und Daten, wo „Aufheben“ sie beendet.
+Öffne im Web-Client Moderation → Domain-Maßnahmen (`/moderation/domain-actions`). Die Liste zeigt für jede Maßnahme Domain, öffentlichen Grund, Art, Ende und Zustand, wirksam oder alle, von jeder Domain oder von der, nach der du suchst;
+„Neue Maßnahme“ öffnet das Formular (`/moderation/domain-actions/new`), und die Wahl einer Domain öffnet die Seite der Maßnahme mit ihren Gründen und Daten, wo „Aufheben“ sie beendet.
+Ein `suspend` fragt zuerst nach: Die Bestätigung sagt, wie viele Follows zwischen lokalen Nutzern und den Konten der Domain es endgültig beendet, und bittet dich, die Domain einzutippen.
 Der Link „Domain-Maßnahmen“ auf der Seite eines entfernten Servers listet nur die Maßnahmen dieser Domain, und „Neue Maßnahme“ startet dort das Formular mit ausgefüllter Domain.
 
 - Domains werden normalisiert zum IDNA-A-Label festgehalten (Kleinbuchstaben, kein abschließender Punkt). `例え.jp` und `xn--r8jz45g.jp` sind dieselbe Domain.
 - Eine Maßnahme gilt auch für Subdomains (eine Maßnahme gegen `spam.example` gilt auch für `a.spam.example`).
 - Eine Maßnahme wird in der Transaktion, die sie festhält, auf die Einschränkungs-Projektion (`domain_restrictions`) und auf die Timeline-Einschränkungen angewendet und wirkt ab der nächsten Zustellung, dem nächsten Abruf oder Empfang.
-- Eine Maßnahme mit Endzeit (`-duration` / `expires_in`, höchstens zehn Jahre) endet zu dieser Zeit von selbst. Der Ablauf ist kein „Aufheben“, daher zeigen Listen ihn als `expired`.
-- Das Aufheben entfernt nur die Einschränkungen dieser Maßnahme. Andere Maßnahmen gegen dieselbe Domain bleiben. Das Aufheben einer schon aufgehobenen Maßnahme ändert nichts.
-- Listen sind neueste zuerst, und `-active` (`active=true`) zeigt nur die geltenden Maßnahmen.
+- Eine Maßnahme mit Endzeit (`-duration` / `expires_in`, höchstens zehn Jahre) endet zu dieser Zeit von selbst. Ablauf ist kein „Aufheben“, Listen zeigen ihn daher als `expired`.
+- Das Aufheben entfernt nur die Einschränkungen dieser Maßnahme. Andere Maßnahmen gegen dieselbe Domain bleiben. Das Aufheben einer bereits aufgehobenen Maßnahme ändert nichts.
+- Listen zeigen die neuesten zuerst, und `-active` (`active=true`) zeigt nur die wirksamen Maßnahmen.
 
-<!-- source: importing-and-exporting-mastodon-csv ba9ed39bd32e -->
+<!-- source: importing-and-exporting-mastodon-csv f9b0965f8f91 -->
 ### Mastodon-CSV importieren und exportieren
 
-Du kannst die Liste der Domain-Maßnahmen im CSV-Format der Domain-Sperren von Mastodon (`#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`) an Mastodon übergeben und von dort übernehmen.
+Du kannst die Liste der Domain-Maßnahmen im CSV-Format der Domain-Sperren von Mastodon (`#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`) mit Mastodon austauschen.
 Du kannst eine CSV importieren, die Mastodon exportiert hat, und Mastodon kann eine CSV importieren, die dieser Server exportiert hat.
 
 ```sh
@@ -282,21 +284,21 @@ my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 ```
 
 In der Admin-API: `GET /api/v1/admin/domain_actions/export` (`text/csv`), `POST .../import/preview` (der Body hat `csv`) und `POST .../import` (der Body hat `blocks`, die gewählten Zeilen, und `private_note`).
-Eine Zeile für die eigene Domain dieses Servers wird übersprungen (`own_domain`), und eine Domain-Maßnahme dagegen wird abgelehnt.
-Öffne im Web-Client Moderation → Domain-Maßnahmen und wähle „CSV von Mastodon“ (`/moderation/domain-actions/import`): „CSV exportieren“ speichert die Datei, und der Import zeigt eine eingefügte oder gewählte Datei vorab an, bevor er die Zeilen importiert, die du behältst.
+Eine Zeile für die eigene Domain dieses Servers wird übersprungen (`own_domain`), und eine Domain-Maßnahme gegen sie wird abgelehnt.
+Öffne im Web-Client Moderation → Domain-Maßnahmen und wähle „CSV von Mastodon“ (`/moderation/domain-actions/import`): „Als CSV speichern“ speichert die Datei, und der Import zeigt eine gewählte Datei vorab an, bevor er die Zeilen importiert, die du behältst; ein `suspend` darunter fragt zuerst nach.
 
 | CSV-Zeile | Maßnahme auf diesem Server |
 | --- | --- |
 | `#severity` ist `suspend` (oder leer) | `suspend` |
 | `#severity` ist `silence` | `limit` |
 | `#severity` ist `noop` | Keine |
-| `#reject_media` / `#reject_reports` ist true | Fügt `reject_media` / `reject_reports` hinzu |
+| `#reject_media` / `#reject_reports` ist wahr | Fügt `reject_media` bzw. `reject_reports` hinzu |
 
 - Ein Import hat zwei Schritte. Prüfe zuerst in der Vorschau, welche Maßnahmen jede Zeile ergreifen würde, wähle die Zeilen, die du behältst, und importiere dann (die CLI ändert nichts, bis du `-apply` hinzufügst, und `-only` wählt Zeilen nach Domain).
-- Eine Zeile, deren Domain oder eine übergeordnete Domain schon eine geltende Maßnahme derselben Art hat, ergreift diese Art nicht (ist jede Art schon da, ist sie „bereits angewendet“). Eine zweite Zeile für dieselbe Domain, eine ungültige Zeile und eine Zeile, die nichts ergreifen würde (nur `noop`), werden ebenfalls übersprungen. Dieselbe CSV erneut zu importieren fügt keine Maßnahmen hinzu.
+- Eine Zeile, deren Domain oder eine übergeordnete Domain schon eine wirksame Maßnahme derselben Art hat, ergreift diese Art nicht (ist jede Art schon da, gilt sie als „schon angewendet“). Eine zweite Zeile für dieselbe Domain, eine ungültige Zeile und eine Zeile, die nichts ergreifen würde (nur `noop`), werden ebenfalls übersprungen. Dieselbe CSV erneut zu importieren fügt keine Maßnahmen hinzu.
 - Eine CSV ohne `#domain`-Kopfzeile wird als Liste mit einer Domain pro Zeile gelesen, und jede Domain erhält `suspend` (wie bei Mastodon). Ein Import nimmt bis zu 5.000 Zeilen.
-- Importierte Maßnahmen gelten „bis zur Aufhebung“ und tragen den öffentlichen Kommentar und die Verschleierung der Zeile sowie die private Notiz, die du angegeben hast. Sie erscheinen im Audit-Log wie einzeln ergriffene Maßnahmen (der Akteur ist die Person bei der API und `cli` bei der CLI).
-- Ein Export schreibt eine Zeile pro Domain für die geltenden Maßnahmen. Eine Domain mit einem `suspend` erhält `suspend`, eine mit einem `limit` erhält `silence`, und eine mit keinem von beiden erhält `noop`. Eine Domain mit nur `force_sensitive`, das die Domain-Sperren von Mastodon nicht haben, wird nicht exportiert. Private Notizen und Endzeiten werden nicht exportiert.
+- Importierte Maßnahmen gelten „bis zur Aufhebung“ und tragen den öffentlichen Kommentar und die Verschleierung der Zeile sowie die private Notiz, die du angegeben hast. Sie erscheinen im Audit-Log wie einzeln ergriffene Maßnahmen (der Akteur ist bei der API die Person und bei der CLI `cli`).
+- Ein Export schreibt eine Zeile pro Domain für die wirksamen Maßnahmen. Eine Domain mit einem `suspend` erhält `suspend`, eine mit einem `limit` erhält `silence`, und eine mit keinem von beiden erhält `noop`. Eine Domain mit nur `force_sensitive`, das die Domain-Sperren von Mastodon nicht haben, wird nicht exportiert. Private Notizen und Endzeiten werden nicht exportiert.
 
 <!-- source: subscribing-to-blocklists d49a93c3c44f -->
 ### Blocklisten abonnieren
@@ -379,21 +381,21 @@ Ein Domain-`suspend` und ein `suspend` eines entfernten Kontos trennen Follows z
 - Das Aufheben der Maßnahme bringt die getrennten Follows nicht zurück. Nutzer folgen erneut.
 - Dieselbe Maßnahme erneut zu verarbeiten (zum Beispiel, wenn ein Job erneut läuft) fügt keine weiteren Einträge getrennter Beziehungen oder Benachrichtigungen hinzu.
 
-<!-- source: federating-only-with-allowed-servers 042f518cd527 -->
+<!-- source: federating-only-with-allowed-servers 84209876856e -->
 ### Nur mit erlaubten Servern föderieren
 
 Die Instanzeinstellung `federation_scope` bestimmt, mit welchen Servern dieser Server föderiert: `open` (der Standard) föderiert mit jedem Server, den keine Domain-Maßnahme sperrt,
-und `allowlist` nur mit den Domains der Allowlist und ihren Subdomains, für eine Organisation oder einen persönlichen Server, der nur mit Servern spricht, die er kennt.
+und `allowlist` nur mit den Domains auf der Allowlist und ihren Subdomains, für eine Organisation oder einen persönlichen Server, der nur mit Servern spricht, die er kennt.
 
 Solange `federation_scope` `allowlist` ist:
 
-- Ein Server ohne Erlaubnis wird wie eine gesperrte Domain behandelt: Seine Zustellungen erhalten `403`, bevor ihre Signaturen geprüft werden, nichts wird an ihn zugestellt oder von ihm abgerufen, und Relays bringen nichts von ihm herein.
-- Eine Erlaubnis deckt ihre Subdomains ab: Wer `friend.example` erlaubt, erlaubt auch `social.friend.example`.
+- Ein Server ohne Erlaubnis wird wie eine gesperrte Domain behandelt: Seine Zustellungen ergeben `403`, bevor ihre Signaturen geprüft werden, nichts wird an ihn zugestellt oder von ihm abgerufen, und Relays bringen nichts von ihm herein.
+- Eine Erlaubnis deckt ihre Subdomains ab: Erlaubt du `friend.example`, ist auch `social.friend.example` erlaubt.
 - Die Domain-Maßnahmen gelten weiterhin für die erlaubten Server: Eine erlaubte Domain mit einem `suspend` bleibt gesperrt, und eine mit einem `limit` oder `reject_media` bleibt eingeschränkt.
-- ActivityPub-GETs brauchen eine Signatur eines erlaubten Servers, was auch immer `authorized_fetch` sagt, damit ein Server ohne Erlaubnis die öffentlichen Beiträge nicht lesen kann. Server und Crawler, die ihre GETs nicht signieren, erhalten `401`.
-- NodeInfo gibt `metadata.federationScope` an, damit andere Server es erkennen können.
+- ActivityPub-GETs brauchen eine Signatur von einem erlaubten Server, was auch immer `authorized_fetch` sagt, damit ein Server ohne Erlaubnis die öffentlichen Beiträge nicht lesen kann. Server und Crawler, die ihre GETs nicht signieren, erhalten `401`.
+- NodeInfo nennt `metadata.federationScope`, damit andere Server es erkennen können.
 
-Solange sie `open` ist, ändert die Allowlist nichts, und sie wird für das nächste Mal behalten, wenn du umschaltest.
+Solange sie `open` ist, ändert die Allowlist nichts und wird für das nächste Umschalten aufbewahrt.
 
 ```sh
 my admin domain allow add -comment "partner" friend.example
@@ -405,44 +407,44 @@ my admin federation scope -apply allowlist  # switches
 my admin federation scope open
 ```
 
-In der Admin-API: `GET /api/v1/admin/domain_allows`, `POST /api/v1/admin/domain_allows` (der Body hat `domain` und `comment`; eine Domain, die bereits erlaubt ist, antwortet mit `200` und behält ihre Erlaubnis) und `DELETE /api/v1/admin/domain_allows/{domain}`, mit der Berechtigung `manage_domains`.
-`GET /api/v1/admin/settings/federation_scope/impact` zählt, was der Wechsel beenden würde, mit der Berechtigung `manage_settings`, und `PATCH /api/v1/admin/settings` ändert `federation_scope` wie jede andere Einstellung.
-Die Allowlist enthält höchstens 5.000 Domains, und ein Kommentar, der nie veröffentlicht wird, höchstens 5.000 Zeichen. Die eigene Domain dieses Servers kann nicht erlaubt werden.
+In der Admin-API: `GET /api/v1/admin/domain_allows`, `POST /api/v1/admin/domain_allows` (der Body hat `domain` und `comment`; eine bereits erlaubte Domain antwortet mit `200` und behält ihre Erlaubnis) und `DELETE /api/v1/admin/domain_allows/{domain}`, mit der Berechtigung `manage_domains`.
+`GET /api/v1/admin/settings/federation_scope/impact` zählt, was das Umschalten beenden würde, mit der Berechtigung `manage_settings`, und `PATCH /api/v1/admin/settings` ändert `federation_scope` wie jede andere Einstellung.
+Die Allowlist enthält höchstens 5.000 Domains und ein Kommentar, der nie veröffentlicht wird, höchstens 5.000 Zeichen. Die eigene Domain dieses Servers kann nicht erlaubt werden.
 
-Das Umschalten auf `allowlist` und das Entfernen einer Erlaubnis, während sie an ist, beendet Follows endgültig:
+Das Umschalten auf `allowlist` und das Entfernen einer Erlaubnis, während sie aktiv ist, beendet Follows endgültig:
 
-- Lies vor dem Umschalten, wie viele genehmigte Follows zwischen lokalen Nutzern und den Servern ohne Erlaubnis der Wechsel beenden würde, wie vielen lokalen Nutzern einer verloren geht und welche Server die meisten davon haben (die Auswirkung oben oder `my admin federation scope allowlist` ohne `-apply`).
-- Der Wechsel trennt die Follows mit jedem Server, den die Allowlist nicht erlaubt, in beide Richtungen und ohne diese Server zu informieren, wie es ein Domain-`suspend` tut: Ein Job (`moderation.sever_allowlist`) trennt sie einen lokalen Nutzer nach dem anderen, und jeder Nutzer, der genehmigte Follows verloren hat, erhält eine Benachrichtigung (`relationships_severed`) mit den Zahlen.
+- Bevor du umschaltest, lies, wie viele genehmigte Follows zwischen lokalen Nutzern und den Servern ohne Erlaubnis das Umschalten beenden würde, wie viele lokale Nutzer eines verlieren und welche Server die meisten davon haben (die Auswirkung oben oder `my admin federation scope allowlist` ohne `-apply`).
+- Das Umschalten trennt die Follows mit jedem Server, den die Allowlist nicht erlaubt, in beide Richtungen und ohne diese Server zu benachrichtigen, wie es ein `suspend` einer Domain tut: Ein Job (`moderation.sever_allowlist`) trennt sie einen lokalen Nutzer nach dem anderen, und jeder Nutzer, der genehmigte Follows verloren hat, erhält eine Benachrichtigung (`relationships_severed`) mit den Zahlen.
 - Das Entfernen einer Erlaubnis, während `federation_scope` `allowlist` ist, trennt auf dieselbe Weise die Follows mit den Konten dieser Domain und ihrer Subdomains, die keine andere Erlaubnis abdeckt. Das Entfernen der Erlaubnis einer Subdomain, deren übergeordnete Domain erlaubt ist, trennt nichts.
 - Das Zurückschalten auf `open` oder das erneute Erlauben der Domain bringt die getrennten Follows nicht zurück. Nutzer folgen erneut.
-- Wird `allowlist` gesetzt, wenn es bereits `allowlist` ist, wird nichts weiter getrennt.
+- `allowlist` zu setzen, wenn es schon `allowlist` ist, trennt nichts weiter.
 
-Öffne im Web-Client Moderation → Domain-Maßnahmen und wähle „Zugelassene Domains“ (`/moderation/domain-actions/allowed`), um Erlaubnisse zu lesen,
-hinzuzufügen und zu entfernen; das Entfernen einer fragt zuerst nach, da es die Domain abschneidet, solange `federation_scope` `allowlist` ist. Die
-Einstellung selbst ist „Föderationsbereich“ auf der Föderationsseite der Servereinstellungen (`/admin/settings/federation`, mit der
-Berechtigung `manage_settings`): Wählst du „Nur zugelassene Domains“ und speicherst, zeigt es die Follows, die der Wechsel beenden würde, die lokalen
-Nutzer, die einen verlieren, und die Server mit den meisten davon, und speichert erst, wenn du bestätigst.
+Öffne im Web-Client Moderation → Domain-Maßnahmen und wähle „Erlaubte Domains“ (`/moderation/domain-actions/allowed`), um Erlaubnisse zu lesen,
+hinzuzufügen und zu entfernen; das Entfernen fragt zuerst nach, da es die Domain abtrennt, solange `federation_scope` `allowlist` ist. Die
+Einstellung selbst ist „Server“ auf der Seite Föderation der Servereinstellungen (`/admin/settings/federation`, mit der
+Berechtigung `manage_settings`): Wählst du „Nur erlaubte Server“ und speicherst, zeigt es die Follows, die das Umschalten beenden würde, die lokalen
+Konten, die eines verlieren, und die Server mit den meisten davon, und speichert erst, wenn du bestätigst.
 
-Das Hinzufügen und Entfernen einer Erlaubnis stehen im Audit-Log (`domain_allow_added` und `domain_allow_removed`), und der Wechsel ist das `setting_changed` von `federation_scope`.
+Das Hinzufügen und Entfernen einer Erlaubnis stehen im Audit-Log (`domain_allow_added` und `domain_allow_removed`), und das Umschalten ist das `setting_changed` von `federation_scope`.
 
-<!-- source: publishing-the-domains-you-act-on b647d2c8c84c -->
+<!-- source: publishing-the-domains-you-act-on e8402b3a2c93 -->
 ### Die Domains veröffentlichen, gegen die du Maßnahmen ergreifst
 
-Du kannst die geltenden `limit`- und `suspend`-Maßnahmen über `GET /api/v1/instance/domain_actions` veröffentlichen.
-Die Server-Einstellung `domain_actions_visibility` (`off` / `signed_in` / `everyone`, Standard `off`) bestimmt, wer die Liste sieht, und
-`domain_actions_rationale_visibility` (dieselben Werte, Standard `off`) bestimmt, wer die öffentlichen Kommentare sieht ([Server-Einstellungen](instance-settings.md)).
+Du kannst die wirksamen Maßnahmen `limit` und `suspend` über `GET /api/v1/instance/domain_actions` veröffentlichen.
+Die Instanzeinstellung `domain_actions_visibility` (`off` / `signed_in` / `everyone`, Standard `off`) bestimmt, wer die Liste sieht, und
+`domain_actions_rationale_visibility` (dieselben Werte, Standard `off`) bestimmt, wer die öffentlichen Kommentare sieht ([Instanzeinstellungen](instance-settings.md)).
 
 ```sh
 my instance set domain_actions_visibility signed_in
 my instance set domain_actions_rationale_visibility signed_in
 ```
 
-- Bei `off` liefert die API `404`, und bei `signed_in` liefert sie `401` auf eine Anfrage ohne Access-Token.
-- Es gibt einen Eintrag pro Maßnahme, neueste zuerst. Ein Eintrag hat die Domain, das SHA-256 der Domain (hex) und die Art sowie den öffentlichen Kommentar für Leute, die ihn sehen dürfen. Private Notizen werden nie geliefert.
+- Bei `off` liefert die API `404`, und bei `signed_in` liefert sie `401` auf eine Anfrage ohne Zugriffstoken.
+- Es gibt einen Eintrag pro Maßnahme, die neuesten zuerst. Ein Eintrag hat die Domain, den SHA-256 der Domain (hex) und die Art sowie den öffentlichen Kommentar für Leute, die ihn sehen dürfen. Private Notizen werden nie geliefert.
 - Bei einer Maßnahme mit `-obfuscate` (`obfuscate`) wird die mittlere Hälfte der Zeichen der Domain (außer Punkten) durch `*` ersetzt (`bad.example` wird zu `bad.*****le`).
-  Jeder kann das SHA-256 einer Domain, die er kennt, vergleichen, um zu prüfen, ob es eine verschleierte ist.
-- `reject_media`-, `reject_reports`- und `force_sensitive`-Maßnahmen sowie aufgehobene oder abgelaufene Maßnahmen werden nicht veröffentlicht.
-- Die Informationsseite des Servers im Web-Client (`https://<host>/about`) zeigt diese Liste unter denselben Einstellungen. Bei `off` wird der Abschnitt nicht gezeigt, und bei `users` sehen Leute, die nicht angemeldet sind, einen Hinweis, dass nur angemeldete Nutzer sie sehen können.
+  Jeder kann den SHA-256 einer Domain, die er kennt, vergleichen, um zu prüfen, ob es eine verschleierte ist.
+- Maßnahmen `reject_media`, `reject_reports` und `force_sensitive` sowie aufgehobene oder abgelaufene Maßnahmen werden nicht veröffentlicht.
+- Die Informationsseite der Instanz im Web-Client (`https://<host>/about`) zeigt diese Liste unter denselben Einstellungen. Bei `off` wird der Abschnitt nicht gezeigt, und bei `signed_in` sehen nicht angemeldete Leute einen Hinweis, dass nur angemeldete Nutzer sie sehen können.
 
 <!-- source: refetching-remote-posts 883740b40c9a -->
 ## Entfernte Beiträge erneut abrufen
@@ -465,43 +467,45 @@ Verwende im Web-Client „Beiträge erneut abrufen“ auf der Prüfseite des Kon
 - Er ruft nicht von einer Domain mit einem `suspend` ab und auch nicht von einer Domain, die `unavailable` ist, weil Zustellungen fehlgeschlagen sind. Ein fehlgeschlagener Abruf derselben URI wird 1 Stunde lang gemerkt, und ein erneuter Abruf in dieser Zeit ruft sie nicht ab.
 - Deine Anforderung wird im Audit-Log als `status_refetch_queued`, `account_statuses_refetch_queued` oder `domain_statuses_refetch_queued` festgehalten.
 
-<!-- source: checking-what-reached-a-remote-server b659a7421ff9 -->
+<!-- source: checking-what-reached-a-remote-server 6c1ec9c8cef1 -->
 ## Prüfen, was einen entfernten Server erreicht hat
 
-Fragt ein Nutzer, ob ein Beitrag, ein Follow oder eine Annahme einen anderen Server erreicht hat, liste die Zustellungen an diesen Server mit der Admin-API auf.
-Sie zeigt jede Zustellung einer Aktivität an eine Inbox des Servers, die neueste zuerst, mit jedem Versuch und dem, was der Server antwortete, einschließlich der erfolgreichen Zustellungen.
+Wenn ein Nutzer fragt, ob ein Beitrag, ein Follow oder ein Accept einen anderen Server erreicht hat, liste die Zustellungen an diesen Server mit der Admin-API auf.
+Sie zeigt jede Zustellung einer Aktivität an eine Inbox des Servers, die neueste zuerst, mit jedem Versuch und dem, was der Server geantwortet hat, die erfolgreichen Zustellungen eingeschlossen.
 Sie braucht die Berechtigung `manage_domains`.
-Im Web-Client zeigt der Abschnitt **Zustellungen** des Bildschirms eines entfernten Servers (`/moderation/instances/{domain}`) dieselbe Liste, mit ihren Filtern nach **Aktivitäts-ID** und **Lokalem Konto** und **Maskierte Felder anzeigen** bei jeder maskierten Zustellung; der Bildschirm sagt, welche davon im Audit-Log erfasst werden, bevor sie ausgeführt werden.
+Im Web-Client zeigt der Abschnitt **Zustellungen** des Bildschirms eines entfernten Servers (`/moderation/instances/{domain}`) dieselbe Liste, mit ihren Filtern nach **Aktivitäts-ID** und **Lokalem Konto** und **Anzeigen** für jedes verborgene Feld unter **Details** einer maskierten Zustellung; der Bildschirm sagt, welche davon im Audit-Log festgehalten werden, bevor sie laufen.
+Die Liste Entfernte Server zeigt nur die Server, die Zustellungen nicht erreicht haben. Um einen anderen Server zu öffnen, gib seine Domain, ein Handle auf ihm oder eine URL auf ihm unter **Server öffnen** über der Liste ein
+oder nutze **Server des Kontos öffnen** auf der Prüfungsseite eines entfernten Kontos oder bei einer Meldung über ein entferntes Konto oder die Domain in einem Audit-Log-Eintrag über eine Domain.
 
 ```sh
 curl -H "Authorization: Bearer $TOKEN" \
   "https://example.com/api/v1/admin/instances/misskey.io/deliveries"
 ```
 
-- Jede Zustellung hat den Aktivitätstyp (`Create`, `Follow`, `Accept` und so weiter), wann die Aktivität erfasst wurde und wann die Inbox hinzugefügt wurde, und ihre `attempts`, die älteste zuerst.
-  Jeder Versuch hat sein `outcome` (`succeeded`, `retryable_failure`, `permanent_failure`, `skipped`), das `signature_scheme` und den `status_code` der Antwort, den `error` eines Fehlers ohne Antwort oder warum nichts gesendet wurde und die Zeit.
-  Ein Versuch mit `succeeded` und `202` bedeutet, dass der andere Server die Aktivität angenommen hat; ob er sie dann zeigt, liegt bei diesem Server.
-- Versuche werden 30 Tage behalten, sodass der Verlauf 30 Tage zurückreicht.
+- Jede Zustellung hat den Aktivitätstyp (`Create`, `Follow`, `Accept` und so weiter), wann die Aktivität festgehalten und wann die Inbox hinzugefügt wurde, und ihre `attempts`, die ältesten zuerst.
+  Jeder Versuch hat sein `outcome` (`succeeded`, `retryable_failure`, `permanent_failure`, `skipped`), das `signature_scheme` und den `status_code` der Antwort, den `error` eines Fehlschlags ohne Antwort oder warum nichts gesendet wurde, und die Zeit.
+  Ein Versuch `succeeded` mit `202` bedeutet, dass der andere Server die Aktivität angenommen hat; ob er sie dann anzeigt, liegt bei diesem Server.
+- Versuche werden 30 Tage aufbewahrt, der Verlauf reicht also 30 Tage zurück.
 - Um die Liste einzugrenzen, füge `activity_uri=<the activity's ID>` hinzu oder `account_id=<a local account's ID>` für die Zustellungen eines Kontos.
-  Eine Abfrage mit `account_id` wird im Audit-Log als `account_deliveries_viewed` erfasst, mit dem Konto und dem Server; die anderen Abfragen werden nicht erfasst.
+  Eine Abfrage mit `account_id` wird im Audit-Log als `account_deliveries_viewed` festgehalten, mit dem Konto und dem Server; die anderen Abfragen werden nicht festgehalten.
 - Der Body der Aktivität wird nie gezeigt.
 
-Manche Zustellungen sind maskiert: Ihr Absender, ihre Aktivitäts-URI und ihre Inbox sind weggelassen, und `mask` sagt, warum.
+Manche Zustellungen sind maskiert: Ihr Absender, ihre Aktivitäts-URI und ihre Inbox werden weggelassen, und `mask` sagt, warum.
 
 | `mask` | Die Aktivität betrifft |
 | --- | --- |
 | `private`, `direct`, `local` | einen Beitrag mit dieser Sichtbarkeit |
-| `approves_followers` | einen Follow, sein Undo, eine Annahme oder eine Ablehnung eines lokalen Kontos, das seine Follower genehmigt |
-| `unknown` | einen Beitrag oder ein Konto, das weg ist, sodass nicht mehr bekannt ist, was es war |
+| `approves_followers` | ein Follow, sein Undo, ein Accept oder ein Reject eines lokalen Kontos, das seine Follower genehmigt |
+| `unknown` | einen Beitrag oder ein Konto, die weg sind, sodass nicht mehr bekannt ist, was es war |
 
-Eine geteilte Inbox nennt keinen Empfänger und wird immer gezeigt; eine maskierte persönliche Inbox im Fehler eines Versuchs lautet `[masked]`.
-Der Typ, die Zeiten und jeder Versuch einer maskierten Zustellung werden gezeigt, sodass du weiterhin siehst, ob sie den Server erreicht hat.
-Um die maskierten Felder einer Zustellung zu sehen, nutze `POST /api/v1/admin/instances/{domain}/deliveries/{id}/reveal`; jeder Aufruf wird als `delivery_revealed` im Audit-Log erfasst, bevor etwas gezeigt wird.
+Eine gemeinsame Inbox nennt keinen Empfänger und wird immer gezeigt; eine maskierte persönliche Inbox im Fehler eines Versuchs lautet `[masked]`.
+Der Typ, die Zeiten und jeder Versuch einer maskierten Zustellung werden gezeigt, du kannst also trotzdem sehen, ob sie den Server erreicht hat.
+Um die maskierten Felder einer Zustellung zu sehen, nutze `POST /api/v1/admin/instances/{domain}/deliveries/{id}/reveal`; jeder Aufruf wird im Audit-Log als `delivery_revealed` festgehalten, bevor etwas gezeigt wird.
 
-<!-- source: reports 8b0684a0561c -->
+<!-- source: reports 5791186f6b24 -->
 ## Meldungen
 
-Meldungen (`Flag`), die von anderen Servern empfangen werden, gelangen als offen (`open`) in die Meldungsliste.
+Von anderen Servern empfangene Meldungen (`Flag`) kommen als offen (`open`) in die Meldungsliste.
 
 ```sh
 my admin report list -state open
@@ -514,23 +518,29 @@ my admin report reopen <report id>
 my admin report forward -comment "Spam account, see the linked posts" <report id>
 ```
 
-In der Admin-API: `GET /api/v1/admin/reports` (filtere mit `state`, `category` und `assignee`: `me`, `none` oder die ID eines lokalen Kontos; `order=oldest` listet stattdessen die am längsten wartende Meldung zuerst auf statt der neuesten), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`,
+Im Web-Client listet **Moderation → Meldungen** (`/moderation/reports`) die offenen Meldungen, die neueste zuerst, mit wer sie eingereicht hat, ihrer Kategorie, wann und wer sie bearbeitet.
+Ihre Filter (Zustand, Kategorie und wer sie bearbeitet: du oder niemand) und die Reihenfolge (die Spalte **Eingereicht**: die neueste oder die am längsten wartende zuerst) bleiben in der Adresse der Seite, und **Zurück** und **Weiter** blättern durch die Seiten.
+Die Seite einer Meldung (`/moderation/reports/{id}`) zeigt ihren Zustand, ihre Kategorie, die angeführten Regeln (eine inzwischen zurückgezogene Regel sagt das), wer sie eingereicht hat und wer sie bearbeitet, ob sie an den Server des Kontos ging und wie viele andere Meldungen und Maßnahmen das Konto hat;
+dann das Konto; den Kommentar; die gemeldeten Beiträge, einen gelöschten mit dem Zeitpunkt seiner Löschung; was im Sprachchat-Raum geschah oder die Änderungen der Veranstaltung; und die Notizen.
+Ab `wide` steht die Seite der Liste, von der du kamst, daneben. **Mir zuweisen** und **Zuweisung aufheben**, **Abschließen** (**Maßnahme ergriffen** oder **Keine Maßnahme nötig**) und **Wieder öffnen** stehen unter ihrem Titel, **Notiz hinzufügen** unter den Notizen.
+
+In der Admin-API: `GET /api/v1/admin/reports` (filtere mit `state`, `category` und `assignee`: `me`, `none` oder die ID eines lokalen Kontos; `order=oldest` listet statt der neuesten die am längsten wartende Meldung zuerst auf), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`,
 `POST .../{id}/resolve` (Body `{"outcome": "actioned" | "dismissed"}`), `POST .../{id}/notes` (Body `{"body": "..."}`), `POST .../{id}/reopen` und `POST .../{id}/forward` (Body `{"comment": "..."}`, optional).
 
 - Eine Zuweisung (`assign`) kann nur an einen lokalen Nutzer gehen, dessen Rolle `manage_reports` hat. In der Admin-API weist du dir selbst zu.
-- Das Ergebnis einer Erledigung (`resolve`) ist `actioned` (es wurde eine Maßnahme gegen das Ziel ergriffen) oder `dismissed` (es war keine Maßnahme nötig). Das erneute Erledigen einer erledigten Meldung ändert das Ergebnis nicht.
-- Löst du eine Maßnahme aus einer Meldung aus (`report_id` / `-report` der Maßnahme), wird die Meldung in derselben Operation als `actioned` erledigt.
-- Eine Notiz (`note`) ist eine interne Notiz, die nur Moderatoren sehen, bis zu 2.000 Zeichen. Sie wird weder dem Ziel noch der meldenden Person gezeigt. Sie lässt sich nicht bearbeiten oder löschen.
-- Das Wiedereröffnen (`reopen`) setzt eine erledigte Meldung zurück auf `open` (die Zuweisung bleibt). Eine offene Meldung kann nicht wiedereröffnet werden (`409` in der Admin-API).
-- Das Weiterleiten (`forward`, die Schaltfläche **An ihren Server weiterleiten** der Meldungsdetails) sendet eine Meldung über ein Konto auf einem anderen Server als `Flag` deines Instanz-Akteurs mit dem Konto und den gemeldeten Beiträgen, die noch existieren, an diesen Server. Der einzige Text, den sie trägt, ist das, was du für die Moderatoren jenes Servers schreibst, wenn du sie weiterleitest (`-comment`, `comment` in der Admin-API oder **Text für ihre Moderatoren** auf der Seite der Meldung; bis zu 1.000 Zeichen, standardmäßig keiner). Der Kommentar der meldenden Person und die Notiz einer [externen Prüfung](#reports-that-an-external-review-filed) verlassen deinen Server auf diesem Weg nie, und nichts von der meldenden Person wird gesendet. Eine Meldung, die ihre meldende Person beim Einreichen zum Weiterleiten gewählt hat, ging sofort hinaus, mit dem Kommentar der meldenden Person. Das Weiterleiten funktioniert bei einer Meldung, die auf diesem Server von einer Person oder von einer [externen Prüfung](#reports-that-an-external-review-filed) eingereicht wurde, offen oder erledigt, die noch nicht weitergeleitet wurde; eine Meldung, die von einem anderen Server empfangen wurde oder einen Sprachchat-Raum oder eine Veranstaltung betrifft, kann nicht weitergeleitet werden (`409` `report-not-forwardable` in der Admin-API, und die Meldungsdetails zeigen keine Schaltfläche). Eine Meldung wird einmal gesendet: Sie erneut weiterzuleiten, mit beliebigem Text, oder eine weiterzuleiten, die ihre meldende Person beim Einreichen weitergeleitet hatte, ändert nichts. `forwarded` in der Admin-API sagt, ob sie gesendet wurde, `forwardable`, ob du sie jetzt senden kannst.
-- Die Meldungsdetails (`show`, `GET .../{id}`) geben die Notizen zurück, die älteste zuerst, mit der Zahl der anderen Meldungen über das Ziel und der Zahl der Maßnahmen gegen das Ziel (aufgehobene und abgelaufene eingeschlossen). Die Liste gibt keine Notizen zurück.
-- Zuweisungen, Erledigungen, Wiedereröffnungen, Notizen und Weiterleitungen werden als Ereignisse festgehalten (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `report_forwards`), und `report_states` hält den aktuellen Zustand.
-- Moderatoren können die gemeldeten Beiträge und den Kommentar der meldenden Person auf der Seite der Meldung übersetzen oder mit `POST .../{id}/statuses/{status_id}/translation` und `POST .../{id}/comment/translation` (Body `{"target_language": "en"}`).
-  Der Text geht nur an einen Übersetzungsanbieter, solange die [Instanzeinstellung](instance-settings.md) `translation_reports_to_server` an ist, und dann nur an einen Anbieter, dem die Sichtbarkeit des Beitrags erlaubt ist: Der Zugriff eines Moderators erweitert nichts, daher geht ein Direktbeitrag nur an einen Anbieter, dem `direct` erlaubt ist, und der Kommentar zählt als `private`.
-  Die Übersetzung des Kommentars wird nicht behalten, ebenso wenig die eines gelöschten Beitrags, und die Zeichen zählen nur gegen das Monatslimit des Servers. Die im Browser eingebaute Übersetzung funktioniert, wenn `translation_browser` an ist, bei Meldungen, was auch immer `translation_reports_to_server` sagt.
-- Eine meldende Person sieht vom Ziel nur das, was sie sonst vom Konto sehen würde: Solange es gesperrt ist oder sie blockiert, bleibt ihre Meldung ohne das Konto aufgelistet. Moderatoren sehen immer das ganze Ziel.
-- Eine lokale meldende Person erhält bei der ersten Erledigung eine Benachrichtigung (`report_resolved`). Erneutes Wiedereröffnen und Erledigen fügt keine Benachrichtigung hinzu.
-  Eine meldende Person kann ihre eigenen Meldungen mit `GET /api/v1/reports` auflisten und sieht nur, ob jede offen oder erledigt ist. Das Ergebnis, die ergriffene Maßnahme, der dem Ziel genannte Grund und der Zuständige werden nicht gezeigt.
+- Das Ergebnis eines Abschlusses (`resolve`) ist `actioned` (gegen das Ziel wurde eine Maßnahme ergriffen) oder `dismissed` (es war keine Maßnahme nötig). Eine abgeschlossene Meldung erneut abzuschließen ändert das Ergebnis nicht.
+- Wenn du aus einer Meldung eine Maßnahme ergreifst (`report_id` / `-report` der Maßnahme), wird die Meldung im selben Vorgang als `actioned` abgeschlossen.
+- Eine Notiz (`note`) ist eine interne Notiz, die nur Moderatoren sehen, bis zu 2.000 Zeichen. Sie wird weder dem Ziel noch dem Melder gezeigt. Sie lässt sich weder bearbeiten noch löschen.
+- Das Wiedereröffnen (`reopen`) setzt eine abgeschlossene Meldung zurück auf `open` (die Zuweisung bleibt). Eine offene Meldung lässt sich nicht wieder öffnen (`409` in der Admin-API).
+- Das Weiterleiten (`forward`, **An deren Server senden …** am Ende der Seite der Meldung, was zuerst nachfragt) sendet eine Meldung über ein Konto auf einem anderen Server als `Flag` deines Instanz-Actors an diesen Server, mit dem Konto und den gemeldeten Beiträgen, die noch existieren. Der einzige Text, den es trägt, ist das, was du beim Weiterleiten für die Moderatoren dieses Servers schreibst (`-comment`, `comment` in der Admin-API oder **Text für deren Moderatoren** auf der Seite der Meldung; bis zu 1.000 Zeichen, standardmäßig keiner). Der Kommentar des Melders und die Notiz einer [externen Prüfung](#reports-that-an-external-review-filed) verlassen deinen Server auf diesem Weg nie, und nichts vom Melder wird gesendet. Eine Meldung, die ihr Melder beim Einreichen zum Weiterleiten gewählt hat, ging sofort hinaus, mit dem Kommentar des Melders. Das Weiterleiten funktioniert bei einer Meldung, die auf diesem Server eingereicht wurde, von einer Person oder einer [externen Prüfung](#reports-that-an-external-review-filed), offen oder abgeschlossen, die noch nicht weitergeleitet wurde; eine von einem anderen Server empfangene Meldung oder eine über einen Sprachchat-Raum oder eine Veranstaltung lässt sich nicht weiterleiten (`409` `report-not-forwardable` in der Admin-API, und die Details der Meldung zeigen keine Schaltfläche). Eine Meldung wird einmal gesendet: Sie erneut weiterzuleiten, mit beliebigem Text, oder eine weiterzuleiten, die ihr Melder beim Einreichen weitergeleitet hatte, ändert nichts. `forwarded` in der Admin-API sagt, ob sie gesendet wurde, `forwardable`, ob du sie jetzt senden kannst.
+- Die Details der Meldung (`show`, `GET .../{id}`) liefern die Notizen, die ältesten zuerst, mit der Zahl der anderen Meldungen über das Ziel und der Zahl der Maßnahmen gegen das Ziel (aufgehobene und abgelaufene eingeschlossen). Die Liste liefert keine Notizen.
+- Zuweisungen, Abschlüsse, Wiedereröffnungen, Notizen und Weiterleitungen werden als Ereignisse festgehalten (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `report_forwards`), und `report_states` hält den aktuellen Zustand.
+- Moderatoren können die gemeldeten Beiträge und den Kommentar des Melders auf der Seite der Meldung übersetzen oder mit `POST .../{id}/statuses/{status_id}/translation` und `POST .../{id}/comment/translation` (Body `{"target_language": "en"}`).
+  Der Text geht nur an einen Übersetzungsanbieter, solange die [Instanzeinstellung](instance-settings.md) `translation_reports_to_server` an ist, und dann nur an einen Anbieter, dem die Sichtbarkeit des Beitrags erlaubt ist: Der Zugriff eines Moderators erweitert nichts, ein direkter Beitrag geht also nur an einen Anbieter, dem `direct` erlaubt ist, und der Kommentar zählt als `private`.
+  Die Übersetzung des Kommentars wird nicht aufbewahrt, die eines gelöschten Beitrags ebenso wenig, und die Zeichen zählen nur auf das monatliche Limit des Servers. Die eingebaute Übersetzung des Browsers, wenn `translation_browser` an ist, wirkt auf die gemeldeten Beiträge, was auch immer `translation_reports_to_server` sagt; der Kommentar, der keine Sprache nennt, wird nur vom Server übersetzt.
+- Ein Melder sieht vom Ziel nur das, was er sonst vom Konto sehen würde: Solange es gesperrt ist oder ihn blockt, bleibt seine Meldung ohne das Konto gelistet. Moderatoren sehen immer das ganze Ziel.
+- Ein lokaler Melder erhält bei der ersten Bearbeitung eine Benachrichtigung (`report_resolved`). Wiedereröffnen und erneutes Abschließen fügt keine Benachrichtigung hinzu.
+  Ein Melder kann seine eigenen Meldungen mit `GET /api/v1/reports` auflisten und sieht nur, ob jede offen oder abgeschlossen ist. Das Ergebnis, die ergriffene Maßnahme, der dem Ziel genannte Grund und der Zuständige werden nicht gezeigt.
 
 <!-- source: reports-that-an-external-review-filed 8563536b46e4 -->
 ### Meldungen, die eine externe Prüfung eingereicht hat
@@ -542,104 +552,105 @@ Einreichen nicht weitergeleitet, und ihr Abschluss benachrichtigt niemanden. Wen
 selbst weiterleiten (`forward`): Die Notiz des Plugins bleibt auf deinem Server, und nur der Text, den du schreibst, geht hinaus. Das Abbrechen der Entscheidung
 lässt die Meldung, wie sie ist.
 
-<!-- source: voice-chat-rooms 7fd142752b07 -->
+<!-- source: voice-chat-rooms d2dd76116ac4 -->
 ### Sprachchat-Räume
 
 - Ein lokaler Nutzer kann einen offenen Sprachchat-Raum melden, den er sehen kann (`POST /api/v1/reports` mit `voice_room_id` und `account_id` auf den Host des Raums gesetzt).
-  Die Meldung zielt auf den Host in diesem Moment und verweist auf die Einstellungen des Raums (Name und Beschreibung) so, wie sie damals waren. Sie verweist auf keine Beiträge und wird nie an einen anderen Server weitergeleitet.
-- Die Meldungsdetails (`GET /api/v1/admin/reports/{id}`) zeigen den Raum (`voice_room`): jede Änderung seiner Einstellungen, wer teilgenommen hat und wann er ging, wer daraus entfernt wurde und wie er endete.
-  Die Aufzeichnungen darüber, wer teilgenommen hat, werden 90 Tage nach dem Ende des Raums aufbewahrt (`voice_participants_retention_days`) und so lange, wie eine Meldung auf den Raum verweist ([Aufbewahrung von Aufzeichnungen](#record-retention-and-holds)).
-  Es gibt keine Aufnahmen und keinen Text-Chat, diese Aufzeichnungen sind also der einzige Beleg.
-- Ein Inhaber von `manage_reports` kann einen offenen Raum für alle Teilnehmer mit `POST /api/v1/admin/voice_rooms/{id}/end` beenden (Body `{"reason": "..."}`, optional, bis zu 500 Zeichen).
-  Der Grund ist nur für die Moderatoren; die Teilnehmer sehen nur, dass der Raum beendet wurde. Es funktioniert auch bei ausgeschaltetem Sprachchat, und das Audit-Log hält `voice_room_ended` fest.
+  Die Meldung richtet sich gegen den Host zu diesem Zeitpunkt und verweist auf die Einstellungen des Raums (Name und Beschreibung), wie sie damals waren. Sie verweist auf keine Beiträge und wird nie an einen anderen Server weitergeleitet.
+- Die Details der Meldung (`GET /api/v1/admin/reports/{id}`) zeigen den Raum (`voice_room`): jede Änderung seiner Einstellungen, wer teilgenommen und wann verlassen hat, wer daraus entfernt wurde und wie er endete.
+  Die Aufzeichnungen darüber, wer teilgenommen hat, werden 90 Tage nach dem Ende des Raums (`voice_participants_retention_days`) aufbewahrt und so lange, wie eine Meldung auf den Raum verweist ([Aufbewahrung von Aufzeichnungen](#record-retention-and-holds)).
+  Es gibt keine Aufnahmen und keinen Textchat, diese Aufzeichnungen sind also der einzige Beleg.
+- Wer `manage_reports` hat, kann einen offenen Raum für alle Teilnehmer mit `POST /api/v1/admin/voice_rooms/{id}/end` beenden (Body `{"reason": "..."}`, optional, bis zu 500 Zeichen).
+  Der Grund ist nur für die Moderatoren; die Teilnehmer sehen nur, dass der Raum beendet wurde. Es funktioniert auch, während der Sprachchat aus ist, und das Audit-Log hält `voice_room_ended` fest.
+  Im Web-Client hat die Seite der Meldung eines offenen Raums „Raum beenden“, was zuerst nachfragt, mit dem Grund.
 
-<!-- source: events d37a09a66811 -->
+<!-- source: events cbc3e19bfdb6 -->
 ### Veranstaltungen
 
-- Ein lokaler Nutzer kann eine Veranstaltung melden, die er sehen kann, auch eine abgesagte (`POST /api/v1/reports` mit `event_id` und `account_id`, gesetzt auf den Organisator der Veranstaltung).
-  Die Meldung zielt auf den Organisator und verweist auf die Einstellungen der Veranstaltung (Titel, Beschreibung und Orte), wie die meldende Person sie sah. Eine Veranstaltung, die noch über ein Datum abstimmt, kann wie jede andere gemeldet und abgesagt werden. Sie verweist auf keine Beiträge und wird nie an einen anderen Server weitergeleitet.
-- Die Meldungsdetails (`GET /api/v1/admin/reports/{id}`) zeigen die Veranstaltung (`event`): ihr Datum, ob und wie sie abgesagt wurde und jede Änderung ihrer Einstellungen, die älteste zuerst, mit allen ihren Orten, auch denen, die nur die genehmigten Teilnehmer sahen.
-  `reported_revision_id` ist die Version, die die meldende Person sah, sodass ein nach der Meldung geänderter Titel oder eine geänderte Adresse weiterhin vor dir liegt.
-- Ein Inhaber von `manage_reports` kann eine Veranstaltung mit `POST /api/v1/admin/events/{id}/cancel` absagen (Body `{"reason": "..."}`, optional, bis zu 500 Zeichen).
-  Der Grund wird mit der Absage allen gezeigt, die die Veranstaltung sehen. Die Nutzer, die „Ich komme“ oder „Vielleicht“ geantwortet haben, und die eingeladenen Nutzer werden benachrichtigt, wie bei der eigenen Absage des Organisators, und das Audit-Log erfasst `event_cancelled`.
-  Eine bereits abgesagte Veranstaltung antwortet mit `409` `event-closed`.
-- Das Sperren oder Löschen des Organisators sagt dessen Veranstaltungen ab, die noch nicht begonnen haben, auch die, die noch über ein Datum abstimmen (`gathering.cancel_organized`), und benachrichtigt ihre Teilnehmer. Diese Absagen nennen niemanden als den, der sie abgesagt hat, und das Aufheben der Sperre stellt sie nicht wieder her. Bereits begonnene Veranstaltungen werden nicht abgesagt.
+- Ein lokaler Nutzer kann eine Veranstaltung melden, die er sehen kann, auch eine abgesagte (`POST /api/v1/reports` mit `event_id` und `account_id` auf den Organisator der Veranstaltung gesetzt).
+  Die Meldung richtet sich gegen den Organisator und verweist auf die Einstellungen der Veranstaltung (Titel, Beschreibung und Orte), wie der Melder sie sah. Eine Veranstaltung, für die noch ein Termin abgestimmt wird, kann wie jede andere gemeldet und abgesagt werden. Sie verweist auf keine Beiträge und wird nie an einen anderen Server weitergeleitet.
+- Die Details der Meldung (`GET /api/v1/admin/reports/{id}`) zeigen die Veranstaltung (`event`): ihren Termin, ob und wie sie abgesagt wurde und jede Änderung ihrer Einstellungen, die älteste zuerst, mit allen ihren Orten, auch denen, die nur die genehmigten Teilnehmer sahen.
+  `reported_revision_id` ist die Version, die der Melder sah, ein nach der Meldung geänderter Titel oder eine geänderte Adresse liegt dir also weiterhin vor.
+- Wer `manage_reports` hat, kann eine Veranstaltung mit `POST /api/v1/admin/events/{id}/cancel` absagen (Body `{"reason": "..."}`, optional, bis zu 500 Zeichen).
+  Der Grund wird mit der Absage allen gezeigt, die die Veranstaltung sehen. Die Nutzer, die mit „Ich komme“ oder „Vielleicht“ geantwortet haben, und die eingeladenen Nutzer werden benachrichtigt, wie bei der eigenen Absage des Organisators, und das Audit-Log hält `event_cancelled` fest.
+  Eine bereits abgesagte Veranstaltung antwortet mit `409` `event-closed`. Im Web-Client hat die Seite der Meldung einer Veranstaltung „Veranstaltung absagen“, was zuerst nachfragt, mit dem Grund.
+- Das Sperren oder Löschen des Organisators sagt die Veranstaltungen des Organisators ab, die noch nicht begonnen haben, auch die, für die noch ein Termin abgestimmt wird (`gathering.cancel_organized`), und benachrichtigt ihre Teilnehmer. Diese Absagen nennen niemanden als den, der sie abgesagt hat, und das Aufheben der Sperre stellt sie nicht wieder her. Bereits begonnene Veranstaltungen werden nicht abgesagt.
 
-<!-- source: notifications-for-moderators-and-the-pending-counts a9a32ea8cccb -->
+<!-- source: notifications-for-moderators-and-the-pending-counts 0d1c327abe83 -->
 ## Benachrichtigungen für Moderatoren und die ausstehenden Zähler
 
-Neue Meldungen, Registrierungen, die auf Genehmigung warten, und Einsprüche erreichen Leute mit der Berechtigung als In-App-Benachrichtigungen.
+Neue Meldungen, Registrierungen, die auf Genehmigung warten, und Einsprüche erreichen Leute mit der Berechtigung als Benachrichtigungen in der App.
 
-| Benachrichtigung | Wann sie ankommt | Wer sie erhält |
+| Benachrichtigung | Wann sie eintrifft | Wer sie erhält |
 | --- | --- | --- |
-| `admin_report` | Wenn das Ziel der Meldung keine andere offene Meldung hat (eine zweite oder spätere Meldung über dasselbe Konto benachrichtigt nicht) | Leute, deren Rolle `manage_reports` hat, außer der meldenden Person und dem Ziel der Meldung |
-| `admin_sign_up` | Wenn eine Registrierung als auf Genehmigung wartend beginnt (Genehmigungsmodus oder `open` bei einem Setup, das keine E-Mails senden kann) | Leute, deren Rolle `manage_accounts` hat |
+| `admin_report` | Wenn das Ziel der Meldung keine andere offene Meldung hat (eine zweite oder spätere Meldung über dasselbe Konto benachrichtigt nicht) | Leute, deren Rolle `manage_reports` hat, außer dem Melder und dem Ziel der Meldung |
+| `admin_sign_up` | Wenn eine Registrierung als auf Genehmigung wartend beginnt (Genehmigungsmodus oder `open` bei einem Setup, das keine Mail senden kann) | Leute, deren Rolle `manage_accounts` hat |
 | `admin_appeal` | Wenn gegen eine Maßnahme Einspruch eingelegt wird | Leute, deren Rolle `manage_accounts` hat, außer der Person, die Einspruch eingelegt hat |
-| `admin_custom_emoji_request` | Wenn das Erstellen eines eigenen Emojis oder das Ersetzen seines Bildes angefragt wird | Leute, deren Rolle `manage_custom_emojis` hat, außer der anfragenden Person |
-| `admin_error_group` | Wenn der Server oder der Web-Client einen Fehler einer neuen Art meldet oder eine Fehlergruppe, die erledigt war, auf einer anderen Version des Servers erneut auftritt | Leute, deren Rolle `manage_errors` hat |
-| `admin_domain_list_failing` | Wenn der Abruf einer abonnierten Blockliste zum dritten Mal in Folge fehlschlägt | Leute, deren Rolle `manage_domains` hat |
+| `admin_custom_emoji_request` | Wenn das Erstellen eines eigenen Emojis oder das Ersetzen seines Bildes beantragt wird | Leute, deren Rolle `manage_custom_emojis` hat, außer dem Antragsteller |
+| `admin_error_group` | Wenn der Server oder der Web-Client einen Fehler einer neuen Art meldet oder eine Fehlergruppe, die gelöst war, auf einer anderen Version des Servers erneut auftritt | Leute, deren Rolle `manage_errors` hat |
+| `admin_domain_list_failing` | Wenn der Abruf einer abonnierten Blockliste zum dritten Mal hintereinander fehlschlägt | Leute, deren Rolle `manage_domains` hat |
 
-- `admin_error_group` kommt höchstens 10 Mal pro Stunde für den ganzen Server an. Der Rest der Stunde wird zu einer Benachrichtigung zusammengefasst,
-  die sagt, wie viele Fehlergruppen es zusätzlich gab. Eine stummgeschaltete Gruppe benachrichtigt nie. Ein Fehler, den der Web-Client für einen
-  Besucher meldet, der nicht angemeldet ist, benachrichtigt erst, wenn auch der Browser eines angemeldeten Nutzers ihn meldet, und sein erneutes Auftreten benachrichtigt niemanden.
+- `admin_error_group` trifft höchstens 10 Mal pro Stunde für den ganzen Server ein. Der Rest der Stunde wird in einer Benachrichtigung zusammengefasst,
+  die sagt, wie viele weitere Fehlergruppen es gab. Eine stummgeschaltete Gruppe benachrichtigt nie. Ein Fehler, den der Web-Client für einen
+  nicht angemeldeten Besucher meldet, benachrichtigt erst, wenn auch der Browser eines angemeldeten Nutzers ihn meldet, und sein erneutes Auftreten benachrichtigt niemanden.
   Die Fehlergruppen werden über `GET /api/v1/admin/error_groups` und
-  `POST /api/v1/admin/error_groups/{id}/resolve` (`/mute`, `/unmute`) gelesen und erledigt, stummgeschaltet oder wieder laut gestellt, die `manage_errors` brauchen.
-- Wer eine Benachrichtigung erhält, wird durch seine Berechtigung bei der Erstellung der Benachrichtigung bestimmt. Eine Person, die die Berechtigung später verliert, sieht diese Art nicht mehr in ihrer Liste und ihrem Zähler für Ungelesenes. Kommt die Berechtigung zurück, sieht sie sie wieder.
+  `POST /api/v1/admin/error_groups/{id}/resolve` (`/mute`, `/unmute`) gelesen und gelöst, stummgeschaltet oder wieder aktiviert, was `manage_errors` braucht.
+- Wer eine Benachrichtigung erhält, wird durch seine Berechtigung beim Erstellen der Benachrichtigung bestimmt. Wer die Berechtigung später verliert, sieht diese Art nicht mehr in seiner Liste und seinem Ungelesen-Zähler. Kommt die Berechtigung zurück, sieht er sie wieder.
 - Jede Art von Benachrichtigung oben kommt auch per E-Mail, standardmäßig an. Jede Person schaltet jede Art in der App und per
   E-Mail auf der Seite **Benachrichtigungen** der Einstellungen (`/settings/notifications` im Web-Client) an oder aus, die nur die
-  Arten auflistet, die ihre Rolle erhält. Eine Art, die in der App ausgeschaltet ist, wird für sie nicht erzeugt, daher wird sie weder gepusht noch per E-Mail gesendet; die Zähler von
+  Arten listet, die ihre Rolle erhält. Eine in der App ausgeschaltete Art wird für sie nicht erstellt, sie wird also weder gepusht noch gemailt; die Zähler von
   `GET /api/v1/admin/counts` ändern sich nicht, weil sie die Meldungen, Registrierungen und Einsprüche selbst zählen.
-  Bei den offenen Meldungen geben die Zähler auch zurück, wann die älteste offene Meldung eingereicht wurde (`oldest_open_report_filed_at`).
-  Der Server reiht den E-Mail-Job in der Transaktion ein, die die Benachrichtigung erfasst, und der Job sendet die E-Mail direkt nach dem
-  Commit, ohne zu warten, bis die Benachrichtigung gelesen wird. Hat die Person bis zum Senden die Berechtigung verloren oder die E-Mail dieser Art
-  ausgeschaltet oder ist ihre primäre Adresse nicht bestätigt oder sind ihre E-Mails gestoppt, wird nichts gesendet.
-  Die E-Mail enthält nur die Art der Benachrichtigung und einen Link zum Benachrichtigungsbildschirm und nichts vom Inhalt der Meldung oder des Kontos. Ihr Abmeldelink schaltet nur die E-Mail dieser Art aus.
-  Bei `mail = none` wird keine E-Mail gesendet, und `sends_email` in `GET /api/v1/instance` ist `false`.
+  Mit den offenen Meldungen liefern die Zähler auch, wann die älteste offene Meldung eingereicht wurde (`oldest_open_report_filed_at`).
+  Der Server reiht den E-Mail-Job in der Transaktion ein, die die Benachrichtigung festhält, und der Job sendet die Mail direkt nach dem
+  Commit, ohne zu warten, bis die Benachrichtigung gelesen wurde. Hat die Person bis zum Senden die Berechtigung verloren oder die E-Mail dieser Art
+  ausgeschaltet, oder ist ihre Hauptadresse nicht bestätigt oder sind ihre E-Mails gestoppt, wird nichts gesendet.
+  Die Mail enthält nur die Art der Benachrichtigung und einen Link zum Benachrichtigungsbildschirm und nichts vom Inhalt der Meldung oder des Kontos. Ihr Abmeldelink schaltet nur die E-Mail dieser Art aus.
+  Mit `mail = none` wird keine Mail gesendet, und `sends_email` in `GET /api/v1/instance` ist `false`.
 
-`GET /api/v1/admin/counts` gibt die Zahl der offenen Meldungen (`open_reports`, braucht `manage_reports`), die Zahl der Registrierungen, die auf Genehmigung warten (`pending_registrations`), und die Zahl der Einsprüche, die auf Prüfung warten (`pending_appeals`), zurück (beide brauchen `manage_accounts`).
-Elemente, für die dir die Berechtigung fehlt, werden nicht zurückgegeben.
+`GET /api/v1/admin/counts` liefert die Zahl der offenen Meldungen (`open_reports`, braucht `manage_reports`), die Zahl der Registrierungen, die auf Genehmigung warten (`pending_registrations`), und die Zahl der Einsprüche, die auf Prüfung warten (`pending_appeals`) (beide brauchen `manage_accounts`), die Zahl der Anfragen für eigene Emojis, die auf eine Entscheidung warten (`pending_custom_emoji_requests`, braucht `manage_custom_emojis`), und die Zahl der offenen Fehlergruppen, neu, wieder aufgetreten oder wieder aktiviert (`open_error_groups`, braucht `manage_errors`).
+Dinge, für die dir die Berechtigung fehlt, werden nicht geliefert.
 
-<!-- source: audit-log e8f33b4d2da4 -->
+<!-- source: audit-log 8334cc0280f5 -->
 ## Audit-Log
 
-Operationen von Moderatoren und Administratoren werden in derselben Transaktion wie die Operation je eine Zeile im Audit-Log (`audit_log_entries`) erfasst.
-Fehlgeschlagene Operationen und Operationen, die nichts geändert haben, werden nicht erfasst: eine bereits aufgehobene Maßnahme aufheben, eine erledigte Meldung erledigen, demselben Zuständigen zuweisen, eine bereits eingestellte Regel einstellen, an dieselbe Position verschieben, eine Rolle vergeben, die der Nutzer schon hat, und eine Rolle entziehen, die der Nutzer nicht hat.
+Operationen von Moderatoren und Administratoren werden je eine Zeile im Audit-Log (`audit_log_entries`) in derselben Transaktion wie die Operation festgehalten.
+Fehlgeschlagene Operationen und Operationen, die nichts geändert haben, werden nicht festgehalten: das Aufheben einer bereits aufgehobenen Maßnahme, das Abschließen einer abgeschlossenen Meldung, das Zuweisen an denselben Zuständigen, das Zurückziehen einer bereits zurückgezogenen Regel, das Verschieben an dieselbe Position, das Vergeben einer Rolle, die der Nutzer schon hat, und das Entziehen einer Rolle, die der Nutzer nicht hat.
 
 | Zielart | Operationen |
 | --- | --- |
-| `account` | `account_action_issued` und `account_action_lifted` (eine Maßnahme gegen ein Konto ergreifen und aufheben), `account_deletion_canceled` (die Löschung wurde abgebrochen, weil ein Einspruch gegen ein `ban` aufgehoben wurde), `revealed_private_data` (IP-Adressen und E-Mail-Adressen eingesehen), `two_factor_disabled` (Zwei-Faktor-Authentifizierung entfernt), `password_reset_link_issued` (ein Link zum Zurücksetzen des Passworts ausgestellt), `email_suppression_lifted` (E-Mail-Sperre aufgehoben), `account_moved` (ein eingeschränktes lokales Konto zu einem lokalen Konto umgezogen; Einschränkungen werden nicht auf das Ziel übertragen, du entscheidest also, ob du sie dort anwendest), `account_statuses_refetch_queued` (erneuter Abruf der Beiträge eines entfernten Kontos), `account_deliveries_viewed` (die Zustellungen eines lokalen Kontos an einen Server aufgelistet; der Zielname ist der Handle und der Server) |
-| `status` | `status_refetch_queued` (erneuter Abruf eines entfernten Beitrags; der Zielname ist die Beitrags-URI) |
-| `domain` | `domain_action_issued` und `domain_action_lifted` (eine Domain-Maßnahme ergreifen und aufheben), `domain_statuses_refetch_queued` (erneuter Abruf von Beiträgen der Konten der Domain), `instance_marked_available` (die Fehler eines Servers löschen), `delivery_revealed` (der maskierte Absender, die Aktivitäts-URI und die Inbox einer Zustellung an den Server gezeigt) |
-| `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`, `report_forwarded` (eine Meldung zuweisen, die Zuweisung aufheben, erledigen und wiedereröffnen, eine Notiz hinzufügen und sie weiterleiten) |
-| `user` | `registration_approved`, `registration_rejected` (Prüfung der Registrierung) |
+| `account` | `account_action_issued` und `account_action_lifted` (Ergreifen und Aufheben einer Maßnahme gegen ein Konto), `account_deletion_canceled` (das Löschen abgebrochen, weil ein Einspruch gegen einen `ban` aufgehoben wurde), `revealed_private_data` (IP-Adressen und E-Mail-Adressen offengelegt), `two_factor_disabled` (Zwei-Faktor-Authentifizierung entfernt), `password_reset_link_issued` (ein Link zum Zurücksetzen des Passworts ausgestellt), `email_suppression_lifted` (Mailsperre aufgehoben), `account_moved` (ein eingeschränktes lokales Konto zu einem lokalen Konto umgezogen; Einschränkungen werden nicht zum Ziel mitgenommen, du entscheidest also, ob du sie dort anwendest), `account_statuses_refetch_queued` (erneuter Abruf der Beiträge eines entfernten Kontos), `account_deliveries_viewed` (die Zustellungen eines lokalen Kontos an einen Server aufgelistet; der Zielname ist das Handle und der Server) |
+| `status` | `status_refetch_queued` (erneuter Abruf eines entfernten Beitrags; der Zielname ist die URI des Beitrags) |
+| `domain` | `domain_action_issued` und `domain_action_lifted` (Ergreifen und Aufheben einer Domain-Maßnahme), `domain_statuses_refetch_queued` (erneuter Abruf von Beiträgen der Konten der Domain), `instance_marked_available` (die Fehlschläge eines Servers gelöscht), `delivery_revealed` (der maskierte Absender, die Aktivitäts-URI und die Inbox einer Zustellung an den Server gezeigt) |
+| `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`, `report_forwarded` (Zuweisen, Aufheben der Zuweisung, Abschließen und Wiedereröffnen einer Meldung, Hinzufügen einer Notiz und Weiterleiten) |
+| `user` | `registration_approved`, `registration_rejected` (Registrierungsprüfung) |
 | `setting` | `setting_changed` (Instanzeinstellungen), `text_changed` (Instanztexte) |
 | `rule` | `rule_added`, `rule_revised`, `rule_moved`, `rule_retired` (Instanzregeln) |
-| `role` | `role_granted`, `role_revoked` (eine Rolle für einen Nutzer vergeben und entziehen), `role_created`, `role_updated`, `role_deleted` (eine Rolle erstellen, ändern und löschen) |
-| `appeal` | `appeal_upheld`, `appeal_overturned` (Prüfung eines Einspruchs; das Aufheben erfasst auch `account_action_lifted` für die Maßnahme und `account_deletion_canceled` bei einem `ban`) |
-| `signup_block` | `signup_block_added`, `signup_block_lifted` (eine Registrierungssperre hinzufügen und aufheben) |
-| `hook_decision` | `hook_decision_applied` (der Server handelte nach dem Urteil einer externen Prüfung und ließ Zustand zurück; der Akteur ist das System), `hook_decision_overridden` (ein Moderator hob die Entscheidung auf, auch durch das Aufheben ihres Einspruchs), `hook_appeal_upheld` (ein Moderator bestätigte den Einspruch gegen einen abgelehnten Beitrag, und die Entscheidung bleibt) |
-| `custom_emoji` | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` (ein eigenes Emoji registrieren, sein Bild ersetzen, ein Emoji von einem anderen Server kopieren, es ändern, aktivieren, deaktivieren und löschen) |
-| `webhook` | `webhook_created`, `webhook_updated`, `webhook_deleted`, `webhook_enabled`, `webhook_disabled`, `webhook_secret_rotated` (einen Webhook erstellen, ändern, löschen, aktivieren und deaktivieren und sein Secret neu erzeugen) |
-| `announcement` | `announcement_created`, `announcement_updated`, `announcement_published`, `announcement_withdrawn` (eine Ankündigung erstellen, ändern, veröffentlichen und zurückziehen) |
-| `invite` | `invite_created`, `invite_revoked` (eine Einladung erstellen und widerrufen; der Zielname sind die ersten 4 Zeichen des Codes) |
+| `role` | `role_granted`, `role_revoked` (Vergeben und Entziehen einer Rolle für einen Nutzer), `role_created`, `role_updated`, `role_deleted` (Erstellen, Ändern und Löschen einer Rolle) |
+| `appeal` | `appeal_upheld`, `appeal_overturned` (Prüfung eines Einspruchs; das Aufheben hält auch `account_action_lifted` für die Maßnahme fest und `account_deletion_canceled` für einen `ban`) |
+| `signup_block` | `signup_block_added`, `signup_block_lifted` (Hinzufügen und Aufheben einer Registrierungssperre) |
+| `hook_decision` | `hook_decision_applied` (der Server handelte nach dem Urteil einer externen Prüfung und verließ den Zustand; der Akteur ist das System), `hook_decision_overridden` (ein Moderator hob die Entscheidung auf, auch durch das Aufheben ihres Einspruchs), `hook_appeal_upheld` (ein Moderator bestätigte den Einspruch gegen einen abgelehnten Beitrag, und die Entscheidung bleibt) |
+| `custom_emoji` | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` (Registrieren eines eigenen Emojis, Ersetzen seines Bildes, Kopieren eines Emojis von einem anderen Server, Ändern, Aktivieren, Deaktivieren und Löschen) |
+| `webhook` | `webhook_created`, `webhook_updated`, `webhook_deleted`, `webhook_enabled`, `webhook_disabled`, `webhook_secret_rotated` (Erstellen, Ändern, Löschen, Aktivieren und Deaktivieren eines Webhooks und Neuerzeugen seines Geheimnisses) |
+| `announcement` | `announcement_created`, `announcement_updated`, `announcement_published`, `announcement_withdrawn`, `announcement_deleted` (Erstellen, Ändern, Veröffentlichen und Zurückziehen einer Ankündigung und Löschen eines Entwurfs) |
+| `invite` | `invite_created`, `invite_revoked` (Erstellen und Widerrufen einer Einladung; der Zielname sind die ersten 4 Zeichen des Codes) |
 | `billing_source` | `billing_import_queued` (ein Billing-Import wurde von Hand gestartet; der Zielname ist der Name des Anbieters) |
-| `cost_item` | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_deleted` (eine Kostenposition registrieren, ihren Namen und Ähnliches ändern, ihren Betrag überarbeiten, ihr Enddatum ändern und sie löschen; der Zielname ist der Name der Position) |
-| `supporter_program` | `supporter_program_enabled`, `supporter_program_disabled` (die Abrechnung aktivieren und deaktivieren; der Zielname ist der Name des Zahlungsanbieters) und `supporter_tips_enabled`, `supporter_tips_revised`, `supporter_tips_disabled` (die Trinkgelder aktivieren, ihre Beträge ändern und sie deaktivieren; der Zielname sind die Währung und die Beträge in der kleinsten Einheit) |
-| `supporter_plan` | `supporter_plan_created`, `supporter_plan_revised`, `supporter_plan_retired` (einen Unterstützungsplan erstellen, ändern und einstellen; der Zielname ist der Name des Plans) |
-| `supporter_subscription` | `supporter_subscription_ended` (ein Administrator beendete ein Abonnement sofort; der Zielname sind der Name des Plans und der Handle des Nutzers) |
-| `custom_emoji_request` | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` (eine Anfrage für ein eigenes Emoji einreichen, zurückziehen, genehmigen und ablehnen; der Zielname ist der `:shortcode:`) |
+| `cost_item` | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_deleted` (Registrieren einer Kostenposition, Ändern ihres Namens und dergleichen, Überarbeiten ihres Betrags, Ändern ihres Enddatums und Löschen; der Zielname ist der Name der Position) |
+| `supporter_program` | `supporter_program_enabled`, `supporter_program_disabled` (Aktivieren und Deaktivieren der Abrechnung; der Zielname ist der Name des Zahlungsanbieters) und `supporter_tips_enabled`, `supporter_tips_revised`, `supporter_tips_disabled` (Aktivieren der Trinkgelder, Ändern ihrer Beträge und Deaktivieren; der Zielname ist die Währung und die Beträge in kleinsten Einheiten) |
+| `supporter_plan` | `supporter_plan_created`, `supporter_plan_revised`, `supporter_plan_retired` (Erstellen, Ändern und Zurückziehen eines Unterstützer-Plans; der Zielname ist der Name des Plans) |
+| `supporter_subscription` | `supporter_subscription_ended` (ein Administrator beendete ein Abonnement sofort; der Zielname ist der Name des Plans und das Handle des Nutzers) |
+| `custom_emoji_request` | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` (Einreichen, Zurückziehen, Genehmigen und Ablehnen einer Anfrage für ein eigenes Emoji; der Zielname ist der `:shortcode:`) |
 | `payment_provider` | `payment_reconcile_queued` (der Abgleich mit dem Zahlungsanbieter wurde von Hand gestartet; der Zielname ist der Name des Anbieters) |
-| `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (einen OAuth-Client deaktivieren und widerrufen; das Deaktivieren widerruft alle seine Tokens; der Zielname sind der Name des Clients und `client_id`) |
-| `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (einen Host für Client ID Metadata Documents verbieten und das Verbot widerrufen; das Verbieten widerruft die Tokens der Clients dieses Hosts; der Zielname ist der Host) |
-| `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (die Schließung des Dienstes ankündigen oder das Datum ändern, die Ankündigung zurückziehen, schließen und die Zustellung der Schließung abschließen; der Zielname ist `service_closure`) |
-| `voice_room` | `voice_room_ended` (ein Moderator beendete einen offenen Sprachchat-Raum; der Zielname ist die Raum-ID, da der Name verschwindet, wenn das Konto, das ihn geschrieben hat, gelöscht wird; die Meldungsdetails zeigen den Namen) |
-| `event` | `event_cancelled` (ein Moderator sagte eine Veranstaltung ab; der Zielname ist die Veranstaltungs-ID, da der Titel verschwindet, wenn das Konto, das ihn geschrieben hat, gelöscht wird; die Meldungsdetails zeigen den Titel) |
-| `domain_allow` | `domain_allow_added`, `domain_allow_removed` (eine Domain zur Allowlist der Föderation hinzufügen und sie entfernen; siehe [nur mit erlaubten Servern föderieren](#federating-only-with-allowed-servers); der Zielname ist die Domain) |
-| `link_card_domain` | `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed` (eine Regel des Link-Karten-Crawlers für eine Domain setzen und sie entfernen; siehe [Domains für Link-Karten](instance-settings.md#link-card-domains)) |
-| `login_provider` | `login_provider_created`, `login_provider_updated`, `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`, `login_provider_secret_rotated` (einen externen Login-Anbieter hinzufügen, ändern, löschen, aktivieren und deaktivieren und sein Client-Secret ersetzen; der Zielname ist der Anzeigename des Anbieters) |
-| `domain_list_subscription` | `domain_list_subscription_created`, `domain_list_subscription_updated`, `domain_list_subscription_deleted` (eine Blockliste abonnieren, ihre Einstellungen ändern und sie entfernen), `domain_list_draft_accepted` und `domain_list_draft_rejected` (einen Entwurf annehmen, was auch die Domain-Maßnahme erfasst, und einen ablehnen), `domain_list_fetch_queued` (ein von Hand verlangter Abruf); der Zielname ist der Titel des Abonnements; siehe [Blocklisten abonnieren](#subscribing-to-blocklists) |
+| `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (Deaktivieren und Aktivieren eines OAuth-Clients; das Deaktivieren widerruft alle seine Tokens; der Zielname ist der Name des Clients und `client_id`) |
+| `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (Verweigern und Aufheben der Verweigerung eines Hosts von Client-ID-Metadatendokumenten; das Verweigern widerruft die Tokens der Clients dieses Hosts; der Zielname ist der Host) |
+| `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (Ankündigen der Schließung des Dienstes oder Ändern des Datums, Zurückziehen der Ankündigung, Schließen und Abschluss der Zustellung der Schließung; der Zielname ist `service_closure`) |
+| `voice_room` | `voice_room_ended` (ein Moderator beendete einen offenen Sprachchat-Raum; der Zielname ist die Raum-ID, da der Name verschwindet, wenn das Konto, das ihn schrieb, gelöscht wird; die Details der Meldung zeigen den Namen) |
+| `event` | `event_cancelled` (ein Moderator sagte eine Veranstaltung ab; der Zielname ist die Veranstaltungs-ID, da der Titel verschwindet, wenn das Konto, das ihn schrieb, gelöscht wird; die Details der Meldung zeigen den Titel) |
+| `domain_allow` | `domain_allow_added`, `domain_allow_removed` (Hinzufügen einer Domain zur Allowlist der Föderation und Entfernen; siehe [nur mit erlaubten Servern föderieren](#federating-only-with-allowed-servers); der Zielname ist die Domain) |
+| `link_card_domain` | `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed` (Setzen einer Regel des Link-Karten-Crawlers für eine Domain und Entfernen; siehe [Link-Karten-Domains](instance-settings.md#link-card-domains)) |
+| `login_provider` | `login_provider_created`, `login_provider_updated`, `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`, `login_provider_secret_rotated` (Hinzufügen, Ändern, Löschen, Aktivieren und Deaktivieren eines externen Login-Anbieters und Ersetzen seines Client-Secrets; der Zielname ist der Anzeigename des Anbieters) |
+| `domain_list_subscription` | `domain_list_subscription_created`, `domain_list_subscription_updated`, `domain_list_subscription_deleted` (Abonnieren einer Blockliste, Ändern ihrer Einstellungen und Entfernen), `domain_list_draft_accepted` und `domain_list_draft_rejected` (Annehmen eines Entwurfs, was auch die Domain-Maßnahme festhält, und Ablehnen eines), `domain_list_fetch_queued` (ein von Hand angeforderter Abruf); der Zielname ist der Titel des Abonnements; siehe [Blocklisten abonnieren](#subscribing-to-blocklists) |
 
-Die Liste zeigt, ob das Ziel noch existiert. Konten, Meldungen, Einsprüche und Registrierungssperren, die nach ihrem Aufbewahrungszeitraum verschwunden sind, entfernte Erlaubnisse sowie gelöschte Rollen, eigene Emojis und Webhooks zeigen nur den Namen zum Zeitpunkt der Erfassung und keinen Link zu einem Bildschirm.
+Die Liste zeigt, ob das Ziel noch existiert. Konten, Meldungen, Einsprüche und Registrierungssperren, die nach ihrer Aufbewahrungsfrist verschwunden sind, entfernte Erlaubnisse und gelöschte Rollen, eigene Emojis und Webhooks zeigen nur den Namen zum Zeitpunkt der Aufzeichnung und keinen Link zu einem Bildschirm.
 
 ```sh
 my admin audit list
@@ -648,14 +659,16 @@ my admin audit list -target-kind domain -target-id spam.example
 ```
 
 In der Admin-API: `GET /api/v1/admin/audit_log` (filtere mit `actor_account_id`, `action`, `target_kind` und `target_id`). Sie braucht die Berechtigung `view_audit`.
+Öffne im Web-Client Moderation → Audit-Log (`/moderation/audit-log`): Jeder Eintrag liest sich als Satz, wer was mit was getan hat, die neuesten zuerst, die Person und das Ziel mit den Bildschirmen verlinkt.
+Filtere nach dem, der es getan hat (du oder die Person eines Eintrags unter „Weitere Operationen dieser Person“), nach der Art des Ziels und dann der Operation und nach einem Ziel (unter „Weitere Operationen darauf“ eines Eintrags).
 
 - Eine Zeile ist der Akteur (der Nutzer bei `user` oder `cli` bei der CLI), die Operation, die Zielart und -ID, der Anzeigename des Ziels, die ID des ursprünglichen Datensatzes und die Zeit.
-  Die Ziel-ID ist die ID des Kontos, der Meldung, des Einspruchs, des Nutzers, der Regel, der Rolle oder der Registrierungssperre; bei einer Domain-Maßnahme ist es die Domain; bei Einstellungen und Texten ist es der Schlüssel.
-- Der Anzeigename des Ziels (`@alice`, `@bob@example.com`, eine Domain, ein Einstellungsschlüssel, der Text einer Regel; bei einem Text sein Schlüssel, bei einer Rolle ihr Schlüssel und der Handle des Nutzers, bei einer Registrierungssperre ihre Art und ihr Wert) ist eine zum Zeitpunkt der Erfassung gemachte Kopie, sodass er auch lesbar bleibt, nachdem das Ziel weg ist.
-  Jede API-Zeile gibt außerdem zurück, ob das Ziel noch existiert (`target_exists`), was bei Konten, Meldungen, Einsprüchen und Registrierungssperren, die weg sind, `false` ist. Das Web-Audit-Log zeigt bei einem Ziel, das weg ist, nur den Anzeigenamen, ohne Link.
-- Der Text von Gründen und Notizen wird nicht kopiert. Schlage ihn über die ID des ursprünglichen Datensatzes nach (die Maßnahme, Zuweisung, Erledigung, Wiedereröffnung, Notiz, Prüfung oder die Version einer Einstellung oder Regel).
-- Die Liste ist neueste zuerst mit Keyset-Paging (`-before <entry id>` in der CLI).
-- Es gibt keine API und keine CLI, um das Audit-Log zu aktualisieren oder zu löschen. Alte Zeilen werden nach dem [Aufbewahrungszeitraum](#record-retention-and-holds) entfernt.
+  Die Ziel-ID ist die ID des Kontos, der Meldung, des Einspruchs, des Nutzers, der Regel, der Rolle oder der Registrierungssperre; bei einer Domain-Maßnahme ist es die Domain; bei Einstellungen und Texten der Schlüssel.
+- Der Anzeigename des Ziels (`@alice`, `@bob@example.com`, eine Domain, ein Einstellungsschlüssel, der Text einer Regel; bei einem Text sein Schlüssel, bei einer Rolle ihr Schlüssel und das Handle des Nutzers, bei einer Registrierungssperre ihre Art und ihr Wert) ist eine zum Zeitpunkt der Aufzeichnung gemachte Kopie, sodass er auch lesbar bleibt, wenn das Ziel weg ist.
+  Jede Zeile der API liefert auch, ob das Ziel noch existiert (`target_exists`), was für Konten, Meldungen, Einsprüche und Registrierungssperren, die weg sind, `false` ist. Das Audit-Log im Web zeigt für ein Ziel, das weg ist, nur den Anzeigenamen, ohne Link.
+- Der Text von Gründen und Notizen wird nicht kopiert. Schlage ihn über die ID des ursprünglichen Datensatzes nach (die Maßnahme, Zuweisung, Abschluss, Wiedereröffnung, Notiz, Prüfung oder die Version einer Einstellung oder Regel).
+- Die Liste zeigt die neuesten zuerst mit Keyset-Paging (`-before <entry id>` in der CLI).
+- Es gibt keine API und keine CLI, um das Audit-Log zu ändern oder zu löschen. Alte Zeilen werden nach der [Aufbewahrungsfrist](#record-retention-and-holds) entfernt.
 
 <!-- source: record-retention-and-holds 9861d8570a91 -->
 ## Aufbewahrung von Aufzeichnungen und Sperren

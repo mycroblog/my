@@ -28,7 +28,7 @@ Standard-Locale, wer die Timelines sehen kann, der Servername, die Beschreibung,
 <!-- source: keys ae25d36239c2 -->
 ## Schlüssel
 
-<!-- source: settings-one-key-one-value a3d12269943c -->
+<!-- source: settings-one-key-one-value d7de299cd54d -->
 ### Einstellungen (ein Schlüssel, ein Wert)
 
 | Schlüssel | Typ | Standard | Beschreibung |
@@ -86,13 +86,14 @@ Standard-Locale, wer die Timelines sehen kann, der Servername, die Beschreibung,
 | `link_cards` | `true` / `false` | `true` | Ob Karten für Links in Beiträgen angezeigt werden. Bei `true` ruft der Server die verlinkte Seite ab, um eine Karte zu bauen. Bei `false` hört er auf abzurufen und blendet auch bereits gebaute Karten aus. Um es nur bei manchen Domains zu stoppen, siehe [Domains für Link-Karten](#link-card-domains) |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | Ob die Abrufe von Link-Karten `robots.txt` überspringen. Bei `false` befolgt der Server die `robots.txt` der verlinkten Websites, sodass eine Website, die `my-linkcard` oder `*` verbietet, keine Karte erhält ([Link-Vorschauen](link-previews.md#cards-of-links-in-posts)). `/about/crawler` sagt verlinkten Websites, welcher er ist. Bei `true` ruft der Server `robots.txt` weder ab noch verwendet er sie, und eine verlinkte Website kann diese Abrufe damit nicht mehr ablehnen; der Server nennt sich weiterhin `my-linkcard`. Schalte es nur ein, wenn zu viele Karten fehlen. Karten, die gebaut wurden, während es eingeschaltet war, werden beim nächsten erneuten Abruf geprüft, nachdem es ausgeschaltet ist. Die Direktiven einer Seite und die Domains für Link-Karten gelten in beiden Fällen |
 | `ux_measurement` | `true` / `false` | `false` | Ob der Webclient Stichproben darüber sendet, wie schnell er antwortet, und dieser Server sie aufbewahrt ([UX-Messungen](error-reporting.md#ux-measurements)). Die Stichproben enthalten weder Konto noch Adresse noch URL. Bei `false` nimmt der Server keine auf, und `ux_measurement` in `GET /api/v1/instance` sagt dem Client, dass er keine senden soll |
+| `ux_measurement_share` | Ganzzahl 1-100 (Prozent) | `10` | Der Anteil der Browsersitzungen, deren Webclient Stichproben sendet, solange `ux_measurement` `true` ist. Jede Sitzung wird einmal ausgelost, wenn der Webclient startet; ein kleiner Server kann mit `100` jede Sitzung messen |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | Ob Clients mit Client ID Metadata Document akzeptiert werden. Bei `true` ruft der Server bei einer Autorisierungsanfrage, deren `client_id` eine `https`-URL ist, die Metadaten unter dieser URL ab und behandelt sie als den Client (ohne vorherige Registrierung). Der Abruf folgt keinen Weiterleitungen, liest höchstens 5 KB und verwendet die Antwort höchstens 24 Stunden lang gemäß ihren Cache-Direktiven wieder. Bei `false` hört er auf abzurufen und lehnt Autorisierungsanfragen, Token-Austausche und Erneuerungen dieser Clients ab |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | Wie viel der laufenden Kosten (erfasst unter `/admin/finance/costs` und festgelegt unter `/admin/finance/publication`) veröffentlicht wird. `private`: Nichts wird veröffentlicht (`GET /api/v1/instance/cost_totals` ist 404). `totals`: nur die Summe pro Zeitraum und Währung. `breakdown`: die Summen und eine Aufschlüsselung nach Anbieter und Kategorie, allen auf den Informationsseiten (`/about` und `/about/costs`) und in der API gezeigt. `breakdown` verrät, bei welchem Anbieter (zum Beispiel welcher Cloud) du betreibst. Auf jeder Stufe bleiben Postennamen, Notizen und einzelne Zahlungen privat. Zeiträume bis einschließlich dem, der den heutigen Tag (UTC) enthält, werden veröffentlicht |
 | `finance_viewer_item_names` | `true` / `false` | `false` | Ob Benutzer mit der Berechtigung `view_finance` auf dem Finanzbildschirm (`/finance`, `GET /api/v1/finance/cost_totals`) die Namen von Kostenposten und die Dienstnamen importierter Kosten sehen. Summen und die Aufschlüsselung nach Anbieter und Kategorie werden immer gezeigt, was auch immer diese Einstellung ist |
 | `finance_viewer_item_memos` | `true` / `false` | `false` | Ob Benutzer mit `view_finance` auf dem Finanzbildschirm die Notizen von Kostenposten sehen. Ist entweder die Einstellung für den Namen oder die für die Notiz `true`, zeigt jeder Zeitraum Postenzeilen (Anbieter, Kategorie und der Betrag dieses Zeitraums, dazu Name und Notiz, wo aktiviert). Leute mit `manage_finance` sehen unabhängig davon alles |
 | `finance_viewer_income` | `totals` / `plans` | `totals` | Ob Benutzer mit `view_finance` nur die Einnahmensummen (`totals`) oder auch die Zahl der Abonnenten pro Plan (`plans`) sehen. Der Betrag pro Plan und wer gezahlt hat, werden nie gezeigt. Ist `income_visibility` `plans`, werden die veröffentlichten Zahlen gezeigt, was auch immer dieser Wert ist. Einnahmen werden auf dem Finanzbildschirm des Webclients (`/finance`) und in `GET /api/v1/finance/income_totals` gelesen |
 | `income_visibility` | `private` / `totals` / `plans` | `private` | Wie viel der Supporter-Einnahmen (der Betrag nach den Gebühren des Zahlungsanbieters) veröffentlicht wird. Es wird getrennt von `finance_visibility` gewählt. `private`: Nichts wird veröffentlicht (`GET /api/v1/instance/income_totals` ist 404). `totals`: nur die Einnahmensumme pro Zeitraum und Währung. `plans`: auch die aktuelle Zahl der Abonnenten pro Plan, allen gezeigt. Bei einem Plan mit wenigen Abonnenten kann die Zahl Leute raten lassen, wer abonniert. Der Saldo (Einnahmen minus Kosten) wird nur gezeigt, wenn weder dieser Wert noch `finance_visibility` `private` ist; sonst würde der Saldo die Seite verraten, die du verborgen hast. Auf jeder Stufe bleiben einzelne Zahlungen, Abonnenten, der Betrag pro Plan sowie Brutto-Beträge und Gebühren privat. Zeiträume bis einschließlich dem, der den heutigen Tag (UTC) enthält, werden veröffentlicht |
-| `funding_meter_visibility` | `off` / `percent` / `amounts` | `off` | Was die Finanzierungsanzeige veröffentlicht: wie weit die Einnahmen dieses Monats (nach den Gebühren des Zahlungsanbieters) das monatliche Ziel decken, gezeigt auf der Info-Seite, auf der Liste der Unterstützer (`/about/supporters`) und in `GET /api/v1/instance` (`funding_meter`). Sie wird zusammen mit dem Ziel unter `/admin/finance/publication` gesetzt, das die Auswahlmöglichkeiten deaktiviert, die die aktuellen Sichtbarkeiten ausschließen, und sagt, warum. `off`: nichts. `percent`: nur der Prozentsatz, auf 1 % abgerundet, ob der Monat gedeckt ist und ob geschätzte Kosten im Ziel enthalten sind. Sie lässt sich nur wählen, solange `finance_visibility` und `income_visibility` beide `private` sind. `amounts`: auch die Einnahmen und das Ziel. Sie lässt sich nur wählen, solange keine von beiden `private` ist. Solange nur eine von beiden veröffentlicht ist, kann die Anzeige nicht gezeigt werden: Die veröffentlichten Beträge und der Prozentsatz würden die verborgene Seite verraten. Wird eine der Sichtbarkeiten so geändert, dass der gewählte Wert nicht mehr erlaubt ist, schaltet die Anzeige auf `off`, und diese Änderung wird wie jede andere erfasst und im Audit-Log festgehalten. Der Monat ist der Kalendermonat, der den heutigen Tag (UTC) enthält, und nur Einnahmen in der Währung des Ziels zählen |
+| `funding_meter_visibility` | `off` / `percent` / `amounts` | `off` | Was die Finanzierungsanzeige veröffentlicht: wie weit die Einnahmen dieses Monats (nach den Gebühren des Zahlungsanbieters) das monatliche Ziel decken, gezeigt auf der Info-Seite, auf der Liste der Unterstützer (`/about/supporters`) und in `GET /api/v1/instance` (`funding_meter`). Sie wird zusammen mit dem Ziel unter `/admin/finance/publication` gesetzt, das nur die Auswahlmöglichkeiten anbietet, die die aktuellen Sichtbarkeiten zulassen, und sagt, warum. `off`: nichts. `percent`: nur der Prozentsatz, auf 1 % abgerundet, ob der Monat gedeckt ist und ob geschätzte Kosten im Ziel enthalten sind. Sie lässt sich nur wählen, solange `finance_visibility` und `income_visibility` beide `private` sind. `amounts`: auch die Einnahmen und das Ziel. Sie lässt sich nur wählen, solange keine von beiden `private` ist. Solange nur eine von beiden veröffentlicht ist, kann die Anzeige nicht gezeigt werden: Die veröffentlichten Beträge und der Prozentsatz würden die verborgene Seite verraten. Wird eine der Sichtbarkeiten so geändert, dass der gewählte Wert nicht mehr erlaubt ist, schaltet die Anzeige auf `off`, und diese Änderung wird wie jede andere erfasst und im Audit-Log festgehalten. Der Monat ist der Kalendermonat, der den heutigen Tag (UTC) enthält, und nur Einnahmen in der Währung des Ziels zählen |
 | `funding_meter_target_amount` | Dezimalzahl über null oder leer | leer | Das monatliche Ziel der Finanzierungsanzeige, in der Haupteinheit von `funding_meter_target_currency` (`1650` Yen, `12.50` Dollar), mit nicht mehr Dezimalstellen, als die Währung hat. Leer: Das Ziel sind die Kosten dieses Monats, was voraussetzt, dass sie in einer Währung vorliegen; in einem Monat, dessen Kosten in mehreren Währungen anfallen oder null sind, wird die Anzeige nicht gezeigt |
 | `funding_meter_target_currency` | ISO-4217-Code oder leer | leer | Die Währung von `funding_meter_target_amount`, etwa `JPY`. Leer: die Währung der Kosten dieses Monats |
 | `funding_meter_rail` | `true` / `false` | `false` | Ob der Webclient die Finanzierungsanzeige neben der Info-Seite auch in der rechten Spalte des breiten Layouts zeigt, solange `funding_meter_visibility` nicht `off` ist |
@@ -102,6 +103,8 @@ Standard-Locale, wer die Timelines sehen kann, der Servername, die Beschreibung,
 | `voice_public_summary` | `true` / `false` | `false` | Ob die Seite eines Sprachchat-Raums, dessen Sichtbarkeit `local` ist, ihren Namen, ihre Beschreibung, ihren Host und ob er noch offen ist Besuchern zeigt, die nicht auf diesem Server angemeldet sind, sowie entfernten Benutzern, und in ihrer Link-Vorschau. Die Teilnehmer werden nie gezeigt. Bei `false` sehen diese Besucher nur, dass der Raum für die lokalen Benutzer dieses Servers ist |
 | `event_creators` | `everyone` / `permitted` | `everyone` | Wer Veranstaltungen erstellen kann ([Veranstaltungen](#events)). `everyone`: jeder angemeldete lokale Benutzer, der nicht gesperrt oder eingeschränkt ist. `permitted`: nur die Inhaber der Berechtigung `create_events`, die standardmäßig nur die eingebaute Rolle `admin` hat und die eine Rolle eines Unterstützungsplans haben kann |
 | `public_counts` | `true` / `false` | `true` | Ob die Startseite (`/`, abgemeldet) und `GET /api/v1/instance/overview` zeigen, wie viele Mitglieder der Server hat, wie viele öffentliche Beiträge seine Benutzer an jedem der letzten 7 Tage gemacht haben und wann der Server gestartet ist. Es zählen nur öffentliche Beiträge von Benutzern dieses Servers; die Zahlen werden alle paar Minuten aktualisiert. Bei `false` lässt die API sie weg |
+| `landing_fediverse_explanation` | `true` / `false` | `true` | Ob die Startseite (`/`, abgemeldet) erklärt, wie das Fediverse funktioniert: dass ein Konto hier Leuten auf anderen Servern folgt und von ihnen gefolgt wird |
+| `landing_features` | `true` / `false` | `true` | Ob die Startseite zeigt, was die Software auf diesem Server kann, mit einer Vorschau auf jede Funktion, die eingeschaltet ist (Sprachchat-Räume, Veranstaltungen, Artikel, Suche, Übersetzung, Unterstützer) |
 | `featured_accounts` | Benutzernamen von bis zu 20 lokalen Konten, durch Leerzeichen oder Kommas getrennt (leer = keine) | leer | Die Konten, die die Vorschläge von Leuten zum Folgen zuerst zeigen, in dieser Reihenfolge, vor den Leuten dieses Servers, die kürzlich gepostet haben. Ein Konto, dessen Inhaber „Mein Konto vorschlagen und über einen Teil des Namens auffindbar machen“ ausgeschaltet hat, wird nicht vorgeschlagen. Siehe [Vorschläge](#suggestions-of-accounts) |
 | `login_providers_only` | `true` / `false` | `false` | Ob Registrierung und Anmeldung auf die Login-Anbieter beschränkt sind, solange mindestens einer aktiviert ist: Passwörter und Passkeys melden dann nicht mehr an, und Benutzer ohne verknüpften Anbieter können sich nicht erneut anmelden, sobald ihre Sitzungen enden. Ohne aktivierten Anbieter gilt es nicht. `my instance set` gibt aus, wie viele aktive Benutzer keine Verknüpfung zu einem aktivierten Anbieter haben. Siehe [Anmeldung auf Login-Anbieter beschränken](login-providers.md#limit-sign-in-to-login-providers). |
 | `invite_creators` | `everyone` / `permitted` | `permitted` | Wer neben dem Personal mit `manage_invites` eigene Einladungen erstellen kann ([Einladungen von Mitgliedern](registration.md#member-invites)). `everyone`: jeder angemeldete lokale Benutzer, der nicht gesperrt oder eingeschränkt ist. `permitted`: nur die Inhaber der Berechtigung `create_invites`, die standardmäßig nur die eingebaute Rolle `admin` hat und die eine Rolle eines Unterstützungsplans haben kann. Im Modus `approval` genehmigt eine nutzbare Einladung den neuen Benutzer sofort, sodass `everyone` jeden Benutzer die Prüfung überspringen lässt |
@@ -293,7 +296,7 @@ und Besucher, die nicht angemeldet sind, sehen keine davon.
   noch nicht begonnene Veranstaltungen ab ([Moderation](moderation.md#events)). Wer geantwortet hat und wer eingeladen wurde, wird
   `event_records_retention_days` nach der Veranstaltung behalten, ebenso die Stimmen zu ihren Terminvorschlägen.
 
-<!-- source: texts-one-key-one-value c639fc7dfe23 -->
+<!-- source: texts-one-key-one-value cc74b8e2bdda -->
 ### Texte (ein Schlüssel, ein Wert)
 
 | Schlüssel | Limit | Beschreibung |
@@ -314,9 +317,9 @@ und Besucher, die nicht angemeldet sind, sehen keine davon.
   `dir="auto"` und `lang=""` (der HTML-Wert für eine unbekannte Sprache) aus, anstatt die Sprache des Bildschirms zu erben.
 - Das Setzen eines leeren Textes löscht ihn.
 - Neben der CLI lassen sich Texte auf den Admin-Bildschirmen des Webclients ändern (Name, Kurzbeschreibung und Beschreibung auf
-  der Seite „Allgemein“ der „Servereinstellungen“, `/admin/settings`; die Bedingungen auf der ersten Seite von „Bedingungen und Richtlinien“,
-  `/admin/documents`, die Datenschutzerklärung unter `/admin/documents/privacy-policy` und die Pflichtangaben für den Handel und Ähnliches unter
-  `/admin/documents/commerce-disclosure`) und mit der Client-API (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
+  der Seite „Allgemein“ der „Servereinstellungen“, `/admin/settings/general`; die Bedingungen unter `/admin/documents/terms`, die
+  Datenschutzerklärung unter `/admin/documents/privacy-policy` und die Pflichtangaben für den Handel unter
+  `/admin/documents/commerce-disclosure`, jeweils eine Seite von „Bedingungen und Richtlinien“, `/admin/documents`) und mit der Client-API (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
   Beides braucht die Rollenberechtigung `manage_settings`, und Änderungen werden im Audit-Log festgehalten (`text_changed`).
 
 <!-- source: terms-and-privacy-policy 82e7bc325cf1 -->
@@ -351,7 +354,7 @@ Ein Server hat getrennt eine Domain und einen Namen.
 - Eine Änderung wirkt ab der nächsten Anfrage, ohne Neustart. Der Tab-Titel und die Seitenleiste eines geöffneten Webclients werden aktualisiert, wenn
   du auf dem Admin-Bildschirm speicherst.
 
-<!-- source: contact-and-thumbnail 71513ab82d51 -->
+<!-- source: contact-and-thumbnail 0c0f6038fb4e -->
 ### Kontakt und Vorschaubild
 
 Der Kontakt der Betreiber (`contact_account`, `contact_email`) und das Bild, das der Server repräsentiert (`thumbnail`
@@ -365,13 +368,13 @@ und der Text `thumbnail_alt`), erscheinen an den folgenden Stellen. Was nicht ge
   Kontaktkontos), `thumbnail` (`url` und `alt`) und `nodeDescription` aus der Kurzbeschreibung `short_description`.
 
 Ist das Kontaktkonto gesperrt oder gelöscht, wird das Konto nicht angezeigt, sondern nur die E-Mail-Adresse.
-Ändere sie auf der Seite „Allgemein“ des Admin-Bildschirms des Webclients („Servereinstellungen“, `/admin/settings`) oder mit der CLI oder der Client-API.
+Ändere sie auf der Seite „Allgemein“ des Admin-Bildschirms des Webclients („Servereinstellungen“, `/admin/settings/general`) oder mit der CLI oder der Client-API.
 
-<!-- source: one-person-server 6ba524c58a4f -->
+<!-- source: one-person-server 1bd8fd4f6da5 -->
 ### Ein-Personen-Server
 
 Ein Server, der nur seinem Betreiber gehört, das eigene Zuhause des Betreibers im Fediverse, ist ein Ein-Personen-Server: Schalte `single_user` ein. Im Webclient
-schaltet ein Administrator ihn mit **Diesen Server zu einem Server für eine Person machen** auf der Seite **Registrierung** der **Servereinstellungen** ein und aus,
+schaltet ein Administrator ihn mit **Ein-Personen-Server** auf der Seite **Registrierung** der **Servereinstellungen** ein und aus,
 die sagt, warum der Server ihn abgelehnt hat, wenn er mehr als ein lokales Konto hat.
 
 ```sh
@@ -396,9 +399,9 @@ Solange er eingeschaltet ist:
 - **Was eine Community braucht, ist verborgen.** Die lokale und die föderierte Timeline und ihre Streams, die Kontovorschläge,
   die Einladungen von Nutzer und von Administratoren, die Prüfung von Registrierungen und die Registrierungssperren antworten mit `404` und dem Typ
   `/api/v1/problems/single-user-mode`.
-- **Keine neuen lokalen Beiträge.** Auf einem Server für eine Person erreicht ein Beitrag für „Dieser Server“ nur die Follower, daher kann ein neuer
+- **Keine neuen lokalen Beiträge.** Auf einem Server für eine Person erreicht ein Beitrag für „Nachbarn“ nur die Follower, daher kann ein neuer
   Beitrag nicht lokal sein: Die Client-API antwortet mit `422` und lässt es aus dem weg, was ein Konto veröffentlichen darf. Eine Standard-Sichtbarkeit
-  von „Dieser Server“ gilt als „Follower“ und lässt sich nicht speichern, und ein Sprachchat-Raum für die Personen dieses Servers kündigt
+  von „Nachbarn“ gilt als „Nur Follower“ und lässt sich nicht speichern, und ein Sprachchat-Raum für die Personen dieses Servers kündigt
   sich in einem Beitrag für die Follower an. Beiträge, die bereits lokal sind, bleiben lokal.
 - **Der Server sagt, was er ist.** `single_user` in `GET /api/v1/instance` ist `true`, mit dem wirksamen Registrierungsmodus
   und den Timelines sowie dem Konto des Betreibers als `single_user_account`, und NodeInfo antwortet mit `openRegistrations: false` und
@@ -407,7 +410,7 @@ Solange er eingeschaltet ist:
   seines einen Kontos, mit dem Weg zur Anmeldung und Links zur Info-Seite, den Nutzungsbedingungen und der Datenschutzerklärung,
   die der Server veröffentlicht. Der Webclient blendet aus, was der Server nicht anbietet, aus Navigation, Menüs und
   Administrationsbildschirmen: die lokale und die föderierte Timeline, die Registrierung, vorgeschlagene Konten, Einladungen, die Prüfung von
-  Registrierungen, die Registrierungssperren, die Sichtbarkeit „Dieser Server“ und die Einstellungen für Registrierung, Einladungen, die öffentlichen
+  Registrierungen, die Registrierungssperren, die Sichtbarkeit „Nachbarn“ und die Einstellungen für Registrierung, Einladungen, die öffentlichen
   Timelines, die Landingpage und vorgeschlagene Konten.
 
 Föderation, Moderation, die Volltextsuche, das Unterstützerprogramm, die Dokumente und die Admin-Bildschirme funktionieren wie auf jedem
@@ -470,7 +473,7 @@ my admin federation sever -direction both
   das nicht tut (etwa `off`), endet der Follow nur auf der lokalen Seite, und die entfernte Seite wird nicht informiert.
 - Es ist gefahrlos wiederholbar. Es gibt die Zahl der beendeten Follows auf der Standardausgabe aus.
 
-<!-- source: admin-screens-and-the-client-api 887d153efcf9 -->
+<!-- source: admin-screens-and-the-client-api d5fece23283e -->
 ## Admin-Bildschirme und die Client-API
 
 Jede Einstellung, die die CLI ändern kann, lässt sich auch auf den Admin-Bildschirmen des Webclients und mit der Client-API ändern. Beide brauchen
@@ -478,26 +481,27 @@ die Rollenberechtigung `manage_settings` (nur die eingebaute Rolle `admin` hat s
 und pro Schlüssel im Audit-Log erfasst (`setting_changed`, das Ziel ist die Einstellung und der Akteur dieser Benutzer). Sieh dir das
 Audit-Log auf dem Moderationsbildschirm an („Audit-Log“, `/moderation/audit-log`).
 
-- **Webclient** („Servereinstellungen“, `/admin/settings`): Der Bildschirm hat eine Seite pro Thema, unter ihrer Überschrift verlinkt. Jede
-  Seite hat ein Formular und eine Speichern-Schaltfläche, und das Speichern sendet nur, was du auf dieser Seite geändert hast; Einstellungen auf den anderen Seiten
-  bleiben, wie sie sind.
+- **Webclient** („Servereinstellungen“, `/admin/settings`): Der Bildschirm listet eine Seite pro Thema auf, in Gruppen. Jede Seite
+  hat ein Formular und eine Speichern-Schaltfläche, und das Speichern sendet nur, was du auf dieser Seite geändert hast; Einstellungen auf den anderen Seiten bleiben,
+  wie sie sind. Eine Auswahl, deren Optionen jeweils viel ändern, sagt darunter, was jede einzelne bewirkt, bevor du speicherst, und eine Zahl nennt ihre
+  Grenzen, wenn sie abgelehnt wird.
 
   | Seite | Abschnitte und Einstellungen |
   | --- | --- |
-  | Allgemein (`/admin/settings`) | Name, Beschreibungen (`name`, `short_description`, `description`); Kontakt und Vorschaubild (`contact_account`, `contact_email`, `thumbnail` und der Text `thumbnail_alt`) |
-  | Symbol und Logo (`/admin/settings/branding`) | Das Symbol, das Logo und das Logo für dunkle Hintergründe, jedes mit einer eigenen Schaltfläche gespeichert ([Logo und Symbol](#logo-and-icon)) |
-  | Registrierung (`/admin/settings/registration`) | Registrierung (`registration_mode`, `login_providers_only`); Einladungen von Mitgliedern (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds`); Apps (`user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration`) |
-  | Inhalt (`/admin/settings/content`) | Sprache (`default_locale`, aus den Sprachen gewählt, die die App hat); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Beiträge (`require_media_description`); Startseite (`public_counts`); Vorgeschlagene Konten (`featured_accounts`) |
-  | Beitragslöschung (`/admin/settings/auto-delete`) | Standard für neue Konten (die Einstellungen `auto_delete_default_*`); Maximum (`auto_delete_max_age_days`, die Einstellungen `auto_delete_max_allow_*`, `auto_delete_max_kept_pins`, `auto_delete_grace_days`). Das Speichern eines Maximums, das eingeschaltet oder verschärft wird (weniger Tage, weniger Ausnahmen oder Anheftungen), fragt zuerst nach, da es die Konten benachrichtigt, für die es neu gilt ([Eine Höchstdauer für das Aufbewahren von Beiträgen](#a-maximum-for-keeping-posts)) |
-  | Föderation (`/admin/settings/federation`) | Föderation (`federation_mode`, `federation_scope` (das Speichern von `allowlist` zeigt zuerst die Follows, die der Wechsel beenden würde, und fragt nach, siehe [nur mit erlaubten Servern föderieren](moderation.md#federating-only-with-allowed-servers)), `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (wähle aus 1 Stunde, 1 Tag, 7 Tagen, 30 Tagen oder 365 Tagen), `link_cards`, `link_cards_ignore_robots_txt`); Eingeschränkte und gesperrte Server (`domain_actions_visibility`, `domain_actions_rationale_visibility`); Externe Prüfung (die Einstellungen `hook_*`, siehe [Entscheidungs-Hooks](decision-hooks.md)) |
-  | Suche und Crawler (`/admin/settings/discovery`) | Suchmaschinen und KI (`search_indexing`, `indexable_default`, `ai_usage`, `security_contact`); Beitragssuche (`search_visibilities`, nur solange der Server eine Volltextsuche hat) |
-  | Sprachchat (`/admin/settings/voice`) | `voice_room_starters`, `voice_public_summary`, `voice_participants_retention_days`; die Seite wird nur aufgelistet, solange der Server Sprachchat anbietet |
+  | Allgemein (`/admin/settings/general`) | Name und Beschreibungen (`name`, `short_description`, `description`); Sprache (`default_locale`, aus den Sprachen gewählt, die die App hat); Kontakt (`contact_account`, `contact_email`); Bilder (`thumbnail` und der Text `thumbnail_alt`, `preview_image` und der Text `preview_image_alt`) |
+  | Symbol und Logo (`/admin/settings/branding`) | Das Symbol, das Logo und das Logo für dunkle Hintergründe ([Logo und Symbol](#logo-and-icon)) |
+  | Registrierung (`/admin/settings/registration`) | Wer sich registrieren kann (`registration_mode`, jeder Modus mit dem, was er bewirkt); Ein-Personen-Server (`single_user`); Einladungen von Mitgliedern (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds` in Stunden); Nur Login-Anbieter (`login_providers_only`, das zuerst nachfragt, mit der Zahl der aktiven Benutzer, die sich dann nicht mehr anmelden könnten, und ob du einer davon bist); Apps (`user_app_registration`, `dynamic_client_registration`, `oauth_metadata_document_clients`, `oauth_client_rate_limits`). Auf einem Ein-Personen-Server sagen die Abschnitte zur Registrierung und zu Einladungen von Mitgliedern, dass sich niemand sonst registriert |
+  | Beiträge und Funktionen (`/admin/settings/content`) | Beiträge (`max_status_length`, `require_media_description`); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Link-Karten (`link_cards`, `link_cards_ignore_robots_txt`); Entwürfe und geplante Beiträge (`max_drafts`, `max_scheduled_posts`, `max_scheduled_posts_per_day`, `scheduled_post_min_lead_minutes`, `scheduled_post_max_lead_days`); Artikel (`article_authoring`, `max_article_bytes`, `max_article_images`); Veranstaltungen (`event_creators`, `event_records_retention_days`); Startseite und Vorschläge (`public_counts`, `landing_fediverse_explanation`, `landing_features`, `featured_accounts`) |
+  | Sprachchat (`/admin/settings/voice`) | Wer Räume öffnen kann (`voice_room_starters`); Räume (`voice_public_summary`, `voice_participants_retention_days`) |
+  | Beitragslöschung (`/admin/settings/auto-delete`) | Standard für neue Konten (die Einstellungen `auto_delete_default_*`); Maximum für alle (`auto_delete_max_age_days`, `auto_delete_grace_days`, die Einstellungen `auto_delete_max_allow_*`, `auto_delete_max_kept_pins`). Das Speichern eines Maximums, das eingeschaltet oder verkürzt wird, fragt zuerst nach ([Eine Höchstdauer für das Aufbewahren von Beiträgen](#a-maximum-for-keeping-posts)) |
+  | Föderation (`/admin/settings/federation`) | Richtung (`federation_mode`); Server (`federation_scope`: Das Speichern von `allowlist` zeigt zuerst die Follows, die der Wechsel beenden würde, und fragt nach, siehe [nur mit erlaubten Servern föderieren](moderation.md#federating-only-with-allowed-servers)); Signierte Abrufe (`authorized_fetch`); Medien von anderen Servern (`remote_media_policy`, `remote_media_cache_ttl_seconds` in Minuten, `remote_media_cache_max_bytes` in MiB); Beiträge von anderen Servern (`remote_status_retention_days`, `remote_status_max_retention_days`, `relay_status_retention_days`); Moderierte Server (`domain_actions_visibility`, `domain_actions_rationale_visibility`) |
+  | Suche und Crawler (`/admin/settings/discovery`) | Suchmaschinen (`search_indexing`, `indexable_default`); Sicherheitskontakt (`security_contact`); KI (`ai_usage`); Volltextsuche (`search_visibilities`) |
+  | Externe Prüfung (`/admin/settings/hooks`) | Ein Abschnitt für jeden Entscheidungs-Hook: sein Modus (`enforce` wird erst angeboten, wenn er nicht `off` ist), was er tut, wenn sein Plugin ausfällt, und seine übrigen Einstellungen; Datensätze der Entscheidungen (`hook_decisions_retention_days`). Siehe [Entscheidungs-Hooks](decision-hooks.md) |
+  | Einsprüche und Datensätze (`/admin/settings/records`) | Einsprüche (`appeal_window_days`); Datensätze aufbewahren (`session_origins_retention_days`, `registration_origins_retention_days`, `reports_retention_days`, `moderation_actions_retention_days`, `audit_log_retention_days`) |
 
-  Auf der Seite Allgemein wird ein Bild hochgeladen, wenn du es auswählst, und wird zum Vorschaubild, wenn du speicherst. Wer die
-  laufenden Kosten, die Einnahmen und die Liste der Unterstützer sehen darf, wird auf den Bildschirmen „Finanzen“ und „Unterstützer“ festgelegt.
-
-  `max_status_length`, `preview_image`, `appeal_window_days` und die Aufbewahrungszeiträume (`*_retention_days`), `remote_media_cache_max_bytes` und `oauth_client_rate_limits` erscheinen nicht auf dem Bildschirm;
-  ändere sie mit der CLI oder der Client-API. Die Einstellungen der Übersetzung haben einen eigenen Bildschirm, unten.
+  Auf der Seite Allgemein wird ein Bild hochgeladen, wenn du speicherst, und wird dann zum Vorschaubild oder zum Bild der Link-Vorschau. Wer die
+  laufenden Kosten, die Einnahmen und die Liste der Unterstützer sehen darf, wird auf den Bildschirmen „Kosten und Einnahmen“ und „Unterstützer“ festgelegt. Die
+  Einstellungen der Übersetzung haben einen eigenen Bildschirm, unten.
 - **Webclient** („Übersetzung“, `/admin/translation`): die Anbieter, die dieser Server hat, ihre Reihenfolge und was jeder
   erhalten darf, die Übersetzung des Browsers, die Monatslimits und wie lange Übersetzungen behalten werden, mit den in diesem
   Monat gesendeten Zeichen und der Cache-Trefferquote. Jeder Serverprozess fügt seine Zahl der Cache-Treffer höchstens einmal pro Minute zur Quote hinzu,
@@ -548,7 +552,7 @@ my instance rule list                                  # active rules (-all incl
   `rule_moved`, `rule_retired`).
 - Die Exit-Codes sind dieselben wie bei Einstellungen (0 für Erfolg, 1 für einen abgelehnten Wert oder einen Datenbankfehler, 2 für falsche Argumente).
 
-<!-- source: link-card-domains c8f674387fa8 -->
+<!-- source: link-card-domains 1b8839ab9f1d -->
 ## Domains für Link-Karten
 
 Die Link-Karten von Beiträgen (`link_cards`) stammen von einem Crawler: Der Server ruft die verlinkte Seite und ihr Bild ab. Eine Regel
@@ -567,11 +571,11 @@ Modi. Eine Regel ist die Entscheidung des Betreibers, und sie gilt zusätzlich z
 - Eine Änderung wirkt sofort, auch auf die Karten, die der Server bereits hat, und die über den Proxy geleiteten Bilder dieser Karten werden nicht mehr ausgeliefert, solange Bilder gestoppt sind.
 - Das Entfernen einer Regel bringt die Karten, die der Server bereits hat, so zurück, wie sie waren. Ein Link, der übersprungen wurde, erhält seine Karte, wenn ein Beitrag sie das nächste Mal braucht; nichts wird massenhaft erneut abgerufen.
   Eine Karte, die erneut abgerufen wurde, während Bilder gestoppt waren, bleibt bis zu ihrem nächsten erneuten Abruf ohne Bild.
-- Auf dem Admin-Bildschirm des Webclients („Domains für Link-Karten“, `/admin/link-card-domains`, `manage_settings`) legt „Regel hinzufügen“ eine Regel mit einer Notiz fest. Die Liste zeigt 40 Regeln pro Seite und lässt sich nach Domain durchsuchen; wähle eine Domain, um die Seite ihrer Regel zu öffnen, auf der du ihren Modus und ihre Notiz änderst und sie entfernst (nach einem Bestätigungsdialog).
+- Auf dem Admin-Bildschirm des Webclients („Domains für Link-Karten“, `/admin/link-card-domains`, `manage_settings`) legt „Regel hinzufügen“ eine Regel mit ihrem Modus und einer Notiz fest und lehnt eine Domain ab, die bereits eine Regel hat, mit einem Link zu dieser Regel. Die Liste zeigt die Regeln nach Domain, jeweils 40 mit „Mehr anzeigen“; wähle eine Domain, um die Seite ihrer Regel zu öffnen, auf der du ihren Modus und ihre Notiz änderst und sie entfernst (nach einem Bestätigungsdialog).
 - Die Admin-API ist `/api/v1/admin/link_card_domains` (auflisten, festlegen; ein `DELETE` mit der Domain entfernt sie) und braucht die Rollenberechtigung `manage_settings`. Ein Server behält höchstens 1.000 Regeln, jede mit einer Notiz von bis zu 5.000 Zeichen.
 - Jede Änderung wird im Audit-Log festgehalten (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 
-<!-- source: theme d3ebe5db33cb -->
+<!-- source: theme 1ada01b2db2e -->
 ## Design
 
 Das serverweite Design ist ein Satz von Überschreibungen der Design-Tokens des Webclients, mit je einem hellen und einem dunklen Wert für jede Farbe. Es gilt für den Webclient jedes Betrachters und für die Seiten, die der Server selbst rendert (Anmeldung, Registrierung, Nutzungsbedingungen usw.). Es gibt kein eigenes CSS.
@@ -582,17 +586,18 @@ Das serverweite Design ist ein Satz von Überschreibungen der Design-Tokens des 
   | --- | --- | --- |
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | Farbe | `#rrggbb` für hell und für dunkel |
   | `font-sans-override`, `font-mono-override` | Schriftfamilie | Familiennamen, durch Kommas getrennt (höchstens 30), ohne generische Familie wie `sans-serif`; setze einen Namen mit einem Wort, das mit einer Ziffer beginnt, in Anführungszeichen, etwa `"M PLUS 1p"` |
-  | `text-tagline`, `text-title`, `text-body`, `text-caption` | Länge | `0` oder rem / px, 0,625rem bis 3rem |
-  | `text-*--line-height` derselben vier | Zahl | 1 bis 2,5 |
+  | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | Länge | `0` oder rem / px, 0,625rem bis 3rem |
+  | `text-*--line-height` derselben sieben | Zahl | 1 bis 2,5 |
   | `radius-control`, `radius-overlay` | Länge | 0 bis 2rem |
   | `duration-spin` | Dauer | ms / s, 0 bis 1000ms |
 
 - Der Webclient zeichnet Text mit eigenen Schriften: Noto Color Emoji für Emoji, Noto Sans für lateinische, griechische und kyrillische Schrift und Noto Sans CJK in den Glyphen der Sprache des Textes für den Rest. Die Schriften von `font-sans-override` (Text) und `font-mono-override` (Code) stehen direkt hinter der Emoji-Schrift, und die Schriften des Webclients zeichnen die Zeichen, die deinen fehlen. Ein Design kann diese Schriften nicht ersetzen.
 - Du speicherst einen Satz als Entwurf, siehst ihn in der Vorschau an und veröffentlichst ihn dann; das wirksame Design ändert sich erst mit der Veröffentlichung. Jedes Speichern ersetzt den ganzen Entwurf, und jede Veröffentlichung ist eine neue Revision. Beim Wiederherstellen wird der Satz, der vor dem aktuellen wirksam war, erneut veröffentlicht; der Entwurf bleibt, wie er ist.
+- Im Webclient zeigt **Administration > Design** den Entwurf und das wirksame Design. „Entwurf bearbeiten“ zeigt jede Farbe für hell und dunkel mit dem Kontrast jedes Paars, das sie bildet, und speichert kein Paar unter seinem Minimum. „Vorschau“ zeigt den Entwurf auf jedem Bildschirm deines Browser-Tabs, bis du es erneut drückst; niemand sonst sieht ihn. „Veröffentlichen“ und „Vorheriges Design wiederherstellen“ befinden sich auf demselben Bildschirm. Das Symbol und das Logo findest du unter **Servereinstellungen > Symbol und Logo**.
 - Beim Speichern und beim Veröffentlichen prüft der Server Form und Bereich der Werte und den Kontrast jedes Paars von Farb-Tokens (Tokens, die du nicht überschreibst, verwenden ihre Standardwerte; WCAG 2.2 AA in Hell und Dunkel). Schlägt eine Prüfung fehl, wird nichts gespeichert oder veröffentlicht.
 - Die Überschreibung eines Tokens, das eine neue Version umbenennt oder abschafft oder dessen Wert nicht mehr zum Token passt, lässt ein Upgrade nie scheitern. Sie bleibt im gespeicherten Satz, gilt aber nicht mehr: Die Admin-API führt sie unter `stale_tokens` auf, `my instance theme get` nennt sie, und das nächste Speichern des Entwurfs entfernt sie.
 - Das Stylesheet der veröffentlichten Revision wird unter `/theme/{revision ID}.css` ausgeliefert (`immutable`, lange im Cache). Die HTML-Hülle hat einen gemeinsamen Cache (60 Sekunden plus 300 Sekunden Revalidierung); es dauert also einige Minuten nach dem Veröffentlichen, bis alle es erhalten. Eine bereits geöffnete Seite behält das alte Aussehen, bis sie neu geladen wird.
-- `<meta name="theme-color">` (hell und dunkel) in der Hülle sowie `theme_color` / `background_color` (hell) des Web App Manifest übernehmen den Wert von `color-surface` des Designs. E-Mails verwenden die Standardfarben der Tokens, unabhängig vom Design.
+- `<meta name="theme-color">` (hell und dunkel) in der Hülle sowie `theme_color` / `background_color` (hell) des Web App Manifest übernehmen den Wert von `color-surface` des Designs. Die HTML-Version jeder E-Mail, die der Server von da an sendet, verwendet die Farben des veröffentlichten Designs, hell und dunkel; ein Entwurf gelangt nie in eine E-Mail.
 - Wer einen Satz ohne Tokens veröffentlicht, setzt das Design auf den Standard zurück, und das Stylesheet wird nicht mehr geladen.
 - Du kannst es mit der Client-API und mit der CLI ändern. Die Client-API braucht die Rollenberechtigung `manage_settings`: `GET /api/v1/admin/theme` liest den Entwurf und den wirksamen Satz, `PUT /api/v1/admin/theme/draft` speichert den Entwurf, `GET /api/v1/admin/theme/draft/stylesheet` liefert das Stylesheet des Entwurfs für die Vorschau, und `POST /api/v1/admin/theme/publish` sowie `POST /api/v1/admin/theme/restore` veröffentlichen. Veröffentlichungen werden im Audit-Log festgehalten (`setting_changed`, Ziel `theme`).
 
@@ -613,7 +618,7 @@ echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # ba
 }
 ```
 
-<!-- source: logo-and-icon a2d23def322b -->
+<!-- source: logo-and-icon 1269b80d7ad5 -->
 ## Logo und Symbol
 
 Neben dem Vorschaubild und dem Link-Vorschaubild kann der Server ein eigenes Symbol, ein Logo und ein dunkles Logo haben, jeweils als eine SVG hochgeladen.
@@ -655,11 +660,11 @@ Bis eines gesetzt ist, werden die eingebauten mycroblog-Bilder verwendet, und da
 - `GET /api/v1/instance` gibt `icon`, `logo` und `logo_dark` mit der URL der SVG, der URL und Größe jeder PNG-Version
   und der Revision zurück; jedes wird weggelassen, solange das eingebaute Bild in Verwendung ist.
 - Lege sie im Webclient unter **Servereinstellungen** > **Symbol und Logo** (`/admin/settings/branding`, Rollenberechtigung `manage_settings`) fest. Wähle eine SVG-
-  Datei für das Symbol, das Logo oder das Logo für dunkle Hintergründe: Der Server prüft sie, der Browser zeichnet die PNG-Versionen, und das
-  Formular zeigt sie als Vorschau (einen Browser-Tab, den Home-Bildschirm, das App-Symbol, eine E-Mail auf hellem und dunklem Hintergrund und das Link-
-  Vorschaubild) mit der Liste dessen, was der Server entfernt hat. Lehnt der Server die Datei ab, steht der Grund unter der Schaltfläche, mit dem Weg,
-  ihn zu beheben. Lege für das Symbol dort auch die Hintergrundfarbe seiner deckenden Versionen fest. **Speichern** sendet die SVG mit jeder PNG-
-  Version; **Eingebautes Symbol verwenden**, **Eingebautes Logo verwenden** und **Logo für dunkle Hintergründe entfernen** löschen sie. Der
+  Datei für das Symbol, das Logo oder das Logo für dunkle Hintergründe: Der Server prüft sie sofort, und das
+  Formular zeigt sie so, wie der Server sie behalten würde, mit der Liste dessen, was der Server entfernt hat. Lehnt der Server die Datei ab, steht der Grund darunter,
+  mit dem Weg, ihn zu beheben. Lege für das Symbol dort auch die Hintergrundfarbe seiner deckenden Versionen fest. **Speichern** zeichnet die PNG-
+  Versionen im Browser und sendet jedes gewählte Bild mit ihnen; **Eingebautes Bild verwenden** bringt beim Speichern ein Bild zum
+  eingebauten zurück. Der
   Webclient behält die Bilder, die er angezeigt hat, für die Offline-Nutzung.
 - Die Client-API tut dasselbe, mit der Rollenberechtigung `manage_settings`:
   `POST /api/v1/admin/instance/brand/sanitize` prüft eine SVG und gibt die bereinigte SVG mit den zu zeichnenden PNG-Versionen zurück (sie
@@ -674,7 +679,7 @@ my instance brand show          # each image with its revision, when and by whom
 my instance brand clear icon    # back to the built-in icon (also logo, logo_dark)
 ```
 
-<!-- source: custom-emoji 5e0ddb3251cf -->
+<!-- source: custom-emoji 852330f1cc29 -->
 ## Eigene Emojis
 
 Lokale eigene Emojis werden als Bilder angezeigt, wenn jemand `:shortcode:` im Text oder in der Inhaltswarnung eines Beitrags oder im
@@ -696,9 +701,10 @@ Notes und Actors, die du sendest, auch Mastodon, Misskey, GoToSocial und Akkoma.
 - Das Löschen lässt sich nicht rückgängig machen. Auch Emojis in früheren Beiträgen werden wieder zu Text, und das erneute Registrieren desselben Shortcodes ergibt ein
   anderes Emoji. Bilder, die föderierte Server kopiert haben, lassen sich nicht löschen.
 - Der Admin-Bildschirm („Eigenes Emoji“, `/admin/custom-emojis`), die Client-API (`/api/v1/admin/custom_emojis`) und die CLI tun
-  dasselbe. Auf dem Bildschirm öffnet „Eigenes Emoji registrieren“ das Registrierungsformular (`/admin/custom-emojis/new`), und das Auswählen
-  eines Emojis in der Liste öffnet seine Seite (`/admin/custom-emojis/{id}`), auf der du seine Einstellungen änderst, sein Bild ersetzt, es aktivierst oder
-  deaktivierst, es löschst oder eines von einem anderen Server kopierst; die Liste selbst aktiviert und deaktiviert ein Emoji mit einem Klick. Der Admin-Bildschirm und die Client-API brauchen die Rollenberechtigung `manage_custom_emojis` (nur die eingebaute `admin`
+  dasselbe. Auf dem Bildschirm öffnet „Emoji registrieren“ das Registrierungsformular (`/admin/custom-emojis/new`), das vor einem Bild über 100 KiB
+  warnt, und das Auswählen eines Emojis in der Liste öffnet seine Seite (`/admin/custom-emojis/{id}`), auf der du es aktivierst
+  oder deaktivierst, sein Bild ersetzt, seine Kategorie, Aliasse und Sichtbarkeit in der Auswahl änderst, es nach Eingabe seines Shortcodes löschst
+  oder eines von einem anderen Server kopierst. Der Admin-Bildschirm und die Client-API brauchen die Rollenberechtigung `manage_custom_emojis` (nur die eingebaute `admin`
   hat sie). Das Registrieren, Kopieren, Ersetzen des Bildes, Ändern von Einstellungen und Aliassen, Aktivieren und Deaktivieren und Löschen werden
   im Audit-Log festgehalten (Ziel `custom_emoji`), auf welchem Weg sie auch erfolgen (ein Vorgang über die CLI wird als CLI-
   Vorgang festgehalten).
@@ -721,7 +727,8 @@ my admin emoji requests reject [-reason <text>] <request id>                    
 
 - Ein Nutzer mit der Rollenberechtigung `create_custom_emojis` (eine Nutzerfunktion) kann unter „Eigenes
   Emoji“ in den Einstellungen (`/settings/custom-emojis`) die Erstellung eines Emojis beantragen, die Aliasse, die Kategorie und die Sichtbarkeit in der Auswahl der von ihm
-  erstellten Emojis ändern und sie löschen. Auch das Ersetzen eines Bildes ist ein Antrag. Ein Antrag erscheint nirgends (Auswahl, Beiträge, Reaktionen,
+  erstellten Emojis ändern und sie löschen; die Seite zeigt, wie viele Anfragen ihnen in diesem Monat noch bleiben. Auch das Ersetzen eines Bildes ist ein
+  Antrag, gestellt mit der Client-API (`POST /api/v1/custom_emoji_requests`, `kind` `image`); die Einstellungsseite bietet es nicht an. Ein Antrag erscheint nirgends (Auswahl, Beiträge, Reaktionen,
   Föderation), bis jemand mit `manage_custom_emojis` ihn genehmigt. Genehmige oder lehne ihn auf der Seite „Anfragen“ von „Eigenes
   Emoji“ auf dem Admin-Bildschirm (`/admin/custom-emojis/requests`), mit der Client-API (`/api/v1/admin/custom_emoji_requests`) oder mit der obigen CLI ab. Personen mit
   `manage_custom_emojis` werden über einen Antrag benachrichtigt (`admin_custom_emoji_request`), und der Antragsteller wird über die

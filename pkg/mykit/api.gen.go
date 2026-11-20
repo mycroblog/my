@@ -14292,6 +14292,10 @@ type Notification struct {
 	// Reaction The emoji of a `reaction`; omitted for the other types.
 	Reaction *ReactionEmoji `json:"reaction,omitempty"`
 
+	// Read Whether the user has read it: it is older than or at the marker's `last_read_id`, or
+	// it was marked read on its own (`POST /notifications/{id}/read`).
+	Read bool `json:"read"`
+
 	// RelationshipSeverance The follows that a `relationships_severed` tells of; omitted without `read:follows`.
 	RelationshipSeverance *RelationshipSeverance `json:"relationship_severance,omitempty"`
 
@@ -14486,7 +14490,7 @@ type NotificationMarker struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	LastReadId *Id `json:"last_read_id,omitempty"`
 
-	// UnreadCount The number of listed notifications newer than `last_read_id`.
+	// UnreadCount The number of listed notifications that are unread, as `Notification.read` tells.
 	UnreadCount int64 `json:"unread_count"`
 }
 
@@ -14834,6 +14838,25 @@ type NotificationSettingsUpdateChangesChannel string
 // the organizer that the voice chat room of the event cannot open. Their `account` is the
 // organizer, except for `event_invited`. Each is sent only while the user sees the event.
 type NotificationType string
+
+// NotificationsRead The data of the stream event `notifications_read`: the user read notifications on a device,
+// and the read marker and the unread count are now these.
+type NotificationsRead struct {
+	// Id The notification read on its own past the marker (`POST /notifications/{id}/read`);
+	// omitted when the marker moved.
+	//
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id *Id `json:"id,omitempty"`
+
+	// LastReadId The newest notification read up to the marker; omitted when the user has read none.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	LastReadId *Id `json:"last_read_id,omitempty"`
+
+	// UnreadCount The number of listed notifications that are unread, as `Notification.read` tells.
+	UnreadCount int64 `json:"unread_count"`
+}
 
 // OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
 // it gets no first-party-only scope and calls no account security operation.
@@ -27795,6 +27818,16 @@ type ClientInterface interface {
 	// Corresponds with POST /notifications/{id}/dismiss (the `DismissNotification` operationId).
 	DismissNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ReadNotification Mark one notification read
+	//
+	// Marks one notification read, wherever it is in the list, for every client of the user. A
+	// notification is unread while it is newer than the marker's `last_read_id` and not marked
+	// read here; marking it again, or marking one the marker already passed, changes nothing. A
+	// notification that is not the user's is a 404.
+	//
+	// Corresponds with POST /notifications/{id}/read (the `ReadNotification` operationId).
+	ReadNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListOAuthApps List the OAuth apps that the authenticated user registered
 	//
 	// The apps that the user registered and has not deleted, oldest first, and whether the user
@@ -39917,6 +39950,26 @@ func (c *Client) GetNotification(ctx context.Context, id Id, reqEditors ...Reque
 // Corresponds with POST /notifications/{id}/dismiss (the `DismissNotification` operationId).
 func (c *Client) DismissNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDismissNotificationRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ReadNotification Mark one notification read
+//
+// Marks one notification read, wherever it is in the list, for every client of the user. A
+// notification is unread while it is newer than the marker's `last_read_id` and not marked
+// read here; marking it again, or marking one the marker already passed, changes nothing. A
+// notification that is not the user's is a 404.
+//
+// Corresponds with POST /notifications/{id}/read (the `ReadNotification` operationId).
+func (c *Client) ReadNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewReadNotificationRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -59156,6 +59209,40 @@ func NewDismissNotificationRequest(server string, id Id) (*http.Request, error) 
 	return req, nil
 }
 
+// NewReadNotificationRequest constructs an http.Request for the ReadNotification method
+func NewReadNotificationRequest(server string, id Id) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/notifications/%s/read", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListOAuthAppsRequest constructs an http.Request for the ListOAuthApps method
 func NewListOAuthAppsRequest(server string) (*http.Request, error) {
 	var err error
@@ -70212,6 +70299,18 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /notifications/{id}/dismiss (the `DismissNotification` operationId).
 	DismissNotificationWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*DismissNotificationResponse, error)
+
+	// ReadNotificationWithResponse Mark one notification read
+	//
+	// Marks one notification read, wherever it is in the list, for every client of the user. A
+	// notification is unread while it is newer than the marker's `last_read_id` and not marked
+	// read here; marking it again, or marking one the marker already passed, changes nothing. A
+	// notification that is not the user's is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /notifications/{id}/read (the `ReadNotification` operationId).
+	ReadNotificationWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*ReadNotificationResponse, error)
 
 	// ListOAuthAppsWithResponse List the OAuth apps that the authenticated user registered
 	//
@@ -95292,6 +95391,57 @@ func (r DismissNotificationResponse) ContentType() string {
 	return ""
 }
 
+// ReadNotificationResponseDefaultHeaders the declared response headers of an HTTP default response for ReadNotification
+type ReadNotificationResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ReadNotificationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ReadNotificationResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ReadNotificationResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ReadNotificationResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ReadNotificationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ReadNotificationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ReadNotificationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListOAuthAppsResponse200Headers the declared response headers of an HTTP 200 response for ListOAuthApps
 type ListOAuthAppsResponse200Headers struct {
 	CacheControl *string
@@ -111594,6 +111744,24 @@ func (c *ClientWithResponses) DismissNotificationWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseDismissNotificationResponse(rsp)
+}
+
+// ReadNotificationWithResponse Mark one notification read
+//
+// Marks one notification read, wherever it is in the list, for every client of the user. A
+// notification is unread while it is newer than the marker's `last_read_id` and not marked
+// read here; marking it again, or marking one the marker already passed, changes nothing. A
+// notification that is not the user's is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /notifications/{id}/read (the `ReadNotification` operationId).
+func (c *ClientWithResponses) ReadNotificationWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*ReadNotificationResponse, error) {
+	rsp, err := c.ReadNotification(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseReadNotificationResponse(rsp)
 }
 
 // ListOAuthAppsWithResponse List the OAuth apps that the authenticated user registered
@@ -142172,6 +142340,69 @@ func ParseDismissNotificationResponse(rsp *http.Response) (*DismissNotificationR
 	switch {
 	case true:
 		var headers DismissNotificationResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseReadNotificationResponse parses an HTTP response from a ReadNotificationWithResponse call
+func ParseReadNotificationResponse(rsp *http.Response) (*ReadNotificationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ReadNotificationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers ReadNotificationResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

@@ -49,12 +49,18 @@ Avec le couple `MY_HOST=localhost:8080` et `MY_WEB_ORIGIN=http://localhost:8080`
 - Le cookie de connexion est `Secure`. Chrome et Firefox l’acceptent sur `http://localhost` ; Safari (WebKit) ne le fait pas, utilisez donc Chrome ou Firefox en local.
 - Les liens des hashtags et des mentions dans le corps des publications utilisent `https://`, puisque ce sont les URL fédérées.
 
-<!-- source: going-public be2475df6407 -->
+<!-- source: going-public a59510155d91 -->
 ## Passer en public
 
-- Définissez `MY_HOST` dans `.env` sur votre vrai domaine, supprimez `MY_WEB_ORIGIN` (il vaut par défaut `https://{MY_HOST}`) et terminez TLS devant le serveur : la couche `compose.caddy.yaml` exécute Caddy pour cela ([fichiers Docker Compose](running.md#docker-compose-files)). `MY_HOST` est enregistré dans la base de données au premier démarrage et ne peut plus être changé ensuite.
-- Derrière un reverse proxy de votre choix, définissez `MY_TRUSTED_PROXIES` dans `.env` afin que les limites de débit, comme celle de la connexion, s’appliquent par IP client plutôt qu’au proxy ([`trusted_proxies`](../reference/configuration.md#trusted_proxies)).
+- Définissez `MY_HOST` dans `.env` sur votre vrai domaine, supprimez `MY_WEB_ORIGIN` (il vaut par défaut `https://{MY_HOST}`), et terminez
+  le TLS devant le serveur : la couche `compose.caddy.yaml` exécute Caddy pour cela
+  ([Fichiers Docker Compose](running.md#docker-compose-files)), ou laissez le serveur servir lui-même le HTTPS
+  ([servir le HTTPS depuis le serveur](running.md#serving-https-from-the-server)). `MY_HOST` est stocké dans la base de données au premier
+  démarrage et ne peut pas être modifié par la suite.
+- Derrière un proxy inverse à vous, définissez `MY_TRUSTED_PROXIES` dans `.env` afin que les limites de débit, comme celle de la connexion,
+  s’appliquent par IP de client plutôt qu’au proxy ([`trusted_proxies`](../reference/configuration.md#trusted_proxies)).
 - Avant d’ouvrir le serveur aux utilisateurs, parcourez la [liste de contrôle de production](production-checklist.md).
 - `docker compose down` arrête la pile. `down -v` supprime aussi les volumes de données.
 
-Pour chaque paramètre, consultez la [référence de la configuration](../reference/configuration.md) ; pour l’exploitation au quotidien, consultez [l’exécution du serveur](running.md).
+Pour tous les paramètres, voir la [référence de la configuration](../reference/configuration.md) ; pour l’exploitation au quotidien, voir
+[exécuter le serveur](running.md).
