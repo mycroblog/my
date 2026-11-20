@@ -74,6 +74,10 @@ const stateWords: Record<RecordState, string> = {
   pending: "Pending",
   failed: "Failed",
   disabled: "Disabled",
+  queued: "Queued",
+  running: "Running",
+  retrying: "Waiting to retry",
+  muted: "Muted",
 };
 
 const reports: readonly Report[] = [
@@ -456,6 +460,7 @@ const job = (id: number, head: string, caption: string, state: RecordState, atte
   id: `j${String(id)}`,
   head,
   caption,
+  code: true,
   href: `#/admin/jobs/j${String(id)}`,
   cells: {
     attempts,

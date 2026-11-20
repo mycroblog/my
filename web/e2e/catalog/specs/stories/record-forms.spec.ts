@@ -277,23 +277,26 @@ test("the irreversible confirmation unlocks only while its field holds the whole
   await expect(banButton(page)).toBeEnabled();
 });
 
-test("the facts of a record stand side by side from an 18rem column, at a phone's width too, and each term over its value in a narrower one", async ({
+test("the facts of a record stand side by side from a 30rem column, and each term over its value on a phone and in a narrower column", async ({
   page,
   open,
 }) => {
   const term = () => page.getByText("Registered", { exact: true });
   const value = () => page.getByText("Nov 3, 2026, 9:41 PM", { exact: true });
-  for (const width of [pc, minimum]) {
-    await open(story("facts", "registration"), { width });
-    const [wideTerm, wideValue] = [await boxOf(term()), await boxOf(value())];
-    expect(wideValue.left).toBeGreaterThan(wideTerm.right);
-    expect(wideValue.top).toBeLessThan(wideTerm.bottom);
-  }
+  await open(story("facts", "registration"), { width: pc });
+  const [wideTerm, wideValue] = [await boxOf(term()), await boxOf(value())];
+  expect(wideValue.left).toBeGreaterThan(wideTerm.right);
+  expect(wideValue.top).toBeLessThan(wideTerm.bottom);
 
-  await open(story("facts", "narrow-column"), { width: pc });
-  const [narrowTerm, narrowValue] = [await boxOf(term()), await boxOf(value())];
-  expect(narrowValue.top).toBeGreaterThanOrEqual(narrowTerm.bottom);
-  expect(Math.abs(narrowValue.left - narrowTerm.left)).toBeLessThan(1);
+  for (const [id, width] of [
+    ["registration", minimum],
+    ["narrow-column", pc],
+  ] as const) {
+    await open(story("facts", id), { width });
+    const [narrowTerm, narrowValue] = [await boxOf(term()), await boxOf(value())];
+    expect(narrowValue.top).toBeGreaterThanOrEqual(narrowTerm.bottom);
+    expect(Math.abs(narrowValue.left - narrowTerm.left)).toBeLessThan(1);
+  }
 });
 
 test("a block of code is shown whole: it never scrolls, and stays inside its width", async ({ page, open }) => {

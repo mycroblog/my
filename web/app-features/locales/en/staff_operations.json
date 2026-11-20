@@ -1,0 +1,646 @@
+{
+  "staff_operations.group.operations": {
+    "defaultMessage": "Operations",
+    "description": "The heading of the group of administration screens about running the server at /admin: the job queue, the errors reported and the UX measurements. Read by administrators."
+  },
+  "staff_operations.entry.jobs": {
+    "defaultMessage": "Jobs",
+    "description": "The name of the screen of the job queue, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.entry.jobs.hint": {
+    "defaultMessage": "The job queue, failed jobs and running them again",
+    "description": "The line under Jobs in the list at /admin. Read by administrators."
+  },
+  "staff_operations.entry.error_groups": {
+    "defaultMessage": "Errors",
+    "description": "The name of the screen of the error groups, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.entry.error_groups.hint": {
+    "defaultMessage": "Errors the server and the web client reported",
+    "description": "The line under Errors in the list at /admin. Read by administrators."
+  },
+  "staff_operations.entry.ux_measurements": {
+    "defaultMessage": "UX measurements",
+    "description": "The name of the screen of how fast the web client responds, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.entry.ux_measurements.hint": {
+    "defaultMessage": "How fast the web client responds",
+    "description": "The line under UX measurements in the list at /admin. Read by administrators."
+  },
+  "staff_operations.entry.link_card_domains": {
+    "defaultMessage": "Link card domains",
+    "description": "The name of the screen of the rules of the link card crawler per domain, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.entry.link_card_domains.hint": {
+    "defaultMessage": "Domains the link card crawler fetches nothing or no images from",
+    "description": "The line under Link card domains in the list at /admin. Read by administrators."
+  },
+  "staff_operations.forbidden": {
+    "defaultMessage": "Your account no longer has the permission for this screen.",
+    "description": "In the place of an operations screen whose permission the reader's account lost meanwhile. Read by administrators."
+  },
+  "staff_operations.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The button that closes a question of an operations screen without doing anything. Read by administrators."
+  },
+  "staff_operations.copy.reason": {
+    "defaultMessage": "Copy the error",
+    "description": "The button under why a job's run failed, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.payload": {
+    "defaultMessage": "Copy the payload",
+    "description": "The button under a job's payload, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.request_id": {
+    "defaultMessage": "Copy the request ID",
+    "description": "The button under the request ID of an error's latest occurrence, which copies it to search the logs. Read by administrators."
+  },
+  "staff_operations.copy.trace_id": {
+    "defaultMessage": "Copy the trace ID",
+    "description": "The button under the trace ID of an error's latest occurrence, which copies it to search the traces. Read by administrators."
+  },
+  "staff_operations.copy.stack": {
+    "defaultMessage": "Copy the stack",
+    "description": "The button under the stack of an error's latest occurrence, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.fingerprint": {
+    "defaultMessage": "Copy the fingerprint",
+    "description": "The button after an error group's fingerprint, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.id": {
+    "defaultMessage": "Copy the ID",
+    "description": "The button after a job's ID, which copies it to search the logs. Read by administrators."
+  },
+  "staff_operations.copy.idempotency_key": {
+    "defaultMessage": "Copy the idempotency key",
+    "description": "The button after a job's idempotency key, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.ordering_key": {
+    "defaultMessage": "Copy the ordering key",
+    "description": "The button after a job's ordering key, which copies it. Read by administrators."
+  },
+  "staff_operations.queue.loading": {
+    "defaultMessage": "Loading the job queue…",
+    "description": "In the place of the job queue's state while it loads. Read by administrators."
+  },
+  "staff_operations.queue.failed": {
+    "defaultMessage": "The job queue could not be loaded.",
+    "description": "In the place of the job queue's state when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.queue.states": {
+    "defaultMessage": "Jobs by state",
+    "description": "For assistive technology, the figures of how many jobs are in each state at /admin/jobs. Read by administrators."
+  },
+  "staff_operations.queue.facts": {
+    "defaultMessage": "The queue",
+    "description": "For assistive technology, the facts of the job queue at /admin/jobs. Read by administrators."
+  },
+  "staff_operations.queue.adapter": {
+    "defaultMessage": "Queue",
+    "description": "The term of the job queue the server runs (db, inline, cloudtasks), shown as it is set. Read by administrators."
+  },
+  "staff_operations.queue.oldest": {
+    "defaultMessage": "Oldest due job",
+    "description": "The term of the time since which the job that has waited longest for a worker has been due. Read by administrators."
+  },
+  "staff_operations.queue.types": {
+    "defaultMessage": "Jobs by type",
+    "description": "The heading of the table of the jobs of each type and state at /admin/jobs, and its name for assistive technology. Read by administrators."
+  },
+  "staff_operations.queue.column.waiting": {
+    "defaultMessage": "Waiting since",
+    "description": "The column of the table of jobs by type: since when the type has kept a due job waiting. Read by administrators."
+  },
+  "staff_operations.queue.empty": {
+    "defaultMessage": "No jobs are queued, running or failed.",
+    "description": "In the place of the table of jobs by type when the queue has none. Read by administrators."
+  },
+  "staff_operations.queue.unlisted": {
+    "defaultMessage": "This queue does not list the jobs that wait or run. Failed jobs are listed.",
+    "description": "In the place of the figures at /admin/jobs, and of an empty list of pending jobs, for a queue that cannot list its pending jobs; Failed jobs follows. Read by administrators."
+  },
+  "staff_operations.queue.to_dead": {
+    "defaultMessage": "Failed jobs",
+    "description": "The link after the line saying the queue does not list its pending jobs, to the list of failed jobs. Read by administrators."
+  },
+  "staff_operations.queue.failed_count": {
+    "defaultMessage": "{count, plural, one {# job failed for good.} other {# jobs failed for good.}}",
+    "description": "First on the job queue's screen while some jobs failed for good, before the link to them. Read by administrators."
+  },
+  "staff_operations.jobs.title": {
+    "defaultMessage": "Job list",
+    "description": "The title of the list of jobs at /admin/jobs/list, the link to it, and the way back to it from a job. Read by administrators."
+  },
+  "staff_operations.jobs.state": {
+    "defaultMessage": "{state, select, queued {Queued} running {Running} retrying {Waiting to retry} dead {Failed} other {{state}}}",
+    "description": "The state of a job: not run yet, held by a worker, waiting to run again after a failure, or failed for good. Also a filter's option and a figure's label. Read by administrators."
+  },
+  "staff_operations.jobs.state.pending": {
+    "defaultMessage": "Not finished",
+    "description": "The state filter's option of every job that is queued, running or waiting to retry, the list's default. Read by administrators."
+  },
+  "staff_operations.jobs.type.any": {
+    "defaultMessage": "Every type",
+    "description": "The type filter's option of jobs of every type. Read by administrators."
+  },
+  "staff_operations.jobs.filters": {
+    "defaultMessage": "Filter jobs",
+    "description": "For assistive technology, the filters over the list of jobs. Read by administrators."
+  },
+  "staff_operations.jobs.column.type": {
+    "defaultMessage": "Type",
+    "description": "The name of a job's type (federation.deliver) as the head of a table's rows, and the type filter's name. Read by administrators."
+  },
+  "staff_operations.jobs.column.state": {
+    "defaultMessage": "State",
+    "description": "The column of a job's state, the state filter's name and the term of a job's state. Read by administrators."
+  },
+  "staff_operations.jobs.column.attempts": {
+    "defaultMessage": "Attempts",
+    "description": "The column and the term of how many times a job has run. Read by administrators."
+  },
+  "staff_operations.jobs.column.due": {
+    "defaultMessage": "Due at",
+    "description": "The column and the term of when a pending job is due to run. Read by administrators."
+  },
+  "staff_operations.jobs.column.failed_at": {
+    "defaultMessage": "Failed at",
+    "description": "The column and the term of when a failed job failed. Read by administrators."
+  },
+  "staff_operations.jobs.table": {
+    "defaultMessage": "Jobs",
+    "description": "For assistive technology, the table of jobs at /admin/jobs/list. Read by administrators."
+  },
+  "staff_operations.jobs.loading": {
+    "defaultMessage": "Loading the jobs…",
+    "description": "In the place of the list of jobs while it loads. Read by administrators."
+  },
+  "staff_operations.jobs.failed": {
+    "defaultMessage": "The jobs could not be loaded.",
+    "description": "In the place of the list of jobs when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.jobs.empty": {
+    "defaultMessage": "No jobs are queued or running.",
+    "description": "In the place of the list of jobs when no job is pending, with no filter. Read by administrators."
+  },
+  "staff_operations.jobs.empty.filtered": {
+    "defaultMessage": "No jobs match these filters.",
+    "description": "In the place of the list of jobs when no job matches the filters; Clear filters is over it. Read by administrators."
+  },
+  "staff_operations.job.loading": {
+    "defaultMessage": "Loading the job…",
+    "description": "In the place of a job's screen while it loads. Read by administrators."
+  },
+  "staff_operations.job.failed": {
+    "defaultMessage": "The job could not be loaded.",
+    "description": "In the place of a job's screen when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.job.missing": {
+    "defaultMessage": "This job is not in the queue: it finished, or was deleted.",
+    "description": "In the place of a job's screen when the server has no such job, before the link to the list. Read by administrators."
+  },
+  "staff_operations.job.facts": {
+    "defaultMessage": "The job",
+    "description": "For assistive technology, the facts of a job. Read by administrators."
+  },
+  "staff_operations.job.created": {
+    "defaultMessage": "Created",
+    "description": "The term of when a job was created. Read by administrators."
+  },
+  "staff_operations.job.worker": {
+    "defaultMessage": "Worker",
+    "description": "The term of the worker that runs a running job. Read by administrators."
+  },
+  "staff_operations.job.locked_until": {
+    "defaultMessage": "Held until",
+    "description": "The term of when the lease of a running job ends, after which another worker may run it. Read by administrators."
+  },
+  "staff_operations.job.id": {
+    "defaultMessage": "ID",
+    "description": "The term of a job's ID, as the logs name it. Read by administrators."
+  },
+  "staff_operations.job.idempotency_key": {
+    "defaultMessage": "Idempotency key",
+    "description": "The term of a job's idempotency key. Read by administrators."
+  },
+  "staff_operations.job.ordering_key": {
+    "defaultMessage": "Ordering key",
+    "description": "The term of a job's ordering key. Read by administrators."
+  },
+  "staff_operations.job.last_error": {
+    "defaultMessage": "Last error",
+    "description": "The heading of why a job's last run failed, and its name for assistive technology. Read by administrators."
+  },
+  "staff_operations.job.payload": {
+    "defaultMessage": "Payload",
+    "description": "The heading of a job's payload, and its name for assistive technology. Read by administrators."
+  },
+  "staff_operations.job.of_type": {
+    "defaultMessage": "Jobs of {type}",
+    "description": "The link at the end of a job's screen to the list of jobs of its type; type is a job type such as federation.deliver. Read by administrators."
+  },
+  "staff_operations.job.retry": {
+    "defaultMessage": "Run again",
+    "description": "The button of a failed job that runs it again, and the confirming button of its question. Read by administrators."
+  },
+  "staff_operations.job.retry.title": {
+    "defaultMessage": "Run this job again?",
+    "description": "The title of the question before a failed job runs again. Read by administrators."
+  },
+  "staff_operations.job.retry.text": {
+    "defaultMessage": "The {type} job runs again from its first attempt. It may repeat what it did before it failed, such as sending a message.",
+    "description": "The text of the question before a failed job runs again; type is a job type such as notification.email. Read by administrators."
+  },
+  "staff_operations.job.retried": {
+    "defaultMessage": "The job is queued to run again.",
+    "description": "What Run again did, said in the job's screen. Read by administrators."
+  },
+  "staff_operations.job.retry_failed": {
+    "defaultMessage": "The job could not be run again. Reload the page and try again.",
+    "description": "What a Run again that failed says, in the job's screen. Read by administrators."
+  },
+  "staff_operations.attempts": {
+    "defaultMessage": "Failed attempts",
+    "description": "The heading of a job's runs that did not succeed, and their log's name for assistive technology. Read by administrators."
+  },
+  "staff_operations.attempts.loading": {
+    "defaultMessage": "Loading the attempts…",
+    "description": "In the place of a job's failed attempts while they load. Read by administrators."
+  },
+  "staff_operations.attempts.failed": {
+    "defaultMessage": "The attempts could not be loaded.",
+    "description": "In the place of a job's failed attempts when they could not be loaded. Read by administrators."
+  },
+  "staff_operations.attempts.empty": {
+    "defaultMessage": "No attempt of this job failed.",
+    "description": "In the place of a job's failed attempts when it has none. Read by administrators."
+  },
+  "staff_operations.attempts.column.attempt": {
+    "defaultMessage": "Attempt",
+    "description": "The head of the rows of the table of a job's failed attempts. Read by administrators."
+  },
+  "staff_operations.attempts.column.outcome": {
+    "defaultMessage": "Outcome",
+    "description": "The column of whether a failed attempt's job ran again or failed for good. Read by administrators."
+  },
+  "staff_operations.attempts.column.finished": {
+    "defaultMessage": "Finished at",
+    "description": "The column of when a failed attempt finished. Read by administrators."
+  },
+  "staff_operations.attempt.head": {
+    "defaultMessage": "Attempt {n}",
+    "description": "The head of a row of a job's failed attempts: which run it was. Read by administrators."
+  },
+  "staff_operations.attempt.outcome": {
+    "defaultMessage": "{outcome, select, dead {Not retried} other {Retried}}",
+    "description": "What came of a failed attempt: the job failed for good and was not retried, or was retried. Read by administrators."
+  },
+  "staff_operations.error_groups.state": {
+    "defaultMessage": "{state, select, open {Open} resolved {Resolved} muted {Muted} other {{state}}}",
+    "description": "The state of an error group: open, resolved by an administrator, or muted (it notifies nobody). Also a filter's option. Read by administrators."
+  },
+  "staff_operations.error_groups.state.any": {
+    "defaultMessage": "Every state",
+    "description": "The state filter's option of error groups of every state. Read by administrators."
+  },
+  "staff_operations.error_groups.source": {
+    "defaultMessage": "{source, select, server {Server} web {Web client} other {{source}}}",
+    "description": "What reported the errors of a group. Also a filter's option. Read by administrators."
+  },
+  "staff_operations.error_groups.source.any": {
+    "defaultMessage": "Both sources",
+    "description": "The source filter's option of error groups of the server and of the web client. Read by administrators."
+  },
+  "staff_operations.error_groups.filters": {
+    "defaultMessage": "Filter errors",
+    "description": "For assistive technology, the filters over the list of error groups. Read by administrators."
+  },
+  "staff_operations.error_groups.column.type": {
+    "defaultMessage": "Error",
+    "description": "The name of an error's type (a Go type, a JavaScript error's name) as the head of the table's rows. Read by administrators."
+  },
+  "staff_operations.error_groups.column.state": {
+    "defaultMessage": "State",
+    "description": "The column of an error group's state, the state filter's name and the term of its state. Read by administrators."
+  },
+  "staff_operations.error_groups.column.source": {
+    "defaultMessage": "Source",
+    "description": "The source filter's name and the term of what reported an error group. Read by administrators."
+  },
+  "staff_operations.error_groups.column.day": {
+    "defaultMessage": "Last 24 hours",
+    "description": "The column and the row of an error group's occurrences in the last 24 hours. Read by administrators."
+  },
+  "staff_operations.error_groups.column.week": {
+    "defaultMessage": "Last 7 days",
+    "description": "The column and the row of an error group's occurrences in the last 7 days. Read by administrators."
+  },
+  "staff_operations.error_groups.column.seen": {
+    "defaultMessage": "Last seen",
+    "description": "The column and the term of when an error group last happened. Read by administrators."
+  },
+  "staff_operations.error_groups.table": {
+    "defaultMessage": "Error groups",
+    "description": "For assistive technology, the table of error groups at /admin/errors. Read by administrators."
+  },
+  "staff_operations.error_groups.loading": {
+    "defaultMessage": "Loading the errors…",
+    "description": "In the place of the list of error groups while it loads. Read by administrators."
+  },
+  "staff_operations.error_groups.failed": {
+    "defaultMessage": "The errors could not be loaded.",
+    "description": "In the place of the list of error groups when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.error_groups.empty": {
+    "defaultMessage": "No errors are open.",
+    "description": "In the place of the list of error groups when none is open, with no filter. Read by administrators."
+  },
+  "staff_operations.error_groups.empty.filtered": {
+    "defaultMessage": "No errors match these filters.",
+    "description": "In the place of the list of error groups when none matches the filters; Clear filters is over it. Read by administrators."
+  },
+  "staff_operations.error_groups.one.loading": {
+    "defaultMessage": "Loading the error…",
+    "description": "In the place of an error group's screen while it loads. Read by administrators."
+  },
+  "staff_operations.error_groups.one.failed": {
+    "defaultMessage": "The error could not be loaded.",
+    "description": "In the place of an error group's screen when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.error_groups.missing": {
+    "defaultMessage": "There is no error group at this address.",
+    "description": "In the place of an error group's screen when the server has none of its ID, before the link to the list. Read by administrators."
+  },
+  "staff_operations.error_groups.facts": {
+    "defaultMessage": "The error",
+    "description": "For assistive technology, the facts of an error group. Read by administrators."
+  },
+  "staff_operations.error_groups.since": {
+    "defaultMessage": "In this state since",
+    "description": "The term of when an error group entered its state. Read by administrators."
+  },
+  "staff_operations.error_groups.resolved_version": {
+    "defaultMessage": "Resolved on version",
+    "description": "The term of the server's version a resolved error group was resolved with. Read by administrators."
+  },
+  "staff_operations.error_groups.kind": {
+    "defaultMessage": "Kind",
+    "description": "The term of whether an error group's errors are panics or errors. Read by administrators."
+  },
+  "staff_operations.error_groups.kind.value": {
+    "defaultMessage": "{kind, select, panic {Panic} other {Error}}",
+    "description": "The kind of an error group's errors: a panic (or an uncaught error of the web client), or an error. Read by administrators."
+  },
+  "staff_operations.error_groups.where": {
+    "defaultMessage": "Where",
+    "description": "The term of where an error group's errors happened: a route, a job type, a goroutine's name. Read by administrators."
+  },
+  "staff_operations.error_groups.message": {
+    "defaultMessage": "Message",
+    "description": "The term of an error's message, scrubbed of personal data. Read by administrators."
+  },
+  "staff_operations.error_groups.first": {
+    "defaultMessage": "First seen",
+    "description": "The term of when an error group first happened. Read by administrators."
+  },
+  "staff_operations.error_groups.fingerprint": {
+    "defaultMessage": "Fingerprint",
+    "description": "The term of an error group's fingerprint, the same in the logs and the exporters. Read by administrators."
+  },
+  "staff_operations.error_groups.counts": {
+    "defaultMessage": "Occurrences",
+    "description": "The heading of an error group's occurrences of the last 24 hours and 7 days, and their table's name for assistive technology. Read by administrators."
+  },
+  "staff_operations.error_groups.counts.period": {
+    "defaultMessage": "Period",
+    "description": "The head of the rows of the table of an error group's occurrences: a period. Read by administrators."
+  },
+  "staff_operations.error_groups.counts.count": {
+    "defaultMessage": "Count",
+    "description": "The column of how many times an error happened in a period or an hour. Read by administrators."
+  },
+  "staff_operations.error_groups.sample": {
+    "defaultMessage": "Latest occurrence",
+    "description": "The heading of an error group's latest occurrence, and its facts' name for assistive technology. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.at": {
+    "defaultMessage": "Happened",
+    "description": "The term of when an error's latest occurrence happened. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.version": {
+    "defaultMessage": "Version",
+    "description": "The term and the column of the server's version an occurrence happened on. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.role": {
+    "defaultMessage": "Process",
+    "description": "The term of the role of the server's process that reported an occurrence (all, web, worker). Read by administrators."
+  },
+  "staff_operations.error_groups.sample.type": {
+    "defaultMessage": "Types",
+    "description": "The term of the chain of an occurrence's error types, outermost first. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.request_id": {
+    "defaultMessage": "Request ID",
+    "description": "The name of an occurrence's request ID, which the logs are searched by. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.trace_id": {
+    "defaultMessage": "Trace ID",
+    "description": "The name of an occurrence's trace ID, which the traces are searched by. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.stack": {
+    "defaultMessage": "Stack",
+    "description": "The name of an occurrence's stack, scrubbed. Read by administrators."
+  },
+  "staff_operations.error_groups.hours": {
+    "defaultMessage": "By hour",
+    "description": "The heading of the hours an error group happened in, the newest first, and their table's name. Read by administrators."
+  },
+  "staff_operations.error_groups.hours.hour": {
+    "defaultMessage": "Hour",
+    "description": "The head of the rows of the table of an error group's hours: the hour's start. Read by administrators."
+  },
+  "staff_operations.error_groups.hours.empty": {
+    "defaultMessage": "It did not happen in the last 90 days.",
+    "description": "In the place of an error group's hours when it had none in the 90 days the server keeps. Read by administrators."
+  },
+  "staff_operations.error_groups.events": {
+    "defaultMessage": "History",
+    "description": "The heading of the changes of an error group's state, the newest first, and their log's name. Read by administrators."
+  },
+  "staff_operations.error_groups.events.empty": {
+    "defaultMessage": "Its state has not changed.",
+    "description": "In the place of an error group's history when it has always been open. Read by administrators."
+  },
+  "staff_operations.error_groups.event": {
+    "defaultMessage": "{kind, select, resolved {{actor, select, cli {Resolved from the command line} other {Resolved by an administrator}}} regressed {Happened again on another version} muted {{actor, select, cli {Muted from the command line} other {Muted by an administrator}}} other {{actor, select, cli {Unmuted from the command line} other {Unmuted by an administrator}}}}",
+    "description": "An entry of an error group's history: who changed its state, or that it happened again on another version after it was resolved. Read by administrators."
+  },
+  "staff_operations.error_groups.event.version": {
+    "defaultMessage": "Version {version}",
+    "description": "The muted line under an entry of an error group's history: the version it names. Read by administrators."
+  },
+  "staff_operations.error_groups.act": {
+    "defaultMessage": "{act, select, resolve {Resolve} mute {Mute} other {Unmute}}",
+    "description": "The buttons of an error group: mark it resolved, mute it, or unmute it. Read by administrators."
+  },
+  "staff_operations.error_groups.done": {
+    "defaultMessage": "{act, select, resolve {The error is resolved.} mute {The error is muted.} other {The error is open again.}}",
+    "description": "What a button of an error group did, said in its screen. Read by administrators."
+  },
+  "staff_operations.error_groups.act_failed": {
+    "defaultMessage": "The change could not be saved. Reload the page and try again.",
+    "description": "What a button of an error group that failed says, in its screen. Read by administrators."
+  },
+  "staff_operations.error_groups.first_version": {
+    "defaultMessage": "First seen on version",
+    "description": "The term of the server's version an error group first happened on. Read by administrators."
+  },
+  "staff_operations.error_groups.last_version": {
+    "defaultMessage": "Last seen on version",
+    "description": "The term of the server's version an error group last happened on. Read by administrators."
+  },
+  "staff_operations.ux.window": {
+    "defaultMessage": "Period",
+    "description": "The heading of the choice of the period the UX measurements sum, and the choice's name. Read by administrators."
+  },
+  "staff_operations.ux.window.choice": {
+    "defaultMessage": "{hours, select, 24 {24 hours} 168 {7 days} other {30 days}}",
+    "description": "An option of the period the UX measurements sum, up to now. Read by administrators."
+  },
+  "staff_operations.ux.since": {
+    "defaultMessage": "Since {date}",
+    "description": "The line under Period: the start of the period's first hour. Read by administrators."
+  },
+  "staff_operations.ux.loading": {
+    "defaultMessage": "Loading the measurements…",
+    "description": "In the place of the UX measurements while they load. Read by administrators."
+  },
+  "staff_operations.ux.failed": {
+    "defaultMessage": "The measurements could not be loaded.",
+    "description": "In the place of the UX measurements when they could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.ux.off": {
+    "defaultMessage": "Measuring is off: the web client sends no samples.",
+    "description": "Under the window's choice while the setting that measures the web client is off. Read by administrators."
+  },
+  "staff_operations.ux.empty": {
+    "defaultMessage": "No samples in this period.",
+    "description": "Under the period's choice when measuring is on and the period has no sample. Read by administrators."
+  },
+  "staff_operations.ux.name": {
+    "defaultMessage": "{metric, select, transition {Kind} press {Action} call_rtt {Transport} call_jitter {Transport} call_packet_loss {Transport} other {Route}}",
+    "description": "The head of the rows of a metric's table: a route of the app, a kind of navigation, an action's ID, or a call's transport. Read by administrators."
+  },
+  "staff_operations.ux.column.p75": {
+    "defaultMessage": "75th percentile",
+    "description": "The column of the value at most three quarters of a name's samples have. Read by administrators."
+  },
+  "staff_operations.ux.band.upto": {
+    "defaultMessage": "Up to {value}",
+    "description": "The column of the share of samples above the column before and at most this value (200 ms, 1%). Read by administrators."
+  },
+  "staff_operations.ux.over": {
+    "defaultMessage": "Over {value}",
+    "description": "The column of the share of samples over the last band's value, and a 75th percentile past every bound. Read by administrators."
+  },
+  "staff_operations.ux.metric": {
+    "defaultMessage": "{metric, select, lcp {Time for a screen to appear (LCP)} inp {Time to answer a press (INP)} long_frame {Long frames} transition {Time to navigate} press {Time to answer an action} call_rtt {Call round-trip time} call_jitter {Call jitter} other {Call packet loss}}",
+    "description": "The heading of a metric's table of the UX measurements, and the table's name: what is measured, with the web's name of the metric where it has one (LCP, INP). Read by administrators."
+  },
+  "staff_operations.ux.p75.band": {
+    "defaultMessage": "{band, select, poor {{value}, poor} other {{value}, needs improvement}}",
+    "description": "A 75th percentile of LCP or INP past the good threshold, and how far: needs improvement, or poor. Read by administrators."
+  },
+  "staff_operations.ux.samples": {
+    "defaultMessage": "{count, plural, one {# sample} other {# samples}}",
+    "description": "The line under a route, an action or a call's transport in a table of the UX measurements: how many samples it has in the period. Read by administrators."
+  },
+  "staff_operations.link_cards.loading": {
+    "defaultMessage": "Loading the rules…",
+    "description": "In the place of the rules of the link card crawler while they load. Read by administrators."
+  },
+  "staff_operations.link_cards.failed": {
+    "defaultMessage": "The rules could not be loaded.",
+    "description": "In the place of the rules of the link card crawler when they could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.link_cards.list": {
+    "defaultMessage": "Rules",
+    "description": "The heading of the list of the rules of the link card crawler, and its name. Read by administrators."
+  },
+  "staff_operations.link_cards.add": {
+    "defaultMessage": "Add a rule",
+    "description": "The button that opens the form of a new rule of the link card crawler, and the form's Save. Read by administrators."
+  },
+  "staff_operations.link_cards.empty": {
+    "defaultMessage": "No domain has a rule: the crawler fetches the cards of every domain.",
+    "description": "In the place of the list of rules when there is none. Read by administrators."
+  },
+  "staff_operations.link_cards.mode": {
+    "defaultMessage": "{mode, select, no_fetch {Stop fetching} other {Stop images only}}",
+    "description": "What the crawler does not do on a rule's domain: fetch anything, or fetch images. Read by administrators."
+  },
+  "staff_operations.link_cards.mode.label": {
+    "defaultMessage": "What the crawler does",
+    "description": "The name of the choice of a rule's mode. Read by administrators."
+  },
+  "staff_operations.link_cards.set_at": {
+    "defaultMessage": "Set {date}",
+    "description": "The line of a rule in the list: when it was last set. Read by administrators."
+  },
+  "staff_operations.link_cards.new": {
+    "defaultMessage": "New rule",
+    "description": "The title of the form of a new rule of the link card crawler. Read by administrators."
+  },
+  "staff_operations.link_cards.section": {
+    "defaultMessage": "Rule",
+    "description": "The heading of the fields of a rule of the link card crawler. Read by administrators."
+  },
+  "staff_operations.link_cards.domain": {
+    "defaultMessage": "Domain",
+    "description": "The field of a new rule's domain. Read by administrators."
+  },
+  "staff_operations.link_cards.note": {
+    "defaultMessage": "Note",
+    "description": "The field of what the administrators keep about a rule. Read by administrators."
+  },
+  "staff_operations.link_cards.missing": {
+    "defaultMessage": "This domain has no rule.",
+    "description": "In the place of a rule's page when its domain has none, before the link to the list. Read by administrators."
+  },
+  "staff_operations.link_cards.remove": {
+    "defaultMessage": "Remove the rule",
+    "description": "The heading of the last section of a rule's page. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.about": {
+    "defaultMessage": "The cards of the domain show again as they were.",
+    "description": "The line under Remove the rule. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.press": {
+    "defaultMessage": "Remove",
+    "description": "The button that removes a rule, and the confirming button of its question. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.title": {
+    "defaultMessage": "Remove the rule of this domain?",
+    "description": "The title of the question before a rule is removed. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.text": {
+    "defaultMessage": "The cards of {domain} show again as they were, and the crawler fetches its pages when a post needs them.",
+    "description": "The text of the question before a rule is removed; domain is the rule's domain. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.failed": {
+    "defaultMessage": "The rule could not be removed. Reload the page and try again.",
+    "description": "Under Remove when the removal failed. Read by administrators."
+  },
+  "staff_operations.link_cards.rule": {
+    "defaultMessage": "{field, select, domain {Enter a host name, without https:// or a path.} other {Write at most 5,000 characters.}}",
+    "description": "Under the field of a rule that the server refused: the rule its value follows. Read by administrators."
+  },
+  "staff_operations.link_cards.taken": {
+    "defaultMessage": "{domain} already has a rule. Change it on its page.",
+    "description": "Under the domain of a new rule of the link card crawler when the domain already has one, which saving would replace; its page is linked under it. Read by administrators."
+  },
+  "staff_operations.link_cards.taken.open": {
+    "defaultMessage": "The rule of {domain}",
+    "description": "The link under the domain of a new rule to the page of the rule the domain already has. Read by administrators."
+  }
+}

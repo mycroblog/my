@@ -178,6 +178,7 @@ export {
   RowList,
   ResultGroup,
   BackButton,
+  BackLead,
   ButtonPair,
   Excerpt,
   FacesRow,
@@ -233,6 +234,7 @@ export {
   type FinanceTableProps,
 } from "./finance";
 export { FactList, FigureTiles, type Fact, type Figure } from "./facts";
+export { CodeText } from "./code-text";
 export { LogEntry, LogList, type LogEntryProps } from "./log";
 export { ColorField, type ColorFieldProps, type ColorPair, type SchemeColors } from "./color-field";
 export {

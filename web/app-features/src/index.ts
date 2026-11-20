@@ -280,6 +280,26 @@ export { loadRules, NewRuleScreen, RuleScreen } from "./staff/rules";
 export type { AdminSubProps } from "./staff/settings/parts";
 export { AdminSettingsTopicScreen, loadAdminSettingsTopic, useAdminSettingsTopicTitle } from "./staff/settings/screen";
 export { loadTranslationSettings, TranslationSettingsScreen } from "./staff/settings/translation";
+export { loadUnderOperations } from "./staff/operations/entries";
+export { errorGroupPath, ErrorGroupScreen, loadError, useErrorGroupTitle } from "./staff/operations/errors";
+export {
+  JobListScreen,
+  jobPath,
+  jobQueuePath,
+  JobScreen,
+  jobsListPath,
+  loadJob,
+  loadJobList,
+  useJobListTitle,
+  useJobTitle,
+} from "./staff/operations/jobs";
+export {
+  LinkCardRuleScreen,
+  loadLinkCardDomains,
+  NewLinkCardRuleScreen,
+  useLinkCardRuleTitle,
+} from "./staff/operations/link-cards";
+export { loadUXScreen, UXMeasurementsScreen } from "./staff/operations/ux";
 export { ThemeDraftScreen, useThemeDraftTitle } from "./staff/theme/draft";
 export { ClosureAnnouncementScreen, useClosureAnnouncementTitle } from "./staff/closure/announce";
 export { ClosureCloseScreen, loadClosureClose, useClosureCloseTitle } from "./staff/closure/close";

@@ -610,12 +610,23 @@ const everyEntry = [
   "/admin/login-providers",
   "/admin/oauth-apps",
   "/admin/webhooks",
+  "/admin/link-card-domains",
+  "/admin/jobs",
+  "/admin/errors",
+  "/admin/ux-measurements",
 ];
 
 for (const [permission, entries, address, read] of [
   [
     "manage_settings",
-    ["/admin/settings", "/admin/documents", "/admin/translation", "/admin/theme", "/admin/relays"],
+    [
+      "/admin/settings",
+      "/admin/documents",
+      "/admin/translation",
+      "/admin/theme",
+      "/admin/relays",
+      "/admin/link-card-domains",
+    ],
     "/admin/settings/general",
     "GET /admin/settings",
   ],

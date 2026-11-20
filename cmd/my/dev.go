@@ -33,18 +33,19 @@ func init() {
 	testBuildUsage = `
 Commands of this test build (build tag e2e_fakes), never in a released binary:
   dev       Run the fakes of the end-to-end tests and the demonstration
-            (my dev push-service|oidc-provider)
+            (my dev push-service|oidc-provider|dead-job)
 `
 }
 
 // runDev implements `my dev <subcommand>`.
 func runDev(args []string, stdout, stderr io.Writer) int {
 	usage := func() {
-		_, _ = fmt.Fprint(stderr, `Usage: my dev push-service|oidc-provider [flags]
+		_, _ = fmt.Fprint(stderr, `Usage: my dev push-service|oidc-provider|dead-job [flags]
 
 Subcommands (test builds only):
   push-service   Run a fake Web Push service over HTTPS on this machine
   oidc-provider  Run a fake OpenID Connect provider over HTTPS on this machine
+  dead-job       Put a job into the queue that the server's worker fails at once
 `)
 	}
 	var serve func(ctx context.Context, args []string, stdout, stderr io.Writer) int
@@ -59,6 +60,8 @@ Subcommands (test builds only):
 		serve = runDevPushService
 	case args[0] == "oidc-provider":
 		serve = runDevOIDCProvider
+	case args[0] == "dead-job":
+		serve = runDevDeadJob
 	default:
 		_, _ = fmt.Fprintf(stderr, "my dev: unknown subcommand %q\n\n", args[0])
 		usage()
