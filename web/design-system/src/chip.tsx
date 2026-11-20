@@ -88,17 +88,36 @@ export function ChipLink({ href, count, children }: { href: string; count?: stri
 }
 
 const badge = tv({
-  base: [
-    "rounded-control bg-surface-raised px-screen-name-gap text-caption leading-[1.5] font-label text-text",
-    // On a raised surface (a section of a settings screen), it takes the page's, so that its tile shows.
-    "[[data-surface-raised]_&]:bg-surface",
-  ],
+  base: "rounded-control px-screen-name-gap text-caption leading-[1.5] font-label",
+  variants: {
+    // The tint and the text of a badge given a hue (a role's): one of the fixed pairs of the tokens, at 4.5:1 in either
+    // scheme; without one, the raised surface, which on a raised surface (a settings section) takes the page's.
+    hue: {
+      none: "bg-surface-raised text-text [[data-surface-raised]_&]:bg-surface",
+      neutral: "bg-badge-neutral text-on-badge-neutral",
+      red: "bg-badge-red text-on-badge-red",
+      orange: "bg-badge-orange text-on-badge-orange",
+      yellow: "bg-badge-yellow text-on-badge-yellow",
+      green: "bg-badge-green text-on-badge-green",
+      teal: "bg-badge-teal text-on-badge-teal",
+      blue: "bg-badge-blue text-on-badge-blue",
+      purple: "bg-badge-purple text-on-badge-purple",
+      pink: "bg-badge-pink text-on-badge-pink",
+    },
+  },
+  defaultVariants: { hue: "none" },
 });
 
-/** A small label on the raised surface (follows you, a role, a bot), as the author wrote it, isolated. */
-export function Badge({ children }: { children: ReactNode }) {
+/** The hues a badge may take, each a fixed tint and text. */
+export type BadgeHue = "neutral" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "purple" | "pink";
+
+/**
+ * A small label on the raised surface (follows you, a role, a bot), as the author wrote it, isolated; `hue`, one of
+ * the badges' fixed colors (a role's badge), which only tells one badge from another: the label carries its meaning.
+ */
+export function Badge({ hue, children }: { hue?: BadgeHue | undefined; children: ReactNode }) {
   return (
-    <bdi dir="auto" className={badge()}>
+    <bdi dir="auto" className={badge({ hue: hue ?? "none" })}>
       {children}
     </bdi>
   );

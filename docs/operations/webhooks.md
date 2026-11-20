@@ -8,8 +8,10 @@ What a receiver gets (headers, signature, events, body) is described in the [web
 ## Set up a webhook
 
 Anyone with the `manage_webhooks` permission can set webhooks up on the admin screen "Webhooks" (`/admin/webhooks`).
-The built-in `admin` role has it. "Add a webhook" opens the form; choosing a webhook in the list opens its page, where you
-change, test, enable, disable and delete it, give it a new secret, and see its deliveries.
+The built-in `admin` role has it. "Set up a webhook" opens the form; choosing a webhook in the list opens its page, where
+you test it, turn it off and on, change it, see its deliveries of the last 14 days and send one again, give it a new
+secret, and delete it after typing the host name of its URL. The page says when deliveries keep failing, and when the
+server turned the webhook off. The history shows each delivery's event, status, attempts and last attempt, not its body.
 
 1. Create a webhook with a destination URL, a description, and the events to subscribe to. Each event also needs its own
    permission besides `manage_webhooks`: `manage_reports` for reports, `manage_accounts` for registrations, accounts,
@@ -24,7 +26,7 @@ The target is shown as the description and the host name of the URL; the URL its
 
 ## Rotate the secret
 
-"New secret" creates a new secret and shows it once. For the next 24 hours messages are signed with the old secret too
+"Make a new secret" creates a new secret and shows it once. For the next 24 hours messages are signed with the old secret too
 (`webhook-signature` carries two signatures), so you can switch the receiver to the new secret in that window.
 Secrets are sealed with `kernel.Sealer` before they are stored in the database; the key is the
 [KEK](key-management.md).

@@ -19,6 +19,8 @@ type Rule = { pattern: RegExp; kind?: Kind; min?: number; max?: number };
 const rules: readonly Rule[] = [
   // Fixed: a pair with an avatar holds its contrast only with this value.
   { pattern: /^--color-avatar-/ },
+  // Fixed: a role's badge has the same colors on every server (BadgeColor of the client API).
+  { pattern: /^--color-(on-)?badge-/ },
   { pattern: /^--color-/, kind: "color" },
   // A theme adds its fonts to the stacks; the stacks, the Latin family and the CJK region are fixed, so that a theme
   // never drops the emoji and text web fonts.

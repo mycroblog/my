@@ -26,6 +26,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
 import { AccountSettings, loadAccountSettings, useAppealableActions } from "./account";
 import { AppsSettings, loadAppsSettings } from "./apps/apps";
+import { CustomEmojiSettings, loadCustomEmojiSettings } from "./custom-emojis";
 import { DisplaySettings, loadDisplaySettings } from "./display";
 import { EventSettings, loadEventSettings } from "./events";
 import { FilterSettings, loadFilterSettings } from "./filters";
@@ -192,6 +193,19 @@ export const settingsEntries: readonly SettingsEntry[] = [
     hint: "settings.entry.events.hint",
     Screen: EventSettings,
     load: loadEventSettings,
+  },
+  {
+    // The custom emoji the reader asks for and made (FR-915, ADR-0070 §2): for a holder of `create_custom_emojis`,
+    // unless they manage the emoji, which they register from the administration with no request and no limit.
+    path: "custom-emojis",
+    group: "general",
+    icon: "emojiCustom",
+    name: "settings.entry.custom_emojis",
+    hint: "settings.entry.custom_emojis.hint",
+    shown: ({ permissions }) =>
+      permissions.includes("create_custom_emojis") && !permissions.includes("manage_custom_emojis"),
+    Screen: CustomEmojiSettings,
+    load: loadCustomEmojiSettings,
   },
   {
     // The reader's subscription, the plans and the tips, while the server takes them, never in the native shell.

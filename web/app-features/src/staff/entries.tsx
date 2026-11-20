@@ -27,6 +27,7 @@ import type { IconName } from "@my/design-system";
 import type { ComponentType } from "react";
 import type { MessageId } from "../messages.gen";
 import { queueOf, ReportQueueScreen } from "./reports/queue";
+import { serverEntries } from "./server/entries";
 import { AdminDocumentsScreen } from "./documents";
 import { AdminLoginProvidersScreen, loadLoginProviders } from "./login-providers";
 import { AdminOAuthAppsScreen, loadOAuthApps } from "./oauth-apps";
@@ -200,6 +201,8 @@ export const staffEntries: readonly StaffEntry[] = [
     Screen: AdminOAuthAppsScreen,
     load: (data, search) => loadOAuthApps(data, search),
   },
+  // Roles, custom emoji, announcements and webhooks (#3263).
+  ...serverEntries,
   ...accountEntries,
   ...domainEntries,
 ];

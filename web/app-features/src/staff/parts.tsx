@@ -101,11 +101,14 @@ export function filtered(search: StaffSearch, change: StaffSearch): StaffSearch 
   return atPage({ ...search, ...change }, undefined, []);
 }
 
-/** What a list reads and changes of its address: its query, and the way to show it at another. */
-type StaffQuery = Pick<StaffAddress, "search" | "onSearch">;
-
 /** Previous and Next under a list, along the pages of the address of `address`, Next to the page of `next`. */
-export function Pages({ address, next }: { address: StaffQuery; next: string | undefined }) {
+export function Pages({
+  address,
+  next,
+}: {
+  address: Pick<StaffAddress, "search" | "onSearch">;
+  next: string | undefined;
+}) {
   const { search, onSearch } = address;
   const trail = trailOf(search);
   const previous = trail.at(-1);

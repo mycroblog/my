@@ -37,13 +37,22 @@ const tabs = tv({
       "data-selected:bg-surface-raised data-selected:text-text",
     ],
     panel: "outline-hidden",
+    // How many things wait under a tab, as the navigation's and the menu's badges draw it.
+    badge: [
+      "box-border h-shell-badge min-w-shell-badge rounded-[calc(var(--shell-badge)/2)]",
+      "bg-text px-shell-badge-inline text-[0.6875rem] leading-none font-label text-surface tabular-nums",
+    ],
   },
 });
 
 export type TabRowProps<T extends string> = {
   /** What the tabs choose between, for assistive technology. */
   label: string;
-  tabs: readonly { id: T; name: string }[];
+  /**
+   * The tabs: each its name, and how many things wait under it (a badge, as the navigation's), with what the count is
+   * for assistive technology ("3 pending"); none or zero shows no badge.
+   */
+  tabs: readonly { id: T; name: string; count?: number | undefined; countLabel?: string | undefined }[];
   /** The current tab. */
   current: T;
   onChange: (id: T) => void;
@@ -52,6 +61,36 @@ export type TabRowProps<T extends string> = {
   /** What the current tab shows. */
   children: ReactNode;
 };
+
+/** The badge of a tab's count, in the reader's numbers; nothing for none or zero. */
+function TabCount({
+  count,
+  label,
+  className,
+}: {
+  count: number | undefined;
+  label: string | undefined;
+  className: string;
+}) {
+  const { lang } = useReader(undefined);
+  if (count === undefined || count <= 0) return null;
+  return (
+    <>
+      <Row
+        as="span"
+        inline
+        rigid
+        align="center"
+        justify="center"
+        className={className}
+        aria-hidden={label === undefined ? undefined : "true"}
+      >
+        {new Intl.NumberFormat(lang).format(count)}
+      </Row>
+      {label !== undefined && <span className="sr-only">{label}</span>}
+    </>
+  );
+}
 
 /** Tabs over a list, with what ends their row, and the list of the current tab under them. */
 export function TabRow<T extends string>({ label, tabs: items, current, onChange, end, children }: TabRowProps<T>) {
@@ -82,8 +121,9 @@ export function TabRow<T extends string>({ label, tabs: items, current, onChange
           as={<TabList aria-label={label} />}
         >
           {items.map((tab) => (
-            <Row key={tab.id} rigid align="center" as={<Tab id={tab.id} className={s.tab()} />}>
+            <Row key={tab.id} rigid align="center" gap="screen-tab-gap" as={<Tab id={tab.id} className={s.tab()} />}>
               {tab.name}
+              <TabCount count={tab.count} label={tab.countLabel} className={s.badge()} />
             </Row>
           ))}
         </Row>
