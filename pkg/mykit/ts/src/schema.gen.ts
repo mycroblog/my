@@ -255,9 +255,9 @@ export interface paths {
         /**
          * List the domains that the instance moderates
          * @description The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
-         *     setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
-         *     `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
-         *     token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
+         *     setting `domain_actions_visibility`, which `GET /instance` gives, decides who may read it:
+         *     `off` makes it a 404, `signed_in` a 401 `/api/v1/problems/unauthenticated` for a request
+         *     without an access token, and `everyone` serves everyone. The setting `domain_actions_rationale_visibility`
          *     decides, in the same way, who gets each action's public comment. The moderators'
          *     private notes are never listed.
          */
@@ -15613,6 +15613,13 @@ export interface components {
              */
             tips_enabled: boolean;
             supporter_list_visibility: components["schemas"]["InstanceAudience"];
+            /**
+             * @description Who may read the list of moderated domains (`GET /instance/domain_actions`), the instance
+             *     setting `domain_actions_visibility`: `off`, nobody (the list is a 404); `signed_in`, the
+             *     users signed in to this server; `everyone`, anonymous visitors included. The about page shows
+             *     the list only when it lets the viewer read it.
+             */
+            domain_actions_visibility: components["schemas"]["InstanceAudience"];
             /**
              * @description The decision hooks in use: what the server sends to an external review before it accepts it.
              *     Absent when there is none. The information page states this.

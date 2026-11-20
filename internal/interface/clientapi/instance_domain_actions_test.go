@@ -156,3 +156,63 @@ func TestListInstanceDomainActionsRefusesReaders(t *testing.T) {
 		t.Errorf("status without settings = %d, want 404", res.StatusCode)
 	}
 }
+
+// TestGetInstanceGivesDomainActionsVisibility checks that GET /instance gives the setting
+// domain_actions_visibility, the same to anonymous and signed-in callers, and "off" unset.
+func TestGetInstanceGivesDomainActionsVisibility(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		settings []instance.CurrentSetting
+		want     clientapi.InstanceAudience
+	}{
+		{"signed_in", []instance.CurrentSetting{
+			{Key: instance.SettingDomainActionsVisibility, RevisionID: testkit.NamedID("revision-1"), Value: string(instance.AudienceSignedIn)},
+		}, clientapi.InstanceAudienceSignedIn},
+		{"everyone", []instance.CurrentSetting{
+			{Key: instance.SettingDomainActionsVisibility, RevisionID: testkit.NamedID("revision-1"), Value: string(instance.AudienceEveryone)},
+		}, clientapi.InstanceAudienceEveryone},
+		{"unset", nil, clientapi.InstanceAudienceOff},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := &fakeInstance{settings: tc.settings}
+			e := newAuthEnv(t, func(o *clientapi.Options) { o.Instance = fake })
+			for _, token := range []string{"", "read"} {
+				res := e.send(t, http.MethodGet, "/instance", token, "")
+				if res.StatusCode != http.StatusOK {
+					t.Fatalf("token %q: status = %d, want 200", token, res.StatusCode)
+				}
+				if got := decode[clientapi.Instance](t, res).DomainActionsVisibility; got != tc.want {
+					t.Errorf("token %q: domain_actions_visibility = %q, want %q", token, got, tc.want)
+				}
+			}
+		})
+	}
+}
+
+// TestGetInstanceDomainActionsVisibilityAgreesWithTheList checks that what GET /instance gives
+// as domain_actions_visibility is what GET /instance/domain_actions does for an anonymous caller.
+func TestGetInstanceDomainActionsVisibilityAgreesWithTheList(t *testing.T) {
+	for _, tc := range []struct {
+		visibility instance.Audience
+		want       clientapi.InstanceAudience
+		wantStatus int
+	}{
+		{instance.AudienceOff, clientapi.InstanceAudienceOff, http.StatusNotFound},
+		{instance.AudienceSignedIn, clientapi.InstanceAudienceSignedIn, http.StatusUnauthorized},
+		{instance.AudienceEveryone, clientapi.InstanceAudienceEveryone, http.StatusOK},
+	} {
+		t.Run(string(tc.visibility), func(t *testing.T) {
+			e := newPublicDomainActionsEnv(t, tc.visibility, instance.AudienceOff)
+			res := e.send(t, http.MethodGet, "/instance", "", "")
+			if res.StatusCode != http.StatusOK {
+				t.Fatalf("GET /instance status = %d, want 200", res.StatusCode)
+			}
+			if got := decode[clientapi.Instance](t, res).DomainActionsVisibility; got != tc.want {
+				t.Errorf("domain_actions_visibility = %q, want %q", got, tc.want)
+			}
+			if res := e.send(t, http.MethodGet, "/instance/domain_actions", "", ""); res.StatusCode != tc.wantStatus {
+				t.Errorf("GET /instance/domain_actions status = %d, want %d under %q", res.StatusCode, tc.wantStatus, tc.want)
+			}
+		})
+	}
+}
