@@ -8,13 +8,13 @@
 // (scripts/changed-contexts.sh, the stories context). Tailwind builds the stylesheet of @my/design-system without
 // its own optimizer, for the browsers of light-dark() (ADR-0110 §14), and the condition @mycroblog/source reads
 // @mycroblog/mykit (under @my/app-data) from its sources, as the app's Vite configuration does. A change to a design
-// token reloads the theme (theme-reload.ts).
+// token reloads the theme (themeReload of @my/design-system).
 
 import tailwindcss from "@tailwindcss/vite";
 import type { StorybookConfig } from "@storybook/react-vite";
 import react from "@vitejs/plugin-react";
 import { defaultClientConditions, mergeConfig } from "vite";
-import { themeReload } from "./theme-reload";
+import { themeReload } from "@my/design-system/theme-reload";
 
 const web = (dir: string) => `../../${dir}/src`;
 
