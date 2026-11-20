@@ -173,8 +173,8 @@ type Handler struct {
 	// localized holds the shell and the manifest of each default locale seen, rendered once
 	// for the instance name they show.
 	localized sync.Map // locale -> *localizedDocuments
-	// files are the servable files of the build, by path, with their ETags.
-	files map[string]string
+	// files are the servable files of the build, by the path they are served at.
+	files map[string]builtFile
 	// previewVersion identifies the template, the assets, and the instance settings that
 	// previews render, for their ETags.
 	previewVersion string
@@ -465,28 +465,38 @@ func devOrigin(s string) (*url.URL, error) {
 	return u, nil
 }
 
-// listedFile is a file of the build in the list at ETagsPath: its size and its ETag without the quotes, the
-// first 18 bytes of its SHA-256 in unpadded base64url, as etag computes.
+// listedFile is a file of the build in the list at ETagsPath: the size of its content and its ETag
+// without the quotes, the first 18 bytes of its SHA-256 in unpadded base64url, as etag computes, and
+// those of each compressed form that the build holds, by its Content-Encoding.
 type listedFile struct {
+	Size      int64                   `json:"size"`
+	ETag      string                  `json:"etag"`
+	Encodings map[string]listedFormat `json:"encodings,omitempty"`
+}
+
+// listedFormat is the size and the ETag of a compressed form of a listedFile.
+type listedFormat struct {
 	Size int64  `json:"size"`
 	ETag string `json:"etag"`
 }
 
-// buildFiles lists the files of the build that are served as they are, with their ETags:
-// every file except the Vite manifest and other hidden files, and the index.html, auth.html, and
-// pay.html that Vite writes (the shell, authpages, and the payment pages replace them). The ETags come from the list that the
-// web build wrote, and no file is read: a build embeds tens of MB of fonts. A build whose list is
-// missing, or names other files or other sizes than the build holds, is refused.
-func buildFiles(build fs.FS) (map[string]string, error) {
+// buildFiles lists the files of the build that are served, by the path they are served at, with
+// their ETags: every file except the Vite manifest and other hidden files, and the index.html,
+// auth.html, and pay.html that Vite writes (the shell, authpages, and the payment pages replace
+// them), each as it is or in its compressed forms. The ETags come from the list that the web build
+// wrote, and no file is read: a build embeds tens of MB of fonts. A build whose list is missing, or
+// names other files or other sizes than the build holds, is refused, and so is a file held only in
+// Brotli, which no request that refuses Brotli could get.
+func buildFiles(build fs.FS) (map[string]builtFile, error) {
 	sizes, err := servedFiles(build)
 	if err != nil {
 		return nil, fmt.Errorf("web: list the build: %w", err)
 	}
-	files := make(map[string]string, len(sizes))
+	files := make(map[string]builtFile, len(sizes))
 	if len(sizes) == 0 {
 		return files, nil
 	}
-	data, err := fs.ReadFile(build, ETagsPath)
+	data, err := readBuildFile(build, ETagsPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, errors.New("web: the build has no " + ETagsPath + "; run scripts/task.sh web:build")
 	}
@@ -497,22 +507,55 @@ func buildFiles(build fs.FS) (map[string]string, error) {
 	if err := json.Unmarshal(data, &list); err != nil {
 		return nil, fmt.Errorf("web: parse %s: %w; run scripts/task.sh web:build", ETagsPath, err)
 	}
-	for p, size := range sizes {
-		f, ok := list[p]
-		if !ok || f.Size != size || f.ETag == "" {
-			return nil, fmt.Errorf("web: %s does not match the build at %s; run scripts/task.sh web:build", ETagsPath, p)
-		}
-		files[p] = `"` + f.ETag + `"`
+	stale := func(p string) error {
+		return fmt.Errorf("web: %s does not match the build at %s; run scripts/task.sh web:build", ETagsPath, p)
 	}
-	for p := range list {
-		if _, ok := sizes[p]; !ok {
-			return nil, fmt.Errorf("web: %s names %s, which the build does not hold; run scripts/task.sh web:build", ETagsPath, p)
+	for p, size := range sizes {
+		name, encoding := splitEncoding(p)
+		l, ok := list[name]
+		if !ok || l.ETag == "" {
+			return nil, stale(p)
+		}
+		f := files[name]
+		f.etag, f.size = `"`+l.ETag+`"`, l.Size
+		if encoding == "" {
+			if l.Size != size {
+				return nil, stale(p)
+			}
+			f.plain = true
+		} else {
+			form, ok := l.Encodings[encoding]
+			if !ok || form.Size != size || form.ETag == "" {
+				return nil, stale(p)
+			}
+			if encoding == encodingBrotli {
+				f.brotli = `"` + form.ETag + `"`
+			} else {
+				f.gzip = `"` + form.ETag + `"`
+			}
+		}
+		files[name] = f
+	}
+	for name, l := range list {
+		f, ok := files[name]
+		if !ok {
+			return nil, fmt.Errorf("web: %s names %s, which the build does not hold; run scripts/task.sh web:build", ETagsPath, name)
+		}
+		if (l.Encodings[encodingBrotli] != listedFormat{}) && f.brotli == "" {
+			return nil, fmt.Errorf("web: %s names %s%s, which the build does not hold; run scripts/task.sh web:build", ETagsPath, name, extBrotli)
+		}
+		if (l.Encodings[encodingGzip] != listedFormat{}) && f.gzip == "" {
+			return nil, fmt.Errorf("web: %s names %s%s, which the build does not hold; run scripts/task.sh web:build", ETagsPath, name, extGzip)
+		}
+		if !f.plain && f.gzip == "" {
+			return nil, fmt.Errorf("web: the build holds %s only in Brotli; run scripts/task.sh web:build", name)
 		}
 	}
 	return files, nil
 }
 
-// servedFiles returns the size of each file of the build that is served as it is, by its path.
+// servedFiles returns the size of each file of the build that is served, as it is or as a
+// compressed form, by its path in the build.
 func servedFiles(build fs.FS) (map[string]int64, error) {
 	sizes := map[string]int64{}
 	err := fs.WalkDir(build, ".", func(p string, d fs.DirEntry, err error) error {
@@ -525,7 +568,7 @@ func servedFiles(build fs.FS) (map[string]int64, error) {
 			}
 			return nil
 		}
-		if d.IsDir() || p == entryKey || p == authEntryKey || p == payEntryKey {
+		if name, _ := splitEncoding(p); d.IsDir() || name == entryKey || name == authEntryKey || name == payEntryKey {
 			return nil
 		}
 		info, err := d.Info()
@@ -539,7 +582,8 @@ func servedFiles(build fs.FS) (map[string]int64, error) {
 }
 
 // ListETags returns the list of ETagsPath for build as the web build writes it, for a build that the
-// web build did not make, such as the build of a test. It reads every file.
+// web build did not make, such as the build of a test. It reads every file, and takes the content of
+// a file held only compressed from its gzipped form.
 func ListETags(build fs.FS) ([]byte, error) {
 	sizes, err := servedFiles(build)
 	if err != nil {
@@ -551,7 +595,26 @@ func ListETags(build fs.FS) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		list[p] = listedFile{Size: size, ETag: strings.Trim(etag(data), `"`)}
+		name, encoding := splitEncoding(p)
+		l := list[name]
+		tag := strings.Trim(etag(data), `"`)
+		switch encoding {
+		case "":
+			l.Size, l.ETag = size, tag
+		case encodingGzip:
+			content, err := gunzip(bytes.NewReader(data), -1)
+			if err != nil {
+				return nil, fmt.Errorf("web: gunzip %s: %w", p, err)
+			}
+			l.Size, l.ETag = int64(len(content)), strings.Trim(etag(content), `"`)
+			fallthrough
+		default:
+			if l.Encodings == nil {
+				l.Encodings = map[string]listedFormat{}
+			}
+			l.Encodings[encoding] = listedFormat{Size: size, ETag: tag}
+		}
+		list[name] = l
 	}
 	return json.Marshal(list)
 }
@@ -706,29 +769,6 @@ func (h *Handler) license(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	h.serveFile(w, r, name, cacheRevalidate)
-}
-
-// serveFile serves a file of the build with its ETag, answering conditional requests.
-func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, name, cacheControl string) {
-	f, err := h.o.Build.Open(name)
-	if err != nil {
-		h.o.NotFound(w, r)
-		return
-	}
-	defer func() { _ = f.Close() }()
-	content, ok := f.(io.ReadSeeker)
-	if !ok {
-		data, err := io.ReadAll(f)
-		if err != nil {
-			h.o.NotFound(w, r)
-			return
-		}
-		content = bytes.NewReader(data)
-	}
-	hd := w.Header()
-	hd.Set("Cache-Control", cacheControl)
-	hd.Set("ETag", h.files[name])
-	http.ServeContent(w, r, name, time.Time{}, content)
 }
 
 // serve writes the document with its ETag and its crawler headers, answering conditional

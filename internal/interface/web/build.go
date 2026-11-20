@@ -82,7 +82,7 @@ var errNoBuild = errors.New("web: the build has no " + manifestPath + "; run scr
 // readEntries builds the tags of the entries from the build manifest, and the integrity of the
 // payment entry's scripts from its inventory.
 func readEntries(build fs.FS) (builtEntries, error) {
-	data, err := fs.ReadFile(build, manifestPath)
+	data, err := readBuildFile(build, manifestPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return builtEntries{}, errNoBuild
 	}
@@ -129,12 +129,13 @@ type scriptInventory struct {
 // its inventory does not name, and so is a build whose payment entry imports a chunk on demand:
 // such a chunk, and the modulepreload that Vite's helper adds for it, would run unchecked by its
 // hash (web/app/scripts/payment-scripts.ts says why no import map checks it). The entry's chunks
-// are read once, when the server starts: they are small, unlike the fonts that the ETags spare it.
+// are read once, when the server starts, and gunzipped: they are small, unlike the fonts that the
+// ETags spare it.
 func paymentScripts(build fs.FS, manifest map[string]chunk) (map[string]string, error) {
 	stale := func(why string) error {
 		return fmt.Errorf("web: %s %s; run scripts/task.sh web:build", PaymentScriptsPath, why)
 	}
-	data, err := fs.ReadFile(build, PaymentScriptsPath)
+	data, err := readBuildFile(build, PaymentScriptsPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, stale("is missing")
 	}
@@ -179,7 +180,7 @@ func paymentScripts(build fs.FS, manifest map[string]chunk) (map[string]string, 
 		if !loaded[s.URL] {
 			return nil, stale("lists " + s.URL + ", which " + payEntryKey + " does not load")
 		}
-		data, err := fs.ReadFile(build, strings.TrimPrefix(s.URL, "/"))
+		data, err := readBuildFile(build, strings.TrimPrefix(s.URL, "/"))
 		if err != nil {
 			return nil, stale("lists " + s.URL + ", which the build cannot read: " + err.Error())
 		}

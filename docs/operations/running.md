@@ -297,8 +297,8 @@ them. With `tls = acme` there is nothing to mount: the certificates live in the 
 Leave out `compose.caddy.yaml`, which would take the same ports. This does not hold with `network_mode: host`, where
 the container shares the machine's network and needs the same capability as a service outside a container.
 
-**Compared with Caddy.** Serving HTTPS from `my` gives up HTTP/3, compression of responses (the server compresses
-nothing), an access log of its own (the server's `http request` log lines remain), and certificates validated through
+**Compared with Caddy.** Serving HTTPS from `my` gives up HTTP/3, compression of responses (the server sends the web
+client's files compressed and compresses nothing else), an access log of its own (the server's `http request` log lines remain), and certificates validated through
 DNS, including wildcard certificates. Keep `compose.caddy.yaml`, or another proxy, when you need any of these.
 
 ## Get the image
@@ -846,6 +846,8 @@ A process whose `role` is `web` or `all` serves the web client embedded in the b
 - The shell is served after ActivityPub content negotiation. Requesting a shell path with an ActivityPub `Accept` returns 404 (post pages redirect, as described below).
   The shell always carries `Vary: Accept`. When you put a CDN in front, include the kind of `Accept` (ActivityPub or HTML) in the cache key, or exclude the shell, `/ap/*` and `/@*` from caching.
   Serve only `/assets/*` from the CDN.
+- The build's text files (scripts, stylesheets, SVG images, license notices) are embedded compressed only. A request that accepts Brotli gets them with `Content-Encoding: br`, one that accepts gzip with `Content-Encoding: gzip`, and any other request gets them decompressed, always with `Vary: Accept-Encoding` and an ETag for each encoding.
+  A proxy in front needs no compression of its own for them, and a CDN must keep `Vary: Accept-Encoding` (or the encoding) in its cache key for `/assets/*`.
 - A binary built without the web client (a plain `go build`, without building the client first) logs a warning at start-up and serves a shell without scripts.
 
 ## Federation endpoints

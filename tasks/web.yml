@@ -309,7 +309,8 @@ tasks:
   # What the server embeds (internal/interface/web): the Vite build of web/app, whose manifest the shell's tags come
   # from (ADR-0028 §4), and the files of web/brand, whose icons the server serves at the root and lists in the Web App
   # Manifest, the inventory of the scripts that the payment entry loads (PCI DSS 6.4.3), which each release publishes,
-  # and last the list of the ETags of those files, which the server reads instead of the files when it starts.
+  # then compresses the text files, of which the server embeds only the Brotli and gzip forms, and last the list of the
+  # ETags of those files, which the server reads instead of the files when it starts.
   # The build fails when React Compiler skips a function (ADR-0025 §9). The Dockerfile's stage web and the root
   # compose.yaml (scripts/dev-compose.sh) run it too.
   build:
@@ -320,6 +321,7 @@ tasks:
       - cd web/app && bun --bun vite build --logLevel warn
       - cp web/brand/* {{.WEB_EMBED_DIR}}/
       - bun web/app/scripts/payment-scripts.ts {{.WEB_EMBED_DIR}}
+      - bun web/app/scripts/compress.ts {{.WEB_EMBED_DIR}}
       - bun web/app/scripts/etags.ts {{.WEB_EMBED_DIR}}
 
   licenses:
