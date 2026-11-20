@@ -6,13 +6,14 @@ participantes. Até uma instância pequena, com poucos seguidos, passa a ter uma
 hashtags cheias, e as publicações públicas dela chegam mais longe. Uma instância que não entra em nenhum relay não ganha
 linhas nem jobs.
 
-<!-- source: join-a-relay 147b07e65534 -->
-## Entrando em um relay
+<!-- source: join-a-relay 551373ffaed6 -->
+## Entrar em um relay
 
-Use “Relays” na área de administração (`/admin/relays`). É preciso a permissão `manage_settings`, que a função `admin`
-embutida tem. “Ingressar em um relay” abre o formulário que o registra. A lista mostra o estado de cada relay com um botão
-que sai dele ou que volta a entrar; ao escolher um relay, abre-se a página dele, com os endereços, o que ele trouxe nas
-últimas 24 horas, e o botão que o exclui. A CLI é `my admin relay` (`my admin relay -help`):
+Use “Relays” na área de administração (`/admin/relays`). Ele exige a permissão `manage_settings`, que o papel `admin` embutido tem.
+“Entrar em um relay” abre o formulário que registra um. A lista mostra o estado de cada relay e o que ele trouxe nas últimas 24
+horas; escolher um relay abre a página dele, com os endereços e o botão que sai dele ou, depois que o servidor saiu ou ele rejeitou
+o servidor, os botões que entram de novo e o excluem. Sair e excluir pedem confirmação antes.
+A CLI é `my admin relay` (`my admin relay -help`):
 
 ```sh
 my admin relay list                                               # every relay, its state, and what it brought in during the last 24 hours
@@ -22,14 +23,16 @@ my admin relay follow <relay id>                                  # join again a
 my admin relay delete <relay id>                                  # delete a relay that the instance left or that rejected it
 ```
 
-1. Registre o URL do relay. Há dois protocolos:
-   - **Mastodon**: o **URL da inbox** do relay (como `https://relay.example/inbox`). Muitos relays, incluindo pub-relay e Activity-Relay, aceitam esse formato.
-   - **LitePub**: o **URL do ator** do relay (como `https://relay.example/relay`). É o protocolo dos relays do Pleroma e do Akkoma.
-   Se você não escolher um protocolo (“Detectar automaticamente”), o servidor usa LitePub quando o URL serve um documento de ator, e Mastodon caso contrário.
-2. Depois do registro, o ator da instância envia ao relay um `Follow`, e o estado fica como “Aguardando a resposta do relay” (`pending`). Quando o relay aceita, o estado passa a “Participando” (`accepted`); quando recusa, “Recusado pelo relay” (`rejected`). Alguns relays demoram porque um operador aprova cada pedido manualmente.
-3. Se você desativar “Receber publicações do relay” no registro, o servidor apenas envia. Para mudar isso, saia do relay e registre-o de novo.
+1. Registre a URL do relay. Há dois protocolos:
+   - **Mastodon**: a **URL da caixa de entrada** (inbox) do relay (como `https://relay.example/inbox`). Muitos relays, incluindo o pub-relay e o Activity-Relay, a aceitam.
+   - **LitePub**: a **URL do ator** (actor) do relay (como `https://relay.example/relay`). Esse é o protocolo dos relays do Pleroma e do Akkoma.
+   Se você não escolher um protocolo (“Detectar automaticamente”), o servidor usa LitePub quando a URL serve um documento de ator, e Mastodon caso contrário.
+2. Depois de você registrá-lo, o ator da instância envia ao relay um `Follow`, e o estado é “Aguardando a resposta do relay” (`pending`).
+   Quando o relay aceita, o estado passa a “Participando” (`accepted`); quando ele recusa, “Rejeitado pelo relay” (`rejected`). Alguns relays demoram porque um operador aprova cada pedido manualmente.
+3. Se você desativar “Receber publicações do relay” ao registrar, o servidor apenas envia. Para mudar isso, saia do relay e registre-o de novo.
 
-Você não pode registrar o relay de um servidor sob uma ação de domínio (`suspend`). Se o servidor de um relay do qual você participa for suspenso depois, o estado não muda, mas nada é enviado nem recebido desse relay, e a área de administração mostra um aviso.
+Você não pode registrar o relay de um servidor sob uma ação de domínio (`suspend`). Se o servidor de um relay em que você participa for suspenso depois, o estado não muda,
+mas nada é enviado a esse relay nem recebido dele, e a área de administração informa isso no estado do relay.
 
 <!-- source: what-the-server-sends 1db52c508f9c -->
 ## O que o servidor envia

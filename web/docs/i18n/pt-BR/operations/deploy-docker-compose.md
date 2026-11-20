@@ -51,15 +51,18 @@ Com o par `MY_HOST=localhost:8080` e `MY_WEB_ORIGIN=http://localhost:8080` do `e
 - O cookie de login é `Secure`. Chrome e Firefox aceitam esse cookie em `http://localhost`; o Safari (WebKit) não aceita, então use o Chrome ou o Firefox localmente.
 - Os links de hashtags e menções nos corpos das publicações usam `https://`, pois são as URLs federadas.
 
-<!-- source: going-public be2475df6407 -->
+<!-- source: going-public a59510155d91 -->
 ## Abrindo ao público
 
-- Defina `MY_HOST` no `.env` com o seu domínio real, remova `MY_WEB_ORIGIN` (ele assume `https://{MY_HOST}` por padrão) e encerre o TLS na frente do servidor: a camada `compose.caddy.yaml` executa o Caddy para isso
-  ([arquivos do Docker Compose](running.md#docker-compose-files)). `MY_HOST` é gravado no banco de dados na primeira inicialização e não pode ser alterado depois.
-- Atrás de um proxy reverso próprio, defina `MY_TRUSTED_PROXIES` no `.env` para que os limites de requisições, como o do login, se apliquem por IP de cliente e não ao proxy
-  ([`trusted_proxies`](../reference/configuration.md#trusted_proxies)).
-- Antes de abrir o servidor para os usuários, siga a [lista de verificação de produção](production-checklist.md).
-- `docker compose down` para a pilha. `down -v` também apaga os volumes de dados.
+- Defina `MY_HOST` em `.env` com o seu domínio real, remova `MY_WEB_ORIGIN` (o padrão é `https://{MY_HOST}`) e termine o
+  TLS na frente do servidor: a camada `compose.caddy.yaml` executa o Caddy para isso
+  ([arquivos do Docker Compose](running.md#docker-compose-files)), ou deixe o próprio servidor servir HTTPS
+  ([servindo HTTPS pelo servidor](running.md#serving-https-from-the-server)). `MY_HOST` é gravado no banco de dados na primeira
+  inicialização e não pode ser alterado depois.
+- Atrás de um proxy reverso seu, defina `MY_TRUSTED_PROXIES` em `.env` para que limites de taxa, como o do login,
+  se apliquem por IP de cliente e não ao proxy ([`trusted_proxies`](../reference/configuration.md#trusted_proxies)).
+- Antes de abrir o servidor aos usuários, percorra a [lista de verificação de produção](production-checklist.md).
+- `docker compose down` para a stack. `down -v` também exclui os volumes de dados.
 
-Para cada configuração, veja a [referência de configuração](../reference/configuration.md); para a operação do dia a dia, veja
+Para todas as configurações, veja a [referência de configuração](../reference/configuration.md); para a operação do dia a dia, veja
 [executando o servidor](running.md).

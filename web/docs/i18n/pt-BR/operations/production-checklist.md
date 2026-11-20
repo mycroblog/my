@@ -63,13 +63,21 @@ por exemplo como um passo da implantação, antes que a nova versão receba trá
 - **Detalhes**: [executando o servidor](running.md) (os endpoints de federação e a entrega dos identificadores a partir de outro domínio),
   [`host`](../reference/configuration.md#host) e [`account_domain`](../reference/configuration.md#account_domain).
 
-<!-- source: reachable-over-https b7513cc3534f -->
+<!-- source: reachable-over-https 20f0b0b9a2d9 -->
 ### Acessível por `https`
 
 - **Por quê**: outros servidores buscam os ids em `https://<host>/` na porta 443, e os navegadores enviam os cookies de login apenas por `https`.
-- **Verifique**: `curl -sI https://<host>/health/live` responde `200` de fora da sua rede, com um certificado válido para `host`,
-  e `my config check` não informa nenhum erro sobre `web_origin`. `http://<host>/` redireciona para `https`, o que o proxy reverso, o balanceador de carga ou a CDN na frente do servidor faz (com o Docker Compose, a camada `compose.caddy.yaml` é esse proxy).
-- **Detalhes**: [executando o servidor](running.md), [`web_origin`](../reference/configuration.md#web_origin).
+- **Verifique**: `curl -sI https://<host>/health/live` responde `200` de fora da sua rede com um certificado válido para `host`,
+  e `my config check` não relata nenhum erro sobre `web_origin`, `tls`, `tls_acme_agree_terms` ou `tls_cert_file`. `curl -sI http://<host>/` responde `301`
+  para `https://<host>/`. Ou o proxy reverso, o balanceador de carga ou a CDN na frente do servidor termina o TLS e redireciona
+  (com o Docker Compose, a camada `compose.caddy.yaml` é esse proxy), ou o próprio servidor faz isso. Com `tls = acme`,
+  `my tls status` mostra um certificado para `host` (e para o host de `web_origin` quando for diferente) cujo emissor não é
+  de homologação: `tls_acme_directory` não está definido ou nomeia um diretório de produção. Crie um alerta para a expiração dele e para pedidos
+  com falha ([alertas](alerts.md#mytlscertificateexpiring)). Com
+  `tls = files`, `my config check` avisa quando restam menos de 14 dias no certificado, e o que quer que o renove precisa
+  manter `tls_cert_file` e `tls_key_file` atualizados.
+- **Detalhes**: [executando o servidor](running.md), [servindo HTTPS pelo servidor](running.md#serving-https-from-the-server),
+  [`web_origin`](../reference/configuration.md#web_origin), [`tls`](../reference/configuration.md#tls).
 
 <!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### Não acessível por trás da CDN

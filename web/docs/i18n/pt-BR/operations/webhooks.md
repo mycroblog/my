@@ -7,27 +7,33 @@ do Discord, um sistema de chamados ou uma ferramenta de automação como o n8n. 
 guarda linhas extras nem roda jobs extras. O que um receptor recebe (cabeçalhos, assinatura, eventos e corpo) está descrito
 na [referência de webhooks](../reference/webhooks.md).
 
-<!-- source: set-up-a-webhook c8a80bc40038 -->
-## Configurando um webhook
+<!-- source: set-up-a-webhook 20c889b84876 -->
+## Configurar um webhook
 
-Qualquer pessoa com a permissão `manage_webhooks` pode configurar webhooks na tela de administração “Webhooks”
-(`/admin/webhooks`). A função `admin` embutida a tem. “Adicionar um webhook” abre o formulário; escolher um webhook na lista
-abre a página dele, onde você altera, testa, ativa, desativa e exclui o webhook, gera um novo segredo e vê as entregas dele.
+Quem tem a permissão `manage_webhooks` pode configurar webhooks na tela de administração “Webhooks” (`/admin/webhooks`).
+O papel `admin` embutido a tem. “Configurar um webhook” abre o formulário; escolher um webhook na lista abre a página dele, onde
+você o testa, o desativa e ativa, o altera, vê as entregas dos últimos 14 dias e reenvia uma, dá a ele um novo
+segredo e o exclui depois de digitar o nome do host da URL dele. A página informa quando as entregas continuam falhando e quando o
+servidor desativou o webhook. O histórico mostra o evento, o status, as tentativas e a última tentativa de cada entrega, e o corpo
+que ela enviou, que pode conter dados pessoais e só é exibido a quem também tem a permissão que o evento exige (veja abaixo).
 
-1. Crie um webhook com uma URL de destino, uma descrição e os eventos a assinar. Cada evento também exige a própria permissão, além de `manage_webhooks`: `manage_reports` para denúncias, `manage_accounts` para cadastros, contas, ações de moderação e recursos, `manage_domains` para ações de domínio, `manage_custom_emojis` para emojis personalizados e `manage_errors` para grupos de erro.
+1. Crie um webhook com uma URL de destino, uma descrição e os eventos a assinar. Cada evento também exige a sua própria
+   permissão além de `manage_webhooks`: `manage_reports` para denúncias, `manage_accounts` para cadastros, contas,
+   ações de moderação e contestações, `manage_domains` para ações sobre domínios, `manage_custom_emojis` para emoji personalizados e
+   `manage_errors` para grupos de erros.
    Publicações públicas não exigem permissão extra. Você não pode selecionar um evento cuja permissão você não tem.
-2. O segredo (`whsec_...`) é mostrado uma única vez, quando o webhook é criado. Configure-o no receptor. Ele não pode ser mostrado de novo.
-3. Na página do webhook, escolha “Enviar um teste” para enviar `webhook.test`, e confira nas entregas dele que chegou.
+2. O segredo (`whsec_...`) é mostrado uma vez, quando o webhook é criado. Configure-o no receptor. Ele não pode ser mostrado de novo.
+3. Na página do webhook, escolha “Enviar um teste” para enviar `webhook.test` e confira nas entregas dele que chegou.
 
-Criar, alterar, excluir, ativar, desativar e rotacionar o segredo de um webhook ficam registrados no registro de auditoria.
-O alvo aparece como a descrição e o nome do host da URL; a URL em si não é registrada.
+Criar, alterar, excluir, ativar, desativar e trocar o segredo de um webhook ficam registrados no log de auditoria.
+O alvo é mostrado como a descrição e o nome do host da URL; a URL em si não é registrada.
 
-<!-- source: rotate-the-secret 928c62f87538 -->
-## Rotacionando o segredo
+<!-- source: rotate-the-secret fc0bedd73653 -->
+## Trocar o segredo
 
-“Novo segredo” cria um novo segredo e o mostra uma única vez. Pelas próximas 24 horas, as mensagens também são assinadas com o
-segredo antigo (`webhook-signature` traz duas assinaturas), para que você possa trocar o receptor para o novo segredo
-nessa janela. Os segredos são cifrados com `kernel.Sealer` antes de serem guardados no banco de dados; a chave é a
+“Gerar um novo segredo” cria um novo segredo e o mostra uma vez. Nas 24 horas seguintes as mensagens também são assinadas com o segredo antigo
+(`webhook-signature` traz duas assinaturas), então você pode mudar o receptor para o novo segredo nessa janela.
+Os segredos são selados com `kernel.Sealer` antes de serem gravados no banco de dados; a chave é a
 [KEK](key-management.md).
 
 <!-- source: failures-and-redelivery 65aba0d2089e -->

@@ -49,20 +49,20 @@ As gorjetas (veja [supporters.md](supporters.md#tips)) usam a API v2 do PAY.JP c
 - **Disputas**: O PAY.JP envia um evento apenas quando uma disputa é aberta. Cada conciliação também lê as disputas encerradas a seu favor (status `cancel`) e registra o cancelamento de um estorno que as transações de pagamento não informam por conta própria. Uma disputa encerrada sem estorno (uma consulta) não registra nada.
 - **Reembolsos**: Reembolse uma gorjeta no painel do PAY.JP. Um reembolso total e um estorno são registrados com a gorjeta; um reembolso parcial, apenas na receita.
 
-<!-- source: card-data-and-pci-dss 7be9976efb0b -->
-## Dados de cartão e PCI DSS
+<!-- source: card-data-and-pci-dss c29c39d7a69c -->
+## Dados do cartão e PCI DSS
 
-Os números de cartão, as datas de validade e os códigos de segurança são digitados somente dentro do iframe do PAY.JP, que o payjp.js exibe. A página e o script deste servidor nunca os tocam. O servidor recebe apenas o ID do token que o payjp.js criou, além do nome do titular e do e-mail que o 3-D Secure exige.
-O servidor guarda somente IDs de objetos do PAY.JP (`cus_`, `sub_`, `ch_`, IDs de Plan, IDs de eventos e as Checkout Sessions, PaymentFlows, reembolsos e disputas das gorjetas), valores, períodos e estados. O cartão de uma gorjeta é digitado na página do próprio PAY.JP, que este servidor nunca serve. Ele não guarda números de cartão, os quatro últimos dígitos nem datas de validade (a página do cartão apenas lê do PAY.JP os quatro últimos dígitos, a data de validade e o e-mail do cliente, e os exibe). Os corpos dos webhooks e as respostas do PAY.JP não ficam guardados nem nos logs nem no banco de dados.
+Números de cartão, datas de validade e códigos de segurança são digitados apenas dentro do iframe do PAY.JP, que o payjp.js exibe. A página e o script deste servidor nunca os tocam. O servidor recebe apenas o ID do token que o payjp.js criou e o nome do titular e o endereço de e-mail de que o 3-D Secure precisa.
+O servidor grava apenas IDs de objetos do PAY.JP (`cus_`, `sub_`, `ch_`, IDs de planos, IDs de eventos e as Checkout Sessions, PaymentFlows, reembolsos e disputas das gorjetas), valores, períodos e estados. O cartão de uma gorjeta é digitado na página própria do PAY.JP, que este servidor nunca serve. Ele não grava números de cartão, os quatro últimos dígitos nem datas de validade (a página do cartão apenas lê do PAY.JP os quatro últimos dígitos, a data de validade e o e-mail do cliente e os mostra). Os corpos dos webhooks e as respostas do PAY.JP não são mantidos nem nos logs nem no banco de dados.
 
-A página de pagamento é servida pela origem deste servidor, então ela foi construída levando em conta a gestão de scripts de páginas de pagamento do PCI DSS v4 (requisito 6.4.3) e a detecção de adulteração (requisito 11.6.1).
+A página de pagamento é servida a partir da origem deste servidor, então ela é construída com a gestão de scripts de páginas de pagamento do PCI DSS v4 (requisito 6.4.3) e a detecção de adulteração (requisito 11.6.1) em mente.
 
-- A página carrega apenas `https://js.pay.jp/v2/pay.js` e um pequeno script com um nonce incorporado à página. Ela não carrega o pacote do cliente web nem qualquer script de análise ou publicidade.
-- A página sempre traz a sua própria Content-Security-Policy (`script-src` apenas o nonce e `https://js.pay.jp`, `frame-src` apenas `https://js.pay.jp` e `https://api.pay.jp`, `form-action 'self'`, `frame-ancestors 'none'`), `Referrer-Policy: no-referrer`, `Cache-Control: no-store` e `X-Content-Type-Options: nosniff`. Nenhuma configuração altera a CSP.
-- O modelo e o script são incorporados ao binário do servidor e não podem ser alterados em tempo de execução. Os envios de formulário só são aceitos a partir da mesma origem.
+- A página é parte do cliente web, embutida no binário do servidor: ela carrega os scripts do próprio cliente web a partir deste servidor, cada um com seu Subresource Integrity, e `https://js.pay.jp/v2/pay.js`, que o PAY.JP serve e atualiza. Ela não carrega nenhum script de análise ou de publicidade.
+- Cada versão traz `payment-scripts.json`, a lista de todos os scripts que a página carrega: cada script do cliente web com seu hash, e o payjp.js. A página compartilha scripts com o restante do cliente web, então a lista muda de versão para versão; guarde a lista da versão que você executa. O servidor se recusa a iniciar com um build cuja lista não corresponde aos seus scripts.
+- A página sempre traz a sua própria Content-Security-Policy (`script-src` apenas este servidor e `https://js.pay.jp`, `frame-src` apenas `https://js.pay.jp` e `https://api.pay.jp`, `form-action 'self'`, `frame-ancestors 'none'`), `Referrer-Policy: no-referrer`, `Cache-Control: no-store` e `X-Content-Type-Options: nosniff`. Nenhuma configuração altera a CSP. Envios de formulário só são aceitos da mesma origem.
 
-Por isso, o escopo do operador deve ser o de um comerciante que deixa a digitação do pagamento para o iframe do PAY.JP (SAQ A). Verifique o escopo aplicável e o tipo de questionário de autoavaliação junto às orientações do PAY.JP e às exigências das bandeiras de cartão.
-Ao fazer isso, ajuda manter um registro destes pontos: as URLs das páginas de pagamento (`/payments/pages/payjp/checkout` e `/portal`), a lista de scripts que a página carrega (os dois citados acima), a CSP da página e o fato de que o tráfego para o servidor usa TLS (a configuração do proxy reverso).
+Como resultado, espera-se que o escopo do operador seja o de um comerciante que deixa a entrada do pagamento ao iframe do PAY.JP (SAQ A). Confira o escopo que se aplica e o tipo de questionário de autoavaliação nas orientações do PAY.JP e nos requisitos das suas bandeiras de cartão.
+Ao fazer isso, ajuda guardar um registro destes pontos: as URLs das páginas de pagamento (`/payments/pages/payjp/checkout` e `/portal`), a lista de scripts que a página carrega (`payment-scripts.json` da versão), a CSP da página e que o tráfego para o servidor usa TLS (a configuração do proxy reverso).
 
 <!-- source: 1-prepare-the-payjp-account b01b53a61e40 -->
 ## 1. Preparar a conta do PAY.JP
