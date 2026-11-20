@@ -394,7 +394,7 @@ my instance rule list                                  # active rules (-all incl
 - 管理 API 為 `/api/v1/admin/link_card_domains`（列出、設定；以網域發出 `DELETE` 即可移除），需要角色權限 `manage_settings`。一台伺服器最多保存 1,000 條規則，每條的備註最多 5,000 個字元。
 - 每次變更都會記錄在稽核記錄中（`link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`）。
 
-<!-- source: theme 98c2eee35f30 -->
+<!-- source: theme 1ada01b2db2e -->
 ## 主題
 
 伺服器範圍的主題是一組對網頁用戶端設計代碼的覆寫，每種顏色都有淺色與深色兩個值。它適用於每位瀏覽者的網頁用戶端，也適用於伺服器自己算繪的畫面（登入、註冊、條款等）。沒有自訂 CSS。
@@ -406,7 +406,7 @@ my instance rule list                                  # active rules (-all incl
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | 顏色 | 淺色與深色各一個 `#rrggbb` |
   | `font-sans-override`, `font-mono-override` | 字型家族 | 字型家族名稱，以逗號分隔（最多 30 個），不可包含 `sans-serif` 這類通用字型家族；名稱中含有以數字開頭的單字時要加引號，例如 `"M PLUS 1p"` |
   | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | 長度 | `0` 或 rem / px，0.625rem 到 3rem |
-  | 上述同樣四個代碼各自的 `text-*--line-height` | 數字 | 1 到 2.5 |
+  | 上述同樣七個代碼各自的 `text-*--line-height` | 數字 | 1 到 2.5 |
   | `radius-control`, `radius-overlay` | 長度 | 0 到 2rem |
   | `duration-spin` | 時間長度 | ms / s，0 到 1000ms |
 
