@@ -168,7 +168,7 @@ tasks:
       - bun --bun playwright test {{.CLI_ARGS}}
 
   typecheck:
-    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/e2e with tsc
+    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app (with its Service Worker), web/devtools, web/storybook and web/e2e with tsc
     deps: [install, ":i18n:compile", routes]
     cmds:
       - cd web/design-tokens && bun --bun tsc -p .
@@ -178,7 +178,8 @@ tasks:
       - cd web/rtc && bun --bun tsc -p .
       - cd web/app-data && bun --bun tsc -p .
       - cd web/app-features && bun --bun tsc -p .
-      - cd web/app && bun --bun tsc -p .
+      # The package's own script, which type-checks the Service Worker (sw/) under its own lib apart from the page.
+      - cd web/app && bun run typecheck
       - cd web/devtools && bun --bun tsc -p .
       - cd web/storybook && bun --bun tsc -p .
       - cd web/e2e && bun --bun tsc -p .
