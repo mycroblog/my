@@ -43,7 +43,8 @@ type AdminAccountFactory func(t *testing.T, opts uow.Options) AdminAccountHarnes
 // and IP address of a registration or a sign-in; the details tell the registration, the email's
 // verification, and the roles; and the reveal shows the email address, the registration and
 // sign-in addresses, and the other accounts of the same addresses only to a local user's
-// account, recording each reveal in the audit log; and an administrator removes the two-factor
+// account, recording each reveal in the audit log, and pages through the sign-ins and the other
+// accounts of an address, recording each page; and an administrator removes the two-factor
 // authentication of a local user, recorded in the audit log.
 func AdminAccountFlows(t *testing.T, newHarness AdminAccountFactory) {
 	t.Helper()
@@ -54,6 +55,7 @@ func AdminAccountFlows(t *testing.T, newHarness AdminAccountFactory) {
 		{"SearchesAccounts", adminAccountSearches},
 		{"ShowsTheDetails", adminAccountDetails},
 		{"RevealsAndAudits", adminAccountReveals},
+		{"PagesSignInsAndSameIPAccountsAndAudits", adminAccountPagesPrivateData},
 		{"KeepsOneAdministratorInRaces", adminAccountKeepsOneAdministratorInRaces},
 		{"DisablesTwoFactorAndAudits", adminAccountDisablesTwoFactor},
 		{"LiftsEmailSuppressionsAndAudits", adminAccountLiftsEmailSuppressions},
@@ -485,5 +487,71 @@ func adminAccountDisablesTwoFactor(t *testing.T, e *adminAccountEnv) {
 	if len(got) != 1 || got[0].ActorUserID != staff || got[0].TargetKind != moderation.AuditTargetAccount ||
 		got[0].TargetID != e.alice || got[0].TargetLabel != "@alice" || !got[0].OccurredAt.Equal(e.Clock.Now()) {
 		t.Errorf("audit log = %+v, want one two_factor_disabled entry on @alice", got)
+	}
+}
+
+func adminAccountPagesPrivateData(t *testing.T, e *adminAccountEnv) {
+	ctx := t.Context()
+	staff := e.staff(t)
+	audited := func() int {
+		t.Helper()
+		got, err := e.mod.AuditLog(ctx, appmoderation.AuditQuery{Action: moderation.AuditRevealedPrivateData}, 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, g := range got {
+			if g.ActorUserID != staff || g.TargetKind != moderation.AuditTargetAccount || g.TargetID != e.carol || g.TargetLabel != "@carol" {
+				t.Errorf("entry = %+v, want a reveal of carol by the staff", g)
+			}
+		}
+		return len(got)
+	}
+
+	// The sign-ins of carol, newest first, one page at a time.
+	first, err := e.admin.SignIns(ctx, e.carol, staff, appidentity.SignInPosition{}, 1)
+	if err != nil || len(first) != 1 || first[0].IP != "192.0.2.9" {
+		t.Fatalf("SignIns(first page) = %+v, %v; want the newest from 192.0.2.9", first, err)
+	}
+	next := appidentity.SignInPosition{At: first[0].CreatedAt, SessionID: first[0].SessionID}
+	rest, err := e.admin.SignIns(ctx, e.carol, staff, next, 10)
+	if err != nil || len(rest) != 1 || rest[0].IP != "192.0.2.1" {
+		t.Errorf("SignIns(after the newest) = %+v, %v; want the one from 192.0.2.1", rest, err)
+	}
+	if n := audited(); n != 2 {
+		t.Errorf("audit entries after two pages of sign-ins = %d, want 2", n)
+	}
+
+	// The others of 192.0.2.1, newest first, without carol; a mapped IPv6 form is the same address.
+	page, after, err := e.admin.SameIPAccounts(ctx, e.carol, staff, "192.0.2.1", "", 1)
+	if err != nil || len(page) != 1 || page[0].Actor.Account.ID != e.bob || after == "" {
+		t.Fatalf("SameIPAccounts(first page) = %+v, %q, %v; want bob and a next page", page, after, err)
+	}
+	page, after, err = e.admin.SameIPAccounts(ctx, e.carol, staff, "::ffff:192.0.2.1", after, 1)
+	if err != nil || len(page) != 1 || page[0].Actor.Account.ID != e.alice || after != "" {
+		t.Errorf("SameIPAccounts(next page) = %+v, %q, %v; want alice, last", page, after, err)
+	}
+	if page, _, err := e.admin.SameIPAccounts(ctx, e.carol, staff, "192.0.2.9", "", 10); err != nil || len(page) != 0 {
+		t.Errorf("SameIPAccounts(192.0.2.9) = %+v, %v; want nobody else", page, err)
+	}
+	if n := audited(); n != 5 {
+		t.Errorf("audit entries after three pages of accounts = %d, want 5", n)
+	}
+
+	// What is refused shows nothing and records nothing.
+	var serr *appidentity.AccountSearchError
+	if _, _, err := e.admin.SameIPAccounts(ctx, e.carol, staff, "not an address", "", 10); !errors.As(err, &serr) || serr.Param != "ip" {
+		t.Errorf("SameIPAccounts(not an address) = %v, want an AccountSearchError naming ip", err)
+	}
+	if _, err := e.admin.SignIns(ctx, e.alfred, staff, appidentity.SignInPosition{}, 10); !errors.Is(err, appidentity.ErrNotLocalAccount) {
+		t.Errorf("SignIns(alfred) = %v, want ErrNotLocalAccount", err)
+	}
+	if _, _, err := e.admin.SameIPAccounts(ctx, e.alfred, staff, "192.0.2.1", "", 10); !errors.Is(err, appidentity.ErrNotLocalAccount) {
+		t.Errorf("SameIPAccounts(alfred) = %v, want ErrNotLocalAccount", err)
+	}
+	if _, err := e.admin.SignIns(ctx, e.IDs.NewID(), staff, appidentity.SignInPosition{}, 10); !errors.Is(err, appaccount.ErrNotFound) {
+		t.Errorf("SignIns(unknown) = %v, want ErrNotFound", err)
+	}
+	if n := audited(); n != 5 {
+		t.Errorf("audit entries after refusals = %d, want 5", n)
 	}
 }

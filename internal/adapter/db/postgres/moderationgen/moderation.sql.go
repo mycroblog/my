@@ -1407,9 +1407,10 @@ WHERE ($1::text = '' OR s.state = $1::text)
   AND ($2::text = '' OR r.category = $2::text)
   AND ($3::uuid IS NULL OR s.assignee_user_id = $3::uuid)
   AND (NOT $4::boolean OR s.assignee_user_id IS NULL)
-  AND ($5::uuid IS NULL OR r.id < $5::uuid)
+  AND ($5::uuid IS NULL OR r.target_account_id = $5::uuid)
+  AND ($6::uuid IS NULL OR r.id < $6::uuid)
 ORDER BY r.id DESC
-LIMIT $6
+LIMIT $7
 `
 
 type ListReportsParams struct {
@@ -1417,6 +1418,7 @@ type ListReportsParams struct {
 	Category   string
 	Assignee   *string
 	Unassigned bool
+	Target     *string
 	Before     *string
 	Lim        int32
 }
@@ -1438,13 +1440,15 @@ type ListReportsRow struct {
 
 // ListReports returns the reports with their state, newest first: those in a state (empty for
 // any), of a category (empty for any), assigned to a user (NULL for anyone) or to nobody when
-// unassigned, and those before the report before (NULL for the first page).
+// unassigned, about an account (NULL for any), and those before the report before (NULL for the
+// first page).
 func (q *Queries) ListReports(ctx context.Context, arg ListReportsParams) ([]ListReportsRow, error) {
 	rows, err := q.db.Query(ctx, listReports,
 		arg.State,
 		arg.Category,
 		arg.Assignee,
 		arg.Unassigned,
+		arg.Target,
 		arg.Before,
 		arg.Lim,
 	)
@@ -1588,9 +1592,10 @@ WHERE ($1::text = '' OR s.state = $1::text)
   AND ($2::text = '' OR r.category = $2::text)
   AND ($3::uuid IS NULL OR s.assignee_user_id = $3::uuid)
   AND (NOT $4::boolean OR s.assignee_user_id IS NULL)
-  AND ($5::uuid IS NULL OR r.id > $5::uuid)
+  AND ($5::uuid IS NULL OR r.target_account_id = $5::uuid)
+  AND ($6::uuid IS NULL OR r.id > $6::uuid)
 ORDER BY r.id
-LIMIT $6
+LIMIT $7
 `
 
 type ListReportsOldestFirstParams struct {
@@ -1598,6 +1603,7 @@ type ListReportsOldestFirstParams struct {
 	Category   string
 	Assignee   *string
 	Unassigned bool
+	Target     *string
 	After      *string
 	Lim        int32
 }
@@ -1625,6 +1631,7 @@ func (q *Queries) ListReportsOldestFirst(ctx context.Context, arg ListReportsOld
 		arg.Category,
 		arg.Assignee,
 		arg.Unassigned,
+		arg.Target,
 		arg.After,
 		arg.Lim,
 	)

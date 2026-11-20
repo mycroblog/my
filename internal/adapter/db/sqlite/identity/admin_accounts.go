@@ -37,7 +37,16 @@ func (r *Repository) ListUserIDsInRegistrationState(ctx context.Context, state i
 
 // ListSessionOriginsOfUser implements identity.AccountAdminRepository.
 func (r *Repository) ListSessionOriginsOfUser(ctx context.Context, userID string, limit int) ([]identity.SessionOrigin, error) {
-	rows, err := r.db.reader().ListSessionOriginsOfUser(ctx, identitygen.ListSessionOriginsOfUserParams{UserID: userID, Lim: int64(limit)})
+	return r.ListSessionOriginsOfUserBefore(ctx, userID, appidentity.SignInPosition{}, limit)
+}
+
+// ListSessionOriginsOfUserBefore implements identity.AccountAdminRepository.
+func (r *Repository) ListSessionOriginsOfUserBefore(ctx context.Context, userID string, before appidentity.SignInPosition, limit int) ([]identity.SessionOrigin, error) {
+	p := identitygen.ListSessionOriginsOfUserParams{UserID: userID, Lim: int64(limit)}
+	if before.SessionID != "" {
+		p.BeforeAt, p.BeforeID = sqlite.ToMillis(before.At), before.SessionID
+	}
+	rows, err := r.db.reader().ListSessionOriginsOfUser(ctx, p)
 	if err != nil {
 		return nil, sqlite.Wrap(err, "list session origins of a user")
 	}

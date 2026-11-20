@@ -1459,9 +1459,10 @@ WHERE (CAST(?1 AS TEXT) = '' OR s.state = ?1)
   AND (CAST(?2 AS TEXT) = '' OR r.category = ?2)
   AND (CAST(?3 AS TEXT) = '' OR s.assignee_user_id = ?3)
   AND (CAST(?4 AS INTEGER) = 0 OR s.assignee_user_id IS NULL)
-  AND (CAST(?5 AS TEXT) = '' OR r.id < ?5)
+  AND (CAST(?5 AS TEXT) = '' OR r.target_account_id = ?5)
+  AND (CAST(?6 AS TEXT) = '' OR r.id < ?6)
 ORDER BY r.id DESC
-LIMIT ?6
+LIMIT ?7
 `
 
 type ListReportsParams struct {
@@ -1469,6 +1470,7 @@ type ListReportsParams struct {
 	Category   string
 	Assignee   string
 	Unassigned int64
+	Target     string
 	Before     string
 	Lim        int64
 }
@@ -1490,13 +1492,15 @@ type ListReportsRow struct {
 
 // ListReports returns the reports with their state, newest first: those in a state (empty for
 // any), of a category (empty for any), assigned to a user (empty for anyone) or to nobody when
-// unassigned is 1, and those before the report before (empty for the first page).
+// unassigned is 1, about an account (empty for any), and those before the report before (empty for
+// the first page).
 func (q *Queries) ListReports(ctx context.Context, arg ListReportsParams) ([]ListReportsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listReports,
 		arg.State,
 		arg.Category,
 		arg.Assignee,
 		arg.Unassigned,
+		arg.Target,
 		arg.Before,
 		arg.Lim,
 	)
@@ -1649,9 +1653,10 @@ WHERE (CAST(?1 AS TEXT) = '' OR s.state = ?1)
   AND (CAST(?2 AS TEXT) = '' OR r.category = ?2)
   AND (CAST(?3 AS TEXT) = '' OR s.assignee_user_id = ?3)
   AND (CAST(?4 AS INTEGER) = 0 OR s.assignee_user_id IS NULL)
-  AND (CAST(?5 AS TEXT) = '' OR r.id > ?5)
+  AND (CAST(?5 AS TEXT) = '' OR r.target_account_id = ?5)
+  AND (CAST(?6 AS TEXT) = '' OR r.id > ?6)
 ORDER BY r.id
-LIMIT ?6
+LIMIT ?7
 `
 
 type ListReportsOldestFirstParams struct {
@@ -1659,6 +1664,7 @@ type ListReportsOldestFirstParams struct {
 	Category   string
 	Assignee   string
 	Unassigned int64
+	Target     string
 	After      string
 	Lim        int64
 }
@@ -1686,6 +1692,7 @@ func (q *Queries) ListReportsOldestFirst(ctx context.Context, arg ListReportsOld
 		arg.Category,
 		arg.Assignee,
 		arg.Unassigned,
+		arg.Target,
 		arg.After,
 		arg.Lim,
 	)

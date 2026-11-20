@@ -29,7 +29,12 @@ type fakeAccountAdmin struct {
 	accounts fakeAccounts
 	queries  []appidentity.AccountSearch
 	reveals  []string // "account by user"
-	reports  []moderation.ReportRecord
+	// signIns are the sign-ins of every local account, newest first, and signInReads and
+	// sameIPReads the reads of them and of the accounts of an IP address ("account by user").
+	signIns     []identity.SessionOrigin
+	signInReads []string
+	sameIPReads []string
+	reports     []moderation.ReportRecord
 	// decisionNote is the note of the decision on the registration.
 	decisionNote string
 	// twoFactor holds the accounts whose users have two-factor authentication, and
@@ -135,6 +140,56 @@ func (f *fakeAccountAdmin) Reveal(_ context.Context, id, by string) (appidentity
 			{IP: "192.0.2.1", Accounts: []appidentity.AdminAccount{f.present(f.accounts[bobAccountID])}},
 		},
 	}, nil
+}
+
+func (f *fakeAccountAdmin) SignIns(_ context.Context, id, by string, before appidentity.SignInPosition, limit int) ([]identity.SessionOrigin, error) {
+	a, ok := f.accounts[id]
+	switch {
+	case !ok:
+		return nil, appaccount.ErrNotFound
+	case a.Local == nil:
+		return nil, appidentity.ErrNotLocalAccount
+	}
+	f.signInReads = append(f.signInReads, id+" by "+by)
+	var out []identity.SessionOrigin
+	for _, o := range f.signIns {
+		past := before.SessionID == "" || o.CreatedAt.Before(before.At) || (o.CreatedAt.Equal(before.At) && o.SessionID < before.SessionID)
+		if past && len(out) < limit {
+			out = append(out, o)
+		}
+	}
+	return out, nil
+}
+
+// SameIPAccounts lists, for every address, bob and the reporter (newest first by account ID),
+// leaving out the account itself.
+func (f *fakeAccountAdmin) SameIPAccounts(_ context.Context, id, by, ip, after string, limit int) ([]appidentity.AdminAccount, string, error) {
+	if ip == "not an address" {
+		return nil, "", &appidentity.AccountSearchError{Param: "ip"}
+	}
+	a, ok := f.accounts[id]
+	switch {
+	case !ok:
+		return nil, "", appaccount.ErrNotFound
+	case a.Local == nil:
+		return nil, "", appidentity.ErrNotLocalAccount
+	}
+	f.sameIPReads = append(f.sameIPReads, id+" by "+by)
+	ids := []string{bobAccountID, reporterAccountID}
+	slices.Sort(ids)
+	slices.Reverse(ids)
+	var out []appidentity.AdminAccount
+	for _, other := range ids {
+		if other != id && (after == "" || other < after) {
+			out = append(out, f.present(f.accounts[other]))
+		}
+	}
+	next := ""
+	if len(out) > limit {
+		out = out[:limit]
+		next = out[limit-1].Actor.Account.ID
+	}
+	return out, next, nil
 }
 
 func (f *fakeAccountAdmin) DisableTwoFactor(_ context.Context, id, by string) error {
@@ -471,5 +526,93 @@ func TestLiftAdminAccountEmailSuppression(t *testing.T) {
 	res = e.send(t, http.MethodPost, path(reportThree), "admin", "")
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusNotFound {
 		t.Errorf("unknown = %d %+v", res.StatusCode, p)
+	}
+}
+
+func TestListAdminAccountSignIns(t *testing.T) {
+	e, admin, _ := newAccountAdminEnv(t)
+	alice := userOf(aliceAccountID)
+	admin.signIns = []identity.SessionOrigin{
+		{SessionID: testkit.NamedID("session-3"), UserID: alice, IP: "192.0.2.3", UserAgent: "ua", CreatedAt: adminNow},
+		{SessionID: testkit.NamedID("session-2"), UserID: alice, CreatedAt: adminNow.Add(-time.Minute)},
+		{SessionID: testkit.NamedID("session-1"), UserID: alice, IP: "192.0.2.1", CreatedAt: adminNow.Add(-time.Hour)},
+	}
+	path := "/admin/accounts/" + aliceAccountID + "/sign_ins"
+	res := e.send(t, http.MethodGet, path+"?limit=2", "admin-read", "")
+	page := decodeJSON[clientapi.AdminAccountSignInPage](t, res)
+	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
+		t.Fatalf("sign-ins = %d (%s)", res.StatusCode, res.Header.Get("Cache-Control"))
+	}
+	if len(page.Items) != 2 || page.NextCursor == nil || page.Items[0].Ip == nil || *page.Items[0].Ip != "192.0.2.3" ||
+		page.Items[0].UserAgent == nil || !page.Items[0].SignedInAt.Equal(adminNow) || page.Items[1].Ip != nil || page.Items[1].UserAgent != nil {
+		t.Fatalf("first page = %+v", page)
+	}
+	res = e.send(t, http.MethodGet, path+"?limit=2&cursor="+*page.NextCursor, "admin-read", "")
+	rest := decodeJSON[clientapi.AdminAccountSignInPage](t, res)
+	if res.StatusCode != http.StatusOK || len(rest.Items) != 1 || rest.NextCursor != nil || rest.Items[0].Ip == nil || *rest.Items[0].Ip != "192.0.2.1" {
+		t.Errorf("second page = %d %+v", res.StatusCode, rest)
+	}
+	// Each page is a read of the private data, which the identity module audits.
+	if want := []string{aliceAccountID + " by " + alice, aliceAccountID + " by " + alice}; !slices.Equal(admin.signInReads, want) {
+		t.Errorf("reads = %v, want %v", admin.signInReads, want)
+	}
+
+	for _, c := range []struct {
+		path, token string
+		status      int
+	}{
+		{"/admin/accounts/" + reporterAccountID + "/sign_ins", "admin-read", http.StatusUnprocessableEntity},
+		{"/admin/accounts/" + reportThree + "/sign_ins", "admin-read", http.StatusNotFound},
+		{path + "?cursor=%25", "admin-read", http.StatusBadRequest},
+		{path + "?cursor=bm90IGEgY3Vyc29y", "admin-read", http.StatusBadRequest},
+		{path + "?limit=41", "admin-read", http.StatusBadRequest},
+		{path, "bob-admin", http.StatusForbidden},
+	} {
+		res := e.send(t, http.MethodGet, c.path, c.token, "")
+		if p := decodeProblem(t, res); res.StatusCode != c.status {
+			t.Errorf("GET %s by %s = %d %+v, want %d", c.path, c.token, res.StatusCode, p, c.status)
+		}
+	}
+	if len(admin.signInReads) != 2 {
+		t.Errorf("reads after refusals = %v, want only the two pages", admin.signInReads)
+	}
+}
+
+func TestListAdminAccountSameIpAccounts(t *testing.T) {
+	e, admin, _ := newAccountAdminEnv(t)
+	path := "/admin/accounts/" + aliceAccountID + "/same_ip_accounts?ip=192.0.2.1"
+	res := e.send(t, http.MethodGet, path+"&limit=1", "admin-read", "")
+	page := decodeJSON[clientapi.AdminAccountPage](t, res)
+	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" || len(page.Items) != 1 || page.NextCursor == nil {
+		t.Fatalf("first page = %d (%s) %+v", res.StatusCode, res.Header.Get("Cache-Control"), page)
+	}
+	first := page.Items[0].Id
+	res = e.send(t, http.MethodGet, path+"&limit=1&cursor="+*page.NextCursor, "admin-read", "")
+	rest := decodeJSON[clientapi.AdminAccountPage](t, res)
+	if res.StatusCode != http.StatusOK || len(rest.Items) != 1 || rest.NextCursor != nil || rest.Items[0].Id == first {
+		t.Errorf("second page = %d %+v after %s", res.StatusCode, rest, first)
+	}
+	if want := []string{aliceAccountID + " by " + userOf(aliceAccountID), aliceAccountID + " by " + userOf(aliceAccountID)}; !slices.Equal(admin.sameIPReads, want) {
+		t.Errorf("reads = %v, want %v", admin.sameIPReads, want)
+	}
+
+	for _, c := range []struct {
+		path, token string
+		status      int
+	}{
+		{"/admin/accounts/" + aliceAccountID + "/same_ip_accounts?ip=not+an+address", "admin-read", http.StatusBadRequest},
+		{"/admin/accounts/" + aliceAccountID + "/same_ip_accounts", "admin-read", http.StatusBadRequest},
+		{"/admin/accounts/" + reporterAccountID + "/same_ip_accounts?ip=192.0.2.1", "admin-read", http.StatusUnprocessableEntity},
+		{"/admin/accounts/" + reportThree + "/same_ip_accounts?ip=192.0.2.1", "admin-read", http.StatusNotFound},
+		{path + "&cursor=%25", "admin-read", http.StatusBadRequest},
+		{path, "bob-admin", http.StatusForbidden},
+	} {
+		res := e.send(t, http.MethodGet, c.path, c.token, "")
+		if p := decodeProblem(t, res); res.StatusCode != c.status {
+			t.Errorf("GET %s by %s = %d %+v, want %d", c.path, c.token, res.StatusCode, p, c.status)
+		}
+	}
+	if len(admin.sameIPReads) != 2 {
+		t.Errorf("reads after refusals = %v, want only the two pages", admin.sameIPReads)
 	}
 }

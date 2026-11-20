@@ -452,15 +452,19 @@ export function reportHandlers(c: ReportContext): { handlers: Handlers; reports:
     return change(r) ?? { status: 200, body: structuredClone(r) };
   };
 
-  const queue = (query: { get: (name: "state" | "category" | "assignee" | "order") => string | null }) => {
+  const queue = (query: {
+    get: (name: "state" | "category" | "assignee" | "target_account_id" | "order") => string | null;
+  }) => {
     const state = query.get("state");
     const category = query.get("category");
     const assignee = query.get("assignee");
+    const target = query.get("target_account_id");
     const me = c.accountId(c.viewer);
     const kept = reports.filter(
       (r) =>
         (state === null || r.state === state) &&
         (category === null || r.category === category) &&
+        (target === null || r.target_account_id === target) &&
         (assignee === null ||
           (assignee === "none"
             ? r.assignee_account_id === undefined

@@ -203,9 +203,10 @@ An action that keeps the only administrator who can sign in from signing in (`di
   You can give only one of `email`, `email_domain` and `ip`. The list does not include IP addresses or email addresses.
 - The state is the first that applies from this list: `deleted`, `suspended` (`suspend`, `ban`), `disabled` (`disable_login`), `rejected` and `pending` (registration review), `limited` (`limit`), `active`.
   The state and the restrictions (`restrictions`) come only from actions against the account itself and do not include domain actions.
-- `GET /api/v1/admin/accounts/{id}` returns the state and restrictions and, for a local account, the registration application and review, the email confirmation, the roles, and up to 20 actions and reports, newest first.
+- `GET /api/v1/admin/accounts/{id}` returns the state and restrictions and, for a local account, the registration application and review, the email confirmation, the roles, and up to 20 actions and reports, newest first. `GET /api/v1/admin/reports?target_account_id={id}` pages through all the reports about an account.
 - `POST /api/v1/admin/accounts/{id}/reveal` returns a local account's email address, the IP addresses and User-Agents of registration and sign-ins (20 entries, newest first), and other accounts that used the same IP address (up to 20 per IP address).
-  Every call records `revealed_private_data` in the audit log, and the data is returned only if the record could be written. IP addresses are removed after the retention period (180 days by default), so sign-in origins older than that cannot be shown.
+  `GET /api/v1/admin/accounts/{id}/sign_ins` and `GET /api/v1/admin/accounts/{id}/same_ip_accounts?ip=` page through all of them.
+  Every call of these three records `revealed_private_data` in the audit log, and the data is returned only if the record could be written. IP addresses are removed after the retention period (180 days by default), so sign-in origins older than that cannot be shown.
 - `two_factor_enabled` in `GET /api/v1/admin/accounts/{id}` shows whether the user of a local account uses two-factor authentication (TOTP).
   A user who lost both the authenticator app and the recovery codes can sign in with the password alone once you remove two-factor authentication with `POST /api/v1/admin/accounts/{id}/two_factor/disable`.
   Only users with the permission `manage_login_recovery` can do this, and by default only the built-in administrator role has it (it belongs to server administration; the web client shows the section only to them).

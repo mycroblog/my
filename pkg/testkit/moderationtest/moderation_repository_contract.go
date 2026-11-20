@@ -725,6 +725,27 @@ func modRepoListsReports(t *testing.T, r *modRepo) {
 		got[0].Status.State != moderation.ReportResolved || got[0].Status.Outcome != moderation.OutcomeDismissed {
 		t.Errorf("ListReportsByReporter = %+v, %v; want the resolved report with its state", got, err)
 	}
+
+	// The reports about one account, in either order and in pages, with the other filters.
+	other := r.report(t, alice, r.ids.NewID(), nil)
+	for _, c := range []struct {
+		name  string
+		q     appmoderation.ReportQuery
+		limit int
+		want  []string
+	}{
+		{"of the target", appmoderation.ReportQuery{TargetAccountID: target}, 10, []string{resolved.ID, assigned.ID, legal.ID, spam.ID}},
+		{"of the other", appmoderation.ReportQuery{TargetAccountID: other.TargetAccountID}, 10, []string{other.ID}},
+		{"of the target, a page", appmoderation.ReportQuery{TargetAccountID: target, After: assigned.ID}, 1, []string{legal.ID}},
+		{"of the target, oldest first", appmoderation.ReportQuery{TargetAccountID: target, OldestFirst: true, After: legal.ID}, 10, []string{assigned.ID, resolved.ID}},
+		{"of the target, open", appmoderation.ReportQuery{TargetAccountID: target, State: moderation.ReportOpen, Unassigned: true}, 10, []string{legal.ID, spam.ID}},
+		{"of nobody reported", appmoderation.ReportQuery{TargetAccountID: alice}, 10, nil},
+	} {
+		got, err := r.h.Moderation.ListReports(ctx, c.q, c.limit)
+		if err != nil || !slices.Equal(reportIDs(got), c.want) {
+			t.Errorf("ListReports(%s) = %v, %v; want %v", c.name, reportIDs(got), err, c.want)
+		}
+	}
 }
 
 func modRepoListsActions(t *testing.T, r *modRepo) {

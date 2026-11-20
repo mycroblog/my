@@ -1148,6 +1148,32 @@ export function moderationHandlers(c: ModerationContext): { handlers: Handlers; 
         },
       };
     },
+    "GET /admin/accounts/{id}/sign_ins": ({ params, query }) => {
+      const h = accountFor(params.id);
+      if (refusal(h)) return h;
+      if (!h.local) return invalid("id");
+      if (outranks(h)) return outranked();
+      const signIns = h.signIns
+        .toSorted((a, b) => b.at - a.at)
+        .map((s, i) => ({
+          key: `${String(s.at)} ${String(i)}`,
+          item: { ip: s.ip, user_agent: s.ua, signed_in_at: iso(s.at) },
+        }));
+      const { body } = page(signIns, query, (s) => s.key);
+      return { status: 200, body: { ...body, items: body.items.map((s) => s.item) } };
+    },
+    "GET /admin/accounts/{id}/same_ip_accounts": ({ params, query }) => {
+      const h = accountFor(params.id);
+      if (refusal(h)) return h;
+      const ip = query.get("ip") ?? "";
+      if (ipv4(ip) === undefined && !/^[0-9a-f:]+$/i.test(ip))
+        return problem(400, "Bad Request", { detail: "ip is not valid.", field: "ip" });
+      if (!h.local) return invalid("id");
+      if (outranks(h)) return outranked();
+      const others = newestAccounts().filter((o) => o !== h && o.local && ipsOf(o).includes(ip));
+      const { body } = page(others.map(adminAccount), query);
+      return { status: 200, body };
+    },
     "POST /admin/accounts/{id}/email_suppression/lift": ({ params }) => {
       const h = accountFor(params.id);
       if (refusal(h)) return h;

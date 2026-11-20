@@ -163,12 +163,13 @@ type Repository interface {
 
 // ReportQuery selects the reports of a list.
 type ReportQuery struct {
-	State          moderation.ReportState // "" for any
-	Category       moderation.Category    // "" for any
-	AssigneeUserID string                 // the user the reports are assigned to; "" for anyone
-	Unassigned     bool                   // only the reports that nobody handles
-	OldestFirst    bool                   // the oldest report first rather than the newest
-	After          string                 // the last report ID of the previous page; "" for the first page
+	State           moderation.ReportState // "" for any
+	Category        moderation.Category    // "" for any
+	AssigneeUserID  string                 // the user the reports are assigned to; "" for anyone
+	Unassigned      bool                   // only the reports that nobody handles
+	TargetAccountID string                 // only the reports about this account; "" for any
+	OldestFirst     bool                   // the oldest report first rather than the newest
+	After           string                 // the last report ID of the previous page; "" for the first page
 }
 
 // ActionQuery selects the actions on accounts of a list.
