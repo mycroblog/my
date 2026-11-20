@@ -4,7 +4,8 @@
 // configuration in its data block. It resolves the browser's locale (locale.ts), which its requests name and under
 // which it places the app; the app shows the reader's own language and time zone, and puts the locale and its
 // direction on the <html>, in place of the shell's, which are those of what a page previews (reader.tsx). It opens the
-// browser's session with the server (ADR-0090 §16), with a session its stream (ADR-0028 §18), and starts the router.
+// browser's session with the server (ADR-0090 §16) as it loads the strings of the reader's locale (strings.ts), with
+// a session its stream (ADR-0028 §18), and starts the router.
 // A server that cannot say whether there is a session leaves the app signed out, as when there is none, but for what
 // the device keeps of the reader, which stays (reader.tsx). Signing out in another tab makes this one leave. Every request
 // goes through one watch of the server, which tells its maintenance, an outage and a too old build (ADR-0088, ADR-0028
@@ -28,8 +29,10 @@ import { AppRoot } from "./app";
 import { parseConfig } from "./config";
 import { readerLocale } from "./locale";
 import { startMeasuring } from "./measure";
+import { keptLocale } from "./reader";
 import { createAppRouter } from "./router";
 import { followSignOut } from "./sign-out";
+import { loadStrings } from "./strings";
 
 const config = parseConfig(document.getElementById("config")?.textContent ?? null, location);
 // The browser's locale: what the requests name (Accept-Language), and what the app shows a reader whose account
@@ -40,9 +43,16 @@ const server = {
   acceptLanguage: () => locale,
   watch: watchServer({ server: config.apiOrigin }),
 };
+// The strings of the browser's locale, and of the one the account chose when this device last read its preferences,
+// before the first paint (reader.tsx); the other locales' only when the reader changes to one. One that fails to load
+// leaves its locale in en.
+const kept = keptLocale();
+const strings = Promise.all(
+  [locale, ...(kept === undefined ? [] : [kept])].map((tag) => loadStrings(tag).catch(() => undefined)),
+);
 // The session's data; null when the server said the browser has none, undefined when it could not say (it did not
 // answer, or failed): the app then shows as signed out, and keeps what the device holds of the reader.
-const opened = await openSession(server).catch(() => undefined);
+const [opened] = await Promise.all([openSession(server).catch(() => undefined), strings]);
 const data = opened ?? null;
 if (data !== null) startStream(data);
 // The Service Worker of the build (sw/sw.ts); the dev server has none.

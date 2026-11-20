@@ -87,7 +87,10 @@ func (w *noIndexByType) check() {
 }
 
 func (w *noIndexByType) WriteHeader(status int) {
-	w.check()
+	// An informational response (103 Early Hints) is not the response, whose type is not known yet.
+	if status < 100 || status >= 200 || status == http.StatusSwitchingProtocols {
+		w.check()
+	}
 	w.ResponseWriter.WriteHeader(status)
 }
 

@@ -9,9 +9,10 @@
 
 import type { Messages } from "@lingui/core";
 import { catalogReader, useLocale } from "@my/design-system";
-import { type MessageId, messages } from "./messages.gen";
+import { catalog, type MessageId } from "./messages.gen";
 
-const stringsIn = catalogReader<MessageId>(messages satisfies Readonly<Record<string, Messages>>);
+/** The app's strings in `locale`, by their ids, and the locale they are in. */
+export const stringsIn = catalogReader<MessageId>(catalog satisfies { readonly source: Messages });
 
 /** The app's strings in the reader's locale. */
 export const useStrings = () => stringsIn(useLocale().locale).t;
@@ -20,9 +21,7 @@ export const useStrings = () => stringsIn(useLocale().locale).t;
  * The languages the app can be shown in, which the settings offer: the locales of the catalog, without the
  * pseudo-locales made from en (ADR-0009 §1), which carry a private-use region.
  */
-export const appLanguages: readonly string[] = Object.keys(messages)
-  .filter((tag) => !/-X[A-Z]$/.test(tag))
-  .toSorted();
+export const appLanguages: readonly string[] = catalog.locales.filter((tag) => !/-X[A-Z]$/.test(tag)).toSorted();
 
 /** `tag` as a canonical BCP 47 tag when a catalog has it or its language, else undefined. */
 export function inCatalog(tag: string): string | undefined {
@@ -33,7 +32,8 @@ export function inCatalog(tag: string): string | undefined {
     return undefined;
   }
   if (canonical === undefined) return undefined;
-  return canonical in messages || new Intl.Locale(canonical).language in messages ? canonical : undefined;
+  const locales: readonly string[] = catalog.locales;
+  return locales.includes(canonical) || locales.includes(new Intl.Locale(canonical).language) ? canonical : undefined;
 }
 
 /**

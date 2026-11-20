@@ -116,8 +116,8 @@ export default defineConfig({
       ],
       output: {
         // Each locale's strings, of every package (its messages.<locale>.gen.ts, @my/i18n), in a chunk of its own,
-        // locale-<tag>-<hash>.js, still loaded with the page as the catalogs import them: all of them in one chunk
-        // passed the Service Worker's limit of a precached file (2 MiB).
+        // locale-<tag>-<hash>.js: en's loaded with the page, the reader's on demand (each package's strings.ts), and
+        // every one with the payment page, which loads nothing on demand.
         codeSplitting: {
           groups: [
             {

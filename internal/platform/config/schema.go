@@ -180,6 +180,16 @@ var schema = []field{
 		set:    func(c *Config, v string) { c.WebOrigin = v },
 	},
 	{
+		key: "web_early_hints",
+		doc: "Whether the web client's pages (the app and the sign-in screens) are preceded by a `103 Early Hints` response that names the stylesheets and scripts the page loads, so that the browser fetches them while the server prepares the page. The pages carry the same `Link` headers either way. Turn it on only when every proxy in front passes a 103 on: a Google Cloud external Application Load Balancer fails the request instead ([web client](../operations/running.md#web-client)).",
+		def: "false",
+		choices: []choice{
+			{value: "false", doc: "No 103; the `Link` headers come with the page."},
+			{value: "true", doc: "A 103 with the `Link` headers before each page."},
+		},
+		set: func(c *Config, v string) { c.WebEarlyHints = v == "true" },
+	},
+	{
 		key: "role",
 		doc: "What this process runs.",
 		def: string(RoleAll),

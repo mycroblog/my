@@ -23,6 +23,8 @@ func (a *App) setUpWeb(opts AppOptions) (auth, pay web.Entry, err error) {
 	}
 	h, err := web.New(web.Options{
 		Build: opts.WebBuild, DevViteOrigin: opts.DevViteOrigin, Version: opts.Version,
+		// A 103 before each page only where the proxies in front pass it on (web_early_hints).
+		EarlyHints: a.Config.WebEarlyHints,
 		// The web client signs in as the first-party client by the authorization code flow (ADR-0090 §16).
 		WebClientID: a.Identity.WebClientID(),
 		Host:        a.Config.Host, AccountDomain: a.Config.AccountDomain, WebOrigin: a.Config.WebOrigin,
