@@ -34,11 +34,11 @@
   },
   "dependencies": {
     "@mycroblog/mykit": "workspace:*",
-    "croner": "11.0.0"
+    "croner": "11.0.1"
   },
   "devDependencies": {
     "@types/bun": "1.4.4",
-    "oxlint": "1.92.0",
-    "oxlint-tsgolint": "7.0.2006"
+    "oxlint": "1.94.0",
+    "oxlint-tsgolint": "7.0.2007"
   }
 }

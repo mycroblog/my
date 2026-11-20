@@ -14,7 +14,7 @@
   "dependencies": {
     "@my/platform": "workspace:*",
     "@mycroblog/mykit": "workspace:*",
-    "@tanstack/react-query": "5.107.1",
+    "@tanstack/react-query": "5.108.0",
     "openapi-fetch": "0.17.0",
     "openapi-react-query": "0.5.4"
   },
