@@ -6,37 +6,34 @@ gestionan sus propios operadores, así que lo que ofrece un servidor (quién pue
 los visitantes, si el chat de voz está activado) depende de ellos. La página «Acerca de» del servidor y los documentos
 que enlaza al registrarte te indican sus reglas; esta guía solo describe cómo se comporta `my`.
 
-<!-- source: creating-an-account 965073ac4cf5 -->
+<!-- source: creating-an-account 6f66cdf29cd2 -->
 ## Crear una cuenta
 
 Elige «Registrarse» en la navegación (o «Crear una cuenta» en la página de inicio de sesión). El formulario pide:
 
 - **Nombre de usuario**: letras (a-z), dígitos y guiones bajos. Tu identificador es `@username@this-server`, y no puedes cambiar el nombre de usuario después.
-- **Dirección de correo electrónico**: con ella inicias sesión.
-- **Contraseña**: el formulario muestra la longitud permitida debajo del campo.
+- **Correo electrónico**: inicias sesión con él.
+- **Contraseña**: el formulario muestra la longitud permitida bajo el campo.
 - **Código de invitación**, cuando el servidor lo pide o lo acepta.
 - **¿Por qué quieres unirte? (opcional)**, cuando el servidor revisa las cuentas nuevas.
 - Una casilla para confirmar que has leído los términos y las políticas del servidor, cuando el servidor publica alguno.
 
-Lo que ves de todo esto depende de cómo acepta el servidor las cuentas nuevas:
+Cuáles de estos campos ves depende de cómo acepta el servidor las cuentas nuevas:
 
 | El servidor | Qué haces |
 | --- | --- |
-| Está abierto | Te registras. El código de invitación es opcional. |
-| Revisa las cuentas nuevas | Te registras e indicas por qué quieres unirte. Un moderador aprueba la cuenta antes de que puedas usarla. Un código de invitación te permite usar la cuenta de inmediato. |
+| Es abierto | Te registras. Un código de invitación es opcional. |
+| Revisa las cuentas nuevas | Te registras y dices por qué quieres unirte. Un moderador aprueba la cuenta antes de que puedas usarla. Un código de invitación te permite usar la cuenta de inmediato. |
 | Acepta solo invitaciones | Escribes el código de invitación que te dieron, o abres el enlace de invitación, que lo rellena. |
-| Está cerrado | La página indica que el servidor no acepta cuentas nuevas. |
+| Está cerrado | La página dice que el servidor no acepta cuentas nuevas. |
 | Registra solo mediante proveedores de inicio de sesión | Te registras con un proveedor que ofrece el servidor (por ejemplo «Iniciar sesión con GitHub») en lugar de una contraseña. |
 
-Si el servidor envía correo electrónico, te envía un enlace para confirmar tu dirección de correo electrónico. Ábrelo y
-elige «Confirmar correo electrónico». Hasta que la cuenta se apruebe y la dirección se confirme, puedes
-iniciar sesión, pero solo ves aquello que estás esperando («Tu cuenta aún no está lista»).
+Si el servidor envía correo, te envía un enlace para confirmar tu dirección de correo. Ábrelo y elige «Confirmar la dirección de correo».
+Hasta que la cuenta se apruebe y la dirección se confirme, puedes iniciar sesión pero solo ves aquello que estás esperando
+(«Tu cuenta aún no está lista»).
 
-Tras el registro, una página de bienvenida te permite elegir un avatar y un nombre para mostrar («Continuar» los guarda,
-«Más tarde» omite este paso). Tu cronología de inicio muestra entonces una lista «Primeros pasos»: «Configura tu perfil»,
-«Sigue a alguien» y «Escribe tu primera publicación». «Ocultar estos pasos» la cierra en ese navegador. «Cuentas
-sugeridas» lista personas a las que puedes seguir, salvo en un servidor de una sola persona, donde «Buscar personas» abre
-la búsqueda.
+Después del registro, un paso de bienvenida pide un nombre para mostrar y un avatar, ambos opcionales («Omitir por ahora»); mientras no sigues a nadie, tu
+cronología de inicio muestra entonces personas que el servidor sugiere, si sugiere alguna.
 
 <!-- source: signing-in fcfbfa76f1d0 -->
 ## Iniciar sesión
@@ -63,15 +60,21 @@ Después de iniciar sesión puede que veas una página en lugar de la aplicació
 - Un moderador ha restringido tu cuenta. La página lista las acciones vigentes y te permite apelar una vez («Apelar esta acción»). Las mismas acciones aparecen en «Estado de la cuenta», en la configuración.
 - Desactivaste la cuenta. «Reactivar tu cuenta» la recupera hasta la fecha en que se elimina; «Eliminar cuenta» la elimina de inmediato.
 
-<!-- source: signing-out fb81956ae999 -->
+<!-- source: signing-out 053a33c01d8e -->
 ## Cerrar sesión
 
-Elige «Cerrar sesión» en la sección «Cuenta» de la aplicación. La página «Navegadores con sesión iniciada» de la
-configuración lista los navegadores que tienen la sesión iniciada en tu cuenta y la cierra en ellos.
+Elige «Cerrar sesión…», la última fila de la configuración, y confirma con «Cerrar sesión». Cierra la sesión de este navegador; tus otros
+navegadores y aplicaciones siguen con la sesión iniciada. «Navegadores con sesión iniciada», en «Seguridad» de la configuración, enumera los navegadores con sesión iniciada
+en tu cuenta y les cierra la sesión.
 
-<!-- source: settings 35cf43b05962 -->
+<!-- source: settings 4cd29f4ed978 -->
 ## Configuración
 
-La configuración se agrupa en «Perfil y comunidad», «Visualización y notificaciones», «Relaciones», «Seguridad»,
-«Aplicaciones» y «Cuenta y datos». En «Seguridad» gestionas tu contraseña, la autenticación en dos pasos, las llaves de
-acceso, las cuentas vinculadas y los navegadores con sesión iniciada.
+«Configuración», en la navegación, abre la configuración. Contiene «Perfil», que cambia cómo se ve tu cuenta y dónde
+se encuentra; «Visualización y publicación»; «Notificaciones»; «Relaciones», que enumera las cuentas que bloqueas y silencias, los
+servidores que silencias y las etiquetas que sigues, cada una con el botón que lo deshace; «Filtros de palabras clave», que enumera tus
+filtros y los añade, cambia y elimina; «Seguridad», donde gestionas tu contraseña, passkeys, autenticación en dos
+pasos, cuentas vinculadas y navegadores con sesión iniciada; «Aplicaciones», que enumera las aplicaciones a las que permitiste usar tu cuenta,
+que puedes revocar, y las aplicaciones que registraste; «Invitaciones», cuando puedes crear invitaciones, que crea enlaces de invitación
+y los revoca; y «Cuenta y datos», que contiene «Estado de la cuenta», tus datos y publicaciones, y la mudanza, desactivación o
+eliminación de la cuenta ([Mudar tu cuenta](moving-your-account.md)).

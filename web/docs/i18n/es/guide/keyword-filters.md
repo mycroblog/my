@@ -5,44 +5,44 @@ Un filtro de palabras clave pliega u oculta las publicaciones que contienen algu
 aún no has visto, un tema del que necesitas descansar. El servidor busca las coincidencias en las publicaciones, así que todas las aplicaciones que uses muestran el mismo
 resultado. Solo tú ves tus filtros, y nadie recibe aviso de ellos.
 
-<!-- source: adding-a-filter 28f5b63e22b2 -->
+<!-- source: adding-a-filter 455f52213244 -->
 ## Añadir un filtro
 
-Abre «Filtros de palabras clave» en «Visualización y notificaciones» dentro de los ajustes y elige «Añadir un filtro»:
+Abre «Filtros de palabras clave», en «Personas y filtros» de la configuración, y elige «Añadir un filtro»:
 
-1. **Nombre:** lo que muestra una publicación plegada en su lugar («Filtrado: Final de temporada»), hasta 50 caracteres.
-2. **Palabras:** una o más palabras o frases. «Añadir una palabra» añade otra, hasta 100 en un filtro. «Palabra completa» junto a una palabra
+1. **Nombre:** lo que muestra en su lugar una publicación plegada («Coincide con el filtro “Final de temporada”»), hasta 50 caracteres.
+2. **Publicaciones que coinciden:** «Plegar tras el nombre del filtro» muestra solo ese nombre en lugar de la publicación, con «Mostrar» para leerla.
+   «Ocultar por completo» deja la publicación fuera, y también su notificación.
+3. **Termina:** «Nunca», después de una de las duraciones ofrecidas, de 30 minutos a una semana, o «En una fecha y hora».
+4. **Palabras:** una o más palabras o frases. «Añadir una palabra» añade otra, hasta 100 en un filtro. «Palabra completa» junto a una palabra
    hace que coincida solo como palabra completa (consulta [Cómo coinciden las palabras](#how-words-match)).
-3. **Dónde se aplica:** tu cronología de inicio y tus listas, tus notificaciones, las cronologías local, federada y de etiquetas,
-   los hilos y los perfiles. Un filtro nuevo se aplica en todas partes; desmarca los lugares que no quieras.
-4. **Qué hace:** «Plegar» pone la publicación tras el nombre del filtro, con «Mostrar» para leerla. «Ocultar» deja la publicación
-   fuera, y también su notificación.
-5. **Termina:** «Nunca», o tras una de las duraciones que se ofrecen, de 30 minutos a una semana.
+5. **Dónde se aplica:** «Inicio y listas», «Notificaciones», «Cronologías públicas» (las cronologías local, federada y de
+   etiquetas), «Hilos» y «Perfiles». Un filtro nuevo se aplica en todas partes; desmarca los lugares que no quieras.
 
-Elige «Añadir». «Editar» en un filtro cambia cualquiera de estos datos, y «Eliminar» lo borra junto con sus palabras tras pedir confirmación. Un filtro
-se aplica al instante a todas las publicaciones, también a las antiguas; las cronologías abiertas en pantalla se cargan de nuevo para mostrar el cambio.
+Elige «Añadir». Al elegir un filtro de la lista se abre para cambiar cualquiera de estos datos, y «Eliminar…» allí lo borra con sus palabras tras
+pedir confirmación. Un filtro se aplica al instante a todas las publicaciones, también a las antiguas; las cronologías abiertas en pantalla se cargan de nuevo para mostrar el cambio.
 
-La búsqueda, tus marcadores y favoritos, y tus mensajes directos nunca se filtran. Tampoco tus propias publicaciones y
+La búsqueda, tus marcadores y favoritos, y tus mensajes directos nunca se filtran. Tampoco tus propias publicaciones ni
 impulsos, ni las publicaciones que citan.
 
-<!-- source: what-a-filtered-post-looks-like 2a5fd3cd5b3c -->
+<!-- source: what-a-filtered-post-looks-like 52e0483be326 -->
 ## Qué aspecto tiene una publicación filtrada
 
-Una publicación que coincide con un filtro de «Plegar» muestra solo «Filtrado:» y los nombres de los filtros con los que coincidió, y «Mostrar». Su
-autor, su texto y sus imágenes quedan fuera de la vista, y un lector de pantalla lee solo esa línea, hasta que eliges «Mostrar». Una publicación
-se pliega de nuevo cuando vuelves a la página.
+Una publicación que coincide con un filtro de plegado muestra solo «Coincide con el filtro» con los nombres de los filtros que coincidieron, y «Mostrar».
+Su autor, su texto y sus imágenes quedan fuera de la vista, y un lector de pantalla lee solo esa línea, hasta que eliges «Mostrar»;
+«Ocultar» la pliega de nuevo, igual que volver a la página.
 
-Una notificación sobre esa publicación muestra la misma línea en lugar del texto de la publicación. Cuando solo coincide una publicación citada, solo
-se pliega la cita, incluso con «Ocultar», con «Mostrar la publicación citada». Un impulso se filtra según la publicación que impulsa.
+Una notificación sobre una publicación así muestra la misma línea en lugar del texto de la publicación. Cuando solo coincide una publicación citada, solo
+se pliega la cita, incluso con «Ocultar», con un «Mostrar» propio. Un impulso se filtra por la publicación que impulsa.
 
-Una publicación que abres tú mismo, desde un enlace o una notificación, se pliega en lugar de ocultarse, de modo que el enlace siga mostrando
+Una publicación que abres tú mismo, desde un enlace o una notificación, se pliega en lugar de ocultarse, para que el enlace siga mostrando
 algo.
 
-<!-- source: when-a-filter-ends 2657ec875f16 -->
+<!-- source: when-a-filter-ends d70431d92b82 -->
 ## Cuándo termina un filtro
 
 Un filtro con fecha de fin deja de aplicarse en ese momento. Permanece en tu lista, marcado como «Caducado», hasta que lo elimines. Para usarlo
-de nuevo, elige «Editar» y un nuevo fin, o «Nunca». Mientras editas un filtro que tiene fin, «Mantener» deja el fin tal
+de nuevo, ábrelo y elige un nuevo final, o «Nunca». Mientras editas un filtro que tiene fin, «Sin cambios» deja el final
 como está.
 
 <!-- source: how-words-match aeca692b00c3 -->
@@ -78,10 +78,10 @@ en lugar de `最終回`. Junto a una letra de otra escritura, «Palabra completa
 Un filtro no admite comodines ni expresiones regulares. Sus palabras coinciden cuando lo hace cualquiera de ellas; para plegar publicaciones solo cuando dos
 palabras aparecen juntas, escríbelas como una sola frase.
 
-<!-- source: limits e41fa1ca05b0 -->
+<!-- source: limits 2f4588a30027 -->
 ## Límites
 
-Puedes tener hasta 100 filtros, con hasta 100 palabras cada uno y 1000 palabras en total. Una palabra tiene como máximo 100 caracteres.
+Puedes tener hasta 100 filtros, con hasta 100 palabras cada uno y 1000 palabras en total. Una palabra tiene hasta 100 caracteres.
 
-El archivo de «Archivo y eliminación» en los ajustes incluye tus filtros, también los caducados, como
+El archivo de «Exportar», en «Cuenta y datos» de la configuración, contiene tus filtros, también los caducados, como
 `keyword_filters.json`.
