@@ -422,7 +422,7 @@ func (h *Handler) renderGeneric(locale, name string, theme themeState, brand bra
 	crawlers := directivesOf(policy)
 	shell, err := renderShell(shellData{
 		Lang: locale, Dir: i18n.Direction(locale), Title: name, Theme: theme, Brand: brand.Icon, Crawlers: crawlers,
-		HasIcon: h.hasIcon, HasAppleTouchIcon: h.hasAppleTouchIcon, HasThemeScript: h.hasThemeScript, ViteClient: viteClient(h.o.DevViteOrigin), Entry: h.tags,
+		HasIcon: h.hasIcon, HasAppleTouchIcon: h.hasAppleTouchIcon, HasThemeScript: h.hasThemeScript, DevScripts: devScripts(h.o.DevViteOrigin), Entry: h.tags,
 		Config: h.runtimeConfig(locale, name, brand),
 		Preview: &previewMeta{
 			Type: ogTypeWebsite, SiteName: name, Title: name, Description: site.summary,
@@ -448,11 +448,17 @@ func (h *Handler) runtimeConfig(locale, name string, brand brandState) runtimeCo
 	}
 }
 
-func viteClient(origin string) string {
+// devScripts returns the scripts that a document loads from the Vite dev server at origin before its
+// entry, none without one: Vite's client, for hot module replacement, then the React Refresh
+// preamble of @vitejs/plugin-react, which installs the runtime's hook before any component module
+// runs (its "can't detect preamble" error otherwise). Vite writes the preamble inline into the HTML it
+// serves; these documents are the server's, whose policy allows no inline script, so they load the
+// plugin's module of it (@vitejs/plugin-react/preamble) from the dev server instead.
+func devScripts(origin string) []string {
 	if origin == "" {
-		return ""
+		return nil
 	}
-	return origin + "/@vite/client"
+	return []string{origin + "/@vite/client", origin + "/@id/@vitejs/plugin-react/preamble"}
 }
 
 // devOrigin parses the origin of a Vite dev server.
@@ -757,10 +763,11 @@ type Entry struct {
 	// Stylesheets are the CSS of the entry and of the chunks it imports statically, and Preloads
 	// those chunks.
 	Stylesheets, Preloads []string
-	// ViteClient is the client script of a Vite dev server, and DevOrigin that server's origin,
-	// whose scripts, styles, and hot module replacement the document's policy must allow; both are
-	// empty in production.
-	ViteClient, DevOrigin string
+	// DevScripts are the scripts of a Vite dev server that run before Script (devScripts), and
+	// DevOrigin that server's origin, whose scripts, styles, and hot module replacement the
+	// document's policy must allow; both are empty in production.
+	DevScripts []string
+	DevOrigin  string
 	// Integrity is the Subresource Integrity of Script and of each of Preloads, by URL, for an
 	// entry whose document checks them (the payment entry's); nil otherwise.
 	Integrity map[string]string
@@ -771,7 +778,7 @@ type Entry struct {
 func (h *Handler) AuthEntry() Entry {
 	return Entry{
 		Script: h.authTags.Script, Stylesheets: h.authTags.Stylesheet, Preloads: h.authTags.Preload,
-		ViteClient: viteClient(h.o.DevViteOrigin), DevOrigin: h.o.DevViteOrigin,
+		DevScripts: devScripts(h.o.DevViteOrigin), DevOrigin: h.o.DevViteOrigin,
 	}
 }
 
@@ -781,6 +788,6 @@ func (h *Handler) AuthEntry() Entry {
 func (h *Handler) PayEntry() Entry {
 	return Entry{
 		Script: h.payTags.Script, Stylesheets: h.payTags.Stylesheet, Preloads: h.payTags.Preload,
-		ViteClient: viteClient(h.o.DevViteOrigin), DevOrigin: h.o.DevViteOrigin, Integrity: h.payTags.Integrity,
+		DevScripts: devScripts(h.o.DevViteOrigin), DevOrigin: h.o.DevViteOrigin, Integrity: h.payTags.Integrity,
 	}
 }

@@ -2,12 +2,12 @@
 
 // A webhook as a holder of `manage_webhooks` keeps it (FR-722, ADR-0060), at /admin/webhooks/{id}: first where it
 // stands and what to do with it (Send a test while it is on; Turn off or Turn on), then its deliveries of the last 14
-// days (each its event, where it stands, its attempts and the last one's outcome, and Send again), so that a failure is
-// in sight, then when it was set up and changed, and its form saved as a whole (its address, what it is for, its
+// days (each its event, where it stands, its attempts and the last one's outcome, and Send again, and under it what was
+// sent, folded), so that a failure is in sight, then when it was set up and changed, and its form saved as a whole (its address, what it is for, its
 // events), or, where it receives an event the reader may not handle, what it is and why they cannot change it; after
 // the form's Save, apart, a new secret (asked first, then shown once at the top of the page, the previous one still
-// signing for 24 hours), and, last, Delete, confirmed with the host typed. The API gives no delivery's payload, so
-// none is shown.
+// signing for 24 hours), and, last, Delete, confirmed with the host typed. What a delivery sent is the server's to
+// withhold from a reader who lacks the permission of its event, and the row says so in its place.
 
 import {
   mayHandleEvent,
@@ -24,6 +24,7 @@ import {
   Box,
   Button,
   ConfirmDialog,
+  Disclosure,
   ModalPresence,
   Row,
   FeedNotice,
@@ -41,8 +42,8 @@ import {
   type RecordState,
 } from "@my/design-system";
 import { use, useState, type ReactNode } from "react";
-import { ListMore, useMoment, useStaffStrings, type T } from "../parts";
-import { Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
+import { ListMore, shownPayload, useMoment, useStaffStrings, type T } from "../parts";
+import { CopyValue, Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
 import { useStillThere } from "./parts";
 import {
   eventName,
@@ -218,9 +219,31 @@ const deliveryMark: Readonly<Record<WebhookDelivery["status"], RecordState>> = {
 
 type DeliveryColumn = "attempt" | "state" | "act";
 
+/** What a delivery sent, folded until shown, with the button that copies it; or why the reader is not shown it. */
+function DeliveryBody({ delivery }: { delivery: WebhookDelivery }) {
+  const { t } = useStaffStrings();
+  const body = delivery.request_body;
+  if (body === undefined)
+    return (
+      <Box as="p" text="caption">
+        {t("staff_webhooks.delivery.body_withheld")}
+      </Box>
+    );
+  return (
+    <Disclosure summary={t("staff_webhooks.delivery.body")}>
+      <CopyValue
+        label={t("staff_webhooks.delivery.body")}
+        value={shownPayload(body)}
+        copy={t("staff_webhooks.delivery.body_copy")}
+        code
+      />
+    </Disclosure>
+  );
+}
+
 /**
  * The deliveries of the last 14 days, newest first, each its event, when, its attempts and the last one's outcome,
- * where it stands, and Send again; what came of a press in the section's status; Show more past the first page.
+ * where it stands, Send again, and what it sent under it; what came of a press in the section's status; Show more past the first page.
  */
 function Deliveries({ webhook }: { webhook: AdminWebhook }) {
   const { t } = useStaffStrings();
@@ -287,6 +310,7 @@ function Deliveries({ webhook }: { webhook: AdminWebhook }) {
         </Button>
       ),
     },
+    detail: <DeliveryBody delivery={d} />,
   }));
   return (
     <SettingsSection heading={heading}>

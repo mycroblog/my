@@ -6,7 +6,8 @@
 // built-in roles kept (`admin` changes only its badge, neither it nor `moderator` is deleted), a held role not deleted,
 // the last administrator kept. The roles: the built-in `admin` and `moderator`; `lead`, a community lead below the
 // administrators with a badge, which the stories give the reader to show what a lower holder of `manage_roles` is
-// offered; `artist`, which lets mio request custom emoji; `helper`, with no permission and nobody holding it.
+// offered; `artist`, which lets mio request custom emoji; `helper`, with no permission and nobody holding it; `patron`,
+// which the supporter plan Patron grants, so that nobody grants, revokes, reshapes or deletes it by hand.
 
 import type { StaffServerContext } from "./staff-server";
 import type { Answer, Handlers, Schema } from "./spec";
@@ -44,8 +45,13 @@ const everyPermission: readonly Permission[] = [
   "create_events",
 ];
 
-/** The roles the fake starts with, highest first; their IDs are made from the fake's start. */
-const startingRoles: readonly Omit<Role, "id">[] = [
+/**
+ * The roles the fake starts with, highest first; their IDs, and the ID of the plan that grants one, are made from the
+ * fake's start.
+ */
+const startingRoles: readonly (Omit<Role, "id" | "supporter_plan"> & {
+  readonly plan?: Omit<Schema<"AdminRoleSupporterPlan">, "id">;
+})[] = [
   { key: "admin", position: 1000, permissions: [...everyPermission] },
   {
     key: "lead",
@@ -70,6 +76,13 @@ const startingRoles: readonly Omit<Role, "id">[] = [
     badge: { label: "Emoji artist", color: "purple" },
   },
   { key: "helper", position: 10, permissions: [] },
+  {
+    key: "patron",
+    position: 5,
+    permissions: ["create_custom_emojis"],
+    badge: { label: "Patron", color: "yellow" },
+    plan: { name: "Patron", retired: false },
+  },
 ];
 
 /** The roles the scenario's people hold at first, by username: hana administers, marco moderates, mio draws emoji. */
@@ -98,7 +111,11 @@ export type FakeRoleOptions = {
 export type RoleContext = StaffServerContext;
 
 export function roleHandlers(c: RoleContext): { handlers: Handlers } {
-  const roles: Role[] = startingRoles.map((r, i) => ({ ...structuredClone(r), id: idOf(c, i) }));
+  const roles: Role[] = startingRoles.map(({ plan, ...r }, i) => ({
+    ...structuredClone(r),
+    id: idOf(c, i),
+    ...(plan === undefined ? {} : { supporter_plan: { ...plan, id: idOf(c, 100 + i) } }),
+  }));
   const held = new Map<string, Set<string>>(
     Object.entries(startingHeld).map(([username, keys]) => [username, new Set(keys)]),
   );
@@ -116,6 +133,11 @@ export function roleHandlers(c: RoleContext): { handlers: Handlers } {
       type: "/api/v1/problems/invalid-role",
       reason,
       ...(missing === undefined ? {} : { missing_permissions: [...missing] }),
+    });
+  const managed = () =>
+    c.problem(409, "Conflict", {
+      type: "/api/v1/problems/role-managed-by-plan",
+      detail: "A supporter plan manages the role.",
     });
   const list = (items: readonly Role[]) => ({ status: 200 as const, body: { items: structuredClone([...items]) } });
   const usernameOfAccount = (id: string) => {
@@ -153,6 +175,8 @@ export function roleHandlers(c: RoleContext): { handlers: Handlers } {
       if (role.position > top() || (body.position !== undefined && body.position > top())) return forbidden();
       if (role.key === "admin" && (body.position !== undefined || body.permissions !== undefined))
         return refused("builtin");
+      if (role.supporter_plan !== undefined && (body.position !== undefined || body.permissions !== undefined))
+        return managed();
       if (body.position !== undefined && (body.position < 0 || body.position > 999)) return refused("position");
       if (body.permissions !== undefined) {
         const missing = lacking(role.permissions, body.permissions);
@@ -177,6 +201,7 @@ export function roleHandlers(c: RoleContext): { handlers: Handlers } {
       if (role === undefined) return c.notFound();
       if (role.position > top()) return forbidden();
       if (role.key === "admin" || role.key === "moderator") return refused("builtin");
+      if (role.supporter_plan !== undefined) return managed();
       if ([...held.values()].some((keys) => keys.has(role.key))) return refused("held");
       roles.splice(roles.indexOf(role), 1);
       return { status: 204 };
@@ -192,6 +217,7 @@ export function roleHandlers(c: RoleContext): { handlers: Handlers } {
       const role = roles.find((r) => r.key === params.role);
       if (username === undefined || role === undefined) return c.notFound();
       if (role.position > top() || role.permissions.some((p) => !mine().has(p))) return forbidden();
+      if (role.supporter_plan !== undefined) return managed();
       const keys = held.get(username) ?? new Set<string>();
       keys.add(role.key);
       held.set(username, keys);
@@ -203,6 +229,7 @@ export function roleHandlers(c: RoleContext): { handlers: Handlers } {
       const role = roles.find((r) => r.key === params.role);
       if (username === undefined || role === undefined) return c.notFound();
       if (role.position > top()) return forbidden();
+      if (role.supporter_plan !== undefined) return managed();
       const admins = [...held.values()].filter((keys) => keys.has("admin")).length;
       if (role.key === "admin" && admins <= 1 && held.get(username)?.has("admin") === true)
         return c.problem(409, "Conflict");

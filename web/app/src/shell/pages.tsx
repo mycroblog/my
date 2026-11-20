@@ -5,6 +5,7 @@
 // signed-in reader, who can only take their data away, or sign out, as from the settings (sign-out.tsx). Each is a page
 // of its own outside the frame, with the server's mark, and its title as the document's.
 
+import { aboutPagePath } from "@my/app-components";
 import { useStatusPageUrl, type Closure, type Instance, type Maintenance } from "@my/app-data";
 import { ClosedScreen } from "@my/app-features";
 import {
@@ -46,7 +47,7 @@ export function PageFooter({ statusPage }: { statusPage: string | undefined }) {
       label={t("app.footer")}
       links={[
         ...(statusPage === undefined ? [] : [{ href: statusPage, label: t("app.status_page") }]),
-        { href: "/about", label: t("app.footer_about") },
+        { href: aboutPagePath, label: t("app.footer_about") },
       ]}
     />
   );

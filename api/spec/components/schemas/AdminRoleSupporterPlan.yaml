@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: The supporter plan that grants a role to its subscribers, and so manages it.
+type: object
+required: [id, name, retired]
+properties:
+  id:
+    $ref: ./Id.yaml
+  name:
+    description: The name of the plan in its current terms.
+    type: string
+  retired:
+    description: Whether the plan is retired, which keeps the role of the subscriptions it still has.
+    type: boolean

@@ -42,3 +42,21 @@ put:
       $ref: ../components/responses/AdminAnnouncement.yaml
     default:
       $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: deleteAdminAnnouncement
+  x-permission: manage_announcements
+  summary: Delete a draft announcement
+  description: |
+    Deletes a draft, which no user ever saw: it is found nowhere after, a 404 like an unknown
+    ID. The audit log records `announcement_deleted` with its title. An announcement that was
+    published is a 409: withdraw it instead. Needs the `manage_announcements` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/AnnouncementId.yaml
+  responses:
+    "204":
+      description: The draft is deleted.
+    default:
+      $ref: ../components/responses/Problem.yaml

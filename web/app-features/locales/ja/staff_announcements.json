@@ -199,6 +199,10 @@
     "defaultMessage": "最後に保存した内容です。",
     "description": "Under the heading of what readers see of an announcement. Read by administrators."
   },
+  "staff_announcements.preview.about_draft": {
+    "defaultMessage": "最後に保存した内容を、いま公開した場合の表示です。",
+    "description": "Under the heading of what readers see of a draft announcement, which shows it as its page would if it were published now (its date is today's or the start of its window). Read by administrators."
+  },
   "staff_announcements.withdraw": {
     "defaultMessage": "お知らせの取り下げ",
     "description": "The heading of the last section of an announcement's page, apart, which withdraws it. Read by administrators."
@@ -226,6 +230,38 @@
   "staff_announcements.withdraw.failed": {
     "defaultMessage": "お知らせは取り下げられていません。接続を確かめて、もう一度試してください。",
     "description": "In the section that withdraws an announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.delete": {
+    "defaultMessage": "下書きの削除",
+    "description": "The heading of the section of a draft announcement's page that deletes it. Read by administrators."
+  },
+  "staff_announcements.delete.about": {
+    "defaultMessage": "まだ読む人には表示されていないお知らせです。一覧からなくなり、監査ログにはタイトルだけが残ります。",
+    "description": "Under the heading of the section that deletes a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.press": {
+    "defaultMessage": "削除する",
+    "description": "The button that deletes a draft announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.delete.title": {
+    "defaultMessage": "この下書きを削除しますか？",
+    "description": "The question before deleting a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.cancel": {
+    "defaultMessage": "削除しない",
+    "description": "The button that closes the question before deleting a draft announcement, keeping it. Read by administrators."
+  },
+  "staff_announcements.delete.text": {
+    "defaultMessage": "本文はなくなり、監査ログにはタイトルだけが残ります。取り消せません。",
+    "description": "Under the question before deleting a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.failed": {
+    "defaultMessage": "下書きは削除されていません。接続を確かめて、もう一度試してください。",
+    "description": "In the section that deletes a draft announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.delete.published": {
+    "defaultMessage": "下書きは削除されていません。その間に公開されました。",
+    "description": "In the section that withdraws an announcement, once a Delete of it as a draft was refused because someone published it meanwhile (409); the page then shows it published. Read by administrators."
   },
   "staff_announcements.irreversible": {
     "defaultMessage": "取り消せません。",

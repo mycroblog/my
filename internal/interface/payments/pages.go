@@ -31,9 +31,10 @@ type PageEntry struct {
 	Stylesheets, Preloads []string
 	// Integrity is the Subresource Integrity of Script and of each of Preloads, by URL.
 	Integrity map[string]string
-	// ViteClient is the client script of a Vite dev server, and DevOrigin that server's origin,
-	// which the pages' policy then allows; both empty in production.
-	ViteClient, DevOrigin string
+	// DevScripts are the scripts of a Vite dev server that run before Script, and DevOrigin that
+	// server's origin, which the pages' policy then allows; both empty in production.
+	DevScripts []string
+	DevOrigin  string
 }
 
 // Shell renders the payment pages' documents: its Render is supporters.PageEnv.Render.
@@ -93,7 +94,7 @@ var pageShell = template.Must(template.New("pay").Funcs(template.FuncMap{
 {{- range .Entry.Preloads}}
 <link rel="modulepreload" href="{{.}}"{{with integrity $integrity .}} integrity="{{.}}"{{end}}>
 {{- end}}
-{{- with .Entry.ViteClient}}
+{{- range .Entry.DevScripts}}
 <script type="module" src="{{.}}"></script>
 {{- end}}
 {{- with .Entry.Script}}

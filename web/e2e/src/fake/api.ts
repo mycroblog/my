@@ -78,6 +78,7 @@ import { voiceHandlers, type FakeVoice, type FakeVoiceMany, type FakeVoiceOpenRe
 import { adminHandlers, type FakeAdmin, type FakeAdminOptions } from "./admin-settings";
 import { closureHandlers, type FakeClosureOptions } from "./closure";
 import { themeHandlers, type FakeThemeOptions } from "./theme";
+import { aboutHandlers, type FakeAboutOptions } from "./about";
 import { fakeRules, reportHandlers, type FakeReportOptions, type FakeReports } from "./reports";
 import { domainHandlers, type FakeDomainOptions, type FakeDomains } from "./domains";
 import { permissionsOfRoles } from "./staff-roles";
@@ -500,6 +501,11 @@ export type FakeOptions = {
    * the tips, the supporters list and the reader's place on it as it says.
    */
   supporters?: FakeSupporterOptions;
+  /**
+   * What the instance says on its about page (about.ts): its summary, rules, status page, terms and privacy policy by
+   * default; everything the page shows, or nearly nothing; and who may read the domains it moderates.
+   */
+  about?: FakeAboutOptions;
   /**
    * The finance (finance.ts): what the instance publishes of its costs and income (nothing by default), estimates,
    * the funding meter, and the reader as a holder of `view_finance`.
@@ -2179,15 +2185,26 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     notFound,
   });
 
+  // What the about page shows of the instance, and its documents and moderated domains (about.ts).
+  const about = aboutHandlers({
+    options: o.about,
+    started,
+    origin: fakeOrigin,
+    visitor,
+    summary,
+    rules: fakeRules(started).rules,
+    statusPage: fakeStatusPage,
+    contactAccount: () => fullAccount(personOf(admin)),
+    problem,
+    notFound,
+  });
+
   const instanceBody = exact<Schema<"Instance">>()({
     domain: fakeHost,
     name: "mycroblog demo",
-    short_description: summary,
     version: "0.0.0-demo",
     source_url: "https://example.invalid/mycroblog/my",
-    status_page_url: fakeStatusPage,
-    terms_url: `${fakeOrigin}/about/terms`,
-    privacy_policy_url: `${fakeOrigin}/about/privacy`,
+    ...about.instance,
     // A one-person server and a closure close the registration whatever the mode (GET /instance shows the effective one).
     registrations: {
       mode: o.singleUser === true || o.closure !== undefined ? "closed" : (o.registrations ?? "open"),
@@ -2204,11 +2221,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     federation: { mode: "off" },
     sends_email: o.email === true,
     ...(o.push === true ? { push_server_key: pushServerKey } : {}),
-    rules: fakeRules(started).rules,
     search_indexing: o.crawlers?.search ?? "allow",
     ai_usage: o.crawlers?.ai ?? "allow",
-    link_cards: false,
-    link_cards_ignore_robots_txt: false,
     ux_measurement: o.uxMeasurement === true,
     ...finance.instance,
     ...supporting.instance,
@@ -3130,7 +3144,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       o.preferencesFail === "read" ? problem(500, "Internal Server Error") : { status: 200, body: preferences },
     "PATCH /preferences": ({ body }) =>
       o.preferencesFail === "save" ? problem(500, "Internal Server Error") : changePreferences(body),
-    "GET /instance": () => ({ status: 200, body: closing.instanceOf(instanceBody) }),
+    "GET /instance": () =>
+      o.about?.instance === "waits"
+        ? never()
+        : o.about?.instance === "fails"
+          ? problem(500, "Internal Server Error")
+          : { status: 200, body: closing.instanceOf(instanceBody) },
     "GET /instance/health": () => {
       const health: Schema<"ServerHealth"> = { status: "ok", checked_at: new Date().toISOString() };
       return { status: 200, body: health };
@@ -4012,6 +4031,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
     // ---- The supporters and the finance -------------------------------------------------------------------------------
 
+    ...about.handlers,
     ...supporting.handlers,
     ...finance.handlers,
     ...financeAdmin.handlers,
@@ -4114,7 +4134,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
    * paths read like an account's, a status's or a hashtag's.
    */
   const publicPath =
-    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags|\/followers|\/following)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
+    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals|\/documents\/[^/]+|\/domain_actions)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags|\/followers|\/following)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 

@@ -16,6 +16,7 @@ var operationSecurity = map[string]operationAccess{
 	"DELETE /api/v1/accounts/{id}/note":                                             {Operation: "deleteAccountNote", Scopes: []string{"write:accounts"}},
 	"DELETE /api/v1/accounts/{id}/subscribe":                                        {Operation: "unsubscribeAccount", Scopes: []string{"write:follows"}},
 	"DELETE /api/v1/admin/accounts/{id}/roles/{role}":                               {Operation: "revokeAccountRole", Permission: "manage_roles", Scopes: []string{"admin:write"}},
+	"DELETE /api/v1/admin/announcements/{id}":                                       {Operation: "deleteAdminAnnouncement", Permission: "manage_announcements", Scopes: []string{"admin:write"}},
 	"DELETE /api/v1/admin/closure/announcement":                                     {Operation: "withdrawServiceClosure", Permission: "manage_service_closure", Scopes: []string{"admin:write"}},
 	"DELETE /api/v1/admin/cost_items/{id}":                                          {Operation: "deleteCostItem", Permission: "manage_finance", Scopes: []string{"admin:write"}},
 	"DELETE /api/v1/admin/custom_emojis/{id}":                                       {Operation: "deleteCustomEmoji", Permission: "manage_custom_emojis", Scopes: []string{"admin:write"}},

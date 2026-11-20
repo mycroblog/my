@@ -412,7 +412,7 @@ func (q *Queries) ListSubscribedWebhookEndpoints(ctx context.Context, eventType 
 }
 
 const listWebhookDeliveries = `-- name: ListWebhookDeliveries :many
-SELECT d.id, d.message_id, d.endpoint_id, d.created_at, m.event_type,
+SELECT d.id, d.message_id, d.endpoint_id, d.created_at, m.event_type, m.body,
   (SELECT count(*) FROM webhook_delivery_attempts a WHERE a.delivery_id = d.id)::bigint AS attempts,
   EXISTS (
     SELECT 1 FROM webhook_delivery_attempts a WHERE a.delivery_id = d.id AND a.outcome = 'succeeded'
@@ -445,6 +445,7 @@ type ListWebhookDeliveriesRow struct {
 	EndpointID      string
 	CreatedAt       time.Time
 	EventType       string
+	Body            []byte
 	Attempts        int64
 	Succeeded       bool
 	LastID          *string
@@ -456,7 +457,7 @@ type ListWebhookDeliveriesRow struct {
 
 // ListWebhookDeliveries returns the deliveries of an endpoint, newest first, before the delivery
 // before (empty for the first page), only the delivery id unless it is empty, with their event,
-// number of attempts, whether one succeeded, and their last attempt.
+// number of attempts, whether one succeeded, their last attempt, and the body of their message.
 func (q *Queries) ListWebhookDeliveries(ctx context.Context, arg ListWebhookDeliveriesParams) ([]ListWebhookDeliveriesRow, error) {
 	rows, err := q.db.Query(ctx, listWebhookDeliveries,
 		arg.EndpointID,
@@ -477,6 +478,7 @@ func (q *Queries) ListWebhookDeliveries(ctx context.Context, arg ListWebhookDeli
 			&i.EndpointID,
 			&i.CreatedAt,
 			&i.EventType,
+			&i.Body,
 			&i.Attempts,
 			&i.Succeeded,
 			&i.LastID,

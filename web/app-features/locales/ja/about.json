@@ -1,0 +1,410 @@
+{
+  "about.loading": {
+    "defaultMessage": "サーバーの情報を読み込んでいます…",
+    "description": "In place of the server's about page while it loads."
+  },
+  "about.failed": {
+    "defaultMessage": "サーバーの情報を読み込めませんでした。",
+    "description": "In place of the about page when the server's information could not be loaded, before Try again."
+  },
+  "about.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button after a sentence of the about page or a document's page that says something could not be loaded."
+  },
+  "about.sign_in": {
+    "defaultMessage": "ログイン",
+    "description": "The link after the line that says the moderated servers are shown to signed-in people. Read by visitors."
+  },
+  "about.contact": {
+    "defaultMessage": "連絡先",
+    "description": "The heading of the section of the about page that names the account and the email address that reach the server's operators."
+  },
+  "about.rules": {
+    "defaultMessage": "ルール",
+    "description": "The heading of the server's rules on the about page."
+  },
+  "about.rules.number": {
+    "defaultMessage": "{n}.",
+    "description": "The number before a rule in the list of the server's rules on the about page."
+  },
+  "about.documents": {
+    "defaultMessage": "規約とポリシー",
+    "description": "The heading of the section of the about page that leads to the terms of service and the privacy policy."
+  },
+  "about.terms": {
+    "defaultMessage": "利用規約",
+    "description": "The row of the about page that opens the terms of service."
+  },
+  "about.privacy": {
+    "defaultMessage": "プライバシーポリシー",
+    "description": "The row of the about page that opens the privacy policy."
+  },
+  "about.commerce": {
+    "defaultMessage": "特定商取引法に基づく表記",
+    "description": "The row of the about page that opens the commerce disclosure of the supporter plans (in Japan, the disclosure under the Act on Specified Commercial Transactions)."
+  },
+  "about.domains": {
+    "defaultMessage": "処分したサーバー",
+    "description": "The heading of the list of the other servers this server limits or suspends, on the about page."
+  },
+  "about.domains.signed_in": {
+    "defaultMessage": "処分したサーバーは、このサーバーにログインした人だけが見られます。",
+    "description": "In place of the list of moderated servers for a visitor, when the server shows it to signed-in people alone; Sign in follows it."
+  },
+  "about.domains.loading": {
+    "defaultMessage": "サーバーを読み込んでいます…",
+    "description": "In place of the list of moderated servers while it loads."
+  },
+  "about.domains.failed": {
+    "defaultMessage": "サーバーを読み込めませんでした。",
+    "description": "In place of the list of moderated servers when it could not be loaded, before Try again."
+  },
+  "about.domains.none": {
+    "defaultMessage": "処分したサーバーはありません。",
+    "description": "In place of the list of moderated servers when it is empty."
+  },
+  "about.domains.kind": {
+    "defaultMessage": "{kind, select, suspend {凍結} limit {制限} other {そのほかの処分}}",
+    "description": "What this server did to another server, after its domain in the list of moderated servers: suspended (no federation at all) or limited (its posts kept off the public timelines)."
+  },
+  "about.reviews": {
+    "defaultMessage": "外部の審査",
+    "description": "The heading of the section of the about page that says what the server sends to an outside service to review before it accepts it."
+  },
+  "about.reviews.lead": {
+    "defaultMessage": "このサーバーは、次のものを受け入れる前に外部のサービスに送って審査します。",
+    "description": "The sentence over the list of what the server sends to an external review, on the about page."
+  },
+  "about.reviews.hook": {
+    "defaultMessage": "{hook, select, inbound_status {ほかのサーバーからの投稿} inbound_follow {ほかのサーバーからのフォロー} signup_check {新規登録} media_check {アップロードされたメディア} local_status {このサーバーの投稿} inbound_actor {ほかのサーバーのプロフィール} local_profile {このサーバーのプロフィール} other {そのほかの内容}}",
+    "description": "An item of the list of what the server sends to an external review, on the about page."
+  },
+  "about.reviews.new_accounts": {
+    "defaultMessage": "{what} (作成から{days, plural, other {# 日}}以内のアカウントのもの)",
+    "description": "An item of the list of what the server sends to an external review, when only the content of new accounts is sent; {what} is the item's name (Posts on this server)."
+  },
+  "about.reviews.unfollowed_direct": {
+    "defaultMessage": "{what} (ここで誰もフォローしていない人からのダイレクトメッセージを含む)",
+    "description": "An item of the list of what the server sends to an external review: posts from other servers, including their direct messages from people no account of this server follows; {what} is the item's name."
+  },
+  "about.auto_delete": {
+    "defaultMessage": "自動削除",
+    "description": "The heading of the section of the about page that says how long the server keeps posts."
+  },
+  "about.auto_delete.max": {
+    "defaultMessage": "投稿は、投稿してから{days, plural, other {# 日}}後に削除されます。",
+    "description": "The most days the server keeps a post, on the about page."
+  },
+  "about.auto_delete.keep": {
+    "defaultMessage": "{kinds}は、残すように選べます。",
+    "description": "What people may keep past the most days, on the about page; {kinds} is a list of the kinds (pinned posts, posts you bookmarked), joined as the language joins a list."
+  },
+  "about.auto_delete.pinned": {
+    "defaultMessage": "ピン留めした投稿",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.pins": {
+    "defaultMessage": "{n, plural, other {最近ピン留めした # 件の投稿}}",
+    "description": "A kind of post people may keep from the automatic deletion when only the latest pins keep posts, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.bookmarked": {
+    "defaultMessage": "ブックマークした投稿",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.favourited": {
+    "defaultMessage": "お気に入りにした投稿",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.media": {
+    "defaultMessage": "メディア付きの投稿",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.polls": {
+    "defaultMessage": "投票付きの投稿",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.articles": {
+    "defaultMessage": "記事",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.visibilities": {
+    "defaultMessage": "選んだ公開範囲の投稿",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.thresholds": {
+    "defaultMessage": "ブーストやお気に入りが一定数ある投稿",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.crawlers": {
+    "defaultMessage": "検索エンジンと AI",
+    "description": "The heading of the section of the about page on what the server states to search engines and AI crawlers."
+  },
+  "about.crawlers.search": {
+    "defaultMessage": "{value, select, allow {検索エンジンは、許可した人の公開の投稿とプロフィールを索引に載せられます。} other {検索エンジンには、このサーバーを索引に載せないよう求めています。}}",
+    "description": "What the server states to search engines, on the about page."
+  },
+  "about.crawlers.ai": {
+    "defaultMessage": "{value, select, allow {AI のクローラーには何も求めていません。} deny_training {AI のクローラーには、ページを学習に使わないよう求めています。} other {AI のクローラーには、ページを学習にも利用にも使わないよう求めています。}}",
+    "description": "What the server states to AI crawlers, on the about page, after about.crawlers.search."
+  },
+  "about.crawlers.how": {
+    "defaultMessage": "表明は、このサーバーの robots.txt、各ページのタグとヘッダー、TDMRep のファイルに書かれています。表明が及ぶのはこのサーバーのページだけです。ほかのサーバーはそれぞれの表明をし、メディアのファイルにはサーバーの表明だけが付きます。",
+    "description": "How the server makes its statement to search engines and AI crawlers and how far it reaches, in the section of the about page on them, after what it states."
+  },
+  "about.crawlers.legal": {
+    "defaultMessage": "この表明が法的にどう扱われるかは国によって異なり、多くの事業者はこうした表明に自主的に従っています。この文章は法的な助言ではありません。",
+    "description": "The legal note at the end of the section of the about page on what the server states to search engines and AI crawlers. It names no country's law."
+  },
+  "about.crawler": {
+    "defaultMessage": "リンクのカードのクローラー",
+    "description": "The title of the page for the operators of websites on this server's link card crawler, which the row of the about page opens."
+  },
+  "about.crawlers.link_cards": {
+    "defaultMessage": "このサーバーも、クローラー my-linkcard として、投稿がリンクするページを取得してカードを出します。",
+    "description": "After what the server states to search engines and AI crawlers, in the section of the about page on them: that the server fetches linked pages for cards, as its own crawler."
+  },
+  "about.crawlers.crawler": {
+    "defaultMessage": "そのクローラーの動きと、サイトからの断り方",
+    "description": "The row of the about page that opens the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.intro": {
+    "defaultMessage": "このサーバーの投稿が Web ページにリンクすると、サーバーがそのページを取得して、タイトル・説明・画像のカードを出します。このページは、そのサイトを運営している人に向けて、どんな要求が届くかと、断り方を説明します。",
+    "description": "Opening paragraph of the page about the link card crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.obeys": {
+    "defaultMessage": "このサーバーでは、クローラーは動いていて、robots.txt に従います。",
+    "description": "What the crawler does on this server, in its usual settings: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.ignores": {
+    "defaultMessage": "このサーバーでは、クローラーは動いていて、管理者の設定により robots.txt を読みません。ここでは robots.txt で断ることはできません。ページの指定は効きます。管理者はドメインごとに取得を止められます。",
+    "description": "What the crawler does on a server whose setting link_cards_ignore_robots_txt is on: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.off": {
+    "defaultMessage": "このサーバーでは、リンクのカードはオフで、クローラーは今は何も取得しません。このページの残りは、オンのときの動きです。",
+    "description": "What the crawler does on a server whose setting link_cards is off: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.title": {
+    "defaultMessage": "見分け方",
+    "description": "Heading of the section with the User-Agent of the link card crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.user_agent": {
+    "defaultMessage": "要求には、次の User-Agent が付きます。",
+    "description": "Sentence before the User-Agent of the crawler, shown as code. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.token": {
+    "defaultMessage": "この中のアドレスが、このサーバーです。robots.txt とページの指定では、クローラーの名前は my-linkcard です。",
+    "description": "Explains the User-Agent of the crawler and the name it goes by. my-linkcard is a literal name: do not translate it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.others": {
+    "defaultMessage": "このサーバーは、連合などのほかの要求を my/ の名前で送ります。それらはこのページの対象ではありませんが、そのうち 2 つはカードに続くことがあります。読む人に見せるためにカードの画像を my/ の名前でもう一度取得することと、ページが fediverse:creator で示すアカウントを照会することです。",
+    "description": "Other requests of the server that a site operator can see, under the server's general User-Agent. my/ and fediverse:creator are literal: do not translate them. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.title": {
+    "defaultMessage": "取得のきっかけ",
+    "description": "Heading of the section that says what makes the crawler fetch a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.post": {
+    "defaultMessage": "URL にリンクする投稿です。サーバーは投稿の本文の最初のリンクからカードを作ります。投稿の公開範囲にはよりません。最近取得したカードがなければ、ページを取得します。",
+    "description": "What makes the crawler fetch a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.remote": {
+    "defaultMessage": "これには、ここで書かれた投稿だけでなく、ほかのサーバーから届いた投稿も含まれます。要求が届いても、ここの誰かがページを読んだとは限りません。",
+    "description": "That posts federated from other servers cause fetches too. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.title": {
+    "defaultMessage": "取得するもの",
+    "description": "Heading of the section that lists what the crawler requests from a website. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.page": {
+    "defaultMessage": "ページ。読むのはページの head だけで、リダイレクトは 5 回まで追い、ページの中のものは何も実行しません。",
+    "description": "What the crawler fetches: the linked page. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.image": {
+    "defaultMessage": "画像 1 枚。ページの head が示す画像です。",
+    "description": "What the crawler fetches: the page's image. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.robots": {
+    "defaultMessage": "ページ、リダイレクト先、画像のそれぞれのオリジンの robots.txt。それらを要求する前に取得します。",
+    "description": "What the crawler fetches: robots.txt. Shown only while the server reads it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.nothing_else": {
+    "defaultMessage": "リンクはたどらないので、サイトのほかのページは巡回しません。",
+    "description": "That the crawler does not crawl a whole website. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.title": {
+    "defaultMessage": "送るもの",
+    "description": "Heading of the section that says what the crawler's requests carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.headers": {
+    "defaultMessage": "上の User-Agent、受け取る内容の種類、ページではこのサーバーの既定の言語 (Accept-Language) です。",
+    "description": "What the crawler's requests carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.not": {
+    "defaultMessage": "Cookie も Referer も送りません。どのアカウントやどの投稿がリンクしたかも伝えません。",
+    "description": "What the crawler's requests do not carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.title": {
+    "defaultMessage": "頻度",
+    "description": "Heading of the section that says how often the crawler requests a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.once": {
+    "defaultMessage": "URL ごとに 1 回取得し、リンクする投稿でカードを共有します。もう一度取得するのは、前の取得から 14 日以上たって投稿が必要としたときだけです。サーバーが自分からカードを取り直すことはありません。",
+    "description": "How often the crawler requests a page. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.failure": {
+    "defaultMessage": "取得に失敗した URL は、24 時間は要求しません。",
+    "description": "That the crawler remembers failures. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.host": {
+    "defaultMessage": "ホストへの要求は同時に 1 つで、あいだを 1 秒以上空けます。リダイレクトと、その要求に必要な robots.txt だけは続けて送ります。",
+    "description": "The limit of the crawler per host. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.throttled": {
+    "defaultMessage": "ホストが 429 か 503 を返すと、Retry-After の時間 (最長 1 時間。なければ 1 分) はそのホストへ要求しません。同じ URL で 24 時間以内にそう 5 回返されたら、取得に失敗したものとして扱います。",
+    "description": "That the crawler stops for a host that asks it to. 429, 503 and Retry-After are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.robots": {
+    "defaultMessage": "robots.txt は、オリジン (スキーム・ホスト・ポート) ごとに 1 日 1 回ほど読みます。読めないとき (429・5xx・ネットワークの失敗) は、そのオリジンからは何も取得せず、1 時間後にもう一度試します。",
+    "description": "How often the crawler reads robots.txt. Shown only while the server reads it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.title": {
+    "defaultMessage": "断り方",
+    "description": "Heading of the section that says how a website refuses the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.title": {
+    "defaultMessage": "取得を断る: robots.txt",
+    "description": "Heading (h3) of the part about refusing the crawler in robots.txt. robots.txt is literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.intro": {
+    "defaultMessage": "サイトからの取得をすべて断るには、robots.txt に次のように書きます。",
+    "description": "Sentence before the robots.txt example that refuses the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.star": {
+    "defaultMessage": "この名前のグループがなければ、* のグループに従います。Allow・Disallow・*・$ を RFC 9309 のとおりに読むので、一部のパスだけを断ることもできます。",
+    "description": "How the crawler reads robots.txt. Allow, Disallow, *, $ and RFC 9309 are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.timing": {
+    "defaultMessage": "新しい規則には 1 日以内に従います。すでにあるカードは、投稿がその URL をもう一度取得するときに消えます。管理者に頼めば、それより早く消せます。",
+    "description": "When a change of robots.txt takes effect. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.ignored": {
+    "defaultMessage": "このサーバーは robots.txt を読まないので、ここではこの規則は効きません。従うサーバーでは効きます。",
+    "description": "Under the robots.txt part, on a server whose setting link_cards_ignore_robots_txt is on. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.title": {
+    "defaultMessage": "カードに出すものを減らす: ページの指定",
+    "description": "Heading (h3) of the part about the page directives that change a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.intro": {
+    "defaultMessage": "ページは、説明や画像をカードから外せます。指定はページを取得して初めて分かるので、ページへの要求は止まりません。指定は、このサーバーが robots.txt を読むかどうかにかかわらず効きます。",
+    "description": "Sentence before the table of page directives. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.caption": {
+    "defaultMessage": "指定ごとのカードの変化",
+    "description": "The name, for assistive technology, of the table of what each directive of a page changes in a card, on the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.directive": {
+    "defaultMessage": "指定",
+    "description": "Column header: a page directive. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.effect": {
+    "defaultMessage": "カード",
+    "description": "Column header: what the directive does to the card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.nosnippet": {
+    "defaultMessage": "説明を出しません。",
+    "description": "What the directives nosnippet and max-snippet:0 do to a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noimageindex": {
+    "defaultMessage": "画像を出さず、画像を要求しません。",
+    "description": "What the directives noimageindex and max-image-preview:none do to a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noindex": {
+    "defaultMessage": "変わりません。これらは検索結果に載せないでほしいという指定で、カードは検索結果ではありません。カードが出るのは誰かがリンクを投稿したからで、検索に載せないページにも、共有するためのものが多くあります。断るには robots.txt を使ってください。",
+    "description": "What the directives noindex and none do to a card, with the reason in plain words. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noindex_ignored": {
+    "defaultMessage": "変わりません。これらは検索結果に載せないでほしいという指定で、カードは検索結果ではありません。カードが出るのは誰かがリンクを投稿したからで、検索に載せないページにも、共有するためのものが多くあります。このサーバーで断るには、管理者に頼んでください。",
+    "description": "What the directives noindex and none do to a card, on a server that does not read robots.txt. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.rest": {
+    "defaultMessage": "タイトル・サイト名・作者は、どの指定でも残ります。",
+    "description": "What no page directive removes from a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.where": {
+    "defaultMessage": "head の中の robots か my-linkcard という名前の meta タグ、または X-Robots-Tag ヘッダーに書きます。",
+    "description": "Sentence before the examples of where a directive goes. robots, my-linkcard and X-Robots-Tag are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.title": {
+    "defaultMessage": "このサーバーの管理者への連絡",
+    "description": "Heading of the section with how to reach the operators of the server that runs the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.intro": {
+    "defaultMessage": "管理者は、ドメインとそのサブドメインからの取得を止められます。画像だけを止めることもできます。すぐに効き、サーバーがすでに持っているカードにも及びます。取得を止めたいときやカードを消したいときは、管理者に頼んでください。",
+    "description": "That the operators of the server can stop the crawler per domain, and that a site operator can ask them. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.none": {
+    "defaultMessage": "このサーバーは連絡先を公開していません。",
+    "description": "In place of the contact details when the server has none. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.funding": {
+    "defaultMessage": "費用と運営資金",
+    "description": "The heading of the section of the about page with this month's funding meter and the way to the server's costs and income."
+  },
+  "about.funding.page": {
+    "defaultMessage": "費用と収入",
+    "description": "The row of the about page that opens the page of the server's published costs and income."
+  },
+  "about.support": {
+    "defaultMessage": "支援",
+    "description": "The heading of the section of the about page that leads to the supporter plans, the tips and the commerce disclosure."
+  },
+  "about.support.page": {
+    "defaultMessage": "{offer, select, both {サポーターのプランとチップ} plans {サポーターのプラン} other {サーバーにチップを贈る}}",
+    "description": "The row of the about page that opens the supporters' page: its plans and tips, its plans, or its tips alone."
+  },
+  "about.support.list": {
+    "defaultMessage": "サポーターの一覧もあります",
+    "description": "The line under the row that opens the supporters' page, where the page lists the supporters too."
+  },
+  "about.server": {
+    "defaultMessage": "サーバー",
+    "description": "The heading of the section of the about page with the server's status page, source code and version, and the name of its list of facts."
+  },
+  "about.server.status": {
+    "defaultMessage": "ステータスページ",
+    "description": "A term of the server's facts on the about page: the address of its status page, on a service apart from the server."
+  },
+  "about.server.source": {
+    "defaultMessage": "ソースコード",
+    "description": "A term of the server's facts on the about page: where to get the source code of the software it runs."
+  },
+  "about.server.version": {
+    "defaultMessage": "バージョン",
+    "description": "A term of the server's facts on the about page: the version of the software it runs."
+  },
+  "about.document.title": {
+    "defaultMessage": "{kind, select, terms {利用規約} privacy_policy {プライバシーポリシー} other {特定商取引法に基づく表記}}",
+    "description": "The title of the page of a document of the server, and the document's title."
+  },
+  "about.document.revised": {
+    "defaultMessage": "最終改訂: {date}",
+    "description": "Under the title of a document of the server: the day of its last revision, as the reader's language writes a date."
+  },
+  "about.document.loading": {
+    "defaultMessage": "文書を読み込んでいます…",
+    "description": "In place of a document of the server while it loads."
+  },
+  "about.document.failed": {
+    "defaultMessage": "文書を読み込めませんでした。",
+    "description": "In place of a document of the server when it could not be loaded, before Try again."
+  },
+  "about.document.unpublished": {
+    "defaultMessage": "{kind, select, terms {このサーバーは利用規約を公開していません。} privacy_policy {このサーバーはプライバシーポリシーを公開していません。} other {このサーバーは特定商取引法に基づく表記を公開していません。}}",
+    "description": "The page of a document the server has not published; a link to the about page follows."
+  },
+  "about.back": {
+    "defaultMessage": "このサーバーについて",
+    "description": "The way back to the server's about page: the button at the start of a document's page and of the page on search engines and AI, and the link after the sentence that says the server has not published a document."
+  }
+}

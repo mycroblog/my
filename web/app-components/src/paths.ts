@@ -102,6 +102,17 @@ export const eventCoorganizersPath = (id: string) => `${eventPath(id)}/coorganiz
 /** The address of the settings' screen of the reminders of events (ADR-0161 §12). */
 export const eventRemindersPath = "/settings/events";
 
+/** The address of the server's about page: who runs it, its rules, its documents and how it is run. */
+export const aboutPagePath = "/about";
+
+/** The address of the page of what the server states to search engines and AI crawlers (ADR-0057 §5). */
+export const crawlerPagePath = "/about/crawler";
+
+/** The addresses of the server's documents, which everyone may read where the server published them. */
+export const termsPagePath = "/about/terms";
+export const privacyPagePath = "/about/privacy";
+export const commercePagePath = "/about/commerce";
+
 /** The address of the costs page, which the funding meter's month is of (FR-905). */
 export const costsPagePath = "/about/costs";
 
