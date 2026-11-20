@@ -286,7 +286,7 @@ func names(plan [][]fastStep) []string {
 func TestFastPlan(t *testing.T) {
 	root := t.TempDir()
 	for _, f := range []string{"go.mod", "internal/a/a.go", "internal/a/a_test.go", "internal/a/testdata/t.go", "tools/agentkit/go.mod", "tools/agentkit/x/x.go",
-		"web/client/src/a.tsx", "pkg/mykit/ts/src/b.ts", "docs/a.md", "scripts/a.sh", "locales/en/x.json",
+		"web/client/src/a.tsx", "pkg/mykit/ts/src/b.ts", "tools/i18n/src/c.ts", "docs/a.md", "scripts/a.sh", "locales/en/x.json",
 		"deploy/opentofu/m/main.tf", "deploy/opentofu/m/tests/a.tftest.hcl", "deploy/opentofu/m/.terraform.lock.hcl", "deploy/other/x.tf"} {
 		write(t, filepath.Join(root, f), "x")
 	}
@@ -300,6 +300,7 @@ func TestFastPlan(t *testing.T) {
 		{[]string{sleepBaseline}, []string{sleepScript}},
 		{[]string{"web/client/src/a.tsx", "web/client/src/gone.tsx"}, []string{"bun fmt", "oxlint (1 files)"}},
 		{[]string{"pkg/mykit/ts/src/b.ts"}, []string{"bun fmt"}},
+		{[]string{"tools/i18n/src/c.ts"}, []string{"bun fmt", "oxlint (1 files)", "i18n:lint"}},
 		{[]string{"docs/a.md"}, []string{"docs:lint", "docs:rules", "agentkit:map-check"}},
 		{[]string{"internal/app/x/context-map.yaml"}, []string{"agentkit:map-check"}},
 		{[]string{"scripts/a.sh"}, []string{"shellcheck"}},
