@@ -124,7 +124,10 @@ export type AdminAnnouncementWrites = {
   readonly publish: (id: string) => Promise<AdminAnnouncement>;
   /** Withdraws the announcement of `id` for good. */
   readonly withdraw: (id: string) => Promise<AdminAnnouncement>;
-  /** Deletes the draft of `id`; one that was published is refused (409), and is withdrawn instead. */
+  /**
+   * Deletes the draft of `id`; one that was published is refused (409), and is withdrawn instead: the announcement is
+   * then read again, so that its page shows it published.
+   */
   readonly remove: (id: string) => Promise<void>;
 };
 
@@ -169,7 +172,13 @@ export function adminAnnouncementWrites(data: AppData): AdminAnnouncementWrites 
     publish: async (id) => written(data, (await data.api.POST("/admin/announcements/{id}/publish", path(id))).data),
     withdraw: async (id) => written(data, (await data.api.POST("/admin/announcements/{id}/withdraw", path(id))).data),
     remove: async (id) => {
-      await data.api.DELETE("/admin/announcements/{id}", path(id));
+      try {
+        await data.api.DELETE("/admin/announcements/{id}", path(id));
+      } catch (error) {
+        if (announcementWithdrawn(error))
+          await data.queryClient.invalidateQueries({ queryKey: adminAnnouncementQuery(data, id).queryKey });
+        throw error;
+      }
       await data.queryClient.invalidateQueries({ predicate: ({ queryKey }) => queryKey[1] === "/admin/announcements" });
     },
   };

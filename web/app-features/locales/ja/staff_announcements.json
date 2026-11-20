@@ -260,8 +260,8 @@
     "description": "In the section that deletes a draft announcement when it failed. Read by administrators."
   },
   "staff_announcements.delete.published": {
-    "defaultMessage": "下書きは削除されていません。その間に公開されました。取り下げるときは、ページを再読み込みしてください。",
-    "description": "In the section that deletes a draft announcement when the server refused because someone published it meanwhile (409). Read by administrators."
+    "defaultMessage": "下書きは削除されていません。その間に公開されました。",
+    "description": "In the section that withdraws an announcement, once a Delete of it as a draft was refused because someone published it meanwhile (409); the page then shows it published. Read by administrators."
   },
   "staff_announcements.irreversible": {
     "defaultMessage": "取り消せません。",

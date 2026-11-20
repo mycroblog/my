@@ -260,8 +260,8 @@
     "description": "In the section that deletes a draft announcement when it failed. Read by administrators."
   },
   "staff_announcements.delete.published": {
-    "defaultMessage": "The draft was not deleted, because it was published meanwhile. Reload the page to withdraw it.",
-    "description": "In the section that deletes a draft announcement when the server refused because someone published it meanwhile (409). Read by administrators."
+    "defaultMessage": "The draft was not deleted: it was published meanwhile.",
+    "description": "In the section that withdraws an announcement, once a Delete of it as a draft was refused because someone published it meanwhile (409); the page then shows it published. Read by administrators."
   },
   "staff_announcements.irreversible": {
     "defaultMessage": "This cannot be undone.",

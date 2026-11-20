@@ -581,11 +581,7 @@ function AnnouncementForm({ a, go, onUnsaved, leaving }: AdminSubProps & { a: Ad
                   </Button>
                 </Box>
                 <SettingsResult>
-                  {deleting === "failed"
-                    ? t("staff_announcements.delete.failed")
-                    : deleting === "published"
-                      ? t("staff_announcements.delete.published")
-                      : undefined}
+                  {deleting === "failed" ? t("staff_announcements.delete.failed") : undefined}
                 </SettingsResult>
               </SettingsSection>
             )}
@@ -607,8 +603,13 @@ function AnnouncementForm({ a, go, onUnsaved, leaving }: AdminSubProps & { a: Ad
                     {t("staff_announcements.withdraw.press")}
                   </Button>
                 </Box>
+                {/* A draft published meanwhile is read again and offers Withdraw here, saying why it was not deleted. */}
                 <SettingsResult>
-                  {withdrawing === "failed" ? t("staff_announcements.withdraw.failed") : undefined}
+                  {withdrawing === "failed"
+                    ? t("staff_announcements.withdraw.failed")
+                    : deleting === "published"
+                      ? t("staff_announcements.delete.published")
+                      : undefined}
                 </SettingsResult>
               </SettingsSection>
             )}

@@ -3,7 +3,8 @@
 // The announcements as the administrator writes them (#3263, FR-726, ADR-0125), on the fake API, as what follows a
 // press: one written with a title and a Markdown text is published after a question, and a reader then sees it among
 // the server's announcements and counted above the home timeline; one is saved as a draft, which offers no Withdraw;
-// a draft's page shows it as its readers' page will; a draft is published from its page, or deleted after a question;
+// a draft's page shows it as its readers' page will; a draft is published from its page, or deleted after a question,
+// and one published meanwhile is read again and offers Withdraw;
 // one showing is revised, and withdrawn after a question, and offers no Delete; its window is read in the reader's
 // time zone. What each screen shows at rest is the stories' (admin-announcements.stories.tsx).
 
@@ -148,7 +149,7 @@ test("a draft is deleted only once the question is answered, and the list then l
   expect(main().getAllByRole("button").at(-1)).toBe(button("Delete"));
   await app.user.click(button("Delete"));
   expect(words(await screen.findByRole("alertdialog", { name: "Delete this draft?" }))).toContain(
-    "Its title and text are gone. This cannot be undone.",
+    "Its text is gone, and only its title stays in the audit log. This cannot be undone.",
   );
   await app.user.click((await asking("Delete this draft?")).getByRole("button", { name: "Keep it" }));
   await waitFor(() => {
@@ -166,6 +167,29 @@ test("a draft is deleted only once the question is answered, and the list then l
   await main().findByText("Welcome to the new web client");
   await settled(app);
   expect(main().queryAllByText("Moderation report for the autumn")).toHaveLength(0);
+});
+
+test("a draft published meanwhile is not deleted: its page reads it again and offers Withdraw, saying why", async () => {
+  const { on, app } = await atAnnouncement(
+    (o) => `/admin/announcements/${o.fake.staffServer.id("announcement", "draft")}`,
+  );
+  // Another administrator publishes the draft while the page is open: the server refuses the deletion and answers it
+  // published from then on.
+  const deleted = on.fake.script("DELETE /admin/announcements/{id}", { fail: 409 });
+  on.fake.script("GET /admin/announcements/{id}", {
+    change: (a) => ({ ...a, state: "published" as const, published_at: new Date().toISOString() }),
+  });
+
+  await app.user.click(button("Delete"));
+  await app.user.click((await asking("Delete this draft?")).getByRole("button", { name: "Delete" }));
+
+  await deleted.arrived();
+  expect(await main().findByRole("button", { name: "Withdraw" })).toBeDefined();
+  expect(main().queryAllByRole("button", { name: "Delete" })).toHaveLength(0);
+  expect(words(main().getByRole("region", { name: "Withdraw the announcement" }))).toContain(
+    "The draft was not deleted: it was published meanwhile.",
+  );
+  expect(main().queryAllByText(/Reload/)).toHaveLength(0);
 });
 
 test("an announcement showing now is revised on Save, and what readers see says the new words", async () => {
