@@ -812,7 +812,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_local": {
-    "defaultMessage": "Local posts",
+    "defaultMessage": "Posts for neighbors",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_unlisted": {
@@ -1036,7 +1036,7 @@
     "description": "An option in the select of which media of other servers the server keeps copies of on a page of Server settings. Read by administrators."
   },
   "staff_settings.option.search_visibilities": {
-    "defaultMessage": "{value, select, public {Public posts} local {Local posts} other {Public and local posts}}",
+    "defaultMessage": "{value, select, public {Public posts} local {Posts for neighbors} other {Public posts and posts for neighbors}}",
     "description": "An option in the select of the posts full-text search covers on a page of Server settings. Read by administrators."
   },
   "staff_settings.option.hook_mode": {
@@ -1540,7 +1540,7 @@
     "description": "The checkbox of whether posts are sent to a translation provider. Read by administrators."
   },
   "staff_settings.providers.audience": {
-    "defaultMessage": "{audience, select, public {Public} local {Local} unlisted {Quiet public} private {Followers only} other {Direct}}",
+    "defaultMessage": "{audience, select, public {Public} local {Neighbors} unlisted {Quiet public} private {Followers only} other {Direct}}",
     "description": "A visibility a translation provider may receive, the same words as a post's visibility. Read by administrators."
   },
   "staff_settings.providers.first": {

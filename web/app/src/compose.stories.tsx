@@ -211,7 +211,7 @@ const states = {
   typing: { name: "Typing", target: nw, draft: typed },
   "near-limit": { name: "Near the limit", target: nw, draft: (d, w) => ({ ...d, text: cut(w.long, 488) }) },
   "over-limit": { name: "Over the limit", target: nw, draft: (d, w) => ({ ...d, text: cut(w.long, 508) }) },
-  "visibility-local": { name: "Local", target: nw, draft: (d, w) => ({ ...typed(d, w), visibility: "local" }) },
+  "visibility-local": { name: "Neighbors", target: nw, draft: (d, w) => ({ ...typed(d, w), visibility: "local" }) },
   "visibility-private": {
     name: "Followers only",
     target: nw,

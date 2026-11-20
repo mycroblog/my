@@ -67,7 +67,7 @@ describe("the author's line", () => {
 
   for (const [visibility, en] of [
     ["public", "Public"],
-    ["local", "Local"],
+    ["local", "Neighbors"],
     ["unlisted", "Quiet public"],
     ["private", "Followers only"],
     ["direct", "Direct"],
@@ -81,7 +81,7 @@ describe("the author's line", () => {
   test("who may see it reads in the reader's locale", () => {
     const { part } = post({ status: status({ visibility: "private" }) }, "ja");
 
-    expect(part.getByRole("img", { name: "フォロワー限定" })).not.toBeNull();
+    expect(part.getByRole("img", { name: "フォロワーのみ" })).not.toBeNull();
   });
 
   test("without its stamp, the author's line has no visibility and no time", () => {

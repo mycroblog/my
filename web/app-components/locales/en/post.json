@@ -128,8 +128,8 @@
     "description": "What the visibility glyph of a public post says, beside its time."
   },
   "post.visibility.local": {
-    "defaultMessage": "Local",
-    "description": "What the visibility glyph of a local post says, beside its time: on its server's local timeline, and outside its server to the author's followers alone."
+    "defaultMessage": "Neighbors",
+    "description": "What the visibility glyph of a post for neighbors says, beside its time: people on its server, and the author's followers on other servers. The composer's name for it (compose.visibility.local)."
   },
   "post.visibility.unlisted": {
     "defaultMessage": "Quiet public",

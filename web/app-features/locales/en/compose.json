@@ -168,8 +168,8 @@
     "description": "The caption of the visibility choices in the audience menu, and the name of the menu's tool."
   },
   "compose.audience.tool": {
-    "defaultMessage": "{visibility, select, public {Who can see it: Public} local {Who can see it: Local} unlisted {Who can see it: Quiet public} private {Who can see it: Followers only} other {Who can see it: Direct}}{limited, select, yes {, replies, boosts or quotes limited} other {}}",
-    "description": "The name of the audience tool for assistive technology: the post's visibility, and whether who may interact is limited. The visibilities are the post's (Public, Local, Quiet public, Followers only, Direct)."
+    "defaultMessage": "{visibility, select, public {Who can see it: Public} local {Who can see it: Neighbors} unlisted {Who can see it: Quiet public} private {Who can see it: Followers only} other {Who can see it: Direct}}{limited, select, yes {, replies, boosts or quotes limited} other {}}",
+    "description": "The name of the audience tool for assistive technology: the post's visibility, and whether who may interact is limited. The visibilities are the post's (Public, Neighbors, Quiet public, Followers only, Direct)."
   },
   "compose.audience.everyone": {
     "defaultMessage": "Anyone",
@@ -200,12 +200,12 @@
     "description": "A visibility in the audience menu; the same word as a post's visibility glyph. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.local": {
-    "defaultMessage": "Local",
-    "description": "A visibility in the audience menu: on this server's local timeline, and to the author's followers elsewhere. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
+    "defaultMessage": "Neighbors",
+    "description": "A visibility in the audience menu: people on this server, and the author's followers on other servers. It names whom the author speaks to. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.unlisted": {
     "defaultMessage": "Quiet public",
-    "description": "A visibility in the audience menu: public, kept out of the public timelines. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
+    "description": "A visibility in the audience menu: anyone with the link or the author's profile, kept off the timelines and hashtags. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.private": {
     "defaultMessage": "Followers only",
@@ -216,15 +216,15 @@
     "description": "A visibility in the audience menu: the accounts the post mentions alone. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), only while it is the visibility the account's new posts start with."
   },
   "compose.visibility.public.about": {
-    "defaultMessage": "Anyone, on any server",
+    "defaultMessage": "Anyone on any server, also on the timelines and hashtags",
     "description": "The line under Public in the audience menu: who sees the post. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.local.about": {
-    "defaultMessage": "Everyone on {server}, and your followers elsewhere",
-    "description": "The line under Local in the audience menu. server is this server's domain. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
+    "defaultMessage": "People on {server}, and your followers on other servers",
+    "description": "The line under Neighbors in the audience menu. server is this server's domain. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.unlisted.about": {
-    "defaultMessage": "Anyone, kept out of the local and federated timelines",
+    "defaultMessage": "Anyone with the link or your profile, not on the timelines or hashtags",
     "description": "The line under Quiet public in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.private.about": {

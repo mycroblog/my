@@ -812,15 +812,15 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_local": {
-    "defaultMessage": "ローカル限定の投稿",
+    "defaultMessage": "ご近所向けの投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_unlisted": {
-    "defaultMessage": "ひかえめな公開の投稿",
+    "defaultMessage": "ひっそり公開の投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_private": {
-    "defaultMessage": "フォロワー限定の投稿",
+    "defaultMessage": "フォロワーのみの投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_direct": {
@@ -956,7 +956,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.translation_reports_to_server.about": {
-    "defaultMessage": "通報のコメントはフォロワー限定の投稿として扱い、それを受け取れるサービスにだけ送ります。",
+    "defaultMessage": "通報のコメントはフォロワーのみの投稿として扱い、それを受け取れるサービスにだけ送ります。",
     "description": "The line about the setting Moderators can translate reports: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.max_article_bytes.about": {
@@ -1036,7 +1036,7 @@
     "description": "An option in the select of which media of other servers the server keeps copies of on a page of Server settings. Read by administrators."
   },
   "staff_settings.option.search_visibilities": {
-    "defaultMessage": "{value, select, public {公開の投稿} local {ローカル限定の投稿} other {公開とローカル限定の投稿}}",
+    "defaultMessage": "{value, select, public {公開の投稿} local {ご近所向けの投稿} other {公開とご近所向けの投稿}}",
     "description": "An option in the select of the posts full-text search covers on a page of Server settings. Read by administrators."
   },
   "staff_settings.option.hook_mode": {
@@ -1540,7 +1540,7 @@
     "description": "The checkbox of whether posts are sent to a translation provider. Read by administrators."
   },
   "staff_settings.providers.audience": {
-    "defaultMessage": "{audience, select, public {公開} local {ローカル限定} unlisted {ひかえめな公開} private {フォロワー限定} other {ダイレクト}}",
+    "defaultMessage": "{audience, select, public {公開} local {ご近所} unlisted {ひっそり公開} private {フォロワーのみ} other {ダイレクト}}",
     "description": "A visibility a translation provider may receive, the same words as a post's visibility. Read by administrators."
   },
   "staff_settings.providers.first": {
