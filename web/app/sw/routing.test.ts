@@ -27,7 +27,7 @@ test("a navigation to a payment page passes through, whatever the provider and t
     ["/payments/pages/fake/checkout/cs_1", "GET"],
     ["/payments/pages/payjp/checkout", "POST"],
     ["/payments/pages/fake/checkout/cs_1", "POST"],
-  ])
+  ] as const)
     expect([path, method, classify(navigation(path, method), origin)]).toEqual([path, method, "network"]);
 });
 
