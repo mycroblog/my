@@ -367,23 +367,31 @@ export {
   FilterBar,
   FilterFacet,
   FilterToggle,
-  MoreRecords,
-  RecordPages,
   RecordTable,
   StateMark,
   type FilterBarProps,
   type FilterFacetProps,
   type FilterValue,
-  type PageTarget,
   type RecordAction,
   type RecordColumn,
   type RecordDirection,
-  type RecordPagesProps,
   type RecordRow,
   type RecordSort,
   type RecordState,
   type RecordTableProps,
 } from "./records";
+export {
+  MoreRecords,
+  Pager,
+  RecordPages,
+  ShowMore,
+  useAddedFocus,
+  type AddedFocus,
+  type PagerProps,
+  type PageTarget,
+  type RecordPagesProps,
+  type ShowMoreProps,
+} from "./pager";
 export { useScrollRestoration, type ScrollMode } from "./scroll";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";
 export { RelativeTime, type RelativeTimeProps } from "./time";

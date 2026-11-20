@@ -114,17 +114,23 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     },
   ],
   [
-    records("pages"),
+    // The pager under them (pager.stories.tsx): the first page, a middle one, the last, the next on its way, the next
+    // failed, and a middle page whose position is not said.
+    "design-system-pager--pages",
     async (page) => {
       const pages = page.getByRole("navigation", { name: "Pages", exact: true });
-      await expect(pages).toHaveCount(4);
+      await expect(pages).toHaveCount(6);
       // Next leads on from every page but the last, Previous from every page but the first, where each stays,
       // disabled, so that a press that reached the last page leaves the focus on its button.
       await expect(pages.getByRole("link", { name: "Next", exact: true })).toHaveCount(2);
       await expect(pages.getByRole("link", { name: "Previous", exact: true })).toHaveCount(2);
       await expect(pages.getByRole("button", { name: "Previous", exact: true, disabled: true })).toHaveCount(1);
-      await expect(pages.getByRole("button", { name: "Previous", exact: true, disabled: false })).toHaveCount(1);
-      await expect(pages.getByRole("button", { name: "Next", exact: true })).toHaveCount(2);
+      // The last page's Next, and the one on its way, which takes no second press.
+      await expect(pages.getByRole("button", { name: "Next", exact: true, disabled: true })).toHaveCount(2);
+      // The page that failed is asked for again by its own button, under the sentence that says so.
+      await expect(pages.getByRole("button", { name: "Try again", exact: true })).toHaveCount(1);
+      await expect(page.getByRole("alert")).toHaveText("This page could not be loaded.");
+      await expect(pages.getByRole("status")).toHaveText(["Page 1", "Page 3", "Page 7", "Page 3", "Page 3", ""]);
     },
   ],
   [

@@ -17,8 +17,6 @@ import {
   FilterBar,
   FilterFacet,
   FilterToggle,
-  MoreRecords,
-  RecordPages,
   RecordTable,
   StateMark,
   type FilterValue,
@@ -27,6 +25,7 @@ import {
   type RecordSort,
   type RecordState,
 } from "./records";
+import { Pager, ShowMore } from "./pager";
 import { Frame, FrameAside, FrameDock, FrameHeading, FrameMain, FrameMark, FrameSide, NavItem, NavList } from "./shell";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -304,9 +303,10 @@ function Queue({
           }
         />
         {pages !== "only" && (
-          <RecordPages
+          <Pager
             {...(pages === "first" ? {} : { previous: { onPress: () => undefined } })}
             next={{ onPress: () => undefined }}
+            position={pages === "first" ? 1 : 2}
           />
         )}
       </Stack>
@@ -685,7 +685,8 @@ export const Jobs: Story = {
         <Column>
           <Stack gap="entry-room">
             <RecordTable label="Jobs" head={{ label: "Job" }} columns={jobColumns} rows={jobs} busy={busy} />
-            <MoreRecords
+            <ShowMore
+              more
               busy={busy}
               onPress={() => {
                 setBusy(true);
@@ -697,26 +698,6 @@ export const Jobs: Story = {
     }
     return <Screen />;
   },
-};
-
-/**
- * The pages of a list: the first, Previous disabled; between, both; the last, Next disabled, where a press on Next that
- * reached it keeps the focus; Next on its way.
- */
-export const Pages: Story = {
-  render: () => (
-    <Column>
-      <Stack gap="entry-room">
-        <RecordPages next={{ href: "#/moderation/reports?after=1035" }} />
-        <RecordPages
-          previous={{ href: "#/moderation/reports?before=1034" }}
-          next={{ href: "#/moderation/reports?after=990" }}
-        />
-        <RecordPages previous={{ href: "#/moderation/reports?before=989" }} />
-        <RecordPages previous={{ onPress: () => undefined }} next={{ onPress: () => undefined }} busy="next" />
-      </Stack>
-    </Column>
-  ),
 };
 
 /**

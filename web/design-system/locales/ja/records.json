@@ -21,7 +21,11 @@
   },
   "records.pages": {
     "defaultMessage": "ページ",
-    "description": "The name, for assistive technology, of the navigation under a long list (reports, accounts, jobs) that moves to the page before or after."
+    "description": "The name, for assistive technology, of the navigation under a long list paged by cursor (reports, accounts, a staff queue) that moves to the page before or after."
+  },
+  "records.page": {
+    "defaultMessage": "{page, number} ページ目",
+    "description": "Between Previous and Next under a long list paged by cursor: which page of it is shown, counted from the first (the server gives no total, so no 'of N'); also read to assistive technology as it changes."
   },
   "records.previous": {
     "defaultMessage": "前へ",
@@ -31,9 +35,21 @@
     "defaultMessage": "次へ",
     "description": "Under a long list, moves to the page after the one shown (older records, in a list of the latest first)."
   },
+  "records.page_failed": {
+    "defaultMessage": "このページを読み込めませんでした。",
+    "description": "Over Previous and Next under a long list, when the page asked for could not be read; the button that asked for it reads Try again (records.retry) meanwhile."
+  },
   "records.more": {
     "defaultMessage": "さらに表示",
-    "description": "Under a list that grows in place (a table of records), adds the next records under those shown."
+    "description": "Under a list that grows in place (a table of records, a list inside a detail or the settings), adds the next items under those shown."
+  },
+  "records.more_failed": {
+    "defaultMessage": "一覧の続きを読み込めませんでした。",
+    "description": "Over Show more under a list that grows in place, when its next items could not be read; the button reads Try again (records.retry) meanwhile."
+  },
+  "records.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button under a list in place of Previous, Next or Show more after it failed (records.page_failed, records.more_failed): asks for the same items again."
   },
   "records.sort_by": {
     "defaultMessage": "並べ替え",

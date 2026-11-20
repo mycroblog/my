@@ -13,8 +13,7 @@
 // state is a glyph of its own shape beside its word, never a tile, its weight and tone by whether it waits for someone.
 //
 // Over a list, a filter bar: a search, then the facets, a button each that opens the facet's values in a menu and,
-// while one is applied, is knocked out and says it, and Clear filters at their end. Under it, the pages of a list paged
-// by cursor (previous and next), or Show more for one that grows in place. Where a list has nothing to show, the
+// while one is applied, is knocked out and says it, and Clear filters at their end. Under it, the pager (pager.tsx). Where a list has nothing to show, the
 // feed's notice says why (nothing yet, nothing that matches) and what to do next. A detail beside its list is the app's frame:
 // the record in the main column, the list compact (its head and state columns alone) in the column beside it from
 // `wide`, the open record marked, and under `wide` the record alone with the way back over it (`ScreenTitle`).
@@ -34,7 +33,7 @@ import {
 } from "react";
 import { Button as AriaButton, Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
-import { Button, ButtonBase, LinkButton, TextButton } from "./button";
+import { Button, ButtonBase, TextButton } from "./button";
 import { ChoiceMark } from "./choice";
 import { Icon, type IconName } from "./icons";
 import { codeRuns } from "./code-text";
@@ -906,99 +905,6 @@ function Record<K extends string>({
         </RecordPlace>
       )}
     </RecordLine>
-  );
-}
-
-// The pages of a list.
-
-/** Where a page leads: an address, or what the screen does to show it. */
-export type PageTarget = { href: string } | { onPress: () => void };
-
-export type RecordPagesProps = {
-  /** The page before, if any (the first page has none). */
-  previous?: PageTarget | undefined;
-  /** The page after, if any (the last page has none). */
-  next?: PageTarget | undefined;
-  /** The page asked for is on its way: its button busy. */
-  busy?: "previous" | "next" | undefined;
-};
-
-/** A page's button; where there is no such page, disabled, so that the focus it holds stays where it was. */
-function PageButton({
-  target,
-  busy,
-  icon,
-  end,
-  children,
-}: {
-  target: PageTarget | undefined;
-  busy: boolean;
-  icon: IconName;
-  end: boolean;
-  children: string;
-}) {
-  const label = (
-    <Row as="span" inline align="center" gap="entry-caption">
-      {!end && <Icon name={icon} place="caption" />}
-      <span>{children}</span>
-      {end && <Icon name={icon} place="caption" />}
-    </Row>
-  );
-  if (target === undefined)
-    return (
-      <Button size="target" isDisabled>
-        {label}
-      </Button>
-    );
-  if ("href" in target)
-    return (
-      <LinkButton href={target.href} size="target">
-        {label}
-      </LinkButton>
-    );
-  return (
-    <Button size="target" busy={busy} onPress={target.onPress}>
-      {label}
-    </Button>
-  );
-}
-
-/**
- * The pages of a list paged by cursor, under it: Previous at the start, Next at the end, either disabled where there is
- * no such page (the first page, the last), so that a press that reaches the last page leaves the focus on its button.
- * A list of one page has none. A navigation named for assistive technology.
- */
-export function RecordPages({ previous, next, busy }: RecordPagesProps) {
-  const { lang } = useReader(undefined);
-  const { t } = stringsIn(lang);
-  if (previous === undefined && next === undefined) return null;
-  return (
-    <Row as="nav" align="center" gap="screen-tabs-gap" aria-label={t("records.pages")}>
-      <PageButton target={previous} busy={busy === "previous"} icon="previous" end={false}>
-        {t("records.previous")}
-      </PageButton>
-      <Box push="end">
-        <PageButton target={next} busy={busy === "next"} icon="onward" end>
-          {t("records.next")}
-        </PageButton>
-      </Box>
-    </Row>
-  );
-}
-
-/**
- * Show more, under a list that grows in place: busy while the next records are on their way. The screen moves the
- * focus to the first record added once they have come, so that the reader goes on from there.
- */
-export function MoreRecords({ onPress, busy = false }: { onPress: () => void; busy?: boolean | undefined }) {
-  const { lang } = useReader(undefined);
-  const { t } = stringsIn(lang);
-  return (
-    <Row justify="center">
-      <Button size="target" busy={busy} onPress={onPress}>
-        {t("records.more")}
-      </Button>
-    </Row>
   );
 }
 
