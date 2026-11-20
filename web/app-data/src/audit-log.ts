@@ -147,6 +147,7 @@ export const auditActionTargets = {
   announcement_updated: "announcement",
   announcement_published: "announcement",
   announcement_withdrawn: "announcement",
+  announcement_deleted: "announcement",
   invite_created: "invite",
   invite_revoked: "invite",
   relay_added: "relay",

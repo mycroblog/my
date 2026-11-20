@@ -231,6 +231,38 @@
     "defaultMessage": "お知らせは取り下げられていません。接続を確かめて、もう一度試してください。",
     "description": "In the section that withdraws an announcement when it failed. Read by administrators."
   },
+  "staff_announcements.delete": {
+    "defaultMessage": "下書きの削除",
+    "description": "The heading of the section of a draft announcement's page that deletes it. Read by administrators."
+  },
+  "staff_announcements.delete.about": {
+    "defaultMessage": "まだだれも見ていないお知らせです。一覧からなくなり、監査ログにはタイトルが残ります。",
+    "description": "Under the heading of the section that deletes a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.press": {
+    "defaultMessage": "削除する",
+    "description": "The button that deletes a draft announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.delete.title": {
+    "defaultMessage": "この下書きを削除しますか？",
+    "description": "The question before deleting a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.cancel": {
+    "defaultMessage": "削除しない",
+    "description": "The button that closes the question before deleting a draft announcement, keeping it. Read by administrators."
+  },
+  "staff_announcements.delete.text": {
+    "defaultMessage": "タイトルと本文はなくなります。取り消せません。",
+    "description": "Under the question before deleting a draft announcement. Read by administrators."
+  },
+  "staff_announcements.delete.failed": {
+    "defaultMessage": "下書きは削除されていません。接続を確かめて、もう一度試してください。",
+    "description": "In the section that deletes a draft announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.delete.published": {
+    "defaultMessage": "その間に公開されたため、削除されていません。代わりに取り下げてください。",
+    "description": "In the section that deletes a draft announcement when the server refused because someone published it meanwhile (409). Read by administrators."
+  },
   "staff_announcements.irreversible": {
     "defaultMessage": "取り消せません。",
     "description": "The mark beside the button that withdraws an announcement. Read by administrators."

@@ -6,10 +6,10 @@
 // and when it shows: from and until a moment of the reader's zone, each optional. A new one is kept as a draft or
 // published; a draft is saved and published; a published one is revised, which notifies nobody again. Publishing asks
 // first: every local user is notified once it starts to show. The page of one says first where it stands, then the
-// form, what readers see as last saved (their own page of it, a draft's as if published now), and, last and apart for
-// a published one, Withdraw, which asks first and cannot be undone (a draft never showed, so it has none, and the API
-// deletes no draft); a withdrawn one is what it was, nothing to change. What is wrong with a field stands under it,
-// which takes the focus.
+// form, what readers see as last saved (their own page of it, a draft's as if published now), and, last and apart,
+// Withdraw for a published one and Delete for a draft, which never showed, each asking first and not to be undone; a
+// deleted draft leaves for the list. A withdrawn one is what it was, nothing to change. What is wrong with a field
+// stands under it, which takes the focus.
 
 import { localInput, localInstant } from "@my/app-components";
 import {
@@ -460,7 +460,7 @@ function AsReadersSee({ a, t }: { a: AdminAnnouncement; t: T }) {
   );
 }
 
-/** A draft or a published announcement: where it stands, its form, what readers see, and Withdraw last. */
+/** A draft or a published announcement: where it stands, its form, what readers see, and Delete or Withdraw last. */
 function AnnouncementForm({ a, go, onUnsaved, leaving }: AdminSubProps & { a: AdminAnnouncement }) {
   const { t } = useStaffStrings();
   const timeZone = useTimeZone();
@@ -468,8 +468,9 @@ function AnnouncementForm({ a, go, onUnsaved, leaving }: AdminSubProps & { a: Ad
   const there = useStillThere();
   const f = useAnnouncementForm(formOf(a, timeZone), onUnsaved);
   const draft = a.state === "draft";
-  const [asking, setAsking] = useState<"publish" | "withdraw" | undefined>(undefined);
+  const [asking, setAsking] = useState<"publish" | "withdraw" | "delete" | undefined>(undefined);
   const [withdrawing, setWithdrawing] = useState<"idle" | "sending" | "failed">("idle");
+  const [deleting, setDeleting] = useState<"idle" | "sending" | "failed" | "published">("idle");
   const save = async (publish: boolean) => {
     const input = f.checked();
     if (f.busy || input === undefined) {
@@ -501,6 +502,22 @@ function AnnouncementForm({ a, go, onUnsaved, leaving }: AdminSubProps & { a: Ad
         if (!there.current) return;
         setAsking(undefined);
         setWithdrawing("failed");
+      },
+    );
+  };
+  const remove = () => {
+    setDeleting("sending");
+    writes.remove(a.id).then(
+      () => {
+        if (!there.current) return;
+        setAsking(undefined);
+        onUnsaved?.(false);
+        go(adminAnnouncementsPath);
+      },
+      (error: unknown) => {
+        if (!there.current) return;
+        setAsking(undefined);
+        setDeleting(announcementWithdrawn(error) ? "published" : "failed");
       },
     );
   };
@@ -547,7 +564,31 @@ function AnnouncementForm({ a, go, onUnsaved, leaving }: AdminSubProps & { a: Ad
                 </Button>
               )}
             </SubmitBar>
-            {/* A draft never showed to anyone, so there is nothing to withdraw; the API keeps no way to delete one. */}
+            {/* A draft never showed to anyone, so there is nothing to withdraw: it is deleted instead. */}
+            {draft && (
+              <SettingsSection heading={t("staff_announcements.delete")} about={t("staff_announcements.delete.about")}>
+                <Irreversible>{t("staff_announcements.irreversible")}</Irreversible>
+                <Box>
+                  <Button
+                    size="timeline"
+                    touch
+                    isDisabled={f.busy}
+                    onPress={() => {
+                      setAsking("delete");
+                    }}
+                  >
+                    {t("staff_announcements.delete.press")}
+                  </Button>
+                </Box>
+                <SettingsResult>
+                  {deleting === "failed"
+                    ? t("staff_announcements.delete.failed")
+                    : deleting === "published"
+                      ? t("staff_announcements.delete.published")
+                      : undefined}
+                </SettingsResult>
+              </SettingsSection>
+            )}
             {!draft && (
               <SettingsSection
                 heading={t("staff_announcements.withdraw")}
@@ -590,6 +631,20 @@ function AnnouncementForm({ a, go, onUnsaved, leaving }: AdminSubProps & { a: Ad
               void save(true);
             }}
           />
+        ) : asking === "delete" ? (
+          <ConfirmDialog
+            key="delete"
+            title={t("staff_announcements.delete.title")}
+            cancel={t("staff_announcements.delete.cancel")}
+            confirm={t("staff_announcements.delete.press")}
+            busy={deleting === "sending"}
+            onCancel={() => {
+              setAsking(undefined);
+            }}
+            onConfirm={remove}
+          >
+            {t("staff_announcements.delete.text")}
+          </ConfirmDialog>
         ) : asking === "withdraw" ? (
           <ConfirmDialog
             key="withdraw"

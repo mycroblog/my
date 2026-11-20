@@ -269,9 +269,10 @@ const (
 	// (announcement_revisions).
 	AuditAnnouncementUpdated AuditAction = "announcement_updated"
 	// AuditAnnouncementPublished and AuditAnnouncementWithdrawn: an announcement was published or
-	// withdrawn (announcement_state_changes).
+	// withdrawn; AuditAnnouncementDeleted: a draft was deleted (announcement_state_changes).
 	AuditAnnouncementPublished AuditAction = "announcement_published"
 	AuditAnnouncementWithdrawn AuditAction = "announcement_withdrawn"
+	AuditAnnouncementDeleted   AuditAction = "announcement_deleted"
 	// AuditInviteCreated: an invite was created (invites).
 	AuditInviteCreated AuditAction = "invite_created"
 	// AuditInviteRevoked: an invite was revoked (invite_revocations).
@@ -482,6 +483,7 @@ var auditActions = []struct {
 	{AuditAnnouncementUpdated, AuditTargetAnnouncement},
 	{AuditAnnouncementPublished, AuditTargetAnnouncement},
 	{AuditAnnouncementWithdrawn, AuditTargetAnnouncement},
+	{AuditAnnouncementDeleted, AuditTargetAnnouncement},
 	{AuditInviteCreated, AuditTargetInvite},
 	{AuditInviteRevoked, AuditTargetInvite},
 	{AuditRelayAdded, AuditTargetRelay},

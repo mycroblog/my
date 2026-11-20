@@ -301,6 +301,7 @@ const (
 	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
+	AdminAuditActionAnnouncementDeleted             AdminAuditAction = "announcement_deleted"
 	AdminAuditActionAnnouncementPublished           AdminAuditAction = "announcement_published"
 	AdminAuditActionAnnouncementUpdated             AdminAuditAction = "announcement_updated"
 	AdminAuditActionAnnouncementWithdrawn           AdminAuditAction = "announcement_withdrawn"
@@ -426,6 +427,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionAccountStatusesRefetchQueued:
 		return true
 	case AdminAuditActionAnnouncementCreated:
+		return true
+	case AdminAuditActionAnnouncementDeleted:
 		return true
 	case AdminAuditActionAnnouncementPublished:
 		return true
@@ -6450,9 +6453,9 @@ type AdminAppealPage struct {
 // endpoint answered 410 Gone or kept failing), `webhook_secret_rotated`; the label is its
 // description and the host name of its URL, never the URL. On an `announcement`:
 // `announcement_created`, `announcement_updated` (its text or window),
-// `announcement_published`, `announcement_withdrawn`; the label is the first line of its
-// text. On an `invite`: `invite_created`, `invite_revoked`; the label is the first
-// characters of its code, never the whole code. On a `relay`: `relay_added`,
+// `announcement_published`, `announcement_withdrawn`, `announcement_deleted` (a draft); the
+// label is the first line of its text. On an `invite`: `invite_created`, `invite_revoked`;
+// the label is the first characters of its code, never the whole code. On a `relay`: `relay_added`,
 // `relay_followed`, `relay_unfollowed`, `relay_removed`, and `relay_accepted`,
 // `relay_rejected` (by the `remote` relay); the label is its URL. The refetch of remote
 // posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
@@ -6545,9 +6548,9 @@ type AdminAuditEntry struct {
 	// endpoint answered 410 Gone or kept failing), `webhook_secret_rotated`; the label is its
 	// description and the host name of its URL, never the URL. On an `announcement`:
 	// `announcement_created`, `announcement_updated` (its text or window),
-	// `announcement_published`, `announcement_withdrawn`; the label is the first line of its
-	// text. On an `invite`: `invite_created`, `invite_revoked`; the label is the first
-	// characters of its code, never the whole code. On a `relay`: `relay_added`,
+	// `announcement_published`, `announcement_withdrawn`, `announcement_deleted` (a draft); the
+	// label is the first line of its text. On an `invite`: `invite_created`, `invite_revoked`;
+	// the label is the first characters of its code, never the whole code. On a `relay`: `relay_added`,
 	// `relay_followed`, `relay_unfollowed`, `relay_removed`, and `relay_accepted`,
 	// `relay_rejected` (by the `remote` relay); the label is its URL. The refetch of remote
 	// posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
@@ -20041,6 +20044,9 @@ type ServerInterface interface {
 	// CreateAdminAnnouncement Write an announcement
 	// (POST /admin/announcements)
 	CreateAdminAnnouncement(w http.ResponseWriter, r *http.Request)
+	// DeleteAdminAnnouncement Delete a draft announcement
+	// (DELETE /admin/announcements/{id})
+	DeleteAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId)
 	// GetAdminAnnouncement Get an announcement
 	// (GET /admin/announcements/{id})
 	GetAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId)
@@ -22998,6 +23004,32 @@ func (siw *ServerInterfaceWrapper) CreateAdminAnnouncement(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateAdminAnnouncement(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAdminAnnouncement operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAdminAnnouncement(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AnnouncementId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAdminAnnouncement(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -35434,6 +35466,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/rules/{id}/retire", wrapper.RetireInstanceRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/announcements", wrapper.ListAdminAnnouncements)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/announcements", wrapper.CreateAdminAnnouncement)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/announcements/{id}", wrapper.DeleteAdminAnnouncement)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/announcements/{id}", wrapper.GetAdminAnnouncement)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/announcements/{id}", wrapper.UpdateAdminAnnouncement)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/announcements/{id}/publish", wrapper.PublishAdminAnnouncement)
@@ -39098,6 +39131,52 @@ type CreateAdminAnnouncementdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response CreateAdminAnnouncementdefaultApplicationProblemPlusJSONResponse) VisitCreateAdminAnnouncementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAdminAnnouncementRequestObject struct {
+	Id AnnouncementId `json:"id"`
+}
+
+type DeleteAdminAnnouncementResponseObject interface {
+	VisitDeleteAdminAnnouncementResponse(w http.ResponseWriter) error
+}
+
+type DeleteAdminAnnouncement204Response struct {
+}
+
+func (response DeleteAdminAnnouncement204Response) VisitDeleteAdminAnnouncementResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteAdminAnnouncementdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DeleteAdminAnnouncementdefaultApplicationProblemPlusJSONResponse) VisitDeleteAdminAnnouncementResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -64383,6 +64462,9 @@ type StrictServerInterface interface {
 	// CreateAdminAnnouncement Write an announcement
 	// (POST /admin/announcements)
 	CreateAdminAnnouncement(ctx context.Context, request CreateAdminAnnouncementRequestObject) (CreateAdminAnnouncementResponseObject, error)
+	// DeleteAdminAnnouncement Delete a draft announcement
+	// (DELETE /admin/announcements/{id})
+	DeleteAdminAnnouncement(ctx context.Context, request DeleteAdminAnnouncementRequestObject) (DeleteAdminAnnouncementResponseObject, error)
 	// GetAdminAnnouncement Get an announcement
 	// (GET /admin/announcements/{id})
 	GetAdminAnnouncement(ctx context.Context, request GetAdminAnnouncementRequestObject) (GetAdminAnnouncementResponseObject, error)
@@ -67132,6 +67214,32 @@ func (sh *strictHandler) CreateAdminAnnouncement(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateAdminAnnouncementResponseObject); ok {
 		if err := validResponse.VisitCreateAdminAnnouncementResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAdminAnnouncement operation middleware
+func (sh *strictHandler) DeleteAdminAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId) {
+	var request DeleteAdminAnnouncementRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAdminAnnouncement(ctx, request.(DeleteAdminAnnouncementRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAdminAnnouncement")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAdminAnnouncementResponseObject); ok {
+		if err := validResponse.VisitDeleteAdminAnnouncementResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -22,6 +22,15 @@ func (q *Queries) DeleteAllAnnouncementHeads(ctx context.Context) error {
 	return err
 }
 
+const deleteAnnouncementHead = `-- name: DeleteAnnouncementHead :exec
+DELETE FROM announcement_heads WHERE announcement_id = ?
+`
+
+func (q *Queries) DeleteAnnouncementHead(ctx context.Context, announcementID string) error {
+	_, err := q.db.ExecContext(ctx, deleteAnnouncementHead, announcementID)
+	return err
+}
+
 const deleteAnnouncementReadsOfUser = `-- name: DeleteAnnouncementReadsOfUser :execrows
 DELETE FROM announcement_reads WHERE user_id = ?
 `

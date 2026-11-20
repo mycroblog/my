@@ -23,8 +23,8 @@ import (
 )
 
 // TestAnnouncements writes, publishes, revises, and withdraws an announcement through the admin
-// API on SQLite (FR-726), and checks that the operations need manage_announcements and a title
-// and are audited, that every local user sees the published announcement as sanitized HTML with
+// API on SQLite (FR-726), and deletes a draft, and checks that the operations need
+// manage_announcements and a title and are audited, that only a draft is deleted, that every local user sees the published announcement as sanitized HTML with
 // its title and marks it read for themselves, that each gets one announcement notification that
 // the withdrawal hides, that the list with the past announcements leaves out the withdrawn one,
 // and that an open stream gets the publication and the withdrawal.
@@ -306,5 +306,40 @@ func TestAnnouncements(t *testing.T) {
 		audit.Items[2].Action != clientapi.AdminAuditActionAnnouncementPublished ||
 		audit.Items[3].Action != clientapi.AdminAuditActionAnnouncementCreated || audit.Items[3].TargetLabel != "Maintenance on Sunday" {
 		t.Errorf("GET the audit log = %d %+v", code, audit)
+	}
+
+	// Only a draft is deleted: it is found nowhere after, and the audit log keeps its title.
+	if code := api(bobToken, http.MethodDelete, "/admin/announcements/"+drafts[0], nil, nil); code != http.StatusForbidden {
+		t.Errorf("DELETE without manage_announcements = %d, want 403", code)
+	}
+	if code := api(adminToken, http.MethodDelete, "/admin/announcements/"+draft.Id, nil, nil); code != http.StatusConflict {
+		t.Errorf("DELETE of a withdrawn announcement = %d, want 409", code)
+	}
+	var shown clientapi.AdminAnnouncement
+	if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{"title": "Shown", "text": "Shown.", "publish": true}, &shown); code != http.StatusCreated {
+		t.Fatalf("POST /admin/announcements (published) = %d", code)
+	}
+	if code := api(adminToken, http.MethodDelete, "/admin/announcements/"+shown.Id, nil, nil); code != http.StatusConflict {
+		t.Errorf("DELETE of a published announcement = %d, want 409", code)
+	}
+	if code := api(adminToken, http.MethodDelete, "/admin/announcements/"+drafts[0], nil, nil); code != http.StatusNoContent {
+		t.Fatalf("DELETE of a draft = %d, want 204", code)
+	}
+	if code := api(adminToken, http.MethodGet, "/admin/announcements/"+drafts[0], nil, nil); code != http.StatusNotFound {
+		t.Errorf("GET of a deleted draft = %d, want 404", code)
+	}
+	if code := api(adminToken, http.MethodDelete, "/admin/announcements/"+drafts[0], nil, nil); code != http.StatusNotFound {
+		t.Errorf("DELETE of a deleted draft = %d, want 404", code)
+	}
+	var left clientapi.AdminAnnouncementPage
+	if code := api(adminToken, http.MethodGet, "/admin/announcements?state=draft", nil, &left); code != http.StatusOK ||
+		len(left.Items) != 1 || left.Items[0].Id != drafts[1] {
+		t.Errorf("GET /admin/announcements?state=draft after the deletion = %d %+v, want the other draft", code, left)
+	}
+	var deleted clientapi.AdminAuditEntryPage
+	if code := api(adminToken, http.MethodGet, "/admin/audit_log?target_kind=announcement&target_id="+drafts[0], nil, &deleted); code != http.StatusOK ||
+		len(deleted.Items) != 2 || deleted.Items[0].Action != clientapi.AdminAuditActionAnnouncementDeleted ||
+		deleted.Items[0].TargetLabel != "Draft one" {
+		t.Errorf("GET the audit log of the deleted draft = %d %+v", code, deleted)
 	}
 }

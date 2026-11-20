@@ -2,9 +2,10 @@
 // The server's announcements as a holder of `manage_announcements` writes them (FR-726, ADR-0125): every one, drafts
 // and withdrawn ones included, newest first, a page at a time, kept to one state where the screen asks (draft,
 // scheduled, showing, ended, withdrawn); one of them; and writing one (a draft, or published at once), revising its
-// title, text and window, publishing a draft and withdrawing one for good. Every write reads again what it changes:
-// the administrators' list and the announcement, and what the readers' screens read (the announcements they see now,
-// their history and an announcement's page), so that a published one shows to the reader in this session too.
+// title, text and window, publishing a draft, withdrawing one for good, and deleting a draft, which then is found
+// nowhere. Every write reads again what it changes: the administrators' list and the announcement, and what the
+// readers' screens read (the announcements they see now, their history and an announcement's page), so that a
+// published one shows to the reader in this session too; a deleted draft showed to no reader, so only the list.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
@@ -123,6 +124,8 @@ export type AdminAnnouncementWrites = {
   readonly publish: (id: string) => Promise<AdminAnnouncement>;
   /** Withdraws the announcement of `id` for good. */
   readonly withdraw: (id: string) => Promise<AdminAnnouncement>;
+  /** Deletes the draft of `id`; one that was published is refused (409), and is withdrawn instead. */
+  readonly remove: (id: string) => Promise<void>;
 };
 
 /** The input the API takes: a window side left empty is none. */
@@ -165,6 +168,10 @@ export function adminAnnouncementWrites(data: AppData): AdminAnnouncementWrites 
       written(data, (await data.api.PUT("/admin/announcements/{id}", { ...path(id), body: inputOf(input) })).data),
     publish: async (id) => written(data, (await data.api.POST("/admin/announcements/{id}/publish", path(id))).data),
     withdraw: async (id) => written(data, (await data.api.POST("/admin/announcements/{id}/withdraw", path(id))).data),
+    remove: async (id) => {
+      await data.api.DELETE("/admin/announcements/{id}", path(id));
+      await data.queryClient.invalidateQueries({ predicate: ({ queryKey }) => queryKey[1] === "/admin/announcements" });
+    },
   };
 }
 

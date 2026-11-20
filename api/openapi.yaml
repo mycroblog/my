@@ -10230,6 +10230,26 @@ paths:
           $ref: '#/components/responses/AdminAnnouncement'
         default:
           $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteAdminAnnouncement
+      x-permission: manage_announcements
+      summary: Delete a draft announcement
+      description: |
+        Deletes a draft, which no user ever saw: it is found nowhere after, a 404 like an unknown
+        ID. The audit log records `announcement_deleted` with its title. An announcement that was
+        published is a 409: withdraw it instead. Needs the `manage_announcements` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/AnnouncementId'
+      responses:
+        '204':
+          description: The draft is deleted.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/announcements/{id}/publish:
     post:
       operationId: publishAdminAnnouncement
@@ -17197,9 +17217,9 @@ components:
         endpoint answered 410 Gone or kept failing), `webhook_secret_rotated`; the label is its
         description and the host name of its URL, never the URL. On an `announcement`:
         `announcement_created`, `announcement_updated` (its text or window),
-        `announcement_published`, `announcement_withdrawn`; the label is the first line of its
-        text. On an `invite`: `invite_created`, `invite_revoked`; the label is the first
-        characters of its code, never the whole code. On a `relay`: `relay_added`,
+        `announcement_published`, `announcement_withdrawn`, `announcement_deleted` (a draft); the
+        label is the first line of its text. On an `invite`: `invite_created`, `invite_revoked`;
+        the label is the first characters of its code, never the whole code. On a `relay`: `relay_added`,
         `relay_followed`, `relay_unfollowed`, `relay_removed`, and `relay_accepted`,
         `relay_rejected` (by the `remote` relay); the label is its URL. The refetch of remote
         posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
@@ -17295,6 +17315,7 @@ components:
         - announcement_updated
         - announcement_published
         - announcement_withdrawn
+        - announcement_deleted
         - invite_created
         - invite_revoked
         - relay_added

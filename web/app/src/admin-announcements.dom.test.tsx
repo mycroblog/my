@@ -3,8 +3,9 @@
 // The announcements as the administrator writes them (#3263, FR-726, ADR-0125), on the fake API, as what follows a
 // press: one written with a title and a Markdown text is published after a question, and a reader then sees it among
 // the server's announcements and counted above the home timeline; one is saved as a draft, which offers no Withdraw;
-// a draft's page shows it as its readers' page will; a draft is published from its page; one showing is revised, and withdrawn after a question; its window is read in
-// the reader's time zone. What each screen shows at rest is the stories' (admin-announcements.stories.tsx).
+// a draft's page shows it as its readers' page will; a draft is published from its page, or deleted after a question;
+// one showing is revised, and withdrawn after a question, and offers no Delete; its window is read in the reader's
+// time zone. What each screen shows at rest is the stories' (admin-announcements.stories.tsx).
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { scenario } from "@my/e2e/fake";
@@ -138,6 +139,35 @@ test("a draft published from its page after the question shows to the readers", 
   expect(await main().findByRole("article", { name: "Moderation report for the autumn" })).toBeDefined();
 });
 
+test("a draft is deleted only once the question is answered, and the list then lacks it", async () => {
+  const { on, app } = await atAnnouncement(
+    (o) => `/admin/announcements/${o.fake.staffServer.id("announcement", "draft")}`,
+  );
+  const deleted = on.fake.script("DELETE /admin/announcements/{id}");
+
+  expect(main().getAllByRole("button").at(-1)).toBe(button("Delete"));
+  await app.user.click(button("Delete"));
+  expect(words(await screen.findByRole("alertdialog", { name: "Delete this draft?" }))).toContain(
+    "Its title and text are gone. This cannot be undone.",
+  );
+  await app.user.click((await asking("Delete this draft?")).getByRole("button", { name: "Keep it" }));
+  await waitFor(() => {
+    if (screen.queryAllByRole("alertdialog").length > 0) throw new Error("test: the question is still open");
+  });
+  expect(deleted.seen).toHaveLength(0);
+
+  await app.user.click(button("Delete"));
+  await app.user.click((await asking("Delete this draft?")).getByRole("button", { name: "Delete" }));
+
+  expect((await deleted.arrived()).url.pathname).toEndWith(
+    `/admin/announcements/${on.fake.staffServer.id("announcement", "draft")}`,
+  );
+  await app.arrived("/admin/announcements");
+  await main().findByText("Welcome to the new web client");
+  await settled(app);
+  expect(main().queryAllByText("Moderation report for the autumn")).toHaveLength(0);
+});
+
 test("an announcement showing now is revised on Save, and what readers see says the new words", async () => {
   const { on, app } = await atAnnouncement(
     (o) => `/admin/announcements/${o.fake.staffServer.id("announcement", "showing")}`,
@@ -162,6 +192,7 @@ test("an announcement is withdrawn only once the question is answered, and its p
   );
   const withdrawn = on.fake.script("POST /admin/announcements/{id}/withdraw");
 
+  expect(main().queryAllByRole("button", { name: "Delete" })).toHaveLength(0);
   expect(main().getAllByRole("button").at(-1)).toBe(button("Withdraw"));
   await app.user.click(button("Withdraw"));
   const first = await asking("Withdraw this announcement?");

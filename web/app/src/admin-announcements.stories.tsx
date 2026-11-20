@@ -4,9 +4,9 @@
 // staff-announcements.ts), whose list holds a draft, one published to start in a few days, one showing now, one whose
 // window ended and one withdrawn. The list: every one, kept to each state, none at all, loading, failing, and its
 // address for a moderator, whose permissions do not open it. The form of a new one. An announcement's page: a draft
-// (Save and Publish), one showing now and one scheduled (Save, and Withdraw last), each with where it stands and what
+// (Save and Publish, and Delete last), one showing now and one scheduled (Save, and Withdraw last), each with where it stands and what
 // readers see, as their own page of it shows it; a withdrawn one, nothing to change; loading, failing, and an address that names none. What follows a
-// press (a refused field, the question before publishing or withdrawing) is the route tests'.
+// press (a refused field, the question before publishing, withdrawing or deleting) is the route tests'.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta, type Fake } from "./app.samples";
@@ -59,7 +59,7 @@ export const NewAnnouncement: Story = { parameters: asAdmin("/admin/announcement
 
 /**
  * A draft: where it stands, its form, what readers see as last saved (their own page of it, as if it were published
- * now), and Save and Publish; no Withdraw.
+ * now), Save and Publish, and Delete last; no Withdraw.
  */
 export const Draft: Story = { parameters: asAdmin("/admin/announcements/{server:announcement:draft}") };
 /** One every local user sees now: its form and Save, what readers see, and Withdraw last. */
