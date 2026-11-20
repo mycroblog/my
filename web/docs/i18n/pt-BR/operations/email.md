@@ -79,15 +79,18 @@ internacionalizados são convertidos para Punycode. Não é possível enviar a u
 Passe os segredos por variável de ambiente ou arquivo (`MY_MAIL_SMTP_PASSWORD` ou `MY_MAIL_SMTP_PASSWORD_FILE`). Não os coloque
 no arquivo de configuração.
 
-<!-- source: amazon-ses-api 1cef4371e61c -->
+<!-- source: amazon-ses-api f2d42a2b8b19 -->
 ### Amazon SES (API)
 
-Ao executar na AWS, `mail = ses` usa a API SES v2. As credenciais vêm da cadeia padrão do AWS SDK (a task role do
-ECS, variáveis de ambiente, o arquivo de configuração compartilhado), então não há segredo a configurar.
+Quando você executa na AWS, `mail = ses` usa a API SES v2. As credenciais vêm da cadeia padrão do AWS SDK (a função da tarefa do
+ECS, as variáveis de ambiente, o arquivo de configuração compartilhado), então não há nenhum segredo para configurar.
 
 1. No SES, verifique o domínio de `mail_from` como uma identidade e ative o Easy DKIM (veja abaixo).
 2. Solicite acesso de produção para sair do sandbox. No sandbox você só pode enviar para endereços verificados.
-3. Permita `ses:SendEmail` para a função de execução na identidade de `mail_from` (e no configuration set, se você usar um).
+3. Permita `ses:SendEmail` para a função de execução na identidade de `mail_from` (e no conjunto de configurações, se você usar um).
+
+[Enviando e-mail pelo Amazon SES](email-ses.md) percorre os registros, o sandbox e o pedido de acesso de produção,
+e o que o módulo OpenTofu para a AWS faz deles.
 
 ```sh
 MY_MAIL=ses
@@ -96,11 +99,11 @@ MY_MAIL_SES_REGION=ap-northeast-1          # the region where you verified the i
 MY_MAIL_SES_CONFIGURATION_SET=my-events    # optional; a configuration set with event destinations
 ```
 
-Quando `mail_ses_configuration_set` está definido, todo e-mail usa esse configuration set. O SES sobrescreve o `Message-ID` e o `Date` do
-e-mail com valores próprios.
-O SES nunca rejeita um destinatário de forma síncrona no momento do envio. Ele aceita o envio para um endereço da lista de supressão da conta e
+Quando `mail_ses_configuration_set` está definido, todo e-mail usa esse conjunto de configurações. O SES sobrescreve o `Message-ID` e o `Date` do
+e-mail com os valores dele.
+O SES nunca rejeita um destinatário de forma síncrona no momento do envio. Ele aceita um envio para um endereço da lista de supressão da conta e
 depois não o entrega, e o bounce chega mais tarde como uma notificação (SNS).
-Para registrar bounces e reclamações, configure as notificações do SES abaixo para chegarem por SNS.
+Para registrar bounces e reclamações, configure as notificações do SES abaixo para chegarem pelo SNS.
 
 <!-- source: a-plugin-mail--plugin 65b46feaf1cf -->
 ### Um plugin (`mail = plugin`)
@@ -395,22 +398,23 @@ List-Unsubscribe=One-Click` (RFC 8058). O botão “cancelar inscrição” dos 
   impediriam que avisos relevantes para a segurança chegassem. Esses e-mails também não trazem esses cabeçalhos.
 - Os usuários podem alterar a mesma configuração na página **Notificações** das configurações.
 
-<!-- source: the-html-version 2ca008b1a48a -->
+<!-- source: the-html-version fc06d2fa37c4 -->
 ## A versão HTML
 
-Todo e-mail é `multipart/alternative`, com o mesmo conteúdo em `text/plain` e `text/html` (ambos UTF-8). Com `mail = none`
-no perfil `development`, apenas a versão em texto é escrita no log.
+Todo e-mail é `multipart/alternative` com o mesmo conteúdo em `text/plain` e `text/html` (ambos em UTF-8). Com `mail = none`
+no perfil `development`, apenas a versão em texto é gravada no log.
 
-- Há um único layout externo, com parágrafos, botões e uma assinatura (nome do servidor, URL, contato, o motivo do e-mail
-  e o link de cancelamento de inscrição). `<html lang dir>` vem do idioma do destinatário, e idiomas como `ar` são dispostos da direita
-  para a esquerda.
-- Ele não carrega fontes nem folhas de estilo externas. As cores são os design tokens padrão, e claro e escuro seguem
-  `color-scheme` e `prefers-color-scheme`. As personalizações de tema do administrador não afetam o e-mail.
-- Ele não carrega imagens, exceto o logotipo da própria instância, quando definido ([logotipo e ícone](instance-settings.md#logo-and-icon)):
+- Há um layout externo, com parágrafos, botões e uma assinatura (nome do servidor, URL, contato, o motivo do e-mail
+  e o link para cancelar a inscrição). `<html lang dir>` vem do idioma do destinatário, e idiomas como `ar` são dispostos da direita para
+  a esquerda.
+- Ele não carrega fontes nem folhas de estilo externas e usa as fontes do sistema. As cores são as do
+  [tema](instance-settings.md#theme) publicado (os design tokens padrão se não houver um), e claro e escuro seguem `color-scheme` e
+  `prefers-color-scheme`.
+- Ele não carrega imagens, exceto o logotipo da própria instância quando há um ([logotipo e ícone](instance-settings.md#logo-and-icon)):
   a versão HTML então começa com o logotipo (`https://<host>/brand/...`, o logotipo escuro no lugar dele quando o cliente de e-mail segue
-  um esquema de cores escuro), com a mesma URL para todos os destinatários, de modo que não revela quem abriu o e-mail. Clientes que não carregam
+  um esquema de cores escuro), a mesma URL para todos os destinatários, de modo que não diz nada sobre quem abriu o e-mail. Clientes que não carregam
   imagens externas mostram o nome do servidor (o texto alternativo da imagem). Sem logotipo, ou quando a URL do servidor não é `https`,
   o e-mail não tem imagem.
-- Apenas URLs `https` viram links. Quando uma URL é `http`, como em um ambiente de desenvolvimento em que `web_origin` é `http://{host}`, a URL
-  é escrita como texto em vez de um botão ou de um link de cancelamento de inscrição, e a URL do servidor na assinatura é omitida.
+- Apenas URLs `https` viram links. Quando uma URL é `http`, como em uma configuração de desenvolvimento em que `web_origin` é `http://{host}`, a URL
+  é escrita como texto em vez de um botão ou de um link de cancelamento, e a URL do servidor na assinatura é omitida.
 - O layout faz parte do binário, então nenhum JavaScript é executado no servidor em tempo de execução.

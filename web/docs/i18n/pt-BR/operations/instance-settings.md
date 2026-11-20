@@ -322,50 +322,50 @@ e o texto `thumbnail_alt`) aparecem nos lugares abaixo. O que não estiver defin
 Quando a conta de contato está suspensa ou excluída, a conta não é exibida e apenas o endereço de e-mail é.
 Altere-os na página Geral da tela de administração do cliente web (“Configurações do servidor”, `/admin/settings/general`), ou com a CLI ou a API de cliente.
 
-<!-- source: one-person-server ed3ac66244d6 -->
-### Servidor de uma pessoa
+<!-- source: one-person-server 275b5c1d39fa -->
+### Servidor de uma só pessoa
 
-Um servidor só do seu operador, a casa própria do operador no fediverso, é um servidor de uma pessoa: ative `single_user`. No cliente web,
-um administrador o ativa e desativa com **Servidor de uma pessoa** na página **Cadastro** de **Configurações do servidor**,
-que informa por que o servidor recusou quando há mais de uma conta local.
+Um servidor só do seu operador, o lar do próprio operador no fediverso, é um servidor de uma só pessoa: ative `single_user`. No cliente web,
+um administrador o ativa e desativa com **Servidor de uma só pessoa** na página **Cadastro** de **Configurações do servidor**,
+que diz por que o servidor recusou quando há mais de uma conta local.
 
 ```sh
 my instance set single_user true
 my instance set single_user false   # back to a community server
 ```
 
-- Ele só pode ser ativado enquanto exatamente uma conta local conta. Toda conta local que não foi excluída conta,
-  inclusive as pendentes de aprovação, desativadas, agendadas para exclusão, suspensas ou limitadas, já que cada uma poderia voltar como
+- Ele só pode ser ativado quando exatamente uma conta local conta. Toda conta local que não foi excluída conta,
+  inclusive as que aguardam aprovação, desativadas, agendadas para exclusão, suspensas ou limitadas, já que cada uma poderia voltar como
   uma segunda pessoa. Uma conta cujo cadastro foi rejeitado não conta. Com qualquer outro número, `my instance set`
-  falha informando a contagem, e a API de administração responde `422` com o tipo `/api/v1/problems/single-user-requires-one-account`.
-  O actor da instância do servidor não é uma conta e nunca conta.
-- Ele pode ser desativado a qualquer momento. Ativá-lo ou desativá-lo não exclui nada e não altera o valor armazenado de nenhuma outra configuração:
-  o que ele retém volta a valer como estava assim que for desativado. Como toda configuração, a alteração vai para o registro de auditoria.
+  falha com a contagem, e a API de administração responde `422` com o tipo `/api/v1/problems/single-user-requires-one-account`.
+  O ator da instância do servidor não é uma conta e nunca conta.
+- Ele pode ser desativado a qualquer momento. Ativá-lo ou desativá-lo não exclui nada e não altera o valor guardado de nenhuma outra configuração:
+  o que ele retém volta a valer como era assim que ele é desativado. Como toda configuração, a mudança vai para o log de auditoria.
 
-Enquanto está ativado:
+Enquanto ele está ativado:
 
-- **O cadastro está fechado.** `registration_mode` é lido como `closed` seja qual for o valor armazenado, então a página de cadastro, o cadastro por um
+- **O cadastro está fechado.** `registration_mode` é lido como `closed`, seja qual for o valor guardado, então a página de cadastro, o cadastro por um
   provedor de login e `my admin create` não criam nenhuma conta. Entrar com um provedor de login continua funcionando.
-- **Somente a timeline inicial.** `local_timeline_visibility` e `federated_timeline_visibility` são lidas como `off`. As timelines de hashtags e de listas
-  permanecem.
-- **O que uma comunidade precisa fica oculto.** As timelines local e federada e seus streams, as sugestões de contas,
+- **Apenas a linha do tempo inicial.** `local_timeline_visibility` e `federated_timeline_visibility` são lidas como `off`. As linhas do tempo de hashtags e de listas
+  continuam.
+- **O que uma comunidade precisa fica oculto.** As linhas do tempo local e federada e os fluxos delas, as sugestões de contas,
   os convites de usuários e de administradores, a análise de cadastros e os bloqueios de cadastro respondem `404` com o tipo
   `/api/v1/problems/single-user-mode`.
-- **Sem novas publicações locais.** Em um servidor de uma pessoa, uma publicação para “Este servidor” não chega a ninguém além dos seguidores, então uma nova
-  publicação não pode ser local: a API de cliente responde `422` e a deixa fora do que uma conta pode publicar. Uma visibilidade
-  padrão de “Este servidor” é lida como “Seguidores” e não pode ser salva, e uma sala de chat de voz para as pessoas deste servidor se anuncia
+- **Sem novas publicações locais.** Em um servidor de uma só pessoa, uma publicação para “Vizinhos” não alcança ninguém além dos seguidores, então uma nova
+  publicação não pode ser local: a API do cliente responde `422` e a deixa de fora do que uma conta pode publicar. Uma visibilidade padrão
+  “Vizinhos” é lida como “Seguidores” e não pode ser salva, e uma sala de chat de voz para as pessoas deste servidor se anuncia
   em uma publicação para os seguidores. As publicações que já são locais continuam locais.
-- **O servidor diz o que ele é.** `single_user` em `GET /api/v1/instance` é `true`, com o modo de cadastro e as timelines efetivos
+- **O servidor diz o que é.** `single_user` em `GET /api/v1/instance` é `true`, com o modo de cadastro e as linhas do tempo efetivos
   e a conta do operador como `single_user_account`, e o NodeInfo responde `openRegistrations: false` com
   `metadata.singleUser: true`.
-- **A página inicial é o perfil do operador.** As pessoas que não entraram e abrem o endereço do servidor veem o perfil
-  de sua única conta, com o caminho para entrar e links para a página sobre, os termos de serviço e a política de privacidade
-  que o servidor publica. O cliente web oculta o que o servidor não oferece, em sua navegação, menus e
-  telas de administração: as timelines local e federada, o cadastro, as contas sugeridas, os convites, a análise de
-  cadastros, os bloqueios de cadastro, a visibilidade “Este servidor” e as configurações de cadastro, convites, timelines
+- **A página inicial é o perfil do operador.** Quem não está conectado e abre o endereço do servidor vê o perfil
+  da única conta dele, com o caminho para entrar e links para a página sobre, os termos de serviço e a política de privacidade
+  que o servidor publica. O cliente web oculta o que o servidor não oferece, da navegação, dos menus e das
+  telas de administração: as linhas do tempo local e federada, o cadastro, as contas sugeridas, os convites, a análise de
+  cadastros, os bloqueios de cadastro, a visibilidade “Vizinhos” e as configurações de cadastro, convites, linhas do tempo
   públicas, página inicial e contas sugeridas.
 
-A federação, a moderação, a busca de texto completo, o programa de apoiadores, os documentos e as telas de administração funcionam como em qualquer
+Federação, moderação, a busca de texto completo, o programa de apoiadores, os documentos e as telas de administração funcionam como em qualquer
 servidor.
 
 <!-- source: usage 68ad8384438f -->
@@ -527,34 +527,54 @@ modos. Uma regra é escolha do operador e se aplica além do que os próprios si
 - A API de administração é `/api/v1/admin/link_card_domains` (listar, definir; um `DELETE` com o domínio o remove) e exige a permissão de função `manage_settings`. Um servidor mantém no máximo 1.000 regras, cada uma com uma anotação de até 5.000 caracteres.
 - Toda alteração é registrada no registro de auditoria (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 
-<!-- source: theme 98c2eee35f30 -->
+<!-- source: theme 1ada01b2db2e -->
 ## Tema
 
-O tema do servidor inteiro é um conjunto de substituições dos tokens de design do cliente web, com um valor claro e um escuro para cada cor. Ele vale para o cliente web de todos os visitantes e para as telas que o servidor renderiza (login, cadastro, termos etc.). Não há CSS personalizado.
+O tema do servidor inteiro é um conjunto de substituições dos design tokens do cliente web, com um valor claro e um escuro para cada cor.
+Ele se aplica ao cliente web de todo visitante e às telas que o servidor renderiza (login, cadastro, termos e assim por diante).
+Não há CSS personalizado.
 
-- Você pode substituir estes tokens de design; o espaçamento, os tamanhos dos componentes, os pesos do texto, as sombras e as cores dos gráficos de dados continuam fixos:
+- Você pode substituir estes design tokens; o espaçamento, os tamanhos dos componentes, os pesos da tipografia, as sombras e
+  as cores dos gráficos de dados permanecem fixos:
 
   | Tokens | Tipo | Substituição |
   | --- | --- | --- |
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | cor | `#rrggbb` para claro e para escuro |
-  | `font-sans-override`, `font-mono-override` | família de fonte | Nomes de família, separados por vírgulas (no máximo 30), sem família genérica como `sans-serif`; coloque entre aspas um nome com uma palavra que comece com um dígito, como `"M PLUS 1p"` |
-  | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | comprimento | `0` ou rem / px, de 0,625rem a 3rem |
-  | `text-*--line-height` dos mesmos quatro | número | de 1 a 2,5 |
-  | `radius-control`, `radius-overlay` | comprimento | de 0 a 2rem |
+  | `font-sans-override`, `font-mono-override` | família de fonte | Nomes de famílias, separados por vírgula (no máximo 30), sem família genérica como `sans-serif`; coloque entre aspas um nome com uma palavra que começa com dígito, como `"M PLUS 1p"` |
+  | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | comprimento | `0` ou rem / px, de 0.625rem a 3rem |
+  | `text-*--line-height` dos mesmos sete | número | 1 a 2.5 |
+  | `radius-control`, `radius-overlay` | comprimento | 0 a 2rem |
   | `duration-spin` | duração | ms / s, de 0 a 1000ms |
 
-- O cliente web desenha o texto com fontes próprias: Noto Color Emoji para os emojis, Noto Sans para o alfabeto latino, o grego e o cirílico, e Noto Sans CJK com os glifos do idioma do texto para o resto. As fontes de `font-sans-override` (texto) e `font-mono-override` (código) vêm logo depois da fonte de emoji, e as fontes do cliente web desenham os caracteres que faltam nas suas. Um tema não pode substituir essas fontes.
-- Você salva um conjunto como rascunho, o visualiza e depois o publica; o tema em vigor não muda até você publicar. Cada salvamento substitui o rascunho inteiro, e cada publicação é uma nova revisão. Restaurar publica de novo o conjunto que estava em vigor antes do atual e deixa o rascunho como está.
-- No cliente web, **Administração > Tema** mostra o rascunho e o tema em vigor. Editar o rascunho mostra cada cor para claro e
-  escuro com o contraste de cada par que ela forma, e não salva um par abaixo do mínimo. Visualizar mostra o rascunho em todas
-  as telas da aba do seu navegador até você pressionar de novo; ninguém mais o vê. Publicar e Restaurar o tema anterior estão
-  na mesma tela. O ícone e o logotipo ficam em **Configurações do servidor > Ícone e logo**.
-- Ao salvar e ao publicar, o servidor confere o formato e a faixa dos valores e o contraste de cada par de tokens de cor (os tokens que você não substitui usam seus valores padrão; WCAG 2.2 AA em claro e em escuro). Se alguma conferência falhar, nada é salvo nem publicado.
-- A substituição de um token que uma nova versão renomeia ou aposenta, ou cujo valor não serve mais ao token, nunca faz uma atualização falhar. Ela continua no conjunto salvo, mas deixa de valer: a API de administração a lista em `stale_tokens`, `my instance theme get` a nomeia e o próximo salvamento do rascunho a descarta.
-- A folha de estilo da revisão publicada é servida em `/theme/{revision ID}.css` (`immutable`, em cache por muito tempo). O shell HTML tem um cache compartilhado (60 segundos mais 300 de revalidação), então leva alguns minutos depois de você publicar para todos receberem. Uma página que já está aberta mantém o visual antigo até ser recarregada.
-- `<meta name="theme-color">` (claro e escuro) no shell e `theme_color` / `background_color` (claro) do Web App Manifest tomam o valor de `color-surface` do tema. A versão HTML de todo e-mail que o servidor envia a partir de então usa as cores do tema publicado, claras e escuras; um rascunho nunca chega a um e-mail.
-- Publicar um conjunto sem tokens volta o tema ao padrão, e a folha de estilo deixa de ser carregada.
-- Você pode alterá-lo com a API de cliente e com a CLI. A API de cliente exige a permissão de função `manage_settings`: `GET /api/v1/admin/theme` lê o rascunho e o conjunto em vigor, `PUT /api/v1/admin/theme/draft` salva o rascunho, `GET /api/v1/admin/theme/draft/stylesheet` devolve a folha de estilo do rascunho para visualização, e `POST /api/v1/admin/theme/publish` e `POST /api/v1/admin/theme/restore` publicam. As publicações ficam registradas no log de auditoria (`setting_changed`, alvo `theme`).
+- O cliente web desenha o texto com as próprias fontes: Noto Color Emoji para emoji, Noto Sans para latim, grego e cirílico, e
+  Noto Sans CJK nos glifos do idioma do texto para o restante. As fontes de `font-sans-override` (texto) e
+  `font-mono-override` (código) vêm logo depois da fonte de emoji, e as fontes do cliente web desenham os caracteres que as suas não têm.
+  Um tema não pode substituir essas fontes.
+- Você salva um conjunto como rascunho, o pré-visualiza e depois o publica; o tema em vigor não muda até você publicar. Cada salvamento
+  substitui o rascunho inteiro, e cada publicação é uma nova revisão. Restaurar publica de novo o conjunto que estava em vigor
+  antes do atual e deixa o rascunho como está.
+- No cliente web, **Administração > Tema** mostra o rascunho e o tema em vigor. Editar o rascunho mostra cada cor
+  para claro e escuro com o contraste de cada par que ela forma, e não salva um par abaixo do mínimo. Pré-visualizar mostra
+  o rascunho em todas as telas da aba do seu navegador até você pressioná-lo de novo; ninguém mais o vê. Publicar e Restaurar o
+  tema anterior estão na mesma tela. O ícone e o logotipo ficam em **Configurações do servidor > Ícone e logotipo**.
+- Ao salvar e ao publicar, o servidor verifica a forma e a faixa dos valores e o contraste de cada par de
+  tokens de cor (os tokens que você não substitui usam os padrões; WCAG 2.2 AA em claro e em escuro). Se qualquer verificação falhar, nada
+  é salvo nem publicado.
+- Uma substituição de um token que uma nova versão renomeia ou aposenta, ou cujo valor deixa de servir ao token, nunca faz uma atualização falhar.
+  Ela continua no conjunto salvo, mas deixa de se aplicar: a API de administração a lista em `stale_tokens`, `my instance theme get` a nomeia,
+  e o próximo salvamento do rascunho a descarta.
+- A folha de estilo da revisão publicada é servida em `/theme/{revision ID}.css` (`immutable`, em cache por muito tempo). O
+  shell HTML tem um cache compartilhado (60 segundos mais 300 segundos de revalidação), então leva alguns minutos depois que você publica para
+  todos a receberem. Uma página que já está aberta mantém a aparência antiga até ser recarregada.
+- `<meta name="theme-color">` (claro e escuro) no shell e `theme_color` / `background_color` (claro) do Web App
+  Manifest assumem o valor de `color-surface` do tema. A versão HTML de todo e-mail que o servidor envia a partir de então usa
+  as cores do tema publicado, claras e escuras; um rascunho nunca chega ao e-mail.
+- Publicar um conjunto sem tokens redefine o tema para o padrão, e a folha de estilo deixa de ser carregada.
+- Você pode alterá-lo pela API do cliente e pela CLI. A API do cliente exige a permissão de papel `manage_settings`:
+  `GET /api/v1/admin/theme` lê o rascunho e o conjunto em vigor, `PUT /api/v1/admin/theme/draft` salva o rascunho,
+  `GET /api/v1/admin/theme/draft/stylesheet` retorna a folha de estilo do rascunho para pré-visualizar, e `POST /api/v1/admin/theme/publish`
+  e `POST /api/v1/admin/theme/restore` publicam. As publicações são registradas no log de auditoria (`setting_changed`, alvo
+  `theme`).
 
 ```sh
 my instance theme get > theme.json          # print the draft as the same JSON as the admin API (-published: the set in effect)
