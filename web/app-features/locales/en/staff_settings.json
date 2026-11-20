@@ -1008,8 +1008,8 @@
     "description": "The setting ux_measurement: whether the web client sends samples of how fast it responds. Read by administrators."
   },
   "staff_settings.setting.ux_measurement_share": {
-    "defaultMessage": "Sessions measured",
-    "description": "The setting ux_measurement_share: the share of browser sessions whose web client sends samples while measuring is on, a number of percent after it. Read by administrators."
+    "defaultMessage": "Share of sessions measured",
+    "description": "The setting ux_measurement_share, under the switch Measure the web client while it is on: the share of browser sessions whose web client sends samples, a number of percent after it. Read by administrators."
   },
   "staff_settings.choice.registration_mode": {
     "defaultMessage": "{value, select, open {Anyone} approval {After a moderator approves} invite {Only with an invite} other {Nobody}}",
