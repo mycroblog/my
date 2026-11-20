@@ -10,13 +10,14 @@
 - **書き出したページ**（`my maintenance export`）。同じテンプレートから作る静的な HTML で、`my serve` がまったく動かせないとき
   （イメージを入れ替えている途中、起動しないリビジョン）に、ロードバランサー、CDN、リバースプロキシが配信します。[メンテナンスのページを書き出す](admin-cli.md#exporting-the-maintenance-page)を参照してください。
 
-<!-- source: what-the-maintenance-mode-answers 13edbbd09e33 -->
+<!-- source: what-the-maintenance-mode-answers 800ed13d3906 -->
 ## メンテナンスモードが返すもの
 
 プロセスが読むのは、待ち受けるアドレス、`host`、`account_domain`、`web_origin`、プロキシ（`trusted_proxies`、`trusted_proxy_header`）、
 [オリジンの確認](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)（`origin_secret`、`origin_secret_previous`、`origin_secret_header`）、`status_page_url`、`maintenance_*` の設定だけです（[設定リファレンス](../reference/configuration.md)）。
 データベース、キュー、blob ストア、KV、メール、ストリームの設定は読まれず確認もされないので、その間は誤っていても到達できなくてもかまいません。
-`role` が何であっても HTTP だけを提供し、ジョブも定期ジョブもストリームブローカーも動かしません。
+`role` が何であっても HTTP だけを提供し、ジョブも定期ジョブもストリームブローカーも動かしません。`tls` の設定にかかわらず平文の HTTP で提供し、
+`listen` か、その既定値の `:8080` で待ち受けます（[サーバー自身が HTTPS を配信する](running.md#serving-https-from-the-server)）。
 `my config check -maintenance` は、メンテナンスモードが読むものだけをちょうど確認します。
 
 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) を設定しているときは、ヘッダーが必要なのにそれを持たないリクエストには、下の表ではなくその確認の `403` が返ります。
@@ -107,7 +108,7 @@ Web クライアントは、API がメンテナンスの problem を返すと全
 （`502` と `504`、および正常なバックエンドがないときのロードバランサー自身の `503`）だけにするか、`my serve` が動かせない間だけルールをオンにしてください。
 すべての `503` に対するルールにすると、クライアント API や Web クライアントが読む problem のような、メンテナンスモード自身の応答まで置き換えてしまいます。
 
-<!-- source: cloud-run b728619281de -->
+<!-- source: cloud-run 8bed844981b6 -->
 ### Cloud Run
 
 変数を付けて新しいリビジョンをデプロイし、あとで外します。
@@ -117,6 +118,9 @@ gcloud run services update my --region=asia-northeast1 \
   --update-env-vars=MY_MAINTENANCE=true,MY_MAINTENANCE_UNTIL=2026-10-24T03:00:00Z
 gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE,MY_MAINTENANCE_UNTIL
 ```
+
+OpenTofu のモジュールを使う場合は、代わりにブロックで `settings = { maintenance = "true" }` として設定し、apply します。次の apply は
+ブロックの内容に戻すためです。アップグレードの前後での扱いは、[Cloud Run へのデプロイ](deploy-cloud-run.md#the-maintenance-mode)にあります。
 
 ロードバランサーなしで Cloud Run を直接公開しているときは、その前に何もないので、使える手段はメンテナンスモードだけです。
 
@@ -135,12 +139,13 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-<!-- source: aws-ecs 8c6aa496b517 -->
+<!-- source: aws-ecs afc0ba5adee4 -->
 ### AWS ECS
 
 コンテナの環境に `MY_MAINTENANCE=true` を入れたサービスのタスク定義のリビジョンを登録し、サービスをそれに更新します。
-作業のあとは、変数なしで同じことをします。OpenTofu のモジュールを使っているなら、`deploy/opentofu/upgrade.sh --platform aws-ecs --maintenance`
-がアップグレードの前にサービスをメンテナンスモードに切り替え、新しいリビジョンで元に戻します。
+作業のあとは、変数なしで同じことをします。OpenTofu のモジュールを使う場合は、代わりにブロックで `settings = { maintenance = "true" }` として設定し、
+apply します。次の apply はブロックの内容に戻すためです。アップグレードの前後では、モードを apply し、次に新しいリリースを apply し、
+最後にそれを外したブロックを apply します。[Cloud Run へのデプロイ](deploy-cloud-run.md#the-maintenance-mode)と同じです。
 
 CloudFront の後ろで **`my serve` が動かせないとき**: 書き出した `index.html` を、2 つ目のオリジンにした S3 のバケットにアップロードし
 （エラーページを、失敗しているオリジンから出すことはできません）、`502` と `504`（`503` は `my serve` が動かせない間だけ）に対するカスタムエラーレスポンスを、

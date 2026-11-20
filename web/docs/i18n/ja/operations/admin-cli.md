@@ -1,7 +1,7 @@
-<!-- source: administrators-and-roles 1baeba6d67b4 -->
+<!-- source: administrators-and-roles f6df0418210b -->
 # 管理者とロール
 
-最初の管理者の作り方、コマンドラインからのロールの管理、サービス終了の告知と実施、アップロードされた画像の再処理、検索インデックスの再構築、メンテナンスページの書き出しについて説明します。
+最初の管理者の作り方、コマンドラインからのロールの管理、サービス終了の告知と実施、アップロードされた画像の再処理、検索インデックスの再構築、サーバー自身が配信する TLS 証明書の扱い、メンテナンスページの書き出しについて説明します。
 
 <!-- source: prerequisites b7ae62128809 -->
 ## 前提条件
@@ -10,7 +10,7 @@
 - データベースにスキーマが適用されていること（`my schema apply`。[database.md](database.md) を参照してください）。
 - `host` と `account_domain` が確定していること。データベースを使う最初のコマンドがこれらを記録し、以降のコマンドは設定が異なると実行を拒否します（[あとから変えられない設定](production-checklist.md#settings-you-cannot-change-later)を参照してください）。
 
-<!-- source: creating-an-administrator e5fec2e3d287 -->
+<!-- source: creating-an-administrator 9be8b2ee8d85 -->
 ## 管理者を作る
 
 ```sh
@@ -37,7 +37,7 @@ my admin create -username alice -email alice@example.com
 - 失敗した実行は何も書き込まないので、原因を直して同じコマンドをもう一度実行できます。
 - 終了コード 2 は使い方の誤りを意味します。
 
-<!-- source: granting-and-revoking-roles a8783994c097 -->
+<!-- source: granting-and-revoking-roles 83f3a38172a4 -->
 ## ロールの付与と取り消し
 
 ロールは権限を持ちます。組み込みのロールは `admin`（`position` 1000、すべての権限）と
@@ -63,9 +63,14 @@ my admin role revoke alice moderator
 - 付与と取り消しは、監査ログに `role_granted` と `role_revoked`（対象の種類は `role`）として記録されます。CLI による操作の実行者は `cli` です（`my admin audit list -target-kind role`）。
 - ユーザーがすでに持っているロールの付与や、持っていないロールの取り消しは、何も変えず、何も記録しません。
 - `admin` の最後の保持者からは、そのロールを外せません（終了コード 1）。先にほかのユーザーに `admin` を付与してください。
+- 管理画面の「ロール」（`/admin/roles`）は、すべてのロールを一覧し、作成、変更、削除ができます。ロールのページでは、
+  順位、権限、バッジを設定します。画面が許すのは次のルールの範囲だけです。自分の最も高いロールを超えない順位、自分が
+  持っている権限（ロールが持つほかの権限は名前が表示され、そのまま保たれます）、`admin` のバッジだけ、
+  そして `admin` と `moderator` は削除できません。ロールを削除するときは、その名前を入力して確認します。プランのロールはプランから設定します。
 - 管理 API は `GET /api/v1/admin/roles`、`GET /api/v1/admin/accounts/{id}/roles`、`PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}` で、権限 `manage_roles` が必要です。
   API では、自分のロールのうち最も高い `position` より上のロールは付与も取り消しもできません（403）。最後の `admin` を取り消すと 409 が返ります。
 - スタッフは自分より下の階級にだけ操作できます。API では、モデレーションの措置とその解除、異議申し立ての判断、メール送信停止の解除、アカウントの非公開データの表示、パスワードリセットリンクの発行、二要素認証の解除には、自分のロールのうち最も高い `position` が、対象のすべてのロールのものより上である必要があります。同じかそれより高い階級（自分のアカウントを含む）に対しては 403 が返ります。モデレーターは管理者に対して操作できず、管理者どうしも互いに操作できません。これらのコマンド（`my admin account ...`）にはこの制限がないので、管理者どうしの意見が合わないときはこちらを使ってください。
+- 唯一の管理者は、ロックアウトも削除もできません。その人に対する `disable_login`、`suspend`、`ban` は、API（409）でもこれらのコマンド（終了コード 1）でも拒否され、自分のアカウントを削除することもできません（409）。ほかの `admin` の保持者は、ログインできるあいだだけ数えます。アカウントを削除したあと、凍結または BAN されているあいだ、`disable_login` の対象のあいだは数えません。
 - 唯一の管理者を締め出したり取り除いたりはできません。その管理者への `disable_login`、`suspend`、`ban` は、API（409）でもこれらのコマンド（終了コード 1）でも拒否され、その管理者は自分のアカウントを削除できません（409）。`admin` のほかの保持者は、ログインできるあいだだけ数えられます。アカウントを削除したあとや、凍結、BAN、`disable_login` の状態にあるあいだは数えられません。
 
 <!-- source: announcing-the-end-of-the-service e1c40ec145f0 -->
@@ -157,7 +162,28 @@ my search status               # the backend and the progress and failures of th
 
 止まった再構築を再開するには、`my search rebuild` をもう一度実行します。最後に処理した投稿から続け、インデックスをもう一度空にすることはありません。再構築が終わっていないあいだは、もう一方のモードは終了コード 1 で拒否されます。それぞれをいつ使うかは[投稿の全文検索](search.md)で説明しています。
 
-<!-- source: exporting-the-maintenance-page 1756fcf1e02e -->
+<!-- source: tls-certificates 76e79e7fd3c0 -->
+## TLS 証明書
+
+`my tls` は、自分で HTTPS を配信するサーバー（`tls = acme` または `tls = files`。[サーバー自身が HTTPS を配信する](running.md#serving-https-from-the-server)を参照してください）の証明書を扱います。
+
+```sh
+my tls status                                          # each host: certificate, renewal, failures, latest orders
+my tls renew -host social.example                      # order a certificate now, without waiting
+my tls revoke -host social.example -reason key_compromise  # replace, then revoke the current certificate
+```
+
+- `status` は、ホストごとに、現在の証明書（シリアル番号、発行者、有効期限）、更新の時期、証明書を得られなかった注文が
+  何回続いているか、直近の注文とそのエラーを表示します。`tls = files` では `tls_cert_file` の
+  証明書を表示し、`tls = off` ではその旨を伝えます。
+- `renew` と `revoke` には、`tls = acme`、実行中のサーバー（認証局の確認に応答するため）、`memory` 以外の
+  `kv` が必要です。失敗したとき、そのホストの証明書を別のプロセスがそのとき注文しているとき、`tls = files` または `tls = off` のときは、終了コード 1 で終了します。
+- `-reason` は、秘密鍵がほかの人に知られたおそれがあるときは `key_compromise`、そうでなければ `superseded` または `operator` です。
+  証明書は失効させたものの、その代わりの証明書を注文できなかったときは、`revoke` は警告を出力して終了コード 0 で終了します。
+
+[コマンドとメトリクス](running.md#commands-and-metrics)で、それぞれが実行中のプロセスに何をするかを説明しています。
+
+<!-- source: exporting-the-maintenance-page c0661d4bb0d0 -->
 ## メンテナンスページの書き出し
 
 `my maintenance export` は、メンテナンスモードのページを静的な HTML として書き出します。

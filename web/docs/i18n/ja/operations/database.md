@@ -87,7 +87,14 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 3882f4bb0751 -->
+<!-- source: the-connection-pool 94890eb11897 -->
+## コネクションプール
+
+PostgreSQL のプールは、`database_url` の `pool_*` パラメーターに従います。`pool_max_conns`（既定では 4 と CPU 数のうち大きいほう）と、何も要求されないときにも保つ接続数の `pool_min_conns` があり、`pool_max_conn_idle_time`（30 分）が残りを閉じます。リクエストの間隔が長いインスタンスでは `pool_min_conns` を設定してください。設定しないと、リクエストのたびに接続が開かれます。
+
+SQLite も `pool_max_conns` を同じ既定値で受け付けます。さらに `pool_max_idle_conns` があり、保つアイドル接続の最大数を指定します。これは `pool_min_conns` のような下限ではなく上限です（既定ではすべての接続を保ち、時間では閉じないので、静かなインスタンスもすぐに応答します）。新しい接続は最初のクエリの前にスキーマを解析します。プールが接続を保つのはそのためです。
+
+<!-- source: upgrading c07691f9e9ac -->
 ## アップグレード
 
 新しいリリースへのアップグレードでは、**新しい**リリースのサーバーのイメージで、必ず次の手順をこの順に実行します。
@@ -103,6 +110,25 @@ docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db
 5. **新しいサーバーを起動します。** そのリリースのデータアップグレード手順がすべて記録されるまで、`/readyz` に `503` を返し、足りない手順をログに出力します。
 
 `my serve` は `my db upgrade -check`、`my schema apply`、`my db upgrade` のどれも実行しません。これらは一回限りのジョブです。1 つのデータベースに対しては、同時に 1 つだけ実行してください。
+
+<!-- source: running-the-steps-in-one-job f249b58d8047 -->
+### 手順を 1 つのジョブで実行する
+
+`my upgrade` は、`my config check` の確認のあとで手順 2 から 4 を 1 つのプロセスで実行するので、単発のジョブ 1 つ（Cloud Run のジョブの
+実行、ECS のタスク、Kubernetes の Job）でマイグレーション全体を行えます。
+
+1. `my config check`
+2. `my db upgrade -check`
+3. `my schema apply`（`my upgrade` に `-allow-destructive` を付けたときは、それも付けます）
+4. `my db upgrade`
+
+失敗した最初の手順で止まり、その手順の終了コードで終了します。あとの手順は実行されません。各手順は、`==> my schema apply` のように
+その手順の名前を示す行を出力し、続けてそのコマンドの出力を出すので、ジョブのログを見れば止まった場所がわかります。原因を直したら、
+`my upgrade` をもう一度実行してください。完了した手順には、もうすることが残っていません。`-config <file>` はすべての手順に渡されます。
+
+`my upgrade -dry-run` は `my config check`、`my db upgrade -check`、`my schema apply -dry-run` を実行し、何も変更しません。
+アップグレードの前に、出力される SQL を読んでください。`my upgrade` の前には、手順 1 のとおりデータベースをバックアップしてください。
+`my upgrade` はメンテナンスモードに切り替えず、サーバーも起動しません。
 
 ほとんどのリリースにはデータアップグレード手順がありません。そのとき `my db upgrade -check` は `ok: the database can be upgraded to this release` を、
 それ以前のリリースの手順を記録済みのデータベースでは、`my db upgrade` は `ok: no data upgrade step to run` を出力します。新しいデータベースは、最初の `my db upgrade` でそのリリースのすべての手順を記録し、書き換えるものはありません。それでも両方を実行してください。そうすれば、手順がすべてのリリースノートを読むことに依存しません。
@@ -220,10 +246,10 @@ kubectl rollout status deployment/my
 Job が失敗した場合は、`kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check`（または `-c schema`、`-c upgrade`）で理由がわかり、Deployment は前のイメージのままです。
 SQLite をボリュームに置いている場合は、同じボリュームを Job にマウントし、先に Deployment の Pod を止めてください。SQLite の書き込み手は 1 つだけです。
 
-<!-- source: cloud-run a6c3de3c814f -->
+<!-- source: cloud-run 9e7486b6a4af -->
 ### Cloud Run
 
-OpenTofu のモジュールを使う場合は、[Cloud Run へのデプロイ](deploy-cloud-run.md#upgrading)のスクリプトがこれらの手順を実行します。手で行う場合は次のとおりです。
+OpenTofu のモジュールを使う場合、アップグレードは新しいリリースの apply です。サービスが新しいイメージに切り替わる前に、マイグレーションのジョブで `my upgrade` を実行し、失敗したらそこで止まります。[Cloud Run へのデプロイ](deploy-cloud-run.md#upgrading)を参照してください。手で行う場合は次のとおりです。
 
 Cloud Run のジョブは 1 つにつき 1 つのコンテナーを実行するので、手順ごとにジョブを作り、`--wait` を付けて順に実行します。これを付けると、ジョブが失敗したときにコマンドも失敗します。
 ジョブにはサービスと同じ環境変数とシークレットを与えてください。

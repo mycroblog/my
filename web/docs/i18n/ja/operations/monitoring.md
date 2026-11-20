@@ -5,7 +5,7 @@
 
 以下に書いた外部サービスの情報には、確認した日付と出典を添えています。サービスのプランや画面は変わるので、制限に頼る前にリンク先のページを確認してください。
 
-<!-- source: which-url-to-monitor 1c5761757c52 -->
+<!-- source: which-url-to-monitor 643ea5375522 -->
 ## どの URL を監視するか
 
 | パス | 用途 | DB へのアクセス | メンテナンスモード中 |
@@ -15,7 +15,9 @@
 | `GET /readyz`, `GET /health/ready` | ロードバランサーや Kubernetes の readiness プローブ | リクエストごと（同時のリクエストは 1 回のチェックを共有） | `200` `{"status":"maintenance"}` |
 
 外部の監視は **`/api/v1/instance/health`** に向けてください。`/readyz`（`/health/ready`）には向けないでください。これらはリクエストのたびにデータベースに問い合わせるので、間隔の短い監視はスケールトゥゼロのデータベースを起こし続けます。プローブはプラットフォームのためのものです。
-モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) と [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) は、プラットフォーム自身の監視から長い間隔で `/health/live`（`monitoring-gcp`）か `/readyz`（`monitoring-aws`）をチェックします。そのコストはそれぞれの README に書かれています。
+[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) の `monitoring` セクションは Google Cloud 上で `/health/live` を、[`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) の `monitoring` セクションは `/readyz` を、それぞれプラットフォーム自身の監視から長い間隔でチェックします。チェックのたびにインスタンスが起きるので、そのコストが `uptime_period` です。
+
+サーバー自身のメトリクス、トレース、エラーレポートの送り先は、同じモジュールの `observability` セクションで、`monitoring` はこれを読みます。既定では、それぞれをプラットフォームに送ります。Google Cloud では、メトリクスを Cloud Monitoring に、リクエストのトレースを Cloud Trace に、エラーレポートを Error Reporting に送ります。この 3 つはすべて Cloud Run が送るものから作られ、各 API は有効になります。AWS では、メトリクスを Embedded Metric Format で CloudWatch に、エラーレポートを CloudWatch Logs に、トレースをすべてのタスクでサーバーの隣で動くコレクター経由で X-Ray に送ります（[AWS ECS でのトレース](running.md#aws-ecs)）。`monitoring` にはそこにメトリクスがあることが必要で、`metrics_exporter` を `settings` の入力に任せる `observability.metrics = "settings"` は受け付けません。
 
 `/api/v1/instance/health` の応答（認証なし、`Cache-Control: no-store`）は次のとおりです。
 

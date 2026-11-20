@@ -3,7 +3,7 @@
 
 サーバーの起動と停止、イメージの入手、そして稼働中の監視 (メトリクス、トレース、ジョブキュー、ヘルスチェック) の方法を説明します。
 
-<!-- source: start-the-server ea157fe28b0d -->
+<!-- source: start-the-server 5faa7632b863 -->
 ## サーバーを起動する
 
 ```sh
@@ -14,7 +14,8 @@ my version        # print the version of the binary
 ```
 
 `my serve` は設定を検証し、データベース、ジョブキュー、鍵管理のアダプターを組み立てて、`listen` で HTTP を受け付けます。
-そこでは TLS なしの素の HTTP/1.1 を話します。前段に、HTTPS (クライアント向けには HTTP/2 や HTTP/3 も) を終端して HTTP/1.1 で転送するリバースプロキシかロードバランサーを置いてください。
+既定の `tls = off` では、そこで素の HTTP/1.1 を話します。前段に、HTTPS (クライアント向けには HTTP/2 や HTTP/3 も) を終端して HTTP/1.1 で転送するリバースプロキシかロードバランサーを置いてください。
+プロキシなしで HTTPS を配信するには、[サーバー自身による HTTPS の配信](#serving-https-from-the-server)を参照してください。
 リアルタイム更新 (`GET /api/v1/streaming`、ローカルタイムラインと連合タイムラインのストリーム、通話のルームのストリーム) は長く続くレスポンスで、30 秒ごと (通話のルームは 15 秒ごと) にハートビートのコメントを送り、何もない間も開いたままです。
 プロキシはこれらのレスポンスをバッファリングしてはいけません (nginx の場合、サーバーが `X-Accel-Buffering: no` を送ります)。また、プロキシのアイドルタイムアウトや読み取りタイムアウトはハートビートの間隔より長くしてください。
 スキーマの適用とデータのアップグレードの手順は実行しません。起動する前に `my schema apply` を、続けて `my db upgrade` を実行してください ([データベース](database.md)を参照。アップグレードでは[アップグレード](database.md#upgrading)の手順の中で両方を実行します)。`my db upgrade` がそのリリースのすべての手順を記録するまで、`/readyz` は `503` を返します。
@@ -88,7 +89,7 @@ HTTP リクエストとジョブの実行は、それぞれ終わったときに
 さらに `_aws` ディレクティブ、`service.name`、`service.version`、`my.role` を持ちます。この 3 つのメトリクスはほかの行には書かれません。`metrics_emf_dimensions` で選んだフィールドは、EMF の求めるとおり文字列として書かれます (たとえばディメンション `http.response.status_code` は `"200"`)。
 ログは標準エラーに、ほかの EMF の行は標準出力に出ます。ECS のログドライバー `awslogs` は両方を CloudWatch Logs に送るので、メトリクスは両方から取り出されます。
 
-<!-- source: docker-compose-files df45a902f45b -->
+<!-- source: docker-compose-files 9f0633524036 -->
 ## Docker Compose のファイル
 
 `deploy/docker/` には、インスタンスをデプロイするためのものが入っています。`compose.yaml` は単独で動き、ほかのファイルはその上に重ねます。
@@ -128,7 +129,8 @@ cp example.env .env
 - ほかのシークレットは環境変数としてコンテナに届きます。代わりにファイルとして渡すには、自分の `compose.override.yaml` で
   シークレットとしてマウントし、その `<NAME>_FILE` を設定します。`compose.yaml` が鍵についてそうしているのと同じです。
 - `.env` にはシークレットが入っています。`chmod 600 .env` を実行し、バックアップと一緒に写しを保管してください。
-- ファイルがそのポートにつなぐので、`MY_LISTEN` は `:8080` のままにします。
+- ファイルがそのポートにつなぐので、`MY_LISTEN` は `:8080` のままにします。ただし、サーバー自身が HTTPS を配信する場合は別です
+  ([サーバー自身による HTTPS の配信](#serving-https-from-the-server))。
 
 **Caddy での TLS。** `MY_HOST` には、DNS がこのマシンを指し、インターネットからポート 80 と 443 に届くドメインを設定し、
 `.env` から `MY_WEB_ORIGIN` を削除します。Caddy は最初のリクエストで証明書をひとりでに取得し、更新します。
@@ -137,6 +139,100 @@ cp example.env .env
 **同梱の Garage。** `COMPOSE_PROFILES=garage` での `compose.s3.yaml` には、`example.env` の先頭に並ぶ値が必要です。
 一度だけ動くサービス `garage-init` が、`up` のたびにストアを準備します。サーバーがメディアを自分で配信するので、ストアは Compose のネットワークの
 中にとどまります。1 ノードは 1 台のディスクです。ボリューム `garage` かバケットをバックアップしてください ([バックアップ](backup.md#media-in-a-bucket))。
+
+<!-- source: serving-https-from-the-server 45ec9231a41e -->
+## サーバー自身による HTTPS の配信
+
+`my` は自分で HTTPS を配信できます。そのため、小さなマシンでは、ドメインとポート 80・443 があれば、リバースプロキシなしで 1 つのバイナリがサーバー全体を動かせます。
+`tls = acme` なら、Let's Encrypt などの ACME 認証局から証明書を取得します。`tls = files` なら、あなたが用意し、certbot などの別のツールで最新に保つ証明書と鍵を配信します。
+
+```sh
+MY_TLS=acme
+MY_TLS_ACME_AGREE_TERMS=true            # you agree to the terms of service of the certificate authority
+# MY_TLS_ACME_EMAIL=ops@social.example  optional contact of the account
+# MY_LISTEN=:443          the default with tls other than off
+# MY_TLS_HTTP_LISTEN=:80  the default; empty opens no port 80
+```
+
+```sh
+MY_TLS=files
+MY_TLS_CERT_FILE=/etc/letsencrypt/live/social.example/fullchain.pem
+MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
+```
+
+- **ポート。** サーバーは `listen` (`tls` が `off` 以外になると既定は `:443`) で HTTPS を配信します。`tls_http_listen` (既定は `:80`) では、`GET` と `HEAD` のリクエストを `https` の同じパスへ `301` で転送し、それ以外のメソッドには `400` で応えます。リクエストの本文が平文で流れることはありません。
+- **ホスト。** サーバーは `host` と、異なる場合は `web_origin` のホストを配信します。それ以外の名前に対するハンドシェイクは、証明書なしで失敗し、サーバーが証明書を注文することもありません。
+- **接続。** TLS 1.2 以降で、暗号スイートは Go の既定のもの、HTTP/2 と HTTP/1.1 に対応し、リクエストヘッダーは最大 64 KiB、HTTP/2 の接続あたりの同時ストリームは最大 100 です。タイムアウトは素の HTTP と同じです。サーバーは引き続きすべてのレスポンスに `Strict-Transport-Security` を付けます ([セキュリティヘッダー](#security-headers))。
+- **ロール。** TLS で待ち受けるのは `web` と `all` のロールだけです。`worker` は、ヘルスチェックを `listen` (既定は `:8080`) の素の HTTP で提供し、ポート 80 は開きません。
+- **クライアントのアドレス。** 前段にプロキシがなければ、接続の相手がクライアントです。`trusted_proxies` は空のままにしてください。前段の CDN が `https` でサーバーに接続する場合にだけ設定します。
+- **メンテナンスモード。** `my serve -maintenance` は `tls` も証明書も読まず、`listen` (設定しなければ `:8080`) で素の HTTP で応えます。メンテナンス中は `MY_LISTEN` とファイアウォールをそのポートに合わせるか、メンテナンス用にリバースプロキシを残してください。
+
+<!-- source: certificates-from-an-acme-certificate-authority 52037a75d641 -->
+### ACME 認証局からの証明書
+
+`tls = acme` では、サーバーは、証明書を持たない各ホストの証明書を、`tls_acme_directory` の認証局 (既定は Let's Encrypt) に注文します。
+
+- **始める前に。** `host` はサーバーを指す DNS 名で、ポート 443 と 80 にインターネットから届く必要があります。認証局は、その名前にサーバーが接続してその名前を管理していることを確かめます。確認には `listen` (TLS-ALPN-01 チャレンジ) か `tls_http_listen` (HTTP-01 チャレンジ) で応えるので、`tls_http_listen` を空にしても、ポート 443 だけで動きます。ワイルドカード証明書と DNS レコードによる検証は使えません。
+- **最初の起動。** サーバーは証明書を待たずに待ち受けを始め、そのあと注文します。ホストが証明書を得るまで、そのホストへのハンドシェイクは失敗します。Let's Encrypt では、最初の証明書は通常 1 分以内に届きます。ログには、ホストごとに `obtained a TLS certificate` と出て、注文が失敗したときは理由とともに `the TLS certificate could not be obtained` と出ます。
+- **更新。** サーバーは、認証局が証明書ごとに示す時刻 (ACME Renewal Information) に更新します。示された期間の中のランダムな時刻を一度選び、期間が変わらない間はそれを保ち、認証局の `Retry-After` が示す間隔で、少なくとも 12 時間ごとに問い合わせ直します。証明書を早めに入れ替える必要のある認証局が期間を動かせるようにするためです。認証局がそのような期間を示さないときは、証明書の有効期間の 3 分の 2 が過ぎたところで更新し、有効期間が 10 日未満の証明書では半分が過ぎたところで更新します。更新では、置き換える証明書を認証局に伝えるので、Let's Encrypt のレート制限の対象外になります。更新の時刻が来るまで現在の証明書が使われ続け、更新に失敗したときは、最初の注文のときと同じように待ちます。
+- **失敗した注文。** 注文に失敗すると、同じホストの次の注文までサーバーは待ちます。最初の失敗の後は 1 分、2 回目の後は 10 分、3 回目の後は 100 分、その後は 1 日です。認証局の制限を超えないようにするためです。待ち時間はデータベースに保存され、再起動しても残ります。原因 (DNS、ファイアウォール、ポート) を直せば、待ち時間が終わったところで次の注文が出ます。
+- **保管場所。** 認証局のアカウント、証明書、すべての注文の記録はデータベースに保存されます。秘密鍵は、ほかのシークレットと同じように鍵暗号化鍵で封じられます ([鍵の管理](key-management.md))。データベースのバックアップにはこれらが含まれ、再起動したサーバーは、注文せずに保存された証明書をすぐに配信します。鍵暗号化鍵を変更すると、これらは包み直されます。新しい証明書は注文されません。
+- **複数のプロセス。** データベースと `kv` ストアを共有するプロセスは協調します。あるホストの証明書は 1 つのプロセスが注文し、ほかのプロセスは待ってからそれを読み込みます。認証局が接続したプロセスが、どれでもその確認に応えます。`kv = db` か `kv = valkey` を使ってください。`kv = memory` は、1 つのプロセスがすべてを動かす (`role = all`) 場合を除いて拒否されます。証明書を取得したプロセスは [`stream`](../reference/configuration.md#stream) のブローカー経由でほかのプロセスに知らせ、数秒のうちにそれが配信されます。そのため、`tls = acme` の `web` プロセスは、ブローカーを待ち受け続けます。`stream = hub` のときや、通知が失われたときでも、すべてのプロセスはデータベースから現在の証明書を 5 分ごと、証明書が更新の時刻に達してからは 1 分ごとに読むので、更新は古い証明書の期限よりずっと前に全プロセスに届きます。
+- **プロファイル。** `tls_acme_profile` は、認証局が提供するプロファイル (Let's Encrypt の `shortlived` など) を選びます。空なら認証局の既定です。プロファイルを変更すると、次の更新はそれに従い、そこで得た証明書は、置き換える証明書より先に期限が切れる場合でも配信されます。
+
+Let's Encrypt の本番環境の制限を使い切らずに試すには、まずステージング環境から始めます。ステージング環境は、ブラウザーが信頼しない証明書を、はるかに高い制限で発行します。
+
+```sh
+MY_TLS_ACME_DIRECTORY=https://acme-staging-v02.api.letsencrypt.org/directory
+```
+
+ログに証明書を取得したと出て、`curl -kv https://social.example/` が `(STAGING)` の証明書を示したら、この設定を削除して再起動します。サーバーは本番環境に新しいアカウントを登録し、そこで証明書を注文します。ステージングの証明書はデータベースに残り、配信されなくなります。
+
+<!-- source: certificates-from-files 35f16ea23b33 -->
+### ファイルからの証明書
+
+`tls = files` では、`tls_cert_file` にサーバーの証明書と、それに続く中間証明書 (certbot の `fullchain.pem`) を入れ、`tls_key_file` にその鍵を入れます。証明書は `host` を含んでいる必要があります。異なる場合の `web_origin` のホストも、証明書がそれを含んでいれば配信されます。
+
+サーバーは 1 分ごとに 2 つのファイルの更新時刻を調べ、どちらかが変わると、再起動せずに読み込み直します。まだ対応していない組み合わせ (新しい鍵より先に新しい証明書が置かれた場合など) は、次の確認まで前の証明書を使い続け、理由はログに出ます。
+
+<!-- source: commands-and-metrics de97a3993e6b -->
+### コマンドとメトリクス
+
+`my tls` は、サーバーの設定を使って、データベースに届くどのマシンからでも証明書を表示・操作します ([管理 CLI](admin-cli.md#tls-certificates))。
+
+```sh
+my tls status                                          # each host: certificate, renewal, latest orders
+my tls renew -host social.example                      # order now, without waiting
+my tls revoke -host social.example -reason key_compromise
+```
+
+- **`status`** は、ホストごとに、現在の証明書 (シリアル番号、発行者、有効期限)、更新される時刻 (認証局が示す期間、または有効期間から導いた時刻)、証明書を得られなかった注文が連続した回数、直近の注文とそのエラーを表示します。`tls = files` では、`tls_cert_file` の証明書を表示します。
+- **`renew`** は、更新の時刻と失敗した注文の後の待ち時間を飛ばして、今すぐ証明書を注文します。失敗した注文の原因を直したら実行してください。認証局の確認には動いているサーバーが応えるので、サーバーが起動している必要があります。各プロセスは数秒のうちに新しい証明書を配信します (`stream = hub` では 5 分以内)。
+- **`revoke`** は、まず現在の証明書を置き換える証明書を注文し、そのあと認証局に現在の証明書の失効を求めて記録します。どのプロセスも、数秒のうちに (`stream = hub` では 5 分以内に)、失効した証明書の配信をやめます。秘密鍵がほかの人に知られたかもしれないときは `key_compromise` を、それ以外は `superseded` か `operator` を使います。置き換えの証明書を注文できないときでも失効は進みます。その場合、プロセスはそのホストの前の証明書が失効していなければそれを配信し、失効していれば、サーバーが新しい証明書を得るまで何も配信しません。
+- `renew` と `revoke` には、`tls = acme` と、`memory` 以外の `kv` が必要です。認証局が接続するプロセスが、確認への応答を `kv` ストアから読むためです。`tls = files` では拒否されます。ファイルを書くツールで、証明書を更新または失効させてください。
+
+[`metrics_exporter`](#metrics) を設定していれば、`my.tls.certificate.expiry` が 7 日未満になったときと、`my.tls.order.consecutive_failures` が 3 以上になったときにアラートを出してください ([アラート](alerts.md#mytlscertificateexpiring))。更新の失敗は、証明書が切れる何週間も前に現れます。
+
+<!-- source: checks-and-running-it 983028d27675 -->
+### チェックと実行
+
+`my config check` は、`tls = acme` のとき、同意されていない利用規約、IP アドレスや `localhost`、ドットのない名前である `host`、`https` の URL ではない `tls_acme_directory`、`all` 以外の `role` での `kv = memory` を、エラーとして報告します。`tls = files` のときは、読めない証明書や鍵、証明書と合わない鍵、`host` を含まない・期限が切れている・まだ有効でない証明書をエラーとして報告し、残りが 14 日未満なら警告します。`tls` が `off` 以外で `trusted_proxies` が設定されていると警告します。`tls = off` で `listen` がループバック以外のアドレスのポート 80 か 443 のときも、前段で TLS を終端するものがないように見えるので警告します。`trusted_proxies` が空のそのようなサーバーが、ループバック以外のアドレスから素の HTTP のリクエストを受け取ると、サーバーは起動ごとに 1 回、同じ警告をログに出します。
+
+**systemd。** 1024 未満のポートには、root 以外のユーザーなら capability が必要です。サービスにそれだけを与えてください。
+
+```ini
+[Service]
+User=my
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+```
+
+`tls = files` では、そのユーザーが証明書のファイルを読める必要もあります。certbot の `live` と `archive` のディレクトリは root だけが読めるので、サービスのグループにアクセスを与えるか (ディレクトリに `chgrp` と `chmod g+rx`、鍵に `g+r`)、デプロイフックでサービスが読めるディレクトリにファイルをコピーしてください。
+
+**Docker。** Docker 20.10 以降は、コンテナが capability なしで 1024 未満のポートを開けるので、イメージはそのまま動きます。イメージは `MY_LISTEN=:8080` を設定しているので、`.env` で `MY_LISTEN=:443` を設定し、`compose.override.yaml` で両方のポートを公開します (`ports: ["80:80", "443:443"]`)。`tls = files` では、`MY_TLS_CERT_FILE` と `MY_TLS_KEY_FILE` が指す場所に証明書のファイルを読み取り専用でマウントします。サーバーはユーザー `65532` として動くので、そのユーザーが読める必要があります。`tls = acme` ではマウントするものはありません。証明書はデータベースにあります。
+同じポートを使ってしまう `compose.caddy.yaml` は含めないでください。`network_mode: host` ではこの話は成り立ちません。コンテナがマシンのネットワークを共有するので、コンテナの外のサービスと同じ capability が必要です。
+
+**Caddy との比較。** `my` から HTTPS を配信すると、HTTP/3、レスポンスの圧縮 (サーバーは Web クライアントのファイルを圧縮して送りますが、それ以外は圧縮しません)、独自のアクセスログ (サーバーの `http request` のログ行は残ります)、DNS で検証する証明書 (ワイルドカード証明書を含む) を使えなくなります。これらのどれかが必要なら、`compose.caddy.yaml` かほかのプロキシを使い続けてください。
 
 <!-- source: get-the-image 89a97ed4f1d2 -->
 ## イメージを入手する
@@ -217,7 +313,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 請求がスパムフィルタで落ちないようにしてください。
 - 公開してよいアドレスを使ってください。情報のページ、ランディングページ、NodeInfo で誰でも見られます。
 
-<!-- source: metrics 77e2cbc5a0f6 -->
+<!-- source: metrics 000df571a6a0 -->
 ## メトリクス
 
 設定 `metrics_exporter` (既定値 `none`) で、サービスのメトリクスを出力します。関連する設定は[設定リファレンス](../reference/configuration.md)にあります。
@@ -240,6 +336,8 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.move.activities` | カウンター | `my.outcome` (`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon`: 受け取った `Move` を記録したか、捨てたならその理由) |
 | `my.delivery.attempts` | カウンター | `my.outcome` (`success` / `retry` / `gone` / `failed`。`gone` には 410 と、サーバーが利用できないか停止されているために飛ばした配送が含まれます) |
 | `my.delivery.duration` | ヒストグラム、秒 | `my.outcome` |
+| `my.ux.duration` | ヒストグラム、秒 | `my.ux.metric` (`lcp` / `inp` / `long_frame` / `transition` / `press` / `call_rtt` / `call_jitter`)、`my.ux.name` (ルート、操作の種類、アクション、または通話のトランスポート。[UX の計測](error-reporting.md#ux-measurements)) |
+| `my.ux.call.packet_loss` | ヒストグラム、パーセント | `my.ux.name` (通話のトランスポート) |
 | `my.plugin.failures` | カウンター | `my.plugin.kind` ([プラグイン](plugins.md)の種類)、`my.plugin.code` (失敗の Connect のコード) |
 | `my.plugin.slot_wait` | ヒストグラム、秒 | `my.plugin.kind` (同時に動くその種類の呼び出しの中で、呼び出しが順番を待った時間) |
 | `my.hook.decisions` | カウンター | `hook`、`mode`、`outcome` ([判定フック](decision-hooks.md)が記録した判定) |
@@ -249,9 +347,11 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.job.wait` | ヒストグラム、秒 | `my.job.type` |
 | `my.link_card.host_pauses` | カウンター | `http.response.status_code` (`429` / `503`)。あるホストからのリンクカードの取得を一時停止するたびに 1。[リンクのプレビュー](link-previews.md#limits-per-host)を参照 |
 | `my.translation.requests` | カウンター | `my.outcome` (`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`)。閲覧者が見られる投稿の翻訳、またはモデレーターが求めた通報の投稿やコメントの翻訳の要求 1 件ごとに 1。投稿者自身の言葉、保存した翻訳、または事業者から応えたか、あるいは投稿を受け取ってよい事業者がない、月ごとの上限に達した、その言語を翻訳する事業者がない、使える翻訳を返した事業者がない、のいずれかで拒否したかを表します。 |
+| `my.translation.lock_waits` | カウンター | なし。同じ投稿を同じ言語に翻訳している別のリクエストを、事業者に問い合わせる代わりに待ったリクエスト 1 件ごとに 1 |
 | `my.translation.characters` | カウンター | `my.provider` (翻訳の事業者の ID)。事業者に送った投稿と通報のコメントの文字数で、マーカーを除き、失敗した呼び出しも含みます。[月ごとの上限](instance-settings.md#admin-screens-and-the-client-api)が数えるのはこの値で、事業者の請求とは異なることがあります |
 | `my.timeline.delivery.lag` | ヒストグラム、秒 | なし (ローカルの投稿が作られてから、ホームタイムラインに書き込まれ、ストリームに通知されるまで) |
 | `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`、ローカルタイムラインと連合タイムラインのストリームは `timeline`、通話のルームのストリームは `voice`) |
+| `my.stream.signals` | カウンター | `my.stream.kind` (`user` / `timeline`)。開いているストリームが処理したシグナル 1 件ごとに 1。クライアントに何かを送ったかどうかは問いません |
 | `my.accounts.registered` | カウンター | なし |
 | `my.statuses.created` | カウンター | `my.visibility` |
 | `my.billing.imports` | カウンター | `my.billing.source` (`aws` / `gcp` / `plugin`)、`my.outcome` (`success` / `failed`)、`error.type` (`failed` のときだけ。失敗の種類で、[クラウドの利用料金の取り込み](billing-import.md)のとおり)。再試行や、翌日の取り込みを待つ失敗も含め、すべての試行を数えます |
@@ -268,11 +368,15 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.federation.instances` | ゲージ | `my.federation.instance.state` (`available`: まだ配送しているが、最後に応答してから少なくとも 1 日は失敗したサーバー。`unavailable`: 配送を止めているサーバー) |
 | `my.metrics.snapshot.age` | ゲージ、秒 | `my.metrics.snapshot.part` (`queue` / `totals`) |
 | `my.errors.reported` | カウンター | `my.error.source` (`server` / `web`)、`my.error.kind` (`panic` / `error`)。[エラーの報告](#error-reports) 1 件ごとに 1 |
+| `my.tls.certificate.expiry` | ゲージ、秒 | `host` (`tls = acme` または `tls = files` で、このプロセスがそのホストのために配信している証明書の期限までの時間。各プロセスが自分の値を報告するので、古い証明書のまま残ったプロセスが分かります。[コマンドとメトリクス](#commands-and-metrics)を参照) |
+| `my.tls.order.attempts` | カウンター | `host`、`result` (`issued` / `failed`)。ACME 認証局への証明書の注文 1 件ごとに、注文したプロセスが 1 を数えます。`my tls renew` と `my tls revoke` も含みます |
+| `my.tls.order.consecutive_failures` | ゲージ | `host` (そのホストの現在の証明書より後の注文のうち、証明書を得られなかったもの。次の注文までの待ち時間を決める数) |
+| `my.tls.rounds` | カウンター | なし。`tls = acme` で、証明書マネージャーがホストを一巡するたびに 1。数えるのが止まったら、マネージャーが止まっています |
 
 ヘルスチェック (`/healthz`、`/readyz`、`/health/live`、`/health/ready`) は計測しません。リモートのドメイン、アカウント、URL、クライアントの IP を含むラベルはありません。
 `my.queue.*`、`my.instance.*`、`my.media.stored_bytes`、`my.db.size`、`my.federation.instances`、`my.billing.import.failing` はインスタンス全体の値です。どのプロセスも、キーバリューストアに保存された 1 つのスナップショットから同じ値を報告します。
 
-<!-- source: system-metrics dad53f84ee0a -->
+<!-- source: system-metrics 973069859f11 -->
 ### システムのメトリクス
 
 プロセス、Go のランタイム、リソースへの接続についてのメトリクスも、同じ `metrics_exporter` で出力します。
@@ -299,6 +403,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `http.client.request.duration` | ヒストグラム、秒 | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`)、`http.request.method`、`my.http.status_class` (`2xx` など)、`error.type` (`forbidden_destination` は SSRF ガードによる拒否) |
 | `http.client.open_connections` | UpDownCounter | なし |
 | `my.readiness.failures` | カウンター | なし |
+| `my.readiness.shared` | カウンター | なし。すでに実行中のチェックの結果を、新しく始める代わりに受け取った readiness のリクエスト 1 件ごとに 1 |
 | `my.http.origin_refused` | カウンター | なし。CDN を通らずに来たために拒否したリクエスト 1 件ごとに 1 ([`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn))。オリジンのアドレスへの探査ではゆっくり増えます。トラフィックが止まるのと同時に跳ね上がったら、CDN がヘッダーを送らなくなっています。メンテナンスモードは何も計測しないので、そのときはアクセスログにしか表れません |
 
 - Go のランタイムのメトリクス (`go.*`) を出力するのは `prometheus` と `otlp` だけです。`emf` では、定期的なスナップショットのジョブが、プロセスと接続プールのゲージと Observable Counter を書きます。
@@ -358,14 +463,36 @@ Cloud Run が公開のリクエストの `traceparent` を常に上書きする�
 - `unit` は、記録したリクエストやジョブが終わるたびに、それまでのスパンをサイドカーに送ってから戻ります。CPU が割り当てられていない間もサイドカーが送れるように、トレースを有効にした構成ではインスタンスベースの課金を使ってください。
 - 費用は、サイドカーのリソースとスパンの量 (Cloud Trace の料金) です。割合は `traces_sample_ratio` で選びます。
 
-<!-- source: aws-ecs 52fa09412f20 -->
+<!-- source: aws-ecs cc7dd1ec1e83 -->
 ### AWS ECS
 
-X-Ray に送るには、タスクの中で **AWS Distro for OpenTelemetry (ADOT) Collector** をサイドカーのコンテナとして動かします。サーバーは SigV4 の署名を持たず、Collector が署名して X-Ray の OTLP エンドポイント (`https://xray.<region>.amazonaws.com/v1/traces`) に送ります。
+X-Ray に送るには、すべてのタスクで **AWS Distro for OpenTelemetry (ADOT) Collector** をサイドカーのコンテナとして動かします。サーバーは SigV4 の署名を持たず、Collector がタスクロールで署名して X-Ray に送ります。[OpenTofu のデプロイ](../../deploy/opentofu/README.md#sections-of-mycroblog-aws)の `mycroblog-aws` モジュールは、既定でこのすべてを行います (`observability.traces = "x-ray"`)。この節の残りは、自分で書くタスク定義のためのものです。
 
-- サーバー: `MY_TRACES_EXPORTER=otlp`、`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`。Collector の設定では、`localhost:4318` の `otlp` レシーバーで受け取り、`sigv4auth` 拡張を使う `otlphttp` エクスポーターで X-Ray に送ります。
-- タスクロールに X-Ray への書き込みの権限を与えてください。
-- 費用は、タスクのリソースのうちサイドカーが使う分と、X-Ray が記録するトレースの数です (月に最初の 100,000 件は無料)。
+- サーバー: `MY_TRACES_EXPORTER=otlp`、`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces`、そしてプロセスが動き続けるので既定の `MY_TRACES_FLUSH=batch`。
+- Collector: `public.ecr.aws/aws-observability/aws-otel-collector:v0.50.0` のようにバージョンを固定したイメージで、設定は変数 `AOT_CONFIG_CONTENT` に書きます。`127.0.0.1:4318` の HTTP の `otlp` レシーバーと `awsxray` エクスポーターです。X-Ray の OTLP エンドポイント (`https://xray.<region>.amazonaws.com/v1/traces`、`sigv4auth` 拡張を使う `otlphttp` エクスポーター経由) も使えますが、アカウントで CloudWatch Transaction Search を有効にする必要があります。
+- タスクロールに `xray:PutTraceSegments` を与えてください。`awsxray` エクスポーターはこれで書き込みます。サーバーが自分でトレースをサンプリングするので、Collector に X-Ray のサンプリングルールは要りません。
+- Collector にタスクの一部を割り当ててください。`mycroblog-aws` は Collector に 32 CPU ユニットと 128 MiB を与え、残りをサーバーに与えて、`GOMEMLIMIT` をその残りの 90% にします。サーバーのコンテナは Collector の起動に依存させてください。そうすると Collector はサーバーのあとに止まり、最後のスパンを受け取れます。
+- 費用は、タスクのリソースのうちサイドカーが使う分と、X-Ray が記録するトレースの数です (月に最初の 100,000 件は無料)。既定の `traces_sample_ratio` 0.01 では、1 日 100,000 リクエストで月に約 30,000 件のトレースを記録します。
+
+<!-- source: profiles e3f49c0becf3 -->
+## プロファイル
+
+[システムのメトリクス](#system-metrics)は、プロセスがどれだけのメモリと CPU を使っているかを示します。Go のランタイムのプロファイルは、何がそれを使っているかを示します。
+`pprof_listen` は、`/debug/pprof/` の下でプロファイルを提供するリスナーのアドレスで、どの `role` でも使えます。既定では空で、リスナーは開きません。
+
+```sh
+MY_PPROF_LISTEN=127.0.0.1:6060 my serve
+
+go tool pprof -sample_index=inuse_space http://127.0.0.1:6060/debug/pprof/heap   # what holds the heap now
+go tool pprof -sample_index=alloc_space http://127.0.0.1:6060/debug/pprof/heap   # what has allocated since the start
+go tool pprof 'http://127.0.0.1:6060/debug/pprof/profile?seconds=30'             # where the CPU goes, for 30 seconds
+curl 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1'                       # every goroutine, by where it waits
+curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '               # the runtime's memory statistics
+```
+
+リスナーには認証がなく、プロファイルはプロセスの内部を見せ、取得には CPU を使います。ループバックに置いてトンネル (`ssh -L 6060:127.0.0.1:6060 <host>`、`kubectl port-forward`) 経由で接続し、使い終わったら設定を外してください。
+ヒーププロファイルが扱うのは Go のヒープだけです。プロセスの常駐メモリには、読み込まれたバイナリのページ、スタック、ランタイム自身の構造も含まれます。それらはメモリの統計で分かります。
+ミューテックスとブロックのプロファイルは空です。サーバーはそれらをサンプリングしません。
 
 <!-- source: stop-the-server 37d4c0cc3d97 -->
 ## サーバーを停止する
@@ -383,16 +510,16 @@ SIGTERM か SIGINT を受け取ると、サーバーは穏やかに停止しま�
 
 データベース、キーバリューストア、キューの作業をするときは、停止する代わりにメンテナンスモード (`MY_MAINTENANCE=true`) で再起動してください。[メンテナンス](maintenance.md)を参照してください。
 
-<!-- source: the-job-queue-and-failed-dead-jobs 55023b12a1aa -->
+<!-- source: the-job-queue-and-failed-dead-jobs 1fd5aaccbff5 -->
 ## ジョブキューと失敗した (dead) ジョブ
 
 [ジョブ](../reference/jobs.md)に、すべてのジョブの種類について、何をするか、何がきっかけで始まるか、どう再試行するか、もう一度実行すると何が起きるかが載っています。
 
-管理画面のジョブ (`/admin/jobs`、権限 `manage_jobs`) には 3 つのページがあります。
+管理画面のジョブ (管理 → ジョブ、`/admin/jobs`、権限 `manage_jobs`) には 3 つのページがあります。
 
-- **「キューの状態」** (`/admin/jobs`): 状態ごと、および種類と状態ごとの数、種類ごとにジョブを待たせている時間、そして最も古い待ちのジョブが待っている時間。
-- **「ジョブの一覧」** (`/admin/jobs/list`): ある 1 つの状態 (未完了、待ち、実行中、リトライ待ち、失敗) のジョブの表で、1 ページずつ、種類、状態、予定または失敗した時刻、試行回数を表示します。失敗したジョブには **「再実行」** があります。
-- **ジョブ** (`/admin/jobs/<id>`、表の種類から開きます): ジョブのすべての情報、最後のエラー、キーとペイロード、成功しなかった試行の履歴 (試行ごとの結果、エラー、ワーカー、開始と終了の時刻)、そして失敗したジョブには **「再実行」**。
+- **キューの状態** (`/admin/jobs`): まず失敗したジョブの数とそこへのリンク。次に状態 (待機中、実行中、リトライ待ち、失敗) ごとの数で、それぞれその状態のジョブへつながります。続いて、期限が来た最も古いジョブが待っている時間と、種類と状態ごとの数、種類ごとにジョブを待たせている時間の表です。
+- **ジョブの一覧** (`/admin/jobs/list`): 終わっていないジョブ (待機中、実行中、リトライ待ち) か、1 つの状態、1 つの種類のジョブを 1 ページずつ表示します。種類、試行回数、予定または失敗した時刻、状態、最後のエラーの最初の行を表示します。
+- **ジョブ** (`/admin/jobs/<id>`、一覧の種類から開きます): 失敗したジョブの **「再実行」** (実行すると、ジョブが失敗する前にしたことを繰り返すことがあるので、先に確認します)、ジョブのすべての情報 (ID とキーはそれぞれコピーボタン付き)、最後のエラーとペイロード (それぞれコピーボタン付き)、成功しなかった試行の表 (新しいものから。結果、終了時刻、ワーカー、エラー)、そして同じ種類のジョブへのリンクです。
 
 管理 API は `GET /api/v1/admin/queue`、`GET /api/v1/admin/jobs?state=&type=`、`GET /api/v1/admin/jobs/{id}`、`GET /api/v1/admin/jobs/{id}/attempts`、`POST /api/v1/admin/jobs/{id}/retry` です。
 完了したジョブはもうキューにないので、そのページは見つかりません。
@@ -471,7 +598,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 管理画面のジョブのページにも、種類ごとに同じ待ち時間が表示されます。どちらかの設定を持つワーカーは、ハンドラーがまったくない種類のジョブ (メトリクスでは `other` として数えます) にも手を付けないので、設定のないワーカーがなければ、そのようなジョブは dead ジョブにならずに待ち続けます。
 
-<!-- source: running-several-jobs-at-once 91e5181261b2 -->
+<!-- source: running-several-jobs-at-once 2a1137a12e8f -->
 ### 複数のジョブを同時に実行する
 
 [`worker_job_concurrency`](../reference/configuration.md#worker_job_concurrency) は、1 つのプロセスが同時に実行するジョブの数を 1 から 128 の間で決めます。`queue = db` で使えます。Cloud Tasks ではプラットフォームが決めます。既定は 1 件ずつで、1 を設定しても同じ動きです。
@@ -480,8 +607,8 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 次の制約を覚えておいてください。
 
-- **データベースの接続**: ジョブは、取得されるとき、自分の処理、結果の記録に接続を必要とします。`database = postgres` では、この設定はプールの最大値より小さくなければならず、そうでないとサーバーは起動しません。最大値は `database_url` の `pool_max_conns` で、既定では 4 と CPU 数の大きいほうなので、vCPU が 1 つなら、上げるまでは 3 までです。データベースや接続プーラーが、すべてのプロセスの接続を受け付けるか確認してください。
-- **SQLite**: トランザクションを 1 つずつ書き込みます。32 を超えるとサーバーは警告をログに出し、ローカルのテストでは、SQLite は 32 より 128 のほうが遅くなりました。
+- **データベースの接続**: ジョブは、取得されるとき、自分の処理、結果の記録に接続を必要とします。この設定はプールの最大値より小さくなければならず、そうでないとサーバーは起動しません。最大値は `database_url` の `pool_max_conns` で、既定では 4 と CPU 数の大きいほうなので、vCPU が 1 つなら、上げるまでは 3 までです。データベースや接続プーラーが、すべてのプロセスの接続を受け付けるか確認してください。
+- **SQLite**: トランザクションを 1 つずつ書き込みます。ローカルのテストでは、SQLite は 32 より 128 のほうが遅くなりました。
 - **CPU を多く使うジョブ**: スロットは 1 つのプロセスの CPU とメモリを分け合います。`media.process` は既定で CPU 数の半分を上限として順番を待ち、その待ち時間はジョブの 5 分のリースに含まれるので、`media.process` でいっぱいのプロセスではリースを超えてやり直しになることがあります。そうしたジョブには、スロットの少ないプロセスを割り当ててください。
 - **1 度に 1 つのサーバー**: プロセスはどの 1 つのホストにも最大 8 本の接続しか張らないので、スロットがいくつあっても、1 つのプロセスが 1 つのサーバーに配送する速さは 8 本の接続の分を超えません。配送の大半が少数の大きなサーバーに向かうなら、スロットを増やしても効かないところで、プロセスを増やすと効きます。
 - **詰まったサーバーはスロットを占める**: 遅いサーバーを待っているスロットはほかのジョブに使えないので、配送はメールや通知と分けてください。
@@ -648,7 +775,7 @@ ActivityPub の JSON や公開のメディアなど、ほかの値が必要な�
 Web クライアントの HTML には、nonce を使わないドキュメントの CSP (`script-src 'self'` など) が付きます。
 これは Trusted Types を必須にし (`require-trusted-types-for 'script'`)、作れるポリシーをクライアントの 2 つに限ります (`trusted-types my-server-sanitized-html my-service-worker`)。
 
-<!-- source: web-client f35b79dd2cc3 -->
+<!-- source: web-client 0a0b62acc010 -->
 ## Web クライアント
 
 `role` が `web` か `all` のプロセスは、バイナリに埋め込まれた Web クライアントを提供します。
@@ -666,6 +793,14 @@ Web クライアントの HTML には、nonce を使わないドキュメント�
 - シェルは ActivityPub のコンテントネゴシエーションのあとで提供します。シェルのパスを ActivityPub の `Accept` で要求すると 404 を返します (投稿のページは、下で説明するようにリダイレクトします)。
   シェルには常に `Vary: Accept` が付きます。前段に CDN を置くときは、`Accept` の種類 (ActivityPub か HTML か) をキャッシュキーに含めるか、シェル、`/ap/*`、`/@*` をキャッシュから外してください。
   CDN から提供するのは `/assets/*` だけにしてください。
+- ビルドのテキストファイル (スクリプト、スタイルシート、SVG 画像、ライセンスの表示) は、圧縮した形だけが埋め込まれています。Brotli を受け付けるリクエストには `Content-Encoding: br` で、gzip を受け付けるリクエストには `Content-Encoding: gzip` で返し、それ以外のリクエストには展開して返します。いずれも `Vary: Accept-Encoding` を付け、エンコーディングごとの ETag を付けます。
+  前段のプロキシは、これらのために自分で圧縮する必要はありません。CDN は `/assets/*` のキャッシュキーに `Vary: Accept-Encoding` (またはエンコーディング) を残してください。
+- シェルとサインインの画面には、ページが最初に読み込むスタイルシートとエントリーのスクリプトを指す `Link` ヘッダーが付きます。Cloudflare (Early Hints の機能) などの CDN は、これをもとに独自のアーリーヒントを作れます。
+  [`web_early_hints`](../reference/configuration.md#web_early_hints) = `true` なら、サーバーも `103 Early Hints` のレスポンスで先にこれを送り、サーバーがページを用意する間にブラウザーがファイルを取得できるようにします。103 を中継できないプロキシはリクエストを失敗させることがあるので、既定ではオフです。
+  - Google Cloud の外部アプリケーションロードバランサーは 502 か 503 (`backend_interim_response_not_supported`) で応えます。その背後ではオフのままにしてください。Cloud Run のデプロイもそうしています。
+  - nginx は 1.29.0 から、`early_hints` を設定すれば中継します。
+  - Caddy の `reverse_proxy` は中継します。`encode` ディレクティブは 2.8 より前のリリースでは 103 を落とします。
+  - ブラウザーが 103 を使うのは、移動先のページだけです。Chrome と Edge は、HTTP/2 と HTTP/3 でだけ使います。
 - Web クライアントなしでビルドしたバイナリ (先にクライアントをビルドせずに、ただ `go build` したもの) は、起動時に警告をログに出し、スクリプトのないシェルを提供します。
 
 <!-- source: federation-endpoints 7aaee8c9da42 -->
