@@ -1,0 +1,242 @@
+{
+  "about.loading": {
+    "defaultMessage": "Loading…",
+    "description": "In place of the server's about page while it loads."
+  },
+  "about.failed": {
+    "defaultMessage": "The server's information could not be loaded.",
+    "description": "In place of the about page when the server's information could not be loaded, before Try again."
+  },
+  "about.retry": {
+    "defaultMessage": "Try again",
+    "description": "The button after a sentence of the about page or a document's page that says something could not be loaded."
+  },
+  "about.sign_in": {
+    "defaultMessage": "Sign in",
+    "description": "The link after the line that says the moderated servers are shown to signed-in people. Read by visitors."
+  },
+  "about.contact": {
+    "defaultMessage": "Contact",
+    "description": "The heading of the section of the about page that names the account and the email address that reach the server's operators."
+  },
+  "about.rules": {
+    "defaultMessage": "Rules",
+    "description": "The heading of the server's rules on the about page."
+  },
+  "about.rules.number": {
+    "defaultMessage": "{n}.",
+    "description": "The number before a rule in the list of the server's rules on the about page."
+  },
+  "about.documents": {
+    "defaultMessage": "Terms and policies",
+    "description": "The heading of the section of the about page that leads to the terms of service and the privacy policy."
+  },
+  "about.terms": {
+    "defaultMessage": "Terms of service",
+    "description": "The row of the about page that opens the terms of service."
+  },
+  "about.privacy": {
+    "defaultMessage": "Privacy policy",
+    "description": "The row of the about page that opens the privacy policy."
+  },
+  "about.commerce": {
+    "defaultMessage": "Commerce disclosure",
+    "description": "The row of the about page that opens the commerce disclosure of the supporter plans (in Japan, the disclosure under the Act on Specified Commercial Transactions)."
+  },
+  "about.domains": {
+    "defaultMessage": "Moderated servers",
+    "description": "The heading of the list of the other servers this server limits or suspends, on the about page."
+  },
+  "about.domains.signed_in": {
+    "defaultMessage": "Signed-in people can see which servers this server moderates.",
+    "description": "In place of the list of moderated servers for a visitor, when the server shows it to signed-in people alone; Sign in follows it."
+  },
+  "about.domains.loading": {
+    "defaultMessage": "Loading the servers…",
+    "description": "In place of the list of moderated servers while it loads."
+  },
+  "about.domains.failed": {
+    "defaultMessage": "The servers could not be loaded.",
+    "description": "In place of the list of moderated servers when it could not be loaded, before Try again."
+  },
+  "about.domains.none": {
+    "defaultMessage": "No server is moderated.",
+    "description": "In place of the list of moderated servers when it is empty."
+  },
+  "about.domains.kind": {
+    "defaultMessage": "{kind, select, suspend {Suspended} limit {Limited} other {Moderated}}",
+    "description": "What this server did to another server, after its domain in the list of moderated servers: suspended (no federation at all) or limited (its posts kept off the public timelines)."
+  },
+  "about.reviews": {
+    "defaultMessage": "External review",
+    "description": "The heading of the section of the about page that says what the server sends to an outside service to review before it accepts it."
+  },
+  "about.reviews.lead": {
+    "defaultMessage": "Before accepting them, this server sends these to an outside service to review:",
+    "description": "The sentence over the list of what the server sends to an external review, on the about page."
+  },
+  "about.reviews.hook": {
+    "defaultMessage": "{hook, select, inbound_status {Posts from other servers} inbound_follow {Follows from other servers} signup_check {Sign-ups} media_check {Uploaded media} local_status {Posts on this server} inbound_actor {Profiles from other servers} local_profile {Profiles on this server} other {Other content}}",
+    "description": "An item of the list of what the server sends to an external review, on the about page."
+  },
+  "about.reviews.new_accounts": {
+    "defaultMessage": "{what}, of accounts up to {days, plural, one {# day} other {# days}} old",
+    "description": "An item of the list of what the server sends to an external review, when only the content of new accounts is sent; {what} is the item's name (Posts on this server)."
+  },
+  "about.reviews.unfollowed_direct": {
+    "defaultMessage": "{what}, direct messages from people nobody here follows included",
+    "description": "An item of the list of what the server sends to an external review: posts from other servers, including their direct messages from people no account of this server follows; {what} is the item's name."
+  },
+  "about.auto_delete": {
+    "defaultMessage": "Automatic deletion",
+    "description": "The heading of the section of the about page that says how long the server keeps posts."
+  },
+  "about.auto_delete.max": {
+    "defaultMessage": "Posts are deleted {days, plural, one {# day} other {# days}} after they are posted.",
+    "description": "The most days the server keeps a post, on the about page."
+  },
+  "about.auto_delete.keep": {
+    "defaultMessage": "You can choose to keep {kinds}.",
+    "description": "What people may keep past the most days, on the about page; {kinds} is a list of the kinds (pinned posts, posts you bookmarked), joined as the language joins a list."
+  },
+  "about.auto_delete.pinned": {
+    "defaultMessage": "pinned posts",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.pins": {
+    "defaultMessage": "up to {n, plural, one {# pinned post} other {# pinned posts}}",
+    "description": "A kind of post people may keep from the automatic deletion when only the latest pins keep posts, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.bookmarked": {
+    "defaultMessage": "posts you bookmarked",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.favourited": {
+    "defaultMessage": "posts you favourited",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.media": {
+    "defaultMessage": "posts with media",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.polls": {
+    "defaultMessage": "posts with a poll",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.articles": {
+    "defaultMessage": "articles",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.visibilities": {
+    "defaultMessage": "posts of the visibilities you choose",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.thresholds": {
+    "defaultMessage": "posts with enough boosts or favourites",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.crawlers": {
+    "defaultMessage": "Search engines and AI",
+    "description": "The heading of the section of the about page on what the server states to search engines and AI crawlers, and the title of its own page."
+  },
+  "about.crawlers.search": {
+    "defaultMessage": "{value, select, allow {Search engines may index the public posts and profiles of people who allow it.} other {Search engines are asked not to index this server.}}",
+    "description": "What the server states to search engines, on the about page."
+  },
+  "about.crawlers.ai": {
+    "defaultMessage": "{value, select, allow {AI crawlers are not asked to stay away.} deny_training {AI crawlers are asked not to train on its pages.} other {AI crawlers are asked not to train on its pages or use them.}}",
+    "description": "What the server states to AI crawlers, on the about page, after about.crawlers.search."
+  },
+  "about.crawlers.page": {
+    "defaultMessage": "What this means",
+    "description": "The row of the about page that opens the page on what the server states to search engines and AI crawlers."
+  },
+  "about.crawler.search": {
+    "defaultMessage": "Search engines",
+    "description": "A heading of the page on what the server states to search engines and AI crawlers."
+  },
+  "about.crawler.search.text": {
+    "defaultMessage": "{value, select, allow {This server lets search engines index the public posts and profiles of the people here who allow it in their settings. The pages of everyone else are marked not to be indexed.} other {This server asks search engines not to index any of its pages, whatever the people here choose.}}",
+    "description": "What the server states to search engines, on its page."
+  },
+  "about.crawler.ai": {
+    "defaultMessage": "AI",
+    "description": "A heading of the page on what the server states to search engines and AI crawlers."
+  },
+  "about.crawler.ai.text": {
+    "defaultMessage": "{value, select, allow {This server asks nothing of AI crawlers. Each person here can ask them not to train on or use their pages.} deny_training {This server asks AI crawlers not to train models on its pages. Each person here can also ask them not to use their pages in AI search, assistants and agents.} other {This server asks AI crawlers neither to train models on its pages nor to use them in AI search, assistants and agents.}}",
+    "description": "What the server states to AI crawlers, on its page."
+  },
+  "about.crawler.how": {
+    "defaultMessage": "How it is stated",
+    "description": "A heading of the page on what the server states to search engines and AI crawlers."
+  },
+  "about.crawler.how.text": {
+    "defaultMessage": "The statement is in this server's robots.txt, in the tags and headers of its pages, and in its TDMRep file. It covers the pages of this server alone: other servers make their own, and media files carry only the server's.",
+    "description": "How the server makes its statement to crawlers and how far it reaches, on the page on what the server states to search engines and AI crawlers."
+  },
+  "about.crawler.legal": {
+    "defaultMessage": "What such a statement means in law depends on the country, and many operators follow such statements voluntarily. This text is not legal advice.",
+    "description": "The legal note at the end of the page on what the server states to search engines and AI crawlers. It names no country's law."
+  },
+  "about.funding": {
+    "defaultMessage": "Costs and funding",
+    "description": "The heading of the section of the about page with this month's funding meter and the way to the server's costs and income."
+  },
+  "about.funding.page": {
+    "defaultMessage": "Costs and income",
+    "description": "The row of the about page that opens the page of the server's published costs and income."
+  },
+  "about.support": {
+    "defaultMessage": "Support",
+    "description": "The heading of the section of the about page that leads to the supporter plans, the tips and the commerce disclosure."
+  },
+  "about.support.page": {
+    "defaultMessage": "{offer, select, both {Plans and tips} plans {Supporter plans} other {Tip the server}}",
+    "description": "The row of the about page that opens the supporters' page: its plans and tips, its plans, or its tips alone."
+  },
+  "about.support.list": {
+    "defaultMessage": "With the list of supporters",
+    "description": "The line under the row that opens the supporters' page, where the page lists the supporters too."
+  },
+  "about.server": {
+    "defaultMessage": "Server",
+    "description": "The heading of the section of the about page with the server's status page, source code and version, and the name of its list of facts."
+  },
+  "about.server.status": {
+    "defaultMessage": "Status page",
+    "description": "A term of the server's facts on the about page: the address of its status page, on a service apart from the server."
+  },
+  "about.server.source": {
+    "defaultMessage": "Source code",
+    "description": "A term of the server's facts on the about page: where to get the source code of the software it runs."
+  },
+  "about.server.version": {
+    "defaultMessage": "Version",
+    "description": "A term of the server's facts on the about page: the version of the software it runs."
+  },
+  "about.document.title": {
+    "defaultMessage": "{kind, select, terms {Terms of service} privacy_policy {Privacy policy} other {Commerce disclosure}}",
+    "description": "The title of the page of a document of the server, and the document's title."
+  },
+  "about.document.revised": {
+    "defaultMessage": "Last revised {date}",
+    "description": "Under the title of a document of the server: the day of its last revision, as the reader's language writes a date."
+  },
+  "about.document.loading": {
+    "defaultMessage": "Loading the document…",
+    "description": "In place of a document of the server while it loads."
+  },
+  "about.document.failed": {
+    "defaultMessage": "The document could not be loaded.",
+    "description": "In place of a document of the server when it could not be loaded, before Try again."
+  },
+  "about.document.unpublished": {
+    "defaultMessage": "{kind, select, terms {This server has not published terms of service.} privacy_policy {This server has not published a privacy policy.} other {This server has not published a commerce disclosure.}}",
+    "description": "The page of a document the server has not published; a link to the about page follows."
+  },
+  "about.document.about": {
+    "defaultMessage": "About this server",
+    "description": "The link to the about page after the sentence that says the server has not published a document."
+  }
+}

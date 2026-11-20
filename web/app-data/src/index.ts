@@ -6,6 +6,12 @@
 
 export { createAppData, createQueryClient, onDataClosed, type AppData } from "./app-data";
 export {
+  domainActionsShown,
+  type InstanceDocument,
+  type InstanceDocumentKind,
+  type InstanceDomainAction,
+} from "./about";
+export {
   articleFieldLimits,
   articleSourceQuery,
   defaultArticleLimits,
