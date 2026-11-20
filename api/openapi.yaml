@@ -19523,6 +19523,11 @@ components:
         badge:
           description: The badge of the role, which its holders may show on their profile; omitted when it has none.
           $ref: '#/components/schemas/RoleBadge'
+        supporter_plan:
+          description: |
+            The supporter plan that grants the role, which only its subscriptions grant and revoke;
+            omitted for a role that no plan grants. A role is the role of one plan at most.
+          $ref: '#/components/schemas/AdminRoleSupporterPlan'
     AdminRoleList:
       description: Roles, highest position first.
       type: object
@@ -19533,6 +19538,22 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AdminRole'
+    AdminRoleSupporterPlan:
+      description: The supporter plan that grants a role to its subscribers, and so manages it.
+      type: object
+      required:
+        - id
+        - name
+        - retired
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          description: The name of the plan in its current terms.
+          type: string
+        retired:
+          description: Whether the plan is retired, which keeps the role of the subscriptions it still has.
+          type: boolean
     AdminRule:
       description: |
         A rule of the instance. Its ID stays the same across revisions, so reports keep

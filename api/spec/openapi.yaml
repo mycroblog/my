@@ -1587,6 +1587,8 @@ components:
       $ref: ./components/schemas/AdminRole.yaml
     AdminRoleList:
       $ref: ./components/schemas/AdminRoleList.yaml
+    AdminRoleSupporterPlan:
+      $ref: ./components/schemas/AdminRoleSupporterPlan.yaml
     AdminRule:
       $ref: ./components/schemas/AdminRule.yaml
     AdminRuleList:

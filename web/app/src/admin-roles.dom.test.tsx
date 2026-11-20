@@ -196,6 +196,26 @@ test("Grant offers the lead only the roles at or below theirs whose permissions 
   expect(grantable()).toEqual(["lead", "moderator", "helper"]);
 });
 
+test("a role a supporter plan grants names its plan, in its row and on its page, where only its badge changes", async () => {
+  // The lead reads no supporter plans: the role itself says which plan grants it.
+  const on = fakeApp(lead);
+  const app = await opened("/admin/roles", on);
+
+  const items = within(main().getByRole("list", { name: "Roles" }))
+    .getAllByRole("listitem")
+    .map(words);
+  expect(items.find((item) => item.startsWith("patron"))).toBe(
+    "patron From a plan Place 5 1 permission Badge: Patron Plan: Patron",
+  );
+
+  await app.navigate("/admin/roles/patron");
+  await main().findByRole("heading", { level: 2, name: "patron" });
+  expect(main().getByText("Granted by the supporter plan “Patron”.", { exact: true })).toBeDefined();
+  expect(main().queryByRole("textbox", { name: "Place" })).toBeNull();
+  expect(main().getByRole("textbox", { name: "Label" })).toBeDefined();
+  expect(main().queryByRole("button", { name: "Delete" })).toBeNull();
+});
+
 test("Grant leaves out a role at the lead's place that grants a permission they lack", async () => {
   const on = fakeApp(lead);
   on.fake.script("GET /admin/roles", {
@@ -287,7 +307,7 @@ test("a role is deleted only with its name typed, and leaves the list", async ()
     const items = within(main().getByRole("list", { name: "Roles" }))
       .getAllByRole("listitem")
       .map(words);
-    if (items.length !== 4) throw new Error(`test: the roles read ${items.join(" / ")}`);
+    if (items.length !== 5) throw new Error(`test: the roles read ${items.join(" / ")}`);
   });
 });
 

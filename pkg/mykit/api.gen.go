@@ -8299,11 +8299,29 @@ type AdminRole struct {
 
 	// Position The rank of the role, from 0 to 999, and 1000 for `admin`.
 	Position int `json:"position"`
+
+	// SupporterPlan The supporter plan that grants the role, which only its subscriptions grant and revoke;
+	// omitted for a role that no plan grants. A role is the role of one plan at most.
+	SupporterPlan *AdminRoleSupporterPlan `json:"supporter_plan,omitempty"`
 }
 
 // AdminRoleList Roles, highest position first.
 type AdminRoleList struct {
 	Items []AdminRole `json:"items"`
+}
+
+// AdminRoleSupporterPlan The supporter plan that grants a role to its subscribers, and so manages it.
+type AdminRoleSupporterPlan struct {
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Name The name of the plan in its current terms.
+	Name string `json:"name"`
+
+	// Retired Whether the plan is retired, which keeps the role of the subscriptions it still has.
+	Retired bool `json:"retired"`
 }
 
 // AdminRule A rule of the instance. Its ID stays the same across revisions, so reports keep

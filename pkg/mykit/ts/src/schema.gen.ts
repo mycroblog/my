@@ -12655,10 +12655,23 @@ export interface components {
             permissions: components["schemas"]["Permission"][];
             /** @description The badge of the role, which its holders may show on their profile; omitted when it has none. */
             badge?: components["schemas"]["RoleBadge"];
+            /**
+             * @description The supporter plan that grants the role, which only its subscriptions grant and revoke;
+             *     omitted for a role that no plan grants. A role is the role of one plan at most.
+             */
+            supporter_plan?: components["schemas"]["AdminRoleSupporterPlan"];
         };
         /** @description Roles, highest position first. */
         AdminRoleList: {
             items: components["schemas"]["AdminRole"][];
+        };
+        /** @description The supporter plan that grants a role to its subscribers, and so manages it. */
+        AdminRoleSupporterPlan: {
+            id: components["schemas"]["Id"];
+            /** @description The name of the plan in its current terms. */
+            name: string;
+            /** @description Whether the plan is retired, which keeps the role of the subscriptions it still has. */
+            retired: boolean;
         };
         /**
          * @description A rule of the instance. Its ID stays the same across revisions, so reports keep
