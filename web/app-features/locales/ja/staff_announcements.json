@@ -236,7 +236,7 @@
     "description": "The heading of the section of a draft announcement's page that deletes it. Read by administrators."
   },
   "staff_announcements.delete.about": {
-    "defaultMessage": "まだだれも見ていないお知らせです。一覧からなくなり、監査ログにはタイトルが残ります。",
+    "defaultMessage": "まだ読む人には表示されていないお知らせです。一覧からなくなり、監査ログにはタイトルだけが残ります。",
     "description": "Under the heading of the section that deletes a draft announcement. Read by administrators."
   },
   "staff_announcements.delete.press": {
@@ -252,7 +252,7 @@
     "description": "The button that closes the question before deleting a draft announcement, keeping it. Read by administrators."
   },
   "staff_announcements.delete.text": {
-    "defaultMessage": "タイトルと本文はなくなります。取り消せません。",
+    "defaultMessage": "本文はなくなり、監査ログにはタイトルだけが残ります。取り消せません。",
     "description": "Under the question before deleting a draft announcement. Read by administrators."
   },
   "staff_announcements.delete.failed": {
@@ -260,7 +260,7 @@
     "description": "In the section that deletes a draft announcement when it failed. Read by administrators."
   },
   "staff_announcements.delete.published": {
-    "defaultMessage": "その間に公開されたため、削除されていません。代わりに取り下げてください。",
+    "defaultMessage": "下書きは削除されていません。その間に公開されました。取り下げるときは、ページを再読み込みしてください。",
     "description": "In the section that deletes a draft announcement when the server refused because someone published it meanwhile (409). Read by administrators."
   },
   "staff_announcements.irreversible": {

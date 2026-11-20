@@ -236,7 +236,7 @@
     "description": "The heading of the section of a draft announcement's page that deletes it. Read by administrators."
   },
   "staff_announcements.delete.about": {
-    "defaultMessage": "Nobody ever saw it. It is gone from the list, and the audit log keeps its title.",
+    "defaultMessage": "Readers have not seen it yet. It leaves the list of announcements, and only its title stays in the audit log.",
     "description": "Under the heading of the section that deletes a draft announcement. Read by administrators."
   },
   "staff_announcements.delete.press": {
@@ -252,7 +252,7 @@
     "description": "The button that closes the question before deleting a draft announcement, keeping it. Read by administrators."
   },
   "staff_announcements.delete.text": {
-    "defaultMessage": "Its title and text are gone. This cannot be undone.",
+    "defaultMessage": "Its text is gone, and only its title stays in the audit log. This cannot be undone.",
     "description": "Under the question before deleting a draft announcement. Read by administrators."
   },
   "staff_announcements.delete.failed": {
@@ -260,7 +260,7 @@
     "description": "In the section that deletes a draft announcement when it failed. Read by administrators."
   },
   "staff_announcements.delete.published": {
-    "defaultMessage": "It was published meanwhile, so it was not deleted. Withdraw it instead.",
+    "defaultMessage": "The draft was not deleted, because it was published meanwhile. Reload the page to withdraw it.",
     "description": "In the section that deletes a draft announcement when the server refused because someone published it meanwhile (409). Read by administrators."
   },
   "staff_announcements.irreversible": {
