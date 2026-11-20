@@ -5,6 +5,7 @@ touches, each `decisions/<area>.md`, and `exemplars.md`:
 
 - `layers`: the layers, the modules and how they reach each other.
 - `schema`: a table, a column, an index, or a change of their data.
+- `api`: the client API's contract as the server keeps it (the spec, the guard).
 
 - The OpenAPI spec is the contract with the web client: when an issue crosses into it, the spec is fixed first, and
   you implement it as given (ADR-0170 §4).

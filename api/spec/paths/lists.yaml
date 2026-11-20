@@ -21,6 +21,8 @@ post:
   tags: [lists]
   security:
     - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

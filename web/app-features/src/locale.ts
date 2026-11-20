@@ -6,7 +6,7 @@
 
 import type { Messages } from "@lingui/core";
 import { catalogReader } from "@my/design-system";
-import { type MessageId, messages } from "./messages.gen";
+import { catalog, type MessageId } from "./messages.gen";
 
 /** The features' strings in `locale`, by their ids, and the locale they are in. */
-export const stringsIn = catalogReader<MessageId>(messages satisfies Readonly<Record<string, Messages>>);
+export const stringsIn = catalogReader<MessageId>(catalog satisfies { readonly source: Messages });

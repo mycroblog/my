@@ -50,7 +50,7 @@ test("each locale's messages compile to a module Lingui formats, with en for a k
   const r = compile();
   expect(r.out).toContain("wrote web/parts/src/messages.gen.ts");
   expect(r.code).toBe(0);
-  const { messages } = (await import(join(root, "web/parts/src/messages.gen.ts"))) as {
+  const { messages } = (await import(join(root, "web/parts/src/messages-every.gen.ts"))) as {
     messages: Record<string, Messages>;
   };
   expect(Object.keys(messages)).toEqual(["ar-XB", "en", "en-XA", "ja"]);
@@ -68,10 +68,12 @@ test("each locale's messages compile to a module Lingui formats, with en for a k
   expect(t("ar-XB", "post.more")).toStartWith("‮");
 });
 
-test("each locale's messages are a module of their own, which messages.gen.ts imports statically", async () => {
+test("each locale's messages are a module of their own: en's imported with the catalog, the others' on demand", async () => {
   expect(compile().code).toBe(0);
   const src = join(root, "web/parts/src");
   expect(readdirSync(src).toSorted()).toEqual([
+    "messages-every.gen.ts",
+    "messages-load.gen.ts",
     "messages.ar-XB.gen.ts",
     "messages.en-XA.gen.ts",
     "messages.en.gen.ts",
@@ -79,10 +81,28 @@ test("each locale's messages are a module of their own, which messages.gen.ts im
     "messages.ja.gen.ts",
   ]);
   const record = readFileSync(join(src, "messages.gen.ts"), "utf8");
-  expect(record).toContain('from "./messages.ja.gen";');
+  expect(record).toContain('from "./messages.en.gen";');
+  expect(record).not.toContain("messages.ja.gen");
   expect(record).not.toContain("import(");
-  const { messages: ja } = (await import(join(src, "messages.ja.gen.ts"))) as { messages: Messages };
-  expect(setupI18n({ locale: "ja", messages: { ja } })._("post.greeting", { name: "Ada" })).toBe("Adaさん、こんにちは");
+  const { catalog } = (await import(join(src, "messages.gen.ts"))) as {
+    catalog: { source: Messages; locales: string[] };
+  };
+  expect(catalog.locales).toEqual(["ar-XB", "en", "en-XA", "ja"]);
+  expect(setupI18n({ locale: "en", messages: { en: catalog.source } })._("post.more")).toBe("More");
+  const load = readFileSync(join(src, "messages-load.gen.ts"), "utf8");
+  expect(load).toContain('import("./messages.ja.gen")');
+  expect(load).not.toContain("messages.en.gen");
+  const { loaders } = (await import(join(src, "messages-load.gen.ts"))) as {
+    loaders: Record<string, () => Promise<Messages>>;
+  };
+  expect(Object.keys(loaders)).toEqual(["ar-XB", "en-XA", "ja"]);
+  const ja = await loaders["ja"]?.();
+  expect(setupI18n({ locale: "ja", messages: { ja: ja ?? {} } })._("post.greeting", { name: "Ada" })).toBe(
+    "Adaさん、こんにちは",
+  );
+  const every = readFileSync(join(src, "messages-every.gen.ts"), "utf8");
+  expect(every).toContain('from "./messages.ja.gen";');
+  expect(every).not.toContain("import(");
 });
 
 test("a locale the catalog no longer has leaves no module behind", () => {

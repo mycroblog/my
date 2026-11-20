@@ -23,6 +23,8 @@ post:
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

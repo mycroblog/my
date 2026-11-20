@@ -4,14 +4,18 @@
 # The PreToolUse hook of the roles (ADR-0169 §2, ADR-0170 §2), which their agent definitions in .claude/agents/ name.
 # It reads the tool call as JSON on stdin and refuses it with exit 2, the reason on stderr.
 #
-#   role-hook.sh builder            a role that builds never reads the visual evaluator's criteria: a call that names
-#                                   them is refused
+#   role-hook.sh builder            a role that builds never reads the criteria of the roles that evaluate: a call that
+#                                   names the visual evaluator's, or the walker's knowledge or definition, is refused
 #   role-hook.sh visual-evaluator   the evaluator reads the rendered page, its own knowledge, and the visual role's
 #                                   decisions, which are never findings: a Read of an image, of
 #                                   .claude/knowledge/visual-evaluator/ or of an area file of the visual decisions,
 #                                   .claude/knowledge/visual/decisions/<area>.md, and nothing else (never the log of
 #                                   the decider's picks, .claude/picks/, nor the exemplars, the lessons of those picks);
 #                                   besides, the SubagentHandback call that delivers its answer, which reads nothing
+#   role-hook.sh walker             the walker sees the running app as a person does (ADR-0169 §2): Bash runs only
+#                                   its browser, `scripts/task.sh web:walk -- <step>`, with no operator, substitution
+#                                   or redirection outside quotes; Read reads only the shots of .tmp/walk/shots/ and
+#                                   its own knowledge, .claude/knowledge/walker/; besides, the SubagentHandback call
 #   role-hook.sh go-test-developer  a test role never reads the implementation (ADR-0170 §2): it reads and greps the
 #   role-hook.sh ts-test-developer  open paths only, and edits the test paths and its own knowledge only.
 #       test paths  go: *_test.go, testdata/, pkg/testkit/, internal/flowtest/, test/;
@@ -149,12 +153,39 @@ test_role() {
   exit 2
 }
 
+# walk_ok reports whether a Bash call of the walker runs its browser alone: one call of web:walk and no other task,
+# whose quoted words are data.
+walk_ok() {
+  local cmd=$1
+  [[ $cmd != *$'\n'* ]] || return 1
+  while [[ $cmd =~ \'[^\']*\' ]]; do cmd=${cmd/"${BASH_REMATCH[0]}"/Q}; done
+  [[ $cmd != *"\`"* ]] || return 1
+  while [[ $cmd =~ \"([^\"\\$]|\\.)*\" ]]; do cmd=${cmd/"${BASH_REMATCH[0]}"/Q}; done
+  [[ $cmd != *[\;\&\|\<\>\"\'\$]* ]] || return 1
+  [[ $cmd =~ ^[[:space:]]*(\./)?([^[:space:]]*/)?scripts/task\.sh[[:space:]]+web:walk[[:space:]]*(--([[:space:]]|$)|$) ]]
+}
+
 case "${1:-}" in
 builder)
-  if [[ $input == *visual-evaluator* ]]; then
-    echo "a role that builds does not read the visual evaluator's criteria (ADR-0169 §2): work from your own knowledge" >&2
+  if [[ $input == *visual-evaluator* || $input == *.claude/knowledge/walker/* || $input == *.claude/agents/walker.md* ]]; then
+    echo "a role that builds does not read the criteria of the roles that evaluate (ADR-0169 §2): work from your own knowledge" >&2
     exit 2
   fi
+  ;;
+walker)
+  tool=$(jq -r '.tool_name // ""' <<<"$input")
+  path=$(jq -r '.tool_input.file_path // ""' <<<"$input")
+  case $tool in
+  SubagentHandback) exit 0 ;;
+  Read)
+    if [[ $path != *..* && ($path =~ (^|/)\.tmp/walk/shots/[^/]+\.png$ || $path =~ (^|/)\.claude/knowledge/walker/[^/]+\.md$) ]]; then
+      exit 0
+    fi
+    ;;
+  Bash) walk_ok "$(jq -r '.tool_input.command // ""' <<<"$input")" && exit 0 ;;
+  esac
+  echo "the walker sees the app as a person does (ADR-0169 §2): step with scripts/task.sh web:walk -- <step>, Read its shots in .tmp/walk/shots/ and .claude/knowledge/walker/, never the source. Not: ${path:-$tool}" >&2
+  exit 2
   ;;
 visual-evaluator)
   tool=$(jq -r '.tool_name // ""' <<<"$input")
@@ -177,7 +208,7 @@ visual-evaluator)
 go-test-developer) test_role go-test-developer go ;;
 ts-test-developer) test_role ts-test-developer ts ;;
 *)
-  echo "usage: role-hook.sh builder|visual-evaluator|go-test-developer|ts-test-developer < tool-call.json" >&2
+  echo "usage: role-hook.sh builder|visual-evaluator|walker|go-test-developer|ts-test-developer < tool-call.json" >&2
   exit 2
   ;;
 esac

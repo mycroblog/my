@@ -6,7 +6,7 @@
 // the body as it is then, asked for at once (busy meanwhile) when the one shown is of an earlier body; it never passes
 // or refuses on an earlier body's count. A publication the server refuses keeps what was
 // written and says why in the server's own words, beside the input the server named; one that got no answer says so, and Publish sends it again with the
-// same Idempotency-Key. As a post's, an article saved as a draft on the server (ADR-0156) is saved over it and published
+// same Idempotency-Key, while one the server answered goes with a new key. As a post's, an article saved as a draft on the server (ADR-0156) is saved over it and published
 // from it; one with a time is saved and scheduled instead, and Save as draft keeps it so; a save refused for a newer
 // draft saved elsewhere is the conflict (§9), and a draft gone may have been published, so it is not saved again.
 
@@ -39,7 +39,8 @@ import {
   type ArticleDraft,
   type ArticleProblems,
 } from "./article-model";
-import { failedPhase, type Phase } from "./use-composer";
+import { postKey } from "./model";
+import { failedPhase, isAnswer, type Phase } from "./use-composer";
 
 /** How long the writer pauses before the preview is asked for again. */
 const previewPauseMs = 600;
@@ -192,9 +193,12 @@ export function useArticleEditor(
       d.scheduledAt === undefined ? await writes.unschedule(saved.id) : await writes.schedule(saved.id, d.scheduledAt),
     );
   };
-  const refused = whileOpen((e: unknown) => {
-    setPhase(failedPhase(e, articleMembers));
-  });
+  /** A write of `d` refused. */
+  const refused = (d: ArticleDraft) =>
+    whileOpen((e: unknown) => {
+      if (isAnswer(e)) setDraft((x) => (x.key === d.key ? { ...x, answers: (x.answers ?? 0) + 1 } : x));
+      setPhase(failedPhase(e, articleMembers));
+    });
   const kept = whileOpen(onKept);
   /** The preview of `d`'s body and summary as they are, when one is at hand: never an earlier body's. */
   const previewOf = (d: ArticleDraft) => {
@@ -249,18 +253,18 @@ export function useArticleEditor(
     if (d.scheduledAt !== undefined && target.kind !== "edit") {
       store(d, true).then(() => {
         kept(d);
-      }, refused);
+      }, refused(d));
       return;
     }
     const sent =
       target.kind === "edit"
         ? articles.edit(target.id, toEditArticle(d))
         : d.saved === undefined
-          ? articles.post(toCreateArticle(d, settings), d.key)
+          ? articles.post(toCreateArticle(d, settings), postKey(d))
           : store(d, false).then((saved) => writes.publish(saved.id));
     sent.then((status) => {
       if (mounted.current) onPublished(status, d);
-    }, refused);
+    }, refused(d));
   };
 
   return {
@@ -348,7 +352,7 @@ export function useArticleEditor(
       setPhase({ kind: "posting" });
       store(draft, true).then(() => {
         kept(draft);
-      }, refused);
+      }, refused(draft));
     },
     keepQuietly: async () => {
       if (draft.target.kind === "edit" || phase.kind === "posting" || !writtenArticle(draft)) return;

@@ -15,6 +15,11 @@ description: |
     use the app (registration pending or rejected, email unverified, the account
     deactivated or deleted, or a moderation action that disables its login). The user
     can still sign in to the server's sign-in page, which says why.
+  - `/api/v1/problems/idempotency-key-reused` (422): the `Idempotency-Key` was sent to the
+    operation with another request in the last 24 hours. Choose a new key for a new request.
+  - `/api/v1/problems/idempotency-key-in-use` (409): the request with this
+    `Idempotency-Key` is still being carried out. Send it again after `Retry-After` for its
+    answer.
   - `/api/v1/problems/blocking` (409): the viewer blocks the account, which keeps them
     from following it. Unblock it first.
   - `/api/v1/problems/federation-restricted` (403): the instance's federation mode

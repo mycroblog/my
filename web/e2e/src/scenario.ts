@@ -338,15 +338,22 @@ export const loginProvider = {
 export const emojis: readonly CustomEmoji[] = [
   {
     shortcode: "wave",
+    // A raised hand, its four fingers up and its thumb out, with two marks of its motion.
     drawing: {
       width: 64,
       height: 64,
-      top: [255, 214, 102],
-      bottom: [255, 190, 64],
+      top: [186, 224, 255],
+      bottom: [140, 196, 245],
       shapes: [
-        { kind: "circle", x: 22, y: 26, r: 5, color: [107, 74, 31] },
-        { kind: "circle", x: 42, y: 26, r: 5, color: [107, 74, 31] },
-        { kind: "rect", x: 20, y: 40, w: 24, h: 5, color: [107, 74, 31] },
+        { kind: "rect", x: 20, y: 14, w: 5, h: 22, color: [255, 200, 61] },
+        { kind: "rect", x: 26, y: 10, w: 5, h: 26, color: [255, 200, 61] },
+        { kind: "rect", x: 32, y: 10, w: 5, h: 26, color: [255, 200, 61] },
+        { kind: "rect", x: 38, y: 14, w: 5, h: 22, color: [255, 200, 61] },
+        { kind: "circle", x: 45, y: 36, r: 5, color: [255, 200, 61] },
+        { kind: "rect", x: 20, y: 30, w: 23, h: 18, color: [255, 200, 61] },
+        { kind: "circle", x: 31, y: 48, r: 11, color: [255, 200, 61] },
+        { kind: "rect", x: 10, y: 14, w: 3, h: 10, color: [255, 255, 255] },
+        { kind: "rect", x: 50, y: 14, w: 3, h: 10, color: [255, 255, 255] },
       ],
     },
   },

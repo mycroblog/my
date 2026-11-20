@@ -29,6 +29,8 @@ patch:
   tags: [preferences]
   security:
     - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

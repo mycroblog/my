@@ -16,7 +16,7 @@ The [configuration reference](../reference/configuration.md) lists every setting
 - A ciphertext is bound to the row ID and column name where it is stored. Copying it to another row or column makes it undecryptable.
 - The sealed columns, named as `my kek status` prints them, are `local_account_private_keys.private_key_enc` (actors' private keys),
   `totp_enrollments.secret_enc` (two-factor authentication secrets), `login_provider_secrets.sealed_secret` (client secrets of sign-in providers),
-  `webhook_secrets.sealed_secret` (webhook signing secrets), `instance_secrets.sealed_secret` (the media proxy signing key),
+  `webhook_secrets.sealed_secret` (webhook signing secrets), `instance_secrets.sealed_secret` (the media proxy signing key and the key of the idempotency fingerprints),
   `tls_acme_accounts.sealed_private_key` (the keys of the ACME accounts when the server gets its own certificates), and
   `tls_certificates.sealed_private_key` (the keys of those certificates).
 - The state of a passkey sign-in or a sign-in through an external provider is sealed the same way but not stored: the browser holds it for at most 30 minutes.

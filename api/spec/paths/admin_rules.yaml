@@ -42,6 +42,8 @@ post:
   tags: [admin-server]
   security:
     - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

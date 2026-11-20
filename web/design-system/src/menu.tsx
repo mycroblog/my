@@ -744,6 +744,7 @@ export function MenuButton({
   onOpenChange,
   sub,
   "aria-keyshortcuts": keyshortcuts,
+  "data-action": action,
   children,
 }: {
   icon: IconName;
@@ -764,12 +765,21 @@ export function MenuButton({
   sub?: MenuSurfaceProps["sub"];
   /** The keys that open the menu (what `useAction` returns). */
   "aria-keyshortcuts"?: string | undefined;
+  /** The ID of the action that opens the menu (what `useAction` returns), by which its press is timed. */
+  "data-action"?: string | undefined;
   children: ReactNode;
 }) {
   return (
     <MenuSurface
       trigger={
-        <IconButton icon={icon} label={label} count={count} pressed={pressed} aria-keyshortcuts={keyshortcuts} />
+        <IconButton
+          icon={icon}
+          label={label}
+          count={count}
+          pressed={pressed}
+          aria-keyshortcuts={keyshortcuts}
+          data-action={action}
+        />
       }
       label={menuLabel ?? label}
       placement={`bottom ${align}`}

@@ -19,6 +19,7 @@ post:
       description: The ID of the delivery.
       schema:
         $ref: ../components/schemas/Id.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "202":
       $ref: ../components/responses/AdminWebhookDelivery.yaml

@@ -4,13 +4,14 @@
   "type": "module",
   "license": "AGPL-3.0-only",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./strings-every": "./src/strings-every.ts"
   },
   "scripts": {
     "dev": "bun --bun vite",
     "build": "bun --bun vite build",
     "typecheck": "bun --bun tsc -p . && bun --bun tsc -p sw",
-    "test": "bun test --conditions=@mycroblog/source --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx' && dom-tests happy-dom --conditions=@mycroblog/source && dom-tests jsdom --conditions=@mycroblog/source"
+    "test": "bun test --preload ./src/test/every-locale.ts --conditions=@mycroblog/source --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx' && dom-tests happy-dom --conditions=@mycroblog/source && dom-tests jsdom --conditions=@mycroblog/source"
   },
   "dependencies": {
     "@lingui/core": "6.12.0",
@@ -20,6 +21,7 @@
     "@my/design-system": "workspace:*",
     "@my/design-tokens": "workspace:*",
     "@my/platform": "workspace:*",
+    "@my/rtc": "workspace:*",
     "@tanstack/react-router": "1.170.46",
     "react": "19.3.1",
     "react-dom": "19.3.1",

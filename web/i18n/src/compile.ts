@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Compiles the catalog of each web package that has one (web/<package>/locales/, ADR-0009 §1, §9) with Lingui into
-// web/<package>/src/messages.gen.ts, which the repository does not commit (ADR-0081): each locale's messages in a module
-// of its own (messages.<locale>.gen.ts), which messages.gen.ts imports statically into one record, so that the app's
-// build puts each locale's strings in a chunk of its own, under the Service Worker's limit of a precached file. It reads
+// modules under web/<package>/src/, which the repository does not commit (ADR-0081): each locale's messages in a module
+// of its own (messages.<locale>.gen.ts), which the app's build puts in a chunk of its own; messages.gen.ts, the message
+// ids and the en messages, which every locale falls back to; messages-load.gen.ts, which loads each other locale's on
+// demand, so that a page downloads only its reader's; and messages-every.gen.ts, which imports them all with the page,
+// for what cannot load one on demand (the payment entry, the tests, the stories). It reads
 // every locale through the plug-in of format.ts, gives a key a locale lacks the en message (ADR-0009 §2), and adds the
 // pseudo-locales en-XA and ar-XB that tools/i18n makes from en. `scripts/task.sh i18n:compile` runs it on Bun before
 // the tasks that type-check, lint, test, or build a package.
@@ -39,7 +41,8 @@ const isLocaleModule = (file: string) => /^messages\.[A-Za-z0-9-]+\.gen\.ts$/.te
 
 /**
  * The modules of the namespace's catalog, compiled by Lingui, by their file names under the package's src/: one a
- * locale, and messages.gen.ts, which holds the message ids and imports every locale's into one record.
+ * locale; messages.gen.ts, which holds the message ids and the en messages; messages-load.gen.ts, which loads each
+ * other locale's on demand; and messages-every.gen.ts, which imports every locale's into one record.
  */
 export async function compile(ns: string): Promise<Record<string, string>> {
   const pkg = tsNamespaces.get(ns);
@@ -88,17 +91,39 @@ export async function compile(ns: string): Promise<Record<string, string>> {
       `export const messages: Messages = ${JSON.stringify(compiled[locale], null, 2)};`,
       "",
     ].join("\n");
-  const name = (i: number) => `locale${String(i)}`;
+  const specifier = (locale: string) => JSON.stringify(`./${localeModule(locale).replace(/\.ts$/, "")}`);
   modules["messages.gen.ts"] = [
     ...header,
-    ...locales.map(
-      (locale, i) => `import { messages as ${name(i)} } from "./${localeModule(locale).replace(/\.ts$/, "")}";`,
-    ),
+    `import { messages as source } from ${specifier(SOURCE)};`,
     "",
     "/** The keys of the catalog: Lingui's message ids. */",
     `export type MessageId = ${ids.map((id) => JSON.stringify(id)).join(" | ") || "never"};`,
     "",
-    "/** The messages of each locale, compiled by Lingui; a key the locale lacks holds the en message. */",
+    `/** The catalog: the messages of ${SOURCE}, which a key another locale lacks reads, and the locales it has. */`,
+    "export const catalog: { readonly source: Messages; readonly locales: readonly string[] } = {",
+    "  source,",
+    `  locales: ${JSON.stringify(locales)},`,
+    "};",
+    "",
+  ].join("\n");
+  const others = locales.filter((locale) => locale !== SOURCE);
+  modules["messages-load.gen.ts"] = [
+    ...header,
+    "",
+    `/** The messages of each locale but ${SOURCE}, each loaded on demand from a module of its own. */`,
+    "export const loaders: Readonly<Record<string, () => Promise<Messages>>> = {",
+    ...others.map(
+      (locale) => `  ${JSON.stringify(locale)}: () => import(${specifier(locale)}).then((m) => m.messages),`,
+    ),
+    "};",
+    "",
+  ].join("\n");
+  const name = (i: number) => `locale${String(i)}`;
+  modules["messages-every.gen.ts"] = [
+    ...header,
+    ...locales.map((locale, i) => `import { messages as ${name(i)} } from ${specifier(locale)};`),
+    "",
+    "/** The messages of every locale, imported with the page: for what cannot load one on demand. */",
     "export const messages: Readonly<Record<string, Messages>> = {",
     ...locales.map((locale, i) => `  ${JSON.stringify(locale)}: ${name(i)},`),
     "};",

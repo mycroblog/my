@@ -6,7 +6,7 @@
 # tasks/docs.yml (site:check), tools/i18n and web/i18n in tasks/i18n.yml (web:lint lints web/i18n too, and the tasks
 # that read a package's compiled catalog compile it first), the published packages in tasks/mykit.yml, and the
 # development packages web/devtools (ADR-0168) and web/storybook, the one Storybook host of the stories (ADR-0165 §1),
-# the scenarios, demo and E2E tests of web/e2e (ADR-0015), the tokens of web/design-tokens (ADR-0059), the
+# the scenarios, demo and E2E tests of web/e2e (ADR-0015), the tokens of web/design-tokens (ADR-0059), the layout of the emails of web/mail (ADR-0086 §2), the
 # components of web/design-system, the shared components of web/app-components (ADR-0025 §4), the platform of
 # web/platform (ADR-0028 §17), the audio of calls of web/rtc (ADR-0101 §7), the server data of web/app-data
 # (ADR-0028 §6), the features of web/app-features and the app of web/app (ADR-0025 §2) here.
@@ -157,6 +157,13 @@ tasks:
     cmds:
       - bun --conditions=@mycroblog/source web/e2e/src/server/main.ts
 
+  # The walker's browser (ADR-0169 §2): web/e2e/walk.ts, one step a call on the demo server that web:demo runs.
+  walk:
+    desc: Walk the running app one step a call in a headless Chromium that stays open (open <url> [--viewport mobile|tablet|pc], look, click <role> <name>, fill <role> <name> <text>, press, scroll, back, goto, close), printing the address, the accessible tree and a shot
+    dir: web/e2e
+    cmds:
+      - bun --bun walk.ts {{.CLI_ARGS}}
+
   # The E2E tests (ADR-0015 §1), against the same demo server, which their global setup starts. Chromium comes from
   # `bun --bun playwright install chromium` in web/e2e. Not a part of `check`: CI runs it when the e2e context changes.
   e2e:
@@ -174,11 +181,24 @@ tasks:
     cmds:
       - bun --bun playwright test {{.CLI_ARGS}}
 
+  # The UX in the lab (ADR-0167 §4): the scenarios of web/e2e/ux against the same demo server, with the CPU throttled,
+  # each three times; it writes .tmp/ux/report.md and report.json, judged against the report UX_LAST names. The
+  # Nightly runs it (web-ux), never the merge queue, and a finding fails nothing.
+  e2e-ux:
+    desc: Build the test build of bin/my and measure the UX of the web client in the lab (LCP, INP, long animation frames, the bundle of each entry) on the scenarios of web/e2e/ux, writing .tmp/ux/report.md (UX_LAST=<report.json> compares with a last run)
+    deps:
+      - task: ":go:bin"
+        vars: { GO_TAGS: e2e_fakes }
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c ux/playwright.config.ts {{.CLI_ARGS}}
+
   typecheck:
-    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app (with its Service Worker), web/devtools, web/storybook and web/e2e with tsc
+    desc: Type-check web/design-tokens, web/mail, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app (with its Service Worker), web/devtools, web/storybook and web/e2e with tsc
     deps: [generated]
     cmds:
       - cd web/design-tokens && bun --bun tsc -p .
+      - cd web/mail && bun --bun tsc -p .
       - cd web/design-system && bun --bun tsc -p .
       - cd web/app-components && bun --bun tsc -p .
       - cd web/platform && bun --bun tsc -p .
@@ -197,29 +217,29 @@ tasks:
   # does not read), layout outside the layout parts and a viewport breakpoint outside the frames of a page
   # (restrict/layout-parts, restrict/viewport-breakpoints).
   lint:
-    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), prove the rules of web/devtools/src/restrictions.js and styles.js on their fixtures, and fail on a colour outside the tokens in their CSS
+    desc: Run Oxlint on web/design-tokens, web/mail, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), prove the rules of web/devtools/src/restrictions.js and styles.js on their fixtures, and fail on a colour outside the tokens in their CSS
     deps: [generated]
     cmds:
-      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/platform web/rtc web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
+      - bun --bun oxlint web/design-tokens web/mail web/design-system web/app-components web/platform web/rtc web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
       - bun test ./web/devtools/src/restrictions.test.js
       - bun web/devtools/src/colors.js web/design-system web/app-components web/platform web/rtc web/app-data web/app-features web/app web/storybook web/i18n
 
   # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
   direction:
-    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…, and bg-left, origin-left or translate-x- outside the ltr and rtl variants), a CSS declaration (margin-left, left, text-align left…), a translateX() that does not turn with the page, or a React style key (marginLeft, left in a style object) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n, naming the logical one
+    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…, and bg-left, origin-left or translate-x- outside the ltr and rtl variants), a CSS declaration (margin-left, left, text-align left…), a translateX() that does not turn with the page, or a React style key (marginLeft, left in a style object) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/mail, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n, naming the logical one
     cmds:
-      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/platform web/rtc web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
+      - bun web/devtools/src/direction.ts web/design-tokens web/mail web/design-system web/app-components web/platform web/rtc web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
 
   knip:
-    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/e2e (knip.json)
+    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/mail, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/e2e (knip.json)
     deps: [generated]
     cmds:
-      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/rtc --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/storybook --workspace web/e2e
+      - bun --bun knip --workspace web/design-tokens --workspace web/mail --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/rtc --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/storybook --workspace web/e2e
 
   # A package's manifest says how its tests run (its `test` script) and what they depend on: scripts/changed-web-packages.sh
   # reads there which packages there are and which a change reaches (ADR-0079 §18).
   test:
-    desc: Run the tests of the packages under web/ (web/design-tokens' fail on a stale internal/domain/instance/theme_tokens.gen.go), side by side, each kind on its DOM - every package, or those of PACKAGES (PACKAGES=app,app-features; `none` for none)
+    desc: Run the tests of the packages under web/ (web/design-tokens' fail on a stale internal/domain/instance/theme_tokens.gen.go, web/mail's on a stale or rule-breaking internal/app/kernel/mail_frame.gen.html), side by side, each kind on its DOM - every package, or those of PACKAGES (PACKAGES=app,app-features; `none` for none)
     deps: [generated]
     vars:
       SELECTED:
@@ -296,12 +316,13 @@ tasks:
   # when the output contains @my/devtools, which only the Storybook host loads, lacks the license notice of a font it
   # ships, or holds the editor in a chunk that an entry loads with the page.
   build-check:
-    desc: Build web/app for production into .tmp/build-check and fail if the build contains @my/devtools (ADR-0168 §3), ships a font without its license notice, or loads Lexical with an entry
+    desc: Build web/app for production into .tmp/build-check and fail if the build contains @my/devtools (ADR-0168 §3), ships a font without its license notice, loads Lexical with an entry, or loads a locale's strings but en's with index.html or auth.html rather than on demand
     deps: [generated]
     cmds:
       - cd web/app && bun --bun vite build --logLevel warn --outDir ../../.tmp/build-check --emptyOutDir
       - bun web/devtools/src/absent.ts .tmp/build-check
       - bun web/app/scripts/build-check.ts .tmp/build-check
+      - bun web/app/scripts/locale-chunks.ts .tmp/build-check
 
   # It skips while node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
   # tasks of `check`, side by side) never install at once after the first install.
@@ -317,7 +338,8 @@ tasks:
   # What the server embeds (internal/interface/web): the Vite build of web/app, whose manifest the shell's tags come
   # from (ADR-0028 §4), and the files of web/brand, whose icons the server serves at the root and lists in the Web App
   # Manifest, the inventory of the scripts that the payment entry loads (PCI DSS 6.4.3), which each release publishes,
-  # and last the list of the ETags of those files, which the server reads instead of the files when it starts.
+  # then compresses the text files, of which the server embeds only the Brotli and gzip forms, and last the list of the
+  # ETags of those files, which the server reads instead of the files when it starts.
   # The build fails when React Compiler skips a function (ADR-0025 §9). The Dockerfile's stage web and the root
   # compose.yaml (scripts/dev-compose.sh) run it too.
   build:
@@ -328,6 +350,7 @@ tasks:
       - cd web/app && bun --bun vite build --logLevel warn
       - cp web/brand/* {{.WEB_EMBED_DIR}}/
       - bun web/app/scripts/payment-scripts.ts {{.WEB_EMBED_DIR}}
+      - bun web/app/scripts/compress.ts {{.WEB_EMBED_DIR}}
       - bun web/app/scripts/etags.ts {{.WEB_EMBED_DIR}}
 
   licenses:

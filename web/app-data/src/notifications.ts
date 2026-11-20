@@ -189,6 +189,30 @@ function readNotification(data: AppData, id: string): Promise<void> {
   return advance(data);
 }
 
+/**
+ * Reads the notifications of the announcement of `id`, which the reader marked read (on its page, or its line above
+ * the home timeline): their cached copies say it is read, and each counts as read as if the reader read it here.
+ */
+export function readAnnouncementNotifications(data: AppData, id: string): void {
+  const told = new Set<string>();
+  for (const { queryKey } of lists(data))
+    data.queryClient.setQueryData<Pages<NotificationItem>>(queryKey, (cached) => {
+      if (!cached?.pages.some((page) => page.items.some((n) => n.announcement?.id === id))) return cached;
+      return {
+        ...cached,
+        pages: cached.pages.map((page) => ({
+          ...page,
+          items: page.items.map((n) => {
+            if (n.announcement?.id !== id) return n;
+            told.add(n.id);
+            return { ...n, announcement: { ...n.announcement, read: true } };
+          }),
+        })),
+      };
+    });
+  for (const notification of told) void readNotification(data, notification);
+}
+
 /** Moves the marker to the newest notification the cache holds: every one is read. It rejects with the problem. */
 async function readAllNotifications(data: AppData): Promise<void> {
   let newest: string | undefined;

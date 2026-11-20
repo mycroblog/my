@@ -16,6 +16,8 @@
   },
   "devDependencies": {
     "@my/design-tokens": "workspace:*",
+    "@my/devtools": "workspace:*",
+    "@my/platform": "workspace:*",
     "@playwright/test": "1.65.0",
     "@types/bun": "1.4.4",
     "axe-core": "4.14.0"

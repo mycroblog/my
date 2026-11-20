@@ -10,7 +10,7 @@ import { createFileRoute, useCanGoBack, useRouter } from "@tanstack/react-router
 import { useStrings } from "../locale";
 import { screenLoad } from "../screen-load";
 import { ScreenHeading } from "../shell/heading";
-import { signInReturningTo } from "../sign-in";
+import { useVisitorSignIn } from "../shell/visitor";
 
 export const Route = createFileRoute("/tags/$tag")({
   loader: ({ context, params }) => screenLoad(context, (data) => loadTagTimeline(data, params.tag)),
@@ -25,16 +25,14 @@ function TagScreen() {
   const router = useRouter();
   const canGoBack = useCanGoBack();
   const t = useStrings();
-  const signIn = (returnTo: string) => {
-    void router.navigate({ href: signInReturningTo(returnTo) });
-  };
+  const signIn = useVisitorSignIn(data !== null);
   return (
     <>
       <ScreenHeading>{t("app.tag", { name: tag })}</ScreenHeading>
       <TagTimeline
         key={tag}
         name={tag}
-        signIn={data === null ? signIn : undefined}
+        signIn={signIn}
         onBack={() => {
           if (canGoBack) router.history.back();
           else void router.navigate({ to: "/" });

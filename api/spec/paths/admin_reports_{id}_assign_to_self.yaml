@@ -11,6 +11,7 @@ post:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/ReportId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/AdminReportDetail.yaml

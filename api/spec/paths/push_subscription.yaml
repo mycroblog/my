@@ -34,6 +34,8 @@ put:
   tags: [push]
   security:
     - oauth2: [push]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -59,6 +61,8 @@ delete:
   tags: [push]
   security:
     - oauth2: [push]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The grant has no subscription.

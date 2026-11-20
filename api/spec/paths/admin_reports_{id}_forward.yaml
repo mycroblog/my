@@ -18,6 +18,7 @@ post:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/ReportId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: false
     content:

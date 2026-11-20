@@ -29,7 +29,7 @@ expect() {
   fi
 }
 
-all="app app-components app-data app-features design-system design-tokens devtools e2e platform rtc"
+all="app app-components app-data app-features design-system design-tokens devtools e2e mail platform rtc"
 # The packages that test on the fake API, and the fake API's own, @my/e2e, which depends on the client library and the
 # tokens alone: a change to it, or to what it depends on, reaches them all; a change to a layer reaches that layer and
 # the layers above it.
@@ -45,20 +45,21 @@ fi
 
 # A package and the packages above it in the layers (ADR-0025 §3).
 expect "the app, which nothing depends on" "app" web/app/src/main.tsx
-expect "the tokens" "$fake design-system design-tokens" web/design-tokens/src/tokens.ts
+expect "the tokens" "$fake design-system design-tokens mail" web/design-tokens/src/tokens.ts
+expect "the email layout, which nothing depends on" "mail" web/mail/src/frame.tsx
 expect "the design system" "$parts" web/design-system/src/button.tsx
 expect "the shared components" "app app-components app-features" web/app-components/src/index.ts
-expect "the platform" "app app-data app-features platform" web/platform/src/index.ts
+expect "the platform, which the lab probe of @my/e2e reads" "$fake platform" web/platform/src/index.ts
 expect "the audio of calls" "app app-features rtc" web/rtc/src/index.ts
 expect "the server data" "app app-data app-features" web/app-data/src/index.ts
 expect "the features" "app app-features" web/app-features/src/index.ts
-expect "two packages add up" "app app-components app-data app-features design-system platform" web/design-system/src/button.tsx web/platform/src/index.ts
+expect "two packages add up" "$fake design-system platform" web/design-system/src/button.tsx web/platform/src/index.ts
 
 # What a test depends on outside the layers, as its package's manifest declares it.
 expect "the fake API" "$fake" web/e2e/src/fake/api.ts
 expect "the scenario the fake API reads" "$fake" web/e2e/src/scenario.ts
 expect "the specs of the E2E tests, which are the fake API's package too" "$fake" web/e2e/specs/sign-in.spec.ts
-expect "a DOM preload: the packages with tests on a DOM, what depends on them, and its own" "$parts devtools" web/devtools/src/happy-dom.ts
+expect "a DOM preload: the packages with tests on a DOM, what depends on them, its own, and @my/e2e, whose walker reads the viewports" "$fake design-system devtools" web/devtools/src/happy-dom.ts
 expect "the client library the server data is built on" "$fake" pkg/mykit/ts/src/client.ts
 expect "the spec its types are generated from" "$fake" api/openapi.yaml
 expect "a catalog of a package" "$parts" web/design-system/locales/en/disclosure.json

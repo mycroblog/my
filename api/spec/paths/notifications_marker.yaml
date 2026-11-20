@@ -32,6 +32,8 @@ put:
   tags: [notifications]
   security:
     - oauth2: ["write:notifications"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

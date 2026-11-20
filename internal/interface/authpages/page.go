@@ -7,6 +7,7 @@ import (
 	"context"
 	"html/template"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/url"
 	"slices"
@@ -32,6 +33,10 @@ type Entry struct {
 	// server's origin, which the screens' policy then allows; both empty in production.
 	DevScripts []string
 	DevOrigin  string
+	// Links are the Link header values that hint Stylesheets and Script on the screen's
+	// response, and EarlyHints first sends them in a 103 Early Hints response.
+	Links      []string
+	EarlyHints bool
 }
 
 // The screens, the screen field of the data that tells the entry which one to render.
@@ -177,6 +182,7 @@ var shellTemplate = template.Must(template.New("auth").Funcs(template.FuncMap{
 
 // render answers with the document of the screen p.
 func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, p page) {
+	writeLinks(w, r, h.o.Entry.Links, h.o.Entry.EarlyHints)
 	ctx := r.Context()
 	p.Server = h.server(ctx)
 	p.Documents = h.documentLinks(r, p.L)
@@ -210,6 +216,33 @@ func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, p p
 	hd.Add("Vary", "Accept-Language, Cookie")
 	w.WriteHeader(status)
 	_, _ = w.Write(body.Bytes())
+}
+
+// writeLinks adds links to the response's Link headers and, with early, for a GET request over
+// HTTP/1.1 or later, first sends them in a 103 Early Hints response (RFC 8297), so that the browser
+// fetches the entry's files while the server reads what the screen shows. It is web.WriteLinks,
+// which this package does not import with the embedded build.
+func writeLinks(w http.ResponseWriter, r *http.Request, links []string, early bool) {
+	if len(links) == 0 {
+		return
+	}
+	hd := w.Header()
+	// An HTTP/1.0 client knows no 1xx (RFC 9110 §15.2), and a HEAD request loads nothing.
+	if !early || r.Method != http.MethodGet || !r.ProtoAtLeast(1, 1) {
+		for _, l := range links {
+			hd.Add("Link", l)
+		}
+		return
+	}
+	// The 103 holds the links alone: a browser applies a Content-Security-Policy of the 103, and the
+	// headers set so far are the server's defaults for a response that is no document.
+	set := hd.Clone()
+	clear(hd)
+	for _, l := range links {
+		hd.Add("Link", l)
+	}
+	w.WriteHeader(http.StatusEarlyHints)
+	maps.Copy(hd, set)
 }
 
 // server reads what the screens show of the server.

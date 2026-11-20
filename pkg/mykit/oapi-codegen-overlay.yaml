@@ -3,6 +3,8 @@
 # The OpenAPI Overlay that oapi-codegen applies to api/openapi.yaml before it generates api.gen.go
 # (oapi-codegen.yaml). It changes only what the client generates, never the spec the server uses.
 overlay: 1.0.0
+# Selectors are RFC 9535 JSONPath.
+x-speakeasy-jsonpath: rfc9535
 info:
   title: mykit
   version: 1.0.0
@@ -12,3 +14,8 @@ actions:
   - target: $.components.schemas.Problem
     update:
       additionalProperties: true
+  # mykit adds the Idempotency-Key of every write itself (idempotency.go), so the generated methods take no parameter
+  # for it, and keep the signatures they had before every write took one. Posting a status or an article keeps its
+  # IdempotencyKey parameter, which it had from the start.
+  - target: $.paths.*[?(@.operationId != 'createStatus' && @.operationId != 'createArticle')].parameters[?(@['$ref'] == '#/components/parameters/IdempotencyKey')]
+    remove: true

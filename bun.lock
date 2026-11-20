@@ -60,6 +60,7 @@
         "@my/design-system": "workspace:*",
         "@my/design-tokens": "workspace:*",
         "@my/platform": "workspace:*",
+        "@my/rtc": "workspace:*",
         "@tanstack/react-router": "1.170.46",
         "react": "19.3.1",
         "react-dom": "19.3.1",
@@ -255,6 +256,8 @@
       },
       "devDependencies": {
         "@my/design-tokens": "workspace:*",
+        "@my/devtools": "workspace:*",
+        "@my/platform": "workspace:*",
         "@playwright/test": "1.65.0",
         "@types/bun": "1.4.4",
         "axe-core": "4.14.0",
@@ -270,6 +273,19 @@
       "devDependencies": {
         "@lingui/core": "6.12.0",
         "@types/bun": "1.4.4",
+      },
+    },
+    "web/mail": {
+      "name": "@my/mail",
+      "dependencies": {
+        "@my/design-tokens": "workspace:*",
+        "react": "19.3.1",
+        "react-dom": "19.3.1",
+      },
+      "devDependencies": {
+        "@types/bun": "1.4.4",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
       },
     },
     "web/platform": {
@@ -878,6 +894,8 @@
     "@my/i18n": ["@my/i18n@workspace:web/i18n"],
 
     "@my/i18n-tools": ["@my/i18n-tools@workspace:tools/i18n"],
+
+    "@my/mail": ["@my/mail@workspace:web/mail"],
 
     "@my/platform": ["@my/platform@workspace:web/platform"],
 

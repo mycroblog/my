@@ -25,6 +25,7 @@ patch:
     - oauth2: ["write:filters"]
   parameters:
     - $ref: ../components/parameters/KeywordFilterId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -45,6 +46,7 @@ delete:
     - oauth2: ["write:filters"]
   parameters:
     - $ref: ../components/parameters/KeywordFilterId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The filter is deleted.

@@ -19,7 +19,7 @@ func (a *App) setUpAuthPages(cfg *config.Config, entry web.Entry) {
 		Locales: a.Locales, StatusPageURL: cfg.StatusPageURL, Logger: a.Logger, Errors: a.ErrorReporter,
 		Entry: authpages.Entry{
 			Script: entry.Script, Stylesheets: entry.Stylesheets, Preloads: entry.Preloads,
-			DevScripts: entry.DevScripts, DevOrigin: entry.DevOrigin,
+			DevScripts: entry.DevScripts, DevOrigin: entry.DevOrigin, Links: entry.Links, EarlyHints: entry.EarlyHints,
 		},
 		Clock:      a.Clock,
 		Moderation: a.Moderation, UserLocales: a.Identity, Documents: a.Instance,

@@ -12,6 +12,8 @@ post:
   tags: [custom-emojis]
   security:
     - oauth2: ["write:custom_emojis"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/CustomEmojiRequest.yaml

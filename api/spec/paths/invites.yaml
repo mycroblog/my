@@ -57,6 +57,8 @@ post:
   tags: [invites]
   security:
     - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: false
     content:

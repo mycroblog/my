@@ -73,7 +73,7 @@ func TestGetInstance(t *testing.T) {
 		// Unset, link cards are fetched and obey robots.txt (ADR-0062).
 		LinkCards: true,
 		// A server built without UX measurements takes none (ADR-0167 §3).
-		UxMeasurement: new(false),
+		UxMeasurement: new(false), UxMeasurementShare: new(10),
 		// Unset, the costs are private (ADR-0067 §8).
 		FinanceVisibility:       clientapi.FinanceVisibilityPrivate,
 		IncomeVisibility:        clientapi.IncomeVisibilityPrivate,

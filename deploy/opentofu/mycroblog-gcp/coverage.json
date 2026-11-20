@@ -75,6 +75,7 @@
     "translator_deepl_*",
     "translator_libretranslate_*",
     "voice*",
+    "web_early_hints",
     "web_origin",
     "webhook_allowed_destinations"
   ],

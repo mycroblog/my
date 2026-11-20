@@ -208,8 +208,7 @@ The drafts operations (`/drafts/...`) are generated like every other operation: 
   draft again when it publishes it: a post that cannot be published then stays a draft, its `last_schedule` says why,
   and the user gets the notification `scheduled_status_failed`.
 - The limits of drafts and schedules are in `limits.drafts` of `GET /instance`. A request past one is a 422 problem.
-- A save, a schedule, and a publication are not retried: they take no `Idempotency-Key`. A publication that got no
-  answer is safe to send again: the draft is gone once it is published, so the repeat is a 404.
+- A save, a schedule, and a publication take an `Idempotency-Key`, as every write does, and are retried with it.
 
 ## Errors
 
@@ -235,17 +234,23 @@ problem of type `about:blank` with the answer's status.
   `MaxWait` (one minute), the answer becomes a problem at once. Set `Retry.Disabled` (`retry: { disabled: true }`) to
   turn the retries off, or `MaxRetries` and `MaxWait` to change them.
 - Only requests that are safe to repeat are retried: `GET`, `HEAD`, and the requests of an operation that takes an
-  `Idempotency-Key` (creating a status). An `Idempotency-Key` header on any other operation does not make it retried:
-  the server ignores it there.
+  `Idempotency-Key`, which is every write (`POST`, `PUT`, `PATCH`, `DELETE`) but the few whose answer carries a secret
+  (a client secret, tokens, recovery codes, a one-time link, a payment provider's checkout or portal) or that each call
+  must reach the audit log (revealing an account's or a delivery's masked data); `x-no-idempotency-key` in the spec. An
+  `Idempotency-Key` header on one of those does not make it retried: the server ignores it there.
 - For the operations that take an `Idempotency-Key`, mykit adds a new UUID when you do not pass one, and sends the
-  same key on every retry, so a retried post is applied once. The server answers a request with a key it has seen
-  with the status posted with it, before it checks the post limit or anything else of a new post.
-- A request that got no answer may still have been applied. Its `*mykit.NetworkError` (`NetworkError`) carries the key
-  it was sent with (`IdempotencyKey`, `idempotencyKey`): send the request again with that key (the `IdempotencyKey`
-  parameter) and it is applied once. Pass your own key to make a repeat safe across a restart, for example after a
-  crash.
-- A media upload reads its body once, so a Go upload is never sent again; a TypeScript `Blob` upload is sent again only
-  after a 401.
+  same key on every retry, so a retried write is applied once. Within 24 hours the server answers a request with a key
+  it has seen with the first answer, before it checks the post limit or anything else of a new request; the same key
+  with another request is a 422 problem. A repeat while the first request is still being carried out is a 409
+  `idempotency-key-in-use`, which is retried after its `Retry-After` as a 429 is.
+- A write that got no answer may still have been applied, so it is sent again with its key, up to `MaxRetries` times.
+  When the last attempt gets no answer either, its `*mykit.NetworkError` (`NetworkError`) carries the key it was sent
+  with (`IdempotencyKey`, `idempotencyKey`): send the request again with that key and it is applied once. Pass your
+  own key to make a repeat safe across a restart, for example after a crash: the `IdempotencyKey` parameter of
+  posting a status or an article, or the `Idempotency-Key` header with a request editor (`headers` in TypeScript) for
+  any other write.
+- A media upload reads its body once, so a Go upload is never sent again; a TypeScript `Blob` upload is sent again as
+  any other write.
 
 ## Media upload
 

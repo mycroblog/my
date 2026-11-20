@@ -19,6 +19,7 @@ post:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/RegistrationId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     content:
       application/json:

@@ -24,6 +24,7 @@ post:
   tags: [passkeys]
   security:
     - oauth2: ["write:accounts"]
+  x-no-idempotency-key: The answer carries a one-time registration token; start a new registration instead.
   requestBody:
     required: true
     content:

@@ -1042,5 +1042,13 @@
   "errors.event.last_candidate": {
     "defaultMessage": "日程の候補は 1 つ以上必要です。",
     "description": "API error title for HTTP 409 when an organizer withdraws the last candidate date of an event's date poll."
+  },
+  "errors.idempotency_key_reused": {
+    "defaultMessage": "このキーはすでに別のリクエストに使われています。新しいリクエストには新しいキーを付けて送ってください。",
+    "description": "API error title for HTTP 422 when a client sends an Idempotency-Key header that it already used for a different request. Idempotency-Key is the name of an HTTP header (not translated)."
+  },
+  "errors.idempotency_key_in_use": {
+    "defaultMessage": "このキーで送ったリクエストはまだ処理中です。少し待ってからもう一度試してください。",
+    "description": "API error title for HTTP 409 when a client sends a request again with the same Idempotency-Key while the first one is still being carried out."
   }
 }

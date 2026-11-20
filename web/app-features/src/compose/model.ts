@@ -106,9 +106,19 @@ export type Draft = {
   readonly scheduledAt?: string | undefined;
   /** Its last schedule failed: the time it was for and why it was not posted (ADR-0156 §8). */
   readonly failure?: { readonly publishAt: string; readonly reason: DraftFailureReason } | undefined;
-  /** The Idempotency-Key of its post, the same for every attempt. */
+  /** What its Idempotency-Key is made from (postKey); it names the post for the drafts left by accident too (kept.ts). */
   readonly key: string;
+  /** How many of its writes the server answered without posting it: each one renews the key of its post (postKey). */
+  readonly answers?: number | undefined;
 };
+
+/**
+ * The Idempotency-Key of the next post of a draft: the same for every attempt that got no answer, so that it is posted
+ * once, and a new one after an answer, so that the post corrected is not taken for the one answered.
+ */
+export function postKey(d: { readonly key: string; readonly answers?: number | undefined }): string {
+  return d.answers === undefined || d.answers === 0 ? d.key : `${d.key}.${String(d.answers)}`;
+}
 
 /** How long a poll may run, the choices the composer offers, in seconds: 5 minutes, an hour, 1, 3 and 7 days. */
 export const pollDurations = [300, 3600, 86400, 259200, 604800] as const;

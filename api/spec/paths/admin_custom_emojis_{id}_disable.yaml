@@ -12,6 +12,7 @@ post:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/CustomEmojiId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/AdminCustomEmoji.yaml

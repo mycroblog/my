@@ -54,8 +54,8 @@ const UXRetention = 30 * 24 * time.Hour
 
 var (
 	// reUXRoute matches a route ID of the web client's router: a path pattern such as
-	// "/_app/statuses/$id", or "__root__".
-	reUXRoute = regexp.MustCompile(`^(?:__root__|/[A-Za-z0-9_$./()\[\]{}-]{0,127})$`)
+	// "/_app/statuses/$id" or "/@{$acct}/status/$id", or "__root__".
+	reUXRoute = regexp.MustCompile(`^(?:__root__|/[A-Za-z0-9_$./()\[\]{}@-]{0,127})$`)
 	// reUXAction matches an action ID: dotted lower-case words such as "post.reply".
 	reUXAction = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}(?:\.[a-z][a-z0-9_]{0,31}){1,3}$`)
 )

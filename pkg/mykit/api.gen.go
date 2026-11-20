@@ -3259,6 +3259,7 @@ const (
 	InstanceSettingKeyTranslationUserMonthlyCharacters   InstanceSettingKey = "translation_user_monthly_characters"
 	InstanceSettingKeyUserAppRegistration                InstanceSettingKey = "user_app_registration"
 	InstanceSettingKeyUxMeasurement                      InstanceSettingKey = "ux_measurement"
+	InstanceSettingKeyUxMeasurementShare                 InstanceSettingKey = "ux_measurement_share"
 	InstanceSettingKeyVoiceParticipantsRetentionDays     InstanceSettingKey = "voice_participants_retention_days"
 	InstanceSettingKeyVoicePublicSummary                 InstanceSettingKey = "voice_public_summary"
 	InstanceSettingKeyVoiceRoomStarters                  InstanceSettingKey = "voice_room_starters"
@@ -3500,6 +3501,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyUserAppRegistration:
 		return true
 	case InstanceSettingKeyUxMeasurement:
+		return true
+	case InstanceSettingKeyUxMeasurementShare:
 		return true
 	case InstanceSettingKeyVoiceParticipantsRetentionDays:
 		return true
@@ -12842,6 +12845,10 @@ type Instance struct {
 	// none.
 	UxMeasurement *bool `json:"ux_measurement,omitempty"`
 
+	// UxMeasurementShare The percent of browser sessions whose web client sends its samples while `ux_measurement`
+	// is true: each session is drawn once, at this share.
+	UxMeasurementShare *int `json:"ux_measurement_share,omitempty"`
+
 	// Version The server version.
 	Version string `json:"version"`
 
@@ -15433,6 +15440,11 @@ type PreviewDomainBlockImportRequest struct {
 //     use the app (registration pending or rejected, email unverified, the account
 //     deactivated or deleted, or a moderation action that disables its login). The user
 //     can still sign in to the server's sign-in page, which says why.
+//   - `/api/v1/problems/idempotency-key-reused` (422): the `Idempotency-Key` was sent to the
+//     operation with another request in the last 24 hours. Choose a new key for a new request.
+//   - `/api/v1/problems/idempotency-key-in-use` (409): the request with this
+//     `Idempotency-Key` is still being carried out. Send it again after `Retry-After` for its
+//     answer.
 //   - `/api/v1/problems/blocking` (409): the viewer blocks the account, which keeps them
 //     from following it. Unblock it first.
 //   - `/api/v1/problems/federation-restricted` (403): the instance's federation mode
@@ -19047,9 +19059,15 @@ type ListAnnouncementHistoryParams struct {
 
 // CreateArticleParams defines parameters for CreateArticle.
 type CreateArticleParams struct {
-	// IdempotencyKey A key the client chooses per new status; a retry with the same key returns the status
-	// posted with it instead of posting again. A key longer than 256 characters, or one
-	// that is not UTF-8 without U+0000, is a 422.
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
@@ -19347,9 +19365,15 @@ type ListOwnReportsParams struct {
 
 // CreateStatusParams defines parameters for CreateStatus.
 type CreateStatusParams struct {
-	// IdempotencyKey A key the client chooses per new status; a retry with the same key returns the status
-	// posted with it instead of posting again. A key longer than 256 characters, or one
-	// that is not UTF-8 without U+0000, is a 422.
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 

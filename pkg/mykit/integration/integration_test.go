@@ -365,9 +365,8 @@ func (l *lostAnswer) RoundTrip(req *http.Request) (*http.Response, error) {
 	return nil, errors.New("connection reset before the answer")
 }
 
-// TestRetryAfterALostAnswer posts a status whose answer is lost, and sends it again with the Idempotency-Key that
-// the *NetworkError reports: the server answers with the status that the first request posted, and posts no
-// second one.
+// TestRetryAfterALostAnswer posts a status whose first answer is lost: the client sends it again with its
+// Idempotency-Key, and the server answers with the status that the first request posted, and posts no second one.
 func TestRetryAfterALostAnswer(t *testing.T) {
 	t.Parallel()
 	srv := platformtest.Start(t, platformtest.Options{})
@@ -376,19 +375,13 @@ func TestRetryAfterALostAnswer(t *testing.T) {
 	api := signIn(t, srv, alice, mykit.Config{HTTPClient: &http.Client{Transport: rt}})
 
 	req := mykit.CreateStatusRequest{Text: "once", Visibility: mykit.VisibilityPublic}
-	_, err := api.CreateStatusWithResponse(t.Context(), &mykit.CreateStatusParams{}, req)
-	var ne *mykit.NetworkError
-	if !errors.As(err, &ne) || ne.IdempotencyKey == "" {
-		t.Fatalf("post with a lost answer = %v, want a *NetworkError with the Idempotency-Key", err)
+	resp, err := api.CreateStatusWithResponse(t.Context(), &mykit.CreateStatusParams{}, req)
+	if err != nil || resp.JSON201 == nil {
+		t.Fatalf("post with a lost answer = %v, want the client to retry it to a 201 with the status", err)
 	}
 	var first mykit.Status
 	if err := json.Unmarshal(rt.lost, &first); err != nil || first.Id == "" {
 		t.Fatalf("lost answer %s: %v, want the posted status", rt.lost, err)
-	}
-
-	resp, err := api.CreateStatusWithResponse(t.Context(), &mykit.CreateStatusParams{IdempotencyKey: &ne.IdempotencyKey}, req)
-	if err != nil || resp.JSON201 == nil {
-		t.Fatalf("retry = %v, want 201 with the status", err)
 	}
 	if resp.JSON201.Id != first.Id {
 		t.Errorf("retry answered status %s, want %s that the first request posted", resp.JSON201.Id, first.Id)

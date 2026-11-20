@@ -10,10 +10,10 @@ import { notificationPath } from "@my/app-components";
 import { useNotificationReads, useNotifications } from "@my/app-data";
 import { RelativeTime, SectionLine, SectionList, SectionNote, TextButton, useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
-import { messages } from "../messages.gen";
+import { catalog } from "../messages.gen";
 import { glyphOf, sentenceOf } from "./kinds";
 
-const known = (id: string) => id in (messages["en"] ?? {});
+const known = (id: string) => id in catalog.source;
 
 /** The reader's `count` latest notifications; `instance` is the server's name, which the notices of the server say. */
 export function LatestNotifications({ instance, count = 5 }: { instance: string; count?: number }) {

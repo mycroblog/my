@@ -352,6 +352,36 @@
         "no-restricted-imports": "off"
       }
     },
+    // A feature measures nothing itself (ADR-0167 §2): the measurement modules of the layers (`@my/*/measure`) are the
+    // app's to wire, and the features and the components import none of them. The Tabler rule above is repeated, since
+    // this override takes the place of its options.
+    {
+      "files": [
+        "web/app-features/**",
+        "web/app-components/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@tabler/*"
+                ],
+                "message": "Use the Icon of @my/design-system; only web/design-system/src/icons.tsx imports Tabler (ADR-0025 §6)."
+              },
+              {
+                "group": [
+                  "@my/*/measure"
+                ],
+                "message": "A feature measures nothing itself: the layers time their own interactions and web/app wires where the samples go (ADR-0167 §2)."
+              }
+            ]
+          }
+        ]
+      }
+    },
     // Outside @my/design-system a component of it takes no className and no style (ADR-0025 §4).
     {
       "files": [

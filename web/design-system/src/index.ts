@@ -142,7 +142,7 @@ export { lightSurfaceColor, PictureField, type PictureFieldProps } from "./pictu
 export { FileField, type FileFieldProps } from "./file-field";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
 export { whenIdle } from "./idle";
-export { catalogReader, type Strings } from "./locale";
+export { catalogReader, type Catalog, type CatalogReader, type Loaders, type Strings } from "./locale";
 export {
   ArticleCard,
   ArticleCover,

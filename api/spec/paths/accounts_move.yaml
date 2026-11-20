@@ -37,6 +37,8 @@ post:
   tags: [accounts]
   security:
     - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -61,6 +63,8 @@ delete:
   tags: [accounts]
   security:
     - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The move is canceled.

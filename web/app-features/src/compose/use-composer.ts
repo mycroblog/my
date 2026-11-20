@@ -4,7 +4,7 @@
 // (each with a failed upload's retry), the post replied to or quoted, read from the cache or the server, and the post
 // itself, or the edit of the reader's post. A post the server refuses keeps the draft and says why in the server's own
 // words, beside the input the server named; one that got no answer says that it did not finish, and Post sends it again with the same Idempotency-Key, so
-// that it is posted once (an edit sent again is the same edit). A post saved as a draft on the server (ADR-0156) is
+// that it is posted once (an edit sent again is the same edit), while one the server answered goes with a new key. A post saved as a draft on the server (ADR-0156) is
 // saved over it and published from it; one with a time is saved and scheduled instead, and Save as draft keeps it so;
 // a save refused for a newer draft saved elsewhere is the conflict (§9). A draft no longer on the server may have been
 // posted (by its schedule, or by a publication whose answer was lost): it is not saved again as a new one, which would
@@ -22,6 +22,7 @@ import {
   type SavedDraft,
   type Status,
 } from "@my/app-data";
+import { ProblemError } from "@mycroblog/mykit";
 import { useEffect, useRef, useState } from "react";
 import { placeRefusal, type FieldMembers, type Refused } from "../field-errors";
 import {
@@ -30,6 +31,7 @@ import {
   maxAttachments,
   onServer,
   postable,
+  postKey,
   problemsOf,
   toDraft,
   toEdit,
@@ -94,6 +96,15 @@ export function failedPhase(e: unknown, members: FieldMembers<string>): Phase {
   if (e instanceof DraftGoneError) return { kind: "gone" };
   const appeal = hookRefusalOf(e);
   return { kind: "failed", ...placeRefusal(e, members), ...(appeal === undefined ? {} : { appeal }) };
+}
+
+/**
+ * Whether a write failed with an answer of the server, after which its post goes with a new Idempotency-Key: the key is
+ * for the retries of a write that got no answer. The answer that the first request with the key is still being carried
+ * out is none: the post may yet be made.
+ */
+export function isAnswer(e: unknown): boolean {
+  return e instanceof ProblemError && e.type !== "/api/v1/problems/idempotency-key-in-use";
 }
 
 let next = 0;
@@ -208,6 +219,7 @@ export function useComposer(
   /** A write of `d` refused. */
   const refused = (d: Draft) =>
     whileOpen((e: unknown) => {
+      if (isAnswer(e)) setDraft((x) => (x.key === d.key ? { ...x, answers: (x.answers ?? 0) + 1 } : x));
       setPhase(failedPhase(e, composerMembers(d)));
     });
   const kept = whileOpen(onKept);
@@ -232,7 +244,7 @@ export function useComposer(
       target.kind === "edit"
         ? writes.edit(target.id, toEdit(d))
         : d.saved === undefined
-          ? writes.post(toStatus(d, settings), d.key)
+          ? writes.post(toStatus(d, settings), postKey(d))
           : store(d, false).then((saved) => writes.publish(saved.id));
     sent.then((status) => {
       rememberTags(d.text);

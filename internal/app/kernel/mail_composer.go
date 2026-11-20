@@ -25,7 +25,8 @@ type MailSite struct {
 	// Logo is the instance's own logo for the header of the HTML version (ADR-0059), nil for
 	// none; LogoDark replaces it on dark backgrounds where the client follows the color scheme.
 	Logo, LogoDark *MailLogo
-	// Colors are the colors of the HTML version.
+	// Colors are the colors of the HTML version: the server's theme, or the defaults of the design
+	// tokens without one (MailColorsFrom).
 	Colors MailColors
 }
 
@@ -141,9 +142,10 @@ var mailText = template.Must(template.New("mail").Parse(
 {{with .Unsubscribe}}{{.}}
 {{end}}`))
 
-// mailFrame is the HTML layout, in the table markup of MJML, with the colors of MailSite.Colors.
-// html/template escapes every value for its context, and turns a URL of a scheme other than http,
-// https, and mailto into "#ZgotmplZ".
+// mailFrame is the HTML layout, which web/mail renders from React into this html/template
+// (`scripts/task.sh mail:frame`), with the colors of MailSite.Colors. html/template escapes every
+// value for its context, turns a URL of a scheme other than http, https, and mailto into
+// "#ZgotmplZ", and a color that is no CSS value into "ZgotmplZ".
 //
 //go:embed mail_frame.gen.html
 var mailFrame string

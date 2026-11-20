@@ -12,6 +12,7 @@ post:
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]
+  x-no-idempotency-key: Every call must reach the permission check and the audit log; a repeat changes nothing.
   parameters:
     - $ref: ../components/parameters/InstanceDomain.yaml
     - $ref: ../components/parameters/DeliveryId.yaml

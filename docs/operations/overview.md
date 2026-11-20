@@ -35,7 +35,7 @@ Where a part keeps data, choose it before the first start: the data does not mov
 | --- | --- | --- | --- |
 | Database | [`database`](../reference/configuration.md#database) | `sqlite` (a file), `postgres` (PostgreSQL and compatible services) | [Database](database.md), [backup](backup.md) |
 | Job queue | [`queue`](../reference/configuration.md#queue) | `db` (a table in the database), `inline` (runs each job at once in the same process, for tests and development), `cloudtasks` (Google Cloud Tasks wakes the server for each job; needs PostgreSQL) | [The job queue](running.md#the-job-queue-and-failed-dead-jobs) |
-| Key-value store, for caches and rate limits | [`kv`](../reference/configuration.md#kv) | `db` (a table in the database), `memory` (each process on its own), `valkey` (Valkey or another Redis-protocol server, shared by every process) | [`kv`](../reference/configuration.md#kv) |
+| Key-value store, for caches, rate limits, and the answers kept for a day to writes sent again | [`kv`](../reference/configuration.md#kv) | `db` (a table in the database), `memory` (each process on its own), `valkey` (Valkey or another Redis-protocol server, shared by every process) | [`kv`](../reference/configuration.md#kv) |
 | Media storage | [`blob`](../reference/configuration.md#blob) | `fs` (a directory), `s3` (Amazon S3, Cloudflare R2, MinIO, Garage, and other S3-compatible stores), `gcs` (Google Cloud Storage) | [Docker Compose files](running.md#docker-compose-files), [backing up media](backup.md#media-in-a-bucket) |
 | Media processing | [`media_image`](../reference/configuration.md#media_image), [`media_video`](../reference/configuration.md#media_video), [`media_audio`](../reference/configuration.md#media_audio), one for each kind of file | `native` (in the server), `plugin` (a plugin of yours converts the files of that kind) | [Converting media](plugins.md#converting-media) |
 | Real-time stream between processes | [`stream`](../reference/configuration.md#stream) | `hub` (inside one process), `postgres` (`LISTEN` / `NOTIFY`), `valkey`, `sns` (Amazon SNS and SQS), `pubsub` (Google Cloud Pub/Sub) | [`stream`](../reference/configuration.md#stream) |
@@ -76,7 +76,7 @@ The released binary and container image hold every adapter of the table.
    needs, and split the workers by job type ([splitting workers](running.md#splitting-workers-by-job-type)).
    With more than one process, the real-time stream needs a broker that reaches every process (`postgres`, `valkey`,
    `sns`, or `pubsub`), and the key-value store should be shared (`db` or `valkey`), since `memory` keeps the rate
-   limits of each process apart. The job queue stays in
+   limits and the answers to writes sent again of each process apart. The job queue stays in
    PostgreSQL, or moves to Google Cloud Tasks ([Cloud Tasks](running.md#cloud-tasks)).
 
 The [Cloud Run deployment](deploy-cloud-run.md) is an example of a setup between the second and the third step:
