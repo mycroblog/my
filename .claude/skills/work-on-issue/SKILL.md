@@ -32,7 +32,8 @@ Given an epic or a milestone, you are the orchestrator. Before building:
    `ts-test-developer`, given the issue and the developer's report. `routine` for mechanical work; for a
    UI change, `visual` first in a story (ADR-0169 §9), `copy` for its strings, `motion` for its states and changes of
    screen, and a fresh `visual-evaluator` given only `web:shot`'s shots, the task and the constraints, before the
-   decider picks. Hand the others their
+   decider picks; for a change of the way across screens, a fresh `walker` given only the demo's URL (`web:demo`),
+   a viewport and an account. Hand the others their
    `ctx <n> --quiet` file.
 5. Bring the branch up to date with `git merge origin/main` (`agentkit regen` on a conflict in generated
    files). `scripts/agentkit.sh check` is the local check; run

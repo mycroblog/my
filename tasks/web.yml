@@ -157,6 +157,13 @@ tasks:
     cmds:
       - bun --conditions=@mycroblog/source web/e2e/src/server/main.ts
 
+  # The walker's browser (ADR-0169 §2): web/e2e/walk.ts, one step a call on the demo server that web:demo runs.
+  walk:
+    desc: Walk the running app one step a call in a headless Chromium that stays open (open <url> [--viewport mobile|tablet|pc], look, click <role> <name>, fill <role> <name> <text>, press, scroll, back, goto, close), printing the address, the accessible tree and a shot
+    dir: web/e2e
+    cmds:
+      - bun --bun walk.ts {{.CLI_ARGS}}
+
   # The E2E tests (ADR-0015 §1), against the same demo server, which their global setup starts. Chromium comes from
   # `bun --bun playwright install chromium` in web/e2e. Not a part of `check`: CI runs it when the e2e context changes.
   e2e:
