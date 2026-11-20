@@ -31,7 +31,8 @@ export function accountQuery({ queries }: AppData, acct: string, signedIn = true
 /**
  * The account of `id`. Without data, its first data is the newest copy of the account the cache holds (cachedAccount),
  * as fetched when that copy was: it shows at once, and is fetched again in the background once it is stale (ADR-0028
- * §7). A copy never replaces data the query holds.
+ * §7). A copy without the follow counts (a post's author: the server counts them only in the account's own answers) is
+ * stale at once, so that the counts follow it. A copy never replaces data the query holds.
  */
 export function accountByIdQuery(data: AppData, id: string) {
   let copy: AccountCopy | undefined | null = null;
@@ -39,7 +40,10 @@ export function accountByIdQuery(data: AppData, id: string) {
   return {
     ...data.queries.queryOptions("get", "/accounts/{id}", { params: { path: { id } } }),
     initialData: () => seed()?.account,
-    initialDataUpdatedAt: () => seed()?.at,
+    initialDataUpdatedAt: () => {
+      const seeded = seed();
+      return seeded?.account.followers_count === undefined ? 0 : seeded.at;
+    },
   };
 }
 
