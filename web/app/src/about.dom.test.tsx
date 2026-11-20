@@ -229,7 +229,11 @@ test("the crawler's page of a server that obeys robots.txt says so, names the cr
 
 test("the crawler's page of a server that does not read robots.txt says a website cannot refuse it there", async () => {
   await renderApp("/about/crawler", { about: { linkCards: "ignores" } });
-  expect(await main().findByText(/^On this server, the crawler is on and it does not read robots\.txt/)).toBeDefined();
+  expect(
+    await main().findByText(
+      /^On this server, the crawler is on and, by its administrators' choice, does not read robots\.txt\. A website cannot refuse it here with robots\.txt\./,
+    ),
+  ).toBeDefined();
   expect(main().getByText(/^This server does not read robots\.txt, so this rule has no effect here\./)).toBeDefined();
   expect(main().queryByText(/^robots\.txt of the origin of the page/)).toBeNull();
   expect(main().getByText("This server publishes no contact.")).toBeDefined();
