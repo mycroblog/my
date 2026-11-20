@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Proves the rules of restrictions.js and styles.js as the workspace runs them: `bun --bun oxlint` with .oxlintrc.json
 // lints the fixtures (web/devtools/fixtures/restrictions/ and the fixtures/ of the layers), and each finding must be
-// one that a fixture line expects with an `error: <Component> prop` comment (design-system-props), an `error: layers
+// one that a fixture line expects with an `error: <Component> prop` or `error: classes <what>` comment
+// (design-system-props), an `error: layers
 // @my/<x>` comment (layer-imports), an `error: platform <what>` comment (platform-globals), an `error: e2e <what>`
 // comment (e2e-queries), an `error: e2e-flaky <what>` comment (e2e-flaky), an `error: color <colour>` comment
 // (token-colors), an `error: layout <class>` or `error: layout-part <name>` comment (layout-parts), an `error:
@@ -42,7 +43,7 @@ const fixtures = dirs.flatMap((dir) =>
 const findings = {
   "restrict(design-system-props)": (/** @type {string} */ message) => {
     const [, component, prop] = /^(<\S+>) (?:of|above) @my\/design-system gets `(\w+)`/.exec(message) ?? [];
-    return `${component} ${prop}`;
+    return component === undefined ? `classes ${/^`([^`]+)`/.exec(message)?.[1]}` : `${component} ${prop}`;
   },
   "restrict(layer-imports)": (/** @type {string} */ message) =>
     `layers ${/^@my\/\S+ imports (@my\/[\w-]+)/.exec(message)?.[1]}`,
@@ -105,7 +106,7 @@ async function expected() {
     const lines = (await Bun.file(`${root}${file}`).text()).split("\n");
     for (const [index, line] of lines.entries()) {
       const match =
-        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport|switch|section|heading|count|date|pager) \S+|html \S+(?: =)?|trail(?= |$))/.exec(
+        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport|switch|section|heading|count|date|pager) \S+|(?:html|classes) \S+(?: =)?|trail(?= |$))/.exec(
           line,
         );
       if (match) found.push(`${file}:${index + 1} ${match[1]}`);
@@ -150,6 +151,7 @@ test("the rules find exactly what the fixtures expect, and nothing in the allowe
     "date",
     "pager",
     "html",
+    "classes",
   ])
     expect([kind, want.some((line) => line.includes(` ${kind} `))]).toEqual([kind, true]);
   expect(lint()).toEqual(want);

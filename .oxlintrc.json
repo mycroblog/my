@@ -409,8 +409,18 @@
       }
     },
     // Only a layout part of @my/design-system writes layout (ADR-0171 §3), and only the frame of a page decides by the
-    // viewport (ADR-0025 §4; the app decides for itself); web/devtools/src/layout-parts.js names both. A story lays
-    // out its specimens and stands in for the app.
+    // viewport (ADR-0025 §4; the app decides for itself, and the layers below the design system not at all);
+    // web/devtools/src/layout-parts.js names both. A story lays out its specimens and stands in for the app.
+    {
+      "files": [
+        "web/platform/**",
+        "web/rtc/**",
+        "web/app-data/**"
+      ],
+      "rules": {
+        "restrict/viewport-breakpoints": "error"
+      }
+    },
     {
       "files": [
         "web/design-system/**",
