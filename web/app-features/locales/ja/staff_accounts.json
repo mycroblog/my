@@ -251,9 +251,13 @@
     "defaultMessage": "最近の処分",
     "description": "The heading of an account's newest actions on its Review page. Read by moderators."
   },
+  "staff_accounts.account.actions.all": {
+    "defaultMessage": "すべての処分",
+    "description": "Under an account's newest actions on its Review page, when there may be more than those shown: opens its Actions page (staff_accounts.page.actions), which pages through them all. Read by moderators."
+  },
   "staff_accounts.account.reports": {
-    "defaultMessage": "最近の通報",
-    "description": "The heading of an account's newest reports on its Review page. Read by moderators."
+    "defaultMessage": "通報",
+    "description": "The heading of an account's reports on its Review page, the newest first, the rest under Show more. Read by moderators."
   },
   "staff_accounts.account.back_report": {
     "defaultMessage": "通報",
@@ -620,8 +624,8 @@
     "description": "The link from an account's revealed email address to the search of the accounts of the same email domain. Read by moderators."
   },
   "staff_accounts.private.sign_ins": {
-    "defaultMessage": "最近のログイン",
-    "description": "The heading of the table of an account's newest sign-ins. Read by moderators."
+    "defaultMessage": "ログインの履歴",
+    "description": "The heading of the table of an account's sign-ins, the newest first, the rest under Show more. Read by moderators."
   },
   "staff_accounts.private.sign_ins.none": {
     "defaultMessage": "保存期間内のログインの記録はありません。",
@@ -642,6 +646,10 @@
   "staff_accounts.private.same_ip": {
     "defaultMessage": "同じ IP アドレスを使ったアカウント",
     "description": "The heading of the table of other accounts that signed up or signed in from an IP address of this one. Read by moderators."
+  },
+  "staff_accounts.private.same_ip.of": {
+    "defaultMessage": "{ip} を使ったアカウント",
+    "description": "For assistive technology, the name of the table of the other accounts that signed up or signed in from one IP address (ip) of this one, one table per address. Read by moderators."
   },
   "staff_accounts.private.same_ip.none": {
     "defaultMessage": "ほかに同じアドレスを使ったアカウントはありません。",

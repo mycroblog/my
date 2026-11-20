@@ -41,6 +41,8 @@ export const FinanceNotOpen: Story = { parameters: screen({ at: "/admin/finance"
 
 /** The cost items, newest first: each its provider, how often, its price today, and whether it ends. */
 export const Costs: Story = { parameters: at("/admin/finance/costs") };
+/** The cost items' second page, two a page. */
+export const CostsSecondPage: Story = { parameters: at("/admin/finance/costs", { staffPage: 2 }, { next: true }) };
 /** No cost recorded yet. */
 export const CostsEmpty: Story = { parameters: at("/admin/finance/costs", { financeAdmin: { costs: "none" } }) };
 export const CostsLoading: Story = { parameters: at("/admin/finance/costs", {}, { state: "loading" }) };
@@ -60,6 +62,8 @@ export const CostError: Story = { parameters: at("/admin/finance/costs/{cost:vps
 
 /** The income by month (gross, fees, net, balance), the latest month's net by source, and the money movements. */
 export const Income: Story = { parameters: at("/admin/finance/income") };
+/** The money movements' second page, two a page. */
+export const IncomeSecondPage: Story = { parameters: at("/admin/finance/income", { staffPage: 2 }, { next: true }) };
 /** The refunds alone among the money movements. */
 export const IncomeRefunds: Story = { parameters: at("/admin/finance/income?kind=refund") };
 /** No chargeback ever: the filter's notice, with Clear filters. */

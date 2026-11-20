@@ -25,6 +25,10 @@ const asAdmin = (path: string, more: Omit<Fake, "at"> = {}) => screen({ at: path
 
 /** Every announcement, the newest first: its title, when it shows and where it stands. */
 export const Announcements: Story = { parameters: asAdmin("/admin/announcements") };
+/** The announcements' second page, two a page. */
+export const AnnouncementsSecondPage: Story = {
+  parameters: asAdmin("/admin/announcements", { server: { staffPage: 2 }, next: true }),
+};
 /** The drafts alone. */
 export const AnnouncementsDrafts: Story = { parameters: asAdmin("/admin/announcements?state=draft") };
 /** The ones waiting for their window to start. */

@@ -119,7 +119,15 @@ export const LoginProviderNew: Story = { parameters: at("/admin/login-providers/
 
 /** OAuth apps of every way of registration, one disabled, the server's own last; and the door to the denied hosts. */
 export const OAuthApps: Story = { parameters: at("/admin/oauth-apps") };
+/** The OAuth apps' second page, two a page. */
+export const OAuthAppsSecondPage: Story = {
+  parameters: at("/admin/oauth-apps", { server: { staffPage: 2 }, next: true }),
+};
 /** The apps registered by a person. */
 export const OAuthAppsByPeople: Story = { parameters: at("/admin/oauth-apps?registration=user") };
 /** The denied hosts of metadata documents, one denied, and the form that denies another. */
 export const OAuthHosts: Story = { parameters: at("/admin/oauth-apps/hosts") };
+/** The denied hosts' second page, one a page. */
+export const OAuthHostsSecondPage: Story = {
+  parameters: at("/admin/oauth-apps/hosts", { server: { staffPage: 1 }, next: true }),
+};

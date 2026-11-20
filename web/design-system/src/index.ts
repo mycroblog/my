@@ -381,15 +381,12 @@ export {
   type RecordTableProps,
 } from "./records";
 export {
-  MoreRecords,
   Pager,
-  RecordPages,
   ShowMore,
   useAddedFocus,
   type AddedFocus,
   type PagerProps,
   type PageTarget,
-  type RecordPagesProps,
   type ShowMoreProps,
 } from "./pager";
 export { useScrollRestoration, type ScrollMode } from "./scroll";

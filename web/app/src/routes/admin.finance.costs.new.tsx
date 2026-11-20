@@ -11,7 +11,7 @@ import { StaffUnderPage } from "../shell/staff-under";
 export const Route = createFileRoute("/admin/finance/costs/new")({
   // The newest item, whose currency a new one starts with.
   loader: ({ context }) =>
-    screenLoad(context, (data) => loadStaffEntry(data, "admin", "finance", {}, loadCostItemsScreen)),
+    screenLoad(context, (data) => loadStaffEntry(data, "admin", "finance", {}, (d) => loadCostItemsScreen(d, {}))),
   component: NewCost,
   // A screen of its own opens at its top.
   staticData: { scroll: "top" },

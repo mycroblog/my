@@ -22,6 +22,7 @@ import {
   type AuditTargetKind,
 } from "@my/app-data";
 import {
+  Pager,
   FeedNotice,
   FilterBar,
   FilterFacet,
@@ -42,7 +43,15 @@ import { formatParts } from "../../slots";
 import { settingNames, textLabels } from "../settings/words";
 import { staffHref, useStaffEntries, type StaffAddress, type StaffArea, type StaffSearch } from "../entries";
 import { ReadNotice, useStaffStrings, type T } from "../parts";
-import { auditLogPath, cursorOf, domainAllowsPath, domainListPath, filtered, Pages, remoteServerPath } from "./parts";
+import {
+  auditLogPath,
+  cursorOf,
+  domainAllowsPath,
+  domainListPath,
+  filtered,
+  useAddressPages,
+  remoteServerPath,
+} from "./parts";
 
 /** What the log shows at an address's query: every operation, unless it names who, what kind, or what. */
 export function auditQueryOf(search: StaffSearch): AuditQuery {
@@ -382,6 +391,7 @@ function AuditFilters({ address, q }: { address: StaffAddress; q: AuditQuery }) 
 
 /** The audit log: its filters, the page of entries, and the pages. */
 export function AuditLogScreen(address: StaffAddress): ReactNode {
+  const pages = useAddressPages(address);
   const { t } = useStaffStrings();
   const alone = useInstance()?.single_user === true;
   const q = auditQueryOf(address.search);
@@ -418,7 +428,7 @@ export function AuditLogScreen(address: StaffAddress): ReactNode {
           ))}
         </LogList>
       )}
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }

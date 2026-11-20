@@ -32,7 +32,8 @@ import {
   FormAlert,
   LinkButton,
   ModalPresence,
-  MoreRecords,
+  ShowMore,
+  useAddedFocus,
   SaveState,
   SettingsEmpty,
   SettingsList,
@@ -67,6 +68,7 @@ export function LinkCardRulesScreen(): ReactNode {
   const moment = useMoment();
   const read = useLinkCardRules();
   const [shown, setShown] = useState(shownAtOnce);
+  const added = useAddedFocus(shown);
   const title = t("staff_operations.entry.link_card_domains");
   if (read.rules === undefined)
     return (
@@ -102,9 +104,10 @@ export function LinkCardRulesScreen(): ReactNode {
           <SettingsEmpty>{t("staff_operations.link_cards.empty")}</SettingsEmpty>
         ) : (
           <SettingsList label={t("staff_operations.link_cards.list")}>
-            {rules.slice(0, shown).map((rule) => (
+            {rules.slice(0, shown).map((rule, i) => (
               <SettingsListRow
                 key={rule.domain}
+                itemRef={added.item(i)}
                 title={rule.domain}
                 state={t("staff_operations.link_cards.mode", { mode: rule.mode })}
                 facts={[t("staff_operations.link_cards.set_at", { date: moment(rule.updated_at) })]}
@@ -113,13 +116,12 @@ export function LinkCardRulesScreen(): ReactNode {
             ))}
           </SettingsList>
         )}
-        {rules.length > shown && (
-          <MoreRecords
-            onPress={() => {
-              setShown((n) => n + shownAtOnce);
-            }}
-          />
-        )}
+        <ShowMore
+          more={rules.length > shown}
+          onPress={added.press(() => {
+            setShown((n) => n + shownAtOnce);
+          })}
+        />
       </SettingsSection>
     </SettingsScreen>
   );

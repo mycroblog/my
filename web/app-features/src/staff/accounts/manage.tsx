@@ -11,8 +11,11 @@
 import { moderatedAccountPath, sentenceHandleOf } from "@my/app-components";
 import {
   usePermissions,
+  useAccountSignIns,
   useAccountWrites,
+  useSameIpAccounts,
   type AccountPrivateData,
+  type ModeratedAccount,
   type ModeratedAccountDetail,
   type PasswordResetLink,
 } from "@my/app-data";
@@ -28,13 +31,14 @@ import {
   ScreenStack,
   Stack,
   TextLink,
+  useAddedFocus,
   type Fact,
   type RecordColumn,
   type RecordRow,
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
 import { staffEntryPath, staffHref } from "../entries";
-import { Titled, useMoment, useStaffStrings } from "../parts";
+import { ListMore, Titled, useMoment, useStaffStrings } from "../parts";
 import { CopyValue } from "../settings/parts";
 import { AccountStateMark, refusalWords, useSaid } from "./parts";
 import { AccountRoles } from "../server/account-roles";
@@ -121,8 +125,8 @@ function PrivateData({ account }: { account: ModeratedAccountDetail }) {
             </TextLink>
           </Row>
         )}
-        {data !== undefined && <SignIns data={data} />}
-        {data !== undefined && <SameIp data={data} />}
+        {data !== undefined && <SignIns account={account.id} data={data} />}
+        {data !== undefined && <SameIp account={account.id} data={data} />}
       </Stack>
     </Titled>
   );
@@ -130,15 +134,20 @@ function PrivateData({ account }: { account: ModeratedAccountDetail }) {
 
 type SignInColumn = "agent" | "when";
 
-/** The newest sign-ins: where each came from, with what, and when. */
-function SignIns({ data }: { data: AccountPrivateData }) {
+/**
+ * The sign-ins, the newest first (those the shown private data hold), the rest under Show more, each read recorded:
+ * where each came from, with what, and when.
+ */
+function SignIns({ account, data }: { account: string; data: AccountPrivateData }) {
   const { t } = useStaffStrings();
+  const list = useAccountSignIns(account, data.sign_ins);
+  const added = useAddedFocus(list.items.length);
   const columns: RecordColumn<SignInColumn>[] = [
     { key: "agent", label: t("staff_accounts.private.column.agent"), bare: true },
     { key: "when", label: t("staff_accounts.private.column.when"), kind: "fit", beside: true },
   ];
-  const rows = data.sign_ins.map((s, i): RecordRow<SignInColumn> => ({
-    id: `${s.signed_in_at}-${i}`,
+  const rows = list.items.map((s, i): RecordRow<SignInColumn> => ({
+    id: `${s.signed_in_at}-${String(i)}`,
     head: s.ip ?? t("staff_accounts.private.unknown"),
     cells: {
       agent: s.user_agent === undefined ? t("staff_accounts.private.unknown") : <bdi>{s.user_agent}</bdi>,
@@ -147,44 +156,71 @@ function SignIns({ data }: { data: AccountPrivateData }) {
   }));
   return (
     <Titled title={t("staff_accounts.private.sign_ins")}>
-      <RecordTable
-        label={t("staff_accounts.private.sign_ins")}
-        head={{ label: t("staff_accounts.private.column.ip") }}
-        columns={columns}
-        rows={rows}
-        empty={<FeedNotice start>{t("staff_accounts.private.sign_ins.none")}</FeedNotice>}
-      />
+      <Stack gap="entry-room">
+        <RecordTable
+          label={t("staff_accounts.private.sign_ins")}
+          head={{ label: t("staff_accounts.private.column.ip") }}
+          columns={columns}
+          rows={rows}
+          itemRef={added.item}
+          empty={<FeedNotice start>{t("staff_accounts.private.sign_ins.none")}</FeedNotice>}
+        />
+        <ListMore list={list} added={added} />
+      </Stack>
     </Titled>
   );
 }
 
 type SameColumn = "ip" | "state";
 
-/** The other accounts that used an address of this one, each opening its own screen. */
-function SameIp({ data }: { data: AccountPrivateData }) {
+/**
+ * The other accounts that used an address of this one, a table for each address, the newest first (those the shown
+ * private data hold), the rest of each under its Show more, each read recorded; each account opening its own screen.
+ */
+function SameIp({ account, data }: { account: string; data: AccountPrivateData }) {
   const { t } = useStaffStrings();
+  const groups = data.same_ip_accounts.filter((group) => group.accounts.length > 0);
+  return (
+    <Titled title={t("staff_accounts.private.same_ip")}>
+      {groups.length === 0 ? (
+        <FeedNotice start>{t("staff_accounts.private.same_ip.none")}</FeedNotice>
+      ) : (
+        <Stack gap="entry-room">
+          {groups.map((group) => (
+            <SameIpGroup key={group.ip} account={account} ip={group.ip} newest={group.accounts} />
+          ))}
+        </Stack>
+      )}
+    </Titled>
+  );
+}
+
+/** The other accounts that used the address `ip`, the newest first, the rest under Show more. */
+function SameIpGroup({ account, ip, newest }: { account: string; ip: string; newest: readonly ModeratedAccount[] }) {
+  const { t } = useStaffStrings();
+  const list = useSameIpAccounts(account, ip, newest);
+  const added = useAddedFocus(list.items.length);
   const columns: RecordColumn<SameColumn>[] = [
     { key: "ip", label: t("staff_accounts.private.column.ip"), bare: true },
     { key: "state", label: t("staff_accounts.search.column.state"), kind: "fit", beside: true },
   ];
-  const rows = data.same_ip_accounts.flatMap((group) =>
-    group.accounts.map((a): RecordRow<SameColumn> => ({
-      id: `${group.ip}-${a.id}`,
-      head: sentenceHandleOf(a.account),
-      href: moderatedAccountPath(a.id),
-      cells: { ip: group.ip, state: <AccountStateMark state={a.state} /> },
-    })),
-  );
+  const rows = list.items.map((a): RecordRow<SameColumn> => ({
+    id: a.id,
+    head: sentenceHandleOf(a.account),
+    href: moderatedAccountPath(a.id),
+    cells: { ip, state: <AccountStateMark state={a.state} /> },
+  }));
   return (
-    <Titled title={t("staff_accounts.private.same_ip")}>
+    <Stack gap="entry-room">
       <RecordTable
-        label={t("staff_accounts.private.same_ip")}
+        label={t("staff_accounts.private.same_ip.of", { ip })}
         head={{ label: t("staff_accounts.search.column.account") }}
         columns={columns}
         rows={rows}
-        empty={<FeedNotice start>{t("staff_accounts.private.same_ip.none")}</FeedNotice>}
+        itemRef={added.item}
       />
-    </Titled>
+      <ListMore list={list} added={added} />
+    </Stack>
   );
 }
 

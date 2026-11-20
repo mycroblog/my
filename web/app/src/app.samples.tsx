@@ -78,6 +78,11 @@ export type Fake = {
   joined?: StoryCall;
   /** A newer build of the app waits (the service worker's), which a toast offers. */
   updateReady?: boolean;
+  /**
+   * Next pressed once under the screen's list that pages by Previous and Next, once its first page is in: the list at
+   * its second page, the address with it.
+   */
+  next?: boolean;
 };
 
 /** What the Stream panel offers a story: new posts and reconnections of the home timeline, or notifications. */
@@ -305,6 +310,27 @@ function StoryApp(props: Fake & { stream: Stream | undefined }) {
   );
 }
 
+/**
+ * Presses Next under the screen's paged list once it shows, when `next`: the last pager of the page
+ * (`[data-pager]`, the design system's), which is the list's where a window of periods stands over it.
+ */
+function usePressedNext(next: boolean) {
+  useEffect(() => {
+    if (!next) return undefined;
+    const timer = setInterval(() => {
+      const button = [...document.querySelectorAll<HTMLButtonElement>("nav[data-pager] div > button:nth-child(2)")].at(
+        -1,
+      );
+      if (button === undefined || button.disabled) return;
+      clearInterval(timer);
+      button.click();
+    }, 50);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [next]);
+}
+
 function StoryPage({
   at,
   state = "normal",
@@ -315,6 +341,7 @@ function StoryPage({
   call = false,
   joined,
   updateReady = false,
+  next = false,
   stream,
   onRestart,
 }: Fake & { stream: Stream | undefined; onRestart: (restarted: true) => void }) {
@@ -357,6 +384,7 @@ function StoryPage({
     },
     [watch],
   );
+  usePressedNext(next);
   useSampleCall(call);
   useEffect(() => (joined === undefined ? undefined : joinStoryCall(data, fake, joined)), [data, fake, joined]);
   useStream(data, fake, stream);

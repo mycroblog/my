@@ -10,16 +10,19 @@
 // focus once the dialog has left.
 
 import {
+  loadAdminEmojiRequests,
   emojiLimits,
   emojiRefusal,
   emojiRequestStates,
   useAdminEmojiRequests,
   useAdminEmojiWrites,
   type AdminCustomEmojiRequest,
+  type AppData,
   type CustomEmojiRequestState,
 } from "@my/app-data";
 import { sentenceHandleOf } from "@my/app-components";
 import {
+  Pager,
   Box,
   Button,
   FactList,
@@ -29,7 +32,6 @@ import {
   FormAlert,
   ModalPresence,
   PanelDialog,
-  RecordPages,
   RecordTable,
   RelativeTime,
   Row,
@@ -43,7 +45,8 @@ import {
   type RecordState,
 } from "@my/design-system";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
+import type { StaffAddress, StaffSearch } from "../entries";
+import { cursorOf, filtered, useAddressPages, ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
 import { coded, EmojiImage, EmojiTabs, EmojiTitle } from "./emoji-parts";
 import { type AdminSubProps } from "../settings/parts";
 import { useStillThere } from "./parts";
@@ -227,12 +230,27 @@ function RequestDialog({
 
 type Column = "image" | "requester" | "created" | "state" | "act";
 
-/** The requests: their tabs, the state shown, a page of them, the request opened, and what came of a decision. */
-export function AdminEmojiRequestsScreen({ go }: AdminSubProps): ReactNode {
+/** The state of the requests an address's query shows; the pending ones where it names none. */
+const requestStateOf = (search: StaffSearch): CustomEmojiRequestState =>
+  emojiRequestStates.find((s) => s === search["state"]) ?? "pending";
+
+/** Reads the page of requests an address's query asks for, for the route's loader. */
+export const loadEmojiRequestsScreen = (data: AppData, search: StaffSearch): Promise<void> =>
+  loadAdminEmojiRequests(data, requestStateOf(search), cursorOf(search));
+
+/**
+ * The requests: their tabs, the state shown and the page, both kept in the address, a page of them, the request opened,
+ * and what came of a decision.
+ */
+export function AdminEmojiRequestsScreen({
+  go,
+  search,
+  onSearch,
+}: AdminSubProps & Pick<StaffAddress, "search" | "onSearch">): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t } = useStaffStrings();
-  const [state, setState] = useState<CustomEmojiRequestState>("pending");
-  const [trail, setTrail] = useState<readonly (string | undefined)[]>([]);
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const state = requestStateOf(search);
+  const cursor = pages.cursor;
   const page = useAdminEmojiRequests(state, cursor);
   const [open, setOpen] = useState<AdminCustomEmojiRequest | undefined>(undefined);
   const [said, setSaid] = useState<{ text: string; n: number } | undefined>(undefined);
@@ -284,7 +302,6 @@ export function AdminEmojiRequestsScreen({ go }: AdminSubProps): ReactNode {
       ),
     },
   }));
-  const previous = trail.at(-1);
   return (
     <>
       <ScreenStack busy={page.stale}>
@@ -295,9 +312,7 @@ export function AdminEmojiRequestsScreen({ go }: AdminSubProps): ReactNode {
               label={t("staff_emoji.request.filters")}
               applied={state !== "pending"}
               onClear={() => {
-                setState("pending");
-                setCursor(undefined);
-                setTrail([]);
+                onSearch(filtered(search, { state: undefined }));
               }}
             >
               <FilterFacet
@@ -306,9 +321,8 @@ export function AdminEmojiRequestsScreen({ go }: AdminSubProps): ReactNode {
                 values={states}
                 chosen={state}
                 onChoose={(id) => {
-                  setState(emojiRequestStates.find((s) => s === id) ?? "pending");
-                  setCursor(undefined);
-                  setTrail([]);
+                  const chosen = emojiRequestStates.find((s) => s === id);
+                  onSearch(filtered(search, { state: chosen === "pending" ? undefined : chosen }));
                 }}
               />
             </FilterBar>
@@ -332,28 +346,7 @@ export function AdminEmojiRequestsScreen({ go }: AdminSubProps): ReactNode {
                     </FeedNotice>
                   }
                 />
-                <RecordPages
-                  previous={
-                    previous === undefined && trail.length === 0
-                      ? undefined
-                      : {
-                          onPress: () => {
-                            setCursor(previous);
-                            setTrail(trail.slice(0, -1));
-                          },
-                        }
-                  }
-                  next={
-                    page.next === undefined
-                      ? undefined
-                      : {
-                          onPress: () => {
-                            setTrail([...trail, cursor]);
-                            setCursor(page.next);
-                          },
-                        }
-                  }
-                />
+                <Pager {...pages.pager(page.next)} />
               </>
             )}
           </ScreenStack>

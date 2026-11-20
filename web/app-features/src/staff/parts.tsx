@@ -2,11 +2,11 @@
 
 // What the staff's screens share: their strings in the reader's locale, how a moment is written (the reader's zone, a
 // date and its time held together), a heading over what it heads, a notice that a screen's read loads or failed, the
-// pages of a list by the server's cursor with the way back along them kept in the address, and the status a press says
-// what it did in.
+// pages of a list by the server's cursor, kept in the address with the way back along them (`useAddressPages`), and
+// the status a press says what it did in.
 
 import { sentenceHandleOf } from "@my/app-components";
-import type { Account } from "@my/app-data";
+import type { Account, PagedList } from "@my/app-data";
 import {
   Box,
   CaptionLine,
@@ -17,11 +17,13 @@ import {
   FormAlert,
   GroupHeading,
   ListTitle,
-  RecordPages,
+  ShowMore,
   Stack,
   TextButton,
   useLocale,
   useTimeZone,
+  type AddedFocus,
+  type PagerProps,
 } from "@my/design-system";
 import { useRef, useState, type ReactNode } from "react";
 import type { StaffAddress, StaffSearch } from "./entries";
@@ -102,60 +104,109 @@ export function ReadNotice({
 
 // The pages of a list by the server's cursor, kept in the address, and the status a press says what it did in.
 
-/** The cursor of the page an address's query asks for; the first page without one. */
-export const cursorOf = (search: StaffSearch): string | undefined =>
-  search["cursor"] === undefined || search["cursor"] === "" ? undefined : search["cursor"];
+/**
+ * The names a list keeps its page under in the address's query: its cursor's, and its trail's (the cursors of the pages
+ * before, the way back by Previous). A screen's first list keeps them as `cursor` and `trail`; a second list on the same
+ * screen under names of its own, so that each keeps its place.
+ */
+export type PageNames = { readonly cursor: string; readonly trail: string };
 
-/** The cursors of the pages before the one shown, the first page's as empty: the way back by Previous. */
-const trailOf = (search: StaffSearch): string[] =>
-  search["trail"] === undefined ? [] : search["trail"].split(",").map((c) => decodeURIComponent(c));
+/** The names of a screen's first list. */
+const firstList: PageNames = { cursor: "cursor", trail: "trail" };
 
-/** `search` at the page of `cursor`, after the `trail` of pages before it. */
-function atPage(search: StaffSearch, cursor: string | undefined, trail: readonly string[]): StaffSearch {
-  const { cursor: _cursor, trail: _trail, ...rest } = search;
+/** The cursor of the page an address's query asks for, of the list of `of`; the first page without one. */
+export const cursorOf = (search: StaffSearch, of: PageNames = firstList): string | undefined =>
+  search[of.cursor] === undefined || search[of.cursor] === "" ? undefined : search[of.cursor];
+
+/**
+ * The cursors of the pages before the one shown, the first page's as empty (so that the second page's trail is the
+ * empty word): the way back by Previous.
+ */
+const trailOf = (search: StaffSearch, of: PageNames): string[] => {
+  const trail = search[of.trail];
+  return trail === undefined ? [] : trail.split(",").map((c) => decodeURIComponent(c));
+};
+
+/** `search` at the page of `cursor`, after the `trail` of pages before it, under the names `of` the list. */
+function atPage(search: StaffSearch, cursor: string | undefined, trail: readonly string[], of: PageNames): StaffSearch {
+  const rest = Object.fromEntries(Object.entries(search).filter(([k]) => k !== of.cursor && k !== of.trail));
   return {
     ...rest,
-    ...(cursor === undefined ? {} : { cursor }),
-    ...(trail.length === 0 ? {} : { trail: trail.map((c) => encodeURIComponent(c)).join(",") }),
+    ...(cursor === undefined ? {} : { [of.cursor]: cursor }),
+    ...(trail.length === 0 ? {} : { [of.trail]: trail.map((c) => encodeURIComponent(c)).join(",") }),
   };
 }
 
-/** `search` with `change` made and at the first page, as a change of the filters starts. */
+/** `search` with `change` made and at the first page of its first list, as a change of the filters starts. */
 export function filtered(search: StaffSearch, change: StaffSearch): StaffSearch {
-  return atPage({ ...search, ...change }, undefined, []);
+  return atPage({ ...search, ...change }, undefined, [], firstList);
 }
 
-/** Previous and Next under a list, along the pages of the address of `address`, Next to the page of `next`. */
-export function Pages({
-  address,
-  next,
-}: {
-  address: Pick<StaffAddress, "search" | "onSearch">;
-  next: string | undefined;
-}) {
+/** Where a list of a screen is along its pages, kept in the address (`useAddressPages`). */
+export type AddressPages = {
+  /** The cursor of the page shown, to read it by; undefined on the first page. */
+  readonly cursor: string | undefined;
+  /** Which page is shown, from 1: the trail's length and one. */
+  readonly position: number;
+  /**
+   * The pager's props under the page shown, Next to the page of `next` (the page's `next_cursor`; none on the last
+   * page): each press shows the screen at the other page as a new entry of the history, so that Back, a reload and a
+   * shared address land on the same page.
+   */
+  readonly pager: (next: string | undefined) => PagerProps;
+};
+
+/**
+ * The one place a list that is a screen's subject keeps its cursor: in the address of `address`, under the names `of`
+ * the list (a screen's first list where left out), with the trail of the pages before it for Previous.
+ */
+export function useAddressPages(
+  address: Pick<StaffAddress, "search" | "onSearch">,
+  of: PageNames = firstList,
+): AddressPages {
   const { search, onSearch } = address;
-  const trail = trailOf(search);
+  const cursor = cursorOf(search, of);
+  const trail = trailOf(search, of);
   const previous = trail.at(-1);
-  return (
-    <RecordPages
-      previous={
-        previous === undefined
+  // A page after the first whose trail the address lost (an address cut short) is at least the second.
+  const position = cursor === undefined ? 1 : Math.max(trail.length, 1) + 1;
+  return {
+    cursor,
+    position,
+    pager: (next) => ({
+      previous:
+        cursor === undefined
           ? undefined
           : {
               onPress: () => {
-                onSearch(atPage(search, previous === "" ? undefined : previous, trail.slice(0, -1)));
+                onSearch(atPage(search, previous === "" ? undefined : previous, trail.slice(0, -1), of));
               },
-            }
-      }
-      next={
+            },
+      next:
         next === undefined
           ? undefined
           : {
               onPress: () => {
-                onSearch(atPage(search, next, [...trail, cursorOf(search) ?? ""]));
+                onSearch(atPage(search, next, [...trail, cursor ?? ""], of));
               },
-            }
-      }
+            },
+      position,
+    }),
+  };
+}
+
+/**
+ * Show more under a list inside a detail that grows in place (`list`, read by pages of app-data), busy while its next
+ * page comes and Try again after it failed; `added` (`useAddedFocus` of the items shown) moves the focus to the first
+ * item a press added.
+ */
+export function ListMore({ list, added }: { list: PagedList<unknown>; added: AddedFocus }) {
+  return (
+    <ShowMore
+      more={list.hasNextPage}
+      busy={list.isFetchingNextPage}
+      failed={list.failedNextPage}
+      onPress={added.press(list.fetchNextPage)}
     />
   );
 }

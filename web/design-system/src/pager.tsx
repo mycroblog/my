@@ -125,7 +125,7 @@ export function Pager({ previous, next, busy, failed, position, periods }: Pager
             : t("records.periods_failed", { direction: failed, granularity: periods })}
         </Failed>
       )}
-      <Row as="nav" wrap align="center" gap="screen-tabs-gap" aria-label={t("records.pages")}>
+      <Row as="nav" wrap align="center" gap="screen-tabs-gap" aria-label={t("records.pages")} data-pager="">
         <Row wrap gap="entry-caption">
           <PageButton target={previous} busy={busy === "previous"} icon="previous" end={false}>
             {failed === "previous"
@@ -220,16 +220,4 @@ export function useAddedFocus(shown: number): AddedFocus {
           }
         : undefined,
   };
-}
-
-export type RecordPagesProps = Pick<PagerProps, "previous" | "next" | "busy">;
-
-/** Previous and Next as a list paged by cursor wrote them before the pager: the pager, saying no position. */
-export function RecordPages(props: RecordPagesProps): ReactNode {
-  return <Pager {...props} />;
-}
-
-/** Show more as a list that grows in place wrote it before the pager, shown only while it has more: the same part. */
-export function MoreRecords({ onPress, busy }: { onPress: () => void; busy?: boolean | undefined }): ReactNode {
-  return <ShowMore more onPress={onPress} busy={busy} />;
 }

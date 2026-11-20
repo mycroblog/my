@@ -20,6 +20,7 @@ import {
   type ModeratedAccountDetail,
 } from "@my/app-data";
 import {
+  Pager,
   BackButton,
   Button,
   FactList,
@@ -43,10 +44,9 @@ import { accountPagePath, ActionTable } from "./account";
 import {
   actionCategoryWords,
   ActionStateMark,
-  cursorOf,
   filtered,
   kindWords,
-  Pages,
+  useAddressPages,
   refusalWords,
   useEnd,
   useSaid,
@@ -63,9 +63,10 @@ export function AccountActionsPage({
   search: StaffSearch;
   onSearch: (search: StaffSearch) => void;
 }): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t } = useStaffStrings();
   const active = search["active"] === "true";
-  const page = useAccountActions(account.id, active, cursorOf(search));
+  const page = useAccountActions(account.id, active, pages.cursor);
   const filters = (
     <FilterBar
       label={t("staff_accounts.actions.filters")}
@@ -106,7 +107,7 @@ export function AccountActionsPage({
           <FeedNotice>{t(active ? "staff_accounts.actions.none_active" : "staff_accounts.actions.none")}</FeedNotice>
         }
       />
-      <Pages address={{ search, onSearch }} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }

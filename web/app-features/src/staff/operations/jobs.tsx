@@ -28,6 +28,7 @@ import {
   type AppData,
 } from "@my/app-data";
 import {
+  Pager,
   Box,
   Button,
   CodeText,
@@ -38,7 +39,7 @@ import {
   FilterBar,
   FilterFacet,
   ModalPresence,
-  MoreRecords,
+  useAddedFocus,
   RecordTable,
   RelativeTime,
   Row,
@@ -55,7 +56,18 @@ import {
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
-import { cursorOf, filtered, Pages, ReadNotice, Titled, useMoment, useSaid, useStaffStrings, type T } from "../parts";
+import {
+  cursorOf,
+  filtered,
+  ListMore,
+  useAddressPages,
+  ReadNotice,
+  Titled,
+  useMoment,
+  useSaid,
+  useStaffStrings,
+  type T,
+} from "../parts";
 import { CopyValue } from "../settings/parts";
 import { CopyAction, SubTitle, useCount } from "./parts";
 
@@ -279,6 +291,7 @@ const searchOf = (q: AdminJobQuery): StaffSearch => ({
 
 /** The jobs of a state and a type, a page at a time, each leading to its screen. */
 export function JobListScreen({ search, onSearch, onBack }: StaffAddress & { onBack: () => void }): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t } = useStaffStrings();
   const moment = useMoment();
   const count = useCount();
@@ -369,7 +382,7 @@ export function JobListScreen({ search, onSearch, onBack }: StaffAddress & { onB
           </FeedNotice>
         }
       />
-      <Pages address={{ search, onSearch }} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }
@@ -436,6 +449,7 @@ function Attempts({ id }: { id: string }): ReactNode {
   const { t } = useStaffStrings();
   const moment = useMoment();
   const list = useAdminJobAttempts(id);
+  const added = useAddedFocus(list.items.length);
   const title = t("staff_operations.attempts");
   if (list.status === "success" && list.items.length === 0) return null;
   if (list.status === "pending" || (list.status === "error" && list.items.length === 0))
@@ -480,13 +494,9 @@ function Attempts({ id }: { id: string }): ReactNode {
           head={{ label: t("staff_operations.attempts.column.attempt") }}
           columns={columns}
           rows={rows}
+          itemRef={added.item}
         />
-        {list.failedNextPage && (
-          <FeedNotice alert start>
-            {t("staff_operations.attempts.failed")}
-          </FeedNotice>
-        )}
-        {list.hasNextPage && <MoreRecords busy={list.isFetchingNextPage} onPress={list.fetchNextPage} />}
+        <ListMore list={list} added={added} />
       </Stack>
     </Titled>
   );

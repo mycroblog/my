@@ -18,6 +18,7 @@ import {
   type ModeratedAppealState,
 } from "@my/app-data";
 import {
+  Pager,
   BackButton,
   Box,
   Button,
@@ -47,7 +48,7 @@ import { useId, useState, type ReactNode } from "react";
 import { staffEntryPath, staffHref, type StaffAddress, type StaffSearch } from "../entries";
 import { ReadNotice, Titled, useMoment, useStaffStrings, Section } from "../parts";
 import { accountActionPath } from "./account";
-import { actionCategoryWords, cursorOf, whoIn, filtered, kindWords, Pages, refusalWords, useSaid } from "./parts";
+import { actionCategoryWords, whoIn, filtered, kindWords, useAddressPages, refusalWords, useSaid } from "./parts";
 
 /** The state of the appeals the queue shows at an address's query: pending unless it says otherwise. */
 export function appealStateOf(search: StaffSearch): ModeratedAppealState | undefined {
@@ -72,10 +73,11 @@ type Column = "action" | "submitted" | "state";
 
 /** The queue of appeals: the filter of their state, the page, and the pages. */
 export function AppealQueueScreen(address: StaffAddress): ReactNode {
+  const pages = useAddressPages(address);
   const { search, onSearch } = address;
   const { t } = useStaffStrings();
   const state = appealStateOf(search);
-  const page = useModeratedAppeals(state, cursorOf(search));
+  const page = useModeratedAppeals(state, pages.cursor);
   const accounts = useStaffAccounts(page.items.map((a) => a.account_id));
   const states: FilterValue[] = appealStates.map((s) => ({
     id: s,
@@ -148,7 +150,7 @@ export function AppealQueueScreen(address: StaffAddress): ReactNode {
         }
         even
       />
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }

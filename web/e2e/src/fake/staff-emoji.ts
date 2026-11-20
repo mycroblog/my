@@ -11,6 +11,7 @@
 // emoji has or a pending request reserves, the limit, a request no longer pending. An image uploaded for an emoji
 // shows as the fake's sparkle.
 
+import { page } from "./common";
 import type { StaffServerContext } from "./staff-server";
 import type { Handlers, Refusal, Schema } from "./spec";
 
@@ -245,17 +246,6 @@ export function emojiHandlers(c: StaffServerContext): {
     created_at: e.created_at,
     updated_at: e.updated_at,
   });
-  const page = <T extends { id: string }>(
-    items: readonly T[],
-    query: { get: (name: "cursor" | "limit") => string | null },
-  ) => {
-    const cursor = query.get("cursor");
-    const size = Math.min(Number(query.get("limit") ?? 20) || 20, 40);
-    const from = cursor === null ? 0 : items.findIndex((x) => x.id === cursor) + 1;
-    const slice = items.slice(from, from + size);
-    const last = slice.at(-1);
-    return { items: slice, ...(last !== undefined && from + size < items.length ? { next_cursor: last.id } : {}) };
-  };
   const found = (id: string) => emojis.find((e) => e.id === id);
   const thisMonth = () => {
     const now = new Date();
@@ -319,7 +309,7 @@ export function emojiHandlers(c: StaffServerContext): {
           (domain === null || e.domain === domain) &&
           (shortcode === undefined || e.shortcode.toLowerCase().includes(shortcode)),
       );
-      return { status: 200, body: page(structuredClone(kept), query) };
+      return { status: 200, body: page(structuredClone(kept), query).body };
     },
     "POST /admin/custom_emojis": ({ body }) => {
       if (!manages()) return forbidden();
@@ -380,7 +370,7 @@ export function emojiHandlers(c: StaffServerContext): {
     "GET /admin/custom_emoji_requests": ({ query }) => {
       if (!manages()) return forbidden();
       const state = query.get("state") ?? "pending";
-      return { status: 200, body: page(requests.filter((r) => r.state === state).map(asAdmin), query) };
+      return { status: 200, body: page(requests.filter((r) => r.state === state).map(asAdmin), query).body };
     },
     "POST /admin/custom_emoji_requests/{id}/approve": ({ params }) => {
       if (!manages()) return forbidden();
@@ -408,7 +398,7 @@ export function emojiHandlers(c: StaffServerContext): {
     },
     "GET /custom_emoji_requests": ({ query }) => {
       if (!creates()) return forbidden();
-      return { status: 200, body: page(requests.filter((r) => r.requester === c.viewer).map(asOwn), query) };
+      return { status: 200, body: page(requests.filter((r) => r.requester === c.viewer).map(asOwn), query).body };
     },
     "POST /custom_emoji_requests": ({ body }) => {
       if (!creates()) return forbidden();
@@ -443,7 +433,7 @@ export function emojiHandlers(c: StaffServerContext): {
       return {
         status: 200,
         body: {
-          ...page(mine, query),
+          ...page(mine, query).body,
           used: used().length,
           pending: used().filter((r) => r.state === "pending").length,
           ...(limit === undefined ? {} : { limit }),

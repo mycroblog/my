@@ -255,10 +255,6 @@
     "defaultMessage": "配送の履歴を読み込めませんでした。",
     "description": "In the section of a webhook's deliveries when they could not be read, before Try again. Read by administrators."
   },
-  "staff_webhooks.deliveries.more_failed": {
-    "defaultMessage": "古い配送の履歴を読み込めませんでした。もう一度試してください。",
-    "description": "Under a webhook's deliveries when the next page failed, over Show more. Read by administrators."
-  },
   "staff_webhooks.deliveries.empty": {
     "defaultMessage": "直近 14 日に送ったメッセージはありません。",
     "description": "In the section of a webhook's deliveries while there is none. Read by administrators."

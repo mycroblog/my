@@ -16,6 +16,7 @@ import {
   type ModeratedInvite,
 } from "@my/app-data";
 import {
+  Pager,
   BackButton,
   Button,
   ConfirmDialog,
@@ -41,7 +42,7 @@ import { useId, useRef, useState, type ReactNode } from "react";
 import type { StaffAddress } from "../entries";
 import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
 import { CopyValue } from "../settings/parts";
-import { cursorOf, LabelledSelect, lengthOptions, Pages, refusalWords, secondsOf, useEnd, useSaid } from "./parts";
+import { LabelledSelect, lengthOptions, useAddressPages, refusalWords, secondsOf, useEnd, useSaid } from "./parts";
 
 /** The address of the list of invites. */
 const invitesPath = "/moderation/invites";
@@ -67,9 +68,10 @@ type Column = "uses" | "ends" | "state";
 
 /** The list of invites: the way to create one, the table with its picked rows' Revoke, and the pages. */
 export function InvitesScreen(address: StaffAddress): ReactNode {
+  const pages = useAddressPages(address);
   const { t } = useStaffStrings();
   const end = useEnd();
-  const cursor = cursorOf(address.search);
+  const cursor = pages.cursor;
   const page = useStaffInvites(cursor);
   const { revoke } = useStaffInviteWrites();
   const { say, status } = useSaid();
@@ -167,7 +169,7 @@ export function InvitesScreen(address: StaffAddress): ReactNode {
         }
         empty={<FeedNotice>{t("staff_accounts.invites.empty")}</FeedNotice>}
       />
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
       <ModalPresence>
         {asking && (
           <ConfirmDialog

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What the screens of domains, remote servers and the audit log share (FR-702–FR-706, FR-716–FR-718): their addresses;
-// the pages of a list by the server's cursor, the way back along them kept in the address; the status a press says what
-// it did in, which takes the focus; the words of a refused write; a labelled choice; the words of an action's kind and
-// its state; and a neutral button that leads to another screen.
+// the status a press says what it did in, which takes the focus; the words of a refused write; a labelled choice; the
+// words of an action's kind and its state; and a neutral button that leads to another screen.
 
 import { staffRefusalOf, type DomainAction, type DomainActionKind } from "@my/app-data";
 import {
@@ -12,7 +11,6 @@ import {
   Icon,
   LinkButton,
   ListTitle,
-  RecordPages,
   Row,
   Select,
   Stack,
@@ -21,8 +19,10 @@ import {
   type SelectOption,
 } from "@my/design-system";
 import { useId, type ReactNode } from "react";
-import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
+import { staffHref } from "../entries";
 import { useMoment, useStaffStrings, type T } from "../parts";
+
+export { cursorOf, filtered, useAddressPages } from "../parts";
 
 /** The address of the list of domain actions, of those on `domain` where given. */
 export const domainActionsPath = "/moderation/domain-actions";
@@ -45,76 +45,6 @@ export const remoteServersPath = "/moderation/instances";
 export const remoteServerPath = (domain: string): string => `${remoteServersPath}/${encodeURIComponent(domain)}`;
 /** The address of the audit log, at `search` where given. */
 export const auditLogPath = "/moderation/audit-log";
-
-/** The cursor of the page an address's query asks for; the first page without one. */
-export const cursorOf = (search: StaffSearch, name = "cursor"): string | undefined =>
-  search[name] === undefined || search[name] === "" ? undefined : search[name];
-
-/** The cursors of the pages before the one shown, the first page's as empty: the way back by Previous. */
-const trailOf = (search: StaffSearch, name: string): string[] =>
-  search[name] === undefined ? [] : search[name].split(",").map((c) => decodeURIComponent(c));
-
-/** `search` at the page of `cursor`, after the `trail` of pages before it, under the names `of` the list. */
-function atPage(
-  search: StaffSearch,
-  cursor: string | undefined,
-  trail: readonly string[],
-  of: { cursor: string; trail: string },
-): StaffSearch {
-  const rest = Object.fromEntries(Object.entries(search).filter(([k]) => k !== of.cursor && k !== of.trail));
-  return {
-    ...rest,
-    ...(cursor === undefined ? {} : { [of.cursor]: cursor }),
-    ...(trail.length === 0 ? {} : { [of.trail]: trail.map((c) => encodeURIComponent(c)).join(",") }),
-  };
-}
-
-const firstList = { cursor: "cursor", trail: "trail" };
-
-/** `search` with `change` made and at the first page, as a change of the filters starts. */
-export function filtered(search: StaffSearch, change: StaffSearch): StaffSearch {
-  return atPage({ ...search, ...change }, undefined, [], firstList);
-}
-
-/**
- * Previous and Next under a list, along the pages of the address of `address`, Next to the page of `next`; a second
- * list of a screen keeps its pages under names of its own (`of`: its cursor's and its trail's).
- */
-export function Pages({
-  address,
-  next,
-  of = firstList,
-}: {
-  address: Pick<StaffAddress, "search" | "onSearch">;
-  next: string | undefined;
-  of?: { cursor: string; trail: string };
-}) {
-  const { search, onSearch } = address;
-  const trail = trailOf(search, of.trail);
-  const previous = trail.at(-1);
-  return (
-    <RecordPages
-      previous={
-        previous === undefined
-          ? undefined
-          : {
-              onPress: () => {
-                onSearch(atPage(search, previous === "" ? undefined : previous, trail.slice(0, -1), of));
-              },
-            }
-      }
-      next={
-        next === undefined
-          ? undefined
-          : {
-              onPress: () => {
-                onSearch(atPage(search, next, [...trail, cursorOf(search, of.cursor) ?? ""], of));
-              },
-            }
-      }
-    />
-  );
-}
 
 /**
  * A sentence with each number joined to the word after it (「12 件」, "12 follows"), so that a line never breaks between

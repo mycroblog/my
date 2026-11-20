@@ -10,6 +10,7 @@ import { type components } from "@mycroblog/mykit";
 import { keepPreviousData, skipToken, useQueries, useQuery } from "@tanstack/react-query";
 import { whileOpen, type AppData } from "./app-data";
 import type { SavedFile } from "./exports";
+import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
 import { oneOf, pageOf, staffChanged, type StaffOne, type StaffPage } from "./staff-reads";
 
@@ -374,16 +375,25 @@ export function useDomainListDrafts(id: string): StaffOne<readonly DomainListDra
   return { ...read, value: read.value?.items };
 }
 
-/** The fetches of the subscription of `id`, newest first, after `cursor`. */
-export function domainListFetchesQuery({ queries }: AppData, id: string, cursor: string | undefined) {
-  return queries.queryOptions("get", "/admin/domain_list_subscriptions/{id}/fetches", {
-    params: { path: { id }, query: cursor === undefined ? {} : { cursor } },
-  });
+/** The fetches of the subscription of `id`, newest first, a page at a time. */
+export function domainListFetchesQuery({ api, queries }: AppData, id: string) {
+  return pagedQuery<DomainListFetch>(
+    queries.queryOptions("get", "/admin/domain_list_subscriptions/{id}/fetches", {
+      params: { path: { id }, query: {} },
+    }).queryKey,
+    async (cursor, signal) =>
+      (
+        await api.GET("/admin/domain_list_subscriptions/{id}/fetches", {
+          params: { path: { id }, query: cursor === undefined ? {} : { cursor } },
+          signal,
+        })
+      ).data,
+  );
 }
 
-/** The page of fetches of the subscription of `id` after `cursor`, as a screen shows it. */
-export function useDomainListFetches(id: string, cursor: string | undefined): StaffPage<DomainListFetch> {
-  return pageOf(useQuery({ ...domainListFetchesQuery(useAppData(), id, cursor), placeholderData: keepPreviousData }));
+/** The fetches of the subscription of `id`, newest first, grown under Show more. */
+export function useDomainListFetches(id: string): PagedList<DomainListFetch> {
+  return usePagedList(domainListFetchesQuery(useAppData(), id));
 }
 
 /** Reads the subscription of `id`, its drafts and its latest fetches, for a route's loader. */
@@ -391,7 +401,7 @@ export async function loadDomainListSubscription(data: AppData, id: string): Pro
   await Promise.all([
     data.queryClient.query(domainListSubscriptionQuery(data, id)).catch(() => undefined),
     data.queryClient.query(domainListDraftsQuery(data, id)).catch(() => undefined),
-    data.queryClient.query(domainListFetchesQuery(data, id, undefined)).catch(() => undefined),
+    data.queryClient.infiniteQuery(domainListFetchesQuery(data, id)).catch(() => undefined),
   ]);
 }
 

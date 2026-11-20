@@ -15,7 +15,7 @@
 // `formatRange`), and gives every word: these parts lay them out. A provider's name is the operator's (`dir="auto"`).
 // A choice of the period's length, or of how a cost longer than a month is counted, is a `SegmentChoice` (choice.tsx).
 
-import { createContext, use, useId, type HTMLAttributes, type ReactNode } from "react";
+import { createContext, use, useId, type HTMLAttributes, type ReactNode, type RefCallback } from "react";
 import { tv } from "tailwind-variants/lite";
 import { ShareBar } from "./choice";
 import { CodeText } from "./code-text";
@@ -265,13 +265,15 @@ export type FinanceRowProps = {
   continued?: boolean | undefined;
   /** The head is code (a route, an action's ID): in the code's face, left to right. */
   code?: boolean | undefined;
+  /** The ref of the row's head, for a table that grows under Show more (`useAddedFocus`). */
+  itemRef?: RefCallback<HTMLElement> | undefined;
 };
 
 /**
  * A row of a `FinanceTable`: its head, with a line under it; then its cells, a figure a currency, one under another,
  * a figure from an estimate with the estimate's glyph before it on its line, and their bar right under them.
  */
-export function FinanceRow({ head, caption, cells, continued = false, code = false }: FinanceRowProps) {
+export function FinanceRow({ head, caption, cells, continued = false, code = false, itemRef }: FinanceRowProps) {
   const s = table();
   const { columns, estimated } = use(TableContext);
   const total = use(TotalContext);
@@ -282,7 +284,7 @@ export function FinanceRow({ head, caption, cells, continued = false, code = fal
           <Spoken>{head}</Spoken>
         ) : (
           // Its line on the head's own line where it fits, never beside a figure of the row's next currency.
-          <Row as="span" wrap align="baseline" gapX="entry-caption">
+          <Row as={<span ref={itemRef} />} wrap align="baseline" gapX="entry-caption">
             {code ? <CodeText>{head}</CodeText> : <span dir="auto">{head}</span>}
             {caption !== undefined && <span className={s.caption()}>{caption}</span>}
           </Row>

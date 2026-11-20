@@ -17,12 +17,12 @@ import {
   type Money,
 } from "@my/app-data";
 import {
+  Pager,
   FeedNotice,
   FilterBar,
   FilterFacet,
   FinanceRow,
   FinanceTable,
-  MoreRecords,
   ScreenStack,
   ScreenTitle,
   TextButton,
@@ -43,7 +43,7 @@ import {
   type FinanceView,
 } from "../../finance-totals";
 import type { StaffSearch, StaffUnderProps } from "../entries";
-import { Section, useStaffStrings, type T } from "../parts";
+import { filtered, useAddressPages, Section, useStaffStrings, type T } from "../parts";
 import { FinanceBack, useDay } from "./parts";
 
 /** The figures of a cell: an amount a currency, or None. */
@@ -122,19 +122,23 @@ const payerOf = (t: T, m: IncomeMovement): string => {
   );
 };
 
-/** The money movements, newest first, of the kind the address names: a movement a row, its amounts in columns. */
+/**
+ * The money movements, newest first, of the kind the address names, a page at a time, the page kept in the address: a
+ * movement a row, its amounts in columns.
+ */
 function Movements({ search, onSearch }: { search: StaffSearch; onSearch: (search: StaffSearch) => void }) {
+  const pages = useAddressPages({ search, onSearch });
   const { t, locale } = useStaffStrings();
   const day = useDay();
   const kind = kindOf(search);
-  const list = useIncomeMovements({ kind });
+  const list = useIncomeMovements({ kind }, pages.cursor);
   const values: FilterValue[] = incomeKinds.map((k) => ({
     id: k,
     label: t("staff_finance.income.kind", { kind: k }),
     icon: "funding",
   }));
   let shown: ReactNode;
-  if (list.status !== "success" && list.items.length === 0)
+  if (list.status !== "success" && !list.stale)
     shown =
       list.status === "error" ? (
         <FeedNotice alert start action={<TextButton onPress={list.refetch}>{t("staff.retry")}</TextButton>}>
@@ -182,7 +186,7 @@ function Movements({ search, onSearch }: { search: StaffSearch; onSearch: (searc
         label={t("staff_finance.income.filters")}
         applied={kind !== undefined}
         onClear={() => {
-          onSearch({});
+          onSearch(filtered(search, { kind: undefined }));
         }}
       >
         <FilterFacet
@@ -191,18 +195,12 @@ function Movements({ search, onSearch }: { search: StaffSearch; onSearch: (searc
           values={values}
           chosen={kind}
           onChoose={(chosen) => {
-            onSearch(chosen === undefined ? {} : { kind: chosen });
+            onSearch(filtered(search, { kind: chosen }));
           }}
         />
       </FilterBar>
       {shown}
-      {list.failedNextPage ? (
-        <FeedNotice alert start action={<TextButton onPress={list.fetchNextPage}>{t("staff.retry")}</TextButton>}>
-          {t("staff_finance.income.movements.failed_more")}
-        </FeedNotice>
-      ) : (
-        list.hasNextPage && <MoreRecords onPress={list.fetchNextPage} busy={list.isFetchingNextPage} />
-      )}
+      <Pager {...pages.pager(list.next)} />
     </Section>
   );
 }

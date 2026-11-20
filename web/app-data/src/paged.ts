@@ -2,6 +2,7 @@
 // A list the API pages with a cursor (a profile's posts, the notifications): the infinite query of one operation, keyed
 // as openapi-react-query keys it, and what a screen reads of it, in the shape of the home timeline's (timeline.ts).
 import { infiniteQueryOptions, useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
+import { useState } from "react";
 
 /** A page of a list: its items and the cursor of the next page. */
 export type Page<T> = { readonly items: readonly T[]; readonly next_cursor?: string | undefined };
@@ -100,6 +101,66 @@ export function usePagedListOf<T, P extends Page<T>>(
   return {
     items: query.data?.pages.flatMap((page) => page.items) ?? [],
     firstPage: query.data?.pages[0],
+    status: query.status,
+    error: query.error,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+    failedNextPage: query.isFetchNextPageError,
+    fetchNextPage: () => {
+      if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
+    },
+    refetch: () => {
+      void query.refetch();
+    },
+  };
+}
+
+/**
+ * How many items the first page of a list after a detail's newest asks for (`useListAfter`): the detail's 20 and the 20
+ * after them, the most the API gives at once, so that the first Show more adds as many as each one after it.
+ */
+export const afterNewestLimit = 40;
+
+/** How many of a list a detail shows as its newest (an account's newest 20 reports): a list that fills them has more. */
+const detailNewest = 20;
+
+/**
+ * A list a detail shows the newest of (`newest`: an account's newest reports, its newest sign-ins), the rest read only
+ * when the reader asks for it with Show more, by `options` (a `pagedQuery` whose first page asks for
+ * `afterNewestLimit`): until the first press, the detail's newest, with more to show while they fill the detail's 20;
+ * from then on, the pages read, kept for this screen alone. Nothing is read before a press, nor read again unasked,
+ * since the server may record each page it answers (an account's sign-ins, in the audit log).
+ */
+export function useListAfter<T>(newest: readonly T[], options: ReturnType<typeof pagedQuery<T>>): PagedList<T> {
+  const [asked, setAsked] = useState(false);
+  const query = useInfiniteQuery({
+    ...options,
+    enabled: asked,
+    staleTime: Infinity,
+    gcTime: 0,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+  if (query.data === undefined) {
+    const failed = asked && query.isError;
+    return {
+      items: newest,
+      status: "success",
+      error: query.error,
+      hasNextPage: newest.length >= detailNewest,
+      isFetchingNextPage: asked && query.isFetching,
+      failedNextPage: failed,
+      fetchNextPage: () => {
+        if (!asked) setAsked(true);
+        else if (!query.isFetching) void query.refetch();
+      },
+      refetch: () => {
+        if (asked) void query.refetch();
+      },
+    };
+  }
+  return {
+    items: query.data.pages.flatMap((page) => page.items),
     status: query.status,
     error: query.error,
     hasNextPage: query.hasNextPage,

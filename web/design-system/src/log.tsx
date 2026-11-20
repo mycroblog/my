@@ -10,7 +10,7 @@
 // For assistive technology: the log is an ordered list named by the screen; Details is a disclosure's button, its
 // state read with it, and what it folds stays out of the page while folded.
 
-import type { ReactNode } from "react";
+import type { ReactNode, RefCallback } from "react";
 import { Disclosure as AriaDisclosure, DisclosurePanel } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { TextButton } from "./button";
@@ -57,13 +57,15 @@ export type LogEntryProps = {
   about?: ReactNode;
   /** What more there is, shown under Details: the payload, the request and its response, the facts of the target. */
   detail?: ReactNode;
+  /** The ref of the entry, for a log that grows under Show more (`useAddedFocus`). */
+  itemRef?: RefCallback<HTMLElement> | undefined;
 };
 
 /**
  * An entry of a log: its glyph, the sentence of who did what to what with the time at the end of its first line, the
  * muted line about it with Details at its end, which shows what more there is under it.
  */
-export function LogEntry({ icon, date, children, about, detail }: LogEntryProps) {
+export function LogEntry({ icon, date, children, about, detail, itemRef }: LogEntryProps) {
   const s = log();
   const { lang } = useReader(undefined);
   const strings = stringsIn(lang);
@@ -104,7 +106,7 @@ export function LogEntry({ icon, date, children, about, detail }: LogEntryProps)
     </>
   );
   return (
-    <Row as="li" align="start" gap="entry-caption">
+    <Row as={<li ref={itemRef} />} align="start" gap="entry-caption">
       <Row as="span" inline line rigid align="center" justify="center" className={s.glyph()}>
         <Icon name={icon} place="action" />
       </Row>

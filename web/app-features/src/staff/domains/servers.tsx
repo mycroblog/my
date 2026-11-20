@@ -26,6 +26,7 @@ import {
   type RemoteServerState,
 } from "@my/app-data";
 import {
+  Pager,
   BackButton,
   Box,
   Button,
@@ -48,10 +49,11 @@ import {
   type FilterValue,
   type RecordColumn,
   type RecordRow,
+  useAddedFocus,
 } from "@my/design-system";
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode, type RefCallback } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
-import { ReadNotice, useMoment, useStaffStrings, type T, useSaid } from "../parts";
+import { ListMore, ReadNotice, useMoment, useStaffStrings, type T, useSaid } from "../parts";
 import {
   auditLogPath,
   cursorOf,
@@ -59,7 +61,7 @@ import {
   filtered,
   GoButton,
   newDomainActionPath,
-  Pages,
+  useAddressPages,
   refusalWords,
   remoteServerPath,
   Section,
@@ -106,6 +108,7 @@ type Column = "failures" | "state";
 
 /** The list of remote servers: Open a server, the filter of their state, the page, and the pages. */
 export function RemoteServersScreen(address: StaffAddress): ReactNode {
+  const pages = useAddressPages(address);
   const { search, onSearch, go } = address;
   const { t } = useStaffStrings();
   const q = serverQueryOf(search);
@@ -184,7 +187,7 @@ export function RemoteServersScreen(address: StaffAddress): ReactNode {
         }
         even
       />
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }
@@ -232,10 +235,6 @@ function OpenServer({ onOpen }: { onOpen: (domain: string) => void }) {
   );
 }
 
-/** The names under which a server's page keeps the pages of its two lists and the deliveries' filters. */
-const eventPages = { cursor: "events", trail: "events_trail" };
-const deliveryPages = { cursor: "cursor", trail: "trail" };
-
 export type RemoteServerScreenProps = StaffAddress & { domain: string; onBack: () => void };
 
 /** The server of `domain` on its page; or why it shows none. */
@@ -260,7 +259,7 @@ export function RemoteServerScreen({ domain, onBack, ...address }: RemoteServerS
     <ScreenStack>
       <ScreenTitle back={back}>{domain}</ScreenTitle>
       <ServerHead server={read.value} />
-      <Availability domain={domain} address={address} />
+      <Availability domain={domain} />
       <Deliveries domain={domain} address={address} />
     </ScreenStack>
   );
@@ -347,31 +346,37 @@ function ServerHead({ server }: { server: RemoteServer }) {
 const eventWords = (t: T, e: AvailabilityEvent): string =>
   t("staff_domains.availability", { kind: e.kind, reason: e.reason });
 
-/** The times the server was marked unavailable or available again, newest first. */
-function Availability({ domain, address }: { domain: string; address: StaffAddress }) {
+/** The times the server was marked unavailable or available again, newest first, grown under Show more. */
+function Availability({ domain }: { domain: string }) {
   const { t } = useStaffStrings();
-  const page = useAvailabilityEvents(domain, cursorOf(address.search, eventPages.cursor));
+  const list = useAvailabilityEvents(domain);
+  const added = useAddedFocus(list.items.length);
   return (
     <Section title={t("staff_domains.availability.title")}>
-      {page.status !== "success" ? (
+      {list.items.length === 0 && list.status !== "success" ? (
         <ReadNotice
-          status={page.status}
+          status={list.status}
           loading={t("staff_domains.availability.loading")}
           failed={t("staff_domains.availability.failed")}
-          retry={page.refetch}
+          retry={list.refetch}
         />
-      ) : page.items.length === 0 ? (
+      ) : list.items.length === 0 ? (
         <FeedNotice start>{t("staff_domains.availability.empty")}</FeedNotice>
       ) : (
         <Stack gap="entry-room">
           <LogList label={t("staff_domains.availability.title")}>
-            {page.items.map((e) => (
-              <LogEntry key={e.id} icon={e.kind === "marked_available" ? "play" : "pause"} date={e.occurred_at}>
+            {list.items.map((e, i) => (
+              <LogEntry
+                key={e.id}
+                itemRef={added.item(i)}
+                icon={e.kind === "marked_available" ? "play" : "pause"}
+                date={e.occurred_at}
+              >
                 {eventWords(t, e)}
               </LogEntry>
             ))}
           </LogList>
-          <Pages address={address} next={page.next} of={eventPages} />
+          <ListMore list={list} added={added} />
         </Stack>
       )}
     </Section>
@@ -382,28 +387,28 @@ function Availability({ domain, address }: { domain: string; address: StaffAddre
 const deliveryQueryOf = (search: StaffSearch) => ({
   activity: search["activity"] === "" ? undefined : search["activity"],
   account: search["account"] === "" ? undefined : search["account"],
-  cursor: cursorOf(search, deliveryPages.cursor),
 });
 
-/** The deliveries to the server, newest first: their filters, the page, and the pages. */
+/** The deliveries to the server, newest first: their filters, and the deliveries, grown under Show more. */
 function Deliveries({ domain, address }: { domain: string; address: StaffAddress }) {
   const { t } = useStaffStrings();
   const q = deliveryQueryOf(address.search);
-  const page = useDeliveries(domain, q);
+  const list = useDeliveries(domain, q);
+  const added = useAddedFocus(list.items.length);
   return (
     <Section title={t("staff_domains.deliveries")}>
       <Stack gap="entry-room">
         <DeliveryFilters address={address} />
-        {page.refused ? (
+        {list.refused ? (
           <FeedNotice start>{t("staff_domains.deliveries.not_local")}</FeedNotice>
-        ) : page.status !== "success" ? (
+        ) : list.items.length === 0 && list.status !== "success" ? (
           <ReadNotice
-            status={page.status}
+            status={list.status}
             loading={t("staff_domains.deliveries.loading")}
             failed={t("staff_domains.deliveries.failed")}
-            retry={page.refetch}
+            retry={list.refetch}
           />
-        ) : page.items.length === 0 ? (
+        ) : list.items.length === 0 ? (
           <FeedNotice start>
             {t(
               q.activity === undefined && q.account === undefined
@@ -414,11 +419,11 @@ function Deliveries({ domain, address }: { domain: string; address: StaffAddress
         ) : (
           <>
             <LogList label={t("staff_domains.deliveries")}>
-              {page.items.map((d) => (
-                <DeliveryEntry key={d.id} domain={domain} delivery={d} />
+              {list.items.map((d, i) => (
+                <DeliveryEntry key={d.id} domain={domain} delivery={d} itemRef={added.item(i)} />
               ))}
             </LogList>
-            <Pages address={address} next={page.next} of={deliveryPages} />
+            <ListMore list={list} added={added} />
           </>
         )}
       </Stack>
@@ -529,7 +534,15 @@ function attemptWords(t: T, a: DeliveryAttempt): string {
  * A delivery: what was sent, how its last attempt went, and under Details every attempt, the sender, the activity and
  * the inbox, a masked one's shown on demand (Show, which the audit log records).
  */
-function DeliveryEntry({ domain, delivery: d }: { domain: string; delivery: Delivery }) {
+function DeliveryEntry({
+  domain,
+  delivery: d,
+  itemRef,
+}: {
+  domain: string;
+  delivery: Delivery;
+  itemRef: RefCallback<HTMLElement> | undefined;
+}) {
   const { t } = useStaffStrings();
   const moment = useMoment();
   const { reveal } = useRemoteServerWrites(domain);
@@ -590,6 +603,7 @@ function DeliveryEntry({ domain, delivery: d }: { domain: string; delivery: Deli
   ];
   return (
     <LogEntry
+      itemRef={itemRef}
       icon={last?.outcome === "succeeded" ? "accepted" : last === undefined ? "time" : "error"}
       date={d.created_at}
       about={

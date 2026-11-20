@@ -246,6 +246,7 @@ export { RemoteServerScreen, serverDomainOf, type RemoteServerScreenProps } from
 export {
   DomainListScreen,
   DomainListsScreen,
+  loadDomainListsScreen,
   NewDomainListScreen,
   useDomainListTitle,
   type DomainListScreenProps,
@@ -259,7 +260,7 @@ export { adminWebhookPath, adminWebhooksPath, NewWebhookScreen } from "./staff/s
 export { WebhookSecretSpecimen } from "./staff/server/webhook-form";
 export { EmojiScreen, NewEmojiScreen } from "./staff/server/emoji-item";
 export { adminEmojiPath, adminEmojiRequestsPath, adminEmojisPath, newAdminEmojiPath } from "./staff/server/emoji-parts";
-export { AdminEmojiRequestsScreen } from "./staff/server/emoji-requests";
+export { AdminEmojiRequestsScreen, loadEmojiRequestsScreen } from "./staff/server/emoji-requests";
 export {
   CustomEmojiSettings,
   EmojiRequestScreen,

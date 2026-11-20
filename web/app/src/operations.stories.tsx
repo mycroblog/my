@@ -34,6 +34,10 @@ export const JobsError: Story = { parameters: at("/admin/jobs", { state: "error"
 
 /** The jobs that are not finished, the earliest due first. */
 export const JobList: Story = { parameters: at("/admin/jobs/list") };
+/** The jobs' second page, two a page. */
+export const JobListSecondPage: Story = {
+  parameters: at("/admin/jobs/list", { server: { staffPage: 2 }, next: true }),
+};
 /** The failed jobs, the most recently failed first. */
 export const JobListFailed: Story = { parameters: at("/admin/jobs/list?state=dead") };
 /** The jobs of one type. */
@@ -47,6 +51,10 @@ export const JobListError: Story = { parameters: at("/admin/jobs/list", { state:
 export const JobFailed: Story = { parameters: at("/admin/jobs/{ops:job:dead-email}") };
 /** A delivery that used up its eight attempts. */
 export const JobFailedAttempts: Story = { parameters: at("/admin/jobs/{ops:job:dead-deliver}") };
+/** A failed job's runs with Show more pressed once, two a page. */
+export const JobAttemptsMore: Story = {
+  parameters: at("/admin/jobs/{ops:job:dead-deliver}", { server: { staffPage: 2 }, more: true }),
+};
 /** A job waiting to retry after three failures. */
 export const JobRetrying: Story = { parameters: at("/admin/jobs/{ops:job:retrying}") };
 /** A job a worker runs. */
@@ -59,6 +67,10 @@ export const JobLoading: Story = { parameters: at("/admin/jobs/{ops:job:dead-ema
 export const Errors: Story = { parameters: at("/admin/errors") };
 /** Every group, of every state. */
 export const ErrorsAll: Story = { parameters: at("/admin/errors?state=any") };
+/** The error groups' second page, one a page. */
+export const ErrorsSecondPage: Story = {
+  parameters: at("/admin/errors", { server: { staffPage: 1 }, next: true }),
+};
 /** No error is open. */
 export const ErrorsEmpty: Story = { parameters: at("/admin/errors", { server: { operations: "none" } }) };
 export const ErrorsLoading: Story = { parameters: at("/admin/errors", { state: "loading" }) };
@@ -66,6 +78,10 @@ export const ErrorsError: Story = { parameters: at("/admin/errors", { state: "er
 
 /** A panic of the server: Resolve and Mute, its facts, its latest occurrence with its IDs and stack, its hours. */
 export const ErrorGroup: Story = { parameters: at("/admin/errors/{ops:error:panic}") };
+/** The same group with occurrences over 30 hours: the newest 12, and Show more. */
+export const ErrorGroupManyHours: Story = {
+  parameters: at("/admin/errors/{ops:error:panic}", { server: { operations: "crowded" } }),
+};
 /** An error of the web client, without a request ID. */
 export const ErrorGroupWeb: Story = { parameters: at("/admin/errors/{ops:error:web}") };
 /** A group resolved, regressed on another version, and resolved again: Mute, and its history. */
@@ -87,6 +103,10 @@ export const UXMeasurementsLoading: Story = { parameters: at("/admin/ux-measurem
 
 /** Link card domains: the rules, a door each, and Add a rule. */
 export const LinkCardDomains: Story = { parameters: at("/admin/link-card-domains") };
+/** More rules than the screen shows at once: the first 40, and Show more. */
+export const LinkCardDomainsMany: Story = {
+  parameters: at("/admin/link-card-domains", { server: { operations: "crowded" } }),
+};
 /** No domain has a rule. */
 export const LinkCardDomainsEmpty: Story = {
   parameters: at("/admin/link-card-domains", { server: { operations: "none" } }),

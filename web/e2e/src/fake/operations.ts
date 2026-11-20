@@ -16,8 +16,12 @@ type Job = Schema<"AdminJob">;
 type Attempt = Schema<"AdminJobAttempt">;
 type Group = Schema<"ErrorGroupDetail">;
 
-/** What the operations hold when the fake starts: the fake's own (by default), or nothing. */
-export type FakeOperationsOptions = "fake" | "none";
+/**
+ * What the operations hold when the fake starts: the fake's own (by default), or nothing; `crowded`, the fake's own
+ * with 45 more rules of the link card crawler (`site01.example` to `site45.example`) and the first error group's
+ * occurrences over 30 hours, so that those lists run past what a screen shows at once.
+ */
+export type FakeOperationsOptions = "fake" | "none" | "crowded";
 
 /** What the operations' handlers take from the fake. */
 export type OperationsContext = {
@@ -483,7 +487,16 @@ export function operationsHandlers(c: OperationsContext): { handlers: Handlers; 
 
   // ---- The error groups -------------------------------------------------------------------------------------------
 
-  const groups: (Group & { daily: number[] })[] = (none ? [] : groupPlans(c.started)).map((plan, i) => {
+  const planned = none ? [] : groupPlans(c.started);
+  const first = planned[0];
+  if (c.options === "crowded" && first !== undefined)
+    first.group.hourly_counts = hours(
+      c.started,
+      Array.from({ length: 30 }, (_, i) => 1 + (i % 6)),
+      -6,
+      "0.42.1",
+    );
+  const groups: (Group & { daily: number[] })[] = planned.map((plan, i) => {
     const id = idAt(c.started - (i + 1) * 24 * 60 * minute, 82_000 + i);
     keyed.set(`error:${plan.key}`, id);
     return { id, ...structuredClone(plan.group), daily: [...plan.daily] };
@@ -569,6 +582,14 @@ export function operationsHandlers(c: OperationsContext): { handlers: Handlers; 
   // ---- The rules of the link card crawler -------------------------------------------------------------------------
 
   const rules = none ? [] : rulePlans(c.started);
+  if (c.options === "crowded")
+    for (let i = 0; i < 45; i += 1)
+      rules.push({
+        domain: `site${String(i + 1).padStart(2, "0")}.example`,
+        mode: i % 3 === 0 ? "no_fetch" : "no_images",
+        note: "",
+        updated_at: new Date(c.started - (i + 1) * 60 * minute).toISOString(),
+      });
   const sorted = () => rules.toSorted((a, b) => a.domain.localeCompare(b.domain));
   const ruleHandlers: Handlers = {
     "GET /admin/link_card_domains": () => {

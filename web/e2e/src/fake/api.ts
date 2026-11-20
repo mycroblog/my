@@ -334,7 +334,15 @@ export type FakeOptions = {
      */
     reports?: boolean;
   };
-  /** The moderators' queue of reports (reports.ts): the fake's own reports by default, or none. */
+  /**
+   * How many items a page of the staff's lists (under /admin) holds when the request names no `limit`: the server's 20
+   * by default; fewer, so that a story or a test reaches the second page of a list the fake holds a few of.
+   */
+  staffPage?: number;
+  /**
+   * The moderators' queue of reports (reports.ts): the fake's own reports by default, or none; `crowded`, kai reported
+   * 24 times more as well, so that the queue and kai's reports run past a page.
+   */
   reports?: FakeReportOptions;
   /** The domain actions, the allowlist, the subscriptions, the servers and the audit log (domains.ts), or none. */
   domains?: FakeDomainOptions;
@@ -342,12 +350,14 @@ export type FakeOptions = {
   admin?: FakeAdminOptions;
   /**
    * The moderation of accounts (accounts.ts): the fake's own actions, appeals, registrations, decisions of the hooks,
-   * sign-up blocks and invites by default, or none of them.
+   * sign-up blocks and invites by default, or none of them; `crowded`, kai with 30 sign-ins and 24 accounts of the
+   * fake's own that signed up from kai's address as well, so that the account search and kai's lists run past a page.
    */
   moderation?: FakeModerationOptions;
   /**
    * The operations (operations.ts): the fake's jobs, error groups and rules of the link card crawler by default, or
-   * none; `uxMeasurement`, the instance measures the web client (`ux_measurement`), whose samples the fake then holds.
+   * none, or `crowded` (more rules and an error group's hours than a screen shows at once); `uxMeasurement`, the
+   * instance measures the web client (`ux_measurement`), whose samples the fake then holds.
    */
   operations?: FakeOperationsOptions;
   uxMeasurement?: boolean;
@@ -4092,9 +4102,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     json(body, 503, { "Content-Type": "application/json", ...headers });
 
   const unimplemented: string[] = [];
-  const route = createRouter(handlers, (error) => {
-    unimplemented.push(error.operation);
-  });
+  const route = createRouter(
+    handlers,
+    (error) => {
+      unimplemented.push(error.operation);
+    },
+    o.staffPage,
+  );
 
   const revocations: { clientId: string; token: string }[] = [];
 
