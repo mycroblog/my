@@ -9,6 +9,7 @@
 // finance.dom.test.tsx).
 
 import { randomUUID } from "node:crypto";
+import { ProblemError } from "@mycroblog/mykit";
 import type { Page } from "@playwright/test";
 import { readCellByCell } from "../catalog/specs/tables";
 import { signIn as apiSignIn } from "../src/seed/sign-in";
@@ -129,9 +130,14 @@ test("a visitor reads the published totals, and a holder of view_finance the fin
     })
     .toBe("paid");
   // The provider books the payment's money among its changes, which the server reads at its reconciliation: the
-  // administrator asks for one now, as the server's settings let them (one an hour; a demo server is new each run).
-  const reconciled = await api.POST("/admin/payment_reconciliation/runs");
-  expect(reconciled.response.status).toBe(202);
+  // administrator asks for one now, as the server's settings let them. The server takes one an hour: a repeat of this
+  // spec on the same server (--repeat-each) is refused with 429, and reads the income an earlier run of the hour booked.
+  try {
+    const reconciled = await api.POST("/admin/payment_reconciliation/runs");
+    expect(reconciled.response.status).toBe(202);
+  } catch (e) {
+    if (!(e instanceof ProblemError && e.status === 429)) throw e;
+  }
 
   // The administrator, who holds view_finance: the finance totals the API answers them, and the item by its name.
   const read = page.waitForRequest((r) => new URL(r.url()).pathname === "/api/v1/finance/cost_totals");
