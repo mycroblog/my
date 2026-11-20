@@ -481,7 +481,7 @@ func TestStatusProblems(t *testing.T) {
 		{appcontent.ErrPollWithMedia, http.StatusUnprocessableEntity, "", "投票のある投稿にはファイルを添付できません。投票かファイルのどちらかを外してください。"},
 		{appcontent.ErrPollNotEditable, http.StatusUnprocessableEntity, "", "投票のある投稿は編集できません。"},
 		{content.ErrInvalidVisibility, http.StatusUnprocessableEntity, "", ""},
-		{appcontent.ErrLocalVisibilityUnavailable, http.StatusUnprocessableEntity, "", "一人のためのサーバーでは、ローカル限定で投稿できません。見られる人を変えてください。"},
+		{appcontent.ErrLocalVisibilityUnavailable, http.StatusUnprocessableEntity, "", "一人のためのサーバーでは、「ご近所」で投稿できません。見られる人を変えてください。"},
 		{fmt.Errorf("x: %w", content.ErrInvalidIdempotencyKey), http.StatusUnprocessableEntity, "", "正しくない値です。入力した内容を確かめてください。"},
 		{appcontent.ErrPostingRestricted, http.StatusForbidden, "", "モデレーションの処分により、今はこのアカウントで投稿できません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。"},
 		{fmt.Errorf("x: %w", appcontent.ErrInteractionRestricted), http.StatusForbidden, "", "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。"},
@@ -780,7 +780,7 @@ func TestCreateStatusQuoteRemoteAudience(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(string(body), "ほかのサーバーの投稿を引用するときは、見られる人を「公開」か「ひかえめな公開」にしてください。") {
+	if res.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(string(body), "ほかのサーバーの投稿を引用するときは、見られる人を「公開」か「ひっそり公開」にしてください。") {
 		t.Errorf("create = %d %s, want 422 with the reason", res.StatusCode, body)
 	}
 }

@@ -5,8 +5,9 @@
 // from a row stays is the E2E tests' (web/e2e/specs/profile.spec.ts).
 
 import { expect, test } from "bun:test";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { main, renderApp } from "./test/app";
+import { postsLike } from "./test/posts";
 
 /** The screen's heading of the profile of `name` (a display name): the name and the full handle. */
 const heading = (name: string) =>
@@ -42,4 +43,30 @@ test("a tab of the lists replaces the address, and Back returns to the profile",
   expect(await panel().findByRole("link", { name: "Yuki 雪" })).toBeDefined();
   await app.user.click(main().getByRole("button", { name: "Back to the profile" }));
   expect(await heading("Sam Rivera")).toBeDefined();
+});
+
+/** `body` without the follow counts of its accounts, as the server answers a list of posts. */
+function withoutCounts<T>(body: T): T {
+  return JSON.parse(JSON.stringify(body), (key, value: unknown) =>
+    key === "followers_count" || key === "following_count" ? undefined : value,
+  ) as T;
+}
+
+test("a profile shows its counts after its author's posts were read in a timeline, the reader's own and another's", async () => {
+  const app = await renderApp("/lists", { viewer: "yuki" });
+  app.fake.script("GET /timelines/home", { change: withoutCounts });
+  await app.navigate("/");
+  await waitFor(() => {
+    for (const author of ["Sam Rivera", "Yuki 雪"])
+      if (postsLike(screen.getByRole("main"), author, "").length === 0)
+        throw new Error(`test: no post of ${author} yet`);
+  });
+
+  await app.navigate("/profile");
+  expect(await countLink("Yuki 雪", "Following")).toBeDefined();
+  expect(await countLink("Yuki 雪", "Followers")).toBeDefined();
+
+  await app.navigate("/@sam");
+  expect(await countLink("Sam Rivera", "Following")).toBeDefined();
+  expect(await countLink("Sam Rivera", "Followers")).toBeDefined();
 });

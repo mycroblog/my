@@ -4,11 +4,12 @@
 // tabs (all, or the mentions) with mark-all-read at the row's end, then, under all, the row of the requests the
 // notification policy holds back. Each unread notification (newer than the read marker) carries its own mark, and is
 // read once the reader acts on it or it goes out above the view (@my/app-data moves the marker): a press on its words,
-// on a control or a link of it, or on an item of a menu of it; opening a menu is not yet an action. Over them all, a row
-// counts the follow requests and opens their screen (follow-requests.tsx), and one under it what waits for the reader's
-// approval (waiting.tsx), where those are answered: their notifications here are plain lines. A notification that
-// asks for an answer of its own (follow back) has it as the primary button; that of a scheduled post that could not be
-// published opens its draft in the composer. A line about an account that acted toward the reader has a menu at its
+// on a control or a link of it, or on an item of a menu of it; opening a menu is not yet an action. That of an
+// announcement the reader marked read elsewhere is read with it. Over them all, a row counts the follow requests and
+// opens their screen (follow-requests.tsx), and one under it what waits for the reader's approval (waiting.tsx), where
+// those are answered: their notifications here are plain lines. A notification that asks for an answer of its own
+// (follow back) has it as the primary button; that of a scheduled post that could not be published opens its draft in
+// the composer. A line about an account that acted toward the reader has a menu at its
 // end, before Dismiss, whose Report… reports the account, with its post where the notification is about one
 // (report.tsx).
 // New notifications come in at the top as the stream receives them. The actions of a post it shows are answered as on
@@ -61,7 +62,7 @@ import {
   useAction,
   useLocale,
 } from "@my/design-system";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { FollowOf } from "../account-follow";
 import { stringsIn } from "../locale";
 import { ReportDialog } from "../report";
@@ -351,6 +352,11 @@ function Requests({ t }: { t: T }) {
 function List({ filter, t, instance }: { filter: NotificationFilter; t: T; instance: string }) {
   const { items, ...list } = useNotifications(filter);
   const reads = useNotificationReads();
+  // An announcement the reader marked read elsewhere (its page, its line above the home timeline) has its notification
+  // read with it.
+  useEffect(() => {
+    for (const n of items) if (n.announcement?.read === true && reads.unread(n.id)) reads.read(n.id);
+  });
   return (
     <ListColumn
       {...list}

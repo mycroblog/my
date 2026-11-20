@@ -140,7 +140,7 @@
     "description": "The heading of the section of the reader's requests for custom emoji."
   },
   "emoji_own.requests.empty": {
-    "defaultMessage": "You have not asked for an emoji yet. Your requests and their decisions show here.",
+    "defaultMessage": "You have not asked for an emoji yet.",
     "description": "In Your requests while the reader made none."
   },
   "emoji_own.emojis": {
@@ -148,7 +148,7 @@
     "description": "The heading of the section of the custom emoji the reader made."
   },
   "emoji_own.emojis.empty": {
-    "defaultMessage": "You have no emoji yet. An approved request makes one, which you can change here.",
+    "defaultMessage": "You have no emoji yet.",
     "description": "In Your emoji while the reader made none."
   },
   "emoji_own.emoji.category": {

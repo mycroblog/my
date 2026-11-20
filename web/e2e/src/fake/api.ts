@@ -2957,9 +2957,15 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   /**
    * The reader's notification as its list shows it now: with its post as it is, and as their keyword filters leave it
-   * among the notifications; none once the post is deleted, or while a filter hides it.
+   * among the notifications; none once the post is deleted, or while a filter hides it. Its announcement is as the
+   * reader sees it now, read once they marked it read.
    */
   const notificationNow = (n: Kept): Notification[] => {
+    const told = n.announcement;
+    if (told !== undefined) {
+      const key = seed.announcements.find((a) => announcementId(a.key) === told.id)?.key;
+      return [key === undefined ? withRead(n) : { ...withRead(n), announcement: announcementOf(key) }];
+    }
     if (n.status === undefined) return [withRead(n)];
     const [now] = judged(current(n.status), "notifications");
     return now === undefined ? [] : [{ ...withRead(n), status: now }];

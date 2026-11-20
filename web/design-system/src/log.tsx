@@ -30,8 +30,8 @@ const log = tv({
     text: "[text-wrap:pretty] [word-break:auto-phrase]",
     about: "text-caption text-muted-text [word-break:auto-phrase]",
     toggle: "whitespace-nowrap",
-    // The chevron after Details points down while folded and up while open.
-    chevron: "motion-safe:transition-transform motion-safe:duration-fast [[aria-expanded=true]_&]:rotate-180",
+    // The chevron after Details points down while folded and up while open, turned at once as the panel shows.
+    chevron: "[[aria-expanded=true]_&]:rotate-180",
     // What it folds stands a little apart from the lines over it, as a group of its own.
     panel: "pt-screen-air [&[hidden]]:hidden",
   },

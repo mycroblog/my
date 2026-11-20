@@ -27,109 +27,57 @@
     "defaultMessage": "プロフィール",
     "description": "An entry of the settings menu, and the title of its page, where the reader edits their profile."
   },
-  "settings.entry.profile.hint": {
-    "defaultMessage": "名前、自己紹介、画像、バッジ、フォロワーの承認、検索への表示",
-    "description": "The line under Profile in the settings menu at /settings: what its page holds, so that the reader finds a setting without opening every entry. A list of nouns, without a full stop."
-  },
   "settings.entry.display": {
     "defaultMessage": "表示と投稿",
     "description": "An entry of the settings menu, and the title of its page: the language, the time zone, how the app shows things, and what a new post starts with."
-  },
-  "settings.entry.display.hint": {
-    "defaultMessage": "言語、タイムゾーン、リンクのプレビュー、新しい投稿の初期値、タイムラインの言語",
-    "description": "The line under Display and posting in the settings menu at /settings: what its page holds. A list of nouns, without a full stop."
   },
   "settings.entry.notifications": {
     "defaultMessage": "通知",
     "description": "An entry of the settings menu, and the title of its page, where the reader chooses what notifies them and how."
   },
-  "settings.entry.notifications.hint": {
-    "defaultMessage": "通知する内容、プッシュ通知、メール、通知音、知らない人からの通知",
-    "description": "The line under Notifications in the settings menu at /settings: what its page holds (the kinds of notification and the ways each arrives, and what happens to notifications from people the reader does not know). A list of nouns, without a full stop."
-  },
   "settings.entry.relationships": {
-    "defaultMessage": "つながり",
+    "defaultMessage": "ブロック・ミュート・ハッシュタグ",
     "description": "An entry of the settings menu, and the title of its page, which lists the accounts the reader blocked or muted, the servers they muted, and the hashtags they follow."
-  },
-  "settings.entry.relationships.hint": {
-    "defaultMessage": "ブロックしたアカウント、ミュートしたアカウント、ミュートしたサーバー、フォロー中のハッシュタグ",
-    "description": "The line under Relationships in the settings menu at /settings: the lists its page holds. A list of nouns, without a full stop."
   },
   "settings.entry.filters": {
     "defaultMessage": "キーワードフィルタ",
     "description": "An entry of the settings menu, and the title of its page, which lists the reader's keyword filters; also the button at the top of one filter's page that goes back to the list."
   },
-  "settings.entry.filters.hint": {
-    "defaultMessage": "投稿を畳むか隠す言葉やフレーズ",
-    "description": "The line under Keyword filters in the settings menu at /settings: what a keyword filter is (posts with its words are folded behind the filter's name, or left out). Without a full stop."
-  },
   "settings.entry.security": {
     "defaultMessage": "セキュリティ",
     "description": "An entry of the settings menu, and the title of its page: how the reader signs in and where they are signed in; also the button at the top of a page under it (the password, two-factor authentication) that goes back to it."
-  },
-  "settings.entry.security.hint": {
-    "defaultMessage": "パスワード、パスキー、二要素認証、連携したアカウント、ログイン中のブラウザ",
-    "description": "The line under Security in the settings menu at /settings: what its page holds. Linked accounts are the reader's accounts on other services that they sign in with. A list of nouns, without a full stop."
   },
   "settings.entry.apps": {
     "defaultMessage": "アプリ",
     "description": "An entry of the settings menu, and the title of its page: the apps of other makers that the reader let use their account, and the apps the reader registered as their developer."
   },
-  "settings.entry.apps.hint": {
-    "defaultMessage": "アカウントの利用を許可したアプリ、自分で登録したアプリ",
-    "description": "The line under Apps in the settings menu at /settings: the two lists its page holds. A list of nouns, without a full stop."
-  },
   "settings.entry.invites": {
     "defaultMessage": "招待",
     "description": "An entry of the settings menu, and the title of its page, where the reader makes invites (a code, and a link with the code) that let people create an account on this server."
   },
-  "settings.entry.invites.hint": {
-    "defaultMessage": "このサーバーに人を招待するコードとリンク",
-    "description": "The line under Invites in the settings menu at /settings: what its page holds. Without a full stop."
-  },
   "settings.entry.account": {
     "defaultMessage": "アカウントとデータ",
     "description": "An entry of the settings menu, and the title of its page: the reader's data, and what becomes of the account; also the button at the top of a page under it that goes back to it."
-  },
-  "settings.entry.account.hint": {
-    "defaultMessage": "エクスポートとインポート、古い投稿の自動削除、アカウントの移転、モデレーションの処分と異議申し立て、無効化と削除",
-    "description": "The line under Account and data in the settings menu at /settings: what its page holds (export and import of the reader's data, deleting their old posts automatically, moving the account to another server, the moderators' actions on the account and the reader's appeals, deactivating or deleting the account). A list of nouns, without a full stop."
   },
   "settings.entry.count": {
     "defaultMessage": "{count, plural, other {確認が必要な項目 # 件}}",
     "description": "What the count at the end of an entry of the settings menu means, for assistive technology, read after the entry's name: how many things on its page wait for the reader (a moderation action to read, an export ready to download). count is that number, 1 or more."
   },
   "settings.entry.voice": {
-    "defaultMessage": "通話",
+    "defaultMessage": "ホストをした通話",
     "description": "An entry of the settings menu, and the title of its page, which lists the voice chat rooms the reader hosted."
   },
-  "settings.entry.voice.hint": {
-    "defaultMessage": "ホストをしたルーム",
-    "description": "The line under Voice chat in the settings menu."
-  },
   "settings.entry.events": {
-    "defaultMessage": "イベント",
+    "defaultMessage": "イベントのリマインダー",
     "description": "The entry of the settings of events (the reminders before them), in the settings' menu and as its screen's title."
   },
-  "settings.entry.events.hint": {
-    "defaultMessage": "イベントの前のリマインダー",
-    "description": "The line under the entry of the settings of events in the settings' menu."
-  },
   "settings.entry.supporter": {
-    "defaultMessage": "サポーター",
+    "defaultMessage": "サポーターのプランとチップ",
     "description": "The entry of the settings of the reader's support of the server (their subscription, tips, the supporters list), in the settings' menu and as its screen's title."
-  },
-  "settings.entry.supporter.hint": {
-    "defaultMessage": "加入・チップ・サポーターの一覧",
-    "description": "Under Supporter in the settings' menu: what its screen holds."
   },
   "settings.entry.custom_emojis": {
     "defaultMessage": "カスタム絵文字",
     "description": "An entry of the settings menu, and the title of its page, where the reader asks for custom emoji of this server and keeps the ones they made."
-  },
-  "settings.entry.custom_emojis.hint": {
-    "defaultMessage": "絵文字の申請と自分の絵文字",
-    "description": "The line under Custom emoji in the settings menu: what its page holds."
   },
   "settings.sign_out": {
     "defaultMessage": "ログアウト…",
@@ -492,7 +440,7 @@
     "description": "The line under the Fields heading of the Edit profile page. max is the most fields a profile has (4)."
   },
   "settings.profile.fields.empty": {
-    "defaultMessage": "補足情報はまだありません。追加すると、Web サイトや呼び方などをプロフィールに表示できます。",
+    "defaultMessage": "補足情報はまだありません。",
     "description": "In the place of the list of fields on the Edit profile page while the profile has none, over the button Add a field."
   },
   "settings.profile.fields.add": {
@@ -980,7 +928,7 @@
     "description": "The button at the end of the heading of a keyword filter's words, or under the sentence of an empty list, that adds a field for one more word or phrase."
   },
   "settings.filters.words.empty": {
-    "defaultMessage": "まだ言葉がありません。一致させる言葉やフレーズを追加してください。",
+    "defaultMessage": "このフィルタには言葉がありません。",
     "description": "In place of a keyword filter's words when the reader removed every one; Add a word follows it."
   },
   "settings.filters.words.missing": {
@@ -1184,15 +1132,15 @@
     "description": "A heading on the settings page Account status, over the list of the moderators' actions in effect on the reader's account now. The page of an account kept out of the app says In effect (auth.status.action_active) with the same word. A heading: no full stop."
   },
   "settings.account.actions.active.empty": {
-    "defaultMessage": "このアカウントに適用中の処分はありません。モデレーターがこのアカウントを処分すると、理由とともにここに表示され、異議を申し立てられます。",
-    "description": "In place of the list Actions in effect on the settings page Account status while no moderators' action is in effect on the reader's account: the fact, what appears there, and what the reader can then do."
+    "defaultMessage": "このアカウントに適用中の処分はありません。",
+    "description": "In place of the list Actions in effect on the settings page Account status while no moderators' action is in effect on the reader's account."
   },
   "settings.account.actions.past": {
     "defaultMessage": "過去の処分",
     "description": "A heading on the settings page Account status, over the list of the moderators' actions on the reader's account that ended or were lifted. A heading: no full stop."
   },
   "settings.account.actions.past.empty": {
-    "defaultMessage": "過去の処分はありません。終了した処分や解除された処分は、異議申し立てとその結果とともにここに残ります。",
+    "defaultMessage": "過去の処分はありません。",
     "description": "In place of the list Past actions on the settings page Account status while no moderators' action on the reader's account has ended or been lifted."
   },
   "settings.account.action.title": {
@@ -1372,7 +1320,7 @@
     "description": "In the section Archive of the settings page Export when the reader's requests for an archive could not be read (the network, the server); Try again follows it (settings.retry)."
   },
   "settings.account.export.archive.none": {
-    "defaultMessage": "アーカイブはありません。依頼すると、準備ができしだいここからダウンロードできます。",
+    "defaultMessage": "アーカイブはありません。",
     "description": "In place of the list in the section Archive of the settings page Export while the reader has requested no archive lately; the button Request an archive follows it (settings.account.export.archive.request)."
   },
   "settings.account.export.archive.request": {
@@ -2496,7 +2444,7 @@
     "description": "The button at the end of the heading Passkeys (or under settings.security.passkeys.none) that leads to the page where the reader names a new passkey; the title of that page; and the button at its end that adds the passkey."
   },
   "settings.security.passkeys.none": {
-    "defaultMessage": "パスキーはまだありません。追加したパスキーがここに表示されます。",
+    "defaultMessage": "パスキーはまだありません。",
     "description": "In the place of the list of passkeys while the account has none, over the button Add a passkey. The line above it (settings.security.passkeys.about) says what a passkey is for, so this one does not."
   },
   "settings.security.passkeys.added": {
@@ -2780,7 +2728,7 @@
     "description": "The line under the heading Authorized apps: what the list holds, and what to do about an app in it."
   },
   "settings.apps.authorized.none": {
-    "defaultMessage": "いまアカウントを使えるアプリはありません。アプリにアカウントの利用を許可すると、ここに表示されます。",
+    "defaultMessage": "いまアカウントを使えるアプリはありません。",
     "description": "In the place of the list of authorized apps while it is empty."
   },
   "settings.last_used": {
@@ -3384,7 +3332,7 @@
     "description": "Under the heading of the rooms the reader hosted, in the settings."
   },
   "settings.voice.none": {
-    "defaultMessage": "まだルームのホストをしたことはありません。ルームを開くと、ここに表示されます。",
+    "defaultMessage": "まだルームのホストをしたことはありません。",
     "description": "In place of the rooms the reader hosted, in the settings, while there are none."
   },
   "settings.voice.ended": {

@@ -5,9 +5,10 @@
 // becomes read.
 
 import { expect, test } from "bun:test";
+import { markAnnouncementRead } from "@my/app-data";
 import { NavigationProvider } from "@my/design-system";
 import { fakeHost, scenario, type FakeOptions, type FakeSeed } from "@my/e2e/fake";
-import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import { PostActions, type ComposeRequest } from "../post-actions";
 import { dataOn, fakeData, renderFeature } from "../test/feature";
 import { loadNotifications, Notifications } from "./notifications";
@@ -582,4 +583,54 @@ test("a notification read while an older one is unread stays read when the app l
   for (const name of ["Hana 花 boosted your post", "Hana 花 favourited your post"])
     expect(unreadMark(within(feed()).getByRole("article", { name }))).not.toBeNull();
   expect(unreadCount()).toBe(2);
+});
+
+// An announcement read elsewhere (its page, its line above the home timeline) reads its notification. The notices'
+// notifications, every one unread, hold the announcement of the scenario's welcome, which sam has not read.
+
+const notices = { everyKind: "notices", unreadNotifications: 20 } as const;
+const announcementRow = () =>
+  within(feed()).getByRole("article", { name: /^Announcement from .*: Welcome to the demo server/ });
+
+/** The ID of the announcement that the notices' notification tells of. */
+async function welcomeOf({ data }: Pick<Awaited<ReturnType<typeof inbox>>, "data">): Promise<string> {
+  const { data: page } = await data.api.GET("/notifications");
+  const id = page?.items.find((n) => n.type === "announcement")?.announcement?.id;
+  if (id === undefined) throw new Error("test: no notification of an announcement");
+  return id;
+}
+
+/** Waits until the server holds the notices' notification of an announcement read. */
+const readOnServer = ({ data }: Pick<Awaited<ReturnType<typeof inbox>>, "data">) =>
+  waitFor(async () => {
+    const { data: page } = await data.api.GET("/notifications");
+    if (page?.items.find((n) => n.type === "announcement")?.read !== true)
+      throw new Error("test: the server holds the notification unread");
+  });
+
+test("an announcement marked read while its notification shows reads the notification, and it alone", async () => {
+  const made = await inbox(notices);
+  const all = unreadCount();
+  expect(unreadMark(announcementRow())).not.toBeNull();
+
+  const welcome = await welcomeOf(made);
+  await act(() => markAnnouncementRead(made.data, welcome));
+
+  await becomesRead(announcementRow, all - 1);
+  await readOnServer(made);
+});
+
+test("an announcement marked read before the notifications show has its notification read", async () => {
+  const made = fakeData({ viewer: "sam", ...notices });
+  await made.data.api.POST("/announcements/{id}/read", { params: { path: { id: await welcomeOf(made) } } });
+  await loadNotifications(made.data);
+  renderFeature(
+    made.data,
+    <PostActions onCompose={() => undefined}>
+      <Notifications instance={fakeHost} />
+    </PostActions>,
+  );
+
+  await becomesRead(announcementRow, 18);
+  await readOnServer(made);
 });

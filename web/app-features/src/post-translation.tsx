@@ -2,8 +2,8 @@
 
 // A post's translation on the reader's request (FR-120, ADR-0148 §4, §12), the same on every screen that draws posts:
 // the reader's view of one post in one place, so each drawn post keeps its own, in memory only, and another copy of
-// the post elsewhere stays as it is. A post offers Translate when it is in another language than the reader's and the
-// instance has a way to translate it: a provider of the server that may receive its visibility (for a signed-in
+// the post elsewhere stays as it is. A post offers Translate when it is in another language than the reader's, is not
+// the reader's own (they wrote it), and the instance has a way to translate it: a provider of the server that may receive its visibility (for a signed-in
 // reader), or the browser's translator, where the instance allows it and the browser translates between the two
 // languages. The server is asked first; when it refuses for a reason the browser may cure (its limit, the post's
 // visibility, the language, its providers down), the browser translates at once where it needs no download, and
@@ -39,7 +39,14 @@ import {
 } from "@my/platform";
 import { useEffect, useRef, useState } from "react";
 import { stringsIn } from "./locale";
-import { usePostAuthor, usePostCardSize, type AuthorAction, type AuthorDone, type PostAuthor } from "./post-actions";
+import {
+  usePostAuthor,
+  usePostCardSize,
+  usePostOwn,
+  type AuthorAction,
+  type AuthorDone,
+  type PostAuthor,
+} from "./post-actions";
 import { ApprovalLine } from "./post-approval";
 
 /** The language tag of the reader's locale that a translation goes into: its language, and its script if it names one. */
@@ -191,7 +198,8 @@ export function usePostTranslation(
   const offer = useInstance()?.translation;
   const ownServer = useTranslateStatus();
   const translateOnServer = through?.translate ?? ownServer;
-  const foreign = inAnotherLanguage(source, target);
+  // The reader wrote their own post: they are never offered to translate it, whatever language it is marked in.
+  const foreign = !usePostOwn()(status) && inAnotherLanguage(source, target);
   const server = !visitor && foreign && (through?.allowed ?? true) && serverTranslates(offer, shown.visibility);
   const browserAllowed = foreign && offer?.browser === true && hasBrowserTranslator();
   const availability = useBrowserAvailability(source, target, browserAllowed);

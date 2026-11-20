@@ -243,7 +243,7 @@ const actionWords: Record<
       mark_statuses_sensitive: "投稿をセンシティブに指定",
       delete_statuses: "投稿の削除",
       force_sensitive: "メディアを常にセンシティブに指定",
-      limit: "公開範囲の制限 (投稿はフォロワー限定になり、公開タイムラインに出ない)",
+      limit: "公開範囲の制限 (投稿はフォロワーのみになり、公開タイムラインに出ない)",
       restrict_posting: "投稿・返信・ブースト・編集の禁止",
       restrict_interaction: "フォロー・お気に入り・ブースト・返信の禁止",
       disable_login: "ログインの停止",

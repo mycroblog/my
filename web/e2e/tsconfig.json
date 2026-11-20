@@ -1,11 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
-  "//": "The scenario and the fake API (src/, also under the stories in the browser and under the component tests on Bun), the seed and the demo server (on Bun), the Playwright specs of the E2E tests, those of the tests in a browser on the built catalog (catalog/), and the lab's scenarios (ux/). The condition @mycroblog/source reads @mycroblog/mykit from its TypeScript sources, as the seed runs it; the same path in `paths` lets Playwright's loader, which takes no condition, read it so in the specs' workers (the fixture `fresh`).",
+  "//": "The walker's browser (walk.ts, on Bun); the scenario and the fake API (src/, also under the stories in the browser and under the component tests on Bun), the seed and the demo server (on Bun), the Playwright specs of the E2E tests, those of the tests in a browser on the built catalog (catalog/), and the lab's scenarios (ux/). The condition @mycroblog/source reads @mycroblog/mykit from its TypeScript sources, as the seed runs it; the same path in `paths` lets Playwright's loader, which takes no condition, read it so in the specs' workers (the fixture `fresh`).",
   "compilerOptions": {
     "customConditions": ["@mycroblog/source"],
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["bun"],
     "paths": { "@mycroblog/mykit": ["../../pkg/mykit/ts/src/index.ts"] }
   },
-  "include": ["src/**/*.ts", "specs/**/*.ts", "catalog/**/*.ts", "ux/**/*.ts", "playwright.config.ts"]
+  "include": ["walk.ts", "src/**/*.ts", "specs/**/*.ts", "catalog/**/*.ts", "ux/**/*.ts", "playwright.config.ts"]
 }

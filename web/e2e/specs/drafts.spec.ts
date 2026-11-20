@@ -9,7 +9,7 @@ import { Frame, homeTimeline } from "./screens";
 import { expect, test } from "./test";
 
 /** What the list says of a writer with neither a draft nor a scheduled post. */
-const nothing = "No drafts or scheduled posts yet. Save a post as a draft or schedule it, and it shows here.";
+const nothing = "No drafts or scheduled posts yet.";
 
 test("a writer saves a draft, reopens it from the list and posts it", async ({ page, signIn, fresh }) => {
   const writer = await fresh.person();

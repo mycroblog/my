@@ -3,10 +3,6 @@
     "defaultMessage": "ロール",
     "description": "The name of the screen of the roles and their permissions, in the list at /admin and as the title of its screen. Read by administrators."
   },
-  "staff_roles.entry.hint": {
-    "defaultMessage": "だれが何をできるか、そのバッジ",
-    "description": "The line under Roles in the list at /admin: what its screen holds. Read by administrators."
-  },
   "staff_roles.loading": {
     "defaultMessage": "ロールを読み込んでいます…",
     "description": "On a screen of roles while the roles are read. Read by administrators."

@@ -4,8 +4,8 @@
 // FR-705, FR-724, FR-725, FR-922, ADR-0058 §1), on the fake server (app.samples.tsx) as its administrator (hana) reads
 // it. The root: the screens of This server and Connections, with what waits counted and with nothing waiting. Server settings: its pages in groups, and each page as a
 // form: General with the thumbnail, the icon and logo set and built in, Sign-up and the same on a one-person server,
-// Posts and features, Federation, Automated review, Search engines and AI, Voice chat, Deleting old posts, Appeals and
-// records; loading, failing, and an address that names no page. Terms and policies, and a document. Translation with a
+// Posts, timelines, and events, Federation, Automated review, Search engines and AI, Voice chat, Deleting old posts, Appeals and
+// record keeping; loading, failing, and an address that names no page. Terms and policies, and a document. Post translation with a
 // provider and with none. Rules: those in effect and retired, a rule, a retired rule, a new rule, and an address that
 // names none. Relays: joined, waiting and rejected, none, a joined relay, a rejected one, and a new one. Login
 // providers: the fake's three, none, the limit to providers waiting for one, a provider, and a new one. OAuth apps: of
@@ -53,7 +53,7 @@ export const SettingsRegistration: Story = {
 export const SettingsRegistrationSingleUser: Story = {
   parameters: at("/admin/settings/registration", { server: { singleUser: true } }),
 };
-/** Posts and features: posts, timelines, link cards, drafts, articles, events, and the front page. */
+/** Posts, timelines, and events: posts, timelines, link cards, drafts, articles, events, and the front page. */
 export const SettingsContent: Story = { parameters: at("/admin/settings/content") };
 /** Federation: its direction and its servers, each with what it does, signed fetches, media, posts, domain actions. */
 export const SettingsFederation: Story = { parameters: at("/admin/settings/federation") };
@@ -65,7 +65,7 @@ export const SettingsDiscovery: Story = { parameters: at("/admin/settings/discov
 export const SettingsVoice: Story = { parameters: at("/admin/settings/voice") };
 /** Deleting old posts: the default of new accounts and what it keeps, and the maximum for everyone. */
 export const SettingsAutoDelete: Story = { parameters: at("/admin/settings/auto-delete") };
-/** Appeals and records: how long people can appeal, and how long each record is kept. */
+/** Appeals and record keeping: how long people can appeal, and how long each record is kept. */
 export const SettingsRecords: Story = { parameters: at("/admin/settings/records") };
 export const SettingsLoading: Story = { parameters: at("/admin/settings/general", { state: "loading" }) };
 export const SettingsError: Story = { parameters: at("/admin/settings/general", { state: "error" }) };

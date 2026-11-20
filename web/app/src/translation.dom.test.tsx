@@ -4,7 +4,7 @@
 // Translate", which puts "[en] " before each text it translates) and goes back to the original, in the home timeline
 // and in the post's thread. To whom Translate is offered, what a refusal says and what is translated with the text are
 // the feature's (post-translation.dom.test.tsx). The reader is Sam, who follows Yuki, on a server that holds the test's
-// posts alone.
+// posts alone. A reader is never offered to translate their own post, whatever language it is marked in.
 
 import { expect, test } from "bun:test";
 import { scenario, type FakeSeed } from "@my/e2e/fake";
@@ -79,4 +79,18 @@ test("a reader translates a post in its thread, and goes back", async () => {
 
   expect(await within(post).findByText(text)).toBeDefined();
   expect(button(post, "Translate")).not.toBeNull();
+});
+
+test("a reader's own post in another language offers no Translate, on Home and on their profile", async () => {
+  const text = "Hi from the ridge.";
+  const app = await home([japanese("own", text, { author: "sam" }), japanese("theirs", "今朝は尾根まで歩きました。")]);
+  const theirs = await findPost(yuki, "今朝は尾根まで歩きました。");
+  expect(button(theirs, "Translate")).not.toBeNull();
+  const own = await findPost("Sam Rivera", text);
+  expect(button(own, "Translate")).toBeNull();
+
+  await app.navigate("/profile");
+
+  const onProfile = await findPost("Sam Rivera", text);
+  expect(button(onProfile, "Translate")).toBeNull();
 });
