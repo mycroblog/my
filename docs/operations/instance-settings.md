@@ -568,7 +568,7 @@ There is no custom CSS.
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | color | `#rrggbb` for light and for dark |
   | `font-sans-override`, `font-mono-override` | font family | Family names, comma-separated (at most 30), with no generic family such as `sans-serif`; quote a name with a word that starts with a digit, such as `"M PLUS 1p"` |
   | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | length | `0` or rem / px, 0.625rem to 3rem |
-  | `text-*--line-height` of the same four | number | 1 to 2.5 |
+  | `text-*--line-height` of the same seven | number | 1 to 2.5 |
   | `radius-control`, `radius-overlay` | length | 0 to 2rem |
   | `duration-spin` | duration | ms / s, 0 to 1000ms |
 
