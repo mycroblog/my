@@ -611,11 +611,11 @@ const everyEntry = [
   "/admin/oauth-apps",
   "/admin/webhooks",
   "/admin/link-card-domains",
+  "/admin/finance",
+  "/admin/supporters",
   "/admin/jobs",
   "/admin/errors",
   "/admin/ux-measurements",
-  "/admin/finance",
-  "/admin/supporters",
 ];
 
 for (const [permission, entries, address, read] of [
