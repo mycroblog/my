@@ -485,7 +485,7 @@ curl -H "Authorization: Bearer $TOKEN" \
   Cada tentativa tem seu `outcome` (`succeeded`, `retryable_failure`, `permanent_failure`, `skipped`), o `signature_scheme` e o `status_code` da resposta, o `error` de uma falha sem resposta ou o motivo de nada ter sido enviado, e o horário.
   Uma tentativa `succeeded` com `202` significa que o outro servidor aceitou a atividade; se ele depois a exibe, depende desse servidor.
 - As tentativas são mantidas por 30 dias, então o histórico volta 30 dias.
-- Para restringir a lista, acrescente `activity_uri=<o ID da atividade>`, ou `account_id=<o ID de uma conta local>` para as entregas de uma conta.
+- Para restringir a lista, acrescente `activity_uri=<the activity's ID>`, ou `account_id=<a local account's ID>` para as entregas de uma conta.
   Uma consulta com `account_id` é registrada no registro de auditoria como `account_deliveries_viewed`, com a conta e o servidor; as outras consultas não são registradas.
 - O corpo da atividade nunca é mostrado.
 

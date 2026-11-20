@@ -30,6 +30,14 @@ Respostas de `/api/v1/instance/health` (sem autenticação, `Cache-Control: no-s
 
 `/healthz` e `/readyz` respondem `200` com `{"status":"ok"}` quando saudáveis, e `/readyz` responde `503` com um documento de problema quando o banco de dados não está pronto. `/health/live` e `/health/ready` são as mesmas verificações com outros nomes.
 
+**No Cloud Run, chame os caminhos que não terminam em `z`.** O Cloud Run reserva alguns caminhos que terminam em `z` e os responde com o próprio `404` antes de uma requisição chegar ao contêiner: `/healthz` é um deles, e nada promete que `/readyz` continue respondendo. De fora de uma implantação no Cloud Run (um monitor de disponibilidade, `curl`), use `/health/live`, `/health/ready` ou `/api/v1/instance/health`. As sondas do próprio contêiner não são afetadas.
+O corpo nunca traz um motivo, um nome de host nem uma versão. A causa está no log do servidor.
+
+`checked_at` é o horário da verificação em que a resposta se baseia. O servidor executa a verificação do banco de dados no máximo uma vez por minuto por processo e reutiliza o resultado,
+então um monitor que consulta com mais frequência que a cada 60 s vê o mesmo `checked_at` e não ganha nada. Com vários processos, cada um executa a própria verificação.
+
+Com [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) definido, esses três caminhos ainda respondem sem o cabeçalho, então não mostram que a CDN o perdeu. Monitore também uma página pela CDN, como `https://<host>/about`, se um monitor for o seu primeiro sinal de problema.
+
 <!-- source: keep-the-monitoring-cheap d7956dee97ca -->
 ## Mantenha o monitoramento barato
 
