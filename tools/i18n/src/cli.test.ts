@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The commands of cli.ts, each run as `scripts/i18n.sh` runs it, on a temporary repository (I18N_TOOL_ROOT).
-import { afterAll, beforeEach, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -38,9 +38,13 @@ const git = (...args: string[]) => exec(["git", "-c", "user.name=t", "-c", "user
 const homeGo = (calls: string) =>
   `package web\n\nfunc home(l *i18n.Localizer, name string) []string {\n\treturn []string{${calls}}\n}\n`;
 
-beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), "my-i18n-"));
-  roots.push(root);
+// The fixture repository, built and committed once; each test runs on a copy of its own.
+let fixture = "";
+
+beforeAll(() => {
+  fixture = mkdtempSync(join(tmpdir(), "my-i18n-fixture-"));
+  roots.push(fixture);
+  root = fixture;
   writeCatalog("locales/en/web/home.json", {
     "home.title": entry("Home"),
     "home.empty.title": entry("Nothing here yet"),
@@ -97,6 +101,12 @@ beforeEach(() => {
   git("init", "-q");
   git("add", "-A");
   expect(git("commit", "-q", "-m", "fixture").code).toBe(0);
+});
+
+beforeEach(() => {
+  root = mkdtempSync(join(tmpdir(), "my-i18n-"));
+  roots.push(root);
+  cpSync(fixture, root, { recursive: true });
 });
 
 afterAll(() => {
