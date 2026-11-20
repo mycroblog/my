@@ -2,7 +2,8 @@
 
 // Signing in as a person of the scenario without a browser, as the web client does (ADR-0090 §16): the authorization
 // code flow with PKCE through the server's sign-in screen, its two-factor step when the person has one, and the token
-// endpoint. It returns a client of the API with the person's access token.
+// endpoint. It returns a client of the API with the person's access token, or the web client's session for a browser:
+// the refresh token the token endpoint sets as its cookie.
 
 import { codeChallenge, createClient, exchange, newCodeVerifier, staticToken, type Api } from "@mycroblog/mykit";
 import type { Person } from "../scenario";
@@ -68,19 +69,32 @@ async function submit(browser: Browser, url: string, action: string, fields: Rec
   return browser.request(action, { csrf_token: csrf, return_to: returnTo, ...fields });
 }
 
+/** The cookie of the web client's session, which carries its refresh token (internal/interface/oauth). */
+export const sessionCookie = "__Host-my_rt";
+
 /**
- * Signs in as `p` and returns a client of the API as them. `totpSecret` answers the two-factor step of a person who
- * has one, with a code of a step other than `avoidStep`, one whose code was used already (totpCode). With `from`, every
- * request comes from that client IP (X-Forwarded-For, which the demo server trusts from this machine), so that the
- * people of the E2E tests do not share one sign-in limit (fresh.ts).
+ * What a sign-in gives: the access token, the refresh token of its cookie (empty when the token endpoint set none), and
+ * the fetch that sends from `from`.
  */
-export async function signIn(
+type SignedIn = {
+  accessToken: string;
+  refreshToken: string;
+  fetchFrom: { fetch?: (request: Request) => Promise<Response> };
+};
+
+/**
+ * Signs in as `p` through the authorization code flow, as the web client does. `totpSecret` answers the two-factor
+ * step of a person who has one, with a code of a step other than `avoidStep`, one whose code was used already
+ * (totpCode). With `from`, every request comes from that client IP (X-Forwarded-For, which the demo server trusts from
+ * this machine), so that the people of the E2E tests do not share one sign-in limit (fresh.ts).
+ */
+async function authorize(
   server: string,
   p: Person,
   totpSecret?: string,
   avoidStep?: number,
   from?: string,
-): Promise<Api> {
+): Promise<SignedIn> {
   const browser = new Browser(server, from);
   const fetchFrom =
     from === undefined
@@ -116,6 +130,52 @@ export async function signIn(
   if (next.status !== 303) throw new Error(`seed: signing in as ${p.username} answered ${next.status}`);
   const code = new URL(browser.location(await browser.request(authorize))).searchParams.get("code");
   if (code === null) throw new Error(`seed: the authorization of ${p.username} returned no code`);
-  const token = await exchange({ server, clientId: "my-web", redirectUri, ...fetchFrom }, code, verifier);
-  return createClient({ server, tokenSource: staticToken(token.accessToken), acceptLanguage: p.locale, ...fetchFrom });
+  let refreshToken = "";
+  const send = fetchFrom.fetch ?? ((request: Request) => fetch(request));
+  const token = await exchange(
+    {
+      server,
+      clientId: "my-web",
+      redirectUri,
+      fetch: async (request) => {
+        const res = await send(request);
+        for (const cookie of res.headers.getSetCookie()) {
+          const [pair = ""] = cookie.split(";");
+          if (pair.startsWith(`${sessionCookie}=`)) refreshToken = pair.slice(sessionCookie.length + 1);
+        }
+        return res;
+      },
+    },
+    code,
+    verifier,
+  );
+  return { accessToken: token.accessToken, refreshToken, fetchFrom };
+}
+
+/** Signs in as `p` (authorize) and returns a client of the API as them. */
+export async function signIn(
+  server: string,
+  p: Person,
+  totpSecret?: string,
+  avoidStep?: number,
+  from?: string,
+): Promise<Api> {
+  const { accessToken, fetchFrom } = await authorize(server, p, totpSecret, avoidStep, from);
+  return createClient({ server, tokenSource: staticToken(accessToken), acceptLanguage: p.locale, ...fetchFrom });
+}
+
+/**
+ * Signs in as `p` (authorize) for a browser: the value of the web client's session cookie, which a browser that holds
+ * it opens the app with, signed in, as after the sign-in screen. Each call is a session of its own.
+ */
+export async function webSession(
+  server: string,
+  p: Person,
+  totpSecret?: string,
+  avoidStep?: number,
+  from?: string,
+): Promise<string> {
+  const { refreshToken } = await authorize(server, p, totpSecret, avoidStep, from);
+  if (refreshToken === "") throw new Error(`seed: the token endpoint set no ${sessionCookie} for ${p.username}`);
+  return refreshToken;
 }

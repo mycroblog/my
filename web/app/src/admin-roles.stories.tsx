@@ -6,7 +6,8 @@
 // offers less. The list of roles, for both: `admin` above the lead's reach, muted. A role's page: one the reader may
 // reshape (`artist`, with a badge), one holding permissions the lead lacks (`moderator`: a sentence names them), the
 // built-in `admin` for the administrator (its badge alone) and for the lead (what it is, nothing to change), one with
-// no permission that nobody holds (`helper`, with Delete last); loading, failing, and an address that names none. A
+// no permission that nobody holds (`helper`, with Delete last), one a supporter plan grants (`patron`, the plan named);
+// loading, failing, and an address that names none. A
 // new role's form, for the lead: the permissions they hold alone, and a place no higher than theirs. The roles of an
 // account on its Management page: mio's, for the administrator and for the lead.
 
@@ -51,6 +52,8 @@ export const RoleAdmin: Story = { parameters: asAdmin("/admin/roles/admin") };
 export const RoleAboveTheReader: Story = { parameters: asLead("/admin/roles/admin") };
 /** A role with no permission that nobody holds, which the lead may delete. */
 export const RoleNobodyHolds: Story = { parameters: asLead("/admin/roles/helper") };
+/** A role the supporter plan Patron grants: what it is and the plan that grants it, its badge alone to change. */
+export const RoleOfAPlan: Story = { parameters: asAdmin("/admin/roles/patron") };
 export const RoleLoading: Story = { parameters: asAdmin("/admin/roles/artist", { state: "loading" }) };
 export const RoleError: Story = { parameters: asAdmin("/admin/roles/artist", { state: "error" }) };
 /** An address that names no role. */

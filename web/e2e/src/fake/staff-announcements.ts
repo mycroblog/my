@@ -4,7 +4,7 @@
 // each state the list filters by (a draft, one published to start in a few days, one showing now, one whose window
 // ended, one withdrawn), newest first, and the writes, checked as the server checks them (a title of 1 to 100
 // graphemes on one line, a text of 1 to 5,000 characters, a window that ends after it starts, nothing changed once
-// withdrawn). What the readers see of them (`shown`) is only what the administration published while the fake ran, so
+// withdrawn, only a draft deleted). What the readers see of them (`shown`) is only what the administration published while the fake ran, so
 // that the seed's announcements stay the readers' in every other story and test: those published and in their window,
 // newest first.
 
@@ -217,6 +217,14 @@ export function announcementHandlers(c: StaffServerContext): {
       }),
     "POST /admin/announcements/{id}/withdraw": ({ params }) =>
       changed(params.id, (a) => ({ ...a, state: "withdrawn" })),
+    "DELETE /admin/announcements/{id}": ({ params }) => {
+      if (!allowed()) return forbidden();
+      const a = found(params.id);
+      if (a === undefined) return c.notFound();
+      if (a.state !== "draft") return c.problem(409, "Conflict");
+      list.splice(list.indexOf(a), 1);
+      return { status: 204 };
+    },
   };
 
   return {

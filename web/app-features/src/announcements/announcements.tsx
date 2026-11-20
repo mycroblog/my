@@ -127,12 +127,29 @@ export function useAnnouncementTitle(id: string): string | undefined {
 }
 
 /**
+ * An announcement as its readers see it on its page: its title, its text as the server renders its Markdown, and when
+ * it shows. The staff's page of one shows it so too.
+ */
+export function AnnouncementEntry({ a }: { a: Announcement }) {
+  const { t, lang } = stringsIn(useLocale().locale);
+  const timeZone = useTimeZone();
+  return (
+    <Entry>
+      <NoticeLine icon="announcements" date={a.published_at}>
+        <strong dir="auto">{titleOf(a, t)}</strong>
+      </NoticeLine>
+      <PostContent html={a.content} lang={undefined} />
+      <CaptionLine icon="events">{period(a, t, lang, timeZone)}</CaptionLine>
+    </Entry>
+  );
+}
+
+/**
  * The page of the announcement of `id`, which marks it read while it shows and is unread; `onBack` goes back to the
  * list.
  */
 export function AnnouncementPage({ id, onBack }: { id: string; onBack: () => void }) {
-  const { t, lang } = stringsIn(useLocale().locale);
-  const timeZone = useTimeZone();
+  const { t } = stringsIn(useLocale().locale);
   const { announcement: a, error } = useAnnouncement(id);
   const markRead = useMarkAnnouncementRead();
   const opens = a !== undefined && !a.read && !a.ended;
@@ -160,13 +177,7 @@ export function AnnouncementPage({ id, onBack }: { id: string; onBack: () => voi
   return (
     <>
       {back}
-      <Entry>
-        <NoticeLine icon="announcements" date={a.published_at}>
-          <strong dir="auto">{titleOf(a, t)}</strong>
-        </NoticeLine>
-        <PostContent html={a.content} lang={undefined} />
-        <CaptionLine icon="events">{period(a, t, lang, timeZone)}</CaptionLine>
-      </Entry>
+      <AnnouncementEntry a={a} />
     </>
   );
 }

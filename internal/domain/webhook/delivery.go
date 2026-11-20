@@ -143,11 +143,13 @@ const (
 	DeliveryFailing DeliveryStatus = "failing"
 )
 
-// DeliveryRecord is a delivery with its message's event, its attempts so far, and its last
-// attempt.
+// DeliveryRecord is a delivery with its message's event and body, its attempts so far, and its
+// last attempt.
 type DeliveryRecord struct {
 	Delivery  Delivery
 	EventType EventType
+	// Body is the body of the message, the request body of every attempt.
+	Body      []byte
 	Attempts  int
 	Succeeded bool
 	Last      *Attempt

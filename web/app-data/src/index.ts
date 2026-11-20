@@ -6,6 +6,19 @@
 
 export { createAppData, createQueryClient, onDataClosed, type AppData } from "./app-data";
 export {
+  audienceLets,
+  domainActionsShown,
+  instanceDocumentQuery,
+  instanceDomainActionsQuery,
+  useAboutInstance,
+  useInstanceDocument,
+  useInstanceDomainActions,
+  type InstanceDocument,
+  type InstanceDocumentRead,
+  type InstanceDocumentKind,
+  type InstanceDomainAction,
+} from "./about";
+export {
   articleFieldLimits,
   articleSourceQuery,
   defaultArticleLimits,
@@ -1405,6 +1418,7 @@ export {
   badgeColors,
   builtinRoles,
   fixedPermissions,
+  grantedByPlan,
   highestPlace,
   loadAccountRoles,
   loadAdminRoles,

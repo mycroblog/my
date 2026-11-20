@@ -395,7 +395,7 @@ func (h *Handler) renderPreview(ctx context.Context, lang string, meta previewMe
 	crawlers := directivesOf(policy)
 	d, err := renderShell(shellData{
 		Lang: lang, Dir: i18n.Direction(lang), Title: meta.Title, Theme: theme, Brand: brand.Icon, Crawlers: crawlers,
-		HasIcon: h.hasIcon, HasAppleTouchIcon: h.hasAppleTouchIcon, HasThemeScript: h.hasThemeScript, ViteClient: viteClient(h.o.DevViteOrigin), Entry: h.tags,
+		HasIcon: h.hasIcon, HasAppleTouchIcon: h.hasAppleTouchIcon, HasThemeScript: h.hasThemeScript, DevScripts: devScripts(h.o.DevViteOrigin), Entry: h.tags,
 		Config:  h.runtimeConfig(locale, name, brand),
 		Preview: &meta,
 	})

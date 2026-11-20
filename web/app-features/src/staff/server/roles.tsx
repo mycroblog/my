@@ -13,6 +13,7 @@ import {
   badgeColors,
   builtinRoles,
   fixedPermissions,
+  grantedByPlan,
   highestPlace,
   mayDelete,
   mayReshape,
@@ -85,7 +86,7 @@ function permissionList(t: T, locale: string, permissions: readonly Permission[]
 function fixedReason(t: T, role: AdminRole, rights: RoleRights): string | undefined {
   if (!withinReach(role, rights)) return t("staff_roles.fixed.above", { key: rights.topKey ?? "" });
   if (role.key === "admin") return t("staff_roles.fixed.admin");
-  if (rights.planRoles.has(role.id)) return t("staff_roles.fixed.plan");
+  if (grantedByPlan(role, rights)) return t("staff_roles.fixed.plan");
   return undefined;
 }
 
@@ -95,13 +96,14 @@ function roleFacts(t: T, role: AdminRole): string[] {
     t("staff_roles.row.place", { position: role.position }),
     t("staff_roles.row.permissions", { count: role.permissions.length }),
     ...(role.badge === undefined ? [] : [t("staff_roles.row.badge", { label: role.badge.label })]),
+    ...(role.supporter_plan === undefined ? [] : [t("staff_roles.row.plan", { name: role.supporter_plan.name })]),
   ];
 }
 
 /** A word on where a role stands for the reader: above their reach, a plan's, or built in; none for any other. */
 function roleState(t: T, role: AdminRole, rights: RoleRights): string | undefined {
   if (!withinReach(role, rights)) return t("staff_roles.state.above");
-  if (rights.planRoles.has(role.id)) return t("staff_roles.state.plan");
+  if (grantedByPlan(role, rights)) return t("staff_roles.state.plan");
   if (builtinRoles.has(role.key)) return t("staff_roles.state.builtin");
   return undefined;
 }
@@ -528,15 +530,24 @@ function changeOf(f: FormState, reshape: boolean): RoleChange {
   };
 }
 
-/** What a role that cannot be changed is: its place and its permissions, a line each, and why the reader cannot. */
+/**
+ * What a role that cannot be changed is: its place, the supporter plan that grants it, and its permissions, a line
+ * each, and why the reader cannot.
+ */
 function RoleFacts({ role, why }: { role: AdminRole; why: string }) {
   const { t } = useStaffStrings();
   const held = permissionOrder.filter((p) => role.permissions.includes(p));
+  const plan = role.supporter_plan;
   return (
     <SettingsSection heading={t("staff_roles.role")}>
       <SettingsFacts
         label={t("staff_roles.role")}
-        items={[{ text: t("staff_roles.row.place", { position: role.position }) }]}
+        items={[
+          { text: t("staff_roles.row.place", { position: role.position }) },
+          ...(plan === undefined
+            ? []
+            : [{ text: t("staff_roles.facts.plan", { name: plan.name, retired: String(plan.retired) }) }]),
+        ]}
       />
       {held.length === 0 ? (
         <SettingsNote instead>{t("staff_roles.facts.no_permissions")}</SettingsNote>

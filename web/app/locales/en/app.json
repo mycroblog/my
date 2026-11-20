@@ -403,6 +403,10 @@
     "defaultMessage": "Costs and income",
     "description": "The heading of the page of the server's published costs and income, which anyone can read."
   },
+  "app.about": {
+    "defaultMessage": "About {name}",
+    "description": "The heading of the server's about page, and the document's title; {name} is the server's name."
+  },
   "app.supporters": {
     "defaultMessage": "Supporters",
     "description": "The name of the supporters' page (the plans, the tip and the supporters list): its heading, and its place in the menu."

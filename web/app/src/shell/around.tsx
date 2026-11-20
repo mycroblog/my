@@ -8,7 +8,17 @@
 // The server's pages end it, as they end the menu's sheet. Under `wide`, a line above the home timeline counts the
 // unread announcements instead.
 
-import { costsPagePath, eventPath, RoomCaption, roomIcon, useEventTime, voiceRoomPath } from "@my/app-components";
+import {
+  aboutPagePath,
+  costsPagePath,
+  eventPath,
+  privacyPagePath,
+  RoomCaption,
+  roomIcon,
+  termsPagePath,
+  useEventTime,
+  voiceRoomPath,
+} from "@my/app-components";
 import { FundingMeterView, LatestNotifications } from "@my/app-features";
 import {
   useAnnouncements,
@@ -38,13 +48,14 @@ export function ServerFooter({ instance }: { instance: Instance | undefined }) {
     <FrameFooter
       label={t("app.footer")}
       links={[
-        { href: "/about", label: t("app.footer_about"), icon: "about" },
+        { href: aboutPagePath, label: t("app.footer_about"), icon: "about" },
+        // The app's own pages of the documents, which the instance's addresses are, opened in place.
         ...(instance?.terms_url === undefined
           ? []
-          : [{ href: instance.terms_url, label: t("app.footer_terms"), icon: "file" as const }]),
+          : [{ href: termsPagePath, label: t("app.footer_terms"), icon: "file" as const }]),
         ...(instance?.privacy_policy_url === undefined
           ? []
-          : [{ href: instance.privacy_policy_url, label: t("app.footer_privacy"), icon: "file" as const }]),
+          : [{ href: privacyPagePath, label: t("app.footer_privacy"), icon: "file" as const }]),
       ]}
     />
   );

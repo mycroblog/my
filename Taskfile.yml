@@ -112,3 +112,4 @@ tasks:
       - i18n:gen
       - i18n:compile
       - web:tokens-gen
+      - mail:frame

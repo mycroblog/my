@@ -1,0 +1,8 @@
+<!-- Breaks "inline-styles": the light look is a class of the stylesheet, which a client that drops it loses. -->
+<!doctype html>
+<html lang="{{.Lang}}" dir="{{.Dir}}"><head><style>
+.mail-text { color: {{$.Colors.Light.Text}}; }
+@media (prefers-color-scheme: dark) {
+  .mail-text { color: {{$.Colors.Dark.Text}} !important; }
+}
+</style></head><body><table><tbody><tr><td class="mail-text">Hello</td></tr></tbody></table></body></html>

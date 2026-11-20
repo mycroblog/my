@@ -99,6 +99,7 @@ const kinds: Record<Action, readonly [says: string, leads: Leads | null]> = {
   announcement_updated: ["changed the announcement Maintenance on Saturday", null],
   announcement_published: ["published the announcement Maintenance on Saturday", null],
   announcement_withdrawn: ["withdrew the announcement Maintenance on Saturday", null],
+  announcement_deleted: ["deleted the announcement draft Maintenance on Saturday", null],
   invite_created: ["created the invite Q7xK", { to: "/moderation/invites" }],
   invite_revoked: ["revoked the invite Q7xK", { to: "/moderation/invites" }],
   relay_added: ["added the relay https://relay.example/inbox", null],

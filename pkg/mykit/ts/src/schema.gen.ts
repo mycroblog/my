@@ -255,9 +255,9 @@ export interface paths {
         /**
          * List the domains that the instance moderates
          * @description The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
-         *     setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
-         *     `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
-         *     token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
+         *     setting `domain_actions_visibility`, which `GET /instance` gives, decides who may read it:
+         *     `off` makes it a 404, `signed_in` a 401 `/api/v1/problems/unauthenticated` for a request
+         *     without an access token, and `everyone` serves everyone. The setting `domain_actions_rationale_visibility`
          *     decides, in the same way, who gets each action's public comment. The moderators'
          *     private notes are never listed.
          */
@@ -7299,7 +7299,13 @@ export interface paths {
          */
         put: operations["updateAdminAnnouncement"];
         post?: never;
-        delete?: never;
+        /**
+         * Delete a draft announcement
+         * @description Deletes a draft, which no user ever saw: it is found nowhere after, a 404 like an unknown
+         *     ID. The audit log records `announcement_deleted` with its title. An announcement that was
+         *     published is a 409: withdraw it instead. Needs the `manage_announcements` permission.
+         */
+        delete: operations["deleteAdminAnnouncement"];
         options?: never;
         head?: never;
         patch?: never;
@@ -11336,9 +11342,9 @@ export interface components {
          *     endpoint answered 410 Gone or kept failing), `webhook_secret_rotated`; the label is its
          *     description and the host name of its URL, never the URL. On an `announcement`:
          *     `announcement_created`, `announcement_updated` (its text or window),
-         *     `announcement_published`, `announcement_withdrawn`; the label is the first line of its
-         *     text. On an `invite`: `invite_created`, `invite_revoked`; the label is the first
-         *     characters of its code, never the whole code. On a `relay`: `relay_added`,
+         *     `announcement_published`, `announcement_withdrawn`, `announcement_deleted` (a draft); the
+         *     label is the first line of its text. On an `invite`: `invite_created`, `invite_revoked`;
+         *     the label is the first characters of its code, never the whole code. On a `relay`: `relay_added`,
          *     `relay_followed`, `relay_unfollowed`, `relay_removed`, and `relay_accepted`,
          *     `relay_rejected` (by the `remote` relay); the label is its URL. The refetch of remote
          *     posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
@@ -11381,7 +11387,7 @@ export interface components {
          *     the event; the ID and the label are the event's ID.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_tips_enabled" | "supporter_tips_revised" | "supporter_tips_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "delivery_revealed" | "account_deliveries_viewed" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued" | "event_cancelled";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "announcement_deleted" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_tips_enabled" | "supporter_tips_revised" | "supporter_tips_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "delivery_revealed" | "account_deliveries_viewed" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued" | "event_cancelled";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -12667,10 +12673,23 @@ export interface components {
             permissions: components["schemas"]["Permission"][];
             /** @description The badge of the role, which its holders may show on their profile; omitted when it has none. */
             badge?: components["schemas"]["RoleBadge"];
+            /**
+             * @description The supporter plan that grants the role, which only its subscriptions grant and revoke;
+             *     omitted for a role that no plan grants. A role is the role of one plan at most.
+             */
+            supporter_plan?: components["schemas"]["AdminRoleSupporterPlan"];
         };
         /** @description Roles, highest position first. */
         AdminRoleList: {
             items: components["schemas"]["AdminRole"][];
+        };
+        /** @description The supporter plan that grants a role to its subscribers, and so manages it. */
+        AdminRoleSupporterPlan: {
+            id: components["schemas"]["Id"];
+            /** @description The name of the plan in its current terms. */
+            name: string;
+            /** @description Whether the plan is retired, which keeps the role of the subscriptions it still has. */
+            retired: boolean;
         };
         /**
          * @description A rule of the instance. Its ID stays the same across revisions, so reports keep
@@ -13416,6 +13435,13 @@ export interface components {
             last_attempt?: components["schemas"]["AdminWebhookAttempt"];
             /** Format: date-time */
             created_at: string;
+            /**
+             * @description The body of the request that every attempt sent, byte for byte as the receiver got it: a
+             *     JSON document, which can carry personal data (an applicant's email address, a report's
+             *     comment). It is kept as long as the delivery, 14 days. Omitted where the reader lacks the
+             *     permission that subscribing to its event needs besides `manage_webhooks`.
+             */
+            request_body?: string;
         };
         /** @description A page of the deliveries of a webhook, newest first. */
         AdminWebhookDeliveryPage: components["schemas"]["PageInfo"] & {
@@ -15587,6 +15613,13 @@ export interface components {
              */
             tips_enabled: boolean;
             supporter_list_visibility: components["schemas"]["InstanceAudience"];
+            /**
+             * @description Who may read the list of moderated domains (`GET /instance/domain_actions`), the instance
+             *     setting `domain_actions_visibility`: `off`, nobody (the list is a 404); `signed_in`, the
+             *     users signed in to this server; `everyone`, anonymous visitors included. The about page shows
+             *     the list only when it lets the viewer read it.
+             */
+            domain_actions_visibility: components["schemas"]["InstanceAudience"];
             /**
              * @description The decision hooks in use: what the server sends to an external review before it accepts it.
              *     Absent when there is none. The information page states this.
@@ -28637,6 +28670,28 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["AdminAnnouncement"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteAdminAnnouncement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the announcement. */
+                id: components["parameters"]["AnnouncementId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The draft is deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             default: components["responses"]["Problem"];
         };
     };

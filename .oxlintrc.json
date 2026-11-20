@@ -5,8 +5,8 @@
 //   nearest tsconfig.json.
 // - jsPlugins: eslint-comments, so that a disable comment says why; restrict/* (web/devtools/src/restrictions.js), the
 //   layer rules of ADR-0025 §3 and §4 that a type cannot hold, the rules of the styles of ADR-0171 §2 and §3, the
-//   checks of the settings of ADR-0110 §6 and the one source of dates of ADR-0009 §3, which restrictions.test.js
-//   proves.
+//   checks of the settings of ADR-0110 §6, the one source of dates of ADR-0009 §3 and no HTML sink under the Trusted
+//   Types of ADR-0019 §9, which restrictions.test.js proves.
 // options.denyWarnings makes a warning fail like an error.
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
@@ -409,8 +409,18 @@
       }
     },
     // Only a layout part of @my/design-system writes layout (ADR-0171 §3), and only the frame of a page decides by the
-    // viewport (ADR-0025 §4; the app decides for itself); web/devtools/src/layout-parts.js names both. A story lays
-    // out its specimens and stands in for the app.
+    // viewport (ADR-0025 §4; the app decides for itself, and the layers below the design system not at all);
+    // web/devtools/src/layout-parts.js names both. A story lays out its specimens and stands in for the app.
+    {
+      "files": [
+        "web/platform/**",
+        "web/rtc/**",
+        "web/app-data/**"
+      ],
+      "rules": {
+        "restrict/viewport-breakpoints": "error"
+      }
+    },
     {
       "files": [
         "web/design-system/**",
@@ -531,6 +541,16 @@
       ],
       "rules": {
         "restrict/page-trail": "error"
+      }
+    },
+    // The shell requires Trusted Types (ADR-0019 §9): no HTML sink anywhere in the web client, the tests and the
+    // development tools among it, since they run under the same policy in the browser.
+    {
+      "files": [
+        "web/**"
+      ],
+      "rules": {
+        "restrict/html-sinks": "error"
       }
     }
   ]

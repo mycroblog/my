@@ -117,7 +117,7 @@ export class Store {
   delete(locale: string, ns: string, key: string): boolean {
     const file = this.files.get(catalogFile(locale, ns, key));
     if (!file || !(key in file.entries)) return false;
-    delete file.entries[key];
+    file.entries = Object.fromEntries(Object.entries(file.entries).filter(([k]) => k !== key));
     this.dirty.add(file.path);
     return true;
   }

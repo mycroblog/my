@@ -266,7 +266,7 @@ func webhookRepoDeliveries(t *testing.T, r *webhookRepo) {
 	rec, err := r.h.Webhooks.FindDelivery(t.Context(), e.EndpointID, d1.ID)
 	if err != nil || rec.Attempts != 1 || rec.Succeeded || rec.Last == nil || rec.Last.ID != failed.ID ||
 		rec.Last.Outcome != webhook.OutcomeHTTPError || rec.Last.StatusCode != 500 || rec.Last.Duration != 120*time.Millisecond ||
-		rec.EventType != webhook.EventReportCreated {
+		rec.EventType != webhook.EventReportCreated || string(rec.Body) != `{"type":"report.created"}` {
 		t.Errorf("FindDelivery after a failure = %+v, %v", rec, err)
 	}
 	r.attempt(t, d1.ID, true)
@@ -279,8 +279,9 @@ func webhookRepoDeliveries(t *testing.T, r *webhookRepo) {
 	}
 
 	page, err := r.h.Webhooks.ListDeliveries(t.Context(), e.EndpointID, "", 10)
-	if err != nil || len(page) != 2 || page[0].Delivery.ID != d2.ID || page[1].Delivery.ID != d1.ID || page[0].Attempts != 0 {
-		t.Errorf("ListDeliveries = %+v, %v; want newest first", page, err)
+	if err != nil || len(page) != 2 || page[0].Delivery.ID != d2.ID || page[1].Delivery.ID != d1.ID || page[0].Attempts != 0 ||
+		string(page[0].Body) != `{"type":"report.resolved"}` {
+		t.Errorf("ListDeliveries = %+v, %v; want newest first, each with its message's body", page, err)
 	}
 	page, err = r.h.Webhooks.ListDeliveries(t.Context(), e.EndpointID, d2.ID, 1)
 	if err != nil || len(page) != 1 || page[0].Delivery.ID != d1.ID {

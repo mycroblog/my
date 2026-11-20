@@ -11,7 +11,8 @@ Anyone with the `manage_webhooks` permission can set webhooks up on the admin sc
 The built-in `admin` role has it. "Set up a webhook" opens the form; choosing a webhook in the list opens its page, where
 you test it, turn it off and on, change it, see its deliveries of the last 14 days and send one again, give it a new
 secret, and delete it after typing the host name of its URL. The page says when deliveries keep failing, and when the
-server turned the webhook off. The history shows each delivery's event, status, attempts and last attempt, not its body.
+server turned the webhook off. The history shows each delivery's event, status, attempts and last attempt, and the body
+it sent, which can carry personal data and is shown only to someone who also has the permission its event needs (below).
 
 1. Create a webhook with a destination URL, a description, and the events to subscribe to. Each event also needs its own
    permission besides `manage_webhooks`: `manage_reports` for reports, `manage_accounts` for registrations, accounts,

@@ -590,7 +590,8 @@ There is no custom CSS.
   HTML shell has a shared cache (60 seconds plus 300 seconds of revalidation), so it takes a few minutes after you publish for
   everyone to get it. A page that is already open keeps the old look until it is reloaded.
 - `<meta name="theme-color">` (light and dark) in the shell and `theme_color` / `background_color` (light) of the Web App
-  Manifest take the value of the theme's `color-surface`. Emails use the default colors of the tokens, whatever the theme.
+  Manifest take the value of the theme's `color-surface`. The HTML version of every email the server sends from then on uses
+  the published theme's colors, light and dark; a draft never reaches email.
 - Publishing a set with no tokens resets the theme to the default, and the stylesheet is no longer loaded.
 - You can change it with the client API and with the CLI. The client API needs the role permission `manage_settings`:
   `GET /api/v1/admin/theme` reads the draft and the set in effect, `PUT /api/v1/admin/theme/draft` saves the draft,
