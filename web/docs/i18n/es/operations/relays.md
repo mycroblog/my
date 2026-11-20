@@ -6,13 +6,14 @@ unidos. Incluso una instancia pequeña con pocos seguimientos obtiene una cronol
 llenas, y sus propias publicaciones públicas llegan más lejos. Una instancia que no se une a un relé no gana filas ni
 trabajos.
 
-<!-- source: join-a-relay 147b07e65534 -->
-## Unirse a un relé
+<!-- source: join-a-relay 5c97a6145f1b -->
+## Unirse a un relay
 
-Usa «Relés» en el área de administración (`/admin/relays`). Requiere el permiso `manage_settings`, que tiene el rol
-integrado `admin`. «Unirse a un relé» abre el formulario que registra uno. La lista muestra el estado de cada relé con un
-botón que lo abandona o se une a él de nuevo; al elegir un relé se abre su página, con sus direcciones, lo que aportó en
-las últimas 24 horas y el botón que lo elimina. La CLI es `my admin relay` (`my admin relay -help`):
+Usa «Relays» en el área de administración (`/admin/relays`). Requiere el permiso `manage_settings`, que tiene el rol integrado `admin`.
+«Unirse a un relay» abre el formulario que registra uno. La lista muestra el estado de cada relay y lo que trajo durante las últimas 24
+horas; al elegir un relay se abre su página, con sus direcciones y el botón que lo abandona, o, una vez que se abandonó o el servidor
+lo rechazó, los botones que se unen de nuevo a él y lo eliminan. Abandonar y eliminar preguntan antes.
+La CLI es `my admin relay` (`my admin relay -help`):
 
 ```sh
 my admin relay list                                               # every relay, its state, and what it brought in during the last 24 hours
@@ -22,16 +23,16 @@ my admin relay follow <relay id>                                  # join again a
 my admin relay delete <relay id>                                  # delete a relay that the instance left or that rejected it
 ```
 
-1. Registra la URL del relé. Hay dos protocolos:
-   - **Mastodon**: la **URL del buzón** (inbox) del relé (como `https://relay.example/inbox`). Muchos relés, incluidos pub-relay y Activity-Relay, la aceptan.
-   - **LitePub**: la **URL del actor** del relé (como `https://relay.example/relay`). Es el protocolo de los relés de Pleroma y Akkoma.
-   Si no eliges un protocolo («Detectar automáticamente»), el servidor usa LitePub cuando la URL sirve un documento de actor, y Mastodon en caso contrario.
-2. Después de registrarlo, el actor de la instancia envía al relé un `Follow`, y el estado es «Esperando la respuesta del relé» (`pending`). Cuando el relé acepta, el estado pasa a «Unido» (`accepted`); cuando rechaza, a «Rechazado por el relé» (`rejected`). Algunos relés tardan porque un operador aprueba cada solicitud a mano.
-3. Si desactivas «Recibir publicaciones del relé» al registrarlo, el servidor solo envía. Para cambiarlo, abandona el relé y regístralo de nuevo.
+1. Registra la URL del relay. Hay dos protocolos:
+   - **Mastodon**: la **URL del inbox** del relay (como `https://relay.example/inbox`). Muchos relays, incluidos pub-relay y Activity-Relay, la aceptan.
+   - **LitePub**: la **URL del actor** del relay (como `https://relay.example/relay`). Este es el protocolo de los relays de Pleroma y Akkoma.
+   Si no eliges un protocolo («Detectar automáticamente»), el servidor usa LitePub cuando la URL sirve un documento de actor, y Mastodon en otro caso.
+2. Tras registrarlo, el actor de la instancia envía al relay un `Follow`, y el estado es «Esperando la respuesta del relay» (`pending`).
+   Cuando el relay acepta, el estado pasa a «Unido» (`accepted`); cuando rechaza, «Rechazado por el relay» (`rejected`). Algunos relays tardan porque un operador aprueba cada solicitud a mano.
+3. Si desactivas «Recibir publicaciones del relay» al registrarlo, el servidor solo envía. Para cambiarlo, abandona el relay y regístralo de nuevo.
 
-No puedes registrar el relé de un servidor sujeto a una acción sobre dominios (`suspend`). Si el servidor de un relé unido
-se suspende más tarde, el estado no cambia, pero no se envía nada a ese relé ni se recibe nada de él, y el área de
-administración muestra una advertencia.
+No puedes registrar el relay de un servidor bajo una acción de dominio (`suspend`). Si el servidor de un relay al que te uniste se suspende después, el estado no cambia,
+pero no se envía ni se recibe nada de ese relay, y el área de administración lo dice en el estado del relay.
 
 <!-- source: what-the-server-sends 1db52c508f9c -->
 ## Qué envía el servidor
