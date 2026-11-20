@@ -3,10 +3,6 @@
     "defaultMessage": "カスタム絵文字",
     "description": "The name of the screen of the custom emoji and the requests for new ones, in the list at /admin and as the title of its screen. Read by administrators."
   },
-  "staff_emoji.entry.hint": {
-    "defaultMessage": "このサーバーとほかのサーバーの絵文字、申請",
-    "description": "The line under Custom emoji in the list at /admin: what its screen holds. Read by administrators."
-  },
   "staff_emoji.entry.count": {
     "defaultMessage": "{count, plural, other {審査待ちの申請 # 件}}",
     "description": "For assistive technology, what the badge at the end of Custom emoji in the list at /admin counts: the requests for custom emoji waiting for review. Read by administrators."
@@ -112,7 +108,7 @@
     "description": "At /admin/custom-emojis when the emoji could not be read, before Try again. Read by administrators."
   },
   "staff_emoji.empty": {
-    "defaultMessage": "カスタム絵文字はまだありません。ここで登録できます。ほかのサーバーの絵文字は、その投稿とともに届きます。",
+    "defaultMessage": "カスタム絵文字はまだありません。",
     "description": "At /admin/custom-emojis when the server has no custom emoji at all. Read by administrators."
   },
   "staff_emoji.empty.filtered": {
@@ -444,7 +440,7 @@
     "description": "At /admin/custom-emojis/requests when they could not be read, before Try again. Read by administrators."
   },
   "staff_emoji.request.empty": {
-    "defaultMessage": "審査を待つ申請はありません。権限を持つ人が絵文字を申請すると、ここに届きます。",
+    "defaultMessage": "審査を待つ申請はありません。",
     "description": "At /admin/custom-emojis/requests when no request is pending. Read by administrators."
   },
   "staff_emoji.request.empty.state": {

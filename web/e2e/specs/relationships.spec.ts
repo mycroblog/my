@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// A person blocks another from their profile, finds them among the blocked accounts of the settings' Relationships
-// (#3202), and unblocks them there: the server keeps the block and then its end, so after a reload the list is without
-// them and their profile offers to follow and to block again. Each person is a fresh one.
+// A person blocks another from their profile, finds them among the blocked accounts of the settings' Blocks, mutes, and
+// hashtags (#3202), and unblocks them there: the server keeps the block and then its end, so after a reload the list is
+// without them and their profile offers to follow and to block again. Each person is a fresh one.
 // What the lists show, how a long one is cut and paged, and what an undo says and where it leaves the focus are
 // component tests on the fake (app-features, settings/relationships.dom.test.tsx and relationships.jsdom.test.tsx).
 
 import { Profile, Relationships } from "./screens";
 import { expect, test } from "./test";
 
-test("a person blocks another from their profile, unblocks them from the settings' Relationships, and after a reload the list is without them and the profile offers Block again", async ({
+test("a person blocks another from their profile, unblocks them from the settings' Blocks, mutes, and hashtags, and after a reload the list is without them and the profile offers Block again", async ({
   page,
   signIn,
   fresh,

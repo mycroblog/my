@@ -11,7 +11,7 @@ rule of the copy lint; `to users` spares admin strings.
 - Short, flat, to the user: no jokes, no blame (not 無効な入力です) — bad states too — web-client G19 (a73e41238) — 2026-10-17 — held 0 / missed 0
 - An error: what happened, why, what to do next (もう一度試す); a field error, how to fix the value; a 404 too — else it blames — web-client G16, G19 (a73e41238) — 2026-10-17 — held 0 / missed 2
 - Unknown cause: reload or update the app, then try again — a step — the decider (#3108) — 2026-11-16 — held 0 / missed 0
-- An empty area: the fact (まだ投稿はありません), what appears there, the next action — a first view — web-client G14 (a73e41238) — 2026-10-17 — held 0 / missed 0
+- An empty area says only that it is empty ("Nothing is recorded yet.", まだ記録はありません); what appears there is said by its heading and its screen, never by the empty state — a sentence of what would appear repeats the heading, and #3261's review removed it from six staff empty states — the decider on #2907 (G14) — 2026-11-20 — held 0 / missed 0
 - One state, one pattern: <対象>を読み込めませんでした: {reason}, then もう一度試す — learned once — web-client G18 (a73e41238) — 2026-10-17 — held 0 / missed 0
 - A confirmation asks (この投稿を削除しますか？), says if it can be undone, and labels buttons with verbs (削除, キャンセル), not yes / no — the verb is the act — web-client G22 (a73e41238) — 2026-10-17 — held 0 / missed 0
 - In en, sentence case, a button or item starts with a verb, names no input (Click, Tap); in ja, です・ます, a button or item ends in する or a noun (投稿する, フォロー) — any device — web-client G20 (a73e41238) — 2026-10-17 — held 0 / missed 3

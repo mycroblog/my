@@ -7,17 +7,9 @@
     "defaultMessage": "Jobs",
     "description": "The name of the screen of the job queue, in the list at /admin and as its title. Read by administrators."
   },
-  "staff_operations.entry.jobs.hint": {
-    "defaultMessage": "The job queue, failed jobs and running them again",
-    "description": "The line under Jobs in the list at /admin. Read by administrators."
-  },
   "staff_operations.entry.error_groups": {
     "defaultMessage": "Errors",
     "description": "The name of the screen of the error groups, in the list at /admin and as its title. Read by administrators."
-  },
-  "staff_operations.entry.error_groups.hint": {
-    "defaultMessage": "Errors the server and the web client reported",
-    "description": "The line under Errors in the list at /admin. Read by administrators."
   },
   "staff_operations.entry.error_groups.count": {
     "defaultMessage": "{count, plural, one {# open error} other {# open errors}}",
@@ -27,17 +19,9 @@
     "defaultMessage": "UX measurements",
     "description": "The name of the screen of how fast the web client responds, in the list at /admin and as its title. Read by administrators."
   },
-  "staff_operations.entry.ux_measurements.hint": {
-    "defaultMessage": "How fast the web client responds",
-    "description": "The line under UX measurements in the list at /admin. Read by administrators."
-  },
   "staff_operations.entry.link_card_domains": {
     "defaultMessage": "Link card domains",
     "description": "The name of the screen of the rules of the link card crawler per domain, in the list at /admin and as its title. Read by administrators."
-  },
-  "staff_operations.entry.link_card_domains.hint": {
-    "defaultMessage": "Domains the link card crawler fetches nothing or no images from",
-    "description": "The line under Link card domains in the list at /admin. Read by administrators."
   },
   "staff_operations.forbidden": {
     "defaultMessage": "Your account no longer has the permission for this screen.",

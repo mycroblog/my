@@ -3,10 +3,6 @@
     "defaultMessage": "webhook",
     "description": "The name of the screen of the webhooks that send the server's events to other services, in the list at /admin and as the title of its screen. Read by administrators."
   },
-  "staff_webhooks.entry.hint": {
-    "defaultMessage": "サーバーの出来事をほかのサービスへ送る",
-    "description": "The line under Webhooks in the list at /admin: what its screen holds. Read by administrators."
-  },
   "staff_webhooks.loading": {
     "defaultMessage": "webhook を読み込んでいます…",
     "description": "At /admin/webhooks while the webhooks are read. Read by administrators."

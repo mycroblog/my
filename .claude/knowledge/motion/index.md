@@ -6,8 +6,9 @@ The motion role settles how a screen answers an action and how its states change
 - `frequency`: always; when not to animate, by how often the change comes.
 - `screens`: a change of screen, its kind (push, pop, modal, replace, none), its time and its easing.
 - `states`: the states every control has, and how a change of state shows.
+- `voice`: a voice chat room's reaction and the halo of who speaks, their times and easings.
 
-- Every time and easing is a token of web/design-tokens (`transition`, `motion`, `press`, `focusRing`), and the
+- Every time and easing is a token of web/design-tokens (`transition`, `motion`, `press`, `focusRing`, `voice`), and the
   decisions say why it has its value. A new value goes in the tokens and a line here together; a value in the code
   that no line explains, or that a line contradicts, is reported, not copied.
 - A motion is judged running, not in a shot: offer options as variants the decider runs on the catalog's stage.

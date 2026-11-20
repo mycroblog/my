@@ -104,7 +104,7 @@
     "description": "The button of the question before subscribing that closes it with nothing done."
   },
   "supporters.checkout.text": {
-    "defaultMessage": "You pay {price} now, then {price} every {interval, select, month {month} other {year}} until you cancel. Your perks start once the payment goes through. You can cancel any time under “Supporter” in the settings, and your perks stay until the end of the period you paid for.",
+    "defaultMessage": "You pay {price} now, then {price} every {interval, select, month {month} other {year}} until you cancel. Your perks start once the payment goes through. You can cancel any time under “Supporter plans and tips” in the settings, and your perks stay until the end of the period you paid for.",
     "description": "What subscribing does, in the question before the payment provider's checkout ({price}: the plan's price at the period; {interval}: month or year)."
   },
   "supporters.checkout.title": {

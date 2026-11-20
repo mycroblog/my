@@ -560,11 +560,11 @@
     "description": "Over the scheduled posts: the reader's time zone, in which their times read."
   },
   "compose.drafts.empty.drafts": {
-    "defaultMessage": "まだ下書きはありません。投稿を下書きに保存すると、ここに表示されます。",
+    "defaultMessage": "まだ下書きはありません。",
     "description": "The drafts' section of the list when it has none, while there are scheduled posts."
   },
   "compose.drafts.empty": {
-    "defaultMessage": "まだ下書きも予約投稿もありません。投稿を下書きに保存するか予約すると、ここに表示されます。",
+    "defaultMessage": "まだ下書きも予約投稿もありません。",
     "description": "The list of drafts and scheduled posts when it has neither."
   },
   "compose.drafts.loading": {
@@ -624,7 +624,7 @@
     "description": "In the preview's place when the server did not render the body; followed by Try again."
   },
   "compose.article.preview.empty": {
-    "defaultMessage": "まだ何も書かれていません。本文を書くと、ここにプレビューが表示されます。",
+    "defaultMessage": "まだ何も書かれていません。",
     "description": "In the preview's place while the body is empty."
   },
   "compose.article.field.title": {

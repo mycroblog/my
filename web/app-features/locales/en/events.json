@@ -16,7 +16,7 @@
     "description": "The button after a sentence that says something of an event's screens could not be loaded."
   },
   "events.empty": {
-    "defaultMessage": "No upcoming events. When someone on this server plans one you can see, it shows here.",
+    "defaultMessage": "No upcoming events.",
     "description": "In place of the list of events when there is none the reader sees."
   },
   "events.create": {

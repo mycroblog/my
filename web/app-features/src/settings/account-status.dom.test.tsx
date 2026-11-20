@@ -313,12 +313,8 @@ describe("Account status", () => {
     const on = await drawnStatus(acted());
     await answered(on);
 
-    expect(linesOf(section(inEffect))).toEqual([
-      "No moderation action is in effect on your account. If a moderator acts on your account, the action appears here with its reason, and you can appeal it.",
-    ]);
-    expect(linesOf(section(past))).toEqual([
-      "No past actions. An action that ended or was lifted stays listed here, with your appeal and its result.",
-    ]);
+    expect(linesOf(section(inEffect))).toEqual(["No moderation action is in effect on your account."]);
+    expect(linesOf(section(past))).toEqual(["No past actions."]);
     expect([titled(inEffect), titled(past)]).toEqual([inEffect, past]);
     expect(main().queryAllByRole("list")).toHaveLength(0);
   });
