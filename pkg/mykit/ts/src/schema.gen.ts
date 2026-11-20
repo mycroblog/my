@@ -4278,6 +4278,8 @@ export interface paths {
          *     - `notification_requests`: the counts of the notification requests changed (a notification
          *       was filtered into one, or one was accepted or dismissed). `data` is a
          *       `NotificationRequestSummary`.
+         *     - `notifications_read`: the user read notifications on a device: the marker moved, or one
+         *       notification was read on its own. `data` is a `NotificationsRead`.
          *     - `conversation`: a conversation of the direct messages changed: a `direct` post that the
          *       user sent or received arrived in it, or the user read it on a device. `data` is a
          *       `Conversation`, as `listConversations` shows it; nothing is sent for a conversation that it
@@ -16847,6 +16849,24 @@ export interface components {
              * @description The number of notifications in them.
              */
             notifications_count: number;
+        };
+        /**
+         * @description The data of the stream event `notifications_read`: the user read notifications on a device,
+         *     and the read marker and the unread count are now these.
+         */
+        NotificationsRead: {
+            /** @description The newest notification read up to the marker; omitted when the user has read none. */
+            last_read_id?: components["schemas"]["Id"];
+            /**
+             * Format: int64
+             * @description The number of listed notifications that are unread, as `Notification.read` tells.
+             */
+            unread_count: number;
+            /**
+             * @description The notification read on its own past the marker (`POST /notifications/{id}/read`);
+             *     omitted when the marker moved.
+             */
+            id?: components["schemas"]["Id"];
         };
         /** @description One channel of one row of the notification settings. */
         NotificationSettingCell: {

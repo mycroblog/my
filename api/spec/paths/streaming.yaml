@@ -21,6 +21,8 @@ get:
     - `notification_requests`: the counts of the notification requests changed (a notification
       was filtered into one, or one was accepted or dismissed). `data` is a
       `NotificationRequestSummary`.
+    - `notifications_read`: the user read notifications on a device: the marker moved, or one
+      notification was read on its own. `data` is a `NotificationsRead`.
     - `conversation`: a conversation of the direct messages changed: a `direct` post that the
       user sent or received arrived in it, or the user read it on a device. `data` is a
       `Conversation`, as `listConversations` shows it; nothing is sent for a conversation that it

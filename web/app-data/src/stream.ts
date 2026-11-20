@@ -9,7 +9,12 @@ import { joinTabGroup, type TabGroup } from "@my/platform";
 import type { AppData } from "./app-data";
 import { receiveDeletion, receiveHomeGap, receiveHomeStatuses, receiveListsGap, receiveListStatuses } from "./arrivals";
 import { receiveConversation, receiveConversationsGap } from "./conversations";
-import { receiveNotification, receiveNotificationGap, receiveNotificationRequests } from "./notifications";
+import {
+  receiveNotification,
+  receiveNotificationGap,
+  receiveNotificationRequests,
+  receiveNotificationsRead,
+} from "./notifications";
 
 /** What the leading tab passes to the others: an event of the stream, or a break after which they read again. */
 type StreamMessage = { readonly kind: "event"; readonly event: StreamEvent } | { readonly kind: "gap" };
@@ -78,7 +83,7 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
 
 /**
  * Puts what the stream says into the cache: new statuses of the home timeline or of a list, a deleted status, a
- * notification, the count of the notification requests, a conversation of the direct messages, or a break.
+ * notification, the count of the notification requests, what the reader read on a device, a conversation of the direct messages, or a break.
  */
 function route(data: AppData, message: StreamMessage): void {
   if (message.kind === "gap") {
@@ -104,6 +109,9 @@ function route(data: AppData, message: StreamMessage): void {
       break;
     case "notification_requests":
       receiveNotificationRequests(data, event.summary);
+      break;
+    case "notifications_read":
+      receiveNotificationsRead(data, event.read);
       break;
     case "conversation":
       receiveConversation(data, event.conversation);

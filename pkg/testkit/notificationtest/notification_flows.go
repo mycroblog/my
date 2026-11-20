@@ -16,6 +16,7 @@ import (
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
+	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -122,8 +123,9 @@ type notificationEnv struct {
 	reach        *contractReach
 	// only holds just the notification projectors, for projecting an event again.
 	only *uow.Projectors
-	// signals records the stream signals of the committed events.
+	// signals records the stream signals of the committed events; reads, those of the reads.
 	signals *recordedSignals
+	reads   *recordedReads
 	// staff stands in for the roles and addresses of the moderators and users; outbox keeps the
 	// email jobs that the projectors enqueue.
 	staff  *stubStaff
@@ -178,10 +180,35 @@ func newNotificationEnv(t *testing.T, newHarness NotificationFactory) *notificat
 		UnitOfWork: nh.UnitOfWork, Statuses: nh.Statuses, Interactions: nh.Interactions,
 		Accounts: ae.Accounts, Relationships: e.graph, Clock: ae.Clock, IDs: ae.IDs, Host: testkit.ContractHost,
 	})
+	e.reads = &recordedReads{}
 	e.svc = appnotification.NewService(appnotification.Deps{
-		UnitOfWork: nh.UnitOfWork, Repository: nh.Notifications, Clock: ae.Clock, IDs: ae.IDs, Staff: e.staff,
+		UnitOfWork: nh.UnitOfWork, Repository: nh.Notifications, Clock: ae.Clock, IDs: ae.IDs, Staff: e.staff, Stream: e.reads,
 	})
 	return e
+}
+
+// recordedReads is a stream.Publisher that keeps the signals of the reads.
+type recordedReads struct {
+	mu     sync.Mutex
+	events []stream.Event
+}
+
+// Publish implements stream.Publisher.
+func (r *recordedReads) Publish(e stream.Event) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if e.Kind == stream.KindNotificationsRead {
+		r.events = append(r.events, e)
+	}
+}
+
+// take returns the signals of the reads since the last take.
+func (r *recordedReads) take() []stream.Event {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := r.events
+	r.events = nil
+	return out
 }
 
 func (e *notificationEnv) user(t *testing.T, username string) string {
@@ -639,12 +666,18 @@ func notificationReadsOutOfOrder(t *testing.T, e *notificationEnv) {
 		}
 	}
 	checkRead(map[string]bool{newest: false, middle: false, oldest: false})
+	e.reads.take()
 
-	// The newest, read while the older ones are unread, stays read; once is enough.
+	// The newest, read while the older ones are unread, stays read; once is enough. Each read
+	// reaches alice's streams.
 	for range 2 {
 		if err := e.svc.ReadOne(ctx, alice, newest); err != nil {
 			t.Fatalf("ReadOne(newest) = %v", err)
 		}
+	}
+	want := stream.Event{Kind: stream.KindNotificationsRead, AccountID: alice, NotificationID: newest}
+	if got := e.reads.take(); !reflect.DeepEqual(got, []stream.Event{want, want}) {
+		t.Errorf("signals of ReadOne = %+v, want two of %+v", got, want)
 	}
 	checkRead(map[string]bool{newest: true, middle: false, oldest: false})
 	e.checkUnread(t, alice, 2)
@@ -657,11 +690,21 @@ func notificationReadsOutOfOrder(t *testing.T, e *notificationEnv) {
 	if err := e.svc.ReadOne(ctx, alice, e.IDs.NewID()); !errors.Is(err, appnotification.ErrNotFound) {
 		t.Errorf("ReadOne(missing) = %v, want ErrNotFound", err)
 	}
+	if got := e.reads.take(); len(got) != 0 {
+		t.Errorf("signals of refused reads = %+v, want none", got)
+	}
 	e.checkUnread(t, bob, 1)
 
-	// The marker passes the oldest: the newest stays read, the middle unread.
+	// The marker passes the oldest: the newest stays read, the middle unread. The marker that
+	// moved reaches alice's streams; one that does not move, nothing.
 	if _, err := e.svc.MarkRead(ctx, alice, oldest); err != nil {
 		t.Fatalf("MarkRead(oldest) = %v", err)
+	}
+	if _, err := e.svc.MarkRead(ctx, alice, oldest); err != nil {
+		t.Fatalf("MarkRead(oldest) again = %v", err)
+	}
+	if got, want := e.reads.take(), []stream.Event{{Kind: stream.KindNotificationsRead, AccountID: alice}}; !reflect.DeepEqual(got, want) {
+		t.Errorf("signals of MarkRead = %+v, want %+v", got, want)
 	}
 	checkRead(map[string]bool{newest: true, middle: false, oldest: true})
 	e.checkUnread(t, alice, 1)

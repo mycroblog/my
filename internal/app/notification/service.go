@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/notification"
 )
@@ -34,6 +35,9 @@ type Deps struct {
 	// filters: the unread count leaves out those that a hide filter matches, which the list
 	// leaves out too (ADR-0157 §7). nil judges none.
 	Filters StatusFilters
+	// Stream signals the account's streams once a read commits (stream.KindNotificationsRead);
+	// nil signals none.
+	Stream stream.Publisher
 }
 
 // ShownAnnouncements tells which server-wide announcements the users see now: published and
@@ -236,15 +240,20 @@ func (s *Service) hidden(ctx context.Context, accountID string, withoutModerator
 // nothing, so clients that report their positions concurrently never move it back.
 // lastReadID must be one of the account's notifications (ErrNotFound otherwise).
 func (s *Service) MarkRead(ctx context.Context, accountID, lastReadID string) (notification.ReadMarker, error) {
+	var moved bool
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if _, err := s.own(ctx, tx, accountID, lastReadID); err != nil {
 			return err
 		}
-		_, err := s.d.Repository.AdvanceReadMarker(ctx, tx, notification.ReadMarker{AccountID: accountID, LastReadID: lastReadID})
+		var err error
+		moved, err = s.d.Repository.AdvanceReadMarker(ctx, tx, notification.ReadMarker{AccountID: accountID, LastReadID: lastReadID})
 		return err
 	})
 	if err != nil {
 		return notification.ReadMarker{}, err
+	}
+	if moved {
+		s.signalRead(accountID, "")
 	}
 	return s.ReadMarker(ctx, accountID)
 }
@@ -254,12 +263,24 @@ func (s *Service) MarkRead(ctx context.Context, accountID, lastReadID string) (n
 // nothing; a notification of another account fails with ErrNotFound. The marker deletes the
 // record once it passes the notification (MarkRead).
 func (s *Service) ReadOne(ctx context.Context, accountID, notificationID string) error {
-	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if _, err := s.own(ctx, tx, accountID, notificationID); err != nil {
 			return err
 		}
 		return s.d.Repository.InsertRead(ctx, tx, accountID, notificationID)
 	})
+	if err == nil {
+		s.signalRead(accountID, notificationID)
+	}
+	return err
+}
+
+// signalRead tells accountID's streams, on its other tabs and devices, that it read
+// notificationID on its own, or that its marker moved ("").
+func (s *Service) signalRead(accountID, notificationID string) {
+	if s.d.Stream != nil {
+		s.d.Stream.Publish(stream.Event{Kind: stream.KindNotificationsRead, AccountID: accountID, NotificationID: notificationID})
+	}
 }
 
 // Dismiss dismisses one of accountID's notifications: it leaves the list and the unread count.

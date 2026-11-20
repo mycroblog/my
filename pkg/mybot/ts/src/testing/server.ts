@@ -250,7 +250,7 @@ export class Server {
 
   /** A new notification of type from from about st (none for one without a post, such as a follow). Hand it to inject. */
   notification(type: NotificationType, from: Account, st?: Status): Notification {
-    return { id: "", type, created_at: "", account: from, ...(st === undefined ? {} : { status: st }) };
+    return { id: "", type, created_at: "", read: false, account: from, ...(st === undefined ? {} : { status: st }) };
   }
 
   /**

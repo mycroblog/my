@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -307,4 +308,46 @@ func TestStreamingNotificationBurst(t *testing.T) {
 	add(burst)
 	hub.Publish(stream.Event{Kind: stream.KindNotifications, AccountID: aliceAccountID})
 	expect(burst)
+}
+
+// TestStreamingNotificationsRead checks that a read on another device reaches the viewer's
+// stream with the marker and the unread count, and the notification read on its own when the
+// viewer's list shows it.
+func TestStreamingNotificationsRead(t *testing.T) {
+	hub := stream.NewHub(stream.HubOptions{})
+	e, f, _ := newNotificationEnvWithViews(t, func(o *clientapi.Options) { o.Streams = hub })
+	srv := httptest.NewServer(e.h)
+	t.Cleanup(srv.Close)
+
+	_, _, r := openStream(t.Context(), t, srv, "read")
+	if line := readLine(t, r); line != ": connected" {
+		t.Fatalf("first line = %q, want the connected comment", line)
+	}
+	expect := func(id *string, last *string, unread int64) {
+		t.Helper()
+		if line := readLine(t, r); line != "event: notifications_read" {
+			t.Fatalf("line = %q, want notifications_read", line)
+		}
+		var got clientapi.NotificationsRead
+		if err := json.Unmarshal([]byte(strings.TrimPrefix(readLine(t, r), "data: ")), &got); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(got.Id, id) || !reflect.DeepEqual(got.LastReadId, last) || got.UnreadCount != unread {
+			t.Errorf("notifications_read = %+v, want id %v, marker %v, %d unread", got, id, last, unread)
+		}
+	}
+	if err := f.ReadOne(t.Context(), aliceAccountID, notificationID(4)); err != nil {
+		t.Fatal(err)
+	}
+	// Bob's signal, and one of a notification alice does not have, send nothing.
+	hub.Publish(stream.Event{Kind: stream.KindNotificationsRead, AccountID: bobAccountID})
+	hub.Publish(stream.Event{Kind: stream.KindNotificationsRead, AccountID: aliceAccountID, NotificationID: notificationID(9)})
+	hub.Publish(stream.Event{Kind: stream.KindNotificationsRead, AccountID: aliceAccountID, NotificationID: notificationID(4)})
+	read := notificationID(4)
+	expect(&read, nil, 3)
+
+	f.markers[aliceAccountID] = notificationID(2)
+	hub.Publish(stream.Event{Kind: stream.KindNotificationsRead, AccountID: aliceAccountID})
+	last := notificationID(2)
+	expect(nil, &last, 1)
 }

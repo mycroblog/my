@@ -14821,6 +14821,25 @@ type NotificationSettingsUpdateChangesChannel string
 // organizer, except for `event_invited`. Each is sent only while the user sees the event.
 type NotificationType string
 
+// NotificationsRead The data of the stream event `notifications_read`: the user read notifications on a device,
+// and the read marker and the unread count are now these.
+type NotificationsRead struct {
+	// Id The notification read on its own past the marker (`POST /notifications/{id}/read`);
+	// omitted when the marker moved.
+	//
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id *Id `json:"id,omitempty"`
+
+	// LastReadId The newest notification read up to the marker; omitted when the user has read none.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	LastReadId *Id `json:"last_read_id,omitempty"`
+
+	// UnreadCount The number of listed notifications that are unread, as `Notification.read` tells.
+	UnreadCount int64 `json:"unread_count"`
+}
+
 // OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
 // it gets no first-party-only scope and calls no account security operation.
 type OAuthApp struct {

@@ -72,6 +72,7 @@ export function mention(n: number, a: Account, text: string, v: Visibility = "pu
     id: id(n),
     type: "mention",
     created_at: new Date().toISOString(),
+    read: false,
     account: a,
     status: status(
       n + 500,

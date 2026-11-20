@@ -28,6 +28,9 @@ export type NotificationType = components["schemas"]["NotificationType"];
 
 type NotificationMarker = components["schemas"]["NotificationMarker"];
 
+/** What the stream says the reader read on a device: the marker, the count, and the one read on its own. */
+export type NotificationsRead = components["schemas"]["NotificationsRead"];
+
 /** How many notification requests wait, by account and by notification (ADR-0158 §7). */
 export type NotificationRequestSummary = components["schemas"]["NotificationRequestSummary"];
 
@@ -340,6 +343,26 @@ export function watchNotifications(data: AppData, listener: (notification: Notif
   return () => {
     arrivals.delete(listener);
   };
+}
+
+/**
+ * Puts what the stream says the reader read on a device, this one or another, into the cache: the marker and the
+ * count, unless the cache holds a marker further on, and the notification read on its own as read.
+ */
+export function receiveNotificationsRead(data: AppData, read: NotificationsRead): void {
+  const store = storeOf(data);
+  data.queryClient.setQueryData<NotificationMarker>(notificationMarkerQuery(data).queryKey, (cached) =>
+    cached?.last_read_id !== undefined && newer(cached.last_read_id, read.last_read_id)
+      ? cached
+      : {
+          ...(read.last_read_id === undefined ? {} : { last_read_id: read.last_read_id }),
+          unread_count: read.unread_count,
+        },
+  );
+  if (read.id !== undefined) cacheRead(data, read.id);
+  const last = markerOf(data)?.last_read_id;
+  const seen = new Set([...store.seen].filter((id) => newer(id, last) && id !== read.id));
+  if (seen.size !== store.seen.size) setSeen(store, seen);
 }
 
 /** Puts the count of the notification requests that the stream received into the cache. */

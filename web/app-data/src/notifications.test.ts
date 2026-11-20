@@ -7,6 +7,7 @@ import {
   notificationMarkerQuery,
   notificationsQuery,
   receiveNotification,
+  receiveNotificationsRead,
   useDismissNotification,
   useNotificationReads,
   useUnreadNotifications,
@@ -132,6 +133,21 @@ test("a notification the server answered read is read already, and reading it as
   await settle();
   expect(readsAlone()).toEqual([id(5)]);
   expect(moves()).toEqual([]);
+});
+
+test("what the stream says was read on another device reads here at once: one read on its own, then the marker", async () => {
+  const { data, id } = await server(5, 3);
+  receiveNotificationsRead(data, { last_read_id: id(2), unread_count: 2, id: id(4) });
+  const one = read(data);
+  expect([5, 4, 3].map((n) => one.reads.unread(id(n)))).toEqual([true, false, true]);
+  expect(one.count).toBe(2);
+  receiveNotificationsRead(data, { last_read_id: id(5), unread_count: 0 });
+  const all = read(data);
+  expect([5, 4, 3].map((n) => all.reads.unread(id(n)))).toEqual([false, false, false]);
+  expect(all.count).toBe(0);
+  // A marker behind the one the cache holds, from a slower device, leaves it.
+  receiveNotificationsRead(data, { last_read_id: id(3), unread_count: 2 });
+  expect(read(data).count).toBe(0);
 });
 
 test("reading the oldest unread one alone moves the marker to it", async () => {

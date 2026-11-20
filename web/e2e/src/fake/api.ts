@@ -748,6 +748,8 @@ function wire(event: FakeStreamEvent): [string, unknown] {
       return ["announcement", event.announcement];
     case "notification_requests":
       return ["notification_requests", event.summary];
+    case "notifications_read":
+      return ["notifications_read", event.read];
     default:
       return [event.type, { id: event.id }];
   }
@@ -3763,13 +3765,17 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     "POST /notifications/{id}/read": ({ params }) => {
       if (!notifications.some((n) => n.id === params.id)) return notFound();
       if (unread(params.id)) readPast = new Set([...readPast, params.id]);
+      // The reader's other tabs and devices hear of it, as the server tells them.
+      send({ type: "notifications_read", read: { ...markerNow(), id: params.id } });
       return { status: 204 };
     },
     "GET /notifications/marker": () => ({ status: 200, body: markerNow() }),
     "PUT /notifications/marker": ({ body }) => {
-      if (lastRead === undefined || body.last_read_id > lastRead) lastRead = body.last_read_id;
-      const at = lastRead;
+      const moved = lastRead === undefined || body.last_read_id > lastRead;
+      if (moved) lastRead = body.last_read_id;
+      const at = lastRead ?? body.last_read_id;
       readPast = new Set([...readPast].filter((id) => id > at));
+      if (moved) send({ type: "notifications_read", read: markerNow() });
       return { status: 200, body: markerNow() };
     },
     "GET /notifications/requests/summary": () => {
