@@ -212,7 +212,9 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
         await expect(token.getByRole("textbox", { name: `Accent text ${scheme}`, exact: true })).not.toHaveAttribute(
           "aria-invalid",
         );
-      await expect(token.getByText(/^\d+\.\d+:1, meets AA \(4\.5:1\)$/)).toHaveCount(2);
+      // The minimum once for the field; each pair its ratio, which a screen reader hears after its verdict.
+      await expect(token.getByText("Each pair needs 4.5:1 or more (WCAG AA).", { exact: true })).toBeVisible();
+      await expect(token.getByText(/^Meets AA \d+\.\d+:1$/)).toHaveCount(2);
     },
   ],
   [
@@ -226,7 +228,7 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       await expect(token.getByRole("textbox", { name: "Accent text Dark", exact: true })).not.toHaveAttribute(
         "aria-invalid",
       );
-      await expect(token.getByText(/^2\.77:1, below AA \(4\.5:1\)$/)).toBeVisible();
+      await expect(token.getByText(/^Below AA 2\.77:1, needs 4\.5:1$/)).toBeVisible();
     },
   ],
   [

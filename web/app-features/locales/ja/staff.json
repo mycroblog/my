@@ -111,6 +111,22 @@
     "defaultMessage": "ログインできるアプリと拒否したホスト",
     "description": "The line under OAuth apps in the list at /admin: what its screen holds. Read by administrators."
   },
+  "staff.entry.theme": {
+    "defaultMessage": "テーマ",
+    "description": "The name of the screen of the server's theme (its colors, type and corners), in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.theme.hint": {
+    "defaultMessage": "すべての画面の色・文字・角の丸み",
+    "description": "The line under Theme in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff.entry.closure": {
+    "defaultMessage": "サーバーの閉鎖",
+    "description": "The name of the screen of the closure of the server (announcing it, checking, closing), in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.closure.hint": {
+    "defaultMessage": "閉鎖の予告・確認と、サーバーの閉鎖",
+    "description": "The line under Server closure in the list at /admin: what its screen holds. Read by administrators."
+  },
   "staff.missing": {
     "defaultMessage": "このアドレスには、あなたが使える画面はありません。",
     "description": "In a moderation or administration screen's place, at an address that names no screen, or one the reader's permissions do not open; a link to the area's screens follows."

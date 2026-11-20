@@ -17,7 +17,15 @@
 // alone: its ratio and verdict say it.
 
 import { contrast } from "@my/design-tokens";
-import { useId, useState, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useId,
+  useState,
+  type HTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from "react";
 import { tv } from "tailwind-variants/lite";
 import { FieldError } from "./form-page";
 import { Icon } from "./icons";
@@ -40,6 +48,11 @@ export type ColorPair = {
 };
 
 export type ColorFieldProps = {
+  /**
+   * The ids of its colors' fields, `<id>-light` and `<id>-dark`, by which what holds it gives the focus to the scheme
+   * whose pair is under its minimum (`focusRefusedField`).
+   */
+  id?: string | undefined;
   /** The token's name (Accent text). */
   label: string;
   /** What it colors, in a line under its name. */
@@ -48,6 +61,11 @@ export type ColorFieldProps = {
   /** The token's new value, once a scheme's color is a whole #rrggbb. */
   onChange: (value: SchemeColors) => void;
   pairs: readonly ColorPair[];
+  /**
+   * Hears whether what a scheme's field holds is a whole #rrggbb, as that comes and goes: while it is not, the token's
+   * value is the last whole color, which the field no longer shows, and what holds it saves nothing.
+   */
+  onValidity?: ((scheme: "light" | "dark", whole: boolean) => void) | undefined;
 };
 
 /** The schemes, in their order. */
@@ -133,24 +151,30 @@ function PairSample({ fg, bg, className }: { fg: string; bg: string; className: 
 
 /** A scheme's color: its swatch and its #rrggbb, and the verdicts of its pairs. */
 function SchemeColor({
+  id,
   scheme,
   nameId,
   value,
   pairs,
   onChange,
+  onValidity,
 }: {
+  /** The id of its color's field; one of its own without it. */
+  id: string | undefined;
   scheme: Scheme;
   /** The id of the token's name, which names its controls with the scheme's. */
   nameId: string;
   value: SchemeColors;
   pairs: readonly ColorPair[];
   onChange: (color: string) => void;
+  onValidity: ((whole: boolean) => void) | undefined;
 }) {
   const s = field();
   const { lang } = useReader(undefined);
   const { t } = stringsIn(lang);
   const titleId = useId();
-  const fieldId = useId();
+  const ownId = useId();
+  const fieldId = id ?? ownId;
   const pairsId = useId();
   const formatId = useId();
   const pickId = useId();
@@ -165,6 +189,13 @@ function SchemeColor({
   }
   const [left, setLeft] = useState(false);
   const whole = hexOf(typed) !== undefined;
+  // Said as it changes, not at every render of what holds the field.
+  const tell = useEffectEvent((now: boolean) => {
+    onValidity?.(now);
+  });
+  useEffect(() => {
+    tell(whole);
+  }, [whole]);
   // A color that is not whole is said once the reader leaves the field, not at each key.
   const misformed = !whole && left;
   const verdicts = pairs.map((pair) => {
@@ -228,15 +259,23 @@ function SchemeColor({
               <Row as="span" inline rigid>
                 <PairSample fg={fg} bg={bg} className={whole ? s.sample() : `${s.sample()} ${s.stale()}`} />
               </Row>
-              <Row as="span" grow wrap align="center" gapX="entry-caption" gapY="0">
+              <Row as="span" grow align="center" justify="between" gap="entry-caption">
                 <span>{pair.label}</span>
                 {whole && (
-                  <Row as="span" inline align="center" gap="entry-caption" className={meets ? s.pass() : s.fail()}>
+                  <Row
+                    as="span"
+                    inline
+                    rigid
+                    align="center"
+                    gap="entry-caption"
+                    className={meets ? s.pass() : s.fail()}
+                  >
                     <Row as="span" inline rigid>
                       <Icon name={meets ? "chosen" : "error"} place="caption" />
                     </Row>
                     <span className={s.ratio()}>
-                      {t(meets ? "color.meets" : "color.below", {
+                      <span className="sr-only">{t(meets ? "color.meets" : "color.below")} </span>
+                      {t(meets ? "color.ratio" : "color.short", {
                         ratio: format(ratio),
                         minimum: format(pair.minimum),
                       })}
@@ -256,15 +295,25 @@ function SchemeColor({
  * A color token of the server's theme: its name and what it colors, then its color in light and in dark, each with
  * the contrast of its pairs against WCAG AA; a pair under its minimum makes that scheme's field invalid.
  */
-export function ColorField({ label, about, value, onChange, pairs }: ColorFieldProps): ReactNode {
+export function ColorField({ id, label, about, value, onChange, pairs, onValidity }: ColorFieldProps): ReactNode {
   const s = field();
   const nameId = useId();
   const aboutId = useId();
+  const needsId = useId();
+  const { lang } = useReader(undefined);
+  const { t } = stringsIn(lang);
+  const format = (n: number) => new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(n);
+  // The minimum each pair needs, said once for the field: one for them all, or text's and a mark's.
+  const minima = pairs.map((pair) => pair.minimum);
+  const high = minima.length === 0 ? undefined : Math.max(...minima);
+  const low = minima.length === 0 ? undefined : Math.min(...minima);
   return (
     <Stack
       role="group"
       aria-labelledby={nameId}
-      {...(about === undefined ? {} : { "aria-describedby": aboutId })}
+      aria-describedby={[about === undefined ? undefined : aboutId, high === undefined ? undefined : needsId]
+        .filter((by) => by !== undefined)
+        .join(" ")}
       gap="screen-row-gap"
       className={s.root()}
     >
@@ -277,11 +326,17 @@ export function ColorField({ label, about, value, onChange, pairs }: ColorFieldP
             {about}
           </p>
         )}
+        {high !== undefined && low !== undefined && (
+          <p id={needsId} className={s.about()}>
+            {t("color.needs", { kinds: high === low ? "one" : "two", high: format(high), low: format(low) })}
+          </p>
+        )}
       </Stack>
       <SchemeGrid className="">
         {SCHEMES.map((scheme) => (
           <SchemeColor
             key={scheme}
+            id={id === undefined ? undefined : `${id}-${scheme}`}
             scheme={scheme}
             nameId={nameId}
             value={value}
@@ -289,6 +344,13 @@ export function ColorField({ label, about, value, onChange, pairs }: ColorFieldP
             onChange={(color) => {
               onChange({ ...value, [scheme]: color });
             }}
+            onValidity={
+              onValidity === undefined
+                ? undefined
+                : (whole) => {
+                    onValidity(scheme, whole);
+                  }
+            }
           />
         ))}
       </SchemeGrid>

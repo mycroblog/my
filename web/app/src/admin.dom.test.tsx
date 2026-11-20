@@ -601,6 +601,8 @@ const everyEntry = [
   "/admin/documents",
   "/admin/rules",
   "/admin/translation",
+  "/admin/theme",
+  "/admin/closure",
   "/admin/roles",
   "/admin/announcements",
   "/admin/custom-emojis",
@@ -613,7 +615,7 @@ const everyEntry = [
 for (const [permission, entries, address, read] of [
   [
     "manage_settings",
-    ["/admin/settings", "/admin/documents", "/admin/translation", "/admin/relays"],
+    ["/admin/settings", "/admin/documents", "/admin/translation", "/admin/theme", "/admin/relays"],
     "/admin/settings/general",
     "GET /admin/settings",
   ],

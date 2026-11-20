@@ -1,0 +1,266 @@
+{
+  "staff_theme.section.text": {
+    "defaultMessage": "文字とリンク",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the text colors. Read by administrators."
+  },
+  "staff_theme.section.accent": {
+    "defaultMessage": "アクセント",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the accent color, the fill of the primary button and the text on it. Read by administrators."
+  },
+  "staff_theme.section.surfaces": {
+    "defaultMessage": "背景",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the background colors (the page, sections, controls, hovered and pressed). Read by administrators."
+  },
+  "staff_theme.section.fonts": {
+    "defaultMessage": "フォント",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the fonts. Read by administrators."
+  },
+  "staff_theme.section.sizes": {
+    "defaultMessage": "文字の大きさ",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the sizes of the type scale. Read by administrators."
+  },
+  "staff_theme.section.line_heights": {
+    "defaultMessage": "行の高さ",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the line heights of the type scale; each field is named by its size (Body). Read by administrators."
+  },
+  "staff_theme.section.shape": {
+    "defaultMessage": "角の丸みと動き",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the heading of the section of the corners' radii and the spinner's turn. Read by administrators."
+  },
+  "staff_theme.token.color_text": {
+    "defaultMessage": "文字",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of most text. Read by administrators."
+  },
+  "staff_theme.token.color_muted_text": {
+    "defaultMessage": "控えめな文字",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of secondary text. Read by administrators."
+  },
+  "staff_theme.token.color_accent_text": {
+    "defaultMessage": "アクセントの文字",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of links and the focus ring. Read by administrators."
+  },
+  "staff_theme.token.color_quote_bar": {
+    "defaultMessage": "引用の線",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of the bar at the start of a quote. Read by administrators."
+  },
+  "staff_theme.token.color_accent": {
+    "defaultMessage": "アクセント",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the accent fill color. Read by administrators."
+  },
+  "staff_theme.token.color_on_accent": {
+    "defaultMessage": "アクセントの上の文字",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of the text on the accent fill. Read by administrators."
+  },
+  "staff_theme.token.color_surface": {
+    "defaultMessage": "ページの背景",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the page's background color. Read by administrators."
+  },
+  "staff_theme.token.color_surface_raised": {
+    "defaultMessage": "入力欄とボタン",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of sections, buttons and fields. Read by administrators."
+  },
+  "staff_theme.token.font_sans_override": {
+    "defaultMessage": "文字のフォント",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the font families of text. Read by administrators."
+  },
+  "staff_theme.token.font_sans_override.about": {
+    "defaultMessage": "ファミリー名をカンマで区切って書きます。足りない文字はアプリのフォントで表示します。",
+    "description": "On the theme editor of the administration (/admin/theme/draft), how the font families are written, under the text font's name. Read by administrators."
+  },
+  "staff_theme.token.font_mono_override": {
+    "defaultMessage": "コードのフォント",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the font families of code. Read by administrators."
+  },
+  "staff_theme.token.font_mono_override.about": {
+    "defaultMessage": "ファミリー名をカンマで区切って書きます。",
+    "description": "On the theme editor of the administration (/admin/theme/draft), how the font families are written, under the code font's name. Read by administrators."
+  },
+  "staff_theme.token.text_tagline": {
+    "defaultMessage": "キャッチコピー",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the largest step of the type scale (the landing page's line); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_heading": {
+    "defaultMessage": "見出し",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (a section's heading); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_title": {
+    "defaultMessage": "タイトル",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (a screen's title); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_reading": {
+    "defaultMessage": "読み物",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (an article's text); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_body": {
+    "defaultMessage": "本文",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (most text); also names its line height. Read by administrators."
+  },
+  "staff_theme.token.text_caption": {
+    "defaultMessage": "キャプション",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the smallest step of the type scale; also names its line height. Read by administrators."
+  },
+  "staff_theme.token.radius_control": {
+    "defaultMessage": "操作の角の丸み",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the radius of buttons and fields. Read by administrators."
+  },
+  "staff_theme.token.radius_overlay": {
+    "defaultMessage": "メニューとダイアログの角の丸み",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the radius of menus, dialogs and notices. Read by administrators."
+  },
+  "staff_theme.token.duration_spin": {
+    "defaultMessage": "読み込み中の印の回転",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the time one turn of the loading spinner takes. Read by administrators."
+  },
+  "staff_theme.token.unknown": {
+    "defaultMessage": "ある色",
+    "description": "On the theme editor of the administration (/admin/theme/draft), in a refusal, the name of a token the app does not know (one a newer server added). Read by administrators."
+  },
+  "staff_theme.token.color_surface_hover": {
+    "defaultMessage": "ページの背景 (ポインターを重ねたとき)",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a control without a surface under the pointer. Read by administrators."
+  },
+  "staff_theme.token.color_surface_pressed": {
+    "defaultMessage": "ページの背景 (押したとき)",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a control without a surface while pressed. Read by administrators."
+  },
+  "staff_theme.token.color_surface_raised_hover": {
+    "defaultMessage": "入力欄とボタン (ポインターを重ねたとき)",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a button or a field under the pointer. Read by administrators."
+  },
+  "staff_theme.token.color_surface_raised_pressed": {
+    "defaultMessage": "ボタン (押したとき)",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of a button while pressed. Read by administrators."
+  },
+  "staff_theme.token.text_headline": {
+    "defaultMessage": "見出し (大)",
+    "description": "On the theme editor of the administration (/admin/theme/draft), the name of a step of the type scale (a page's headline); also names its line height. Read by administrators."
+  },
+  "staff_theme.pair": {
+    "defaultMessage": "{role, select, text {{name}の上} other {{name}の下}}",
+    "description": "On the theme editor of the administration (/admin/theme/draft), a pair the color makes with another one, beside its contrast ratio: the color as text on {name}, or as the background under {name} ({name}, the other color's name). Read by administrators."
+  },
+  "staff_theme.error.range": {
+    "defaultMessage": "{kind, select, length {{min}rem から {max}rem までの値にしてください。} duration {{min}ms から {max}ms までの値にしてください。} other {{min} から {max} までの値にしてください。}}",
+    "description": "On the theme editor of the administration (/admin/theme/draft), under a field whose value the server refused as out of its bounds ({min}, {max}). Read by administrators."
+  },
+  "staff_theme.error.contrast": {
+    "defaultMessage": "保存していません。{scheme, select, light {ライト} other {ダーク}}で{background}の上の{token}は {ratio}:1 で、{minimum}:1 必要です。どちらかの色を変えてください。",
+    "description": "On the theme editor of the administration (/admin/theme/draft), beside Save when the server refused the draft for a pair under its minimum contrast ({token} and {background}, the colors' names; {ratio} and {minimum}, numbers). Read by administrators."
+  },
+  "staff_theme.error.invalid": {
+    "defaultMessage": "{kind, select, length {0 か、rem か px を付けた数 (0.875rem) で書いてください。} number {数 (1.5) で書いてください。} duration {ms か s を付けた数 (800ms) で書いてください。} other {ファミリー名をカンマで区切って書いてください。}}",
+    "description": "On the theme editor of the administration (/admin/theme/draft), under a field whose value the server refused as no value of its kind, how to write one. Read by administrators."
+  },
+  "staff_theme.draft.title": {
+    "defaultMessage": "テーマの下書き",
+    "description": "The title of the theme editor of the administration (/admin/theme/draft). Read by administrators."
+  },
+  "staff_theme.draft.none": {
+    "defaultMessage": "下書きは保存していません。公開中のテーマから始められます。",
+    "description": "On the theme's screen of the administration (/admin/theme), in the draft's section while no draft was saved. Read by administrators."
+  },
+  "staff_theme.draft.same": {
+    "defaultMessage": "公開中のテーマと同じ",
+    "description": "On the theme's screen of the administration (/admin/theme), the draft's state: it overrides what the published theme does. Read by administrators."
+  },
+  "staff_theme.draft.differs": {
+    "defaultMessage": "まだ公開していません",
+    "description": "On the theme's screen of the administration (/admin/theme), the draft's state: it differs from the published theme. Read by administrators."
+  },
+  "staff_theme.loading": {
+    "defaultMessage": "テーマを読み込んでいます…",
+    "description": "In place of the theme's screens while the theme is read. Read by administrators."
+  },
+  "staff_theme.failed": {
+    "defaultMessage": "テーマを読み込めませんでした。",
+    "description": "In place of the theme's screens when the theme could not be read, before Try again. Read by administrators."
+  },
+  "staff_theme.draft": {
+    "defaultMessage": "下書き",
+    "description": "On the theme's screen of the administration (/admin/theme), the heading of the section of the draft, which is published from there. Read by administrators."
+  },
+  "staff_theme.fact.saved": {
+    "defaultMessage": "保存",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of when the draft was saved, beside the date. Read by administrators."
+  },
+  "staff_theme.fact.published": {
+    "defaultMessage": "公開",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of when the theme in effect was published, beside the date. Read by administrators."
+  },
+  "staff_theme.fact.changes": {
+    "defaultMessage": "変更",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of how many tokens the set changes from the default. Read by administrators."
+  },
+  "staff_theme.fact.state": {
+    "defaultMessage": "状態",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of whether the draft is published. Read by administrators."
+  },
+  "staff_theme.fact.stale": {
+    "defaultMessage": "反映されなくなった変更",
+    "description": "On the theme's screen of the administration (/admin/theme), the term of the overrides an upgrade of the server left without effect. Read by administrators."
+  },
+  "staff_theme.stale": {
+    "defaultMessage": "{count, plural, other {# 件: {tokens}。次に保存すると消えます。}}",
+    "description": "On the theme's screen of the administration (/admin/theme), the overrides an upgrade renamed, retired or put out of bounds ({tokens}: their names as this screen says them, in a list of the reader's language; the code name, such as color-link, for a token the app no longer knows). Read by administrators."
+  },
+  "staff_theme.publish": {
+    "defaultMessage": "公開する",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that publishes the draft to every visitor. Read by administrators."
+  },
+  "staff_theme.preview": {
+    "defaultMessage": "プレビュー",
+    "description": "On the theme's screen of the administration (/admin/theme), the toggle that lays the draft over every screen of this tab, pressed while it does. Read by administrators."
+  },
+  "staff_theme.preview.on": {
+    "defaultMessage": "もう一度プレビューを押すまで、このタブのすべての画面で下書きを表示します。",
+    "description": "On the theme's screen of the administration (/admin/theme), while the draft is previewed: where and until when. Read by administrators."
+  },
+  "staff_theme.edit": {
+    "defaultMessage": "下書きを編集する",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that opens the theme editor on the draft. Read by administrators."
+  },
+  "staff_theme.start": {
+    "defaultMessage": "下書きを作成する",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that opens the theme editor while no draft is saved. Read by administrators."
+  },
+  "staff_theme.published": {
+    "defaultMessage": "公開中",
+    "description": "On the theme's screen of the administration (/admin/theme), the heading of the section of the published theme. Read by administrators."
+  },
+  "staff_theme.published.none": {
+    "defaultMessage": "既定のテーマです。",
+    "description": "On the theme's screen of the administration (/admin/theme), in the section of the published theme while none was published. Read by administrators."
+  },
+  "staff_theme.restore": {
+    "defaultMessage": "ひとつ前のテーマを復元する",
+    "description": "On the theme's screen of the administration (/admin/theme), the button that publishes again the theme in effect before the current one. Read by administrators."
+  },
+  "staff_theme.done": {
+    "defaultMessage": "{what, select, publish {公開しました。} other {復元しました。}}数分のうちに訪れた人の画面に反映され、開いているページには読み込み直すと反映されます。",
+    "description": "On the theme's screen of the administration (/admin/theme), after the draft was published or the previous theme restored. Read by administrators."
+  },
+  "staff_theme.restore.none": {
+    "defaultMessage": "これより前に公開したテーマはありません。",
+    "description": "On the theme's screen of the administration (/admin/theme), when restoring found no theme published before the current one. Read by administrators."
+  },
+  "staff_theme.publish.none": {
+    "defaultMessage": "下書きを保存していません。保存してから公開してください。",
+    "description": "On the theme's screen of the administration (/admin/theme), when publishing found no draft saved. Read by administrators."
+  },
+  "staff_theme.brand": {
+    "defaultMessage": "「サーバーの設定」のページ",
+    "description": "On the theme's screen of the administration (/admin/theme), under Icon and logo, the door to that page: where it is."
+  },
+  "staff_theme.changes": {
+    "defaultMessage": "{count, plural, =0 {なし (既定のテーマ)} other {既定から # 件}}",
+    "description": "On the theme's screen of the administration (/admin/theme), how many tokens the set changes from the default. Read by administrators."
+  },
+  "staff_theme.elsewhere": {
+    "defaultMessage": "ほかの場所",
+    "description": "On the theme's screen of the administration (/admin/theme), the heading of the last section, which leads to the icon and logo page of Server settings. Read by administrators."
+  },
+  "staff_theme.invalid": {
+    "defaultMessage": "{what, select, publish {下書きを公開しませんでした。サーバーの更新でテーマの決まりが変わり、下書きがそれを満たさなくなっています。下書きで示された箇所を直して保存し、公開してください。} other {ひとつ前のテーマを復元しませんでした。サーバーの更新でテーマの決まりが変わり、そのテーマがそれを満たさなくなっています。使いたいテーマを下書きで作り、公開してください。}}",
+    "description": "On the theme's screen of the administration (/admin/theme), when the server refused to publish the draft or restore the previous theme because the set no longer meets a rule (an upgrade changed the defaults its pairs are checked with); in both cases a link to the draft's form follows (staff_theme.edit). Read by administrators."
+  }
+}

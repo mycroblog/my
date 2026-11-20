@@ -46,5 +46,9 @@
   "closure.export_download_failed": {
     "defaultMessage": "エクスポートをダウンロードできませんでした。もう一度試してください。",
     "description": "What the closed server's screen says when the download of the ready archive of the reader's data failed."
+  },
+  "closure.progress": {
+    "defaultMessage": "閉鎖の進み具合",
+    "description": "The link on the closed server's screen, for an administrator who closes it, to the progress of the deletion of the accounts on other servers. Read by administrators."
   }
 }

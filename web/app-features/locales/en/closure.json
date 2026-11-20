@@ -46,5 +46,9 @@
   "closure.export_download_failed": {
     "defaultMessage": "The export could not be downloaded. Try again.",
     "description": "What the closed server's screen says when the download of the ready archive of the reader's data failed."
+  },
+  "closure.progress": {
+    "defaultMessage": "Closure progress",
+    "description": "The link on the closed server's screen, for an administrator who closes it, to the progress of the deletion of the accounts on other servers. Read by administrators."
   }
 }
