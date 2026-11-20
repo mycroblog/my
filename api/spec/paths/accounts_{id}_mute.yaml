@@ -11,6 +11,7 @@ post:
     - oauth2: ["write:mutes"]
   parameters:
     - $ref: ../components/parameters/AccountId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: false
     content:
@@ -31,6 +32,7 @@ delete:
     - oauth2: ["write:mutes"]
   parameters:
     - $ref: ../components/parameters/AccountId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/Relationship.yaml

@@ -416,6 +416,9 @@ type Options struct {
 	// with 503. VoiceStreamHeartbeat overrides DefaultVoiceStreamHeartbeat when positive.
 	VoiceStreams         stream.RoomSubscriber
 	VoiceStreamHeartbeat time.Duration
+	// Idempotency keeps the answers to the requests with an Idempotency-Key for
+	// IdempotencyWindow (idempotency.go); nil keeps none, and the key is only checked.
+	Idempotency kernel.KeyValueStore
 	// RateLimiter applies AnonymousLimit and AccountLimit; nil applies no limit.
 	RateLimiter *kernel.RateLimiter
 	// AnonymousLimit and AccountLimit override the package's limits of the same names when

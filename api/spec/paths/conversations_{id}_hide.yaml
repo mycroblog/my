@@ -12,6 +12,7 @@ post:
     - oauth2: ["read:direct", "write:statuses"]
   parameters:
     - $ref: ../components/parameters/ConversationId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The conversation is hidden.

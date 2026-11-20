@@ -13,6 +13,7 @@ post:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/SupporterPlanId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       $ref: ../components/responses/AdminSupporterPlan.yaml

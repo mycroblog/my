@@ -31,12 +31,15 @@ type Config struct {
 	// UserAgent is the product of the application, such as "mybot/1.2"; User-Agent carries it before the
 	// library's own token.
 	UserAgent string
-	// Retry is the policy for 429 and 503 answers. The zero value retries with the defaults.
+	// Retry is the policy for 429 and 503 answers and for writes that got no answer. The zero value retries with
+	// the defaults.
 	Retry RetryPolicy
 }
 
-// RetryPolicy decides how a request answered with 429 or 503 is sent again. Only requests that are safe to
-// repeat are retried: GET, HEAD, and the requests of an operation that takes an Idempotency-Key.
+// RetryPolicy decides how a request answered with 429 or 503, or one that got no answer, is sent again. Only
+// requests that are safe to repeat are retried: after a 429 or 503 GET, HEAD, and the requests of an operation
+// that takes an Idempotency-Key; after no answer, only the latter: every write but the few whose answer carries
+// a secret.
 type RetryPolicy struct {
 	// Disabled turns the retries off: the 429 or 503 becomes a *Problem at once.
 	Disabled bool

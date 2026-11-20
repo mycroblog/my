@@ -11,6 +11,7 @@ post:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/DomainListSubscriptionId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "202":
       description: The fetch is queued.

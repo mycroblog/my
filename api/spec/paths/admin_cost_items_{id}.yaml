@@ -27,6 +27,7 @@ patch:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/CostItemId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -51,6 +52,7 @@ delete:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/CostItemId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The item is deleted.

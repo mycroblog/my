@@ -42,6 +42,8 @@ post:
   tags: [reports]
   security:
     - oauth2: ["write:reports"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

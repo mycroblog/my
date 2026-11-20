@@ -12,6 +12,7 @@ post:
   tags: [passkeys]
   security:
     - oauth2: ["write:accounts"]
+  x-no-idempotency-key: The answer carries a one-time confirmation token; start a new confirmation instead.
   responses:
     "200":
       description: The options of the confirmation.

@@ -51,6 +51,7 @@ post:
     - oauth2: ["write:statuses"]
   parameters:
     - $ref: ../components/parameters/HookDecisionId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

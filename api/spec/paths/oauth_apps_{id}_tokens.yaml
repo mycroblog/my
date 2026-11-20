@@ -15,6 +15,7 @@ post:
   tags: [oauth-apps]
   security:
     - oauth2: ["write:accounts"]
+  x-no-idempotency-key: The answer carries the tokens, which the server does not keep to send again.
   requestBody:
     content:
       application/json:

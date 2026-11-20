@@ -17,8 +17,9 @@ import (
 
 // transport is the HttpRequestDoer of the generated client. For each request it adds the headers, the access
 // token, and the Idempotency-Key; after a 401 it refreshes the token once and sends the request again; after a
-// 429 or 503 it waits and retries the requests that are safe to repeat; and it turns an answer with a status of
-// 400 or more into a *Problem and a failure to get an answer into a *NetworkError.
+// 429 or 503 it waits and retries the requests that are safe to repeat, and after a failure to get an answer
+// the writes with an Idempotency-Key; and it turns an answer with a status of 400 or more into a *Problem and a
+// failure to get an answer that is not retried into a *NetworkError.
 type transport struct {
 	client         *http.Client
 	tokens         TokenSource
@@ -44,7 +45,8 @@ func (t *transport) Do(req *http.Request) (*http.Response, error) {
 	}
 	// A request is sent again only when its body can be read again. A 429 or 503 is retried for a GET or HEAD,
 	// and for an operation that takes an Idempotency-Key and has one: the header makes no other operation safe
-	// to repeat, since the server ignores it there.
+	// to repeat, since the server ignores it there. A failure to get an answer is retried only with the key,
+	// with which the server applies the write once however many of the attempts reached it.
 	replayable := req.Body == nil || req.Body == http.NoBody || req.GetBody != nil
 	idempotencyKey := ""
 	if acceptsIdempotencyKey(req.Method, req.URL.Path, t.basePath) {
@@ -72,6 +74,14 @@ func (t *transport) Do(req *http.Request) (*http.Response, error) {
 		}
 		resp, err := t.client.Do(r)
 		if err != nil {
+			if idempotencyKey != "" && replayable && ctx.Err() == nil && retries < t.retry.maxRetries() {
+				wait, _ := retryDelay("", retries, t.retry.maxWait(), time.Now())
+				retries++
+				if err := t.sleep(ctx, wait); err != nil {
+					return nil, &NetworkError{Method: req.Method, URL: req.URL.Redacted(), IdempotencyKey: idempotencyKey, Err: err}
+				}
+				continue
+			}
 			return nil, &NetworkError{Method: req.Method, URL: req.URL.Redacted(), IdempotencyKey: idempotencyKey, Err: err}
 		}
 		switch {

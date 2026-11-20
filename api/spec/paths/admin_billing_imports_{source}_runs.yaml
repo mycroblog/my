@@ -19,6 +19,7 @@ post:
       description: The billing source.
       schema:
         $ref: ../components/schemas/BillingSourceName.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "202":
       description: The import is queued.

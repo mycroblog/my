@@ -24,6 +24,8 @@ post:
     treated as no token. An access token that is sent must be valid, as for every operation.
   tags: [client-errors]
   security: []
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

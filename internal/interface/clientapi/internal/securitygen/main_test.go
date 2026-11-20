@@ -158,3 +158,42 @@ func TestPermissionNeedsAnAdminScope(t *testing.T) {
 		}
 	}
 }
+
+func TestIdempotency(t *testing.T) {
+	key := &openapi3.ParameterRef{Value: &openapi3.Parameter{Name: idempotencyKeyHeader, In: openapi3.ParameterInHeader}}
+	other := &openapi3.ParameterRef{Value: &openapi3.Parameter{Name: "id", In: openapi3.ParameterInPath}}
+	exempt := map[string]any{noIdempotencyKeyExtension: "The answer carries a secret."}
+	tests := []struct {
+		name    string
+		method  string
+		op      openapi3.Operation
+		want    bool
+		wantErr string
+	}{
+		{name: "write with the key", method: "post", op: openapi3.Operation{Parameters: openapi3.Parameters{other, key}}, want: true},
+		{name: "write without the key", method: "delete", op: openapi3.Operation{Parameters: openapi3.Parameters{other}}, wantErr: "takes the Idempotency-Key"},
+		{name: "exempt write", method: "post", op: openapi3.Operation{Extensions: exempt}},
+		{name: "exempt write with the key", method: "post", op: openapi3.Operation{Parameters: openapi3.Parameters{key}, Extensions: exempt}, wantErr: "only for a write"},
+		{name: "exempt read", method: "get", op: openapi3.Operation{Extensions: exempt}, wantErr: "only for a write"},
+		{name: "exempt without a reason", method: "patch", op: openapi3.Operation{Extensions: map[string]any{noIdempotencyKeyExtension: ""}}, wantErr: "says why"},
+		{name: "read", method: "get", op: openapi3.Operation{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := idempotency(tt.method, &tt.op)
+			if tt.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("idempotency = %v, %v; want an error containing %q", got, err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil || got != tt.want {
+				t.Errorf("idempotency = %v, %v; want %v", got, err, tt.want)
+			}
+		})
+	}
+	src, err := render(map[string]access{"POST /api/v1/p": {operation: "postP", scopes: []string{"write"}, idempotent: true}})
+	if err != nil || !strings.Contains(string(src), `{Operation: "postP", Idempotent: true, Scopes: []string{"write"}}`) {
+		t.Errorf("render = %s, %v; want Idempotent: true", src, err)
+	}
+}

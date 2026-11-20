@@ -31,6 +31,7 @@ put:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/AnnouncementId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

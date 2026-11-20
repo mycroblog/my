@@ -89,7 +89,7 @@ if errors.As(err, &problem) && problem.Type == "/api/v1/problems/blocking" {
 
 ### Retries and idempotency keys
 
-A `429` or `503` is retried up to 3 times after the `Retry-After` it gives, when the request is safe to repeat (`GET`, `HEAD`, and the creation of a post or an article). The server applies a post or an article with an `Idempotency-Key` once, so mykit adds a key to the operations that take one and sends the same key on every retry. A `NetworkError` carries the key, so you can send the request again with it and it is applied once. `Retry` in the configuration changes or turns off the retries; see [rate limits](rate-limits.md).
+A `429` or `503` is retried up to 3 times after the `Retry-After` it gives, when the request is safe to repeat (`GET`, `HEAD`, and every write but the few whose answer carries a secret). The server applies a write with an `Idempotency-Key` once, so mykit adds a key to every write that takes one, sends the same key on every retry, and sends a write that got no answer again with it. A `NetworkError` carries the key, so you can send the request again with it and it is applied once. `Retry` in the configuration changes or turns off the retries; see [rate limits](rate-limits.md).
 
 ### Streaming
 

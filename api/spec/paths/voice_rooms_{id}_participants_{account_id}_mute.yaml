@@ -11,6 +11,8 @@ post:
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The participant is muted.

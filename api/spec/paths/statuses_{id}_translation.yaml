@@ -27,6 +27,8 @@ post:
   tags: [statuses]
   security:
     - oauth2: ["read:statuses"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

@@ -16,6 +16,8 @@ post:
   tags: [preferences]
   security:
     - oauth2: ["read:accounts"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

@@ -20,6 +20,7 @@ post:
       description: The ID of the remote post.
       schema:
         $ref: ../components/schemas/Id.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "202":
       description: The refetch is queued.

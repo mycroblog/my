@@ -11,6 +11,7 @@ post:
     - oauth2: ["write:notifications"]
   parameters:
     - $ref: ../components/parameters/AccountId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The request is accepted.

@@ -27,6 +27,7 @@ put:
   parameters:
     - $ref: ../components/parameters/DraftId.yaml
     - $ref: ../components/parameters/IfMatch.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:
@@ -49,6 +50,7 @@ delete:
     - oauth2: ["write:statuses"]
   parameters:
     - $ref: ../components/parameters/DraftId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "204":
       description: The draft is deleted.

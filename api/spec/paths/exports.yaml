@@ -39,6 +39,8 @@ post:
   tags: [accounts]
   security:
     - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "202":
       description: The export, being built.

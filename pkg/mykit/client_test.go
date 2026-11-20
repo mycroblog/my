@@ -156,8 +156,9 @@ func TestNetworkError(t *testing.T) {
 	}
 }
 
-// TestNetworkErrorCarriesTheIdempotencyKey checks that a post that got no answer reports the key it was sent
-// with, so that the caller can send it again with the same key.
+// TestNetworkErrorCarriesTheIdempotencyKey checks that a post that got no answer is sent again with the same key,
+// and after the last retry reports that key, so that the caller can send it again with it; and that a GET that
+// got no answer is not sent again.
 func TestNetworkErrorCarriesTheIdempotencyKey(t *testing.T) {
 	var mu sync.Mutex
 	var keys []string
@@ -179,13 +180,19 @@ func TestNetworkErrorCarriesTheIdempotencyKey(t *testing.T) {
 		t.Fatalf("err = %v, want a *NetworkError", err)
 	}
 	mu.Lock()
-	if len(keys) != 1 || keys[0] == "" || ne.IdempotencyKey != keys[0] {
-		t.Errorf("IdempotencyKey = %q, keys sent %q; want the key sent", ne.IdempotencyKey, keys)
+	if len(keys) != 4 || keys[0] == "" || slices.ContainsFunc(keys, func(k string) bool { return k != keys[0] }) || ne.IdempotencyKey != keys[0] {
+		t.Errorf("IdempotencyKey = %q, keys sent %q; want the key sent 4 times (3 retries)", ne.IdempotencyKey, keys)
 	}
+	keys = nil
 	mu.Unlock()
 	if _, err := api.GetInstanceWithResponse(context.Background()); !errors.As(err, &ne) || ne.IdempotencyKey != "" {
 		t.Errorf("err of a GET = %v, want a *NetworkError without a key", err)
 	}
+	mu.Lock()
+	if len(keys) != 1 {
+		t.Errorf("a GET was sent %d times, want once", len(keys))
+	}
+	mu.Unlock()
 }
 
 // tokenServer is a server whose token endpoint renews rt<n> into at<n+1> and rt<n+1>, and whose
@@ -412,10 +419,10 @@ func TestRetryAfter(t *testing.T) {
 		}
 	})
 
-	t.Run("POST without Idempotency-Key is not retried", func(t *testing.T) {
+	t.Run("a write that takes no Idempotency-Key is not retried", func(t *testing.T) {
 		calls.Store(0)
 		api, waits := newTestAPI(t, srv, Config{})
-		_, err := api.FavouriteStatusWithResponse(context.Background(), "01890a5d-ac96-774b-bcce-b302099a8057")
+		_, err := api.CreateOAuthAppWithResponse(context.Background(), CreateOAuthAppJSONRequestBody{})
 		var p *Problem
 		if !errors.As(err, &p) || p.Status != http.StatusTooManyRequests {
 			t.Fatalf("err = %v, want the 429 problem", err)
@@ -457,7 +464,7 @@ func TestRetryAfter(t *testing.T) {
 			req.Header.Set("Idempotency-Key", "my-key")
 			return nil
 		}
-		_, err := api.FavouriteStatusWithResponse(context.Background(), "01890a5d-ac96-774b-bcce-b302099a8057", withKey)
+		_, err := api.CreateOAuthAppWithResponse(context.Background(), CreateOAuthAppJSONRequestBody{}, withKey)
 		var p *Problem
 		if !errors.As(err, &p) || p.Status != http.StatusTooManyRequests {
 			t.Fatalf("err = %v, want the 429 problem", err)

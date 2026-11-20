@@ -14,6 +14,7 @@ post:
     - oauth2: ["admin:write"]
   parameters:
     - $ref: ../components/parameters/HookDecisionId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The decision with its cancellation.

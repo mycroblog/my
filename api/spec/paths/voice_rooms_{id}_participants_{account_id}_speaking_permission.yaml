@@ -12,6 +12,8 @@ post:
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The room after the grant.
@@ -33,6 +35,8 @@ delete:
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The room after the revocation.

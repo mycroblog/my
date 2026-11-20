@@ -17,6 +17,8 @@ post:
   tags: [supporters]
   security:
     - oauth2: ["write:supporters"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   requestBody:
     required: true
     content:

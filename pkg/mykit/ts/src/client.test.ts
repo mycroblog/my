@@ -7,6 +7,13 @@ import { staticToken, type TokenSource } from "./token.js";
 import { sleepSignal } from "./transport.js";
 
 const createStatusBody = { text: "hello", visibility: "public" as const };
+// A write that takes no Idempotency-Key: its answer carries the client secret.
+const createOAuthAppBody = {
+  name: "app",
+  redirect_uris: ["https://app.example/callback"],
+  scope: "read",
+  client_type: "confidential" as const,
+};
 
 describe("requests", () => {
   test("go to the client API with the token, Accept-Language, and the server's origin", async () => {
@@ -214,12 +221,12 @@ describe("retries after 429 and 503", () => {
     expect(s.waits[0]).toBeLessThanOrEqual(5000);
   });
 
-  test("a POST without an Idempotency-Key is not retried", async () => {
+  test("a write that takes no Idempotency-Key is not retried", async () => {
     const f = fakeFetch(() => problem(429, "/api/v1/problems/rate-limited", {}, { "Retry-After": "1" }));
     const s = fakeSleep();
     const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
     const error = (await api
-      .POST("/accounts/{id}/follow", { params: { path: { id: "a1" } } })
+      .POST("/oauth_apps", { body: createOAuthAppBody })
       .catch((e: unknown) => e)) as ProblemError;
     expect(error.status).toBe(429);
     expect(f.requests).toHaveLength(1);
@@ -257,22 +264,56 @@ describe("retries after 429 and 503", () => {
     const s = fakeSleep();
     const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
     const error = (await api
-      .POST("/accounts/{id}/follow", { params: { path: { id: "a1" } }, headers: { "Idempotency-Key": "mine" } })
+      .POST("/oauth_apps", { body: createOAuthAppBody, headers: { "Idempotency-Key": "mine" } })
       .catch((e: unknown) => e)) as ProblemError;
     expect(error.status).toBe(429);
     expect(f.requests).toHaveLength(1);
     expect(s.waits).toEqual([]);
   });
 
-  test("a post that got no answer reports its Idempotency-Key, to send it again with", async () => {
+  test("a write that got no answer is sent again with the same Idempotency-Key", async () => {
+    let n = 0;
+    const f = fakeFetch(() =>
+      ++n === 1 ? Promise.reject(new TypeError("connection reset")) : json(200, { relationship: "r" }),
+    );
+    const s = fakeSleep();
+    const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
+    await api.POST("/accounts/{id}/follow", { params: { path: { id: "a1" } } });
+    const keys = f.requests.map((r) => r.request.headers.get("Idempotency-Key"));
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(keys[1]).toBe(keys[0] ?? "");
+    expect(s.waits).toHaveLength(1);
+  });
+
+  test("a post that got no answer after its retries reports its Idempotency-Key, to send it again with", async () => {
     const f = fakeFetch(() => Promise.reject(new TypeError("connection reset")));
-    const api = createClient({ server, fetch: f.fetch });
+    const s = fakeSleep();
+    const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
     const error = (await api.POST("/statuses", { body: createStatusBody }).catch((e: unknown) => e)) as NetworkError;
     expect(error).toBeInstanceOf(NetworkError);
-    expect(error.idempotencyKey).toBe(f.requests[0]?.request.headers.get("Idempotency-Key") ?? "");
+    const keys = f.requests.map((r) => r.request.headers.get("Idempotency-Key"));
+    expect(keys).toHaveLength(4);
+    expect(new Set(keys).size).toBe(1);
+    expect(error.idempotencyKey).toBe(keys[0] ?? "");
     expect(error.idempotencyKey).not.toBe("");
+    expect(s.waits).toHaveLength(3);
+  });
+
+  test("a GET or a write that takes no Idempotency-Key that got no answer is not sent again", async () => {
+    const f = fakeFetch(() => Promise.reject(new TypeError("connection reset")));
+    const s = fakeSleep();
+    const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
     const get = (await api.GET("/timelines/home").catch((e: unknown) => e)) as NetworkError;
+    expect(get).toBeInstanceOf(NetworkError);
     expect(get.idempotencyKey).toBeUndefined();
+    const write = (await api
+      .POST("/oauth_apps", { body: createOAuthAppBody })
+      .catch((e: unknown) => e)) as NetworkError;
+    expect(write).toBeInstanceOf(NetworkError);
+    expect(write.idempotencyKey).toBeUndefined();
+    expect(f.requests).toHaveLength(2);
+    expect(s.waits).toEqual([]);
   });
 
   test("retries can be turned off", async () => {

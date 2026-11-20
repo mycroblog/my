@@ -27,6 +27,9 @@ info:
       all its users (the `client` policy). Past a limit the answer is 429 with `Retry-After`.
       The fields are left out while the server cannot read its limits, which then let requests
       through.
+    - Every write (`POST`, `PUT`, `PATCH`, `DELETE`) takes an `Idempotency-Key`, with which
+      a request whose answer did not arrive is sent again and carried out once. The few
+      whose answer carries a secret take none (`x-no-idempotency-key` says why).
     - This document is served at `GET /openapi.yaml`, without a limit or a token.
     - IDs are UUIDv7 strings. Collections use keyset pagination: pass the `next_cursor` of a
       page as `cursor` to get the next page.

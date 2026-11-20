@@ -17,6 +17,7 @@ post:
     - oauth2: ["admin:read"]
   parameters:
     - $ref: ../components/parameters/AdminAccountId.yaml
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The email address and the IP addresses of the account.

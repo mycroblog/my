@@ -10,6 +10,8 @@ post:
   tags: [supporters]
   security:
     - oauth2: ["write:supporters"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The portal to open.

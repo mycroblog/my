@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 // @mycroblog/mykit: the client of the mycroblog/my client API (ADR-0093). The types are generated from the spec
 // (schema.gen.ts); the hand-written layer adds the cross-cutting behaviour only: the access token and its refresh,
-// Accept-Language, RFC 9457 errors, cursor pagination, retries after 429 and 503, the Idempotency-Key, media upload,
+// Accept-Language, RFC 9457 errors, cursor pagination, retries after 429 and 503 and of writes that got no answer,
+// the Idempotency-Key, media upload,
 // PKCE, and the client of the event stream.
 export { apiBasePath, createClient, type Api, type ClientOptions } from "./client.js";
-export { idempotencyKeyOperations } from "./idempotency.js";
+// oxlint-disable-next-line typescript/no-deprecated -- the deprecated export stays until its removal (ADR-0093 §8).
+export { idempotencyKeyOperations, writesWithoutIdempotencyKey } from "./idempotency.js";
 export { codeChallenge, exchange, newCodeVerifier, OAuthError, tokenPath, type OAuthConfig } from "./oauth.js";
 export { all, type Page, type PageFetcher } from "./paging.js";
 export { NetworkError, ProblemError, problemFromResponse, problemTypeAboutBlank, type Problem } from "./problem.js";
