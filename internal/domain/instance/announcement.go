@@ -47,10 +47,14 @@ var (
 	// ErrAnnouncementWithdrawn reports a change of a withdrawn announcement, which can no longer
 	// change.
 	ErrAnnouncementWithdrawn = errors.New("instance: announcement is withdrawn")
+	// ErrAnnouncementNotDraft reports the deletion of an announcement that was published, which
+	// is withdrawn instead.
+	ErrAnnouncementNotDraft = errors.New("instance: announcement is not a draft")
 )
 
 // AnnouncementState is where an announcement is in its life (announcement_heads.state): a draft
-// that no user sees, published, or withdrawn for good.
+// that no user sees, published, or withdrawn for good; or deleted, a draft that was dropped, which
+// has no head and is found nowhere.
 type AnnouncementState string
 
 // States of an announcement.
@@ -58,6 +62,7 @@ const (
 	AnnouncementDraft     AnnouncementState = "draft"
 	AnnouncementPublished AnnouncementState = "published"
 	AnnouncementWithdrawn AnnouncementState = "withdrawn"
+	AnnouncementDeleted   AnnouncementState = "deleted"
 )
 
 // AnnouncementRevision is one version of an announcement (announcement_revisions): its title,
@@ -106,11 +111,12 @@ func validAnnouncementTitle(title string, graphemes GraphemeCounter) bool {
 	return graphemes(title) <= MaxAnnouncementTitleGraphemes
 }
 
-// AnnouncementStateChange records a publication or a withdrawal (announcement_state_changes).
+// AnnouncementStateChange records a publication, a withdrawal, or the deletion of a draft
+// (announcement_state_changes).
 type AnnouncementStateChange struct {
 	ID             string
 	AnnouncementID string
-	// State is AnnouncementPublished or AnnouncementWithdrawn.
+	// State is AnnouncementPublished, AnnouncementWithdrawn, or AnnouncementDeleted.
 	State AnnouncementState
 	// ChangedByUserID is the user who made the change, or "" for the CLI.
 	ChangedByUserID string
@@ -128,7 +134,8 @@ type AnnouncementHead struct {
 
 // Apply returns the head after the revision or state change with the greatest ID, given h, which
 // is the zero value for an announcement without a head yet. Revisions and state changes come in
-// any order; the result is the same.
+// any order; the result is the same. A deleted draft stays deleted, which the projection keeps no
+// head of; a deletion of an announcement that was published changes nothing.
 func (h AnnouncementHead) Apply(revisionID string, change *AnnouncementStateChange) AnnouncementHead {
 	if h.State == "" {
 		h.State = AnnouncementDraft
@@ -138,8 +145,12 @@ func (h AnnouncementHead) Apply(revisionID string, change *AnnouncementStateChan
 	}
 	if change != nil {
 		switch {
-		case h.State == AnnouncementWithdrawn:
-			// A withdrawal is for good.
+		case h.State == AnnouncementWithdrawn, h.State == AnnouncementDeleted:
+			// A withdrawal and a deletion are for good.
+		case change.State == AnnouncementDeleted:
+			if h.State == AnnouncementDraft {
+				h.State = AnnouncementDeleted
+			}
 		case change.State == AnnouncementPublished:
 			h.State, h.PublishedAt = AnnouncementPublished, change.ChangedAt
 		case change.State == AnnouncementWithdrawn:

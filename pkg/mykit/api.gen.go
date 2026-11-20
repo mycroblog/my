@@ -299,6 +299,7 @@ const (
 	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
+	AdminAuditActionAnnouncementDeleted             AdminAuditAction = "announcement_deleted"
 	AdminAuditActionAnnouncementPublished           AdminAuditAction = "announcement_published"
 	AdminAuditActionAnnouncementUpdated             AdminAuditAction = "announcement_updated"
 	AdminAuditActionAnnouncementWithdrawn           AdminAuditAction = "announcement_withdrawn"
@@ -424,6 +425,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionAccountStatusesRefetchQueued:
 		return true
 	case AdminAuditActionAnnouncementCreated:
+		return true
+	case AdminAuditActionAnnouncementDeleted:
 		return true
 	case AdminAuditActionAnnouncementPublished:
 		return true
@@ -6448,9 +6451,9 @@ type AdminAppealPage struct {
 // endpoint answered 410 Gone or kept failing), `webhook_secret_rotated`; the label is its
 // description and the host name of its URL, never the URL. On an `announcement`:
 // `announcement_created`, `announcement_updated` (its text or window),
-// `announcement_published`, `announcement_withdrawn`; the label is the first line of its
-// text. On an `invite`: `invite_created`, `invite_revoked`; the label is the first
-// characters of its code, never the whole code. On a `relay`: `relay_added`,
+// `announcement_published`, `announcement_withdrawn`, `announcement_deleted` (a draft); the
+// label is the first line of its text. On an `invite`: `invite_created`, `invite_revoked`;
+// the label is the first characters of its code, never the whole code. On a `relay`: `relay_added`,
 // `relay_followed`, `relay_unfollowed`, `relay_removed`, and `relay_accepted`,
 // `relay_rejected` (by the `remote` relay); the label is its URL. The refetch of remote
 // posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
@@ -6543,9 +6546,9 @@ type AdminAuditEntry struct {
 	// endpoint answered 410 Gone or kept failing), `webhook_secret_rotated`; the label is its
 	// description and the host name of its URL, never the URL. On an `announcement`:
 	// `announcement_created`, `announcement_updated` (its text or window),
-	// `announcement_published`, `announcement_withdrawn`; the label is the first line of its
-	// text. On an `invite`: `invite_created`, `invite_revoked`; the label is the first
-	// characters of its code, never the whole code. On a `relay`: `relay_added`,
+	// `announcement_published`, `announcement_withdrawn`, `announcement_deleted` (a draft); the
+	// label is the first line of its text. On an `invite`: `invite_created`, `invite_revoked`;
+	// the label is the first characters of its code, never the whole code. On a `relay`: `relay_added`,
 	// `relay_followed`, `relay_unfollowed`, `relay_removed`, and `relay_accepted`,
 	// `relay_rejected` (by the `remote` relay); the label is its URL. The refetch of remote
 	// posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
@@ -8306,11 +8309,29 @@ type AdminRole struct {
 
 	// Position The rank of the role, from 0 to 999, and 1000 for `admin`.
 	Position int `json:"position"`
+
+	// SupporterPlan The supporter plan that grants the role, which only its subscriptions grant and revoke;
+	// omitted for a role that no plan grants. A role is the role of one plan at most.
+	SupporterPlan *AdminRoleSupporterPlan `json:"supporter_plan,omitempty"`
 }
 
 // AdminRoleList Roles, highest position first.
 type AdminRoleList struct {
 	Items []AdminRole `json:"items"`
+}
+
+// AdminRoleSupporterPlan The supporter plan that grants a role to its subscribers, and so manages it.
+type AdminRoleSupporterPlan struct {
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Name The name of the plan in its current terms.
+	Name string `json:"name"`
+
+	// Retired Whether the plan is retired, which keeps the role of the subscriptions it still has.
+	Retired bool `json:"retired"`
 }
 
 // AdminRule A rule of the instance. Its ID stays the same across revisions, so reports keep
@@ -9004,6 +9025,12 @@ type AdminWebhookDelivery struct {
 
 	// MessageId The `webhook-id` of the message, the same on every attempt.
 	MessageId Id `json:"message_id"`
+
+	// RequestBody The body of the request that every attempt sent, byte for byte as the receiver got it: a
+	// JSON document, which can carry personal data (an applicant's email address, a report's
+	// comment). It is kept as long as the delivery, 14 days. Omitted where the reader lacks the
+	// permission that subscribing to its event needs besides `manage_webhooks`.
+	RequestBody *string `json:"request_body,omitempty"`
 
 	// Status `pending`: not sent yet. `succeeded`: an attempt got a 2xx answer. `failing`: every
 	// attempt so far failed; it is retried over about 27 hours, 8 attempts in all, and can be
@@ -22966,6 +22993,15 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/announcements (the `CreateAdminAnnouncement` operationId).
 	CreateAdminAnnouncement(ctx context.Context, body CreateAdminAnnouncementJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteAdminAnnouncement Delete a draft announcement
+	//
+	// Deletes a draft, which no user ever saw: it is found nowhere after, a 404 like an unknown
+	// ID. The audit log records `announcement_deleted` with its title. An announcement that was
+	// published is a 409: withdraw it instead. Needs the `manage_announcements` permission.
+	//
+	// Corresponds with DELETE /admin/announcements/{id} (the `DeleteAdminAnnouncement` operationId).
+	DeleteAdminAnnouncement(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetAdminAnnouncement Get an announcement
 	//
 	// An unknown ID is a 404. Needs the `manage_announcements` permission.
@@ -31199,6 +31235,25 @@ func (c *Client) CreateAdminAnnouncementWithBody(ctx context.Context, contentTyp
 // Corresponds with POST /admin/announcements (the `CreateAdminAnnouncement` operationId).
 func (c *Client) CreateAdminAnnouncement(ctx context.Context, body CreateAdminAnnouncementJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateAdminAnnouncementRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteAdminAnnouncement Delete a draft announcement
+//
+// Deletes a draft, which no user ever saw: it is found nowhere after, a 404 like an unknown
+// ID. The audit log records `announcement_deleted` with its title. An announcement that was
+// published is a 409: withdraw it instead. Needs the `manage_announcements` permission.
+//
+// Corresponds with DELETE /admin/announcements/{id} (the `DeleteAdminAnnouncement` operationId).
+func (c *Client) DeleteAdminAnnouncement(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAdminAnnouncementRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -45615,6 +45670,40 @@ func NewCreateAdminAnnouncementRequestWithBody(server string, contentType string
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteAdminAnnouncementRequest constructs an http.Request for the DeleteAdminAnnouncement method
+func NewDeleteAdminAnnouncementRequest(server string, id AnnouncementId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/announcements/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -64888,6 +64977,17 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/announcements (the `CreateAdminAnnouncement` operationId).
 	CreateAdminAnnouncementWithResponse(ctx context.Context, body CreateAdminAnnouncementJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateAdminAnnouncementResponse, error)
 
+	// DeleteAdminAnnouncementWithResponse Delete a draft announcement
+	//
+	// Deletes a draft, which no user ever saw: it is found nowhere after, a 404 like an unknown
+	// ID. The audit log records `announcement_deleted` with its title. An announcement that was
+	// published is a 409: withdraw it instead. Needs the `manage_announcements` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /admin/announcements/{id} (the `DeleteAdminAnnouncement` operationId).
+	DeleteAdminAnnouncementWithResponse(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*DeleteAdminAnnouncementResponse, error)
+
 	// GetAdminAnnouncementWithResponse Get an announcement
 	//
 	// An unknown ID is a 404. Needs the `manage_announcements` permission.
@@ -75361,6 +75461,57 @@ func (r CreateAdminAnnouncementResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r CreateAdminAnnouncementResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DeleteAdminAnnouncementResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteAdminAnnouncement
+type DeleteAdminAnnouncementResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeleteAdminAnnouncementResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeleteAdminAnnouncementResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeleteAdminAnnouncementResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteAdminAnnouncementResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAdminAnnouncementResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAdminAnnouncementResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteAdminAnnouncementResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -103881,6 +104032,23 @@ func (c *ClientWithResponses) CreateAdminAnnouncementWithResponse(ctx context.Co
 	return ParseCreateAdminAnnouncementResponse(rsp)
 }
 
+// DeleteAdminAnnouncementWithResponse Delete a draft announcement
+//
+// Deletes a draft, which no user ever saw: it is found nowhere after, a 404 like an unknown
+// ID. The audit log records `announcement_deleted` with its title. An announcement that was
+// published is a 409: withdraw it instead. Needs the `manage_announcements` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /admin/announcements/{id} (the `DeleteAdminAnnouncement` operationId).
+func (c *ClientWithResponses) DeleteAdminAnnouncementWithResponse(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*DeleteAdminAnnouncementResponse, error) {
+	rsp, err := c.DeleteAdminAnnouncement(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAdminAnnouncementResponse(rsp)
+}
+
 // GetAdminAnnouncementWithResponse Get an announcement
 //
 // An unknown ID is a 404. Needs the `manage_announcements` permission.
@@ -118183,6 +118351,69 @@ func ParseCreateAdminAnnouncementResponse(rsp *http.Response) (*CreateAdminAnnou
 		response.Headers201 = &headers
 	case true:
 		var headers CreateAdminAnnouncementResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAdminAnnouncementResponse parses an HTTP response from a DeleteAdminAnnouncementWithResponse call
+func ParseDeleteAdminAnnouncementResponse(rsp *http.Response) (*DeleteAdminAnnouncementResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAdminAnnouncementResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers DeleteAdminAnnouncementResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

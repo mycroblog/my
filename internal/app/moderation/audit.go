@@ -58,6 +58,7 @@ const (
 	AuditAnnouncementUpdated             = moderation.AuditAnnouncementUpdated
 	AuditAnnouncementPublished           = moderation.AuditAnnouncementPublished
 	AuditAnnouncementWithdrawn           = moderation.AuditAnnouncementWithdrawn
+	AuditAnnouncementDeleted             = moderation.AuditAnnouncementDeleted
 	AuditInviteCreated                   = moderation.AuditInviteCreated
 	AuditInviteRevoked                   = moderation.AuditInviteRevoked
 	AuditRelayAdded                      = moderation.AuditRelayAdded

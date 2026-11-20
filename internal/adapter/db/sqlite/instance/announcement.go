@@ -77,6 +77,15 @@ func (r *Repository) UpsertAnnouncementHead(ctx context.Context, tx uow.Tx, h in
 	return sqlite.Wrap(err, "upsert announcement head")
 }
 
+// DeleteAnnouncementHead implements appinstance.AnnouncementRepository.
+func (r *Repository) DeleteAnnouncementHead(ctx context.Context, tx uow.Tx, announcementID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.DeleteAnnouncementHead(ctx, announcementID), "delete announcement head "+announcementID)
+}
+
 // DeleteAllAnnouncementHeads implements appinstance.AnnouncementRepository.
 func (r *Repository) DeleteAllAnnouncementHeads(ctx context.Context, tx uow.Tx) error {
 	q, err := r.db.queries(tx)

@@ -283,6 +283,18 @@
     "defaultMessage": "送り直されていません。接続を確かめて、もう一度試してください。",
     "description": "The last line of a delivery's row when Send again failed. Read by administrators."
   },
+  "staff_webhooks.delivery.body": {
+    "defaultMessage": "送った内容",
+    "description": "Over the body of the request a delivery sent (a JSON document), folded under its row until shown; also the name of the block that holds it. Read by administrators."
+  },
+  "staff_webhooks.delivery.body_copy": {
+    "defaultMessage": "送った内容をコピー",
+    "description": "The button under the body of the request a delivery sent, which copies it. Read by administrators."
+  },
+  "staff_webhooks.delivery.body_withheld": {
+    "defaultMessage": "送った内容は、このイベントに必要な権限を持つ人にだけ表示されます。",
+    "description": "Under a delivery's row, in place of the body of its request, for a reader who lacks the permission its event needs (a report's: Handle reports). Read by administrators."
+  },
   "staff_webhooks.rotate": {
     "defaultMessage": "新しいシークレット",
     "description": "The heading of the section of a webhook's page that makes a new secret. Read by administrators."

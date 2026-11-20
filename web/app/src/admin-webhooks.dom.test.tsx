@@ -2,9 +2,10 @@
 
 // The webhooks in the app (#3263, FR-722, ADR-0060), on the fake API, as what follows a press: one set up with the
 // events the reader may choose, its secret shown once at the top with Copy and Done; its events changed; a new secret
-// made and shown once; a test sent and a delivery sent again, each a delivery that waits. A community lead (hana
-// holding `lead` alone, without `manage_domains`) is offered no server's event, and a webhook receiving one is
-// read-only for them, with one line why, while its test, its state, its secret and Delete stay theirs. What each
+// made and shown once; a test sent and a delivery sent again, each a delivery that waits; what a delivery sent shown
+// under its row. A community lead (hana holding `lead` alone, without `manage_domains`) is offered no server's event,
+// and a webhook receiving one is read-only for them, with one line why, while its test, its state, its secret and
+// Delete stay theirs, and what its delivery of a server's moderation sent is not shown to them. What each
 // screen shows at rest is the stories' (admin-webhooks.stories.tsx).
 
 import { expect, test } from "bun:test";
@@ -208,6 +209,28 @@ test("a test sent adds a delivery that waits to the deliveries", async () => {
   });
   const first = within(main().getByRole("table", { name: "Deliveries" })).getAllByRole("row")[1];
   expect(first === undefined ? "" : words(first)).toMatch(/^Test message.*Waiting/);
+});
+
+test("what a delivery sent is folded under its row, and Show lays it out as JSON with its copy button", async () => {
+  const { app } = await opened(webhook("alerts"), admin);
+  const row = delivery("A registration awaits approval");
+  expect(within(row).queryByRole("group", { name: "What was sent" })).toBeNull();
+
+  await app.user.click(within(row).getByRole("button", { name: "Show" }));
+
+  const body = words(within(row).getByRole("group", { name: "What was sent" }));
+  expect(body).toContain('"type": "registration.pending"');
+  expect(body).toContain('"email": "kenji@mail.example"');
+  expect(within(row).getByRole("button", { name: "Copy what was sent" })).toBeDefined();
+});
+
+test("the lead is not shown what a delivery of an event they may not handle sent, and the row says why", async () => {
+  await opened(webhook("chat"), lead);
+
+  const withheld = delivery("A server is moderated");
+  expect(words(withheld)).toContain("What was sent is shown only to someone with the permission its event needs.");
+  expect(within(withheld).queryByRole("button", { name: "Show" })).toBeNull();
+  expect(within(delivery("A local account posts publicly")).getByRole("button", { name: "Show" })).toBeDefined();
 });
 
 test("a failing delivery sent again reaches the server, and waits", async () => {

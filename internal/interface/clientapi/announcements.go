@@ -33,6 +33,7 @@ type Announcements interface {
 	UpdateAnnouncement(ctx context.Context, in appinstance.UpdateAnnouncementInput) (instance.Announcement, error)
 	PublishAnnouncement(ctx context.Context, id, byUserID string) (instance.Announcement, error)
 	WithdrawAnnouncement(ctx context.Context, id, byUserID string) (instance.Announcement, error)
+	DeleteAnnouncement(ctx context.Context, id, byUserID string) error
 	RenderAnnouncement(body string) string
 }
 
@@ -182,14 +183,14 @@ func (s *Server) requireAnnouncements(ctx context.Context) (*problem, error) {
 }
 
 // announcementProblem maps the errors of the announcement use cases to problems: 404 for an
-// unknown announcement, 409 for a withdrawn one, and 422 for bad input. It reports false for any
-// other error.
+// unknown announcement, 409 for a withdrawn one and for the deletion of one that was published,
+// and 422 for bad input. It reports false for any other error.
 func (s *Server) announcementProblem(ctx context.Context, err error) (problem, bool) {
 	l := s.Localizer(ctx)
 	switch {
 	case errors.Is(err, appinstance.ErrNotFound):
 		return s.notFoundResponse(ctx), true
-	case errors.Is(err, instance.ErrAnnouncementWithdrawn):
+	case errors.Is(err, instance.ErrAnnouncementWithdrawn), errors.Is(err, instance.ErrAnnouncementNotDraft):
 		return s.problem(ctx, http.StatusConflict, ProblemTypeBlank, l.ServerErrorsConflict(), ""), true
 	case errors.Is(err, instance.ErrAnnouncementTitle):
 		return s.fieldProblem(ctx, "title", l.ServerErrorsInvalidValue()), true
@@ -354,4 +355,25 @@ func (s *Server) WithdrawAdminAnnouncement(ctx context.Context, req WithdrawAdmi
 		return nil, fmt.Errorf("clientapi: withdraw announcement %s: %w", req.Id, err)
 	}
 	return WithdrawAdminAnnouncement200JSONResponse{s.adminAnnouncementResponse(a)}, nil
+}
+
+// DeleteAdminAnnouncement serves DELETE /api/v1/admin/announcements/{id}.
+func (s *Server) DeleteAdminAnnouncement(ctx context.Context, req DeleteAdminAnnouncementRequestObject) (DeleteAdminAnnouncementResponseObject, error) {
+	if p, err := s.requireAnnouncements(ctx); err != nil {
+		return nil, err
+	} else if p != nil {
+		return DeleteAdminAnnouncementdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = s.o.Announcements.DeleteAnnouncement(ctx, req.Id, v.UserID)
+	if p, ok := s.announcementProblem(ctx, err); ok {
+		return DeleteAdminAnnouncementdefaultApplicationProblemPlusJSONResponse(p), nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: delete announcement %s: %w", req.Id, err)
+	}
+	return DeleteAdminAnnouncement204Response{}, nil
 }

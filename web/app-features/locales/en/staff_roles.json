@@ -43,6 +43,10 @@
     "defaultMessage": "Badge: {label}",
     "description": "A fact of a role in the list of roles: the label of its badge, as the staff wrote it. Read by administrators."
   },
+  "staff_roles.row.plan": {
+    "defaultMessage": "Plan: {name}",
+    "description": "A fact of a role in the list of roles: the name of the supporter plan that grants it, as the staff wrote it. Read by administrators."
+  },
   "staff_roles.state.above": {
     "defaultMessage": "Above yours",
     "description": "At the end of a role's row: the role is above the reader's highest role, so they cannot change, grant or revoke it. Read by administrators."
@@ -130,6 +134,10 @@
   "staff_roles.facts.no_permissions": {
     "defaultMessage": "Grants no permission.",
     "description": "On the page of a role the reader cannot change, for one with no permission. Read by administrators."
+  },
+  "staff_roles.facts.plan": {
+    "defaultMessage": "{retired, select, true {Granted by the supporter plan “{name}”, which is retired.} other {Granted by the supporter plan “{name}”.}}",
+    "description": "On the page of a role a supporter plan grants: the plan's name, as the staff wrote it, and whether the plan is retired (retired is true or false). Read by administrators."
   },
   "staff_roles.badge": {
     "defaultMessage": "Badge",

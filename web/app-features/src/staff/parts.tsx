@@ -269,3 +269,12 @@ export function Field({
 /** The ids that describe the control of `id`: its error, while it has one. */
 export const errorOf = (id: string, error: string | undefined): string | undefined =>
   error === undefined ? undefined : `${id}-error`;
+
+/** A payload as its lines are best read (a job's, a webhook's): a JSON document laid out, anything else as it is. */
+export function shownPayload(payload: string): string {
+  try {
+    return JSON.stringify(JSON.parse(payload), null, 2);
+  } catch {
+    return payload;
+  }
+}

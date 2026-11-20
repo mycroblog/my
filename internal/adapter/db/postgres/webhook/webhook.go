@@ -342,7 +342,7 @@ func (r *Repository) deliveries(ctx context.Context, p webhookgen.ListWebhookDel
 	for i, row := range rows {
 		out[i] = webhook.DeliveryRecord{
 			Delivery:  webhook.Delivery{ID: row.ID, MessageID: row.MessageID, EndpointID: row.EndpointID, CreatedAt: postgres.UTC(row.CreatedAt)},
-			EventType: webhook.EventType(row.EventType), Attempts: int(row.Attempts), Succeeded: row.Succeeded,
+			EventType: webhook.EventType(row.EventType), Body: row.Body, Attempts: int(row.Attempts), Succeeded: row.Succeeded,
 		}
 		if row.LastID != nil {
 			out[i].Last = &webhook.Attempt{

@@ -14,13 +14,16 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/identitytest"
 )
 
 // instanceAnnouncementCases are the cases of InstanceFlows about the server-wide
-// announcements (FR-726): drafts, publication, revisions, and withdrawal, the window in which
+// announcements (FR-726): drafts, publication, revisions, and withdrawal, the deletion of a draft
+// alone, audited, the window in which
 // the users see one, the list with the past ones, the administrators' pages of them by state, the times at which their notifications are
 // scheduled, each user's reads and their erasure, invalid input that writes nothing, and the
 // announcement_heads projection that equals a rebuild.
@@ -29,6 +32,7 @@ var instanceAnnouncementCases = []struct {
 	run  func(t *testing.T, e *instanceEnv)
 }{
 	{"AnnouncementLifecycle", instanceAnnouncementLifecycle},
+	{"DeletesOnlyDrafts", instanceDeletesOnlyDrafts},
 	{"AnnouncementWindow", instanceAnnouncementWindow},
 	{"PastAnnouncements", instancePastAnnouncements},
 	{"AnnouncementPages", instanceAnnouncementPages},
@@ -168,6 +172,86 @@ func instanceAnnouncementLifecycle(t *testing.T, e *instanceEnv) {
 	}
 	if all, err := e.service.Announcements(ctx, appinstance.AnnouncementFilterAll, "", 1000); err != nil || len(all) != 1 || all[0].ID != draft.ID {
 		t.Errorf("Announcements = %+v, %v; want the withdrawn one", all, err)
+	}
+}
+
+func instanceDeletesOnlyDrafts(t *testing.T, e *instanceEnv) {
+	ctx := t.Context()
+	rec := &identitytest.AuditRecorder{}
+	e.projectors.Register(appmoderation.EventAuditRecorded, func(_ context.Context, _ uow.Tx, ev uow.Event) error {
+		rec.Add(ev.(appmoderation.AuditRecorded).Entry)
+		return nil
+	})
+	draft := e.createAnnouncement(t, "A draft to drop.", false, time.Time{}, time.Time{})
+	e.createAnnouncement(t, "A draft to keep.", false, time.Time{}, time.Time{})
+	published := e.createAnnouncement(t, "Published.", true, time.Time{}, time.Time{})
+	withdrawn := e.createAnnouncement(t, "Withdrawn.", true, time.Time{}, time.Time{})
+	if _, err := e.service.WithdrawAnnouncement(ctx, withdrawn.ID, announcementAdmin); err != nil {
+		t.Fatalf("WithdrawAnnouncement = %v", err)
+	}
+
+	e.clock.Advance(time.Second)
+	if err := e.service.DeleteAnnouncement(ctx, draft.ID, announcementAdmin); err != nil {
+		t.Fatalf("DeleteAnnouncement(draft) = %v", err)
+	}
+	if _, err := e.service.Announcement(ctx, draft.ID); !errors.Is(err, appinstance.ErrNotFound) {
+		t.Errorf("Announcement(deleted) = %v, want ErrNotFound", err)
+	}
+	if err := e.service.DeleteAnnouncement(ctx, draft.ID, announcementAdmin); !errors.Is(err, appinstance.ErrNotFound) {
+		t.Errorf("DeleteAnnouncement(deleted) = %v, want ErrNotFound", err)
+	}
+	for _, op := range []struct {
+		name string
+		do   func() error
+	}{
+		{"PublishAnnouncement", func() error { _, err := e.service.PublishAnnouncement(ctx, draft.ID, ""); return err }},
+		{"UpdateAnnouncement", func() error {
+			_, err := e.service.UpdateAnnouncement(ctx, appinstance.UpdateAnnouncementInput{
+				AnnouncementID: draft.ID, AnnouncementInput: appinstance.AnnouncementInput{Title: "again", Body: "again"},
+			})
+			return err
+		}},
+		{"MarkAnnouncementRead", func() error { _, err := e.service.MarkAnnouncementRead(ctx, announcementReader, draft.ID); return err }},
+	} {
+		if err := op.do(); !errors.Is(err, appinstance.ErrNotFound) {
+			t.Errorf("%s(deleted) = %v, want ErrNotFound", op.name, err)
+		}
+	}
+	for _, a := range []instance.Announcement{published, withdrawn} {
+		if err := e.service.DeleteAnnouncement(ctx, a.ID, announcementAdmin); !errors.Is(err, instance.ErrAnnouncementNotDraft) {
+			t.Errorf("DeleteAnnouncement(%s) = %v, want ErrAnnouncementNotDraft", a.Revision.Body, err)
+		}
+	}
+	listed := func() []string {
+		t.Helper()
+		all, err := e.service.Announcements(ctx, appinstance.AnnouncementFilterAll, "", 1000)
+		if err != nil {
+			t.Fatalf("Announcements = %v", err)
+		}
+		var out []string
+		for _, a := range all {
+			out = append(out, a.Revision.Body)
+		}
+		return out
+	}
+	want := []string{"Withdrawn.", "Published.", "A draft to keep."}
+	if got := listed(); !reflect.DeepEqual(got, want) {
+		t.Errorf("Announcements after the deletion = %q, want %q", got, want)
+	}
+	if err := appinstance.RebuildProjections(ctx, e.h.UnitOfWork, e.h.Instance); err != nil {
+		t.Fatalf("RebuildProjections = %v", err)
+	}
+	if got := listed(); !reflect.DeepEqual(got, want) {
+		t.Errorf("Announcements after a rebuild = %q, want %q", got, want)
+	}
+	var deleted []string
+	for _, a := range rec.All() {
+		if a.Action == appmoderation.AuditAnnouncementDeleted {
+			deleted = append(deleted, a.TargetID+" "+a.TargetLabel+" by "+a.ActorUserID)
+		}
+	}
+	if want := []string{draft.ID + " " + instance.AnnouncementLabel(draft.Revision.Title, draft.Revision.Body) + " by " + announcementAdmin}; !reflect.DeepEqual(deleted, want) {
+		t.Errorf("audited deletions = %q, want %q", deleted, want)
 	}
 }
 
@@ -470,8 +554,11 @@ func instanceAnnouncementProjectionEqualsRebuild(t *testing.T, e *instanceEnv) {
 				_, err = e.service.PublishAnnouncement(ctx, ids[rng.IntN(len(ids))], "")
 			case op == 3 && rng.IntN(3) == 0:
 				_, err = e.service.WithdrawAnnouncement(ctx, ids[rng.IntN(len(ids))], "")
+			case op == 4 && rng.IntN(3) == 0:
+				err = e.service.DeleteAnnouncement(ctx, ids[rng.IntN(len(ids))], "")
 			}
-			if err != nil && !errors.Is(err, instance.ErrAnnouncementWithdrawn) {
+			if err != nil && !errors.Is(err, instance.ErrAnnouncementWithdrawn) && !errors.Is(err, instance.ErrAnnouncementNotDraft) &&
+				!errors.Is(err, appinstance.ErrNotFound) {
 				t.Fatalf("round %d step %d: %v", round, step, err)
 			}
 		}

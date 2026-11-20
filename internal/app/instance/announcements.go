@@ -22,7 +22,7 @@ import (
 
 // The server-wide announcements (FR-726). The holders of manage_announcements
 // write an announcement, a plain-text title and a body in Markdown, as a draft, publish it for every local user within an
-// optional window, revise it, and withdraw it for good; each change records an event and its
+// optional window, revise it, and withdraw it for good, or delete a draft; each change records an event and its
 // audit log entry in one transaction (ADR-0058). Every local user sees the published
 // announcements of the moment, rendered to sanitized HTML, and marks the ones they have read.
 // A publication, a revision of a published announcement, and a withdrawal signal the streams
@@ -38,6 +38,8 @@ type AnnouncementRepository interface {
 	// AnnouncementHead returns the announcement_heads row of the announcement.
 	AnnouncementHead(ctx context.Context, tx uow.Tx, announcementID string) (instance.AnnouncementHead, error)
 	UpsertAnnouncementHead(ctx context.Context, tx uow.Tx, h instance.AnnouncementHead) error
+	// DeleteAnnouncementHead deletes the head of the announcement, a deleted draft's.
+	DeleteAnnouncementHead(ctx context.Context, tx uow.Tx, announcementID string) error
 	DeleteAllAnnouncementHeads(ctx context.Context, tx uow.Tx) error
 	// ListAnnouncementRevisionIDs returns the announcement and ID of every revision, oldest
 	// first, as heads with only those two fields, for rebuilding.
@@ -86,7 +88,8 @@ type AnnouncementRevised struct {
 // EventType implements uow.Event.
 func (AnnouncementRevised) EventType() string { return EventAnnouncementRevised }
 
-// AnnouncementStateChanged is emitted when an announcement is published or withdrawn.
+// AnnouncementStateChanged is emitted when an announcement is published or withdrawn, or a draft
+// is deleted.
 type AnnouncementStateChanged struct {
 	Change instance.AnnouncementStateChange
 }
@@ -121,7 +124,10 @@ func registerAnnouncementProjectors(r *uow.Projectors, repo Repository) {
 			return err
 		}
 		head.AnnouncementID = id
-		return repo.UpsertAnnouncementHead(ctx, tx, head.Apply(revisionID, change))
+		if head = head.Apply(revisionID, change); head.State == instance.AnnouncementDeleted {
+			return repo.DeleteAnnouncementHead(ctx, tx, id)
+		}
+		return repo.UpsertAnnouncementHead(ctx, tx, head)
 	}
 	r.Register(EventAnnouncementRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		rev := e.(AnnouncementRevised).Revision
@@ -171,8 +177,8 @@ func rebuildAnnouncementHeads(ctx context.Context, tx uow.Tx, repo Repository) e
 		heads[c.AnnouncementID] = head(c.AnnouncementID).Apply("", &c)
 	}
 	for _, id := range order {
-		if heads[id].RevisionID == "" {
-			continue // a state change without a revision: nothing to show
+		if heads[id].RevisionID == "" || heads[id].State == instance.AnnouncementDeleted {
+			continue // a state change without a revision, or a deleted draft: nothing to show
 		}
 		if err := repo.UpsertAnnouncementHead(ctx, tx, heads[id]); err != nil {
 			return err
@@ -335,6 +341,34 @@ func (s *Service) PublishAnnouncement(ctx context.Context, id, byUserID string) 
 // wrapping ErrNotFound for an unknown announcement.
 func (s *Service) WithdrawAnnouncement(ctx context.Context, id, byUserID string) (instance.Announcement, error) {
 	return s.setAnnouncementState(ctx, id, byUserID, instance.AnnouncementWithdrawn, appmoderation.AuditAnnouncementWithdrawn)
+}
+
+// DeleteAnnouncement deletes a draft, which no user ever saw: it is found nowhere after, and the
+// audit log keeps its title. It fails with an error wrapping ErrNotFound for an unknown or deleted
+// announcement and instance.ErrAnnouncementNotDraft for one that was published, which is withdrawn
+// instead.
+func (s *Service) DeleteAnnouncement(ctx context.Context, id, byUserID string) error {
+	now := s.d.Clock.Now()
+	change := instance.AnnouncementStateChange{
+		ID: s.d.IDs.NewID(), AnnouncementID: id, State: instance.AnnouncementDeleted, ChangedByUserID: byUserID, ChangedAt: now,
+	}
+	audit := s.audit(appmoderation.AuditAnnouncementDeleted, appmoderation.AuditTargetAnnouncement, id, "", change.ID, byUserID, now)
+	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		cur, err := s.d.Repository.Announcement(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if cur.State != instance.AnnouncementDraft {
+			return fmt.Errorf("delete announcement %s: %w", id, instance.ErrAnnouncementNotDraft)
+		}
+		if err := s.d.Repository.InsertAnnouncementStateChange(ctx, tx, change); err != nil {
+			return err
+		}
+		if err := tx.Emit(ctx, AnnouncementStateChanged{Change: change}); err != nil {
+			return err
+		}
+		return tx.Emit(ctx, withLabel(audit, instance.AnnouncementLabel(cur.Revision.Title, cur.Revision.Body)))
+	})
 }
 
 func (s *Service) setAnnouncementState(ctx context.Context, id, byUserID string, state instance.AnnouncementState, action appmoderation.AuditAction) (instance.Announcement, error) {

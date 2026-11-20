@@ -80,9 +80,14 @@ func (s *Server) roleDefinitionProblem(ctx context.Context, err error) (*RolePro
 	}, nil, true
 }
 
-func adminRoleResponse(r appidentity.RoleWithPermissions) AdminRoleJSONResponse {
+// adminRoleResponse presents a role with the plan that grants it.
+func (s *Server) adminRoleResponse(ctx context.Context, r appidentity.RoleWithPermissions) (AdminRoleJSONResponse, error) {
+	plans, err := s.rolePlans(ctx)
+	if err != nil {
+		return AdminRoleJSONResponse{}, err
+	}
 	cache := cacheNoStore
-	return AdminRoleJSONResponse{Body: newAdminRole(r), Headers: AdminRoleResponseHeaders{CacheControl: &cache}}
+	return AdminRoleJSONResponse{Body: newAdminRole(r, plans), Headers: AdminRoleResponseHeaders{CacheControl: &cache}}, nil
 }
 
 func permissionsFrom(in []Permission) []identity.Permission {
@@ -116,7 +121,11 @@ func (s *Server) CreateRole(ctx context.Context, req CreateRoleRequestObject) (C
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: create role %s: %w", req.Body.Key, err)
 	}
-	return CreateRole201JSONResponse{adminRoleResponse(r)}, nil
+	res, err := s.adminRoleResponse(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return CreateRole201JSONResponse{res}, nil
 }
 
 // UpdateRole serves PATCH /api/v1/admin/roles/{role}.
@@ -151,7 +160,11 @@ func (s *Server) UpdateRole(ctx context.Context, req UpdateRoleRequestObject) (U
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: update role %s: %w", req.Role, err)
 	}
-	return UpdateRole200JSONResponse{adminRoleResponse(r)}, nil
+	res, err := s.adminRoleResponse(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return UpdateRole200JSONResponse{res}, nil
 }
 
 // DeleteRole serves DELETE /api/v1/admin/roles/{role}.

@@ -1405,6 +1405,7 @@ export {
   badgeColors,
   builtinRoles,
   fixedPermissions,
+  grantedByPlan,
   highestPlace,
   loadAccountRoles,
   loadAdminRoles,
