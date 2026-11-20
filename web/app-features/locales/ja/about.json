@@ -160,7 +160,7 @@
     "description": "The title of the page for the operators of websites on this server's link card crawler, which the row of the about page opens."
   },
   "about.crawlers.link_cards": {
-    "defaultMessage": "このサーバーも、投稿がリンクするページを、クローラー my-linkcard として取得してカードを出します。",
+    "defaultMessage": "このサーバーも、クローラー my-linkcard として、投稿がリンクするページを取得してカードを出します。",
     "description": "After what the server states to search engines and AI crawlers, in the section of the about page on them: that the server fetches linked pages for cards, as its own crawler."
   },
   "about.crawlers.crawler": {
@@ -196,7 +196,7 @@
     "description": "Explains the User-Agent of the crawler and the name it goes by. my-linkcard is a literal name: do not translate it. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.identity.others": {
-    "defaultMessage": "このサーバーは、連合など、このページの対象でない要求を my/ の名前で送ります。カードに続くものが 2 つあります。読む人に見せるためにカードの画像を my/ の名前で取り直すことと、ページが fediverse:creator で示すアカウントを照会することです。",
+    "defaultMessage": "このサーバーは、連合などのほかの要求を my/ の名前で送ります。それらはこのページの対象ではありませんが、そのうち 2 つはカードに続くことがあります。読む人に見せるためにカードの画像を my/ の名前でもう一度取得することと、ページが fediverse:creator で示すアカウントを照会することです。",
     "description": "Other requests of the server that a site operator can see, under the server's general User-Agent. my/ and fediverse:creator are literal: do not translate them. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.trigger.title": {
@@ -204,7 +204,7 @@
     "description": "Heading of the section that says what makes the crawler fetch a URL. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.trigger.post": {
-    "defaultMessage": "URL にリンクする投稿です。サーバーは投稿の本文の最初のリンクからカードを作ります。投稿の公開範囲にはよりません。新しいカードがなければ、ページを取得します。",
+    "defaultMessage": "URL にリンクする投稿です。サーバーは投稿の本文の最初のリンクからカードを作ります。投稿の公開範囲にはよりません。最近取得したカードがなければ、ページを取得します。",
     "description": "What makes the crawler fetch a URL. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.trigger.remote": {
@@ -224,7 +224,7 @@
     "description": "What the crawler fetches: the page's image. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.fetches.robots": {
-    "defaultMessage": "ページと画像のオリジンの robots.txt。ページと画像を要求する前に取得します。",
+    "defaultMessage": "ページ、リダイレクト先、画像のそれぞれのオリジンの robots.txt。それらを要求する前に取得します。",
     "description": "What the crawler fetches: robots.txt. Shown only while the server reads it. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.fetches.nothing_else": {
@@ -260,11 +260,11 @@
     "description": "The limit of the crawler per host. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.frequency.throttled": {
-    "defaultMessage": "ホストが 429 か 503 を返すと、Retry-After の時間 (最長 1 時間。なければ 1 分) はそのホストへ要求しません。同じ URL がそう 5 回返したら、取得に失敗したものとして扱います。",
+    "defaultMessage": "ホストが 429 か 503 を返すと、Retry-After の時間 (最長 1 時間。なければ 1 分) はそのホストへ要求しません。同じ URL で 24 時間以内にそう 5 回返されたら、取得に失敗したものとして扱います。",
     "description": "That the crawler stops for a host that asks it to. 429, 503 and Retry-After are literal. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.frequency.robots": {
-    "defaultMessage": "robots.txt は、オリジン (スキーム・ホスト・ポート) ごとに 1 日 1 回ほど読みます。読めないとき (429・5xx・ネットワークの失敗) は、そのオリジンからは何も取得せず、1 時間後に試します。",
+    "defaultMessage": "robots.txt は、オリジン (スキーム・ホスト・ポート) ごとに 1 日 1 回ほど読みます。読めないとき (429・5xx・ネットワークの失敗) は、そのオリジンからは何も取得せず、1 時間後にもう一度試します。",
     "description": "How often the crawler reads robots.txt. Shown only while the server reads it. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.opt_out.title": {
@@ -276,7 +276,7 @@
     "description": "Heading (h3) of the part about refusing the crawler in robots.txt. robots.txt is literal. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.opt_out.robots.intro": {
-    "defaultMessage": "サイトへの取得をすべて断るには、robots.txt に次のように書きます。",
+    "defaultMessage": "サイトからの取得をすべて断るには、robots.txt に次のように書きます。",
     "description": "Sentence before the robots.txt example that refuses the crawler. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.opt_out.robots.star": {
@@ -292,11 +292,11 @@
     "description": "Under the robots.txt part, on a server whose setting link_cards_ignore_robots_txt is on. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.opt_out.directives.title": {
-    "defaultMessage": "カードを減らす: ページの指定",
+    "defaultMessage": "カードに出すものを減らす: ページの指定",
     "description": "Heading (h3) of the part about the page directives that change a card. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.opt_out.directives.intro": {
-    "defaultMessage": "ページは、説明や画像をカードから外せます。指定はページを取得して初めて分かるので、ページへの要求は止まりません。これは、このサーバーの robots.txt の設定によらず効きます。",
+    "defaultMessage": "ページは、説明や画像をカードから外せます。指定はページを取得して初めて分かるので、ページへの要求は止まりません。指定は、このサーバーが robots.txt を読むかどうかにかかわらず効きます。",
     "description": "Sentence before the table of page directives. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.opt_out.directives.caption": {
@@ -320,11 +320,11 @@
     "description": "What the directives noimageindex and max-image-preview:none do to a card. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.opt_out.directives.noindex": {
-    "defaultMessage": "変わりません。これらは検索結果に載せないでほしいという指定で、カードは検索結果ではありません。カードが出るのは誰かがリンクを投稿したからで、検索に載せないページの多くは共有されることを望んでいます。断るには robots.txt を使ってください。",
+    "defaultMessage": "変わりません。これらは検索結果に載せないでほしいという指定で、カードは検索結果ではありません。カードが出るのは誰かがリンクを投稿したからで、検索に載せないページにも、共有するためのものが多くあります。断るには robots.txt を使ってください。",
     "description": "What the directives noindex and none do to a card, with the reason in plain words. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.opt_out.directives.noindex_ignored": {
-    "defaultMessage": "変わりません。これらは検索結果に載せないでほしいという指定で、カードは検索結果ではありません。カードが出るのは誰かがリンクを投稿したからで、検索に載せないページの多くは共有されることを望んでいます。このサーバーで断るには、管理者に頼んでください。",
+    "defaultMessage": "変わりません。これらは検索結果に載せないでほしいという指定で、カードは検索結果ではありません。カードが出るのは誰かがリンクを投稿したからで、検索に載せないページにも、共有するためのものが多くあります。このサーバーで断るには、管理者に頼んでください。",
     "description": "What the directives noindex and none do to a card, on a server that does not read robots.txt. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.opt_out.directives.rest": {
@@ -340,7 +340,7 @@
     "description": "Heading of the section with how to reach the operators of the server that runs the crawler. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.contact.intro": {
-    "defaultMessage": "管理者は、ドメインとそのサブドメインへの取得を止められます。画像だけを止めることもできます。すぐに効き、すでにあるカードにも及びます。取得を止めたいときやカードを消したいときは、管理者に頼んでください。",
+    "defaultMessage": "管理者は、ドメインとそのサブドメインからの取得を止められます。画像だけを止めることもできます。すぐに効き、サーバーがすでに持っているカードにも及びます。取得を止めたいときやカードを消したいときは、管理者に頼んでください。",
     "description": "That the operators of the server can stop the crawler per domain, and that a site operator can ask them. On the page for the operators of websites on this server's link card crawler."
   },
   "about.crawler.contact.none": {
