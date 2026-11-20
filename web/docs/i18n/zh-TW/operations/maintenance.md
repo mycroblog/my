@@ -8,12 +8,12 @@
 - **維護模式**（`maintenance = true`、`MY_MAINTENANCE=true` 或 `my serve -maintenance`）。`my serve` 啟動時不開啟任何轉接器，並以 `503`、`Retry-After`，以及每種用戶端都能理解的回應來回答所有請求。只要 `my serve` 本身能執行，就使用這種方式。
 - **匯出的頁面**（`my maintenance export`）。以相同範本產生的靜態 HTML，在 `my serve` 完全無法執行時（例如正在替換映像檔，或修訂版本無法啟動），交由負載平衡器、CDN 或反向代理提供。請參閱[匯出維護頁面](admin-cli.md#exporting-the-maintenance-page)。
 
-<!-- source: what-the-maintenance-mode-answers 13edbbd09e33 -->
+<!-- source: what-the-maintenance-mode-answers 800ed13d3906 -->
 ## 維護模式的回應
 
 程序只會讀取監聽位址、`host`、`account_domain`、`web_origin`、代理（`trusted_proxies`、`trusted_proxy_header`）、[來源檢查](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)（`origin_secret`、`origin_secret_previous`、`origin_secret_header`）、`status_page_url`，以及 `maintenance_*` 設定（[設定參考](../reference/configuration.md)）。
 資料庫、佇列、blob 儲存、KV、郵件和串流的設定不會被讀取或檢查，所以在這段期間它們可以是錯的或無法連線。
-不論 `role` 為何，它都只提供 HTTP：沒有任務、沒有週期性任務、沒有串流 broker。
+不論 `role` 為何，它都只提供 HTTP：沒有任務、沒有週期性任務、沒有串流 broker。不論 `tls` 設定為何，它也只提供一般的 HTTP，位於 `listen` 或其預設值 `:8080`（[由伺服器本身提供 HTTPS](running.md#serving-https-from-the-server)）。
 `my config check -maintenance` 會檢查維護模式所讀取的內容，不多也不少。
 
 設定了 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) 時，需要標頭但沒有帶標頭的請求，會得到該項檢查的 `403`，而不是下表的回應。
@@ -88,7 +88,7 @@
 
 以下前端的錯誤頁面會以匯出的頁面回應伺服器的錯誤。請只比對伺服器沒有在執行時的錯誤（`502` 和 `504`，以及負載平衡器在沒有健康後端時自己回應的 `503`），或只在 `my serve` 無法執行時才開啟該規則：對所有 `503` 生效的規則，也會取代維護模式自己的回應，例如用戶端 API 和網頁用戶端讀取的 problem。
 
-<!-- source: cloud-run b728619281de -->
+<!-- source: cloud-run 8bed844981b6 -->
 ### Cloud Run
 
 部署一個帶有該變數的新修訂版本，作業結束後再移除：
@@ -98,6 +98,8 @@ gcloud run services update my --region=asia-northeast1 \
   --update-env-vars=MY_MAINTENANCE=true,MY_MAINTENANCE_UNTIL=2026-10-24T03:00:00Z
 gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE,MY_MAINTENANCE_UNTIL
 ```
+
+使用 OpenTofu 模組時，請改在區塊中以 `settings = { maintenance = "true" }` 設定並套用，因為下一次套用會還原區塊所寫的內容：升級前後的做法請見[在 Cloud Run 上部署](deploy-cloud-run.md#the-maintenance-mode)。
 
 當 Cloud Run 不經負載平衡器而直接對外公開時，它前面沒有任何東西，因此維護模式是唯一的工具。
 
@@ -113,10 +115,10 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-<!-- source: aws-ecs 8c6aa496b517 -->
+<!-- source: aws-ecs afc0ba5adee4 -->
 ### AWS ECS
 
-為服務的任務定義註冊一個新修訂版本，在容器的環境中加上 `MY_MAINTENANCE=true`，把服務更新到這個版本，作業結束後再以不含該變數的版本做同樣的事。使用 OpenTofu 模組時，`deploy/opentofu/upgrade.sh --platform aws-ecs --maintenance` 會在升級前把服務切換到維護模式，並以新的修訂版本切換回來。
+為服務的任務定義註冊一個新修訂版本，在容器的環境中加上 `MY_MAINTENANCE=true`，把服務更新到這個版本，作業結束後再以不含該變數的版本做同樣的事。使用 OpenTofu 模組時，請改在區塊中以 `settings = { maintenance = "true" }` 設定並套用，因為下一次套用會還原區塊所寫的內容：升級前後，先套用維護模式，再套用新版本，最後套用不含它的區塊，做法如[在 Cloud Run 上部署](deploy-cloud-run.md#the-maintenance-mode)所述。
 
 **當 `my serve` 無法執行時**，若位於 CloudFront 後方：把匯出的 `index.html` 上傳到作為第二個來源的 S3 bucket（錯誤頁面不能來自出問題的來源），並為 `502` 和 `504`（以及只在 `my serve` 無法執行時的 `503`）加入自訂錯誤回應，設定 `ResponsePagePath: /maintenance/index.html` 和 `ResponseCode: 503`。CloudFront 可以透過帶有自訂標頭的回應標頭政策加上 `Retry-After`，但該政策會套用到該快取行為的所有回應，因此請只在維護期間附加，之後再移除。
 
