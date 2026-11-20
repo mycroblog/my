@@ -7,11 +7,11 @@ llenas, y sus propias publicaciones públicas llegan más lejos. Una instancia q
 trabajos.
 
 <!-- source: join-a-relay 551373ffaed6 -->
-## Unirse a un relay
+## Unirse a un relé
 
 Usa «Relays» en el área de administración (`/admin/relays`). Requiere el permiso `manage_settings`, que tiene el rol integrado `admin`.
-«Unirse a un relay» abre el formulario que registra uno. La lista muestra el estado de cada relay y lo que trajo durante las últimas 24
-horas; al elegir un relay se abre su página, con sus direcciones y el botón que lo abandona, o, una vez que el servidor lo abandonó o este
+«Unirse a un relé» abre el formulario que registra uno. La lista muestra el estado de cada relé y lo que trajo durante las últimas 24
+horas; al elegir un relé se abre su página, con sus direcciones y el botón que lo abandona, o, una vez que el servidor lo abandonó o este
 lo rechazó, los botones que se unen de nuevo a él y lo eliminan. Abandonar y eliminar preguntan antes.
 La CLI es `my admin relay` (`my admin relay -help`):
 
@@ -23,16 +23,16 @@ my admin relay follow <relay id>                                  # join again a
 my admin relay delete <relay id>                                  # delete a relay that the instance left or that rejected it
 ```
 
-1. Registra la URL del relay. Hay dos protocolos:
+1. Registra la URL del relé. Hay dos protocolos:
    - **Mastodon**: la **URL del inbox** del relay (como `https://relay.example/inbox`). Muchos relays, incluidos pub-relay y Activity-Relay, la aceptan.
    - **LitePub**: la **URL del actor** del relay (como `https://relay.example/relay`). Este es el protocolo de los relays de Pleroma y Akkoma.
    Si no eliges un protocolo («Detectar automáticamente»), el servidor usa LitePub cuando la URL sirve un documento de actor, y Mastodon en otro caso.
 2. Tras registrarlo, el actor de la instancia envía al relay un `Follow`, y el estado es «Esperando la respuesta del relay» (`pending`).
    Cuando el relay acepta, el estado pasa a «Unido» (`accepted`); cuando rechaza, «Rechazado por el relay» (`rejected`). Algunos relays tardan porque un operador aprueba cada solicitud a mano.
-3. Si desactivas «Recibir publicaciones del relay» al registrarlo, el servidor solo envía. Para cambiarlo, abandona el relay y regístralo de nuevo.
+3. Si desactivas «Recibir publicaciones del relé» al registrarlo, el servidor solo envía. Para cambiarlo, abandona el relé y regístralo de nuevo.
 
 No puedes registrar el relay de un servidor bajo una acción de dominio (`suspend`). Si el servidor de un relay al que te uniste se suspende después, el estado no cambia,
-pero no se envía ni se recibe nada de ese relay, y el área de administración lo dice en el estado del relay.
+pero no se envía ni se recibe nada de ese relé, y el área de administración lo dice en el estado del relé.
 
 <!-- source: what-the-server-sends c55ab0a5b079 -->
 ## Qué envía el servidor
