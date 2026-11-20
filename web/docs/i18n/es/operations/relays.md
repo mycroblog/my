@@ -6,12 +6,12 @@ unidos. Incluso una instancia pequeña con pocos seguimientos obtiene una cronol
 llenas, y sus propias publicaciones públicas llegan más lejos. Una instancia que no se une a un relé no gana filas ni
 trabajos.
 
-<!-- source: join-a-relay 5c97a6145f1b -->
+<!-- source: join-a-relay 551373ffaed6 -->
 ## Unirse a un relay
 
 Usa «Relays» en el área de administración (`/admin/relays`). Requiere el permiso `manage_settings`, que tiene el rol integrado `admin`.
 «Unirse a un relay» abre el formulario que registra uno. La lista muestra el estado de cada relay y lo que trajo durante las últimas 24
-horas; al elegir un relay se abre su página, con sus direcciones y el botón que lo abandona, o, una vez que se abandonó o el servidor
+horas; al elegir un relay se abre su página, con sus direcciones y el botón que lo abandona, o, una vez que el servidor lo abandonó o este
 lo rechazó, los botones que se unen de nuevo a él y lo eliminan. Abandonar y eliminar preguntan antes.
 La CLI es `my admin relay` (`my admin relay -help`):
 
