@@ -333,12 +333,18 @@ scripts/task.sh go:sqlc-check  # fail when the generated code is stale (part of 
 
 Every email the server sends is a draft from a pure function next to its job handler (`internal/app/<module>/mail_drafts.go`),
 which `kernel.MailComposer` completes with the common frame: the committed HTML layout
-(`internal/app/kernel/mail_frame.gen.html`) and the text version with the signature. The catalog in
+(`internal/app/kernel/mail_frame.gen.html`) and the text version with the signature. The layout is written in React in
+`web/mail`, with parts of its own (tables and inline styles); `scripts/task.sh mail:frame` renders it into the Go template,
+and refuses a layout that is not tables with inline styles, loads anything but the server's logo, or lacks `lang` and `dir`.
+The tests of `web/mail` fail when the committed file is stale. The catalog in
 `internal/platform/mailpreview/catalog.go` renders each of them from sample inputs:
 
 - `scripts/task.sh mail:preview` writes every email in `en`, `ja`, `en-XA`, and `ar-XB` to `.tmp/mail/preview/` and
   prints the path of its `index.html`; open it in a browser. `scripts/task.sh mail:preview-watch` renders them again
   on every change of the layout, the messages, or the Go code.
+- `scripts/task.sh mail:mailpit` sends every email in `en` and the right-to-left `ar-XB`, each light and dark (its subject
+  starts with the locale, the scheme, and the email's name), to the Mailpit of `scripts/task.sh docker:mailpit` (or
+  `docker compose up`), whose UI at `http://127.0.0.1:8025` shows them as a mail client would.
 - A new email needs a draft function, a job type named `Job...Email`, and its entries in the catalog: a test fails
   until the catalog has them. `scripts/task.sh mail:golden` then writes its golden files
   (`internal/platform/mailpreview/testdata/golden`), so that a change to any email shows in the pull request's diff.
