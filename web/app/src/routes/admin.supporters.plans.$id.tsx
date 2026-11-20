@@ -3,13 +3,13 @@
 // A supporter plan, at /admin/supporters/plans/{id}, a screen under Supporters (ADR-0072): its facts, the change of
 // it and of its role, and retiring it. Its title is the plan's name. Without a session it asks the reader to sign in.
 
-import { loadPlans, PlanScreen, usePlanTitle } from "@my/app-features";
+import { loadPlans, PlanScreen, usePlanTitle, loadStaffEntry } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { screenLoad } from "../screen-load";
 import { StaffUnderPage } from "../shell/staff-under";
 
 export const Route = createFileRoute("/admin/supporters/plans/$id")({
-  loader: ({ context }) => screenLoad(context, loadPlans),
+  loader: ({ context }) => screenLoad(context, (data) => loadStaffEntry(data, "admin", "supporters", {}, loadPlans)),
   component: Plan,
   // A screen of its own opens at its top.
   staticData: { scroll: "top" },

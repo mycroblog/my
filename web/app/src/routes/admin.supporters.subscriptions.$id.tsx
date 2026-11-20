@@ -4,13 +4,16 @@
 // its facts, and ending it at once. Its query is the list's the reader came from, which its way back keeps. Without a
 // session it asks the reader to sign in.
 
-import { loadSubscription, SubscriptionScreen, useSubscriptionTitle } from "@my/app-features";
+import { loadSubscription, SubscriptionScreen, useSubscriptionTitle, loadStaffEntry } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { screenLoad } from "../screen-load";
 import { StaffUnderPage } from "../shell/staff-under";
 
 export const Route = createFileRoute("/admin/supporters/subscriptions/$id")({
-  loader: ({ context, params }) => screenLoad(context, (data) => loadSubscription(data, params.id)),
+  loader: ({ context, params }) =>
+    screenLoad(context, (data) =>
+      loadStaffEntry(data, "admin", "supporters", {}, (d) => loadSubscription(d, params.id)),
+    ),
   component: Subscription,
   // A screen of its own opens at its top.
   staticData: { scroll: "top" },

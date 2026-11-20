@@ -32,12 +32,12 @@ import {
 } from "@my/design-system";
 import type { ReactNode } from "react";
 import { staffEntryPath } from "../entries";
-import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
+import { ReadNotice, useMoment, useStaffStrings, type T, Section } from "../parts";
 import { categoryWords } from "../reports/queue";
 import { ActionForm } from "./action-form";
 import { AccountActionsPage } from "./actions";
 import { ManagePage } from "./manage";
-import { AccountStateMark, actionCategoryWords, ActionStateMark, bannedBy, kindWords, useEnd, Section } from "./parts";
+import { AccountStateMark, actionCategoryWords, ActionStateMark, bannedBy, kindWords, useEnd } from "./parts";
 
 /** The pages of an account's moderation. */
 export type AccountPage = "review" | "actions" | "manage";

@@ -56,7 +56,7 @@ import {
 import { useId, useState, type ReactNode } from "react";
 import type { StaffUnderProps } from "../entries";
 import { moneyText } from "../../finance-totals";
-import { errorOf, Field, ReadNotice, Titled, useMoment, useStaffStrings, useSaid, type T } from "../parts";
+import { errorOf, Field, ReadNotice, Section, useMoment, useStaffStrings, useSaid, type T } from "../parts";
 import { Irreversible } from "../settings/parts";
 import { supporterCurrencies, supportersPaths } from "./parts";
 
@@ -134,7 +134,8 @@ export function PlanListScreen({ go }: StaffUnderProps): ReactNode {
     href: supportersPaths.plan(plan.id),
     cells: {
       price: t("staff_supporters.plans.monthly", { price: moneyText(locale, plan.monthly_price) }),
-      members: t("staff_supporters.plans.members", { count: plan.members }),
+      // A count under its column's name, which says what it counts.
+      members: new Intl.NumberFormat(locale).format(plan.members),
       standing: <PlanMark plan={plan} />,
     },
   }));
@@ -361,6 +362,7 @@ function PlanForm({
         min={min}
         max={max}
         describedBy={errorOf(ids[input], errors[input])}
+        invalid={errors[input] !== undefined}
         onChange={(v) => {
           change({ [input]: v }, input);
         }}
@@ -627,7 +629,7 @@ function PlanView({ plan, go }: { plan: AdminSupporterPlan; go: (href: string) =
       <FactList label={plan.name} items={planFacts(t, locale, moment, plan)} />
       {!plan.retired && (
         <>
-          <Titled title={t("staff_supporters.plan.change")}>
+          <Section title={t("staff_supporters.plan.change")}>
             <PlanForm
               key={`${plan.revised_at}:${String(round)}`}
               plan={plan}
@@ -636,8 +638,8 @@ function PlanView({ plan, go }: { plan: AdminSupporterPlan; go: (href: string) =
                 say(t("staff_supporters.plan.done.saved"));
               }}
             />
-          </Titled>
-          <Titled title={t("staff_supporters.plan.retire")}>
+          </Section>
+          <Section title={t("staff_supporters.plan.retire")}>
             <Stack gap="screen-field-gap">
               <Irreversible>{t("staff_supporters.plan.retire.about", { count: plan.members })}</Irreversible>
               <Row>
@@ -650,7 +652,7 @@ function PlanView({ plan, go }: { plan: AdminSupporterPlan; go: (href: string) =
                 </Button>
               </Row>
             </Stack>
-          </Titled>
+          </Section>
         </>
       )}
       <ModalPresence>

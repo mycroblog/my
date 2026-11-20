@@ -3,13 +3,14 @@
 // The billing imports, at /admin/finance/imports, a screen under Finance (ADR-0068): each source's state, its billing
 // months, and importing now. Without a session it asks the reader to sign in.
 
-import { BillingImportsScreen, loadBillingImportsScreen } from "@my/app-features";
+import { BillingImportsScreen, loadBillingImportsScreen, loadStaffEntry } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { screenLoad } from "../screen-load";
 import { StaffUnderPage } from "../shell/staff-under";
 
 export const Route = createFileRoute("/admin/finance/imports")({
-  loader: ({ context }) => screenLoad(context, loadBillingImportsScreen),
+  loader: ({ context }) =>
+    screenLoad(context, (data) => loadStaffEntry(data, "admin", "finance", {}, loadBillingImportsScreen)),
   component: Imports,
   // A screen of its own opens at its top.
   staticData: { scroll: "top" },

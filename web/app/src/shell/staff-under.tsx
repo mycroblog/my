@@ -101,7 +101,9 @@ function Under({ area, entry, title, screen }: UnderProps) {
   const open = useStaffEntry(area, entry) !== undefined;
   const name = useStaffTitle(area, entry);
   const areaName = t(area === "moderation" ? "app.moderation" : "app.admin");
-  if (known && !open)
+  // Nothing of the screen, and none of its reads, before the reader's permissions say it is open.
+  if (!known) return <ScreenHeading>{title ?? name ?? areaName}</ScreenHeading>;
+  if (!open)
     return (
       <>
         <ScreenHeading>{areaName}</ScreenHeading>

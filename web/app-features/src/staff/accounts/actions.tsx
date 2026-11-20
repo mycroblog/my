@@ -37,7 +37,7 @@ import {
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import type { StaffSearch } from "../entries";
-import { ReadNotice, useMoment, useStaffStrings } from "../parts";
+import { ReadNotice, useMoment, useStaffStrings, Section } from "../parts";
 import { appealHref } from "./appeals";
 import { accountPagePath, ActionTable } from "./account";
 import {
@@ -50,7 +50,6 @@ import {
   refusalWords,
   useEnd,
   useSaid,
-  Section,
   whoIn,
 } from "./parts";
 

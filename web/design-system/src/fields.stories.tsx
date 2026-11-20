@@ -7,6 +7,7 @@
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
+import { NumberField } from "./field";
 import { BareTextArea, CheckField, DateTimeField, FieldLabel, NestedFields, TextField } from "./form-page";
 import { Stack } from "./layout";
 
@@ -57,6 +58,15 @@ export const Amount: Story = {
   render: () => (
     <Column>
       <TextField id="amount" name="amount" label="Monthly price" inputMode="decimal" figures defaultValue="1500" />
+    </Column>
+  ),
+};
+
+/** A number that is refused: marked invalid, as the field of its error is. */
+export const NumberInvalid: Story = {
+  render: () => (
+    <Column>
+      <NumberField label="Role position" defaultValue={120} min={0} max={999} invalid />
     </Column>
   ),
 };

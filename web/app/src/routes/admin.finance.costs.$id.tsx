@@ -4,13 +4,16 @@
 // date, what names it, its end, and deleting it. Its title is the item's name. Without a session it asks the reader to
 // sign in.
 
-import { CostItemScreen, loadCostItemScreen, useCostItemTitle } from "@my/app-features";
+import { CostItemScreen, loadCostItemScreen, useCostItemTitle, loadStaffEntry } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { screenLoad } from "../screen-load";
 import { StaffUnderPage } from "../shell/staff-under";
 
 export const Route = createFileRoute("/admin/finance/costs/$id")({
-  loader: ({ context, params }) => screenLoad(context, (data) => loadCostItemScreen(data, params.id)),
+  loader: ({ context, params }) =>
+    screenLoad(context, (data) =>
+      loadStaffEntry(data, "admin", "finance", {}, (d) => loadCostItemScreen(d, params.id)),
+    ),
   component: Cost,
   // A screen of its own opens at its top.
   staticData: { scroll: "top" },

@@ -46,7 +46,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { staffHref, type StaffSearch, type StaffUnderProps } from "../entries";
 import { moneyText } from "../../finance-totals";
-import { ReadNotice, Titled, useMoment, useMomentDay, useStaffStrings, useSaid, type T } from "../parts";
+import { ReadNotice, Section, useMoment, useMomentDay, useStaffStrings, useSaid, type T } from "../parts";
 import { Irreversible } from "../settings/parts";
 import { stateWords, subscriberOf, subscriptionMark, supportersPaths } from "./parts";
 
@@ -146,8 +146,9 @@ export function SubscriptionListScreen({ search, onSearch, go }: StaffUnderProps
     );
   const columns: RecordColumn<Column>[] = [
     { key: "plan", label: t("staff_supporters.subscriptions.column.plan"), bare: true },
-    { key: "ends", label: t("staff_supporters.subscriptions.column.ends"), kind: "fit", bare: true },
-    { key: "state", label: t("staff_supporters.subscriptions.column.state"), kind: "fit", beside: true },
+    // Columns of words, which an even table shares out alike, so that no filter moves them.
+    { key: "ends", label: t("staff_supporters.subscriptions.column.ends"), bare: true },
+    { key: "state", label: t("staff_supporters.subscriptions.column.state"), beside: true },
   ];
   const rows = list.items.map((s): RecordRow<Column> => ({
     id: s.id,
@@ -170,6 +171,7 @@ export function SubscriptionListScreen({ search, onSearch, go }: StaffUnderProps
         head={{ label: t("staff_supporters.subscriptions.column.subscriber") }}
         columns={columns}
         rows={rows}
+        even
         empty={
           <FeedNotice>
             {t(filtered ? "staff_supporters.subscriptions.empty.filtered" : "staff_supporters.subscriptions.empty")}
@@ -282,7 +284,7 @@ function SubscriptionView({ subscription: s, onBack }: { subscription: AdminSubs
       {status}
       <FactList label={subscriber} items={facts} />
       {goesOn(s.state) && (
-        <Titled title={t("staff_supporters.subscription.end")}>
+        <Section title={t("staff_supporters.subscription.end")}>
           <Stack gap="screen-field-gap">
             <Irreversible>{t("staff_supporters.subscription.end.about")}</Irreversible>
             <Row>
@@ -295,7 +297,7 @@ function SubscriptionView({ subscription: s, onBack }: { subscription: AdminSubs
               </Button>
             </Row>
           </Stack>
-        </Titled>
+        </Section>
       )}
       <ModalPresence>
         {asking && (

@@ -56,6 +56,7 @@ export type RecordState =
   | "expired"
   | "lifted"
   | "pending"
+  | "ending"
   | "failed"
   | "disabled";
 
@@ -70,18 +71,22 @@ const stateGlyph: Record<RecordState, IconName> = {
   expired: "stateExpired",
   lifted: "stateLifted",
   pending: "statePending",
+  // In force until a date it has (a cost's last payment, a subscription's period end).
+  ending: "schedule",
   failed: "error",
   disabled: "stateDisabled",
 };
 
 /**
- * How a state weighs: what waits for someone (open, pending, failed) and what shuts something out (suspended, and
- * permanent, which nothing lifts) in the text's color and a label's weight; what is in force (assigned, active,
- * limited) in the text's color; what is over (resolved, expired, lifted, disabled) muted.
+ * How a state weighs: what asks someone to act (open, failed) and what shuts something out (suspended, and permanent,
+ * which nothing lifts) in the text's color and a label's weight; what is in force (assigned, active, limited) and what
+ * waits for a date or a payment of its own (pending) in the text's color; what is over (resolved, expired, lifted,
+ * disabled) muted.
  */
 const stateTone = {
   open: "waits",
-  pending: "waits",
+  pending: "holds",
+  ending: "holds",
   failed: "waits",
   assigned: "holds",
   active: "holds",
@@ -94,8 +99,9 @@ const stateTone = {
   disabled: "over",
 } as const satisfies Record<RecordState, string>;
 
+// The size of what holds it (a fact's value, a cell), never smaller than what it is the state of.
 const stateMark = tv({
-  base: "text-caption [word-break:auto-phrase]",
+  base: "[word-break:auto-phrase]",
   variants: {
     tone: { waits: "font-label text-text", holds: "text-text", over: "text-muted-text" },
   },
@@ -276,6 +282,9 @@ const PLACE = {
   head: "min-w-0 flex-[1_1_0%]",
   // What stands beside the head on a narrow table (a state): at the first line's end; wide, its column.
   beside: "flex-none",
+  // Figures beside the head (a price): narrow, at the first line's end in a room of their own, so that what stands
+  // before them keeps its place from row to row; wide, at their column's end.
+  besideFigures: "min-w-[5.5rem] flex-none text-end",
   // A fact: narrow, after the first line, its column's name before it, in a line that wraps; wide, its column.
   fact: "order-2 inline-flex min-w-0 items-baseline gap-x-entry-caption @min-[30rem]:order-none @min-[30rem]:block",
   // A fact that says what it is by itself: narrow, as a fact, muted at the caption's size, with no column's name.
@@ -836,7 +845,17 @@ function Record<K extends string>({
         return (
           <RecordPlace
             key={column.key}
-            at={column.beside === true ? "beside" : figures ? "figures" : column.bare === true ? "bare" : "fact"}
+            at={
+              column.beside === true
+                ? figures
+                  ? "besideFigures"
+                  : "beside"
+                : figures
+                  ? "figures"
+                  : column.bare === true
+                    ? "bare"
+                    : "fact"
+            }
             role="cell"
             className=""
           >

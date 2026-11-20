@@ -15,7 +15,6 @@ import {
 import { copyText } from "@my/platform";
 import {
   Button,
-  ListTitle,
   CopyBlock,
   FieldError,
   FieldLabel,
@@ -25,7 +24,7 @@ import {
   type RecordState,
   type SelectOption,
 } from "@my/design-system";
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 
 export { cursorOf, filtered, Pages, useSaid } from "../parts";
@@ -158,19 +157,6 @@ export function CopyValue({ label, value, copy }: { label: string; value: string
       }
       result={copied === undefined ? undefined : t(copied ? "staff_accounts.copied" : "staff_accounts.copy_failed")}
     />
-  );
-}
-
-/**
- * A section of a screen that holds fields or what is decided on (the form of a new action, the decision of an appeal),
- * under a title of the list's size: never smaller than the labels of the fields under it.
- */
-export function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Stack gap="entry-room">
-      <ListTitle>{title}</ListTitle>
-      {children}
-    </Stack>
   );
 }
 

@@ -22,14 +22,12 @@ import {
 import {
   Box,
   Button,
-  CheckField,
   ChoiceList,
   FactList,
   FeedNotice,
   FieldError,
   focusRefusedField,
   FormAlert,
-  GroupHeading,
   Row,
   ScreenStack,
   ScreenTitle,
@@ -41,7 +39,7 @@ import { useId, useState, type ReactNode } from "react";
 import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
-import { errorOf, Field, ReadNotice, Titled, useStaffStrings, useSaid, type T } from "../parts";
+import { errorOf, Field, ReadNotice, Section, useStaffStrings, useSaid, type T } from "../parts";
 import { FinanceBack, currencyOptions } from "./parts";
 
 /** The settings of this screen. */
@@ -109,7 +107,12 @@ function Choice<V extends string>({
   const chosen = choices.indexOf(value as V);
   return (
     <Stack gap="entry-line">
-      {shown && <GroupHeading>{label}</GroupHeading>}
+      {/* Named as a field is, under the section it belongs to, never as a peer of the sections. */}
+      {shown && (
+        <Box as="p" weight="label">
+          {label}
+        </Box>
+      )}
       <ChoiceList
         id={id}
         label={label}
@@ -133,6 +136,41 @@ function Choice<V extends string>({
         onChange={([i]) => {
           const next = i === undefined ? undefined : choices[i];
           if (next !== undefined) onChange(next);
+        }}
+      />
+      {error !== undefined && <FieldError id={`${id}-error`}>{error}</FieldError>}
+    </Stack>
+  );
+}
+
+/**
+ * A choice that is on or off, in the look of the screen's other choices (`ChoiceList`), so that a checkbox and a radio
+ * stand alike: the same indent, the same size of label.
+ */
+function Check({
+  id,
+  label,
+  on,
+  error,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  on: boolean;
+  error: string | undefined;
+  onChange: (on: boolean) => void;
+}) {
+  return (
+    <Stack gap="entry-line">
+      <ChoiceList
+        id={id}
+        label={label}
+        multiple
+        describedBy={errorOf(id, error)}
+        items={[{ key: id, label }]}
+        chosen={on ? [0] : []}
+        onChange={(chosen) => {
+          onChange(chosen.length > 0);
         }}
       />
       {error !== undefined && <FieldError id={`${id}-error`}>{error}</FieldError>}
@@ -245,7 +283,7 @@ function PublicationForm({ saved }: { saved: Values }) {
       }
     >
       {status}
-      <Titled title={t("staff_finance.publication.costs")}>
+      <Section title={t("staff_finance.publication.costs")}>
         <Choice
           id={idOf("finance_visibility")}
           label={t("staff_finance.publication.costs")}
@@ -257,8 +295,8 @@ function PublicationForm({ saved }: { saved: Values }) {
             set("finance_visibility", v);
           }}
         />
-      </Titled>
-      <Titled title={t("staff_finance.publication.income")}>
+      </Section>
+      <Section title={t("staff_finance.publication.income")}>
         <Choice
           id={idOf("income_visibility")}
           label={t("staff_finance.publication.income")}
@@ -270,8 +308,8 @@ function PublicationForm({ saved }: { saved: Values }) {
             set("income_visibility", v);
           }}
         />
-      </Titled>
-      <Titled title={t("staff_finance.publication.meter")}>
+      </Section>
+      <Section title={t("staff_finance.publication.meter")}>
         {meterNote === "one_side" && (
           <Box as="p">{t("staff_finance.publication.meter.allowed", { case: meterNote })}</Box>
         )}
@@ -316,39 +354,30 @@ function PublicationForm({ saved }: { saved: Values }) {
             />
           </Field>
         </Row>
-        <CheckField
+        <Check
           id={idOf("funding_meter_rail")}
-          name="rail"
-          value="true"
-          touch
           label={t("staff_finance.publication.rail")}
-          checked={shown.funding_meter_rail === "true"}
+          on={shown.funding_meter_rail === "true"}
           error={errorAt("funding_meter_rail")}
           onChange={(on) => {
             set("funding_meter_rail", on ? "true" : "false");
           }}
         />
-      </Titled>
-      <Titled title={t("staff_finance.publication.viewer")}>
-        <CheckField
+      </Section>
+      <Section title={t("staff_finance.publication.viewer")}>
+        <Check
           id={idOf("finance_viewer_item_names")}
-          name="item_names"
-          value="true"
-          touch
           label={t("staff_finance.publication.viewer.names")}
-          checked={shown.finance_viewer_item_names === "true"}
+          on={shown.finance_viewer_item_names === "true"}
           error={errorAt("finance_viewer_item_names")}
           onChange={(on) => {
             set("finance_viewer_item_names", on ? "true" : "false");
           }}
         />
-        <CheckField
+        <Check
           id={idOf("finance_viewer_item_memos")}
-          name="item_memos"
-          value="true"
-          touch
           label={t("staff_finance.publication.viewer.memos")}
-          checked={shown.finance_viewer_item_memos === "true"}
+          on={shown.finance_viewer_item_memos === "true"}
           error={errorAt("finance_viewer_item_memos")}
           onChange={(on) => {
             set("finance_viewer_item_memos", on ? "true" : "false");
@@ -366,7 +395,7 @@ function PublicationForm({ saved }: { saved: Values }) {
             set("finance_viewer_income", v);
           }}
         />
-      </Titled>
+      </Section>
       {(fault !== undefined || refused !== undefined) && (
         <FormAlert regular>
           {refused?.field === undefined && refused?.reason !== undefined

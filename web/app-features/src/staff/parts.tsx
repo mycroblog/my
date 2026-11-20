@@ -16,6 +16,7 @@ import {
   FieldLabel,
   FormAlert,
   GroupHeading,
+  ListTitle,
   RecordPages,
   Stack,
   TextButton,
@@ -53,6 +54,19 @@ export function useMomentDay(): (iso: string) => string {
 /** The handle a sentence names an account by; the words for an account that is gone without one. */
 export function handleIn(t: T, account: Account | undefined): string {
   return account === undefined ? t("staff.account_gone") : sentenceHandleOf(account);
+}
+
+/**
+ * A section of a screen that holds fields or what is decided on (the form of a new action, the decision of an appeal),
+ * under a title of the list's size: never smaller than the labels of the fields under it.
+ */
+export function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Stack gap="entry-room">
+      <ListTitle>{title}</ListTitle>
+      {children}
+    </Stack>
+  );
 }
 
 /** A heading over what it heads, close under it. */

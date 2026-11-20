@@ -4,16 +4,16 @@
     "description": "Heading of the group of administration screens about the server's running costs, income and supporter plans, at /admin."
   },
   "staff_finance.entry": {
-    "defaultMessage": "Finance",
-    "description": "Name of the administration screen of the server's running costs and income, at /admin/finance, and its title."
+    "defaultMessage": "Costs and income",
+    "description": "Name of the administration screen of the server's running costs and income, at /admin/finance, and its title; apart from Finance, the menu's page of the finance for its readers. Read by administrators."
   },
   "staff_finance.entry.hint": {
     "defaultMessage": "Costs, income, billing imports, and what is published",
     "description": "Line under Finance in the list of administration screens at /admin."
   },
   "staff_finance.back.root": {
-    "defaultMessage": "Finance",
-    "description": "The way back from a screen under Finance to its first page, at /admin/finance."
+    "defaultMessage": "Costs and income",
+    "description": "The way back from a screen under Costs and income to its first page, at /admin/finance."
   },
   "staff_finance.back.costs": {
     "defaultMessage": "Costs",
@@ -64,8 +64,8 @@
     "description": "Under the list of cost items when its next page could not be loaded, before Try again."
   },
   "staff_finance.costs.empty": {
-    "defaultMessage": "No cost is recorded yet. Record what the server pays, and the totals count it.",
-    "description": "In the place of the list of cost items while there is none."
+    "defaultMessage": "No cost is recorded yet.",
+    "description": "In the place of the list of cost items while there is none; Record a cost stands over it."
   },
   "staff_finance.costs.column.item": {
     "defaultMessage": "Item",
@@ -227,10 +227,6 @@
     "defaultMessage": "Billing months in",
     "description": "Fact of a billing source: the time zone of its billing months."
   },
-  "staff_finance.imports.last_run": {
-    "defaultMessage": "Last import",
-    "description": "Fact of a billing source: its last import and what came of it."
-  },
   "staff_finance.imports.never": {
     "defaultMessage": "Never",
     "description": "Fact of a billing source that has never imported, or never succeeded."
@@ -242,10 +238,6 @@
   "staff_finance.imports.failed_at": {
     "defaultMessage": "Failed {at}",
     "description": "Fact of a billing source's last import that failed. {at} is when."
-  },
-  "staff_finance.imports.why": {
-    "defaultMessage": "Why it failed",
-    "description": "Fact of a billing source whose last import failed: why, and what to do."
   },
   "staff_finance.imports.error": {
     "defaultMessage": "{kind, select, permission {The credentials may not read the billing data. Give them the permission the operations guide names.} not_enabled {The provider's billing data is not enabled. Enable it in the provider's console.} not_found {The dataset, table, or subscription does not exist. Check the names in the configuration.} throttled {The provider asked to slow down. Wait for the next import, or import now later.} request_cap {The cap of billed requests is reached, so nothing was called. Raise the cap, or wait for the next day or month.} bytes_cap {The query would scan more than its cap. Raise the cap in the configuration.} invalid_response {The provider answered something the server could not read. Wait for the next import, or import now later.} unavailable {The provider could not be reached. Wait for the next import, or import now later.} other {Check the server's log, then import now.}}",
@@ -455,10 +447,6 @@
     "defaultMessage": "Name",
     "description": "Field of a cost item: its name, such as VPS or Domain example.org."
   },
-  "staff_finance.cost.name.hint": {
-    "defaultMessage": "What is paid for, such as a server or a domain. Never published.",
-    "description": "Under the name field of a cost item. Read by administrators."
-  },
   "staff_finance.cost.name.blank": {
     "defaultMessage": "Write what is paid for.",
     "description": "Under the name field of a cost item when it is empty."
@@ -466,10 +454,6 @@
   "staff_finance.cost.provider": {
     "defaultMessage": "Provider",
     "description": "Field of a cost item: who is paid, such as Sakura Cloud or AWS."
-  },
-  "staff_finance.cost.provider.hint": {
-    "defaultMessage": "Who is paid. The breakdown groups the costs by this name.",
-    "description": "Under the provider field of a cost item."
   },
   "staff_finance.cost.provider.blank": {
     "defaultMessage": "Write who is paid.",
@@ -514,6 +498,10 @@
   "staff_finance.cost.ends.before": {
     "defaultMessage": "Choose a date on or after the first payment.",
     "description": "Under the last payment date of a cost item when it is before the first payment."
+  },
+  "staff_finance.cost.no_end": {
+    "defaultMessage": "No end",
+    "description": "Fact of a repeating cost item without a last payment date."
   },
   "staff_finance.cost.amount": {
     "defaultMessage": "Amount",

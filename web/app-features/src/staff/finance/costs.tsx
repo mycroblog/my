@@ -71,7 +71,7 @@ function EndMark({ item, today }: { item: CostItem; today: string }) {
   return ended(item, today) ? (
     <StateMark state="expired">{t("staff_finance.costs.ended", { date: day(item.ends_on) })}</StateMark>
   ) : (
-    <StateMark state="active">{t("staff_finance.costs.ends", { date: day(item.ends_on) })}</StateMark>
+    <StateMark state="ending">{t("staff_finance.costs.ends", { date: day(item.ends_on) })}</StateMark>
   );
 }
 
@@ -133,7 +133,7 @@ export function CostItemsScreen({ go }: StaffUnderProps): ReactNode {
         columns={columns}
         rows={rows}
         even
-        empty={<FeedNotice>{t("staff_finance.costs.empty")}</FeedNotice>}
+        empty={<FeedNotice start>{t("staff_finance.costs.empty")}</FeedNotice>}
       />
       {list.failedNextPage ? (
         <FeedNotice alert start action={<TextButton onPress={list.fetchNextPage}>{t("staff.retry")}</TextButton>}>
@@ -312,7 +312,6 @@ export function CostItemCreateScreen({ go }: StaffUnderProps): ReactNode {
           id={idOf("name")}
           name="name"
           label={t("staff_finance.cost.name")}
-          hint={t("staff_finance.cost.name.hint")}
           maxLength={costNameLimit}
           error={errorAt("name")}
           onChange={(name) => {
@@ -323,7 +322,6 @@ export function CostItemCreateScreen({ go }: StaffUnderProps): ReactNode {
           id={idOf("provider")}
           name="provider"
           label={t("staff_finance.cost.provider")}
-          hint={t("staff_finance.cost.provider.hint")}
           maxLength={costNameLimit}
           error={errorAt("provider")}
           onChange={(provider) => {
@@ -342,12 +340,13 @@ export function CostItemCreateScreen({ go }: StaffUnderProps): ReactNode {
           />
         </Field>
         <Field id={idOf("schedule")} label={t("staff_finance.cost.schedule")}>
-          <Row wrap align="center" gap="screen-tab-gap">
+          <Row align="center" gap="screen-tab-gap">
             {!once && (
               <NumberField
                 id={idOf("interval")}
                 label={t("staff_finance.cost.interval")}
                 describedBy={errorOf(idOf("interval"), errorAt("interval"))}
+                invalid={errorAt("interval") !== undefined}
                 value={draft.interval}
                 min={1}
                 max={costIntervalLimit}

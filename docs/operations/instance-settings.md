@@ -478,7 +478,7 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   | Appeals and records (`/admin/settings/records`) | Appeals (`appeal_window_days`); Keeping records (`session_origins_retention_days`, `registration_origins_retention_days`, `reports_retention_days`, `moderation_actions_retention_days`, `audit_log_retention_days`) |
 
   On the General page, an image is uploaded when you save, and becomes the thumbnail or the link preview image then. Who
-  may see the running costs, the income, and the supporter list is set on the "Finance" and "Supporters" screens. The
+  may see the running costs, the income, and the supporter list is set on the "Costs and income" and "Supporters" screens. The
   settings of translation have a screen of their own, below.
 - **Web client** ("Translation", `/admin/translation`): the providers this server has, their order and what each may
   receive, the browser's translation, the monthly limits, and how long translations are kept, with the characters sent

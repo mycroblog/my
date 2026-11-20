@@ -36,6 +36,7 @@ import {
   FactList,
   FeedNotice,
   FormAlert,
+  LinkButton,
   Row,
   ScreenStack,
   ScreenTitle,
@@ -46,12 +47,11 @@ import {
   Stack,
   StateMark,
   TextField,
-  TextLink,
   type Fact,
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import { moneyText } from "../../finance-totals";
-import { Field, ReadNotice, Titled, useMoment, useStaffStrings, useSaid, type T } from "../parts";
+import { Field, ReadNotice, Section, useMoment, useStaffStrings, useSaid, type T } from "../parts";
 import { supporterCurrencies, supportersPaths, tipAmountsOf } from "./parts";
 
 type Say = (words: string, alert?: boolean) => void;
@@ -77,8 +77,10 @@ export function SupportersAdminScreen(): ReactNode {
     );
   return (
     <ScreenStack>
-      {title}
-      {status}
+      <Stack gap="entry-line">
+        {title}
+        {status}
+      </Stack>
       <Warnings program={program.value} />
       <Doors />
       <Program program={program.value} say={say} />
@@ -213,7 +215,7 @@ function Program({ program, say }: { program: SupporterProgram; say: Say }) {
   // What cannot be done now is a sentence, never a disabled button.
   const action = program.enabled ? (
     program.live_subscriptions > 0 ? (
-      <CaptionLine icon="caution">{t("staff_supporters.program.cannot_off")}</CaptionLine>
+      <CaptionLine icon="about">{t("staff_supporters.program.cannot_off")}</CaptionLine>
     ) : (
       <Row>
         <Button
@@ -239,15 +241,15 @@ function Program({ program, say }: { program: SupporterProgram; say: Say }) {
       </Button>
     </Row>
   ) : (
-    <CaptionLine icon="caution">{t("staff_supporters.program.cannot_on")}</CaptionLine>
+    <CaptionLine icon="about">{t("staff_supporters.program.cannot_on")}</CaptionLine>
   );
   return (
-    <Titled title={t("staff_supporters.program")}>
+    <Section title={t("staff_supporters.program")}>
       <Stack gap="entry-room">
         <FactList label={t("staff_supporters.program")} items={facts} />
         {action}
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 
@@ -256,23 +258,28 @@ function Disclosure({ program }: { program: SupporterProgram }) {
   const { t } = useStaffStrings();
   const may = usePermissions().includes("manage_settings");
   return (
-    <Titled title={t("staff_supporters.disclosure")}>
+    <Section title={t("staff_supporters.disclosure")}>
       <Stack gap="entry-line">
         <Box as="p">
           {t(
             program.commerce_disclosure ? "staff_supporters.disclosure.published" : "staff_supporters.disclosure.none",
           )}
         </Box>
+        {/* Each place to go a quiet button of its own, as the staff screens' places to go are. */}
         <Row wrap gap="screen-tab-gap">
           {program.commerce_disclosure && (
-            <TextLink href="/about/commerce">{t("staff_supporters.disclosure.read")}</TextLink>
+            <LinkButton size="timeline" href="/about/commerce">
+              {t("staff_supporters.disclosure.read")}
+            </LinkButton>
           )}
           {may && (
-            <TextLink href="/admin/documents/commerce-disclosure">{t("staff_supporters.disclosure.edit")}</TextLink>
+            <LinkButton size="timeline" href="/admin/documents/commerce-disclosure">
+              {t("staff_supporters.disclosure.edit")}
+            </LinkButton>
           )}
         </Row>
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 
@@ -297,27 +304,27 @@ function ListAudience({ say }: { say: Say }) {
   if (!may) {
     const now = instance?.supporter_list_visibility;
     return (
-      <Titled title={t("staff_supporters.list")}>
+      <Section title={t("staff_supporters.list")}>
         <FeedNotice start lead>
           {now === undefined ? t("staff_supporters.list.loading") : t("staff_supporters.list.now", { audience: now })}
         </FeedNotice>
-      </Titled>
+      </Section>
     );
   }
   if (stored === undefined)
     return (
-      <Titled title={t("staff_supporters.list")}>
+      <Section title={t("staff_supporters.list")}>
         <ReadNotice
           status={settings.status === "error" ? "error" : "pending"}
           loading={t("staff_supporters.list.loading")}
           failed={t("staff_supporters.list.failed")}
           retry={settings.refetch}
         />
-      </Titled>
+      </Section>
     );
   const value = chosen ?? stored;
   return (
-    <Titled title={t("staff_supporters.list")}>
+    <Section title={t("staff_supporters.list")}>
       <Stack
         gap="screen-field-gap"
         as={
@@ -359,7 +366,7 @@ function ListAudience({ say }: { say: Say }) {
           </Button>
         </Row>
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 
@@ -372,14 +379,14 @@ function Tips({ say }: { say: Say }) {
   const read = useSupporterTips();
   if (read.value === undefined)
     return (
-      <Titled title={t("staff_supporters.tips")}>
+      <Section title={t("staff_supporters.tips")}>
         <ReadNotice
           status={read.status === "error" ? "error" : "pending"}
           loading={t("staff_supporters.tips.loading")}
           failed={t("staff_supporters.tips.failed")}
           retry={read.refetch}
         />
-      </Titled>
+      </Section>
     );
   const tips = read.value;
   const facts: Fact[] = [
@@ -399,7 +406,7 @@ function Tips({ say }: { say: Say }) {
     })),
   ];
   return (
-    <Titled title={t("staff_supporters.tips")}>
+    <Section title={t("staff_supporters.tips")}>
       <Stack gap="entry-room">
         <FactList label={t("staff_supporters.tips")} items={facts} />
         {!tips.one_time_payments && (
@@ -414,7 +421,7 @@ function Tips({ say }: { say: Say }) {
         )}
         <TipsForm key={`${String(tips.enabled)}:${amountsText(tips)}`} tips={tips} say={say} />
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 
@@ -595,5 +602,5 @@ function Payments({ say }: { say: Say }) {
         </Row>
       </Stack>
     );
-  return <Titled title={t("staff_supporters.payments")}>{body}</Titled>;
+  return <Section title={t("staff_supporters.payments")}>{body}</Section>;
 }

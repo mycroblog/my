@@ -14,6 +14,7 @@ import {
   type BillingImport,
 } from "@my/app-data";
 import {
+  Box,
   Button,
   dateFormat,
   FactList,
@@ -30,7 +31,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
-import { ReadNotice, Titled, useMoment, useStaffStrings, useSaid, type T } from "../parts";
+import { ReadNotice, Section, useMoment, useStaffStrings, useSaid, type T } from "../parts";
 import { FinanceBack } from "./parts";
 
 type Say = (words: string, alert?: boolean) => void;
@@ -46,7 +47,6 @@ const requestsOf = (t: T, locale: string, count: number, cap: number | undefined
 
 /** The facts of a source's imports. */
 function sourceFacts(t: T, locale: string, moment: (iso: string) => string, source: BillingImport): Fact[] {
-  const run = source.last_run;
   const bytes = new Intl.NumberFormat(locale, {
     style: "unit",
     unit: "byte",
@@ -59,20 +59,6 @@ function sourceFacts(t: T, locale: string, moment: (iso: string) => string, sour
       value: t("staff_finance.imports.method.value", { method: source.method }),
     },
     { term: t("staff_finance.imports.zone"), value: source.time_zone },
-    {
-      term: t("staff_finance.imports.last_run"),
-      value:
-        run === undefined ? (
-          t("staff_finance.imports.never")
-        ) : run.outcome === "succeeded" ? (
-          <StateMark state="active">{t("staff_finance.imports.succeeded", { at: moment(run.occurred_at) })}</StateMark>
-        ) : (
-          <StateMark state="failed">{t("staff_finance.imports.failed_at", { at: moment(run.occurred_at) })}</StateMark>
-        ),
-    },
-    ...(run === undefined || run.outcome === "succeeded"
-      ? []
-      : [{ term: t("staff_finance.imports.why"), value: t("staff_finance.imports.error", { kind: run.error_kind }) }]),
     {
       term: t("staff_finance.imports.last_success"),
       value: source.last_success_at === undefined ? t("staff_finance.imports.never") : moment(source.last_success_at),
@@ -95,13 +81,14 @@ function sourceFacts(t: T, locale: string, moment: (iso: string) => string, sour
 function Source({ source, say }: { source: BillingImport; say: Say }) {
   const { t, locale } = useStaffStrings();
   const moment = useMoment();
-  const run = useBillingImportRun();
+  const importRun = useBillingImportRun();
+  const run = source.last_run;
   const [busy, setBusy] = useState(false);
   const months = dateFormat(locale, "UTC", { year: "numeric", month: "long" });
   const importNow = () => {
     if (busy) return;
     setBusy(true);
-    run(source.source).then(
+    importRun(source.source).then(
       (answer) => {
         setBusy(false);
         say(
@@ -119,8 +106,30 @@ function Source({ source, say }: { source: BillingImport; say: Say }) {
     );
   };
   return (
-    <Titled title={source.provider}>
+    <Section title={source.provider}>
       <Stack gap="entry-room">
+        {/* Where its imports stand leads its block: a failure, why and what to do, and the way to import again. */}
+        <Stack gap="entry-line">
+          {run === undefined ? (
+            <Box as="p">{t("staff_finance.imports.never")}</Box>
+          ) : run.outcome === "succeeded" ? (
+            <StateMark state="active">
+              {t("staff_finance.imports.succeeded", { at: moment(run.occurred_at) })}
+            </StateMark>
+          ) : (
+            <>
+              <StateMark state="failed">
+                {t("staff_finance.imports.failed_at", { at: moment(run.occurred_at) })}
+              </StateMark>
+              <Box as="p">{t("staff_finance.imports.error", { kind: run.error_kind })}</Box>
+            </>
+          )}
+          <Row>
+            <Button busy={busy} onPress={importNow}>
+              {t("staff_finance.imports.now")}
+            </Button>
+          </Row>
+        </Stack>
         <FactList
           label={t("staff_finance.imports.facts", { provider: source.provider })}
           items={sourceFacts(t, locale, moment, source)}
@@ -151,13 +160,8 @@ function Source({ source, say }: { source: BillingImport; say: Say }) {
             ))}
           </FinanceTable>
         )}
-        <Row>
-          <Button busy={busy} onPress={importNow}>
-            {t("staff_finance.imports.now")}
-          </Button>
-        </Row>
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 

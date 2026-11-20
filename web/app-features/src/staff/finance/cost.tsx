@@ -41,7 +41,7 @@ import { useId, useState, type ReactNode } from "react";
 import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
-import { errorOf, Field, ReadNotice, Titled, useMoment, useStaffStrings, useSaid } from "../parts";
+import { errorOf, Field, ReadNotice, Section, useMoment, useStaffStrings, useSaid } from "../parts";
 import { Irreversible } from "../settings/parts";
 import { FinanceBack, financePaths, scheduleWords, useDay, useTodayDate } from "./parts";
 
@@ -115,6 +115,15 @@ function CostFacts({ item }: { item: CostItem }) {
     item.schedule === "once"
       ? { term: t("staff_finance.cost.paid_on"), value: day(item.starts_on) }
       : { term: t("staff_finance.cost.starts"), value: day(item.starts_on) },
+    // Where a repeating item ends stands with when it starts; the form below changes it.
+    ...(item.schedule === "once"
+      ? []
+      : [
+          {
+            term: t("staff_finance.cost.ends"),
+            value: item.ends_on === undefined ? t("staff_finance.cost.no_end") : day(item.ends_on),
+          },
+        ]),
     { term: t("staff_finance.cost.recorded"), value: moment(item.created_at) },
   ];
   return <FactList label={t("staff_finance.cost.facts")} items={facts} />;
@@ -202,7 +211,7 @@ function Prices({ item, say }: { item: CostItem; say: Say }) {
     );
   };
   return (
-    <Titled title={t("staff_finance.cost.prices")}>
+    <Section title={t("staff_finance.cost.prices")}>
       <Stack gap="entry-room">
         <FinanceTable
           label={t("staff_finance.cost.prices")}
@@ -266,7 +275,7 @@ function Prices({ item, say }: { item: CostItem; say: Say }) {
           </Row>
         </Stack>
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 
@@ -325,7 +334,7 @@ function Label({ item, say }: { item: CostItem; say: Say }) {
     setRefused(undefined);
   };
   return (
-    <Titled title={t("staff_finance.cost.label")}>
+    <Section title={t("staff_finance.cost.label")}>
       <Stack
         gap="screen-field-gap"
         as={
@@ -395,7 +404,7 @@ function Label({ item, say }: { item: CostItem; say: Say }) {
           </Button>
         </Row>
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 
@@ -433,7 +442,7 @@ function End({ item, say }: { item: CostItem; say: Say }) {
     );
   };
   return (
-    <Titled title={t("staff_finance.cost.end")}>
+    <Section title={t("staff_finance.cost.end")}>
       <Stack
         gap="screen-field-gap"
         as={
@@ -446,21 +455,23 @@ function End({ item, say }: { item: CostItem; say: Say }) {
           />
         }
       >
-        <Field id={dateId} label={t("staff_finance.cost.end.date")} error={error}>
-          <DateTimeField
-            id={dateId}
-            date
-            label={t("staff_finance.cost.end.date")}
-            value={date}
-            min={item.starts_on}
-            invalid={error !== undefined}
-            describedBy={errorOf(dateId, error)}
-            onChange={(value) => {
-              setDate(value);
-              setError(undefined);
-            }}
-          />
-        </Field>
+        <Row>
+          <Field id={dateId} label={t("staff_finance.cost.end.date")} error={error}>
+            <DateTimeField
+              id={dateId}
+              date
+              label={t("staff_finance.cost.end.date")}
+              value={date}
+              min={item.starts_on}
+              invalid={error !== undefined}
+              describedBy={errorOf(dateId, error)}
+              onChange={(value) => {
+                setDate(value);
+                setError(undefined);
+              }}
+            />
+          </Field>
+        </Row>
         <Row wrap align="center" gap="screen-tab-gap">
           <Button type="submit" busy={busy === "end"}>
             {t(item.ends_on === undefined ? "staff_finance.cost.end.set" : "staff_finance.cost.end.move")}
@@ -481,7 +492,7 @@ function End({ item, say }: { item: CostItem; say: Say }) {
           )}
         </Row>
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 
@@ -492,7 +503,7 @@ function Delete({ item, onDeleted, say }: { item: CostItem; onDeleted: () => voi
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   return (
-    <Titled title={t("staff_finance.cost.delete")}>
+    <Section title={t("staff_finance.cost.delete")}>
       <Stack gap="screen-field-gap">
         <Irreversible>{t("staff_finance.cost.delete.about")}</Irreversible>
         <Row>
@@ -528,6 +539,6 @@ function Delete({ item, onDeleted, say }: { item: CostItem; onDeleted: () => voi
           </ConfirmDialog>
         )}
       </ModalPresence>
-    </Titled>
+    </Section>
   );
 }

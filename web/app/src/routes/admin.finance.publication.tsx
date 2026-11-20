@@ -4,13 +4,14 @@
 // settings of what is published, or what is published now for a reader who may not change them. Without a session it
 // asks the reader to sign in.
 
-import { FinancePublicationScreen, loadFinancePublication } from "@my/app-features";
+import { FinancePublicationScreen, loadFinancePublication, loadStaffEntry } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { screenLoad } from "../screen-load";
 import { StaffUnderPage } from "../shell/staff-under";
 
 export const Route = createFileRoute("/admin/finance/publication")({
-  loader: ({ context }) => screenLoad(context, loadFinancePublication),
+  loader: ({ context }) =>
+    screenLoad(context, (data) => loadStaffEntry(data, "admin", "finance", {}, loadFinancePublication)),
   component: Publication,
   // A screen of its own opens at its top.
   staticData: { scroll: "top" },

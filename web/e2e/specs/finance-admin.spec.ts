@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Recording a cost on the real server (#3264, FR-901): an administrator finds Finance through Admin in the navigation
+// Recording a cost on the real server (#3264, FR-901): an administrator finds Costs and income through Admin in the navigation
 // and its list of screens, opens the costs, records a monthly one, and lands on its screen, which reads it back from
 // the server with its price from its first payment; then revises the price from a later date, which the list of
 // prices says it applies from, and deletes the cost, after a question, so that the run leaves nothing in the totals.
@@ -18,13 +18,13 @@ test("an administrator records a monthly cost, revises its price from a date, an
   const name = `Object storage ${randomUUID().slice(0, 8)}`;
   await signIn(admin);
 
-  // Admin in the navigation, then Finance among the screens, then its costs.
+  // Admin in the navigation, then Costs and income among the screens, then its costs.
   await page
     .getByRole("navigation", { name: "Main", exact: true })
     .getByRole("link", { name: "Admin", exact: true })
     .click();
   const main = page.getByRole("main");
-  await main.getByRole("link", { name: /^Finance .+$/ }).click();
+  await main.getByRole("link", { name: /^Costs and income .+$/ }).click();
   await main.getByRole("link", { name: /^Costs .+$/ }).click();
   await main.getByRole("link", { name: "Record a cost", exact: true }).click();
 

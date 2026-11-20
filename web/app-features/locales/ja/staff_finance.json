@@ -4,16 +4,16 @@
     "description": "Heading of the group of administration screens about the server's running costs, income and supporter plans, at /admin."
   },
   "staff_finance.entry": {
-    "defaultMessage": "会計",
-    "description": "Name of the administration screen of the server's running costs and income, at /admin/finance, and its title."
+    "defaultMessage": "費用と収入",
+    "description": "Name of the administration screen of the server's running costs and income, at /admin/finance, and its title; apart from Finance, the menu's page of the finance for its readers. Read by administrators."
   },
   "staff_finance.entry.hint": {
     "defaultMessage": "費用・収入・請求の取り込み・公開の範囲",
     "description": "Line under Finance in the list of administration screens at /admin."
   },
   "staff_finance.back.root": {
-    "defaultMessage": "会計",
-    "description": "The way back from a screen under Finance to its first page, at /admin/finance."
+    "defaultMessage": "費用と収入",
+    "description": "The way back from a screen under Costs and income to its first page, at /admin/finance."
   },
   "staff_finance.back.costs": {
     "defaultMessage": "費用",
@@ -64,8 +64,8 @@
     "description": "Under the list of cost items when its next page could not be loaded, before Try again."
   },
   "staff_finance.costs.empty": {
-    "defaultMessage": "記録された費用はまだありません。サーバーが払うものを記録すると、集計に入ります。",
-    "description": "In the place of the list of cost items while there is none."
+    "defaultMessage": "記録された費用はまだありません。",
+    "description": "In the place of the list of cost items while there is none; Record a cost stands over it."
   },
   "staff_finance.costs.column.item": {
     "defaultMessage": "項目",
@@ -227,10 +227,6 @@
     "defaultMessage": "請求月の基準",
     "description": "Fact of a billing source: the time zone of its billing months."
   },
-  "staff_finance.imports.last_run": {
-    "defaultMessage": "最後の取り込み",
-    "description": "Fact of a billing source: its last import and what came of it."
-  },
   "staff_finance.imports.never": {
     "defaultMessage": "まだありません",
     "description": "Fact of a billing source that has never imported, or never succeeded."
@@ -242,10 +238,6 @@
   "staff_finance.imports.failed_at": {
     "defaultMessage": "{at} に失敗",
     "description": "Fact of a billing source's last import that failed. {at} is when."
-  },
-  "staff_finance.imports.why": {
-    "defaultMessage": "失敗の理由",
-    "description": "Fact of a billing source whose last import failed: why, and what to do."
   },
   "staff_finance.imports.error": {
     "defaultMessage": "{kind, select, permission {認証情報に請求データを読む権限がありません。運用ガイドにある権限を付けてください。} not_enabled {事業者の請求データが有効になっていません。事業者のコンソールで有効にしてください。} not_found {データセット・テーブル・サブスクリプションがありません。設定の名前を確認してください。} throttled {事業者から速度を落とすよう求められました。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} request_cap {課金される要求の上限に達したため、何も呼び出していません。上限を上げるか、次の日か月を待ってください。} bytes_cap {問い合わせが上限より多く読み込むところでした。設定で上限を上げてください。} invalid_response {事業者の応答を読み取れませんでした。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} unavailable {事業者に接続できませんでした。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} other {サーバーのログを確認してから、今すぐ取り込んでください。}}",
@@ -455,10 +447,6 @@
     "defaultMessage": "名前",
     "description": "Field of a cost item: its name, such as VPS or Domain example.org."
   },
-  "staff_finance.cost.name.hint": {
-    "defaultMessage": "支払いの対象。サーバーやドメインなど。公開されません。",
-    "description": "Under the name field of a cost item. Read by administrators."
-  },
   "staff_finance.cost.name.blank": {
     "defaultMessage": "支払いの対象を書いてください。",
     "description": "Under the name field of a cost item when it is empty."
@@ -466,10 +454,6 @@
   "staff_finance.cost.provider": {
     "defaultMessage": "事業者",
     "description": "Field of a cost item: who is paid, such as Sakura Cloud or AWS."
-  },
-  "staff_finance.cost.provider.hint": {
-    "defaultMessage": "支払い先。内訳はこの名前でまとめます。",
-    "description": "Under the provider field of a cost item."
   },
   "staff_finance.cost.provider.blank": {
     "defaultMessage": "支払い先を書いてください。",
@@ -514,6 +498,10 @@
   "staff_finance.cost.ends.before": {
     "defaultMessage": "最初の支払日以降の日付を選んでください。",
     "description": "Under the last payment date of a cost item when it is before the first payment."
+  },
+  "staff_finance.cost.no_end": {
+    "defaultMessage": "終わりなし",
+    "description": "Fact of a repeating cost item without a last payment date."
   },
   "staff_finance.cost.amount": {
     "defaultMessage": "金額",

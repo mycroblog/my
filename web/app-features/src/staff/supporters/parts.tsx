@@ -34,8 +34,8 @@ export function tipAmountsOf(text: string): string[] {
 /** How a subscription's state weighs as a record's: what holds the role, what waits, what is over. */
 export const subscriptionMark: Readonly<Record<SubscriptionState, RecordState>> = {
   active: "active",
-  // Its perks stay to the period's end, which it waits for: not the look of one that renews.
-  canceling: "pending",
+  // Its perks stay to the period's end: not the look of one that renews, nor of one not paid yet.
+  canceling: "ending",
   past_due: "failed",
   pending: "pending",
   lapsed: "failed",

@@ -34,6 +34,7 @@ import {
   answeredPeriods,
   FinanceChoices,
   FinancePages,
+  moneyCoded,
   moneyText,
   periodName,
   periodOfAnswer,
@@ -42,12 +43,12 @@ import {
   type FinanceView,
 } from "../../finance-totals";
 import type { StaffSearch, StaffUnderProps } from "../entries";
-import { Titled, useStaffStrings, type T } from "../parts";
+import { Section, useStaffStrings, type T } from "../parts";
 import { FinanceBack, useDay } from "./parts";
 
 /** The figures of a cell: an amount a currency, or None. */
 const figuresOf = (t: T, locale: string, amounts: readonly Money[] | undefined): FinanceFigure[] =>
-  amounts === undefined || amounts.length === 0 ? [t("finance.none")] : amounts.map((m) => moneyText(locale, m));
+  amounts === undefined || amounts.length === 0 ? [t("finance.none")] : amounts.map((m) => moneyCoded(locale, m));
 
 /** The totals of the window: a period a row, its gross, fees, net and balance. */
 function IncomeTable({ view, periods }: { view: FinanceView; periods: readonly AdminIncomePeriodTotal[] }) {
@@ -90,7 +91,7 @@ function BySource({ view, period }: { view: FinanceView; period: AdminIncomePeri
     period: periodName(t, locale, view.granularity, periodOfAnswer(period)),
   });
   return (
-    <Titled title={title}>
+    <Section title={title}>
       <FinanceTable
         label={title}
         head={t("staff_finance.income.column.source")}
@@ -104,7 +105,7 @@ function BySource({ view, period }: { view: FinanceView; period: AdminIncomePeri
           />
         ))}
       </FinanceTable>
-    </Titled>
+    </Section>
   );
 }
 
@@ -152,9 +153,9 @@ function Movements({ search, onSearch }: { search: StaffSearch; onSearch: (searc
     shown = (
       <FinanceTable
         label={t("staff_finance.income.movements")}
-        head={t("staff_finance.income.column.payer")}
+        head={t("staff_finance.income.column.on")}
         columns={[
-          { label: t("staff_finance.income.column.on") },
+          { label: t("staff_finance.income.column.payer") },
           { label: t("staff_finance.income.column.gross"), figures: true },
           { label: t("staff_finance.income.column.fee"), figures: true },
           { label: t("staff_finance.income.column.net"), figures: true },
@@ -163,10 +164,10 @@ function Movements({ search, onSearch }: { search: StaffSearch; onSearch: (searc
         {list.items.map((m) => (
           <FinanceRow
             key={m.id}
-            head={payerOf(t, m)}
+            head={day(m.occurred_on)}
             caption={t("staff_finance.income.what", { kind: m.kind, source: m.source })}
             cells={[
-              day(m.occurred_on),
+              payerOf(t, m),
               { figures: [moneyText(locale, m.gross)] },
               { figures: [moneyText(locale, m.fee)] },
               { figures: [moneyText(locale, m.net)] },
@@ -176,7 +177,7 @@ function Movements({ search, onSearch }: { search: StaffSearch; onSearch: (searc
       </FinanceTable>
     );
   return (
-    <Titled title={t("staff_finance.income.movements")}>
+    <Section title={t("staff_finance.income.movements")}>
       <FilterBar
         label={t("staff_finance.income.filters")}
         applied={kind !== undefined}
@@ -202,7 +203,7 @@ function Movements({ search, onSearch }: { search: StaffSearch; onSearch: (searc
       ) : (
         list.hasNextPage && <MoreRecords onPress={list.fetchNextPage} busy={list.isFetchingNextPage} />
       )}
-    </Titled>
+    </Section>
   );
 }
 

@@ -3,14 +3,15 @@
 // A new cost item, at /admin/finance/costs/new, a screen under Finance (ADR-0067): recorded, the reader goes on to its
 // screen. Without a session it asks the reader to sign in.
 
-import { CostItemCreateScreen, loadCostItemsScreen } from "@my/app-features";
+import { CostItemCreateScreen, loadCostItemsScreen, loadStaffEntry } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { screenLoad } from "../screen-load";
 import { StaffUnderPage } from "../shell/staff-under";
 
 export const Route = createFileRoute("/admin/finance/costs/new")({
   // The newest item, whose currency a new one starts with.
-  loader: ({ context }) => screenLoad(context, loadCostItemsScreen),
+  loader: ({ context }) =>
+    screenLoad(context, (data) => loadStaffEntry(data, "admin", "finance", {}, loadCostItemsScreen)),
   component: NewCost,
   // A screen of its own opens at its top.
   staticData: { scroll: "top" },
