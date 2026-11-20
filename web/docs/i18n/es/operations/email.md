@@ -78,15 +78,18 @@ convierten a Punycode. No se puede enviar a una dirección cuya parte local (ant
 Pasa los secretos por variable de entorno o por archivo (`MY_MAIL_SMTP_PASSWORD` o `MY_MAIL_SMTP_PASSWORD_FILE`). No los pongas en el
 archivo de configuración.
 
-<!-- source: amazon-ses-api 1cef4371e61c -->
+<!-- source: amazon-ses-api f2d42a2b8b19 -->
 ### Amazon SES (API)
 
-Cuando ejecutas en AWS, `mail = ses` usa la API v2 de SES. Las credenciales vienen de la cadena por defecto del SDK de AWS (el rol de tarea de
+Cuando ejecutas en AWS, `mail = ses` usa la API SES v2. Las credenciales vienen de la cadena predeterminada del SDK de AWS (el rol de tarea de
 ECS, las variables de entorno, el archivo de configuración compartido), así que no hay ningún secreto que configurar.
 
-1. En SES, verifica el dominio de `mail_from` como identidad y activa Easy DKIM (consulta más abajo).
-2. Solicita acceso de producción para salir del sandbox. En el sandbox solo puedes enviar a direcciones verificadas.
-3. Permite `ses:SendEmail` al rol de ejecución sobre la identidad de `mail_from` (y sobre el conjunto de configuración, si usas uno).
+1. En SES, verifica el dominio de `mail_from` como identidad y activa Easy DKIM (ve abajo).
+2. Solicita el acceso a producción para salir del sandbox. En el sandbox solo puedes enviar a direcciones verificadas.
+3. Permite `ses:SendEmail` al rol de ejecución sobre la identidad de `mail_from` (y sobre el configuration set, si usas uno).
+
+[Enviar correo con Amazon SES](email-ses.md) explica los registros, el sandbox y la solicitud de acceso a producción,
+y cuáles de ellos hace el módulo de OpenTofu para AWS.
 
 ```sh
 MY_MAIL=ses
@@ -95,11 +98,11 @@ MY_MAIL_SES_REGION=ap-northeast-1          # the region where you verified the i
 MY_MAIL_SES_CONFIGURATION_SET=my-events    # optional; a configuration set with event destinations
 ```
 
-Cuando `mail_ses_configuration_set` está definido, todos los correos usan ese conjunto de configuración. SES sobrescribe el `Message-ID` y el `Date` del
+Cuando `mail_ses_configuration_set` está definido, todos los correos usan ese configuration set. SES sobrescribe el `Message-ID` y la `Date` del
 correo con sus propios valores.
 SES nunca rechaza a un destinatario de forma síncrona en el momento del envío. Acepta un envío a una dirección de la lista de supresión de la cuenta y
 luego no lo entrega, y el rebote llega más tarde como una notificación (SNS).
-Para registrar rebotes y quejas, configura las notificaciones de SES de más abajo para que lleguen a través de SNS.
+Para registrar los rebotes y las quejas, configura las notificaciones de SES de abajo para que lleguen por SNS.
 
 <!-- source: a-plugin-mail--plugin 65b46feaf1cf -->
 ### Un plugin (`mail = plugin`)
@@ -394,22 +397,23 @@ List-Unsubscribe=One-Click` (RFC 8058). El botón «darse de baja» de los clien
   impedirían que llegaran avisos relevantes para la seguridad. Estos correos tampoco llevan tales cabeceras.
 - Los usuarios pueden cambiar la misma configuración en la página **Notificaciones** de la configuración.
 
-<!-- source: the-html-version 2ca008b1a48a -->
+<!-- source: the-html-version fc06d2fa37c4 -->
 ## La versión HTML
 
-Todos los correos son `multipart/alternative` con el mismo contenido como `text/plain` y `text/html` (ambos en UTF-8). Con `mail = none`
+Todo correo es `multipart/alternative` con el mismo contenido como `text/plain` y `text/html` (ambos UTF-8). Con `mail = none`
 en el perfil `development`, solo la versión de texto se escribe en el registro.
 
 - Hay un diseño exterior, con párrafos, botones y una firma (nombre del servidor, URL, contacto, el motivo del correo
-  y el enlace para darse de baja). `<html lang dir>` viene de la configuración regional del destinatario, y los idiomas como `ar` se maquetan de derecha a
+  y el enlace para darse de baja). `<html lang dir>` viene del idioma del destinatario, y los idiomas como `ar` se maquetan de derecha a
   izquierda.
-- No carga fuentes ni hojas de estilo externas. Los colores son los tokens de diseño por defecto, y el modo claro y oscuro siguen
-  `color-scheme` y `prefers-color-scheme`. Los cambios de tema del administrador no afectan al correo.
-- No carga imágenes, salvo el logotipo propio de la instancia cuando hay uno ([logotipo e icono](instance-settings.md#logo-and-icon)):
+- No carga fuentes ni hojas de estilo externas y usa las fuentes del sistema. Los colores son los del [tema](instance-settings.md#theme)
+  publicado (los tokens de diseño predeterminados si no hay ninguno), y claro y oscuro siguen `color-scheme` y
+  `prefers-color-scheme`.
+- No carga imágenes, salvo el logotipo de la propia instancia cuando hay uno definido ([logotipo e icono](instance-settings.md#logo-and-icon)):
   la versión HTML empieza entonces con el logotipo (`https://<host>/brand/...`, el logotipo oscuro en su lugar donde el cliente de correo sigue
   un esquema de color oscuro), la misma URL para todos los destinatarios, así que no revela nada sobre quién abrió el correo. Los clientes que no cargan
   imágenes externas muestran en su lugar el nombre del servidor (el texto alternativo de la imagen). Sin logotipo, o cuando la URL del servidor no es `https`,
-  el correo no tiene ninguna imagen.
+  el correo no tiene imagen.
 - Solo las URL `https` se convierten en enlaces. Cuando una URL es `http`, como en una configuración de desarrollo donde `web_origin` es `http://{host}`, la URL
-  se escribe como texto en lugar de un botón o un enlace para darse de baja, y se omite la URL del servidor en la firma.
-- El diseño forma parte del binario, así que no se ejecuta JavaScript en el servidor en tiempo de ejecución.
+  se escribe como texto en lugar de un botón o un enlace de baja, y la URL del servidor en la firma se omite.
+- El diseño es parte del binario, así que no se ejecuta JavaScript en el servidor en tiempo de ejecución.
