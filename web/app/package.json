@@ -36,6 +36,8 @@
     "@my/e2e": "workspace:*",
     "@mycroblog/mykit": "workspace:*",
     "@storybook/react-vite": "10.6.7",
+    "@tailwindcss/node": "4.3.5",
+    "@tailwindcss/oxide": "4.3.5",
     "@tailwindcss/vite": "4.3.5",
     "@tanstack/router-generator": "1.168.0",
     "@tanstack/router-plugin": "1.169.0",
@@ -49,6 +51,7 @@
     "oxc-transform-react": "0.157.0",
     "storybook": "10.6.7",
     "vite": "8.3.6",
-    "vite-plugin-pwa": "2.0.0"
+    "vite-plugin-pwa": "2.0.0",
+    "workbox-build": "7.4.1"
   }
 }
