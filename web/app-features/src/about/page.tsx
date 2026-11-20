@@ -26,9 +26,9 @@ import { financePublished, type Instance, type InstanceDomainAction, type PagedL
 import {
   Avatar,
   Box,
+  ContentLink,
   FactList,
   FeedNotice,
-  GroupHeading,
   OpenRow,
   Row,
   ScreenStack,
@@ -55,8 +55,10 @@ export function useAboutStrings(): T {
 /** A section of the page: its heading, close over what it holds. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Stack as="section" aria-label={title} gap="entry-line" text="body">
-      <GroupHeading>{title}</GroupHeading>
+    <Stack as="section" aria-label={title} gap="content-paragraph" text="body">
+      <Box as="h2" text="title" weight="strong" breaks="phrase">
+        {title}
+      </Box>
       {children}
     </Stack>
   );
@@ -71,8 +73,8 @@ function Paragraphs({ text }: { text: string }) {
         .map((p) => p.trim())
         .filter((p) => p !== "")
         .map((p, i) => (
-          <Box key={i} as="p" keeps="lines" breaks="phrase" dir="auto">
-            {p}
+          <Box key={i} as="p" keeps="lines" breaks="phrase">
+            <bdi>{p}</bdi>
           </Box>
         ))}
     </Stack>
@@ -125,20 +127,48 @@ export function AboutView({ instance, retry, domains, builtInIcon }: AboutViewPr
   );
 }
 
-/** The server's head, as a profile's: banner, icon, name over domain, summary; and its description under it. */
+/**
+ * The server's head: with a thumbnail, as a profile's (the banner, the icon over its edge, the name over the domain);
+ * without, no empty band, the icon beside the name and the domain. Then its summary and its description.
+ */
 function Head({ instance, builtInIcon }: { instance: Instance; builtInIcon: string }) {
   const nameId = useId();
-  return (
-    <ProfileHead
-      nameId={nameId}
-      banner={instance.thumbnail?.url}
-      avatar={<Avatar name={instance.name} src={instance.icon?.svg_url ?? builtInIcon} size="preview" decorative />}
-      name={instance.name}
-      handle={instance.domain}
-    >
+  const avatar = <Avatar name={instance.name} src={instance.icon?.svg_url ?? builtInIcon} size="preview" decorative />;
+  const text = (
+    <>
       {instance.short_description !== undefined && <Paragraphs text={instance.short_description} />}
       {instance.description !== undefined && <Paragraphs text={instance.description} />}
-    </ProfileHead>
+    </>
+  );
+  if (instance.thumbnail !== undefined)
+    return (
+      <ProfileHead
+        nameId={nameId}
+        banner={instance.thumbnail.url}
+        avatar={avatar}
+        name={instance.name}
+        handle={instance.domain}
+      >
+        {text}
+      </ProfileHead>
+    );
+  return (
+    <Stack as="section" aria-labelledby={nameId} gap="screen-profile-gap">
+      <Row align="center" gap="screen-head-room">
+        <Row inline rigid>
+          {avatar}
+        </Row>
+        <Stack gap="hair">
+          <Box as="h2" text="title" weight="strong" breaks="phrase">
+            <bdi id={nameId}>{instance.name}</bdi>
+          </Box>
+          <Box as="p" text="caption" tone="muted" breaks="anywhere">
+            <bdi dir="ltr">{instance.domain}</bdi>
+          </Box>
+        </Stack>
+      </Row>
+      {text}
+    </Stack>
   );
 }
 
@@ -150,7 +180,9 @@ function Contact({ contact, t }: { contact: NonNullable<Instance["contact"]>; t:
       {contact.email !== undefined && (
         <Box as="p" breaks="anywhere">
           <bdi dir="ltr">
-            <TextLink href={`mailto:${contact.email}`}>{contact.email}</TextLink>
+            <ContentLink kind="link" href={`mailto:${contact.email}`}>
+              {contact.email}
+            </ContentLink>
           </bdi>
         </Box>
       )}
@@ -169,12 +201,12 @@ function Rules({ rules, t }: { rules: Instance["rules"]; t: T }) {
               {t("about.rules.number", { n: i + 1 })}
             </Box>
             <Stack grow gap="hair">
-              <Box as="span" breaks="phrase" dir="auto">
-                {rule.text}
+              <Box as="span" breaks="phrase">
+                <bdi>{rule.text}</bdi>
               </Box>
               {rule.hint !== undefined && (
-                <Box as="span" text="caption" tone="muted" breaks="phrase" dir="auto">
-                  {rule.hint}
+                <Box as="span" text="caption" tone="muted" breaks="phrase">
+                  <bdi>{rule.hint}</bdi>
                 </Box>
               )}
             </Stack>
@@ -245,23 +277,25 @@ function DomainList({ list, t }: { list: PagedList<InstanceDomainAction>; t: T }
   );
 }
 
-/** A moderated domain: its name and what was done, then the public reason. */
+/**
+ * A moderated domain: its name on a line of its own, then what was done, with the public reason after a middle dot, so
+ * that a long name never parts the state from the line it heads.
+ */
 function Domain({ item, t }: { item: InstanceDomainAction; t: T }) {
   return (
     <Stack gap="hair">
-      <Row wrap gapX="entry-name" align="baseline">
-        <Box as="bdi" dir="ltr" breaks="anywhere">
-          {item.domain}
-        </Box>
-        <Box as="span" text="caption" tone="muted">
-          {t("about.domains.kind", { kind: item.kind })}
-        </Box>
-      </Row>
-      {item.comment !== undefined && (
-        <Box as="span" text="caption" tone="muted" breaks="phrase" dir="auto" lang="">
-          {item.comment}
-        </Box>
-      )}
+      <Box as="span" breaks="anywhere">
+        <bdi dir="ltr">{item.domain}</bdi>
+      </Box>
+      <Box as="span" text="caption" tone="muted" breaks="phrase">
+        {t("about.domains.kind", { kind: item.kind })}
+        {item.comment !== undefined && (
+          <>
+            {"\u00a0\u00b7 "}
+            <bdi lang="">{item.comment}</bdi>
+          </>
+        )}
+      </Box>
     </Stack>
   );
 }
@@ -398,8 +432,10 @@ const shownAddress = (url: string) => url.replace(/^(?:https?:\/\/|mailto:)/, ""
 /** The server's version, the source code it runs (AGPL-3.0 §13), and its status page. */
 function Server({ instance, t }: { instance: Instance; t: T }) {
   const link = (href: string) => (
-    <Box as="span" dir="ltr" breaks="anywhere">
-      <TextLink href={href}>{shownAddress(href)}</TextLink>
+    <Box as="bdi" dir="ltr" breaks="anywhere">
+      <ContentLink kind="link" href={href}>
+        {shownAddress(href)}
+      </ContentLink>
     </Box>
   );
   const items: Fact[] = [

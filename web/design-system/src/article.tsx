@@ -302,6 +302,8 @@ const text = tv({
     "[&_hr]:mx-auto [&_hr]:my-0 [&_hr]:w-1/4 [&_hr]:border-0 [&_hr]:border-t-content-quote",
     "[&_hr]:[border-top-style:solid] [&_hr]:border-t-quote-bar",
     "[&_table]:w-full [&_table]:border-collapse [&_table]:text-body [&_:is(th,td)]:[word-break:auto-phrase]",
+    // A cell breaks between words alone: its column is as wide as its longest word, and the table scrolls past that.
+    "[&_:is(th,td)]:[overflow-wrap:normal]",
     "[&_th]:bg-surface-raised [&_th]:font-label [&_:is(th,td)]:px-content-code-inline [&_:is(th,td)]:py-entry-line",
     "[&_:is(th,td)[align=right]]:text-right [&_:is(th,td)[align=center]]:text-center",
     "[&_:is(th,td)[align]]:whitespace-nowrap",
