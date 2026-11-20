@@ -21,8 +21,8 @@
 // lets a token of that permission's scope call it (ADR-0090 §17).
 //
 // Every write (POST, PUT, PATCH, DELETE) takes the Idempotency-Key header, or says with
-// x-no-idempotency-key why it takes none (its answer carries a secret that the server does not
-// keep); the Server keeps the answers of the operations that take it (idempotency.go).
+// x-no-idempotency-key why it takes none (its answer carries a secret or a payment provider's URL
+// that the server does not keep, or each call must reach the audit log); the Server keeps the answers of the operations that take it (idempotency.go).
 package main
 
 import (

@@ -25,8 +25,9 @@ import (
 )
 
 // The Idempotency-Key of the client API (draft-ietf-httpapi-idempotency-key-header, ADR-0028
-// §18): every write takes one, except the few whose answer carries a secret
-// (x-no-idempotency-key in the spec), and a repeat gets the first answer.
+// §18): every write takes one, except the few whose answer carries a secret or a payment
+// provider's URL, or whose every call must reach the audit log (x-no-idempotency-key in the
+// spec), and a repeat gets the first answer.
 
 // Problem types of the Idempotency-Key.
 const (

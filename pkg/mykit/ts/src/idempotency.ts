@@ -7,8 +7,8 @@ export const idempotencyKeyHeader = "Idempotency-Key";
 export const problemTypeIdempotencyKeyInUse = "/api/v1/problems/idempotency-key-in-use";
 
 /**
- * The writes whose spec takes no Idempotency-Key, since their answer carries a secret that the server does not keep
- * to send again, as the method and the path of the spec (with its `{param}`s); every other write takes one. When
+ * The writes whose spec takes no Idempotency-Key, since their answer carries a secret or a payment provider's URL that
+ * the server does not keep to send again, or each call must reach the audit log, as the method and the path of the spec (with its `{param}`s); every other write takes one. When
  * the caller sends no key to a write that takes one, the client adds a new one, so that the request can be retried.
  * A test keeps the list equal to the writes of schema.gen.ts that take no such header.
  */
@@ -29,6 +29,11 @@ export const writesWithoutIdempotencyKey: readonly { readonly method: string; re
   { method: "POST", path: "/admin/webhooks" },
   { method: "POST", path: "/admin/webhooks/{id}/rotate_secret" },
   { method: "POST", path: "/admin/accounts/{id}/password_reset_link" },
+  { method: "POST", path: "/admin/accounts/{id}/reveal" },
+  { method: "POST", path: "/admin/instances/{domain}/deliveries/{id}/reveal" },
+  { method: "POST", path: "/supporter/checkout" },
+  { method: "POST", path: "/supporter/tips" },
+  { method: "POST", path: "/supporter/portal" },
 ];
 
 /**
@@ -143,14 +148,11 @@ export const idempotencyKeyOperations: readonly { readonly method: string; reado
   { method: "POST", path: "/conversations/{id}/hide" },
   { method: "POST", path: "/reports" },
   { method: "POST", path: "/announcements/{id}/read" },
-  { method: "POST", path: "/supporter/checkout" },
   { method: "POST", path: "/supporter/subscription/sync" },
   { method: "POST", path: "/supporter/subscription/change" },
   { method: "POST", path: "/supporter/subscription/cancel" },
   { method: "POST", path: "/supporter/subscription/resume" },
   { method: "POST", path: "/supporter/subscription/cancel_scheduled_change" },
-  { method: "POST", path: "/supporter/portal" },
-  { method: "POST", path: "/supporter/tips" },
   { method: "DELETE", path: "/voice/rooms/{id}" },
   { method: "PATCH", path: "/voice/rooms/{id}" },
   { method: "DELETE", path: "/voice/rooms/{id}/participation" },
@@ -190,7 +192,6 @@ export const idempotencyKeyOperations: readonly { readonly method: string; reado
   { method: "POST", path: "/client_measurements" },
   { method: "POST", path: "/admin/jobs/{id}/retry" },
   { method: "POST", path: "/admin/instances/{domain}/mark_available" },
-  { method: "POST", path: "/admin/instances/{domain}/deliveries/{id}/reveal" },
   { method: "POST", path: "/admin/billing_imports/{source}/runs" },
   { method: "POST", path: "/admin/cost_items" },
   { method: "DELETE", path: "/admin/cost_items/{id}" },
@@ -241,7 +242,6 @@ export const idempotencyKeyOperations: readonly { readonly method: string; reado
   { method: "POST", path: "/admin/custom_emoji_requests/{id}/approve" },
   { method: "POST", path: "/admin/custom_emoji_requests/{id}/reject" },
   { method: "PUT", path: "/admin/instance_texts/{key}" },
-  { method: "POST", path: "/admin/accounts/{id}/reveal" },
   { method: "POST", path: "/admin/accounts/{id}/two_factor/disable" },
   { method: "POST", path: "/admin/accounts/{id}/email_suppression/lift" },
   { method: "POST", path: "/admin/roles" },

@@ -10,8 +10,7 @@ post:
   tags: [supporters]
   security:
     - oauth2: ["write:supporters"]
-  parameters:
-    - $ref: ../components/parameters/IdempotencyKey.yaml
+  x-no-idempotency-key: The answer carries the payment provider's portal URL, which is not kept; open it again instead.
   responses:
     "200":
       description: The portal to open.

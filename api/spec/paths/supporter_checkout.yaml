@@ -17,8 +17,7 @@ post:
   tags: [supporters]
   security:
     - oauth2: ["write:supporters"]
-  parameters:
-    - $ref: ../components/parameters/IdempotencyKey.yaml
+  x-no-idempotency-key: The answer carries the payment provider's checkout URL, which is not kept; starting again continues the open checkout.
   requestBody:
     required: true
     content:

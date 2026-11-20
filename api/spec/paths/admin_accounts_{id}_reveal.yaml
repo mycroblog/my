@@ -15,9 +15,9 @@ post:
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]
+  x-no-idempotency-key: Every call must reach the permission check and the audit log; a repeat changes nothing.
   parameters:
     - $ref: ../components/parameters/AdminAccountId.yaml
-    - $ref: ../components/parameters/IdempotencyKey.yaml
   responses:
     "200":
       description: The email address and the IP addresses of the account.

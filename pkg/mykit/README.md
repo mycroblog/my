@@ -235,7 +235,8 @@ problem of type `about:blank` with the answer's status.
   turn the retries off, or `MaxRetries` and `MaxWait` to change them.
 - Only requests that are safe to repeat are retried: `GET`, `HEAD`, and the requests of an operation that takes an
   `Idempotency-Key`, which is every write (`POST`, `PUT`, `PATCH`, `DELETE`) but the few whose answer carries a secret
-  (a client secret, tokens, recovery codes, a one-time link; `x-no-idempotency-key` in the spec). An
+  (a client secret, tokens, recovery codes, a one-time link, a payment provider's checkout or portal) or that each call
+  must reach the audit log (revealing an account's or a delivery's masked data); `x-no-idempotency-key` in the spec. An
   `Idempotency-Key` header on one of those does not make it retried: the server ignores it there.
 - For the operations that take an `Idempotency-Key`, mykit adds a new UUID when you do not pass one, and sends the
   same key on every retry, so a retried write is applied once. Within 24 hours the server answers a request with a key

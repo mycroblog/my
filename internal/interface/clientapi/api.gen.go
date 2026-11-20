@@ -18913,20 +18913,6 @@ type RefetchAccountStatusesParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
-// RevealAdminAccountParams defines parameters for RevealAdminAccount.
-type RevealAdminAccountParams struct {
-	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
-	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
-	// anonymous client: the same address) already sent to the operation gets the first answer
-	// again instead of being carried out again. The same key with another request (another
-	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
-	// while the first request is still being carried out is a 409
-	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
-	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
-	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
-	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
-}
-
 // RevokeAccountRoleParams defines parameters for RevokeAccountRole.
 type RevokeAccountRoleParams struct {
 	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
@@ -19901,20 +19887,6 @@ type ListInstanceDeliveriesParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// RevealInstanceDeliveryParams defines parameters for RevealInstanceDelivery.
-type RevealInstanceDeliveryParams struct {
-	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
-	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
-	// anonymous client: the same address) already sent to the operation gets the first answer
-	// again instead of being carried out again. The same key with another request (another
-	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
-	// while the first request is still being carried out is a 409
-	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
-	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
-	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
-	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // MarkInstanceAvailableParams defines parameters for MarkInstanceAvailable.
@@ -22600,34 +22572,6 @@ type ListSubscriptionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
-// StartSupporterCheckoutParams defines parameters for StartSupporterCheckout.
-type StartSupporterCheckoutParams struct {
-	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
-	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
-	// anonymous client: the same address) already sent to the operation gets the first answer
-	// again instead of being carried out again. The same key with another request (another
-	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
-	// while the first request is still being carried out is a 409
-	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
-	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
-	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
-	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
-}
-
-// OpenSupporterPortalParams defines parameters for OpenSupporterPortal.
-type OpenSupporterPortalParams struct {
-	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
-	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
-	// anonymous client: the same address) already sent to the operation gets the first answer
-	// again instead of being carried out again. The same key with another request (another
-	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
-	// while the first request is still being carried out is a 409
-	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
-	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
-	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
-	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
-}
-
 // CancelOwnSupporterSubscriptionParams defines parameters for CancelOwnSupporterSubscription.
 type CancelOwnSupporterSubscriptionParams struct {
 	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
@@ -22686,20 +22630,6 @@ type ResumeOwnSupporterSubscriptionParams struct {
 
 // SyncOwnSupporterSubscriptionParams defines parameters for SyncOwnSupporterSubscription.
 type SyncOwnSupporterSubscriptionParams struct {
-	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
-	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
-	// anonymous client: the same address) already sent to the operation gets the first answer
-	// again instead of being carried out again. The same key with another request (another
-	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
-	// while the first request is still being carried out is a 409
-	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
-	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
-	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
-	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
-}
-
-// StartSupporterTipParams defines parameters for StartSupporterTip.
-type StartSupporterTipParams struct {
 	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
 	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
 	// anonymous client: the same address) already sent to the operation gets the first answer
@@ -23686,7 +23616,7 @@ type ServerInterface interface {
 	RefetchAccountStatuses(w http.ResponseWriter, r *http.Request, id Id, params RefetchAccountStatusesParams)
 	// RevealAdminAccount Show the email address and the IP addresses of a local account
 	// (POST /admin/accounts/{id}/reveal)
-	RevealAdminAccount(w http.ResponseWriter, r *http.Request, id AdminAccountId, params RevealAdminAccountParams)
+	RevealAdminAccount(w http.ResponseWriter, r *http.Request, id AdminAccountId)
 	// ListAccountRoles List the roles of a local account
 	// (GET /admin/accounts/{id}/roles)
 	ListAccountRoles(w http.ResponseWriter, r *http.Request, id AdminAccountId)
@@ -23965,7 +23895,7 @@ type ServerInterface interface {
 	ListInstanceDeliveries(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params ListInstanceDeliveriesParams)
 	// RevealInstanceDelivery Show the sender, the activity URI, and the inbox of a delivery
 	// (POST /admin/instances/{domain}/deliveries/{id}/reveal)
-	RevealInstanceDelivery(w http.ResponseWriter, r *http.Request, domain InstanceDomain, id DeliveryId, params RevealInstanceDeliveryParams)
+	RevealInstanceDelivery(w http.ResponseWriter, r *http.Request, domain InstanceDomain, id DeliveryId)
 	// MarkInstanceAvailable Mark a remote server available
 	// (POST /admin/instances/{domain}/mark_available)
 	MarkInstanceAvailable(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params MarkInstanceAvailableParams)
@@ -24811,10 +24741,10 @@ type ServerInterface interface {
 	ListSubscriptions(w http.ResponseWriter, r *http.Request, params ListSubscriptionsParams)
 	// StartSupporterCheckout Start a subscription to a supporter plan
 	// (POST /supporter/checkout)
-	StartSupporterCheckout(w http.ResponseWriter, r *http.Request, params StartSupporterCheckoutParams)
+	StartSupporterCheckout(w http.ResponseWriter, r *http.Request)
 	// OpenSupporterPortal Open the payment provider's portal of the authenticated user
 	// (POST /supporter/portal)
-	OpenSupporterPortal(w http.ResponseWriter, r *http.Request, params OpenSupporterPortalParams)
+	OpenSupporterPortal(w http.ResponseWriter, r *http.Request)
 	// GetOwnSupporterSubscription Get the authenticated user's supporter subscription
 	// (GET /supporter/subscription)
 	GetOwnSupporterSubscription(w http.ResponseWriter, r *http.Request)
@@ -24835,7 +24765,7 @@ type ServerInterface interface {
 	SyncOwnSupporterSubscription(w http.ResponseWriter, r *http.Request, params SyncOwnSupporterSubscriptionParams)
 	// StartSupporterTip Start a tip
 	// (POST /supporter/tips)
-	StartSupporterTip(w http.ResponseWriter, r *http.Request, params StartSupporterTipParams)
+	StartSupporterTip(w http.ResponseWriter, r *http.Request)
 	// GetOwnSupporterTip Get a tip of the authenticated user
 	// (GET /supporter/tips/{id})
 	GetOwnSupporterTip(w http.ResponseWriter, r *http.Request, id SupporterTipId)
@@ -26972,32 +26902,8 @@ func (siw *ServerInterfaceWrapper) RevealAdminAccount(w http.ResponseWriter, r *
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params RevealAdminAccountParams
-
-	headers := r.Header
-
-	// ------------- Optional header parameter "Idempotency-Key" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
-		var IdempotencyKey IdempotencyKey
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
-			return
-		}
-
-		params.IdempotencyKey = &IdempotencyKey
-
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevealAdminAccount(w, r, id, params)
+		siw.Handler.RevealAdminAccount(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31267,32 +31173,8 @@ func (siw *ServerInterfaceWrapper) RevealInstanceDelivery(w http.ResponseWriter,
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params RevealInstanceDeliveryParams
-
-	headers := r.Header
-
-	// ------------- Optional header parameter "Idempotency-Key" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
-		var IdempotencyKey IdempotencyKey
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
-			return
-		}
-
-		params.IdempotencyKey = &IdempotencyKey
-
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevealInstanceDelivery(w, r, domain, id, params)
+		siw.Handler.RevealInstanceDelivery(w, r, domain, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -42842,35 +42724,8 @@ func (siw *ServerInterfaceWrapper) ListSubscriptions(w http.ResponseWriter, r *h
 // StartSupporterCheckout operation middleware
 func (siw *ServerInterfaceWrapper) StartSupporterCheckout(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params StartSupporterCheckoutParams
-
-	headers := r.Header
-
-	// ------------- Optional header parameter "Idempotency-Key" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
-		var IdempotencyKey IdempotencyKey
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
-			return
-		}
-
-		params.IdempotencyKey = &IdempotencyKey
-
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.StartSupporterCheckout(w, r, params)
+		siw.Handler.StartSupporterCheckout(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -42883,35 +42738,8 @@ func (siw *ServerInterfaceWrapper) StartSupporterCheckout(w http.ResponseWriter,
 // OpenSupporterPortal operation middleware
 func (siw *ServerInterfaceWrapper) OpenSupporterPortal(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params OpenSupporterPortalParams
-
-	headers := r.Header
-
-	// ------------- Optional header parameter "Idempotency-Key" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
-		var IdempotencyKey IdempotencyKey
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
-			return
-		}
-
-		params.IdempotencyKey = &IdempotencyKey
-
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.OpenSupporterPortal(w, r, params)
+		siw.Handler.OpenSupporterPortal(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -43143,35 +42971,8 @@ func (siw *ServerInterfaceWrapper) SyncOwnSupporterSubscription(w http.ResponseW
 // StartSupporterTip operation middleware
 func (siw *ServerInterfaceWrapper) StartSupporterTip(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params StartSupporterTipParams
-
-	headers := r.Header
-
-	// ------------- Optional header parameter "Idempotency-Key" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
-		var IdempotencyKey IdempotencyKey
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
-			return
-		}
-
-		params.IdempotencyKey = &IdempotencyKey
-
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.StartSupporterTip(w, r, params)
+		siw.Handler.StartSupporterTip(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -48812,8 +48613,7 @@ func (response RefetchAccountStatusesdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type RevealAdminAccountRequestObject struct {
-	Id     AdminAccountId `json:"id"`
-	Params RevealAdminAccountParams
+	Id AdminAccountId `json:"id"`
 }
 
 type RevealAdminAccountResponseObject interface {
@@ -54485,7 +54285,6 @@ func (response ListInstanceDeliveriesdefaultApplicationProblemPlusJSONResponse) 
 type RevealInstanceDeliveryRequestObject struct {
 	Domain InstanceDomain `json:"domain"`
 	Id     DeliveryId     `json:"id"`
-	Params RevealInstanceDeliveryParams
 }
 
 type RevealInstanceDeliveryResponseObject interface {
@@ -71521,8 +71320,7 @@ func (response ListSubscriptionsdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type StartSupporterCheckoutRequestObject struct {
-	Params StartSupporterCheckoutParams
-	Body   *StartSupporterCheckoutJSONRequestBody
+	Body *StartSupporterCheckoutJSONRequestBody
 }
 
 type StartSupporterCheckoutResponseObject interface {
@@ -71584,7 +71382,6 @@ func (response StartSupporterCheckoutdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type OpenSupporterPortalRequestObject struct {
-	Params OpenSupporterPortalParams
 }
 
 type OpenSupporterPortalResponseObject interface {
@@ -72018,8 +71815,7 @@ func (response SyncOwnSupporterSubscriptiondefaultApplicationProblemPlusJSONResp
 }
 
 type StartSupporterTipRequestObject struct {
-	Params StartSupporterTipParams
-	Body   *StartSupporterTipJSONRequestBody
+	Body *StartSupporterTipJSONRequestBody
 }
 
 type StartSupporterTipResponseObject interface {
@@ -77373,11 +77169,10 @@ func (sh *strictHandler) RefetchAccountStatuses(w http.ResponseWriter, r *http.R
 }
 
 // RevealAdminAccount operation middleware
-func (sh *strictHandler) RevealAdminAccount(w http.ResponseWriter, r *http.Request, id AdminAccountId, params RevealAdminAccountParams) {
+func (sh *strictHandler) RevealAdminAccount(w http.ResponseWriter, r *http.Request, id AdminAccountId) {
 	var request RevealAdminAccountRequestObject
 
 	request.Id = id
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevealAdminAccount(ctx, request.(RevealAdminAccountRequestObject))
@@ -80029,12 +79824,11 @@ func (sh *strictHandler) ListInstanceDeliveries(w http.ResponseWriter, r *http.R
 }
 
 // RevealInstanceDelivery operation middleware
-func (sh *strictHandler) RevealInstanceDelivery(w http.ResponseWriter, r *http.Request, domain InstanceDomain, id DeliveryId, params RevealInstanceDeliveryParams) {
+func (sh *strictHandler) RevealInstanceDelivery(w http.ResponseWriter, r *http.Request, domain InstanceDomain, id DeliveryId) {
 	var request RevealInstanceDeliveryRequestObject
 
 	request.Domain = domain
 	request.Id = id
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.RevealInstanceDelivery(ctx, request.(RevealInstanceDeliveryRequestObject))
@@ -87998,10 +87792,8 @@ func (sh *strictHandler) ListSubscriptions(w http.ResponseWriter, r *http.Reques
 }
 
 // StartSupporterCheckout operation middleware
-func (sh *strictHandler) StartSupporterCheckout(w http.ResponseWriter, r *http.Request, params StartSupporterCheckoutParams) {
+func (sh *strictHandler) StartSupporterCheckout(w http.ResponseWriter, r *http.Request) {
 	var request StartSupporterCheckoutRequestObject
-
-	request.Params = params
 
 	var body StartSupporterCheckoutJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -88031,10 +87823,8 @@ func (sh *strictHandler) StartSupporterCheckout(w http.ResponseWriter, r *http.R
 }
 
 // OpenSupporterPortal operation middleware
-func (sh *strictHandler) OpenSupporterPortal(w http.ResponseWriter, r *http.Request, params OpenSupporterPortalParams) {
+func (sh *strictHandler) OpenSupporterPortal(w http.ResponseWriter, r *http.Request) {
 	var request OpenSupporterPortalRequestObject
-
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.OpenSupporterPortal(ctx, request.(OpenSupporterPortalRequestObject))
@@ -88218,10 +88008,8 @@ func (sh *strictHandler) SyncOwnSupporterSubscription(w http.ResponseWriter, r *
 }
 
 // StartSupporterTip operation middleware
-func (sh *strictHandler) StartSupporterTip(w http.ResponseWriter, r *http.Request, params StartSupporterTipParams) {
+func (sh *strictHandler) StartSupporterTip(w http.ResponseWriter, r *http.Request) {
 	var request StartSupporterTipRequestObject
-
-	request.Params = params
 
 	var body StartSupporterTipJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {

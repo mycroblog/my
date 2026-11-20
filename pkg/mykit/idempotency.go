@@ -14,7 +14,8 @@ const idempotencyKeyHeader = "Idempotency-Key"
 const problemTypeIdempotencyKeyInUse = "/api/v1/problems/idempotency-key-in-use"
 
 // writesWithoutIdempotencyKey are the writes whose spec takes no Idempotency-Key, since their answer carries a
-// secret that the server does not keep to send again; every other write takes one. They are the method and the path
+// secret or a payment provider's URL that the server does not keep to send again, or each call must reach the
+// audit log; every other write takes one. They are the method and the path
 // relative to the API's base path, with * for a path parameter. When the caller sends no key to a write that takes
 // one, the client adds a new one, so that the request can be retried. TestIdempotencyKeyOperationsMatchGenerated
 // keeps the list equal to the writes of api.gen.go that send no such header.
@@ -35,6 +36,11 @@ var writesWithoutIdempotencyKey = []struct{ method, path string }{
 	{http.MethodPost, "/admin/webhooks"},
 	{http.MethodPost, "/admin/webhooks/*/rotate_secret"},
 	{http.MethodPost, "/admin/accounts/*/password_reset_link"},
+	{http.MethodPost, "/admin/accounts/*/reveal"},
+	{http.MethodPost, "/admin/instances/*/deliveries/*/reveal"},
+	{http.MethodPost, "/supporter/checkout"},
+	{http.MethodPost, "/supporter/tips"},
+	{http.MethodPost, "/supporter/portal"},
 }
 
 // isWrite reports whether method is one of a write: POST, PUT, PATCH, or DELETE.
