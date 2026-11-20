@@ -599,7 +599,7 @@ Web クライアントでは、**モデレーション → 通報**（`/moderati
 `GET /api/v1/admin/counts` は、未解決の通報の数（`open_reports`、`manage_reports` が必要）、承認待ちの登録の数（`pending_registrations`）と審査待ちの異議申し立ての数（`pending_appeals`）（どちらも `manage_accounts` が必要）、判断待ちのカスタム絵文字の申請の数（`pending_custom_emoji_requests`、`manage_custom_emojis` が必要）、新規、再発、またはミュート解除された未解決のエラーグループの数（`open_error_groups`、`manage_errors` が必要）を返します。
 権限のない項目は返されません。
 
-<!-- source: audit-log 4d53a2539898 -->
+<!-- source: audit-log 8334cc0280f5 -->
 ## 監査ログ
 
 モデレーターと管理者の操作は、操作と同じトランザクションの中で、1 件ずつ 1 行として監査ログ（`audit_log_entries`）に記録されます。
@@ -629,7 +629,7 @@ Web クライアントでは、**モデレーション → 通報**（`/moderati
 | `supporter_subscription` | `supporter_subscription_ended`（管理者が申し込みをすぐに終了した。対象の名前はプランの名前と利用者のハンドル） |
 | `custom_emoji_request` | `custom_emoji_request_submitted`、`custom_emoji_request_withdrawn`、`custom_emoji_request_approved`、`custom_emoji_request_rejected`（カスタム絵文字の申請の提出、取り下げ、承認、却下。対象の名前は `:shortcode:`） |
 | `payment_provider` | `payment_reconcile_queued`（決済サービスとの照合を手動で始めた。対象の名前はプロバイダーの名前） |
-| `oauth_client` | `oauth_client_disabled`、`oauth_client_enabled`（OAuth クライアントの無効化とその取り消し。無効化するとそのすべてのトークンが無効になる。対象の名前はクライアントの名前と `client_id`） |
+| `oauth_client` | `oauth_client_disabled`、`oauth_client_enabled`（OAuth クライアントの無効化と有効化。無効化するとそのすべてのトークンが無効になる。対象の名前はクライアントの名前と `client_id`） |
 | `oauth_client_host` | `oauth_client_host_denied`、`oauth_client_host_allowed`（Client ID Metadata Document のホストの拒否とその取り消し。拒否するとそのホストのクライアントのトークンが無効になる。対象の名前はホスト） |
 | `instance` | `service_closure_announced`、`service_closure_withdrawn`、`service_closure_closed`、`service_closure_delivery_completed`（サービスの終了の告知または日付の変更、告知の取り下げ、終了、終了の配送の完了。対象の名前は `service_closure`） |
 | `voice_room` | `voice_room_ended`（モデレーターが開いている通話のルームを終了した。名前は書いたアカウントが消去されるとなくなるため、対象の名前はルームの ID。通報の詳細には名前が表示される） |
