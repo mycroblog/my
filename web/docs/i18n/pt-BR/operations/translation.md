@@ -96,66 +96,80 @@ my instance set translation_provider_visibilities 'deepl=public|local|unlisted|p
 **Atribuição.** Os termos do DeepL exigem que o nome ou o logotipo dele apareça com cada tradução. O cliente web mostra
 “DeepL” com um link para `https://www.deepl.com` ao lado de cada tradução vinda dele, então você não precisa acrescentar nada.
 
-<!-- source: google-cloud-translation e351f57274b0 -->
+<!-- source: google-cloud-translation ab42392ab00c -->
 ## Google Cloud Translation
 
-[Cloud Translation](https://cloud.google.com/translate) tem o ID de provedor `google`. O servidor chama o método `TranslateText`
-dele com o modelo de tradução geral, e envia o texto como HTML para que as menções, os links e as outras partes que precisam
-permanecer como estão voltem no lugar.
+O [Cloud Translation](https://cloud.google.com/translate) tem o ID de provedor `google`. O servidor chama o método
+`TranslateText` dele com o modelo geral de tradução, e envia o texto como HTML para que as menções, os links e
+as outras partes que devem permanecer como estão voltem no lugar.
 
-1. Ative a API Cloud Translation (`translate.googleapis.com`) no projeto que paga as traduções:
+1. Ative a API Cloud Translation (`translate.googleapis.com`) no projeto que paga pelas traduções:
    `gcloud services enable translate.googleapis.com --project PROJECT`.
 2. Conceda à conta de serviço do servidor `roles/cloudtranslate.user` nesse projeto:
    `gcloud projects add-iam-policy-binding PROJECT --member serviceAccount:SA_EMAIL --role roles/cloudtranslate.user`.
-3. Defina `MY_TRANSLATOR_GOOGLE_PROJECT` com o ID do projeto. `MY_TRANSLATOR_GOOGLE_LOCATION` é `global` por padrão; ele pode
-   indicar outra localização do Cloud Translation que sirva o modelo geral, como `us-central1`.
+3. Defina `MY_TRANSLATOR_GOOGLE_PROJECT` com o ID do projeto. `MY_TRANSLATOR_GOOGLE_LOCATION` é `global` por padrão; ela
+   pode nomear outra localização do Cloud Translation que ofereça o modelo geral, como `us-central1`.
 4. Reinicie o servidor e adicione `google` à configuração da instância `translation_providers`.
 
-O servidor se autentica com Application Default Credentials, como os outros serviços do Google Cloud que ele usa: no Cloud Run,
-a conta de serviço do serviço; em outros lugares, o arquivo de chave que `GOOGLE_APPLICATION_CREDENTIALS` indica. Nenhuma
-chave de API é usada. O servidor não faz nenhuma chamada na inicialização, então uma API ou uma função ausente só aparece quando
-um leitor pede uma tradução: o servidor então tenta o próximo provedor, e o leitor vê que a tradução falhou quando não resta
-nenhum. Uma cota ou um limite de taxa do projeto que o Google informa também passa para o próximo provedor.
+No Google Cloud, com o módulo OpenTofu [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections), a seção
+`translation` faz os três primeiros passos, e o apply reinicia o serviço:
 
-O Google cobra por caractere enviado, depois de uma franquia gratuita mensal; veja
-[preços do Cloud Translation](https://cloud.google.com/translate/pricing). Os limites mensais do próprio servidor também contam
-os caracteres, mas não exatamente como o Google os cobra, então configure também um alerta de orçamento no Cloud Billing.
+```hcl
+  translation = {}   # or { project_id = "other-project", location = "us-central1" }
+```
 
-O Google [declara](https://cloud.google.com/translate/data-usage) que usa o texto apenas para fornecer a tradução, o mantém na
-memória só por pouco tempo, não o usa para treinar os seus modelos e não o compartilha. O servidor chama o endpoint global do
-Cloud Translation, em que o Google não restringe o processamento a uma única região.
+Ela ativa a API no projeto da implantação, ou em `project_id`, concede à conta de serviço do serviço
+`roles/cloudtranslate.user` ali e define `translator_google_project` e `translator_google_location`. Depois adicione `google` a
+`translation_providers`.
 
-Os [requisitos de atribuição](https://cloud.google.com/translate/attribution) do Google pedem que uma tradução seja exibida
-como tradução automática e que o selo “com tecnologia do Google Tradutor” apareça ao lado dela, com link para
-`https://translate.google.com`. O cliente web mostra o nome “Google Tradutor” com esse link ao lado de cada tradução desse
-provedor. O Google oferece as imagens do selo apenas para download, então o servidor não fornece aos clientes nenhum logotipo
-para esse provedor; verifique se o que os leitores veem atende aos requisitos do Google para a sua instância.
+O servidor se autentica com as Application Default Credentials, como os outros serviços do Google Cloud que usa: no
+Cloud Run, a conta de serviço do serviço; em outros lugares, o arquivo de chave que `GOOGLE_APPLICATION_CREDENTIALS` nomeia. Nenhuma
+chave de API é usada. O servidor não faz nenhuma chamada na inicialização, então uma API ou uma função ausente só aparece quando um leitor pede uma
+tradução: o servidor então tenta o próximo provedor, e o leitor vê que a tradução falhou quando não resta nenhum.
+Uma cota ou um limite de taxa do projeto que o Google informa também passa para o próximo provedor.
 
-<!-- source: amazon-translate a6cd83df7ef1 -->
+O Google cobra pelo caractere enviado, depois de uma franquia gratuita mensal; veja os
+[preços do Cloud Translation](https://cloud.google.com/translate/pricing). Os limites mensais do próprio servidor também contam os
+caracteres, mas não exatamente como o Google cobra, então defina também um alerta de orçamento no Cloud Billing.
+
+O Google [declara](https://cloud.google.com/translate/data-usage) que usa o texto apenas para fornecer a tradução,
+o mantém em memória só por pouco tempo, não o usa para treinar seus modelos e não o compartilha. O servidor chama o
+endpoint global do Cloud Translation, em que o Google não restringe o processamento a uma região.
+
+Os [requisitos de atribuição](https://cloud.google.com/translate/attribution) do Google pedem que uma tradução seja mostrada como
+traduzida por máquina e que o selo “powered by Google Translate” apareça ao lado dela, com um link para
+`https://translate.google.com`. O cliente web mostra o nome “Google Translate” com esse link ao lado de toda
+tradução feita por este provedor. O Google oferece as imagens do selo apenas para download, então o servidor não dá aos clientes nenhum logotipo para
+este provedor; verifique se o que os leitores veem atende aos requisitos do Google para a sua instância.
+
+<!-- source: amazon-translate b7aa8e79d2d7 -->
 ## Amazon Translate
 
-O Amazon Translate é o provedor `aws`. O servidor chama a operação `TranslateText` dele com as credenciais da cadeia padrão do
-AWS SDK, como para os outros serviços da AWS: o perfil de execução da tarefa ou da instância, as variáveis de ambiente
-`AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`, ou os arquivos de credenciais compartilhadas. Nenhuma chave entra na
+O Amazon Translate é o provedor `aws`. O servidor chama a operação `TranslateText` dele com as credenciais da
+cadeia padrão do SDK da AWS, como para os outros serviços da AWS: a função de execução da tarefa ou da instância, as variáveis de ambiente
+`AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`, ou os arquivos de credenciais compartilhados. Nenhuma chave vai para a
 configuração do servidor.
 
-1. Conceda ao perfil ou usuário com que o servidor roda a permissão IAM `translate:TranslateText`. Para uma publicação cujo
-   idioma é desconhecido, o Amazon Translate detecta o idioma com o Amazon Comprehend; as políticas gerenciadas pela AWS para o
+1. Dê à função ou ao usuário com que o servidor roda a permissão IAM `translate:TranslateText`. Para uma publicação cujo
+   idioma é desconhecido, o Amazon Translate detecta o idioma com o Amazon Comprehend; as políticas gerenciadas da AWS para o
    Amazon Translate concedem `comprehend:DetectDominantLanguage` junto com ela, então conceda essa também.
-2. Defina `translator_aws_region` (`MY_TRANSLATOR_AWS_REGION`) com a região do Amazon Translate, como `us-east-1`. Detectar o
-   idioma exige uma região em que o Amazon Comprehend também funcione.
-3. Reinicie o servidor e, depois, ative o provedor com `translation_providers = aws`, sozinho ou na sua ordem de preferência
+2. Defina `translator_aws_region` (`MY_TRANSLATOR_AWS_REGION`) com a região do Amazon Translate, como `us-east-1`. Detectar
+   o idioma exige uma região em que o Amazon Comprehend também rode.
+3. Reinicie o servidor e ative o provedor com `translation_providers = aws`, sozinho ou na sua ordem de preferência
    entre os outros ([configurações da instância](instance-settings.md)).
 
-O Amazon Translate cobra por caractere enviado, com um nível gratuito nos primeiros 12 meses
-([preços](https://aws.amazon.com/translate/pricing/)). O servidor envia apenas as palavras de uma publicação: menções,
-hashtags, links e código ficam no servidor, e cada um deles vai como um marcador curto dentro da marcação HTML. Mantenha os
-limites mensais de `translation_user_monthly_characters` e `translation_server_monthly_characters` dentro do que você quer pagar.
+Na AWS, com o módulo OpenTofu [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws), a seção
+`translation` faz os dois primeiros passos: `translation = {}` permite as duas ações à função das tarefas e define
+`translator_aws_region` com a região da implantação, ou com `region` quando você a informa. Depois ative o provedor.
 
-**A Amazon pode guardar o texto e usá-lo para melhorar os seus serviços, possivelmente em outra região, a menos que a política de
-exclusão de serviços de IA do AWS Organizations
-([AI services opt-out policy](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_ai-opt-out.html))
-cubra a conta.** Sem essa exclusão, a Amazon não é apenas o seu provedor de serviço para esse texto: diga isso na sua política de
-privacidade ([modelo de política de privacidade](privacy-policy-template.md#the-services-you-choose)), e não permita
-`private` nem `direct` para `aws` em `translation_provider_visibilities`. Por padrão, o provedor recebe apenas publicações
-`public`, `local` e `unlisted`.
+O Amazon Translate cobra pelo caractere enviado, com uma camada gratuita nos primeiros 12 meses
+([preços](https://aws.amazon.com/translate/pricing/)). O servidor envia apenas as palavras de uma publicação: menções, hashtags,
+links e código ficam no servidor, e cada um deles vai como um marcador curto em marcação HTML. Mantenha os limites mensais
+de `translation_user_monthly_characters` e `translation_server_monthly_characters` dentro do que você quer pagar.
+
+**A Amazon pode armazenar o texto e usá-lo para melhorar os seus serviços, possivelmente em outra região, a menos que a
+[política de exclusão de serviços de IA](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_ai-opt-out.html)
+do AWS Organizations cubra a conta.** Sem a exclusão, a Amazon não é apenas a sua prestadora de serviço para esse texto: diga isso na sua
+política de privacidade ([modelo de política de privacidade](privacy-policy-template.md#the-services-you-choose)), e não permita
+`private` nem `direct` para `aws` em `translation_provider_visibilities`. Por padrão, o provedor recebe apenas publicações `public`,
+`local` e `unlisted`.

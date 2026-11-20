@@ -28,7 +28,7 @@ idioma padrão, quem pode ver as timelines, o nome da instância, a descrição,
 <!-- source: keys ae25d36239c2 -->
 ## Chaves
 
-<!-- source: settings-one-key-one-value a3d12269943c -->
+<!-- source: settings-one-key-one-value d7de299cd54d -->
 ### Configurações (uma chave, um valor)
 
 | Chave | Tipo | Padrão | Descrição |
@@ -86,13 +86,14 @@ idioma padrão, quem pode ver as timelines, o nome da instância, a descrição,
 | `link_cards` | `true` / `false` | `true` | Se devem ser exibidos cartões para os links nas publicações. Quando `true`, o servidor busca a página do link para montar um cartão. Quando `false`, ele para de buscar e também oculta os cartões já montados. Para parar apenas em alguns domínios, veja [domínios de cartões de link](#link-card-domains) |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | Se as buscas de cartões de link ignoram o `robots.txt`. Quando `false`, o servidor obedece ao `robots.txt` dos sites linkados, então um site que proíbe `my-linkcard` ou `*` não recebe cartão ([prévias de link](link-previews.md#cards-of-links-in-posts)). `/about/crawler` informa aos sites linkados qual é ele. Quando `true`, o servidor não busca nem usa o `robots.txt`, e um site linkado não pode mais recusar essas buscas por ele; o servidor ainda se identifica como `my-linkcard`. Ative apenas quando faltarem cartões demais. Os cartões montados enquanto estava ativado são verificados na próxima nova busca depois que for desativado. As diretivas de uma página e os domínios de cartões de link valem nos dois casos |
 | `ux_measurement` | `true` / `false` | `false` | Se o cliente web envia amostras de quão rápido responde e este servidor as guarda ([medições de UX](error-reporting.md#ux-measurements)). As amostras não levam conta, endereço nem URL. Com `false`, o servidor não coleta nenhuma, e `ux_measurement` em `GET /api/v1/instance` diz ao cliente para não enviá-las |
+| `ux_measurement_share` | inteiro 1-100 (porcentagem) | `10` | A parcela das sessões de navegador cujo cliente web envia amostras enquanto `ux_measurement` é `true`. Cada sessão é sorteada uma vez, quando o cliente web inicia; um servidor pequeno pode medir todas as sessões com `100` |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | Se devem ser aceitos clientes com Client ID Metadata Document. Quando `true`, para uma requisição de autorização cujo `client_id` é uma URL `https`, o servidor busca os metadados nessa URL e os trata como o cliente (sem registro prévio). A busca não segue redirecionamentos, lê no máximo 5 KB e reutiliza a resposta por no máximo 24 horas, seguindo suas diretivas de cache. Quando `false`, ele para de buscar e recusa requisições de autorização, trocas de token e renovações desses clientes |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | Quanto dos custos de operação (registrados em `/admin/finance/costs` e definidos em `/admin/finance/publication`) publicar. `private`: nada é publicado (`GET /api/v1/instance/cost_totals` é 404). `totals`: apenas o total por período e moeda. `breakdown`: os totais e uma divisão por provedor e categoria, mostrados a todos nas páginas de informação (`/about` e `/about/costs`) e na API. `breakdown` revela em qual provedor (por exemplo, qual nuvem) você opera. Em todos os níveis, os nomes dos itens, as anotações e os pagamentos individuais permanecem privados. Os períodos até o que contém hoje (UTC), inclusive, são publicados |
 | `finance_viewer_item_names` | `true` / `false` | `false` | Se os usuários com a permissão `view_finance` veem os nomes dos itens de custo e os nomes dos serviços dos custos importados na tela de finanças (`/finance`, `GET /api/v1/finance/cost_totals`). Os totais e a divisão por provedor e categoria sempre são mostrados, qualquer que seja esta configuração |
 | `finance_viewer_item_memos` | `true` / `false` | `false` | Se os usuários com `view_finance` veem as anotações dos itens de custo na tela de finanças. Se a configuração de nome ou a de anotação for `true`, cada período mostra linhas de itens (provedor, categoria e o valor desse período, mais o nome e a anotação quando habilitados). Quem tem `manage_finance` vê tudo, independentemente |
 | `finance_viewer_income` | `totals` / `plans` | `totals` | Se os usuários com `view_finance` veem apenas os totais de receita (`totals`) ou também o número de assinantes por plano (`plans`). O valor por plano e quem pagou nunca são mostrados. Se `income_visibility` for `plans`, as contagens publicadas são mostradas qualquer que seja este valor. A receita é lida na tela de finanças do cliente web (`/finance`) e em `GET /api/v1/finance/income_totals` |
 | `income_visibility` | `private` / `totals` / `plans` | `private` | Quanto da receita dos apoiadores (o valor depois das taxas do provedor de pagamento) publicar. É escolhida separadamente de `finance_visibility`. `private`: nada é publicado (`GET /api/v1/instance/income_totals` é 404). `totals`: apenas o total de receita por período e moeda. `plans`: também o número atual de assinantes por plano, mostrado a todos. Em um plano com poucos assinantes, a contagem pode permitir adivinhar quem assina. O saldo (receita menos custos) só é mostrado quando nem este valor nem `finance_visibility` é `private`; caso contrário, o saldo revelaria o lado que você ocultou. Em todos os níveis, os pagamentos individuais, os assinantes, o valor por plano e os valores brutos e taxas permanecem privados. Os períodos até o que contém hoje (UTC), inclusive, são publicados |
-| `funding_meter_visibility` | `off` / `percent` / `amounts` | `off` | O que o medidor de financiamento publica: até onde a receita deste mês (depois das taxas do provedor de pagamento) chega em direção à meta mensal, mostrada na página sobre, na lista de apoiadores (`/about/supporters`) e em `GET /api/v1/instance` (`funding_meter`). É definido junto com a meta em `/admin/finance/publication`, que desativa as opções que as visibilidades atuais excluem e explica o motivo. `off`: nada. `percent`: somente a porcentagem, arredondada para baixo a 1%, se o mês está coberto e se os custos estimados estão na meta. Só pode ser escolhido enquanto `finance_visibility` e `income_visibility` são ambos `private`. `amounts`: também a receita e a meta. Só pode ser escolhido enquanto nenhum dos dois é `private`. Enquanto apenas um deles é publicado, o medidor não pode ser mostrado: os valores publicados e a porcentagem revelariam o lado oculto. Mudar qualquer uma das visibilidades de modo que o valor escolhido deixe de ser permitido coloca o medidor em `off`, e essa mudança é registrada e auditada como qualquer outra. O mês é o mês de calendário que contém hoje (UTC), e só conta a receita na moeda da meta |
+| `funding_meter_visibility` | `off` / `percent` / `amounts` | `off` | O que o medidor de financiamento publica: até onde a receita deste mês (depois das taxas do provedor de pagamento) chega em direção à meta mensal, mostrada na página sobre, na lista de apoiadores (`/about/supporters`) e em `GET /api/v1/instance` (`funding_meter`). É definido junto com a meta em `/admin/finance/publication`, que oferece apenas as opções que as visibilidades atuais permitem e explica o motivo. `off`: nada. `percent`: somente a porcentagem, arredondada para baixo a 1%, se o mês está coberto e se os custos estimados estão na meta. Só pode ser escolhido enquanto `finance_visibility` e `income_visibility` são ambos `private`. `amounts`: também a receita e a meta. Só pode ser escolhido enquanto nenhum dos dois é `private`. Enquanto apenas um deles é publicado, o medidor não pode ser mostrado: os valores publicados e a porcentagem revelariam o lado oculto. Mudar qualquer uma das visibilidades de modo que o valor escolhido deixe de ser permitido coloca o medidor em `off`, e essa mudança é registrada e auditada como qualquer outra. O mês é o mês de calendário que contém hoje (UTC), e só conta a receita na moeda da meta |
 | `funding_meter_target_amount` | decimal maior que zero, ou vazio | vazio | A meta mensal do medidor de financiamento, na unidade principal de `funding_meter_target_currency` (`1650` ienes, `12.50` dólares), sem mais casas decimais do que a moeda tem. Vazio: a meta são os custos deste mês, o que exige que estejam em uma única moeda; em um mês cujos custos estão em várias moedas, ou são zero, o medidor não é mostrado |
 | `funding_meter_target_currency` | código ISO 4217, ou vazio | vazio | A moeda de `funding_meter_target_amount`, como `JPY`. Vazio: a moeda dos custos deste mês |
 | `funding_meter_rail` | `true` / `false` | `false` | Se o cliente web também mostra o medidor de financiamento na coluna da direita do layout largo, além da página sobre, enquanto `funding_meter_visibility` não é `off` |
@@ -102,6 +103,8 @@ idioma padrão, quem pode ver as timelines, o nome da instância, a descrição,
 | `voice_public_summary` | `true` / `false` | `false` | Se a página de uma sala de chat de voz cuja visibilidade é `local` mostra seu nome, descrição, anfitrião e se ainda está aberta aos visitantes que não entraram neste servidor e aos usuários remotos, e em sua prévia de link. Os participantes nunca são mostrados. Quando `false`, esses visitantes veem apenas que a sala é para os usuários locais deste servidor |
 | `event_creators` | `everyone` / `permitted` | `everyone` | Quem pode criar eventos ([eventos](#events)). `everyone`: todo usuário local com sessão iniciada que não está suspenso nem limitado. `permitted`: somente quem tem a permissão `create_events`, que por padrão apenas a função integrada `admin` tem e que uma função de um plano de apoiador pode ter |
 | `public_counts` | `true` / `false` | `true` | Se a página inicial (`/`, sem login) e `GET /api/v1/instance/overview` mostram quantos membros o servidor tem, quantas publicações públicas seus usuários fizeram em cada um dos últimos 7 dias e quando o servidor iniciou. Contam apenas as publicações públicas dos usuários deste servidor; os números são atualizados a cada poucos minutos. Quando `false`, a API os omite |
+| `landing_fediverse_explanation` | `true` / `false` | `true` | Se a página inicial (`/`, sem login) explica como o fediverso funciona: que uma conta aqui segue e é seguida por pessoas de outros servidores |
+| `landing_features` | `true` / `false` | `true` | Se a página inicial mostra o que o software faz neste servidor, com uma amostra de cada recurso que está ativado (salas de voz, eventos, artigos, busca, tradução, apoiadores) |
 | `featured_accounts` | nomes de usuário de até 20 contas locais, separados por espaços ou vírgulas (vazio = nenhuma) | vazio | As contas que as sugestões de pessoas para seguir mostram primeiro, nesta ordem, antes das pessoas deste servidor que publicaram recentemente. Uma conta cujo dono desativou “Sugerir minha conta e permitir encontrá-la por parte do nome” não é sugerida. Veja [sugestões](#suggestions-of-accounts) |
 | `login_providers_only` | `true` / `false` | `false` | Se o cadastro e a entrada ficam limitados aos provedores de login enquanto pelo menos um estiver habilitado: senhas e passkeys deixam de dar acesso, e usuários sem um provedor vinculado não conseguem entrar de novo depois que suas sessões terminarem. Sem nenhum provedor habilitado, não se aplica. `my instance set` mostra quantos usuários ativos não têm vínculo com um provedor habilitado. Veja [limitar a entrada aos provedores de login](login-providers.md#limit-sign-in-to-login-providers). |
 | `invite_creators` | `everyone` / `permitted` | `permitted` | Quem pode criar convites próprios além da equipe com `manage_invites` ([convites de membros](registration.md#member-invites)). `everyone`: todo usuário local que entrou e não está suspenso nem limitado. `permitted`: apenas quem tem a permissão `create_invites`, que por padrão só a função integrada `admin` tem e que uma função de um plano de apoiador pode ter. No modo `approval`, um convite utilizável aprova o novo usuário na hora, então `everyone` permite que todo usuário pule a análise |
@@ -245,7 +248,7 @@ Os usuários locais planejam eventos com uma data, um fuso horário e até três
 - Um usuário cria no máximo 10 eventos por hora, e um evento envia no máximo 100 convites por hora.
 - Os usuários podem denunciar um evento, e os moderadores podem cancelar um; suspender ou excluir um organizador cancela os eventos dele que não começaram ([moderação](moderation.md#events)). Quem respondeu e quem foi convidado é mantido por `event_records_retention_days` depois do evento, assim como os votos nas datas candidatas dele.
 
-<!-- source: texts-one-key-one-value c639fc7dfe23 -->
+<!-- source: texts-one-key-one-value cc74b8e2bdda -->
 ### Textos (uma chave, um valor)
 
 | Chave | Limite | Descrição |
@@ -266,9 +269,9 @@ Os usuários locais planejam eventos com uma data, um fuso horário e até três
   `dir="auto"` e `lang=""` (o valor HTML para um idioma desconhecido) em vez de herdar o idioma da tela.
 - Definir um texto vazio o exclui.
 - Além da CLI, os textos podem ser alterados nas telas de administração do cliente web (nome, descrição curta e descrição na
-  página Geral de “Configurações do servidor”, `/admin/settings`; os termos na primeira página de “Termos e políticas”,
-  `/admin/documents`, a política de privacidade em `/admin/documents/privacy-policy`, e a divulgação comercial e similares em
-  `/admin/documents/commerce-disclosure`) e com a API de cliente (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
+  página Geral de “Configurações do servidor”, `/admin/settings/general`; os termos em `/admin/documents/terms`, a política
+  de privacidade em `/admin/documents/privacy-policy` e a divulgação comercial em `/admin/documents/commerce-disclosure`,
+  cada uma uma página de “Termos e políticas”, `/admin/documents`) e com a API de cliente (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
   Ambos exigem a permissão de função `manage_settings`, e as alterações são registradas no registro de auditoria (`text_changed`).
 
 <!-- source: terms-and-privacy-policy 82e7bc325cf1 -->
@@ -303,7 +306,7 @@ Uma instância tem um domínio e um nome, separadamente.
 - Uma alteração tem efeito a partir da próxima requisição, sem reiniciar. O título da aba e a barra lateral de um cliente web aberto são atualizados quando
   você salva na tela de administração.
 
-<!-- source: contact-and-thumbnail 71513ab82d51 -->
+<!-- source: contact-and-thumbnail 0c0f6038fb4e -->
 ### Contato e miniatura
 
 O contato para os operadores (`contact_account`, `contact_email`) e a imagem que representa a instância (`thumbnail`
@@ -317,13 +320,13 @@ e o texto `thumbnail_alt`) aparecem nos lugares abaixo. O que não estiver defin
   conta de contato), `thumbnail` (`url` e `alt`) e `nodeDescription` a partir da descrição curta `short_description`.
 
 Quando a conta de contato está suspensa ou excluída, a conta não é exibida e apenas o endereço de e-mail é.
-Altere-os na página Geral da tela de administração do cliente web (“Configurações do servidor”, `/admin/settings`), ou com a CLI ou a API de cliente.
+Altere-os na página Geral da tela de administração do cliente web (“Configurações do servidor”, `/admin/settings/general`), ou com a CLI ou a API de cliente.
 
-<!-- source: one-person-server 6ba524c58a4f -->
+<!-- source: one-person-server ed3ac66244d6 -->
 ### Servidor de uma pessoa
 
 Um servidor só do seu operador, a casa própria do operador no fediverso, é um servidor de uma pessoa: ative `single_user`. No cliente web,
-um administrador o ativa e desativa com **Tornar este um servidor de uma pessoa** na página **Cadastro** de **Configurações do servidor**,
+um administrador o ativa e desativa com **Servidor de uma pessoa** na página **Cadastro** de **Configurações do servidor**,
 que informa por que o servidor recusou quando há mais de uma conta local.
 
 ```sh
@@ -422,7 +425,7 @@ my admin federation sever -direction both
   não envia (como `off`), o seguimento termina apenas no lado local e o lado remoto não é avisado.
 - É seguro executá-lo repetidamente. Ele imprime na saída padrão o número de seguimentos que encerrou.
 
-<!-- source: admin-screens-and-the-client-api 887d153efcf9 -->
+<!-- source: admin-screens-and-the-client-api d5fece23283e -->
 ## Telas de administração e a API de cliente
 
 Toda configuração que a CLI pode alterar também pode ser alterada nas telas de administração do cliente web e com a API de cliente. Ambos exigem
@@ -430,26 +433,27 @@ a permissão de função `manage_settings` (apenas a função integrada `admin` 
 e registrada por chave no registro de auditoria (`setting_changed`, o alvo é a configuração e o autor é esse usuário). Consulte o
 registro de auditoria na tela de moderação (“Registro de auditoria”, `/moderation/audit-log`).
 
-- **Cliente web** (“Configurações do servidor”, `/admin/settings`): a tela tem uma página por tópico, com link sob o título. Cada
-  página tem um formulário e um botão de salvar, e salvar envia apenas o que você alterou nessa página; as configurações das outras páginas
-  permanecem como estão.
+- **Cliente web** (“Configurações do servidor”, `/admin/settings`): a tela lista uma página por tópico, em grupos. Cada
+  página tem um formulário e um botão de salvar, e salvar envia apenas o que você alterou nessa página; as configurações das
+  outras páginas permanecem como estão. Uma escolha cujas opções mudam muita coisa diz, abaixo dela e antes de você salvar, o
+  que cada uma faz, e um número informa seus limites quando é recusado.
 
   | Página | Seções e configurações |
   | --- | --- |
-  | Geral (`/admin/settings`) | Nome, Descrições (`name`, `short_description`, `description`); Contato e miniatura (`contact_account`, `contact_email`, `thumbnail` e o texto `thumbnail_alt`) |
-  | Ícone e logo (`/admin/settings/branding`) | O ícone, o logotipo e o logotipo para fundos escuros, cada um salvo com seu próprio botão ([Logotipo e ícone](#logo-and-icon)) |
-  | Cadastro (`/admin/settings/registration`) | Cadastro (`registration_mode`, `login_providers_only`); Convites de membros (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds`); Apps (`user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration`) |
-  | Conteúdo (`/admin/settings/content`) | Idioma (`default_locale`, escolhido entre os idiomas que o app tem); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Publicações (`require_media_description`); Página inicial (`public_counts`); Contas sugeridas (`featured_accounts`) |
-  | Exclusão de publicações (`/admin/settings/auto-delete`) | Padrão para contas novas (as configurações `auto_delete_default_*`); Máximo (`auto_delete_max_age_days`, as configurações `auto_delete_max_allow_*`, `auto_delete_max_kept_pins`, `auto_delete_grace_days`). Salvar um máximo que está sendo ativado ou tornado mais rígido (menos dias, menos exceções ou fixações) pergunta antes, já que avisa as contas que ele passa a atingir ([Um máximo para manter publicações](#a-maximum-for-keeping-posts)) |
-  | Federação (`/admin/settings/federation`) | Federação (`federation_mode`, `federation_scope` (salvar `allowlist` primeiro mostra os seguimentos que a mudança encerraria e pede confirmação, veja [federar somente com servidores permitidos](moderation.md#federating-only-with-allowed-servers)), `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (escolha entre 1 hora, 1 dia, 7 dias, 30 dias ou 365 dias), `link_cards`, `link_cards_ignore_robots_txt`); Servidores limitados e suspensos (`domain_actions_visibility`, `domain_actions_rationale_visibility`); Análise externa (as configurações `hook_*`, veja [Hooks de decisão](decision-hooks.md)) |
-  | Busca e rastreadores (`/admin/settings/discovery`) | Mecanismos de busca e IA (`search_indexing`, `indexable_default`, `ai_usage`, `security_contact`); Busca de publicações (`search_visibilities`, apenas enquanto o servidor tem busca de texto completo) |
-  | Chat de voz (`/admin/settings/voice`) | `voice_room_starters`, `voice_public_summary`, `voice_participants_retention_days`; a página só é listada enquanto o servidor oferece chat de voz |
+  | Geral (`/admin/settings/general`) | Nome e descrições (`name`, `short_description`, `description`); Idioma (`default_locale`, escolhido entre os idiomas que o app tem); Contato (`contact_account`, `contact_email`); Imagens (`thumbnail` e o texto `thumbnail_alt`, `preview_image` e o texto `preview_image_alt`) |
+  | Ícone e logo (`/admin/settings/branding`) | O ícone, o logotipo e o logotipo para fundos escuros ([Logotipo e ícone](#logo-and-icon)) |
+  | Cadastro (`/admin/settings/registration`) | Quem pode se cadastrar (`registration_mode`, cada modo com o que ele faz); Servidor de uma pessoa (`single_user`); Convites de membros (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds` em horas); Somente provedores de login (`login_providers_only`, que pergunta antes, com quantos usuários ativos não poderiam mais entrar e se você é um deles); Apps (`user_app_registration`, `dynamic_client_registration`, `oauth_metadata_document_clients`, `oauth_client_rate_limits`). Em um servidor de uma pessoa, as seções de cadastro e de convites de membros dizem que ninguém mais se cadastra |
+  | Publicações e recursos (`/admin/settings/content`) | Publicações (`max_status_length`, `require_media_description`); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Cartões de link (`link_cards`, `link_cards_ignore_robots_txt`); Rascunhos e publicações agendadas (`max_drafts`, `max_scheduled_posts`, `max_scheduled_posts_per_day`, `scheduled_post_min_lead_minutes`, `scheduled_post_max_lead_days`); Artigos (`article_authoring`, `max_article_bytes`, `max_article_images`); Eventos (`event_creators`, `event_records_retention_days`); Página inicial e sugestões (`public_counts`, `landing_fediverse_explanation`, `landing_features`, `featured_accounts`) |
+  | Chat de voz (`/admin/settings/voice`) | Quem pode abrir salas (`voice_room_starters`); Salas (`voice_public_summary`, `voice_participants_retention_days`) |
+  | Exclusão de publicações (`/admin/settings/auto-delete`) | Padrão para contas novas (as configurações `auto_delete_default_*`); Máximo para todos (`auto_delete_max_age_days`, `auto_delete_grace_days`, as configurações `auto_delete_max_allow_*`, `auto_delete_max_kept_pins`). Salvar um máximo que está sendo ativado ou encurtado pergunta antes ([Um máximo para manter publicações](#a-maximum-for-keeping-posts)) |
+  | Federação (`/admin/settings/federation`) | Direção (`federation_mode`); Servidores (`federation_scope`: salvar `allowlist` primeiro mostra os seguimentos que a mudança encerraria e pede confirmação, veja [federar somente com servidores permitidos](moderation.md#federating-only-with-allowed-servers)); Buscas assinadas (`authorized_fetch`); Mídia de outros servidores (`remote_media_policy`, `remote_media_cache_ttl_seconds` em minutos, `remote_media_cache_max_bytes` em MiB); Publicações de outros servidores (`remote_status_retention_days`, `remote_status_max_retention_days`, `relay_status_retention_days`); Servidores moderados (`domain_actions_visibility`, `domain_actions_rationale_visibility`) |
+  | Busca e rastreadores (`/admin/settings/discovery`) | Mecanismos de busca (`search_indexing`, `indexable_default`); Contato de segurança (`security_contact`); IA (`ai_usage`); Busca de texto completo (`search_visibilities`) |
+  | Revisão externa (`/admin/settings/hooks`) | Uma seção para cada hook de decisão: seu modo (`enforce` só é oferecido quando não está `off`), o que ele faz quando seu plugin falha e suas outras configurações; Registros de decisões (`hook_decisions_retention_days`). Veja [Hooks de decisão](decision-hooks.md) |
+  | Recursos e registros (`/admin/settings/records`) | Recursos (`appeal_window_days`); Manutenção de registros (`session_origins_retention_days`, `registration_origins_retention_days`, `reports_retention_days`, `moderation_actions_retention_days`, `audit_log_retention_days`) |
 
-  Na página Geral, uma imagem é enviada quando você a escolhe e se torna a miniatura quando você salva. Quem pode ver os
-  custos de operação, a receita e a lista de apoiadores é definido nas telas “Finanças” e “Apoiadores”.
-
-  `max_status_length`, `preview_image`, `appeal_window_days`, os períodos de retenção (`*_retention_days`), `remote_media_cache_max_bytes` e `oauth_client_rate_limits` não aparecem na tela;
-  altere-os com a CLI ou a API de cliente. As configurações de tradução têm uma tela própria, abaixo.
+  Na página Geral, uma imagem é enviada quando você salva e então se torna a miniatura ou a imagem de prévia de link. Quem
+  pode ver os custos de operação, a receita e a lista de apoiadores é definido nas telas “Custos e receita” e “Apoiadores”. As
+  configurações de tradução têm uma tela própria, abaixo.
 - **Cliente web** (“Tradução”, `/admin/translation`): os provedores que este servidor tem, sua ordem e o que cada um pode
   receber, a tradução do navegador, os limites mensais e por quanto tempo as traduções são mantidas, com os caracteres enviados
   neste mês e a taxa de acertos do cache. Cada processo do servidor soma sua contagem de acertos do cache à taxa no máximo uma vez por minuto,
@@ -500,7 +504,7 @@ my instance rule list                                  # active rules (-all incl
   `rule_moved`, `rule_retired`).
 - Os códigos de saída são os mesmos das configurações (0 para sucesso, 1 para um valor rejeitado ou um erro do banco de dados, 2 para argumentos incorretos).
 
-<!-- source: link-card-domains c8f674387fa8 -->
+<!-- source: link-card-domains 1b8839ab9f1d -->
 ## Domínios de cartões de link
 
 Os cartões de link das publicações (`link_cards`) vêm de um crawler: o servidor busca a página linkada e sua imagem. Uma regra
@@ -519,11 +523,11 @@ modos. Uma regra é escolha do operador e se aplica além do que os próprios si
 - Uma alteração tem efeito na hora, inclusive sobre os cartões que o servidor já tem, e as imagens com proxy desses cartões deixam de ser servidas enquanto as imagens estiverem paradas.
 - Remover uma regra traz de volta os cartões que o servidor já tem como estavam. Um link que foi ignorado recebe seu cartão da próxima vez que uma publicação precisar dele; nada é buscado de novo em massa.
   Um cartão buscado de novo enquanto as imagens estavam paradas continua sem imagem até sua próxima nova busca.
-- Na tela de administração do cliente web (“Domínios de cartões de link”, `/admin/link-card-domains`, `manage_settings`), “Adicionar uma regra” define uma regra com uma anotação. A lista mostra 40 regras por página e pode ser pesquisada por domínio; escolher um domínio abre a página da regra, onde você altera o modo e a anotação, e a remove (depois de uma caixa de diálogo de confirmação).
+- Na tela de administração do cliente web (“Domínios de cartões de link”, `/admin/link-card-domains`, `manage_settings`), “Adicionar uma regra” define uma regra com seu modo e uma anotação, e recusa um domínio que já tem uma regra, com um link para essa regra. A lista mostra as regras por domínio, 40 por vez com “Mostrar mais”; escolher um domínio abre a página da regra, onde você altera o modo e a anotação, e a remove (depois de uma caixa de diálogo de confirmação).
 - A API de administração é `/api/v1/admin/link_card_domains` (listar, definir; um `DELETE` com o domínio o remove) e exige a permissão de função `manage_settings`. Um servidor mantém no máximo 1.000 regras, cada uma com uma anotação de até 5.000 caracteres.
 - Toda alteração é registrada no registro de auditoria (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 
-<!-- source: theme d3ebe5db33cb -->
+<!-- source: theme 98c2eee35f30 -->
 ## Tema
 
 O tema do servidor inteiro é um conjunto de substituições dos tokens de design do cliente web, com um valor claro e um escuro para cada cor. Ele vale para o cliente web de todos os visitantes e para as telas que o servidor renderiza (login, cadastro, termos etc.). Não há CSS personalizado.
@@ -534,17 +538,21 @@ O tema do servidor inteiro é um conjunto de substituições dos tokens de desig
   | --- | --- | --- |
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | cor | `#rrggbb` para claro e para escuro |
   | `font-sans-override`, `font-mono-override` | família de fonte | Nomes de família, separados por vírgulas (no máximo 30), sem família genérica como `sans-serif`; coloque entre aspas um nome com uma palavra que comece com um dígito, como `"M PLUS 1p"` |
-  | `text-tagline`, `text-title`, `text-body`, `text-caption` | comprimento | `0` ou rem / px, de 0,625rem a 3rem |
+  | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | comprimento | `0` ou rem / px, de 0,625rem a 3rem |
   | `text-*--line-height` dos mesmos quatro | número | de 1 a 2,5 |
   | `radius-control`, `radius-overlay` | comprimento | de 0 a 2rem |
   | `duration-spin` | duração | ms / s, de 0 a 1000ms |
 
 - O cliente web desenha o texto com fontes próprias: Noto Color Emoji para os emojis, Noto Sans para o alfabeto latino, o grego e o cirílico, e Noto Sans CJK com os glifos do idioma do texto para o resto. As fontes de `font-sans-override` (texto) e `font-mono-override` (código) vêm logo depois da fonte de emoji, e as fontes do cliente web desenham os caracteres que faltam nas suas. Um tema não pode substituir essas fontes.
 - Você salva um conjunto como rascunho, o visualiza e depois o publica; o tema em vigor não muda até você publicar. Cada salvamento substitui o rascunho inteiro, e cada publicação é uma nova revisão. Restaurar publica de novo o conjunto que estava em vigor antes do atual e deixa o rascunho como está.
+- No cliente web, **Administração > Tema** mostra o rascunho e o tema em vigor. Editar o rascunho mostra cada cor para claro e
+  escuro com o contraste de cada par que ela forma, e não salva um par abaixo do mínimo. Visualizar mostra o rascunho em todas
+  as telas da aba do seu navegador até você pressionar de novo; ninguém mais o vê. Publicar e Restaurar o tema anterior estão
+  na mesma tela. O ícone e o logotipo ficam em **Configurações do servidor > Ícone e logo**.
 - Ao salvar e ao publicar, o servidor confere o formato e a faixa dos valores e o contraste de cada par de tokens de cor (os tokens que você não substitui usam seus valores padrão; WCAG 2.2 AA em claro e em escuro). Se alguma conferência falhar, nada é salvo nem publicado.
 - A substituição de um token que uma nova versão renomeia ou aposenta, ou cujo valor não serve mais ao token, nunca faz uma atualização falhar. Ela continua no conjunto salvo, mas deixa de valer: a API de administração a lista em `stale_tokens`, `my instance theme get` a nomeia e o próximo salvamento do rascunho a descarta.
 - A folha de estilo da revisão publicada é servida em `/theme/{revision ID}.css` (`immutable`, em cache por muito tempo). O shell HTML tem um cache compartilhado (60 segundos mais 300 de revalidação), então leva alguns minutos depois de você publicar para todos receberem. Uma página que já está aberta mantém o visual antigo até ser recarregada.
-- `<meta name="theme-color">` (claro e escuro) no shell e `theme_color` / `background_color` (claro) do Web App Manifest tomam o valor de `color-surface` do tema. Os e-mails usam as cores padrão dos tokens, seja qual for o tema.
+- `<meta name="theme-color">` (claro e escuro) no shell e `theme_color` / `background_color` (claro) do Web App Manifest tomam o valor de `color-surface` do tema. A versão HTML de todo e-mail que o servidor envia a partir de então usa as cores do tema publicado, claras e escuras; um rascunho nunca chega a um e-mail.
 - Publicar um conjunto sem tokens volta o tema ao padrão, e a folha de estilo deixa de ser carregada.
 - Você pode alterá-lo com a API de cliente e com a CLI. A API de cliente exige a permissão de função `manage_settings`: `GET /api/v1/admin/theme` lê o rascunho e o conjunto em vigor, `PUT /api/v1/admin/theme/draft` salva o rascunho, `GET /api/v1/admin/theme/draft/stylesheet` devolve a folha de estilo do rascunho para visualização, e `POST /api/v1/admin/theme/publish` e `POST /api/v1/admin/theme/restore` publicam. As publicações ficam registradas no log de auditoria (`setting_changed`, alvo `theme`).
 
@@ -565,7 +573,7 @@ echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # ba
 }
 ```
 
-<!-- source: logo-and-icon a2d23def322b -->
+<!-- source: logo-and-icon 1269b80d7ad5 -->
 ## Logotipo e ícone
 
 Além da miniatura e da imagem de prévia, a instância pode ter seu próprio ícone, logotipo e logotipo escuro, cada um enviado como um único SVG.
@@ -607,12 +615,11 @@ Enquanto nenhum for definido, as imagens integradas do mycroblog são usadas, e 
 - `GET /api/v1/instance` retorna `icon`, `logo` e `logo_dark` com a URL do SVG, a URL e o tamanho de cada versão PNG
   e a revisão; cada um é omitido enquanto a imagem integrada está em uso.
 - Defina-os no cliente web em **Configurações do servidor** > **Ícone e logo** (`/admin/settings/branding`, permissão de função `manage_settings`). Escolha um arquivo
-  SVG para o ícone, o logotipo ou o logotipo para fundos escuros: o servidor o verifica, o navegador desenha as versões PNG e o
-  formulário as exibe em prévia (uma aba do navegador, a tela inicial, o ícone do app, um e-mail em fundo claro e escuro e a prévia
-  de link) com a lista do que o servidor removeu. Se o servidor recusar o arquivo, o motivo aparece sob o botão com como
-  corrigir. Para o ícone, defina ali também a cor de fundo de suas versões opacas. **Salvar** envia o SVG com todas as versões
-  PNG; **Usar o ícone padrão**, **Usar o logotipo padrão** e **Remover o logotipo para fundos escuros** os limpam. O
-  cliente web guarda as imagens que mostrou para uso offline.
+  SVG para o ícone, o logotipo ou o logotipo para fundos escuros: o servidor o verifica na hora, e o
+  formulário o mostra como o servidor o manteria, com a lista do que o servidor removeu. Se o servidor recusar o arquivo, o motivo aparece sob ele
+  com como corrigir. Para o ícone, defina ali também a cor de fundo de suas versões opacas. **Salvar** desenha as versões
+  PNG no navegador e envia cada imagem escolhida com elas; **Usar a imagem padrão** devolve uma imagem à integrada
+  quando você salva. O cliente web guarda as imagens que mostrou para uso offline.
 - A API de cliente faz o mesmo, com a permissão de função `manage_settings`:
   `POST /api/v1/admin/instance/brand/sanitize` verifica um SVG e retorna o SVG higienizado com as versões PNG a desenhar (não
   salva nada), `PUT /api/v1/admin/instance/brand/{icon|logo|logo_dark}` salva o SVG com todas as versões PNG
@@ -626,7 +633,7 @@ my instance brand show          # each image with its revision, when and by whom
 my instance brand clear icon    # back to the built-in icon (also logo, logo_dark)
 ```
 
-<!-- source: custom-emoji 5e0ddb3251cf -->
+<!-- source: custom-emoji 852330f1cc29 -->
 ## Emojis personalizados
 
 Os emojis personalizados locais são mostrados como imagens quando alguém escreve `:shortcode:` no corpo ou no aviso de conteúdo de uma publicação, ou no
@@ -648,9 +655,10 @@ Notes e dos actors que você envia.
 - A exclusão não pode ser desfeita. Os emojis em publicações antigas também voltam a ser texto, e registrar o mesmo shortcode de novo cria um
   emoji diferente. As imagens que os servidores federados copiaram não podem ser excluídas.
 - A tela de administração (“Emoji personalizado”, `/admin/custom-emojis`), a API de cliente (`/api/v1/admin/custom_emojis`) e a CLI fazem as
-  mesmas coisas. Na tela, “Registrar um emoji personalizado” abre o formulário de registro (`/admin/custom-emojis/new`), e escolher
-  um emoji na lista abre sua página (`/admin/custom-emojis/{id}`), onde você altera suas configurações, substitui sua imagem, ativa ou
-  desativa, exclui ou copia um de outro servidor; a própria lista ativa e desativa um emoji com um toque. A tela de administração e a API de cliente exigem a permissão de função `manage_custom_emojis` (apenas a função integrada `admin`
+  mesmas coisas. Na tela, “Registrar um emoji” abre o formulário de registro (`/admin/custom-emojis/new`), que avisa
+  sobre uma imagem acima de 100 KiB, e escolher um emoji na lista abre sua página (`/admin/custom-emojis/{id}`), onde você ativa
+  ou desativa, substitui a imagem, altera a categoria, os aliases e a visibilidade no seletor, exclui digitando o shortcode
+  ou copia um de outro servidor. A tela de administração e a API de cliente exigem a permissão de função `manage_custom_emojis` (apenas a função integrada `admin`
   a tem). Registrar, copiar, substituir a imagem, alterar configurações e aliases, ativar e desativar, e excluir são
   registrados no registro de auditoria (alvo `custom_emoji`) seja qual for a forma como são feitos (uma operação da CLI é registrada como uma operação
   da CLI).
@@ -673,7 +681,8 @@ my admin emoji requests reject [-reason <text>] <request id>                    
 
 - Um usuário com a permissão de função `create_custom_emojis` (um recurso de usuário) pode solicitar a criação de um emoji em “Emoji
   personalizado” nas configurações (`/settings/custom-emojis`), alterar os aliases, a categoria e a visibilidade no seletor dos emojis que
-  criou, e excluí-los. Substituir uma imagem também é uma solicitação. Uma solicitação não aparece em lugar nenhum (seletor, publicações, reações,
+  criou, e excluí-los; a página mostra quantas solicitações lhes restam neste mês. Substituir uma imagem também é uma
+  solicitação, feita com a API de cliente (`POST /api/v1/custom_emoji_requests`, `kind` `image`); a página de configurações não a oferece. Uma solicitação não aparece em lugar nenhum (seletor, publicações, reações,
   federação) até que alguém com `manage_custom_emojis` a aprove. Aprove ou rejeite na página “Solicitações” de “Emoji
   personalizado” na tela de administração (`/admin/custom-emojis/requests`), com a API de cliente (`/api/v1/admin/custom_emoji_requests`) ou com a CLI acima. As pessoas com
   `manage_custom_emojis` são notificadas de uma solicitação (`admin_custom_emoji_request`), e quem solicitou é notificado da

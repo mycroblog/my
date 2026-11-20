@@ -8,13 +8,14 @@ Há duas ferramentas:
 - **O modo de manutenção** (`maintenance = true`, `MY_MAINTENANCE=true` ou `my serve -maintenance`). O `my serve` inicia sem abrir nenhum adaptador e responde a cada requisição com um `503`, um `Retry-After` e uma resposta que cada cliente entende. Use-o sempre que o próprio `my serve` puder rodar.
 - **A página exportada** (`my maintenance export`). HTML estático do mesmo template, para um balanceador de carga, uma CDN ou um proxy reverso servir quando o `my serve` não consegue rodar de jeito nenhum (uma imagem sendo substituída, uma revisão que não inicia). Veja [Exportando a página de manutenção](admin-cli.md#exporting-the-maintenance-page).
 
-<!-- source: what-the-maintenance-mode-answers 13edbbd09e33 -->
+<!-- source: what-the-maintenance-mode-answers 800ed13d3906 -->
 ## O que o modo de manutenção responde
 
 O processo lê apenas o endereço de escuta, `host`, `account_domain`, `web_origin`, os proxies (`trusted_proxies`, `trusted_proxy_header`),
 a [verificação de origem](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) (`origin_secret`, `origin_secret_previous`, `origin_secret_header`), `status_page_url` e as configurações `maintenance_*` ([referência de configuração](../reference/configuration.md)).
 As configurações do banco de dados, da fila, do armazenamento de blobs, do KV, do e-mail e do stream não são lidas nem verificadas, então podem estar erradas ou inacessíveis nesse meio-tempo.
-Qualquer que seja o `role`, ele serve apenas HTTP: sem jobs, sem jobs periódicos, sem broker de stream.
+Qualquer que seja o `role`, ele serve apenas HTTP: sem jobs, sem jobs periódicos, sem broker de stream. Ele também serve HTTP simples qualquer que seja o valor de `tls`,
+em `listen` ou no padrão `:8080` ([servindo HTTPS a partir do servidor](running.md#serving-https-from-the-server)).
 `my config check -maintenance` verifica exatamente o que o modo de manutenção lê.
 
 Com [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) definido, uma requisição que precisa do cabeçalho e não o tem recebe o `403` daquela verificação, em vez da tabela abaixo.
@@ -105,7 +106,7 @@ As páginas de erro dos front ends abaixo respondem aos erros do servidor com a 
 (`502` e `504`, e o `503` do próprio balanceador de carga quando ele não tem backend saudável), ou ative a regra somente enquanto o `my serve` não consegue rodar:
 uma regra para todo `503` também substituiria as próprias respostas do modo de manutenção, como o problema que a API do cliente e o cliente web leem.
 
-<!-- source: cloud-run b728619281de -->
+<!-- source: cloud-run 8bed844981b6 -->
 ### Cloud Run
 
 Implante uma nova revisão com a variável e remova-a depois:
@@ -115,6 +116,9 @@ gcloud run services update my --region=asia-northeast1 \
   --update-env-vars=MY_MAINTENANCE=true,MY_MAINTENANCE_UNTIL=2026-10-24T03:00:00Z
 gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE,MY_MAINTENANCE_UNTIL
 ```
+
+Com o módulo OpenTofu, defina-o no bloco, como `settings = { maintenance = "true" }`, e aplique, pois a próxima aplicação restaura
+o que o bloco diz: [Implantando no Cloud Run](deploy-cloud-run.md#the-maintenance-mode) mostra isso em torno de uma atualização.
 
 Quando o Cloud Run é exposto diretamente, sem balanceador de carga, não há nada na frente dele, então o modo de manutenção é a única ferramenta.
 
@@ -133,12 +137,13 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-<!-- source: aws-ecs 8c6aa496b517 -->
+<!-- source: aws-ecs afc0ba5adee4 -->
 ### AWS ECS
 
 Registre uma revisão da task definition do serviço com `MY_MAINTENANCE=true` no ambiente do contêiner, atualize o serviço para ela,
-e faça o mesmo sem a variável depois. Com os módulos do OpenTofu, `deploy/opentofu/upgrade.sh --platform aws-ecs --maintenance`
-troca o serviço para o modo de manutenção antes de uma atualização, e de volta com a nova revisão.
+e faça o mesmo sem a variável depois. Com o módulo OpenTofu, defina-o no bloco, como `settings = { maintenance = "true" }`,
+e aplique, pois a próxima aplicação restaura o que o bloco diz: em torno de uma atualização, aplique o modo, depois a nova versão, depois o bloco sem ele,
+como faz [Implantando no Cloud Run](deploy-cloud-run.md#the-maintenance-mode).
 
 **Quando o `my serve` não consegue rodar** atrás do CloudFront: envie o `index.html` exportado para um bucket do S3 que seja uma segunda origem
 (a página de erro não pode vir da origem que está falhando), e adicione respostas de erro personalizadas para `502` e `504` (e `503` somente enquanto o `my serve` não consegue rodar)
