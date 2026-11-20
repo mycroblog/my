@@ -5,7 +5,8 @@
   "license": "AGPL-3.0-only",
   "exports": {
     ".": "./src/index.ts",
-    "./sw-protocol": "./src/sw-protocol.ts"
+    "./sw-protocol": "./src/sw-protocol.ts",
+    "./measure": "./src/measure.ts"
   },
   "scripts": {
     "typecheck": "bun --bun tsc -p .",

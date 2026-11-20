@@ -15,6 +15,7 @@
 // ADR-0025 §3): the app asks it and passes the answer in as `supported`.
 
 import type { ReactNode } from "react";
+import { timeTransition } from "./measure";
 
 export type TransitionKind = "push" | "pop" | "modal" | "replace" | "none";
 
@@ -44,12 +45,15 @@ export function routerTransitions<Change>(
  * by `kind` where the browser runs View Transitions (`supported`). It resolves once the new screen is in the DOM.
  */
 export async function runTransition(kind: TransitionKind, update: () => void, supported: boolean): Promise<void> {
+  const ended = timeTransition(kind);
   const types = supported && transitionTypes(kind);
   if (types === false) {
     update();
+    ended();
     return;
   }
   await document.startViewTransition({ update, types }).updateCallbackDone;
+  ended();
 }
 
 /** The View Transition name of a shared element, a CSS identifier apart from the names of the frame's regions. */

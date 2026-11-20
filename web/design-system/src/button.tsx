@@ -12,6 +12,7 @@ import { createContext, use, type ComponentProps, type ReactNode } from "react";
 import { Button as AriaButton, Link as AriaLink, type ButtonProps as AriaButtonProps } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Box, Pin, Row, Spoken, type Gap, type RowProps } from "./layout";
+import { timePress } from "./measure";
 import { usePreviewState } from "./preview";
 
 export type ButtonKind = "primary" | "secondary" | "quiet";
@@ -30,6 +31,8 @@ export type ButtonProps = Omit<AriaButtonProps, "className" | "style" | "render"
   busy?: boolean;
   /** The keys that run the button's action (what `useAction` returns), for assistive technology. */
   "aria-keyshortcuts"?: string | undefined;
+  /** The ID of the action the button runs (what `useAction` returns), by which its press is timed (measure.ts). */
+  "data-action"?: string | undefined;
   /**
    * On a touch screen, its press target reaches the touch height above and below it, as an icon button's does: a
    * button of a row that is a finger's target tall (a list's Remove), drawn a timeline control's height.
@@ -184,6 +187,24 @@ export const heardPointerDown = (props: ComponentProps<"button">) =>
   props.disabled === true ? undefined : props.onPointerDown;
 
 /**
+ * The handlers that time the presses of a button that runs the action `action`, from the input that ends the press (a
+ * pointer's release, Enter or Space let go) to the next paint; none without an action or while it is disabled. They
+ * listen in the capture phase, before React Aria's press handlers run what the press does.
+ */
+function pressTiming(action: string | undefined, disabled: boolean | undefined) {
+  if (action === undefined || disabled === true) return {};
+  return {
+    "data-action": action,
+    onPointerUpCapture: (e: { timeStamp: number }) => {
+      timePress(action, e.timeStamp);
+    },
+    onKeyUpCapture: (e: { key: string; timeStamp: number }) => {
+      if (e.key === "Enter" || e.key === " ") timePress(action, e.timeStamp);
+    },
+  };
+}
+
+/**
  * What the buttons and the link buttons inside act on, where several alike stand side by side (a card's plan): each
  * says it after its words to assistive technology alone, so that its name begins with the words shown and tells it
  * from the others ("Choose Supporter", WCAG 2.5.3). A button with a name of its own (`aria-label`) keeps that.
@@ -209,6 +230,7 @@ export function ButtonBase({
   pressed,
   "aria-keyshortcuts": keyshortcuts,
   "aria-description": description,
+  "data-action": action,
   touch,
   children,
   ...rest
@@ -232,6 +254,7 @@ export function ButtonBase({
           render={(props, { isHovered, isPressed, isFocusVisible }) => (
             <button
               {...props}
+              {...pressTiming(action, props.disabled)}
               onPointerDown={heardPointerDown(props)}
               aria-pressed={pressed}
               aria-keyshortcuts={keyshortcuts}

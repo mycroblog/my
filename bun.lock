@@ -60,6 +60,7 @@
         "@my/design-system": "workspace:*",
         "@my/design-tokens": "workspace:*",
         "@my/platform": "workspace:*",
+        "@my/rtc": "workspace:*",
         "@tanstack/react-router": "1.170.46",
         "react": "19.3.1",
         "react-dom": "19.3.1",

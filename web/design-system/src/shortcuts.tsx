@@ -36,6 +36,7 @@ import {
   type Scope,
 } from "./keys";
 import { Row, Stack } from "./layout";
+import { timePress } from "./measure";
 import { stringsIn, useReader } from "./locale";
 import { ModalLayer, ModalPresence } from "./modal";
 
@@ -133,7 +134,8 @@ export function HeardShortcuts({ onAct, children }: { onAct: () => void; childre
  * the key goes on to the page. A
  * focus action shows under its group, the namespace of its ID (`post` of `post.reply`) unless `group` names another,
  * headed by `groupLabel` from the part's catalog ("When a post is focused"). It returns the aria-keyshortcuts to
- * spread on the control that does the same. Without a provider (a part on its own) it declares nothing.
+ * spread on the control that does the same, with the action's ID (`data-action`), by which the design system times
+ * the control's presses and the key's (measure.ts). Without a provider (a part on its own) it declares nothing.
  */
 export function useAction(
   id: string,
@@ -144,7 +146,7 @@ export function useAction(
     group,
     groupLabel,
   }: { scope: Scope; label: string; group?: string | undefined; groupLabel?: string | undefined },
-): { "aria-keyshortcuts"?: string } {
+): { "aria-keyshortcuts"?: string; "data-action": string } {
   const store = use(StoreContext);
   const target = use(ScopeContext);
   if (store !== null && scope === "focus" && target === null)
@@ -162,8 +164,12 @@ export function useAction(
       scope,
       owner: () => (scope === "focus" ? (target?.current ?? null) : null),
       run: (press) => {
+        const start = performance.now();
         const did = latest.current.run(press);
-        if (did !== false) latest.current.heard?.();
+        if (did !== false) {
+          timePress(id, start);
+          latest.current.heard?.();
+        }
         return did;
       },
       group,
@@ -171,7 +177,7 @@ export function useAction(
     });
   }, [store, target, id, label, scope, group, groupLabel]);
   const keys = store?.aria(id);
-  return keys === undefined ? {} : { "aria-keyshortcuts": keys };
+  return keys === undefined ? { "data-action": id } : { "aria-keyshortcuts": keys, "data-action": id };
 }
 
 const help = tv({

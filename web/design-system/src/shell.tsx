@@ -1011,6 +1011,7 @@ export function FrameAction({
   secondary = false,
   menu,
   "aria-keyshortcuts": keyshortcuts,
+  "data-action": action,
 }: {
   icon: IconName;
   label: string;
@@ -1022,6 +1023,8 @@ export function FrameAction({
   menu?: { label: string; children: ReactNode } | undefined;
   /** The keys that run the action (what `useAction` returns), for assistive technology. */
   "aria-keyshortcuts"?: string | undefined;
+  /** The ID of the action (what `useAction` returns), by which its press is timed. */
+  "data-action"?: string | undefined;
 }) {
   const place = use(PlaceContext);
   const float = place === "float";
@@ -1032,6 +1035,7 @@ export function FrameAction({
       size={float ? (labelled ? "form" : "float") : "side"}
       aria-label={label}
       aria-keyshortcuts={keyshortcuts}
+      data-action={action}
       onPress={onPress}
     >
       <Row as="span" inline align="center" gap="shell-inset">
