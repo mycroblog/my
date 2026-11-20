@@ -127,8 +127,6 @@ export type SettingsEntry = {
   readonly icon: IconName;
   /** Its name, in the menu and as the title of its screen (settings.entry.<path>). */
   readonly name: MessageId;
-  /** What its screen holds, the line under its name in the menu at /settings (settings.entry.<path>.hint). */
-  readonly hint: MessageId;
   /** Whether the menu lists it and its screen opens for this reader; for every reader without it. */
   readonly shown?: (facts: SettingsFacts) => boolean;
   /**
@@ -151,7 +149,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "general",
     icon: "profile",
     name: "settings.entry.profile",
-    hint: "settings.entry.profile.hint",
     Screen: ProfileSettings,
     load: loadProfileSettings,
   },
@@ -160,7 +157,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "general",
     icon: "display",
     name: "settings.entry.display",
-    hint: "settings.entry.display.hint",
     Screen: DisplaySettings,
     load: loadDisplaySettings,
   },
@@ -169,7 +165,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "general",
     icon: "notifications",
     name: "settings.entry.notifications",
-    hint: "settings.entry.notifications.hint",
     Screen: NotificationSettings,
     load: loadNotificationSettings,
   },
@@ -179,7 +174,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "general",
     icon: "room",
     name: "settings.entry.voice",
-    hint: "settings.entry.voice.hint",
     shown: (facts) => facts.voice,
     Screen: VoiceSettings,
     load: loadVoiceSettings,
@@ -190,7 +184,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "general",
     icon: "events",
     name: "settings.entry.events",
-    hint: "settings.entry.events.hint",
     Screen: EventSettings,
     load: loadEventSettings,
   },
@@ -201,7 +194,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "general",
     icon: "emojiCustom",
     name: "settings.entry.custom_emojis",
-    hint: "settings.entry.custom_emojis.hint",
     shown: ({ permissions }) =>
       permissions.includes("create_custom_emojis") && !permissions.includes("manage_custom_emojis"),
     Screen: CustomEmojiSettings,
@@ -213,7 +205,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "general",
     icon: "funding",
     name: "settings.entry.supporter",
-    hint: "settings.entry.supporter.hint",
     shown: (facts) => facts.supporters,
     Screen: SupporterSettings,
     load: loadSupporterSettings,
@@ -223,7 +214,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "people",
     icon: "members",
     name: "settings.entry.relationships",
-    hint: "settings.entry.relationships.hint",
     Screen: RelationshipSettings,
     load: loadRelationshipSettings,
   },
@@ -232,7 +222,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "people",
     icon: "filter",
     name: "settings.entry.filters",
-    hint: "settings.entry.filters.hint",
     Screen: FilterSettings,
     load: loadFilterSettings,
   },
@@ -241,7 +230,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "access",
     icon: "security",
     name: "settings.entry.security",
-    hint: "settings.entry.security.hint",
     Screen: SecuritySettings,
     load: loadSecuritySettings,
   },
@@ -250,7 +238,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "access",
     icon: "apps",
     name: "settings.entry.apps",
-    hint: "settings.entry.apps.hint",
     Screen: AppsSettings,
     load: loadAppsSettings,
   },
@@ -261,7 +248,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "access",
     icon: "invite",
     name: "settings.entry.invites",
-    hint: "settings.entry.invites.hint",
     shown: (facts) => !facts.singleUser,
     listed: (facts) => facts.mayInvite,
     Screen: InvitesSettings,
@@ -272,7 +258,6 @@ export const settingsEntries: readonly SettingsEntry[] = [
     group: "account",
     icon: "accountData",
     name: "settings.entry.account",
-    hint: "settings.entry.account.hint",
     count: ({ appealable }) => appealable,
     Screen: AccountSettings,
     load: loadAccountSettings,

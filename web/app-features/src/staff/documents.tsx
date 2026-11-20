@@ -63,7 +63,6 @@ export function AdminDocumentsScreen(): ReactNode {
               key={d.path}
               icon="file"
               label={t("staff_settings.document", { document: d.key })}
-              hint={t("staff_settings.document.hint", { document: d.key })}
               href={documentPath(d.path)}
               count={undefined}
             />

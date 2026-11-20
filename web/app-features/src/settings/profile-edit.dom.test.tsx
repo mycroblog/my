@@ -96,9 +96,7 @@ describe("the form opens with what the account has", () => {
     expect(bioField().value).toBe("");
     expect(pairs()).toEqual([]);
     expect(screen.queryAllByRole("list", { name: "Fields" })).toHaveLength(0);
-    expect(
-      screen.getByText("No fields yet. Add one to show something like a website or your pronouns on your profile."),
-    ).not.toBeNull();
+    expect(screen.getByText("No fields yet.")).not.toBeNull();
   });
 
   test("in Japanese the images, the fields and Save read in it", async () => {
@@ -315,7 +313,7 @@ describe("the fields", () => {
 
   test("Add a field stands once: before the pairs while there is one, and after the line that says there is none", async () => {
     const form = await profileForm();
-    const none = "No fields yet. Add one to show something like a website or your pronouns on your profile.";
+    const none = "No fields yet.";
     /** Whether Add a field comes before `part` as the page is read. */
     const addBefore = (part: HTMLElement) =>
       (part.compareDocumentPosition(screen.getByRole("button", { name: "Add a field" })) &

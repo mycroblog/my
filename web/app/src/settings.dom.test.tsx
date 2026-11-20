@@ -42,17 +42,6 @@ const groups = (menu: HTMLElement) =>
 const beside = (name = "Settings") =>
   screen.queryAllByRole("navigation", { name }).filter((menu) => !screen.getByRole("main").contains(menu));
 
-const profileHint = "Name, bio, images, badges, approving followers, appearing in search";
-const displayHint = "Language, time zone, link previews, defaults for new posts, timeline languages";
-const notificationsHint = "What you are notified of, push, email, sound, notifications from people you do not know";
-const relationshipsHint = "Blocked accounts, muted accounts, muted servers, followed hashtags";
-const filtersHint = "Words and phrases that fold or hide posts";
-const securityHint = "Password, passkeys, two-factor authentication, linked accounts, signed-in browsers";
-const appsHint = "Apps you allowed to use your account, apps you registered";
-const invitesHint = "Invite codes and links to bring people to this server";
-const accountHint =
-  "Export and import, automatic deletion of old posts, moving the account, moderation actions and appeals, deactivation and deletion";
-
 /**
  * The count of the entry Account and data in `menu`, there once the actions on the reader's account are read: one of
  * the fake's is in effect and can be appealed.
@@ -94,30 +83,30 @@ describe("the menu", () => {
       account,
       ...others
     ] = rows(menu);
-    // An entry's row says its name, then what it holds.
-    expect(profile?.[0]).toMatch(new RegExp(`^Profile\\s*${profileHint}$`));
+    // An entry's row says its name alone.
+    expect(profile?.[0]).toBe("Profile");
     expect(profile?.slice(1)).toEqual(["/settings/profile", null]);
-    expect(display?.[0]).toMatch(new RegExp(`^Display and posting\\s*${displayHint}$`));
+    expect(display?.[0]).toBe("Display and posting");
     expect(display?.slice(1)).toEqual(["/settings/display", null]);
-    expect(notifications?.[0]).toMatch(new RegExp(`^Notifications\\s*${notificationsHint}$`));
+    expect(notifications?.[0]).toBe("Notifications");
     expect(notifications?.slice(1)).toEqual(["/settings/notifications", null]);
-    expect(voice?.[0]).toMatch(/^Voice chat\s*The rooms you hosted$/);
+    expect(voice?.[0]).toBe("Voice chat");
     expect(voice?.slice(1)).toEqual(["/settings/voice", null]);
-    expect(events?.[0]).toMatch(/^Events\s*Reminders before events$/);
+    expect(events?.[0]).toBe("Events");
     expect(events?.slice(1)).toEqual(["/settings/events", null]);
-    expect(relationships?.[0]).toMatch(new RegExp(`^Relationships\\s*${relationshipsHint}$`));
+    expect(relationships?.[0]).toBe("Relationships");
     expect(relationships?.slice(1)).toEqual(["/settings/relationships", null]);
-    expect(filters?.[0]).toMatch(new RegExp(`^Keyword filters\\s*${filtersHint}$`));
+    expect(filters?.[0]).toBe("Keyword filters");
     expect(filters?.slice(1)).toEqual(["/settings/filters", null]);
-    expect(security?.[0]).toMatch(new RegExp(`^Security\\s*${securityHint}$`));
+    expect(security?.[0]).toBe("Security");
     expect(security?.slice(1)).toEqual(["/settings/security", null]);
-    expect(apps?.[0]).toMatch(new RegExp(`^Apps\\s*${appsHint}$`));
+    expect(apps?.[0]).toBe("Apps");
     expect(apps?.slice(1)).toEqual(["/settings/apps", null]);
     // The reader may create invites, which the settings read before the menu opens.
-    expect(invites?.[0]).toMatch(new RegExp(`^Invites\\s*${invitesHint}$`));
+    expect(invites?.[0]).toBe("Invites");
     expect(invites?.slice(1)).toEqual(["/settings/invites", null]);
     // Then how many things wait there, as its badge and as what the badge means.
-    expect(account?.[0]).toMatch(new RegExp(`^Account and data\\s*${accountHint}\\s*1\\s*1 item to check$`));
+    expect(account?.[0]).toMatch(/^Account and data\s*1\s*1 item to check$/);
     expect(account?.slice(1)).toEqual(["/settings/account", null]);
     expect(others).toEqual([["Sign out…", "/settings?sign_out=true", null]]);
     // The menu is the screen: none beside it.

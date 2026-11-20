@@ -11,17 +11,9 @@
     "defaultMessage": "Domain actions",
     "description": "The name of the moderators' screen of the actions on remote domains, in the list of moderation screens and as its title. Read by moderators."
   },
-  "staff_domains.entry.domain_actions.hint": {
-    "defaultMessage": "Suspend or limit remote domains, and manage blocklists",
-    "description": "The line under Domain actions in the list of moderation screens. Read by moderators."
-  },
   "staff_domains.entry.instances": {
     "defaultMessage": "Remote servers",
     "description": "The name of the moderators' screen of the remote servers, in the list of moderation screens and as its title. Read by moderators."
-  },
-  "staff_domains.entry.instances.hint": {
-    "defaultMessage": "Whether deliveries reach other servers",
-    "description": "The line under Remote servers in the list of moderation screens. Read by moderators."
   },
   "staff_domains.forbidden": {
     "defaultMessage": "Your account no longer has the permission to moderate domains.",

@@ -7,10 +7,6 @@
     "defaultMessage": "Costs and income",
     "description": "Name of the administration screen of the server's running costs and income, at /admin/finance, and its title; apart from Finance, the menu's page of the finance for its readers. Read by administrators."
   },
-  "staff_finance.entry.hint": {
-    "defaultMessage": "Costs, income, billing imports, and what is published",
-    "description": "Line under Finance in the list of administration screens at /admin."
-  },
   "staff_finance.back.root": {
     "defaultMessage": "Costs and income",
     "description": "The way back from a screen under Costs and income to its first page, at /admin/finance."
@@ -34,10 +30,6 @@
   "staff_finance.costs": {
     "defaultMessage": "Costs",
     "description": "Name of the screen of the cost items, at /admin/finance/costs, and its title."
-  },
-  "staff_finance.costs.hint": {
-    "defaultMessage": "What the server pays, once or repeatedly",
-    "description": "Line under Costs in the list of Finance screens."
   },
   "staff_finance.costs.record": {
     "defaultMessage": "Record a cost",
@@ -98,10 +90,6 @@
   "staff_finance.income": {
     "defaultMessage": "Income",
     "description": "Name of the screen of the income and its money movements, at /admin/finance/income, and its title."
-  },
-  "staff_finance.income.hint": {
-    "defaultMessage": "Payments, refunds, and fees, and who paid",
-    "description": "Line under Income in the list of Finance screens."
   },
   "staff_finance.income.totals": {
     "defaultMessage": "Income per period",
@@ -184,7 +172,7 @@
     "description": "In the place of the money movements when they could not be loaded, before Try again."
   },
   "staff_finance.income.movements.empty": {
-    "defaultMessage": "No money has moved yet. Payments and refunds show here once the payment provider reports them.",
+    "defaultMessage": "No money has moved yet.",
     "description": "In the place of the money movements while there is none."
   },
   "staff_finance.income.movements.none": {
@@ -194,10 +182,6 @@
   "staff_finance.imports": {
     "defaultMessage": "Billing imports",
     "description": "Name of the screen of the imports of cloud providers' usage charges, at /admin/finance/imports, and its title."
-  },
-  "staff_finance.imports.hint": {
-    "defaultMessage": "Usage charges read from cloud providers",
-    "description": "Line under Billing imports in the list of Finance screens."
   },
   "staff_finance.imports.loading": {
     "defaultMessage": "Loading the billing imports…",
@@ -302,10 +286,6 @@
   "staff_finance.publication": {
     "defaultMessage": "Publication",
     "description": "Name of the screen of what the server publishes of its finance, at /admin/finance/publication, and its title."
-  },
-  "staff_finance.publication.hint": {
-    "defaultMessage": "What everyone can see of the costs and the income",
-    "description": "Line under Publication in the list of Finance screens, until the server says what is published now."
   },
   "staff_finance.publication.loading": {
     "defaultMessage": "Loading what is published…",
@@ -426,10 +406,6 @@
   "staff_finance.publication.not_yours": {
     "defaultMessage": "Only an administrator who may change the server's settings changes what is published.",
     "description": "On the publication screen, to a reader who may not change the server's settings, under what is published now."
-  },
-  "staff_finance.publication.now": {
-    "defaultMessage": "Publishes {costs, select, private {no costs} totals {the costs' totals} breakdown {the costs' totals and breakdown} other {}} and {income, select, private {no income} totals {the income's totals} plans {the income's totals and members of each plan} other {}}",
-    "description": "Line under Publication in the list of Finance screens: what the server publishes now of its costs and of its income."
   },
   "staff_finance.schedule": {
     "defaultMessage": "{schedule, select, once {Once} weeks {{count, plural, one {Every week} other {Every # weeks}}} months {{count, plural, one {Every month} other {Every # months}}} years {{count, plural, one {Every year} other {Every # years}}} other {}}",

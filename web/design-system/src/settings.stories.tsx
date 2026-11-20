@@ -69,18 +69,18 @@ const en = {
     account: "Account",
   },
   entries: {
-    profile: ["Profile", "Name, bio, images, badges, how people find you"],
-    display: ["Display and posting", "Language, time zone, new posts, timelines"],
-    notifications: ["Notifications", "What reaches you, and where"],
-    emoji: ["Custom emoji", "Emoji you added to this server"],
-    reminders: ["Event reminders", "When to hear about the events you join"],
-    relationships: ["Relationships", "Blocked and muted accounts, muted servers, followed hashtags"],
-    filters: ["Keyword filters", "Words hidden from your timelines"],
-    security: ["Security", "Password, passkeys, two-factor authentication, signed-in browsers"],
-    apps: ["Apps", "Apps you let into your account, apps you made"],
-    invites: ["Invites", "Invite people to this server"],
-    account: ["Account and data", "Export and import, auto-delete, move, moderation history, delete"],
-    supporter: ["Supporter membership", "Your plan and your payments"],
+    profile: "Profile",
+    display: "Display and posting",
+    notifications: "Notifications",
+    emoji: "Custom emoji",
+    reminders: "Event reminders",
+    relationships: "Relationships",
+    filters: "Keyword filters",
+    security: "Security",
+    apps: "Apps",
+    invites: "Invites",
+    account: "Account and data",
+    supporter: "Supporter membership",
   },
   display: {
     display: "Display",
@@ -183,18 +183,18 @@ const ja: typeof en = {
     account: "アカウント",
   },
   entries: {
-    profile: ["プロフィール", "名前、自己紹介、画像、バッジ、見つけてもらう方法"],
-    display: ["表示と投稿", "言語、タイムゾーン、投稿の初期設定、タイムライン"],
-    notifications: ["通知", "何を、どこで受け取るか"],
-    emoji: ["カスタム絵文字", "このサーバーに追加した絵文字"],
-    reminders: ["イベントのリマインダー", "参加するイベントをいつ知らせるか"],
-    relationships: ["つながり", "ブロック、ミュート、ミュートしたサーバー、フォロー中のハッシュタグ"],
-    filters: ["キーワードフィルター", "タイムラインに表示しない言葉"],
-    security: ["セキュリティ", "パスワード、パスキー、二要素認証、ログイン中のブラウザ"],
-    apps: ["アプリ", "連携を許可したアプリ、自分で登録したアプリ"],
-    invites: ["招待", "このサーバーに人を招待する"],
-    account: ["アカウントとデータ", "エクスポートとインポート、自動削除、引っ越し、モデレーションの履歴、削除"],
-    supporter: ["サポーター", "プランと支払い"],
+    profile: "プロフィール",
+    display: "表示と投稿",
+    notifications: "通知",
+    emoji: "カスタム絵文字",
+    reminders: "イベントのリマインダー",
+    relationships: "つながり",
+    filters: "キーワードフィルター",
+    security: "セキュリティ",
+    apps: "アプリ",
+    invites: "招待",
+    account: "アカウントとデータ",
+    supporter: "サポーター",
   },
   display: {
     display: "表示",
@@ -346,8 +346,7 @@ function Menu({ compact = false, current, grown = false }: { compact?: boolean; 
               <SettingsItem
                 key={e.id}
                 icon={e.icon}
-                label={w.entries[e.id][0] ?? ""}
-                hint={w.entries[e.id][1]}
+                label={w.entries[e.id]}
                 count={e.count}
                 countLabel={e.count === undefined ? undefined : `${String(e.count)} ${w.unread}`}
                 href={`/settings/${e.id}`}
@@ -690,7 +689,7 @@ function Settings({ at, grown = false }: { at: At; grown?: boolean }) {
       </FrameSide>
       <FrameMain>
         <FrameHeading>
-          {at === "menu" ? w.settings : at === "filter" ? w.filter.title : (w.entries[screens[at].entry][0] ?? "")}
+          {at === "menu" ? w.settings : at === "filter" ? w.filter.title : w.entries[screens[at].entry]}
         </FrameHeading>
         {open === undefined ? <Menu grown={grown} /> : <open.Screen back={back} />}
       </FrameMain>

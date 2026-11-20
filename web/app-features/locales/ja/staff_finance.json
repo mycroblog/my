@@ -7,10 +7,6 @@
     "defaultMessage": "費用と収入",
     "description": "Name of the administration screen of the server's running costs and income, at /admin/finance, and its title; apart from Finance, the menu's page of the finance for its readers. Read by administrators."
   },
-  "staff_finance.entry.hint": {
-    "defaultMessage": "費用・収入・請求の取り込み・公開の範囲",
-    "description": "Line under Finance in the list of administration screens at /admin."
-  },
   "staff_finance.back.root": {
     "defaultMessage": "費用と収入",
     "description": "The way back from a screen under Costs and income to its first page, at /admin/finance."
@@ -34,10 +30,6 @@
   "staff_finance.costs": {
     "defaultMessage": "費用",
     "description": "Name of the screen of the cost items, at /admin/finance/costs, and its title."
-  },
-  "staff_finance.costs.hint": {
-    "defaultMessage": "サーバーが払う費用。単発と繰り返し",
-    "description": "Line under Costs in the list of Finance screens."
   },
   "staff_finance.costs.record": {
     "defaultMessage": "費用を記録",
@@ -98,10 +90,6 @@
   "staff_finance.income": {
     "defaultMessage": "収入",
     "description": "Name of the screen of the income and its money movements, at /admin/finance/income, and its title."
-  },
-  "staff_finance.income.hint": {
-    "defaultMessage": "支払い・返金・手数料と、支払った人",
-    "description": "Line under Income in the list of Finance screens."
   },
   "staff_finance.income.totals": {
     "defaultMessage": "期間ごとの収入",
@@ -184,7 +172,7 @@
     "description": "In the place of the money movements when they could not be loaded, before Try again."
   },
   "staff_finance.income.movements.empty": {
-    "defaultMessage": "お金の動きはまだありません。決済の事業者が知らせた支払いと返金がここに出ます。",
+    "defaultMessage": "お金の動きはまだありません。",
     "description": "In the place of the money movements while there is none."
   },
   "staff_finance.income.movements.none": {
@@ -194,10 +182,6 @@
   "staff_finance.imports": {
     "defaultMessage": "請求の取り込み",
     "description": "Name of the screen of the imports of cloud providers' usage charges, at /admin/finance/imports, and its title."
-  },
-  "staff_finance.imports.hint": {
-    "defaultMessage": "クラウドの事業者から読み込む利用料金",
-    "description": "Line under Billing imports in the list of Finance screens."
   },
   "staff_finance.imports.loading": {
     "defaultMessage": "請求の取り込みを読み込んでいます…",
@@ -302,10 +286,6 @@
   "staff_finance.publication": {
     "defaultMessage": "公開の範囲",
     "description": "Name of the screen of what the server publishes of its finance, at /admin/finance/publication, and its title."
-  },
-  "staff_finance.publication.hint": {
-    "defaultMessage": "費用と収入のうち、誰でも見られるもの",
-    "description": "Line under Publication in the list of Finance screens, until the server says what is published now."
   },
   "staff_finance.publication.loading": {
     "defaultMessage": "公開の範囲を読み込んでいます…",
@@ -426,10 +406,6 @@
   "staff_finance.publication.not_yours": {
     "defaultMessage": "公開の範囲は、サーバーの設定を変えられる管理者だけが変えられます。",
     "description": "On the publication screen, to a reader who may not change the server's settings, under what is published now."
-  },
-  "staff_finance.publication.now": {
-    "defaultMessage": "費用は{costs, select, private {公開せず} totals {合計を公開し} breakdown {合計と内訳を公開し} other {}}、収入は{income, select, private {公開していません} totals {合計を公開しています} plans {合計とプランごとの人数を公開しています} other {}}",
-    "description": "Line under Publication in the list of Finance screens: what the server publishes now of its costs and of its income."
   },
   "staff_finance.schedule": {
     "defaultMessage": "{schedule, select, once {単発} weeks {{count, plural, =1 {毎週} other {# 週ごと}}} months {{count, plural, =1 {毎月} other {# か月ごと}}} years {{count, plural, =1 {毎年} other {# 年ごと}}} other {}}",

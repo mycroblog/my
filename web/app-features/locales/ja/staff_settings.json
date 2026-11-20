@@ -123,81 +123,41 @@
     "defaultMessage": "全般",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
-  "staff_settings.topic.general.hint": {
-    "defaultMessage": "名前・説明・連絡先・画像",
-    "description": "The line under General in the list of Server settings: what its page holds. Read by administrators."
-  },
   "staff_settings.topic.branding": {
     "defaultMessage": "アイコンとロゴ",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
-  },
-  "staff_settings.topic.branding.hint": {
-    "defaultMessage": "このサーバーを表す画像",
-    "description": "The line under Icon and logo in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.topic.registration": {
     "defaultMessage": "登録",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
-  "staff_settings.topic.registration.hint": {
-    "defaultMessage": "参加できる人・招待・アプリ",
-    "description": "The line under Sign-up in the list of Server settings: what its page holds. Read by administrators."
-  },
   "staff_settings.topic.content": {
     "defaultMessage": "投稿と機能",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
-  },
-  "staff_settings.topic.content.hint": {
-    "defaultMessage": "投稿の上限・タイムライン・リンクのカード・記事・イベント",
-    "description": "The line under Posts and features in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.topic.federation": {
     "defaultMessage": "連合",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
-  "staff_settings.topic.federation.hint": {
-    "defaultMessage": "やりとりするサーバーと、そのデータの保存",
-    "description": "The line under Federation in the list of Server settings: what its page holds. Read by administrators."
-  },
   "staff_settings.topic.hooks": {
     "defaultMessage": "外部の審査",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
-  },
-  "staff_settings.topic.hooks.hint": {
-    "defaultMessage": "判定フックの働き方",
-    "description": "The line under Automated review in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.topic.discovery": {
     "defaultMessage": "検索とクローラー",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
-  "staff_settings.topic.discovery.hint": {
-    "defaultMessage": "検索エンジンと AI に許すこと、セキュリティの連絡先、全文検索の対象",
-    "description": "The line under Search engines and AI in the list of Server settings: what its page holds. Read by administrators."
-  },
   "staff_settings.topic.voice": {
     "defaultMessage": "通話",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
-  },
-  "staff_settings.topic.voice.hint": {
-    "defaultMessage": "ルームを開ける人と、外に見せること",
-    "description": "The line under Voice chat in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.topic.auto_delete": {
     "defaultMessage": "投稿の削除",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
-  "staff_settings.topic.auto_delete.hint": {
-    "defaultMessage": "新しいアカウントの既定と、全員の上限",
-    "description": "The line under Deleting old posts in the list of Server settings: what its page holds. Read by administrators."
-  },
   "staff_settings.topic.records": {
     "defaultMessage": "異議申し立てと記録",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
-  },
-  "staff_settings.topic.records.hint": {
-    "defaultMessage": "異議申し立ての期限と、記録の保存期間",
-    "description": "The line under Appeals and records in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.group.server": {
     "defaultMessage": "このサーバー",
@@ -1147,10 +1107,6 @@
     "defaultMessage": "{document, select, terms {利用規約} privacy_policy {プライバシーポリシー} other {特定商取引法に基づく表記}}",
     "description": "The name of a document in the list at /admin/documents and the title of its page. Read by administrators."
   },
-  "staff_settings.document.hint": {
-    "defaultMessage": "{document, select, terms {登録するときに同意してもらう内容} privacy_policy {このサーバーが個人データをどう扱うか} other {サポーターのプランの販売者の情報}}",
-    "description": "The line under a document's name in the list at /admin/documents. Read by administrators."
-  },
   "staff_settings.document.text": {
     "defaultMessage": "本文",
     "description": "The heading of the section of a document's text on its page. Read by administrators."
@@ -1192,7 +1148,7 @@
     "description": "Under the heading of the rules in effect while they are at the limit. Read by administrators."
   },
   "staff_settings.rules.empty": {
-    "defaultMessage": "まだルールはありません。ルールは「このサーバーについて」のページと、登録と通報のときに表示されます。",
+    "defaultMessage": "まだルールはありません。",
     "description": "In place of the list of rules while there is none. Read by administrators."
   },
   "staff_settings.rules.numbered": {

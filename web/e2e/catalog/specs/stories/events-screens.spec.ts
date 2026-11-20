@@ -38,11 +38,7 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
   [
     "events-empty",
     async (page) => {
-      await expect(
-        main(page).getByText(
-          /^No upcoming events\. When someone on this server plans one you can see, it shows here\.$/,
-        ),
-      ).toBeVisible();
+      await expect(main(page).getByText(/^No upcoming events\.$/)).toBeVisible();
       await expect(listed(page)).toHaveCount(0);
     },
   ],

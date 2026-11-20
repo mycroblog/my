@@ -12,7 +12,7 @@
     "description": "In place of the list of voice chat rooms when they could not be loaded, beside a button to try again."
   },
   "voice.rooms_empty": {
-    "defaultMessage": "いま開いているルームはありません。参加できるルームが開くと、ここに表示されます。",
+    "defaultMessage": "いま開いているルームはありません。",
     "description": "In place of the list of voice chat rooms when none is open that the reader sees."
   },
   "voice.back": {
@@ -472,7 +472,7 @@
     "description": "In place of the invitations of a voice chat room when they could not be loaded, beside a button to try again."
   },
   "voice.invitations.none": {
-    "defaultMessage": "まだ誰も招待していません。招待された人がここに表示されます。",
+    "defaultMessage": "まだ誰も招待していません。",
     "description": "In place of the invitations of a voice chat room while there are none."
   },
   "voice.invitations.as": {

@@ -351,9 +351,7 @@ describe("Passkeys", () => {
 
     expect(sections()).toContain("Passkeys");
     expect(rows("Passkeys")).toEqual([]);
-    expect(words(section("Passkeys"))).toMatch(
-      inOrder("Passkeys", about, "No passkeys yet. Passkeys you add appear here.", "Add a passkey"),
-    );
+    expect(words(section("Passkeys"))).toMatch(inOrder("Passkeys", about, "No passkeys yet.", "Add a passkey"));
     expect(links(section("Passkeys"))).toEqual([["Add a passkey", paths.passkey]]);
   });
 

@@ -40,7 +40,7 @@
     "description": "What the screen of what waits for the reader's approval (notifications.waiting) says under its list when more could not be loaded, beside a button to try again."
   },
   "notifications.waiting_empty": {
-    "defaultMessage": "承認待ちはありません。誰かがあなたの投稿への返信・ブースト・引用の承認を求めると、ここに表示されます。",
+    "defaultMessage": "承認待ちはありません。",
     "description": "What the screen of the replies, boosts and quotes waiting for the reader's approval (notifications.waiting) says when none waits."
   },
   "notifications.requests_hint": {
@@ -348,7 +348,7 @@
     "description": "The row over the notifications that counts the follow requests and opens their screen. count is how many."
   },
   "notifications.follow_requests_empty": {
-    "defaultMessage": "誰かがフォローをリクエストすると、ここに表示されます。",
+    "defaultMessage": "フォローのリクエストはありません。",
     "description": "In place of the follow requests when there are none."
   },
   "notifications.follow_requests_loading": {
@@ -396,7 +396,7 @@
     "description": "What the screens of the held-back notifications say when they could not be loaded, beside a button to try again."
   },
   "notifications.held_empty": {
-    "defaultMessage": "保留中の通知はありません。通知の設定で保留にした通知は、ここに表示されます。",
+    "defaultMessage": "保留中の通知はありません。",
     "description": "What the screen of the held-back notifications says when none is held back."
   },
   "notifications.held_none": {
