@@ -536,7 +536,7 @@ Les nouveaux signalements, les inscriptions en attente d’approbation et les co
 `GET /api/v1/admin/counts` renvoie le nombre de signalements ouverts (`open_reports`, exige `manage_reports`), le nombre d’inscriptions en attente d’approbation (`pending_registrations`) et le nombre de contestations en attente d’examen (`pending_appeals`) (les deux exigent `manage_accounts`), le nombre de demandes d’émojis personnalisés en attente d’une décision (`pending_custom_emoji_requests`, exige `manage_custom_emojis`), et le nombre de groupes d’erreurs ouverts, nouveaux, régressés ou réactivés (`open_error_groups`, exige `manage_errors`).
 Les éléments pour lesquels vous n’avez pas la permission ne sont pas renvoyés.
 
-<!-- source: audit-log 4d53a2539898 -->
+<!-- source: audit-log 8334cc0280f5 -->
 ## Journal d’audit
 
 Les opérations des modérateurs et des administrateurs sont enregistrées à raison d’une ligne chacune dans le journal d’audit (`audit_log_entries`) dans la même transaction que l’opération.
@@ -566,7 +566,7 @@ Les opérations en échec et celles qui n’ont rien changé ne sont pas enregis
 | `supporter_subscription` | `supporter_subscription_ended` (un administrateur a mis fin aussitôt à un abonnement ; le nom de la cible est le nom de la formule et l’identifiant de l’utilisateur) |
 | `custom_emoji_request` | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` (soumettre, retirer, approuver et rejeter une demande d’émoji personnalisé ; le nom de la cible est le `:shortcode:`) |
 | `payment_provider` | `payment_reconcile_queued` (la réconciliation avec le fournisseur de paiement a été lancée à la main ; le nom de la cible est le nom du fournisseur) |
-| `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (désactiver et révoquer un client OAuth ; le désactiver révoque tous ses jetons ; le nom de la cible est le nom du client et `client_id`) |
+| `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (désactiver et réactiver un client OAuth ; le désactiver révoque tous ses jetons ; le nom de la cible est le nom du client et `client_id`) |
 | `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (refuser et lever le refus d’un hôte de Client ID Metadata Document ; le refuser révoque les jetons des clients de cet hôte ; le nom de la cible est l’hôte) |
 | `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (annoncer la fermeture du service ou en changer la date, retirer l’annonce, fermer, et terminer la livraison de la fermeture ; le nom de la cible est `service_closure`) |
 | `voice_room` | `voice_room_ended` (un modérateur a mis fin à un salon de chat vocal ouvert ; le nom de la cible est l’ID du salon, puisque le nom disparaît lorsque le compte qui l’a écrit est effacé ; les détails du signalement affichent le nom) |
