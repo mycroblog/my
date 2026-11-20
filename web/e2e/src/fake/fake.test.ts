@@ -817,14 +817,36 @@ describe("a visitor", () => {
   });
 });
 
+/**
+ * The path of the first GET operation of the API specification that the fake does not answer, its parameters filled
+ * in: found at run time, since each change that implements more of the API would otherwise take a fixed example away.
+ */
+async function unimplementedPath(): Promise<string> {
+  const document = Bun.YAML.parse(await Bun.file(new URL("../../../../api/openapi.yaml", import.meta.url)).text()) as {
+    paths: Record<string, Record<string, unknown>>;
+  };
+  const fake = createFakeApi();
+  for (const [template, operations] of Object.entries(document.paths)) {
+    if (!("get" in operations)) continue;
+    const path = template.replace(/\{\w+\}/g, "none");
+    const answered = await fake.serve(request("GET", path)).then(
+      () => true,
+      (error: unknown) => !(error instanceof UnimplementedError),
+    );
+    if (!answered) return path;
+  }
+  throw new Error("test: the fake answers every GET operation of the API; this test needs one it does not");
+}
+
 describe("an operation the fake does not implement", () => {
   test("fails by name, and is kept among those it refused", async () => {
+    const path = await unimplementedPath();
     const fake = createFakeApi();
-    const failure: unknown = await fake.serve(request("GET", "/admin/closure")).catch((e: unknown) => e);
+    const failure: unknown = await fake.serve(request("GET", path)).catch((e: unknown) => e);
     expect(failure).toBeInstanceOf(UnimplementedError);
-    expect((failure as UnimplementedError).operation).toBe("GET /api/v1/admin/closure");
-    expect((failure as Error).message).toBe("fake: GET /api/v1/admin/closure is no operation the fake API implements");
-    expect(fake.unimplemented).toEqual(["GET /api/v1/admin/closure"]);
+    expect((failure as UnimplementedError).operation).toBe(`GET /api/v1${path}`);
+    expect((failure as Error).message).toBe(`fake: GET /api/v1${path} is no operation the fake API implements`);
+    expect(fake.unimplemented).toEqual([`GET /api/v1${path}`]);
   });
 
   test("fails for a method the operation's path does not have", async () => {
