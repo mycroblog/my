@@ -316,6 +316,40 @@ describe("retries after 429 and 503", () => {
     expect(s.waits).toEqual([]);
   });
 
+  test("a write whose key is in use is sent again with it after Retry-After, within maxRetries", async () => {
+    let n = 0;
+    const f = fakeFetch(() =>
+      ++n === 1
+        ? problem(409, "/api/v1/problems/idempotency-key-in-use", {}, { "Retry-After": "1" })
+        : json(200, { id: "s1" }),
+    );
+    const s = fakeSleep();
+    const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
+    await api.POST("/statuses", { body: createStatusBody });
+    const keys = f.requests.map((r) => r.request.headers.get("Idempotency-Key"));
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).toBe(keys[0] ?? "");
+    expect(s.waits).toEqual([1000]);
+
+    const busy = fakeFetch(() => problem(409, "/api/v1/problems/idempotency-key-in-use", {}, { "Retry-After": "1" }));
+    const limited = createClient({ server, fetch: busy.fetch, sleep: fakeSleep().sleep, retry: { maxRetries: 2 } });
+    const error = (await limited.POST("/statuses", { body: createStatusBody }).catch((e: unknown) => e)) as ProblemError;
+    expect(error.status).toBe(409);
+    expect(busy.requests).toHaveLength(3);
+  });
+
+  test("another 409 is not sent again", async () => {
+    const f = fakeFetch(() => problem(409, "/api/v1/problems/blocking", {}, { "Retry-After": "1" }));
+    const s = fakeSleep();
+    const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
+    const error = (await api
+      .POST("/accounts/{id}/follow", { params: { path: { id: "a1" } } })
+      .catch((e: unknown) => e)) as ProblemError;
+    expect(error.type).toBe("/api/v1/problems/blocking");
+    expect(f.requests).toHaveLength(1);
+    expect(s.waits).toEqual([]);
+  });
+
   test("retries can be turned off", async () => {
     const f = fakeFetch(() => problem(429, "/api/v1/problems/rate-limited", {}, { "Retry-After": "1" }));
     const api = createClient({ server, fetch: f.fetch, retry: { disabled: true } });

@@ -3,6 +3,9 @@
 /** The header that makes a request safe to send again (draft-ietf-httpapi-idempotency-key-header). */
 export const idempotencyKeyHeader = "Idempotency-Key";
 
+/** The 409 of a request whose key's first request is still being carried out. */
+export const problemTypeIdempotencyKeyInUse = "/api/v1/problems/idempotency-key-in-use";
+
 /**
  * The writes whose spec takes no Idempotency-Key, since their answer carries a secret that the server does not keep
  * to send again, as the method and the path of the spec (with its `{param}`s); every other write takes one. When

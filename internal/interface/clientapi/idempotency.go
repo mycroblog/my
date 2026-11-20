@@ -34,7 +34,7 @@ const (
 	// request within IdempotencyWindow.
 	ProblemTypeIdempotencyKeyReused = "/api/v1/problems/idempotency-key-reused"
 	// ProblemTypeIdempotencyKeyInUse is the 409 of a repeat while the first request with its key
-	// is still being carried out.
+	// is still being carried out, with a Retry-After of a second.
 	ProblemTypeIdempotencyKeyInUse = "/api/v1/problems/idempotency-key-in-use"
 )
 
@@ -117,6 +117,16 @@ func (s *Server) serveIdempotent(w http.ResponseWriter, r *http.Request, pattern
 		s.serveRepeat(w, r, pattern, secret, raw)
 		return
 	}
+	s.writeKeyInUse(w, r)
+}
+
+// idempotencyRetryAfter is the Retry-After of ProblemTypeIdempotencyKeyInUse, in seconds: a
+// client retries a while later, when the first request may have ended.
+const idempotencyRetryAfter = "1"
+
+// writeKeyInUse answers a repeat while the first request with its key is being carried out.
+func (s *Server) writeKeyInUse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Retry-After", idempotencyRetryAfter)
 	s.writeProblem(w, r, http.StatusConflict, ProblemTypeIdempotencyKeyInUse, s.localizer(r).ServerErrorsIdempotencyKeyInUse(), "")
 }
 
@@ -199,7 +209,7 @@ func (s *Server) serveRepeat(w http.ResponseWriter, r *http.Request, pattern str
 	}
 	l := s.localizer(r)
 	if kept.Pending {
-		s.writeProblem(w, r, http.StatusConflict, ProblemTypeIdempotencyKeyInUse, l.ServerErrorsIdempotencyKeyInUse(), "")
+		s.writeKeyInUse(w, r)
 		return
 	}
 	h := requestHash(r, secret)

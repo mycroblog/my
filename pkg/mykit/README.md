@@ -240,7 +240,8 @@ problem of type `about:blank` with the answer's status.
 - For the operations that take an `Idempotency-Key`, mykit adds a new UUID when you do not pass one, and sends the
   same key on every retry, so a retried write is applied once. Within 24 hours the server answers a request with a key
   it has seen with the first answer, before it checks the post limit or anything else of a new request; the same key
-  with another request is a 422 problem.
+  with another request is a 422 problem. A repeat while the first request is still being carried out is a 409
+  `idempotency-key-in-use`, which is retried after its `Retry-After` as a 429 is.
 - A write that got no answer may still have been applied, so it is sent again with its key, up to `MaxRetries` times.
   When the last attempt gets no answer either, its `*mykit.NetworkError` (`NetworkError`) carries the key it was sent
   with (`IdempotencyKey`, `idempotencyKey`): send the request again with that key and it is applied once. Pass your

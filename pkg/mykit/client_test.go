@@ -497,6 +497,59 @@ func TestRetryAfter(t *testing.T) {
 	})
 }
 
+// A 409 of a key in use is retried with the key after its Retry-After, within the retry budget; another 409 is not.
+func TestRetryAfterTheKeyInUse(t *testing.T) {
+	var calls atomic.Int32
+	var keys sync.Map
+	typ := problemTypeIdempotencyKeyInUse
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c := calls.Add(1)
+		keys.Store(c, r.Header.Get("Idempotency-Key"))
+		if c == 1 {
+			w.Header().Set("Retry-After", "1")
+			writeProblem(w, http.StatusConflict, typ, nil)
+			return
+		}
+		writeJSON(w, map[string]any{})
+	}))
+	defer srv.Close()
+
+	t.Run("a keyed write is retried with its key", func(t *testing.T) {
+		calls.Store(0)
+		api, waits := newTestAPI(t, srv, Config{})
+		if _, err := api.CreateStatusWithResponse(context.Background(), nil, CreateStatusJSONRequestBody{}); err != nil {
+			t.Fatal(err)
+		}
+		k1, _ := keys.Load(int32(1))
+		k2, _ := keys.Load(int32(2))
+		if calls.Load() != 2 || len(*waits) != 1 || (*waits)[0] != time.Second || k1 == "" || k1 != k2 {
+			t.Errorf("calls = %d, waits = %v, keys %q %q; want one retry after 1s with the key", calls.Load(), *waits, k1, k2)
+		}
+	})
+
+	t.Run("not beyond the retry budget", func(t *testing.T) {
+		calls.Store(0)
+		api, waits := newTestAPI(t, srv, Config{Retry: RetryPolicy{Disabled: true}})
+		_, err := api.CreateStatusWithResponse(context.Background(), nil, CreateStatusJSONRequestBody{})
+		var p *Problem
+		if !errors.As(err, &p) || p.Type != typ || calls.Load() != 1 || len(*waits) != 0 {
+			t.Errorf("err = %v, calls = %d, waits = %v; want the 409 at once", err, calls.Load(), *waits)
+		}
+	})
+
+	t.Run("another 409 is not retried", func(t *testing.T) {
+		calls.Store(0)
+		typ = "/api/v1/problems/blocking"
+		defer func() { typ = problemTypeIdempotencyKeyInUse }()
+		api, waits := newTestAPI(t, srv, Config{})
+		_, err := api.CreateStatusWithResponse(context.Background(), nil, CreateStatusJSONRequestBody{})
+		var p *Problem
+		if !errors.As(err, &p) || p.Type != "/api/v1/problems/blocking" || calls.Load() != 1 || len(*waits) != 0 {
+			t.Errorf("err = %v, calls = %d, waits = %v; want the 409 at once", err, calls.Load(), *waits)
+		}
+	})
+}
+
 func TestRetryGivesUpAfterMaxRetries(t *testing.T) {
 	var calls atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

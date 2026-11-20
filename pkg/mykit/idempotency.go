@@ -10,6 +10,9 @@ import (
 // idempotencyKeyHeader is the header that makes a request safe to send again (draft-ietf-httpapi-idempotency-key-header).
 const idempotencyKeyHeader = "Idempotency-Key"
 
+// problemTypeIdempotencyKeyInUse is the 409 of a request whose key's first request is still being carried out.
+const problemTypeIdempotencyKeyInUse = "/api/v1/problems/idempotency-key-in-use"
+
 // writesWithoutIdempotencyKey are the writes whose spec takes no Idempotency-Key, since their answer carries a
 // secret that the server does not keep to send again; every other write takes one. They are the method and the path
 // relative to the API's base path, with * for a path parameter. When the caller sends no key to a write that takes

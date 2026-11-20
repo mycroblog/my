@@ -17,8 +17,8 @@ import (
 
 // transport is the HttpRequestDoer of the generated client. For each request it adds the headers, the access
 // token, and the Idempotency-Key; after a 401 it refreshes the token once and sends the request again; after a
-// 429 or 503 it waits and retries the requests that are safe to repeat, and after a failure to get an answer
-// the writes with an Idempotency-Key; and it turns an answer with a status of 400 or more into a *Problem and a
+// 429 or 503 it waits and retries the requests that are safe to repeat, and after a failure to get an answer,
+// or a 409 of the key in use, the writes with an Idempotency-Key; and it turns an answer with a status of 400 or more into a *Problem and a
 // failure to get an answer that is not retried into a *NetworkError.
 type transport struct {
 	client         *http.Client
@@ -46,7 +46,8 @@ func (t *transport) Do(req *http.Request) (*http.Response, error) {
 	// A request is sent again only when its body can be read again. A 429 or 503 is retried for a GET or HEAD,
 	// and for an operation that takes an Idempotency-Key and has one: the header makes no other operation safe
 	// to repeat, since the server ignores it there. A failure to get an answer is retried only with the key,
-	// with which the server applies the write once however many of the attempts reached it.
+	// with which the server applies the write once however many of the attempts reached it, and so is the 409
+	// of a key whose first request is still being carried out.
 	replayable := req.Body == nil || req.Body == http.NoBody || req.GetBody != nil
 	idempotencyKey := ""
 	if acceptsIdempotencyKey(req.Method, req.URL.Path, t.basePath) {
@@ -103,6 +104,21 @@ func (t *transport) Do(req *http.Request) (*http.Response, error) {
 				return nil, problemFrom(resp)
 			}
 			discard(resp)
+			retries++
+			if err := t.sleep(ctx, wait); err != nil {
+				return nil, err
+			}
+			continue
+		case resp.StatusCode == http.StatusConflict && idempotencyKey != "" && replayable && retries < t.retry.maxRetries():
+			// The first request with the key is still being carried out: its answer comes after it ends.
+			p := problemFrom(resp)
+			if p.Type != problemTypeIdempotencyKeyInUse {
+				return nil, p
+			}
+			wait, ok := retryDelay(resp.Header.Get("Retry-After"), retries, t.retry.maxWait(), time.Now())
+			if !ok {
+				return nil, p
+			}
 			retries++
 			if err := t.sleep(ctx, wait); err != nil {
 				return nil, err

@@ -238,8 +238,8 @@ func TestIdempotencyKeyInUseWhileTheFirstRuns(t *testing.T) {
 	res := e.post(t, "write", "k1", postBody)
 	close(e.hold)
 	wait()
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypeIdempotencyKeyInUse {
-		t.Errorf("repeat in progress = %d %q, want 409 %s", res.StatusCode, p.Type, clientapi.ProblemTypeIdempotencyKeyInUse)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypeIdempotencyKeyInUse || res.Header.Get("Retry-After") != "1" {
+		t.Errorf("repeat in progress = %d %q (Retry-After %q), want 409 %s after 1 s", res.StatusCode, p.Type, res.Header.Get("Retry-After"), clientapi.ProblemTypeIdempotencyKeyInUse)
 	}
 	e.hold = nil
 	if res := e.post(t, "write", "k1", postBody); res.StatusCode != http.StatusCreated {
