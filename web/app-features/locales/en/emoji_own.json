@@ -208,8 +208,8 @@
     "description": "The setting of whether the emoji picker offers one of the reader's emoji."
   },
   "emoji_own.visible.value": {
-    "defaultMessage": "{value, select, true {Yes} other {No}}",
-    "description": "A value of whether the picker offers one of the reader's emoji."
+    "defaultMessage": "{value, select, true {On} other {Off}}",
+    "description": "A value of whether the picker offers one of the reader's emoji: on or off, as the administrators' screen says it."
   },
   "emoji_own.save": {
     "defaultMessage": "Save",

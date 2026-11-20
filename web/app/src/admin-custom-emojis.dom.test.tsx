@@ -335,7 +335,7 @@ test("the reader's own emoji is taken out of the picker on Save, and the picker 
   const picker = on.fake.script("GET /custom_emojis");
 
   await app.user.type(main().getByRole("textbox", { name: "Category" }), "Hearts");
-  await app.user.selectOptions(main().getByRole("combobox", { name: "Offer it in the picker" }), "No");
+  await app.user.selectOptions(main().getByRole("combobox", { name: "Offer it in the picker" }), "Off");
   await app.user.click(button("Save"));
 
   expect((await changed.arrived()).body).toMatchObject({ category: "Hearts", visible_in_picker: false });
