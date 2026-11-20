@@ -254,6 +254,12 @@ func (r *Repository) Events(ctx context.Context, groupID string) ([]appdiagnosti
 	return out, nil
 }
 
+// CountGroups implements appdiagnostics.Repository.
+func (r *Repository) CountGroups(ctx context.Context, state diagnostics.State) (int64, error) {
+	n, err := r.db.reader().CountErrorGroupsInState(ctx, string(state))
+	return n, postgres.Wrap(err, "count error groups")
+}
+
 // RebuildHeads implements appdiagnostics.Repository.
 func (r *Repository) RebuildHeads(ctx context.Context, tx uow.Tx) error {
 	q, err := r.db.queries(tx)

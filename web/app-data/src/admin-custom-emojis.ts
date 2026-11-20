@@ -191,12 +191,16 @@ export async function uploadEmojiImage(data: AppData, file: File): Promise<Media
   return media;
 }
 
-/** Reads again what a write of the emoji changes: the emoji, the picker every reader reads, the requesters' lists. */
+/**
+ * Reads again what a write of the emoji changes: the emoji, the picker every reader reads, the requesters' lists, and the
+ * count of the requests that wait.
+ */
 async function emojisChanged(data: AppData): Promise<void> {
   const paths = new Set([
     "/admin/custom_emojis",
     "/admin/custom_emojis/{id}",
     "/admin/custom_emoji_requests",
+    "/admin/counts",
     "/custom_emojis/mine",
     "/custom_emoji_requests",
   ]);

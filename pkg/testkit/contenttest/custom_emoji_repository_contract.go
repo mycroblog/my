@@ -437,6 +437,10 @@ func emojiRepoRequestLists(t *testing.T, r *emojiRepo) {
 	if err != nil || approved != 1 || pending != 2 {
 		t.Errorf("CountCustomEmojiUsage = %d approved, %d pending, %v; want 1 and 2", approved, pending, err)
 	}
+	// Every requester's pending requests: a3, a4, b1, and the late one.
+	if n, err := r.repo.CountPendingCustomEmojiRequests(ctx); err != nil || n != 4 {
+		t.Errorf("CountPendingCustomEmojiRequests = %d, %v; want 4", n, err)
+	}
 	ids := func(rs []content.CustomEmojiRequestRecord) []string {
 		out := make([]string, len(rs))
 		for i, rec := range rs {

@@ -206,6 +206,8 @@ type Repository interface {
 	CountsSince(ctx context.Context, groupIDs []string, since time.Time) ([]GroupHourCount, error)
 	// Events returns the events of a group, oldest first.
 	Events(ctx context.Context, groupID string) ([]Event, error)
+	// CountGroups counts the groups in state.
+	CountGroups(ctx context.Context, state diagnostics.State) (int64, error)
 
 	// RebuildHeads empties error_group_states and derives it from the groups and the newest
 	// event of each.

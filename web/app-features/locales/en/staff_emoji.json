@@ -7,6 +7,10 @@
     "defaultMessage": "This server's emoji, others', and requests",
     "description": "The line under Custom emoji in the list at /admin: what its screen holds. Read by administrators."
   },
+  "staff_emoji.entry.count": {
+    "defaultMessage": "{count, plural, one {# request waiting for review} other {# requests waiting for review}}",
+    "description": "For assistive technology, what the badge at the end of Custom emoji in the list at /admin counts: the requests for custom emoji waiting for review. Read by administrators."
+  },
   "staff_emoji.no_image": {
     "defaultMessage": "No image",
     "description": "In the place of a custom emoji's image when it cannot be shown (another server's media the server rejects). Read by administrators."
