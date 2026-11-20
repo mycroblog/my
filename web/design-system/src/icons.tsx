@@ -113,6 +113,7 @@ import {
   IconMusic,
   IconNote,
   IconNotes,
+  IconPalette,
   IconPaperclip,
   IconPaw,
   IconPencil,
@@ -357,6 +358,8 @@ export const icons = {
   planRetired: { off: IconArchive },
   // The service closing, its dates, or its announcement withdrawn.
   closure: { off: IconServerOff },
+  // The server's theme: the colors, type and corners of every screen.
+  theme: { off: IconPalette },
   // The server's limit on how long the reader's posts stay before they are deleted.
   autoDelete: { off: IconHourglassLow },
   // A scheduled post that could not go out at its time: the calendar with a mark of what went wrong.

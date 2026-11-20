@@ -42,6 +42,9 @@
 //     is of the domain whose sign-ups wait for a moderator (the scenario's `approvalDomain`);
 //     `fresh.approve(newcomer)` the moderator's approval of their registration, and `fresh.emailConfirmed(newcomer)`
 //     whether the server holds their email address as confirmed.
+//   - `fresh.closureWithdrawn(staff)` the closure of the service withdrawn when one is announced, and
+//     `fresh.defaultTheme(staff)` the default theme published unless it is in effect: what a spec that changes them
+//     does in a `finally`, so that a failure leaves the server as every other spec expects it.
 //   - `fresh.invite()` an invite of the administrator for one person: `{ code, url }`, the registration screen's
 //     address with the code.
 //   - `fresh.providerIdentity()` a subject, an email address, a name and a username nobody has signed in with, for a

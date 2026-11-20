@@ -144,6 +144,7 @@
         "@my/app-components": "workspace:*",
         "@my/app-data": "workspace:*",
         "@my/design-system": "workspace:*",
+        "@my/design-tokens": "workspace:*",
         "@my/platform": "workspace:*",
         "@my/rtc": "workspace:*",
         "lexical": "0.53.0",

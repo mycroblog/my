@@ -170,6 +170,14 @@ export function OnOffRow({
  * every such option and act of the administration has, beside the question that confirms it.
  */
 export function Irreversible({ children }: { children: string }): ReactNode {
+  return <Caution>{children}</Caution>;
+}
+
+/**
+ * A warning of the administration, before what the reader should weigh (a notice too short, a move not ended), in the
+ * look of the mark of what cannot be undone: the glyph of caution and the text's color, in a label's weight.
+ */
+export function Caution({ children }: { children: string }): ReactNode {
   return (
     <Row align="start" gap="entry-caption">
       <Row as="span" inline line rigid align="center">

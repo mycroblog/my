@@ -241,6 +241,7 @@ const form = tv({
     input: [
       "box-border rounded-control border-0 bg-surface-raised px-control-timeline-inline font-sans",
       "text-body text-text outline-hidden focus-visible:shadow-focus read-only:text-muted-text",
+      "placeholder:text-muted-text",
       // On a raised surface (a section of a settings screen), a field takes the page's surface.
       "[[data-surface-raised]_&]:bg-surface",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
@@ -420,6 +421,8 @@ export type TextFieldProps = {
    * names do, in the text's own weight, not as the label of a field in a form of fields.
    */
   row?: boolean | undefined;
+  /** What an empty field stands for (a default the server keeps), muted inside it; never its name or a rule of it. */
+  placeholder?: string | undefined;
 };
 
 /**
@@ -450,6 +453,7 @@ export function TextField({
   onChange,
   labelHidden = false,
   row = false,
+  placeholder,
 }: TextFieldProps) {
   const s = form({ height: !multiline ? "line" : rows === undefined ? "area" : "rows" });
   const holder = use(FieldContext);
@@ -475,6 +479,7 @@ export function TextField({
         }),
     required,
     maxLength,
+    placeholder,
     "aria-invalid": error ? true : undefined,
     "aria-describedby": described,
   };
@@ -902,6 +907,8 @@ const bare = tv({
     dateTime: [
       "box-border h-control-form rounded-control border-0 bg-surface-raised px-control-timeline-inline",
       "font-sans text-body text-text tabular-nums outline-hidden [color-scheme:inherit] focus-visible:shadow-focus",
+      // On a raised surface (a section of a settings screen), it takes the page's surface, as a text field does.
+      "[[data-surface-raised]_&]:bg-surface",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
       "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],

@@ -1,0 +1,258 @@
+{
+  "staff_closure.loading": {
+    "defaultMessage": "閉鎖の状態を読み込んでいます…",
+    "description": "In place of the closure's screens while the closure is read. Read by administrators."
+  },
+  "staff_closure.failed": {
+    "defaultMessage": "閉鎖の状態を読み込めませんでした。",
+    "description": "In place of the closure's screens when the closure could not be read, before Try again. Read by administrators."
+  },
+  "staff_closure.announcement": {
+    "defaultMessage": "予告",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the section of the announcement of the closure. Read by administrators."
+  },
+  "staff_closure.none": {
+    "defaultMessage": "閉鎖は予告していません。",
+    "description": "On the closure's screen of the administration (/admin/closure), while no closure is announced. Read by administrators."
+  },
+  "staff_closure.announce": {
+    "defaultMessage": "閉鎖を予告する",
+    "description": "On the closure's screen of the administration (/admin/closure), the button to the form that announces the closure, and that form's title. Read by administrators."
+  },
+  "staff_closure.announce.press": {
+    "defaultMessage": "予告する",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the button that sends the announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_closure.change": {
+    "defaultMessage": "日付を変更する",
+    "description": "On the closure's screen of the administration (/admin/closure), the button to the form that changes the dates of the announcement, and that form's title. Read by administrators."
+  },
+  "staff_closure.withdraw": {
+    "defaultMessage": "取り消す",
+    "description": "On the closure's screen of the administration (/admin/closure), the button that withdraws the announcement (asked first), and the confirmation of its question. Read by administrators."
+  },
+  "staff_closure.withdraw.title": {
+    "defaultMessage": "閉鎖の予告を取り消しますか？",
+    "description": "On the closure's screen of the administration (/admin/closure), the question before withdrawing the announcement. Read by administrators."
+  },
+  "staff_closure.withdraw.text": {
+    "defaultMessage": "サーバーはこれまでどおり動き、すべての人に通知とメールが届きます。断った登録と終えたサポーターの加入は、そのままです。",
+    "description": "On the closure's screen of the administration (/admin/closure), what follows withdrawing the announcement. Read by administrators."
+  },
+  "staff_closure.short_notice": {
+    "defaultMessage": "予告から閉鎖まで 30 日に足りません。データのエクスポートや移転が間に合わない人がいるかもしれません。",
+    "description": "On the closure's screen of the administration (/admin/closure), under the announcement's facts when it gives less than 30 days' notice. Read by administrators."
+  },
+  "staff_closure.close": {
+    "defaultMessage": "サーバーを閉鎖する",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the section that leads to closing the server, and the title of the check before it. Read by administrators."
+  },
+  "staff_closure.check": {
+    "defaultMessage": "確認して閉鎖する",
+    "description": "On the closure's screen of the administration (/admin/closure), the button to the check before closing the server, once the closing date has passed. Read by administrators."
+  },
+  "staff_closure.close.wait": {
+    "defaultMessage": "{date} を過ぎるとサーバーを閉鎖できます。",
+    "description": "On the closure's screen of the administration (/admin/closure), in place of the way to close the server before the closing date ({date}, a date and time). Read by administrators."
+  },
+  "staff_closure.close.press": {
+    "defaultMessage": "サーバーを閉鎖する",
+    "description": "On the check before closing the server (/admin/closure/close), the button that asks before closing the server, and the confirmation of its question. Read by administrators."
+  },
+  "staff_closure.close.refused": {
+    "defaultMessage": "今はサーバーを閉鎖できません。閉鎖の画面に戻って状態を確かめてください。",
+    "description": "On the check before closing the server (/admin/closure/close), when the server refused the closure in the state it is in. Read by administrators."
+  },
+  "staff_closure.close.not_yet": {
+    "defaultMessage": "{why, select, none {先に閉鎖を予告してください。} early {{date} を過ぎるとサーバーを閉鎖できます。} other {サーバーは閉鎖しました。}}",
+    "description": "On the check before closing the server (/admin/closure/close), in place of Close the server while it cannot be closed ({date}, the closing date and time). Read by administrators."
+  },
+  "staff_closure.close.title": {
+    "defaultMessage": "{domain} を閉鎖しますか？",
+    "description": "On the check before closing the server (/admin/closure/close), the question before closing the server ({domain}, the server's domain, typed to confirm). Read by administrators."
+  },
+  "staff_closure.close.text": {
+    "defaultMessage": "利用者は {date} までログインしてデータをエクスポートすることだけができます。約 {deletes, number} 件の配送で、このサーバーのアカウントの削除をほかのサーバーに依頼します。取り消せません。",
+    "description": "On the check before closing the server (/admin/closure/close), what follows closing the server ({date}, the export deadline; {deletes}, a number). Read by administrators."
+  },
+  "staff_closure.close.heading": {
+    "defaultMessage": "閉鎖",
+    "description": "On the check before closing the server (/admin/closure/close), the heading of the last section, which holds the mark of what cannot be undone and the button that closes the server. Read by administrators."
+  },
+  "staff_closure.closed": {
+    "defaultMessage": "閉鎖",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the section of a closed server. Read by administrators."
+  },
+  "staff_closure.progress": {
+    "defaultMessage": "アカウントの削除 (このサーバーとほかのサーバー)",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the progress of the delivery of the deletion of every local account. Read by administrators."
+  },
+  "staff_closure.progress.accounts": {
+    "defaultMessage": "削除したアカウント",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of local accounts whose deletion was recorded. Read by administrators."
+  },
+  "staff_closure.progress.fanouts": {
+    "defaultMessage": "宛先を調べている削除",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deletions whose receiving servers are still being found. Read by administrators."
+  },
+  "staff_closure.progress.pending": {
+    "defaultMessage": "待機中",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries not attempted yet or to be attempted again. Read by administrators."
+  },
+  "staff_closure.progress.refused": {
+    "defaultMessage": "拒否",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries refused for good. Read by administrators."
+  },
+  "staff_closure.progress.skipped": {
+    "defaultMessage": "見送り",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries not sent, to a suspended or unavailable server. Read by administrators."
+  },
+  "staff_closure.progress.dead": {
+    "defaultMessage": "試行を使い切った",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries that used up their attempts. Read by administrators."
+  },
+  "staff_closure.progress.going": {
+    "defaultMessage": "配送は続いています。終わるまでサーバーとワーカーを止めないでください。",
+    "description": "On the closure's screen of the administration (/admin/closure), under the progress while deliveries go on. Read by administrators."
+  },
+  "staff_closure.progress.done": {
+    "defaultMessage": "すべての配送が終わりました。",
+    "description": "On the closure's screen of the administration (/admin/closure), under the progress once every delivery has ended. Read by administrators."
+  },
+  "staff_closure.progress.meter": {
+    "defaultMessage": "済んだ配送",
+    "description": "On the closure's screen of the administration (/admin/closure), the name of the meter of the deliveries of the deletion of the accounts that have ended, delivered or not, of all of them (staff_closure.progress.ended under it says the numbers). Read by administrators."
+  },
+  "staff_closure.progress.undelivered": {
+    "defaultMessage": "配送できなかったもの",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading over the deliveries that failed: refused, skipped, out of attempts. Read by administrators."
+  },
+  "staff_closure.progress.ended": {
+    "defaultMessage": "{all, number} 件中 {ended, number} 件が終了 (配送 {succeeded, number} 件、配送できず {failed, number} 件)",
+    "description": "On the closure's screen of the administration (/admin/closure), under the meter of the deliveries of the deletion of the accounts: those ended of all, and of them those delivered and those not delivered (numbers). Read by administrators."
+  },
+  "staff_closure.state": {
+    "defaultMessage": "{state, select, due {閉鎖日を過ぎています} other {予告中}}",
+    "description": "On the closure's screen of the administration (/admin/closure), the state of an announced closure beside its mark: announced, or its closing date passed and the server not closed yet. Read by administrators."
+  },
+  "staff_closure.fact.state": {
+    "defaultMessage": "状態",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of where the closure stands. Read by administrators."
+  },
+  "staff_closure.fact.closes": {
+    "defaultMessage": "閉鎖日",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of the closing date and time. Read by administrators."
+  },
+  "staff_closure.fact.closed": {
+    "defaultMessage": "閉鎖した日時",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of when the server was closed. Read by administrators."
+  },
+  "staff_closure.fact.export_until": {
+    "defaultMessage": "エクスポートの期限",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of the last moment the users can export their data. Read by administrators."
+  },
+  "staff_closure.fact.announced": {
+    "defaultMessage": "予告した日時",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of when the announcement or its last change of dates was made. Read by administrators."
+  },
+  "staff_closure.fact.message": {
+    "defaultMessage": "メッセージ",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of the operator's message to the users. Read by administrators."
+  },
+  "staff_closure.irreversible": {
+    "defaultMessage": "閉鎖するとサービスは終わります。取り消せません。",
+    "description": "On the check before closing the server (/admin/closure/close), the mark beside Close the server. Read by administrators."
+  },
+  "staff_closure.form.dates": {
+    "defaultMessage": "日付",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the heading of the section of the closing date and the export deadline. Read by administrators."
+  },
+  "staff_closure.form.closes": {
+    "defaultMessage": "閉鎖日",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the name of the closing date and time's field. Read by administrators."
+  },
+  "staff_closure.form.closes.missing": {
+    "defaultMessage": "閉鎖する日時を選んでください。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the closing date when it is empty or no whole date and time. Read by administrators."
+  },
+  "staff_closure.form.until": {
+    "defaultMessage": "エクスポートの期限",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the name of the field of the last moment the users can export their data. Read by administrators."
+  },
+  "staff_closure.form.until.about": {
+    "defaultMessage": "エクスポートの期限を空欄にすると、閉鎖日の 30 日後になります。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the line under the heading of the dates: the export deadline's default. Read by administrators."
+  },
+  "staff_closure.form.until.before": {
+    "defaultMessage": "閉鎖日以降の日時を選んでください。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the export deadline when it is before the closing date. Read by administrators."
+  },
+  "staff_closure.form.message": {
+    "defaultMessage": "利用者へのメッセージ",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the heading of the section of the operator's message, shown in the notices and on the closed server's page. Read by administrators."
+  },
+  "staff_closure.form.closed": {
+    "defaultMessage": "サーバーは閉鎖したため、閉鎖を予告できません。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), when the server is closed already. Read by administrators."
+  },
+  "staff_closure.form.short": {
+    "defaultMessage": "予告から閉鎖まで 30 日に足りません。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), beside the button when the closing date is less than 30 days away. Read by administrators."
+  },
+  "staff_closure.form.refused": {
+    "defaultMessage": "{field, select, closes_at {別の閉鎖日を選んでください。} export_until {閉鎖日以降の日時を選んでください。} other {メッセージを 5000 文字までにしてください。}}",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the field the server refused. Read by administrators."
+  },
+  "staff_closure.ask.announce.title": {
+    "defaultMessage": "閉鎖を予告しますか？",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the question before announcing the closure. Read by administrators."
+  },
+  "staff_closure.ask.announce.text": {
+    "defaultMessage": "すべての人に通知とメールが届きます。登録と招待を止め、承認待ちの登録を断り、サポーターの加入はそれぞれの期間の終わりに終えます。予告を取り消しても、これらは元に戻りません。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), what follows announcing the closure. Read by administrators."
+  },
+  "staff_closure.ask.change.title": {
+    "defaultMessage": "日付を変更しますか？",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the question before changing the dates of the announcement. Read by administrators."
+  },
+  "staff_closure.ask.change.text": {
+    "defaultMessage": "すべての人に新しい日付の通知とメールが届きます。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), what follows changing the dates of the announcement. Read by administrators."
+  },
+  "staff_closure.check.heading": {
+    "defaultMessage": "閉鎖で起きること",
+    "description": "On the check before closing the server (/admin/closure/close), the heading of what closing would end. Read by administrators."
+  },
+  "staff_closure.check.deletes": {
+    "defaultMessage": "配送する削除",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the estimate of the deliveries of the deletion of every local account. Read by administrators."
+  },
+  "staff_closure.check.migrations": {
+    "defaultMessage": "終わっていないアカウントの移転",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the account migrations not ended. Read by administrators."
+  },
+  "staff_closure.check.holds": {
+    "defaultMessage": "保全中のアカウント",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the accounts whose records are held. Read by administrators."
+  },
+  "staff_closure.check.count": {
+    "defaultMessage": "{count, number}",
+    "description": "On the check before closing the server (/admin/closure/close), a count of the check, as a number. Read by administrators."
+  },
+  "staff_closure.check.migrations.warning": {
+    "defaultMessage": "移転が終わるまで待ってください。閉鎖の後は誰も移転を始められません。",
+    "description": "On the check before closing the server (/admin/closure/close), while account moves have not ended. Read by administrators."
+  },
+  "staff_closure.check.holds.warning": {
+    "defaultMessage": "保全中の記録はコマンドラインでエクスポートし、サーバーの外に保管してください。",
+    "description": "On the check before closing the server (/admin/closure/close), while accounts are under a retention hold. Read by administrators."
+  },
+  "staff_closure.check.deletes.value": {
+    "defaultMessage": "約 {deletes, number} 件 ({accounts, number} 個のアカウントを {inboxes, number} 個のサーバーへ)",
+    "description": "On the check before closing the server (/admin/closure/close), the estimate of the deliveries ({deletes}), the local accounts ({accounts}) and the known inboxes ({inboxes}), numbers. Read by administrators."
+  },
+  "staff_closure.check.subscriptions": {
+    "defaultMessage": "すぐ終わるサポーターの加入 (返金なし)",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the supporter subscriptions that the closure cancels. Read by administrators."
+  }
+}
