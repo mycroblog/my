@@ -4,9 +4,9 @@
 // /about/terms, its privacy policy at /about/privacy, the commerce disclosure of its supporter plans at /about/commerce.
 // It reads as an article's page does: its title over the day it was last revised, then its text, as the server
 // sanitized it, in whatever language its administrators wrote it. Where the server has not published it, the page says
-// so with the way to the about page. And what the server states to search engines and AI crawlers, at /about/crawler
-// (ADR-0057 §5): its choice of each, in the words of its value, how the statement is made and how far it reaches, and
-// that it is no legal advice.
+// so with the way to the about page; else the screen leads it with that way (`AboutBack`). And what the server states
+// to search engines and AI crawlers, at /about/crawler (ADR-0057 §5): its choice of each, in the words of its value,
+// how the statement is made and how far it reaches, and that it is no legal advice.
 
 import { aboutPagePath, PostContent } from "@my/app-components";
 import type { Instance, InstanceDocument, InstanceDocumentKind } from "@my/app-data";
@@ -14,6 +14,7 @@ import {
   ArticleParts,
   ArticleText,
   ArticleTitle,
+  BackButton,
   dateFormat,
   FeedNotice,
   TextButton,
@@ -28,6 +29,11 @@ import { useAboutStrings } from "./page";
 export function useAboutTitle(page: InstanceDocumentKind | "crawler"): string {
   const t = useAboutStrings();
   return page === "crawler" ? t("about.crawlers") : t("about.document.title", { kind: page });
+}
+
+/** The way back to the about page, at the start of a document's page and of the crawlers' page. */
+export function AboutBack({ onPress }: { onPress: () => void }): ReactNode {
+  return <BackButton onPress={onPress}>{useAboutStrings()("about.back")}</BackButton>;
 }
 
 /** A document as the page reads it: until it is read, when it could not be, when the server has none, or it. */
@@ -52,7 +58,7 @@ export function DocumentView({ kind, read }: { kind: InstanceDocumentKind; read:
     );
   if (read.status === "unpublished")
     return (
-      <FeedNotice lead action={<TextLink href={aboutPagePath}>{t("about.document.about")}</TextLink>}>
+      <FeedNotice lead action={<TextLink href={aboutPagePath}>{t("about.back")}</TextLink>}>
         {t("about.document.unpublished", { kind })}
       </FeedNotice>
     );

@@ -235,8 +235,8 @@
     "defaultMessage": "{kind, select, terms {このサーバーは利用規約を公開していません。} privacy_policy {このサーバーはプライバシーポリシーを公開していません。} other {このサーバーは特定商取引法に基づく表記を公開していません。}}",
     "description": "The page of a document the server has not published; a link to the about page follows."
   },
-  "about.document.about": {
+  "about.back": {
     "defaultMessage": "このサーバーについて",
-    "description": "The link to the about page after the sentence that says the server has not published a document."
+    "description": "The way back to the server's about page: the button at the start of a document's page and of the page on search engines and AI, and the link after the sentence that says the server has not published a document."
   }
 }

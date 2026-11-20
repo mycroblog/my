@@ -7,7 +7,13 @@
 export { createAppData, createQueryClient, onDataClosed, type AppData } from "./app-data";
 export {
   domainActionsShown,
+  instanceDocumentQuery,
+  instanceDomainActionsQuery,
+  useAboutInstance,
+  useInstanceDocument,
+  useInstanceDomainActions,
   type InstanceDocument,
+  type InstanceDocumentRead,
   type InstanceDocumentKind,
   type InstanceDomainAction,
 } from "./about";

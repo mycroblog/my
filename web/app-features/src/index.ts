@@ -18,8 +18,8 @@ export { EventScreen, EventVisitor, loadEvent, useEventTitle } from "./events/ev
 export { EventCoorganizersScreen, EventInvitationsScreen } from "./events/invitations";
 export { EventsScreen, loadEvents } from "./events/list";
 export type { JoinRoom } from "./events/places";
-export { CrawlerView, DocumentView, useAboutTitle, type DocumentRead } from "./about/document";
-export { AboutView, type AboutDomains, type AboutViewProps } from "./about/page";
+export { AboutBack, CrawlerView, DocumentView, useAboutTitle, type DocumentRead } from "./about/document";
+export { AboutView, AboutWaiting, type AboutDomains, type AboutViewProps } from "./about/page";
 export { FundingMeterView } from "./finance/meter";
 export { PublicFinanceScreen } from "./finance/public";
 export { FinanceScreen } from "./finance/viewer";

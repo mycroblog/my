@@ -3137,7 +3137,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       o.preferencesFail === "read" ? problem(500, "Internal Server Error") : { status: 200, body: preferences },
     "PATCH /preferences": ({ body }) =>
       o.preferencesFail === "save" ? problem(500, "Internal Server Error") : changePreferences(body),
-    "GET /instance": () => ({ status: 200, body: closing.instanceOf(instanceBody) }),
+    "GET /instance": () =>
+      o.about?.instance === "waits"
+        ? never()
+        : o.about?.instance === "fails"
+          ? problem(500, "Internal Server Error")
+          : { status: 200, body: closing.instanceOf(instanceBody) },
     "GET /instance/health": () => {
       const health: Schema<"ServerHealth"> = { status: "ok", checked_at: new Date().toISOString() };
       return { status: 200, body: health };
@@ -4115,7 +4120,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
    * paths read like an account's, a status's or a hashtag's.
    */
   const publicPath =
-    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
+    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals|\/documents\/[^/]+|\/domain_actions)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 

@@ -97,17 +97,25 @@ export type AboutViewProps = {
   builtInIcon: string;
 };
 
+/**
+ * In place of a page of the server's information until the instance is read: that it loads, or, with `retry`, that it
+ * could not be read, with Try again.
+ */
+export function AboutWaiting({ retry }: { retry?: (() => void) | undefined }): ReactNode {
+  const t = useAboutStrings();
+  return retry === undefined ? (
+    <FeedNotice lead>{t("about.loading")}</FeedNotice>
+  ) : (
+    <FeedNotice alert lead action={<TextButton onPress={retry}>{t("about.retry")}</TextButton>}>
+      {t("about.failed")}
+    </FeedNotice>
+  );
+}
+
 /** The about page of the server. */
 export function AboutView({ instance, retry, domains, builtInIcon }: AboutViewProps): ReactNode {
   const t = useAboutStrings();
-  if (instance === undefined)
-    return retry === undefined ? (
-      <FeedNotice lead>{t("about.loading")}</FeedNotice>
-    ) : (
-      <FeedNotice alert lead action={<TextButton onPress={retry}>{t("about.retry")}</TextButton>}>
-        {t("about.failed")}
-      </FeedNotice>
-    );
+  if (instance === undefined) return <AboutWaiting retry={retry} />;
   return (
     <ScreenStack>
       <Head instance={instance} builtInIcon={builtInIcon} />

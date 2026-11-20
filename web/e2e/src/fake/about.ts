@@ -22,6 +22,8 @@ export type FakeAboutOptions = {
   says?: "full" | "bare";
   /** Who may read the moderated domains: nobody by default. */
   domains?: Audience;
+  /** The instance (`GET /instance`) is never answered (`waits`), or always fails (`fails`). */
+  instance?: "waits" | "fails";
 };
 
 /** What the about handlers take from the fake. */

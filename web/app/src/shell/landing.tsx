@@ -10,6 +10,7 @@
 // The footer links the server's documents, its source code (AGPL-3.0 §13) and its status page. A one-person server
 // shows its operator's profile at / instead (ADR-0152 §7), in the app's frame.
 
+import { aboutPagePath, privacyPagePath, termsPagePath } from "@my/app-components";
 import { rightsOf, useInstance, useStatusPageUrl, type Instance } from "@my/app-data";
 import {
   FormActions,
@@ -72,10 +73,9 @@ function LandingFooter({ instance }: { instance: Instance | undefined }) {
   const t = useStrings();
   const statusPage = useStatusPageUrl();
   const links = [
-    ...(instance?.terms_url === undefined ? [] : [{ href: instance.terms_url, label: t("app.footer_terms") }]),
-    ...(instance?.privacy_policy_url === undefined
-      ? []
-      : [{ href: instance.privacy_policy_url, label: t("app.footer_privacy") }]),
+    // The app's own pages of the documents, which the instance's addresses are, opened in place.
+    ...(instance?.terms_url === undefined ? [] : [{ href: termsPagePath, label: t("app.footer_terms") }]),
+    ...(instance?.privacy_policy_url === undefined ? [] : [{ href: privacyPagePath, label: t("app.footer_privacy") }]),
     ...(instance === undefined ? [] : [{ href: instance.source_url, label: t("app.landing_source") }]),
     ...(statusPage === undefined ? [] : [{ href: statusPage, label: t("app.status_page") }]),
   ];
@@ -132,7 +132,7 @@ export function Landing({ serverName }: { serverName: string }) {
       front={{
         more: (
           <FormLinks>
-            <FormLink href="/about">{t("app.landing_about")}</FormLink>
+            <FormLink href={aboutPagePath}>{t("app.landing_about")}</FormLink>
           </FormLinks>
         ),
       }}
