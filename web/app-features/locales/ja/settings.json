@@ -3020,7 +3020,7 @@
     "description": "The question of the confirmation before a new secret of a confidential app is made. app is the name the reader gave the app."
   },
   "settings.apps.secret.rotate.text": {
-    "defaultMessage": "いまのシークレットはすぐに使えなくなり、元に戻せません。トークンの更新には新しいシークレットが必要です。発行済みのトークンは引き続き使えます。",
+    "defaultMessage": "いまのシークレットはすぐに使えなくなり、取り消せません。トークンの更新には新しいシークレットが必要です。発行済みのトークンは引き続き使えます。",
     "description": "Under settings.apps.secret.rotate.title in the confirmation: what making a new secret ends, that it cannot be undone, and what keeps working."
   },
   "settings.apps.secret.rotated": {
@@ -3068,7 +3068,7 @@
     "description": "The name of the row in the section Delete app."
   },
   "settings.apps.delete.about": {
-    "defaultMessage": "このアプリのトークンは、ほかの人が許可した分も含めて、すぐに使えなくなります。元に戻せません。",
+    "defaultMessage": "このアプリのトークンは、ほかの人が許可した分も含めて、すぐに使えなくなります。取り消せません。",
     "description": "The line under settings.apps.delete.row, and under settings.apps.delete.title in the confirmation: what deleting the app ends, and that it cannot be undone."
   },
   "settings.apps.delete.title": {
@@ -3352,7 +3352,7 @@
     "description": "The name of the row in the section Revoke invite: what revoking gives."
   },
   "settings.invites.revoke.about": {
-    "defaultMessage": "リンクと招待コードはすぐに使えなくなり、元に戻せません。この招待で登録した人のアカウントはそのまま残ります。",
+    "defaultMessage": "リンクと招待コードはすぐに使えなくなり、取り消せません。この招待で登録した人のアカウントはそのまま残ります。",
     "description": "The line under settings.invites.revoke.row, and the text of the confirmation under settings.invites.revoke.title: what stops working, that it cannot be undone, and what stays."
   },
   "settings.invites.revoke.title": {

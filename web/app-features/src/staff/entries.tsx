@@ -38,6 +38,8 @@ import { AdminSettingsScreen } from "./settings/screen";
 import { loadTranslationSettings, TranslationSettingsScreen } from "./settings/translation";
 import { loadSupportersAdmin, SupportersAdminScreen } from "./supporters/program";
 import { accountEntries, accountGroups } from "./accounts/entries";
+import { AdminClosureScreen, loadClosure } from "./closure/screen";
+import { AdminThemeScreen, loadTheme } from "./theme/screen";
 
 /** The two areas of the staff's screens, each a tree of routes under its root. */
 const staffAreas = ["moderation", "admin"] as const;
@@ -210,6 +212,31 @@ export const staffEntries: readonly StaffEntry[] = [
     hint: "staff.entry.oauth_apps.hint",
     Screen: AdminOAuthAppsScreen,
     load: (data, search) => loadOAuthApps(data, search),
+  },
+  // The instance theme and the closure of the service (FR-605, FR-808, FR-809, #3266): the theme's draft, and the
+  // closure's announcement and its check before closing, are each a route of their own (admin.theme.draft.tsx,
+  // admin.closure.announcement.tsx, admin.closure.close.tsx).
+  {
+    path: "theme",
+    area: "admin",
+    group: "server",
+    permission: "manage_settings",
+    icon: "theme",
+    name: "staff.entry.theme",
+    hint: "staff.entry.theme.hint",
+    Screen: AdminThemeScreen,
+    load: (data) => loadTheme(data),
+  },
+  {
+    path: "closure",
+    area: "admin",
+    group: "server",
+    permission: "manage_service_closure",
+    icon: "closure",
+    name: "staff.entry.closure",
+    hint: "staff.entry.closure.hint",
+    Screen: AdminClosureScreen,
+    load: (data) => loadClosure(data),
   },
   // Roles, custom emoji, announcements and webhooks (#3263).
   ...serverEntries,

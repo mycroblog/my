@@ -115,6 +115,22 @@
     "defaultMessage": "Apps that can sign in, and denied hosts",
     "description": "The line under OAuth apps in the list at /admin: what its screen holds. Read by administrators."
   },
+  "staff.entry.theme": {
+    "defaultMessage": "Theme",
+    "description": "The name of the screen of the server's theme (its colors, type and corners), in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.theme.hint": {
+    "defaultMessage": "Colors, type and corners of every screen",
+    "description": "The line under Theme in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff.entry.closure": {
+    "defaultMessage": "Server closure",
+    "description": "The name of the screen of the closure of the server (announcing it, checking, closing), in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.closure.hint": {
+    "defaultMessage": "Announce the closure, check, and close the server",
+    "description": "The line under Server closure in the list at /admin: what its screen holds. Read by administrators."
+  },
   "staff.missing": {
     "defaultMessage": "This address leads to no screen open to you.",
     "description": "In a moderation or administration screen's place, at an address that names no screen, or one the reader's permissions do not open; a link to the area's screens follows."
