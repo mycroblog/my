@@ -31,11 +31,11 @@ my admin relay delete <relay id>                                  # delete a rel
 Du kannst das Relay eines Servers nicht registrieren, auf den eine Domain-Aktion (`suspend`) angewendet wurde. Wird der Server eines beigetretenen Relays später gesperrt, ändert sich der Zustand nicht,
 aber an dieses Relay wird nichts gesendet und von ihm nichts empfangen, und der Admin-Bereich weist im Zustand des Relays darauf hin.
 
-<!-- source: what-the-server-sends 1db52c508f9c -->
+<!-- source: what-the-server-sends c55ab0a5b079 -->
 ## Was der Server sendet
 
-- Nur das Erstellen, Bearbeiten und Löschen lokaler **öffentlicher** (`public`) Beiträge wird gesendet. Beiträge, die `unlisted`, nur für Follower, direkt oder nur lokal (`local`) sind, sowie Boosts werden nie gesendet.
-  Um einen Beitrag von Relays fernzuhalten, poste ihn als `unlisted` oder `local`. Es gibt kein Opt-out pro Nutzer.
+- Nur das Erstellen, Bearbeiten und Löschen lokaler **öffentlicher** (`public`) Beiträge wird gesendet. Beiträge, die `unlisted`, nur für Follower, direkt oder für Nachbarn (`local`) sind, sowie Boosts werden nie gesendet.
+  Um einen Beitrag von Relays fernzuhalten, poste ihn als `unlisted` oder `local` („Ruhig öffentlich“ oder „Nachbarn“). Es gibt kein Opt-out pro Nutzer.
 - Die Dokumente öffentlicher Beiträge tragen eine Linked Data Signature (`RsaSignature2017`), damit Mastodon und Misskey Beiträge akzeptieren können, die ein Relay unverändert weitergibt.
 - Die Zahl der Zustellungen wächst um die Zahl der beigetretenen Relays mal die Zahl der öffentlichen Beiträge (Zustellungen an ein Relay werden zu einer zusammengefasst).
 

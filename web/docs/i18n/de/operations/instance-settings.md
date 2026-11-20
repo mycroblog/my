@@ -370,7 +370,7 @@ und der Text `thumbnail_alt`), erscheinen an den folgenden Stellen. Was nicht ge
 Ist das Kontaktkonto gesperrt oder gelöscht, wird das Konto nicht angezeigt, sondern nur die E-Mail-Adresse.
 Ändere sie auf der Seite „Allgemein“ des Admin-Bildschirms des Webclients („Servereinstellungen“, `/admin/settings/general`) oder mit der CLI oder der Client-API.
 
-<!-- source: one-person-server ed3ac66244d6 -->
+<!-- source: one-person-server 39888347b833 -->
 ### Ein-Personen-Server
 
 Ein Server, der nur seinem Betreiber gehört, das eigene Zuhause des Betreibers im Fediverse, ist ein Ein-Personen-Server: Schalte `single_user` ein. Im Webclient
@@ -399,9 +399,9 @@ Solange er eingeschaltet ist:
 - **Was eine Community braucht, ist verborgen.** Die lokale und die föderierte Timeline und ihre Streams, die Kontovorschläge,
   die Einladungen von Nutzer und von Administratoren, die Prüfung von Registrierungen und die Registrierungssperren antworten mit `404` und dem Typ
   `/api/v1/problems/single-user-mode`.
-- **Keine neuen lokalen Beiträge.** Auf einem Server für eine Person erreicht ein Beitrag für „Dieser Server“ nur die Follower, daher kann ein neuer
+- **Keine neuen lokalen Beiträge.** Auf einem Server für eine Person erreicht ein Beitrag für „Nachbarn“ nur die Follower, daher kann ein neuer
   Beitrag nicht lokal sein: Die Client-API antwortet mit `422` und lässt es aus dem weg, was ein Konto veröffentlichen darf. Eine Standard-Sichtbarkeit
-  von „Dieser Server“ gilt als „Follower“ und lässt sich nicht speichern, und ein Sprachchat-Raum für die Personen dieses Servers kündigt
+  von „Nachbarn“ gilt als „Follower“ und lässt sich nicht speichern, und ein Sprachchat-Raum für die Personen dieses Servers kündigt
   sich in einem Beitrag für die Follower an. Beiträge, die bereits lokal sind, bleiben lokal.
 - **Der Server sagt, was er ist.** `single_user` in `GET /api/v1/instance` ist `true`, mit dem wirksamen Registrierungsmodus
   und den Timelines sowie dem Konto des Betreibers als `single_user_account`, und NodeInfo antwortet mit `openRegistrations: false` und
@@ -410,7 +410,7 @@ Solange er eingeschaltet ist:
   seines einen Kontos, mit dem Weg zur Anmeldung und Links zur Info-Seite, den Nutzungsbedingungen und der Datenschutzerklärung,
   die der Server veröffentlicht. Der Webclient blendet aus, was der Server nicht anbietet, aus Navigation, Menüs und
   Administrationsbildschirmen: die lokale und die föderierte Timeline, die Registrierung, vorgeschlagene Konten, Einladungen, die Prüfung von
-  Registrierungen, die Registrierungssperren, die Sichtbarkeit „Dieser Server“ und die Einstellungen für Registrierung, Einladungen, die öffentlichen
+  Registrierungen, die Registrierungssperren, die Sichtbarkeit „Nachbarn“ und die Einstellungen für Registrierung, Einladungen, die öffentlichen
   Timelines, die Landingpage und vorgeschlagene Konten.
 
 Föderation, Moderation, die Volltextsuche, das Unterstützerprogramm, die Dokumente und die Admin-Bildschirme funktionieren wie auf jedem
