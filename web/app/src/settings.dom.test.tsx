@@ -90,11 +90,11 @@ describe("the menu", () => {
     expect(display?.slice(1)).toEqual(["/settings/display", null]);
     expect(notifications?.[0]).toBe("Notifications");
     expect(notifications?.slice(1)).toEqual(["/settings/notifications", null]);
-    expect(voice?.[0]).toBe("Voice chat");
+    expect(voice?.[0]).toBe("Voice chats you hosted");
     expect(voice?.slice(1)).toEqual(["/settings/voice", null]);
-    expect(events?.[0]).toBe("Events");
+    expect(events?.[0]).toBe("Event reminders");
     expect(events?.slice(1)).toEqual(["/settings/events", null]);
-    expect(relationships?.[0]).toBe("Relationships");
+    expect(relationships?.[0]).toBe("Blocks, mutes, and hashtags");
     expect(relationships?.slice(1)).toEqual(["/settings/relationships", null]);
     expect(filters?.[0]).toBe("Keyword filters");
     expect(filters?.slice(1)).toEqual(["/settings/filters", null]);
@@ -158,9 +158,9 @@ describe("an entry", () => {
       ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", "page"],
       ["Notifications", "/settings/notifications", null],
-      ["Voice chat", "/settings/voice", null],
-      ["Events", "/settings/events", null],
-      ["Relationships", "/settings/relationships", null],
+      ["Voice chats you hosted", "/settings/voice", null],
+      ["Event reminders", "/settings/events", null],
+      ["Blocks, mutes, and hashtags", "/settings/relationships", null],
       ["Keyword filters", "/settings/filters", null],
       ["Security", "/settings/security", null],
       ["Apps", "/settings/apps", null],
@@ -188,9 +188,9 @@ describe("an entry", () => {
       ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", null],
       ["Notifications", "/settings/notifications", null],
-      ["Voice chat", "/settings/voice", null],
-      ["Events", "/settings/events", null],
-      ["Relationships", "/settings/relationships", null],
+      ["Voice chats you hosted", "/settings/voice", null],
+      ["Event reminders", "/settings/events", null],
+      ["Blocks, mutes, and hashtags", "/settings/relationships", null],
       ["Keyword filters", "/settings/filters", null],
       ["Security", "/settings/security", null],
       ["Apps", "/settings/apps", null],
@@ -256,9 +256,9 @@ describe("the display language", () => {
       ["プロフィール", "/settings/profile", null],
       ["表示と投稿", "/settings/display", "page"],
       ["通知", "/settings/notifications", null],
-      ["通話", "/settings/voice", null],
-      ["イベント", "/settings/events", null],
-      ["つながり", "/settings/relationships", null],
+      ["ホストをした通話", "/settings/voice", null],
+      ["イベントのリマインダー", "/settings/events", null],
+      ["ブロック・ミュート・ハッシュタグ", "/settings/relationships", null],
       ["キーワードフィルタ", "/settings/filters", null],
       ["セキュリティ", "/settings/security", null],
       ["アプリ", "/settings/apps", null],

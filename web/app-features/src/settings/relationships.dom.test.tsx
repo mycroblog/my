@@ -623,10 +623,10 @@ describe("the whole list", () => {
     expect(screen.queryAllByText("This list could not be loaded.")).toHaveLength(0);
   });
 
-  test("the way back, named Relationships, is the owner's to follow", async () => {
+  test("the way back, named Blocks, mutes, and hashtags, is the owner's to follow", async () => {
     const { user, told } = await whole("servers");
 
-    await user.click(screen.getByRole("button", { name: "Relationships" }));
+    await user.click(screen.getByRole("button", { name: "Blocks, mutes, and hashtags" }));
 
     expect(told).toEqual(["back"]);
   });
@@ -637,12 +637,14 @@ describe("the whole list", () => {
 
     const missing = await screen.findByRole("alert");
     expect(plain(missing.textContent)).toMatch(
-      inOrder("This settings page does not exist. Check the address.", "Relationships"),
+      inOrder("This settings page does not exist. Check the address.", "Blocks, mutes, and hashtags"),
     );
-    expect(within(missing).getByRole("link", { name: "Relationships" }).getAttribute("href")).toBe(
+    expect(within(missing).getByRole("link", { name: "Blocks, mutes, and hashtags" }).getAttribute("href")).toBe(
       "/settings/relationships",
     );
-    expect(screen.getAllByRole("heading").map((heading) => plain(heading.textContent))).toEqual(["Relationships"]);
+    expect(screen.getAllByRole("heading").map((heading) => plain(heading.textContent))).toEqual([
+      "Blocks, mutes, and hashtags",
+    ]);
     // No list was asked for.
     expect(on.requests.filter((r) => /^GET \/(blocks|mutes|domain_mutes|followed_tags)/.test(r))).toEqual([]);
   });

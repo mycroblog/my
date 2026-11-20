@@ -27,7 +27,9 @@ export class Relationships {
 
   /** The screen's heading, the entry's name. */
   get heading(): Locator {
-    return this.page.getByRole("main").getByRole("heading", { level: 1, name: "Relationships", exact: true });
+    return this.page
+      .getByRole("main")
+      .getByRole("heading", { level: 1, name: "Blocks, mutes, and hashtags", exact: true });
   }
 
   /** The section of `list`, whose heading says its count after its name once the list is not empty. */

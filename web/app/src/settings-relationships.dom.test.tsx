@@ -46,14 +46,14 @@ const rows = (menu: HTMLElement) =>
 const beside = () =>
   screen.queryAllByRole("navigation", { name: "Settings" }).filter((menu) => !screen.getByRole("main").contains(menu));
 
-/** The rows of the menu beside a screen of Relationships at `at`: Relationships is the entry the reader is at. */
+/** The rows of the menu beside a screen of Blocks, mutes, and hashtags at `at`: that entry is the one the reader is at. */
 const besideRelationships = (at: string) => [
   ["Profile", "/settings/profile", null],
   ["Display and posting", "/settings/display", null],
   ["Notifications", "/settings/notifications", null],
-  ["Voice chat", "/settings/voice", null],
-  ["Events", "/settings/events", null],
-  ["Relationships", entry, "page"],
+  ["Voice chats you hosted", "/settings/voice", null],
+  ["Event reminders", "/settings/events", null],
+  ["Blocks, mutes, and hashtags", entry, "page"],
   ["Keyword filters", "/settings/filters", null],
   ["Security", "/settings/security", null],
   ["Apps", "/settings/apps", null],
@@ -87,8 +87,8 @@ describe("the entry", () => {
 
     await entryRead();
     expect(app.path()).toBe(entry);
-    expect(heading()).toBe("Relationships");
-    expect(app.title()).toContain("Relationships");
+    expect(heading()).toBe("Blocks, mutes, and hashtags");
+    expect(app.title()).toContain("Blocks, mutes, and hashtags");
     await withInvites();
     expect(beside().flatMap(rows)).toEqual(besideRelationships(entry));
     // Its four lists, as the feature draws them.
@@ -117,7 +117,7 @@ describe("the entry", () => {
 });
 
 describe("the whole of a list", () => {
-  test("is where the entry's See all row leads, a screen titled by the list under the same row of the menu, whose way back, named Relationships, leads to the entry", async () => {
+  test("is where the entry's See all row leads, a screen titled by the list under the same row of the menu, whose way back, named Blocks, mutes, and hashtags, leads to the entry", async () => {
     const app = await renderApp(entry, many);
     await entryRead();
 
@@ -129,14 +129,14 @@ describe("the whole of a list", () => {
     expect(app.title()).toContain("Muted servers");
     expect(main().getAllByRole("listitem")).toHaveLength(9);
     await withInvites();
-    // A screen of the same entry: the menu beside it still marks Relationships.
+    // A screen of the same entry: the menu beside it still marks Blocks, mutes, and hashtags.
     expect(beside().flatMap(rows)).toEqual(besideRelationships(`${entry}/servers`));
 
-    await app.user.click(main().getByRole("button", { name: "Relationships" }));
+    await app.user.click(main().getByRole("button", { name: "Blocks, mutes, and hashtags" }));
 
     await entryRead();
     expect(app.path()).toBe(entry);
-    expect(heading()).toBe("Relationships");
+    expect(heading()).toBe("Blocks, mutes, and hashtags");
   });
 
   for (const [list, title, count] of [
@@ -154,19 +154,21 @@ describe("the whole of a list", () => {
       expect(app.path()).toBe(`${entry}/${list}`);
     });
 
-  test("at an address that names no list says under the entry's title, Relationships, that the page does not exist, with the menu still marking the entry, and leads to the entry", async () => {
+  test("at an address that names no list says under the entry's title, Blocks, mutes, and hashtags, that the page does not exist, with the menu still marking the entry, and leads to the entry", async () => {
     const app = await renderApp(`${entry}/nothing`, some);
 
     const missing = await main().findByRole("alert");
-    expect(missing.textContent).toMatch(/^This settings page does not exist\. Check the address\.\s*Relationships$/);
+    expect(missing.textContent).toMatch(
+      /^This settings page does not exist\. Check the address\.\s*Blocks, mutes, and hashtags$/,
+    );
     // No list's name is known: the screen and the page are titled as the entry is.
-    expect(heading()).toBe("Relationships");
-    expect(app.title()).toContain("Relationships");
+    expect(heading()).toBe("Blocks, mutes, and hashtags");
+    expect(app.title()).toContain("Blocks, mutes, and hashtags");
     expect(main().queryAllByRole("listitem")).toHaveLength(0);
     await withInvites();
     expect(beside().flatMap(rows)).toEqual(besideRelationships(`${entry}/nothing`));
 
-    await app.user.click(within(missing).getByRole("link", { name: "Relationships" }));
+    await app.user.click(within(missing).getByRole("link", { name: "Blocks, mutes, and hashtags" }));
 
     await entryRead();
     expect(app.path()).toBe(entry);
@@ -218,7 +220,7 @@ describe("the screens of Relationships, as the app draws them, keep the rules of
     await app.navigate(entry);
 
     expect((await main().findByRole("alert")).textContent).toContain("Your settings could not be loaded.");
-    expect(heading()).toBe("Relationships");
+    expect(heading()).toBe("Blocks, mutes, and hashtags");
     expect(beside()).toHaveLength(1);
     expect(settingsFindings(document.body)).toEqual([]);
   });
