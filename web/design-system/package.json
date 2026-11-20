@@ -6,6 +6,8 @@
   "sideEffects": ["*.css"],
   "exports": {
     ".": "./src/index.ts",
+    "./strings": "./src/strings.ts",
+    "./strings-every": "./src/strings-every.ts",
     "./test/chunks": "./src/test/chunks.ts",
     "./test/settings": "./src/test/settings.ts",
     "./editor": "./src/editor.tsx",
@@ -18,7 +20,7 @@
   },
   "scripts": {
     "typecheck": "bun --bun tsc -p .",
-    "test": "bun test --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx' && dom-tests happy-dom && dom-tests jsdom"
+    "test": "bun test --preload ./src/test/every-locale.ts --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx' && dom-tests happy-dom && dom-tests jsdom"
   },
   "dependencies": {
     "@lexical/history": "0.53.0",

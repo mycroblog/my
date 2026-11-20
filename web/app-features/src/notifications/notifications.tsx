@@ -67,7 +67,7 @@ import { stringsIn } from "../locale";
 import { ReportDialog } from "../report";
 import { useCompose, usePostActions, usePostNotice, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost as Post } from "../post-translation";
-import { messages } from "../messages.gen";
+import { catalog } from "../messages.gen";
 import { glyphOf, sentenceOf, shapeOf } from "./kinds";
 import { FollowRequestsRow, loadFollowRequestCount } from "./follow-requests";
 import { PushPrompt } from "./push-prompt";
@@ -96,7 +96,7 @@ export async function loadNotifications(data: AppData): Promise<void> {
   ]).catch(() => undefined);
 }
 
-const known = (id: string) => id in (messages["en"] ?? {});
+const known = (id: string) => id in catalog.source;
 
 /** What the reader may do with a notification of its kind, under its line (`FollowOf`: account-follow.tsx). */
 function Act({ n, t }: { n: NotificationItem; t: T }): ReactNode {

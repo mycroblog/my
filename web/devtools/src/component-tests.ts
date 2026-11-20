@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What a component test needs once a DOM is registered (ADR-0171 §4): the preloads happy-dom.ts and jsdom.ts load it
-// after they registered theirs, since React, Testing Library and Motion look for `document` when they are loaded.
+// after they registered theirs, since React, Testing Library and Motion look for `document` when they are loaded. It
+// loads the preload of the strings of the package the tests run in (src/test/every-locale.ts), when it has one.
 
 import { afterEach } from "bun:test";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { cleanup } from "@testing-library/react";
 import { MotionGlobalConfig } from "motion/react";
 
@@ -20,3 +23,6 @@ afterEach(() => {
   cleanup();
   for (const log of document.querySelectorAll("[data-live-announcer] [role='log']")) log.replaceChildren();
 });
+
+const everyLocale = join(process.cwd(), "src/test/every-locale.ts");
+if (existsSync(everyLocale)) await import(everyLocale);

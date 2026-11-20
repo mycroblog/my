@@ -7,10 +7,10 @@
 
 import type { Messages } from "@lingui/core";
 import { catalogReader } from "@my/design-system";
-import { type MessageId, messages } from "./messages.gen";
+import { catalog, type MessageId } from "./messages.gen";
 
 /** The package's strings in `locale`, by their ids, and the locale they are in, from Lingui's compiled messages. */
-export const stringsIn = catalogReader<MessageId>(messages satisfies Readonly<Record<string, Messages>>);
+export const stringsIn = catalogReader<MessageId>(catalog satisfies { readonly source: Messages });
 
 // Chinese is named by its script, never by a region: zh-CN and zh-TW are Simplified and Traditional Chinese, as
 // ADR-0009 §2 resolves them, and a name such as "Chinese (Taiwan)" takes a political side the app does not take.

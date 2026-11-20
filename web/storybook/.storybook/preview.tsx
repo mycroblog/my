@@ -18,12 +18,16 @@ import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
 import "./preview.css";
 import { keymap } from "@my/app";
+import { readEveryLocale } from "@my/app/strings-every";
 import { I18nProvider, MenuSheet, ShortcutProvider, useLocale } from "@my/design-system";
 import { breakpoint, fontFamily } from "@my/design-tokens";
 import { sizes } from "@my/devtools/sizes";
 import { namesCommandKey, supportsViewTransitions } from "@my/platform";
 import type { Decorator, Preview } from "@storybook/react-vite";
 import { useLayoutEffect, useSyncExternalStore, type ReactNode } from "react";
+
+// Every locale's strings, imported with the stories, so that the toolbar switches the locale at once.
+readEveryLocale();
 
 const locales = ["en", "ja", "ar-XB"] as const;
 const themes = ["light", "dark"] as const;
