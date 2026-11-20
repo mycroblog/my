@@ -29,10 +29,10 @@
   },
   "thread.failed": {
     "defaultMessage": "The post could not be loaded.",
-    "description": "What a post's screen says when the post could not be loaded (the server did not answer, or failed), beside a button to try again."
+    "description": "What a post's screen says when the post could not be loaded (the server did not answer, or failed), beside a button to try again; the list of who reacted to a post says it alone, for any failure."
   },
   "thread.not_found": {
-    "defaultMessage": "This post was not found. It may have been deleted, or the link may be wrong.",
+    "defaultMessage": "This post was not found. It may have been deleted, or the link may be wrong. Check the link, or go back.",
     "description": "In place of a post's screen when the server answers that the post is not there: it never was, was deleted, or the reader may not see it (never say which), under a button back."
   },
   "thread.retry": {

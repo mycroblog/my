@@ -264,7 +264,7 @@
     "description": "The button of the profile of an account that moved, which opens the account it moved to."
   },
   "profile.not_found": {
-    "defaultMessage": "{handle} は見つかりませんでした。アカウントがもう存在しないか、リンクが間違っている可能性があります。",
+    "defaultMessage": "{handle} は見つかりませんでした。アカウントがもう存在しないか、リンクが間違っている可能性があります。リンクを確かめるか、前の画面に戻ってください。",
     "description": "In place of a profile of an account that does not exist or is not available (deleted, deactivated: never say which), under a button back. handle is the @handle that was opened."
   },
   "profile.not_found_back": {

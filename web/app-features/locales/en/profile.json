@@ -264,7 +264,7 @@
     "description": "The button of the profile of an account that moved, which opens the account it moved to."
   },
   "profile.not_found": {
-    "defaultMessage": "{handle} was not found. The account may no longer exist, or the link may be wrong.",
+    "defaultMessage": "{handle} was not found. The account may no longer exist, or the link may be wrong. Check the link, or go back.",
     "description": "In place of a profile of an account that does not exist or is not available (deleted, deactivated: never say which), under a button back. handle is the @handle that was opened."
   },
   "profile.not_found_back": {
