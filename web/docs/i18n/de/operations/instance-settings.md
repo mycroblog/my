@@ -575,7 +575,7 @@ Modi. Eine Regel ist die Entscheidung des Betreibers, und sie gilt zusätzlich z
 - Die Admin-API ist `/api/v1/admin/link_card_domains` (auflisten, festlegen; ein `DELETE` mit der Domain entfernt sie) und braucht die Rollenberechtigung `manage_settings`. Ein Server behält höchstens 1.000 Regeln, jede mit einer Notiz von bis zu 5.000 Zeichen.
 - Jede Änderung wird im Audit-Log festgehalten (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 
-<!-- source: theme 98c2eee35f30 -->
+<!-- source: theme 1ada01b2db2e -->
 ## Design
 
 Das serverweite Design ist ein Satz von Überschreibungen der Design-Tokens des Webclients, mit je einem hellen und einem dunklen Wert für jede Farbe. Es gilt für den Webclient jedes Betrachters und für die Seiten, die der Server selbst rendert (Anmeldung, Registrierung, Nutzungsbedingungen usw.). Es gibt kein eigenes CSS.
@@ -587,7 +587,7 @@ Das serverweite Design ist ein Satz von Überschreibungen der Design-Tokens des 
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | Farbe | `#rrggbb` für hell und für dunkel |
   | `font-sans-override`, `font-mono-override` | Schriftfamilie | Familiennamen, durch Kommas getrennt (höchstens 30), ohne generische Familie wie `sans-serif`; setze einen Namen mit einem Wort, das mit einer Ziffer beginnt, in Anführungszeichen, etwa `"M PLUS 1p"` |
   | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | Länge | `0` oder rem / px, 0,625rem bis 3rem |
-  | `text-*--line-height` derselben vier | Zahl | 1 bis 2,5 |
+  | `text-*--line-height` derselben sieben | Zahl | 1 bis 2,5 |
   | `radius-control`, `radius-overlay` | Länge | 0 bis 2rem |
   | `duration-spin` | Dauer | ms / s, 0 bis 1000ms |
 

@@ -4,13 +4,12 @@
 Ein Relay ist ein Server, der die öffentlichen Beiträge der Server, die ihm beitreten, an die anderen beigetretenen Server weitergibt. Selbst ein kleiner Server mit wenigen Follows erhält eine gefüllte föderierte Timeline und Hashtag-Timelines,
 und seine eigenen öffentlichen Beiträge reichen weiter. Ein Server, der keinem Relay beitritt, gewinnt keine Zeilen und keine Jobs.
 
-<!-- source: join-a-relay 5c97a6145f1b -->
+<!-- source: join-a-relay 551373ffaed6 -->
 ## Einem Relay beitreten
 
 Verwende „Relays“ im Admin-Bereich (`/admin/relays`). Dafür ist die Berechtigung `manage_settings` nötig, die die eingebaute Rolle `admin` hat.
 „Einem Relay beitreten“ öffnet das Formular, das eines registriert. Die Liste zeigt den Zustand jedes Relays und was es in den letzten 24
-Stunden eingebracht hat; wenn du ein Relay auswählst, öffnet sich seine Seite mit seinen Adressen und der Schaltfläche, die es verlässt, oder, sobald es verlassen wurde oder
-es den Server abgelehnt hat, den Schaltflächen, die ihm erneut beitreten und es löschen. Verlassen und Löschen fragen vorher nach.
+Stunden eingebracht hat; wenn du ein Relay auswählst, öffnet sich seine Seite mit seinen Adressen und der Schaltfläche, die es verlässt, oder, sobald der Server es verlassen oder es den Server abgelehnt hat, den Schaltflächen, die ihm erneut beitreten und es löschen. Verlassen und Löschen fragen vorher nach.
 Die CLI ist `my admin relay` (`my admin relay -help`):
 
 ```sh
