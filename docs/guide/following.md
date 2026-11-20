@@ -6,7 +6,7 @@
 address of its profile. When you are signed in, the server looks up an account it does not know yet on its own server;
 visitors who are not signed in only find accounts the server already knows. Some servers do not look up accounts of other servers at all, and then
 only the accounts they already know are found. The "Posts" tab searches the words of posts when the server offers it;
-it finds public posts, and posts set to "Local" for people who are signed in, and only of
+it finds public posts, and posts for neighbors when you are signed in, and only of
 authors who allow it (authors can opt out in their profile settings).
 
 On a profile of an account on another server, the page shows only the posts this server has received and links to the
@@ -47,21 +47,21 @@ choose "Anyone". A list you cannot open says so in place of the accounts.
 
 | Timeline | What it shows |
 | --- | --- |
-| Home | Your posts, and the posts and boosts of the people you follow. It also shows posts set to "Local" by the people you follow, and the public posts and posts set to "Local" of the hashtags you follow, from people you do not follow. New posts show at the top as they arrive. While you read further down, the "new posts" button over the timeline counts the ones that came in above you. If you turn off "Show new posts as they arrive" (under "Timelines" in the "Display and posting" settings), new posts wait until you press that button. |
-| Local | The public posts, and the posts set to "Local", of the accounts of this server. |
-| Federated | The public posts of the accounts of this server and of the accounts of other servers that this server knows. "Local" and "Quiet public" posts are not on it. |
+| Home | Your posts, and the posts and boosts of the people you follow. It also shows posts for neighbors by the people you follow, and the public posts and posts for neighbors of the hashtags you follow, from people you do not follow. New posts show at the top as they arrive. While you read further down, the "new posts" button over the timeline counts the ones that came in above you. If you turn off "Show new posts as they arrive" (under "Timelines" in the "Display and posting" settings), new posts wait until you press that button. |
+| Local | The public posts, and the posts for neighbors, of the accounts of this server. |
+| Federated | The public posts of the accounts of this server and of the accounts of other servers that this server knows. Posts for neighbors and "Quiet public" posts are not on it. |
 
 The Local and Federated timelines are for everyone who uses the server, whether you follow them or not. A server's
 operators can turn either one off, or show it only to people who are signed in; the page then says so.
 "Languages to show", under "Timelines" in the "Display and posting" settings, limits every timeline to the languages
 you choose; posts with no language set still show.
 
-A hashtag page (for example `#cats`) shows the public posts and the posts set to "Local" with that tag.
+A hashtag page (for example `#cats`) shows the public posts and the posts for neighbors with that tag.
 
 ## Following hashtags
 
 A hashtag page has the button "Follow" when you are signed in. After you follow a hashtag, your home timeline also shows
-the public posts and the posts set to "Local" with it from people you do not follow, the next time you open it.
+the public posts and the posts for neighbors with it from people you do not follow, the next time you open it.
 Such a post says "Followed hashtag #cats" above it, and the hashtag leads to its page, where "Following" unfollows it.
 Replies come too; boosts do not, and neither do posts of people you block or mute, or of accounts and servers that
 the server keeps off its public timelines. Home shows only the posts this server already has: following a hashtag does

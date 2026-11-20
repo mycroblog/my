@@ -944,7 +944,7 @@
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under a delivery with no attempt yet. Read by moderators."
   },
   "staff_domains.delivery.masked": {
-    "defaultMessage": "{mask, select, private {About a followers-only post} direct {About a direct message} local {About a local-only post} approves_followers {About a follow of an account that approves its followers} other {About something that is gone}}: the sender, the activity and the inbox are hidden",
+    "defaultMessage": "{mask, select, private {About a followers-only post} direct {About a direct message} local {About a post for neighbors} approves_followers {About a follow of an account that approves its followers} other {About something that is gone}}: the sender, the activity and the inbox are hidden",
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under a masked delivery, why it is masked. Read by moderators."
   },
   "staff_domains.delivery.reveal.audited": {
