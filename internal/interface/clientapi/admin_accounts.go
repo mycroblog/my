@@ -11,6 +11,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -27,6 +28,8 @@ type AccountAdmin interface {
 	Search(ctx context.Context, q appidentity.AccountSearch, limit int) ([]appidentity.AdminAccount, string, error)
 	Detail(ctx context.Context, accountID string) (appidentity.AdminAccountDetail, error)
 	Reveal(ctx context.Context, accountID, byUserID string) (appidentity.PrivateData, error)
+	SignIns(ctx context.Context, accountID, byUserID string, before appidentity.SignInPosition, limit int) ([]identity.SessionOrigin, error)
+	SameIPAccounts(ctx context.Context, accountID, byUserID, ip, after string, limit int) ([]appidentity.AdminAccount, string, error)
 	DisableTwoFactor(ctx context.Context, accountID, byUserID string) error
 	LiftEmailSuppression(ctx context.Context, accountID, byUserID string) error
 }
@@ -356,16 +359,10 @@ func (s *Server) RevealAdminAccount(ctx context.Context, req RevealAdminAccountR
 		return nil, err
 	}
 	d, err := s.o.AccountAdmin.Reveal(ctx, req.Id, v.UserID)
-	switch {
-	case errors.Is(err, appidentity.ErrTargetOutranksActor):
-		return RevealAdminAccountdefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
-	case errors.Is(err, appaccount.ErrNotFound):
-		return RevealAdminAccountdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
-	case errors.Is(err, appidentity.ErrNotLocalAccount):
-		l := s.Localizer(ctx)
-		return RevealAdminAccountdefaultApplicationProblemPlusJSONResponse(
-			s.fieldProblem(ctx, "id", l.ServerErrorsInvalidValue())), nil
-	case err != nil:
+	if p := s.revealProblem(ctx, err); p != nil {
+		return RevealAdminAccountdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	if err != nil {
 		return nil, fmt.Errorf("clientapi: reveal account %s: %w", req.Id, err)
 	}
 	out := AdminAccountPrivateData{SignIns: make([]AdminAccountSignIn, 0, len(d.SignIns)), SameIpAccounts: make([]AdminSameIpAccounts, 0, len(d.SameIP))}
@@ -378,16 +375,7 @@ func (s *Server) RevealAdminAccount(ctx context.Context, req RevealAdminAccountR
 		out.RegistrationIp, out.RegisteredAt = &ip, &at
 	}
 	for _, o := range d.SignIns {
-		item := AdminAccountSignIn{SignedInAt: o.CreatedAt.UTC()}
-		if o.IP != "" {
-			ip := o.IP
-			item.Ip = &ip
-		}
-		if o.UserAgent != "" {
-			ua := o.UserAgent
-			item.UserAgent = &ua
-		}
-		out.SignIns = append(out.SignIns, item)
+		out.SignIns = append(out.SignIns, newAdminAccountSignIn(o))
 	}
 	for _, g := range d.SameIP {
 		accounts, err := s.newAdminAccounts(ctx, g.Accounts)
@@ -398,4 +386,114 @@ func (s *Server) RevealAdminAccount(ctx context.Context, req RevealAdminAccountR
 	}
 	cache := cacheNoStore
 	return RevealAdminAccount200JSONResponse{Body: out, Headers: RevealAdminAccount200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// newAdminAccountSignIn presents where one sign-in came from.
+func newAdminAccountSignIn(o identity.SessionOrigin) AdminAccountSignIn {
+	item := AdminAccountSignIn{SignedInAt: o.CreatedAt.UTC()}
+	if o.IP != "" {
+		ip := o.IP
+		item.Ip = &ip
+	}
+	if o.UserAgent != "" {
+		ua := o.UserAgent
+		item.UserAgent = &ua
+	}
+	return item
+}
+
+// revealProblem is the problem of a failed reveal, sign-in list, or same-IP list of an account,
+// or nil when err is none of theirs.
+func (s *Server) revealProblem(ctx context.Context, err error) *problem {
+	var p problem
+	switch {
+	case errors.Is(err, appidentity.ErrTargetOutranksActor):
+		p = s.targetOutranksActor(ctx)
+	case errors.Is(err, appaccount.ErrNotFound):
+		p = s.notFoundResponse(ctx)
+	case errors.Is(err, appidentity.ErrNotLocalAccount):
+		p = s.fieldProblem(ctx, "id", s.Localizer(ctx).ServerErrorsInvalidValue())
+	default:
+		return nil
+	}
+	return &p
+}
+
+// ListAdminAccountSignIns serves GET /api/v1/admin/accounts/{id}/sign_ins, newest first. The
+// cursor is the time and the session ID of the last sign-in of the previous page.
+func (s *Server) ListAdminAccountSignIns(ctx context.Context, req ListAdminAccountSignInsRequestObject) (ListAdminAccountSignInsResponseObject, error) {
+	if p, err := s.requirePermission(ctx, identity.PermManageAccounts); err != nil {
+		return nil, err
+	} else if p != nil {
+		return ListAdminAccountSignInsdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	limit, ok := pageLimit(req.Params.Limit)
+	if !ok {
+		return ListAdminAccountSignInsdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "limit")), nil
+	}
+	var before appidentity.SignInPosition
+	if req.Params.Cursor != nil {
+		if before.At, before.SessionID, ok = decodeTimeCursor(*req.Params.Cursor); !ok || !kernel.ValidID(before.SessionID) {
+			return ListAdminAccountSignInsdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "cursor")), nil
+		}
+	}
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	origins, err := s.o.AccountAdmin.SignIns(ctx, req.Id, v.UserID, before, limit+1)
+	if p := s.revealProblem(ctx, err); p != nil {
+		return ListAdminAccountSignInsdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: list the sign-ins of account %s: %w", req.Id, err)
+	}
+	origins, last := trim(origins, limit)
+	page := AdminAccountSignInPage{Items: make([]AdminAccountSignIn, 0, len(origins))}
+	for _, o := range origins {
+		page.Items = append(page.Items, newAdminAccountSignIn(o))
+	}
+	if last >= 0 {
+		page.NextCursor = encodeTimeCursor(origins[last].CreatedAt, origins[last].SessionID)
+	}
+	cache := cacheNoStore
+	return ListAdminAccountSignIns200JSONResponse{Body: page, Headers: ListAdminAccountSignIns200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// ListAdminAccountSameIPAccounts serves GET /api/v1/admin/accounts/{id}/same_ip_accounts, newest
+// first. The cursor is the position of the list after the last account of the previous page.
+func (s *Server) ListAdminAccountSameIPAccounts(ctx context.Context, req ListAdminAccountSameIPAccountsRequestObject) (ListAdminAccountSameIPAccountsResponseObject, error) {
+	if p, err := s.requirePermission(ctx, identity.PermManageAccounts); err != nil {
+		return nil, err
+	} else if p != nil {
+		return ListAdminAccountSameIPAccountsdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	pq := s.parsePage(ctx, req.Params.Cursor, req.Params.Limit)
+	if pq.problem != nil {
+		return ListAdminAccountSameIPAccountsdefaultApplicationProblemPlusJSONResponse(*pq.problem), nil
+	}
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	as, next, err := s.o.AccountAdmin.SameIPAccounts(ctx, req.Id, v.UserID, req.Params.Ip, pq.before, pq.limit)
+	if serr := (*appidentity.AccountSearchError)(nil); errors.As(err, &serr) {
+		return ListAdminAccountSameIPAccountsdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, serr.Param)), nil
+	}
+	if p := s.revealProblem(ctx, err); p != nil {
+		return ListAdminAccountSameIPAccountsdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: list the accounts sharing an IP address with account %s: %w", req.Id, err)
+	}
+	items, err := s.newAdminAccounts(ctx, as)
+	if err != nil {
+		return nil, err
+	}
+	page := AdminAccountPage{Items: items}
+	if next != "" {
+		page.NextCursor = encodeCursor(next)
+	}
+	cache := cacheNoStore
+	return ListAdminAccountSameIPAccounts200JSONResponse{Body: page, Headers: ListAdminAccountSameIPAccounts200ResponseHeaders{CacheControl: &cache}}, nil
 }

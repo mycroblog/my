@@ -6213,10 +6213,12 @@ type AdminAccountPrivateData struct {
 	RegistrationIp *string `json:"registration_ip,omitempty"`
 
 	// SameIpAccounts For each IP address of `sign_ins` and `registration_ip`, newest first, up to 20
-	// other accounts that registered or signed in from it, newest first.
+	// other accounts that registered or signed in from it, newest first; `GET
+	// .../same_ip_accounts` pages through them all.
 	SameIpAccounts []AdminSameIpAccounts `json:"same_ip_accounts"`
 
-	// SignIns The newest 20 sign-ins within the retention, newest first.
+	// SignIns The newest 20 sign-ins within the retention, newest first; `GET .../sign_ins` pages
+	// through them all.
 	SignIns []AdminAccountSignIn `json:"sign_ins"`
 }
 
@@ -6262,6 +6264,14 @@ type AdminAccountSignIn struct {
 
 	// UserAgent The User-Agent; omitted when unknown.
 	UserAgent *string `json:"user_agent,omitempty"`
+}
+
+// AdminAccountSignInPage A page of the sign-ins of an account, newest first.
+type AdminAccountSignInPage struct {
+	Items []AdminAccountSignIn `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
 // AdminAccountState The state of an account, the first that applies: `deleted` (deleted here or on its
@@ -6400,7 +6410,7 @@ type AdminAppealPage struct {
 // AdminAuditAction The kind of an audited operation, each on one kind of target. On an `account`:
 // `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 // `revealed_private_data` (a moderator was shown the account's email address and IP
-// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
+// addresses, a page of its sign-ins, or a page of the accounts that shared an IP address), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 // suppression of the primary email address of the account's user), `account_moved` (a limited
@@ -6495,7 +6505,7 @@ type AdminAuditEntry struct {
 	// Action The kind of an audited operation, each on one kind of target. On an `account`:
 	// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 	// `revealed_private_data` (a moderator was shown the account's email address and IP
-	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
+	// addresses, a page of its sign-ins, or a page of the accounts that shared an IP address), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 	// suppression of the primary email address of the account's user), `account_moved` (a limited
@@ -18544,6 +18554,27 @@ type ListAccountActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListAdminAccountSameIPAccountsParams defines parameters for ListAdminAccountSameIPAccounts.
+type ListAdminAccountSameIPAccountsParams struct {
+	// Ip The IP address, as `sign_ins` or `registration_ip` of the reveal give it.
+	Ip string `form:"ip" json:"ip"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListAdminAccountSignInsParams defines parameters for ListAdminAccountSignIns.
+type ListAdminAccountSignInsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListAdminAnnouncementsParams defines parameters for ListAdminAnnouncements.
 type ListAdminAnnouncementsParams struct {
 	// State Keep only these announcements; omitted keeps every one.
@@ -18877,6 +18908,10 @@ type ListReportsParams struct {
 	// that nobody handles, or the ID of a local account. Omitted keeps every report; any
 	// other value is a `400`.
 	Assignee *string `form:"assignee,omitempty" json:"assignee,omitempty"`
+
+	// TargetAccountId Keep only the reports about this account, local or remote. An account that no report is
+	// about gives an empty page.
+	TargetAccountId *Id `form:"target_account_id,omitempty" json:"target_account_id,omitempty"`
 
 	// Order `newest` (the default) lists the most recently filed report first; `oldest` lists the
 	// report that has waited longest first. The cursor continues the page in the same order.
@@ -19967,6 +20002,12 @@ type ServerInterface interface {
 	// GrantAccountRole Grant a role to a local account
 	// (PUT /admin/accounts/{id}/roles/{role})
 	GrantAccountRole(w http.ResponseWriter, r *http.Request, id AdminAccountId, role RoleKey)
+	// ListAdminAccountSameIPAccounts List the other accounts that used an IP address of a local account
+	// (GET /admin/accounts/{id}/same_ip_accounts)
+	ListAdminAccountSameIPAccounts(w http.ResponseWriter, r *http.Request, id AdminAccountId, params ListAdminAccountSameIPAccountsParams)
+	// ListAdminAccountSignIns List where the sign-ins of a local account came from
+	// (GET /admin/accounts/{id}/sign_ins)
+	ListAdminAccountSignIns(w http.ResponseWriter, r *http.Request, id AdminAccountId, params ListAdminAccountSignInsParams)
 	// DisableAdminAccountTwoFactor Remove the two-factor authentication of a local account
 	// (POST /admin/accounts/{id}/two_factor/disable)
 	DisableAdminAccountTwoFactor(w http.ResponseWriter, r *http.Request, id AdminAccountId)
@@ -22711,6 +22752,129 @@ func (siw *ServerInterfaceWrapper) GrantAccountRole(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GrantAccountRole(w, r, id, role)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAdminAccountSameIPAccounts operation middleware
+func (siw *ServerInterfaceWrapper) ListAdminAccountSameIPAccounts(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AdminAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAdminAccountSameIPAccountsParams
+
+	// ------------- Required query parameter "ip" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "ip", r.URL.Query(), &params.Ip, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "ip"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ip", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAdminAccountSameIPAccounts(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAdminAccountSignIns operation middleware
+func (siw *ServerInterfaceWrapper) ListAdminAccountSignIns(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AdminAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAdminAccountSignInsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAdminAccountSignIns(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26593,6 +26757,19 @@ func (siw *ServerInterfaceWrapper) ListReports(w http.ResponseWriter, r *http.Re
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "assignee"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "assignee", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "target_account_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "target_account_id", r.URL.Query(), &params.TargetAccountId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "target_account_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "target_account_id", Err: err})
 		}
 		return
 	}
@@ -35264,6 +35441,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/accounts", wrapper.ListAdminAccounts)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/accounts/{id}", wrapper.GetAdminAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/reveal", wrapper.RevealAdminAccount)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/accounts/{id}/sign_ins", wrapper.ListAdminAccountSignIns)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/accounts/{id}/same_ip_accounts", wrapper.ListAdminAccountSameIPAccounts)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/two_factor/disable", wrapper.DisableAdminAccountTwoFactor)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/password_reset_link", wrapper.IssueAdminAccountPasswordResetLink)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/email_suppression/lift", wrapper.LiftAdminAccountEmailSuppression)
@@ -38606,6 +38785,132 @@ type GrantAccountRoledefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GrantAccountRoledefaultApplicationProblemPlusJSONResponse) VisitGrantAccountRoleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAdminAccountSameIPAccountsRequestObject struct {
+	Id     AdminAccountId `json:"id"`
+	Params ListAdminAccountSameIPAccountsParams
+}
+
+type ListAdminAccountSameIPAccountsResponseObject interface {
+	VisitListAdminAccountSameIPAccountsResponse(w http.ResponseWriter) error
+}
+
+type ListAdminAccountSameIPAccounts200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListAdminAccountSameIPAccounts200JSONResponse struct {
+	Body    AdminAccountPage
+	Headers ListAdminAccountSameIPAccounts200ResponseHeaders
+}
+
+func (response ListAdminAccountSameIPAccounts200JSONResponse) VisitListAdminAccountSameIPAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAdminAccountSameIPAccountsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListAdminAccountSameIPAccountsdefaultApplicationProblemPlusJSONResponse) VisitListAdminAccountSameIPAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAdminAccountSignInsRequestObject struct {
+	Id     AdminAccountId `json:"id"`
+	Params ListAdminAccountSignInsParams
+}
+
+type ListAdminAccountSignInsResponseObject interface {
+	VisitListAdminAccountSignInsResponse(w http.ResponseWriter) error
+}
+
+type ListAdminAccountSignIns200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListAdminAccountSignIns200JSONResponse struct {
+	Body    AdminAccountSignInPage
+	Headers ListAdminAccountSignIns200ResponseHeaders
+}
+
+func (response ListAdminAccountSignIns200JSONResponse) VisitListAdminAccountSignInsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAdminAccountSignInsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListAdminAccountSignInsdefaultApplicationProblemPlusJSONResponse) VisitListAdminAccountSignInsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -64039,6 +64344,12 @@ type StrictServerInterface interface {
 	// GrantAccountRole Grant a role to a local account
 	// (PUT /admin/accounts/{id}/roles/{role})
 	GrantAccountRole(ctx context.Context, request GrantAccountRoleRequestObject) (GrantAccountRoleResponseObject, error)
+	// ListAdminAccountSameIPAccounts List the other accounts that used an IP address of a local account
+	// (GET /admin/accounts/{id}/same_ip_accounts)
+	ListAdminAccountSameIPAccounts(ctx context.Context, request ListAdminAccountSameIPAccountsRequestObject) (ListAdminAccountSameIPAccountsResponseObject, error)
+	// ListAdminAccountSignIns List where the sign-ins of a local account came from
+	// (GET /admin/accounts/{id}/sign_ins)
+	ListAdminAccountSignIns(ctx context.Context, request ListAdminAccountSignInsRequestObject) (ListAdminAccountSignInsResponseObject, error)
 	// DisableAdminAccountTwoFactor Remove the two-factor authentication of a local account
 	// (POST /admin/accounts/{id}/two_factor/disable)
 	DisableAdminAccountTwoFactor(ctx context.Context, request DisableAdminAccountTwoFactorRequestObject) (DisableAdminAccountTwoFactorResponseObject, error)
@@ -66660,6 +66971,60 @@ func (sh *strictHandler) GrantAccountRole(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GrantAccountRoleResponseObject); ok {
 		if err := validResponse.VisitGrantAccountRoleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAdminAccountSameIPAccounts operation middleware
+func (sh *strictHandler) ListAdminAccountSameIPAccounts(w http.ResponseWriter, r *http.Request, id AdminAccountId, params ListAdminAccountSameIPAccountsParams) {
+	var request ListAdminAccountSameIPAccountsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAdminAccountSameIPAccounts(ctx, request.(ListAdminAccountSameIPAccountsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAdminAccountSameIPAccounts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAdminAccountSameIPAccountsResponseObject); ok {
+		if err := validResponse.VisitListAdminAccountSameIPAccountsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAdminAccountSignIns operation middleware
+func (sh *strictHandler) ListAdminAccountSignIns(w http.ResponseWriter, r *http.Request, id AdminAccountId, params ListAdminAccountSignInsParams) {
+	var request ListAdminAccountSignInsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAdminAccountSignIns(ctx, request.(ListAdminAccountSignInsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAdminAccountSignIns")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAdminAccountSignInsResponseObject); ok {
+		if err := validResponse.VisitListAdminAccountSignInsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -5,7 +5,8 @@ post:
   summary: Show the email address and the IP addresses of a local account
   description: |
     The primary email address of a local account, where it registered and its newest 20
-    sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
+    sign-ins came from, and up to 20 other accounts per IP address that used the same one;
+    `GET .../sign_ins` and `GET .../same_ip_accounts` page through the rest. Each call is recorded in the audit log as `revealed_private_data` before
     anything is returned; it changes nothing else. IP addresses are kept for the retention
     of the sign-in and registration origins only. A remote account or the
     instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the

@@ -213,7 +213,8 @@ FOR UPDATE;
 
 -- ListReports returns the reports with their state, newest first: those in a state (empty for
 -- any), of a category (empty for any), assigned to a user (NULL for anyone) or to nobody when
--- unassigned, and those before the report before (NULL for the first page).
+-- unassigned, about an account (NULL for any), and those before the report before (NULL for the
+-- first page).
 -- name: ListReports :many
 SELECT r.id, r.uri, r.reporter_account_id, r.target_account_id, r.category, r.comment, r.forwarded,
   r.filed_at, s.state, s.outcome, s.assignee_user_id, s.since
@@ -222,6 +223,7 @@ WHERE (sqlc.arg(state)::text = '' OR s.state = sqlc.arg(state)::text)
   AND (sqlc.arg(category)::text = '' OR r.category = sqlc.arg(category)::text)
   AND (sqlc.narg(assignee)::uuid IS NULL OR s.assignee_user_id = sqlc.narg(assignee)::uuid)
   AND (NOT sqlc.arg(unassigned)::boolean OR s.assignee_user_id IS NULL)
+  AND (sqlc.narg(target)::uuid IS NULL OR r.target_account_id = sqlc.narg(target)::uuid)
   AND (sqlc.narg(before)::uuid IS NULL OR r.id < sqlc.narg(before)::uuid)
 ORDER BY r.id DESC
 LIMIT sqlc.arg(lim);
@@ -236,6 +238,7 @@ WHERE (sqlc.arg(state)::text = '' OR s.state = sqlc.arg(state)::text)
   AND (sqlc.arg(category)::text = '' OR r.category = sqlc.arg(category)::text)
   AND (sqlc.narg(assignee)::uuid IS NULL OR s.assignee_user_id = sqlc.narg(assignee)::uuid)
   AND (NOT sqlc.arg(unassigned)::boolean OR s.assignee_user_id IS NULL)
+  AND (sqlc.narg(target)::uuid IS NULL OR r.target_account_id = sqlc.narg(target)::uuid)
   AND (sqlc.narg(after)::uuid IS NULL OR r.id > sqlc.narg(after)::uuid)
 ORDER BY r.id
 LIMIT sqlc.arg(lim);

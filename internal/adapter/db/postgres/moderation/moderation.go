@@ -544,7 +544,7 @@ func (r *Repository) ListReports(ctx context.Context, q appmoderation.ReportQuer
 		var oldest []moderationgen.ListReportsOldestFirstRow
 		oldest, err = r.db.reader().ListReportsOldestFirst(ctx, moderationgen.ListReportsOldestFirstParams{
 			State: string(q.State), Category: string(q.Category), Assignee: postgres.ToNullString(q.AssigneeUserID), Unassigned: q.Unassigned,
-			After: postgres.ToNullString(q.After), Lim: lim,
+			Target: postgres.ToNullString(q.TargetAccountID), After: postgres.ToNullString(q.After), Lim: lim,
 		})
 		for _, row := range oldest {
 			rows = append(rows, moderationgen.ListReportsRow(row))
@@ -552,7 +552,7 @@ func (r *Repository) ListReports(ctx context.Context, q appmoderation.ReportQuer
 	} else {
 		rows, err = r.db.reader().ListReports(ctx, moderationgen.ListReportsParams{
 			State: string(q.State), Category: string(q.Category), Assignee: postgres.ToNullString(q.AssigneeUserID), Unassigned: q.Unassigned,
-			Before: postgres.ToNullString(q.After), Lim: lim,
+			Target: postgres.ToNullString(q.TargetAccountID), Before: postgres.ToNullString(q.After), Lim: lim,
 		})
 	}
 	if err != nil {

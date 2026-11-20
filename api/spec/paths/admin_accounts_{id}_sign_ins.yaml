@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listAdminAccountSignIns
+  x-permission: manage_accounts
+  summary: List where the sign-ins of a local account came from
+  description: |
+    The sign-ins of a local account within the retention of the sign-in origins, newest first,
+    with their IP addresses: the whole list that `POST .../reveal` starts with its newest 20.
+    Each call is recorded in the audit log as `revealed_private_data` before anything is
+    returned, as the reveal is. A remote account or the instance actor is a 422 naming `id`. An
+    unknown account is a 404. A local account whose roles do not rank below the user's, the
+    user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
+    `manage_accounts` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - $ref: ../components/parameters/AdminAccountId.yaml
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of sign-ins.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminAccountSignInPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

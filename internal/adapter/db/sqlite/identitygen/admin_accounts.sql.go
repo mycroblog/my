@@ -14,18 +14,28 @@ import (
 const listSessionOriginsOfUser = `-- name: ListSessionOriginsOfUser :many
 SELECT session_id, user_id, ip, user_agent, created_at FROM session_origins
 WHERE user_id = ?1
+  AND (CAST(?2 AS TEXT) = '' OR created_at < CAST(?3 AS INTEGER)
+    OR (created_at = CAST(?3 AS INTEGER) AND session_id < ?2))
 ORDER BY created_at DESC, session_id DESC
-LIMIT ?2
+LIMIT ?4
 `
 
 type ListSessionOriginsOfUserParams struct {
-	UserID string
-	Lim    int64
+	UserID   string
+	BeforeID string
+	BeforeAt int64
+	Lim      int64
 }
 
-// ListSessionOriginsOfUser returns the newest origins of a user's sessions.
+// ListSessionOriginsOfUser returns the newest origins of a user's sessions, those before the
+// origin at (before_at, before_id) (before_id empty for the first page).
 func (q *Queries) ListSessionOriginsOfUser(ctx context.Context, arg ListSessionOriginsOfUserParams) ([]SessionOrigin, error) {
-	rows, err := q.db.QueryContext(ctx, listSessionOriginsOfUser, arg.UserID, arg.Lim)
+	rows, err := q.db.QueryContext(ctx, listSessionOriginsOfUser,
+		arg.UserID,
+		arg.BeforeID,
+		arg.BeforeAt,
+		arg.Lim,
+	)
 	if err != nil {
 		return nil, err
 	}

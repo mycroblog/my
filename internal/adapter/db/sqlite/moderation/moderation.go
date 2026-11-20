@@ -545,7 +545,7 @@ func (r *Repository) ListReports(ctx context.Context, q appmoderation.ReportQuer
 		var oldest []moderationgen.ListReportsOldestFirstRow
 		oldest, err = r.db.reader().ListReportsOldestFirst(ctx, moderationgen.ListReportsOldestFirstParams{
 			State: string(q.State), Category: string(q.Category), Assignee: q.AssigneeUserID, Unassigned: sqlite.BoolToInt(q.Unassigned),
-			After: q.After, Lim: int64(limit),
+			Target: q.TargetAccountID, After: q.After, Lim: int64(limit),
 		})
 		for _, row := range oldest {
 			rows = append(rows, moderationgen.ListReportsRow(row))
@@ -553,7 +553,7 @@ func (r *Repository) ListReports(ctx context.Context, q appmoderation.ReportQuer
 	} else {
 		rows, err = r.db.reader().ListReports(ctx, moderationgen.ListReportsParams{
 			State: string(q.State), Category: string(q.Category), Assignee: q.AssigneeUserID, Unassigned: sqlite.BoolToInt(q.Unassigned),
-			Before: q.After, Lim: int64(limit),
+			Target: q.TargetAccountID, Before: q.After, Lim: int64(limit),
 		})
 	}
 	if err != nil {

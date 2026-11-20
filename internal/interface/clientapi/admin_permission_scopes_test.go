@@ -45,6 +45,8 @@ func adminRequest(pattern, token string) *http.Request {
 		path += "?granularity=month&from=2026-01-01&to=2026-02-01"
 	case strings.HasSuffix(path, "/domain_actions/impact"):
 		path += "?domain=a.example"
+	case strings.HasSuffix(path, "/same_ip_accounts"):
+		path += "?ip=192.0.2.1"
 	case strings.Contains(path, "/instance/brand/") && method != http.MethodDelete:
 		body, contentType = "--b--\r\n", "multipart/form-data; boundary=b"
 	}

@@ -13,6 +13,7 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
+	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -433,6 +434,12 @@ func (s *Server) reportQuery(ctx context.Context, p ListReportsParams) (appmoder
 		rq.Category = moderation.Category(*p.Category)
 	}
 	rq.OldestFirst = p.Order != nil && *p.Order == ListReportsParamsOrderOldest
+	if p.TargetAccountId != nil {
+		if !kernel.ValidID(*p.TargetAccountId) {
+			return rq, "target_account_id", nil
+		}
+		rq.TargetAccountID = *p.TargetAccountId
+	}
 	if p.Assignee == nil {
 		return rq, "", nil
 	}

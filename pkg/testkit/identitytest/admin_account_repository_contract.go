@@ -123,6 +123,39 @@ func adminAccountRepoOrigins(t *testing.T, r *identityRepo) {
 	if err != nil || len(origins) != 2 || origins[0].SessionID != recent.ID || origins[1].SessionID != older.ID {
 		t.Errorf("ListSessionOriginsOfUser(2) = %+v, %v; want the two newest, newest first", origins, err)
 	}
+	// The pages of the origins continue after a position, through origins of the same time: tie
+	// started at the time of recent, and its ID is higher.
+	tie := identity.Session{ID: r.ids.NewID(), UserID: alice, TokenHash: []byte("tie"), CreatedAt: recent.CreatedAt, ExpiresAt: recent.ExpiresAt}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.h.Identity.InsertSession(ctx, tx, tie); err != nil {
+			return err
+		}
+		return r.h.Identity.InsertSessionOrigin(ctx, tx, identity.SessionOrigin{SessionID: tie.ID, UserID: alice, IP: "192.0.2.5", CreatedAt: tie.CreatedAt})
+	})
+	at := func(s identity.Session) appidentity.SignInPosition {
+		return appidentity.SignInPosition{At: s.CreatedAt, SessionID: s.ID}
+	}
+	for _, c := range []struct {
+		name   string
+		before appidentity.SignInPosition
+		limit  int
+		want   []string
+	}{
+		{"the first page", appidentity.SignInPosition{}, 10, []string{tie.ID, recent.ID, older.ID, old.ID}},
+		{"a first page", appidentity.SignInPosition{}, 1, []string{tie.ID}},
+		{"after one of the same time", at(tie), 2, []string{recent.ID, older.ID}},
+		{"after an earlier one", at(older), 10, []string{old.ID}},
+		{"after the last", at(old), 10, nil},
+	} {
+		got, err := r.h.Identity.ListSessionOriginsOfUserBefore(ctx, alice, c.before, c.limit)
+		var ids []string
+		for _, o := range got {
+			ids = append(ids, o.SessionID)
+		}
+		if err != nil || !slices.Equal(ids, c.want) {
+			t.Errorf("ListSessionOriginsOfUserBefore(%s) = %v, %v; want %v", c.name, ids, err, c.want)
+		}
+	}
 
 	// The purges delete the oldest first, at most limit at a time, and keep the held users'.
 	except := []string{held}

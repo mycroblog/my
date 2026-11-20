@@ -32,9 +32,12 @@ WHERE state = sqlc.arg(state) AND (CAST(sqlc.arg(before) AS TEXT) = '' OR user_i
 ORDER BY user_id DESC
 LIMIT sqlc.arg(lim);
 
--- ListSessionOriginsOfUser returns the newest origins of a user's sessions.
+-- ListSessionOriginsOfUser returns the newest origins of a user's sessions, those before the
+-- origin at (before_at, before_id) (before_id empty for the first page).
 -- name: ListSessionOriginsOfUser :many
 SELECT session_id, user_id, ip, user_agent, created_at FROM session_origins
 WHERE user_id = sqlc.arg(user_id)
+  AND (CAST(sqlc.arg(before_id) AS TEXT) = '' OR created_at < CAST(sqlc.arg(before_at) AS INTEGER)
+    OR (created_at = CAST(sqlc.arg(before_at) AS INTEGER) AND session_id < sqlc.arg(before_id)))
 ORDER BY created_at DESC, session_id DESC
 LIMIT sqlc.arg(lim);

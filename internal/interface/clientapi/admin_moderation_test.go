@@ -133,7 +133,7 @@ func (f *fakeModeration) Reports(_ context.Context, q appmoderation.ReportQuery,
 		past := q.After == "" || (q.OldestFirst && r.Report.ID > q.After) || (!q.OldestFirst && r.Report.ID < q.After)
 		if (q.State == "" || r.Status.State == q.State) && (q.Category == "" || r.Report.Category == q.Category) &&
 			(q.AssigneeUserID == "" || r.Status.AssigneeUserID == q.AssigneeUserID) && (!q.Unassigned || r.Status.AssigneeUserID == "") &&
-			past && len(out) < limit {
+			(q.TargetAccountID == "" || r.Report.TargetAccountID == q.TargetAccountID) && past && len(out) < limit {
 			out = append(out, r)
 		}
 	}
@@ -585,5 +585,46 @@ func TestAssignAndResolveReport(t *testing.T) {
 		if res.StatusCode != http.StatusNotFound {
 			t.Errorf("%s of an unknown report = %d, want 404", path, res.StatusCode)
 		}
+	}
+}
+
+// TestListReportsOfAnAccount pages the reports about one account, in the queue's orders.
+func TestListReportsOfAnAccount(t *testing.T) {
+	e, f := newModerationEnv(t)
+	f.reports[1].Report.TargetAccountID = reporterAccountID
+	ids := func(p clientapi.AdminReportPage) []string {
+		out := []string{}
+		for _, r := range p.Items {
+			out = append(out, r.Id)
+		}
+		return out
+	}
+	res := e.sendJSON(t, http.MethodGet, "/admin/reports?limit=1&target_account_id="+aliceAccountID, "admin-read", "")
+	page := decodeJSON[clientapi.AdminReportPage](t, res)
+	if res.StatusCode != http.StatusOK || !slices.Equal(ids(page), []string{reportThree}) || page.NextCursor == nil {
+		t.Fatalf("first page = %d %+v", res.StatusCode, page)
+	}
+	res = e.sendJSON(t, http.MethodGet, "/admin/reports?limit=1&target_account_id="+aliceAccountID+"&cursor="+*page.NextCursor, "admin-read", "")
+	page = decodeJSON[clientapi.AdminReportPage](t, res)
+	if !slices.Equal(ids(page), []string{reportOne}) || page.NextCursor != nil {
+		t.Errorf("second page = %+v, want the oldest report of alice, last", page)
+	}
+	for query, want := range map[string][]string{
+		"target_account_id=" + reporterAccountID:                 {reportTwo},
+		"target_account_id=" + aliceAccountID + "&order=oldest":  {reportOne, reportThree},
+		"target_account_id=01890a5d-ac96-774b-bcce-b302099a4999": {},
+	} {
+		res := e.sendJSON(t, http.MethodGet, "/admin/reports?"+query, "admin-read", "")
+		if page := decodeJSON[clientapi.AdminReportPage](t, res); res.StatusCode != http.StatusOK || !slices.Equal(ids(page), want) {
+			t.Errorf("?%s = %d %v, want %v", query, res.StatusCode, ids(page), want)
+		}
+	}
+	res = e.send(t, http.MethodGet, "/admin/reports?target_account_id=alice", "admin-read", "")
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, "target_account_id") {
+		t.Errorf("?target_account_id=alice = %d %+v, want 400 naming the parameter", res.StatusCode, p)
+	}
+	res = e.send(t, http.MethodGet, "/admin/reports?target_account_id="+aliceAccountID, "bob-admin", "")
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusForbidden || p.Detail == nil || !strings.Contains(*p.Detail, "manage_reports") {
+		t.Errorf("by bob = %d %+v, want 403 for manage_reports", res.StatusCode, p)
 	}
 }

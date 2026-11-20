@@ -49,11 +49,20 @@ func (r *Repository) ListUserIDsInRegistrationState(ctx context.Context, state i
 
 // ListSessionOriginsOfUser implements identity.AccountAdminRepository.
 func (r *Repository) ListSessionOriginsOfUser(ctx context.Context, userID string, limit int) ([]identity.SessionOrigin, error) {
+	return r.ListSessionOriginsOfUserBefore(ctx, userID, appidentity.SignInPosition{}, limit)
+}
+
+// ListSessionOriginsOfUserBefore implements identity.AccountAdminRepository.
+func (r *Repository) ListSessionOriginsOfUserBefore(ctx context.Context, userID string, before appidentity.SignInPosition, limit int) ([]identity.SessionOrigin, error) {
 	lim, err := postgres.ToInt32(limit, "limit")
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListSessionOriginsOfUser(ctx, identitygen.ListSessionOriginsOfUserParams{UserID: userID, Lim: lim})
+	p := identitygen.ListSessionOriginsOfUserParams{UserID: userID, Lim: lim}
+	if before.SessionID != "" {
+		p.BeforeAt, p.BeforeID = postgres.ToNullTime(before.At), postgres.ToNullString(before.SessionID)
+	}
+	rows, err := r.db.reader().ListSessionOriginsOfUser(ctx, p)
 	if err != nil {
 		return nil, postgres.Wrap(err, "list session origins of a user")
 	}

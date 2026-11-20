@@ -203,7 +203,8 @@ SELECT report_id, state, outcome, assignee_user_id, since FROM report_states WHE
 
 -- ListReports returns the reports with their state, newest first: those in a state (empty for
 -- any), of a category (empty for any), assigned to a user (empty for anyone) or to nobody when
--- unassigned is 1, and those before the report before (empty for the first page).
+-- unassigned is 1, about an account (empty for any), and those before the report before (empty for
+-- the first page).
 -- name: ListReports :many
 SELECT r.id, r.uri, r.reporter_account_id, r.target_account_id, r.category, r.comment, r.forwarded,
   r.filed_at, s.state, s.outcome, s.assignee_user_id, s.since
@@ -212,6 +213,7 @@ WHERE (CAST(sqlc.arg(state) AS TEXT) = '' OR s.state = sqlc.arg(state))
   AND (CAST(sqlc.arg(category) AS TEXT) = '' OR r.category = sqlc.arg(category))
   AND (CAST(sqlc.arg(assignee) AS TEXT) = '' OR s.assignee_user_id = sqlc.arg(assignee))
   AND (CAST(sqlc.arg(unassigned) AS INTEGER) = 0 OR s.assignee_user_id IS NULL)
+  AND (CAST(sqlc.arg(target) AS TEXT) = '' OR r.target_account_id = sqlc.arg(target))
   AND (CAST(sqlc.arg(before) AS TEXT) = '' OR r.id < sqlc.arg(before))
 ORDER BY r.id DESC
 LIMIT sqlc.arg(lim);
@@ -226,6 +228,7 @@ WHERE (CAST(sqlc.arg(state) AS TEXT) = '' OR s.state = sqlc.arg(state))
   AND (CAST(sqlc.arg(category) AS TEXT) = '' OR r.category = sqlc.arg(category))
   AND (CAST(sqlc.arg(assignee) AS TEXT) = '' OR s.assignee_user_id = sqlc.arg(assignee))
   AND (CAST(sqlc.arg(unassigned) AS INTEGER) = 0 OR s.assignee_user_id IS NULL)
+  AND (CAST(sqlc.arg(target) AS TEXT) = '' OR r.target_account_id = sqlc.arg(target))
   AND (CAST(sqlc.arg(after) AS TEXT) = '' OR r.id > sqlc.arg(after))
 ORDER BY r.id
 LIMIT sqlc.arg(lim);

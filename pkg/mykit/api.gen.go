@@ -6211,10 +6211,12 @@ type AdminAccountPrivateData struct {
 	RegistrationIp *string `json:"registration_ip,omitempty"`
 
 	// SameIpAccounts For each IP address of `sign_ins` and `registration_ip`, newest first, up to 20
-	// other accounts that registered or signed in from it, newest first.
+	// other accounts that registered or signed in from it, newest first; `GET
+	// .../same_ip_accounts` pages through them all.
 	SameIpAccounts []AdminSameIpAccounts `json:"same_ip_accounts"`
 
-	// SignIns The newest 20 sign-ins within the retention, newest first.
+	// SignIns The newest 20 sign-ins within the retention, newest first; `GET .../sign_ins` pages
+	// through them all.
 	SignIns []AdminAccountSignIn `json:"sign_ins"`
 }
 
@@ -6260,6 +6262,14 @@ type AdminAccountSignIn struct {
 
 	// UserAgent The User-Agent; omitted when unknown.
 	UserAgent *string `json:"user_agent,omitempty"`
+}
+
+// AdminAccountSignInPage A page of the sign-ins of an account, newest first.
+type AdminAccountSignInPage struct {
+	Items []AdminAccountSignIn `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
 // AdminAccountState The state of an account, the first that applies: `deleted` (deleted here or on its
@@ -6398,7 +6408,7 @@ type AdminAppealPage struct {
 // AdminAuditAction The kind of an audited operation, each on one kind of target. On an `account`:
 // `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 // `revealed_private_data` (a moderator was shown the account's email address and IP
-// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
+// addresses, a page of its sign-ins, or a page of the accounts that shared an IP address), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 // suppression of the primary email address of the account's user), `account_moved` (a limited
@@ -6493,7 +6503,7 @@ type AdminAuditEntry struct {
 	// Action The kind of an audited operation, each on one kind of target. On an `account`:
 	// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 	// `revealed_private_data` (a moderator was shown the account's email address and IP
-	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
+	// addresses, a page of its sign-ins, or a page of the accounts that shared an IP address), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 	// suppression of the primary email address of the account's user), `account_moved` (a limited
@@ -18555,6 +18565,27 @@ type ListAccountActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListAdminAccountSameIPAccountsParams defines parameters for ListAdminAccountSameIPAccounts.
+type ListAdminAccountSameIPAccountsParams struct {
+	// Ip The IP address, as `sign_ins` or `registration_ip` of the reveal give it.
+	Ip string `form:"ip" json:"ip"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListAdminAccountSignInsParams defines parameters for ListAdminAccountSignIns.
+type ListAdminAccountSignInsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListAdminAnnouncementsParams defines parameters for ListAdminAnnouncements.
 type ListAdminAnnouncementsParams struct {
 	// State Keep only these announcements; omitted keeps every one.
@@ -18888,6 +18919,10 @@ type ListReportsParams struct {
 	// that nobody handles, or the ID of a local account. Omitted keeps every report; any
 	// other value is a `400`.
 	Assignee *string `form:"assignee,omitempty" json:"assignee,omitempty"`
+
+	// TargetAccountId Keep only the reports about this account, local or remote. An account that no report is
+	// about gives an empty page.
+	TargetAccountId *Id `form:"target_account_id,omitempty" json:"target_account_id,omitempty"`
 
 	// Order `newest` (the default) lists the most recently filed report first; `oldest` lists the
 	// report that has waited longest first. The cursor continues the page in the same order.
@@ -22673,7 +22708,8 @@ type ClientInterface interface {
 	// An account as the moderators see it: its state, the restrictions of its own
 	// actions, and, for a local account, its registration, whether its email address is
 	// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
-	// `manage_reports` permission, its newest 20 reports. The email address and the IP
+	// `manage_reports` permission, its newest 20 reports (`GET /admin/reports?target_account_id=`
+	// pages through them all). The email address and the IP
 	// addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
 	// Needs the `manage_accounts` permission.
 	//
@@ -22797,7 +22833,8 @@ type ClientInterface interface {
 	// RevealAdminAccount Show the email address and the IP addresses of a local account
 	//
 	// The primary email address of a local account, where it registered and its newest 20
-	// sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
+	// sign-ins came from, and up to 20 other accounts per IP address that used the same one;
+	// `GET .../sign_ins` and `GET .../same_ip_accounts` page through the rest. Each call is recorded in the audit log as `revealed_private_data` before
 	// anything is returned; it changes nothing else. IP addresses are kept for the retention
 	// of the sign-in and registration origins only. A remote account or the
 	// instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
@@ -22840,6 +22877,33 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /admin/accounts/{id}/roles/{role} (the `GrantAccountRole` operationId).
 	GrantAccountRole(ctx context.Context, id AdminAccountId, role RoleKey, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAdminAccountSameIPAccounts List the other accounts that used an IP address of a local account
+	//
+	// The other local accounts that registered or signed in from `ip`, newest first: the whole
+	// list of which `POST .../reveal` shows 20 per IP address. The account itself is left out. A
+	// page may be shorter than `limit` and still have a `next_cursor`. Each call is recorded in
+	// the audit log as `revealed_private_data` before anything is returned, as the reveal is. An
+	// `ip` that is not an IP address is a 400 naming `ip`. A remote account or the instance actor
+	// is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank
+	// below the user's, the user's own included, is a 403
+	// `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
+	//
+	// Corresponds with GET /admin/accounts/{id}/same_ip_accounts (the `ListAdminAccountSameIPAccounts` operationId).
+	ListAdminAccountSameIPAccounts(ctx context.Context, id AdminAccountId, params *ListAdminAccountSameIPAccountsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAdminAccountSignIns List where the sign-ins of a local account came from
+	//
+	// The sign-ins of a local account within the retention of the sign-in origins, newest first,
+	// with their IP addresses: the whole list that `POST .../reveal` starts with its newest 20.
+	// Each call is recorded in the audit log as `revealed_private_data` before anything is
+	// returned, as the reveal is. A remote account or the instance actor is a 422 naming `id`. An
+	// unknown account is a 404. A local account whose roles do not rank below the user's, the
+	// user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
+	// `manage_accounts` permission.
+	//
+	// Corresponds with GET /admin/accounts/{id}/sign_ins (the `ListAdminAccountSignIns` operationId).
+	ListAdminAccountSignIns(ctx context.Context, id AdminAccountId, params *ListAdminAccountSignInsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DisableAdminAccountTwoFactor Remove the two-factor authentication of a local account
 	//
@@ -30716,7 +30780,8 @@ func (c *Client) ListAdminAccounts(ctx context.Context, params *ListAdminAccount
 // An account as the moderators see it: its state, the restrictions of its own
 // actions, and, for a local account, its registration, whether its email address is
 // verified, and its roles, with its newest 20 actions and, for a viewer who also has the
-// `manage_reports` permission, its newest 20 reports. The email address and the IP
+// `manage_reports` permission, its newest 20 reports (`GET /admin/reports?target_account_id=`
+// pages through them all). The email address and the IP
 // addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
 // Needs the `manage_accounts` permission.
 //
@@ -30910,7 +30975,8 @@ func (c *Client) RefetchAccountStatuses(ctx context.Context, id Id, reqEditors .
 // RevealAdminAccount Show the email address and the IP addresses of a local account
 //
 // The primary email address of a local account, where it registered and its newest 20
-// sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
+// sign-ins came from, and up to 20 other accounts per IP address that used the same one;
+// `GET .../sign_ins` and `GET .../same_ip_accounts` page through the rest. Each call is recorded in the audit log as `revealed_private_data` before
 // anything is returned; it changes nothing else. IP addresses are kept for the retention
 // of the sign-in and registration origins only. A remote account or the
 // instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
@@ -30984,6 +31050,53 @@ func (c *Client) RevokeAccountRole(ctx context.Context, id AdminAccountId, role 
 // Corresponds with PUT /admin/accounts/{id}/roles/{role} (the `GrantAccountRole` operationId).
 func (c *Client) GrantAccountRole(ctx context.Context, id AdminAccountId, role RoleKey, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGrantAccountRoleRequest(c.Server, id, role)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListAdminAccountSameIPAccounts List the other accounts that used an IP address of a local account
+//
+// The other local accounts that registered or signed in from `ip`, newest first: the whole
+// list of which `POST .../reveal` shows 20 per IP address. The account itself is left out. A
+// page may be shorter than `limit` and still have a `next_cursor`. Each call is recorded in
+// the audit log as `revealed_private_data` before anything is returned, as the reveal is. An
+// `ip` that is not an IP address is a 400 naming `ip`. A remote account or the instance actor
+// is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank
+// below the user's, the user's own included, is a 403
+// `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
+//
+// Corresponds with GET /admin/accounts/{id}/same_ip_accounts (the `ListAdminAccountSameIPAccounts` operationId).
+func (c *Client) ListAdminAccountSameIPAccounts(ctx context.Context, id AdminAccountId, params *ListAdminAccountSameIPAccountsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAdminAccountSameIPAccountsRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListAdminAccountSignIns List where the sign-ins of a local account came from
+//
+// The sign-ins of a local account within the retention of the sign-in origins, newest first,
+// with their IP addresses: the whole list that `POST .../reveal` starts with its newest 20.
+// Each call is recorded in the audit log as `revealed_private_data` before anything is
+// returned, as the reveal is. A remote account or the instance actor is a 422 naming `id`. An
+// unknown account is a 404. A local account whose roles do not rank below the user's, the
+// user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
+// `manage_accounts` permission.
+//
+// Corresponds with GET /admin/accounts/{id}/sign_ins (the `ListAdminAccountSignIns` operationId).
+func (c *Client) ListAdminAccountSignIns(ctx context.Context, id AdminAccountId, params *ListAdminAccountSignInsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAdminAccountSignInsRequest(c.Server, id, params)
 	if err != nil {
 		return nil, err
 	}
@@ -45191,6 +45304,160 @@ func NewGrantAccountRoleRequest(server string, id AdminAccountId, role RoleKey) 
 	return req, nil
 }
 
+// NewListAdminAccountSameIPAccountsRequest constructs an http.Request for the ListAdminAccountSameIPAccounts method
+func NewListAdminAccountSameIPAccountsRequest(server string, id AdminAccountId, params *ListAdminAccountSameIPAccountsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/accounts/%s/same_ip_accounts", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "ip", params.Ip, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListAdminAccountSignInsRequest constructs an http.Request for the ListAdminAccountSignIns method
+func NewListAdminAccountSignInsRequest(server string, id AdminAccountId, params *ListAdminAccountSignInsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/accounts/%s/sign_ins", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDisableAdminAccountTwoFactorRequest constructs an http.Request for the DisableAdminAccountTwoFactor method
 func NewDisableAdminAccountTwoFactorRequest(server string, id AdminAccountId) (*http.Request, error) {
 	var err error
@@ -50919,6 +51186,18 @@ func NewListReportsRequest(server string, params *ListReportsParams) (*http.Requ
 		if params.Assignee != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "assignee", *params.Assignee, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.TargetAccountId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "target_account_id", *params.TargetAccountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -64323,7 +64602,8 @@ type ClientWithResponsesInterface interface {
 	// An account as the moderators see it: its state, the restrictions of its own
 	// actions, and, for a local account, its registration, whether its email address is
 	// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
-	// `manage_reports` permission, its newest 20 reports. The email address and the IP
+	// `manage_reports` permission, its newest 20 reports (`GET /admin/reports?target_account_id=`
+	// pages through them all). The email address and the IP
 	// addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
 	// Needs the `manage_accounts` permission.
 	//
@@ -64457,7 +64737,8 @@ type ClientWithResponsesInterface interface {
 	// RevealAdminAccountWithResponse Show the email address and the IP addresses of a local account
 	//
 	// The primary email address of a local account, where it registered and its newest 20
-	// sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
+	// sign-ins came from, and up to 20 other accounts per IP address that used the same one;
+	// `GET .../sign_ins` and `GET .../same_ip_accounts` page through the rest. Each call is recorded in the audit log as `revealed_private_data` before
 	// anything is returned; it changes nothing else. IP addresses are kept for the retention
 	// of the sign-in and registration origins only. A remote account or the
 	// instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
@@ -64508,6 +64789,37 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /admin/accounts/{id}/roles/{role} (the `GrantAccountRole` operationId).
 	GrantAccountRoleWithResponse(ctx context.Context, id AdminAccountId, role RoleKey, reqEditors ...RequestEditorFn) (*GrantAccountRoleResponse, error)
+
+	// ListAdminAccountSameIPAccountsWithResponse List the other accounts that used an IP address of a local account
+	//
+	// The other local accounts that registered or signed in from `ip`, newest first: the whole
+	// list of which `POST .../reveal` shows 20 per IP address. The account itself is left out. A
+	// page may be shorter than `limit` and still have a `next_cursor`. Each call is recorded in
+	// the audit log as `revealed_private_data` before anything is returned, as the reveal is. An
+	// `ip` that is not an IP address is a 400 naming `ip`. A remote account or the instance actor
+	// is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank
+	// below the user's, the user's own included, is a 403
+	// `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/accounts/{id}/same_ip_accounts (the `ListAdminAccountSameIPAccounts` operationId).
+	ListAdminAccountSameIPAccountsWithResponse(ctx context.Context, id AdminAccountId, params *ListAdminAccountSameIPAccountsParams, reqEditors ...RequestEditorFn) (*ListAdminAccountSameIPAccountsResponse, error)
+
+	// ListAdminAccountSignInsWithResponse List where the sign-ins of a local account came from
+	//
+	// The sign-ins of a local account within the retention of the sign-in origins, newest first,
+	// with their IP addresses: the whole list that `POST .../reveal` starts with its newest 20.
+	// Each call is recorded in the audit log as `revealed_private_data` before anything is
+	// returned, as the reveal is. A remote account or the instance actor is a 422 naming `id`. An
+	// unknown account is a 404. A local account whose roles do not rank below the user's, the
+	// user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
+	// `manage_accounts` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/accounts/{id}/sign_ins (the `ListAdminAccountSignIns` operationId).
+	ListAdminAccountSignInsWithResponse(ctx context.Context, id AdminAccountId, params *ListAdminAccountSignInsParams, reqEditors ...RequestEditorFn) (*ListAdminAccountSignInsResponse, error)
 
 	// DisableAdminAccountTwoFactorWithResponse Remove the two-factor authentication of a local account
 	//
@@ -74728,6 +75040,136 @@ func (r GrantAccountRoleResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GrantAccountRoleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListAdminAccountSameIPAccountsResponse200Headers the declared response headers of an HTTP 200 response for ListAdminAccountSameIPAccounts
+type ListAdminAccountSameIPAccountsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListAdminAccountSameIPAccountsResponseDefaultHeaders the declared response headers of an HTTP default response for ListAdminAccountSameIPAccounts
+type ListAdminAccountSameIPAccountsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListAdminAccountSameIPAccountsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminAccountPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListAdminAccountSameIPAccountsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListAdminAccountSameIPAccountsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListAdminAccountSameIPAccountsResponse) GetJSON200() *AdminAccountPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListAdminAccountSameIPAccountsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListAdminAccountSameIPAccountsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAdminAccountSameIPAccountsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAdminAccountSameIPAccountsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAdminAccountSameIPAccountsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListAdminAccountSignInsResponse200Headers the declared response headers of an HTTP 200 response for ListAdminAccountSignIns
+type ListAdminAccountSignInsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListAdminAccountSignInsResponseDefaultHeaders the declared response headers of an HTTP default response for ListAdminAccountSignIns
+type ListAdminAccountSignInsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListAdminAccountSignInsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminAccountSignInPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListAdminAccountSignInsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListAdminAccountSignInsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListAdminAccountSignInsResponse) GetJSON200() *AdminAccountSignInPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListAdminAccountSignInsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListAdminAccountSignInsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAdminAccountSignInsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAdminAccountSignInsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAdminAccountSignInsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -103050,7 +103492,8 @@ func (c *ClientWithResponses) ListAdminAccountsWithResponse(ctx context.Context,
 // An account as the moderators see it: its state, the restrictions of its own
 // actions, and, for a local account, its registration, whether its email address is
 // verified, and its roles, with its newest 20 actions and, for a viewer who also has the
-// `manage_reports` permission, its newest 20 reports. The email address and the IP
+// `manage_reports` permission, its newest 20 reports (`GET /admin/reports?target_account_id=`
+// pages through them all). The email address and the IP
 // addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
 // Needs the `manage_accounts` permission.
 //
@@ -103226,7 +103669,8 @@ func (c *ClientWithResponses) RefetchAccountStatusesWithResponse(ctx context.Con
 // RevealAdminAccountWithResponse Show the email address and the IP addresses of a local account
 //
 // The primary email address of a local account, where it registered and its newest 20
-// sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
+// sign-ins came from, and up to 20 other accounts per IP address that used the same one;
+// `GET .../sign_ins` and `GET .../same_ip_accounts` page through the rest. Each call is recorded in the audit log as `revealed_private_data` before
 // anything is returned; it changes nothing else. IP addresses are kept for the retention
 // of the sign-in and registration origins only. A remote account or the
 // instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
@@ -103300,6 +103744,49 @@ func (c *ClientWithResponses) GrantAccountRoleWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseGrantAccountRoleResponse(rsp)
+}
+
+// ListAdminAccountSameIPAccountsWithResponse List the other accounts that used an IP address of a local account
+//
+// The other local accounts that registered or signed in from `ip`, newest first: the whole
+// list of which `POST .../reveal` shows 20 per IP address. The account itself is left out. A
+// page may be shorter than `limit` and still have a `next_cursor`. Each call is recorded in
+// the audit log as `revealed_private_data` before anything is returned, as the reveal is. An
+// `ip` that is not an IP address is a 400 naming `ip`. A remote account or the instance actor
+// is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank
+// below the user's, the user's own included, is a 403
+// `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/accounts/{id}/same_ip_accounts (the `ListAdminAccountSameIPAccounts` operationId).
+func (c *ClientWithResponses) ListAdminAccountSameIPAccountsWithResponse(ctx context.Context, id AdminAccountId, params *ListAdminAccountSameIPAccountsParams, reqEditors ...RequestEditorFn) (*ListAdminAccountSameIPAccountsResponse, error) {
+	rsp, err := c.ListAdminAccountSameIPAccounts(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAdminAccountSameIPAccountsResponse(rsp)
+}
+
+// ListAdminAccountSignInsWithResponse List where the sign-ins of a local account came from
+//
+// The sign-ins of a local account within the retention of the sign-in origins, newest first,
+// with their IP addresses: the whole list that `POST .../reveal` starts with its newest 20.
+// Each call is recorded in the audit log as `revealed_private_data` before anything is
+// returned, as the reveal is. A remote account or the instance actor is a 422 naming `id`. An
+// unknown account is a 404. A local account whose roles do not rank below the user's, the
+// user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
+// `manage_accounts` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/accounts/{id}/sign_ins (the `ListAdminAccountSignIns` operationId).
+func (c *ClientWithResponses) ListAdminAccountSignInsWithResponse(ctx context.Context, id AdminAccountId, params *ListAdminAccountSignInsParams, reqEditors ...RequestEditorFn) (*ListAdminAccountSignInsResponse, error) {
+	rsp, err := c.ListAdminAccountSignIns(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAdminAccountSignInsResponse(rsp)
 }
 
 // DisableAdminAccountTwoFactorWithResponse Remove the two-factor authentication of a local account
@@ -117314,6 +117801,160 @@ func ParseGrantAccountRoleResponse(rsp *http.Response) (*GrantAccountRoleRespons
 		response.Headers200 = &headers
 	case true:
 		var headers GrantAccountRoleResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListAdminAccountSameIPAccountsResponse parses an HTTP response from a ListAdminAccountSameIPAccountsWithResponse call
+func ParseListAdminAccountSameIPAccountsResponse(rsp *http.Response) (*ListAdminAccountSameIPAccountsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAdminAccountSameIPAccountsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminAccountPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListAdminAccountSameIPAccountsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListAdminAccountSameIPAccountsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListAdminAccountSignInsResponse parses an HTTP response from a ListAdminAccountSignInsWithResponse call
+func ParseListAdminAccountSignInsResponse(rsp *http.Response) (*ListAdminAccountSignInsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAdminAccountSignInsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminAccountSignInPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListAdminAccountSignInsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListAdminAccountSignInsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

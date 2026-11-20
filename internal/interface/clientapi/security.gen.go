@@ -83,6 +83,8 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/admin/accounts/{id}":                                               {Operation: "getAdminAccount", Permission: "manage_accounts", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/accounts/{id}/actions":                                       {Operation: "listAccountActions", Permission: "manage_accounts", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/accounts/{id}/roles":                                         {Operation: "listAccountRoles", Permission: "manage_roles", Scopes: []string{"admin:read"}},
+	"GET /api/v1/admin/accounts/{id}/same_ip_accounts":                              {Operation: "listAdminAccountSameIPAccounts", Permission: "manage_accounts", Scopes: []string{"admin:read"}},
+	"GET /api/v1/admin/accounts/{id}/sign_ins":                                      {Operation: "listAdminAccountSignIns", Permission: "manage_accounts", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/announcements":                                               {Operation: "listAdminAnnouncements", Permission: "manage_announcements", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/announcements/{id}":                                          {Operation: "getAdminAnnouncement", Permission: "manage_announcements", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/appeals":                                                     {Operation: "listAppeals", Permission: "manage_accounts", Scopes: []string{"admin:read"}},

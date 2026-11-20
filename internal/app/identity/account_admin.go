@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -102,6 +103,16 @@ type AccountAdminRepository interface {
 	// ListSessionOriginsOfUser returns the newest limit origins of a user's sessions, newest
 	// first.
 	ListSessionOriginsOfUser(ctx context.Context, userID string, limit int) ([]identity.SessionOrigin, error)
+	// ListSessionOriginsOfUserBefore returns up to limit origins of a user's sessions, newest
+	// first, that come after before in that order (the zero position for the first page).
+	ListSessionOriginsOfUserBefore(ctx context.Context, userID string, before SignInPosition, limit int) ([]identity.SessionOrigin, error)
+}
+
+// SignInPosition is the place of a sign-in in the newest-first list of a user's sign-ins: the
+// creation time and the session ID of its origin. The zero position is before the newest.
+type SignInPosition struct {
+	At        time.Time
+	SessionID string
 }
 
 // AccountAdminDeps are the ports and collaborators of the account management.
@@ -219,6 +230,12 @@ func (s *AccountAdmin) Search(ctx context.Context, q AccountSearch, limit int) (
 	if err != nil {
 		return nil, "", err
 	}
+	return s.search(ctx, src, q, limit)
+}
+
+// search returns up to limit accounts of src that meet q, newest first, from q.After, and the
+// position of the next page ("" on the last page), reading at most MaxAccountSearchScan of them.
+func (s *AccountAdmin) search(ctx context.Context, src source, q AccountSearch, limit int) ([]AdminAccount, string, error) {
 	type found struct {
 		key string
 		a   AdminAccount
@@ -622,14 +639,8 @@ func (s *AccountAdmin) Detail(ctx context.Context, accountID string) (AdminAccou
 // account.ErrNotFound for an unknown account, ErrNotLocalAccount for an account without a user,
 // and ErrTargetOutranksActor when byUserID does not rank above the account's user.
 func (s *AccountAdmin) Reveal(ctx context.Context, accountID, byUserID string) (PrivateData, error) {
-	actor, err := s.d.Accounts.FindByID(ctx, accountID)
+	actor, err := s.revealable(ctx, accountID, byUserID)
 	if err != nil {
-		return PrivateData{}, err
-	}
-	if actor.Local == nil || actor.Local.UserID == "" {
-		return PrivateData{}, ErrNotLocalAccount
-	}
-	if err := checkActOn(ctx, s.d.Repository, byUserID, actor.Local.UserID); err != nil {
 		return PrivateData{}, err
 	}
 	userID, repo := actor.Local.UserID, s.d.Repository
@@ -654,16 +665,99 @@ func (s *AccountAdmin) Reveal(ctx context.Context, accountID, byUserID string) (
 	if out.SameIP, err = s.sameIP(ctx, userID, out); err != nil {
 		return PrivateData{}, err
 	}
+	if err := s.auditReveal(ctx, actor, byUserID); err != nil {
+		return PrivateData{}, err
+	}
+	return out, nil
+}
+
+// SignIns returns up to limit origins of the sessions of a local user's account, newest first,
+// after the position before (the zero position for the first page), for byUserID ("" for the
+// CLI). Like Reveal, it records the call in the audit log (revealed_private_data) before anything
+// is returned, and fails as Reveal does.
+func (s *AccountAdmin) SignIns(ctx context.Context, accountID, byUserID string, before SignInPosition, limit int) ([]identity.SessionOrigin, error) {
+	actor, err := s.revealable(ctx, accountID, byUserID)
+	if err != nil {
+		return nil, err
+	}
+	out, err := s.d.Repository.ListSessionOriginsOfUserBefore(ctx, actor.Local.UserID, before, limit)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.auditReveal(ctx, actor, byUserID); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// SameIPAccounts returns up to limit of the other local accounts that registered or signed in
+// from ip, newest first, from the position after ("" for the first page), and the position of
+// the next page ("" on the last page). The account itself is left out, and a page may be short
+// and still have a next one, as a search's may. Like Reveal, it records the call in the audit
+// log (revealed_private_data) before anything is returned, and fails as Reveal does, or with an
+// *AccountSearchError naming ip when ip is not an IP address.
+func (s *AccountAdmin) SameIPAccounts(ctx context.Context, accountID, byUserID, ip, after string, limit int) ([]AdminAccount, string, error) {
+	addr := normalizeIP(ip)
+	if addr == "" {
+		return nil, "", &AccountSearchError{Param: "ip"}
+	}
+	actor, err := s.revealable(ctx, accountID, byUserID)
+	if err != nil {
+		return nil, "", err
+	}
+	self, repo := actor.Local.UserID, s.d.Repository
+	others := s.users(func(ctx context.Context, before string, limit int) ([]string, error) {
+		return repo.ListUserIDsByIP(ctx, addr, before, limit)
+	})
+	src := func(ctx context.Context, before string, limit int) ([]candidate, error) {
+		cs, err := others(ctx, before, limit)
+		for i := range cs {
+			if cs[i].key == self {
+				cs[i].accountID = ""
+			}
+		}
+		return cs, err
+	}
+	out, next, err := s.search(ctx, src, AccountSearch{After: after}, limit)
+	if err != nil {
+		return nil, "", err
+	}
+	if err := s.auditReveal(ctx, actor, byUserID); err != nil {
+		return nil, "", err
+	}
+	return out, next, nil
+}
+
+// revealable returns the account whose private data byUserID asks for: a local user's account
+// whose user ranks below byUserID. It fails with account.ErrNotFound for an unknown account,
+// ErrNotLocalAccount for an account without a user, and ErrTargetOutranksActor.
+func (s *AccountAdmin) revealable(ctx context.Context, accountID, byUserID string) (account.Actor, error) {
+	actor, err := s.d.Accounts.FindByID(ctx, accountID)
+	if err != nil {
+		return account.Actor{}, err
+	}
+	if actor.Local == nil || actor.Local.UserID == "" {
+		return account.Actor{}, ErrNotLocalAccount
+	}
+	if err := checkActOn(ctx, s.d.Repository, byUserID, actor.Local.UserID); err != nil {
+		return account.Actor{}, err
+	}
+	return actor, nil
+}
+
+// auditReveal records in the audit log, in a transaction of its own, that byUserID was shown the
+// private data of actor (revealed_private_data).
+func (s *AccountAdmin) auditReveal(ctx context.Context, actor account.Actor, byUserID string) error {
 	actorKind, actorUser := appmoderation.AuditActor(byUserID)
 	audit := appmoderation.AuditRecorded{Entry: appmoderation.AuditEntry{
 		ID: s.d.IDs.NewID(), ActorKind: actorKind, ActorUserID: actorUser, Action: appmoderation.AuditRevealedPrivateData,
-		TargetKind: appmoderation.AuditTargetAccount, TargetID: accountID, TargetLabel: "@" + actor.Local.Username,
+		TargetKind: appmoderation.AuditTargetAccount, TargetID: actor.Account.ID, TargetLabel: "@" + actor.Local.Username,
 		OccurredAt: s.d.Clock.Now(),
 	}}
 	if err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return tx.Emit(ctx, audit) }); err != nil {
-		return PrivateData{}, fmt.Errorf("identity: audit the reveal of %s: %w", accountID, err)
+		return fmt.Errorf("identity: audit the reveal of %s: %w", actor.Account.ID, err)
 	}
-	return out, nil
+	return nil
 }
 
 // sameIP returns, for each IP address that d shows, newest first, the other accounts that used

@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listAdminAccountSameIPAccounts
+  x-permission: manage_accounts
+  summary: List the other accounts that used an IP address of a local account
+  description: |
+    The other local accounts that registered or signed in from `ip`, newest first: the whole
+    list of which `POST .../reveal` shows 20 per IP address. The account itself is left out. A
+    page may be shorter than `limit` and still have a `next_cursor`. Each call is recorded in
+    the audit log as `revealed_private_data` before anything is returned, as the reveal is. An
+    `ip` that is not an IP address is a 400 naming `ip`. A remote account or the instance actor
+    is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank
+    below the user's, the user's own included, is a 403
+    `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - $ref: ../components/parameters/AdminAccountId.yaml
+    - name: ip
+      in: query
+      required: true
+      description: The IP address, as `sign_ins` or `registration_ip` of the reveal give it.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of accounts.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminAccountPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

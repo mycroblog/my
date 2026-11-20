@@ -9,23 +9,34 @@ package identitygen
 
 import (
 	"context"
+	"time"
 )
 
 const listSessionOriginsOfUser = `-- name: ListSessionOriginsOfUser :many
 SELECT session_id, user_id, ip, user_agent, created_at FROM session_origins
 WHERE user_id = $1
+  AND ($2::timestamptz IS NULL OR created_at < $2::timestamptz
+    OR (created_at = $2::timestamptz AND session_id < $3::uuid))
 ORDER BY created_at DESC, session_id DESC
-LIMIT $2
+LIMIT $4
 `
 
 type ListSessionOriginsOfUserParams struct {
-	UserID string
-	Lim    int32
+	UserID   string
+	BeforeAt *time.Time
+	BeforeID *string
+	Lim      int32
 }
 
-// ListSessionOriginsOfUser returns the newest origins of a user's sessions.
+// ListSessionOriginsOfUser returns the newest origins of a user's sessions, those before the
+// origin at (before_at, before_id) (NULL for the first page).
 func (q *Queries) ListSessionOriginsOfUser(ctx context.Context, arg ListSessionOriginsOfUserParams) ([]SessionOrigin, error) {
-	rows, err := q.db.Query(ctx, listSessionOriginsOfUser, arg.UserID, arg.Lim)
+	rows, err := q.db.Query(ctx, listSessionOriginsOfUser,
+		arg.UserID,
+		arg.BeforeAt,
+		arg.BeforeID,
+		arg.Lim,
+	)
 	if err != nil {
 		return nil, err
 	}

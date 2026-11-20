@@ -32,9 +32,12 @@ WHERE state = sqlc.arg(state)::text AND (sqlc.narg(before)::uuid IS NULL OR user
 ORDER BY user_id DESC
 LIMIT sqlc.arg(lim);
 
--- ListSessionOriginsOfUser returns the newest origins of a user's sessions.
+-- ListSessionOriginsOfUser returns the newest origins of a user's sessions, those before the
+-- origin at (before_at, before_id) (NULL for the first page).
 -- name: ListSessionOriginsOfUser :many
 SELECT session_id, user_id, ip, user_agent, created_at FROM session_origins
 WHERE user_id = sqlc.arg(user_id)
+  AND (sqlc.narg(before_at)::timestamptz IS NULL OR created_at < sqlc.narg(before_at)::timestamptz
+    OR (created_at = sqlc.narg(before_at)::timestamptz AND session_id < sqlc.narg(before_id)::uuid))
 ORDER BY created_at DESC, session_id DESC
 LIMIT sqlc.arg(lim);

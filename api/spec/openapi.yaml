@@ -722,6 +722,10 @@ paths:
     $ref: ./paths/admin_accounts_{id}.yaml
   /admin/accounts/{id}/reveal:
     $ref: ./paths/admin_accounts_{id}_reveal.yaml
+  /admin/accounts/{id}/sign_ins:
+    $ref: ./paths/admin_accounts_{id}_sign_ins.yaml
+  /admin/accounts/{id}/same_ip_accounts:
+    $ref: ./paths/admin_accounts_{id}_same_ip_accounts.yaml
   /admin/accounts/{id}/two_factor/disable:
     $ref: ./paths/admin_accounts_{id}_two_factor_disable.yaml
   /admin/accounts/{id}/password_reset_link:
@@ -1381,6 +1385,8 @@ components:
       $ref: ./components/schemas/AdminAccountRestriction.yaml
     AdminAccountSignIn:
       $ref: ./components/schemas/AdminAccountSignIn.yaml
+    AdminAccountSignInPage:
+      $ref: ./components/schemas/AdminAccountSignInPage.yaml
     AdminAccountState:
       $ref: ./components/schemas/AdminAccountState.yaml
     AdminAnnouncement:
