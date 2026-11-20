@@ -57,7 +57,11 @@ export type RecordState =
   | "lifted"
   | "pending"
   | "failed"
-  | "disabled";
+  | "disabled"
+  | "queued"
+  | "running"
+  | "retrying"
+  | "muted";
 
 const stateGlyph: Record<RecordState, IconName> = {
   open: "stateOpen",
@@ -72,12 +76,17 @@ const stateGlyph: Record<RecordState, IconName> = {
   pending: "statePending",
   failed: "error",
   disabled: "stateDisabled",
+  queued: "stateQueued",
+  running: "stateRunning",
+  retrying: "stateRetrying",
+  muted: "stateMuted",
 };
 
 /**
  * How a state weighs: what waits for someone (open, pending, failed) and what shuts something out (suspended, and
- * permanent, which nothing lifts) in the text's color and a label's weight; what is in force (assigned, active,
- * limited) in the text's color; what is over (resolved, expired, lifted, disabled) muted.
+ * permanent, which nothing lifts) in the text's color and a label's weight; what is in force or under way (assigned,
+ * active, limited, a job queued, running or waiting to run again, a muted error that still counts) in the text's color;
+ * what is over (resolved, expired, lifted, disabled) muted.
  */
 const stateTone = {
   open: "waits",
@@ -92,6 +101,10 @@ const stateTone = {
   expired: "over",
   lifted: "over",
   disabled: "over",
+  queued: "holds",
+  running: "holds",
+  retrying: "holds",
+  muted: "holds",
 } as const satisfies Record<RecordState, string>;
 
 const stateMark = tv({

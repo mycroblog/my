@@ -172,6 +172,7 @@ const definitions: readonly Definition[] = [
   ["article_authoring", "enum", "everyone", ["everyone", "permission"]],
   ["max_article_bytes", "int", "100000", [1000, 100000]],
   ["max_article_images", "int", "20", [0, 100]],
+  ["ux_measurement", "bool", "false"],
 ];
 
 /** Whether `value` is one `kind` takes, as far as the fake checks: a number in its bounds, a choice, an address. */
@@ -197,6 +198,8 @@ export type FakeAdmin = {
   readonly relayId: (index: number) => string;
   /** The ID of the login provider at `index` of the fake's, newest first, or "none". */
   readonly providerId: (index: number) => string;
+  /** The value of the setting of `key` now, saved or the server's default. */
+  readonly setting: (key: Key) => string;
 };
 
 export function adminHandlers(c: AdminContext): { handlers: Handlers; admin: FakeAdmin } {
@@ -836,6 +839,7 @@ export function adminHandlers(c: AdminContext): { handlers: Handlers; admin: Fak
       ruleId: (index) => startRules[index] ?? "none",
       relayId: (index) => startRelays[index] ?? "none",
       providerId: (index) => startProviders[index] ?? "none",
+      setting: valueOf,
     },
   };
 }

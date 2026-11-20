@@ -820,11 +820,11 @@ describe("a visitor", () => {
 describe("an operation the fake does not implement", () => {
   test("fails by name, and is kept among those it refused", async () => {
     const fake = createFakeApi();
-    const failure: unknown = await fake.serve(request("GET", "/admin/jobs")).catch((e: unknown) => e);
+    const failure: unknown = await fake.serve(request("GET", "/admin/webhooks")).catch((e: unknown) => e);
     expect(failure).toBeInstanceOf(UnimplementedError);
-    expect((failure as UnimplementedError).operation).toBe("GET /api/v1/admin/jobs");
-    expect((failure as Error).message).toBe("fake: GET /api/v1/admin/jobs is no operation the fake API implements");
-    expect(fake.unimplemented).toEqual(["GET /api/v1/admin/jobs"]);
+    expect((failure as UnimplementedError).operation).toBe("GET /api/v1/admin/webhooks");
+    expect((failure as Error).message).toBe("fake: GET /api/v1/admin/webhooks is no operation the fake API implements");
+    expect(fake.unimplemented).toEqual(["GET /api/v1/admin/webhooks"]);
   });
 
   test("fails for a method the operation's path does not have", async () => {

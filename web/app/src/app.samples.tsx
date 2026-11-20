@@ -49,6 +49,7 @@ export type Fake = {
    * `{admin:provider:0}` of the administration's rule, relay and login provider at that index of the fake's,
    * `{account:kai}` of the account of the scenario's person of that username, `{moderated:appeal:kai}` of the fake's item of that key of the moderation of accounts (an action,
    * an appeal, a registration, a decision of a hook and its appeal, a sign-up block, an invite: accounts.ts),
+   * `{ops:job:dead-email}` and `{ops:error:panic}` of the operations' job and error group of that key (operations.ts),
    * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
    * `members:<index>` of its members, `filter:<index>` of the editor of the reader's keyword filter at that index,
    * `action:<index>` of the moderators' action on the reader's account at that index (newest first),
@@ -210,7 +211,8 @@ function pathOf(fake: FakeApi, at: string): string {
             : fake.admin.providerId(Number(index)),
       )
       .replace(/\{account:([\w@.-]+)\}/g, (_, username: string) => fake.accountId(username))
-      .replace(/\{moderated:([\w:-]+)\}/g, (_, key: string) => fake.moderation.id(key));
+      .replace(/\{moderated:([\w:-]+)\}/g, (_, key: string) => fake.moderation.id(key))
+      .replace(/\{ops:((?:job|error):[\w-]+)\}/g, (_, key: string) => fake.operations.id(key));
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));

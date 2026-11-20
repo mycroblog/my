@@ -411,6 +411,10 @@
     "defaultMessage": "セキュリティの連絡先",
     "description": "The heading of the section of the security contact on the Search and crawlers page of Server settings. Read by administrators."
   },
+  "staff_settings.section.ux_measurement": {
+    "defaultMessage": "計測",
+    "description": "The heading of the section of the setting that measures the web client, under the UX measurements. Read by administrators."
+  },
   "staff_settings.text.name": {
     "defaultMessage": "名前",
     "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
@@ -998,6 +1002,14 @@
   "staff_settings.setting.max_article_bytes.about": {
     "defaultMessage": "記事の本文の大きさの上限です。本文から作る HTML で数えます (1000〜100000)。",
     "description": "The line about the setting Largest article: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.ux_measurement": {
+    "defaultMessage": "Web クライアントを計測する",
+    "description": "The setting ux_measurement: whether the web client sends samples of how fast it responds. Read by administrators."
+  },
+  "staff_settings.setting.ux_measurement.about": {
+    "defaultMessage": "サンプルにはアカウント、アドレス、URL が含まれず、このサーバーだけに保存されます。",
+    "description": "The line under Measure the web client. Read by administrators."
   },
   "staff_settings.choice.registration_mode": {
     "defaultMessage": "{value, select, open {誰でも} approval {モデレーターの承認のあと} invite {招待がある人だけ} other {誰も登録できない}}",

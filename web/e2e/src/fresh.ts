@@ -3,9 +3,10 @@
 // What an E2E test makes for itself on the demo server, so that it changes nothing another test or a second run of it
 // reads (`--repeat-each`): a person, a post, a follow request. Each is made as the seed makes the scenario (seed.ts):
 // the person with `bin/my admin create`, the rest with the client API through @mycroblog/mykit, signed in as each
-// person, and no SQL. Each name holds a part of a random UUID, so that it is unique to the test and the run without
-// reading the clock.
+// person, and no SQL but for a failed job, which no operation of the server makes (`deadJob`). Each name holds a part of
+// a random UUID, so that it is unique to the test and the run without reading the clock.
 
+import { Database } from "bun:sqlite";
 import { randomBytes, randomUUID } from "node:crypto";
 import { all, type Api, type components } from "@mycroblog/mykit";
 import type { Drawing } from "./drawing";
@@ -110,6 +111,13 @@ function clientIP(): string {
   return `198.${String(18 + (a & 1))}.${String(b)}.${String(c)}`;
 }
 
+/** A UUIDv7 of the moment `ms`, as the server's IDs are. */
+function uuidv7(ms: number): string {
+  const hex = ms.toString(16).padStart(12, "0") + randomBytes(10).toString("hex");
+  const variant = ((parseInt(hex.slice(16, 17), 16) & 0x3) | 0x8).toString(16);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-7${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
 /** A part of a random UUID: unique to a test and a run, and short enough for a username. */
 const unique = () => randomUUID().replaceAll("-", "").slice(0, 16);
 
@@ -123,6 +131,8 @@ export type FreshOptions = {
   server: string;
   /** Runs `bin/my` with `args` and `input` on its standard input against the server's database. */
   runMy: (args: readonly string[], input?: string) => string;
+  /** The demo server's SQLite database, which a failed job is put into (`deadJob`). */
+  database: string;
   /**
    * The TOTP secrets of the scenario's people who have two-factor authentication and the steps their enrollments used,
    * by username (the seed's state), to sign them in.
@@ -539,6 +549,81 @@ export class Fresh {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
     throw new Error("fresh: the plans never took subscriptions");
+  }
+
+  /**
+   * A job that failed for good, as the server's own runner fails it: a job of a real type put into the queue's table
+   * with a payload its handler cannot read, which the worker claims within a second and makes a dead job at once, its
+   * one attempt recorded. The server has no operation that fails a job, so this one is written to the database; the
+   * rest is the server's. `admin` reads it back through the admin API until it is dead.
+   */
+  async deadJob(admin: Person): Promise<{ id: string; type: string }> {
+    const type = "notification.post_subscribers";
+    const now = Date.now();
+    const id = uuidv7(now);
+    const db = new Database(this.#o.database);
+    try {
+      db.run("PRAGMA busy_timeout = 10000");
+      db.run(
+        "INSERT INTO jobs (id, type, payload, idempotency_key, attempt, run_at, created_at) VALUES (?, ?, ?, ?, 0, ?, ?)",
+        [id, type, Buffer.from(`fresh ${unique()}`), `fresh:${id}`, now, now],
+      );
+    } finally {
+      db.close();
+    }
+    const api = await this.#api(admin);
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const { data } = await api.GET("/admin/jobs/{id}", { params: { path: { id } } });
+      if (data?.state === "dead") return { id, type };
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`fresh: the job ${id} never failed`);
+  }
+
+  /**
+   * Deletes the job of `id` once it is a dead job again (a job run again fails as it did), as `bin/my job delete` does,
+   * so that the test leaves no failed job behind; `admin` reads it through the admin API meanwhile.
+   */
+  async forgetJob(admin: Person, id: string): Promise<void> {
+    const api = await this.#api(admin);
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const { data, response } = await api.GET("/admin/jobs/{id}", { params: { path: { id } } });
+      if (data?.state === "dead") break;
+      if (response.status === 404) return;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    this.#o.runMy(["job", "delete", id]);
+  }
+
+  /**
+   * An error the web client reports, as a browser that is not signed in sends it (counted, notifying nobody): a name
+   * and a message unique to it, from a script of the server's own origin. Its group, as `admin` reads it from the open
+   * groups once the server counted it.
+   */
+  async clientError(admin: Person): Promise<{ id: string; type: string }> {
+    // Letters only: the server scrubs digits, IDs and addresses out of a message.
+    const word = [...randomBytes(10)].map((b) => String.fromCharCode(97 + (b % 26))).join("");
+    const type = `FreshError${word.slice(0, 1).toUpperCase()}${word.slice(1)}`;
+    const response = await fetch(new URL("/api/v1/client_errors", this.#o.server), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": clientIP() },
+      body: JSON.stringify({
+        name: type,
+        message: `fresh ${word} went wrong`,
+        stack: `${type}: fresh ${word} went wrong\n    at render (${new URL(`/assets/fresh-${word}.js`, this.#o.server).href}:1:10)`,
+        route: "/_app/",
+        kind: "uncaught",
+      }),
+    });
+    if (response.status !== 204) throw new Error(`fresh: the error report answered ${String(response.status)}`);
+    const api = await this.#api(admin);
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const { data } = await api.GET("/admin/error_groups", { params: { query: { state: "open", source: "web" } } });
+      const group = data?.items.find((g) => g.type === type);
+      if (group !== undefined) return { id: group.id, type };
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`fresh: the error ${type} was never counted`);
   }
 
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */

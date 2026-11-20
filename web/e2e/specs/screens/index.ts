@@ -47,4 +47,5 @@ export { VerifyEmail } from "./verify";
 export { connectedPeers, keepPeerConnections, openPeers, receivedAudio, VoiceRoom, VoiceRoomOpen } from "./voice";
 export { Welcome } from "./welcome";
 export { Notice } from "./notice";
+export { Operations } from "./operations";
 export { bookmarks, homeTimeline, localTimeline, Post, Timeline } from "./timeline";

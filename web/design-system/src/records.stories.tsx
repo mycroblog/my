@@ -74,6 +74,10 @@ const stateWords: Record<RecordState, string> = {
   pending: "Pending",
   failed: "Failed",
   disabled: "Disabled",
+  queued: "Queued",
+  running: "Running",
+  retrying: "Waiting to retry",
+  muted: "Muted",
 };
 
 const reports: readonly Report[] = [

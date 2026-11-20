@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Code as a reader follows it when it wraps (a payload, an endpoint, an IP address): it breaks at a space or after a
-// slash, a question mark, an ampersand, an equals sign, a pipe or a comma, and inside a run of other characters only
+// Code as a reader follows it when it wraps (a payload, an endpoint, an IP address, a key): it breaks at a space or
+// after a slash, a question mark, an ampersand, an equals sign, a pipe, a comma, or a colon that does not start a
+// URL's `//` (`notification.email:01J9…`), and inside a run of other characters only
 // where the run is longer than its line, never at a hyphen of a date or inside a word that fits. In a block, each line
 // stands on its own, and a wrapped line's continuation hangs under its own line's indent, two characters further
 // in, so that it never reads as a line of its own. The text is unchanged for copying and for assistive technology.
@@ -9,7 +10,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 /** A run between two places a line may break: the characters a reader keeps together, with the mark that ends it. */
-const RUNS = /\s+|[^\s/?&=|,]*[/?&=|,]+|[^\s/?&=|,]+/g;
+const RUNS = /\s+|(?:[^\s/?&=|,:]|:(?=\/))*(?:[/?&=|,]|:(?!\/))+|(?:[^\s/?&=|,:]|:(?=\/))+/g;
 
 /** A run kept whole on its line, unless it is longer than the line, where it breaks inside. */
 function CodeRun({ children }: { children: string }) {

@@ -120,6 +120,7 @@ export const test = base.extend<Fixtures>({
       new Fresh({
         server: baseURL,
         runMy: (args, input) => runMyOn(envFile, args, input),
+        database: (JSON.parse(readFileSync(envFile, "utf8")) as Record<string, string>)["MY_DATABASE_URL"] ?? "",
         totp: { secrets: state.totp, steps: state.totpSteps },
       }),
     );

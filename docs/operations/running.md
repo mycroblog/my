@@ -574,11 +574,11 @@ For work on the database, key-value store or queue, restart in maintenance mode 
 
 [Jobs](../reference/jobs.md) lists every job type: what it does, what starts it, how it retries, and what running it again does.
 
-The admin jobs page (`/admin/jobs`, permission `manage_jobs`) has three pages:
+The admin jobs page (Administration → Jobs, `/admin/jobs`, permission `manage_jobs`) has three pages:
 
-- **Queue state** (`/admin/jobs`): the count per state and per type and state, how long each type keeps a job waiting, and how long the oldest waiting job has waited.
-- **Jobs** (`/admin/jobs/list`): a table of the jobs in one state (pending, waiting, running, waiting to retry, failed), a page at a time, with the type, state, the time it is scheduled or failed, and the number of attempts. Failed jobs have **Run again**.
-- **A job** (`/admin/jobs/<id>`, from the type in the table): every fact of the job, its last error, keys and payload, the history of unsuccessful attempts (result, error, worker, and start and end time of each attempt), and **Run again** for a failed job.
+- **Queue state** (`/admin/jobs`): the count per state (queued, running, waiting to retry, failed), each leading to the jobs in that state; when the oldest due job became due; and a table of the counts per type and state with how long each type keeps a job waiting.
+- **Job list** (`/admin/jobs/list`): the jobs that are not finished (queued, running, waiting to retry), or of one state, and of one type, a page at a time, with the type, the job ID, the number of attempts, the time it is due or failed, and the state.
+- **A job** (`/admin/jobs/<id>`, from the type in the list): **Run again** for a failed job, which asks first, since a run may repeat what the job did before it failed; every fact of the job and its keys; its last error and its payload, each with a copy button; the unsuccessful attempts, newest first (result, worker, duration, and the error under Details); and a link to the jobs of its type.
 
 The admin API is `GET /api/v1/admin/queue`, `GET /api/v1/admin/jobs?state=&type=`, `GET /api/v1/admin/jobs/{id}`, `GET /api/v1/admin/jobs/{id}/attempts` and `POST /api/v1/admin/jobs/{id}/retry`.
 A completed job is no longer in the queue, so its page is not found.

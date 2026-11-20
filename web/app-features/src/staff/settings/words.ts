@@ -113,6 +113,7 @@ export const settingNames = {
   translation_server_monthly_characters: "staff_settings.setting.translation_server_monthly_characters",
   translation_user_monthly_characters: "staff_settings.setting.translation_user_monthly_characters",
   user_app_registration: "staff_settings.setting.user_app_registration",
+  ux_measurement: "staff_settings.setting.ux_measurement",
   voice_participants_retention_days: "staff_settings.setting.voice_participants_retention_days",
   voice_public_summary: "staff_settings.setting.voice_public_summary",
   voice_room_starters: "staff_settings.setting.voice_room_starters",
@@ -152,6 +153,7 @@ export const settingAbouts = {
   translation_reports_to_server: "staff_settings.setting.translation_reports_to_server.about",
   translation_user_monthly_characters: "staff_settings.setting.translation_user_monthly_characters.about",
   user_app_registration: "staff_settings.setting.user_app_registration.about",
+  ux_measurement: "staff_settings.setting.ux_measurement.about",
   voice_participants_retention_days: "staff_settings.setting.voice_participants_retention_days.about",
   voice_public_summary: "staff_settings.setting.voice_public_summary.about",
 } as const satisfies Readonly<Record<string, MessageId>>;
@@ -201,6 +203,7 @@ export const sectionHeadings = {
   translation_limits: "staff_settings.section.translation_limits",
   translation_providers: "staff_settings.section.translation_providers",
   translation_reports: "staff_settings.section.translation_reports",
+  ux_measurement: "staff_settings.section.ux_measurement",
   voice_rooms: "staff_settings.section.voice_rooms",
   voice_starters: "staff_settings.section.voice_starters",
 } as const satisfies Readonly<Record<string, MessageId>>;
