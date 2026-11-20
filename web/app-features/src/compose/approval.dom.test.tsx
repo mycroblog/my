@@ -98,7 +98,11 @@ test("a reply to a post that admits the reader at once says nothing of an approv
   expect(dialog.queryAllByText(/approv/i)).toHaveLength(0);
 });
 
-test("the audience's menu chooses, for replies, boosts and quotes each, who may at once and whether others may ask for approval; the tool says the post is limited", async () => {
+/**
+ * The reply's composer with the audience's menu open on the permissions, each kind's anyone at first, and how to
+ * read and set what a kind holds.
+ */
+async function permissions() {
   const { user, dialog, w } = await replyTo("layla-asks");
   const menu = (name: string) => within(screen.getByRole("menu", { name }));
   /** The row of `kind` in the permissions, by what it reads: its label, then who may now. */
@@ -128,27 +132,49 @@ test("the audience's menu chooses, for replies, boosts and quotes each, who may 
     await user.click(screen.getByRole("button", { name: w.back }));
     await screen.findByRole("menu", { name: w.permissions });
   };
+  const all = () => (["reply", "announce", "quote"] as const).map(holds);
 
   await user.click(dialog.getByRole("button", { name: w.audience }));
   await user.click(await screen.findByRole("menuitem", { name: new RegExp(`^${w.permissions}`) }));
   await screen.findByRole("menu", { name: w.permissions });
-  expect((["reply", "announce", "quote"] as const).map(holds)).toEqual([w.everyone, w.everyone, w.everyone]);
+  expect(all()).toEqual([w.everyone, w.everyone, w.everyone]);
+  return { dialog, w, holds, choose, all };
+}
 
-  await choose("announce", w.followers, true);
-  await choose("quote", w.nobody, true);
+// One test per kind: the walk through both panels in one test came close to the limit of a test on a busy machine.
+test("the audience's menu chooses who may reply at once and whether others may ask for approval; the tool says the post is limited", async () => {
+  const { dialog, w, holds, choose, all } = await permissions();
 
-  expect((["reply", "announce", "quote"] as const).map(holds)).toEqual([
-    w.everyone,
-    w.withApproval(w.followers),
-    w.withApproval(w.nobody),
-  ]);
+  await choose("reply", w.followers, true);
+  expect(all()).toEqual([w.withApproval(w.followers), w.everyone, w.everyone]);
   // The page under an open menu is hidden from a query by role; the tool is still there, renamed.
   expect(dialog.getByRole("button", { name: w.limited, hidden: true })).toBeDefined();
 
-  // Anyone admits everyone at once, so there is nothing to ask for: the check goes, and so does the approval it held;
-  // Only you without it admits no one else.
+  // Anyone admits everyone at once, so there is nothing to ask for: the check goes, and so does the approval it held.
+  await choose("reply", w.everyone, undefined);
+  expect(holds("reply")).toBe(w.everyone);
+});
+
+test("the audience's menu chooses who may boost at once and whether others may ask for approval; the tool says the post is limited", async () => {
+  const { dialog, w, holds, choose, all } = await permissions();
+
+  await choose("announce", w.followers, true);
+  expect(all()).toEqual([w.everyone, w.withApproval(w.followers), w.everyone]);
+  expect(dialog.getByRole("button", { name: w.limited, hidden: true })).toBeDefined();
+
+  // Anyone admits everyone at once, so there is nothing to ask for: the check goes, and so does the approval it held.
   await choose("announce", w.everyone, undefined);
   expect(holds("announce")).toBe(w.everyone);
+});
+
+test("the audience's menu chooses who may quote at once and whether others may ask for approval; the tool says the post is limited", async () => {
+  const { dialog, w, holds, choose, all } = await permissions();
+
+  await choose("quote", w.nobody, true);
+  expect(all()).toEqual([w.everyone, w.everyone, w.withApproval(w.nobody)]);
+  expect(dialog.getByRole("button", { name: w.limited, hidden: true })).toBeDefined();
+
+  // Only you without the approval admits no one else.
   await choose("quote", w.nobody, false);
   expect(holds("quote")).toBe(w.nobody);
 });
