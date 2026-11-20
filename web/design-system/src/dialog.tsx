@@ -145,7 +145,8 @@ export type ConfirmDialogProps = {
   /** The confirmation's label, the verb of the title (Delete). */
   confirm: string;
   onCancel: () => void;
-  onConfirm: () => void;
+  /** The confirmation, given the text the reader typed where there is one to type (its edges trimmed), else "". */
+  onConfirm: (entered: string) => void;
   /** The confirmed action in flight: the confirmation spins and the dialog stays. */
   busy?: boolean | undefined;
   /**
@@ -222,7 +223,15 @@ export function ConfirmDialog({
           {cancel}
         </Button>
         {phrase === undefined ? (
-          <Button kind="primary" size="form" busy={busy} isDisabled={pending} onPress={onConfirm}>
+          <Button
+            kind="primary"
+            size="form"
+            busy={busy}
+            isDisabled={pending}
+            onPress={() => {
+              onConfirm("");
+            }}
+          >
             {confirmLabel}
           </Button>
         ) : (
@@ -244,7 +253,7 @@ export function ConfirmDialog({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (unlocked && !busy) onConfirm();
+              if (unlocked && !busy) onConfirm(entered.trim());
             }}
           />
         }

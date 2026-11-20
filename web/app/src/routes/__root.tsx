@@ -7,7 +7,7 @@
 // a signed-in reader is a page of its own before the app, without the shell too. An address the app has no screen for
 // shows its own heading inside the shell.
 
-import { useInstance, useServerState, useWritesInFlight } from "@my/app-data";
+import { useInstance, usePermissions, useServerState, useWritesInFlight } from "@my/app-data";
 import { useVoiceCall } from "@my/app-features";
 import { FeedNotice, MenuSheet, NavigationProvider } from "@my/design-system";
 import { watchKeyboardInset } from "@my/platform";
@@ -21,6 +21,7 @@ import { Landing } from "../shell/landing";
 import { ClosedPage, MaintenancePage, pageServer } from "../shell/pages";
 import { useScreenScroll } from "../shell/scroll";
 import { Shell } from "../shell/shell";
+import { useThemePreviewSheet } from "../shell/theme-preview";
 import { useNarrowViewport } from "../shell/viewport";
 import { useShowsWelcome } from "../shell/welcome";
 import { isServerPage } from "../sign-in";
@@ -78,19 +79,35 @@ function useReloadAfterMaintenance(underMaintenance: boolean) {
   }, [owed, writing, calling]);
 }
 
+/** The address of the closure's screen, which the closed server still shows its administrators. */
+const closurePath = "/admin/closure";
+
+/** Whether `pathname` is the closure's screen or one under it. */
+const isClosurePath = (pathname: string) => pathname === closurePath || pathname.startsWith(`${closurePath}/`);
+
 /**
  * The page that takes the place of every screen, if one does: the maintenance while the server answers with it, and
- * for a signed-in reader the closed server.
+ * for a signed-in reader the closed server, but on the closure's screens of an administrator who follows its progress.
  */
-function ServerPage({ signedIn, children }: { signedIn: boolean; children: ReactNode }) {
+function ServerPage({ signedIn, pathname, children }: { signedIn: boolean; pathname: string; children: ReactNode }) {
   const { config } = Route.useRouteContext();
   const instance = useInstance();
   const { maintenance } = useServerState();
+  const closes = usePermissions(signedIn).includes("manage_service_closure");
   useReloadAfterMaintenance(maintenance !== null);
   if (maintenance !== null) return <MaintenancePage maintenance={maintenance} />;
   const closure = instance?.closure;
-  if (signedIn && closure !== undefined && (closure.state === "closed" || closure.state === "delivery_completed"))
-    return <ClosedPage server={pageServer(instance, config.instanceName)} closure={closure} />;
+  const closed = closure !== undefined && (closure.state === "closed" || closure.state === "delivery_completed");
+  // The administrator who closed the server follows the deletion of its accounts on the closure's screen.
+  if (closes && closed && isClosurePath(pathname)) return children;
+  if (signedIn && closed)
+    return (
+      <ClosedPage
+        server={pageServer(instance, config.instanceName)}
+        closure={closure}
+        progress={closes ? closurePath : undefined}
+      />
+    );
   return children;
 }
 
@@ -128,6 +145,7 @@ function Root() {
   useFocusOnNavigation();
   useScreenScroll();
   useKeyboardInset();
+  useThemePreviewSheet();
   return (
     <NavigationProvider
       navigate={(href) => {
@@ -135,7 +153,7 @@ function Root() {
         else void router.navigate({ href });
       }}
     >
-      <ServerPage signedIn={signedIn}>
+      <ServerPage signedIn={signedIn} pathname={pathname}>
         <Screens pathname={pathname} signedIn={signedIn} serverName={config.instanceName} />
       </ServerPage>
     </NavigationProvider>

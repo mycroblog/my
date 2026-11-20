@@ -3,6 +3,9 @@
 What to do, in order, when you stop running the server: let users take their data out, delete the accounts that remain on other servers,
 then stop the server and switch to a static closure page.
 Each command is described in more detail in [administrators and roles](admin-cli.md#announcing-the-end-of-the-service).
+In the web client, **Administration > Server closure** does the same for anyone with `manage_service_closure`: it announces the
+closure, changes its dates or withdraws it; once the closing date has passed, **Check and close** shows what `check` shows
+and closes the server after you type its domain; after that it shows the delivery progress that `status` shows.
 
 ## The sequence
 

@@ -4,7 +4,8 @@
 // when the reader can still take their data, the operator's words, and the ways to take it: the archive of everything,
 // requested here, built in the background and downloaded here once ready (the latest export's state says which, and
 // the request waits while one is being built), and the CSV of whom they follow, which another server imports. Signing
-// out ends it: the app asks and signs out as its settings do (`onSignOut`).
+// out ends it: the app asks and signs out as its settings do (`onSignOut`). An administrator who follows the closure
+// has the way to its progress there too.
 
 import { useDataExports, type Closure, type DataExport } from "@my/app-data";
 import {
@@ -12,6 +13,7 @@ import {
   dateFormat,
   FormActions,
   FormHead,
+  FormLink,
   FormLinks,
   FormPage,
   FormText,
@@ -36,9 +38,11 @@ export type ClosedScreenProps = {
   onSignOut: () => void;
   /** The page's footer (FormPageFooter). */
   footer?: ReactNode;
+  /** The address of the progress of the closure, for an administrator who follows it; none for everyone else. */
+  progress?: string | undefined;
 };
 
-export function ClosedScreen({ server, wordmark, closure, onSignOut, footer }: ClosedScreenProps) {
+export function ClosedScreen({ server, wordmark, closure, onSignOut, footer, progress }: ClosedScreenProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const { exports, request, download, csv } = useDataExports();
   const [sending, setSending] = useState(false);
@@ -110,6 +114,7 @@ export function ClosedScreen({ server, wordmark, closure, onSignOut, footer }: C
       {failed === "download" && <FormText role="status">{t("closure.export_download_failed")}</FormText>}
       {failed === "csv" && <FormText role="status">{t("closure.download_failed")}</FormText>}
       <FormLinks>
+        {progress !== undefined && <FormLink href={progress}>{t("closure.progress")}</FormLink>}
         <TextButton onPress={onSignOut}>{t("closure.sign_out")}</TextButton>
       </FormLinks>
     </FormPage>

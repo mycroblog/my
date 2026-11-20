@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The E2E tests of the web client (ADR-0015 §1): one project, `en` on Chromium, against the demo server that
-// specs/global-setup.ts starts with the scenario (src/server/demo.ts). Run them with `scripts/task.sh web:e2e`, which
+// The E2E tests of the web client (ADR-0015 §1): `en` on Chromium, then `server-wide`, the specs that change the whole
+// server, against the demo server that specs/global-setup.ts starts with the scenario (src/server/demo.ts). Run them with `scripts/task.sh web:e2e`, which
 // builds the test build of bin/my first; they run on Bun alone (`bun --bun playwright test`). The specs query by role
 // and accessible name, and keep the operations of a screen in @my/e2e (restrict/e2e-queries), out of the patterns that
 // made them flaky (restrict/e2e-flaky).
 
 import { availableParallelism } from "node:os";
 import { defineConfig, devices } from "@playwright/test";
+
+/** The specs that change what every other spec's server is: they run in a project of their own, after the rest. */
+const serverWide = ["admin-theme.spec.ts", "admin-closure.spec.ts"];
 
 export default defineConfig({
   testDir: "specs",
@@ -28,5 +31,16 @@ export default defineConfig({
     reducedMotion: "reduce",
     trace: "retain-on-failure",
   },
-  projects: [{ name: "en", use: { ...devices["Desktop Chrome"], locale: "en" } }],
+  projects: [
+    {
+      name: "en",
+      use: { ...devices["Desktop Chrome"], locale: "en" },
+      testIgnore: serverWide,
+      teardown: "server-wide",
+    },
+    // The specs that change the whole server for every spec beside them (the theme in effect; a closure announced,
+    // which closes the registration and rejects the sign-ups that wait): the teardown of `en`, so that they run once
+    // every other spec of the run (of its shard, which has a server of its own) has ended, one test at a time.
+    { name: "server-wide", use: { ...devices["Desktop Chrome"], locale: "en" }, testMatch: serverWide, workers: 1 },
+  ],
 });

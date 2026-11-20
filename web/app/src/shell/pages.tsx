@@ -104,8 +104,17 @@ export function MaintenancePage({ maintenance }: { maintenance: Maintenance }) {
   );
 }
 
-/** The page of the closed server, in place of every screen of a signed-in reader. */
-export function ClosedPage({ server, closure }: { server: FormPageServer; closure: Closure }) {
+/** The page of the closed server, in place of every screen of a signed-in reader, with the way to its progress. */
+export function ClosedPage({
+  server,
+  closure,
+  progress,
+}: {
+  server: FormPageServer;
+  closure: Closure;
+  /** The address of the closure's progress, for an administrator who may follow it. */
+  progress?: string | undefined;
+}) {
   const statusPage = useStatusPageUrl();
   const [signingOut, setSigningOut] = useState(false);
   return (
@@ -114,6 +123,7 @@ export function ClosedPage({ server, closure }: { server: FormPageServer; closur
         server={server}
         wordmark={wordmark}
         closure={closure}
+        progress={progress}
         onSignOut={() => {
           setSigningOut(true);
         }}
