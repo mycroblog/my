@@ -1,34 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The board of an event (ADR-0161 §5, §11, §17; #3354), in the app's shell, in grays: the event's page with its board
-// for a reader who writes on it, empty, read-only (cancelled, or ended more than 7 days ago), for a reader who reads but
-// does not write, and for one who may not read it; who writes, in the event's form, for its organizer and as said to a
+// The board of an event (ADR-0161 §5, §11, §17; #3354), in the app's shell: the event's page with its board for a
+// reader who writes on it, empty, read-only (cancelled, or ended more than 7 days ago), for a reader who reads but does
+// not write, and for one who may not read it; who writes, in the event's form, for its organizer and as said to a
 // co-organizer; and the notification of a new post on the board. Each page is whole and edge to edge, so that it reads
-// at the phone, tablet and PC widths of the toolbar's viewport. Live options:
+// at the phone, tablet and PC widths of the toolbar's viewport.
 //
-// - `event-board-place`, where the board stands on the event's page: `after`, a section after everything the page
-//   holds (its time, places, the reader's answer, its organizers and who goes); `middle`, a section right after the
-//   reader's answer, before its organizers and who goes; `tabs`, two tabs under the event's head, Details and Board,
-//   the address of the board (the notification's) opening its tab.
-// - `event-board-composer`, how a writer writes on it: `in-place`, a box at the board's top on the raised surface, as
-//   the reply in place of a conversation, with the tools of a post but boost and quote (attach, poll, content warning,
-//   language, emoji); `dialog`, a row at the board's top that opens the composer, the event named above its text, as
-//   a reply's post is.
-// - `event-board-closed`, what a reader who may not read the board sees: `none`, nothing of it; `hint`, the line under
-//   the answers saying that going or maybe opens it.
+// The board is the second of two tabs under the event's head, Details and Board, its address (the notification's)
+// opening its tab; a reader who may not read it gets no tabs, the page as it is without a board. A writer writes from
+// one bar at the board's top, their avatar and the prompt, which opens the app's composer, the event named over the
+// text as a reply's post is. Where the bar would be, a reader who does not write now is told why.
 //
-// What the design system lacks yet (a post of the board, whose actions have no boost, the board's composer, an
-// account's line) is drawn here as a stand-in, and the words are samples in English.
+// What the design system lacks yet (a post of the board, whose actions have no boost and whose More has no bookmark,
+// and the bar that opens the composer) is drawn here as a stand-in, and the words are samples in English.
 
 import { color } from "@my/design-tokens";
-import { Options } from "@my/devtools/options";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useLayoutEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { Button as Press } from "react-aria-components";
 import { Avatar } from "./avatar";
-import { Button } from "./button";
 import { ChoiceList } from "./choice";
-import { CharCount, ComposerText } from "./composer";
-import { PlainTextEditor } from "./editor";
 import { ActionRow, Byline, Entry, Stamp } from "./entry";
 import { AnswerChoice, EventTime, PlaceLine, PlaceList, type Answer } from "./event";
 import { Feed, FeedItem, FeedNotice } from "./feed";
@@ -36,6 +27,7 @@ import { IconButton } from "./icon-button";
 import { Icon, type IconName } from "./icons";
 import { Box, Row, Stack } from "./layout";
 import {
+  AccountRow,
   BackButton,
   Excerpt,
   GroupHeading,
@@ -65,26 +57,12 @@ import {
   SectionLine,
   SectionList,
 } from "./shell";
+import { ShowMore } from "./pager";
 import { HeadcountMark } from "./voice";
-
-type Place = "after" | "middle" | "tabs";
-type Writing = "in-place" | "dialog";
-type Closed = "none" | "hint";
 
 const minute = 60_000;
 const hour = 60 * minute;
 const none = () => undefined;
-
-/** The page in grays while the board is settled: what is on it, its order and its grouping, before any color. */
-function useGrays() {
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-    root.style.filter = "grayscale(1)";
-    return () => {
-      root.style.filter = "";
-    };
-  }, []);
-}
 
 // ---- The app's shell around the page --------------------------------------------------------------------------------
 
@@ -142,7 +120,6 @@ const footer = (
 
 /** The app's shell, at `current` (a place's address), around the main column's `children`. */
 function Shell({ current, children }: { current: string; children: ReactNode }) {
-  useGrays();
   return (
     <Frame>
       <FrameSide label="Main">
@@ -204,24 +181,20 @@ const sora: Person = { name: "Sora", handle: "@sora", avatar: images.logo };
 const aoi: Person = { name: "Aoi Tanaka", handle: "@aoi" };
 const yuki: Person = { name: "Yuki", handle: "@yuki" };
 
-/** A stand-in for an account's line of a list (AccountLine of the app's components). */
+/** An account's line of a list, as AccountLine of the app's components draws it. */
 function Person({ person }: { person: Person }) {
   return (
-    <Row align="center" gap="entry-avatar">
-      <Avatar name={person.name} src={person.avatar} size="row" decorative />
-      <Stack shrink gap="hair">
-        <Box as="bdi" lines={1} weight="label">
-          {person.name}
-        </Box>
-        <Box as="bdi" lines={1} text="caption" tone="muted">
-          {person.handle}
-        </Box>
-      </Stack>
-    </Row>
+    <AccountRow
+      avatar={<Avatar name={person.name} src={person.avatar} size="post" decorative />}
+      name={person.name}
+      handle={person.handle}
+      href={`/${person.handle}`}
+    />
   );
 }
 
-function People({ heading, people }: { heading: string; people: Person[] }) {
+/** A list of people under its heading, its first page, and Show more under it while the server holds more. */
+function People({ heading, people, more = false }: { heading: string; people: Person[]; more?: boolean }) {
   return (
     <Stack gap="entry-line">
       <GroupHeading>{heading}</GroupHeading>
@@ -232,6 +205,7 @@ function People({ heading, people }: { heading: string; people: Person[] }) {
           </RowItem>
         ))}
       </RowList>
+      <ShowMore more={more} onPress={none} />
     </Stack>
   );
 }
@@ -242,15 +216,7 @@ type EventState = "open" | "cancelled" | "ended";
 const going = { yes: "Going", maybe: "Maybe", no: "Not going" } as const;
 
 /** The reader's answer, held here as the screen would hold it. */
-function Answering({
-  initial,
-  note,
-  isDisabled,
-}: {
-  initial: Answer | null;
-  note?: string | undefined;
-  isDisabled?: boolean;
-}) {
+function Answering({ initial, isDisabled }: { initial: Answer | null; isDisabled?: boolean }) {
   const [value, setValue] = useState<Answer | null>(initial);
   return (
     <AnswerChoice
@@ -259,7 +225,6 @@ function Answering({
       value={value}
       onChange={setValue}
       save={null}
-      note={note}
       isDisabled={isDisabled}
     />
   );
@@ -296,8 +261,8 @@ function Head({ state }: { state: EventState }) {
         </Box>
         <Row wrap align="center" gapX="entry-caption" text="caption" tone="muted">
           <span>By Mika</span>
-          <HeadcountMark count={{ shown: "8", label: "8 going" }} />
-          <HeadcountMark count={{ shown: "3", label: "3 maybe" }} glyph="answerMaybe" />
+          <HeadcountMark count={{ shown: "24", label: "24 going" }} />
+          <HeadcountMark count={{ shown: "2", label: "2 maybe" }} glyph="answerMaybe" />
         </Row>
       </Stack>
     </>
@@ -330,11 +295,26 @@ function Organizers() {
   return <People heading="Organizers" people={[mika, ren]} />;
 }
 
+/** Who goes: the first page of the 24 (the screen's page holds 20), and Show more under it. */
+const goingPeople: Person[] = [
+  sora,
+  aoi,
+  yuki,
+  ...Array.from({ length: 17 }, (_, i) => ({ name: `Guest ${String(i + 1)}`, handle: `@guest${String(i + 1)}` })),
+];
+
+/** Who goes, and both who answered maybe. */
 function Attendees() {
   return (
     <>
-      <People heading="Going" people={[sora, aoi, yuki]} />
-      <People heading="Maybe" people={[{ name: "Haruto", handle: "@haruto", avatar: images.dusk }]} />
+      <People heading="Going" people={goingPeople} more />
+      <People
+        heading="Maybe"
+        people={[
+          { name: "Haruto", handle: "@haruto", avatar: images.dusk },
+          { name: "Lina", handle: "@lina" },
+        ]}
+      />
     </>
   );
 }
@@ -405,56 +385,24 @@ function Post({ post }: { post: BoardPost }) {
   );
 }
 
-/** The box a writer writes in at the board's top, as the reply in place of a conversation. */
-function InPlace() {
-  return (
-    <Stack
-      as="form"
-      gap="entry"
-      surface="raised"
-      radius="entry"
-      pad="embed"
-      aria-label="Write on the board"
-      onSubmit={(e) => {
-        e.preventDefault();
-      }}
-    >
-      <ComposerText roomy={false}>
-        <PlainTextEditor
-          namespace="board"
-          look="composer"
-          value=""
-          onChange={none}
-          label="Your post on the board"
-          placeholder="Write to the people of this event"
-        />
-      </ComposerText>
-      <Row align="center" gap="entry-caption">
-        <Row grow shrink align="center" bleedStart="icon-button-inline">
-          <IconButton icon="attach" label="Add images, a video or a sound" />
-          <IconButton icon="poll" label="Add a poll" />
-          <IconButton icon="hidden" label="Add a content warning" />
-          <IconButton icon="translate" label="Language: English" />
-          <IconButton icon="emojiSmileys" label="Add an emoji" />
-        </Row>
-        <CharCount left={500} near={20} label="500" />
-        <Button kind="primary" size="timeline">
-          Post
-        </Button>
-      </Row>
-    </Stack>
-  );
-}
-
-/** The row at the board's top that opens the composer, the event named over its text. */
+/**
+ * The bar at the board's top that opens the app's composer, one control: the writer's avatar, as the posts' are, the
+ * prompt on one line, cut at its end where the bar is narrower, and the glyph of writing at its end.
+ */
 function OpensComposer() {
   return (
-    <Row align="center" gap="entry-avatar" surface="raised" radius="entry" pad="embed">
-      <Avatar name={yuki.name} size="row" decorative />
-      <Box grow tone="muted">
-        Write to the people of this event
+    <Row
+      align="center"
+      gap="entry-avatar"
+      as={
+        <Press className="box-border w-full cursor-pointer rounded-entry border-0 bg-surface-raised p-embed text-start font-sans text-body text-muted-text outline-hidden data-focus-visible:shadow-focus data-hovered:bg-surface-hover data-pressed:bg-surface-pressed" />
+      }
+    >
+      <Avatar name={yuki.name} src={images.snow} size="post" decorative />
+      <Box grow shrink lines={1}>
+        Write on the board
       </Box>
-      <Button size="timeline">Write</Button>
+      <Icon name="compose" place="action" />
     </Row>
   );
 }
@@ -480,22 +428,12 @@ function NoComposer({ state, access }: { state: EventState; access: Access }) {
   );
 }
 
-function Board({
-  writing,
-  state,
-  access,
-  empty,
-}: {
-  writing: Writing;
-  state: EventState;
-  access: Access;
-  empty: boolean;
-}) {
+function Board({ state, access, empty }: { state: EventState; access: Access; empty: boolean }) {
   const writes = access === "writer" && state === "open";
   const posts = empty ? [] : boardPosts;
   return (
     <Stack gap="entry-room">
-      {writes ? writing === "in-place" ? <InPlace /> : <OpensComposer /> : <NoComposer state={state} access={access} />}
+      {writes ? <OpensComposer /> : <NoComposer state={state} access={access} />}
       <Feed
         label="The event's board"
         count={posts.length}
@@ -531,36 +469,14 @@ function Tabbed({ details, board }: { details: ReactNode; board: ReactNode }) {
   );
 }
 
-type PageProps = {
-  place: Place;
-  writing: Writing;
-  closed: Closed;
-  state?: EventState;
-  access?: Access;
-  empty?: boolean;
-};
+type PageProps = { state?: EventState; access?: Access; empty?: boolean };
 
-/** The event's page, the board where `place` puts it. */
-function EventPage({ place, writing, closed, state = "open", access = "writer", empty = false }: PageProps) {
-  const reads = access !== "none";
-  const answer = (
-    <Answering
-      initial={access === "none" ? "no" : "yes"}
-      isDisabled={state !== "open"}
-      note={!reads && closed === "hint" ? "Answer Going or Maybe to read the event's board." : undefined}
-    />
-  );
-  const board = reads && <Board writing={writing} state={state} access={access} empty={empty} />;
-  const section = board !== false && (
-    <Stack gap="entry-line">
-      <GroupHeading>Board</GroupHeading>
-      {board}
-    </Stack>
-  );
+/** The event's page: its head, then Details and Board as tabs; no tabs for a reader who may not read the board. */
+function EventPage({ state = "open", access = "writer", empty = false }: PageProps) {
   const details = (
     <>
       <About />
-      {answer}
+      <Answering initial={access === "none" ? "no" : "yes"} isDisabled={state !== "open"} />
       <Organizers />
       <Attendees />
     </>
@@ -569,48 +485,13 @@ function EventPage({ place, writing, closed, state = "open", access = "writer", 
     <Shell current="/events">
       <ScreenStack>
         <Head state={state} />
-        {place === "tabs" ? (
-          board === false ? (
-            details
-          ) : (
-            <Tabbed details={details} board={board} />
-          )
+        {access === "none" ? (
+          details
         ) : (
-          <>
-            <About />
-            {answer}
-            {place === "middle" && section}
-            <Organizers />
-            <Attendees />
-            {place === "after" && section}
-          </>
+          <Tabbed details={details} board={<Board state={state} access={access} empty={empty} />} />
         )}
       </ScreenStack>
     </Shell>
-  );
-}
-
-/** The page in each option of where the board stands and how a writer writes on it. */
-const page = (props: Omit<PageProps, "place" | "writing" | "closed">) => (
-  <Options
-    id="event-board-place"
-    variants={{
-      after: <Writings place="after" {...props} />,
-      middle: <Writings place="middle" {...props} />,
-      tabs: <Writings place="tabs" {...props} />,
-    }}
-  />
-);
-
-function Writings(props: Omit<PageProps, "writing" | "closed">) {
-  return (
-    <Options
-      id="event-board-composer"
-      variants={{
-        "in-place": <EventPage writing="in-place" closed="none" {...props} />,
-        dialog: <EventPage writing="dialog" closed="none" {...props} />,
-      }}
-    />
   );
 }
 
@@ -774,36 +655,23 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** A reader going, who writes on the board (everyone who reads it writes): the composer at its top, its posts. */
-export const Writer: Story = { render: () => page({}) };
+/** A reader going, who writes on the board (everyone who reads it writes): the bar that opens the composer, its posts. */
+export const Writer: Story = { render: () => <EventPage /> };
 
 /** The same board with nothing on it yet. */
-export const Empty: Story = { render: () => page({ empty: true }) };
+export const Empty: Story = { render: () => <EventPage empty /> };
 
-/** A reader of a board only the organizers write on: no composer, and who writes, in its place. */
-export const ReaderNotWriter: Story = { render: () => page({ access: "reader" }) };
+/** A reader of a board only the organizers write on: no bar, and who writes, in its place. */
+export const ReaderNotWriter: Story = { render: () => <EventPage access="reader" /> };
 
-/** A cancelled event: the board read-only, said where the composer would be; the answers closed. */
-export const ReadOnlyCancelled: Story = { render: () => page({ state: "cancelled" }) };
+/** A cancelled event: the board read-only, said where the bar would be; the answers closed. */
+export const ReadOnlyCancelled: Story = { render: () => <EventPage state="cancelled" /> };
 
-/** An event that ended more than 7 days ago: the board read-only, said where the composer would be. */
-export const ReadOnlyEnded: Story = { render: () => page({ state: "ended" }) };
+/** An event that ended more than 7 days ago: the board read-only, said where the bar would be. */
+export const ReadOnlyEnded: Story = { render: () => <EventPage state="ended" /> };
 
-/**
- * A reader who sees the event and answered Not going: no board, in each option of what they are told; and in
- * each option of where the board would stand, which leaves no tabs.
- */
-export const NoAccess: Story = {
-  render: () => (
-    <Options
-      id="event-board-closed"
-      variants={{
-        none: <EventPage place="after" writing="in-place" closed="none" access="none" />,
-        hint: <EventPage place="after" writing="in-place" closed="hint" access="none" />,
-      }}
-    />
-  ),
-};
+/** A reader who sees the event and answered Not going: no tabs and nothing of the board, the page as it is. */
+export const NoAccess: Story = { render: () => <EventPage access="none" /> };
 
 /** Who writes on the board, in the form that changes the event, for its organizer: after who sees it. */
 export const WritersInTheForm: Story = { render: () => <FormEnd organizer /> };
