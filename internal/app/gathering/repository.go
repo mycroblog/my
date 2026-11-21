@@ -155,7 +155,11 @@ func (r Record) Event() gathering.Event {
 
 // BoardTerm returns what decides whether the board of the event is open.
 func (r Record) BoardTerm() gathering.BoardTerm {
-	return gathering.BoardTerm{Cancelled: r.Cancellation != nil, Scheduled: r.Scheduled(), EndsAt: r.Confirmation.Schedule.EndsAt}
+	t := gathering.BoardTerm{EndsAt: r.Head.Schedule.EndsAt}
+	if c := r.Cancellation; c != nil {
+		t.Cancelled, t.CancelledAt = true, c.CancelledAt
+	}
+	return t
 }
 
 // Coorganizes reports whether accountID is a co-organizer of the event.

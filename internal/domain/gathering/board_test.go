@@ -113,7 +113,9 @@ func TestBoardOpen(t *testing.T) {
 		t.Errorf("BoardWritableAfterEnd = %v, want 7 days", gathering.BoardWritableAfterEnd)
 	}
 	end := time.Date(2026, 12, 1, 14, 0, 0, 0, time.UTC)
-	scheduled := gathering.BoardTerm{Scheduled: true, EndsAt: end}
+	// An event that polls its date ends with its last candidate date, as a scheduled one with
+	// its date: both are a BoardTerm with that end.
+	scheduled := gathering.BoardTerm{EndsAt: end}
 	for _, tc := range []struct {
 		name string
 		term gathering.BoardTerm
@@ -125,9 +127,10 @@ func TestBoardOpen(t *testing.T) {
 		{"a second before 7 days after the end", scheduled, end.Add(gathering.BoardWritableAfterEnd - time.Second), true},
 		{"a second after 7 days after the end", scheduled, end.Add(gathering.BoardWritableAfterEnd + time.Second), false},
 		{"a month after the end", scheduled, end.Add(30 * 24 * time.Hour), false},
-		{"cancelled before the start", gathering.BoardTerm{Cancelled: true, Scheduled: true, EndsAt: end}, end.Add(-24 * time.Hour), false},
-		{"cancelled while polling", gathering.BoardTerm{Cancelled: true}, end, false},
-		{"polling", gathering.BoardTerm{}, end.Add(365 * 24 * time.Hour), true},
+		{"cancelled before the start", gathering.BoardTerm{EndsAt: end, Cancelled: true, CancelledAt: end.Add(-48 * time.Hour)}, end.Add(-24 * time.Hour), false},
+		{"cancelled while polling", gathering.BoardTerm{EndsAt: end, Cancelled: true, CancelledAt: end.Add(-48 * time.Hour)}, end.Add(-24 * time.Hour), false},
+		{"polling, a year after its last candidate", scheduled, end.Add(365 * 24 * time.Hour), false},
+		{"no end", gathering.BoardTerm{}, end, false},
 	} {
 		if got := gathering.BoardOpen(tc.term, tc.now); got != tc.want {
 			t.Errorf("%s: BoardOpen = %v, want %v", tc.name, got, tc.want)
@@ -139,8 +142,8 @@ func TestBoardOpen(t *testing.T) {
 // CanReadBoard reads, is open as BoardOpen says, and writes only while open and admitted.
 func TestBoard(t *testing.T) {
 	end := time.Date(2026, 12, 1, 14, 0, 0, 0, time.UTC)
-	open := gathering.BoardTerm{Scheduled: true, EndsAt: end}
-	cancelled := gathering.BoardTerm{Cancelled: true, Scheduled: true, EndsAt: end}
+	open := gathering.BoardTerm{EndsAt: end}
+	cancelled := gathering.BoardTerm{EndsAt: end, Cancelled: true, CancelledAt: end.Add(-48 * time.Hour)}
 	now := end.Add(-time.Hour)
 	organizers := boardEvent(gathering.VisibilityPublic, gathering.BoardWritersOrganizers)
 	invited := boardEvent(gathering.VisibilityInvited, gathering.BoardWritersReaders)

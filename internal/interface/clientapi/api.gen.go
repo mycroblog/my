@@ -11827,7 +11827,8 @@ type EventBoardAccess struct {
 
 	// Writable Whether the user may post on the board and edit their posts on it now: the event's
 	// `board_writers` admit the user, and the board is not read-only. The board is read-only once
-	// the event is cancelled, and from 7 days after its end.
+	// the event is cancelled, and from 7 days after its end (for an `unscheduled` event, the end of
+	// its last candidate date, its `ends_at`).
 	Writable bool `json:"writable"`
 }
 

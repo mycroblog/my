@@ -30,6 +30,8 @@ var eventBoardStart = time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
 const (
 	eventBoardStartsIn = 3 * time.Hour
 	eventBoardEndsIn   = 5 * time.Hour
+	// eventBoardPollEndsIn is the end of the last candidate date of the date poll of records.
+	eventBoardPollEndsIn = 74 * time.Hour
 	// missingID names no status and no event.
 	eventBoardMissingID = "0192f0c1-0000-7000-8000-000000000000"
 )
@@ -670,7 +672,7 @@ func (e *eventBoardEnv) records() eventBoardRecords {
 		Settings: gathering.Settings{Title: "When do we meet?", TimeZone: "Asia/Tokyo", BoardWriters: gathering.BoardWritersReaders},
 		Candidates: []gathering.Schedule{
 			{StartsAt: eventBoardStart.Add(48 * time.Hour), EndsAt: eventBoardStart.Add(50 * time.Hour)},
-			{StartsAt: eventBoardStart.Add(72 * time.Hour), EndsAt: eventBoardStart.Add(74 * time.Hour)},
+			{StartsAt: eventBoardStart.Add(72 * time.Hour), EndsAt: eventBoardStart.Add(eventBoardPollEndsIn)},
 		},
 	})
 	if err != nil {
@@ -707,6 +709,12 @@ func TestEventBoardsToPurge(t *testing.T) {
 	want := []string{r.cancelled, r.ended, r.quiet, eventBoardMissingID}
 	if due, err := e.app.Events.BoardsToPurge(t.Context(), all); err != nil || !slices.Equal(due, want) {
 		t.Errorf("BoardsToPurge after the retention = %v, %v, want %v", due, err, want)
+	}
+	// A date poll ends with its last candidate date, as the purge of the records counts.
+	e.at(eventBoardPollEndsIn + 91*24*time.Hour)
+	want = []string{r.cancelled, r.ended, r.quiet, r.polling, eventBoardMissingID}
+	if due, err := e.app.Events.BoardsToPurge(t.Context(), all); err != nil || !slices.Equal(due, want) {
+		t.Errorf("BoardsToPurge after the retention of the last candidate = %v, %v, want %v", due, err, want)
 	}
 	// Answering deletes nothing: the posts go with the purge alone.
 	for _, id := range []string{r.cancelled, r.ended, r.quiet, r.polling} {

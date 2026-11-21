@@ -5,7 +5,6 @@ package gathering
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/mycroblog/my/internal/domain/gathering"
 )
@@ -55,8 +54,10 @@ func (s *Service) BoardReaders(ctx context.Context, id string, accountIDs []stri
 }
 
 // BoardsToPurge returns, in their order, the events of gatheringIDs whose boards' posts go with
-// their records now (ADR-0161 §14, §17): those that ended (at their end, or at their
-// cancellation) longer than event_records_retention_days ago and that no report points at, and
+// their records now (ADR-0161 §14, §17): those that ended longer than
+// event_records_retention_days ago, by the end that the purge of the records counts from
+// (gathering.BoardTerm.Ended: the earlier of the end, that of the last candidate date while the
+// event polls its date, and the cancellation), and that no report points at, and
 // the events that do not exist. Without Deps.Retention it returns none.
 func (s *Service) BoardsToPurge(ctx context.Context, gatheringIDs []string) ([]string, error) {
 	r := s.d.Retention
@@ -78,7 +79,7 @@ func (s *Service) BoardsToPurge(ctx context.Context, gatheringIDs []string) ([]s
 		case err != nil:
 			return nil, err
 		}
-		if end, ok := rec.endedAt(); ok && end.Before(before) {
+		if end, ok := rec.BoardTerm().Ended(); ok && end.Before(before) {
 			ended = append(ended, id)
 		}
 	}
@@ -96,18 +97,6 @@ func (s *Service) BoardsToPurge(ctx context.Context, gatheringIDs []string) ([]s
 		}
 	}
 	return out, nil
-}
-
-// endedAt returns when the event ended: its cancellation, or the end of its date; false for an
-// event that polls its date and was not cancelled.
-func (r Record) endedAt() (time.Time, bool) {
-	switch {
-	case r.Cancellation != nil:
-		return r.Cancellation.CancelledAt, true
-	case r.Scheduled():
-		return r.Confirmation.Schedule.EndsAt, true
-	}
-	return time.Time{}, false
 }
 
 // boardAccess returns what accountID may do with the board of rec.

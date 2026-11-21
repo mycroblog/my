@@ -154,23 +154,39 @@ func CanWriteBoard(e Event, viewer Viewer, f Facts) bool {
 // edits (ADR-0161 §17).
 const BoardWritableAfterEnd = 7 * 24 * time.Hour
 
-// BoardTerm is what decides whether the board of an event is open.
+// BoardTerm is when an event ends, which decides whether its board is open and when its records
+// and its board's posts go.
 type BoardTerm struct {
-	// Cancelled reports a cancelled event.
-	Cancelled bool
-	// Scheduled reports an event with a fixed date, which ends at EndsAt; an event that polls its
-	// date has no end yet.
-	Scheduled bool
-	EndsAt    time.Time
+	// EndsAt is the end of the event: of its date, or, while it polls its date, of its last
+	// candidate date (gathering_heads.ends_at).
+	EndsAt time.Time
+	// Cancelled reports a cancelled event, cancelled at CancelledAt.
+	Cancelled   bool
+	CancelledAt time.Time
+}
+
+// Ended returns the end that the retention of the records of the event counts from
+// (event_records_retention_days, ADR-0161 §14): the earlier of its end and its cancellation. The
+// purge of the records (ListGatheringsToPurge) states the same rule in SQL, and the purge of the
+// board's posts (§17) follows it. False for an event with neither an end nor a cancellation.
+func (t BoardTerm) Ended() (time.Time, bool) {
+	switch {
+	case t.Cancelled && (t.EndsAt.IsZero() || t.CancelledAt.Before(t.EndsAt)):
+		return t.CancelledAt, true
+	case !t.EndsAt.IsZero():
+		return t.EndsAt, true
+	}
+	return time.Time{}, false
 }
 
 // BoardOpen reports whether the board of an event takes new posts and edits at now: it is
-// read-only as soon as the event is cancelled, and from BoardWritableAfterEnd after its end.
+// read-only as soon as the event is cancelled, and from BoardWritableAfterEnd after its end, the
+// end of its last candidate date while it polls its date.
 func BoardOpen(t BoardTerm, now time.Time) bool {
-	if t.Cancelled {
+	if t.Cancelled || t.EndsAt.IsZero() {
 		return false
 	}
-	return !t.Scheduled || now.Before(t.EndsAt.Add(BoardWritableAfterEnd))
+	return now.Before(t.EndsAt.Add(BoardWritableAfterEnd))
 }
 
 // BoardAccess is what a viewer may do with the board of an event.
