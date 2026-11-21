@@ -1267,14 +1267,14 @@ func (l *Localizer) ServerErrorsEventBoardClosed() string {
 
 // ServerErrorsEventBoardNotReader formats "server:errors.event.board_not_reader". API error title for HTTP 403 when someone who sees an event but has not answered going or maybe (and does not organize it) reads or posts on its board.
 //
-//	en: Only the organizers and the people going or maybe going read this event's board. Change your answer to going or maybe to read it.
+//	en: Only the organizer, the co-organizers, and the people who answered going or maybe can read this event's board. Set your answer to going or maybe to read it.
 func (l *Localizer) ServerErrorsEventBoardNotReader() string {
 	return l.format("server:errors.event.board_not_reader", nil)
 }
 
 // ServerErrorsEventBoardNotWriter formats "server:errors.event.board_not_writer". API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, organizers, or readers) leave the reader out.
 //
-//	en: The organizer of this event has not opened its board to your posts.
+//	en: Only the people this event's organizer chose can write on its board.
 func (l *Localizer) ServerErrorsEventBoardNotWriter() string {
 	return l.format("server:errors.event.board_not_writer", nil)
 }

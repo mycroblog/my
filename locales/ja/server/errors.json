@@ -1048,7 +1048,7 @@
     "description": "API error title for HTTP 403 when someone who sees an event but has not answered going or maybe (and does not organize it) reads or posts on its board."
   },
   "errors.event.board_not_writer": {
-    "defaultMessage": "このイベントの主催者は、掲示板にあなたが書けるようにしていません。",
+    "defaultMessage": "このイベントの掲示板には、主催者が選んだ人だけが書けます。",
     "description": "API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, organizers, or readers) leave the reader out."
   },
   "errors.event.board_closed": {

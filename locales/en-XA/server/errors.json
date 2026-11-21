@@ -156,11 +156,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.event.board_not_reader": {
-    "defaultMessage": "[Ǿƞŀẏ ŧħḗḗ ǿǿřɠȧȧƞīẑḗḗřş ȧȧƞḓ ŧħḗḗ ƥḗḗǿǿƥŀḗḗ ɠǿǿīƞɠ ǿǿř ḿȧȧẏƀḗḗ ɠǿǿīƞɠ řḗḗȧȧḓ ŧħīş ḗḗṽḗḗƞŧ''ş ƀǿǿȧȧřḓ. Ƈħȧȧƞɠḗḗ ẏǿǿŭŭř ȧȧƞşẇḗḗř ŧǿǿ ɠǿǿīƞɠ ǿǿř ḿȧȧẏƀḗḗ ŧǿǿ řḗḗȧȧḓ īŧ.]",
+    "defaultMessage": "[Ǿƞŀẏ ŧħḗḗ ǿǿřɠȧȧƞīẑḗḗř, ŧħḗḗ ƈǿǿ-ǿǿřɠȧȧƞīẑḗḗřş, ȧȧƞḓ ŧħḗḗ ƥḗḗǿǿƥŀḗḗ ẇħǿǿ ȧȧƞşẇḗḗřḗḗḓ ɠǿǿīƞɠ ǿǿř ḿȧȧẏƀḗḗ ƈȧȧƞ řḗḗȧȧḓ ŧħīş ḗḗṽḗḗƞŧ''ş ƀǿǿȧȧřḓ. Şḗḗŧ ẏǿǿŭŭř ȧȧƞşẇḗḗř ŧǿǿ ɠǿǿīƞɠ ǿǿř ḿȧȧẏƀḗḗ ŧǿǿ řḗḗȧȧḓ īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.event.board_not_writer": {
-    "defaultMessage": "[Ŧħḗḗ ǿǿřɠȧȧƞīẑḗḗř ǿǿƒ ŧħīş ḗḗṽḗḗƞŧ ħȧȧş ƞǿǿŧ ǿǿƥḗḗƞḗḗḓ īŧş ƀǿǿȧȧřḓ ŧǿǿ ẏǿǿŭŭř ƥǿǿşŧş.]",
+    "defaultMessage": "[Ǿƞŀẏ ŧħḗḗ ƥḗḗǿǿƥŀḗḗ ŧħīş ḗḗṽḗḗƞŧ''ş ǿǿřɠȧȧƞīẑḗḗř ƈħǿǿşḗḗ ƈȧȧƞ ẇřīŧḗḗ ǿǿƞ īŧş ƀǿǿȧȧřḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.event.closed": {
