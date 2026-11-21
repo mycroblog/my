@@ -89,6 +89,7 @@ export const memberNotificationRows: readonly FakeNotificationRow[] = [
       "event_reminder",
       "event_started",
       "event_room_unavailable",
+      "event_board_posted",
     ],
   }),
   { group: "status", section: "ordinary", in_app: true },

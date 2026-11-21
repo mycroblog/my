@@ -6,11 +6,12 @@
 //   (a fixed start and end, or the candidate dates of a poll in their place, chosen as it is created), its time zone
 //   (the reader's by default), its places (a voice chat room with who speaks in it without asking, offered to a reader
 //   who may host rooms; a place in person with its name, its address and a map's URL; a place online with its name and
-//   URL), who sees the places in person and online, who sees the event, and its capacity. Create sends it, and the
-//   event's page takes the form's place. Another reader is told they may not.
+//   URL), who sees the places in person and online, who sees the event, who writes on its board (§17), and its
+//   capacity. Create sends it, and the event's page takes the form's place. Another reader is told they may not.
 // - Changing one, at /events/{id}/edit, for its organizers: the same form with the event's settings and no choice of
-//   how its date is set (a poll's dates are changed from its table, on the event's page); who sees the event is the
-//   organizer's alone to change, and a co-organizer is told so. Save sends what changed, and goes back to the event.
+//   how its date is set (a poll's dates are changed from its table, on the event's page); who sees the event and who
+//   writes on its board are the organizer's alone to change, and a co-organizer is told so. Save sends what changed,
+//   and goes back to the event.
 //
 // The dates are read in the event's own time zone, chosen right under them; a date left as it was keeps the moment the
 // server holds (a wall time of a night whose clock goes back names two), and is not sent. What the form finds wrong before
@@ -20,6 +21,7 @@
 
 import { localInput, localInstant, nameOf } from "@my/app-components";
 import {
+  eventBoardWriters,
   eventFaultField,
   eventLimits,
   eventPlaceDisclosures,
@@ -33,6 +35,7 @@ import {
   useEventWrites,
   useMayCreateEvents,
   useMayOpenVoiceRooms,
+  type EventBoardWriters,
   type EventCreate,
   type EventPlace,
   type EventPlaceDisclosure,
@@ -97,6 +100,8 @@ type Draft = {
   readonly onlineUrl: string;
   readonly disclosure: EventPlaceDisclosure;
   readonly visibility: EventVisibility;
+  /** Who writes on the event's board (ADR-0161 §17). */
+  readonly boardWriters: EventBoardWriters;
   readonly capacity: number;
   /** The moments the server holds of a fixed date (an event that is there): what a date left as it was sends. */
   readonly held?: { readonly startsAt: string; readonly endsAt: string } | undefined;
@@ -158,6 +163,7 @@ function newDraft(timeZone: string): Draft {
     onlineUrl: "",
     disclosure: "approved",
     visibility: "public",
+    boardWriters: "organizers",
     capacity: 0,
   };
 }
@@ -190,6 +196,7 @@ function draftOf(event: ServerEvent): Draft {
     onlineUrl: online?.url ?? "",
     disclosure: event.place_disclosure,
     visibility: event.visibility,
+    boardWriters: event.board_writers,
     capacity: event.capacity,
     ...(event.state === "unscheduled" ? {} : { held: { startsAt: event.starts_at, endsAt: event.ends_at } }),
   };
@@ -211,6 +218,7 @@ const fieldOrder = [
   "places",
   "place_disclosure",
   "visibility",
+  "board_writers",
   "capacity",
 ] as const;
 
@@ -316,6 +324,7 @@ const fieldRules: Readonly<Record<string, FieldKey>> = {
   time_zone: "time_zone",
   place_disclosure: "place_disclosure",
   visibility: "visibility",
+  board_writers: "board_writers",
   capacity: "capacity",
   places: "places",
 };
@@ -335,6 +344,7 @@ const ruleWords: Readonly<Record<FieldKey, Parameters<T>[0]>> = {
   places: "events.form.places_rule",
   place_disclosure: "events.form.places_rule",
   visibility: "events.form.visibility_rule",
+  board_writers: "events.form.board_writers_rule",
   capacity: "events.form.capacity_rule",
 };
 
@@ -372,6 +382,7 @@ function Choice<K extends string>({
   value,
   onChange,
   error,
+  hint,
   id,
   nested = false,
 }: {
@@ -381,11 +392,14 @@ function Choice<K extends string>({
   value: K;
   onChange: (key: K) => void;
   error?: string | undefined;
+  /** A line under the choice that describes it, at `<id>-hint`, in place of which a refusal stands. */
+  hint?: string | undefined;
   /** What takes the focus when the server refuses the choice, its error at `<id>-error`. */
   id?: string | undefined;
   /** A choice of what is checked above it (who speaks in the room), under a field's label, not a group's heading. */
   nested?: boolean | undefined;
 }) {
+  const hinted = error === undefined && hint !== undefined;
   return (
     <Stack gap={nested ? "form-page-field-gap" : "entry-line"}>
       {nested ? (
@@ -397,7 +411,9 @@ function Choice<K extends string>({
       )}
       <ChoiceList
         id={id}
-        describedBy={id === undefined || error === undefined ? undefined : `${id}-error`}
+        describedBy={
+          id === undefined ? undefined : error !== undefined ? `${id}-error` : hinted ? `${id}-hint` : undefined
+        }
         label={heading}
         multiple={false}
         items={keys.map((key) => ({ key, label: words(key) }))}
@@ -407,6 +423,11 @@ function Choice<K extends string>({
           if (key !== undefined) onChange(key);
         }}
       />
+      {hinted && (
+        <Box as="p" id={id === undefined ? undefined : `${id}-hint`} text="caption" tone="muted">
+          {hint}
+        </Box>
+      )}
       {error !== undefined && <FieldError id={id === undefined ? undefined : `${id}-error`}>{error}</FieldError>}
     </Stack>
   );
@@ -857,6 +878,31 @@ function EventForm({
           </Stack>
         )}
 
+        {organizer ? (
+          <Choice
+            id={fieldId("board_writers")}
+            heading={t("events.form.board_writers")}
+            keys={eventBoardWriters}
+            words={(writers) => t("events.form.board_writers_choice", { writers })}
+            value={draft.boardWriters}
+            onChange={(boardWriters) => {
+              change({ boardWriters });
+            }}
+            hint={t("events.form.board_writers_hint")}
+            error={shown.fields.board_writers}
+          />
+        ) : (
+          <Stack gap="entry-line">
+            <GroupHeading>{t("events.form.board_writers")}</GroupHeading>
+            <Box as="p" text="body" dir="auto">
+              {t("events.form.board_writers_organizer", {
+                writers: draft.boardWriters,
+                organizer: organizerName,
+              })}
+            </Box>
+          </Stack>
+        )}
+
         <Stack gap="form-page-field-gap">
           <Box as="p" id={`${fieldId("capacity")}-label`} weight="label">
             {t("events.form.capacity")}
@@ -915,12 +961,16 @@ function createOf(draft: Draft, voiceOffered: boolean): EventCreate {
     time_zone: zone,
     place_disclosure: draft.disclosure,
     capacity: draft.capacity,
+    board_writers: draft.boardWriters,
     ...(places.length === 0 ? {} : { places }),
     ...date,
   };
 }
 
-/** The change of `event` the draft makes: every setting, the date once it changed, the visibility its organizer's. */
+/**
+ * The change of `event` the draft makes: every setting, the date once it changed, the visibility and who writes on the
+ * board its organizer's.
+ */
 function updateOf(event: ServerEvent, draft: Draft, voiceOffered: boolean): EventUpdate {
   const zone = draft.timeZone;
   const dated = draft.dating === "fixed" && dateChanged(draft);
@@ -938,6 +988,9 @@ function updateOf(event: ServerEvent, draft: Draft, voiceOffered: boolean): Even
     capacity: draft.capacity,
     places: placesOf(draft, voiceOffered),
     ...(event.viewer.organizer && draft.visibility !== event.visibility ? { visibility: draft.visibility } : {}),
+    ...(event.viewer.organizer && draft.boardWriters !== event.board_writers
+      ? { board_writers: draft.boardWriters }
+      : {}),
     ...(dated ? dates : {}),
   };
 }

@@ -69,10 +69,19 @@ const noticeMs = 6000;
 /**
  * What the composer opens for: a reply to the post, a quote of it, an edit of the reader's post, or a new post written
  * again from the reader's post just deleted (a redraft), the last two with what the post held; or a draft of the
- * reader's on the server (a notification of its failed schedule).
+ * reader's on the server (a notification of its failed schedule); or a new post on the board of an event, named by its
+ * title. A reply to a post of a board, and a redraft of one, name the board's event (`board`): they go to the board.
  */
 export type ComposeRequest =
-  { kind: "reply" | "quote" | "draft"; id: string } | { kind: "edit" | "redraft"; id: string; source: PostSource };
+  | { kind: "reply"; id: string; board?: string | undefined }
+  | { kind: "quote" | "draft"; id: string }
+  | { kind: "edit"; id: string; source: PostSource }
+  | { kind: "redraft"; id: string; source: PostSource; board?: string | undefined }
+  | { kind: "board"; event: string; title: string };
+
+/** The event whose board `status` is posted on, as a request to the composer names it; none for any other post. */
+const boardOn = (status: Status | undefined) =>
+  status?.event_board === undefined ? {} : { board: status.event_board.event_id };
 
 /** A write a post's action asks for: a mark, or a vote in its poll. */
 type Write = { kind: "mark"; mark: StatusMark } | { kind: "vote"; vote: PollVote };
@@ -183,8 +192,12 @@ export function usePostActions(): (action: PostAction) => void {
       void write(id, w).catch(() => undefined);
     });
   return (action) => {
-    if (action.type === "reply" || action.type === "quote") {
-      context?.onCompose?.({ kind: action.type, id: action.id });
+    if (action.type === "reply") {
+      context?.onCompose?.({ kind: "reply", id: action.id, ...boardOn(cached(action.id)) });
+      return;
+    }
+    if (action.type === "quote") {
+      context?.onCompose?.({ kind: "quote", id: action.id });
       return;
     }
     if (action.type === "vote") {
@@ -383,20 +396,24 @@ export function PostActions({
       },
     );
   };
-  /** Deletes the post to write it again; `kept` is the source an attempt read before its deletion failed. */
-  const redraft = (id: string, kept?: PostSource) => {
+  /**
+   * Deletes the post to write it again; `kept` is the source an attempt read before its deletion failed, and `board`
+   * the board a post of one is written again on, read before the deletion takes the post from the cache.
+   */
+  const redraft = (id: string, kept?: PostSource, read?: ReturnType<typeof boardOn>) => {
+    const board = read ?? boardOn(own.cached(id));
     setConfirm((c) => c && { ...c, busy: true });
     setNotice(undefined);
     own.redraft(id, kept).then(
       (source) => {
         setConfirm(undefined);
-        onCompose?.({ kind: "redraft", id, source });
+        onCompose?.({ kind: "redraft", id, source, ...board });
       },
       (e: unknown) => {
         setConfirm(undefined);
         const source = e instanceof RedraftError ? e.source : kept;
         failed(e instanceof RedraftError ? e.cause : e, t("post_actions.delete_failed"), () => {
-          redraft(id, source);
+          redraft(id, source, board);
         });
       },
     );

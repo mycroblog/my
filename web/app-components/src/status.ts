@@ -157,6 +157,8 @@ export type PostStatus = {
   poll?: PostPoll | undefined;
   /** What makes it an article (ADR-0160): its `content` is the article's text, empty in a list. */
   article?: PostArticle | undefined;
+  /** The event whose board it is posted on (ADR-0161 §17); none for any other post. */
+  event_board?: { event_id: string } | undefined;
 };
 
 /** An article's title, summary and cover (the API's StatusArticle); the summary is never a content warning. */

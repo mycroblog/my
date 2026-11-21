@@ -32,13 +32,13 @@
 //   go at once, the page as it is laid out (the answers move by the row), the focus staying on the answer pressed.
 // - Who writes is a ChoiceList: hover, the focus ring, the checked mark, at once.
 //
-// What the design system lacks yet (a post of the board, whose actions have no boost and whose More has no bookmark,
-// and the bar that opens the composer) is drawn here as a stand-in, and the words are samples in English.
+// The bar is the design system's PromptBar. A post of the board (the app's components' Post, whose actions have no
+// boost and whose More has no bookmark) is drawn here as a stand-in, since the design system draws no post; the words
+// are the catalog's in English.
 
 import { color } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Button as Press } from "react-aria-components";
 import { Avatar } from "./avatar";
 import { ChoiceList } from "./choice";
 import { ActionRow, Byline, Entry, Stamp } from "./entry";
@@ -79,6 +79,7 @@ import {
   SectionList,
 } from "./shell";
 import { ShowMore } from "./pager";
+import { PromptBar } from "./prompt-bar";
 import { SaveState } from "./save-state";
 import { HeadcountMark } from "./voice";
 
@@ -407,25 +408,12 @@ function Post({ post }: { post: BoardPost }) {
   );
 }
 
-/**
- * The bar at the board's top that opens the app's composer, one control: the writer's avatar, as the posts' are, the
- * prompt on one line, cut at its end where the bar is narrower, and the glyph of writing at its end.
- */
+/** The bar at the board's top that opens the app's composer (PromptBar). */
 function OpensComposer() {
   return (
-    <Row
-      align="center"
-      gap="entry-avatar"
-      as={
-        <Press className="box-border w-full cursor-pointer rounded-entry border-0 bg-surface-raised p-embed text-start font-sans text-body text-muted-text outline-hidden data-focus-visible:shadow-focus data-hovered:bg-surface-hover data-pressed:bg-surface-pressed" />
-      }
-    >
-      <Avatar name={yuki.name} src={images.snow} size="post" decorative />
-      <Box grow shrink lines={1}>
-        Write on the board
-      </Box>
-      <Icon name="compose" place="action" />
-    </Row>
+    <PromptBar avatar={<Avatar name={yuki.name} src={images.snow} size="post" decorative />} onPress={none}>
+      Write on the board
+    </PromptBar>
   );
 }
 
@@ -436,11 +424,11 @@ type Access = "writer" | "reader" | "none";
 function NoComposer({ state, access }: { state: EventState; access: Access }) {
   const why =
     state === "cancelled"
-      ? "The event was cancelled: the board is read-only."
+      ? "The event was cancelled, so the board is read-only."
       : state === "ended"
-        ? "The event ended more than 7 days ago: the board is read-only."
+        ? "7 days have passed since the event ended, so the board is read-only."
         : access === "reader"
-          ? "Only the organizers write on this board."
+          ? "Only the organizer and the co-organizers can write on this board."
           : undefined;
   if (why === undefined) return null;
   return (
@@ -594,9 +582,9 @@ function WritersChoice() {
   const [chosen, setChosen] = useState(1);
   return (
     <Stack gap="entry-line">
-      <GroupHeading>Who writes on the board</GroupHeading>
+      <GroupHeading>Who can write on the board</GroupHeading>
       <ChoiceList
-        label="Who writes on the board"
+        label="Who can write on the board"
         multiple={false}
         items={writers.map((key) => ({ key, label: writerWords[key] }))}
         chosen={[chosen]}
@@ -605,7 +593,7 @@ function WritersChoice() {
         }}
       />
       <Box as="p" text="caption" tone="muted">
-        The organizers and those going or maybe read the board.
+        You, the co-organizers, and the people who answered going or maybe can read the board.
       </Box>
     </Stack>
   );
@@ -615,9 +603,10 @@ function WritersChoice() {
 function WritersSaid() {
   return (
     <Stack gap="entry-line">
-      <GroupHeading>Who writes on the board</GroupHeading>
+      <GroupHeading>Who can write on the board</GroupHeading>
       <Box as="p" text="body">
-        The organizer and the co-organizers. Mika, the organizer, changes it.
+        The organizer and the co-organizers can write on the board. Only the organizer, Mika, changes who can write on
+        it.
       </Box>
     </Stack>
   );

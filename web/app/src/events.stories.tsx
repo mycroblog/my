@@ -5,7 +5,8 @@
 // goes to, approved, in another zone than theirs; one they may go to, not approved, its place hidden; one they are
 // invited to and have not answered; one at its capacity; one they co-organize; a date poll; a voice place before the
 // start, with its room open, and with a room that could not open; cancelled; ended; one the reader does not see; its
-// page loading, failing, with long names, and for a visitor; and the ways in: the profile of an organizer with their
+// page loading, failing, with long names, and for a visitor; its board for a writer, empty, for a reader who does not
+// write, cancelled, and its address for a reader who may not read it; and the ways in: the profile of an organizer with their
 // upcoming events, and the reminders in the settings, loading and failing.
 // More of the upcoming events, an event's attendees and its invitations than a page holds, before and after Show more
 // (pages.samples.ts, `more`).
@@ -79,6 +80,19 @@ export const EventError: Story = { parameters: screen({ at: "/events/{event:book
 export const EventLong: Story = { parameters: screen({ at: "/events/{event:bread-class}", state: "long" }) };
 /** A visitor: only this server's people see events, and Sign in; nothing of the event. */
 export const EventVisitor: Story = { parameters: screen({ at: "/events/{event:book-swap}", signedOut: true }) };
+
+// ---- The board (ADR-0161 §17), on the Board tab's address ----------------------------------------------------------
+
+/** The board of an event the reader co-organizes: the bar that opens the composer, and its posts, newest first. */
+export const BoardWriter: Story = { parameters: screen({ at: "/events/{event:bread-class}?tab=board" }) };
+/** A board everyone who reads it writes on, with nothing on it yet. */
+export const BoardEmpty: Story = { parameters: screen({ at: "/events/{event:cooking-night}?tab=board" }) };
+/** A board only the organizers write on, for a reader going: who writes, in the bar's place. */
+export const BoardReaderNotWriter: Story = { parameters: screen({ at: "/events/{event:book-swap}?tab=board" }) };
+/** The board of a cancelled event: read-only, said in the bar's place. */
+export const BoardCancelled: Story = { parameters: screen({ at: "/events/{event:flea-market}?tab=board" }) };
+/** The Board tab's address for a reader who has not answered: no tabs and no sign of the board, at the event's address. */
+export const BoardNotReader: Story = { parameters: screen({ at: "/events/{event:garden-day}?tab=board" }) };
 
 /** The profile of an organizer: their upcoming events the reader sees, under the head. */
 export const ProfileEvents: Story = { parameters: screen({ at: "/@sam" }) };

@@ -20,6 +20,12 @@
 //   dates added, withdrawn and confirmed from its table (poll.tsx); and why its voice room could not open, in the
 //   organizer's own words (places.tsx).
 //
+// For a reader of its board (§17), what follows the head is two tabs of one screen, Details (all of the above under the
+// head) and Board (board.tsx), the address the event's with a search alone (`?tab=board`); a reader who may not read
+// it gets no tabs and no sign of the board. When a saved answer gives or takes the board, the tabs come or go at once
+// and the focus stays on the answer pressed; a reader who loses the board on its tab is on the page without tabs, the
+// address the event's, the focus on the title.
+//
 // The page is drawn again as the event starts and as it ends. An event the reader does not see, or that is not there
 // (the server's 404), says so. What came of a press that the page does not show in the control's own line (a
 // download, a join that failed) is said once, in the one polite live region the page keeps from the start, a new
@@ -27,6 +33,7 @@
 
 import { nameOf, useEventWhen, useGoingCount } from "@my/app-components";
 import {
+  eventBoardQuery,
   eventPhase,
   eventQuery,
   eventRefusal,
@@ -58,12 +65,14 @@ import {
   ScreenTitle,
   Spoken,
   Stack,
+  TabRow,
   useLocale,
   type Answer,
 } from "@my/design-system";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState } from "react";
 import { ReportDialog } from "../report";
 import { saveFile } from "../save-file";
+import { Board } from "./board";
 import { descriptionParts } from "./description";
 import { CancelDialog, EventMenu } from "./manage";
 import { Attendees, Organizers } from "./people";
@@ -71,9 +80,14 @@ import { hasPlaces, Places, RoomFoot, type JoinRoom, type Say } from "./places";
 import { Poll, PollAskDialog, type PollAsk } from "./poll";
 import { Retry, useEventStrings, type T } from "./parts";
 
-/** What the page's loader waits for: the event, from the cache unless a write marked it stale. */
-export async function loadEvent(data: AppData, id: string): Promise<void> {
-  await data.queryClient.query({ ...eventQuery(data, id), staleTime: Infinity }).catch(() => undefined);
+/**
+ * What the page's loader waits for: the event, from the cache unless a write marked it stale; on the Board tab, the
+ * board's first page too, for a reader of it.
+ */
+export async function loadEvent(data: AppData, id: string, tab?: EventTab): Promise<void> {
+  const event = await data.queryClient.query({ ...eventQuery(data, id), staleTime: Infinity }).catch(() => undefined);
+  if (tab !== "board" || event?.viewer.board.readable !== true) return;
+  await data.queryClient.infiniteQuery({ ...eventBoardQuery(data, id), staleTime: Infinity }).catch(() => undefined);
 }
 
 /** The title of the event of `id` once it is known, for the screen's heading and the document's title. */
@@ -203,10 +217,29 @@ function answerNote(event: ServerEvent, phase: EventPhase, t: T): string | undef
   return undefined;
 }
 
-/** The reader's answer to the event: saves as it is pressed, while the event is to come. */
-function Answering({ event, phase, writes, t }: { event: ServerEvent; phase: EventPhase; writes: EventWrites; t: T }) {
-  const [saving, setSaving] = useState<Saving | null>(null);
+/**
+ * The reader's answer to the event: saves as it is pressed, while the event is to come. What came of it (`saving`) is
+ * held by the page, so that it stays as the tabs come or go above it; `onPressed` hears each answer pressed.
+ */
+function Answering({
+  event,
+  phase,
+  writes,
+  saving,
+  setSaving,
+  onPressed,
+  t,
+}: {
+  event: ServerEvent;
+  phase: EventPhase;
+  writes: EventWrites;
+  saving: Saving | null;
+  setSaving: (s: Saving) => void;
+  onPressed: () => void;
+  t: T;
+}) {
   const answer = (chosen: EventAnswer) => {
+    onPressed();
     setSaving({ state: "saving" });
     writes.answer(chosen).then(
       () => {
@@ -302,9 +335,37 @@ function Calendar({ writes, say, t }: { writes: EventWrites; say: Say; t: T }) {
   );
 }
 
+/** The tabs under the event's head, for a reader of its board. */
+export type EventTab = "details" | "board";
+
+/**
+ * Keeps the focus on the answer pressed as the tabs come or go above the answers once it is saved (the answers are
+ * drawn anew under another parent): `pressed` marks an answer pressed, and once the board's access changed, the answer
+ * chosen (else the first) takes the focus again, while nothing else took it meanwhile.
+ */
+function useAnswerKept(readable: boolean, answers: string) {
+  const pressed = useRef(false);
+  const before = useRef(readable);
+  useLayoutEffect(() => {
+    if (before.current === readable) return;
+    before.current = readable;
+    if (!pressed.current) return;
+    pressed.current = false;
+    const active = document.activeElement;
+    if (active !== null && active !== document.body) return;
+    const group = document.getElementById(answers);
+    (group?.querySelector<HTMLElement>("input:checked") ?? group?.querySelector<HTMLElement>("input"))?.focus();
+  }, [readable, answers]);
+  return () => {
+    pressed.current = true;
+  };
+}
+
 /** The event as the reader sees it; `refetch` reads it again. */
 function Shown({
   event,
+  tab,
+  onTab,
   join,
   say,
   refetch,
@@ -312,6 +373,8 @@ function Shown({
   t,
 }: {
   event: ServerEvent;
+  tab: EventTab;
+  onTab: (tab: EventTab) => void;
   join: JoinRoom;
   say: Say;
   refetch: () => void;
@@ -323,6 +386,23 @@ function Shown({
   const phase = eventPhase(event, now);
   const room = eventRoom(event, now);
   const title = useRef<HTMLHeadingElement>(null);
+  const readable = event.viewer.board.readable;
+  const [saving, setSaving] = useState<Saving | null>(null);
+  const answers = useId();
+  const pressedAnswer = useAnswerKept(readable, answers);
+  // A reader who loses the board on its tab is on the page without tabs, the address the event's, the focus on the
+  // title; one who opens the Board tab's address without the board is on the event's address.
+  const hadBoard = useRef(readable);
+  const leaveBoard = useEffectEvent(() => {
+    onTab("details");
+  });
+  useLayoutEffect(() => {
+    const lost = hadBoard.current && !readable;
+    hadBoard.current = readable;
+    if (readable || tab !== "board") return;
+    leaveBoard();
+    if (lost) title.current?.focus();
+  }, [readable, tab]);
   const [cancelling, setCancelling] = useState(false);
   const [reporting, setReporting] = useState(false);
   // The cancellation was done: the title takes the focus once the dialog is out of the document.
@@ -332,6 +412,44 @@ function Shown({
   // What a done confirmation of the poll leaves the focus to, once its dialog is out of the document: the title over
   // the date it fixed, or the poll's first date's menu after a date was withdrawn.
   const pollDone = useRef<PollAsk["op"] | null>(null);
+  // What the event is, the reader's answer and who goes: the page itself, or its Details tab for a reader of the board.
+  const details = (
+    <>
+      {event.description !== "" && <EventDescription parts={descriptionParts(event.description)} />}
+      {hasPlaces(event) && (
+        <Stack gap="entry-line">
+          <GroupHeading>{t("events.where")}</GroupHeading>
+          <Places event={event} now={now} refetch={refetch} t={t} />
+        </Stack>
+      )}
+      {phase === "polling" ? (
+        <Stack gap="entry-line">
+          <GroupHeading>{t("events.poll_heading")}</GroupHeading>
+          <div ref={poll}>
+            <Poll event={event} writes={writes} say={say} onAsk={setPollAsk} t={t} />
+          </div>
+        </Stack>
+      ) : (
+        <Stack gap="entry-room">
+          <Stack id={answers}>
+            <Answering
+              event={event}
+              phase={phase}
+              writes={writes}
+              saving={saving}
+              setSaving={setSaving}
+              onPressed={pressedAnswer}
+              t={t}
+            />
+          </Stack>
+          {/* A cancelled event's file says it is cancelled, which updates the entry a calendar imported before. */}
+          {phase !== "ended" && <Calendar writes={writes} say={say} t={t} />}
+        </Stack>
+      )}
+      <Organizers event={event} t={t} />
+      <Attendees event={event} phase={phase} say={say} t={t} />
+    </>
+  );
   return (
     <ScreenStack>
       <ScreenTitle
@@ -354,29 +472,21 @@ function Shown({
       </ScreenTitle>
       <State event={event} phase={phase} t={t} />
       <When event={event} phase={phase} t={t} />
-      {event.description !== "" && <EventDescription parts={descriptionParts(event.description)} />}
-      {hasPlaces(event) && (
-        <Stack gap="entry-line">
-          <GroupHeading>{t("events.where")}</GroupHeading>
-          <Places event={event} now={now} refetch={refetch} t={t} />
-        </Stack>
-      )}
-      {phase === "polling" ? (
-        <Stack gap="entry-line">
-          <GroupHeading>{t("events.poll_heading")}</GroupHeading>
-          <div ref={poll}>
-            <Poll event={event} writes={writes} say={say} onAsk={setPollAsk} t={t} />
-          </div>
-        </Stack>
+      {readable ? (
+        <TabRow
+          label={event.title}
+          tabs={[
+            { id: "details", name: t("events.tab", { tab: "details" }) },
+            { id: "board", name: t("events.tab", { tab: "board" }) },
+          ]}
+          current={tab}
+          onChange={onTab}
+        >
+          {tab === "board" ? <Board event={event} t={t} /> : <ScreenStack>{details}</ScreenStack>}
+        </TabRow>
       ) : (
-        <Stack gap="entry-room">
-          <Answering event={event} phase={phase} writes={writes} t={t} />
-          {/* A cancelled event's file says it is cancelled, which updates the entry a calendar imported before. */}
-          {phase !== "ended" && <Calendar writes={writes} say={say} t={t} />}
-        </Stack>
+        details
       )}
-      <Organizers event={event} t={t} />
-      <Attendees event={event} phase={phase} say={say} t={t} />
       {room.state === "open" && <RoomFoot roomId={room.roomId} join={join} say={say} t={t} />}
       <ModalPresence>
         {reporting && (
@@ -449,10 +559,23 @@ function Said({ told }: { told: { words: string; n: number } | null }) {
 }
 
 /**
- * The page of the event of `id` for a reader signed in. `join` joins its open voice room from the reader's press and
- * shows the room; `onBack` goes to the events.
+ * The page of the event of `id` for a reader signed in, on its tab `tab` (the address's) for a reader of its board.
+ * `onTab` opens the other tab in its place, and the Details tab when the reader may not read the board; `join` joins
+ * its open voice room from the reader's press and shows the room; `onBack` goes to the events.
  */
-export function EventScreen({ id, join, onBack }: { id: string; join: JoinRoom; onBack: () => void }) {
+export function EventScreen({
+  id,
+  tab = "details",
+  onTab,
+  join,
+  onBack,
+}: {
+  id: string;
+  tab?: EventTab | undefined;
+  onTab: (tab: EventTab) => void;
+  join: JoinRoom;
+  onBack: () => void;
+}) {
   const t = useEventStrings();
   const { event, error, gone, refetch } = useEvent(id);
   const [told, setTold] = useState<{ words: string; n: number } | null>(null);
@@ -469,7 +592,9 @@ export function EventScreen({ id, join, onBack }: { id: string; join: JoinRoom; 
         </ScreenStack>
       );
     if (event !== undefined)
-      return <Shown event={event} join={join} say={say} refetch={refetch} onBack={onBack} t={t} />;
+      return (
+        <Shown event={event} tab={tab} onTab={onTab} join={join} say={say} refetch={refetch} onBack={onBack} t={t} />
+      );
     if (error !== null)
       return (
         <ScreenStack>

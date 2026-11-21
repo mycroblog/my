@@ -13,7 +13,8 @@
 //   opened from the server closes without a word, and the server keeps it as it was last saved.
 // - Leaving by accident (the backdrop, or the app closing it without a word): the
 //   post is saved as a draft on the server, without a word, and kept here, so that opening the composer for the same
-//   target (New post, or Reply or Quote on the same post) brings it back.
+//   target (New post, or Reply or Quote on the same post) brings it back. A post on an event's board is kept here
+//   alone: a draft of the server's would leave the board.
 // - While a post or a save is in flight, none of these leaves it, nor do the drafts open; a composer the app closed
 //   then hears nothing of its answer.
 //
@@ -98,7 +99,7 @@ function ViewFailed({ c, layer, phone, onClose, onDismiss, retry }: ComposerView
   const kind = c.draft.target.kind;
   return (
     <ComposerFrame
-      title={t(`compose.title.${kind === "redraft" ? "new" : kind}`)}
+      title={t(`compose.title.${kind === "redraft" || kind === "board" ? "new" : kind}`)}
       closeLabel={t("compose.close")}
       onClose={onClose}
       onDismiss={onDismiss}

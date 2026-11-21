@@ -3,8 +3,8 @@
 // What each kind of notification shows (FR-205): its glyph, the sentence of its Web Push notification
 // (notifications.kind.*, which reuses the server's words) with its values, and its shape. A notification about a post
 // that speaks to the reader (a mention, a quote, a new post of an account they subscribe to) shows the post whole, the
-// sentence over it; the others are the line of their kind, with the reader's post they are about as its first words,
-// or the account and what the reader may do with it. A kind the client does not know reads as a new notification.
+// sentence over it; the others are the line of their kind, with the post they are about as its first words (the
+// reader's, or a new one on an event's board), or the account and what the reader may do with it. A kind the client does not know reads as a new notification.
 
 import { AccountName } from "@my/app-components";
 import type { NotificationItem, NotificationType } from "@my/app-data";
@@ -66,6 +66,7 @@ const glyphs: Readonly<Record<NotificationType, IconName>> = {
   event_reminder: "eventReminder",
   event_started: "eventStarted",
   event_room_unavailable: "roomUnavailable",
+  event_board_posted: "board",
   reply_request: "reply",
   boost_request: "boost",
   quote_request: "quote",

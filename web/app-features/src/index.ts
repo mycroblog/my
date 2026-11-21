@@ -14,7 +14,7 @@ export {
 export { AuthScreen } from "./auth/screen";
 export { descriptionParts } from "./events/description";
 export { EventCreateScreen, EventEditScreen } from "./events/editor";
-export { EventScreen, EventVisitor, loadEvent, useEventTitle } from "./events/event";
+export { EventScreen, EventVisitor, loadEvent, useEventTitle, type EventTab } from "./events/event";
 export { EventCoorganizersScreen, EventInvitationsScreen } from "./events/invitations";
 export { EventsScreen, loadEvents } from "./events/list";
 export type { JoinRoom } from "./events/places";

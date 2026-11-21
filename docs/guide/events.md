@@ -45,6 +45,16 @@ could not open, the page says why.
 Links to maps, online meetings, and the links in a description open in a new tab and name the site they go to: they
 leave this server, which never checks them.
 
+## The board
+
+Each event has a board for what people need to know before and during it. The organizer, the co-organizers, and the
+people who answered "Going" or "Maybe" see the event's page as two tabs, "Details" and "Board"; anyone else sees no
+board at all. On the board, "Write on the board" opens the composer, and the post goes on the board alone: it is never
+shown in a timeline, a profile, or search, never sent to other servers, and cannot be boosted or quoted. Posts on the
+board are edited, deleted, replied to, favourited, and reacted to as any post. Who can write is the organizer's choice;
+when you can't, the board says who can. Once the event is cancelled, or 7 days after it ends, the board is read-only.
+A new post on the board notifies its readers, and the notification opens the board.
+
 ## Organizing an event
 
 Choose "New event" on the list of events. The editor asks for:
@@ -59,11 +69,12 @@ Choose "New event" on the list of events. The editor asks for:
   speak without asking**.
 - **Who sees the event**: everyone on this server, the organizer's followers, the people the organizer follows, mutual
   follows of the organizer, or only invited people. People you invite, and people who answered, always see it.
+- **Who can write on the board**: only you, you and the co-organizers (the default), or everyone who reads the board.
 - **Capacity**, how many people can answer "Going"; leave it empty for no limit.
 
 On the event's page, the organizer and the co-organizers approve attendees ("Approve" and "Revoke approval"), invite
 people of this server under "Invitations", and change the event with "Edit event". The organizer alone changes who
-sees the event, names up to three "Co-organizers", and cancels the event with "Cancel event", optionally with a reason
+sees the event and who can write on the board, names up to three "Co-organizers", and cancels the event with "Cancel event", optionally with a reason
 that the event then shows. A cancelled event stays readable but takes no more answers.
 
 The server's moderators can cancel an event too; its page then says so, with their reason. Some servers let only some

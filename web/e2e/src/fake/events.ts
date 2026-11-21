@@ -6,7 +6,9 @@
 // one check of who sees an event (§9) and its places, so that a hidden place never reaches the client. The events are
 // the seed's plans (the scenario's, and the fake's own beside them, which name the reader's part in each: organizer,
 // co-organizer, invited, an attendee approved or not), held in memory with what the reader writes. A voice place's room
-// is the one its organizer hosts among the fake's open rooms, for an event that started with its room open.
+// is the one its organizer hosts among the fake's open rooms, for an event that started with its room open. Each event's
+// board (§17) is read by its organizers and those going or maybe, written on by those its `board_writers` admit until it
+// is cancelled or 7 days after its end; its posts are statuses the fake makes (api.ts), which no timeline holds.
 
 import type { ServerEventPlan } from "../scenario";
 import { eventStart } from "../scenario";
@@ -42,6 +44,10 @@ export type FakeEventPlan = ServerEventPlan & {
   readonly cancelled?: { readonly reason: Schema<"EventCancelReason">; readonly note?: string };
   readonly startsInMinutes?: number;
   readonly room?: "open" | Schema<"EventRoomUnavailableReason">;
+  /** Who writes on its board; the server's default (`organizers`) without one. */
+  readonly boardWriters?: Schema<"EventBoardWriters">;
+  /** The posts on its board, oldest first, each by a person of the seed that many minutes before the seed runs. */
+  readonly board?: readonly { readonly by: string; readonly text: string; readonly minutesAgo: number }[];
 };
 
 const trailhead: Place = {
@@ -58,7 +64,8 @@ const stream: Place = { kind: "url", name: "The class on video", url: "https://m
  * co-organize; one they are invited to; one they go to approved, and one they may go to unapproved (its place hidden);
  * one at its capacity; a voice place before the start, with its room open, and with a room that could not open; one
  * cancelled, one that ended; and two the reader does not see (for the organizer's followers, and of an account the
- * reader blocks).
+ * reader blocks). Boards with posts: the class the reader co-organizes (they write), the swap they go to (only the
+ * organizers write), and the cancelled one (read-only); everyone who reads it writes on the cooking night's.
  */
 export const fakeEventPlans: readonly FakeEventPlan[] = [
   {
@@ -105,6 +112,10 @@ export const fakeEventPlans: readonly FakeEventPlan[] = [
       { by: "marco", answer: "maybe" },
     ],
     invited: ["mio"],
+    board: [
+      { by: "sam", text: "The oven fits four loaves at once, so we bake in two rounds.", minutesAgo: 26 * 60 },
+      { by: "hana", text: "I can bring extra flour and a scale.", minutesAgo: 3 * 60 },
+    ],
   },
   {
     key: "garden-day",
@@ -138,6 +149,9 @@ export const fakeEventPlans: readonly FakeEventPlan[] = [
       { by: "yuki", answer: "going", approved: true },
       { by: "ren", answer: "maybe" },
     ],
+    board: [
+      { by: "mio", text: "The café opens its back room for us from 6. Come in through the garden.", minutesAgo: 90 },
+    ],
   },
   {
     key: "cooking-night",
@@ -153,6 +167,7 @@ export const fakeEventPlans: readonly FakeEventPlan[] = [
       { by: "yuki", answer: "maybe" },
       { by: "sam", answer: "going", approved: true },
     ],
+    boardWriters: "readers",
   },
   {
     key: "tiny-concert",
@@ -223,6 +238,7 @@ export const fakeEventPlans: readonly FakeEventPlan[] = [
     hours: 6,
     cancelled: { reason: "organizer", note: "Rain all day. We try again next month." },
     attendees: [{ by: "yuki", answer: "going" }],
+    board: [{ by: "layla", text: "Keep your things for next month: same place, same time.", minutesAgo: 50 }],
   },
   {
     key: "picnic",
@@ -299,6 +315,19 @@ export type EventContext = {
   readonly problem: (status: number, title: string, more?: Partial<Schema<"Problem">>) => Refusal;
   readonly notFound: () => Refusal;
   readonly page: <T>(items: readonly T[], query: PageQuery, key: (item: T) => string) => { body: { items: T[] } };
+  /**
+   * Makes a post of `by` on the board of the event `eventId` at `at` (ms), which the statuses' operations read, edit,
+   * delete and mark as any status the fake made; with `request`, once per its `Idempotency-Key`.
+   */
+  readonly boardPost: (
+    eventId: string,
+    by: string,
+    body: Schema<"EventBoardPostCreate">,
+    at: number,
+    request?: Request,
+  ) => Schema<"Status">;
+  /** The posts on the board of the event `eventId` that are there now, newest first. */
+  readonly boardPosts: (eventId: string) => readonly Schema<"Status">[];
 };
 
 /** An event as the fake holds it, by usernames. */
@@ -313,6 +342,7 @@ type Held = {
   timeZone: string;
   placeDisclosure: Schema<"EventPlaceDisclosure">;
   capacity: number;
+  boardWriters: Schema<"EventBoardWriters">;
   places: Place[];
   /** The fixed date, in ms; undefined while the date is polled. */
   schedule: { startsAt: number; endsAt: number } | undefined;
@@ -416,9 +446,13 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       return { ...p, room_unavailable: plan.room };
     });
     const created = c.started - day;
+    const id = idAt(schedule?.startsAt ?? candidates[0]?.startsAt ?? startsAt, 40_000 + i);
+    for (const post of plan.board ?? [])
+      if (c.accountOf(post.by) !== undefined)
+        c.boardPost(id, post.by, { text: post.text }, c.started - post.minutesAgo * minute);
     held.push({
       key: plan.key,
-      id: idAt(schedule?.startsAt ?? candidates[0]?.startsAt ?? startsAt, 40_000 + i),
+      id,
       organizer: plan.organizer,
       coorganizers: people(plan.coorganizers),
       title: plan.title,
@@ -427,6 +461,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       timeZone: plan.timeZone,
       placeDisclosure: plan.placeDisclosure ?? "approved",
       capacity: plan.capacity ?? 0,
+      boardWriters: plan.boardWriters ?? "organizers",
       places,
       schedule,
       candidates,
@@ -500,6 +535,17 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
     return account;
   };
 
+  /** Whether the reader reads the board of `e` (§17): they organize it, or answer going or maybe. */
+  const readsBoard = (e: Held) => organizes(e) || rsvpOf(e)?.answer === "going" || rsvpOf(e)?.answer === "maybe";
+  /** Whether the board of `e` is read-only: the event was cancelled, or 7 days passed since its end. */
+  const boardClosed = (e: Held) => e.cancellation !== undefined || Date.now() > endOf(e) + 7 * day;
+  /** Whether the board's writers admit the reader, whatever its period says. */
+  const admitted = (e: Held) =>
+    e.boardWriters === "readers" ||
+    e.organizer === viewer ||
+    (e.boardWriters === "organizers" && e.coorganizers.includes(viewer));
+  const writesBoard = (e: Held) => readsBoard(e) && admitted(e) && !boardClosed(e);
+
   /** The event as the reader sees it. */
   const shown = (e: Held): Event => {
     const rsvp = rsvpOf(e);
@@ -513,7 +559,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       time_zone: e.timeZone,
       place_disclosure: e.placeDisclosure,
       capacity: e.capacity,
-      board_writers: "organizers" as const,
+      board_writers: e.boardWriters,
       places: e.places.filter((p) => seesPlace(e, p)).map((p) => ({ ...p })),
       hidden_places: e.places.filter((p) => !seesPlace(e, p)).map((p) => p.kind),
       starts_at: iso(startOf(e)),
@@ -530,15 +576,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
         invited: invited(e),
         ...(rsvp === undefined ? {} : { answer: rsvp.answer }),
         approved: rsvp?.approved === true,
-        // The fake keeps no board posts: who reads the board follows the server, and nobody writes.
-        board: {
-          readable:
-            e.organizer === viewer ||
-            e.coorganizers.includes(viewer) ||
-            rsvp?.answer === "going" ||
-            rsvp?.answer === "maybe",
-          writable: false,
-        },
+        board: { readable: readsBoard(e), writable: writesBoard(e) },
       },
     };
   };
@@ -551,6 +589,12 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
   const notOrganizer = () => refused(403, "event-not-organizer", "Only the organizers can do this");
   const organizerOnly = () => refused(403, "event-organizer-only", "Only the organizer can do this");
   const scheduledAlready = () => refused(409, "event-scheduled", "The date of the event is confirmed");
+  const notReader = () =>
+    refused(
+      403,
+      "event-board-not-reader",
+      "Only the organizer, the co-organizers, and the people who answered going or maybe can read this event's board. Set your answer to going or maybe to read it.",
+    );
   /** The server's 429 of a limit an hour whose oldest request counted was `since`, with how long to wait. */
   const rateLimited = (since: number): Refusal => ({
     ...c.problem(429, "Too many requests"),
@@ -722,6 +766,8 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       };
       const fault = settingsFault(settings);
       if (fault !== null) return fault;
+      const boardWriters = body.board_writers ?? "organizers";
+      if (!["organizer", "organizers", "readers"].includes(boardWriters)) return invalid("board_writers");
       const fixed = body.starts_at !== undefined || body.ends_at !== undefined;
       const polled = body.candidates !== undefined;
       if (fixed === polled) return invalid("candidates");
@@ -749,6 +795,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
         organizer: viewer,
         coorganizers: [],
         ...settings,
+        boardWriters,
         schedule: fixed
           ? { startsAt: Date.parse(body.starts_at ?? ""), endsAt: Date.parse(body.ends_at ?? "") }
           : undefined,
@@ -780,6 +827,10 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       if ("problem" in e) return e;
       if (body.visibility !== undefined && body.visibility !== e.visibility && e.organizer !== viewer)
         return organizerOnly();
+      if (body.board_writers !== undefined && body.board_writers !== e.boardWriters && e.organizer !== viewer)
+        return organizerOnly();
+      if (body.board_writers !== undefined && !["organizer", "organizers", "readers"].includes(body.board_writers))
+        return invalid("board_writers");
       const settings = {
         title: body.title ?? e.title,
         description: body.description ?? e.description,
@@ -812,6 +863,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
           : p,
       );
       if (dated) e.schedule = { startsAt: Date.parse(body.starts_at ?? ""), endsAt: Date.parse(body.ends_at ?? "") };
+      if (body.board_writers !== undefined) e.boardWriters = body.board_writers;
       e.revisions += 1;
       e.revisedAt = Date.now();
       return ok(e);
@@ -1004,6 +1056,33 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       if (kept === undefined) return c.notFound();
       kept.revoked = true;
       return { status: 204 };
+    },
+    "GET /events/{id}/board": ({ params, query }) => {
+      const e = seen(params.id);
+      if ("problem" in e) return e;
+      if (!readsBoard(e)) return notReader();
+      return { status: 200, body: c.page(c.boardPosts(e.id), query, (s) => s.id).body };
+    },
+    "POST /events/{id}/board": ({ params, body, request }) => {
+      const e = seen(params.id);
+      if ("problem" in e) return e;
+      if (!readsBoard(e)) return notReader();
+      if (boardClosed(e))
+        return refused(
+          409,
+          "event-board-closed",
+          "This event's board is read-only: the event was cancelled, or 7 days have passed since it ended.",
+        );
+      if (!admitted(e))
+        return refused(
+          403,
+          "event-board-not-writer",
+          "Only the people this event's organizer chose can write on its board.",
+        );
+      if (body.in_reply_to_id !== undefined && !c.boardPosts(e.id).some((s) => s.id === body.in_reply_to_id))
+        return invalid("in_reply_to_id");
+      if (body.text.trim() === "" && (body.media ?? []).length === 0) return invalid("text");
+      return { status: 201, body: c.boardPost(e.id, viewer, body, Date.now(), request) };
     },
     "GET /preferences/event_reminders": () => ({ status: 200, body: remindersShown() }),
     "PUT /preferences/event_reminders": ({ body }) => {

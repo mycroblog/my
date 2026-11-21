@@ -14,7 +14,9 @@
 // post's date and counts), and a line after the actions (`after`: a thread's fold), inside its surface. Its author's name leads to their profile and its time to the post's own page (paths.ts). It shows its
 // extent by a surface only while hovered or focused (Entry). A post that the reader's keyword filters matched
 // (`filtered`, ADR-0157 §10) is folded whole under the line that names the filters, which the reader shows; a quoted
-// post that they matched is folded alone (post-filter.tsx).
+// post that they matched is folded alone (post-filter.tsx). A post of an event's board (ADR-0161 §17) has the board's
+// glyph in place of the visibility's, no bookmark in its more menu and, as any post whose boost and quote are both
+// denied the reader, no boost menu.
 // It fetches nothing and keeps no state of the server's: each action is a callback, and what the action changes comes
 // back in the next status.
 
@@ -214,13 +216,24 @@ const failures: Record<TranslationFailure["reason"], MessageId> = {
 type T = ReturnType<typeof stringsIn>["t"];
 
 // Each visibility's glyph, and the name it says for assistive technology.
-export const visibilities: Record<PostVisibility, { icon: IconName; label: MessageId }> = {
+const visibilities: Record<PostVisibility, { icon: IconName; label: MessageId }> = {
   public: { icon: "public", label: "post.visibility.public" },
   local: { icon: "local", label: "post.visibility.local" },
   unlisted: { icon: "unlisted", label: "post.visibility.unlisted" },
   private: { icon: "followers", label: "post.visibility.private" },
   direct: { icon: "direct", label: "post.visibility.direct" },
 };
+
+/** Whether `status` is a post of an event's board, which never leaves it. */
+const isBoardPost = (status: PostStatus) => status.event_board !== undefined;
+
+/** Who reads a post, as its glyph says it: the board's for a post of an event's board, else its visibility's. */
+export const audienceOf = (status: PostStatus): { icon: IconName; label: MessageId } =>
+  isBoardPost(status) ? { icon: "board", label: "post.board" } : visibilities[status.visibility];
+
+/** Whether the reader may neither boost nor quote `status`: a post of a board, or one whose author denies both. */
+const unboosted = (status: PostStatus) =>
+  isBoardPost(status) || (status.permissions?.announce === "denied" && status.permissions.quote === "denied");
 
 /** A language tag that is known, for a lang attribute. */
 const known = (tag: string) => (tag === "und" || tag === "" ? undefined : tag);
@@ -668,8 +681,9 @@ const needsAccount: ReadonlySet<PostAction["type"]> = new Set([
 
 /**
  * The more menu: what reaches the post (its link, its original page when it came from another server, sharing it),
- * the bookmark and the thread's mute, then for one's own edit (none with a poll), and apart and last delete and delete-and-redraft, which ask
- * first; an article is never redrafted, since the composer writes posts.
+ * the bookmark (none on a post of a board) and the thread's mute, then for one's own edit (none with a poll), and apart
+ * and last delete and delete-and-redraft, which ask first; an article is never redrafted, since the composer writes
+ * posts.
  */
 function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; t: T; act: Act }) {
   const item = (type: Exclude<PostAction["type"], "reaction" | "vote">, icon: IconName, label: string, on = false) => (
@@ -694,7 +708,8 @@ function MoreItems({ status, own, t, act }: { status: PostStatus; own: boolean; 
         {item("share", "share", t("post.share"))}
       </MenuGroup>
       <MenuGroup>
-        {item("bookmark", "bookmark", t(bookmarked ? "post.unbookmark" : "post.bookmark"), bookmarked)}
+        {!isBoardPost(status) &&
+          item("bookmark", "bookmark", t(bookmarked ? "post.unbookmark" : "post.bookmark"), bookmarked)}
         {/* Only a reader with an account is told whether the thread is muted, and mutes it. */}
         {muted !== undefined &&
           item("mute-thread", "mute", t(muted ? "post.unmute_thread" : "post.mute_thread"), muted)}
@@ -810,7 +825,10 @@ function ReactAction({
   );
 }
 
-/** The actions: reply, boost (a menu of boost and quote, with its count and on state), favourite and react, more. */
+/**
+ * The actions: reply, boost (a menu of boost and quote, with its count and on state; none where the reader may do
+ * neither), favourite and react, more.
+ */
 function Actions({
   status,
   own,
@@ -834,6 +852,8 @@ function Actions({
     act({ type, id: status.id });
   };
   const boosted = status.boosted ?? false;
+  // A post the reader may neither boost nor quote (a board's) has no boost menu, and its key does nothing.
+  const boosts = !unboosted(status);
   // A boost or a quote of a post whose author approves the reader's by hand says so in the menu, before it is sent.
   const waits = {
     announce: status.permissions?.announce === "pending",
@@ -845,7 +865,7 @@ function Actions({
   // The help lists them once for every post, under the post's group.
   const keyed = (label: string) => ({ scope: "focus" as const, label, groupLabel: t("post.shortcuts") });
   const reply = useAction("post.reply", on("reply"), keyed(t("post.reply")));
-  const boost = useAction("post.boost", on("boost"), keyed(t("post.boost")));
+  const boost = useAction("post.boost", boosts ? on("boost") : () => false, keyed(t("post.boost")));
   const favourite = useAction("post.favourite", on("favourite"), keyed(t("post.favourite")));
   const more = useAction(
     "post.more",
@@ -865,34 +885,36 @@ function Actions({
       }
     >
       <IconButton icon="reply" label={t("post.reply")} count={status.replies_count} onPress={on("reply")} {...reply} />
-      <MenuButton
-        icon="boost"
-        label={t("post.boost")}
-        count={status.boosts_count}
-        pressed={boosted}
-        align="start"
-        {...boost}
-      >
-        <MenuGroup>
-          <MenuItem
-            id="boost"
-            icon="boost"
-            on={boosted}
-            onAction={on("boost")}
-            about={!boosted && waits.announce ? t("post.boost_waits", { handle }) : undefined}
-          >
-            {t(boosted ? "post.unboost" : "post.boost")}
-          </MenuItem>
-          <MenuItem
-            id="quote"
-            icon="quote"
-            onAction={on("quote")}
-            about={waits.quote ? t("post.quote_waits", { handle }) : undefined}
-          >
-            {t("post.quote")}
-          </MenuItem>
-        </MenuGroup>
-      </MenuButton>
+      {boosts && (
+        <MenuButton
+          icon="boost"
+          label={t("post.boost")}
+          count={status.boosts_count}
+          pressed={boosted}
+          align="start"
+          {...boost}
+        >
+          <MenuGroup>
+            <MenuItem
+              id="boost"
+              icon="boost"
+              on={boosted}
+              onAction={on("boost")}
+              about={!boosted && waits.announce ? t("post.boost_waits", { handle }) : undefined}
+            >
+              {t(boosted ? "post.unboost" : "post.boost")}
+            </MenuItem>
+            <MenuItem
+              id="quote"
+              icon="quote"
+              onAction={on("quote")}
+              about={waits.quote ? t("post.quote_waits", { handle }) : undefined}
+            >
+              {t("post.quote")}
+            </MenuItem>
+          </MenuGroup>
+        </MenuButton>
+      )}
       <IconButton
         icon="favourite"
         label={t("post.favourite")}
@@ -1016,7 +1038,7 @@ export function Post({
       end={
         stamp ? (
           <Stamp
-            glyph={{ icon: visibilities[shown.visibility].icon, label: t(visibilities[shown.visibility].label) }}
+            glyph={{ icon: audienceOf(shown).icon, label: t(audienceOf(shown).label) }}
             date={shown.created_at}
             href={statusPath(shown)}
             edited={
