@@ -55,6 +55,18 @@ describe("eventMoment", () => {
     expect(eventMoment("en", "Asia/Tokyo", at, "Asia/Tokyo").there).toBeUndefined();
   });
 
+  // JavaScriptCore keeps the name it is given and V8 resolves to CLDR's, which is at times the old one: either way, two
+  // names of one zone are one.
+  test.each([
+    ["Asia/Kolkata", "Asia/Calcutta"],
+    ["Asia/Calcutta", "Asia/Kolkata"],
+    ["Europe/Kyiv", "Europe/Kiev"],
+    ["America/New_York", "US/Eastern"],
+    ["Etc/UTC", "UTC"],
+  ])("gives no second time for another name of the reader's zone (%s, %s)", (reader, event) => {
+    expect(eventMoment("en", reader, at, event).there).toBeUndefined();
+  });
+
   test("gives no second time for a zone the platform does not know", () => {
     expect(eventMoment("en", "Asia/Tokyo", at, "Mars/Olympus").there).toBeUndefined();
   });
