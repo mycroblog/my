@@ -63,6 +63,53 @@ func (q *Queries) InsertRelayedStatus(ctx context.Context, arg InsertRelayedStat
 	return err
 }
 
+const listDeletedStatusesToPurge = `-- name: ListDeletedStatusesToPurge :many
+SELECT d.status_id, d.uri, d.author_account_id, d.origin, d.moderation_action_id, d.deleted_at
+FROM status_deletions d
+WHERE d.status_id > COALESCE($1::uuid, '00000000-0000-0000-0000-000000000000')
+  AND d.deleted_at < $2::timestamptz
+  AND d.origin <> 'account_deletion'
+  AND EXISTS (SELECT 1 FROM statuses s WHERE s.id = d.status_id)
+ORDER BY d.status_id
+LIMIT $3::integer
+`
+
+type ListDeletedStatusesToPurgeParams struct {
+	After         *string
+	DeletedBefore time.Time
+	BatchLimit    int32
+}
+
+// ListDeletedStatusesToPurge returns, in status ID order after the cursor @after, up to
+// @batch_limit deletions recorded before @deleted_before whose status still has its row. A
+// deletion by the erasure of an account is left to that erasure, which removes more of the rows.
+func (q *Queries) ListDeletedStatusesToPurge(ctx context.Context, arg ListDeletedStatusesToPurgeParams) ([]StatusDeletion, error) {
+	rows, err := q.db.Query(ctx, listDeletedStatusesToPurge, arg.After, arg.DeletedBefore, arg.BatchLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StatusDeletion{}
+	for rows.Next() {
+		var i StatusDeletion
+		if err := rows.Scan(
+			&i.StatusID,
+			&i.Uri,
+			&i.AuthorAccountID,
+			&i.Origin,
+			&i.ModerationActionID,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRelayedStatusesToPurge = `-- name: ListRelayedStatusesToPurge :many
 SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM relayed_statuses rs JOIN statuses s ON s.id = rs.status_id

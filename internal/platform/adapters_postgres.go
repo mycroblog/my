@@ -77,7 +77,7 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 		decisions: postgreshook.NewRepository(d), existingStatuses: postgrescontent.NewStatusRepository(d), drafts: postgrescontent.NewStatusRepository(d),
 		retention: retentionRepositories{
 			statuses: postgrescontent.NewStatusRepository(d), purges: postgresfederation.NewRepository(d), profiles: postgresaccount.NewRepository(d), emojis: postgrescontent.NewCustomEmojiRepository(d),
-			autoDeletes: postgrescontent.NewStatusRepository(d),
+			autoDeletes: postgrescontent.NewStatusRepository(d), deleted: postgrescontent.NewStatusRepository(d),
 		},
 		projections: d.ProjectionStore(tables), dataUpgrades: postgresdbupgrade.NewDataUpgradeRepository(d),
 		sealedValues: postgresrewrap.NewSealedValueStore(d),
