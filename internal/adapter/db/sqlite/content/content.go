@@ -169,7 +169,10 @@ func (r *StatusRepository) InsertDeletion(ctx context.Context, tx uow.Tx, d cont
 	if sqlite.IsUniqueViolation(err, "status_deletions.status_id") || sqlite.IsUniqueViolation(err, "status_deletions.uri") {
 		return fmt.Errorf("delete status %s: %w", d.StatusID, appcontent.ErrAlreadyDeleted)
 	}
-	return sqlite.Wrap(err, "insert status deletion")
+	if err != nil {
+		return sqlite.Wrap(err, "insert status deletion")
+	}
+	return insertContentPurge(ctx, q, d)
 }
 
 // InsertDeletions implements content.Repository.
@@ -200,7 +203,10 @@ func (r *StatusRepository) InsertDeletions(ctx context.Context, tx uow.Tx, ds []
 	if sqlite.IsUniqueViolation(err, "status_deletions.status_id") || sqlite.IsUniqueViolation(err, "status_deletions.uri") {
 		return fmt.Errorf("delete %d statuses: %w", len(ds), appcontent.ErrAlreadyDeleted)
 	}
-	return sqlite.Wrap(err, "insert status deletions")
+	if err != nil {
+		return sqlite.Wrap(err, "insert status deletions")
+	}
+	return insertContentPurges(ctx, q, ds)
 }
 
 // EnsureTag implements content.Repository.

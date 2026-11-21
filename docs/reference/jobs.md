@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 108 job types. 44 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 109 job types. 45 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -71,6 +71,7 @@ A job type can also be registered or do its work only with some settings; **Need
 | `content.auto_delete_statuses` | Deletes local posts past their authors' automatic deletion policies, as their authors would, at most 100 per account and run. While the server sets a maximum for keeping posts, reads every local account: tells each account that the maximum newly applies to, and holds it to the maximum once its grace period ends. | Schedule, then itself for the next batch | Default | Next run. Each account is told once per maximum. |
 | `content.purge_remote_statuses` | Deletes remote posts past their retention, in batches, and after 30 days the records of those deletions that no interaction or notification still needs. | Schedule, then itself | Default | Next run |
 | `content.purge_relayed_statuses` | Deletes the posts that only relays brought in past their retention, in batches. | Schedule, then itself | Default | Next run |
+| `content.purge_deleted_statuses` | Deletes the text, media references, and polls of the posts deleted more than 7 days ago, in batches; the record of each deleted post's URI stays. A post that a report or an action points to, or whose author is under a hold, stays. | Schedule, then itself | Default | Next run |
 | `content.purge_remote_emojis` | Deletes the remote custom emoji nothing refers to, in batches. | Schedule, then itself | Default | Next run |
 
 ## Accounts, follows, and imports
@@ -221,6 +222,7 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `account.erase_deleted` | 1 hour |
 | `account.execute_deletions` | 1 hour |
 | `content.auto_delete_statuses` | 1 hour |
+| `content.purge_deleted_statuses` | 1 hour |
 | `content.purge_relayed_statuses` | 1 hour |
 | `content.purge_remote_statuses` | 1 hour |
 | `federation.purge_records` | 1 hour |

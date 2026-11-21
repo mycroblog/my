@@ -945,10 +945,11 @@ func redactSecret(msg, v string) string {
 	return msg
 }
 
+// allowedValues lists the values of f that a released binary takes, whatever the build: without those of e2eFakes.
 func allowedValues(f *field) []string {
 	var vs []string
 	for _, c := range f.choices {
-		if _, testOnly := testOnlyValues[f.key][c.value]; !testOnly {
+		if fake, ok := e2eFakes[f.key]; !ok || c.value != fake {
 			vs = append(vs, c.value)
 		}
 	}

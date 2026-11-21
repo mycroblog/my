@@ -164,7 +164,10 @@ func (r *StatusRepository) InsertDeletion(ctx context.Context, tx uow.Tx, d cont
 	if postgres.IsUniqueViolation(err, "status_deletions_pkey") || postgres.IsUniqueViolation(err, "status_deletions_tombstone_uri") {
 		return fmt.Errorf("delete status %s: %w", d.StatusID, appcontent.ErrAlreadyDeleted)
 	}
-	return postgres.Wrap(err, "insert status deletion")
+	if err != nil {
+		return postgres.Wrap(err, "insert status deletion")
+	}
+	return insertContentPurge(ctx, q, d)
 }
 
 // InsertDeletions implements content.Repository.
@@ -186,7 +189,10 @@ func (r *StatusRepository) InsertDeletions(ctx context.Context, tx uow.Tx, ds []
 	if postgres.IsUniqueViolation(err, "status_deletions_pkey") || postgres.IsUniqueViolation(err, "status_deletions_tombstone_uri") {
 		return fmt.Errorf("delete %d statuses: %w", len(ds), appcontent.ErrAlreadyDeleted)
 	}
-	return postgres.Wrap(err, "insert status deletions")
+	if err != nil {
+		return postgres.Wrap(err, "insert status deletions")
+	}
+	return insertContentPurges(ctx, q, ds)
 }
 
 // EnsureTag implements content.Repository.

@@ -70,7 +70,7 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 		decisions: sqlitehook.NewRepository(d), existingStatuses: sqlitecontent.NewStatusRepository(d), drafts: sqlitecontent.NewStatusRepository(d),
 		retention: retentionRepositories{
 			statuses: sqlitecontent.NewStatusRepository(d), purges: sqlitefederation.NewRepository(d), profiles: sqliteaccount.NewRepository(d), emojis: sqlitecontent.NewCustomEmojiRepository(d),
-			autoDeletes: sqlitecontent.NewStatusRepository(d),
+			autoDeletes: sqlitecontent.NewStatusRepository(d), deleted: sqlitecontent.NewStatusRepository(d),
 		},
 		projections: d.ProjectionStore(tables), dataUpgrades: sqlitedbupgrade.NewDataUpgradeRepository(d),
 		sealedValues: sqliterewrap.NewSealedValueStore(d),

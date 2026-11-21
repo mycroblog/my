@@ -35,6 +35,8 @@ export type ColumnTimeline = {
   readonly error: Error | null;
   readonly hasNextPage: boolean;
   readonly isFetchingNextPage: boolean;
+  /** Whether the fetch of a page after the first failed; `status` is then `error` too, with the pages fetched before. */
+  readonly failedNextPage: boolean;
   /** Fetches the next page; nothing while one is being fetched or when there is none. */
   readonly fetchNextPage: () => void;
   /** Fetches the timeline again from its first page, after the first page failed. */
@@ -127,9 +129,11 @@ export function ListColumn<T>({
   keyOf,
   children,
   status,
-  error,
+  // The column says that a page failed, not why: `error` is kept out of what goes on to the feed.
+  error: _error,
   hasNextPage,
   isFetchingNextPage,
+  failedNextPage,
   fetchNextPage,
   refetch,
   words,
@@ -144,12 +148,12 @@ export function ListColumn<T>({
     failedMore: t("column.failed_more"),
     empty: t("column.empty"),
   };
-  const failedMore = status === "success" && error !== null && !isFetchingNextPage;
+  const failedMore = failedNextPage && !isFetchingNextPage;
   const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("column.retry")}</TextButton>;
   const end =
     status === "pending" ? (
       <FeedNotice>{say.loading}</FeedNotice>
-    ) : status === "error" ? (
+    ) : status === "error" && !failedNextPage ? (
       <FeedNotice alert action={retry(refetch)}>
         {say.failed}
       </FeedNotice>
@@ -163,7 +167,7 @@ export function ListColumn<T>({
       (empty ?? <FeedNotice>{say.empty}</FeedNotice>)
     ) : undefined;
   // After a failure it asks again only when the reader tries again, never by itself.
-  const asks = status === "success" && hasNextPage && !failedMore;
+  const asks = status === "success" && hasNextPage && !failedNextPage;
   return (
     <Feed
       label={label}

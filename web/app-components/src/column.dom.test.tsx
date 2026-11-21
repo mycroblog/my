@@ -26,6 +26,7 @@ function column(over: Partial<ColumnTimeline> = {}, locale = "en", empty?: React
       error={null}
       hasNextPage={false}
       isFetchingNextPage={false}
+      failedNextPage={false}
       fetchNextPage={() => asked.push("next")}
       refetch={() => asked.push("again")}
       {...over}
@@ -78,6 +79,7 @@ describe("the feed", () => {
         error={null}
         hasNextPage={false}
         isFetchingNextPage={false}
+        failedNextPage={false}
         fetchNextPage={() => undefined}
         refetch={() => undefined}
         onAction={(action) => actions.push(action)}
@@ -133,14 +135,25 @@ describe("its states", () => {
     expect(screen.getByRole("article").compareDocumentPosition(said) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   });
 
-  test("when more failed, it alerts with a retry, which fetches the next page", async () => {
+  // As TanStack Query gives a next page that failed: the query's status is error, with the pages fetched before.
+  test("when more failed, it alerts with a retry under the posts, which fetches the next page", async () => {
     const user = userEvent.setup();
-    const asked = column({ statuses: [status("a")], hasNextPage: true, error: new Error("x") });
+    const failed = { status: "error", error: new Error("x"), failedNextPage: true } as const;
+    const asked = column({ ...failed, statuses: [status("a")], hasNextPage: true });
 
     expect(notice("alert")).toEqual({ said: "More posts could not be loaded.", buttons: ["Try again"] });
+    expect(screen.getByRole("article")).not.toBeNull();
     await user.click(screen.getByRole("button", { name: "Try again" }));
 
     expect(asked).toEqual(["next"]);
+  });
+
+  test("while the retry of more loads, it says that more load", () => {
+    const failed = { status: "error", error: new Error("x"), failedNextPage: true } as const;
+    column({ ...failed, statuses: [status("a")], hasNextPage: true, isFetchingNextPage: true });
+
+    expect(notice("status")).toEqual({ said: "Loading more posts…", buttons: [] });
+    expect(notice("alert")).toBeUndefined();
   });
 
   test("with posts and nothing to say, it shows no notice", () => {
@@ -220,7 +233,13 @@ describe("the next page", () => {
     reach();
     expect(last).toEqual([]);
 
-    const failed = column({ statuses: [status("a")], hasNextPage: true, error: new Error("x") });
+    const failed = column({
+      status: "error",
+      error: new Error("x"),
+      failedNextPage: true,
+      statuses: [status("a")],
+      hasNextPage: true,
+    });
     reach();
     expect(failed).toEqual([]);
   });

@@ -87,10 +87,21 @@ func TestRetentionContract(t *testing.T) {
 			Interactions: postgrescontent.NewInteractionRepository(db),
 			Federation:   NewRepository(db),
 			Retention:    postgrescontent.NewStatusRepository(db),
+			Deleted:      postgrescontent.NewStatusRepository(db),
 			Purges:       NewRepository(db),
 			Instances:    NewRepository(db),
 			Profiles:     postgresaccount.NewRepository(db),
 			Emojis:       postgrescontent.NewCustomEmojiRepository(db),
+			Rows: func(t *testing.T, table, column, value string) int {
+				t.Helper()
+				var n int
+				// The table and column names come from the contract, never from input.
+				q := "SELECT count(*) FROM " + table + " WHERE " + column + " = $1"
+				if err := db.Pool().QueryRow(t.Context(), q, value).Scan(&n); err != nil {
+					t.Fatalf("count %s: %v", table, err)
+				}
+				return n
+			},
 		}
 	})
 }

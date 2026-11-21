@@ -561,6 +561,23 @@ func (q *Queries) InsertStatus(ctx context.Context, arg InsertStatusParams) erro
 	return err
 }
 
+const insertStatusContentPurge = `-- name: InsertStatusContentPurge :exec
+INSERT INTO status_content_purges (status_id, due_at) VALUES ($1, $2)
+ON CONFLICT (status_id) DO NOTHING
+`
+
+type InsertStatusContentPurgeParams struct {
+	StatusID string
+	DueAt    time.Time
+}
+
+// InsertStatusContentPurge records that the rows of a deleted status go at @due_at; a purge
+// recorded already keeps its time.
+func (q *Queries) InsertStatusContentPurge(ctx context.Context, arg InsertStatusContentPurgeParams) error {
+	_, err := q.db.Exec(ctx, insertStatusContentPurge, arg.StatusID, arg.DueAt)
+	return err
+}
+
 const insertStatusCounters = `-- name: InsertStatusCounters :exec
 INSERT INTO status_counters (status_id, replies_count, boosts_count, favourites_count) VALUES ($1, $2, $3, $4)
 ON CONFLICT (status_id) DO NOTHING

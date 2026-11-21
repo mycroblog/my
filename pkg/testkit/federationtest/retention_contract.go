@@ -33,7 +33,8 @@ import (
 // service closure's Deletes and a Delete whose Create stays; the outbound documents and the
 // delivery attempts go after theirs; so do the handle checks, all but the newest of each account;
 // and the remote accounts with past profile revisions or snapshots are listed in pages and pruned
-// to their current revision, its snapshot, and the head's. The purges on top of it are
+// to their current revision, its snapshot, and the head's; the purge of deleted statuses is
+// checked on the adapter (deleted_purge_contract.go). The purges on top of it are
 // RetentionFlows, which internal/flowtest/federation runs once on SQLite; the purge of remote
 // custom emoji is checked there too.
 func RetentionContract(t *testing.T, newHarness RetentionFactory) {
@@ -54,6 +55,13 @@ func RetentionContract(t *testing.T, newHarness RetentionFactory) {
 		{"PurgesTheOutboundActivities", retentionRepoOutbound},
 		{"DeletesTheBodiesOfOutboundActivities", retentionRepoOutboundBodies},
 		{"DeletesTheOldHandleChecks", retentionRepoHandleChecks},
+		{"QueuesThePurgesOfDeletedStatuses", retentionRepoQueuesContentPurges},
+		{"ListsMovesAndDeletesTheDuePurges", retentionRepoDueContentPurges},
+		{"PurgesTheContentOfDeletedStatuses", retentionRepoPurgesDeletedContent},
+		{"KeepsTheDeletedStatusesThatModerationRetains", retentionRepoKeepsRetainedDeletedContent},
+		{"BoundsTheRunsOfThePurgeOfDeletedStatuses", retentionRepoBoundsDeletedPurges},
+		{"ContinuesThePurgeOfDeletedStatuses", retentionRepoContinuesDeletedPurges},
+		{"DeletesThePurgesOfStatusesPurgedByRetention", retentionRepoRetentionDeletesContentPurges},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
