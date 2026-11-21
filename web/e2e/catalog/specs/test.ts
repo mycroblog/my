@@ -94,3 +94,13 @@ export const test = base.extend<Fixtures>({
     await use(baseURL ?? catalogURL());
   },
 });
+
+/**
+ * `items` in order, in groups of at most `size`. A test that walks stories on one page walks a group: a page of its
+ * own per story costs a context and a cold load each, and a walk of every story of a screen outruns a test's timeout.
+ */
+export function groupsOf<T>(items: readonly T[], size: number): T[][] {
+  const groups: T[][] = [];
+  for (let i = 0; i < items.length; i += size) groups.push(items.slice(i, i + size));
+  return groups;
+}
