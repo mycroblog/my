@@ -335,6 +335,10 @@
     "defaultMessage": "The voice chat room of {title} cannot open",
     "description": "The sentence of a notification in the reader's list of notifications: The event itself stays. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
   },
+  "notifications.kind.event_board_posted": {
+    "defaultMessage": "{name} wrote on the board of {title}",
+    "description": "The sentence of a notification in the reader's list of notifications: someone wrote a new post on the board of an event the reader reads and answered going or maybe; the post's first words follow under it. {name} is the display name, or the @handle, of the writer. {title} is the title of the event, as its organizers wrote it, or the words of notifications.untitled_event when it has none. Its words are those of the Web Push notification of the same kind."
+  },
   "notifications.requests": {
     "defaultMessage": "{count, plural, one {# held-back notification} other {# held-back notifications}} · {people, plural, one {from # person} other {from # people}}",
     "description": "The row at the top of the notifications that opens the requests: notifications the reader's notification policy held back, one request per account. people is how many accounts, count how many notifications."

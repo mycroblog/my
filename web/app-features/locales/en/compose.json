@@ -283,6 +283,10 @@
     "defaultMessage": "Replying to {handle}",
     "description": "What the post replied to says to assistive technology, above the composer's text. handle is its author's, as @user@domain."
   },
+  "compose.on_board": {
+    "defaultMessage": "On the board of {title}",
+    "description": "Over the composer's text when it writes a post on an event's board, as a reply's context line (compose.replying_to): title is the event's title, as its organizers wrote it, or the words of notifications.untitled_event when it has none."
+  },
   "compose.reply_waits": {
     "defaultMessage": "Others see your reply once {handle} approves it",
     "description": "A line over the send row while writing a reply to a post whose author approves replies by hand: until that author approves it, only the writer sees the reply. handle is the author's, as @user@domain."
