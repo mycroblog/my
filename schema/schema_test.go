@@ -18,6 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/domain/finance"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/domain/notification"
 	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 	"github.com/mycroblog/my/schema"
 	"github.com/mycroblog/my/schema/ddl"
@@ -237,6 +238,32 @@ func TestPaymentErrorKindCheckMatchesTheModule(t *testing.T) {
 		m := check.FindStringSubmatch(sql)
 		if m == nil {
 			t.Fatalf("%s: no CHECK on payment_reconcile_runs.error_kind", name)
+		}
+		var got []string
+		for _, q := range regexp.MustCompile(`'([^']+)'`).FindAllStringSubmatch(m[1], -1) {
+			got = append(got, q[1])
+		}
+		if !slices.Equal(got, want) {
+			t.Errorf("%s: CHECK lists %v, want %v", name, got, want)
+		}
+	}
+}
+
+// The CHECK constraint of user_tokens.unsubscribe_category lists exactly the groups of the
+// notification settings whose emails carry an unsubscribe link (ADR-0086 §4, §11), in the order
+// of the settings: a group added without it sends no email, since its link cannot be issued.
+func TestUnsubscribeCategoryCheckMatchesTheNotificationGroups(t *testing.T) {
+	var want []string
+	for _, g := range notification.Groups {
+		if g.Unsubscribable() {
+			want = append(want, string(g.Group))
+		}
+	}
+	check := regexp.MustCompile(`(?s)CREATE TABLE user_tokens \(.*?unsubscribe_category [^\n]*CHECK \(unsubscribe_category IN \((.*?)\)\)`)
+	for name, sql := range map[string]string{"sqlite": schema.SQLite, "postgres": schema.Postgres} {
+		m := check.FindStringSubmatch(sql)
+		if m == nil {
+			t.Fatalf("%s: no CHECK on user_tokens.unsubscribe_category", name)
 		}
 		var got []string
 		for _, q := range regexp.MustCompile(`'([^']+)'`).FindAllStringSubmatch(m[1], -1) {
