@@ -54,15 +54,13 @@ func (a *App) setUpGathering(repo appgathering.Repository, statuses content.Repo
 		end := e.(appvoice.RoomEnded).Ending
 		return a.Events.RoomEnded(ctx, tx, end.RoomID, end.Reason == voice.EndUnattended)
 	})
-	// The posts of the boards go with the records of their events (ADR-0161 §17); the gathering
-	// module does not know the posts.
+	// The posts of the boards go with the records of their events (ADR-0161 §17): the content
+	// module asks the gathering module which boards are due, and the gathering module does not
+	// know the posts.
 	a.BoardPurge = content.NewBoardPurge(content.BoardPurgeDeps{
-		UnitOfWork: a.UnitOfWork, Repository: statuses, Outbox: outbox, Clock: a.Clock,
+		UnitOfWork: a.UnitOfWork, Repository: statuses, Boards: contentBoards{a}, Clock: a.Clock,
 	})
-	a.BoardPurge.RegisterJobs(a.Handlers)
-	a.Projectors.Register(appgathering.EventRecordsPurged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		return a.BoardPurge.EnqueueTx(ctx, tx, e.(appgathering.RecordsPurged).GatheringIDs)
-	})
+	a.BoardPurge.RegisterJobs(a.Handlers, a.Scheduler)
 }
 
 // eventBoards lists and takes the posts of the boards of the events for the client API
@@ -87,6 +85,13 @@ func (b contentBoards) Board(ctx context.Context, accountID, gatheringID string)
 	}
 	a, err := b.a.Events.Board(ctx, accountID, gatheringID)
 	return content.BoardAccess{Sees: a.Sees, Reads: a.Reads, Open: a.Open, Writes: a.Writes}, err
+}
+
+func (b contentBoards) BoardsToPurge(ctx context.Context, gatheringIDs []string) ([]string, error) {
+	if b.a.Events == nil {
+		return nil, nil
+	}
+	return b.a.Events.BoardsToPurge(ctx, gatheringIDs)
 }
 
 func (b contentBoards) BoardReaders(ctx context.Context, gatheringID string, accountIDs []string) (map[string]bool, error) {

@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 110 job types. 45 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 110 job types. 46 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -73,7 +73,7 @@ A job type can also be registered or do its work only with some settings; **Need
 | `content.purge_relayed_statuses` | Deletes the posts that only relays brought in past their retention, in batches. | Schedule, then itself | Default | Next run |
 | `content.purge_deleted_statuses` | Deletes the text, media references, and polls of the posts deleted more than 7 days ago, in batches; the record of each deleted post's URI stays. A post that a report or an action points to, or whose author is under a hold, stays. | Schedule, then itself | Default | Next run |
 | `content.purge_remote_emojis` | Deletes the remote custom emoji nothing refers to, in batches. | Schedule, then itself | Default | Next run |
-| `content.purge_boards` | Deletes the posts of the boards of events whose answers and invitations were erased after their retention, in batches; their text and media go with `content.purge_deleted_statuses`. | `gathering.purge_records` | Default | Safe |
+| `content.purge_boards` | Deletes the posts of the boards of events that ended or were cancelled past `event_records_retention_days`, except those of an event a report points to, in batches; their text and media go with `content.purge_deleted_statuses`. | Schedule | Default | Next run |
 
 ## Accounts, follows, and imports
 
@@ -172,7 +172,7 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | `gathering.end_rooms` | Ends the voice chat rooms of an event that was cancelled or whose voice chat room was removed, as their host, or as a moderator for a moderator's cancellation. The event stays. | A cancellation, or a change that removes the voice chat room; `gathering.room` when the event was cancelled while its room opened | Default | Safe. A room that ended stays as it ended. |
 | `gathering.notify` | Sends one notification of an event: an invitation, the date confirmed from its candidate dates, a change of the date or place, a cancellation, a reminder, the start, or a voice chat room that cannot open, to its organizer. It picks the recipients when it runs, and only those who can still see the event. Above 500 of them, the first job only queues jobs of the same type for up to 500 each. A reminder or start of a date that changed since, or of an event cancelled since, sends nothing. | An invitation, a confirmed date, a change, or a cancellation; `gathering.tick` and `gathering.room`; a voice chat room of an event that nobody came to | Default | Safe. Each notification is created once. |
 | `gathering.cancel_organized` | Cancels the events of a suspended or deleted organizer that have not started, date polls not yet confirmed included, each as a cancellation that notifies its attendees. Cancels nothing when the account is active again by the time it runs. | A suspension or deletion of an account that organizes an upcoming event | Default | Safe. A cancelled event is not cancelled again. |
-| `gathering.purge_records` | Erases the answers, approvals, invitations, and votes on candidate dates of the events that ended or were cancelled past `event_records_retention_days`, except those a report or a hold preserves, and queues `content.purge_boards` for the posts of their boards. | Schedule | Default | Next run |
+| `gathering.purge_records` | Erases the answers, approvals, invitations, and votes on candidate dates of the events that ended or were cancelled past `event_records_retention_days`, except those a report or a hold preserves. | Schedule | Default | Next run |
 
 ## Full-text search
 
@@ -224,6 +224,7 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `account.execute_deletions` | 1 hour |
 | `content.auto_delete_statuses` | 1 hour |
 | `content.purge_deleted_statuses` | 1 hour |
+| `content.purge_boards` | 1 hour |
 | `content.purge_relayed_statuses` | 1 hour |
 | `content.purge_remote_statuses` | 1 hour |
 | `federation.purge_records` | 1 hour |

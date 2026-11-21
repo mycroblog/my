@@ -67,6 +67,10 @@ type Boards interface {
 	Board(ctx context.Context, accountID, gatheringID string) (BoardAccess, error)
 	// BoardReaders returns which of accountIDs read the board of the event gatheringID.
 	BoardReaders(ctx context.Context, gatheringID string, accountIDs []string) (map[string]bool, error)
+	// BoardsToPurge returns the events of gatheringIDs whose boards' posts go with their records
+	// now: ended or cancelled longer than event_records_retention_days ago and pointed at by no
+	// report, or unknown (ADR-0161 §14, §17).
+	BoardsToPurge(ctx context.Context, gatheringIDs []string) ([]string, error)
 }
 
 // BoardRepository is the part of Repository that holds the posts of the boards
@@ -88,6 +92,9 @@ type BoardRepository interface {
 	ListLiveBoardStatusIDsOf(ctx context.Context, tx uow.Tx, gatheringIDs []string, limit int) ([]string, error)
 	// ListBoardStatusIDs returns every board post, deleted or not, in ID order, in tx.
 	ListBoardStatusIDs(ctx context.Context, tx uow.Tx) ([]string, error)
+	// ListBoardGatheringIDs returns up to limit events whose boards have posts that are not
+	// deleted, in ID order, after the event after ("" for the first).
+	ListBoardGatheringIDs(ctx context.Context, after string, limit int) ([]string, error)
 }
 
 // Domain events of the posts of the boards. A command emits exactly one of them in its

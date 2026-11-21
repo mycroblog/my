@@ -101,3 +101,16 @@ func (r *StatusRepository) ListBoardStatusIDs(ctx context.Context, tx uow.Tx) ([
 	ids, err := q.ListBoardStatusIDs(ctx)
 	return ids, postgres.Wrap(err, "list board statuses")
 }
+
+// ListBoardGatheringIDs implements content.BoardRepository.
+func (r *StatusRepository) ListBoardGatheringIDs(ctx context.Context, after string, limit int) ([]string, error) {
+	lim, err := postgres.ToInt32(limit, "limit")
+	if err != nil {
+		return nil, err
+	}
+	ids, err := r.db.reader().ListBoardGatheringIDs(ctx, contentgen.ListBoardGatheringIDsParams{After: postgres.ToNullString(after), Lim: lim})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list the events of boards")
+	}
+	return ids, nil
+}

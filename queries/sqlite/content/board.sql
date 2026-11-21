@@ -48,3 +48,12 @@ SELECT status_id FROM status_gathering_boards ORDER BY status_id;
 
 -- name: PurgeStatusGatheringBoards :exec
 DELETE FROM status_gathering_boards WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
+
+-- ListBoardGatheringIDs returns at most lim events, in ID order after the event after ('' for the
+-- first), whose boards have posts that are not deleted.
+-- name: ListBoardGatheringIDs :many
+SELECT DISTINCT b.gathering_id FROM status_gathering_boards b
+WHERE b.gathering_id > CAST(sqlc.arg(after) AS TEXT)
+  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = b.status_id)
+ORDER BY b.gathering_id
+LIMIT sqlc.arg(lim);

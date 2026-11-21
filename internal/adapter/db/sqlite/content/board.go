@@ -97,3 +97,12 @@ func (r *StatusRepository) ListBoardStatusIDs(ctx context.Context, tx uow.Tx) ([
 	ids, err := q.ListBoardStatusIDs(ctx)
 	return ids, sqlite.Wrap(err, "list board statuses")
 }
+
+// ListBoardGatheringIDs implements content.BoardRepository.
+func (r *StatusRepository) ListBoardGatheringIDs(ctx context.Context, after string, limit int) ([]string, error) {
+	ids, err := r.db.reader().ListBoardGatheringIDs(ctx, contentgen.ListBoardGatheringIDsParams{After: after, Lim: int64(limit)})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list the events of boards")
+	}
+	return ids, nil
+}

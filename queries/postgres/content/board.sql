@@ -48,3 +48,12 @@ SELECT status_id FROM status_gathering_boards ORDER BY status_id;
 
 -- name: PurgeStatusGatheringBoards :exec
 DELETE FROM status_gathering_boards WHERE status_id = ANY(sqlc.arg(ids)::uuid[]);
+
+-- ListBoardGatheringIDs returns at most lim events, in ID order after the event after (NULL for
+-- the first), whose boards have posts that are not deleted.
+-- name: ListBoardGatheringIDs :many
+SELECT DISTINCT b.gathering_id FROM status_gathering_boards b
+WHERE (sqlc.narg(after)::uuid IS NULL OR b.gathering_id > sqlc.narg(after)::uuid)
+  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = b.status_id)
+ORDER BY b.gathering_id
+LIMIT sqlc.arg(lim);

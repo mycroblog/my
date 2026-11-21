@@ -4,8 +4,8 @@ package content
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -14,10 +14,13 @@ import (
 )
 
 const (
-	// JobPurgeBoards deletes the posts of the boards of events whose records the gathering module
-	// erased (ADR-0161 §14, §17); the payload names the events.
+	// JobPurgeBoards deletes the posts of the boards of the events whose records are past their
+	// retention (ADR-0161 §14, §17); no payload.
 	JobPurgeBoards = "content.purge_boards"
-	// BoardPurgeBatch is how many posts one transaction of JobPurgeBoards deletes.
+	// BoardPurgeInterval is the period of the purge's schedule.
+	BoardPurgeInterval = time.Hour
+	// BoardPurgeBatch is how many posts one transaction of JobPurgeBoards deletes, and how many
+	// events one read of the boards takes.
 	BoardPurgeBatch = 100
 )
 
@@ -25,57 +28,74 @@ const (
 type BoardPurgeDeps struct {
 	UnitOfWork uow.UnitOfWork
 	Repository Repository
-	// Outbox enqueues JobPurgeBoards in the transaction that erased the records.
-	Outbox queue.Outbox
+	// Boards tells which events' boards go now; nil purges none.
+	Boards Boards
 	Clock  kernel.Clock
 }
 
-// BoardPurge deletes the posts of the boards of events with the records of the events (ADR-0161
-// §17). The gathering module erases the records and emits its domain event; the composition root
-// enqueues the purge from it in the same transaction (EnqueueTx), so that this module never waits
-// on the other, and the job deletes the posts a batch per transaction, each with its deletion and
-// BoardStatusesDeleted. The deleted posts' rows go with the purge of deleted statuses, which keeps
-// those that a report or a hold keeps.
+// BoardPurge deletes the posts of the boards of the events with the records of the events
+// (ADR-0161 §17): event_records_retention_days after the event ended or was cancelled, except
+// while a report points at the event. Each run reads the events whose boards still have posts
+// (status_gathering_boards, which loses its rows as the purged posts go), asks the gathering
+// module which of them are due (Boards.BoardsToPurge), and deletes their posts a batch per
+// transaction, each with its deletion and BoardStatusesDeleted; so the posts of an event go
+// whether or not anyone answered it. The deleted posts' rows go with the purge of deleted
+// statuses, which keeps those that a report or a hold keeps.
 type BoardPurge struct{ d BoardPurgeDeps }
 
 // NewBoardPurge returns a BoardPurge on d.
 func NewBoardPurge(d BoardPurgeDeps) *BoardPurge { return &BoardPurge{d: d} }
 
-type purgeBoardsPayload struct {
-	GatheringIDs []string `json:"gathering_ids"`
-}
-
-// EnqueueTx enqueues in tx the deletion of the posts of the boards of gatheringIDs.
-func (b *BoardPurge) EnqueueTx(ctx context.Context, tx uow.Tx, gatheringIDs []string) error {
-	if len(gatheringIDs) == 0 || b.d.Outbox == nil {
-		return nil
-	}
-	payload, err := json.Marshal(purgeBoardsPayload{GatheringIDs: gatheringIDs})
-	if err != nil {
-		return err
-	}
-	return b.d.Outbox.EnqueueTx(ctx, tx, queue.NewJob{Type: JobPurgeBoards, Payload: payload})
-}
-
-// RegisterJobs registers the JobPurgeBoards handler.
-func (b *BoardPurge) RegisterJobs(reg *queue.JobHandlerRegistry) {
+// RegisterJobs registers the JobPurgeBoards handler and its hourly schedule.
+func (b *BoardPurge) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
 	reg.Register(JobPurgeBoards, b.handle)
+	sched.Add(queue.Schedule{Name: JobPurgeBoards, Every: BoardPurgeInterval, Job: queue.NewJob{Type: JobPurgeBoards}})
 }
 
-func (b *BoardPurge) handle(ctx context.Context, j queue.Job) queue.Result {
-	var p purgeBoardsPayload
-	if err := json.Unmarshal(j.Payload, &p); err != nil {
-		return queue.Fail(fmt.Errorf("content: purge boards payload %s: %w", j.Payload, err))
-	}
-	if _, err := b.Purge(ctx, p.GatheringIDs); err != nil {
+func (b *BoardPurge) handle(ctx context.Context, _ queue.Job) queue.Result {
+	if _, err := b.Run(ctx); err != nil {
 		return queue.Retry(0, err)
 	}
 	return queue.Done()
 }
 
+// Run deletes the posts of every board whose event is due (Boards.BoardsToPurge) and returns how
+// many it deleted. It is safe to repeat.
+func (b *BoardPurge) Run(ctx context.Context) (int, error) {
+	if b.d.Boards == nil {
+		return 0, nil
+	}
+	total, after := 0, ""
+	for {
+		ids, err := b.d.Repository.ListBoardGatheringIDs(ctx, after, BoardPurgeBatch)
+		if err != nil {
+			return total, err
+		}
+		if len(ids) == 0 {
+			return total, nil
+		}
+		after = ids[len(ids)-1]
+		due, err := b.d.Boards.BoardsToPurge(ctx, ids)
+		if err != nil {
+			return total, err
+		}
+		n, err := b.Purge(ctx, due)
+		total += n
+		if err != nil {
+			return total, err
+		}
+		if len(ids) < BoardPurgeBatch {
+			return total, nil
+		}
+	}
+}
+
 // Purge deletes every post of the boards of gatheringIDs that is not deleted, BoardPurgeBatch
 // posts per transaction, and returns how many it deleted. It is safe to repeat.
 func (b *BoardPurge) Purge(ctx context.Context, gatheringIDs []string) (int, error) {
+	if len(gatheringIDs) == 0 {
+		return 0, nil
+	}
 	total := 0
 	for {
 		n := 0

@@ -30,6 +30,44 @@ func (q *Queries) InsertStatusGatheringBoard(ctx context.Context, arg InsertStat
 	return err
 }
 
+const listBoardGatheringIDs = `-- name: ListBoardGatheringIDs :many
+SELECT DISTINCT b.gathering_id FROM status_gathering_boards b
+WHERE b.gathering_id > CAST(?1 AS TEXT)
+  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = b.status_id)
+ORDER BY b.gathering_id
+LIMIT ?2
+`
+
+type ListBoardGatheringIDsParams struct {
+	After string
+	Lim   int64
+}
+
+// ListBoardGatheringIDs returns at most lim events, in ID order after the event after (” for the
+// first), whose boards have posts that are not deleted.
+func (q *Queries) ListBoardGatheringIDs(ctx context.Context, arg ListBoardGatheringIDsParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listBoardGatheringIDs, arg.After, arg.Lim)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var gathering_id string
+		if err := rows.Scan(&gathering_id); err != nil {
+			return nil, err
+		}
+		items = append(items, gathering_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBoardStatusIDs = `-- name: ListBoardStatusIDs :many
 SELECT status_id FROM status_gathering_boards ORDER BY status_id
 `
