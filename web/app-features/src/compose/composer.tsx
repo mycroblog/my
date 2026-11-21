@@ -18,8 +18,9 @@
 // a line over the row says when, and Schedule takes Post's place, which stays alone at the row's end. A menu in the
 // head, before close, keeps it as a draft or opens the drafts (drafts.tsx). A draft whose scheduled post failed says
 // why and what Post does now, and a save refused for a newer draft saved elsewhere says so and opens that one. A new
-// post the server's automated review refused offers its appeal in the error's place (refused.tsx). Its state is the
-// hook's (use-composer.ts).
+// post the server's automated review refused offers its appeal in the error's place (refused.tsx). A post on an event's
+// board names the board over the text, and has no audience, time or drafts: the board decides who reads it. Its state
+// is the hook's (use-composer.ts).
 
 import { useHookAppeal } from "@my/app-data";
 import {
@@ -68,6 +69,7 @@ import { postHeld, RefusedAppeal } from "./refused";
 import { useSuggestions } from "./suggest";
 import { Language, Schedule } from "./tools";
 import {
+  boardOf,
   descriptionRequired,
   maxAttachments,
   nearChars,
@@ -314,10 +316,14 @@ export function ComposerView({
   // Its draft gone from the server: Post posts what is written as a new post, and says so.
   const gone = c.phase.kind === "gone";
   const editing = draft.target.kind === "edit";
+  // A post on an event's board: the board decides who reads it, and it is never a draft nor scheduled.
+  const onBoard = boardOf(draft.target) !== undefined;
   const left = settings.maxChars - usedChars(draft);
-  // A redraft is a new post; a quote whose quoted post was taken out is one too.
+  // A redraft is a new post, and a post on a board; a quote whose quoted post was taken out is one too.
   const kind = draft.target.kind;
-  const title = t(`compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`);
+  const title = t(
+    `compose.title.${kind === "redraft" || kind === "board" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`,
+  );
   const alert = alertOf(c, t, { locale, timeZone });
   const handle = answered ? sentenceHandleOf((answered.boost ?? answered).account) : "";
   // A reply to a post whose author approves the reader's replies says so over the row, before it is sent.
@@ -344,8 +350,8 @@ export function ComposerView({
     setOpen(o ? "schedule" : undefined);
   };
   // The drafts, a place apart from sending this post, in the head: keep this one as a draft, or open the list. An edit
-  // is no draft: it is saved at once, and never scheduled.
-  const draftsMenu = !editing && (
+  // is no draft: it is saved at once, and never scheduled; nor is a post on a board.
+  const draftsMenu = !editing && !onBoard && (
     <MenuButton icon="drafts" label={t("compose.later")} align="end" open={draftsOpen} onOpenChange={setDraftsOpen}>
       <MenuGroup>
         <MenuItem id="save" icon="saveDraft" onAction={onSaveDraft}>
@@ -452,8 +458,8 @@ export function ComposerView({
               if (!adding) textRef.current?.focus();
             }}
           />
-          {!editing && <Audience c={c} t={t} open={audienceOpen} setOpen={setOpen} />}
-          {!editing && (
+          {!editing && !onBoard && <Audience c={c} t={t} open={audienceOpen} setOpen={setOpen} />}
+          {!editing && !onBoard && (
             <Schedule
               at={c.draft.scheduledAt}
               limits={settings.schedule}
@@ -520,6 +526,11 @@ export function ComposerView({
       {editing && (
         <CaptionLine icon={visibilityIcon[draft.visibility]} lang={lang}>
           {t("compose.edit.fixed", { visibility: t(`compose.visibility.${draft.visibility}`) })}
+        </CaptionLine>
+      )}
+      {draft.target.kind === "board" && (
+        <CaptionLine icon="board" lang={lang}>
+          {t("compose.on_board", { title: draft.target.title || t("notifications.untitled_event") })}
         </CaptionLine>
       )}
       {draft.target.kind === "reply" && answered && (

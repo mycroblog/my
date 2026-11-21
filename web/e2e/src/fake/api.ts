@@ -1873,11 +1873,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   };
   /**
    * A status the reader makes: a post, a draft published, or an article posted (with its body, as read alone), newest,
-   * on top of their home timeline.
+   * on top of their home timeline; or, with `board`, a post of `board.by` on an event's board at `board.at`, which no
+   * timeline holds, private to the board's readers, never boosted nor quoted.
    */
-  const publish = (w: Written): Status => {
+  const publish = (w: Written, board?: { eventId: string; by: string; at: number }): Status => {
     draftsMade += 1;
-    const at = Date.now();
+    const at = board?.at ?? Date.now();
+    const author = board?.by ?? viewer;
     const { article, text } = w;
     const id = idAt(at, 950_000 + draftsMade);
     const parent = w.in_reply_to_id === undefined ? undefined : statusById(w.in_reply_to_id);
@@ -1887,9 +1889,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const waits = asked !== undefined && permissionOf(asked, "reply", viewer) === "pending";
     const status = exact<Status>()({
       id,
-      uri: `${fakeOrigin}/users/${viewer}/statuses/${id}`,
-      url: `${fakeOrigin}/@${viewer}/${id}`,
-      account: accountOf(viewer),
+      uri: `${fakeOrigin}/users/${author}/statuses/${id}`,
+      url: `${fakeOrigin}/@${author}/${id}`,
+      account: accountOf(author),
       content: article === undefined ? serverHtml(text, fakeHost) : bodyHtml(text),
       spoiler_text: w.spoiler_text ?? "",
       sensitive: w.sensitive ?? false,
@@ -1929,14 +1931,25 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(quoted === undefined ? {} : { quote: { state: "accepted" as const, quoted_status: quoted } }),
       ...(article === undefined ? {} : { article: madeArticle(article, text) }),
       ...(waits ? { approval: "pending" as const } : {}),
+      ...(board === undefined
+        ? {}
+        : {
+            event_board: { event_id: board.eventId },
+            permissions: { reply: "allowed" as const, announce: "denied" as const, quote: "denied" as const },
+          }),
     });
     made.set(id, status);
     if (parent !== undefined && !waits) countReply(parent.id, 1);
     madeSources.set(id, { text, spoiler: w.spoiler_text ?? "", ...(article === undefined ? {} : { article }) });
-    // A list holds no article's body (ADR-0160 §8).
-    home.unshift(article === undefined ? status : { ...status, content: "" });
+    // A list holds no article's body (ADR-0160 §8), and no timeline a board's post.
+    if (board === undefined) home.unshift(article === undefined ? status : { ...status, content: "" });
     return status;
   };
+  /** The posts on the board of the event `eventId` the fake made that are there now, newest first. */
+  const boardPosts = (eventId: string): Status[] =>
+    [...made.values()]
+      .filter((s) => s.event_board?.event_id === eventId)
+      .toSorted((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id.localeCompare(a.id));
   /** Counts `by` more replies on the status `id`, one of the seed or one the reader made here. */
   const countReply = (id: string, by: number) => {
     const own = made.get(id);
@@ -2544,6 +2557,11 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     problem,
     notFound,
     page,
+    boardPost: (eventId, by, body, at, request) => {
+      const post = () => publish({ ...body, visibility: "private" }, { eventId, by, at });
+      return request === undefined ? post() : once(request, post);
+    },
+    boardPosts,
   });
 
   /** When the oldest open report was filed, as the counts say it: nothing while none is open. */
@@ -2733,6 +2751,15 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const event = firstEvent === undefined ? undefined : events.events.shown(firstEvent.key);
     const about: About = event === undefined ? {} : { event_id: event.id, event };
     const room = rooms[0];
+    // A new post on a board the reader reads: the newest of the first board that has one.
+    const boardEvent = seed.events
+      .map((p) => events.events.shown(p.key))
+      .find((e) => e?.viewer.board.readable === true && boardPosts(e.id).some((s) => s.account.id !== idOf(viewer)));
+    const boardPost = boardEvent && boardPosts(boardEvent.id).find((s) => s.account.id !== idOf(viewer));
+    const onBoard: About =
+      boardEvent === undefined || boardPost === undefined
+        ? {}
+        : { event_id: boardEvent.id, event: boardEvent, status: boardPost };
     type Kinds = [NotificationType, string | undefined, About][];
     const fromPeople: Kinds = [
       ["follow", "kobo@bread.example", {}],
@@ -2754,6 +2781,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ["voice_room_started", "hana", room === undefined ? {} : { voice_room_id: room.id, voice_room: room }],
       ["voice_room_invited", "sam", room === undefined ? {} : { voice_room_id: room.id }],
       ["event_invited", "mio", about],
+      ["event_board_posted", boardPost?.account.username ?? "hana", onBoard],
     ];
     const notices: Kinds = [
       ["event_schedule_confirmed", undefined, about],
@@ -2905,6 +2933,23 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     // An account the reader no longer follows leaves every list of theirs (ADR-0013 §11).
     if (!following.has(edge)) for (const l of lists) l.members = l.members.filter((x) => x !== other);
     return { status: 200, body: relationshipOf(id) };
+  }
+
+  /**
+   * Sets or takes back the reader's favourite of the status `id` the fake made (a post on a board), and answers it as
+   * it reads then; undefined for any other status.
+   */
+  function favouriteMade(id: string, on: boolean): Answer<"POST /statuses/{id}/favourite"> | undefined {
+    const own = made.get(id);
+    if (own === undefined) return undefined;
+    const was = own.favourited === true;
+    const marked = {
+      ...own,
+      favourited: on,
+      favourites_count: Math.max(0, own.favourites_count + (on ? 1 : 0) - (was ? 1 : 0)),
+    };
+    made.set(id, marked);
+    return { status: 200, body: marked };
   }
 
   /** Does `act` to the seed's post of the status `id` the reader may see, and answers it as it reads then. */
@@ -3569,6 +3614,25 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return opened === undefined ? notFound() : { status: 200, body: opened };
     },
     "PUT /statuses/{id}": ({ params, body }) => {
+      // A status the fake made (a post on a board) is edited by its author, its text and warning replaced.
+      const own = made.get(params.id);
+      if (own !== undefined) {
+        if (own.account.id !== accountOf(viewer).id) return problem(403, "Forbidden");
+        if (own.poll !== undefined || own.article !== undefined) return problem(422, "Unprocessable Entity");
+        const edited = exact<Status>()({
+          ...own,
+          content: serverHtml(body.text, fakeHost),
+          spoiler_text: body.spoiler_text ?? "",
+          mentions: mentionsOf(body.text),
+          tags: statusTags(body.text),
+          edited_at: new Date().toISOString(),
+        });
+        made.set(params.id, edited);
+        madeSources.set(params.id, { text: body.text, spoiler: body.spoiler_text ?? "" });
+        const at = home.findIndex((s) => s.id === params.id);
+        if (at >= 0) home.splice(at, 1, edited);
+        return { status: 200, body: edited };
+      }
       const p = shownPost(params.id);
       if (p === undefined) return notFound();
       if (p.author !== viewer) return problem(403, "Forbidden");
@@ -3694,6 +3758,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         return undefined;
       }),
     "POST /statuses/{id}/favourite": ({ params }) =>
+      favouriteMade(params.id, true) ??
       acted(params.id, (p) => {
         keepOwn(p.key);
         ownFavourite.set(p.key, true);
@@ -3701,6 +3766,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         return undefined;
       }),
     "DELETE /statuses/{id}/favourite": ({ params }) =>
+      favouriteMade(params.id, false) ??
       acted(params.id, (p) => {
         keepOwn(p.key);
         ownFavourite.set(p.key, false);

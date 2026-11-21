@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // An event's page: the reader's answer to it and to the dates of its poll, each saved at once (the action returns once
-// the server answered), who is going, and the calendar file it downloads.
+// the server answered), who is going, the calendar file it downloads, and its board under the Board tab.
 
 import { expect, type Download, type Locator, type Page } from "@playwright/test";
 import { answered } from "./write";
@@ -166,6 +166,40 @@ export class EventPage {
     await answered(this.page, { methods: ["POST"], path: /\/api\/v1\/events\/[^/]+\/cancel$/ }, () =>
       dialog.getByRole("button", { name: "Cancel the event", exact: true }).click(),
     );
+  }
+
+  /** The event's tabs, Details and Board, named by its title: there for a reader of the board alone. */
+  tabs(title: string): Locator {
+    return this.page.getByRole("main").getByRole("tablist", { name: title, exact: true });
+  }
+
+  /** The tab `name` of the event titled `title`. */
+  tab(title: string, name: "Details" | "Board"): Locator {
+    return this.tabs(title).getByRole("tab", { name, exact: true });
+  }
+
+  /** The posts of the board, newest first, in the Board tab. */
+  get board(): Locator {
+    return this.page.getByRole("main").getByRole("feed", { name: "The event's board", exact: true });
+  }
+
+  /** The post on the board that holds `text`. */
+  boardPost(text: string): Locator {
+    return this.board.getByRole("article").filter({ hasText: text });
+  }
+
+  /** Opens the composer of a post on the board by the bar of the Board tab. */
+  async writeOnTheBoard(): Promise<Locator> {
+    await this.page.getByRole("main").getByRole("button", { name: "Write on the board", exact: true }).click();
+    return this.page.getByRole("dialog", { name: "New post", exact: true });
+  }
+
+  /** Posts what `composer`, the board's, holds, and returns once the server has answered and the composer has closed. */
+  async postOnTheBoard(composer: Locator): Promise<void> {
+    await answered(this.page, { methods: ["POST"], path: /\/api\/v1\/events\/[^/]+\/board$/ }, () =>
+      composer.getByRole("button", { name: "Post", exact: true }).click(),
+    );
+    await expect(composer).toBeHidden();
   }
 
   /** Answers the poll's date that starts at `start` `vote` (Can go, Maybe, Cannot go), once the server saved it. */

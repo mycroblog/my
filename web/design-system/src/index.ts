@@ -335,6 +335,7 @@ export { EventDescription, type DescriptionPart } from "./event-description";
 export { SearchField, type SearchFieldProps } from "./search-field";
 export { claimPressableStyle } from "./pressable-style";
 export { SaveState, type SaveStateProps } from "./save-state";
+export { PromptBar, type PromptBarProps } from "./prompt-bar";
 export {
   NumberField,
   Select,

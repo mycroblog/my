@@ -13,6 +13,7 @@ import {
   type DraftFailureReason,
   type DraftRequest,
   type EditStatus,
+  type EventBoardPost,
   type Interaction,
   type InteractionChoice,
   type MediaAttachment,
@@ -26,15 +27,18 @@ import type { FieldMembers } from "../field-errors";
 import { interactions } from "../interactions";
 
 /**
- * What the composer was opened for: a new post, a reply to or a quote of a post, an edit of the reader's post, or a
- * new post written again from the reader's post that was deleted for it (redraft), each of the last two from what the
- * post held.
+ * What the composer was opened for: a new post, a reply to or a quote of a post, an edit of the reader's post, a new
+ * post written again from the reader's post that was deleted for it (redraft), each of the last two from what the post
+ * held, or a new post on the board of an event (ADR-0161 §17), named by its title. A reply to a post of a board, and a
+ * redraft of one, name the board's event (`board`): they go to the board too.
  */
 export type Target =
   | { kind: "new" }
-  | { kind: "reply"; id: string }
+  | { kind: "reply"; id: string; board?: string | undefined }
   | { kind: "quote"; id: string }
-  | { kind: "edit" | "redraft"; id: string; source: PostSource };
+  | { kind: "edit"; id: string; source: PostSource }
+  | { kind: "redraft"; id: string; source: PostSource; board?: string | undefined }
+  | { kind: "board"; event: string; title: string };
 
 /**
  * What the app opens the composer for: a target, or a draft of the reader's on the server (ADR-0156), continued from
@@ -43,7 +47,20 @@ export type Target =
 export type Opening = Target | { kind: "draft"; id: string; schedule?: boolean | undefined };
 
 /** A target as one string, by which a draft left for it is found again. */
-export const targetKey = (target: Opening) => (target.kind === "new" ? "new" : `${target.kind}:${target.id}`);
+export const targetKey = (target: Opening) =>
+  target.kind === "new" ? "new" : target.kind === "board" ? `board:${target.event}` : `${target.kind}:${target.id}`;
+
+/**
+ * The event whose board the post of `target` goes to: a new post on a board, or a reply to or a redraft of one of its
+ * posts; none for any other. Such a post is never a draft of the server's nor scheduled, and has no audience of its
+ * own: the board decides who reads it.
+ */
+export const boardOf = (target: Target): string | undefined =>
+  target.kind === "board"
+    ? target.event
+    : target.kind === "reply" || target.kind === "redraft"
+      ? target.board
+      : undefined;
 
 /** An image of the post: its file while it uploads, the server's file once ready, and its description. */
 export type Attachment = {
@@ -394,6 +411,17 @@ export function toStatus(d: Draft, settings: ComposeSettings): CreateStatus {
         }),
     ...(policy === undefined ? {} : { interaction_policy: policy }),
   };
+}
+
+/** The body of a post on an event's board: the post's but the audience, which the board decides, and a quote. */
+export function toBoardPost(d: Draft, settings: ComposeSettings): EventBoardPost {
+  const {
+    visibility: _visibility,
+    quoted_status_id: _quote,
+    interaction_policy: _policy,
+    ...post
+  } = toStatus(d, settings);
+  return post;
 }
 
 /**

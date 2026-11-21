@@ -10,7 +10,8 @@
 #
 #   visual-agreement.sh keep <<<'<record>'
 #                                       appends the record to the log, its shots (the folder web:shot wrote) copied to
-#                                       .tmp/picks/visual/<id> and its shots field pointing there
+#                                       .tmp/picks/visual/<id> and its shots field pointing there; a record whose shots
+#                                       are null (a motion's pick) as it is
 #   visual-agreement.sh scenes          each recorded pick with the outcome hidden: its id, its variants in name order,
 #                                       and the directory of its shots
 #   visual-agreement.sh score <id>=<variant>...
@@ -34,12 +35,23 @@ picks() {
 }
 
 if [[ ${1:-} == keep ]]; then
-  rec=$(jq -ce 'select(type == "object" and (.options | strings | test("^[a-z0-9][a-z0-9-]*$")) and (.shots | type) == "string")') || rec=""
+  rec=$(jq -ce 'select(type == "object" and (.options | strings | test("^[a-z0-9][a-z0-9-]*$")) and (.shots | type) == ("string", "null"))') || rec=""
   if [[ -z $rec || $rec == *$'\n'* ]]; then
-    echo "visual-agreement: keep reads one record of a pick on stdin, its shots the folder web:shot wrote" >&2
+    echo "visual-agreement: keep reads one record of a pick on stdin, its shots the folder web:shot wrote, or null" >&2
     exit 1
   fi
   id=$(jq -r .options <<<"$rec")
+  # A pick with no shots (a motion, which still shots do not show) is logged as it is, and never replayed.
+  if [[ $(jq -r '.shots | type' <<<"$rec") == null ]]; then
+    if [[ -f $log ]] && jq -e --arg id "$id" 'select(.options == $id)' "$log" >/dev/null; then
+      echo "visual-agreement: the options $id are logged already: one record per options id" >&2
+      exit 1
+    fi
+    mkdir -p "$(dirname "$log")"
+    echo "$rec" >>"$log"
+    echo "kept the record of $id, with no shots"
+    exit 0
+  fi
   from=$main/$(jq -r .shots <<<"$rec")
   kept=.tmp/picks/visual/$id
   if [[ ! -d $from ]]; then

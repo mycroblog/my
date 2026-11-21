@@ -8,7 +8,8 @@
 // saved over it and published from it; one with a time is saved and scheduled instead, and Save as draft keeps it so;
 // a save refused for a newer draft saved elsewhere is the conflict (§9). A draft no longer on the server may have been
 // posted (by its schedule, or by a publication whose answer was lost): it is not saved again as a new one, which would
-// post it twice, and what was written stays, to be posted as a new post only when the reader asks for it.
+// post it twice, and what was written stays, to be posted as a new post only when the reader asks for it. A post on an
+// event's board (and a reply to one of its posts) goes to the board, and is never a draft of the server's.
 
 import {
   DraftConflictError,
@@ -27,12 +28,14 @@ import { useEffect, useRef, useState } from "react";
 import { placeRefusal, type FieldMembers, type Refused } from "../field-errors";
 import {
   answering,
+  boardOf,
   composerMembers,
   maxAttachments,
   onServer,
   postable,
   postKey,
   problemsOf,
+  toBoardPost,
   toDraft,
   toEdit,
   toStatus,
@@ -233,19 +236,23 @@ export function useComposer(
     }
     setPhase({ kind: "posting" });
     const { target } = d;
-    if (d.scheduledAt !== undefined && target.kind !== "edit") {
+    const board = boardOf(target);
+    if (d.scheduledAt !== undefined && target.kind !== "edit" && board === undefined) {
       store(d, true).then(() => {
         kept(d);
       }, refused(d));
       return;
     }
     // A post saved as a draft is published from it, as it is written now; the server deletes the draft.
+    // A post on an event's board goes to the board, never through a draft of the server's.
     const sent =
       target.kind === "edit"
         ? writes.edit(target.id, toEdit(d))
-        : d.saved === undefined
-          ? writes.post(toStatus(d, settings), postKey(d))
-          : store(d, false).then((saved) => writes.publish(saved.id));
+        : board !== undefined
+          ? writes.postOnBoard(board, toBoardPost(d, settings), postKey(d))
+          : d.saved === undefined
+            ? writes.post(toStatus(d, settings), postKey(d))
+            : store(d, false).then((saved) => writes.publish(saved.id));
     sent.then((status) => {
       rememberTags(d.text);
       if (mounted.current) onPosted(status, d);
@@ -301,7 +308,7 @@ export function useComposer(
       send(fresh);
     },
     keep: () => {
-      if (phase.kind === "posting" || draft.target.kind === "edit") return;
+      if (phase.kind === "posting" || draft.target.kind === "edit" || boardOf(draft.target) !== undefined) return;
       setPhase({ kind: "posting" });
       store(draft, true).then(() => {
         kept(draft);

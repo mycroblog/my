@@ -104,6 +104,7 @@ import {
   IconMaximize,
   IconMenu2,
   IconMessageCircle,
+  IconMessages,
   IconMicrophone,
   IconMicrophoneOff,
   IconMoodHappy,
@@ -372,6 +373,7 @@ export const icons = {
   eventReminder: { off: IconAlarm },
   eventStarted: { off: IconCalendarBolt },
   roomUnavailable: { off: IconMicrophoneOff },
+  board: { off: IconMessages },
   // The places of an event by kind (its voice chat room is `room`, an address online `link`): a place in person, a
   // pin on a map. The answers to it and to its date poll: going or can go, maybe, not going or cannot, each a shape
   // of its own, so that a column of counts and the reader's own answer say which by shape as well as by word.

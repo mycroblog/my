@@ -259,6 +259,30 @@
     "defaultMessage": "{state, select, cancelled {中止} other {終了}}",
     "description": "At the top of an event's page, beside its glyph, as its line in a list marks it: it was cancelled (the reason follows under it) or it ended."
   },
+  "events.tab": {
+    "defaultMessage": "{tab, select, board {掲示板} other {詳細}}",
+    "description": "A tab under an event's head on its page, for a reader of its board: board shows the event's board, other (details) what the event is, the answers and who goes. A reader who may not read the board gets no tabs."
+  },
+  "events.board.feed": {
+    "defaultMessage": "イベントの掲示板",
+    "description": "The name of the list of the posts on an event's board, under its Board tab, for assistive technology."
+  },
+  "events.board.write": {
+    "defaultMessage": "掲示板に書く",
+    "description": "The bar at the top of an event's board, for a reader who may write on it, beside their avatar: it opens the composer for a post on the board. Also the bar's name for assistive technology."
+  },
+  "events.board.empty": {
+    "defaultMessage": "掲示板にはまだ何も書かれていません。",
+    "description": "In place of the posts of an event's board when nothing is on it."
+  },
+  "events.board.closed": {
+    "defaultMessage": "{reason, select, cancelled {イベントが中止されたため、掲示板は読むだけになっています。} other {イベントが終わってから 7 日が過ぎたため、掲示板は読むだけになっています。}}",
+    "description": "In muted words at the top of an event's board, where the bar to write on it would be, when nobody writes on it any more: cancelled, the event was cancelled; other, 7 days passed since the event's end (it is writable for the 7 days after the end). Its words are those of the error server:errors.event.board_closed."
+  },
+  "events.board.not_writer": {
+    "defaultMessage": "{writers, select, organizer {この掲示板に書けるのは主催者だけです。} other {この掲示板に書けるのは主催者と共同主催者だけです。}}",
+    "description": "In muted words at the top of an event's board, where the bar to write on it would be, for a reader the event's board_writers leave out: organizer, only the organizer writes on it; other (organizers), the organizer and the co-organizers."
+  },
   "events.create.submit": {
     "defaultMessage": "イベントを作成する",
     "description": "The button at the foot of the form that creates an event."
@@ -466,6 +490,26 @@
   "events.form.visibility_rule": {
     "defaultMessage": "イベントを見られる人を選んでください。",
     "description": "Under the choice of who sees an event, when the server refused it."
+  },
+  "events.form.board_writers": {
+    "defaultMessage": "掲示板に書ける人",
+    "description": "The heading of the choice of who writes on an event's board, in the form that creates or changes the event, after who sees it; and the choice's name."
+  },
+  "events.form.board_writers_choice": {
+    "defaultMessage": "{writers, select, organizer {あなただけ} organizers {あなたと共同主催者} other {掲示板を読める全員}}",
+    "description": "An option of who writes on an event's board, in the form its organizer creates or changes it with (you is the organizer): writers is organizer, organizers (the organizer and the co-organizers), or other (readers: everyone who reads the board)."
+  },
+  "events.form.board_writers_hint": {
+    "defaultMessage": "掲示板を読めるのは、あなたと共同主催者、「行く」か「たぶん」と答えた人です。",
+    "description": "Under the choice of who writes on an event's board, in the form its organizer creates or changes it with: who reads the board, as server:errors.event.board_not_reader says it."
+  },
+  "events.form.board_writers_organizer": {
+    "defaultMessage": "{writers, select, organizer {掲示板に書けるのは主催者だけです} organizers {掲示板に書けるのは主催者と共同主催者です} other {掲示板を読める全員が書けます}}。書ける人を変えられるのは主催者の {organizer} だけです。",
+    "description": "In place of the choice of who writes on an event's board, in the form a co-organizer changes it with: who writes on it now (writers as events.form.board_writers_choice), and that only the organizer, organizer (the organizer's name), changes it."
+  },
+  "events.form.board_writers_rule": {
+    "defaultMessage": "掲示板に書ける人を選んでください。",
+    "description": "Under the choice of who writes on an event's board, when the server refused it."
   },
   "events.form.visibility_organizer": {
     "defaultMessage": "{visibility, select, public {このサーバーの全員に見えます} followers {{organizer} のフォロワーに見えます} following {{organizer} がフォローしている人に見えます} mutuals {{organizer} の相互フォローの人に見えます} other {招待された人だけに見えます}}。見られる人を変えられるのは主催者の {organizer} だけです。",

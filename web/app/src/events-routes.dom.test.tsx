@@ -140,7 +140,9 @@ test("at capacity Going is refused, and Maybe and Not going still save", async (
   await app.user.click(within(answers).getByRole("radio", { name: "Maybe" }));
   await says("Saved");
   expect(app.fake.events.shown("tiny-concert")?.viewer.answer).toBe("maybe");
-  await app.user.click(within(answers).getByRole("radio", { name: "Not going" }));
+  // Maybe gives the board: the answers are drawn again under the Details tab.
+  const again = main().getByRole("radiogroup", { name: "Your answer" });
+  await app.user.click(within(again).getByRole("radio", { name: "Not going" }));
   await waitFor(() => {
     if (app.fake.events.shown("tiny-concert")?.viewer.answer !== "declined")
       throw new Error("test: the server holds no not going");

@@ -143,6 +143,10 @@
     "defaultMessage": "Direct",
     "description": "What the visibility glyph of a post for the accounts it mentions alone says, beside its time."
   },
+  "post.board": {
+    "defaultMessage": "On the event's board",
+    "description": "What the board glyph of a post on an event's board says, beside its time, in place of its visibility glyph (post.visibility.*): only the event's board shows it."
+  },
   "post.copy_link": {
     "defaultMessage": "Copy link",
     "description": "The item of a post's more menu that copies the link to the post."

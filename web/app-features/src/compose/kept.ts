@@ -6,7 +6,7 @@
 // waits for the one before, and takes the server draft it saved when it is of the same post (its key). No React here.
 
 import type { ComposeSettings, ComposeWrites, SavedDraft } from "@my/app-data";
-import { onServer, targetKey, toDraft, type Draft } from "./model";
+import { boardOf, onServer, targetKey, toDraft, type Draft } from "./model";
 
 /** The writes the drafts left by accident need. */
 export type KeptWrites = Pick<ComposeWrites, "saveDraft" | "deleteDraft">;
@@ -53,8 +53,9 @@ export class KeptDrafts {
     // An image still uploading, or failed, is not kept: the server has no file of it (but a draft's it could not read).
     const draft = { ...d, attachments: d.attachments.filter(onServer) };
     this.#drafts.set(key, draft);
-    // An edit is no new post: the server's drafts hold none.
-    if (d.target.kind === "edit") return;
+    // An edit is no new post, and a post on an event's board would leave its board as a draft: the server's drafts
+    // hold neither.
+    if (d.target.kind === "edit" || boardOf(d.target) !== undefined) return;
     this.#after(key, async (last) => {
       const before = KeptDrafts.#savedOf(draft, last);
       try {
@@ -86,7 +87,7 @@ export class KeptDrafts {
   settle(d: Draft, writes: KeptWrites): void {
     const key = targetKey(d.target);
     this.#drafts.delete(key);
-    if (d.target.kind === "edit") return;
+    if (d.target.kind === "edit" || boardOf(d.target) !== undefined) return;
     this.#after(key, async (last) => {
       if (last?.key === d.key && last.saved.id !== d.saved?.id)
         await writes.deleteDraft(last.saved.id).catch(() => undefined);

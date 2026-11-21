@@ -74,6 +74,7 @@ export {
   adminPath,
   autoDeletePath,
   dataExportPath,
+  eventBoardPath,
   eventCoorganizersPath,
   eventEditPath,
   eventInvitationsPath,

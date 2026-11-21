@@ -299,7 +299,12 @@ export class Fresh {
    */
   async event(
     organizer: Person,
-    o: { title: string; inDays?: number; candidates?: readonly number[] },
+    o: {
+      title: string;
+      inDays?: number;
+      candidates?: readonly number[];
+      boardWriters?: components["schemas"]["EventBoardWriters"];
+    },
   ): Promise<{ id: string; title: string; candidates: readonly Date[] }> {
     const title = `${o.title} ${unique().slice(0, 8)}`;
     const now = Date.now();
@@ -315,9 +320,32 @@ export class Fresh {
         title,
         time_zone: "UTC",
         ...(o.candidates === undefined ? span(o.inDays ?? 3) : { candidates: o.candidates.map(span) }),
+        ...(o.boardWriters === undefined ? {} : { board_writers: o.boardWriters }),
       },
     });
     return { id: body(data, "the event").id, title, candidates: (o.candidates ?? []).map(startOf) };
+  }
+
+  /** `by` answers the event `id` `answer` (`going`, `maybe`, `declined`). */
+  async answer(by: Person, id: string, answer: components["schemas"]["EventAnswer"]): Promise<void> {
+    const { error } = await (
+      await this.#api(by)
+    ).PUT("/events/{id}/rsvp", { params: { path: { id } }, body: { answer } });
+    if (error !== undefined) throw new Error(`fresh: ${by.username} could not answer the event ${id}`);
+  }
+
+  /** A new post of `author` on the board of the event `id`, whose text ends with a word unique to it. */
+  async boardPost(author: Person, id: string, o: { text: string }): Promise<FreshPost> {
+    const word = unique();
+    const text = `${o.text} ${word.slice(0, 8)}`;
+    const { data } = await (
+      await this.#api(author)
+    ).POST("/events/{id}/board", {
+      params: { path: { id }, header: { "Idempotency-Key": `fresh:${word}` } },
+      body: { text, language: author.locale },
+    });
+    const status: Status = body(data, "the board's post");
+    return { id: status.id, text, media: status.media_attachments };
   }
 
   /** The evenings (18:00 of the test's zone) `inDays` days from now, each, for a form a spec fills with dates. */

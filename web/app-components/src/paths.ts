@@ -87,6 +87,9 @@ export const eventsPath = "/events";
 /** The address of an event's page (ADR-0161 §9). */
 export const eventPath = (id: string) => `/events/${encodeURIComponent(id)}`;
 
+/** The address of an event's page on its Board tab (ADR-0161 §17): the event's, with a search alone. */
+export const eventBoardPath = (id: string) => `${eventPath(id)}?tab=board`;
+
 /** The address of the form that creates an event (FR-940). */
 export const eventNewPath = "/events/new";
 
@@ -162,7 +165,7 @@ const requests: ReadonlySet<string> = new Set(["reply_request", "boost_request",
  * approval for a request to reply, boost or quote; the follow requests for one; the post it is about; the account an
  * account moved to; the announcement; the automatic deletion's settings for the server's maximum that will apply to
  * the reader's posts; the voice chat room a room's start or invitation is about; the event an event's notification is
- * about; the account that acted; else the notifications.
+ * about, on its Board tab for a new post on its board; the account that acted; else the notifications.
  */
 export function notificationPath(n: NotificationTarget): string {
   if (requests.has(n.type)) return waitingPath;
@@ -170,6 +173,7 @@ export function notificationPath(n: NotificationTarget): string {
   if (n.type === "auto_delete_limit") return autoDeletePath;
   if (n.type.startsWith("voice_room_"))
     return n.voice_room_id === undefined ? "/notifications" : voiceRoomPath(n.voice_room_id);
+  if (n.type === "event_board_posted") return n.event_id === undefined ? "/notifications" : eventBoardPath(n.event_id);
   if (n.type.startsWith("event_")) return n.event_id === undefined ? "/notifications" : eventPath(n.event_id);
   if (n.type === "follow_request") return followRequestsPath;
   if (n.status !== undefined) return statusPath(n.status);

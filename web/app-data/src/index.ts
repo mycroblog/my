@@ -158,6 +158,16 @@ export {
   type EventWrites,
 } from "./events";
 export {
+  eventBoardClosesAt,
+  eventBoardQuery,
+  eventBoardWriters,
+  postOnEventBoard,
+  useEventBoard,
+  writesOnEventBoard,
+  type EventBoardPost,
+  type EventBoardWriters,
+} from "./event-board";
+export {
   cancelSupporterScheduledChange,
   cancelSupporterSubscription,
   changeSupporterSubscription,

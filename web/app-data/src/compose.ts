@@ -24,6 +24,7 @@ import {
   type SavedDraft,
   type ServerDraft,
 } from "./drafts";
+import { postOnEventBoard, type EventBoardPost } from "./event-board";
 import { editStatus, type EditStatus } from "./own-posts";
 import { usePreferences } from "./preferences";
 import { useAppData } from "./provider";
@@ -347,6 +348,8 @@ export function refusedMember(error: unknown): { member: string; said: string } 
 /** The writes of the composer, bound to the session's data. */
 export type ComposeWrites = {
   readonly post: (body: CreateStatus, idempotencyKey: string) => Promise<Status>;
+  /** Posts on the board of the event of `eventId` (event-board.ts). */
+  readonly postOnBoard: (eventId: string, body: EventBoardPost, idempotencyKey: string) => Promise<Status>;
   /** Edits the reader's post of `id` (own-posts.ts). */
   readonly edit: (id: string, body: EditStatus) => Promise<Status>;
   readonly upload: (file: File, options?: Parameters<typeof uploadAttachment>[2]) => Promise<MediaAttachment>;
@@ -371,6 +374,7 @@ export function useComposeWrites(): ComposeWrites {
   const data = useAppData();
   return {
     post: (body, key) => postStatus(data, body, key),
+    postOnBoard: (eventId, body, key) => postOnEventBoard(data, eventId, body, key),
     edit: (id, body) => editStatus(data, id, body),
     upload: (file, options) => uploadAttachment(data, file, options),
     media: (id) => readMedia(data, id),
