@@ -6,8 +6,8 @@
 INSERT INTO gatherings (id, organizer_account_id, created_at) VALUES ($1, $2, $3);
 
 -- name: InsertGatheringRevision :exec
-INSERT INTO gathering_revisions (id, gathering_id, title, description, visibility, time_zone, place_disclosure, capacity, revised_by_account_id, revised_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
+INSERT INTO gathering_revisions (id, gathering_id, title, description, visibility, time_zone, place_disclosure, capacity, board_writers, revised_by_account_id, revised_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
 
 -- name: InsertGatheringRevisionPlace :exec
 INSERT INTO gathering_revision_places (revision_id, position, kind, name, address, url, speakers) VALUES ($1, $2, $3, $4, $5, $6, $7);
@@ -43,7 +43,7 @@ ON CONFLICT (gathering_id) DO NOTHING;
 -- name: GetGathering :one
 SELECT g.id, g.organizer_account_id, g.created_at,
   h.revision_id, COALESCE(h.confirmation_id::text, '')::text AS confirmation_id, h.state, h.starts_at, h.ends_at, h.going_count,
-  v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.revised_by_account_id, v.revised_at,
+  v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.board_writers, v.revised_by_account_id, v.revised_at,
   COALESCE(c.confirmed_by_account_id::text, '')::text AS confirmed_by_account_id, COALESCE(c.confirmed_at, g.created_at)::timestamptz AS confirmed_at,
   x.reason AS cancel_reason, x.cancelled_by_account_id, x.note AS cancel_note, x.cancelled_at,
   (SELECT COUNT(*) FROM gathering_revisions n WHERE n.gathering_id = g.id) AS revision_count
@@ -60,7 +60,7 @@ WHERE g.id = $1;
 -- name: ListUpcomingGatherings :many
 SELECT g.id, g.organizer_account_id, g.created_at,
   h.revision_id, COALESCE(h.confirmation_id::text, '')::text AS confirmation_id, h.state, h.starts_at, h.ends_at, h.going_count,
-  v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.revised_by_account_id, v.revised_at,
+  v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.board_writers, v.revised_by_account_id, v.revised_at,
   COALESCE(c.confirmed_by_account_id::text, '')::text AS confirmed_by_account_id, COALESCE(c.confirmed_at, g.created_at)::timestamptz AS confirmed_at,
   x.reason AS cancel_reason, x.cancelled_by_account_id, x.note AS cancel_note, x.cancelled_at,
   (SELECT COUNT(*) FROM gathering_revisions n WHERE n.gathering_id = g.id) AS revision_count

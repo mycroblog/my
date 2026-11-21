@@ -68,12 +68,20 @@ type closePollPayload struct {
 }
 
 // RegisterProjectors enqueues JobClosePoll, to run at the poll's end, when a local status with a
-// poll that ends is posted, and when a local account votes in a remote poll that ends. The job's
+// poll that ends is posted (on a board of an event or not), and when a local account votes in a
+// remote poll that ends. The job's
 // idempotency key is the poll's, so the votes of a poll enqueue it once while it is pending.
 func (c *PollCloser) RegisterProjectors(r *uow.Projectors) {
 	r.Register(EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(StatusCreated)
 		if !ev.Status.IsLocal || ev.Revision.Poll == nil {
+			return nil
+		}
+		return c.enqueue(ctx, tx, *ev.Revision.Poll)
+	})
+	r.Register(EventBoardStatusPosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(BoardStatusPosted)
+		if ev.Revision.Poll == nil {
 			return nil
 		}
 		return c.enqueue(ctx, tx, *ev.Revision.Poll)

@@ -127,6 +127,13 @@ func (o *Objects) visibleAmong(ctx context.Context, req Requester, page appconte
 				appcontent.CanView(appcontent.ContextStatus, anon, facts, restrictions[st.AuthorAccountID], appcontent.Relation{})
 			continue
 		}
+		// A board post never leaves its event (ADR-0161 §17).
+		if facts.Board, err = boardFacts(ctx, o.d.Statuses, st); err != nil {
+			return nil, err
+		}
+		if facts.Board != nil {
+			continue
+		}
 		if appcontent.CanView(appcontent.ContextObjectFetch, viewer, facts, restrictions[st.AuthorAccountID], rel) {
 			out[st.ID] = true
 		} else if !req.Anonymous() {

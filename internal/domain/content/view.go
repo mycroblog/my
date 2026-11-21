@@ -74,6 +74,17 @@ type StatusFacts struct {
 	// Unpublished is whether the status is a local reply held until the author of its parent
 	// approves it (ADR-0155 §7): its author alone sees it.
 	Unpublished bool
+	// Board is set for a post of the board of an event (ADR-0161 §17), nil for any other status.
+	Board *BoardFacts
+}
+
+// BoardFacts are what decides who sees a post of the board of an event. The posts of a board
+// never leave it: they are shown in ContextBoard alone, to a local viewer who reads the board,
+// whatever their visibility.
+type BoardFacts struct {
+	// Reads reports that the viewer reads the board (gathering.CanReadBoard); false for a viewer
+	// who is not a local account.
+	Reads bool
 }
 
 // ViewContext is where the status would be shown.
@@ -106,6 +117,11 @@ const (
 	// §6). It admits only signed-in viewers and only direct posts, whether or not the viewer
 	// follows the author: the direct posts of others that the home timeline leaves out.
 	ContextDirectMessages
+	// ContextBoard is a post of the board of an event (ADR-0161 §17) as the board shows it: in the
+	// board's list, or one of its posts read or acted on by ID through a use case that admits board
+	// posts. It admits only board posts and local viewers who read the board; every other context
+	// denies a board post.
+	ContextBoard
 )
 
 // ViewContexts lists every view context.
@@ -113,6 +129,7 @@ func ViewContexts() []ViewContext {
 	return []ViewContext{
 		ContextStatus, ContextHome, ContextLocalTimeline, ContextFederatedTimeline,
 		ContextHashtag, ContextProfile, ContextObjectFetch, ContextDelivery, ContextSearch, ContextDirectMessages,
+		ContextBoard,
 	}
 }
 
@@ -139,6 +156,8 @@ func (c ViewContext) String() string {
 		return "search"
 	case ContextDirectMessages:
 		return "direct messages"
+	case ContextBoard:
+		return "board"
 	default:
 		return "invalid"
 	}
@@ -146,8 +165,12 @@ func (c ViewContext) String() string {
 
 // CanView reports whether viewer may see status in context. It fails closed: an invalid
 // visibility, viewer kind, or context, or a local visibility on a remote status, is denied. An
-// unpublished status (a held local reply) is its author's alone.
+// unpublished status (a held local reply) is its author's alone. A post of the board of an event
+// is shown in ContextBoard alone (canViewOnBoard), and ContextBoard shows nothing else.
 func CanView(ctx ViewContext, viewer Viewer, status StatusFacts, author AuthorRestrictions, rel Relation) bool {
+	if status.Board != nil || ctx == ContextBoard {
+		return canViewOnBoard(ctx, viewer, status, author, rel)
+	}
 	if !status.Visibility.Valid() || (status.Visibility == VisibilityLocal && !status.AuthorIsLocal) {
 		return false
 	}
@@ -182,6 +205,23 @@ func CanView(ctx ViewContext, viewer Viewer, status StatusFacts, author AuthorRe
 		return false
 	}
 	return isAuthor || inAudience(ctx, vis, viewer.Kind, rel)
+}
+
+// canViewOnBoard reports whether viewer may see status, a post of the board of an event or a
+// status asked for in ContextBoard: only a board post, of a local author, in ContextBoard, to a
+// local viewer who reads the board. Its visibility, follows, and mentions grant nothing; blocks
+// either way and the author's profile_view hide it from everyone but the author.
+func canViewOnBoard(ctx ViewContext, viewer Viewer, status StatusFacts, author AuthorRestrictions, rel Relation) bool {
+	if ctx != ContextBoard || status.Board == nil || !status.Board.Reads || !status.AuthorIsLocal {
+		return false
+	}
+	if viewer.Kind != ViewerLocal || viewer.AccountID == "" {
+		return false
+	}
+	if viewer.AccountID == status.AuthorAccountID {
+		return true
+	}
+	return !author.ProfileView && !rel.Blocking && !rel.BlockedBy
 }
 
 // contextAdmits reports whether the viewer kind and the status's origin make sense in ctx.

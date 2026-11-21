@@ -219,8 +219,11 @@ type Deps struct {
 	// user while article_authoring is everyone, the holders of create_articles otherwise. Nil lets
 	// everyone.
 	MayWriteArticles func(ctx context.Context, userID string) (bool, error)
-	Clock            kernel.Clock
-	IDs              kernel.IDGenerator
+	// Boards tells who reads and who writes on the boards of the events (ADR-0161 §17); nil
+	// takes no board post.
+	Boards Boards
+	Clock  kernel.Clock
+	IDs    kernel.IDGenerator
 	// Host is the serving domain of the status URIs and pages (ADR-0018).
 	Host string
 	// AccountDomain is the domain of local handles; @user@AccountDomain and @user@Host mention a
@@ -450,6 +453,8 @@ type PreparedCreate struct {
 	// media are the decisions of media.check on the attachments that CreateTx acts on.
 	media []mediaVerdict
 	now   time.Time
+	// board is the board of an event that the status is posted on (PostOnBoard), nil for none.
+	board *preparedBoard
 }
 
 // PrepareCreate checks and builds a new local status as Create does, without writing it, so
@@ -492,7 +497,18 @@ func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Po
 	if err := repo.InsertRevision(ctx, tx, rev); err != nil {
 		return Post{}, err
 	}
-	if err := tx.Emit(ctx, StatusCreated{Status: p.st, Revision: rev, ConversationID: ins.ConversationID, HeldReply: p.reply != nil}); err != nil {
+	var created uow.Event = StatusCreated{Status: p.st, Revision: rev, ConversationID: ins.ConversationID, HeldReply: p.reply != nil}
+	if b := p.board; b != nil {
+		// A board post is announced to no one but its board (board.go).
+		if err := repo.InsertStatusBoard(ctx, tx, p.st.ID, b.gatheringID); err != nil {
+			return Post{}, err
+		}
+		created = BoardStatusPosted{
+			Status: p.st, Revision: rev, GatheringID: b.gatheringID, ConversationID: ins.ConversationID,
+			MentionedReaderIDs: b.mentionedReaders,
+		}
+	}
+	if err := tx.Emit(ctx, created); err != nil {
 		return Post{}, err
 	}
 	if p.reply != nil {
@@ -712,16 +728,33 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 	if _, err := s.postingRestrictions(ctx, in.AccountID); err != nil {
 		return Post{}, err
 	}
+	gid, err := boardOf(ctx, s.d.Repository, nil, st)
+	if err != nil {
+		return Post{}, err
+	}
+	var board *preparedBoard
+	if gid != "" {
+		// A board post is edited while its author may write on the board (ADR-0161 §17).
+		if err := s.editableOnBoard(ctx, st, gid); err != nil {
+			return Post{}, err
+		}
+		board = &preparedBoard{gatheringID: gid}
+	}
 	body, err := s.prepareText(ctx, author, in.TextInput)
 	if err != nil {
 		return Post{}, err
 	}
-	return s.commitEdit(ctx, author, st, current, body, in.DetachQuote)
+	if board != nil {
+		if board.mentionedReaders, err = s.mentionedReaders(ctx, gid, st.AuthorAccountID, body.mentions); err != nil {
+			return Post{}, err
+		}
+	}
+	return s.commitEdit(ctx, author, st, current, body, in.DetachQuote, board)
 }
 
 // commitEdit asks local.status about the edit of st, whose current revision is current, to the
 // content body, and records it as the new head.
-func (s *Service) commitEdit(ctx context.Context, author appaccount.Actor, st content.Status, current content.Revision, body preparedText, detachQuote bool) (Post, error) {
+func (s *Service) commitEdit(ctx context.Context, author appaccount.Actor, st content.Status, current content.Revision, body preparedText, detachQuote bool, board *preparedBoard) (Post, error) {
 	now := s.d.Clock.Now()
 	rev := body.revision(s.d.IDs.NewID(), st.ID, 0, now)
 	tags := body.tags(s.d.IDs, now)
@@ -773,7 +806,11 @@ func (s *Service) commitEdit(ctx context.Context, author appaccount.Actor, st co
 				return err
 			}
 		}
-		if err := tx.Emit(ctx, StatusRevised{Status: st, Revision: rev, HeldReply: held}); err != nil {
+		var revised uow.Event = StatusRevised{Status: st, Revision: rev, HeldReply: held}
+		if board != nil {
+			revised = BoardStatusRevised{Status: st, Revision: rev, GatheringID: board.gatheringID, MentionedReaderIDs: board.mentionedReaders}
+		}
+		if err := tx.Emit(ctx, revised); err != nil {
 			return err
 		}
 		if err := s.applyAttachmentVerdicts(ctx, tx, st.ID, verdicts); err != nil {
@@ -796,9 +833,14 @@ func (s *Service) commitEdit(ctx context.Context, author appaccount.Actor, st co
 // Delete deletes a local status by its author (FR-108). It records the deletion, which stays as
 // the tombstone of the URI, and removes the status from every projection at once. A status that
 // does not exist or is already deleted fails with ErrNotFound; another account's status with
-// ErrNotAuthor.
+// ErrNotAuthor. The author deletes a post of the board of an event whenever, the board read-only
+// or not, and the deletion is announced as BoardStatusesDeleted (board.go).
 func (s *Service) Delete(ctx context.Context, accountID, statusID string) (content.Deletion, error) {
 	st, err := s.ownStatus(ctx, accountID, statusID)
+	if err != nil {
+		return content.Deletion{}, err
+	}
+	gid, err := boardOf(ctx, s.d.Repository, nil, st)
 	if err != nil {
 		return content.Deletion{}, err
 	}
@@ -808,6 +850,9 @@ func (s *Service) Delete(ctx context.Context, accountID, statusID string) (conte
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if err := s.d.Repository.InsertDeletion(ctx, tx, d); err != nil {
 			return err
+		}
+		if gid != "" {
+			return tx.Emit(ctx, BoardStatusesDeleted{Deletions: []StatusDeleted{{Deletion: d, Status: st}}})
 		}
 		return tx.Emit(ctx, StatusDeleted{Deletion: d, Status: st})
 	})

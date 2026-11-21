@@ -195,6 +195,9 @@ func (p *Previews) status(ctx context.Context, statusID string, authors previewA
 		restrictions.ProfileView = restrictions.ProfileView || !author.actor.Lifecycle.Active() || author.actor.Local == nil
 	}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	if facts.Board, err = offBoardFacts(ctx, p.d.Repository, st); err != nil {
+		return StatusPreview{}, err
+	}
 	if !content.CanView(content.ContextStatus, content.Viewer{Kind: content.ViewerAnonymous}, facts, restrictions, content.Relation{}) {
 		return StatusPreview{}, hidden
 	}

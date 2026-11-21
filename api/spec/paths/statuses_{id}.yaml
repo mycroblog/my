@@ -6,7 +6,8 @@ get:
   summary: Get a status
   description: |
     A status that the viewer may not see is a 404, the same as a missing one. An article comes
-    with its body in `content`.
+    with its body in `content`. A post of the board of an event (`listEventBoard`) is seen only
+    by the users who read the board.
   tags: [statuses]
   security:
     - {}
@@ -36,6 +37,9 @@ put:
     `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
     status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
     status is a 404 to a token without `read:direct`, the user's own included.
+    A post of the board of an event is edited here while its author may post on the board: a 403
+    `/api/v1/problems/event-board-not-reader` or `/api/v1/problems/event-board-not-writer`
+    otherwise, and a 409 `/api/v1/problems/event-board-closed` once the board is read-only.
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]
@@ -65,7 +69,8 @@ delete:
   description: |
     Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
     status is a 404 to a token without `read:direct`, the user's own included, and nothing
-    is deleted.
+    is deleted. The author deletes a post of the board of an event here, the board read-only or
+    not.
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]

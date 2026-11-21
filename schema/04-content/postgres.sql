@@ -97,6 +97,16 @@ CREATE TABLE status_articles (
 -- The articles of a profile, newest first.
 CREATE INDEX status_articles_author_account_id_status_id ON status_articles (author_account_id, status_id);
 
+-- Resource (child of a status): a status posted on the board of an event (ADR-0161 §17), a local
+-- status that never leaves the event: it is not federated, and the reads of statuses leave it out
+-- but the board's. gathering_id is the event (gatherings, of internal/app/gathering).
+CREATE TABLE status_gathering_boards (
+  status_id uuid NOT NULL PRIMARY KEY,
+  gathering_id uuid NOT NULL
+);
+-- The posts of a board, newest first.
+CREATE INDEX status_gathering_boards_gathering_id_status_id ON status_gathering_boards (gathering_id, status_id);
+
 -- Event (child of a revision): the title and summary of an article's revision. summary_origin body
 -- is a summary made from the body because the author left it empty (ADR-0160 §6).
 CREATE TABLE status_revision_articles (
@@ -164,7 +174,7 @@ CREATE TABLE status_deletions (
   status_id uuid NOT NULL PRIMARY KEY,
   uri text NOT NULL,
   author_account_id uuid NOT NULL,
-  origin text NOT NULL CHECK (origin IN ('author', 'moderation', 'remote', 'account_deletion', 'retention', 'auto_delete')),
+  origin text NOT NULL CHECK (origin IN ('author', 'moderation', 'remote', 'account_deletion', 'retention', 'auto_delete', 'event_records')),
   moderation_action_id uuid,
   deleted_at timestamptz NOT NULL
 );

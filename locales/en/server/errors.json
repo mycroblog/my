@@ -1043,6 +1043,18 @@
     "defaultMessage": "The date poll needs at least one candidate.",
     "description": "API error title for HTTP 409 when an organizer withdraws the last candidate date of an event's date poll."
   },
+  "errors.event.board_not_reader": {
+    "defaultMessage": "Only the organizer, the co-organizers, and the people who answered going or maybe can read this event's board. Set your answer to going or maybe to read it.",
+    "description": "API error title for HTTP 403 when someone who sees an event but has not answered going or maybe (and does not organize it) reads or posts on its board."
+  },
+  "errors.event.board_not_writer": {
+    "defaultMessage": "Only the people this event's organizer chose can write on its board.",
+    "description": "API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, organizers, or readers) leave the reader out."
+  },
+  "errors.event.board_closed": {
+    "defaultMessage": "This event's board is read-only: the event was cancelled, or 7 days have passed since it ended.",
+    "description": "API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or from 7 days after its end (the board is writable for the 7 days after the end)."
+  },
   "errors.idempotency_key_reused": {
     "defaultMessage": "This key was already used for a different request. Send the new request with a new key.",
     "description": "API error title for HTTP 422 when a client sends an Idempotency-Key header that it already used for a different request. Idempotency-Key is the name of an HTTP header (not translated)."

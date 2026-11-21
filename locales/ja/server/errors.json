@@ -1043,6 +1043,18 @@
     "defaultMessage": "日程の候補は 1 つ以上必要です。",
     "description": "API error title for HTTP 409 when an organizer withdraws the last candidate date of an event's date poll."
   },
+  "errors.event.board_not_reader": {
+    "defaultMessage": "このイベントの掲示板は、主催者と共同主催者、「行く」か「たぶん」と答えた人だけが読めます。読むには「行く」か「たぶん」と答えてください。",
+    "description": "API error title for HTTP 403 when someone who sees an event but has not answered going or maybe (and does not organize it) reads or posts on its board."
+  },
+  "errors.event.board_not_writer": {
+    "defaultMessage": "このイベントの掲示板には、主催者が選んだ人だけが書けます。",
+    "description": "API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, organizers, or readers) leave the reader out."
+  },
+  "errors.event.board_closed": {
+    "defaultMessage": "このイベントの掲示板は読むだけになっています。イベントが中止されたか、終わってから 7 日が過ぎました。",
+    "description": "API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or from 7 days after its end (the board is writable for the 7 days after the end)."
+  },
   "errors.idempotency_key_reused": {
     "defaultMessage": "このキーはすでに別のリクエストに使われています。新しいリクエストには新しいキーを付けて送ってください。",
     "description": "API error title for HTTP 422 when a client sends an Idempotency-Key header that it already used for a different request. Idempotency-Key is the name of an HTTP header (not translated)."

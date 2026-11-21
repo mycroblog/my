@@ -765,6 +765,10 @@ func (s *Service) inboundReplyVerdict(ctx context.Context, authorID string, pare
 	rel.Mentioned = slices.Contains(rev.MentionedAccountIDs, authorID)
 	viewer := content.Viewer{Kind: content.ViewerRemote, AccountID: authorID}
 	facts := content.StatusFacts{AuthorAccountID: parent.AuthorAccountID, AuthorIsLocal: parent.IsLocal, Visibility: parent.Visibility}
+	// A remote reply to a board post, which never leaves its event, is denied.
+	if facts.Board, err = offBoardFacts(ctx, s.d.Repository, parent); err != nil {
+		return interactionVerdict{}, err
+	}
 	if !content.CanView(content.ContextObjectFetch, viewer, facts, restrictions.Author, rel) || rel.Blocking || rel.BlockedBy {
 		return interactionVerdict{decision: content.InteractionDenied}, nil
 	}

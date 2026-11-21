@@ -28,7 +28,7 @@ patch:
   description: |
     Changes the settings or the date of the event, by its organizer or a co-organizer; a date
     on an `unscheduled` event ends its date poll, as a confirmation does. Only the
-    organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+    organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
     `voice` place needs the organizer to be able to host rooms (a 422
     `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
   tags: [events]

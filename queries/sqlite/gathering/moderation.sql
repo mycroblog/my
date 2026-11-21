@@ -6,7 +6,7 @@
 
 -- ListGatheringRevisions returns the revisions of an event, oldest first.
 -- name: ListGatheringRevisions :many
-SELECT id, gathering_id, title, description, visibility, time_zone, place_disclosure, capacity, revised_by_account_id, revised_at
+SELECT id, gathering_id, title, description, visibility, time_zone, place_disclosure, capacity, revised_by_account_id, revised_at, board_writers
 FROM gathering_revisions WHERE gathering_id = sqlc.arg(gathering_id)
 ORDER BY id;
 

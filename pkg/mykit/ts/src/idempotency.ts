@@ -202,6 +202,7 @@ export const idempotencyKeyOperations: readonly { readonly method: string; reado
   { method: "PATCH", path: "/events/{id}" },
   { method: "POST", path: "/events/{id}/cancel" },
   { method: "PUT", path: "/events/{id}/rsvp" },
+  { method: "POST", path: "/events/{id}/board" },
   { method: "PUT", path: "/events/{id}/attendees/{account_id}/approval" },
   { method: "DELETE", path: "/events/{id}/attendees/{account_id}/approval" },
   { method: "POST", path: "/events/{id}/invitations" },

@@ -37,6 +37,9 @@ type InteractionDeps struct {
 	// Quotes stores the quotes and the approvals this server gives (ADR-0069); nil answers
 	// every QuoteRequest with ErrNotFound.
 	Quotes QuoteRepository
+	// Boards tells who reads the boards of the events (ADR-0161 §17): their readers favourite,
+	// react to, and vote in the polls of their posts; nil admits no board post.
+	Boards Boards
 	Clock  kernel.Clock
 	IDs    kernel.IDGenerator
 	// Host is the serving domain of the Announce and Like activity URIs (ADR-0018).
@@ -190,7 +193,7 @@ func (s *Interactions) Favourite(ctx context.Context, accountID, statusID string
 	if err := s.checkRestrictions(ctx, accountID, false); err != nil {
 		return content.Favourite{}, err
 	}
-	st, err := s.visibleStatus(ctx, accountID, statusID)
+	st, err := s.visibleOnBoard(ctx, accountID, statusID)
 	if err != nil {
 		return content.Favourite{}, err
 	}
@@ -403,8 +406,19 @@ func (s *Interactions) ClearRemotePinsTx(ctx context.Context, tx uow.Tx, account
 
 // visibleStatus returns statusID when accountID is a local, active account that may see it
 // (content.CanView in ContextStatus). A status that is missing, deleted, or hidden from the
-// account fails with ErrNotFound.
+// account fails with ErrNotFound, and so does a post of the board of an event: it is not boosted,
+// bookmarked, or pinned (ADR-0161 §17).
 func (s *Interactions) visibleStatus(ctx context.Context, accountID, statusID string) (content.Status, error) {
+	return s.visible(ctx, s.audience(), accountID, statusID)
+}
+
+// visibleOnBoard is visibleStatus that admits the posts of the boards that the account reads,
+// which their readers favourite, react to, and vote in.
+func (s *Interactions) visibleOnBoard(ctx context.Context, accountID, statusID string) (content.Status, error) {
+	return s.visible(ctx, s.audience().onBoard(), accountID, statusID)
+}
+
+func (s *Interactions) visible(ctx context.Context, aud audience, accountID, statusID string) (content.Status, error) {
 	viewer, err := s.d.Accounts.FindByID(ctx, accountID)
 	if errors.Is(err, appaccount.ErrNotFound) {
 		return content.Status{}, fmt.Errorf("account %s: %w", accountID, ErrActorUnavailable)
@@ -415,7 +429,7 @@ func (s *Interactions) visibleStatus(ctx context.Context, accountID, statusID st
 	if !viewer.Account.IsLocal() || !viewer.Lifecycle.Active() {
 		return content.Status{}, fmt.Errorf("account %s: %w", accountID, ErrActorUnavailable)
 	}
-	st, _, err := s.audience().visibleStatus(ctx, content.Viewer{Kind: content.ViewerLocal, AccountID: accountID}, statusID)
+	st, _, err := aud.visibleStatus(ctx, content.Viewer{Kind: content.ViewerLocal, AccountID: accountID}, statusID)
 	return st, err
 }
 
@@ -442,7 +456,7 @@ func (s *Interactions) interactionReaders() interactionReaders {
 func (s *Interactions) audience() audience {
 	return audience{
 		statuses: s.d.Statuses, interactions: s.d.Interactions, accounts: s.d.Accounts,
-		relationships: s.d.Relationships, restrictions: s.d.Restrictions,
+		relationships: s.d.Relationships, restrictions: s.d.Restrictions, boards: s.d.Boards,
 	}
 }
 

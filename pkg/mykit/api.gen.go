@@ -2453,6 +2453,27 @@ func (e EventAnswer) Valid() bool {
 	}
 }
 
+// Defines values for EventBoardWriters.
+const (
+	EventBoardWritersOrganizer  EventBoardWriters = "organizer"
+	EventBoardWritersOrganizers EventBoardWriters = "organizers"
+	EventBoardWritersReaders    EventBoardWriters = "readers"
+)
+
+// Valid indicates whether the value is a known member of the EventBoardWriters enum.
+func (e EventBoardWriters) Valid() bool {
+	switch e {
+	case EventBoardWritersOrganizer:
+		return true
+	case EventBoardWritersOrganizers:
+		return true
+	case EventBoardWritersReaders:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for EventCancelReason.
 const (
 	EventCancelReasonModerator          EventCancelReason = "moderator"
@@ -11686,6 +11707,12 @@ type ErrorGroupState string
 // places that the user sees: `hidden_places` lists the kinds of the others, whose details never
 // reach the client.
 type Event struct {
+	// BoardWriters Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
+	// `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+	// The board is read by the organizer, the co-organizers, and the users who see the event and
+	// answer `going` or `maybe`.
+	BoardWriters EventBoardWriters `json:"board_writers"`
+
 	// Cancellation The cancellation of an event.
 	Cancellation *EventCancellation `json:"cancellation,omitempty"`
 
@@ -11793,6 +11820,59 @@ type EventBallotPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
+// EventBoardAccess What the user may do with the board of an event.
+type EventBoardAccess struct {
+	// Readable Whether the user reads the board: the user organizes or co-organizes the event, or answers
+	// `going` or `maybe`.
+	Readable bool `json:"readable"`
+
+	// Writable Whether the user may post on the board and edit their posts on it now: the event's
+	// `board_writers` admit the user, and the board is not read-only. The board is read-only once
+	// the event is cancelled, and from 7 days after its end (for an `unscheduled` event, the end of
+	// its last candidate date, its `ends_at`).
+	Writable bool `json:"writable"`
+}
+
+// EventBoardPage A page of the posts of the board of an event, newest first.
+type EventBoardPage struct {
+	Items []Status `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventBoardPostCreate A new post on the board of an event. It has what a new status has but a visibility, which the
+// board decides, and a quote, which a board post never has.
+type EventBoardPostCreate struct {
+	// InReplyToId A post of the same board to reply to; any other status is a 422.
+	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Media The media to attach, in order.
+	Media *StatusMediaInput `json:"media,omitempty"`
+
+	// Poll A poll of a new status. It ends `expires_in` seconds after the status is
+	// posted; the author and the users who voted are notified then.
+	Poll *PollInput `json:"poll,omitempty"`
+
+	// Sensitive Whether the media are sensitive.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// SpoilerText The content warning; omitted or empty for none. It counts toward `max_post_characters`.
+	SpoilerText *SpoilerText `json:"spoiler_text,omitempty"`
+
+	// Text The plain text; the server links mentions, hashtags, and URLs.
+	Text StatusText `json:"text"`
+}
+
+// EventBoardWriters Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
+// `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+// The board is read by the organizer, the co-organizers, and the users who see the event and
+// answer `going` or `maybe`.
+type EventBoardWriters string
+
 // EventCancelReason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
 // suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
 type EventCancelReason string
@@ -11852,6 +11932,9 @@ type EventCandidateList struct {
 // EventCreate A new event, either with a fixed date (`starts_at` and `ends_at`) or with the candidate dates
 // of a date poll (`candidates`), not both.
 type EventCreate struct {
+	// BoardWriters Who posts on the event's board; `organizers` when omitted.
+	BoardWriters *EventBoardWriters `json:"board_writers,omitempty"`
+
 	// Candidates 1 to 20 different candidate dates, each checked as a fixed date: the event is
 	// `unscheduled` until the organizers confirm one of them.
 	Candidates *[]EventCandidateCreate `json:"candidates,omitempty"`
@@ -12007,9 +12090,11 @@ type EventState string
 // date (`starts_at` and `ends_at` together) is checked as a new event's; on an `unscheduled`
 // event, it fixes the date without a candidate and ends the date poll.
 type EventUpdate struct {
-	Capacity    *int       `json:"capacity,omitempty"`
-	Description *string    `json:"description,omitempty"`
-	EndsAt      *time.Time `json:"ends_at,omitempty"`
+	// BoardWriters Who posts on the event's board; only the organizer changes it.
+	BoardWriters *EventBoardWriters `json:"board_writers,omitempty"`
+	Capacity     *int               `json:"capacity,omitempty"`
+	Description  *string            `json:"description,omitempty"`
+	EndsAt       *time.Time         `json:"ends_at,omitempty"`
 
 	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
 	// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
@@ -12036,6 +12121,9 @@ type EventViewer struct {
 
 	// Approved Whether the organizer or a co-organizer approved the user's answer.
 	Approved bool `json:"approved"`
+
+	// Board What the user may do with the board of an event.
+	Board EventBoardAccess `json:"board"`
 
 	// Coorganizer Whether the user co-organizes the event.
 	Coorganizer bool `json:"coorganizer"`
@@ -15745,6 +15833,12 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
 //     it can.
 //   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+//   - `/api/v1/problems/event-board-not-reader` (403): the user sees the event but does not read its
+//     board: the user neither organizes it nor answers `going` or `maybe`.
+//   - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the
+//     user post on its board.
+//   - `/api/v1/problems/event-board-closed` (409): the board of the event is read-only: the event was
+//     cancelled, or 7 days have passed since its end (it is writable for the 7 days after the end).
 //   - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
 //   - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
 //     takes no more candidates, answers, or confirmations.
@@ -16449,6 +16543,9 @@ type Status struct {
 	// image, and the rest as text. Empty for a boost, whose emoji are those of `boost`.
 	Emojis []CustomEmoji `json:"emojis"`
 
+	// EventBoard The board of an event that the status is posted on; omitted for any other status.
+	EventBoard *StatusEventBoard `json:"event_board,omitempty"`
+
 	// Favourited Whether the authenticated user favourited the status.
 	Favourited *bool `json:"favourited,omitempty"`
 
@@ -16507,7 +16604,8 @@ type Status struct {
 	OmittedMediaCount *int `json:"omitted_media_count,omitempty"`
 
 	// Permissions What the authenticated user may do with the status: reply to it, boost it, and quote it.
-	// Omitted for anonymous requests.
+	// Omitted for anonymous requests. A post of the board of an event (`event_board`) is never
+	// boosted or quoted, and is replied to (on its board) only by the users who may post there.
 	Permissions *InteractionPermissions `json:"permissions,omitempty"`
 
 	// Pinned Whether the status is pinned to the author's profile; given only to the author.
@@ -16608,6 +16706,16 @@ type StatusEditArticle struct {
 
 	// Title The title of the revision.
 	Title string `json:"title"`
+}
+
+// StatusEventBoard The board of an event that a status is posted on (`listEventBoard`). A board post is seen only
+// by the readers of the board, is never boosted or quoted, and is replied to only from the
+// board, by the users who may post on it.
+type StatusEventBoard struct {
+	// EventId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	EventId Id `json:"event_id"`
 }
 
 // StatusHistory The revisions of a status.
@@ -19204,6 +19312,15 @@ type ListEventAttendeesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListEventBoardParams defines parameters for ListEventBoard.
+type ListEventBoardParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListEventCandidateVotesParams defines parameters for ListEventCandidateVotes.
 type ListEventCandidateVotesParams struct {
 	// Vote Only the answers of this kind; every answer when omitted.
@@ -19800,6 +19917,9 @@ type CreateEventJSONRequestBody = EventCreate
 
 // UpdateEventJSONRequestBody defines body for UpdateEvent for application/json ContentType.
 type UpdateEventJSONRequestBody = EventUpdate
+
+// PostToEventBoardJSONRequestBody defines body for PostToEventBoard for application/json ContentType.
+type PostToEventBoardJSONRequestBody = EventBoardPostCreate
 
 // CancelEventJSONRequestBody defines body for CancelEvent for application/json ContentType.
 type CancelEventJSONRequestBody = EventCancelRequest
@@ -26562,7 +26682,7 @@ type ClientInterface interface {
 	//
 	// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
 	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
-	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+	// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
 	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
 	//
@@ -26575,7 +26695,7 @@ type ClientInterface interface {
 	//
 	// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
 	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
-	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+	// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
 	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
 	//
@@ -26610,6 +26730,52 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 	ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListEventBoard List the posts of the board of an event
+	//
+	// The posts of the event's board, newest first, for the users who read it: the organizer, the
+	// co-organizers, and the users who see the event and answer `going` or `maybe`. A 403
+	// `/api/v1/problems/event-board-not-reader` for a user who sees the event but does not read its
+	// board. A post is a status that never leaves its event: it is not federated, and no timeline,
+	// search, profile, list, or conversation shows it. Its readers fetch, favourite, react to, and
+	// vote in it by its ID with the operations of statuses, and its author edits and deletes it
+	// there too; it is not boosted, quoted, bookmarked, or pinned (a 404, as a status the user does
+	// not see). A post whose author and the user block each other is left out.
+	//
+	// Corresponds with GET /events/{id}/board (the `ListEventBoard` operationId).
+	ListEventBoard(ctx context.Context, id EventId, params *ListEventBoardParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostToEventBoardWithBody Post on the board of an event
+	//
+	// Posts a status on the event's board (201), by a user whom the event's `board_writers` let
+	// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
+	// user who sees the event but does not read its board, a 403
+	// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
+	// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+	// after its end. The post is checked as `createStatus` checks a new status, and retrying with
+	// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
+	// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /events/{id}/board (the `PostToEventBoard` operationId).
+	PostToEventBoardWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostToEventBoard Post on the board of an event
+	//
+	// Posts a status on the event's board (201), by a user whom the event's `board_writers` let
+	// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
+	// user who sees the event but does not read its board, a 403
+	// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
+	// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+	// after its end. The post is checked as `createStatus` checks a new status, and retrying with
+	// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
+	// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /events/{id}/board (the `PostToEventBoard` operationId).
+	PostToEventBoard(ctx context.Context, id EventId, body PostToEventBoardJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetEventCalendar Get an event as an iCalendar file
 	//
@@ -28531,7 +28697,8 @@ type ClientInterface interface {
 	//
 	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 	// status is a 404 to a token without `read:direct`, the user's own included, and nothing
-	// is deleted.
+	// is deleted. The author deletes a post of the board of an event here, the board read-only or
+	// not.
 	//
 	// Corresponds with DELETE /statuses/{id} (the `DeleteStatus` operationId).
 	DeleteStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -28539,7 +28706,8 @@ type ClientInterface interface {
 	// GetStatus Get a status
 	//
 	// A status that the viewer may not see is a 404, the same as a missing one. An article comes
-	// with its body in `content`.
+	// with its body in `content`. A post of the board of an event (`listEventBoard`) is seen only
+	// by the users who read the board.
 	//
 	// Corresponds with GET /statuses/{id} (the `GetStatus` operationId).
 	GetStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -28555,6 +28723,9 @@ type ClientInterface interface {
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 	// status is a 404 to a token without `read:direct`, the user's own included.
+	// A post of the board of an event is edited here while its author may post on the board: a 403
+	// `/api/v1/problems/event-board-not-reader` or `/api/v1/problems/event-board-not-writer`
+	// otherwise, and a 409 `/api/v1/problems/event-board-closed` once the board is read-only.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -28572,6 +28743,9 @@ type ClientInterface interface {
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 	// status is a 404 to a token without `read:direct`, the user's own included.
+	// A post of the board of an event is edited here while its author may post on the board: a 403
+	// `/api/v1/problems/event-board-not-reader` or `/api/v1/problems/event-board-not-writer`
+	// otherwise, and a 409 `/api/v1/problems/event-board-closed` once the board is read-only.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -37664,7 +37838,7 @@ func (c *Client) GetEvent(ctx context.Context, id EventId, reqEditors ...Request
 //
 // Changes the settings or the date of the event, by its organizer or a co-organizer; a date
 // on an `unscheduled` event ends its date poll, as a confirmation does. Only the
-// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
 // `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
 //
@@ -37687,7 +37861,7 @@ func (c *Client) UpdateEventWithBody(ctx context.Context, id EventId, contentTyp
 //
 // Changes the settings or the date of the event, by its organizer or a co-organizer; a date
 // on an `unscheduled` event ends its date poll, as a confirmation does. Only the
-// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
 // `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
 //
@@ -37753,6 +37927,82 @@ func (c *Client) RevokeEventAttendeeApproval(ctx context.Context, id EventId, ac
 // Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 func (c *Client) ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewApproveEventAttendeeRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListEventBoard List the posts of the board of an event
+//
+// The posts of the event's board, newest first, for the users who read it: the organizer, the
+// co-organizers, and the users who see the event and answer `going` or `maybe`. A 403
+// `/api/v1/problems/event-board-not-reader` for a user who sees the event but does not read its
+// board. A post is a status that never leaves its event: it is not federated, and no timeline,
+// search, profile, list, or conversation shows it. Its readers fetch, favourite, react to, and
+// vote in it by its ID with the operations of statuses, and its author edits and deletes it
+// there too; it is not boosted, quoted, bookmarked, or pinned (a 404, as a status the user does
+// not see). A post whose author and the user block each other is left out.
+//
+// Corresponds with GET /events/{id}/board (the `ListEventBoard` operationId).
+func (c *Client) ListEventBoard(ctx context.Context, id EventId, params *ListEventBoardParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListEventBoardRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PostToEventBoardWithBody Post on the board of an event
+//
+// Posts a status on the event's board (201), by a user whom the event's `board_writers` let
+// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
+// user who sees the event but does not read its board, a 403
+// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
+// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+// after its end. The post is checked as `createStatus` checks a new status, and retrying with
+// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
+// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /events/{id}/board (the `PostToEventBoard` operationId).
+func (c *Client) PostToEventBoardWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostToEventBoardRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PostToEventBoard Post on the board of an event
+//
+// Posts a status on the event's board (201), by a user whom the event's `board_writers` let
+// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
+// user who sees the event but does not read its board, a 403
+// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
+// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+// after its end. The post is checked as `createStatus` checks a new status, and retrying with
+// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
+// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /events/{id}/board (the `PostToEventBoard` operationId).
+func (c *Client) PostToEventBoard(ctx context.Context, id EventId, body PostToEventBoardJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostToEventBoardRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -41223,7 +41473,8 @@ func (c *Client) SearchStatuses(ctx context.Context, params *SearchStatusesParam
 //
 // Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 // status is a 404 to a token without `read:direct`, the user's own included, and nothing
-// is deleted.
+// is deleted. The author deletes a post of the board of an event here, the board read-only or
+// not.
 //
 // Corresponds with DELETE /statuses/{id} (the `DeleteStatus` operationId).
 func (c *Client) DeleteStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -41241,7 +41492,8 @@ func (c *Client) DeleteStatus(ctx context.Context, id StatusId, reqEditors ...Re
 // GetStatus Get a status
 //
 // A status that the viewer may not see is a 404, the same as a missing one. An article comes
-// with its body in `content`.
+// with its body in `content`. A post of the board of an event (`listEventBoard`) is seen only
+// by the users who read the board.
 //
 // Corresponds with GET /statuses/{id} (the `GetStatus` operationId).
 func (c *Client) GetStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -41267,6 +41519,9 @@ func (c *Client) GetStatus(ctx context.Context, id StatusId, reqEditors ...Reque
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 // status is a 404 to a token without `read:direct`, the user's own included.
+// A post of the board of an event is edited here while its author may post on the board: a 403
+// `/api/v1/problems/event-board-not-reader` or `/api/v1/problems/event-board-not-writer`
+// otherwise, and a 409 `/api/v1/problems/event-board-closed` once the board is read-only.
 //
 // Takes any type of body and a specified content type.
 //
@@ -41294,6 +41549,9 @@ func (c *Client) EditStatusWithBody(ctx context.Context, id StatusId, contentTyp
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 // status is a 404 to a token without `read:direct`, the user's own included.
+// A post of the board of an event is edited here while its author may post on the board: a 403
+// `/api/v1/problems/event-board-not-reader` or `/api/v1/problems/event-board-not-writer`
+// otherwise, and a 409 `/api/v1/problems/event-board-closed` once the board is read-only.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -55672,6 +55930,126 @@ func NewApproveEventAttendeeRequest(server string, id EventId, accountId EventAc
 	return req, nil
 }
 
+// NewListEventBoardRequest constructs an http.Request for the ListEventBoard method
+func NewListEventBoardRequest(server string, id EventId, params *ListEventBoardParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/board", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostToEventBoardRequest calls the generic PostToEventBoard builder with application/json body
+func NewPostToEventBoardRequest(server string, id EventId, body PostToEventBoardJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostToEventBoardRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewPostToEventBoardRequestWithBody constructs an http.Request for the PostToEventBoard method, with any body, and a specified content type
+func NewPostToEventBoardRequestWithBody(server string, id EventId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/board", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetEventCalendarRequest constructs an http.Request for the GetEventCalendar method
 func NewGetEventCalendarRequest(server string, id EventId) (*http.Request, error) {
 	var err error
@@ -68918,7 +69296,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
 	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
-	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+	// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
 	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
 	//
@@ -68931,7 +69309,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
 	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
-	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+	// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
 	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
 	//
@@ -68972,6 +69350,54 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 	ApproveEventAttendeeWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*ApproveEventAttendeeResponse, error)
+
+	// ListEventBoardWithResponse List the posts of the board of an event
+	//
+	// The posts of the event's board, newest first, for the users who read it: the organizer, the
+	// co-organizers, and the users who see the event and answer `going` or `maybe`. A 403
+	// `/api/v1/problems/event-board-not-reader` for a user who sees the event but does not read its
+	// board. A post is a status that never leaves its event: it is not federated, and no timeline,
+	// search, profile, list, or conversation shows it. Its readers fetch, favourite, react to, and
+	// vote in it by its ID with the operations of statuses, and its author edits and deletes it
+	// there too; it is not boosted, quoted, bookmarked, or pinned (a 404, as a status the user does
+	// not see). A post whose author and the user block each other is left out.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /events/{id}/board (the `ListEventBoard` operationId).
+	ListEventBoardWithResponse(ctx context.Context, id EventId, params *ListEventBoardParams, reqEditors ...RequestEditorFn) (*ListEventBoardResponse, error)
+
+	// PostToEventBoardWithBodyWithResponse Post on the board of an event
+	//
+	// Posts a status on the event's board (201), by a user whom the event's `board_writers` let
+	// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
+	// user who sees the event but does not read its board, a 403
+	// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
+	// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+	// after its end. The post is checked as `createStatus` checks a new status, and retrying with
+	// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
+	// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events/{id}/board (the `PostToEventBoard` operationId).
+	PostToEventBoardWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostToEventBoardResponse, error)
+
+	// PostToEventBoardWithResponse Post on the board of an event
+	//
+	// Posts a status on the event's board (201), by a user whom the event's `board_writers` let
+	// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
+	// user who sees the event but does not read its board, a 403
+	// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
+	// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+	// after its end. The post is checked as `createStatus` checks a new status, and retrying with
+	// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
+	// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events/{id}/board (the `PostToEventBoard` operationId).
+	PostToEventBoardWithResponse(ctx context.Context, id EventId, body PostToEventBoardJSONRequestBody, reqEditors ...RequestEditorFn) (*PostToEventBoardResponse, error)
 
 	// GetEventCalendarWithResponse Get an event as an iCalendar file
 	//
@@ -71059,7 +71485,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 	// status is a 404 to a token without `read:direct`, the user's own included, and nothing
-	// is deleted.
+	// is deleted. The author deletes a post of the board of an event here, the board read-only or
+	// not.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -71069,7 +71496,8 @@ type ClientWithResponsesInterface interface {
 	// GetStatusWithResponse Get a status
 	//
 	// A status that the viewer may not see is a 404, the same as a missing one. An article comes
-	// with its body in `content`.
+	// with its body in `content`. A post of the board of an event (`listEventBoard`) is seen only
+	// by the users who read the board.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -71087,6 +71515,9 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 	// status is a 404 to a token without `read:direct`, the user's own included.
+	// A post of the board of an event is edited here while its author may post on the board: a 403
+	// `/api/v1/problems/event-board-not-reader` or `/api/v1/problems/event-board-not-writer`
+	// otherwise, and a 409 `/api/v1/problems/event-board-closed` once the board is read-only.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -71104,6 +71535,9 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 	// status is a 404 to a token without `read:direct`, the user's own included.
+	// A post of the board of an event is edited here while its author may post on the board: a 403
+	// `/api/v1/problems/event-board-not-reader` or `/api/v1/problems/event-board-not-writer`
+	// otherwise, and a 409 `/api/v1/problems/event-board-closed` once the board is read-only.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -90327,6 +90761,151 @@ func (r ApproveEventAttendeeResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ApproveEventAttendeeResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListEventBoardResponse200Headers the declared response headers of an HTTP 200 response for ListEventBoard
+type ListEventBoardResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListEventBoardResponseDefaultHeaders the declared response headers of an HTTP default response for ListEventBoard
+type ListEventBoardResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListEventBoardResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventBoardPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListEventBoardResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListEventBoardResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListEventBoardResponse) GetJSON200() *EventBoardPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListEventBoardResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListEventBoardResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListEventBoardResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListEventBoardResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListEventBoardResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// PostToEventBoardResponse201Headers the declared response headers of an HTTP 201 response for PostToEventBoard
+type PostToEventBoardResponse201Headers struct {
+	CacheControl *string
+}
+
+// PostToEventBoardResponse422Headers the declared response headers of an HTTP 422 response for PostToEventBoard
+type PostToEventBoardResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// PostToEventBoardResponseDefaultHeaders the declared response headers of an HTTP default response for PostToEventBoard
+type PostToEventBoardResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type PostToEventBoardResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Status
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *StatusRejectedProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *PostToEventBoardResponse201Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *PostToEventBoardResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *PostToEventBoardResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r PostToEventBoardResponse) GetJSON201() *Status {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r PostToEventBoardResponse) GetApplicationproblemJSON422() *StatusRejectedProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r PostToEventBoardResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r PostToEventBoardResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r PostToEventBoardResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostToEventBoardResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PostToEventBoardResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -109740,7 +110319,7 @@ func (c *ClientWithResponses) GetEventWithResponse(ctx context.Context, id Event
 //
 // Changes the settings or the date of the event, by its organizer or a co-organizer; a date
 // on an `unscheduled` event ends its date poll, as a confirmation does. Only the
-// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
 // `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
 //
@@ -109759,7 +110338,7 @@ func (c *ClientWithResponses) UpdateEventWithBodyWithResponse(ctx context.Contex
 //
 // Changes the settings or the date of the event, by its organizer or a co-organizer; a date
 // on an `unscheduled` event ends its date poll, as a confirmation does. Only the
-// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
 // `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
 //
@@ -109823,6 +110402,72 @@ func (c *ClientWithResponses) ApproveEventAttendeeWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseApproveEventAttendeeResponse(rsp)
+}
+
+// ListEventBoardWithResponse List the posts of the board of an event
+//
+// The posts of the event's board, newest first, for the users who read it: the organizer, the
+// co-organizers, and the users who see the event and answer `going` or `maybe`. A 403
+// `/api/v1/problems/event-board-not-reader` for a user who sees the event but does not read its
+// board. A post is a status that never leaves its event: it is not federated, and no timeline,
+// search, profile, list, or conversation shows it. Its readers fetch, favourite, react to, and
+// vote in it by its ID with the operations of statuses, and its author edits and deletes it
+// there too; it is not boosted, quoted, bookmarked, or pinned (a 404, as a status the user does
+// not see). A post whose author and the user block each other is left out.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /events/{id}/board (the `ListEventBoard` operationId).
+func (c *ClientWithResponses) ListEventBoardWithResponse(ctx context.Context, id EventId, params *ListEventBoardParams, reqEditors ...RequestEditorFn) (*ListEventBoardResponse, error) {
+	rsp, err := c.ListEventBoard(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListEventBoardResponse(rsp)
+}
+
+// PostToEventBoardWithBodyWithResponse Post on the board of an event
+//
+// Posts a status on the event's board (201), by a user whom the event's `board_writers` let
+// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
+// user who sees the event but does not read its board, a 403
+// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
+// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+// after its end. The post is checked as `createStatus` checks a new status, and retrying with
+// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
+// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events/{id}/board (the `PostToEventBoard` operationId).
+func (c *ClientWithResponses) PostToEventBoardWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostToEventBoardResponse, error) {
+	rsp, err := c.PostToEventBoardWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostToEventBoardResponse(rsp)
+}
+
+// PostToEventBoardWithResponse Post on the board of an event
+//
+// Posts a status on the event's board (201), by a user whom the event's `board_writers` let
+// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
+// user who sees the event but does not read its board, a 403
+// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
+// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+// after its end. The post is checked as `createStatus` checks a new status, and retrying with
+// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
+// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events/{id}/board (the `PostToEventBoard` operationId).
+func (c *ClientWithResponses) PostToEventBoardWithResponse(ctx context.Context, id EventId, body PostToEventBoardJSONRequestBody, reqEditors ...RequestEditorFn) (*PostToEventBoardResponse, error) {
+	rsp, err := c.PostToEventBoard(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostToEventBoardResponse(rsp)
 }
 
 // GetEventCalendarWithResponse Get an event as an iCalendar file
@@ -112835,7 +113480,8 @@ func (c *ClientWithResponses) SearchStatusesWithResponse(ctx context.Context, pa
 //
 // Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 // status is a 404 to a token without `read:direct`, the user's own included, and nothing
-// is deleted.
+// is deleted. The author deletes a post of the board of an event here, the board read-only or
+// not.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -112851,7 +113497,8 @@ func (c *ClientWithResponses) DeleteStatusWithResponse(ctx context.Context, id S
 // GetStatusWithResponse Get a status
 //
 // A status that the viewer may not see is a 404, the same as a missing one. An article comes
-// with its body in `content`.
+// with its body in `content`. A post of the board of an event (`listEventBoard`) is seen only
+// by the users who read the board.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -112875,6 +113522,9 @@ func (c *ClientWithResponses) GetStatusWithResponse(ctx context.Context, id Stat
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 // status is a 404 to a token without `read:direct`, the user's own included.
+// A post of the board of an event is edited here while its author may post on the board: a 403
+// `/api/v1/problems/event-board-not-reader` or `/api/v1/problems/event-board-not-writer`
+// otherwise, and a 409 `/api/v1/problems/event-board-closed` once the board is read-only.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -112898,6 +113548,9 @@ func (c *ClientWithResponses) EditStatusWithBodyWithResponse(ctx context.Context
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 // status is a 404 to a token without `read:direct`, the user's own included.
+// A post of the board of an event is edited here while its author may post on the board: a 403
+// `/api/v1/problems/event-board-not-reader` or `/api/v1/problems/event-board-not-writer`
+// otherwise, and a 409 `/api/v1/problems/event-board-closed` once the board is read-only.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -136295,6 +136948,184 @@ func ParseApproveEventAttendeeResponse(rsp *http.Response) (*ApproveEventAttende
 		response.Headers200 = &headers
 	case true:
 		var headers ApproveEventAttendeeResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListEventBoardResponse parses an HTTP response from a ListEventBoardWithResponse call
+func ParseListEventBoardResponse(rsp *http.Response) (*ListEventBoardResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListEventBoardResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventBoardPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListEventBoardResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListEventBoardResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParsePostToEventBoardResponse parses an HTTP response from a PostToEventBoardWithResponse call
+func ParsePostToEventBoardResponse(rsp *http.Response) (*PostToEventBoardResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostToEventBoardResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Status
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StatusRejectedProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers PostToEventBoardResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case rsp.StatusCode == 422:
+		var headers PostToEventBoardResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers PostToEventBoardResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

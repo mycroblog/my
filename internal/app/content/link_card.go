@@ -220,7 +220,8 @@ type fetchLinkCardPayload struct {
 // RegisterProjectors registers the projector of status_link_cards (ADR-0062 §1, §6): the URL
 // chosen from the current revision of each status that is not deleted. When the card of the URL
 // is missing or stale, it enqueues JobFetchLinkCard, delayed for a remote status. Register it
-// after RegisterProjectors, which moves the heads.
+// after RegisterProjectors, which moves the heads. A post of the board of an event, which never
+// leaves its event, has no card: no fetch tells a remote server of its link (ADR-0161 §17).
 func (l *LinkCards) RegisterProjectors(r *uow.Projectors) {
 	r.Register(EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(StatusCreated)

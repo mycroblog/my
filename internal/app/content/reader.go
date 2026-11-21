@@ -47,6 +47,8 @@ type ReaderDeps struct {
 	// RemoteArticles shows the images of the bodies of received articles through the media proxy
 	// (ArticleBody); nil shows none of them as images.
 	RemoteArticles RemoteArticleSanitizer
+	// Boards tells who reads the boards of the events (ADR-0161 §17); nil shows no board post.
+	Boards Boards
 }
 
 // Reader presents statuses to a viewer: one status, its thread, its edit history, and a local
@@ -54,6 +56,11 @@ type ReaderDeps struct {
 // content.CanView in ContextStatus; a status that the viewer may not see fails with
 // ErrNotFound, the same as a missing or deleted one, and is left out of lists, so that its
 // existence does not leak (ADR-0017 §3).
+//
+// The posts of the boards of events are left out of every list but Board, ViewsWithBoards, and
+// OwnBoardPosts; the reads of one status by its ID (View, Visible, VisibleToLocal, Readable,
+// History, Source, Reactions, and the status of Thread) show one to a viewer who reads its board
+// (board.go).
 //
 // The viewer is anonymous or a local account (content.ViewerAnonymous, content.ViewerLocal).
 type Reader struct {
@@ -74,7 +81,7 @@ func NewReader(d ReaderDeps) *Reader {
 	}
 	return &Reader{d: d, aud: audience{
 		statuses: d.Statuses, interactions: d.Interactions, accounts: d.Accounts,
-		relationships: d.Relationships, restrictions: d.Restrictions,
+		relationships: d.Relationships, restrictions: d.Restrictions, boards: d.Boards,
 	}}
 }
 
@@ -113,6 +120,9 @@ type StatusView struct {
 	// InteractionPolicy is who may reply to, boost, and quote the status (ADR-0155 §10), for the
 	// author of a local status only; nil for anyone else.
 	InteractionPolicy *content.InteractionSettings
+	// BoardGatheringID is the event whose board the status is posted on (ADR-0161 §17), "" for
+	// any other status.
+	BoardGatheringID string
 }
 
 // Edited reports whether the status has a revision after its first.
@@ -185,6 +195,11 @@ type BookmarkPage struct {
 
 // View returns a status as viewer sees it.
 func (r *Reader) View(ctx context.Context, viewer Viewer, statusID string) (StatusView, error) {
+	return r.onBoard().view(ctx, viewer, statusID)
+}
+
+// view is View, admitting a board post as r does.
+func (r *Reader) view(ctx context.Context, viewer Viewer, statusID string) (StatusView, error) {
 	st, author, err := r.aud.visibleStatus(ctx, viewer, statusID)
 	if err != nil {
 		return StatusView{}, err
@@ -196,7 +211,7 @@ func (r *Reader) View(ctx context.Context, viewer Viewer, statusID string) (Stat
 // that the viewer may not see fails with ErrNotFound, the same as a missing or deleted one.
 // Other modules check through it that a viewer may refer to a status, such as in a report.
 func (r *Reader) Visible(ctx context.Context, viewer Viewer, statusID string) (content.Status, error) {
-	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
+	st, _, err := r.aud.onBoard().visibleStatus(ctx, viewer, statusID)
 	return st, err
 }
 
@@ -228,7 +243,7 @@ func (r *Reader) VisibleAmong(ctx context.Context, viewer Viewer, ids []string) 
 // statusID, as Visible decides for one, with a number of queries that does not grow with
 // viewerIDs.
 func (r *Reader) VisibleToLocal(ctx context.Context, statusID string, viewerIDs []string) (map[string]bool, error) {
-	return r.aud.visibleToLocal(ctx, statusID, viewerIDs)
+	return r.aud.onBoard().visibleToLocal(ctx, statusID, viewerIDs)
 }
 
 // ReadableStatus is a status that a viewer may see, for a module that works on its text.
@@ -244,7 +259,7 @@ type ReadableStatus struct {
 // Readable returns what a module needs to work on the text of a status that viewer may see; a
 // status that the viewer may not see fails with ErrNotFound, the same as a missing or deleted one.
 func (r *Reader) Readable(ctx context.Context, viewer Viewer, statusID string) (ReadableStatus, error) {
-	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
+	st, _, err := r.aud.onBoard().visibleStatus(ctx, viewer, statusID)
 	if err != nil {
 		return ReadableStatus{}, err
 	}
@@ -285,7 +300,8 @@ func (r *Reader) Live(ctx context.Context, statusID string) error {
 // decided and presented a page at a time (Reader.page): the ancestors with the first
 // descendants, and more descendants while fewer than MaxThreadDescendants are shown.
 func (r *Reader) Thread(ctx context.Context, viewer Viewer, statusID string) (Thread, error) {
-	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
+	// A board post is shown to its readers, and its thread, a list, is not: the board lists it.
+	st, _, err := r.aud.onBoard().visibleStatus(ctx, viewer, statusID)
 	if err != nil {
 		return Thread{}, err
 	}
@@ -378,7 +394,7 @@ func (r *Reader) Thread(ctx context.Context, viewer Viewer, statusID string) (Th
 // History returns the revisions of a status that viewer may see, oldest first (FR-109). What
 // moderation forces sensitive shows so in every revision with media, as in the current one.
 func (r *Reader) History(ctx context.Context, viewer Viewer, statusID string) ([]RevisionView, error) {
-	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
+	st, _, err := r.aud.onBoard().visibleStatus(ctx, viewer, statusID)
 	if err != nil {
 		return nil, err
 	}
@@ -437,7 +453,7 @@ func (r *Reader) Bookmarks(ctx context.Context, viewer Viewer, before string, li
 		out.Next = marks[limit-1].ID
 	}
 	for _, b := range marks {
-		view, err := r.View(ctx, viewer, b.StatusID)
+		view, err := r.view(ctx, viewer, b.StatusID)
 		if errors.Is(err, ErrNotFound) {
 			continue
 		}
@@ -523,6 +539,35 @@ func (r *Reader) presentWith(ctx context.Context, viewer Viewer, st content.Stat
 	}
 	if out.Permissions, out.InteractionPolicy, err = r.permissions(ctx, viewer, st, out.InReplyTo); err != nil {
 		return StatusView{}, err
+	}
+	if out.BoardGatheringID, err = boardOf(ctx, r.d.Statuses, nil, st); err != nil {
+		return StatusView{}, err
+	}
+	if out.BoardGatheringID != "" && out.Permissions != nil {
+		if *out.Permissions, err = r.boardPermissions(ctx, viewer.AccountID, out.BoardGatheringID); err != nil {
+			return StatusView{}, err
+		}
+	}
+	return out, nil
+}
+
+// boardPermissions returns what accountID may do with a post of the board of gatheringID: never
+// boost or quote it, and reply to it, on the board, only while the account may post there
+// (ADR-0161 §17).
+func (r *Reader) boardPermissions(ctx context.Context, accountID, gatheringID string) (InteractionPermissions, error) {
+	out := InteractionPermissions{Reply: content.InteractionDenied, Announce: content.InteractionDenied, Quote: content.InteractionDenied}
+	var a BoardAccess
+	switch k := r.aud.known; {
+	case k != nil && k.gatheringID == gatheringID && k.viewerID == accountID:
+		a = k.access
+	case r.d.Boards != nil:
+		var err error
+		if a, err = r.d.Boards.Board(ctx, accountID, gatheringID); err != nil {
+			return InteractionPermissions{}, err
+		}
+	}
+	if a.Writes {
+		out.Reply = content.InteractionAllowed
 	}
 	return out, nil
 }

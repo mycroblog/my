@@ -304,7 +304,7 @@ func (s *Service) EditArticle(ctx context.Context, in EditArticleInput) (Post, e
 	if err != nil {
 		return Post{}, err
 	}
-	return s.commitEdit(ctx, author, st, current, body, false)
+	return s.commitEdit(ctx, author, st, current, body, false, nil)
 }
 
 // PreviewArticle renders the body of an article of the local account accountID as publishing it

@@ -178,8 +178,10 @@ func (s *Server) newEvents(ctx context.Context, views []appgathering.View) ([]Ev
 			Places: make([]EventPlace, 0, len(v.Places)), HiddenPlaces: make([]EventPlaceKind, 0, len(v.HiddenPlaces)),
 			StartsAt: v.Head.Schedule.StartsAt.UTC(), EndsAt: v.Head.Schedule.EndsAt.UTC(), State: EventState(v.Head.State),
 			GoingCount: v.Head.GoingCount, CreatedAt: v.CreatedAt.UTC(), RevisedAt: v.Revision.RevisedAt.UTC(), RevisionCount: v.Revisions,
+			BoardWriters: EventBoardWriters(st.BoardWriters),
 			Viewer: EventViewer{
 				Organizer: v.Viewer.Organizer, Coorganizer: v.Viewer.Coorganizer, Invited: v.Viewer.Invited, Approved: v.Viewer.Approved,
+				Board: EventBoardAccess{Readable: v.Viewer.Board.Reads, Writable: v.Viewer.Board.Writes},
 			},
 		}
 		for _, c := range v.Coorganizers {
@@ -326,6 +328,9 @@ func (s *Server) CreateEvent(ctx context.Context, req CreateEventRequestObject) 
 	if b.Places != nil {
 		in.Settings.Places = eventPlaces(*b.Places)
 	}
+	if b.BoardWriters != nil {
+		in.Settings.BoardWriters = gathering.BoardWriters(*b.BoardWriters)
+	}
 	view, err := events.Create(ctx, v.AccountID, in)
 	if err != nil {
 		p, err := s.eventFail(ctx, err)
@@ -375,6 +380,10 @@ func (s *Server) UpdateEvent(ctx context.Context, req UpdateEventRequestObject) 
 	if b.Places != nil {
 		places := eventPlaces(*b.Places)
 		patch.Places = &places
+	}
+	if b.BoardWriters != nil {
+		w := gathering.BoardWriters(*b.BoardWriters)
+		patch.BoardWriters = &w
 	}
 	switch {
 	case b.StartsAt != nil && b.EndsAt != nil:

@@ -53,6 +53,27 @@ type unpublishedStatuses interface {
 	Unpublished(ctx context.Context, st appcontent.Status) (bool, error)
 }
 
+// boardStatuses tells the posts of the boards of the events, which never leave their event
+// (ADR-0161 §17), as *appcontent.Service does.
+type boardStatuses interface {
+	OnBoard(ctx context.Context, st appcontent.Status) (bool, error)
+}
+
+// boardFacts returns the facts of st as a post of the board of an event for a viewer outside
+// this server's own reads, which content.CanView denies: nil for an ordinary status and for
+// statuses that cannot tell.
+func boardFacts(ctx context.Context, statuses any, st appcontent.Status) (*appcontent.BoardFacts, error) {
+	b, ok := statuses.(boardStatuses)
+	if !ok {
+		return nil, nil
+	}
+	on, err := b.OnBoard(ctx, st)
+	if err != nil || !on {
+		return nil, err
+	}
+	return &appcontent.BoardFacts{}, nil
+}
+
 // ObjectAccounts is the part of the account module's public API that object fetches read.
 // *appaccount.Service implements it.
 type ObjectAccounts interface {
@@ -375,6 +396,10 @@ func (o *Objects) canView(ctx context.Context, req Requester, st appcontent.Stat
 			return false, err
 		}
 	}
+	var err error
+	if facts.Board, err = boardFacts(ctx, o.d.Statuses, st); err != nil {
+		return false, err
+	}
 	viewer := appcontent.Viewer{Kind: appcontent.ViewerAnonymous}
 	var rel appcontent.Relation
 	if !req.Anonymous() {
@@ -390,7 +415,6 @@ func (o *Objects) canView(ctx context.Context, req Requester, st appcontent.Stat
 	if ok := appcontent.CanView(appcontent.ContextObjectFetch, viewer, facts, restrictions, rel); ok || req.Anonymous() {
 		return ok, nil
 	}
-	var err error
 	if rel.Mentioned, err = o.d.Accounts.AnyOnDomain(ctx, req.Domain, rev.MentionedAccountIDs); err != nil {
 		return false, err
 	}

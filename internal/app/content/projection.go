@@ -21,19 +21,21 @@ import (
 //     held (a reply request of its is not accepted, ADR-0155 §6) until StatusReleased;
 //   - status_counters counts the replies, not held, whose visibility CountsAsReply (the boosts and
 //     favourites are counted by RegisterInteractionProjectors);
-//   - account_post_counters counts each account's statuses and their latest PublishedAt;
-//   - local_post_counters counts each local account's statuses that CountAsLocalPost (its
-//     boosts are counted by RegisterInteractionProjectors).
+//   - account_post_counters counts each account's statuses and their latest PublishedAt, but the
+//     posts of the boards of events, which no remote server learns of (ADR-0161 §17);
+//   - local_post_counters counts each local account's statuses that CountAsLocalPost, but the
+//     board posts (its boosts are counted by RegisterInteractionProjectors).
 //
-// The rebuild queries of the Repository state the same rules in SQL; the property test in
-// contenttest.StatusRepositoryContract checks that both agree.
+// The posts of the boards of events project alike from BoardStatusPosted, BoardStatusRevised, and
+// BoardStatusesDeleted. The rebuild queries of the Repository state the same rules in SQL; the
+// property test in contenttest.StatusRepositoryContract checks that both agree.
 func RegisterProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(StatusCreated)
 		if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(ev.Status, false)); err != nil {
 			return err
 		}
-		return projectCreated(ctx, tx, repo, ev.Status, ev.Revision, ev.HeldReply)
+		return projectCreated(ctx, tx, repo, ev.Status, ev.Revision, ev.HeldReply, true)
 	})
 	r.Register(EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(StatusReleased)
@@ -76,6 +78,7 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		}
 		return projectDeletedMany(ctx, tx, repo, ds)
 	})
+	registerBoardProjectors(r, repo)
 	// poll_tallies holds the counts of the newest observation of each remote poll.
 	r.Register(EventPollTallyObserved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		o := e.(PollTallyObserved).Observation
@@ -121,8 +124,9 @@ func projectRevision(ctx context.Context, tx uow.Tx, repo Repository, rev conten
 }
 
 // projectCreated projects the new status s with its first revision rev. A held reply is not
-// linked to its parent nor counted among its replies.
-func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.Status, rev content.Revision, held bool) error {
+// linked to its parent nor counted among its replies; a status that is not counted (a post of the
+// board of an event, which remote servers learn nothing of) counts among no posts of its author.
+func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.Status, rev content.Revision, held, counted bool) error {
 	if err := projectRevision(ctx, tx, repo, rev); err != nil {
 		return err
 	}
@@ -150,6 +154,9 @@ func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 		if err := linkReply(ctx, tx, repo, s); err != nil {
 			return err
 		}
+	}
+	if !counted {
+		return nil
 	}
 	if err := repo.AddPost(ctx, tx, s.AuthorAccountID, s.PublishedAt); err != nil {
 		return err
@@ -201,6 +208,10 @@ func projectDeleted(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 	if err := repo.DeleteStatusProjections(ctx, tx, s.ID); err != nil {
 		return err
 	}
+	// A board post counts among no posts (projectCreated).
+	if gid, err := boardOf(ctx, repo, tx, s); err != nil || gid != "" {
+		return err
+	}
 	if err := repo.RemovePost(ctx, tx, s.AuthorAccountID); err != nil {
 		return err
 	}
@@ -220,6 +231,11 @@ func projectDeletedMany(ctx context.Context, tx uow.Tx, repo Repository, ds []St
 	if err != nil {
 		return err
 	}
+	// The board posts count among no posts (projectCreated).
+	boards, err := repo.StatusBoardsAmong(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
 	replies := map[string]int64{}
 	posts := map[string]int64{}
 	localPosts := map[string]int64{}
@@ -227,6 +243,9 @@ func projectDeletedMany(ctx context.Context, tx uow.Tx, repo Repository, ds []St
 		s := d.Status
 		if link, ok := links[s.ID]; ok && link.ParentStatusID != s.ID && s.Visibility.CountsAsReply() && !slices.Contains(ids, link.ParentStatusID) {
 			replies[link.ParentStatusID]--
+		}
+		if _, onBoard := boards[s.ID]; onBoard {
+			continue
 		}
 		posts[s.AuthorAccountID]++
 		if s.CountsAsLocalPost() {

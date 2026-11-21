@@ -103,7 +103,7 @@ func (s *Interactions) VotePoll(ctx context.Context, accountID, statusID, pollID
 	if err := s.checkRestrictions(ctx, accountID, false); err != nil {
 		return nil, err
 	}
-	st, err := s.visibleStatus(ctx, accountID, statusID)
+	st, err := s.visibleOnBoard(ctx, accountID, statusID)
 	if err != nil {
 		return nil, err
 	}

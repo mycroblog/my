@@ -116,11 +116,31 @@ func (s Speakers) Valid() bool {
 	return false
 }
 
+// BoardWriters is who writes on the board of an event (gathering_revisions.board_writers,
+// ADR-0161 §5, §17), among those who read it.
+type BoardWriters string
+
+// The writers of a board.
+const (
+	// BoardWritersOrganizer is the organizer alone.
+	BoardWritersOrganizer BoardWriters = "organizer"
+	// BoardWritersOrganizers is the organizer and the co-organizers.
+	BoardWritersOrganizers BoardWriters = "organizers"
+	// BoardWritersReaders is everyone who reads the board.
+	BoardWritersReaders BoardWriters = "readers"
+)
+
+// Valid reports whether w is one of the writers of a board.
+func (w BoardWriters) Valid() bool {
+	return w == BoardWritersOrganizer || w == BoardWritersOrganizers || w == BoardWritersReaders
+}
+
 // Defaults of a new event (ADR-0161 §5, §6).
 const (
 	DefaultVisibility      = VisibilityPublic
 	DefaultPlaceDisclosure = DisclosureApproved
 	DefaultSpeakers        = SpeakersManual
+	DefaultBoardWriters    = BoardWritersOrganizers
 )
 
 // Answer is an attendee's answer (gathering_rsvps.answer).
@@ -223,6 +243,8 @@ type Settings struct {
 	Capacity int
 	// Places are in the order the organizer gave them, at most one of each kind.
 	Places []Place
+	// BoardWriters is who writes on the event's board.
+	BoardWriters BoardWriters
 }
 
 // Place returns the place of kind k, false without one.
@@ -251,6 +273,7 @@ const (
 	FieldEndsAt          Field = "ends_at"
 	FieldCandidates      Field = "candidates"
 	FieldNote            Field = "note"
+	FieldBoardWriters    Field = "board_writers"
 )
 
 // SettingsError reports the invalid setting.
@@ -266,8 +289,9 @@ type GraphemeCounter func(s string) int
 // MaxTitleLength code points) on one line, without surrounding white space or control
 // characters; a description of at most MaxDescriptionLength characters without control
 // characters other than line breaks; a known visibility and disclosure; a time zone that
-// ValidTimeZone accepts; a capacity of 0 to MaxCapacity; and at most MaxPlaces places, one of each
-// kind, each valid for its kind (validPlace). It returns a *SettingsError.
+// ValidTimeZone accepts; a capacity of 0 to MaxCapacity; at most MaxPlaces places, one of each
+// kind, each valid for its kind (validPlace); and known writers of the board. It returns a
+// *SettingsError.
 func (s Settings) Validate(graphemes GraphemeCounter) error {
 	invalid := func(f Field) error { return &SettingsError{Field: f} }
 	switch {
@@ -285,6 +309,8 @@ func (s Settings) Validate(graphemes GraphemeCounter) error {
 		return invalid(FieldCapacity)
 	case !validPlaces(s.Places):
 		return invalid(FieldPlaces)
+	case !s.BoardWriters.Valid():
+		return invalid(FieldBoardWriters)
 	}
 	return nil
 }

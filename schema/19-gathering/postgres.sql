@@ -21,7 +21,8 @@ CREATE INDEX gatherings_organizer_account_id ON gatherings (organizer_account_id
 
 -- Event (revision): the settings of an event; the settings it was created with are the first,
 -- and the newest row is current. The title is 1 to 100 grapheme clusters
--- (internal/domain/gathering); time_zone is an IANA name. The erasure of the account that wrote a
+-- (internal/domain/gathering); time_zone is an IANA name; board_writers is who writes on the board of
+-- the event (ADR-0161 §17). The erasure of the account that wrote a
 -- revision empties its title and description and deletes its places.
 CREATE TABLE gathering_revisions (
   id uuid NOT NULL PRIMARY KEY,
@@ -33,7 +34,8 @@ CREATE TABLE gathering_revisions (
   place_disclosure text NOT NULL CHECK (place_disclosure IN ('approved', 'viewers')),
   capacity integer NOT NULL CHECK (capacity BETWEEN 0 AND 10000),
   revised_by_account_id uuid NOT NULL,
-  revised_at timestamptz NOT NULL
+  revised_at timestamptz NOT NULL,
+  board_writers text NOT NULL DEFAULT 'organizers' CHECK (board_writers IN ('organizer', 'organizers', 'readers'))
 );
 CREATE INDEX gathering_revisions_gathering_id_id ON gathering_revisions (gathering_id, id DESC);
 -- The revisions that an account wrote, which its erasure empties.

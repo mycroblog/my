@@ -73,6 +73,7 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 		ArticleLimits:    a.articleLimits,
 		ArticleLimitsTx:  a.articleLimitsTx,
 		MayWriteArticles: a.mayWriteArticles,
+		Boards:           contentBoards{a}, // reads a.Events, built by setUpGathering
 		Clock:            a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
 	})
 	a.Hooks.RegisterOverrideEffect(hook.MediaCheck, a.Content.UndoMediaReview)
@@ -87,7 +88,8 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 		EmojiTags: func(ctx context.Context, ids []string) ([]content.EmojiTag, error) {
 			return a.Media.EmojiTags(ctx, ids)
 		},
-		Clock: a.Clock, IDs: a.IDs, Host: cfg.Host,
+		Boards: contentBoards{a},
+		Clock:  a.Clock, IDs: a.IDs, Host: cfg.Host,
 	})
 }
 
@@ -98,6 +100,7 @@ func (a *App) setUpStatusReader(statuses content.Repository, interactions conten
 		Statuses: statuses, Interactions: interactions, Accounts: a.Accounts, Relationships: a.Graph,
 		Restrictions: a.AccountPolicy.Content(), Media: a.Media, Clock: a.Clock, LinkCards: a.LinkCards,
 		Quotes: quotes, DomainMutes: a.Graph, RemoteArticles: newRemoteArticleSanitizer(),
+		Boards: contentBoards{a},
 	})
 }
 

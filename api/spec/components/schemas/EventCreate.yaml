@@ -25,6 +25,10 @@ properties:
   capacity:
     description: How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
     type: integer
+  board_writers:
+    description: Who posts on the event's board; `organizers` when omitted.
+    allOf:
+      - $ref: ./EventBoardWriters.yaml
   places:
     description: Up to 3 places, one of each kind.
     type: array

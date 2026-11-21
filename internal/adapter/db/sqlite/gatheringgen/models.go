@@ -44,6 +44,7 @@ type GatheringRevision struct {
 	Capacity           int64
 	RevisedByAccountID string
 	RevisedAt          int64
+	BoardWriters       string
 }
 
 type GatheringRevisionPlace struct {

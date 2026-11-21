@@ -4,11 +4,21 @@
 // That the picker's field has the focus once it opened is in emoji-picker-overlay.jsdom.test.tsx.
 
 import { expect, test } from "bun:test";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { EmojiPickerPopover, EmojiPickerSheet, EmojiPickerSurface, LazyEmojiPicker } from "./emoji-picker-overlay";
 import { IconButton } from "./icon-button";
+
+/**
+ * Waits for the focus to come back to what `target` finds: the overlay unmounts once its motion has left, and React
+ * Aria gives the focus back on the animation frame after that, so neither is done when the press that closed it is.
+ */
+async function focusReturnsTo(target: () => HTMLElement): Promise<void> {
+  await waitFor(() => {
+    expect(document.activeElement).toBe(target());
+  });
+}
 
 const picker = (
   <LazyEmojiPicker
@@ -87,7 +97,7 @@ test("Escape closes the picker's popover, and the focus is back on its trigger",
 
   expect(changes).toEqual([true, false]);
   expect(screen.queryByRole("dialog")).toBeNull();
-  expect(document.activeElement).toBe(screen.getByRole("button", { name: "React", expanded: false }));
+  await focusReturnsTo(() => screen.getByRole("button", { name: "React", expanded: false }));
 });
 
 test("a popover with no owner opens and closes by its trigger alone", async () => {
@@ -103,7 +113,7 @@ test("a popover with no owner opens and closes by its trigger alone", async () =
   await user.keyboard("{Escape}");
 
   expect(screen.queryByRole("dialog")).toBeNull();
-  expect(document.activeElement).toBe(screen.getByRole("button", { name: "React", expanded: false }));
+  await focusReturnsTo(() => screen.getByRole("button", { name: "React", expanded: false }));
 });
 
 /** A React button that opens the picker's sheet, over a page with a button, and how often the sheet asked to close. */
@@ -170,5 +180,5 @@ for (const [how, close] of [
 
     expect(closes).toHaveLength(1);
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "React" }));
+    await focusReturnsTo(() => screen.getByRole("button", { name: "React" }));
   });

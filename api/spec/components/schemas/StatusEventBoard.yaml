@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The board of an event that a status is posted on (`listEventBoard`). A board post is seen only
+  by the readers of the board, is never boosted or quoted, and is replied to only from the
+  board, by the users who may post on it.
+type: object
+required: [event_id]
+properties:
+  event_id:
+    $ref: ./Id.yaml

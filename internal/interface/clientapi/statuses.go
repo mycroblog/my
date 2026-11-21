@@ -256,6 +256,9 @@ func (s *Server) contentProblem(ctx context.Context, err error, article string) 
 	case errors.Is(err, appcontent.ErrPollNotEditable):
 		return unprocessable(l.ServerErrorsStatusPollNotEditable())
 	}
+	if p, ok := s.boardProblem(ctx, err); ok {
+		return p, true
+	}
 	return s.articleProblem(ctx, err, article)
 }
 
@@ -436,6 +439,9 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 	if v.Permissions != nil {
 		p := newInteractionPermissions(*v.Permissions)
 		out.Permissions = &p
+	}
+	if v.BoardGatheringID != "" {
+		out.EventBoard = &StatusEventBoard{EventId: v.BoardGatheringID}
 	}
 	if v.InteractionPolicy != nil {
 		policy := newInteractionPolicy(*v.InteractionPolicy)

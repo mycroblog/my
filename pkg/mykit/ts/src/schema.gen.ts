@@ -3224,7 +3224,8 @@ export interface paths {
         /**
          * Get a status
          * @description A status that the viewer may not see is a 404, the same as a missing one. An article comes
-         *     with its body in `content`.
+         *     with its body in `content`. A post of the board of an event (`listEventBoard`) is seen only
+         *     by the users who read the board.
          */
         get: operations["getStatus"];
         /**
@@ -3238,6 +3239,9 @@ export interface paths {
          *     `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
          *     status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
          *     status is a 404 to a token without `read:direct`, the user's own included.
+         *     A post of the board of an event is edited here while its author may post on the board: a 403
+         *     `/api/v1/problems/event-board-not-reader` or `/api/v1/problems/event-board-not-writer`
+         *     otherwise, and a 409 `/api/v1/problems/event-board-closed` once the board is read-only.
          */
         put: operations["editStatus"];
         post?: never;
@@ -3245,7 +3249,8 @@ export interface paths {
          * Delete the authenticated user's status
          * @description Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
          *     status is a 404 to a token without `read:direct`, the user's own included, and nothing
-         *     is deleted.
+         *     is deleted. The author deletes a post of the board of an event here, the board read-only or
+         *     not.
          */
         delete: operations["deleteStatus"];
         options?: never;
@@ -5395,7 +5400,7 @@ export interface paths {
          * Change an event
          * @description Changes the settings or the date of the event, by its organizer or a co-organizer; a date
          *     on an `unscheduled` event ends its date poll, as a confirmation does. Only the
-         *     organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+         *     organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
          *     `voice` place needs the organizer to be able to host rooms (a 422
          *     `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
          */
@@ -5503,6 +5508,47 @@ export interface paths {
         get: operations["listEventAttendees"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the posts of the board of an event
+         * @description The posts of the event's board, newest first, for the users who read it: the organizer, the
+         *     co-organizers, and the users who see the event and answer `going` or `maybe`. A 403
+         *     `/api/v1/problems/event-board-not-reader` for a user who sees the event but does not read its
+         *     board. A post is a status that never leaves its event: it is not federated, and no timeline,
+         *     search, profile, list, or conversation shows it. Its readers fetch, favourite, react to, and
+         *     vote in it by its ID with the operations of statuses, and its author edits and deletes it
+         *     there too; it is not boosted, quoted, bookmarked, or pinned (a 404, as a status the user does
+         *     not see). A post whose author and the user block each other is left out.
+         */
+        get: operations["listEventBoard"];
+        put?: never;
+        /**
+         * Post on the board of an event
+         * @description Posts a status on the event's board (201), by a user whom the event's `board_writers` let
+         *     post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
+         *     user who sees the event but does not read its board, a 403
+         *     `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
+         *     409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+         *     after its end. The post is checked as `createStatus` checks a new status, and retrying with
+         *     the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
+         *     same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
+         */
+        post: operations["postToEventBoard"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14902,6 +14948,7 @@ export interface components {
             place_disclosure: components["schemas"]["EventPlaceDisclosure"];
             /** @description How many attendees may answer `going`; 0 for no limit. */
             capacity: number;
+            board_writers: components["schemas"]["EventBoardWriters"];
             places: components["schemas"]["EventPlace"][];
             /** @description The kinds of the places that the user does not see. */
             hidden_places: components["schemas"]["EventPlaceKind"][];
@@ -14952,6 +14999,48 @@ export interface components {
             account: components["schemas"]["Account"];
             vote: components["schemas"]["EventVote"];
         };
+        /** @description What the user may do with the board of an event. */
+        EventBoardAccess: {
+            /**
+             * @description Whether the user reads the board: the user organizes or co-organizes the event, or answers
+             *     `going` or `maybe`.
+             */
+            readable: boolean;
+            /**
+             * @description Whether the user may post on the board and edit their posts on it now: the event's
+             *     `board_writers` admit the user, and the board is not read-only. The board is read-only once
+             *     the event is cancelled, and from 7 days after its end (for an `unscheduled` event, the end of
+             *     its last candidate date, its `ends_at`).
+             */
+            writable: boolean;
+        };
+        /** @description A page of the posts of the board of an event, newest first. */
+        EventBoardPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["Status"][];
+        };
+        /**
+         * @description A new post on the board of an event. It has what a new status has but a visibility, which the
+         *     board decides, and a quote, which a board post never has.
+         */
+        EventBoardPostCreate: {
+            text: components["schemas"]["StatusText"];
+            spoiler_text?: components["schemas"]["SpoilerText"];
+            /** @description Whether the media are sensitive. */
+            sensitive?: boolean;
+            language?: components["schemas"]["StatusLanguageInput"];
+            /** @description A post of the same board to reply to; any other status is a 422. */
+            in_reply_to_id?: components["schemas"]["Id"];
+            media?: components["schemas"]["StatusMediaInput"];
+            poll?: components["schemas"]["PollInput"];
+        };
+        /**
+         * @description Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
+         *     `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+         *     The board is read by the organizer, the co-organizers, and the users who see the event and
+         *     answer `going` or `maybe`.
+         * @enum {string}
+         */
+        EventBoardWriters: "organizer" | "organizers" | "readers";
         /** @description A page of the answers to a candidate date, in the order of the users' IDs. */
         EventBallotPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["EventBallot"][];
@@ -15027,6 +15116,8 @@ export interface components {
             place_disclosure?: components["schemas"]["EventPlaceDisclosure"];
             /** @description How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit. */
             capacity?: number;
+            /** @description Who posts on the event's board; `organizers` when omitted. */
+            board_writers?: components["schemas"]["EventBoardWriters"];
             /** @description Up to 3 places, one of each kind. */
             places?: components["schemas"]["EventPlace"][];
             /**
@@ -15164,6 +15255,8 @@ export interface components {
             time_zone?: string;
             place_disclosure?: components["schemas"]["EventPlaceDisclosure"];
             capacity?: number;
+            /** @description Who posts on the event's board; only the organizer changes it. */
+            board_writers?: components["schemas"]["EventBoardWriters"];
             places?: components["schemas"]["EventPlace"][];
             /** Format: date-time */
             starts_at?: string;
@@ -15182,6 +15275,7 @@ export interface components {
             answer?: components["schemas"]["EventAnswer"];
             /** @description Whether the organizer or a co-organizer approved the user's answer. */
             approved: boolean;
+            board: components["schemas"]["EventBoardAccess"];
         };
         /**
          * @description Who sees an event: `public` every local user, `followers` the users who follow the organizer,
@@ -17869,6 +17963,12 @@ export interface components {
          *     - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
          *       it can.
          *     - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+         *     - `/api/v1/problems/event-board-not-reader` (403): the user sees the event but does not read its
+         *       board: the user neither organizes it nor answers `going` or `maybe`.
+         *     - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the
+         *       user post on its board.
+         *     - `/api/v1/problems/event-board-closed` (409): the board of the event is read-only: the event was
+         *       cancelled, or 7 days have passed since its end (it is writable for the 7 days after the end).
          *     - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
          *     - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
          *       takes no more candidates, answers, or confirmations.
@@ -18554,6 +18654,14 @@ export interface components {
             summary: string;
         };
         /**
+         * @description The board of an event that a status is posted on (`listEventBoard`). A board post is seen only
+         *     by the readers of the board, is never boosted or quoted, and is replied to only from the
+         *     board, by the users who may post on it.
+         */
+        StatusEventBoard: {
+            event_id: components["schemas"]["Id"];
+        };
+        /**
          * @description A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
          *     `muted` describe the authenticated user's relation to it and are omitted for anonymous
          *     requests; `pinned` is only given to the author.
@@ -18689,9 +18797,12 @@ export interface components {
              *     `quoted_status`.
              */
             quote?: components["schemas"]["StatusQuote"];
+            /** @description The board of an event that the status is posted on; omitted for any other status. */
+            event_board?: components["schemas"]["StatusEventBoard"];
             /**
              * @description What the authenticated user may do with the status: reply to it, boost it, and quote it.
-             *     Omitted for anonymous requests.
+             *     Omitted for anonymous requests. A post of the board of an event (`event_board`) is never
+             *     boosted or quoted, and is replied to (on its board) only by the users who may post there.
              */
             permissions?: components["schemas"]["InteractionPermissions"];
             /** @description Who may reply to, boost, and quote the status; given only to its author. */
@@ -28525,6 +28636,79 @@ export interface operations {
                     "application/json": components["schemas"]["EventAttendeePage"];
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listEventBoard: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the posts. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventBoardPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    postToEventBoard: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventBoardPostCreate"];
+            };
+        };
+        responses: {
+            /** @description The posted status. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+            422: components["responses"]["StatusRejectedProblem"];
             default: components["responses"]["Problem"];
         };
     };

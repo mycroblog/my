@@ -20,6 +20,8 @@ type (
 	ViewContext = content.ViewContext
 	// StatusFacts is content.StatusFacts.
 	StatusFacts = content.StatusFacts
+	// BoardFacts is content.BoardFacts.
+	BoardFacts = content.BoardFacts
 	// AuthorRestrictions is content.AuthorRestrictions.
 	AuthorRestrictions = content.AuthorRestrictions
 	// Relation is content.Relation.
@@ -47,6 +49,7 @@ const (
 	ContextProfile           = content.ContextProfile
 	ContextSearch            = content.ContextSearch
 	ContextDirectMessages    = content.ContextDirectMessages
+	ContextBoard             = content.ContextBoard
 
 	FollowNone   = content.FollowNone
 	FollowActive = content.FollowActive

@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/EventId.yaml
+get:
+  operationId: listEventBoard
+  summary: List the posts of the board of an event
+  description: |
+    The posts of the event's board, newest first, for the users who read it: the organizer, the
+    co-organizers, and the users who see the event and answer `going` or `maybe`. A 403
+    `/api/v1/problems/event-board-not-reader` for a user who sees the event but does not read its
+    board. A post is a status that never leaves its event: it is not federated, and no timeline,
+    search, profile, list, or conversation shows it. Its readers fetch, favourite, react to, and
+    vote in it by its ID with the operations of statuses, and its author edits and deletes it
+    there too; it is not boosted, quoted, bookmarked, or pinned (a 404, as a status the user does
+    not see). A post whose author and the user block each other is left out.
+  tags: [events]
+  security:
+    - oauth2: ["read:events"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the posts.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/EventBoardPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: postToEventBoard
+  summary: Post on the board of an event
+  description: |
+    Posts a status on the event's board (201), by a user whom the event's `board_writers` let
+    post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
+    user who sees the event but does not read its board, a 403
+    `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
+    409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+    after its end. The post is checked as `createStatus` checks a new status, and retrying with
+    the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
+    same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
+  tags: [events]
+  security:
+    - oauth2: ["write:events"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/EventBoardPostCreate.yaml
+  responses:
+    "201":
+      description: The posted status.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Status.yaml
+    "422":
+      $ref: ../components/responses/StatusRejectedProblem.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

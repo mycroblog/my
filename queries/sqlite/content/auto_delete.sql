@@ -43,6 +43,7 @@ LIMIT sqlc.arg(batch_limit);
 -- and that none of the policy's exceptions keeps: a visibility in @kept_visibilities (a JSON
 -- array), a pin (one of the author's newest @max_kept_pins pins when it is positive), the author's bookmark or favourite, media or a poll in the current revision, being an article, or
 -- at least @keep_min_boosts boosts or @keep_min_favourites favourites (0 for no threshold).
+-- The posts of the boards of events go with their events (ADR-0161 section 17), never here.
 -- name: ListStatusesToAutoDelete :many
 SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
@@ -66,6 +67,7 @@ WHERE s.author_account_id = sqlc.arg(account_id) AND s.id < CAST(sqlc.arg(id_bef
   AND (CAST(sqlc.arg(keep_polls) AS INTEGER) = 0 OR NOT EXISTS (
     SELECT 1 FROM status_heads h JOIN polls q ON q.revision_id = h.revision_id WHERE h.status_id = s.id))
   AND (CAST(sqlc.arg(keep_articles) AS INTEGER) = 0 OR NOT EXISTS (SELECT 1 FROM status_articles a WHERE a.status_id = s.id))
+  AND NOT EXISTS (SELECT 1 FROM status_gathering_boards g WHERE g.status_id = s.id)
   AND (CAST(sqlc.arg(keep_min_boosts) AS INTEGER) = 0 OR NOT EXISTS (
     SELECT 1 FROM status_counters c WHERE c.status_id = s.id
       AND c.boosts_count >= CAST(sqlc.arg(keep_min_boosts) AS INTEGER)))

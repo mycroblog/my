@@ -404,6 +404,11 @@ type StatusDeletion struct {
 	DeletedAt          time.Time
 }
 
+type StatusGatheringBoard struct {
+	StatusID    string
+	GatheringID string
+}
+
 type StatusHead struct {
 	StatusID      string
 	RevisionID    string

@@ -237,6 +237,16 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 		}
 		return p.mentions(ctx, tx, ev.Status.ID, ev.Status.AuthorAccountID, ev.Revision.MentionedAccountIDs, ev.Revision.RevisedAt)
 	})
+	// A post of the board of an event mentions only the accounts that read the board (ADR-0161
+	// §17), which the event names.
+	r.Register(appcontent.EventBoardStatusPosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.BoardStatusPosted)
+		return p.mentions(ctx, tx, ev.Status.ID, ev.Status.AuthorAccountID, ev.MentionedReaderIDs, ev.Revision.RevisedAt)
+	})
+	r.Register(appcontent.EventBoardStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.BoardStatusRevised)
+		return p.mentions(ctx, tx, ev.Status.ID, ev.Status.AuthorAccountID, ev.MentionedReaderIDs, ev.Revision.RevisedAt)
+	})
 	// An approved reply mentions its accounts when it is released into its thread.
 	r.Register(appcontent.EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.StatusReleased)
@@ -468,13 +478,20 @@ func registerDeletedStatusProjector(r *uow.Projectors, repo Repository) {
 		return recordDeletedStatus(ctx, tx, repo, e.(appcontent.StatusDeleted).Deletion.StatusID)
 	})
 	r.Register(appcontent.EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		ds := e.(appcontent.StatusesDeleted).Deletions
-		ids := make([]string, len(ds))
-		for i, d := range ds {
-			ids[i] = d.Deletion.StatusID
-		}
-		return repo.RecordDeletedStatuses(ctx, tx, ids)
+		return repo.RecordDeletedStatuses(ctx, tx, deletedStatusIDs(e.(appcontent.StatusesDeleted).Deletions))
 	})
+	r.Register(appcontent.EventBoardStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return repo.RecordDeletedStatuses(ctx, tx, deletedStatusIDs(e.(appcontent.BoardStatusesDeleted).Deletions))
+	})
+}
+
+// deletedStatusIDs returns the IDs of the statuses of ds.
+func deletedStatusIDs(ds []appcontent.StatusDeleted) []string {
+	ids := make([]string, len(ds))
+	for i, d := range ds {
+		ids[i] = d.Deletion.StatusID
+	}
+	return ids
 }
 
 // recordDeletedStatus records a deleted status in notification_deleted_statuses when a
