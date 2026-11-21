@@ -40,6 +40,13 @@ SELECT value ->> '$.status_id', value ->> '$.uri', value ->> '$.author_account_i
   CAST(sqlc.arg(origin) AS TEXT), CAST(sqlc.narg(moderation_action_id) AS TEXT), CAST(sqlc.arg(deleted_at) AS INTEGER)
 FROM json_each(CAST(sqlc.arg(deletions) AS TEXT));
 
+-- InsertStatusContentPurges is InsertStatusContentPurge of many statuses with one time, a JSON
+-- array; WHERE true keeps ON CONFLICT from reading as a join constraint.
+-- name: InsertStatusContentPurges :exec
+INSERT INTO status_content_purges (status_id, due_at)
+SELECT value, CAST(sqlc.arg(due_at) AS INTEGER) FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)) WHERE true
+ON CONFLICT (status_id) DO NOTHING;
+
 -- InsertStatusSensitivityOverrides is InsertStatusSensitivityOverride of many statuses, a JSON
 -- array; WHERE true keeps ON CONFLICT from reading as a join constraint.
 -- name: InsertStatusSensitivityOverrides :exec

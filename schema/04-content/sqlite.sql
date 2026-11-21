@@ -174,6 +174,17 @@ CREATE INDEX status_deletions_uri ON status_deletions (uri);
 CREATE UNIQUE INDEX status_deletions_tombstone_uri ON status_deletions (uri) WHERE origin <> 'retention';
 CREATE INDEX status_deletions_retention ON status_deletions (deleted_at) WHERE origin = 'retention';
 
+-- Current value: the purge of a deleted status's rows that content.purge_deleted_statuses still
+-- has to do, due DeletedContentRetention after the deletion, or later while the moderation records
+-- keep the status (ADR-0058 §8). A deletion by retention or by the erasure of an account has
+-- none: those purge the rows themselves. The row goes with the status's rows.
+CREATE TABLE status_content_purges (
+  status_id TEXT NOT NULL PRIMARY KEY,
+  due_at INTEGER NOT NULL
+) STRICT;
+-- The purges that are due, the earliest first.
+CREATE INDEX status_content_purges_due_at_status_id ON status_content_purges (due_at, status_id);
+
 -- Resource: a hashtag, unique by its normalized name. name_normalized compares byte by byte (the
 -- default BINARY), so that the prefix search of hashtags (ADR-0092 §1) reads the range
 -- name_normalized >= q AND name_normalized < q || U+10FFFF in index order.

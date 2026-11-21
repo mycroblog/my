@@ -117,6 +117,9 @@ DELETE FROM status_conversations WHERE status_id = ANY(sqlc.arg(ids)::uuid[]);
 -- name: PurgeRelayedStatuses :exec
 DELETE FROM relayed_statuses WHERE status_id = ANY(sqlc.arg(ids)::uuid[]);
 
+-- name: PurgeStatusContentPurges :exec
+DELETE FROM status_content_purges WHERE status_id = ANY(sqlc.arg(ids)::uuid[]);
+
 -- InsertRelayedStatus records a status that only a relay brought in; a status recorded already
 -- keeps its row.
 -- name: InsertRelayedStatus :exec
@@ -171,15 +174,19 @@ WHERE status_id IN (
   ORDER BY d.deleted_at, d.status_id LIMIT @batch_limit
 );
 
--- ListDeletedStatusesToPurge returns, in status ID order after the cursor @after, up to
--- @batch_limit deletions recorded before @deleted_before whose status still has its row. A
--- deletion by the erasure of an account is left to that erasure, which removes more of the rows.
--- name: ListDeletedStatusesToPurge :many
-SELECT d.status_id, d.uri, d.author_account_id, d.origin, d.moderation_action_id, d.deleted_at
-FROM status_deletions d
-WHERE d.status_id > COALESCE(sqlc.narg(after)::uuid, '00000000-0000-0000-0000-000000000000')
-  AND d.deleted_at < sqlc.arg(deleted_before)::timestamptz
-  AND d.origin <> 'account_deletion'
-  AND EXISTS (SELECT 1 FROM statuses s WHERE s.id = d.status_id)
-ORDER BY d.status_id
+-- ListDueStatusContentPurges returns, the earliest first, up to @batch_limit purges of deleted
+-- statuses due at @due_before or earlier, with the author of each status and whether its row is
+-- still there. It reads status_content_purges_due_at_status_id from its start, and the primary
+-- keys of the deletions and the statuses.
+-- name: ListDueStatusContentPurges :many
+SELECT p.status_id, d.author_account_id, (s.id IS NOT NULL)::boolean AS present
+FROM status_content_purges p
+  JOIN status_deletions d ON d.status_id = p.status_id
+  LEFT JOIN statuses s ON s.id = p.status_id
+WHERE p.due_at <= sqlc.arg(due_before)::timestamptz
+ORDER BY p.due_at, p.status_id
 LIMIT sqlc.arg(batch_limit)::integer;
+
+-- PostponeStatusContentPurges moves the purges of the statuses @ids to @due_at.
+-- name: PostponeStatusContentPurges :exec
+UPDATE status_content_purges SET due_at = sqlc.arg(due_at)::timestamptz WHERE status_id = ANY(sqlc.arg(ids)::uuid[]);

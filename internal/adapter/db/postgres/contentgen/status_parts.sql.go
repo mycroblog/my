@@ -12,6 +12,23 @@ import (
 	"time"
 )
 
+const insertStatusContentPurges = `-- name: InsertStatusContentPurges :exec
+INSERT INTO status_content_purges (status_id, due_at)
+SELECT unnest($1::uuid[]), $2::timestamptz
+ON CONFLICT (status_id) DO NOTHING
+`
+
+type InsertStatusContentPurgesParams struct {
+	StatusIds []string
+	DueAt     time.Time
+}
+
+// InsertStatusContentPurges is InsertStatusContentPurge of many statuses with one time.
+func (q *Queries) InsertStatusContentPurges(ctx context.Context, arg InsertStatusContentPurgesParams) error {
+	_, err := q.db.Exec(ctx, insertStatusContentPurges, arg.StatusIds, arg.DueAt)
+	return err
+}
+
 const insertStatusDeletions = `-- name: InsertStatusDeletions :exec
 INSERT INTO status_deletions (status_id, uri, author_account_id, origin, moderation_action_id, deleted_at)
 SELECT unnest($1::uuid[]), unnest($2::text[]), unnest($3::uuid[]),
