@@ -5,6 +5,7 @@ package gathering
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -31,6 +32,9 @@ const (
 	EventCoorganizerChanged = "gathering.coorganizer_changed"
 	// EventCancelled follows the cancellation of an event.
 	EventCancelled = "gathering.cancelled"
+	// EventRecordsPurged follows the erasure of the records of events after their retention
+	// (ADR-0161 §14); the content module deletes the posts of their boards with them (§17).
+	EventRecordsPurged = "gathering.records_purged"
 )
 
 // Created carries an event that was created, with its date (Confirmation), or with the
@@ -101,6 +105,16 @@ type Cancelled struct{ Cancellation Cancellation }
 
 // EventType implements uow.Event.
 func (Cancelled) EventType() string { return EventCancelled }
+
+// RecordsPurged carries the events whose answers, approvals, and invitations the retention erased
+// together, in ID order.
+type RecordsPurged struct {
+	GatheringIDs []string
+	PurgedAt     time.Time
+}
+
+// EventType implements uow.Event.
+func (RecordsPurged) EventType() string { return EventRecordsPurged }
 
 // RegisterProjectors registers the projectors of the module's own projections: each event that
 // changes them derives again the rows of gathering_heads, gathering_attendees, and

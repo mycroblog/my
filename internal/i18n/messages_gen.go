@@ -1258,6 +1258,27 @@ func (l *Localizer) ServerErrorsEventAlreadyInvited() string {
 	return l.format("server:errors.event.already_invited", nil)
 }
 
+// ServerErrorsEventBoardClosed formats "server:errors.event.board_closed". API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or more than 7 days after it ended.
+//
+//	en: This event's board is read-only: the event was cancelled or ended more than 7 days ago.
+func (l *Localizer) ServerErrorsEventBoardClosed() string {
+	return l.format("server:errors.event.board_closed", nil)
+}
+
+// ServerErrorsEventBoardNotReader formats "server:errors.event.board_not_reader". API error title for HTTP 403 when someone who sees an event but has not answered going or maybe (and does not organize it) reads or posts on its board.
+//
+//	en: Only the organizers and the people going or maybe going read this event's board. Change your answer to going or maybe to read it.
+func (l *Localizer) ServerErrorsEventBoardNotReader() string {
+	return l.format("server:errors.event.board_not_reader", nil)
+}
+
+// ServerErrorsEventBoardNotWriter formats "server:errors.event.board_not_writer". API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, organizers, or readers) leave the reader out.
+//
+//	en: The organizer of this event has not opened its board to your posts.
+func (l *Localizer) ServerErrorsEventBoardNotWriter() string {
+	return l.format("server:errors.event.board_not_writer", nil)
+}
+
 // ServerErrorsEventClosed formats "server:errors.event.closed". API error title for HTTP 409 when an event was cancelled, or an answer comes after it started.
 //
 //	en: This event was cancelled or has started, so it can no longer be changed or answered.

@@ -97,7 +97,7 @@ func (q *Queries) EraseGatheringRevision(ctx context.Context, id string) error {
 const getGathering = `-- name: GetGathering :one
 SELECT g.id, g.organizer_account_id, g.created_at,
   h.revision_id, COALESCE(h.confirmation_id::text, '')::text AS confirmation_id, h.state, h.starts_at, h.ends_at, h.going_count,
-  v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.revised_by_account_id, v.revised_at,
+  v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.board_writers, v.revised_by_account_id, v.revised_at,
   COALESCE(c.confirmed_by_account_id::text, '')::text AS confirmed_by_account_id, COALESCE(c.confirmed_at, g.created_at)::timestamptz AS confirmed_at,
   x.reason AS cancel_reason, x.cancelled_by_account_id, x.note AS cancel_note, x.cancelled_at,
   (SELECT COUNT(*) FROM gathering_revisions n WHERE n.gathering_id = g.id) AS revision_count
@@ -125,6 +125,7 @@ type GetGatheringRow struct {
 	TimeZone             string
 	PlaceDisclosure      string
 	Capacity             int32
+	BoardWriters         string
 	RevisedByAccountID   string
 	RevisedAt            time.Time
 	ConfirmedByAccountID string
@@ -158,6 +159,7 @@ func (q *Queries) GetGathering(ctx context.Context, id string) (GetGatheringRow,
 		&i.TimeZone,
 		&i.PlaceDisclosure,
 		&i.Capacity,
+		&i.BoardWriters,
 		&i.RevisedByAccountID,
 		&i.RevisedAt,
 		&i.ConfirmedByAccountID,
@@ -465,8 +467,8 @@ func (q *Queries) InsertGatheringRSVPApproval(ctx context.Context, arg InsertGat
 }
 
 const insertGatheringRevision = `-- name: InsertGatheringRevision :exec
-INSERT INTO gathering_revisions (id, gathering_id, title, description, visibility, time_zone, place_disclosure, capacity, revised_by_account_id, revised_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+INSERT INTO gathering_revisions (id, gathering_id, title, description, visibility, time_zone, place_disclosure, capacity, board_writers, revised_by_account_id, revised_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 `
 
 type InsertGatheringRevisionParams struct {
@@ -478,6 +480,7 @@ type InsertGatheringRevisionParams struct {
 	TimeZone           string
 	PlaceDisclosure    string
 	Capacity           int32
+	BoardWriters       string
 	RevisedByAccountID string
 	RevisedAt          time.Time
 }
@@ -492,6 +495,7 @@ func (q *Queries) InsertGatheringRevision(ctx context.Context, arg InsertGatheri
 		arg.TimeZone,
 		arg.PlaceDisclosure,
 		arg.Capacity,
+		arg.BoardWriters,
 		arg.RevisedByAccountID,
 		arg.RevisedAt,
 	)
@@ -788,7 +792,7 @@ func (q *Queries) ListGatheringViewerFacts(ctx context.Context, arg ListGatherin
 const listUpcomingGatherings = `-- name: ListUpcomingGatherings :many
 SELECT g.id, g.organizer_account_id, g.created_at,
   h.revision_id, COALESCE(h.confirmation_id::text, '')::text AS confirmation_id, h.state, h.starts_at, h.ends_at, h.going_count,
-  v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.revised_by_account_id, v.revised_at,
+  v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.board_writers, v.revised_by_account_id, v.revised_at,
   COALESCE(c.confirmed_by_account_id::text, '')::text AS confirmed_by_account_id, COALESCE(c.confirmed_at, g.created_at)::timestamptz AS confirmed_at,
   x.reason AS cancel_reason, x.cancelled_by_account_id, x.note AS cancel_note, x.cancelled_at,
   (SELECT COUNT(*) FROM gathering_revisions n WHERE n.gathering_id = g.id) AS revision_count
@@ -827,6 +831,7 @@ type ListUpcomingGatheringsRow struct {
 	TimeZone             string
 	PlaceDisclosure      string
 	Capacity             int32
+	BoardWriters         string
 	RevisedByAccountID   string
 	RevisedAt            time.Time
 	ConfirmedByAccountID string
@@ -871,6 +876,7 @@ func (q *Queries) ListUpcomingGatherings(ctx context.Context, arg ListUpcomingGa
 			&i.TimeZone,
 			&i.PlaceDisclosure,
 			&i.Capacity,
+			&i.BoardWriters,
 			&i.RevisedByAccountID,
 			&i.RevisedAt,
 			&i.ConfirmedByAccountID,

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/content"
 	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -22,8 +23,9 @@ import (
 // setUpGathering builds the events of the local users (ADR-0161): the projectors of their
 // projections, their notifications and gathering.tick, their voice chat rooms, and the Service of
 // the client API. It comes after the voice chat, whose hosts it reads and whose rooms it opens,
-// and after the notifications, which it creates.
-func (a *App) setUpGathering(repo appgathering.Repository) {
+// and after the notifications, which it creates, and after the statuses, whose board posts go with
+// the records of the events.
+func (a *App) setUpGathering(repo appgathering.Repository, statuses content.Repository) {
 	appgathering.RegisterProjectors(a.Projectors, repo)
 	appgathering.RegisterDueProjectors(a.Projectors, repo)
 	outbox := a.Outbox
@@ -52,6 +54,46 @@ func (a *App) setUpGathering(repo appgathering.Repository) {
 		end := e.(appvoice.RoomEnded).Ending
 		return a.Events.RoomEnded(ctx, tx, end.RoomID, end.Reason == voice.EndUnattended)
 	})
+	// The posts of the boards go with the records of their events (ADR-0161 §17); the gathering
+	// module does not know the posts.
+	a.BoardPurge = content.NewBoardPurge(content.BoardPurgeDeps{
+		UnitOfWork: a.UnitOfWork, Repository: statuses, Outbox: outbox, Clock: a.Clock,
+	})
+	a.BoardPurge.RegisterJobs(a.Handlers)
+	a.Projectors.Register(appgathering.EventRecordsPurged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return a.BoardPurge.EnqueueTx(ctx, tx, e.(appgathering.RecordsPurged).GatheringIDs)
+	})
+}
+
+// eventBoards lists and takes the posts of the boards of the events for the client API
+// (clientapi.EventBoards): the status reader lists them, and the content service posts them.
+type eventBoards struct{ a *App }
+
+func (b eventBoards) Board(ctx context.Context, viewer content.Viewer, gatheringID, before string, limit int) (content.BoardPage, error) {
+	return b.a.Statuses.Board(ctx, viewer, gatheringID, before, limit)
+}
+
+func (b eventBoards) PostOnBoard(ctx context.Context, in content.BoardPostInput) (content.Post, error) {
+	return b.a.Content.PostOnBoard(ctx, in)
+}
+
+// contentBoards tells the content module who reads and who writes on the boards of the events
+// (ADR-0161 §17) through the gathering module, which is built after it; before that, no board.
+type contentBoards struct{ a *App }
+
+func (b contentBoards) Board(ctx context.Context, accountID, gatheringID string) (content.BoardAccess, error) {
+	if b.a.Events == nil {
+		return content.BoardAccess{}, nil
+	}
+	a, err := b.a.Events.Board(ctx, accountID, gatheringID)
+	return content.BoardAccess{Sees: a.Sees, Reads: a.Reads, Open: a.Open, Writes: a.Writes}, err
+}
+
+func (b contentBoards) BoardReaders(ctx context.Context, gatheringID string, accountIDs []string) (map[string]bool, error) {
+	if b.a.Events == nil {
+		return map[string]bool{}, nil
+	}
+	return b.a.Events.BoardReaders(ctx, gatheringID, accountIDs)
 }
 
 // gatheringRooms opens and ends the voice chat rooms of the events through the voice module

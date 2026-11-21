@@ -256,6 +256,9 @@ func (s *Server) contentProblem(ctx context.Context, err error, article string) 
 	case errors.Is(err, appcontent.ErrPollNotEditable):
 		return unprocessable(l.ServerErrorsStatusPollNotEditable())
 	}
+	if p, ok := s.boardProblem(ctx, err); ok {
+		return p, true
+	}
 	return s.articleProblem(ctx, err, article)
 }
 

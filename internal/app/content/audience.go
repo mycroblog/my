@@ -14,13 +14,65 @@ import (
 )
 
 // audience decides who may see one status, through content.CanView in ContextStatus, for the
-// use cases that act on or present a single status (ADR-0017 §3).
+// use cases that act on or present a single status (ADR-0017 §3). A post of the board of an
+// event is judged in ContextBoard where the use case admits board posts (onBoard), and in
+// ContextStatus, which denies it, everywhere else (board.go).
 type audience struct {
 	statuses      Repository
 	interactions  InteractionRepository
 	accounts      Accounts
 	relationships Relationships
 	restrictions  RestrictionPolicy
+	// boards tells who reads the boards of the events; nil admits no board post.
+	boards Boards
+	// admitsBoards is whether the use case admits the posts of the boards that the viewer reads.
+	admitsBoards bool
+	// known is the access of the viewer to one board that the use case read beforehand, nil
+	// for none.
+	known *knownBoard
+	// ownPosts admits the board posts of the viewer's own as though the viewer read their boards:
+	// for the viewer's data export.
+	ownPosts bool
+}
+
+// knownBoard is what one viewer may do with the board of one event.
+type knownBoard struct {
+	gatheringID string
+	viewerID    string
+	access      BoardAccess
+}
+
+// onBoard returns a, admitting the posts of the boards that the viewer reads.
+func (a audience) onBoard() audience {
+	a.admitsBoards = true
+	return a
+}
+
+// boardFacts returns the facts of st as a post of the board of an event, nil for an ordinary
+// status, and the context that CanView judges st in for viewerID ("" for a visitor): ContextBoard
+// for a board post where a admits board posts, ContextStatus otherwise.
+func (a audience) boardFacts(ctx context.Context, viewerID string, st content.Status) (*content.BoardFacts, content.ViewContext, error) {
+	gid, err := boardOf(ctx, a.statuses, nil, st)
+	if err != nil || gid == "" {
+		return nil, content.ContextStatus, err
+	}
+	f := &content.BoardFacts{}
+	if !a.admitsBoards || viewerID == "" {
+		return f, content.ContextStatus, nil
+	}
+	switch {
+	case a.ownPosts && viewerID == st.AuthorAccountID:
+		f.Reads = true
+	case a.known != nil && a.known.gatheringID == gid && a.known.viewerID == viewerID:
+		f.Reads = a.known.access.Reads
+	case a.boards != nil:
+		access, err := a.boards.Board(ctx, viewerID, gid)
+		if err != nil {
+			return nil, content.ContextStatus, err
+		}
+		f.Reads = access.Reads
+	}
+	return f, content.ContextBoard, nil
 }
 
 // live returns a status unless it is missing or deleted; both fail with ErrNotFound.
@@ -78,7 +130,16 @@ func (a audience) visible(ctx context.Context, viewer content.Viewer, st content
 	if facts.Unpublished, err = a.unpublished(ctx, st); err != nil {
 		return false, appaccount.Actor{}, err
 	}
-	return content.CanView(content.ContextStatus, viewer, facts, restrictions, rel), author, nil
+	viewerID := ""
+	if viewer.Kind == content.ViewerLocal {
+		viewerID = viewer.AccountID
+	}
+	board, in, err := a.boardFacts(ctx, viewerID, st)
+	if err != nil {
+		return false, appaccount.Actor{}, err
+	}
+	facts.Board = board
+	return content.CanView(in, viewer, facts, restrictions, rel), author, nil
 }
 
 // unpublished reports whether st is a local reply held until the author of its parent approves
@@ -188,9 +249,27 @@ func (a audience) visibleToLocal(ctx context.Context, statusID string, viewerIDs
 	if facts.Unpublished, err = a.unpublished(ctx, st); err != nil {
 		return nil, err
 	}
+	gid, err := boardOf(ctx, a.statuses, nil, st)
+	if err != nil {
+		return nil, err
+	}
+	in, reads := content.ContextStatus, map[string]bool{}
+	if gid != "" {
+		// A board post, judged in ContextBoard where board posts are admitted (boardFacts).
+		if a.admitsBoards && a.boards != nil {
+			in = content.ContextBoard
+			if reads, err = a.boards.BoardReaders(ctx, gid, viewerIDs); err != nil {
+				return nil, err
+			}
+		}
+	}
 	for _, id := range viewerIDs {
 		viewer := content.Viewer{Kind: content.ViewerLocal, AccountID: id}
-		out[id] = content.CanView(content.ContextStatus, viewer, facts, restrictions, rels[id])
+		f := facts
+		if gid != "" {
+			f.Board = &content.BoardFacts{Reads: reads[id]}
+		}
+		out[id] = content.CanView(in, viewer, f, restrictions, rels[id])
 	}
 	return out, nil
 }

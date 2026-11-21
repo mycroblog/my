@@ -49,7 +49,7 @@ func (q *Queries) ListGatheringRecordAccounts(ctx context.Context, gatheringID s
 
 const listGatheringRevisions = `-- name: ListGatheringRevisions :many
 
-SELECT id, gathering_id, title, description, visibility, time_zone, place_disclosure, capacity, revised_by_account_id, revised_at
+SELECT id, gathering_id, title, description, visibility, time_zone, place_disclosure, capacity, revised_by_account_id, revised_at, board_writers
 FROM gathering_revisions WHERE gathering_id = ?1
 ORDER BY id
 `
@@ -80,6 +80,7 @@ func (q *Queries) ListGatheringRevisions(ctx context.Context, gatheringID string
 			&i.Capacity,
 			&i.RevisedByAccountID,
 			&i.RevisedAt,
+			&i.BoardWriters,
 		); err != nil {
 			return nil, err
 		}

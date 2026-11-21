@@ -172,7 +172,12 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 	var views []appcontent.StatusView
 	if len(statusIDs) > 0 {
 		var err error
-		views, err = s.o.TimelineReader.Views(ctx, localContentViewer(viewer), statusIDs)
+		// A notification of a post of the board of an event shows it to a reader of the board.
+		if b, ok := s.o.TimelineReader.(boardViews); ok {
+			views, err = b.ViewsWithBoards(ctx, localContentViewer(viewer), statusIDs)
+		} else {
+			views, err = s.o.TimelineReader.Views(ctx, localContentViewer(viewer), statusIDs)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("clientapi: the statuses of the notifications of %s: %w", accountID, err)
 		}

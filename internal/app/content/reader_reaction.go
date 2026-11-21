@@ -71,7 +71,7 @@ type ReactedPage struct {
 // whose name (EmojiView.Name) is emoji unless it is "". An emoji that no reaction can have
 // gives an empty page, and a reaction whose emoji was deleted is left out. A status that the viewer may not see fails with ErrNotFound.
 func (r *Reader) Reactions(ctx context.Context, viewer Viewer, statusID, emoji, before string, limit int) (ReactedPage, error) {
-	if _, _, err := r.aud.visibleStatus(ctx, viewer, statusID); err != nil {
+	if _, _, err := r.aud.onBoard().visibleStatus(ctx, viewer, statusID); err != nil {
 		return ReactedPage{}, err
 	}
 	var key string

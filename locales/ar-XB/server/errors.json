@@ -151,6 +151,18 @@
     "defaultMessage": "‮⊥ɥɐʇ nsǝɹ ıs ɐʅɹǝɐpʎ ıuʌıʇǝp ʇo ʇɥǝ ǝʌǝuʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.event.board_closed": {
+    "defaultMessage": "‮⊥ɥıs ǝʌǝuʇ''s qoɐɹp ıs ɹǝɐp-ouʅʎ: ʇɥǝ ǝʌǝuʇ ʍɐs ɔɐuɔǝʅʅǝp oɹ ǝupǝp ɯoɹǝ ʇɥɐu 7 pɐʎs ɐƃo.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.board_not_reader": {
+    "defaultMessage": "‮Ouʅʎ ʇɥǝ oɹƃɐuızǝɹs ɐup ʇɥǝ dǝodʅǝ ƃoıuƃ oɹ ɯɐʎqǝ ƃoıuƃ ɹǝɐp ʇɥıs ǝʌǝuʇ''s qoɐɹp. Ↄɥɐuƃǝ ʎonɹ ɐusʍǝɹ ʇo ƃoıuƃ oɹ ɯɐʎqǝ ʇo ɹǝɐp ıʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.board_not_writer": {
+    "defaultMessage": "‮⊥ɥǝ oɹƃɐuızǝɹ oɟ ʇɥıs ǝʌǝuʇ ɥɐs uoʇ odǝuǝp ıʇs qoɐɹp ʇo ʎonɹ dosʇs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.event.closed": {
     "defaultMessage": "‮⊥ɥıs ǝʌǝuʇ ʍɐs ɔɐuɔǝʅʅǝp oɹ ɥɐs sʇɐɹʇǝp, so ıʇ ɔɐu uo ʅouƃǝɹ qǝ ɔɥɐuƃǝp oɹ ɐusʍǝɹǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -137,7 +137,7 @@ func TestCanOrganize(t *testing.T) {
 func validSettings() gathering.Settings {
 	return gathering.Settings{
 		Title: "Picnic", Visibility: gathering.VisibilityPublic, TimeZone: "Asia/Tokyo",
-		PlaceDisclosure: gathering.DisclosureApproved,
+		PlaceDisclosure: gathering.DisclosureApproved, BoardWriters: gathering.BoardWritersOrganizers,
 		Places: []gathering.Place{
 			{Kind: gathering.PlacePhysical, Name: "Park", Address: "1-1 Chiyoda", URL: "https://maps.example/park"},
 			{Kind: gathering.PlaceURL, Name: "Stream", URL: "http://stream.example/live"},

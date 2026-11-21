@@ -94,6 +94,14 @@ func (r *Reader) page(ctx context.Context, viewer Viewer, ids []string) (*Reader
 	if page.held, err = r.d.Statuses.HeldRepliesAmong(ctx, nil, localReplies); err != nil {
 		return nil, err
 	}
+	for _, id := range live {
+		if statuses[id].IsLocal {
+			page.boardsAmong = append(page.boardsAmong, id)
+		}
+	}
+	if page.boards, err = r.d.Statuses.StatusBoardsAmong(ctx, nil, page.boardsAmong); err != nil {
+		return nil, err
+	}
 	if page.revisions, err = r.d.Statuses.FindCurrentRevisions(ctx, live); err != nil {
 		return nil, err
 	}
@@ -224,10 +232,13 @@ type pageStatuses struct {
 	// held are the held replies among the local replies heldAmong of the page.
 	held      map[string]bool
 	heldAmong []string
-	revisions map[string]content.Revision
-	counters  map[string]content.Counters
-	tags      map[string]content.Tag
-	sensitive map[string]bool
+	// boards are the events of the board posts among the local statuses boardsAmong of the page.
+	boards      map[string]string
+	boardsAmong []string
+	revisions   map[string]content.Revision
+	counters    map[string]content.Counters
+	tags        map[string]content.Tag
+	sensitive   map[string]bool
 	// polls are the polls of the page's revisions, with their tallies, and the votes of voter,
 	// the page's viewer ("" for a visitor).
 	polls   []string
@@ -305,6 +316,21 @@ func (p *pageStatuses) HeldRepliesAmong(ctx context.Context, tx uow.Tx, ids []st
 	for _, id := range ids {
 		if p.held[id] {
 			out[id] = true
+		}
+	}
+	return out, nil
+}
+
+// StatusBoardsAmong answers the board posts among the local statuses of the page from what the
+// page read, and reads the others.
+func (p *pageStatuses) StatusBoardsAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]string, error) {
+	if tx != nil || slices.ContainsFunc(ids, func(id string) bool { return !slices.Contains(p.boardsAmong, id) && p.statuses[id].IsLocal }) {
+		return p.Repository.StatusBoardsAmong(ctx, tx, ids)
+	}
+	out := make(map[string]string, len(ids))
+	for _, id := range ids {
+		if g, ok := p.boards[id]; ok {
+			out[id] = g
 		}
 	}
 	return out, nil

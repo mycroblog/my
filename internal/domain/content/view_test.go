@@ -234,6 +234,8 @@ var localAuthorPolicy = []block{
 		"remote mentioned         | Y   -   Y   Y   Y", // ADR-0017: local is not sent to non-followers
 		"remote blocked by author | -   -   -   -   -",
 	}},
+	// ContextBoard shows the posts of a board alone, never an ordinary status.
+	{content.ContextBoard, allDenied()},
 }
 
 // remoteAuthorPolicy: statuses of a remote author with no restrictions. A remote status never has
@@ -362,6 +364,7 @@ var remoteAuthorPolicy = []block{
 	}},
 	{content.ContextObjectFetch, allDenied()},
 	{content.ContextDelivery, allDenied()},
+	{content.ContextBoard, allDenied()},
 }
 
 func allDenied() []string {

@@ -263,6 +263,7 @@ WHERE s.author_account_id = $1::uuid AND s.id < $2::uuid
   AND (NOT $10::boolean OR NOT EXISTS (
     SELECT 1 FROM status_heads h JOIN polls q ON q.revision_id = h.revision_id WHERE h.status_id = s.id))
   AND (NOT $11::boolean OR NOT EXISTS (SELECT 1 FROM status_articles a WHERE a.status_id = s.id))
+  AND NOT EXISTS (SELECT 1 FROM status_gathering_boards g WHERE g.status_id = s.id)
   AND ($12::integer = 0 OR NOT EXISTS (
     SELECT 1 FROM status_counters c WHERE c.status_id = s.id
       AND c.boosts_count >= $12::integer))
@@ -296,6 +297,7 @@ type ListStatusesToAutoDeleteParams struct {
 // of the author's newest @max_kept_pins pins when it is positive), the
 // author's bookmark or favourite, media or a poll in the current revision, being an article, or at least
 // @keep_min_boosts boosts or @keep_min_favourites favourites (0 for no threshold).
+// The posts of the boards of events go with their events (ADR-0161 section 17), never here.
 func (q *Queries) ListStatusesToAutoDelete(ctx context.Context, arg ListStatusesToAutoDeleteParams) ([]Status, error) {
 	rows, err := q.db.Query(ctx, listStatusesToAutoDelete,
 		arg.AccountID,

@@ -245,6 +245,27 @@ func (l *LinkCards) RegisterProjectors(r *uow.Projectors) {
 	r.Register(EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return l.d.Repository.DeleteStatusLinkCardsOf(ctx, tx, deletedIDs(e.(StatusesDeleted).Deletions))
 	})
+	// The posts of the boards of events have their cards as the other posts do.
+	r.Register(EventBoardStatusPosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(BoardStatusPosted)
+		return l.project(ctx, tx, ev.Status, ev.Revision)
+	})
+	r.Register(EventBoardStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(BoardStatusRevised)
+		head, err := l.d.Statuses.Head(ctx, tx, ev.Revision.StatusID)
+		switch {
+		case errors.Is(err, ErrNotFound):
+			return nil // deleted
+		case err != nil:
+			return err
+		case head.RevisionID != ev.Revision.ID:
+			return nil
+		}
+		return l.project(ctx, tx, ev.Status, ev.Revision)
+	})
+	r.Register(EventBoardStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return l.d.Repository.DeleteStatusLinkCardsOf(ctx, tx, deletedIDs(e.(BoardStatusesDeleted).Deletions))
+	})
 }
 
 // deletedIDs returns the IDs of the statuses of ds.

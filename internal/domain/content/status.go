@@ -116,6 +116,9 @@ const (
 	// DeletedByRetention is the purge of an old remote status (ADR-0006). Unlike the others, it
 	// does not stop the same URI from being ingested again.
 	DeletedByRetention DeletionOrigin = "retention"
+	// DeletedByEventRecords is the deletion of a post of the board of an event with the records
+	// of the event (ADR-0161 §14, §17). Like the post, it never federates.
+	DeletedByEventRecords DeletionOrigin = "event_records"
 )
 
 // Tombstone reports whether d stops a later Create, Update, or fetch of its URI from bringing

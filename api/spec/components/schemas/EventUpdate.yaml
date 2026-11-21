@@ -17,6 +17,10 @@ properties:
     $ref: ./EventPlaceDisclosure.yaml
   capacity:
     type: integer
+  board_writers:
+    description: Who posts on the event's board; only the organizer changes it.
+    allOf:
+      - $ref: ./EventBoardWriters.yaml
   places:
     type: array
     items:

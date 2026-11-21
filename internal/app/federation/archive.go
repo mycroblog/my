@@ -51,10 +51,17 @@ type outboxArchive struct {
 	Type    string         `json:"type"`
 }
 
+// ownBoardPosts pages the posts of a local account on the boards of the events (ADR-0161 §17),
+// as *appcontent.Reader does.
+type ownBoardPosts interface {
+	OwnBoardPosts(ctx context.Context, viewer appcontent.Viewer, before string, limit int) (appcontent.BoardPage, error)
+}
+
 // ArchiveOutbox writes to w the outbox of a local account as its owner sees it: an
 // OrderedCollection of the Create of every status of the account that is not deleted, of every
-// visibility, newest first, each with its Note addressed as it was delivered. Boosts are left
-// out.
+// visibility, newest first, each with its Note addressed as it was delivered, and then the
+// account's posts on the boards of the events, newest first, which are never delivered (FR-008).
+// Boosts are left out.
 func (o *Objects) ArchiveOutbox(ctx context.Context, accountID string, w io.Writer) error {
 	a, err := o.d.Accounts.FindByID(ctx, accountID)
 	if err != nil {
@@ -75,20 +82,7 @@ func (o *Objects) ArchiveOutbox(ctx context.Context, accountID string, w io.Writ
 	}
 	owner := appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: accountID}
 	total, before := 0, ""
-	for {
-		page, err := o.d.Timeline.Profile(ctx, owner, accountID, apptimeline.ProfileFilter{ExcludeBoosts: true},
-			apptimeline.Query{Before: before, Limit: apptimeline.MaxLimit})
-		if err != nil {
-			return err
-		}
-		ids := make([]string, 0, len(page.Entries))
-		for _, e := range page.Entries {
-			ids = append(ids, e.StatusID)
-		}
-		views, err := o.d.Reader.Views(ctx, owner, ids)
-		if err != nil {
-			return err
-		}
+	write := func(views []appcontent.StatusView) error {
 		parts, err := o.pageParts(ctx, views)
 		if err != nil {
 			return err
@@ -109,10 +103,44 @@ func (o *Objects) ArchiveOutbox(ctx context.Context, accountID string, w io.Writ
 			}
 			total++
 		}
+		return nil
+	}
+	for {
+		page, err := o.d.Timeline.Profile(ctx, owner, accountID, apptimeline.ProfileFilter{ExcludeBoosts: true},
+			apptimeline.Query{Before: before, Limit: apptimeline.MaxLimit})
+		if err != nil {
+			return err
+		}
+		ids := make([]string, 0, len(page.Entries))
+		for _, e := range page.Entries {
+			ids = append(ids, e.StatusID)
+		}
+		views, err := o.d.Reader.Views(ctx, owner, ids)
+		if err != nil {
+			return err
+		}
+		if err := write(views); err != nil {
+			return err
+		}
 		if page.Next == "" {
 			break
 		}
 		before = page.Next
+	}
+	if boards, ok := o.d.Reader.(ownBoardPosts); ok {
+		for before = ""; ; {
+			page, err := boards.OwnBoardPosts(ctx, owner, before, apptimeline.MaxLimit)
+			if err != nil {
+				return err
+			}
+			if err := write(page.Statuses); err != nil {
+				return err
+			}
+			if page.Next == "" {
+				break
+			}
+			before = page.Next
+		}
 	}
 	if _, err := fmt.Fprintf(bw, `],"totalItems":%d}`+"\n", total); err != nil {
 		return err

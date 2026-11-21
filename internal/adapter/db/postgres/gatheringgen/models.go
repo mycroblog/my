@@ -48,6 +48,7 @@ type GatheringRevision struct {
 	Capacity           int32
 	RevisedByAccountID string
 	RevisedAt          time.Time
+	BoardWriters       string
 }
 
 type GatheringRevisionPlace struct {

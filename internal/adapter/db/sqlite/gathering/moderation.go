@@ -53,7 +53,8 @@ func (r *Repository) Revisions(ctx context.Context, tx uow.Tx, gatheringID strin
 			Settings: gathering.Settings{
 				Title: row.Title, Description: row.Description, Visibility: gathering.Visibility(row.Visibility), TimeZone: row.TimeZone,
 				PlaceDisclosure: gathering.PlaceDisclosure(row.PlaceDisclosure), Capacity: fromInt(row.Capacity),
-				Places: byRevision[row.ID],
+				BoardWriters: gathering.BoardWriters(row.BoardWriters),
+				Places:       byRevision[row.ID],
 			},
 		}
 	}

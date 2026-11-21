@@ -829,13 +829,20 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		return repo.DeleteStatusTranslations(ctx, tx, e.(appcontent.StatusDeleted).Status.ID)
 	})
 	r.Register(appcontent.EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		ds := e.(appcontent.StatusesDeleted).Deletions
-		ids := make([]string, len(ds))
-		for i, d := range ds {
-			ids[i] = d.Status.ID
-		}
-		return repo.DeleteStatusTranslationsOf(ctx, tx, ids)
+		return repo.DeleteStatusTranslationsOf(ctx, tx, deletedIDs(e.(appcontent.StatusesDeleted).Deletions))
 	})
+	r.Register(appcontent.EventBoardStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return repo.DeleteStatusTranslationsOf(ctx, tx, deletedIDs(e.(appcontent.BoardStatusesDeleted).Deletions))
+	})
+}
+
+// deletedIDs returns the IDs of the statuses of ds.
+func deletedIDs(ds []appcontent.StatusDeleted) []string {
+	ids := make([]string, len(ds))
+	for i, d := range ds {
+		ids[i] = d.Status.ID
+	}
+	return ids
 }
 
 // RegisterJobs registers the handler and the schedule of the periodic job.

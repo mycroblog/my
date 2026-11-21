@@ -29,6 +29,8 @@ var (
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.
 type Repository interface {
+	BoardRepository
+
 	// Resources and events, written by commands.
 
 	// InsertStatus inserts a status. A URI that another status has fails with ErrStatusExists.

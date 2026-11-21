@@ -513,6 +513,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       time_zone: e.timeZone,
       place_disclosure: e.placeDisclosure,
       capacity: e.capacity,
+      board_writers: "organizers" as const,
       places: e.places.filter((p) => seesPlace(e, p)).map((p) => ({ ...p })),
       hidden_places: e.places.filter((p) => !seesPlace(e, p)).map((p) => p.kind),
       starts_at: iso(startOf(e)),
@@ -529,6 +530,15 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
         invited: invited(e),
         ...(rsvp === undefined ? {} : { answer: rsvp.answer }),
         approved: rsvp?.approved === true,
+        // The fake keeps no board posts: who reads the board follows the server, and nobody writes.
+        board: {
+          readable:
+            e.organizer === viewer ||
+            e.coorganizers.includes(viewer) ||
+            rsvp?.answer === "going" ||
+            rsvp?.answer === "maybe",
+          writable: false,
+        },
       },
     };
   };

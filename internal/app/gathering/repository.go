@@ -147,7 +147,15 @@ type Record struct {
 // Event returns what the policy functions read of the event.
 func (r Record) Event() gathering.Event {
 	s := r.Revision.Settings
-	return gathering.Event{OrganizerAccountID: r.OrganizerAccountID, Visibility: s.Visibility, PlaceDisclosure: s.PlaceDisclosure}
+	return gathering.Event{
+		OrganizerAccountID: r.OrganizerAccountID, Visibility: s.Visibility, PlaceDisclosure: s.PlaceDisclosure,
+		BoardWriters: s.BoardWriters,
+	}
+}
+
+// BoardTerm returns what decides whether the board of the event is open.
+func (r Record) BoardTerm() gathering.BoardTerm {
+	return gathering.BoardTerm{Cancelled: r.Cancellation != nil, Scheduled: r.Scheduled(), EndsAt: r.Confirmation.Schedule.EndsAt}
 }
 
 // Coorganizes reports whether accountID is a co-organizer of the event.

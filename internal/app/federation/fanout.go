@@ -551,6 +551,10 @@ func (f *FanOut) subject(ctx context.Context, act federation.OutboundActivity, p
 		s.facts = appcontent.StatusFacts{AuthorAccountID: s.boost.BoosterAccountID, AuthorIsLocal: s.boost.IsLocal, Visibility: s.boost.Visibility}
 	} else {
 		s.facts = appcontent.StatusFacts{AuthorAccountID: s.status.AuthorAccountID, AuthorIsLocal: s.status.IsLocal, Visibility: s.status.Visibility}
+		// A board post is delivered to no one (ADR-0161 §17): not its poll's Update either.
+		if s.facts.Board, err = boardFacts(ctx, f.d.Statuses, s.status); err != nil {
+			return subject{}, err
+		}
 	}
 	s.visibility = appcontent.EffectiveVisibility(s.facts.Visibility, s.restrictions)
 	return s, nil

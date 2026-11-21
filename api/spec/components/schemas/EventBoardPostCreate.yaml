@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A new post on the board of an event. It has what a new status has but a visibility, which the
+  board decides, and a quote, which a board post never has.
+type: object
+required: [text]
+properties:
+  text:
+    $ref: ./StatusText.yaml
+  spoiler_text:
+    $ref: ./SpoilerText.yaml
+  sensitive:
+    description: Whether the media are sensitive.
+    type: boolean
+  language:
+    $ref: ./StatusLanguageInput.yaml
+  in_reply_to_id:
+    description: A post of the same board to reply to; any other status is a 422.
+    allOf:
+      - $ref: ./Id.yaml
+  media:
+    $ref: ./StatusMediaInput.yaml
+  poll:
+    $ref: ./PollInput.yaml

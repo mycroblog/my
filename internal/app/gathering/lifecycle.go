@@ -30,6 +30,7 @@ type Patch struct {
 	Capacity        *int
 	Places          *[]gathering.Place
 	Schedule        *gathering.Schedule
+	BoardWriters    *gathering.BoardWriters
 }
 
 // withDefaults fills the defaults of the empty settings.
@@ -39,6 +40,9 @@ func withDefaults(s gathering.Settings) gathering.Settings {
 	}
 	if s.PlaceDisclosure == "" {
 		s.PlaceDisclosure = gathering.DefaultPlaceDisclosure
+	}
+	if s.BoardWriters == "" {
+		s.BoardWriters = gathering.DefaultBoardWriters
 	}
 	s.Places = placesWithDefaults(s.Places)
 	return s
@@ -180,14 +184,18 @@ func patched(cur gathering.Settings, p Patch) (gathering.Settings, bool) {
 	if p.Places != nil {
 		next.Places = placesWithDefaults(*p.Places)
 	}
+	if p.BoardWriters != nil {
+		next.BoardWriters = *p.BoardWriters
+	}
 	changed := next.Title != cur.Title || next.Description != cur.Description || next.TimeZone != cur.TimeZone ||
 		next.Visibility != cur.Visibility || next.PlaceDisclosure != cur.PlaceDisclosure || next.Capacity != cur.Capacity ||
-		!slices.Equal(next.Places, cur.Places)
+		!slices.Equal(next.Places, cur.Places) || next.BoardWriters != cur.BoardWriters
 	return next, changed
 }
 
 // Update revises the settings and the date of the event id, by its organizer or a co-organizer
-// (ADR-0161 §4, §5). Only the organizer changes the visibility (ErrOrganizerOnly); the organizer's
+// (ADR-0161 §4, §5). Only the organizer changes the visibility and the writers of the board
+// (ErrOrganizerOnly, ADR-0161 §17); the organizer's
 // eligibility is checked when the organizer revises (ErrNotEligible), and the organizer's right to
 // a voice chat room when a voice place is added (ErrVoiceUnavailable). A new date is a new
 // confirmation, checked as a new event's; on an event that polls its date, it confirms that date
@@ -200,7 +208,7 @@ func (s *Service) Update(ctx context.Context, accountID, id string, p Patch) (Vi
 	}
 	cur := v.Revision.Settings
 	next, changed := patched(cur, p)
-	if next.Visibility != cur.Visibility && !v.Viewer.Organizer {
+	if (next.Visibility != cur.Visibility || next.BoardWriters != cur.BoardWriters) && !v.Viewer.Organizer {
 		return View{}, ErrOrganizerOnly
 	}
 	_, hadVoice := cur.Place(gathering.PlaceVoice)

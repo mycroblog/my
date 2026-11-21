@@ -17,8 +17,9 @@ import (
 // The retention of the answers and the invitations of the events (ADR-0161 §14): the hourly
 // JobPurgeRecords erases them event_records_retention_days after an event ended or was cancelled,
 // except those of an event that a report points at and those that name an account that a
-// retention hold preserves. The events, their revisions, dates, co-organizers, and cancellations
-// stay.
+// retention hold preserves, and emits RecordsPurged, on which the content module deletes the
+// posts of their boards (ADR-0161 §17). The events, their revisions, dates, co-organizers, and
+// cancellations stay.
 
 const (
 	// JobPurgeRecords erases the answers, approvals, and invitations of the events that ended or
@@ -148,6 +149,9 @@ func (s *Service) purgeBatch(ctx context.Context, ids, heldIDs []string) (int, e
 			return err
 		}
 		if err := s.d.Repository.PurgeRecords(ctx, tx, purge); err != nil {
+			return err
+		}
+		if err := tx.Emit(ctx, RecordsPurged{GatheringIDs: purge, PurgedAt: s.now()}); err != nil {
 			return err
 		}
 		for _, id := range purge {

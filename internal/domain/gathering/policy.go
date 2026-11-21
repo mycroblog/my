@@ -2,11 +2,14 @@
 
 package gathering
 
+import "time"
+
 // Event is what the policy functions read of an event: its organizer and its current settings.
 type Event struct {
 	OrganizerAccountID string
 	Visibility         Visibility
 	PlaceDisclosure    PlaceDisclosure
+	BoardWriters       BoardWriters
 }
 
 // Viewer is the account a policy function decides for. The zero value is a viewer who is not
@@ -33,6 +36,8 @@ type Facts struct {
 	Invited bool
 	// Answered reports that the viewer answered the event (any answer, declined included).
 	Answered bool
+	// Attending reports that the viewer's current answer is going or maybe.
+	Attending bool
 	// Voted reports that the viewer answered a candidate of the event's date poll (any vote).
 	Voted bool
 	// Approved reports that an organizer approved the viewer's answer of going or maybe and did
@@ -119,4 +124,76 @@ type OrganizerFacts struct {
 // organizer revises it; a co-organizer needs none of it.
 func CanOrganize(f OrganizerFacts) bool {
 	return f.Local && f.Active && !f.Limited && (f.EveryoneCreates || f.MayCreate)
+}
+
+// CanReadBoard reports whether viewer reads the board of the event (ADR-0161 §17): CanSee holds,
+// and the viewer organizes it or answers going or maybe. An invitee who has not answered does
+// not read it, and one who changes to not going stops reading it.
+func CanReadBoard(e Event, viewer Viewer, f Facts) bool {
+	return CanSee(e, viewer, f) && (Organizes(e, viewer, f) || f.Attending)
+}
+
+// CanWriteBoard reports whether viewer may write on the board of the event, whatever its term
+// (BoardOpen): CanReadBoard holds, and the event's BoardWriters admit the viewer: the organizer
+// alone, the organizer and the co-organizers, or every reader. Unknown writers admit only the
+// organizer.
+func CanWriteBoard(e Event, viewer Viewer, f Facts) bool {
+	if !CanReadBoard(e, viewer, f) {
+		return false
+	}
+	switch e.BoardWriters {
+	case BoardWritersReaders:
+		return true
+	case BoardWritersOrganizers:
+		return Organizes(e, viewer, f)
+	}
+	return viewer.AccountID == e.OrganizerAccountID
+}
+
+// BoardWritableAfterEnd is how long after its end the board of an event takes new posts and
+// edits (ADR-0161 §17).
+const BoardWritableAfterEnd = 7 * 24 * time.Hour
+
+// BoardTerm is what decides whether the board of an event is open.
+type BoardTerm struct {
+	// Cancelled reports a cancelled event.
+	Cancelled bool
+	// Scheduled reports an event with a fixed date, which ends at EndsAt; an event that polls its
+	// date has no end yet.
+	Scheduled bool
+	EndsAt    time.Time
+}
+
+// BoardOpen reports whether the board of an event takes new posts and edits at now: it is
+// read-only as soon as the event is cancelled, and from BoardWritableAfterEnd after its end.
+func BoardOpen(t BoardTerm, now time.Time) bool {
+	if t.Cancelled {
+		return false
+	}
+	return !t.Scheduled || now.Before(t.EndsAt.Add(BoardWritableAfterEnd))
+}
+
+// BoardAccess is what a viewer may do with the board of an event.
+type BoardAccess struct {
+	// Sees reports that the viewer sees the event (CanSee).
+	Sees bool
+	// Reads reports that the viewer reads the board (CanReadBoard).
+	Reads bool
+	// Open reports that the board takes new posts and edits (BoardOpen), whoever writes.
+	Open bool
+	// Writes reports that the viewer may post on the board and edit its posts at now
+	// (CanWriteBoard while BoardOpen).
+	Writes bool
+}
+
+// Board returns what viewer may do with the board of the event at now: the one place that
+// decides who reads and who writes on a board, for its list, its posts, and the notifications
+// of its posts (ADR-0161 §17).
+func Board(e Event, t BoardTerm, viewer Viewer, f Facts, now time.Time) BoardAccess {
+	return BoardAccess{
+		Sees:   CanSee(e, viewer, f),
+		Reads:  CanReadBoard(e, viewer, f),
+		Open:   BoardOpen(t, now),
+		Writes: CanWriteBoard(e, viewer, f) && BoardOpen(t, now),
+	}
 }

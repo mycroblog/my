@@ -537,6 +537,8 @@ paths:
     $ref: ./paths/events_{id}_rsvp.yaml
   /events/{id}/attendees:
     $ref: ./paths/events_{id}_attendees.yaml
+  /events/{id}/board:
+    $ref: ./paths/events_{id}_board.yaml
   /events/{id}/attendees/{account_id}/approval:
     $ref: ./paths/events_{id}_attendees_{account_id}_approval.yaml
   /events/{id}/invitations:
@@ -1944,6 +1946,14 @@ components:
       $ref: ./components/schemas/EventAttendeePage.yaml
     EventBallot:
       $ref: ./components/schemas/EventBallot.yaml
+    EventBoardAccess:
+      $ref: ./components/schemas/EventBoardAccess.yaml
+    EventBoardPage:
+      $ref: ./components/schemas/EventBoardPage.yaml
+    EventBoardPostCreate:
+      $ref: ./components/schemas/EventBoardPostCreate.yaml
+    EventBoardWriters:
+      $ref: ./components/schemas/EventBoardWriters.yaml
     EventBallotPage:
       $ref: ./components/schemas/EventBallotPage.yaml
     EventCancelReason:

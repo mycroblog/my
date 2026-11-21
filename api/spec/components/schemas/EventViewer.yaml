@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: What an event says of the user who reads it.
 type: object
-required: [organizer, coorganizer, invited, approved]
+required: [organizer, coorganizer, invited, approved, board]
 properties:
   organizer:
     description: Whether the user organizes the event.
@@ -19,3 +19,5 @@ properties:
   approved:
     description: Whether the organizer or a co-organizer approved the user's answer.
     type: boolean
+  board:
+    $ref: ./EventBoardAccess.yaml

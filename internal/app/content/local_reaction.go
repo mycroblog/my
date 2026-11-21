@@ -32,7 +32,7 @@ func (s *Interactions) React(ctx context.Context, accountID, statusID, emoji str
 	if err := s.checkRestrictions(ctx, accountID, false); err != nil {
 		return content.Reaction{}, err
 	}
-	st, err := s.visibleStatus(ctx, accountID, statusID)
+	st, err := s.visibleOnBoard(ctx, accountID, statusID)
 	if err != nil {
 		return content.Reaction{}, err
 	}

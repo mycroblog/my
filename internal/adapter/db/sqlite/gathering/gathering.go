@@ -51,7 +51,7 @@ func (r *Repository) InsertRevision(ctx context.Context, tx uow.Tx, rev appgathe
 	s := rev.Settings
 	if err := q.InsertGatheringRevision(ctx, gatheringgen.InsertGatheringRevisionParams{
 		ID: rev.ID, GatheringID: rev.GatheringID, Title: s.Title, Description: s.Description, Visibility: string(s.Visibility),
-		TimeZone: s.TimeZone, PlaceDisclosure: string(s.PlaceDisclosure), Capacity: toInt(s.Capacity),
+		TimeZone: s.TimeZone, PlaceDisclosure: string(s.PlaceDisclosure), Capacity: toInt(s.Capacity), BoardWriters: string(s.BoardWriters),
 		RevisedByAccountID: rev.RevisedByAccountID, RevisedAt: toTime(rev.RevisedAt),
 	}); err != nil {
 		return wrap(err, "insert gathering revision")
@@ -165,6 +165,7 @@ func recordOf(row gatheringgen.GetGatheringRow) appgathering.Record {
 			Settings: gathering.Settings{
 				Title: row.Title, Description: row.Description, Visibility: gathering.Visibility(row.Visibility), TimeZone: row.TimeZone,
 				PlaceDisclosure: gathering.PlaceDisclosure(row.PlaceDisclosure), Capacity: fromInt(row.Capacity),
+				BoardWriters: gathering.BoardWriters(row.BoardWriters),
 			},
 		},
 		Confirmation: appgathering.Confirmation{

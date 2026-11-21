@@ -2455,6 +2455,27 @@ func (e EventAnswer) Valid() bool {
 	}
 }
 
+// Defines values for EventBoardWriters.
+const (
+	EventBoardWritersOrganizer  EventBoardWriters = "organizer"
+	EventBoardWritersOrganizers EventBoardWriters = "organizers"
+	EventBoardWritersReaders    EventBoardWriters = "readers"
+)
+
+// Valid indicates whether the value is a known member of the EventBoardWriters enum.
+func (e EventBoardWriters) Valid() bool {
+	switch e {
+	case EventBoardWritersOrganizer:
+		return true
+	case EventBoardWritersOrganizers:
+		return true
+	case EventBoardWritersReaders:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for EventCancelReason.
 const (
 	EventCancelReasonModerator          EventCancelReason = "moderator"
@@ -11685,6 +11706,12 @@ type ErrorGroupState string
 // places that the user sees: `hidden_places` lists the kinds of the others, whose details never
 // reach the client.
 type Event struct {
+	// BoardWriters Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
+	// `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+	// The board is read by the organizer, the co-organizers, and the users who see the event and
+	// answer `going` or `maybe`.
+	BoardWriters EventBoardWriters `json:"board_writers"`
+
 	// Cancellation The cancellation of an event.
 	Cancellation *EventCancellation `json:"cancellation,omitempty"`
 
@@ -11792,6 +11819,58 @@ type EventBallotPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
+// EventBoardAccess What the user may do with the board of an event.
+type EventBoardAccess struct {
+	// Readable Whether the user reads the board: the user organizes or co-organizes the event, or answers
+	// `going` or `maybe`.
+	Readable bool `json:"readable"`
+
+	// Writable Whether the user may post on the board and edit their posts on it now: the event's
+	// `board_writers` admit the user, and the board is not read-only. The board is read-only once
+	// the event is cancelled, and from 7 days after its end.
+	Writable bool `json:"writable"`
+}
+
+// EventBoardPage A page of the posts of the board of an event, newest first.
+type EventBoardPage struct {
+	Items []Status `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventBoardPostCreate A new post on the board of an event. It has what a new status has but a visibility, which the
+// board decides, and a quote, which a board post never has.
+type EventBoardPostCreate struct {
+	// InReplyToId A post of the same board to reply to; any other status is a 422.
+	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Media The media to attach, in order.
+	Media *StatusMediaInput `json:"media,omitempty"`
+
+	// Poll A poll of a new status. It ends `expires_in` seconds after the status is
+	// posted; the author and the users who voted are notified then.
+	Poll *PollInput `json:"poll,omitempty"`
+
+	// Sensitive Whether the media are sensitive.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// SpoilerText The content warning; omitted or empty for none. It counts toward `max_post_characters`.
+	SpoilerText *SpoilerText `json:"spoiler_text,omitempty"`
+
+	// Text The plain text; the server links mentions, hashtags, and URLs.
+	Text StatusText `json:"text"`
+}
+
+// EventBoardWriters Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
+// `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+// The board is read by the organizer, the co-organizers, and the users who see the event and
+// answer `going` or `maybe`.
+type EventBoardWriters string
+
 // EventCancelReason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
 // suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
 type EventCancelReason string
@@ -11851,6 +11930,9 @@ type EventCandidateList struct {
 // EventCreate A new event, either with a fixed date (`starts_at` and `ends_at`) or with the candidate dates
 // of a date poll (`candidates`), not both.
 type EventCreate struct {
+	// BoardWriters Who posts on the event's board; `organizers` when omitted.
+	BoardWriters *EventBoardWriters `json:"board_writers,omitempty"`
+
 	// Candidates 1 to 20 different candidate dates, each checked as a fixed date: the event is
 	// `unscheduled` until the organizers confirm one of them.
 	Candidates *[]EventCandidateCreate `json:"candidates,omitempty"`
@@ -12006,9 +12088,11 @@ type EventState string
 // date (`starts_at` and `ends_at` together) is checked as a new event's; on an `unscheduled`
 // event, it fixes the date without a candidate and ends the date poll.
 type EventUpdate struct {
-	Capacity    *int       `json:"capacity,omitempty"`
-	Description *string    `json:"description,omitempty"`
-	EndsAt      *time.Time `json:"ends_at,omitempty"`
+	// BoardWriters Who posts on the event's board; only the organizer changes it.
+	BoardWriters *EventBoardWriters `json:"board_writers,omitempty"`
+	Capacity     *int               `json:"capacity,omitempty"`
+	Description  *string            `json:"description,omitempty"`
+	EndsAt       *time.Time         `json:"ends_at,omitempty"`
 
 	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
 	// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
@@ -12035,6 +12119,9 @@ type EventViewer struct {
 
 	// Approved Whether the organizer or a co-organizer approved the user's answer.
 	Approved bool `json:"approved"`
+
+	// Board What the user may do with the board of an event.
+	Board EventBoardAccess `json:"board"`
 
 	// Coorganizer Whether the user co-organizes the event.
 	Coorganizer bool `json:"coorganizer"`
@@ -15742,6 +15829,12 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
 //     it can.
 //   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+//   - `/api/v1/problems/event-board-not-reader` (403): the user sees the event but does not read its
+//     board: the user neither organizes it nor answers `going` or `maybe`.
+//   - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the
+//     user post on its board.
+//   - `/api/v1/problems/event-board-closed` (409): the board of the event is read-only: the event was
+//     cancelled, or ended more than 7 days ago.
 //   - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
 //   - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
 //     takes no more candidates, answers, or confirmations.
@@ -21396,6 +21489,29 @@ type ApproveEventAttendeeParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// ListEventBoardParams defines parameters for ListEventBoard.
+type ListEventBoardParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// PostToEventBoardParams defines parameters for PostToEventBoard.
+type PostToEventBoardParams struct {
+	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
+	// 24 hours, a request with a key that the same sign-in of the user in the same client (an
+	// anonymous client: the same address) already sent to the operation gets the first answer
+	// again instead of being carried out again. The same key with another request (another
+	// path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+	// while the first request is still being carried out is a 409
+	// `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+	// or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+	// 256 characters, or one that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // CancelEventParams defines parameters for CancelEvent.
 type CancelEventParams struct {
 	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
@@ -23418,6 +23534,9 @@ type CreateEventJSONRequestBody = EventCreate
 // UpdateEventJSONRequestBody defines body for UpdateEvent for application/json ContentType.
 type UpdateEventJSONRequestBody = EventUpdate
 
+// PostToEventBoardJSONRequestBody defines body for PostToEventBoard for application/json ContentType.
+type PostToEventBoardJSONRequestBody = EventBoardPostCreate
+
 // CancelEventJSONRequestBody defines body for CancelEvent for application/json ContentType.
 type CancelEventJSONRequestBody = EventCancelRequest
 
@@ -24419,6 +24538,12 @@ type ServerInterface interface {
 	// ApproveEventAttendee Approve an attendee of an event
 	// (PUT /events/{id}/attendees/{account_id}/approval)
 	ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId, params ApproveEventAttendeeParams)
+	// ListEventBoard List the posts of the board of an event
+	// (GET /events/{id}/board)
+	ListEventBoard(w http.ResponseWriter, r *http.Request, id EventId, params ListEventBoardParams)
+	// PostToEventBoard Post on the board of an event
+	// (POST /events/{id}/board)
+	PostToEventBoard(w http.ResponseWriter, r *http.Request, id EventId, params PostToEventBoardParams)
 	// GetEventCalendar Get an event as an iCalendar file
 	// (GET /events/{id}/calendar.ics)
 	GetEventCalendar(w http.ResponseWriter, r *http.Request, id EventId)
@@ -37185,6 +37310,111 @@ func (siw *ServerInterfaceWrapper) ApproveEventAttendee(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// ListEventBoard operation middleware
+func (siw *ServerInterfaceWrapper) ListEventBoard(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListEventBoardParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEventBoard(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostToEventBoard operation middleware
+func (siw *ServerInterfaceWrapper) PostToEventBoard(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostToEventBoardParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostToEventBoard(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetEventCalendar operation middleware
 func (siw *ServerInterfaceWrapper) GetEventCalendar(w http.ResponseWriter, r *http.Request) {
 
@@ -45553,6 +45783,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events/{id}/cancel", wrapper.CancelEvent)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/rsvp", wrapper.AnswerEvent)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/attendees", wrapper.ListEventAttendees)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/board", wrapper.ListEventBoard)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events/{id}/board", wrapper.PostToEventBoard)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/events/{id}/attendees/{account_id}/approval", wrapper.RevokeEventAttendeeApproval)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/attendees/{account_id}/approval", wrapper.ApproveEventAttendee)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/invitations", wrapper.ListEventInvitations)
@@ -63090,6 +63322,155 @@ func (response ApproveEventAttendeedefaultApplicationProblemPlusJSONResponse) Vi
 	return err
 }
 
+type ListEventBoardRequestObject struct {
+	Id     EventId `json:"id"`
+	Params ListEventBoardParams
+}
+
+type ListEventBoardResponseObject interface {
+	VisitListEventBoardResponse(w http.ResponseWriter) error
+}
+
+type ListEventBoard200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListEventBoard200JSONResponse struct {
+	Body    EventBoardPage
+	Headers ListEventBoard200ResponseHeaders
+}
+
+func (response ListEventBoard200JSONResponse) VisitListEventBoardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventBoarddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListEventBoarddefaultApplicationProblemPlusJSONResponse) VisitListEventBoardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostToEventBoardRequestObject struct {
+	Id     EventId `json:"id"`
+	Params PostToEventBoardParams
+	Body   *PostToEventBoardJSONRequestBody
+}
+
+type PostToEventBoardResponseObject interface {
+	VisitPostToEventBoardResponse(w http.ResponseWriter) error
+}
+
+type PostToEventBoard201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type PostToEventBoard201JSONResponse struct {
+	Body    Status
+	Headers PostToEventBoard201ResponseHeaders
+}
+
+func (response PostToEventBoard201JSONResponse) VisitPostToEventBoardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostToEventBoard422ApplicationProblemPlusJSONResponse struct {
+	StatusRejectedProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PostToEventBoard422ApplicationProblemPlusJSONResponse) VisitPostToEventBoardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostToEventBoarddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response PostToEventBoarddefaultApplicationProblemPlusJSONResponse) VisitPostToEventBoardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetEventCalendarRequestObject struct {
 	Id EventId `json:"id"`
 }
@@ -75602,6 +75983,12 @@ type StrictServerInterface interface {
 	// ApproveEventAttendee Approve an attendee of an event
 	// (PUT /events/{id}/attendees/{account_id}/approval)
 	ApproveEventAttendee(ctx context.Context, request ApproveEventAttendeeRequestObject) (ApproveEventAttendeeResponseObject, error)
+	// ListEventBoard List the posts of the board of an event
+	// (GET /events/{id}/board)
+	ListEventBoard(ctx context.Context, request ListEventBoardRequestObject) (ListEventBoardResponseObject, error)
+	// PostToEventBoard Post on the board of an event
+	// (POST /events/{id}/board)
+	PostToEventBoard(ctx context.Context, request PostToEventBoardRequestObject) (PostToEventBoardResponseObject, error)
 	// GetEventCalendar Get an event as an iCalendar file
 	// (GET /events/{id}/calendar.ics)
 	GetEventCalendar(ctx context.Context, request GetEventCalendarRequestObject) (GetEventCalendarResponseObject, error)
@@ -84104,6 +84491,67 @@ func (sh *strictHandler) ApproveEventAttendee(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ApproveEventAttendeeResponseObject); ok {
 		if err := validResponse.VisitApproveEventAttendeeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEventBoard operation middleware
+func (sh *strictHandler) ListEventBoard(w http.ResponseWriter, r *http.Request, id EventId, params ListEventBoardParams) {
+	var request ListEventBoardRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEventBoard(ctx, request.(ListEventBoardRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEventBoard")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEventBoardResponseObject); ok {
+		if err := validResponse.VisitListEventBoardResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostToEventBoard operation middleware
+func (sh *strictHandler) PostToEventBoard(w http.ResponseWriter, r *http.Request, id EventId, params PostToEventBoardParams) {
+	var request PostToEventBoardRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	var body PostToEventBoardJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostToEventBoard(ctx, request.(PostToEventBoardRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostToEventBoard")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostToEventBoardResponseObject); ok {
+		if err := validResponse.VisitPostToEventBoardResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

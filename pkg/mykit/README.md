@@ -185,6 +185,10 @@ and `api.POST("/events")` in TypeScript. They need the scopes `read:events` and 
   refused. Answers end when the event starts.
 - `GET /events/{id}/calendar.ics` (`GetEventCalendarWithResponse`) returns the event as an iCalendar file to add to the
   user's own calendar: its times are in UTC, and it names only the places the user sees.
+- Each event has a board, read by its organizers and by those who answer `going` or `maybe` (`viewer.board`).
+  `ListEventBoardWithResponse` lists its posts, newest first, and `PostToEventBoardWithResponse` posts on it, for the
+  users whom the event's `board_writers` let post. A post is a status that never leaves the event: favourite, react to,
+  vote in, edit, and delete it with the operations of statuses, by its ID.
 - An event created with `candidates` instead of `starts_at` and `ends_at` polls its date: its `state` is `unscheduled`,
   and its `starts_at` and `ends_at` span the candidates. `ListEventCandidatesWithResponse` reads the candidates with
   their counts and the user's own answer, `VoteEventCandidateWithResponse` answers one `yes`, `maybe`, or `no` (again and

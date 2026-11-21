@@ -25,8 +25,9 @@ import (
 //   - local_post_counters counts each local account's statuses that CountAsLocalPost (its
 //     boosts are counted by RegisterInteractionProjectors).
 //
-// The rebuild queries of the Repository state the same rules in SQL; the property test in
-// contenttest.StatusRepositoryContract checks that both agree.
+// The posts of the boards of events project alike from BoardStatusPosted, BoardStatusRevised, and
+// BoardStatusesDeleted. The rebuild queries of the Repository state the same rules in SQL; the
+// property test in contenttest.StatusRepositoryContract checks that both agree.
 func RegisterProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(StatusCreated)
@@ -76,6 +77,7 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		}
 		return projectDeletedMany(ctx, tx, repo, ds)
 	})
+	registerBoardProjectors(r, repo)
 	// poll_tallies holds the counts of the newest observation of each remote poll.
 	r.Register(EventPollTallyObserved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		o := e.(PollTallyObserved).Observation

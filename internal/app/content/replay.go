@@ -5,6 +5,7 @@ package content
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -23,12 +24,21 @@ func (s *Service) IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bo
 // current conversation), then a Boosted for each live boost, ordered by boost ID. Deleted statuses and retracted boosts emit nothing, so a
 // projection that applies these events to empty tables ends where incremental updating did.
 // StatusCreated.HeldReply says the replies held out of their thread, as when they were created:
-// the timelines leave the unpublished ones out (StatusCreated.Unpublished).
+// the timelines leave the unpublished ones out (StatusCreated.Unpublished). The posts of the boards
+// of events, which no other module lists (board.go), emit nothing.
 func ReplayEvents(ctx context.Context, tx uow.Tx, statuses Repository, interactions InteractionRepository, emit func(uow.Event) error) error {
-	posts, err := statuses.ListCurrentPosts(ctx, tx)
+	all, err := statuses.ListCurrentPosts(ctx, tx)
 	if err != nil {
 		return err
 	}
+	boardIDs, err := statuses.ListBoardStatusIDs(ctx, tx)
+	if err != nil {
+		return err
+	}
+	posts := slices.DeleteFunc(all, func(p Post) bool {
+		_, found := slices.BinarySearch(boardIDs, p.Status.ID)
+		return found
+	})
 	// The conversations of the direct posts, which the list of direct messages is keyed by
 	// (ADR-0154 §6), read together. The current conversation is the one every merge ended in, so
 	// no merge is replayed.

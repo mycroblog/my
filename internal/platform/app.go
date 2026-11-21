@@ -231,6 +231,8 @@ type App struct {
 	VoiceRooms *appvoice.Service
 	// Events runs the events of the local users (ADR-0161).
 	Events *appgathering.Service
+	// BoardPurge deletes the posts of the boards of the events with their records (ADR-0161 §17).
+	BoardPurge *content.BoardPurge
 	// Hooks runs the decision hooks (ADR-0147). A module that owns a subject takes it as apphook.Gate.
 	Hooks *apphook.Service
 	// mediaCheck is the hook media.check that the media processing and the posts share.
@@ -628,7 +630,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err := a.setUpVoice(cfg, repos.voice); err != nil {
 		return nil, err
 	}
-	a.setUpGathering(repos.gatherings)
+	a.setUpGathering(repos.gatherings, repos.statuses)
 	if err := a.setUpFinance(ctx, cfg, repos.finance, opts); err != nil {
 		return nil, err
 	}

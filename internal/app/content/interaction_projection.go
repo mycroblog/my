@@ -90,6 +90,10 @@ func RegisterInteractionProjectors(r *uow.Projectors, repo InteractionRepository
 		}
 		return repo.DeleteStatusBoostEdgesOf(ctx, tx, ids)
 	})
+	// A deleted board post, which has no boosts, takes its reaction counts with it.
+	r.Register(EventBoardStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return repo.DeleteStatusReactionCountsOf(ctx, tx, deletedIDs(e.(BoardStatusesDeleted).Deletions))
+	})
 	// A deleted status leaves every status projection; its counters go with RegisterProjectors.
 	// Its local boosts no longer count as their boosters' posts.
 	r.Register(EventStatusDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {

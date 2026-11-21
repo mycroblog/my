@@ -305,6 +305,10 @@ func (s *Service) visibleTo(ctx context.Context, accountID, statusID string) (co
 	}
 	viewer := content.Viewer{Kind: content.ViewerLocal, AccountID: accountID}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	// A board post is neither replied to by an ordinary post nor quoted (ADR-0161 §17).
+	if facts.Board, err = offBoardFacts(ctx, s.d.Repository, st); err != nil {
+		return content.Status{}, interactor{}, err
+	}
 	if !content.CanView(content.ContextStatus, viewer, facts, restrictions.Author, rel) {
 		return content.Status{}, interactor{}, notFound
 	}
