@@ -163,13 +163,11 @@ test("failed: a draft whose scheduled post failed says when and why, over its te
 
 test("empty: neither drafts nor scheduled posts is one sentence, with no heading of a list", () => {
   const { part } = list({ kind: "ready", drafts: [], scheduled: [] });
-  expect(
-    part.getByText("No drafts or scheduled posts yet. Save a post as a draft or schedule it, and it shows here."),
-  ).not.toBeNull();
+  expect(part.getByText("No drafts or scheduled posts yet.")).not.toBeNull();
   expect(part.queryAllByRole("heading", { name: /^(Scheduled|Drafts)\s*\d/ })).toHaveLength(0);
 
   expect(list({ kind: "ready", drafts: [], scheduled: [] }, "ja").said()).toContain(
-    "まだ下書きも予約投稿もありません。投稿を下書きに保存するか予約すると、ここに表示されます。",
+    "まだ下書きも予約投稿もありません。",
   );
 });
 
@@ -177,11 +175,11 @@ test("scheduled posts and no draft: the drafts' heading says there are none", ()
   const { part } = list({ kind: "ready", drafts: [], scheduled: lists.scheduled });
   expect(part.getByRole("heading", { name: /^Scheduled\s*2$/ })).not.toBeNull();
   expect(part.getByRole("heading", { name: /^Drafts\s*0$/ })).not.toBeNull();
-  expect(part.getByText("No drafts yet. Save a post as a draft, and it shows here.")).not.toBeNull();
+  expect(part.getByText("No drafts yet.")).not.toBeNull();
 
   const ja = list({ kind: "ready", drafts: [], scheduled: lists.scheduled }, "ja");
   expect(ja.part.getByRole("heading", { name: /^予約\s*2$/ })).not.toBeNull();
-  expect(ja.said()).toContain("まだ下書きはありません。投稿を下書きに保存すると、ここに表示されます。");
+  expect(ja.said()).toContain("まだ下書きはありません。");
 });
 
 test("drafts and no scheduled post: the list starts at the drafts, without the zone", () => {
@@ -460,8 +458,9 @@ test("a time nearer than the server's nearest, or farther than its farthest, say
   );
 });
 
+// Three minutes, not two: the field holds whole minutes, so two ahead may be less than one by the time the form judges it.
 test("the form takes the instance's limits once they are read", async () => {
-  const said = await scheduleForm(from(2 * 60_000), { minutes: 1 });
+  const said = await scheduleForm(from(3 * 60_000), { minutes: 1 });
 
   expect(said).toContain("From 1 minute to 366 days from now");
   expect(said).not.toContain("Schedule the post at least");

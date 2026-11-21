@@ -5,9 +5,7 @@
 // screen, and the footer; from `desktop`, the server's introduction (its banner, its mark and its description) on a
 // raised panel of 5/12 at the start, which stays in view while a long form scrolls, and the column beside it without
 // the mark, so that the reader sees which server they are on. With no banner, the introduction sits in the panel's
-// middle. The server's front page shows its introduction at every width, at the top of the column on a phone and a
-// tablet, with the server's name as the page's title and what leads on from it (its about page) at its end. Fields
-// are raised surfaces; what went wrong takes a glyph and the text's color, never a hue, since the accent
+// middle. Fields are raised surfaces; what went wrong takes a glyph and the text's color, never a hue, since the accent
 // means the primary action and links only. A form's own error sits right before the button that sent it, where the
 // reader is when they send it again; a field's sits under the field. Like the app's frame (shell.tsx), it reads the
 // viewport, and it carries the page's surface onto <html>.
@@ -42,7 +40,6 @@ const page = tv({
     ],
     introBody: "flex w-full max-w-[var(--form-page-intro-width)] flex-col gap-form-page-intro-gap",
     banner: "aspect-banner w-full rounded-overlay object-cover",
-    summary: "grid gap-form-page-head-gap",
     column: [
       "flex w-full max-w-[var(--form-page-column)] flex-col gap-form-page-gap",
       "desktop:box-border desktop:max-w-[var(--form-page-column-wide)] desktop:justify-self-center",
@@ -58,14 +55,6 @@ const page = tv({
     banner: { false: { intro: "desktop:items-center" }, true: { intro: "desktop:items-start" } },
     // With no server to introduce, the column stands alone in the page's middle at every width.
     alone: { true: { root: "desktop:flex desktop:px-shell-edge", column: "desktop:px-0" } },
-    // The front page: the introduction heads the column below `desktop`, and the column fills the rest of the page.
-    front: {
-      true: {
-        root: "max-desktop:flex-col max-desktop:items-center max-desktop:gap-form-page-gap",
-        intro: "max-desktop:flex max-desktop:w-full max-desktop:max-w-[var(--form-page-column)]",
-        column: "flex-1",
-      },
-    },
   },
 });
 
@@ -100,7 +89,7 @@ const mark = tv({
  * The server's mark: its own logo (for light and dark) with its name, else the built-in wordmark with its name; `title`
  * makes the name the page's h1.
  */
-function Mark({
+export function Mark({
   server,
   wordmark,
   size,
@@ -120,8 +109,8 @@ function Mark({
         server.logoDark ? (
           // A logo drawn for each colour scheme: the one of the scheme shows.
           <>
-            <Box only="light" as={<img className={`${s.logo()} ${s.wordmark()}`} src={server.logo} alt="" />} />
-            <Box only="dark" as={<img className={`${s.logo()} ${s.wordmark()}`} src={server.logoDark} alt="" />} />
+            <Box only="light" as={<img className={s.logo()} src={server.logo} alt="" />} />
+            <Box only="dark" as={<img className={s.logo()} src={server.logoDark} alt="" />} />
           </>
         ) : (
           <img className={s.logo()} src={server.logo} alt="" />
@@ -154,51 +143,31 @@ export type FormPageProps = {
    * charged), in a band of its own at the top of the column.
    */
   band?: string | undefined;
-  /**
-   * The server's front page: its introduction shows at every width and names the page, and `more` ends it (a link to
-   * the server's about page).
-   */
-  front?: { more?: ReactNode } | undefined;
   children: ReactNode;
 };
 
 /** A page of its own outside the app's frame: the server's mark or introduction, the screen, and the footer. */
-export function FormPage({ server, wordmark, footer, front, band, children }: FormPageProps) {
+export function FormPage({ server, wordmark, footer, band, children }: FormPageProps) {
   const banner = server?.banner !== undefined && server.banner !== "";
-  const isFront = server !== undefined && front !== undefined;
-  const s = page({ banner, alone: server === undefined, front: isFront });
-  const intro = server !== undefined && (
-    <div className={s.introBody()}>
-      {banner && <img className={s.banner()} src={server.banner} alt="" />}
-      <Mark server={server} wordmark={wordmark} size="intro" title={isFront} />
-      {isFront ? (
-        // What leads on from the summary stays with it.
-        <div className={s.summary()}>
-          {server.description && <p dir="auto">{server.description}</p>}
-          {front.more}
-        </div>
-      ) : (
-        server.description && <p dir="auto">{server.description}</p>
-      )}
-    </div>
-  );
+  const s = page({ banner, alone: server === undefined });
   return (
     <div className={s.root()}>
-      {server !== undefined &&
-        (isFront ? (
-          <header className={s.intro()}>{intro}</header>
-        ) : (
-          <aside className={s.intro()} aria-label={server.name}>
-            {intro}
-          </aside>
-        ))}
+      {server !== undefined && (
+        <aside className={s.intro()} aria-label={server.name}>
+          <div className={s.introBody()}>
+            {banner && <img className={s.banner()} src={server.banner} alt="" />}
+            <Mark server={server} wordmark={wordmark} size="intro" />
+            {server.description && <p dir="auto">{server.description}</p>}
+          </div>
+        </aside>
+      )}
       <div className={s.column()}>
         {band !== undefined && (
           <p className={s.band()} role="note" dir="auto">
             {band}
           </p>
         )}
-        {server !== undefined && !isFront && (
+        {server !== undefined && (
           <header className={s.header()}>
             <Mark server={server} wordmark={wordmark} size="line" />
           </header>

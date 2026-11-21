@@ -16,12 +16,12 @@ export class Invites {
     this.page = page;
   }
 
-  /** The menu's row to the entry, whose name the row's hint follows. */
+  /** The menu's row to the entry. */
   get menuRow(): Locator {
     return this.page
       .getByRole("main")
       .getByRole("navigation", { name: "Settings", exact: true })
-      .getByRole("link", { name: /^Invites.+$/ });
+      .getByRole("link", { name: "Invites", exact: true });
   }
 
   /** The screen's heading, the entry's name. */

@@ -43,23 +43,27 @@ Sus campos, y lo que hace la depuración de datos sensibles con ellos, están en
 
 Ninguna otra línea lleva una pila.
 
-<!-- source: google-cloud-cloud-run 925c99683713 -->
+<!-- source: google-cloud-cloud-run a263d8621ca1 -->
 ### Google Cloud (Cloud Run)
 
-Cloud Error Reporting lee la línea sin ninguna configuración y muestra los errores en la consola, en Error Reporting. Es gratuito; solo pagas Cloud Logging.
+Cloud Error Reporting lee la línea sin ninguna configuración y enumera los errores en la consola, en Error Reporting. Es gratuito; solo pagas Cloud Logging.
 
-- Agrupa los errores por el tipo y los primeros marcos de la traza de pila. No puede usar la huella del servidor, así que un grupo de Error Reporting puede diferir de un grupo de la pantalla de administración.
-- Conserva los grupos durante 30 días y te avisa de los errores nuevos y de los resueltos que vuelven a ocurrir, con un máximo de 20 notificaciones por hora para el proyecto. Configura su canal de notificaciones en la consola de Google Cloud.
-- Para encontrar lo ocurrido en torno a un informe, busca en Cloud Logging `jsonPayload."request_id"="<id>"`, o lo mismo con `trace_id`.
+- Agrupa los errores por el tipo y los frames superiores de la pila. No puede tomar la huella del servidor, así que un grupo de Error Reporting puede diferir de un grupo de la pantalla de administración.
+- Conserva los grupos durante 30 días, y te avisa de errores nuevos y de errores resueltos que vuelven a ocurrir, como máximo 20 notificaciones por hora para el proyecto. Configura su canal de notificación en la consola de Google Cloud.
+- Para encontrar lo que ocurrió en torno a un informe, busca en Cloud Logging `jsonPayload."request_id"="<id>"`, o lo mismo con `trace_id`.
 
-<!-- source: aws 6ca6594afd7e -->
+Con el módulo de OpenTofu [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections), la sección `observability` envía aquí los informes de forma predeterminada (`errors = "error-reporting"`): activa la API de Error Reporting y deja `errors_exporter` en `none`.
+
+<!-- source: aws bc7e48e1321b -->
 ### AWS
 
-CloudWatch Logs lee la línea como JSON simple.
+CloudWatch Logs lee la línea como JSON sin más.
 
-- Activa la detección de anomalías de registros en el grupo de registros. Señala un patrón de línea que nunca había visto y puede lanzar una alarma a SNS. Solo lee los primeros 1500 caracteres de una línea, y por eso `message` es el último campo. No conserva un estado de resuelto.
-- Para contar los informes, crea un filtro de métricas como `{ $.msg = "error report" }`. No uses ninguna dimensión tomada de `my.error.fingerprint`: cada valor de una dimensión se factura como una métrica propia. `my.error.source` y `my.error.kind` son seguras.
+- Activa la detección de anomalías de registros para el grupo de registros. Señala un patrón de línea que nunca había visto y puede alarmar a SNS. Lee solo los primeros 1500 caracteres de una línea, por lo que `message` es el último campo. No conserva un estado de resuelto.
+- Para contar informes, crea un filtro de métricas como `{ $.msg = "error report" }`. No uses ninguna dimensión tomada de `my.error.fingerprint`: cada valor de una dimensión se factura como una métrica propia. `my.error.source` y `my.error.kind` son seguras.
 - Encuentra el contexto con Logs Insights: ``filter `request_id` = "<id>"``.
+
+Con el módulo de OpenTofu [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws), la sección `observability` conserva los informes en CloudWatch Logs de forma predeterminada (`errors = "cloudwatch"`), con `errors_exporter` en `none`. La detección de anomalías de registros sigue siendo un paso tuyo.
 
 <!-- source: self-hosted 90de7a419474 -->
 ### Autoalojado
@@ -74,15 +78,15 @@ Para notificaciones que no necesiten un servicio externo, usa la pantalla de adm
 El servidor cuenta los informes por huella en la base de datos. No necesita ninguna configuración ni servicio adicional, y escribe poco: el primer informe de una huella se escribe de inmediato, y los siguientes se suman en memoria y se escriben una vez por minuto. Una terminación forzosa del proceso puede perder los recuentos del último minuto; las líneas de registro no se pierden así.
 Los recuentos de más de 90 días se eliminan cada día. Si lo que ha fallado es la base de datos, el informe queda solo en la línea de registro.
 
-<!-- source: the-administration-screen 09092782a7c1 -->
+<!-- source: the-administration-screen e7dacd037150 -->
 ### La pantalla de administración
 
 Las personas cuyo rol tiene `manage_errors` (el rol integrado `admin` lo tiene) ven «Errores» en el menú de administración (`/admin/errors`).
 
-- La lista muestra los grupos, por defecto los abiertos. Filtra por estado (abierto, resuelto, silenciado, todos los estados) y por origen (el servidor, el cliente web). Cada fila muestra el tipo de error, dónde ocurrió, las primeras líneas del mensaje, los recuentos de las últimas 24 horas y de los últimos 7 días, y la primera y la última vez y versión.
-- La página de un grupo muestra la última aparición (hora, versión, rol del proceso, ID de solicitud, ID de traza, los tipos, el mensaje y la traza de pila), las apariciones por hora de los últimos 90 días y el historial de sus cambios de estado. El ID de solicitud y el ID de traza tienen un botón «Copiar»: pégalos en tu búsqueda de registros.
-- «Marcar como resuelto» es para un error que has corregido. Si vuelve a ocurrir en otra versión del servidor, el grupo se abre de nuevo y vuelve a notificar. El mismo error en la versión que se resolvió solo se cuenta, de modo que las últimas solicitudes de la versión antigua no lo reabren.
-- «Silenciar» sigue contando pero no envía ninguna notificación ni evento de webhook. «Dejar de silenciar» vuelve a abrir el grupo.
+- La lista muestra los grupos, por defecto los abiertos, el visto más recientemente primero. Filtra por estado (abierto, resuelto, silenciado, todos los estados) y por origen (el servidor, el cliente web). Cada fila muestra la primera línea del mensaje, dónde ocurrió, los recuentos de las últimas 24 horas y 7 días, cuándo se vio por última vez y su estado.
+- La página de un grupo empieza con lo que puedes hacer en su estado («Resolver» y «Silenciar» para un grupo abierto, «Silenciar» para uno resuelto, «Dejar de silenciar» para uno silenciado). Muestra los datos del grupo (dónde, el mensaje, la primera y la última vez y versión, la huella), sus recuentos de las últimas 24 horas y 7 días, la última aparición (hora, versión, rol del proceso, los tipos, el ID de solicitud y el ID de traza, y la pila), las apariciones por hora de los últimos 90 días, la más reciente primero, y el historial de sus cambios de estado. La huella, el ID de solicitud, el ID de traza y la pila tienen un botón de copiar: pega los ID en tu búsqueda de registros.
+- «Resolver» es para un error que corregiste. Si vuelve a ocurrir en otra versión del servidor, el grupo se abre de nuevo y vuelve a notificar. El mismo error en la versión que se resolvió solo se cuenta, para que las últimas solicitudes de la versión antigua no lo reabran.
+- «Silenciar» sigue contando pero no envía ninguna notificación ni evento de webhook. «Dejar de silenciar» abre el grupo de nuevo.
 
 Las mismas acciones están disponibles como `GET /api/v1/admin/error_groups` y `POST /api/v1/admin/error_groups/{id}/resolve` (`/mute`, `/unmute`).
 
@@ -99,6 +103,15 @@ Las mismas acciones están disponibles como `GET /api/v1/admin/error_groups` y `
 El cliente web envía los errores que sus pantallas no gestionaron a `POST /api/v1/client_errors` en tu propio servidor, así que ningún tercero los ve y no cambia ninguna configuración de seguridad de contenido. El servidor responde `204` a todo y descarta lo que no acepta: un cuerpo de más de 16 KiB, una traza de pila sin ningún archivo de tu propio cliente web y más de 10 informes por minuto desde una misma dirección IP. El mismo error se envía una vez por visualización de página, y como máximo 20 por visualización de página.
 Un informe enviado sin una sesión iniciada se cuenta y se registra, pero no notifica a nadie por sí solo, de modo que un script anónimo no pueda llenar tu bandeja de entrada. El grupo notifica cuando también lo informa el navegador de una persona con sesión iniciada.
 Las trazas de pila son las de la compilación minificada y no se traducen de vuelta al código fuente, así que lee primero la ruta y el mensaje. La versión es la del servidor que sirvió la página. Una página que se abrió sin conexión, o tras 3 segundos sin respuesta, procede de la copia del navegador, que indica la versión de cuando el navegador guardó el cliente web: una versión anterior con el mismo cliente web.
+
+<!-- source: ux-measurements 2edcd05329e6 -->
+## Mediciones de UX
+
+El cliente web envía muestras de lo rápido que responde a `POST /api/v1/client_measurements` en tu propio servidor, igual que sus errores: cuánto tarda una pantalla en aparecer (LCP) y en responder a una pulsación (INP) en cada ruta, sus frames largos, cada navegación por tipo, cada acción por su ID (`post.reply`), y el viaje de ida y vuelta, la fluctuación y la pérdida de paquetes de las llamadas de voz. Una muestra nombra solo la ruta, el tipo, la acción o el transporte de la llamada; no lleva ninguna cuenta, dirección ni URL. El servidor responde `204` a todo y acepta como máximo 10 solicitudes por minuto de una misma dirección IP.
+El servidor cuenta las muestras por hora en la base de datos, escritas una vez por minuto, y las elimina tras 30 días. `GET /api/v1/admin/ux_measurements` (`manage_errors`) suma las últimas 24 horas, o `hours` hasta 720, con el percentil 75 de cada nombre; las métricas `my.ux.duration` y `my.ux.call.packet_loss` exportan las mismas muestras ([Métricas](running.md#metrics)). Cada tipo conserva sus primeros 200 nombres en un proceso; los posteriores cuentan como `other`.
+Está desactivado por defecto; el ajuste de la instancia `ux_measurement` lo activa, y mientras está desactivado el servidor no toma ninguna muestra ([Ajustes de la instancia](instance-settings.md)). Mientras está activado, solo una parte de las sesiones del navegador envía muestras, el 10 % salvo que `ux_measurement_share` fije otra, y cada sesión se sortea una vez cuando arranca el cliente web.
+
+Las personas cuyo rol tiene `manage_errors` ven «Mediciones de UX» en el menú de administración (`/admin/ux-measurements`). Elige las últimas 24 horas, 7 días o 30 días; cada métrica con muestras tiene una tabla de sus nombres con sus muestras y el percentil 75 y, para LCP e INP, la proporción de muestras buenas y malas (dentro de 2,5 s y más de 4 s para LCP, dentro de 200 ms y más de 500 ms para INP), con un percentil 75 por encima del umbral bueno marcado. «Medir el cliente web», bajo las tablas, es el ajuste `ux_measurement`, que solo cambian allí las personas cuyo rol también tiene `manage_settings`, con su propio «Guardar».
 
 <!-- source: sending-reports-to-a-service eb5f208ca8fc -->
 ## Envío de informes a un servicio
@@ -124,7 +137,7 @@ El servidor limita lo que envía para no saturar el servicio:
 
 Vigila el contador `my.errors.exported`: `my.outcome` es `success`, `dropped` (por encima de un límite, la cola estaba llena o el servicio pidió reducir el ritmo) o `failed` (no se pudo contactar con el servicio o este rechazó el informe) ([Ejecutar el servidor](running.md#metrics)).
 
-<!-- source: sentry-glitchtip-and-datadog 12c935ec3c05 -->
+<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
 ### Sentry, GlitchTip y Datadog
 
 ```sh
@@ -132,11 +145,19 @@ MY_ERRORS_EXPORTER=sentry
 MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; the DSN is a secret
 ```
 
-El servidor habla el protocolo de Sentry por sí mismo, así que no interviene ningún SDK de Sentry y no se lee ninguna variable de entorno `SENTRY_*`. Establece la huella, de modo que el servicio agrupa por ella, y las etiquetas `service` (`my`), `my.role`, `my.error.where` y `error.fingerprint`. La versión (release) es la del servidor y el entorno es `errors_environment`.
+Con los módulos de OpenTofu, deja los errores de la sección `observability` a los ajustes, y el módulo crea el secreto del DSN para que lo rellenes, que su salida `secrets_to_fill` enumera:
+
+```hcl
+  observability = { errors = "settings" }
+  settings      = { errors_exporter = "sentry" }
+  secrets       = ["errors_sentry_dsn"]
+```
+
+El servidor habla el protocolo de Sentry por sí mismo, así que no interviene ningún SDK de Sentry y no se lee ninguna variable de entorno `SENTRY_*`. Define la huella, por lo que el servicio agrupa por ella, y las etiquetas `service` (`my`), `my.role`, `my.error.where` y `error.fingerprint`. La versión es la del servidor y el entorno es `errors_environment`.
 
 - **Sentry** (alojado o autoalojado): copia el DSN de las claves de cliente del proyecto.
 - **GlitchTip**: copia el DSN del proyecto. Es de código abierto y funciona en un servidor pequeño. Comprueba qué reglas de alerta ofrece tu versión para incidencias nuevas y recurrentes.
-- **Datadog Error Tracking**: usa el DSN de Sentry de tu sitio de Datadog, `https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`. Datadog exige la etiqueta `service`, que el servidor siempre establece. Datadog guarda estos eventos como registros y los agrupa en Error Tracking. Si en cambio envías la línea de registro a Datadog con un agente o un reenviador (Error Tracking for Logs), la traza de pila está en `message`; asígnala a `error.stack` con un pipeline de registros, o Datadog no la reconocerá como traza de pila. El exportador `sentry` no necesita esa asignación.
+- **Datadog Error Tracking**: usa el DSN de Sentry de tu sitio de Datadog, `https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`. Datadog exige la etiqueta `service`, que el servidor siempre define. Datadog almacena estos eventos como registros y los agrupa en Error Tracking. Si envías la línea de registro a Datadog con un agente o un reenviador (Error Tracking for Logs), la pila está en `message`; asígnala a `error.stack` con un pipeline de registros, o Datadog no la ve como una pila. El exportador `sentry` no necesita tal asignación.
 
 <!-- source: otlp-backends fe964b8f1b2c -->
 ### Backends OTLP

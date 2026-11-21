@@ -291,6 +291,14 @@
     "defaultMessage": "Create an account",
     "description": "The landing page's primary action for a visitor while the server takes new accounts; it opens the server's registration page."
   },
+  "app.landing_sign_up_invite": {
+    "defaultMessage": "Create an account with an invite",
+    "description": "The landing page's primary action while the server takes new accounts by invite only; it opens the registration page, which asks for the invite."
+  },
+  "app.landing_account": {
+    "defaultMessage": "Account",
+    "description": "On the landing page, the name for assistive technology of the part that offers creating an account or signing in."
+  },
   "app.landing_approval": {
     "defaultMessage": "A moderator reviews each new account before it can be used.",
     "description": "On the landing page, under Create an account and Sign in, when the registration mode is approval."
@@ -302,6 +310,98 @@
   "app.landing_closed": {
     "defaultMessage": "This server is not accepting new accounts.",
     "description": "On the landing page, under Sign in, when the server takes no new accounts (registration closed, a one-person server, a closure)."
+  },
+  "app.landing_counts": {
+    "defaultMessage": "This server in numbers",
+    "description": "On the landing page, the name for assistive technology of the server's counts (members, public posts this week)."
+  },
+  "app.landing_members": {
+    "defaultMessage": "{count, plural, one {member} other {members}}",
+    "description": "On the landing page, the label under the number of the server's members; the number itself stands above it."
+  },
+  "app.landing_week_posts": {
+    "defaultMessage": "{count, plural, one {public post in the last 7 days} other {public posts in the last 7 days}}",
+    "description": "On the landing page, the label under the number of public posts the server's members made in the last 7 days; the number stands above it."
+  },
+  "app.landing_fediverse_heading": {
+    "defaultMessage": "Part of the fediverse",
+    "description": "On the landing page, the heading of the software's explanation of the fediverse (independent servers that follow one another)."
+  },
+  "app.landing_fediverse": {
+    "defaultMessage": "An account here has an address like @you@{domain}. With it you can follow people on Mastodon and the other servers of the fediverse, and they can follow you.",
+    "description": "On the landing page, under Part of the fediverse: how an account of this server follows and is followed by people on other servers. {domain} is this server's domain; @you is a sample name."
+  },
+  "app.landing_features_heading": {
+    "defaultMessage": "What you can do here",
+    "description": "On the landing page, the heading of the list of what members of this server can do besides posting (articles, events, voice rooms…), of what the server has on."
+  },
+  "app.landing_feature_articles": {
+    "defaultMessage": "Besides posts, write articles: long pieces with headings and images.",
+    "description": "On the landing page, an item of What you can do here, shown while every member may write articles."
+  },
+  "app.landing_feature_events": {
+    "defaultMessage": "Plan events and see who is coming.",
+    "description": "On the landing page, an item of What you can do here, shown while every member may create events."
+  },
+  "app.landing_feature_voice": {
+    "defaultMessage": "Talk live with others in voice chat rooms.",
+    "description": "On the landing page, an item of What you can do here, shown while the server's voice rooms are on."
+  },
+  "app.landing_feature_search": {
+    "defaultMessage": "Search posts by their words, not only by hashtags.",
+    "description": "On the landing page, an item of What you can do here, shown while the server has full-text search."
+  },
+  "app.landing_feature_translation": {
+    "defaultMessage": "Read posts from anywhere translated into your language.",
+    "description": "On the landing page, an item of What you can do here, shown while the server has a translation provider."
+  },
+  "app.landing_feature_supporters": {
+    "defaultMessage": "Help pay the costs of running this server.",
+    "description": "On the landing page, an item of What you can do here, shown while the server takes supporters or tips."
+  },
+  "app.landing_feature_articles_name": {
+    "defaultMessage": "Articles",
+    "description": "On the landing page, the name of a sample of the articles' screens, over the sentence of What you can do here on articles."
+  },
+  "app.landing_feature_translation_name": {
+    "defaultMessage": "Translation",
+    "description": "On the landing page, the name of a sample of a translated post, over the sentence of What you can do here on translation."
+  },
+  "app.landing_sample_room": {
+    "defaultMessage": "Saturday night radio",
+    "description": "On the landing page, the name of a sample voice room in a miniature of the rooms' list; not a real room."
+  },
+  "app.landing_sample_event": {
+    "defaultMessage": "Morning walk by the river",
+    "description": "On the landing page, the title of a sample event in a miniature of the events' list; not a real event."
+  },
+  "app.landing_sample_article_title": {
+    "defaultMessage": "Ten years of a small garden",
+    "description": "On the landing page, the title of a sample article in a miniature of a timeline; not a real article."
+  },
+  "app.landing_sample_article_summary": {
+    "defaultMessage": "What grew, what did not, and what I would plant again.",
+    "description": "On the landing page, the summary of the sample article whose title is app.landing_sample_article_title."
+  },
+  "app.landing_sample_post": {
+    "defaultMessage": "Baked bread this morning. The kitchen still smells of it.",
+    "description": "On the landing page, the text of a sample post, shown translated in a miniature and found by a sample search; it must hold the word of app.landing_sample_search."
+  },
+  "app.landing_sample_search": {
+    "defaultMessage": "bread",
+    "description": "On the landing page, the words in a sample search field, which the sample post (app.landing_sample_post) holds."
+  },
+  "app.landing_sample_plan": {
+    "defaultMessage": "Supporter",
+    "description": "On the landing page, the name of a sample supporters' plan in a miniature of the plans; not a real plan."
+  },
+  "app.landing_sample_month": {
+    "defaultMessage": "/ month",
+    "description": "On the landing page, after the price of the sample supporters' plan: the period it is paid for."
+  },
+  "app.landing_sample_translated": {
+    "defaultMessage": "Post translated from {language}",
+    "description": "On the landing page, under a sample post shown translated in a miniature of a timeline: the language it was written in ({language}, a language's name)."
   },
   "app.landing_without_account": {
     "defaultMessage": "Without an account",

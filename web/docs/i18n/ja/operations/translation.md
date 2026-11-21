@@ -61,7 +61,7 @@ my instance set translation_provider_visibilities 'deepl=public|local|unlisted|p
 
 **帰属表示。** DeepL の規約では、各翻訳とともにその名前かロゴを表示することが求められます。Web クライアントは、DeepL による翻訳のそれぞれの隣に `https://www.deepl.com` へのリンク付きで「DeepL」と表示するので、あなたが付け加えるものはありません。
 
-<!-- source: google-cloud-translation e351f57274b0 -->
+<!-- source: google-cloud-translation ab42392ab00c -->
 ## Google Cloud Translation
 
 [Cloud Translation](https://cloud.google.com/translate) のプロバイダー ID は `google` です。サーバーは汎用の翻訳モデルでその `TranslateText` メソッドを呼び出し、メンションやリンクなど変えてはならない部分が元の位置に戻ってくるよう、テキストを HTML として送ります。
@@ -73,6 +73,14 @@ my instance set translation_provider_visibilities 'deepl=public|local|unlisted|p
 3. `MY_TRANSLATOR_GOOGLE_PROJECT` にプロジェクト ID を設定します。`MY_TRANSLATOR_GOOGLE_LOCATION` の既定値は `global` で、汎用モデルを提供する Cloud Translation のほかのロケーション（たとえば `us-central1`）も指定できます。
 4. サーバーを再起動し、インスタンスの設定 `translation_providers` に `google` を加えます。
 
+Google Cloud で OpenTofu モジュール [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) を使う場合は、セクション `translation` が最初の 3 つの手順を行い、apply でサービスが再起動されます。
+
+```hcl
+  translation = {}   # or { project_id = "other-project", location = "us-central1" }
+```
+
+このセクションは、デプロイのプロジェクト（`project_id` を指定したときはそのプロジェクト）で API を有効にし、そこでサービスのサービスアカウントに `roles/cloudtranslate.user` を付与し、`translator_google_project` と `translator_google_location` を設定します。そのあと、`translation_providers` に `google` を加えてください。
+
 サーバーは、使っているほかの Google Cloud のサービスと同じく、アプリケーションのデフォルト認証情報（Application Default Credentials）で認証します。Cloud Run ではサービスのサービスアカウント、それ以外では `GOOGLE_APPLICATION_CREDENTIALS` が指すキーファイルです。API キーは使いません。サーバーは起動時に呼び出しを行わないので、API やロールが足りないことは、読む人が翻訳を求めたときに初めてわかります。そのときサーバーは次のプロバイダーを試し、残りがなければ読む人には翻訳に失敗したことが表示されます。Google が報告するプロジェクトのクォータやレート制限でも、次のプロバイダーに移ります。
 
 Google は、月ごとの無料枠を超えた分を送った文字数で課金します。[Cloud Translation の料金](https://cloud.google.com/translate/pricing)を参照してください。サーバー自身の月ごとの上限も文字数を数えますが、Google の請求とまったく同じではないので、Cloud Billing で予算アラートも設定してください。
@@ -81,7 +89,7 @@ Google は、テキストを翻訳の提供にだけ使い、メモリにごく�
 
 Google の[帰属表示の要件](https://cloud.google.com/translate/attribution)では、翻訳を機械翻訳として示し、その隣に `https://translate.google.com` へリンクする「powered by Google Translate」のバッジを表示することが求められます。Web クライアントは、このプロバイダーによる翻訳のそれぞれの隣に、そのリンク付きで「Google Translate」という名前を表示します。Google はバッジの画像をダウンロードでしか提供していないので、サーバーはこのプロバイダーのロゴをクライアントに渡しません。読む人に見えるものがあなたのインスタンスについて Google の要件を満たしているか確認してください。
 
-<!-- source: amazon-translate a6cd83df7ef1 -->
+<!-- source: amazon-translate b7aa8e79d2d7 -->
 ## Amazon Translate
 
 Amazon Translate はプロバイダー `aws` です。サーバーは、ほかの AWS のサービスと同じく AWS SDK のデフォルトのチェーンの認証情報で、その `TranslateText` 操作を呼び出します。タスクやインスタンスの実行ロール、環境変数 `AWS_ACCESS_KEY_ID` と `AWS_SECRET_ACCESS_KEY`、または共有の認証情報ファイルです。サーバーの設定にキーを入れることはありません。
@@ -89,6 +97,8 @@ Amazon Translate はプロバイダー `aws` です。サーバーは、ほか�
 1. サーバーを動かすロールまたはユーザーに、IAM の権限 `translate:TranslateText` を与えます。言語のわからない投稿では、Amazon Translate は Amazon Comprehend で言語を判定します。Amazon Translate 用の AWS のマネージドポリシーは `comprehend:DetectDominantLanguage` も一緒に付与しているので、これも付与してください。
 2. `translator_aws_region`（`MY_TRANSLATOR_AWS_REGION`）に Amazon Translate のリージョン（たとえば `us-east-1`）を設定します。言語の判定には、Amazon Comprehend も動いているリージョンが必要です。
 3. サーバーを再起動し、`translation_providers = aws` で、単独で、またはほかのプロバイダーの中で好みの順にプロバイダーを有効にします（[インスタンスの設定](instance-settings.md)）。
+
+AWS で OpenTofu モジュール [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) を使う場合は、セクション `translation` が最初の 2 つの手順を行います。`translation = {}` と書くと、タスクのロールに 2 つのアクションを許可し、`translator_aws_region` をデプロイのリージョン（`region` を指定したときはそのリージョン）に設定します。そのあと、プロバイダーを有効にしてください。
 
 Amazon Translate は送った文字数で課金し、最初の 12 か月には無料枠があります（[料金](https://aws.amazon.com/translate/pricing/)）。サーバーが送るのは投稿の言葉だけです。メンション、ハッシュタグ、リンク、コードはサーバーにとどまり、それぞれ HTML のマークアップの短いプレースホルダーとして送られます。`translation_user_monthly_characters` と `translation_server_monthly_characters` の月ごとの上限は、払ってもよい範囲に収めてください。
 

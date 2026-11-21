@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The stories of the supporter's screens (web/app/src/supporters.stories.tsx) each show the state they are named by,
-// on the fake API: the supporters' page for a reader without a plan, a member, a visitor, a reader who may not
-// subscribe nor tip (each reason, with the program and on a server of tips alone), a server of tips alone, the native shell, a server that takes no support, and its loading, failure,
-// empty list and long names; the settings' Supporter in each state of a subscription and back from the checkout; and
-// the tip, its returns, a reader who may not tip and a server that takes none. What the screens do from each state is
-// the app's route tests' (web/app/src/supporters-routes.dom.test.tsx); this is that the catalog shows each state for a
-// review and a shot.
+// The stories of the supporter's screens (web/app/src/supporters.stories.tsx) each show the state they are named by, on
+// the fake API: the supporters' page for a reader without a plan, a member, a visitor, a reader who may not subscribe
+// nor tip (each reason, with the program and on a server of tips alone), a server of tips alone, the native shell, a
+// server that takes no support, and its loading, failure, empty list and long names; the settings' Supporter plans and
+// tips in each state of a subscription and back from the checkout; and the tip, its returns, a reader who may not tip
+// and a server that takes none. What the screens do from each state is the app's route tests'
+// (web/app/src/supporters-routes.dom.test.tsx); this is that the catalog shows each state for a review and a shot.
 
 import type { Page } from "@playwright/test";
-import { expect, pc, test } from "../test";
+import { expect, groupsOf, pc, test } from "../test";
 
 /** The story of the supporter's screens named `name`. */
 const story = (name: string) => `screens-supporters--${name}`;
@@ -221,11 +221,16 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
   ["tip-error", (page) => says(page, /^The amounts could not be loaded\./)],
 ];
 
-// One page walks the stories, a step each: a page of its own per story would cost the catalog's run its time limit.
-test("each story of the supporter's screens shows its state", async ({ page, open }) => {
-  for (const [name, shows] of states)
-    await test.step(name, async () => {
-      await open(story(name), { width: pc });
-      await shows(page);
-    });
-});
+// One page walks a group of the stories, a step each (groupsOf).
+const groups = groupsOf(states, 8);
+for (const [i, group] of groups.entries())
+  test(`each story of the supporter's screens shows its state (${i + 1} of ${groups.length})`, async ({
+    page,
+    open,
+  }) => {
+    for (const [name, shows] of group)
+      await test.step(name, async () => {
+        await open(story(name), { width: pc });
+        await shows(page);
+      });
+  });

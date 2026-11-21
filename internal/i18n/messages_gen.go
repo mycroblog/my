@@ -2184,7 +2184,7 @@ func (l *Localizer) ServerErrorsStatusInvalidText() string {
 
 // ServerErrorsStatusLocalUnavailable formats "server:errors.status.local_unavailable". API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only.
 //
-//	en: Posts on a one-person server cannot be local. Change who can see it.
+//	en: On a one-person server, you cannot post to Neighbors. Change who can see it.
 func (l *Localizer) ServerErrorsStatusLocalUnavailable() string {
 	return l.format("server:errors.status.local_unavailable", nil)
 }

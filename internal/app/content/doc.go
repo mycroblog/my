@@ -13,9 +13,9 @@
 // way the author's own deletion is.
 //
 // The projections of statuses hold live statuses only: the transaction that records a deletion
-// removes the status's rows from all of them. Favourites, bookmarks, and pins of a deleted status
-// stay as long as the status's rows do, and change no count, since a deleted status has no
-// counters. local_post_counters is the count NodeInfo reports as usage.localPosts (ADR-0006 §1).
+// removes the status's rows from all of them, and DeletedPurge deletes its own rows
+// DeletedContentRetention later; the deletion stays as the tombstone. Favourites, bookmarks, and
+// pins of a deleted status stay, and change no count, since a deleted status has no counters. local_post_counters is the count NodeInfo reports as usage.localPosts (ADR-0006 §1).
 // It is one row per local account, summed
 // on each request, rather than one row for the instance that every post would contend for, so
 // deleting a status also subtracts its local boosts from each booster's row.

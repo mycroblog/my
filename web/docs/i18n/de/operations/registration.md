@@ -30,12 +30,12 @@ Vom oberen Rand des Diagramms nach unten:
 
 Die Abschnitte unten beschreiben jeden Schritt.
 
-<!-- source: the-sign-up-page 111fbe5ecf64 -->
+<!-- source: the-sign-up-page 9a7c6e5bdf58 -->
 ## Die Registrierungsseite
 
 Nutzer registrieren sich unter `https://<host>/auth/sign_up` mit Nutzername, E-Mail-Adresse und Passwort, es sei denn, [die Registrierung ist auf Login-Anbieter beschränkt](#registration-limited-to-login-providers).
 Nach der Registrierung ist dieser Browser sofort angemeldet.
-Die Seite funktioniert ohne JavaScript und ist wie die Anmeldeseite durch ein CSRF-Token und durch das Abweisen von Cross-Origin-Anfragen geschützt.
+Die Seite ist wie die Anmeldeseite durch ein CSRF-Token und durch das Abweisen von Cross-Origin-Anfragen geschützt.
 Wenn du CAPTCHA als Bot-Schutz wählst, zeigen die Registrierungs- und Anmeldeseite sein Widget und brauchen JavaScript ([CAPTCHA](captcha.md)).
 
 Der Registrierungsmodus ist die Server-Einstellung `registration_mode`. Wähle ihn mit der CLI oder im Web-Client auf der Seite „Registrierung“ unter „Servereinstellungen“ (`/admin/settings/registration`) ([Server-Einstellungen](instance-settings.md)). Eine Änderung gilt ab der nächsten Registrierung.
@@ -127,7 +127,7 @@ Solange die Server-Einstellung `login_providers_only` gilt, werden Links zum Zur
   Eine Anmeldung, die auf ihren Zwei-Faktor-Code wartet, und eine noch nicht abgeschlossene App-Autorisierung hören ebenfalls auf zu funktionieren: Der Nutzer startet sie erneut.
   Bei `mail = smtp` sendet der Server dem Nutzer außerdem eine E-Mail, dass sich das Passwort geändert hat.
 
-<!-- source: invite-codes 441b486504dd -->
+<!-- source: invite-codes 4d49dd1f0927 -->
 ## Einladungscodes
 
 Einladungen funktionieren in den Modi `open`, `approval` und `invite`. Einladungen des Personals werden mit der CLI, den Moderationsbildschirmen und der Admin-API unten erstellt; Mitglieder können auch eigene Einladungen erstellen ([Einladungen von Mitgliedern](#member-invites)).
@@ -145,32 +145,32 @@ my invite revoke <code>
 - Codes werden ohne Beachtung von Groß- und Kleinschreibung, Leerzeichen und Bindestrichen abgeglichen.
 - Auch wenn sich mehrere Leute gleichzeitig registrieren, wird ein Code nie über sein Limit hinaus verwendet (eine Unique-Constraint auf `invite_redemptions`).
 - Ein widerrufener, abgelaufener oder aufgebrauchter Code ergibt jeweils denselben Fehler (eine unbrauchbare Einladung).
-- Neben der CLI kannst du Einladungen in den Moderationsbildschirmen des Webclients („Einladungen“, `/moderation/invites`) und über die Client-API
+- Neben der CLI kannst du Einladungen in den Moderationsbildschirmen des Web-Clients („Einladungen“, `/moderation/invites`) und über die Client-API
   (`GET` / `POST /api/v1/admin/invites` und `POST /api/v1/admin/invites/{id}/revoke`) erstellen, auflisten und widerrufen. Beide brauchen die Rollenberechtigung `manage_invites`
   (der eingebaute `moderator` hat sie nicht, erstelle also, um das zu delegieren, eine Rolle mit dieser Berechtigung und vergib sie).
   Ein Dienst, der selbstständig Einladungen verteilt, ruft dieselbe API mit einem Token des Scopes `admin:manage_invites` auf ([einen anderen Dienst die Admin-API nutzen lassen](moderation.md#letting-another-service-use-the-admin-api)).
   „Einladung erstellen“ in der Liste öffnet das Formular (`/moderation/invites/new`), das den Code und den Registrierungslink der neuen Einladung zeigt.
-  Die Liste lässt dich den Link einer nutzbaren Einladung kopieren und sie widerrufen.
+  Die Liste zeigt für jede Einladung ihren Code, wer sie erstellt hat, wie viele sich damit registriert haben, ihr Ende und ihren Zustand; wähle Einladungen aus und wähle „Widerrufen“, was vorher nachfragt.
 - Die Liste zeigt jede Einladung, die des Personals und die der Mitglieder, mit dem, der sie erstellt hat (`created_by`), und wie (`creator_kind`: `staff` oder `member`). Die Inhaber von `manage_invites` können jede davon widerrufen.
-- Die Prüfseite des Kontos in den Moderationsbildschirmen (`GET /api/v1/admin/accounts/{id}`, Berechtigung `manage_accounts`) zeigt die Einladung, mit der sich das Konto registriert hat, und wer sie erstellt hat, die Person, die den Benutzer eingeladen hat.
+- Die Prüfseite des Kontos in den Moderationsbildschirmen (`GET /api/v1/admin/accounts/{id}`, Berechtigung `manage_accounts`) zeigt die Einladung, mit der sich das Konto registriert hat, und wer sie erstellt hat, die Person, die den Nutzer eingeladen hat.
 - Das Erstellen und Widerrufen einer Einladung wird im Audit-Log erfasst (`invite_created`, `invite_revoked`), vom Bildschirm, der API und der CLI gleichermaßen. Der Zielname sind die ersten 4 Zeichen des Codes (`ABCD…`); der vollständige Code wird nicht ins Audit-Log kopiert.
   Eine bereits widerrufene Einladung erneut zu widerrufen, ändert nichts und wird deshalb nicht erfasst.
 
-<!-- source: member-invites db3bff74ed69 -->
+<!-- source: member-invites 85edfb5c0806 -->
 ## Einladungen von Mitgliedern
 
-Mitglieder können neben dem Team eigene Einladungen erstellen.
+Mitglieder können neben dem Personal eigene Einladungen erstellen.
 Wer das darf, bestimmt die Server-Einstellung `invite_creators` ([Server-Einstellungen](instance-settings.md)):
 
 - `permitted` (Standard): nur die Nutzer, deren Rollen die Berechtigung `create_invites` haben. Standardmäßig hat nur die eingebaute Rolle `admin` sie. Du kannst sie einer Rolle hinzufügen, die du von Hand erteilst, oder der Rolle eines [Unterstützungsplans](supporters.md), sodass Unterstützer Leute einladen können.
 - `everyone`: jeder angemeldete lokale Nutzer.
 
 So oder so kann ein Nutzer, dessen Konto gesperrt oder eingeschränkt ist oder dessen Registrierung nicht freigegeben ist, keine Einladungen erstellen, und niemand kann es, solange der Registrierungsmodus `closed` ist.
-Die Inhaber von `manage_invites` erstellen weiterhin Einladungen des Teams, auf die keines der Limits unten zutrifft.
+Die Inhaber von `manage_invites` erstellen weiterhin Einladungen des Personals, auf die keines der Limits unten zutrifft.
 
-Ein Mitglied erstellt, listet, kopiert und widerruft seine eigenen Einladungen in den Einstellungen des Web-Clients („Deine Einladungen“, `/settings/invites`) oder über die Client-API (`GET` / `POST /api/v1/invites` und `POST /api/v1/invites/{id}/revoke`).
-Die Einstellungen listen die Seite nur für einen Nutzer auf, der jetzt Einladungen erstellen kann; ein Nutzer, der es nicht mehr kann, öffnet sie weiterhin über ihre Adresse, um die von ihm erstellten Einladungen zu kopieren und zu widerrufen.
-Die Liste sagt für jede Einladung, ob sie verwendbar, widerrufen, abgelaufen, aufgebraucht oder nicht verwendbar ist, weil ihr Ersteller nicht mehr einladen kann.
+Ein Mitglied erstellt, listet und widerruft seine eigenen Einladungen und kopiert den Link einer verwendbaren in den Einstellungen des Web-Clients („Einladungen“, `/settings/invites`) oder über die Client-API (`GET` / `POST /api/v1/invites` und `POST /api/v1/invites/{id}/revoke`).
+Die Einstellungen listen die Seite nur für einen Nutzer auf, der jetzt Einladungen erstellen kann; ein Nutzer, der es nicht kann, öffnet sie weiterhin über ihre Adresse, wo sie sagt, warum, um die von ihm erstellten Einladungen zu widerrufen.
+Die Liste sagt für jede Einladung, ob sie verwendbar, widerrufen, abgelaufen, aufgebraucht oder nicht verwendbar ist, weil ihr Ersteller nicht einladen kann.
 
 Limits, ebenfalls Server-Einstellungen, gelten nur für Einladungen von Mitgliedern.
 Administratoren ändern sie und `invite_creators` unter „Einladungen von Mitgliedern“ auf der Seite „Registrierung“ der Servereinstellungen (`/admin/settings/registration`):
@@ -191,7 +191,7 @@ Im Modus `approval` gibt eine verwendbare Einladung den neuen Nutzer sofort frei
 Mit `invite_creators = everyone` kann daher jeder Nutzer Leute ohne Prüfung hereinlassen, was den Freigabemodus schwächt.
 Wenn du dich auf die Prüfung verlässt, behalte `permitted` und gib `create_invites` nur Leuten, denen du vertraust, oder halte `member_invite_max_active` und `member_invite_max_uses` niedrig.
 
-<!-- source: approving-and-rejecting e68676f67aab -->
+<!-- source: approving-and-rejecting 34e7c6193247 -->
 ## Freigeben und Ablehnen
 
 ```sh
@@ -206,6 +206,7 @@ my registration reject -note "spam" bob
 - Der Exit-Code 2 bedeutet ein falsches Argument.
 
 Dieselben Entscheidungen lassen sich in den Admin-Screens (der Client-API) treffen. Alle brauchen die Berechtigung `manage_accounts`.
+Im Web-Client listet Moderation → Registrierungen (`/moderation/registrations`) die Registrierungen auf, die auf Freigabe warten, mit E-Mail-Adresse, ihrer Bestätigung und dem Beitrittsgrund; wähle sie aus und wähle „Freigeben“ oder „Ablehnen“, was vorher nachfragt, mit einer Notiz für die Moderatoren. Ein Ein-Personen-Server zeigt sie nicht.
 
 | Operation | Was sie tut |
 | --- | --- |
@@ -213,8 +214,8 @@ Dieselben Entscheidungen lassen sich in den Admin-Screens (der Client-API) treff
 | `POST /api/v1/admin/registrations/{id}/approve` | Gibt frei. Der Body `{"note": "..."}` ist optional. Die Antwort zeigt die Notiz als `decision_note`, und eine Antwort auf eine entschiedene Registrierung hat keine E-Mail-Adresse |
 | `POST /api/v1/admin/registrations/{id}/reject` | Lehnt ab. Der Body ist derselbe wie bei `approve` |
 
-- Das ist derselbe Anwendungsfall wie die CLI, und er hält die Entscheidung in `registration_decisions` und im Audit-Log fest (`registration_approved`, `registration_rejected`). Der Akteur einer CLI-Entscheidung ist `cli`; der Akteur einer API-Entscheidung ist der Moderator, der entschieden hat.
-- Eine bereits entschiedene Registrierung zu entscheiden ändert nichts und liefert den aktuellen Status (entscheiden zwei Leute gleichzeitig, wird nur eine Entscheidung festgehalten). Ein Nutzer, der ohne die Registrierungsseite angelegt wurde, ergibt 404.
+- Das ist derselbe Anwendungsfall wie bei der CLI, und er hält die Entscheidung in `registration_decisions` und im Audit-Log fest (`registration_approved`, `registration_rejected`). Der Akteur einer CLI-Entscheidung ist `cli`; der Akteur einer API-Entscheidung ist der Moderator, der entschieden hat.
+- Eine bereits entschiedene Registrierung noch einmal zu entscheiden ändert nichts und liefert den aktuellen Zustand (entscheiden zwei Personen gleichzeitig, wird nur eine Entscheidung festgehalten). Ein Nutzer, der ohne die Registrierungsseite angelegt wurde, ergibt 404.
 
 <!-- source: sign-up-blocks b70eb18cd52f -->
 ## Registrierungssperren

@@ -118,6 +118,9 @@ DELETE FROM status_conversations WHERE status_id IN (SELECT value FROM json_each
 -- name: PurgeRelayedStatuses :exec
 DELETE FROM relayed_statuses WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
 
+-- name: PurgeStatusContentPurges :exec
+DELETE FROM status_content_purges WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
+
 -- InsertRelayedStatus records a status that only a relay brought in; a status recorded already
 -- keeps its row.
 -- name: InsertRelayedStatus :exec
@@ -171,3 +174,21 @@ WHERE status_id IN (
     AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.status_id = d.status_id)
   ORDER BY d.deleted_at, d.status_id LIMIT @batch_limit
 );
+
+-- ListDueStatusContentPurges returns, the earliest first, up to @batch_limit purges of deleted
+-- statuses due at @due_before or earlier, with the author of each status and whether its row is
+-- still there. It reads status_content_purges_due_at_status_id from its start, and the primary
+-- keys of the deletions and the statuses.
+-- name: ListDueStatusContentPurges :many
+SELECT p.status_id, d.author_account_id, CAST(s.id IS NOT NULL AS INTEGER) AS present
+FROM status_content_purges p
+  JOIN status_deletions d ON d.status_id = p.status_id
+  LEFT JOIN statuses s ON s.id = p.status_id
+WHERE p.due_at <= CAST(sqlc.arg(due_before) AS INTEGER)
+ORDER BY p.due_at, p.status_id
+LIMIT sqlc.arg(batch_limit);
+
+-- PostponeStatusContentPurges moves the purges of the statuses @ids, a JSON array, to @due_at.
+-- name: PostponeStatusContentPurges :exec
+UPDATE status_content_purges SET due_at = CAST(sqlc.arg(due_at) AS INTEGER)
+WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));

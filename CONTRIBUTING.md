@@ -134,6 +134,9 @@ The tests do not use these services: they start what they need themselves, and `
 
 `scripts/task.sh docs:site-dev` serves the documentation site (`web/docs`) on `http://localhost:4321`, and
 `scripts/task.sh mail:preview` writes every email to `.tmp/mail/preview/` ([Emails](#emails)).
+`scripts/task.sh web:docs-screenshots` takes the site's screenshots again (`web/docs/src/assets/screenshots/`) from
+the demo server's scenario: run it when a pictured screen changes, and commit the images. Each image is a shot of
+`web/e2e/shots/list.ts`, whose test fails on an image no shot makes.
 
 ## Workflow
 
@@ -246,6 +249,11 @@ are blank.
   `scripts/web-icons.sh` renders the PNG icons and `internal/interface/web/preview-image.png` from its SVGs.
 - `scripts/task.sh web:dev` serves `web/app` on `http://localhost:5173` and passes `/api`, `/oauth` and `/auth` on to
   the server of `docker compose up` (`MY_SERVER` names another).
+- `scripts/task.sh web:storybook` serves the Storybook host (`web/storybook`), the catalog of the components and the
+  screens. A pull request that changes the web client gets it as its UI preview: `ui-preview.yml` builds it without
+  secrets, and `ui-preview-deploy.yml` publishes it on the Workers Preview `pr-<number>` of the Worker `my-ui` and
+  comments its URL and the stories the pull request changes. main's catalog is the Worker itself, and the Preview of
+  a closed pull request is deleted (`ui-preview-cleanup.yml`, `scripts/ui-preview.sh`).
 - `scripts/task.sh go:bin` runs `web:build` first and builds the single binary `bin/my`.
 - `my serve -dev-vite-origin <origin>` loads the client's scripts, and the auth screens', from the web client's Vite
   dev server at that origin.

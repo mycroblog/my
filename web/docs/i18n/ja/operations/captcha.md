@@ -1,7 +1,7 @@
-<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 2c065ac1d2fb -->
+<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 5931f1f78fe3 -->
 # CAPTCHA によるボット対策 (Turnstile / hCaptcha / reCAPTCHA)
 
-CAPTCHA は既定ではオフで、設定 [`captcha`](../reference/configuration.md#captcha) は `none` です。このときログイン・登録・パスワード再設定のページは JavaScript なしで動き、第三者には何も送りません。
+CAPTCHA は既定ではオフで、設定 [`captcha`](../reference/configuration.md#captcha) は `none` です。このときログイン・登録・パスワード再設定のページは、第三者には何も送りません。
 CAPTCHA のサービスを選ぶと、そのサービスのウィジェットが 3 つのフォームに表示されます。ログイン (`/auth/sign_in`)、登録 (`/auth/sign_up`)、パスワード再設定リンクの申請
 (`/auth/forgot_password`、メールを送るサーバーだけ) です。サーバーは、ウィジェットが作ったトークンをサービスの siteverify API で検証します。
 一部のフォームだけを保護することはできません。
@@ -74,14 +74,14 @@ MY_CAPTCHA_SECRET_KEY_FILE=/run/secrets/my_captcha_secret_key
 月 10,000 回の評価という無料枠を超えると、reCAPTCHA の siteverify は**常に成功します** (その間 CAPTCHA は何も守りません)。
 サーバーは超過を検出できないので、Google Cloud のコンソールで使用量を確認してください。
 
-<!-- source: pages-and-content-security-policy b0cf9741b2ce -->
+<!-- source: pages-and-content-security-policy 666bab0dd33b -->
 ## ページと Content-Security-Policy
 
 - ウィジェットの言語はページのロケールに、テーマはブラウザの配色 (ライトまたはダーク) に従います。
   Turnstile のウィジェットは自分で配色に従います。hCaptcha と reCAPTCHA は、ブラウザが送るクライアントヒント `Sec-CH-Prefers-Color-Scheme` で選ばれ、それを送らないブラウザにはライトのテーマになります。
 - ウィジェットの隣に、どのサービスが確認を行うか、サービスが IP アドレスとブラウザの情報を受け取ることが書かれ、サービスのプライバシーポリシーへのリンクがあります
   (hCaptcha と reCAPTCHA では利用規約へのリンクも)。reCAPTCHA では、これが Google の求める一文「This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.」も兼ねます。
-- JavaScript のないブラウザでは、確認に JavaScript が必要だというメッセージを `<noscript>` で表示します。CAPTCHA を解けない人は登録もログインもできず、
+- CAPTCHA を解けない人は登録もログインもできず、
   `my admin create` でアカウントを作る、しばらく `captcha = none` にする、といったほかの方法でしか助けられません。
 - `Content-Security-Policy` (CSP) が広がるのは、CAPTCHA が有効なときのログイン・登録・パスワード再設定の申請のページだけです。`'unsafe-inline'` と `'unsafe-eval'` は決して加えません。
   Web クライアント、クライアント API、同意画面、メールアドレスの確認などのページの CSP は変わりません。

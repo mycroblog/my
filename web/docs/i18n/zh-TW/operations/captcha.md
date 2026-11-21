@@ -1,7 +1,7 @@
-<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 2c065ac1d2fb -->
+<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 5931f1f78fe3 -->
 # CAPTCHA 機器人防護（Turnstile / hCaptcha / reCAPTCHA）
 
-CAPTCHA 預設為關閉：設定 [`captcha`](../reference/configuration.md#captcha) 為 `none`。此時登入、註冊和密碼重設頁面不需要 JavaScript 就能運作，也不會傳送任何資料給第三方。選擇 CAPTCHA 服務後，該服務的小工具會出現在三個表單上：登入（`/auth/sign_in`）、註冊（`/auth/sign_up`），以及申請密碼重設連結（`/auth/forgot_password`，僅限會寄送郵件的伺服器）。伺服器會透過服務的 siteverify API 驗證小工具產生的 token。你無法只保護其中部分表單。
+CAPTCHA 預設為關閉：設定 [`captcha`](../reference/configuration.md#captcha) 為 `none`。此時登入、註冊和密碼重設頁面不會傳送任何資料給第三方。選擇 CAPTCHA 服務後，該服務的小工具會出現在三個表單上：登入（`/auth/sign_in`）、註冊（`/auth/sign_up`），以及申請密碼重設連結（`/auth/forgot_password`，僅限會寄送郵件的伺服器）。伺服器會透過服務的 siteverify API 驗證小工具產生的 token。你無法只保護其中部分表單。
 
 <!-- source: choosing-a-service 22ddd3cc639f -->
 ## 選擇服務
@@ -65,12 +65,12 @@ MY_CAPTCHA_SECRET_KEY_FILE=/run/secrets/my_captcha_secret_key
 
 超過每月 10,000 次評估的免費額度後，reCAPTCHA 的 siteverify **一律會成功**（所以在那段期間 CAPTCHA 沒有任何防護作用）。伺服器無法偵測是否超量，所以請在 Google Cloud 控制台中檢查你的用量。
 
-<!-- source: pages-and-content-security-policy b0cf9741b2ce -->
+<!-- source: pages-and-content-security-policy 666bab0dd33b -->
 ## 頁面與 Content-Security-Policy
 
 - 小工具的語言依照頁面的語系，主題則依照瀏覽器的配色（淺色或深色）。Turnstile 小工具會自行依照配色。hCaptcha 和 reCAPTCHA 則依瀏覽器送出的 client hint `Sec-CH-Prefers-Color-Scheme` 來選擇；不送出它的瀏覽器會使用淺色主題。
 - 頁面會在小工具旁說明由哪個服務執行檢查、該服務會收到 IP 位址和瀏覽器資訊，並連結到該服務的隱私權政策（hCaptcha 和 reCAPTCHA 還會連結到服務條款）。對 reCAPTCHA 來說，這也兼作 Google 要求的聲明：「This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.」
-- 在沒有 JavaScript 的瀏覽器中，`<noscript>` 訊息會說明這項檢查需要 JavaScript。無法通過 CAPTCHA 的使用者既無法註冊也無法登入，你只能用其他方式協助他們，例如用 `my admin create` 建立帳號，或暫時設定 `captcha = none`。
+- 無法通過 CAPTCHA 的使用者既無法註冊也無法登入，你只能用其他方式協助他們，例如用 `my admin create` 建立帳號，或暫時設定 `captcha = none`。
 - 只有在 CAPTCHA 啟用時，`Content-Security-Policy`（CSP）才會在登入、註冊和申請密碼重設頁面上放寬。絕不會加入 `'unsafe-inline'` 和 `'unsafe-eval'`。網頁用戶端、用戶端 API、同意畫面、電子郵件確認及其他頁面的 CSP 不會改變。
 
 | `captcha` | 新增的來源 |

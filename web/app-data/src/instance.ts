@@ -25,6 +25,22 @@ export function instanceQuery({ queries }: AppData) {
   return queries.queryOptions("get", "/instance");
 }
 
+/** The counts of the instance (`GET /instance/overview`): its members and their public posts of the last 7 days. */
+export type InstanceCounts = components["schemas"]["InstanceCounts"];
+
+/** The counts of the instance, which the landing page shows. */
+export function instanceOverviewQuery({ queries }: AppData) {
+  return queries.queryOptions("get", "/instance/overview");
+}
+
+/**
+ * The counts of the instance, undefined until the server answered, while the instance setting `public_counts` hides
+ * them, and when they could not be read: a page that shows them shows nothing in their place then.
+ */
+export function useInstanceCounts(): InstanceCounts | undefined {
+  return useQuery(instanceOverviewQuery(useAppData())).data?.counts;
+}
+
 /** The device's key of the status page's address of a server. */
 const statusPageKey = (server: string) => `my:status-page:${server}`;
 

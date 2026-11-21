@@ -1,7 +1,7 @@
-<!-- source: administrators-and-roles 1baeba6d67b4 -->
+<!-- source: administrators-and-roles f6df0418210b -->
 # 管理员和角色
 
-本页介绍如何创建第一个管理员、在命令行中管理角色、公告并执行服务关停、重新处理已上传的图片、重建搜索索引，以及导出维护页面。
+本页介绍如何创建第一个管理员、在命令行中管理角色、公告并执行服务关停、重新处理已上传的图片、重建搜索索引、处理由服务器自己提供的 TLS 证书，以及导出维护页面。
 
 <!-- source: prerequisites b7ae62128809 -->
 ## 前提条件
@@ -10,7 +10,7 @@
 - 已将 schema 应用到数据库（`my schema apply`；参见 [database.md](database.md)）。
 - `host` 和 `account_domain` 已经最终确定。第一个使用数据库的命令会记录它们，此后只要配置与记录不同，所有命令都会拒绝运行（参见[之后无法更改的设置](production-checklist.md#settings-you-cannot-change-later)）。
 
-<!-- source: creating-an-administrator e5fec2e3d287 -->
+<!-- source: creating-an-administrator 9be8b2ee8d85 -->
 ## 创建管理员
 
 ```sh
@@ -32,7 +32,7 @@ my admin create -username alice -email alice@example.com
 - 失败的运行不会写入任何内容，因此你可以修正原因后再次运行同一命令。
 - 退出码 2 表示用法错误。
 
-<!-- source: granting-and-revoking-roles a8783994c097 -->
+<!-- source: granting-and-revoking-roles 83f3a38172a4 -->
 ## 授予和撤销角色
 
 角色持有权限。内置角色是 `admin`（`position` 为 1000，拥有所有权限）和 `moderator`（`position` 为 100，拥有 `manage_reports`、`manage_accounts` 和 `view_audit`）。`my serve` 每次启动时都会检查内置角色（任何 `role` 的进程都会检查），`my admin role` 每次运行时也会检查。两者都会创建缺少的角色，并赋予 `admin` 当前运行版本的所有权限。升级新增权限时，无需任何手动步骤。`moderator` 会保留管理员设置的权限和 position。
@@ -54,6 +54,7 @@ my admin role revoke alice moderator
 - 授予和撤销会以 `role_granted` 和 `role_revoked`（目标类型 `role`）写入审计日志。CLI 操作的执行者是 `cli`（`my admin audit list -target-kind role`）。
 - 授予用户已有的角色，或撤销用户没有的角色，不会改变也不会记录任何内容。
 - `admin` 的最后一位持有者不能失去它（退出码 1）。请先把 `admin` 授予另一位用户。
+- 管理界面“角色”（`/admin/roles`）会列出所有角色，并可创建、更改和删除它们：角色的页面可设置其位置、权限和徽章。它只提供下面的规则所允许的操作：不高于你最高角色的位置、你自己持有的权限（角色拥有的其他权限会被列出并保留）、只能使用 `admin` 的徽章，并且不能删除 `admin` 或 `moderator`。删除角色时需要输入它的名称。方案（plan）中的角色由方案设置。
 - 管理员 API 是 `GET /api/v1/admin/roles`、`GET /api/v1/admin/accounts/{id}/roles`，以及 `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`，需要权限 `manage_roles`。通过 API，你不能授予或撤销高于你自己所有角色中最高 `position` 的角色（403）。撤销最后一个 `admin` 会返回 409。
 - 工作人员只能对较低级别的人操作。通过 API，审核操作及其解除、裁定申诉、解除电子邮件屏蔽、查看账号的私密数据、签发密码重置链接以及移除双因素认证，都要求你的角色中最高的 `position` 高于目标每个角色的 position；级别更高或相同（包括你自己的账号）会返回 403。审核员不能对管理员操作，一位管理员也不能对另一位管理员操作。这些命令（`my admin account ...`）没有这样的限制，因此当管理员之间出现分歧时请使用它们。
 - 唯一的管理员不能被锁定或移除：对其执行 `disable_login`、`suspend` 和 `ban` 会被拒绝，无论是通过 API（409）还是这些命令（退出码 1），他们也不能删除自己的账号（409）。另一位 `admin` 持有者只有在能够登录时才算数：删除账号后、被封禁或被 `disable_login` 时都不算。
@@ -138,7 +139,24 @@ my search status               # the backend and the progress and failures of th
 
 再次运行 `my search rebuild` 可以恢复已停止的重建。它会从最后处理的帖子继续，不会再次清空索引。在一次重建未完成期间，另一种模式会以退出码 1 被拒绝。[帖子全文搜索](search.md)说明了何时使用哪种模式。
 
-<!-- source: exporting-the-maintenance-page 1756fcf1e02e -->
+<!-- source: tls-certificates 76e79e7fd3c0 -->
+## TLS 证书
+
+`my tls` 处理自己提供 HTTPS 的服务器（`tls = acme` 或 `tls = files`；参见[由服务器提供 HTTPS](running.md#serving-https-from-the-server)）的证书。
+
+```sh
+my tls status                                          # each host: certificate, renewal, failures, latest orders
+my tls renew -host social.example                      # order a certificate now, without waiting
+my tls revoke -host social.example -reason key_compromise  # replace, then revoke the current certificate
+```
+
+- `status` 会为每个主机显示当前的证书（序列号、颁发者、到期时间）、它何时续期、连续多少次订购都没有拿到证书，以及最近的订购及其错误。在 `tls = files` 时，它显示 `tls_cert_file` 的证书；在 `tls = off` 时，它会说明这一点。
+- `renew` 和 `revoke` 需要 `tls = acme`、正在运行的服务器（它会回应证书颁发机构的验证），以及不是 `memory` 的 `kv`。当它们失败、当时另有进程正在订购该主机的证书，以及在 `tls = files` 或 `tls = off` 时，它们以退出码 1 退出。
+- 当私钥可能已被他人知晓时，`-reason` 用 `key_compromise`，否则用 `superseded` 或 `operator`。如果 `revoke` 已吊销证书但无法订购它的替代证书，它会以退出码 0 退出并打印警告。
+
+[命令和指标](running.md#commands-and-metrics)说明了每个命令会对正在运行的进程做什么。
+
+<!-- source: exporting-the-maintenance-page c0661d4bb0d0 -->
 ## 导出维护页面
 
 `my maintenance export` 将维护模式的页面写成静态 HTML，供负载均衡器、CDN 或反向代理在 `my serve` 本身无法运行时（例如正在替换镜像、某个修订版无法启动）提供。它使用与维护模式相同的模板，因此两者显示的文字和外观相同。

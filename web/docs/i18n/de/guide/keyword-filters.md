@@ -3,34 +3,34 @@
 
 Ein Stichwortfilter klappt Beiträge ein oder blendet sie aus, die eines seiner Wörter enthalten, egal wer sie geschrieben hat: Spoiler zu einer Serie, die du noch nicht gesehen hast, ein Thema, von dem du eine Pause brauchst. Der Server gleicht die Beiträge ab, sodass jede App, die du nutzt, dasselbe Ergebnis zeigt. Nur du siehst deine Filter, und niemand erfährt davon.
 
-<!-- source: adding-a-filter 28f5b63e22b2 -->
+<!-- source: adding-a-filter 455f52213244 -->
 ## Einen Filter hinzufügen
 
-Öffne in den Einstellungen unter „Anzeige und Benachrichtigungen“ die „Stichwortfilter“ und wähle „Filter hinzufügen“:
+Öffne „Stichwortfilter“ unter „Personen und Filter“ in den Einstellungen und wähle „Filter hinzufügen“:
 
-1. **Name:** was ein eingeklappter Beitrag an seiner Stelle zeigt („Gefiltert: Staffelfinale“), bis zu 50 Zeichen.
-2. **Wörter:** ein oder mehrere Wörter oder Wortgruppen. „Wort hinzufügen“ fügt ein weiteres hinzu, bis zu 100 in einem Filter. „Ganzes Wort“ neben einem Wort bewirkt, dass es nur als ganzes Wort passt (siehe [Wie Wörter passen](#how-words-match)).
-3. **Wo er gilt:** deine Home-Timeline und Listen, deine Benachrichtigungen, die lokale, die föderierte und die Hashtag-Timeline, Threads und Profile. Ein neuer Filter gilt überall; entferne das Häkchen bei den Orten, an denen du ihn nicht willst.
-4. **Was er bewirkt:** „Einklappen“ legt den Beitrag hinter den Namen des Filters, mit „Anzeigen“ zum Lesen. „Ausblenden“ lässt den Beitrag weg, und seine Benachrichtigung auch.
-5. **Endet:** „Nie“ oder nach einer der angebotenen Zeitspannen, von 30 Minuten bis zu einer Woche.
+1. **Name:** was ein eingeklappter Beitrag an seiner Stelle zeigt („Passt zum Filter ‚Staffelfinale‘“), bis zu 50 Zeichen.
+2. **Passende Beiträge:** „Hinter dem Namen des Filters einklappen“ zeigt an der Stelle des Beitrags nur diesen Namen, mit „Anzeigen“ zum Lesen. „Ganz ausblenden“ lässt den Beitrag weg, und seine Benachrichtigung auch.
+3. **Endet:** „Nie“, nach einer der angebotenen Dauern von 30 Minuten bis zu einer Woche oder „Zu einem Datum und einer Uhrzeit“.
+4. **Wörter:** ein oder mehrere Wörter oder Wendungen. „Wort hinzufügen“ fügt ein weiteres hinzu, bis zu 100 in einem Filter. „Ganzes Wort“ neben einem Wort lässt es nur als ganzes Wort passen (siehe [Wie Wörter passen](#how-words-match)).
+5. **Wo er gilt:** „Startseite und Listen“, „Benachrichtigungen“, „Öffentliche Timelines“ (die lokale, die föderierte und die Hashtag-Timelines), „Threads“ und „Profile“. Ein neuer Filter gilt überall; entferne die Haken bei den Orten, die du nicht möchtest.
 
-Wähle „Hinzufügen“. „Bearbeiten“ an einem Filter ändert jede dieser Angaben, und „Löschen“ entfernt ihn mit seinen Wörtern nach einer Rückfrage. Ein Filter gilt sofort für jeden Beitrag, auch für ältere; die Timelines, die auf dem Bildschirm offen sind, laden neu, um die Änderung zu zeigen.
+Wähle „Hinzufügen“. Ein Filter der Liste öffnet ihn, um etwas davon zu ändern, und „Löschen …“ dort entfernt ihn nach einer Rückfrage mit seinen Wörtern. Ein Filter gilt sofort für jeden Beitrag, auch für alte; die Timelines laden auf dem Bildschirm neu, um die Änderung zu zeigen.
 
-Die Suche, deine Lesezeichen und Favoriten sowie deine Direktnachrichten werden nie gefiltert. Deine eigenen Beiträge und Boosts werden es ebenso wenig wie die Beiträge, die sie zitieren.
+Die Suche, deine Lesezeichen und Favoriten und deine Direktnachrichten werden nie gefiltert. Deine eigenen Beiträge und Boosts auch nicht, ebenso wenig die Beiträge, die sie zitieren.
 
-<!-- source: what-a-filtered-post-looks-like 2a5fd3cd5b3c -->
+<!-- source: what-a-filtered-post-looks-like 52e0483be326 -->
 ## Wie ein gefilterter Beitrag aussieht
 
-Ein Beitrag, auf den ein „Einklappen“-Filter passt, zeigt nur „Gefiltert:“ und die Namen der Filter, die gepasst haben, sowie „Anzeigen“. Sein Autor, sein Text und seine Bilder bleiben verborgen, und ein Screenreader liest nur diese Zeile vor, bis du „Anzeigen“ wählst. Ein Beitrag klappt wieder ein, wenn du zur Seite zurückkehrst.
+Ein Beitrag, auf den ein einklappender Filter passt, zeigt nur „Passt zum Filter“ mit den Namen der Filter, die gepasst haben, und „Anzeigen“. Autor, Text und Bilder bleiben außer Sicht, und ein Screenreader liest nur diese Zeile, bis du „Anzeigen“ wählst; „Ausblenden“ klappt ihn wieder ein, ebenso wie das Zurückkehren zur Seite.
 
-Eine Benachrichtigung über einen solchen Beitrag zeigt dieselbe Zeile statt des Beitragstexts. Passt nur ein zitierter Beitrag, wird nur das Zitat eingeklappt, auch bei „Ausblenden“, mit „Zitierten Beitrag anzeigen“. Ein Boost wird anhand des Beitrags gefiltert, den er boostet.
+Eine Benachrichtigung über einen solchen Beitrag zeigt dieselbe Zeile anstelle des Beitragstextes. Passt nur ein zitierter Beitrag, wird nur das Zitat eingeklappt, auch bei „Ganz ausblenden“, mit einem eigenen „Anzeigen“. Ein Boost wird nach dem Beitrag gefiltert, den er boostet.
 
-Ein Beitrag, den du selbst öffnest, über einen Link oder eine Benachrichtigung, wird eingeklappt statt ausgeblendet, damit der Link trotzdem etwas zeigt.
+Ein Beitrag, den du selbst öffnest, über einen Link oder eine Benachrichtigung, wird eingeklappt statt ausgeblendet, damit der Link noch etwas zeigt.
 
-<!-- source: when-a-filter-ends 2657ec875f16 -->
-## Wann ein Filter endet
+<!-- source: when-a-filter-ends d70431d92b82 -->
+## Wenn ein Filter endet
 
-Ein Filter mit einem Ende gilt ab diesem Zeitpunkt nicht mehr. Er bleibt in deiner Liste, als „Abgelaufen“ markiert, bis du ihn löschst. Um ihn wieder zu verwenden, wähle „Bearbeiten“ und ein neues Ende oder „Nie“. Während du einen Filter mit einem Ende bearbeitest, lässt „Beibehalten“ das Ende unverändert.
+Ein Filter mit einem Ende gilt ab diesem Zeitpunkt nicht mehr. Er bleibt in deiner Liste, markiert mit „Abgelaufen“, bis du ihn löschst. Um ihn wieder zu verwenden, öffne ihn und wähle ein neues Ende oder „Nie“. Während du einen Filter mit Ende bearbeitest, lässt „Keine Änderung“ das Ende, wie es ist.
 
 <!-- source: how-words-match aeca692b00c3 -->
 ## Wie Wörter passen
@@ -56,9 +56,9 @@ Manche Schriften schreiben Wörter ohne Leerzeichen dazwischen: unter anderem Ch
 
 Ein Filter kennt keine Platzhalter und keine regulären Ausdrücke. Seine Wörter passen, wenn eines von ihnen passt; um Beiträge nur einzuklappen, wenn zwei Wörter zusammen vorkommen, schreibe sie als eine Wortgruppe.
 
-<!-- source: limits e41fa1ca05b0 -->
+<!-- source: limits 2f4588a30027 -->
 ## Grenzen
 
-Du kannst bis zu 100 Filter haben, mit jeweils bis zu 100 Wörtern und insgesamt 1.000 Wörtern. Ein Wort ist bis zu 100 Zeichen lang.
+Du kannst bis zu 100 Filter haben, mit bis zu 100 Wörtern je Filter und insgesamt 1.000 Wörtern. Ein Wort hat bis zu 100 Zeichen.
 
-Das Archiv unter „Archiv und Löschung“ in den Einstellungen enthält deine Filter, auch abgelaufene, als `keyword_filters.json`.
+Das Archiv von „Exportieren“ unter „Konto und Daten“ in den Einstellungen enthält deine Filter, auch abgelaufene, als `keyword_filters.json`.

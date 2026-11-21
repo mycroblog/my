@@ -280,8 +280,8 @@ test("routing", async () => {
   f.add(mention(10, account(1, "alice"), "PING now please"));
   f.add(mention(11, account(2, "bob"), "help"));
   f.add(mention(12, account(3, "carol"), "just saying hi"));
-  f.add({ id: id(13), type: "follow", created_at: new Date().toISOString(), account: account(4, "dave") });
-  f.add({ id: id(14), type: "poll_closed", created_at: new Date().toISOString() });
+  f.add({ id: id(13), type: "follow", created_at: new Date().toISOString(), read: false, account: account(4, "dave") });
+  f.add({ id: id(14), type: "poll_closed", created_at: new Date().toISOString(), read: false });
   const options = f.options();
   const bot = new Bot(options);
   const got = new Map<string, string>();

@@ -1,5 +1,5 @@
 ---
-# source: b4ce098ad39e
+# source: 10be220855d1
 title: mycroblog
 description: 從小規模起步、隨著社群一起成長的聯邦宇宙微網誌。
 template: splash
@@ -31,7 +31,7 @@ import Screenshot from "../../components/Screenshot.astro";
 
 <Screenshot
   name="home"
-  alt="mycroblog 的首頁時間軸：一則引用了湖泊與夕陽兩張照片、帶有自訂表情符號回應的貼文，接著是一則關於麵包的日文貼文；旁邊是導覽列、最新通知與伺服器資訊。"
+  alt="mycroblog 的首頁時間軸：一則轉發的貼文談論翻譯笑話、一則日文的歡迎貼文，以及一則附有麵包照片的酸種麵包貼文；旁邊是導覽列、伺服器的公告、即將舉行的活動與最新通知。"
   eager
 />
 
@@ -42,7 +42,7 @@ import Screenshot from "../../components/Screenshot.astro";
     一個執行檔加上 SQLite，跑在每月 5 美元的 VM 上，或是一個可縮減到零的容器。之後可以成長到 PostgreSQL、Cloud Tasks、Valkey、Pub/Sub 或 SNS、置於 CDN 後方的 S3 或 GCS，以及你需要的任意數量的 Web 與 worker 程序。
   </Card>
   <Card title="聯邦互通" icon="random">
-    追蹤、貼文、引用貼文與自訂表情符號回應，都能與 Mastodon、Misskey、GoToSocial 等伺服器互相往來。「本站」可見範圍讓貼文只留在你的伺服器與你的追蹤者之間。
+    追蹤、貼文、引用貼文與自訂表情符號回應，都能與 Mastodon、Misskey、GoToSocial 等伺服器互相往來。鄰里貼文只留在你的伺服器與你的追蹤者之間。
   </Card>
   <Card title="支持者與公開帳目" icon="heart">
     透過 Stripe 或 PAY.JP 提供付費方案，授予角色、徽章以及新增自訂表情符號的權限。記錄伺服器的花費，自動匯入 AWS、Google Cloud 與 Cloudflare 的費用，並向社群公開支出與收入。
@@ -67,22 +67,22 @@ import Screenshot from "../../components/Screenshot.astro";
   <Screenshot
     name="post"
     caption="聯邦互通"
-    alt="一則引用其他伺服器貼文的貼文，附有兩張照片，以及它的回覆、轉發、喜歡與自訂表情符號回應。"
+    alt="一則日文貼文，附有黎明時山稜的照片，以及它的回覆、轉發、喜歡與自訂表情符號回應，還有誰做出了回應。"
   />
   <Screenshot
     name="supporters"
     caption="支持者與公開帳目"
-    alt="某個伺服器的支持者頁面：各付費方案「Coffee」與「A whole loaf of sourdough every month」的成員及其大頭貼。"
+    alt="某個伺服器的支持者頁面：兩個月費方案「Coffee」與「A whole loaf」及其年費價格，以及各方案下選擇公開列出的支持者與他們的大頭貼。"
   />
   <Screenshot
     name="voice-room"
     caption="語音聊天室"
-    alt="一個已開啟 47 分鐘的即時語音聊天室「Sunday baking club」：台上有主持人、共同主持人與兩位發言者，另有四位聽眾，其中一位舉手。"
+    alt="一個進行中的語音聊天室「Saturday meetup: bread and tea」：主持人、一位共同主持人與另外兩位發言者，以及三位聽眾，其中一位舉手。"
   />
   <Screenshot
     name="reports"
     caption="內建審核功能"
-    alt="版主的檢舉佇列：五件待處理的檢舉，列出類別、檢舉者、負責處理者，以及已等待多久。"
+    alt="版主的檢舉佇列：同一個帳號的四件待處理檢舉，列出類別、檢舉者與時間，其中一件已指派給該版主。"
   />
 </CardGrid>
 

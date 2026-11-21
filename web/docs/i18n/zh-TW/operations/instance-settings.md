@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## 鍵
 
-<!-- source: settings-one-key-one-value a3d12269943c -->
+<!-- source: settings-one-key-one-value d7de299cd54d -->
 ### 設定（一個鍵，一個值）
 
 | 鍵 | 型別 | 預設值 | 說明 |
@@ -83,6 +83,7 @@
 | `link_cards` | `true` / `false` | `true` | 是否為貼文中的連結顯示卡片。為 `true` 時，伺服器會擷取被連結的頁面來建立卡片。為 `false` 時，它會停止擷取，並隱藏已建立的卡片。若只想在部分網域停止，請參閱[連結卡片網域](#link-card-domains) |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | 連結卡片的擷取是否略過 `robots.txt`。為 `false` 時，伺服器會遵守被連結網站的 `robots.txt`，所以禁止 `my-linkcard` 或 `*` 的網站不會有卡片（[連結預覽](link-previews.md#cards-of-links-in-posts)）。`/about/crawler` 會告知被連結的網站目前是哪一種。為 `true` 時，伺服器既不擷取也不使用 `robots.txt`，被連結的網站也就無法再用它拒絕這些擷取；伺服器仍以 `my-linkcard` 自稱。只有在缺少的卡片太多時才開啟它。開啟期間建立的卡片，會在關閉後下一次重新擷取時接受檢查。頁面的指示和連結卡片網域在兩種情況下都適用 |
 | `ux_measurement` | `true` / `false` | `false` | Web 用戶端是否傳送其回應速度的樣本，以及本伺服器是否保存這些樣本（[UX 量測](error-reporting.md#ux-measurements)）。樣本不含帳號、位址或 URL。為 `false` 時，伺服器不收集任何樣本，`GET /api/v1/instance` 中的 `ux_measurement` 會告知用戶端不要傳送 |
+| `ux_measurement_share` | 整數 1-100（百分比） | `10` | 在 `ux_measurement` 為 `true` 時，網頁用戶端會傳送樣本的瀏覽器工作階段所占的比例。每個工作階段在網頁用戶端啟動時抽籤一次；小型伺服器可以用 `100` 量測每個工作階段 |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | 是否接受 Client ID Metadata Document 用戶端。為 `true` 時，對於 `client_id` 為 `https` URL 的授權請求，伺服器會擷取該 URL 的中繼資料，並將其視為用戶端（不需事先註冊）。擷取不會跟隨重新導向，最多讀取 5 KB，並依照其快取指示最多重複使用回應 24 小時。為 `false` 時，它會停止擷取，並拒絕這些用戶端的授權請求、token 交換和更新 |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | 要公開多少營運成本（在 `/admin/finance/costs` 記錄，在 `/admin/finance/publication` 設定）。`private`：不公開任何東西（`GET /api/v1/instance/cost_totals` 為 404）。`totals`：只公開每個期間和幣別的總額。`breakdown`：公開總額，以及依服務商和類別的明細，在資訊頁面（`/about` 和 `/about/costs`）和 API 中向所有人顯示。`breakdown` 會透露你使用哪個服務商（例如哪個雲端）。不論哪個層級，項目名稱、備註和個別付款都保持不公開。公開的期間到包含今天（UTC）的期間為止 |
 | `finance_viewer_item_names` | `true` / `false` | `false` | 擁有 `view_finance` 權限的使用者，是否能在財務畫面（`/finance`、`GET /api/v1/finance/cost_totals`）上看到成本項目名稱和匯入成本的服務名稱。不論此設定為何，總額以及依服務商和類別的明細一律會顯示 |
@@ -99,6 +100,8 @@
 | `voice_public_summary` | `true` / `false` | `false` | 可見範圍為 `local` 的語音聊天室頁面，是否向未登入這台伺服器的訪客和遠端使用者顯示其名稱、說明、主持人以及是否仍開放中，並顯示在其連結預覽中。參與者永遠不會顯示。為 `false` 時，這些訪客只會看到這是給這台伺服器本站使用者的聊天室 |
 | `event_creators` | `everyone` / `permitted` | `everyone` | 誰能建立活動（[活動](#events)）。`everyone`：所有已登入、未被停權或限制的本站使用者。`permitted`：只有 `create_events` 權限的持有者；預設只有內建的 `admin` 角色擁有它，支持者方案的角色也可以擁有它 |
 | `public_counts` | `true` / `false` | `true` | 首頁（`/`，未登入時）和 `GET /api/v1/instance/overview` 是否顯示伺服器有多少成員、使用者在過去 7 天中每天發了多少公開貼文，以及伺服器何時開始運作。只計算這台伺服器使用者的公開貼文；數字每幾分鐘更新一次。為 `false` 時，API 會省略它們 |
+| `landing_fediverse_explanation` | `true` / `false` | `true` | 首頁（`/`，未登入時）是否說明聯邦宇宙的運作方式：這裡的帳號可以追蹤其他伺服器上的人，也可以被他們追蹤 |
+| `landing_features` | `true` / `false` | `true` | 首頁是否顯示軟體在這台伺服器上能做什麼，並為每個已開啟的功能（語音聊天室、活動、文章、搜尋、翻譯、支持者）附上範例 |
 | `featured_accounts` | 最多 20 個本站帳號的使用者名稱，以空白或逗號分隔（空白 = 無） | 空白 | 追蹤對象推薦中優先顯示的帳號，依此順序排在這台伺服器最近發文的人之前。擁有者關閉了「推薦我的帳號，並允許用部分名稱找到它」的帳號不會被推薦。請參閱[推薦](#suggestions-of-accounts) |
 | `login_providers_only` | `true` / `false` | `false` | 在至少啟用一個登入提供者時，註冊和登入是否限定使用登入提供者：密碼和通行金鑰不再能登入，沒有連結提供者的使用者在其工作階段結束後就無法再登入。沒有啟用任何提供者時不適用。`my instance set` 會印出有多少活躍使用者沒有連結到已啟用的提供者。請參閱[登入限定使用登入提供者](login-providers.md#limit-sign-in-to-login-providers)。 |
 | `invite_creators` | `everyone` / `permitted` | `permitted` | 除了擁有 `manage_invites` 的工作人員之外，誰能建立自己的邀請（[成員邀請](registration.md#member-invites)）。`everyone`：所有已登入、未被停權或限制的本站使用者。`permitted`：只有 `create_invites` 權限的持有者；預設只有內建的 `admin` 角色擁有此權限，支持者方案的角色也可以擁有。在 `approval` 模式下，可用的邀請會立即核准新使用者，所以 `everyone` 會讓每位使用者都能略過審查 |
@@ -204,7 +207,7 @@
 - 使用者每小時最多建立 10 個活動，一個活動每小時最多送出 100 個邀請。
 - 使用者可以檢舉活動，版主可以取消活動；停權或刪除主辦人，會取消該主辦人尚未開始的活動（[審核](moderation.md#events)）。誰回覆了以及誰受邀，會在活動之後保留 `event_records_retention_days`，對其候選日期的投票也一樣。
 
-<!-- source: texts-one-key-one-value c639fc7dfe23 -->
+<!-- source: texts-one-key-one-value cc74b8e2bdda -->
 ### 文字（一個鍵，一個值）
 
 | 鍵 | 限制 | 說明 |
@@ -221,7 +224,7 @@
 - 每段文字只有一個值。管理員以自己喜歡的任何語言寫一次，所有語系的讀者都會看到相同的值；其他語言的讀者則依靠機器翻譯之類的方式。管理欄位的標籤和說明會像其他畫面文字一樣翻譯成檢視者的語言；只有管理員寫的值不會翻譯。
 - 伺服器不知道文字的語言，所以網頁用戶端和伺服器產生的畫面在輸出文字時，會使用 `dir="auto"` 和 `lang=""`（HTML 中表示未知語言的值），而不是繼承畫面的語言。
 - 將文字設為空白會刪除它。
-- 除了 CLI 之外，文字也可以在網頁用戶端的管理畫面中變更（名稱、簡短說明和說明在「伺服器設定」的「一般」頁面 `/admin/settings`；服務條款在「條款與政策」的第一頁 `/admin/documents`，隱私權政策在 `/admin/documents/privacy-policy`，商業揭露事項等在 `/admin/documents/commerce-disclosure`），或透過用戶端 API（`GET /api/v1/admin/instance_texts`、`PUT /api/v1/admin/instance_texts/{key}`）變更。兩者都需要角色權限 `manage_settings`，變更會記錄在稽核記錄中（`text_changed`）。
+- 除了 CLI 之外，文字也可以在網頁用戶端的管理畫面中變更（名稱、簡短說明和說明在「伺服器設定」的「一般」頁面 `/admin/settings/general`；服務條款在 `/admin/documents/terms`，隱私權政策在 `/admin/documents/privacy-policy`，商業揭露事項在 `/admin/documents/commerce-disclosure`，各自是「條款與政策」（`/admin/documents`）中的一個頁面），或透過用戶端 API（`GET /api/v1/admin/instance_texts`、`PUT /api/v1/admin/instance_texts/{key}`）變更。兩者都需要角色權限 `manage_settings`，變更會記錄在稽核記錄中（`text_changed`）。
 
 <!-- source: terms-and-privacy-policy 82e7bc325cf1 -->
 ### 服務條款與隱私權政策
@@ -241,7 +244,7 @@
 - 名稱在所有語系中都相同。沒有名稱時，會改為顯示網域（`host`）。
 - 變更會從下一個請求開始生效，不需要重新啟動。在管理畫面儲存後，已開啟的網頁用戶端的分頁標題和側邊欄也會更新。
 
-<!-- source: contact-and-thumbnail 71513ab82d51 -->
+<!-- source: contact-and-thumbnail 0c0f6038fb4e -->
 ### 聯絡方式與縮圖
 
 營運者的聯絡方式（`contact_account`、`contact_email`）和代表實例的圖片（`thumbnail` 和文字 `thumbnail_alt`）會出現在以下地方。未設定的項目不會出現。
@@ -250,12 +253,12 @@
 - `GET /api/v1/instance` 中的 `contact`（`account` 和 `email`）和 `thumbnail`（`url`、`width`、`height`、`alt`）。
 - NodeInfo 中的 `metadata`：依照 Misskey 慣例的 `maintainer`（`name` 為聯絡帳號的顯示名稱，沒有時則為其使用者名稱；`email` 為 `contact_email`）、依照 Pleroma 和 Akkoma 慣例的 `staffAccounts`（聯絡帳號的 actor ID）、`thumbnail`（`url` 和 `alt`），以及取自簡短說明 `short_description` 的 `nodeDescription`。
 
-聯絡帳號被停權或刪除時，不會顯示該帳號，只會顯示電子郵件地址。請在網頁用戶端管理畫面的「一般」頁面（「伺服器設定」，`/admin/settings`）中，或透過 CLI 或用戶端 API 變更。
+聯絡帳號被停權或刪除時，不會顯示該帳號，只會顯示電子郵件地址。請在網頁用戶端管理畫面的「一般」頁面（「伺服器設定」，`/admin/settings/general`）中，或透過 CLI 或用戶端 API 變更。
 
-<!-- source: one-person-server 6ba524c58a4f -->
+<!-- source: one-person-server 1bd8fd4f6da5 -->
 ### 單人伺服器
 
-只屬於營運者一人的伺服器，也就是營運者自己在聯邦宇宙中的家，就是單人伺服器：請開啟 `single_user`。在網頁用戶端中，管理員可以在「伺服器設定」的「註冊」頁面，用「將這個伺服器設為單人伺服器」來開啟或關閉它；伺服器有一個以上的本站帳號而拒絕時，該頁面會說明原因。
+只屬於營運者一人的伺服器，也就是營運者自己在聯邦宇宙中的家，就是單人伺服器：請開啟 `single_user`。在網頁用戶端中，管理員可以在「伺服器設定」的「註冊」頁面，用「單人伺服器」來開啟或關閉它；伺服器有一個以上的本站帳號而拒絕時，該頁面會說明原因。
 
 ```sh
 my instance set single_user true
@@ -270,9 +273,9 @@ my instance set single_user false   # back to a community server
 - **註冊關閉**。 不論 `registration_mode` 儲存的值為何，都會被視為 `closed`，所以註冊頁面、透過登入提供者的註冊以及 `my admin create` 都不會建立帳號。使用登入提供者登入仍可運作。
 - **只有首頁時間軸**。 `local_timeline_visibility` 和 `federated_timeline_visibility` 會被視為 `off`。主題標籤和列表時間軸則保留。
 - **社群才需要的功能會被隱藏**。 本站和聯邦時間軸及其串流、帳號推薦、使用者和管理員的邀請、註冊審查，以及註冊封鎖，都會以類型 `/api/v1/problems/single-user-mode` 回應 `404`。
-- **不能發新的本站貼文**。 在只有一個人的伺服器上，「本站」的貼文除了追蹤者之外送不到任何人，所以新貼文不能設為本站：用戶端 API 會回應 `422`，並將它從帳號可用的發文選項中排除。預設可見範圍為「本站」時會被視為「僅追蹤者」且無法儲存，而給這台伺服器使用者的語音聊天室，會以給追蹤者的貼文來宣告。已經是本站的貼文仍保持本站。
+- **不能發新的鄰里貼文**。 在只有一個人的伺服器上，「鄰里」的貼文除了追蹤者之外送不到任何人，所以新貼文不能設為鄰里：用戶端 API 會回應 `422`，並將它從帳號可用的發文選項中排除。預設可見範圍為「鄰里」時會被視為「僅追蹤者」且無法儲存，而給這台伺服器使用者的語音聊天室，會以給追蹤者的貼文來宣告。已經是鄰里的貼文仍保持鄰里。
 - **伺服器會表明自己的性質**。 `GET /api/v1/instance` 中的 `single_user` 為 `true`，並附上實際生效的註冊模式和時間軸，以及作為 `single_user_account` 的營運者帳號；NodeInfo 則回應 `openRegistrations: false` 和 `metadata.singleUser: true`。
-- **首頁就是營運者的個人檔案**。 未登入的人開啟伺服器的網址時，會看到其唯一帳號的個人檔案，以及登入方式，和伺服器公開的關於頁面、服務條款和隱私權政策的連結。網頁用戶端會從導覽列、選單和管理畫面中隱藏伺服器不提供的功能：本站和聯邦時間軸、註冊、推薦帳號、邀請、註冊審查、註冊封鎖、可見範圍「本站」，以及註冊、邀請、公開時間軸、首頁和推薦帳號的設定。
+- **首頁就是營運者的個人檔案**。 未登入的人開啟伺服器的網址時，會看到其唯一帳號的個人檔案，以及登入方式，和伺服器公開的關於頁面、服務條款和隱私權政策的連結。網頁用戶端會從導覽列、選單和管理畫面中隱藏伺服器不提供的功能：本站和聯邦時間軸、註冊、推薦帳號、邀請、註冊審查、註冊封鎖、可見範圍「鄰里」，以及註冊、邀請、公開時間軸、首頁和推薦帳號的設定。
 
 聯邦、審核、全文搜尋、支持者計畫、文件和管理畫面，都和其他伺服器一樣運作。
 
@@ -326,27 +329,27 @@ my admin federation sever -direction both
 - 只有在目前的模式會送出該方向時，才會將 `Reject`（`in`）或 `Undo`（`out`）送到遠端那一側。在不送出的模式（例如 `off`）下，追蹤只會在本站這一側結束，遠端那一側不會被告知。
 - 重複執行是安全的。它會將結束的追蹤數印到標準輸出。
 
-<!-- source: admin-screens-and-the-client-api 887d153efcf9 -->
+<!-- source: admin-screens-and-the-client-api d5fece23283e -->
 ## 管理畫面與用戶端 API
 
 CLI 能變更的每項設定，也都能在網頁用戶端的管理畫面和透過用戶端 API 變更。兩者都需要角色權限 `manage_settings`（只有內建的 `admin` 角色擁有）。和 CLI 一樣，變更會保留為修訂版本，並按鍵記錄在稽核記錄中（`setting_changed`，目標為該設定，執行者為該使用者）。請在審核畫面（「稽核日誌」，`/moderation/audit-log`）查看稽核記錄。
 
-- **網頁用戶端**（「伺服器設定」，`/admin/settings`）：畫面依主題分為多個頁面，各自連結在其標題之下。每個頁面有一個表單和一個儲存按鈕，儲存時只會送出你在該頁面上變更的內容；其他頁面上的設定維持原狀。
+- **網頁用戶端**（「伺服器設定」，`/admin/settings`）：畫面依主題分為多個頁面，並分成幾個群組。每個頁面有一個表單和一個儲存按鈕，儲存時只會送出你在該頁面上變更的內容；其他頁面上的設定維持原狀。各選項會帶來重大差異的選擇，會在儲存之前於其下方說明每個選項的作用；數字被拒絕時，會說明它的範圍。
 
   | 頁面 | 區塊與設定 |
   | --- | --- |
-  | 一般（`/admin/settings`） | 名稱、說明（`name`、`short_description`、`description`）；聯絡資訊與縮圖（`contact_account`、`contact_email`、`thumbnail`，以及文字 `thumbnail_alt`） |
-  | 圖示與標誌（`/admin/settings/branding`） | 圖示、標誌和深色背景用的標誌，各自以自己的按鈕儲存（[標誌與圖示](#logo-and-icon)） |
-  | 註冊（`/admin/settings/registration`） | 註冊（`registration_mode`、`login_providers_only`）；成員邀請（`invite_creators`、`member_invite_max_active`、`member_invite_max_uses`、`member_invite_max_lifetime_seconds`）；應用程式（`user_app_registration`、`oauth_metadata_document_clients`、`dynamic_client_registration`） |
-  | 內容（`/admin/settings/content`） | 語言（`default_locale`，從應用程式支援的語言中選擇）；時間軸（`local_timeline_visibility`、`federated_timeline_visibility`）；貼文（`require_media_description`）；首頁（`public_counts`）；推薦帳號（`featured_accounts`） |
-  | 貼文刪除（`/admin/settings/auto-delete`） | 新帳號的預設值（`auto_delete_default_*` 設定）；上限（`auto_delete_max_age_days`、`auto_delete_max_allow_*` 設定、`auto_delete_max_kept_pins`、`auto_delete_grace_days`）。儲存開啟或更嚴格（更少天數、更少例外或釘選）的上限時會先詢問，因為它會通知新受其約束的帳號（[貼文保留的上限](#a-maximum-for-keeping-posts)） |
-  | 聯邦（`/admin/settings/federation`） | 聯邦（`federation_mode`、`federation_scope`（儲存 `allowlist` 時，會先顯示這次切換將結束的追蹤並詢問，請參閱[只與被允許的伺服器聯邦](moderation.md#federating-only-with-allowed-servers)）、`authorized_fetch`、`remote_media_policy`、`remote_media_cache_ttl_seconds`（從 1 小時、1 天、7 天、30 天或 365 天中選擇）、`link_cards`、`link_cards_ignore_robots_txt`）；受限制與停權的伺服器（`domain_actions_visibility`、`domain_actions_rationale_visibility`）；外部審核（`hook_*` 設定，請參閱[決策掛鉤](decision-hooks.md)） |
-  | 搜尋與爬蟲（`/admin/settings/discovery`） | 搜尋引擎與 AI（`search_indexing`、`indexable_default`、`ai_usage`、`security_contact`）；貼文搜尋（`search_visibilities`，僅限伺服器有全文搜尋時） |
-  | 語音聊天（`/admin/settings/voice`） | `voice_room_starters`、`voice_public_summary`、`voice_participants_retention_days`；只有在伺服器提供語音聊天時才會列出這個頁面 |
+  | 一般（`/admin/settings/general`） | 名稱與說明（`name`、`short_description`、`description`）；語言（`default_locale`，從應用程式支援的語言中選擇）；聯絡方式（`contact_account`、`contact_email`）；圖片（`thumbnail` 和文字 `thumbnail_alt`、`preview_image` 和文字 `preview_image_alt`） |
+  | 圖示與標誌（`/admin/settings/branding`） | 圖示、標誌和深色背景用的標誌（[標誌與圖示](#logo-and-icon)） |
+  | 註冊（`/admin/settings/registration`） | 誰能註冊（`registration_mode`，每種模式都附上它的作用）；單人伺服器（`single_user`）；成員邀請（`invite_creators`、`member_invite_max_active`、`member_invite_max_uses`、以小時計的 `member_invite_max_lifetime_seconds`）；僅限登入提供者（`login_providers_only`，儲存前會先詢問，並附上有多少活躍使用者將無法再登入，以及你是否為其中之一）；應用程式（`user_app_registration`、`dynamic_client_registration`、`oauth_metadata_document_clients`、`oauth_client_rate_limits`）。在單人伺服器上，註冊和成員邀請的區塊會說明沒有其他人會註冊 |
+  | 貼文與功能（`/admin/settings/content`） | 貼文（`max_status_length`、`require_media_description`）；時間軸（`local_timeline_visibility`、`federated_timeline_visibility`）；連結卡片（`link_cards`、`link_cards_ignore_robots_txt`）；草稿與排程貼文（`max_drafts`、`max_scheduled_posts`、`max_scheduled_posts_per_day`、`scheduled_post_min_lead_minutes`、`scheduled_post_max_lead_days`）；文章（`article_authoring`、`max_article_bytes`、`max_article_images`）；活動（`event_creators`、`event_records_retention_days`）；首頁與推薦（`public_counts`、`landing_fediverse_explanation`、`landing_features`、`featured_accounts`） |
+  | 語音聊天（`/admin/settings/voice`） | 誰能開設聊天室（`voice_room_starters`）；聊天室（`voice_public_summary`、`voice_participants_retention_days`） |
+  | 貼文刪除（`/admin/settings/auto-delete`） | 新帳號的預設值（`auto_delete_default_*` 設定）；所有人的上限（`auto_delete_max_age_days`、`auto_delete_grace_days`、`auto_delete_max_allow_*` 設定、`auto_delete_max_kept_pins`）。儲存開啟或更短的上限時會先詢問（[貼文保留的上限](#a-maximum-for-keeping-posts)） |
+  | 聯邦（`/admin/settings/federation`） | 方向（`federation_mode`）；伺服器（`federation_scope`：儲存 `allowlist` 時，會先顯示這次切換將結束的追蹤並詢問，請參閱[只與被允許的伺服器聯邦](moderation.md#federating-only-with-allowed-servers)）；簽章擷取（`authorized_fetch`）；來自其他伺服器的媒體（`remote_media_policy`、以分鐘計的 `remote_media_cache_ttl_seconds`、以 MiB 計的 `remote_media_cache_max_bytes`）；來自其他伺服器的貼文（`remote_status_retention_days`、`remote_status_max_retention_days`、`relay_status_retention_days`）；受處置的伺服器（`domain_actions_visibility`、`domain_actions_rationale_visibility`） |
+  | 搜尋與爬蟲（`/admin/settings/discovery`） | 搜尋引擎（`search_indexing`、`indexable_default`）；安全聯絡方式（`security_contact`）；AI（`ai_usage`）；全文搜尋（`search_visibilities`） |
+  | 外部審核（`/admin/settings/hooks`） | 每個決策掛鉤各有一個區塊：它的模式（只有在不是 `off` 之後才會提供 `enforce`）、外掛失敗時要怎麼做，以及它的其他設定；決策紀錄（`hook_decisions_retention_days`）。請參閱[決策掛鉤](decision-hooks.md) |
+  | 申訴與紀錄（`/admin/settings/records`） | 申訴（`appeal_window_days`）；保存紀錄（`session_origins_retention_days`、`registration_origins_retention_days`、`reports_retention_days`、`moderation_actions_retention_days`、`audit_log_retention_days`） |
 
-  在「一般」頁面上，圖片會在你選擇時上傳，並在儲存時成為縮圖。誰能看到營運成本、收入和支持者列表，是在「費用」和「支持者」畫面上設定的。
-
-  `max_status_length`、`preview_image`、`appeal_window_days` 和保留期間（`*_retention_days`）、`remote_media_cache_max_bytes`，以及 `oauth_client_rate_limits` 不會出現在畫面上；請透過 CLI 或用戶端 API 變更。翻譯的設定有自己的畫面，見下文。
+  在「一般」頁面上，圖片會在你儲存時上傳，並在那時成為縮圖或連結預覽圖片。誰能看到營運成本、收入和支持者列表，是在「費用與收入」和「支持者」畫面上設定的。翻譯的設定有自己的畫面，見下文。
 - **網頁用戶端**（「翻譯」，`/admin/translation`）：這台伺服器擁有的提供者、它們的順序以及各自可以收到什麼、瀏覽器的翻譯、每月上限，以及翻譯保留多久，並顯示本月送出的字元數和快取命中率。每個伺服器行程最多每分鐘將其快取命中次數加到命中率一次，所以最新的請求可能需要一分鐘才會顯示，而停止的行程可能會留下最後一分鐘未計入。在啟用伺服器端提供者之前，請先更新你的隱私權政策（[範本](privacy-policy-template.md#the-services-you-choose)）：送給提供者的文字無法收回。提供者的 API 金鑰和[翻譯外掛](plugins.md#translating-posts)的位址存放在[部署設定](../reference/configuration.md)中；任何設定和用戶端 API 的回應都不會包含它們。
 - **翻譯上限**。 計算的是送出的字元數（以碼位計）：代替提及、連結等的標記不計入，伺服器已保留的翻譯、已經是讀者語言的貼文，以及瀏覽器的翻譯也都不計入。每次呼叫提供者都會計入，失敗的呼叫也一樣，因為提供者可能已經收到文字，所以這個數字可能與提供者的計費不同。超過上限時，請求會以 `429` 拒絕，且不會呼叫任何提供者；此時若你允許且瀏覽器能翻譯該貼文，網頁用戶端會改用讀者瀏覽器的翻譯。月份以 UTC 計算。
 - **用戶端 API**：`GET /api/v1/admin/settings` 會回傳每項設定的目前值、預設值、是否已設定，以及其型別和可接受的值（選項或範圍）。`PATCH /api/v1/admin/settings` 會以 `{"values": {"<key>": "<value>", ...}}` 一次變更多項設定。所有值都是字串，會和 CLI 一樣正規化後儲存。只要有一個鍵未知或一個值無效，就會回應指出該鍵的 422，而且不會有任何變更。變更的鍵會在同一個交易中記錄為修訂版本並寫入稽核記錄。
@@ -373,7 +376,7 @@ my instance rule list                                  # active rules (-all incl
 - 在網頁用戶端的管理畫面（「規則」，`/admin/rules`，`manage_rules`）中，列表會依序顯示有效的規則，可以用「上移」和「下移」重新排序；列表上方的篩選器可以改為顯示已廢止的規則。「新增規則」會開啟一個填寫文字和補充說明的頁面。選擇規則的文字可以開啟其頁面，在那裡編輯它，或（經過確認對話框後）廢止它。每次變更都會記錄在稽核記錄中（`rule_added`、`rule_revised`、`rule_moved`、`rule_retired`）。
 - 結束代碼與設定相同（0 表示成功，1 表示值被拒絕或資料庫錯誤，2 表示引數錯誤）。
 
-<!-- source: link-card-domains c8f674387fa8 -->
+<!-- source: link-card-domains 1b8839ab9f1d -->
 ## 連結卡片網域
 
 貼文的連結卡片（`link_cards`）來自一個爬蟲：伺服器會擷取被連結的頁面及其圖片。規則會讓這個爬蟲在某個網域及其子網域上停止，而不影響該網域的其他一切。規則有兩種模式之一。規則是營運者的選擇，除了被連結網站本身拒絕的內容之外另外適用（[連結預覽](link-previews.md#cards-of-links-in-posts)）。
@@ -387,14 +390,14 @@ my instance rule list                                  # active rules (-all incl
 - 規則涵蓋網域及其子網域，圖片則會以頁面和圖片兩者的主機來檢查。涵蓋某個主機的所有規則都會適用，所以子網域上的規則不會放寬其上層網域的規則。網域的寫法和正規化方式與網域處置相同：不含 scheme 或連接埠的主機名稱，國際化網域可用任何拼寫方式。
 - 變更會立即生效，已有的卡片也一樣，而且在停止圖片期間，這些卡片經代理的圖片也會停止提供。
 - 移除規則後，伺服器已有的卡片會恢復原狀。被略過的連結，會在下次有貼文需要時取得卡片；不會大量重新擷取。在停止圖片期間重新擷取的卡片，在下一次重新擷取之前都不會有圖片。
-- 在網頁用戶端的管理畫面（「連結卡片網域」，`/admin/link-card-domains`，`manage_settings`）中，「新增規則」可以設定附帶備註的規則。列表每頁顯示 40 條規則，可以依網域搜尋；選擇網域會開啟其規則的頁面，在那裡可以變更模式和備註，或（經過確認對話框後）移除它。
+- 在網頁用戶端的管理畫面（「連結卡片網域」，`/admin/link-card-domains`，`manage_settings`）中，「新增規則」可以設定附帶模式和備註的規則，並拒絕已經有規則的網域，同時附上該規則的連結。列表依網域顯示規則，每次 40 條，可用「顯示更多」載入更多；選擇網域會開啟其規則的頁面，在那裡可以變更模式和備註，或（經過確認對話框後）移除它。
 - 管理 API 為 `/api/v1/admin/link_card_domains`（列出、設定；以網域發出 `DELETE` 即可移除），需要角色權限 `manage_settings`。一台伺服器最多保存 1,000 條規則，每條的備註最多 5,000 個字元。
 - 每次變更都會記錄在稽核記錄中（`link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`）。
 
-<!-- source: theme d3ebe5db33cb -->
+<!-- source: theme 1ada01b2db2e -->
 ## 主題
 
-伺服器範圍的主題是一組對 Web 用戶端設計代碼的覆寫，每種顏色都有淺色與深色兩個值。它適用於每位瀏覽者的 Web 用戶端，也適用於伺服器自己算繪的畫面（登入、註冊、條款等）。沒有自訂 CSS。
+伺服器範圍的主題是一組對網頁用戶端設計代碼的覆寫，每種顏色都有淺色與深色兩個值。它適用於每位瀏覽者的網頁用戶端，也適用於伺服器自己算繪的畫面（登入、註冊、條款等）。沒有自訂 CSS。
 
 - 你可以覆寫下列設計代碼；間距、元件的尺寸、文字的字重、陰影與資料圖表的顏色維持固定：
 
@@ -402,17 +405,18 @@ my instance rule list                                  # active rules (-all incl
   | --- | --- | --- |
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | 顏色 | 淺色與深色各一個 `#rrggbb` |
   | `font-sans-override`, `font-mono-override` | 字型家族 | 字型家族名稱，以逗號分隔（最多 30 個），不可包含 `sans-serif` 這類通用字型家族；名稱中含有以數字開頭的單字時要加引號，例如 `"M PLUS 1p"` |
-  | `text-tagline`, `text-title`, `text-body`, `text-caption` | 長度 | `0` 或 rem / px，0.625rem 到 3rem |
-  | 上述四個代碼各自的 `text-*--line-height` | 數字 | 1 到 2.5 |
+  | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | 長度 | `0` 或 rem / px，0.625rem 到 3rem |
+  | 上述同樣七個代碼各自的 `text-*--line-height` | 數字 | 1 到 2.5 |
   | `radius-control`, `radius-overlay` | 長度 | 0 到 2rem |
   | `duration-spin` | 時間長度 | ms / s，0 到 1000ms |
 
-- Web 用戶端以自帶的字型繪製文字：表情符號用 Noto Color Emoji，拉丁字母、希臘字母和西里爾字母用 Noto Sans，其餘文字用與文字語言相應字形的 Noto Sans CJK。`font-sans-override`（內文）與 `font-mono-override`（程式碼）中的字型緊排在表情符號字型之後，你的字型所缺少的字元由 Web 用戶端的字型繪製。主題無法取代這些字型。
+- 網頁用戶端以自帶的字型繪製文字：表情符號用 Noto Color Emoji，拉丁字母、希臘字母和西里爾字母用 Noto Sans，其餘文字用與文字語言相應字形的 Noto Sans CJK。`font-sans-override`（內文）與 `font-mono-override`（程式碼）中的字型緊排在表情符號字型之後，你的字型所缺少的字元由網頁用戶端的字型繪製。主題無法取代這些字型。
 - 你把一組設定儲存為草稿，預覽之後再發布；發布之前，生效中的主題不會改變。每次儲存都會取代整份草稿，每次發布都是一個新的修訂。還原會再次發布目前這組之前生效的那一組，草稿維持不變。
+- 在網頁用戶端中，**管理 > 主題**會顯示草稿和生效中的主題。「編輯草稿」會顯示每種顏色的淺色與深色，以及它所形成的每一對顏色的對比度，低於最低值的組合不會儲存。「預覽」會在你的瀏覽器分頁的每個畫面上顯示草稿，直到你再按一次為止；其他人看不到。「發布」和「還原上一個主題」在同一個畫面上。圖示和標誌在**伺服器設定 > 圖示與標誌**。
 - 儲存與發布時，伺服器會檢查值的格式與範圍，以及每一對顏色代碼的對比度（你沒有覆寫的代碼使用預設值；淺色與深色下都要達到 WCAG 2.2 AA）。只要有一項檢查未通過，就不會儲存或發布任何內容。
 - 如果新版本重新命名或淘汰了某個代碼，或某個覆寫的值已不適合該代碼，升級不會因此失敗。該覆寫仍保留在已儲存的設定中，但不再生效：管理 API 會把它列在 `stale_tokens` 底下，`my instance theme get` 會指出它的名稱，下次儲存草稿時會將它捨棄。
 - 已發布修訂的樣式表透過 `/theme/{revision ID}.css` 提供（`immutable`，長期快取）。HTML 外殼有共用快取（60 秒加 300 秒的重新驗證），所以發布之後需要幾分鐘才會傳到所有人。已經開啟的頁面在重新載入之前維持舊的外觀。
-- 外殼中的 `<meta name="theme-color">`（淺色與深色）以及 Web App Manifest 的 `theme_color` / `background_color`（淺色）取主題的 `color-surface` 的值。無論主題為何，電子郵件都使用代碼的預設顏色。
+- 外殼中的 `<meta name="theme-color">`（淺色與深色）以及 Web App Manifest 的 `theme_color` / `background_color`（淺色）取主題的 `color-surface` 的值。從此之後，伺服器寄出的每封電子郵件的 HTML 版本都使用已發布主題的顏色（淺色與深色）；草稿永遠不會影響電子郵件。
 - 發布一組不含任何代碼的設定，會把主題重設為預設，樣式表也不再載入。
 - 你可以用用戶端 API 與 CLI 更改它。用戶端 API 需要角色權限 `manage_settings`：`GET /api/v1/admin/theme` 讀取草稿與生效中的設定，`PUT /api/v1/admin/theme/draft` 儲存草稿，`GET /api/v1/admin/theme/draft/stylesheet` 傳回草稿的樣式表以供預覽，`POST /api/v1/admin/theme/publish` 與 `POST /api/v1/admin/theme/restore` 負責發布。發布會記錄在稽核日誌中（`setting_changed`，目標為 `theme`）。
 
@@ -433,7 +437,7 @@ echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # ba
 }
 ```
 
-<!-- source: logo-and-icon a2d23def322b -->
+<!-- source: logo-and-icon 1269b80d7ad5 -->
 ## 標誌與圖示
 
 除了縮圖和預覽圖片之外，實例還可以有自己的圖示、標誌和深色標誌，各自以一個 SVG 上傳。在設定之前，會使用內建的 mycroblog 圖片，清除後也會恢復內建圖片。
@@ -450,7 +454,7 @@ echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # ba
 - 檔案儲存在 blob 儲存區的 `instance/brand/<revision>/` 之下，並以 `Cache-Control: public, max-age=31536000, immutable` 在 `https://<host>/brand/<revision>/<version>.svg|.png` 提供，因為修訂版本的內容永遠不會改變。SVG 會以 `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox` 和 `X-Content-Type-Options: nosniff` 提供，所以即使單獨開啟，它也不會執行或載入任何東西。先前修訂版本的檔案會保留，讓已寄出的電子郵件仍保有其標誌。
 - 設定了圖示時，HTML 外殼會連結其 PNG 網站圖示、SVG 和 180 px 的 `apple-touch-icon`，Web App Manifest 會依序列出其 512 px、192 px、maskable 和 SVG 圖示（其他聯邦宇宙伺服器會將第一個當作這台伺服器的圖示），而 `/apple-touch-icon.png` 會回傳 180 px 的版本。外殼的 ETag 會隨圖片改變，外殼的共用快取和主題一樣會持續幾分鐘。已安裝的應用程式在 Android 上，會在 Chrome 下次檢查 manifest 時取得新圖示；在桌面上，應用程式在重新安裝之前會保留舊圖示。
 - `GET /api/v1/instance` 會回傳 `icon`、`logo` 和 `logo_dark`，附上 SVG 的 URL、每個 PNG 版本的 URL 和尺寸，以及修訂版本；使用內建圖片時則會省略。
-- 請在網頁用戶端的「伺服器設定」>「圖示與標誌」（`/admin/settings/branding`，角色權限 `manage_settings`）中設定。為圖示、標誌或深色背景用的標誌選擇一個 SVG 檔案：伺服器會檢查它，瀏覽器會繪製 PNG 版本，表單會預覽它們（瀏覽器分頁、主畫面、應用程式圖示、淺色和深色背景上的電子郵件，以及連結預覽），並列出伺服器移除的項目。如果伺服器拒絕該檔案，按鈕下方會顯示原因及修正方式。圖示的不透明版本的背景色也在那裡設定。「儲存」會將 SVG 連同所有 PNG 版本一起送出；「使用內建圖示」、「使用內建標誌」和「移除深色背景用的標誌」會清除它們。網頁用戶端會保留已顯示過的圖片以供離線使用。
+- 請在網頁用戶端的「伺服器設定」>「圖示與標誌」（`/admin/settings/branding`，角色權限 `manage_settings`）中設定。為圖示、標誌或深色背景用的標誌選擇一個 SVG 檔案：伺服器會立即檢查它，表單會以伺服器實際保留的樣子顯示它，並列出伺服器移除的項目。如果伺服器拒絕該檔案，原因及修正方式會顯示在它的下方。圖示的不透明版本的背景色也在那裡設定。「儲存」會在瀏覽器中繪製 PNG 版本，並將所選的每張圖片連同它們一起送出；「使用內建圖片」會在你儲存時讓圖片恢復為內建的圖片。網頁用戶端會保留已顯示過的圖片以供離線使用。
 - 用戶端 API 也能做相同的事，需要角色權限 `manage_settings`：`POST /api/v1/admin/instance/brand/sanitize` 會檢查 SVG，並回傳清理後的 SVG 以及要繪製的 PNG 版本（不會儲存任何東西），`PUT /api/v1/admin/instance/brand/{icon|logo|logo_dark}` 會將 SVG 連同所有 PNG 版本一起儲存（`multipart/form-data`，每個版本一個部分），對同一路徑發出 `DELETE` 會清除其中一個，而 `GET /api/v1/admin/instance/brand` 會回傳目前的圖片以及圖示的背景色。每次變更都會保留為修訂版本（`instance_brand_revisions`），並記錄在稽核記錄中（`setting_changed`，目標為 `brand_icon`、`brand_logo` 或 `brand_logo_dark`）。
 - 由於 PNG 版本是由用戶端繪製的，CLI 無法設定它們，但可以顯示它們，並清除損壞的圖片：
 
@@ -459,7 +463,7 @@ my instance brand show          # each image with its revision, when and by whom
 my instance brand clear icon    # back to the built-in icon (also logo, logo_dark)
 ```
 
-<!-- source: custom-emoji 5e0ddb3251cf -->
+<!-- source: custom-emoji 852330f1cc29 -->
 ## 自訂表情符號
 
 當有人在貼文的內文或內容警告中，或在顯示名稱、自我介紹或個人檔案欄位中寫下 `:shortcode:` 時，本站的自訂表情符號會以圖片顯示。它們也會透過你送出的 Note 和 actor 的 `Emoji` 標籤，送達 Mastodon、Misskey、GoToSocial 和 Akkoma。
@@ -469,7 +473,7 @@ my instance brand clear icon    # back to the built-in icon (also logo, logo_dar
 - 停用的表情符號不會出現在任何地方（貼文、個人檔案、聯邦、選擇器），`:shortcode:` 會再次以文字顯示。設定為在選擇器中隱藏的表情符號只是不出現在選擇器中，仍可透過直接輸入來使用。來自其他伺服器的表情符號只能停用，或複製為這台伺服器的表情符號。
 - 複製會在與媒體代理相同的限制下擷取其他伺服器表情符號的圖片（不會擷取設有 `reject_media` 網域的圖片），執行與上述相同的檢查，並將其註冊為新的本站表情符號。短代碼為原本的短代碼，或你指定的短代碼。圖片會縮小到 256 px 的方框內，而無法擷取或未通過檢查的圖片不會留下任何東西。
 - 刪除無法復原。過去貼文中的表情符號也會變回文字，再次註冊相同的短代碼會成為不同的表情符號。聯邦伺服器已複製的圖片無法刪除。
-- 管理畫面（「自訂表情符號」，`/admin/custom-emojis`）、用戶端 API（`/api/v1/admin/custom_emojis`）和 CLI 能做相同的事。在畫面上，「註冊自訂表情符號」會開啟註冊表單（`/admin/custom-emojis/new`），在列表中選擇表情符號會開啟其頁面（`/admin/custom-emojis/{id}`），在那裡可以變更設定、替換圖片、啟用或停用、刪除，或複製其他伺服器的表情符號；列表本身也能一鍵啟用和停用表情符號。管理畫面和用戶端 API 需要角色權限 `manage_custom_emojis`（只有內建的 `admin` 擁有）。不論以何種方式進行，註冊、複製、替換圖片、變更設定和別名、啟用和停用，以及刪除，都會記錄在稽核記錄中（目標為 `custom_emoji`）（從 CLI 進行的操作會記錄為 CLI 操作）。
+- 管理畫面（「自訂表情符號」，`/admin/custom-emojis`）、用戶端 API（`/api/v1/admin/custom_emojis`）和 CLI 能做相同的事。在畫面上，「註冊表情符號」會開啟註冊表單（`/admin/custom-emojis/new`），其中會對超過 100 KiB 的圖片發出警告；在列表中選擇表情符號會開啟其頁面（`/admin/custom-emojis/{id}`），在那裡可以啟用或停用、替換圖片、變更類別、別名和選擇器中的顯示、輸入其短代碼後刪除，或複製其他伺服器的表情符號。管理畫面和用戶端 API 需要角色權限 `manage_custom_emojis`（只有內建的 `admin` 擁有）。不論以何種方式進行，註冊、複製、替換圖片、變更設定和別名、啟用和停用，以及刪除，都會記錄在稽核記錄中（目標為 `custom_emoji`）（從 CLI 進行的操作會記錄為 CLI 操作）。
 
 ```sh
 my admin emoji create -shortcode blobcat -category Cats -alias neko blobcat.png   # register one
@@ -487,7 +491,7 @@ my admin emoji requests approve <request id>                                    
 my admin emoji requests reject [-reason <text>] <request id>                      # reject a request (the requester sees the reason)
 ```
 
-- 擁有角色權限 `create_custom_emojis`（一項使用者功能）的使用者，可以從設定中的「自訂表情符號」（`/settings/custom-emojis`）申請建立表情符號、變更自己建立的表情符號的別名、類別和在選擇器中的顯示，以及刪除它們。替換圖片也是一種申請。申請在擁有 `manage_custom_emojis` 的人核准之前，不會出現在任何地方（選擇器、貼文、回應、聯邦）。請在管理畫面「自訂表情符號」的「申請」頁面（`/admin/custom-emojis/requests`）、透過用戶端 API（`/api/v1/admin/custom_emoji_requests`），或透過上述 CLI 核准或拒絕。擁有 `manage_custom_emojis` 的人會收到申請的通知（`admin_custom_emoji_request`），申請者則會收到核准或拒絕的通知。申請、撤回、核准和拒絕都會記錄在稽核記錄中（目標為 `custom_emoji_request`）。
+- 擁有角色權限 `create_custom_emojis`（一項使用者功能）的使用者，可以從設定中的「自訂表情符號」（`/settings/custom-emojis`）申請建立表情符號、變更自己建立的表情符號的別名、類別和在選擇器中的顯示，以及刪除它們；該頁面會顯示他們這個月還剩下多少次申請。替換圖片也是一種申請，要透過用戶端 API 提出（`POST /api/v1/custom_emoji_requests`，`kind` 為 `image`）；設定頁面不提供這項操作。申請在擁有 `manage_custom_emojis` 的人核准之前，不會出現在任何地方（選擇器、貼文、回應、聯邦）。請在管理畫面「自訂表情符號」的「申請」頁面（`/admin/custom-emojis/requests`）、透過用戶端 API（`/api/v1/admin/custom_emoji_requests`），或透過上述 CLI 核准或拒絕。擁有 `manage_custom_emojis` 的人會收到申請的通知（`admin_custom_emoji_request`），申請者則會收到核准或拒絕的通知。申請、撤回、核准和拒絕都會記錄在稽核記錄中（目標為 `custom_emoji_request`）。
 - 待處理的建立申請會保留其短代碼。在該申請被拒絕或撤回之前，無法以相同短代碼提出申請或進行註冊。已核准表情符號的圖片會被複製為實例 actor 的上傳檔案，所以即使申請者的帳號被刪除，它仍會保留。
 - 建立者只有在持有 `create_custom_emojis` 期間才能變更自己的表情符號。角色被移除後，表情符號仍會保留。管理員不論建立者是誰，都能變更和刪除所有表情符號。
 - 當角色來自支持者方案時，使用者每月可建立的表情符號數量受方案的每月表情符號上限限制。它計算的是使用者在目前日曆月（UTC）內提出、已核准或待處理的建立申請；被拒絕和已撤回的申請不計入，刪除表情符號也不會釋出名額。申請計入其提出的月份，即使在下個月才被核准也一樣。計數會在每月第一天的 00:00 UTC 重設，設定頁面會以使用者自己的時區顯示重設時間。替換表情符號的圖片，以及管理員註冊的表情符號，都不計入。管理員手動指派的角色，以及停用支持者功能的伺服器，都沒有上限。

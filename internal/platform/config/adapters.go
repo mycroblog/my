@@ -45,6 +45,17 @@ func testOnly(tag, key string, values ...string) {
 	}
 }
 
+// e2eFakes maps a setting to its value whose adapter only a test build with the build tag e2e_fakes has: the fake
+// payment provider and mailer (ADR-0015 §6), the fake search index (ADR-0149 §3), and the fake translation provider
+// (ADR-0148). It is the same in every build, so that what the documents generated from the schema list does not
+// depend on the build; a build without the tag also records the values as test-only.
+var e2eFakes = map[string]string{
+	"mail":            "fake",
+	"payments":        "fake",
+	"search":          "fake",
+	"translator_fake": "true",
+}
+
 func testOnlyError(value, tag string) error {
 	return fmt.Errorf("%q is only in test builds: the build tag %s adds its adapter, and released binaries never have it", value, tag)
 }

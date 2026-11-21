@@ -72,6 +72,8 @@ func TestGetInstance(t *testing.T) {
 		SearchIndexing: clientapi.SearchIndexingDeny, AiUsage: clientapi.AIUsageDeny,
 		// Unset, link cards are fetched and obey robots.txt (ADR-0062).
 		LinkCards: true,
+		// Unset, the landing page shows both of its parts about the fediverse and the software (#3080).
+		LandingFediverseExplanation: true, LandingFeatures: true,
 		// A server built without UX measurements takes none (ADR-0167 §3).
 		UxMeasurement: new(false), UxMeasurementShare: new(10),
 		// Unset, the costs are private (ADR-0067 §8).

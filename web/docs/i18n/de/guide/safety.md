@@ -3,14 +3,16 @@
 
 Du entscheidest, was du liest und wer dich erreichen kann. Blockieren, Stummschalten und Stichwortfilter gehören allein dir.
 
-<!-- source: blocking-an-account a663f393c724 -->
-## Ein Konto blockieren
+<!-- source: blocking-an-account b0f13fd9f335 -->
+## Ein Konto sperren
 
-Öffne „Mehr“ im Profil des Kontos und wähle „Blockieren“. Der Client fragt „… blockieren?“ und sagt, was folgt: Ihr folgt einander nicht mehr, und keiner von euch kann dem anderen folgen, bis du die Blockierung aufhebst. Die Follows, die der Block beendet hat, kommen nicht zurück, wenn du die Blockierung aufhebst.
+Öffne „Mehr“ auf dem Profil des Kontos oder bei einem seiner Beiträge und wähle „Sperren …“. Der Client fragt „… sperren?“ und sagt,
+was folgt: Ihr folgt einander nicht mehr, und keiner von euch kann dem anderen folgen, bis du die Sperre aufhebst. Die
+Folgen, die die Sperre beendet hat, kommen nicht zurück, wenn du die Sperre aufhebst.
 
-Ein Block blendet außerdem die Beiträge von euch beiden füreinander aus.
+Eine Sperre blendet außerdem die Beiträge von euch beiden füreinander aus.
 
-„Blockierte Konten“ unter „Beziehungen“ in den Einstellungen listet die Konten auf, die du blockierst, und lässt dich die „Blockierung aufheben“.
+„Gesperrte Konten“ unter „Beziehungen“ in den Einstellungen listet die Konten auf, die du sperrst, und lässt dich ihre Sperre „Aufheben“.
 
 <!-- source: muting-an-account 85439ae52d1f -->
 ## Ein Konto stummschalten
@@ -19,27 +21,25 @@ Ein Block blendet außerdem die Beiträge von euch beiden füreinander aus.
 
 Um die Benachrichtigungen von Leuten, die du nicht kennst, zurückzuhalten, bis du sie annimmst, nutze die Benachrichtigungsregel (siehe [Benachrichtigungen von Leuten zurückhalten, die du nicht kennst](notifications.md#holding-notifications-from-people-you-dont-know)).
 
-<!-- source: muting-a-server 71b077a8504c -->
+<!-- source: muting-a-server e0c9ee7072e1 -->
 ## Einen Server stummschalten
 
-„Stummgeschaltete Domains“ unter „Beziehungen“ in den Einstellungen schaltet einen ganzen Server stumm (zum Beispiel
-`mastodon.example`; seine Subdomains werden ebenfalls stummgeschaltet). Das blendet die Beiträge seiner Konten in deinen
-Timelines außer der Home-Timeline aus, ihre Boosts in deiner Home-Timeline und ihre Benachrichtigungen. Die Konten
-dieses Servers, denen du folgst, bleiben in deiner Home-Timeline. Es betrifft nur dich, und der Server wird nicht
-informiert.
+„Server stummschalten“ im selben Menü schaltet bei einem Konto eines anderen Servers den ganzen Server samt Subdomains stumm; „Stummgeschaltete
+Server“ unter „Beziehungen“ in den Einstellungen listet sie auf und lässt dich die Stummschaltung „Aufheben“. Es blendet die Beiträge seiner
+Konten in deinen Timelines außer der Startseite aus, ihre Boosts in deiner Startseite und ihre Benachrichtigungen. Die Konten dieses Servers, denen du folgst, bleiben auf deiner
+Startseite. Nur du bist betroffen, und der Server erfährt nichts davon.
 
-<!-- source: filtering-posts-by-keyword e09ea3dbfb6c -->
+<!-- source: filtering-posts-by-keyword f9a948813910 -->
 ## Beiträge nach Stichwort filtern
 
-„Stichwortfilter“ unter „Anzeige und Benachrichtigungen“ in den Einstellungen klappt Beiträge ein oder blendet sie aus, die Wörter enthalten, die du wählst, egal wer sie geschrieben hat. [Stichwortfilter](keyword-filters.md) erklärt, wie du sie einrichtest und wie ihre Wörter passen.
+„Stichwortfilter“ unter „Personen und Filter“ in den Einstellungen klappt Beiträge ein oder blendet sie aus, die Wörter enthalten, die du
+wählst, egal wer sie geschrieben hat. [Stichwortfilter](keyword-filters.md) erklärt, wie du sie einrichtest und wie ihre Wörter passen.
 
-<!-- source: when-a-moderator-acts-on-your-account 953c67a332c0 -->
+<!-- source: when-a-moderator-acts-on-your-account 3f099b781eff -->
 ## Wenn ein Moderator gegen dein Konto vorgeht
 
-Die Moderatoren eines Servers können ein Konto einschränken oder sperren. „Kontostatus“ unter „Konto und Daten“ in den
-Einstellungen listet die geltenden Maßnahmen auf („Maßnahmen in Kraft“) mit ihrem Grund und ihrem Ende und lässt dich
-einmal Einspruch gegen eine Maßnahme einlegen („Einspruch einlegen“). Du wirst über Hinweise der Moderatoren und über
-das Ergebnis eines Einspruchs benachrichtigt.
+Die Moderatoren eines Servers können ein Konto einschränken oder sperren. „Kontostatus“ unter „Konto und Daten“ in den Einstellungen
+listet die geltenden Maßnahmen („Geltende Maßnahmen“) und die früheren mit ihrem Grund und ihrem Ende auf; öffne eine
+Maßnahme, um einmal Einspruch einzulegen („Einspruch senden“). Du wirst über die Mitteilungen der Moderatoren und das Ergebnis eines Einspruchs benachrichtigt.
 
-Was die Moderatoren tun dürfen und welche Regeln gelten, entscheidet jeder Server selbst: Lies seine Regeln, bevor du
-Einspruch einlegst.
+Was die Moderatoren tun dürfen und welche Regeln gelten, entscheidet jeder Server selbst: Lies seine Regeln, bevor du Einspruch einlegst.

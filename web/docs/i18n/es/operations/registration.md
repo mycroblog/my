@@ -30,52 +30,52 @@ De arriba abajo en el diagrama:
 
 Las secciones siguientes describen cada paso.
 
-<!-- source: the-sign-up-page 111fbe5ecf64 -->
+<!-- source: the-sign-up-page 9a7c6e5bdf58 -->
 ## La página de registro
 
-Los usuarios se registran en `https://<host>/auth/sign_up` con un nombre de usuario, una dirección de correo electrónico y una contraseña, salvo que [el registro esté limitado a proveedores de inicio de sesión](#registration-limited-to-login-providers).
+Los usuarios se registran en `https://<host>/auth/sign_up` con un nombre de usuario, una dirección de correo y una contraseña, salvo que [el registro esté limitado a los proveedores de inicio de sesión](#registration-limited-to-login-providers).
 Tras registrarse, ese navegador inicia sesión de inmediato.
-La página funciona sin JavaScript y, como la página de inicio de sesión, está protegida con un token CSRF y rechaza las solicitudes de otro origen.
-Si eliges CAPTCHA como protección contra bots, las páginas de registro y de inicio de sesión muestran su widget y necesitan JavaScript ([CAPTCHA](captcha.md)).
+Como la página de inicio de sesión, está protegida por un token CSRF y rechazando las solicitudes de origen cruzado.
+Cuando eliges CAPTCHA para la protección contra bots, las páginas de registro e inicio de sesión muestran su widget y necesitan JavaScript ([CAPTCHA](captcha.md)).
 
-El modo de registro es el ajuste de instancia `registration_mode`. Elígelo con la CLI o en el cliente web, en la página «Registro» de «Configuración del servidor» (`/admin/settings/registration`) ([configuración de la instancia](instance-settings.md)). Un cambio se aplica desde el siguiente registro.
-Mientras el servidor anuncia su cierre y después de que cierre, el registro se trata como `closed` sea cual sea el ajuste ([CLI de administración](admin-cli.md#announcing-the-end-of-the-service)).
-Lo mismo ocurre en un [servidor de una sola persona](instance-settings.md#one-person-server), donde tampoco se ofrecen las invitaciones, la revisión de registros ni los bloqueos de registro, y ninguna vía crea una cuenta, tampoco `my admin create`.
+El modo de registro es el ajuste de la instancia `registration_mode`. Elígelo con la CLI o en el cliente web, en la página «Registro» de «Ajustes del servidor» (`/admin/settings/registration`) ([ajustes de la instancia](instance-settings.md)). Un cambio se aplica desde el siguiente registro.
+Mientras el servidor anuncia su cierre y después de que cierra, el registro se trata como `closed` diga lo que diga el ajuste ([CLI de administración](admin-cli.md#announcing-the-end-of-the-service)).
+Lo mismo ocurre en un [servidor de una sola persona](instance-settings.md#one-person-server), donde tampoco se ofrecen invitaciones, revisión de registros ni bloqueos de registro, y ninguna vía crea una cuenta, `my admin create` incluido.
 
 ```sh
 my instance set registration_mode invite
 ```
 
-| Modo | Página | Estado justo después de registrarse |
+| Modo | Página | Estado justo después del registro |
 | --- | --- | --- |
-| `open` | Cualquiera puede registrarse; el código de invitación es opcional | Aprobado, salvo con `mail = none`, donde queda pendiente de la aprobación de un moderador (véase más abajo). Una invitación solo registra quién invitó al usuario |
-| `approval` (predeterminado) | Pregunta además «¿Por qué quieres unirte?» (opcional, hasta 1000 caracteres); el código de invitación es opcional | Pendiente de aprobación; aprobado de inmediato con una invitación válida |
-| `invite` | El código de invitación es obligatorio | Aprobado |
-| `closed` | Solo dice que no se aceptan registros | Ninguno |
+| `open` | Cualquiera puede registrarse; un código de invitación es opcional | Aprobado, salvo con `mail = none`, donde espera la aprobación de un moderador (ve abajo). Una invitación no cambia nada salvo registrar quién invitó al usuario |
+| `approval` (predeterminado) | También pregunta «¿Por qué quieres unirte?» (opcional, hasta 1000 caracteres); un código de invitación es opcional | Esperando aprobación; aprobado de inmediato con una invitación utilizable |
+| `invite` | Se requiere un código de invitación | Aprobado |
+| `closed` | Solo dice que no se acepta el registro | Ninguno |
 
-- En todos los modos salvo `closed`, la página tiene un campo para el código de invitación, que se rellena con el enlace de una invitación (`?invite=<code>`). Un código que no funciona (desconocido, revocado, caducado, agotado, o de un miembro que ya no puede invitar) se rechaza en todos los modos, no se ignora, para que un código mal escrito no pase inadvertido.
-- Un bloqueo de registro que exige aprobación mantiene un registro pendiente de aprobación incluso con una invitación ([bloqueos de registro](#sign-up-blocks)).
-- Si hay un plugin configurado para el gancho de decisión [`signup.check`](decision-hooks.md#sign-ups), un registro sin invitación también lo revisa ese plugin después del CAPTCHA y de los bloqueos, y puede dejarlo pendiente de aprobación o rechazarlo.
+- En todos los modos salvo `closed`, la página tiene un campo de código de invitación, rellenado a partir del enlace de una invitación (`?invite=<code>`). Un código que no funciona (desconocido, revocado, caducado, agotado o de un miembro que ya no puede invitar) se rechaza en todos los modos, no se ignora, para que un código mal escrito no pase desapercibido.
+- Un bloqueo de registro que requiere aprobación mantiene un registro pendiente de aprobación incluso con una invitación ([bloqueos de registro](#sign-up-blocks)).
+- Con un plugin definido para el hook de decisión [`signup.check`](decision-hooks.md#sign-ups), un registro sin invitación también lo revisa ese plugin después del CAPTCHA y de los bloqueos, y puede retenerlo para su aprobación o rechazarlo.
 
-- Los registros desde la misma red (dirección IP; `/64` en IPv6) se limitan a 5 cada 30 minutos. Pasado ese límite, el servidor devuelve `429` con `Retry-After`.
-- Si el nombre de usuario o la dirección de correo electrónico ya están en uso, la página muestra un error en ese campo y no escribe nada (tampoco se consume una invitación).
-- Cuando configuras [proveedores de inicio de sesión externos](login-providers.md) (OpenID Connect, GitHub, Discord o Mastodon) y dejas que los usuarios nuevos se registren con uno, las páginas de inicio de sesión y de registro muestran un botón por cada proveedor habilitado, con el nombre para mostrar del proveedor tal como lo escribiste (un proveedor de GitHub muestra «Iniciar sesión con GitHub» y uno de Discord «Iniciar sesión con Discord», en el idioma del visitante).
-  Quien tiene una cuenta en el proveedor que no está vinculada a ningún usuario de este servidor recibe el mismo formulario de registro sin el campo de contraseña, y el usuario nuevo inicia sesión solo con el proveedor.
-  El modo de registro, el código de invitación, el motivo, el CAPTCHA, los bloqueos de registro, `signup.check` y el límite por red se aplican igual que en el formulario con contraseña; en el modo `closed`, o cuando el proveedor no permite registros, la página de inicio de sesión indica que no hay ninguna cuenta vinculada.
-  Una dirección que el proveedor marca como verificada (`email_verified`; en GitHub, la dirección principal cuando está verificada; en Discord, la dirección cuando Discord la marca como verificada) queda confirmada de inmediato si el usuario la conserva; cualquier otra dirección, y todas las direcciones de un usuario que se registra con un servidor de Mastodon, que no da ninguna, se confirman por correo como se explica más abajo.
-  Una dirección de correo electrónico que coincide con la de un usuario existente nunca vincula a ese usuario: el formulario dice que la dirección ya está en uso.
-  Un usuario con autenticación de dos factores sigue introduciendo el código después de iniciar sesión con un proveedor.
-  Un proveedor de GitHub pide a GitHub el ámbito `user:email`, y también `read:org` cuando indicas organizaciones permitidas; entonces el servidor comprueba en cada inicio de sesión que el usuario pertenece a una de ellas y rechaza el inicio de sesión en caso contrario. Registra `https://<host>/auth/external/<provider ID>/callback` como URL de devolución de llamada de tu aplicación OAuth de GitHub.
-  Un proveedor de Discord pide a Discord los ámbitos `identify` y `email`, y también `guilds` cuando indicas servidores permitidos; entonces el servidor comprueba en cada inicio de sesión que el usuario pertenece a uno de ellos. Registra la misma URL de devolución de llamada en tu aplicación de Discord.
-- Un usuario con la sesión iniciada vincula una cuenta de un proveedor en «Cuentas vinculadas» de la configuración, tras confirmar con la contraseña, una clave de acceso u otra cuenta vinculada, y solo con los proveedores que permiten vínculos.
-  El navegador debe haber iniciado sesión como el mismo usuario en las páginas de inicio de sesión; de lo contrario, el servidor pide iniciar sesión primero.
-  Se rechaza una cuenta de un proveedor que ya ha vinculado otro usuario, y un usuario vincula como máximo una cuenta por proveedor.
-  Un usuario puede desvincular una cuenta a menos que sea la última forma de iniciar sesión (sin contraseña, sin claves de acceso y sin otra cuenta vinculada).
-- Un usuario sin contraseña y sin claves de acceso confirma las operaciones que normalmente las piden (establecer una contraseña, añadir una clave de acceso, eliminar o trasladar la cuenta, vincular otra cuenta) iniciando sesión de nuevo en un proveedor vinculado.
+- Los registros desde la misma red (dirección IP; `/64` para IPv6) están limitados a 5 cada 30 minutos. Más allá de eso el servidor devuelve `429` con `Retry-After`.
+- Si el nombre de usuario o la dirección de correo ya están en uso, la página muestra un error en ese campo y no escribe nada (tampoco se consume una invitación).
+- Cuando configuras [proveedores de inicio de sesión externos](login-providers.md) (OpenID Connect, GitHub, Discord o Mastodon) y dejas que los usuarios nuevos se registren con uno, las páginas de inicio de sesión y registro muestran un botón para cada proveedor activado, rotulado con el nombre para mostrar del proveedor exactamente como lo escribiste (un proveedor de GitHub muestra «Iniciar sesión con GitHub», y uno de Discord «Iniciar sesión con Discord», en el idioma del visitante).
+  Quien tiene una cuenta en el proveedor que no está vinculada a un usuario de este servidor recibe el mismo formulario de registro sin el campo de contraseña, y el usuario nuevo inicia sesión solo con el proveedor.
+  El modo de registro, el código de invitación, el motivo, el CAPTCHA, los bloqueos de registro, `signup.check` y el límite de red se aplican como en el formulario de contraseña; en el modo `closed`, o cuando el proveedor no permite registros, la página de inicio de sesión dice que no hay ninguna cuenta vinculada.
+  Una dirección que el proveedor marca como verificada (`email_verified`; para GitHub, la dirección principal cuando está verificada; para Discord, la dirección cuando Discord la marca como verificada) se confirma de inmediato si el usuario la conserva; cualquier otra dirección, y toda dirección de un usuario que se registra con un servidor de Mastodon, que no da ninguna, se confirma por correo como se indica abajo.
+  Una dirección de correo que coincide con un usuario existente nunca vincula a ese usuario: el formulario dice que la dirección ya está en uso.
+  Un usuario con autenticación en dos pasos sigue introduciendo el código después de iniciar sesión con un proveedor.
+  Un proveedor de GitHub pide a GitHub el scope `user:email`, y también `read:org` cuando enumeras Organizations permitidas; el servidor comprueba entonces en cada inicio de sesión que el usuario pertenece a una de ellas y rechaza el inicio de sesión en otro caso. Registra `https://<host>/auth/external/<provider ID>/callback` como URL de callback de tu aplicación OAuth de GitHub.
+  Un proveedor de Discord pide a Discord los scopes `identify` y `email`, y también `guilds` cuando enumeras servidores permitidos; el servidor comprueba entonces en cada inicio de sesión que el usuario pertenece a uno de ellos. Registra la misma URL de callback en tu aplicación de Discord.
+- Un usuario con sesión iniciada vincula una cuenta de un proveedor en «Cuentas vinculadas» de la configuración, tras confirmar con la contraseña, una passkey u otra cuenta vinculada, y solo para los proveedores que permiten vínculos.
+  El navegador debe haber iniciado sesión en las páginas de inicio de sesión como el mismo usuario; en otro caso el servidor pide iniciar sesión primero.
+  Una cuenta de un proveedor que otro usuario vincula se rechaza, y un usuario vincula como máximo una cuenta por proveedor.
+  Un usuario puede desvincular una cuenta salvo que sea la última forma de iniciar sesión (sin contraseña, sin passkey y sin otra cuenta vinculada).
+- Un usuario sin contraseña y sin passkeys confirma las operaciones que en otro caso las piden (establecer una contraseña, añadir una passkey, eliminar o mudar la cuenta, vincular otra cuenta) iniciando sesión de nuevo en un proveedor vinculado.
   A un proveedor OpenID Connect se le pide que autentique de nuevo al usuario (`max_age=0` y `prompt=login`), y se rechaza una autenticación anterior.
-  La confirmación sirve una vez, solo para esa operación y en un plazo de 10 minutos; iniciar sesión con una cuenta que no es la vinculada cuenta como un intento erróneo, con el mismo límite que una contraseña incorrecta.
-- En cada registro e inicio de sesión, el servidor guarda la dirección IP del cliente (y, en el inicio de sesión, el User-Agent). Los registros se eliminan automáticamente tras 180 días
-  (la configuración de instancia `session_origins_retention_days` y `registration_origins_retention_days`, de al menos 90 días). Los registros de una cuenta con una retención legal se conservan ([conservación de registros y retenciones](moderation.md#record-retention-and-holds)).
+  La confirmación funciona una vez, solo para esa operación, en 10 minutos; iniciar sesión con una cuenta que no es la vinculada cuenta como un intento erróneo, contra el mismo límite que una contraseña errónea.
+- En cada registro e inicio de sesión, el servidor anota la dirección IP del cliente (y, en el inicio de sesión, el User-Agent). Los registros se eliminan automáticamente tras 180 días
+  (los ajustes de la instancia `session_origins_retention_days` y `registration_origins_retention_days`, al menos 90 días). Los registros de una cuenta bajo una retención se conservan ([conservación de registros y retenciones](moderation.md#record-retention-and-holds)).
   Indica este periodo de conservación en tu política de privacidad ([plantilla de política de privacidad](privacy-policy-template.md)).
 
 <!-- source: when-a-user-can-use-the-app 317d6d8b7688 -->
@@ -127,10 +127,10 @@ Mientras se aplica el ajuste de instancia `login_providers_only`, se rechazan lo
   Un inicio de sesión que espera su código de dos factores y una autorización de aplicación sin completar también dejan de funcionar: el usuario los empieza de nuevo.
   Con `mail = smtp`, el servidor también envía al usuario un correo que avisa del cambio de contraseña.
 
-<!-- source: invite-codes 441b486504dd -->
+<!-- source: invite-codes 4d49dd1f0927 -->
 ## Códigos de invitación
 
-Las invitaciones funcionan en los modos `open`, `approval` e `invite`. El personal crea invitaciones con la CLI, las pantallas de moderación y la API de administración que se describen abajo; los miembros también pueden crear las suyas ([invitaciones de miembros](#member-invites)).
+Las invitaciones funcionan en los modos `open`, `approval` e `invite`. Las invitaciones del personal se crean con la CLI, las pantallas de moderación y la API de administración de abajo; los miembros también pueden crear sus propias invitaciones ([invitaciones de miembros](#member-invites)).
 En el modo `closed` no se puede crear ninguna invitación y ninguna funciona.
 
 ```sh
@@ -141,57 +141,57 @@ my invite list                            # newest first; states: usable / revok
 my invite revoke <code>
 ```
 
-- `create` muestra el código (16 caracteres) y el enlace a la página de registro con el código ya rellenado (`https://<host>/auth/sign_up?invite=<code>`).
-- Los códigos se comparan sin distinguir mayúsculas de minúsculas, espacios ni guiones.
-- Aunque varias personas se registren a la vez, un código nunca se usa más allá de su límite (una restricción de unicidad en `invite_redemptions`).
+- `create` imprime el código (16 caracteres) y el enlace a la página de registro con el código rellenado (`https://<host>/auth/sign_up?invite=<code>`).
+- Los códigos se comparan sin distinguir mayúsculas, espacios ni guiones.
+- Aunque varias personas se registren a la vez, un código nunca se usa más allá de su límite (una restricción única en `invite_redemptions`).
 - Un código revocado, caducado o agotado da siempre el mismo error (una invitación inutilizable).
-- Además de la CLI, puedes crear, listar y revocar invitaciones en las pantallas de moderación del cliente web («Invitaciones», `/moderation/invites`) y mediante la API de clientes
+- Además de la CLI, puedes crear, enumerar y revocar invitaciones en las pantallas de Moderación del cliente web («Invitaciones», `/moderation/invites`) y mediante la API de cliente
   (`GET` / `POST /api/v1/admin/invites` y `POST /api/v1/admin/invites/{id}/revoke`). Ambas necesitan el permiso de rol `manage_invites`
-  (el rol integrado `moderator` no lo tiene, así que para delegarlo crea un rol con ese permiso y concédelo).
-  Un servicio que reparte invitaciones por sí mismo llama a la misma API con un token del ámbito `admin:manage_invites` ([permitir que otro servicio use la API de administración](moderation.md#letting-another-service-use-the-admin-api)).
+  (el `moderator` integrado no lo tiene, así que para delegarlo, crea un rol con ese permiso y concédelo).
+  Un servicio que reparte invitaciones por sí mismo llama a la misma API con un token del scope `admin:manage_invites` ([dejar que otro servicio use la API de administración](moderation.md#letting-another-service-use-the-admin-api)).
   «Crear una invitación» en la lista abre el formulario (`/moderation/invites/new`), que muestra el código y el enlace de registro de la invitación nueva.
-  La lista permite copiar el enlace de una invitación válida y revocarla.
+  La lista muestra el código de cada invitación, quién la creó, cuántos se registraron con ella, su fin y su estado; elige invitaciones y elige «Revocar», que pregunta antes.
 - La lista muestra todas las invitaciones, las del personal y las de los miembros, con quién la creó (`created_by`) y cómo (`creator_kind`: `staff` o `member`). Quienes tienen `manage_invites` pueden revocar cualquiera de ellas.
-- La página de revisión de la cuenta en las pantallas de moderación (`GET /api/v1/admin/accounts/{id}`, permiso `manage_accounts`) muestra la invitación con la que se registró la cuenta y quién la creó, es decir, la persona que invitó al usuario.
-- Crear y revocar una invitación se registra en el registro de auditoría (`invite_created`, `invite_revoked`) igual desde la pantalla, la API y la CLI. El nombre del destino son los 4 primeros caracteres del código (`ABCD…`); el código completo no se copia al registro de auditoría.
-  Revocar una invitación ya revocada no cambia nada, así que no se registra.
+- La página Revisión de la cuenta en las pantallas de moderación (`GET /api/v1/admin/accounts/{id}`, permiso `manage_accounts`) muestra la invitación con la que se registró la cuenta y quién la creó, la persona que invitó al usuario.
+- Crear y revocar una invitación se anota en el registro de auditoría (`invite_created`, `invite_revoked`) igual desde la pantalla, la API y la CLI. El nombre del destino son los 4 primeros caracteres del código (`ABCD…`); el código completo no se copia al registro de auditoría.
+  Revocar una invitación ya revocada no cambia nada, así que no se anota.
 
-<!-- source: member-invites db3bff74ed69 -->
+<!-- source: member-invites 85edfb5c0806 -->
 ## Invitaciones de miembros
 
 Los miembros pueden crear invitaciones propias, además del personal.
-Quién puede hacerlo lo decide el ajuste de instancia `invite_creators` ([configuración de la instancia](instance-settings.md)):
+Quién puede lo decide el ajuste de la instancia `invite_creators` ([ajustes de la instancia](instance-settings.md)):
 
-- `permitted` (predeterminado): solo los usuarios cuyos roles tienen el permiso `create_invites`. Por defecto solo lo tiene el rol integrado `admin`. Puedes añadirlo a un rol que concedas a mano, o al rol de un [plan de apoyo](supporters.md), para que los mecenas puedan invitar a otras personas.
-- `everyone`: todos los usuarios locales con la sesión iniciada.
+- `permitted` (predeterminado): solo los usuarios cuyos roles tienen el permiso `create_invites`. Por defecto solo lo tiene el rol integrado `admin`. Puedes añadirlo a un rol que concedas a mano, o al rol de un [plan de mecenas](supporters.md), para que los mecenas puedan invitar a personas.
+- `everyone`: todos los usuarios locales con sesión iniciada.
 
-En cualquier caso, un usuario cuya cuenta está suspendida o limitada, o cuyo registro no está aprobado, no puede crear invitaciones, y nadie puede mientras el modo de registro sea `closed`.
-Quienes tienen `manage_invites` siguen creando invitaciones del personal, a las que no se aplica ninguno de los límites siguientes.
+En cualquier caso, un usuario cuya cuenta está suspendida o limitada, o cuyo registro no está aprobado, no puede crear invitaciones, y nadie puede mientras el modo de registro es `closed`.
+Quienes tienen `manage_invites` siguen creando invitaciones del personal, a las que no se aplica ninguno de los límites de abajo.
 
-Un miembro crea, lista, copia y revoca sus propias invitaciones en la configuración del cliente web («Tus invitaciones», `/settings/invites`), o mediante la API de clientes (`GET` / `POST /api/v1/invites` y `POST /api/v1/invites/{id}/revoke`).
-La configuración lista la página solo para un usuario que puede crear invitaciones ahora; un usuario que ya no puede sigue abriéndola desde su dirección para copiar y revocar las invitaciones que creó.
-La lista indica, de cada invitación, si es válida, está revocada, caducada, agotada, o inutilizable porque su creador ya no puede invitar.
+Un miembro crea, enumera y revoca sus propias invitaciones, y copia el enlace de una utilizable, en la configuración del cliente web («Invitaciones», `/settings/invites`), o mediante la API de cliente (`GET` / `POST /api/v1/invites` y `POST /api/v1/invites/{id}/revoke`).
+La configuración enumera la página solo para un usuario que puede crear invitaciones ahora; un usuario que no puede aún la abre desde su dirección, donde dice por qué, para revocar las invitaciones que creó.
+La lista dice, para cada invitación, si es utilizable, está revocada, caducada, agotada o no es utilizable mientras su creador no puede crear invitaciones.
 
-Los límites, que también son ajustes de instancia, se aplican solo a las invitaciones de miembros.
-Los administradores los cambian, igual que `invite_creators`, en «Invitaciones de los miembros» de la página «Registro» de la configuración del servidor (`/admin/settings/registration`):
+Los límites, también ajustes de la instancia, se aplican solo a las invitaciones de miembros.
+Los administradores los cambian, junto con `invite_creators`, en «Invitaciones de miembros» de la página «Registro» de los ajustes del servidor (`/admin/settings/registration`):
 
-| Ajuste | Significado | Predeterminado | Rango |
+| Ajuste | Significado | Valor predeterminado | Rango |
 | --- | --- | --- | --- |
-| `member_invite_max_active` | Cuántas invitaciones válidas (no revocadas, caducadas ni agotadas) puede tener un miembro a la vez | `5` | 0-100 (0: los miembros no pueden crear invitaciones) |
+| `member_invite_max_active` | Cuántas invitaciones utilizables (no revocadas, caducadas ni agotadas) puede tener un miembro a la vez | `5` | 0-100 (0: los miembros no pueden crear invitaciones) |
 | `member_invite_max_uses` | Cuántas personas pueden registrarse con una invitación | `10` | 1-1000 |
-| `member_invite_max_lifetime_seconds` | Cuánto tiempo puede funcionar una invitación, en segundos | `2592000` (30 días) | 3600 (1 hora) a 31 536 000 (365 días) |
+| `member_invite_max_lifetime_seconds` | Cuánto tiempo puede funcionar una invitación, en segundos | `2592000` (30 días) | de 3600 (1 hora) a 31 536 000 (365 días) |
 
-- Un miembro elige los usos y la duración dentro de los límites; si no elige, una invitación permite 1 registro y funciona durante 7 días (o menos, si un límite es más bajo). No se puede crear una invitación sin límite de usos o de tiempo.
-- Bajar un límite no cambia las invitaciones existentes; se aplica a la siguiente invitación que se cree.
-- Cada registro con la invitación de un miembro comprueba que su creador todavía puede crear invitaciones. Si el creador perdió `create_invites` (por ejemplo, porque terminó su plan), `invite_creators` volvió a `permitted`, o la cuenta se suspendió, se limitó o se eliminó, la invitación no funciona y la página de registro dice que no es válida.
+- Un miembro elige los usos y la duración dentro de los límites; sin elección, una invitación permite 1 registro y funciona durante 7 días (o menos, cuando un límite es menor). No se puede crear una invitación sin límite de usos ni de tiempo.
+- Reducir un límite no cambia las invitaciones existentes; se aplica a la siguiente invitación creada.
+- Todo registro con la invitación de un miembro comprueba que su creador aún puede crear invitaciones. Cuando el creador perdió `create_invites` (por ejemplo, terminó su plan), `invite_creators` volvió a `permitted`, o la cuenta se suspendió, limitó o eliminó, la invitación no funciona y la página de registro dice que no es válida.
   La invitación en sí no cambia, así que vuelve a funcionar, dentro de su caducidad, cuando el creador puede volver a invitar.
-- Crear y revocar una invitación de un miembro se registra en el registro de auditoría como `invite_created` e `invite_revoked`, con el miembro como autor.
+- Crear y revocar de un miembro se anotan en el registro de auditoría como `invite_created` e `invite_revoked`, con el miembro como actor.
 
-En el modo `approval`, una invitación válida aprueba de inmediato al usuario nuevo: quien lo invitó sustituye la revisión de los moderadores.
+En el modo `approval`, una invitación utilizable aprueba al usuario nuevo de inmediato: la persona que lo invitó sustituye a la revisión de los moderadores.
 Con `invite_creators = everyone`, todos los usuarios pueden por tanto dejar entrar a personas sin revisión, lo que debilita el modo de aprobación.
 Si dependes de la revisión, mantén `permitted` y da `create_invites` solo a personas de confianza, o mantén bajos `member_invite_max_active` y `member_invite_max_uses`.
 
-<!-- source: approving-and-rejecting e68676f67aab -->
+<!-- source: approving-and-rejecting 34e7c6193247 -->
 ## Aprobar y rechazar
 
 ```sh
@@ -202,19 +202,20 @@ my registration reject -note "spam" bob
 ```
 
 - El argumento es el nombre de usuario de una cuenta local (la `@` inicial puede omitirse).
-- Solo se pueden decidir los registros pendientes de aprobación. Con un registro ya decidido, o un usuario creado sin la página de registro (`my admin create`), el comando no cambia nada y termina con el código 1.
-- El código de salida 2 indica un argumento incorrecto.
+- Solo se pueden decidir los registros que esperan aprobación. Para un registro ya decidido, o un usuario creado sin la página de registro (`my admin create`), el comando no cambia nada y termina con el código 1.
+- El código de salida 2 significa un argumento erróneo.
 
-Las mismas decisiones pueden tomarse desde las pantallas de administración (la API de clientes). Todas necesitan el permiso `manage_accounts`.
+Las mismas decisiones pueden tomarse desde las pantallas de administración (la API de cliente). Todas necesitan el permiso `manage_accounts`.
+En el cliente web, Moderación → Registros (`/moderation/registrations`) enumera los registros que esperan aprobación con su dirección de correo, si está confirmada y el motivo para unirse; elígelos y elige «Aprobar» o «Rechazar», que pregunta antes, con una nota para los moderadores. Un servidor de una sola persona no la muestra.
 
 | Operación | Qué hace |
 | --- | --- |
-| `GET /api/v1/admin/registrations` | Registros pendientes de aprobación (el que más espera, primero). Devuelve el ID del registro, el motivo para unirse, la dirección de correo electrónico y si está confirmada, y la cuenta local |
-| `POST /api/v1/admin/registrations/{id}/approve` | Aprueba. El cuerpo `{"note": "..."}` es opcional. La respuesta muestra la nota como `decision_note`, y la respuesta sobre un registro ya decidido no incluye la dirección de correo electrónico |
-| `POST /api/v1/admin/registrations/{id}/reject` | Rechaza. El cuerpo es el mismo que el de `approve` |
+| `GET /api/v1/admin/registrations` | Registros que esperan aprobación (el que lleva más tiempo esperando primero). Devuelve el ID del registro, el motivo para unirse, la dirección de correo y si está confirmada, y la cuenta local |
+| `POST /api/v1/admin/registrations/{id}/approve` | Aprueba. El cuerpo `{"note": "..."}` es opcional. La respuesta muestra la nota como `decision_note`, y una respuesta sobre un registro ya decidido no tiene dirección de correo |
+| `POST /api/v1/admin/registrations/{id}/reject` | Rechaza. El cuerpo es el mismo que para `approve` |
 
-- Es el mismo caso de uso que la CLI, y registra la decisión en `registration_decisions` y en el registro de auditoría (`registration_approved`, `registration_rejected`). El autor de una decisión por CLI es `cli`; el autor de una decisión por API es el moderador que decidió.
-- Decidir un registro ya decidido no cambia nada y devuelve el estado actual (si dos personas deciden a la vez, solo se registra una decisión). Un usuario creado sin la página de registro da 404.
+- Es el mismo caso de uso que la CLI, y anota la decisión en `registration_decisions` y en el registro de auditoría (`registration_approved`, `registration_rejected`). El actor de una decisión de la CLI es `cli`; el actor de una decisión de la API es el moderador que decidió.
+- Decidir un registro ya decidido no cambia nada y devuelve el estado actual (si dos personas deciden a la vez, solo se anota una decisión). Un usuario creado sin la página de registro da 404.
 
 <!-- source: sign-up-blocks b70eb18cd52f -->
 ## Bloqueos de registro

@@ -46,27 +46,13 @@ function menu({ compact = false }: { compact?: boolean } = {}) {
       end={<SettingsItem icon="signOut" label="Sign out…" count={undefined} href="/settings?sign_out=true" away />}
     >
       <SettingsGroup heading="General">
-        <SettingsItem
-          icon="profile"
-          label="Profile"
-          hint="Name, bio, images"
-          count={undefined}
-          href="/settings/profile"
-        />
-        <SettingsItem
-          icon="display"
-          label="Display and posting"
-          hint="Language, time zone"
-          count={undefined}
-          href="/settings/display"
-          current
-        />
+        <SettingsItem icon="profile" label="Profile" count={undefined} href="/settings/profile" />
+        <SettingsItem icon="display" label="Display and posting" count={undefined} href="/settings/display" current />
       </SettingsGroup>
       <SettingsGroup heading="Account">
         <SettingsItem
           icon="accountData"
           label="Account and data"
-          hint="Export, delete"
           count={3}
           countLabel="3 to read"
           href="/settings/account"
@@ -108,15 +94,15 @@ test("the entry the reader is at is the menu's current page, and no other entry 
   expect(leads(nav.getAllByRole("link", { current: "page" }))).toEqual(["/settings/display"]);
 });
 
-test("an entry's link says its name, what it holds and its count, a space apart: the count by its label, or the number itself", () => {
+test("an entry's link says its name and its count, a space apart: the count by its label, or the number itself", () => {
   const nav = menu();
 
-  expect(nav.getByRole("link", { name: "Profile Name, bio, images" })).not.toBeNull();
-  expect(nav.getByRole("link", { name: "Account and data Export, delete 3 to read" })).not.toBeNull();
+  expect(nav.getByRole("link", { name: "Profile" })).not.toBeNull();
+  expect(nav.getByRole("link", { name: "Account and data 3 to read" })).not.toBeNull();
   expect(nav.getByRole("link", { name: "Invites 12" })).not.toBeNull();
 });
 
-test("a compact menu keeps its groups and its counts, and leaves out what an entry holds", () => {
+test("a compact menu keeps its groups, its counts and the entry the reader is at", () => {
   const nav = menu({ compact: true });
 
   expect(nav.getAllByRole("region").map((group) => within(group).getByRole("heading").textContent)).toEqual([

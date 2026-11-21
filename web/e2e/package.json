@@ -9,7 +9,7 @@
   },
   "scripts": {
     "typecheck": "bun --bun tsc -p .",
-    "test": "bun test --conditions=@mycroblog/source ./src"
+    "test": "bun test --conditions=@mycroblog/source ./src ./shots/list.test.ts"
   },
   "dependencies": {
     "@mycroblog/mykit": "workspace:*"

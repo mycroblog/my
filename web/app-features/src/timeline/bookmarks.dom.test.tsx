@@ -54,7 +54,7 @@ test("with no bookmarks, the column says so, in en and ja", async () => {
   await loadBookmarks(data);
 
   shown(data);
-  expect(screen.getByText("No bookmarks yet. Posts you bookmark show here.")).not.toBeNull();
+  expect(screen.getByText("No bookmarks yet.")).not.toBeNull();
   shown(data, "ja");
-  expect(screen.getByText("まだブックマークはありません。ブックマークした投稿がここに表示されます。")).not.toBeNull();
+  expect(screen.getByText("まだブックマークはありません。")).not.toBeNull();
 });

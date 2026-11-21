@@ -173,6 +173,11 @@ const (
 	// SettingPublicCounts decides whether GET /instance/overview, and so the landing page, shows
 	// the number of members, the public posts of the last days, and when the instance started.
 	SettingPublicCounts SettingKey = "public_counts"
+	// SettingLandingFediverseExplanation decides whether the landing page explains how the
+	// fediverse works, and SettingLandingFeatures whether it shows what the software does on this
+	// instance (#3080).
+	SettingLandingFediverseExplanation SettingKey = "landing_fediverse_explanation"
+	SettingLandingFeatures             SettingKey = "landing_features"
 	// SettingFeaturedAccounts are the local accounts that the suggestions of accounts show first,
 	// in this order (FR-308).
 	SettingFeaturedAccounts SettingKey = "featured_accounts"
@@ -840,6 +845,14 @@ var definitions = []Definition{
 		Doc: "Whether the landing page and GET /instance/overview show the number of members, the public posts of local accounts on each of the last 7 days, and when the instance started.",
 	},
 	{
+		Key: SettingLandingFediverseExplanation, Kind: KindBool, Default: "true",
+		Doc: "Whether the landing page explains how the fediverse works: that an account here follows and is followed by people on other servers.",
+	},
+	{
+		Key: SettingLandingFeatures, Kind: KindBool, Default: "true",
+		Doc: "Whether the landing page shows what the software does on this instance, with a sample of each feature that is on.",
+	},
+	{
 		Key: SettingFeaturedAccounts, Kind: KindAccounts, Default: "",
 		Doc: "Usernames of up to 20 local accounts, separated by spaces or commas, that the suggestions of accounts show first, in this order; an account that turned off being suggested is left out (FR-308).",
 	},
@@ -911,8 +924,8 @@ var definitions = []Definition{
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPolls, "false", "the posts with a poll"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepArticles, "true", "the articles"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPublic, "false", "the public posts"),
-	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepLocal, "false", "the local-only posts"),
-	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepUnlisted, "false", "the unlisted posts"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepLocal, "false", "the posts for neighbors"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepUnlisted, "false", "the quiet public posts"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPrivate, "false", "the followers-only posts"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepDirect, "true", "the direct posts"),
 	{
@@ -945,7 +958,7 @@ var definitions = []Definition{
 	},
 	{
 		Key: SettingSingleUser, Kind: KindBool, Default: "false",
-		Doc: "Whether the server is a one-person server: registration stays closed, the local and federated timelines, invites, the review of registrations, the sign-up blocks, and the suggestions of accounts are off, and new posts cannot be local. It can be turned on only while exactly one local account exists (FR-811, ADR-0152).",
+		Doc: "Whether the server is a one-person server: registration stays closed, the local and federated timelines, invites, the review of registrations, the sign-up blocks, and the suggestions of accounts are off, and new posts cannot be for neighbors. It can be turned on only while exactly one local account exists (FR-811, ADR-0152).",
 	},
 	{
 		Key: SettingMaxDrafts, Kind: KindInt, Default: "100", Min: 1, Max: MaxDraftLimit,
@@ -1821,6 +1834,14 @@ func (s Settings) LoginProvidersOnly() bool { return s.boolValue(SettingLoginPro
 
 // PublicCounts returns the value of SettingPublicCounts.
 func (s Settings) PublicCounts() bool { return s.boolValue(SettingPublicCounts) }
+
+// LandingFediverseExplanation returns the value of SettingLandingFediverseExplanation.
+func (s Settings) LandingFediverseExplanation() bool {
+	return s.boolValue(SettingLandingFediverseExplanation)
+}
+
+// LandingFeatures returns the value of SettingLandingFeatures.
+func (s Settings) LandingFeatures() bool { return s.boolValue(SettingLandingFeatures) }
 
 // FeaturedAccounts returns the usernames of SettingFeaturedAccounts, in order; none when unset.
 func (s Settings) FeaturedAccounts() []string {

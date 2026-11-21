@@ -5,21 +5,21 @@ Ce que le serveur indique aux moteurs de recherche et aux robots d’IA, les par
 
 Le fichier robots.txt et les balises meta sont des déclarations que les robots peuvent respecter ou non ; ce ne sont pas un blocage technique. Si vous devez bloquer, utilisez un WAF ou une limitation de débit.
 
-<!-- source: settings 13dfb1b04948 -->
+<!-- source: settings 470e02c5f395 -->
 ## Paramètres
 
-| Portée | Paramètre | Où le modifier | Valeur par défaut |
+| Portée | Paramètre | Où le modifier | Si non défini |
 | --- | --- | --- | --- |
-| Serveur | `search_indexing` (`allow` / `deny`) | La section « Moteurs de recherche et IA » de la page « Recherche et robots » des paramètres d’administration du serveur, `my instance set`, `PATCH /api/v1/admin/settings` ([Paramètres du serveur](instance-settings.md)) | `deny` |
-| Serveur | `ai_usage` (`allow` / `deny_training` / `deny`) | Identique | `deny` |
-| Serveur | `indexable_default` (le `indexable` des nouveaux comptes) | Identique | `false` |
-| Serveur | `security_contact` (où signaler les vulnérabilités) | Identique | Vide (aucun `security.txt` n’est servi) |
+| Serveur | `search_indexing` (`allow` / `deny`) | Les sections « Moteurs de recherche » et « IA » de la page « Recherche et robots d’exploration » des paramètres du serveur dans l’administration, `my instance set`, `PATCH /api/v1/admin/settings` ([Paramètres de l’instance](instance-settings.md)) | `deny` |
+| Serveur | `ai_usage` (`allow` / `deny_training` / `deny`) | Idem | `deny` |
+| Serveur | `indexable_default` (le `indexable` des nouveaux comptes) | Idem | `false` |
+| Serveur | `security_contact` (où signaler les vulnérabilités) | Idem | Vide (aucun `security.txt` n’est servi) |
 | Personne | `indexable` (apparaître dans la recherche) | « Moteurs de recherche et IA » dans les paramètres du profil, `PATCH /api/v1/accounts/update_credentials` | `indexable_default` à l’inscription |
-| Personne | `ai_opt_out` (refuser l’entraînement et l’utilisation par l’IA) | Identique | `false` |
+| Personne | `ai_opt_out` (refuser l’entraînement et l’utilisation par l’IA) | Idem | `false` |
 
 - La déclaration d’une page est la plus stricte entre le paramètre du serveur et celui du propriétaire de la page. Une personne ne peut pas autoriser plus que le serveur.
-- Les moteurs de recherche sont informés qu’ils peuvent indexer uniquement les profils et les publications `public` des comptes avec `indexable = true`, sur un serveur avec `search_indexing = allow`.
-  Un serveur qui souhaite être référencé modifie à la fois `search_indexing` et `indexable_default`. Les personnes inscrites avant que vous ne modifiiez `indexable_default` ne sont pas incluses tant qu’elles n’ont pas choisi elles-mêmes `indexable`.
+- Les moteurs de recherche sont informés qu’ils peuvent n’indexer que les profils et les publications `public` des comptes avec `indexable = true`, sur un serveur avec `search_indexing = allow`.
+  Un serveur qui veut être trouvable par la recherche change à la fois `search_indexing` et `indexable_default`. Les personnes inscrites avant que vous ayez changé `indexable_default` ne sont pas incluses tant qu’elles n’ont pas choisi `indexable` elles-mêmes.
 - Un paramètre modifié prend effet dans `/robots.txt`, les pages et les réponses de médias sans redémarrage.
 
 <!-- source: what-the-server-returns 31584e03601b -->

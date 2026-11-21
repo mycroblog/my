@@ -1,9 +1,9 @@
-<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 2c065ac1d2fb -->
-# Protection contre les bots par CAPTCHA (Turnstile / hCaptcha / reCAPTCHA)
+<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 5931f1f78fe3 -->
+# Protection anti-bot CAPTCHA (Turnstile / hCaptcha / reCAPTCHA)
 
-Le CAPTCHA est désactivé par défaut : le paramètre [`captcha`](../reference/configuration.md#captcha) vaut `none`. Les pages de connexion, d’inscription et de réinitialisation du mot de passe fonctionnent alors sans JavaScript et n’envoient rien à des tiers.
-Lorsque vous choisissez un service de CAPTCHA, le widget du service apparaît sur trois formulaires : la connexion (`/auth/sign_in`), l’inscription (`/auth/sign_up`) et la demande de lien de réinitialisation du mot de passe
-(`/auth/forgot_password`, uniquement sur les serveurs qui envoient des e-mails). Le serveur vérifie le jeton produit par le widget auprès de l’API siteverify du service.
+Le CAPTCHA est désactivé par défaut : le paramètre [`captcha`](../reference/configuration.md#captcha) vaut `none`. Les pages de connexion, d’inscription et de réinitialisation du mot de passe n’envoient alors rien à des tiers.
+Lorsque vous choisissez un service de CAPTCHA, le widget du service apparaît sur trois formulaires : la connexion (`/auth/sign_in`), l’inscription (`/auth/sign_up`) et la demande d’un lien de réinitialisation du mot de passe
+(`/auth/forgot_password`, uniquement sur les serveurs qui envoient des e-mails). Le serveur vérifie le jeton que produit le widget avec l’API siteverify du service.
 Vous ne pouvez pas protéger seulement certains formulaires.
 
 <!-- source: choosing-a-service 22ddd3cc639f -->
@@ -74,23 +74,23 @@ La connexion est laissée passer afin qu’une panne du service ou une clé erro
 Au-delà de l’offre gratuite de 10 000 évaluations par mois, le siteverify de reCAPTCHA **réussit toujours** (le CAPTCHA n’offre alors aucune protection).
 Le serveur ne peut pas détecter ce dépassement : surveillez donc votre consommation dans la console Google Cloud.
 
-<!-- source: pages-and-content-security-policy b0cf9741b2ce -->
+<!-- source: pages-and-content-security-policy 666bab0dd33b -->
 ## Pages et Content-Security-Policy
 
-- La langue du widget suit la langue de la page et son thème suit le jeu de couleurs du navigateur (clair ou sombre).
-  Le widget Turnstile suit lui-même le jeu de couleurs. hCaptcha et reCAPTCHA sont réglés grâce à l’indication client `Sec-CH-Prefers-Color-Scheme`, que le navigateur envoie ; les navigateurs qui ne l’envoient pas obtiennent le thème clair.
+- La langue du widget suit la locale de la page et son thème suit le jeu de couleurs du navigateur (clair ou sombre).
+  Le widget Turnstile suit lui-même le jeu de couleurs. hCaptcha et reCAPTCHA sont choisis avec l’indication client `Sec-CH-Prefers-Color-Scheme`, que le navigateur envoie ; les navigateurs qui ne l’envoient pas obtiennent le thème clair.
 - À côté du widget, la page indique quel service effectue la vérification, que le service reçoit l’adresse IP et des informations sur le navigateur, et renvoie vers la politique de confidentialité du service
-  (et vers les conditions d’utilisation pour hCaptcha et reCAPTCHA). Pour reCAPTCHA, cela tient aussi lieu de la phrase exigée par Google : « This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply. »
-- Dans un navigateur sans JavaScript, un message `<noscript>` indique que la vérification nécessite JavaScript. Un utilisateur qui ne peut pas résoudre le CAPTCHA ne peut ni s’inscrire ni se connecter,
-  et vous ne pouvez l’aider que par d’autres moyens, par exemple en créant le compte avec `my admin create` ou en réglant `captcha = none` pendant un moment.
+  (et vers les conditions pour hCaptcha et reCAPTCHA). Pour reCAPTCHA, cela sert aussi de phrase exigée par Google : « This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply. »
+- Une personne qui ne peut pas résoudre le CAPTCHA ne peut ni s’inscrire ni se connecter,
+  et vous ne pouvez l’aider que par d’autres moyens, comme créer le compte avec `my admin create` ou définir `captcha = none` pendant un moment.
 - La `Content-Security-Policy` (CSP) ne s’élargit que sur les pages de connexion, d’inscription et de demande de réinitialisation du mot de passe lorsque le CAPTCHA est activé. `'unsafe-inline'` et `'unsafe-eval'` ne sont jamais ajoutés.
-  La CSP du client web, de l’API cliente, de l’écran de consentement, de la confirmation de l’adresse e-mail et des autres pages ne change pas.
+  La CSP du client web, de l’API cliente, de l’écran de consentement, de la confirmation de l’e-mail et des autres pages ne change pas.
 
 | `captcha` | Sources ajoutées |
 | --- | --- |
-| `turnstile` | `script-src`, `frame-src`: `https://challenges.cloudflare.com` |
-| `hcaptcha` | `script-src`, `frame-src`, `style-src`, `connect-src`: `https://hcaptcha.com`, `https://*.hcaptcha.com` |
-| `recaptcha` | `script-src`: `https://www.google.com/recaptcha/`, `https://www.gstatic.com/recaptcha/`; `frame-src`: `https://www.google.com/recaptcha/`, `https://recaptcha.google.com/recaptcha/`; `connect-src`: `https://www.google.com/recaptcha/` |
+| `turnstile` | `script-src`, `frame-src` : `https://challenges.cloudflare.com` |
+| `hcaptcha` | `script-src`, `frame-src`, `style-src`, `connect-src` : `https://hcaptcha.com`, `https://*.hcaptcha.com` |
+| `recaptcha` | `script-src` : `https://www.google.com/recaptcha/`, `https://www.gstatic.com/recaptcha/` ; `frame-src` : `https://www.google.com/recaptcha/`, `https://recaptcha.google.com/recaptcha/` ; `connect-src` : `https://www.google.com/recaptcha/` |
 
 Si un proxy inverse ou un CDN placé devant le serveur remplace la CSP, ajoutez les mêmes sources pour ces trois pages.
 

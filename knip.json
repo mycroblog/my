@@ -62,8 +62,8 @@
       "project": [".storybook/*.{ts,tsx}"]
     },
     "web/e2e": {
-      "entry": ["walk.ts", "src/seed/main.ts", "src/**/*.test.ts", "specs/**/*.ts", "catalog/playwright.config.ts", "catalog/**/*.ts", "ux/playwright.config.ts", "ux/**/*.ts", "src/ux/probe.ts"],
-      "project": ["src/**/*.ts", "specs/**/*.ts", "catalog/**/*.ts", "ux/**/*.ts"]
+      "entry": ["walk.ts", "src/seed/main.ts", "src/**/*.test.ts", "specs/**/*.ts", "catalog/playwright.config.ts", "catalog/**/*.ts", "ux/playwright.config.ts", "ux/**/*.ts", "shots/playwright.config.ts", "shots/global-setup.ts", "shots/specs/**/*.ts", "shots/**/*.test.ts", "src/ux/probe.ts"],
+      "project": ["src/**/*.ts", "specs/**/*.ts", "catalog/**/*.ts", "ux/**/*.ts", "shots/**/*.ts"]
     },
     "web/i18n": {
       "entry": ["src/**/*.test.ts"],

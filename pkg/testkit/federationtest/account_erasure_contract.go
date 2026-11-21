@@ -30,7 +30,7 @@ import (
 // revisions and head; a user loses its email addresses with their delivery failures, suppression
 // lifts, and suppressions, and its password credentials; the statuses of
 // an author are listed in pages with whether they are deleted, and erased with their interactions,
-// keeping their deletions; an account's favourites and bookmarks go in bounded batches; its follows,
+// keeping their deletions and deleting their purges (status_content_purges); an account's favourites and bookmarks go in bounded batches; its follows,
 // blocks, mutes, private notes, and counters go in bounded batches; its feed entries and its rows of
 // the direct-message conversations go, the other parties keeping theirs; and its notifications go,
 // as do the notifications about erased statuses. Each method leaves the rows of other accounts.
@@ -45,6 +45,7 @@ func AccountErasureContract(t *testing.T, newHarness AccountErasureFactory) {
 		{"ListsAndRecordsTheAccountsToErase", erasureRepoTargets},
 		{"ErasesProfilesAndUserData", erasureRepoProfiles},
 		{"ErasesStatusesAndInteractions", erasureRepoContent},
+		{"ErasesThePurgesOfErasedStatuses", erasureRepoContentPurges},
 		{"ErasesTheGraph", erasureRepoGraph},
 		{"ErasesFeedsAndNotifications", erasureRepoFeeds},
 		{"ErasesDirectMessageConversations", erasureRepoConversations},

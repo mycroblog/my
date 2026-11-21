@@ -49,7 +49,7 @@ promtool test rules alerts.test.yml
 
 [`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) 是以同一批 Prometheus 指標做成的 Grafana 儀表板：請求速率、狀態碼與延遲；任務執行、每種任務類型的 worker 時間與佇列；傳送、收件匣活動與遠端伺服器；以及每個程序的 CPU 與記憶體。請在 Grafana 中匯入它（**Dashboards** → **New** → **Import**），並選擇你的 Prometheus 資料來源；它的 **Job** 變數用來選擇抓取任務（預設為 `my`）。
 
-<!-- source: google-cloud-cloud-run 64a6e8b7ce61 -->
+<!-- source: google-cloud-cloud-run addd07c417a9 -->
 ### Google Cloud（Cloud Run）
 
 當 `metrics_exporter = none` 時，請用 Cloud Run 和 Cloud Logging 已有的資料來建立警示：
@@ -61,9 +61,9 @@ promtool test rules alerts.test.yml
 - **資料庫**：Cloud SQL 的磁碟使用率與連線指標，或你的資料庫供應商的用量警示。
 - **成本**：設有警示門檻的 Cloud Billing 預算（[成本與預算](#cost-and-budget)）。
 
-[`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) 模組會以下表的名稱將這些建立為政策，並列出它以不同方式涵蓋或無法表達的每一項警示。它從未被套用過。只有流量才會產生的指標，在縮減至零的服務上會有空缺，所以針對它缺席的警示會誤報；能察覺閒置伺服器已經停擺的，是它的可用性檢查。
+[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) 的 `monitoring` 區段會以下表的名稱將這些建立為政策，而[它背後模組的 README](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) 列出它以不同方式涵蓋或無法表達的每一項警示。它從未被套用過。只有流量才會產生的指標，在縮減至零的服務上會有空缺，所以針對它缺席的警示會誤報；能察覺閒置伺服器已經停擺的，是它的可用性檢查。
 
-<!-- source: aws-ecs 609e5bf632ef -->
+<!-- source: aws-ecs ce4eac5fd50d -->
 ### AWS ECS
 
 使用 `metrics_exporter = emf` 時，CloudWatch Logs 會把伺服器的日誌行轉換為命名空間 `metrics_emf_namespace` 中的指標，使用以點分隔的名稱（`my.job.duration`、`my.queue.oldest_ready_age`）。請求和任務的持續時間指標來自請求和任務的日誌行，維度則是你在 `metrics_emf_dimensions` 中列出的標籤；若要針對失敗的任務發出警示，請包含 `my.outcome`，若要針對 5xx 發出警示，請包含 `http.response.status_code`。全實例的 gauge（佇列、媒體、資料庫大小、遠端伺服器、帳單匯入、快照）由定期快照任務寫入。Go 執行階段指標（`go.*`）不會以 EMF 寫入；請改用 ECS 服務的 CPU 和記憶體指標。
@@ -74,9 +74,9 @@ promtool test rules alerts.test.yml
 - **電子郵件**（`mail = ses`）：CloudWatch 中的 SES 信譽指標（退信率和投訴率）。
 - **費用**：設有警報的 AWS Budgets 預算（[費用與預算](#cost-and-budget)）。
 
-模組 [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) 會以下表中的名稱把這些建立為警示，並附有相同的清單。它從未被實際套用過。
+[`mycroblog-aws`](../../deploy/opentofu/README.md#sections) 的 `monitoring` 區段會以下表中的名稱把這些建立為警示，而[它背後模組的 README](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) 附有相同的清單。它從未被實際套用過。
 
-<!-- source: the-alerts d76842ca02b8 -->
+<!-- source: the-alerts afb87d0111fd -->
 ## 警報一覽
 
 嚴重程度：**page** = 立即處理，**ticket** = 上班時間處理。規則欄中的「–」表示目前還沒有對應的指標；請依說明檢查。
@@ -110,17 +110,19 @@ promtool test rules alerts.test.yml
 | 資源 | [`MyMediaStorageLarge`](#mymediastoragelarge) | `my_media_stored_bytes` | 超過你規劃的大小（範例為 50 GiB）並持續 1 小時 | ticket | 上傳增加；是時候升級方案或提高預算了 |
 | 電子郵件 | [`MyEmailFailing`](#myemailfailing) | 電子郵件任務中 `my_outcome="dead"` 的 `my_job_duration_seconds_count` | 一小時內有任何一個 | ticket | SMTP 或 SES 設定錯誤、帳號被停權或超出配額、地址被永久拒絕 |
 | 電子郵件 | [`MyEmailRetrying`](#myemailretrying) | 同上，`my_outcome="retry"` | 超過執行次數的 50% 並持續 15 分鐘 | ticket | 無法連到郵件伺服器或登入被拒、寄送速率限制 |
+| TLS | [`MyTLSCertificateExpiring`](#mytlscertificateexpiring) | `my_tls_certificate_expiry_seconds` | 任何處理程序中少於 7 天並持續 15 分鐘 | page | 更新連續數週失敗、處理程序沒有載入已更新的憑證、沒有任何東西更新的憑證檔案 |
+| TLS | [`MyTLSOrdersFailing`](#mytlsordersfailing) | `my_tls_order_consecutive_failures` | 3 次以上並持續 5 分鐘 | ticket | DNS 不再指向伺服器、80 和 443 連接埠被封鎖、憑證授權單位的速率限制或服務中斷 |
 | 費用 | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 並持續 6 小時 | ticket | 缺少權限、未設定帳單匯出、達到請求上限、服務商無法使用 |
 | 費用 | 超出預算 | – | – | – | 流量、儲存空間或設定錯誤導致費用超出規劃（[見下文](#cost-and-budget)） |
 
-<!-- source: where-to-look b9e94304077f -->
+<!-- source: where-to-look 988be973ea5b -->
 ## 該去哪裡看
 
 下方的運作手冊條目大多會用到這些工具。
 
 - **任務畫面**（「管理」→「任務」，`/admin/jobs`，需要 `manage_jobs`）：依狀態（等待中、執行中、重試中、失敗）和類型區分的數量，以及等待最久的任務；它的**任務**頁面（`/admin/jobs/list`）會列出某一種狀態的任務，每個任務的頁面都有它最後的錯誤和未成功的嘗試。只有保存在資料庫中的佇列（`queue = db` 和 `cloudtasks`）才會列出待處理的任務；失敗的任務和嘗試則會在所有佇列中列出。
 - **`my job` 指令**，在擁有伺服器設定的主機上執行（`queue = db` 和 `cloudtasks`）：`my job list` 會列出失敗的任務，最新的在前；`my job retry <id>...` 會將它們放回佇列；`my job delete <id>...` 會捨棄它們。任務可以安全地重新執行。
-- **遠端伺服器畫面**（「審核」→「遠端伺服器」，`/moderation/instances`，需要 `manage_domains`）：傳送失敗的伺服器，以及傳送被暫停的伺服器，附有原因和時間。「恢復傳送」會把伺服器重新標示為可用。
+- **遠端伺服器畫面**（「審核」→「遠端伺服器」，`/moderation/instances`，需要 `manage_domains`）：傳送失敗的伺服器，以及傳送被暫停的伺服器，附有原因和時間。「恢復傳送」會把伺服器重新標示為可用。「開啟伺服器」會以網域開啟任何伺服器的頁面，不論它有沒有列在清單中。
 - **日誌**：標準錯誤輸出上的 JSON 行。每個 HTTP 請求結束時有一行 `msg` 為 `http request` 的日誌，每次任務執行則有一行 `msg` 為 `job` 的日誌（成功為 `INFO`，重試為 `WARN`，徹底失敗的任務為 `ERROR`，並附有 `error`、`job_id` 和 `my.job.type`）。請求內的日誌行帶有它的 `request_id`，用戶端會將它看成 `X-Request-Id`。
   - `federation.deliver` 執行的日誌行也會說明傳送去了哪裡以及如何結束：`my.delivery.domain`（遠端伺服器的網域）、`activity.type`（例如 `Create`）、`my.delivery.outcome`（`succeeded`、`retryable_failure`、`permanent_failure` 或 `skipped`），以及 `http.response.status_code`（收件匣的回應；當它沒有回應或什麼都沒送出時不存在）。`my.outcome` 仍是任務執行的結果。該行從不指出寄件者、活動或收件匣 URL。
     Cloud Logging：`jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
@@ -490,7 +492,7 @@ Go 執行階段使用了超過 `GOMEMLIMIT` 的 90%。接近上限時，垃圾�
 
 匯入的費用和本月至今的估計值會顯示在「管理」→「費用」→「帳單匯入」中。失敗的匯入會記錄在那裡，並由下一次的每日匯入重試；[`MyBillingImportFailing`](#mybillingimportfailing) 會在當月數字過時之前通知你。
 
-<!-- source: mybillingimportfailing da997f400ac4 -->
+<!-- source: mybillingimportfailing fc199aaa760f -->
 ### MyBillingImportFailing
 
 某個帳單來源的使用費用最新一次匯入失敗，且之後的 6 小時內都沒有成功的匯入。匯入每天執行一次；節流和無法使用的情況會在數小時內重試，其他失敗則要等到隔天的匯入，因此在那之前，費用畫面會顯示較舊的數字。
@@ -502,9 +504,40 @@ Go 執行階段使用了超過 `GOMEMLIMIT` 的 90%。接近上限時，垃圾�
 
 處理：
 
-- 排除原因（權限、帳單匯出、請求上限），然後在「管理」→「費用」→「帳單匯入」中按下「立即匯入」，而不是等到隔天。
+- 排除原因（權限、帳單匯出、請求上限），然後在「管理」→「費用與收入」→「帳單匯入」中按下「立即匯入」，而不是等到隔天。
 
 沒有 Prometheus 時（使用 `metrics_exporter = none` 的 Cloud Run），請改為針對 `billing import failed` 行建立以日誌為基礎的警報。
+
+<!-- source: mytlscertificateexpiring 04321a12c086 -->
+### MyTLSCertificateExpiring
+
+某個處理程序提供的憑證將在 7 天內到期。使用 `tls = acme` 時，伺服器會在憑證約剩三分之一的有效期間時更新它，也就是在到期前數週，所以這表示更新已經失敗很長一段時間，或是處理程序沒有載入已更新的憑證。使用 `tls = files` 時，這表示沒有任何東西更新這些檔案。
+
+檢查：
+
+- `instance` 標籤：當其他處理程序為同一個主機提供較新的憑證時，只有這個處理程序保留了舊的憑證。
+- `my tls status`：主機目前的憑證、何時更新，以及最近的申請與其錯誤。
+- 日誌行 `the TLS certificate could not be obtained` 與其原因。
+
+處理：
+
+- 排除申請失敗的原因（請參閱 [MyTLSOrdersFailing](#mytlsordersfailing)），然後執行 `my tls renew -host <host>` 立即申請，而不是等到下一次申請。
+- 在資料庫已有較新憑證時仍保留舊憑證的處理程序，會在 5 分鐘內載入它；如果沒有，請重新啟動它。
+- 使用 `tls = files` 時，請用寫入這些檔案的工具（certbot）更新檔案；伺服器會在一分鐘內載入它們。
+
+<!-- source: mytlsordersfailing a344584cde47 -->
+### MyTLSOrdersFailing
+
+主機憑證最近的 3 次以上申請都沒有取得任何憑證。第三次失敗之後，伺服器在每次申請之間會先等待 100 分鐘，之後等待一天，以便維持在憑證授權單位的限制之內。在此期間，目前的憑證仍會繼續使用。
+
+檢查：
+
+- `my tls status`：失敗次數與每次申請的錯誤。`rejectedIdentifier`、`dns`、`connection` 或 `unauthorized` 錯誤表示憑證授權單位無法以該名稱連到伺服器；`rateLimited` 表示已達到它的限制。
+- 該 `host` 是否解析到伺服器，以及 443 和 80 連接埠是否可從網際網路連到。
+
+處理：
+
+- 排除原因，然後執行 `my tls renew -host <host>`：它會立即申請，不需要等待。
 
 <!-- source: telling-users-about-an-incident e8cb0ca13fe8 -->
 ## 向使用者說明事故

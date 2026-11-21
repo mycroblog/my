@@ -24,14 +24,16 @@ type retentionRepositories struct {
 	emojis   content.EmojiPurgeRepository
 	// autoDeletes is the persistence of the users' automatic deletion of their old posts.
 	autoDeletes content.AutoDeleteRepository
+	// deleted is the persistence of the purge of deleted statuses.
+	deleted content.DeletedPurgeRepository
 }
 
 // setUpRetention registers the purges of federated data and their schedules (ADR-0006, FR-803):
 // the remote statuses past remote_status_retention_days (or remote_status_max_retention_days), the ones
 // that only relays brought in past relay_status_retention_days (ADR-0006), the inbox
 // and delivery records, the past profiles of unrelated remote accounts, and the remote custom
-// emoji that nothing refers to any more (ADR-0051 §1). The statuses that the moderation records
-// need stay (ADR-0058). It also sets up the users' automatic deletion of their own old posts
+// emoji that nothing refers to any more (ADR-0051 §1), and the rows of deleted statuses. The
+// statuses that the moderation records need stay (ADR-0058). It also sets up the users' automatic deletion of their own old posts
 // (FR-118) and its schedule. It comes after the content, graph, and notification services, which
 // tell what local data refers to.
 func (a *App) setUpRetention(repos retentionRepositories, statuses content.Repository) {
@@ -45,6 +47,9 @@ func (a *App) setUpRetention(repos retentionRepositories, statuses content.Repos
 		UnitOfWork: a.UnitOfWork, Repository: statuses, Retention: repos.statuses, Notifications: a.Notifications,
 		Evidence: a.Moderation, Follows: followedAuthors{a},
 		Jobs: a.Jobs, Clock: a.Clock, Period: a.relayStatusRetention,
+	}).RegisterJobs(a.Handlers, a.Scheduler)
+	content.NewDeletedPurge(content.DeletedPurgeDeps{
+		UnitOfWork: a.UnitOfWork, Repository: repos.deleted, Evidence: a.Moderation, Jobs: a.Jobs, Clock: a.Clock,
 	}).RegisterJobs(a.Handlers, a.Scheduler)
 	federation.NewPurger(federation.PurgeDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repos.purges, Clock: a.Clock,

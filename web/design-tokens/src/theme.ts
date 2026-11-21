@@ -29,6 +29,8 @@ const rules: readonly Rule[] = [
   { pattern: /^--text-[a-z]+--line-height$/, kind: "number", min: 1, max: 2.5 },
   { pattern: /^--radius-/, kind: "length", min: 0, max: 2 },
   { pattern: /^--duration-/, kind: "duration", min: 0, max: 1000 },
+  // Fixed: the easing of a motion, which its keyframes are drawn for.
+  { pattern: /^--ease-/ },
   // Fixed: the motion of a change of screen, whose kinds read as one set only with these values.
   { pattern: /^--transition-/ },
   // Fixed: the weights and letter spacing of the type scale, and the sizes and mixes of the components, whose
@@ -37,7 +39,7 @@ const rules: readonly Rule[] = [
   { pattern: /^--font-weight-/ },
   {
     pattern:
-      /^--(control|icon-button|target|focus-ring|press|spinner|icon|avatar|menu|disclosure|content|article|entry|feed|embed|poll|media|viewer|chip|toggle|emoji-picker|dialog|composer|diff|kbd|shell|screen|voice|event|form-page)-/,
+      /^--(control|icon-button|target|focus-ring|press|spinner|icon|avatar|menu|disclosure|content|article|entry|feed|embed|poll|media|viewer|chip|toggle|emoji-picker|dialog|composer|diff|kbd|shell|screen|voice|event|form-page|landing)-/,
   },
   // Fixed: Tailwind maps a shadow to its utilities.
   { pattern: /^--shadow-/ },

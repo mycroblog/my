@@ -936,7 +936,7 @@
     "description": "API error detail for HTTP 422 when an administrator turns on the instance setting single_user: how many local accounts the server has. {count} is that number."
   },
   "errors.status.local_unavailable": {
-    "defaultMessage": "Posts on a one-person server cannot be local. Change who can see it.",
+    "defaultMessage": "On a one-person server, you cannot post to Neighbors. Change who can see it.",
     "description": "API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only."
   },
   "errors.interaction_request.answered": {

@@ -32,9 +32,9 @@ export class Moderation {
     return this.page.getByRole("main").getByRole("navigation", { name: "Moderation screens", exact: true });
   }
 
-  /** The root's link to the queue of reports, its hint and, while reports are open, how many after its name. */
+  /** The root's link to the queue of reports, with how many after its name while reports are open. */
   get reportsLink(): Locator {
-    return this.screens.getByRole("link", { name: /^Reports .+$/ });
+    return this.screens.getByRole("link", { name: /^Reports(?: .+)?$/ });
   }
 
   /** The table of the queue of reports. */

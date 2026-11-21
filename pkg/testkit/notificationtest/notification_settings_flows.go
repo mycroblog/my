@@ -150,8 +150,8 @@ func notificationSettings(t *testing.T, e *notificationEnv) {
 }
 
 // notificationEmails checks the email of an ordinary notification: enqueued with the
-// notification to run 15 minutes later, and sent only when the notification is still unread, not
-// dismissed, still shown, its row's email still on, and the recipient has a usable address.
+// notification to run 15 minutes later, and sent only when the notification is still unread (not
+// behind the marker nor read on its own), not dismissed, still shown, its row's email still on, and the recipient has a usable address.
 func notificationEmails(t *testing.T, e *notificationEnv) {
 	ctx := t.Context()
 	alice, bob := e.user(t, "alice"), e.user(t, "bob")
@@ -229,4 +229,16 @@ func notificationEmails(t *testing.T, e *notificationEnv) {
 		t.Fatal(err)
 	}
 	run(j, 1, "of a hidden mention")
+	if _, err := e.graph.Unblock(ctx, alice, bob); err != nil {
+		t.Fatal(err)
+	}
+
+	// Read on its own while an older one is unread, it is not; the older one still is.
+	_, older := mention()
+	n, j = mention()
+	if err := e.svc.ReadOne(ctx, alice, n.ID); err != nil {
+		t.Fatal(err)
+	}
+	run(j, 1, "of a mention read on its own")
+	run(older, 2, "of the older mention, still unread")
 }

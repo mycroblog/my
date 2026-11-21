@@ -27,11 +27,11 @@ export class StaffAccounts {
     return this.page.getByRole("main");
   }
 
-  /** The root's link to the screen of `name` (Accounts, Appeals, Registrations), its hint after its name. */
+  /** The root's link to the screen of `name` (Accounts, Appeals, Registrations), with how many wait after its name. */
   entry(name: string): Locator {
     return this.main
       .getByRole("navigation", { name: "Moderation screens", exact: true })
-      .getByRole("link", { name: new RegExp(`^${escape(name)} .+$`) });
+      .getByRole("link", { name: new RegExp(`^${escape(name)}(?: .+)?$`) });
   }
 
   /** What the screen says a press did, in its words. */

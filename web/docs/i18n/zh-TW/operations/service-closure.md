@@ -1,7 +1,11 @@
-<!-- source: closing-the-service 30c438995ba1 -->
+<!-- source: closing-the-service cf650f5a468f -->
 # 結束服務
 
-本頁依序說明停止營運伺服器時要做的事：讓使用者把資料帶走、刪除留在其他伺服器上的帳號，然後停止伺服器並切換到靜態的結束服務頁面。每個指令的詳細說明，請參閱[管理員與角色](admin-cli.md#announcing-the-end-of-the-service)。
+本頁依序說明停止營運伺服器時要做的事：讓使用者把資料帶走、刪除留在其他伺服器上的帳號，然後停止伺服器並切換到靜態的結束服務頁面。
+每個指令的詳細說明，請參閱[管理員與角色](admin-cli.md#announcing-the-end-of-the-service)。
+在網頁用戶端中，擁有 `manage_service_closure` 的人可以用「管理」>「結束服務」完成同樣的事：公告
+結束服務、變更它的日期或撤回它；關閉日過後，「檢查並關閉」會顯示 `check` 顯示的內容，
+並在你輸入伺服器的網域後關閉伺服器；在那之後它會顯示 `status` 顯示的投遞進度。
 
 <!-- source: the-sequence 4557c35b6851 -->
 ## 流程
@@ -87,10 +91,10 @@ my admin closure status
 
 即使投遞完成，伺服器仍會以關閉狀態持續運作到 `export_until`，並持續提供使用者匯出。伺服器永遠不會自行刪除資料，因此過了期限後，它仍會持續運作直到你停止它。如果你還沒有匯出保存保留下的紀錄（§3），請現在匯出。
 
-<!-- source: 6-switching-to-the-static-page 9795c9aea7ae -->
+<!-- source: 6-switching-to-the-static-page e1102fb5f56f -->
 ## 6. 切換到靜態頁面
 
-匯出期限過後，匯出結束服務頁面。**這會讀取資料庫，因此請在停止 `my serve` 和銷毀資料庫之前執行**。
+匯出期限過後，匯出結束服務頁面。**這會讀取資料庫，所以請在停止 `my serve` 並丟棄資料庫之前執行。**
 
 ```sh
 my admin closure export-html -out ./closure             # all locales; index.html starts from the instance's default locale
@@ -98,19 +102,26 @@ my admin closure export-html -out ./closure -lang ja,en # set the locales and th
 ```
 
 - 它會寫出：
-  - `<dir>/<locale>.html`，以及依序列出所有語系的 `<dir>/index.html`。它們使用與維護頁面（`my maintenance export`）相同的範本和 CSS，並顯示伺服器名稱（`maintenance_server_name`，未設定時為實例名稱，再沒有則為主機名稱）、關閉日、公告中營運者的訊息，以及狀態頁面的連結（`status_page_url`）。CSS 只有內嵌，沒有腳本或外部資源，CSP 寫在 `<meta>` 標籤中。主題色彩的覆寫會被寫入。
-  - 前端設定範例 `nginx.conf`、`Caddyfile` 和 `cloudfront-function.js`。每個範例對聯邦和探索路徑（`/ap/*`、`/inbox`、`/.well-known/webfinger`、`/.well-known/host-meta`、`/.well-known/host-meta.json`、`/.well-known/nodeinfo`、`/nodeinfo/*`）以及個人檔案（`/@*`）回傳不含內文的 `410`，對其他所有路徑則回傳 `Accept-Language` 中第一個語言的頁面（沒有時為 `index.html`）。每種語言會導向應用程式會以哪個語系顯示它的那個語系頁面：`zh`、`zh-SG` 和 `zh-Hans` 會得到 `zh-CN.html`，`zh-Hant`、`zh-HK` 和 `zh-MO` 會得到 `zh-TW.html`。
-- 伺服器尚未關閉時，指令會拒絕執行（結束代碼 1）。在 `delivery_completed` 之前，它會警告投遞仍在進行（但仍會寫出檔案）。
+  - `<dir>/<locale>.html`，以及依序列出所有語言的 `<dir>/index.html`。它們使用與維護頁面（`my maintenance export`）相同的範本和 CSS，並顯示
+    伺服器名稱（`maintenance_server_name`，否則是實例名稱，再否則是主機名稱）、結束日、公告中營運者的訊息，以及狀態頁面的連結（`status_page_url`）。
+    CSS 只以內嵌方式提供，沒有指令碼或外部資源，CSP 放在 `<meta>` 標籤中。已發布佈景主題的顏色覆寫會直接寫入。
+  - 前端設定範例 `nginx.conf`、`Caddyfile` 和 `cloudfront-function.js`。對於聯邦與探索路徑（`/ap/*`、`/inbox`、`/.well-known/webfinger`、
+    `/.well-known/host-meta`、`/.well-known/host-meta.json`、`/.well-known/nodeinfo`、`/nodeinfo/*`）和個人檔案（`/@*`），它們都回傳沒有內文的 `410`，
+    其他每個路徑則回傳 `Accept-Language` 中第一個語言的頁面（沒有時回傳 `index.html`）。
+    語言會對應到 App 會用來顯示它的語言的頁面：`zh`、`zh-SG` 和 `zh-Hans` 得到 `zh-CN.html`，`zh-Hant`、`zh-HK` 和 `zh-MO` 得到 `zh-TW.html`。
+- 如果伺服器尚未關閉，這個指令會拒絕執行（結束代碼 1）。在 `delivery_completed` 之前，它會警告投遞仍在進行（但仍會寫出檔案）。
 
-切換前端。只將頁面（`*.html`）放在公開位置，並依你的環境調整範例中的主機名稱、目錄和憑證路徑。
+切換前端。只把頁面（`*.html`）放在公開位置，並依你的環境調整範例中的主機名稱、目錄和憑證路徑。
 
 | 前端 | 設定方式 |
 | --- | --- |
-| nginx | 將頁面放在 `/srv/closure`，並從 `http` 區塊 include `nginx.conf`。頁面也會以 `410` 提供 |
-| Caddy | 將頁面放在 `/srv/closure`，並使用 `Caddyfile`。Caddy 會取得憑證，頁面也會以 `410` 提供 |
-| CloudFront | 將頁面直接放在 S3 bucket 底下，讓該 bucket 成為預設快取行為的來源，並將 `cloudfront-function.js` 關聯為 viewer-request 的 CloudFront Function（`cloudfront-js-2.0`）。請在快取政策的快取鍵中加入 `Accept-Language`。頁面會以 `200` 提供（viewer-request 函式無法變更來源回應的狀態） |
+| nginx | 把頁面放在 `/srv/closure`，並在 `http` 區塊中引入 `nginx.conf`。頁面同樣以 `410` 提供 |
+| Caddy | 把頁面放在 `/srv/closure`，並使用 `Caddyfile`。Caddy 會取得憑證，頁面同樣以 `410` 提供 |
+| CloudFront | 把頁面直接放在 S3 儲存貯體下，讓該儲存貯體成為預設快取行為的來源，並把 `cloudfront-function.js` 關聯為 viewer-request 的 CloudFront Function（`cloudfront-js-2.0`）。把 `Accept-Language` 放進快取政策的快取金鑰。頁面以 `200` 提供（viewer-request 函式無法變更來源回應的狀態） |
 
-切換後，請確認 `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` 回傳 `410`，且 `curl -i https://social.example/` 回傳結束服務頁面。接著停止 `my serve` 和 worker。至於運作時間監控，請停止健康檢查的監控，或讓它們指向結束服務頁面。
+切換之後，請確認 `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` 回傳 `410`，
+而且 `curl -i https://social.example/` 回傳結束服務頁面。然後停止 `my serve` 和 worker。
+關於可用性監控，請停止健康檢查的監控，或把它們指向結束服務頁面。
 
 <!-- source: 7-discarding-the-db-blobs-and-backups c7c55aac56e0 -->
 ## 7. 銷毀資料庫、blob 和備份

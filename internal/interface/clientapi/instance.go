@@ -146,6 +146,8 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	// What the link card crawler does on this instance, for the page that tells site operators
 	// about it (ADR-0062).
 	out.LinkCards, out.LinkCardsIgnoreRobotsTxt = settings.LinkCardsEnabled(), settings.LinkCardsIgnoreRobotsTxt()
+	// What the landing page shows besides the instance itself (#3080).
+	out.LandingFediverseExplanation, out.LandingFeatures = settings.LandingFediverseExplanation(), settings.LandingFeatures()
 	// Whether the web client sends its UX measurements (ADR-0167 §3).
 	uxMeasurement := settings.UXMeasurement() && s.o.UXMeasurements != nil
 	out.UxMeasurement = &uxMeasurement

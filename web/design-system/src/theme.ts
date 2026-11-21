@@ -15,6 +15,7 @@ import {
   fontFamily,
   fontWeight,
   formPage,
+  landing,
   motion,
   properties,
   radius,
@@ -236,6 +237,11 @@ const theme = {
         .filter((name) => name !== "bannerRatio")
         .map((name) => [`form-page-${kebab(name)}`, ref(`--form-page-${kebab(name)}`)]),
     ),
+    ...Object.fromEntries(
+      names(landing)
+        .filter((name) => name !== "sampleScale")
+        .map((name) => [`landing-${kebab(name)}`, ref(`--landing-${kebab(name)}`)]),
+    ),
     // Between the rows of a footer's links that wrap, so that the targets of two rows never overlap.
     "form-page-footer-rows": "max(var(--form-page-field-gap), calc(var(--target-minimum) - 1lh))",
   },
@@ -262,12 +268,14 @@ const theme = {
     speaking: speaking("0px"),
   },
   animation: {
-    ...Object.fromEntries(names(motion).map((name) => [name, `my-${name} var(--duration-${name}) linear infinite`])),
+    ...Object.fromEntries(
+      names(motion).map((name) => [name, `my-${name} var(--duration-${name}) var(--ease-${name}) infinite`]),
+    ),
     // A voice chat room's: a reaction rises and fades once, or, with reduced motion, fades in and out where it is; the
     // halo of who speaks swells and settles while they speak.
-    reaction: "my-reaction var(--voice-reaction-duration) ease-out both",
-    "reaction-still": "my-reaction-still var(--voice-reaction-duration) linear both",
-    speaking: "my-speaking var(--voice-speaking-duration) ease-in-out infinite alternate",
+    reaction: "my-reaction var(--voice-reaction-duration) var(--voice-reaction-ease) both",
+    "reaction-still": "my-reaction-still var(--voice-reaction-duration) var(--voice-reaction-still-ease) both",
+    speaking: "my-speaking var(--voice-speaking-duration) var(--voice-speaking-ease) infinite alternate",
   },
 };
 

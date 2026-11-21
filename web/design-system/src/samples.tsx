@@ -3,9 +3,10 @@
 // What the stories of every layer share (ADR-0165 §1): generated avatar images, not photos of real people (a dusk
 // landscape, a bright snowfield whose edge meets a white surface, and a dark logo on transparency), and the name line
 // of a post header as the design system's parts draw it: the name at the start, the visibility glyph and the time
-// together at the end. Only the subpath @my/design-system/samples exports it; screens never use it.
+// together at the end; and a part of a story whose motion stands still, as with reduced motion. Only the subpath @my/design-system/samples exports it; screens never use it.
 
-import type { CSSProperties } from "react";
+import { MotionConfig } from "motion/react";
+import type { CSSProperties, ReactNode } from "react";
 import { Icon } from "./icons";
 import { RelativeTime } from "./time";
 import { rootPx, text } from "@my/design-tokens";
@@ -91,3 +92,8 @@ export const NameLine = ({
     </span>
   </div>
 );
+
+/** `children` as a reader who asked for reduced motion sees them, whatever the device says. */
+export function StillMotion({ children }: { children: ReactNode }) {
+  return <MotionConfig reducedMotion="always">{children}</MotionConfig>;
+}

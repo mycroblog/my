@@ -71,7 +71,7 @@ test("Publish pressed while the cover is processing says to wait, and publishes 
 
 test("Publish pressed before the preview of the body as it is asks for it at once, busy, and decides on it", async () => {
   const title = "Published before its preview";
-  const nothing = "Nothing written yet. Write the body, and its preview shows here.";
+  const nothing = "Nothing written yet.";
   const app = await renderApp("/articles/new", { viewer: "yuki" });
   await app.user.type(screen.getByRole("textbox", { name: "Title" }), title);
   // The server's previews are held: the one shown stays the one of no body.

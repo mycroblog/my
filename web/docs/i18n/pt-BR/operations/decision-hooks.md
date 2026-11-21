@@ -131,7 +131,7 @@ O job de processamento espera o plugin por até `plugin_media_check_timeout` (10
 personalizado de outro servidor ou aprovar um pedido de emoji processa a imagem enquanto o moderador espera, então essa espera
 é dele.
 
-<!-- source: sign-ups be7ddf1149a9 -->
+<!-- source: sign-ups c67c61b5e627 -->
 ## Cadastros
 
 `signup.check` roda nos cadastros feitos pela página de cadastro e por meio de um provedor de login, depois do CAPTCHA e da
@@ -143,7 +143,7 @@ As respostas agem como as da lista de bloqueio quando o hook aplica o veredito:
 
 - `require_approval` deixa o cadastro esperando em **Moderação** > **Cadastros**, como faz um bloqueio com a mesma
   severidade, em todos os modos de cadastro. Aprove ou rejeite-o ali: cancelar a decisão não altera o cadastro.
-- `reject` não faz nada até você ativar `hook_signup_check_reject` (**Configurações do servidor** > **Federação** > **Análise externa**, desativado por
+- `reject` não faz nada até você ativar `hook_signup_check_reject` (**Configurações do servidor** > **Análise externa**, desativado por
   padrão). Enquanto está desativado, um `reject` é registrado em `observe`, já que não impede nada, e o cadastro segue. Enquanto
   está ativado, o candidato vê o mesmo texto fixo de um bloqueio (“Este servidor não pode aceitar este cadastro.”). Nenhuma conta
   é criada, então cancelar essa decisão só altera o registro dela, e o candidato se cadastra de novo.
@@ -191,37 +191,37 @@ e ele a envie de novo.
 Cancelar um `drop` de `inbound.actor` busca a conta de novo no servidor dela, que guarda o perfil que serve agora
 sem chamar o plugin quando ele é o descartado, e pergunta sobre ele quando mudou desde então.
 
-<!-- source: local-posts 37ba27537191 -->
+<!-- source: local-posts a7f29a329b2f -->
 ## Publicações locais
 
 `local.status` analisa uma publicação de uma conta do seu servidor antes de o servidor criá-la, e cada edição de uma antes de o
 servidor guardá-la. O autor espera o plugin, então
 a espera é curta: `plugin_local_status_timeout` (1 segundo por padrão). Uma falha, um timeout ou um breaker aberto sempre deixa a
-publicação passar (`pass` é o único comportamento de falha dele), e a espera não faz parte de uma transação do banco de dados.
+publicação passar (`pass` é o seu único comportamento de falha), e a espera não faz parte de uma transação do banco de dados.
 
 O que ele envia e quando:
 
-- Somente as publicações de contas mais novas que `hook_local_status_account_age_days` (**Configurações do servidor** > **Federação** >
-  **Análise externa**, 7 dias por padrão; `0` envia as publicações de todas as contas). As contas novas são de onde vem a maior parte do spam, e as contas
+- Apenas as publicações de contas com menos de `hook_local_status_account_age_days` (**Configurações do servidor** >
+  **Análise externa**, 7 dias por padrão; `0` envia as publicações de todas as contas). Contas novas são de onde vem a maior parte do spam, e as contas
   estabelecidas não são enviadas.
-- Somente publicações `public`, `local` e `unlisted`. As publicações `private` e `direct` nunca são enviadas.
-- O texto como o autor o digitou e como o servidor o renderiza, o aviso de conteúdo, o idioma, se está marcada como
+- Apenas publicações `public`, `local` e `unlisted`. Publicações `private` e `direct` nunca são enviadas.
+- O texto como o autor digitou e como o servidor o renderiza, o aviso de conteúdo, o idioma, se está marcada como
   sensível, as descrições das imagens, as opções da enquete, as hashtags, quantas contas ela menciona, o endereço que a publicação
-  receberia, a publicação a que responde ou que cita (apenas pelo endereço), o endereço e o nome de usuário do autor e quando a conta foi
+  receberia, a publicação à qual responde ou que cita (apenas pelo endereço), o endereço e o nome de usuário do autor, e quando a conta foi
   criada. Nenhuma mídia é enviada.
 - A chave do assunto é o ID que a publicação receberia. Enviar uma publicação de novo com o mesmo `Idempotency-Key` devolve a publicação
   que foi criada, sem chamar o plugin; uma nova tentativa é um novo assunto.
-- Uma edição é enviada da mesma forma, com a publicação como editada, para as mesmas contas: as que estão dentro de
+- Uma edição é enviada do mesmo modo, com a publicação já editada, para as mesmas contas: as que estão dentro de
   `hook_local_status_account_age_days`. A chave dela é o ID da publicação, `#` e o ID da nova revisão, então cada edição é um
   assunto próprio.
 - Iniciar uma sala de chat de voz publica a primeira publicação dela sem este hook.
 
 Quando o hook aplica o veredito, `reject` recusa a publicação e nada é guardado. O autor vê um texto fixo (“Esta publicação não foi publicada.”)
-e um caminho para recorrer; nunca o motivo nem a nota. `flag` deixa a publicação passar e abre uma denúncia dela, contra o
+e uma forma de contestar; nunca o motivo nem a nota. `flag` deixa a publicação passar e abre uma denúncia dela, contra o
 autor.
 
-Em uma edição, `reject` recusa somente essa edição: a publicação continua como estava, e o autor vê um texto fixo (“Esta edição não foi
-salva.”). Uma edição não pode ser objeto de recurso, já que a publicação continua lá para os seus moderadores agirem como de costume. `flag` guarda a
+Em uma edição, `reject` recusa apenas essa edição: a publicação continua como estava, e o autor vê um texto fixo (“Esta edição não foi
+salva.”). Uma edição não pode ser contestada, já que a publicação continua lá para os seus moderadores agirem como de costume. `flag` guarda a
 edição e abre uma denúncia da publicação, e `allow` a deixa passar.
 
 <!-- source: appeals 79991f552151 -->
@@ -246,36 +246,37 @@ nota. Um cliente próprio lê em que ponto está um recurso com `GET /api/v1/hoo
 Uma conta que um recurso revertido tirou do hook continua fora dele até que a conta seja excluída. Se for assumida depois,
 `local.status` não a analisa mais.
 
-<!-- source: local-profiles dbafa1545e2a -->
+<!-- source: local-profiles 83ef61114409 -->
 ## Perfis locais
 
 `local.profile` analisa uma alteração do perfil de uma conta do seu servidor antes de o servidor guardá-la. O dono espera
 o plugin, então a espera é curta: `plugin_local_profile_timeout` (1 segundo por padrão). Uma falha, um timeout ou um
-breaker aberto sempre deixa a alteração passar (`pass` é o único comportamento de falha dele), e a espera não faz parte de uma transação
-do banco de dados.
+breaker aberto sempre deixa a alteração passar (`pass` é o seu único comportamento de falha), e a espera não faz parte de uma transação do
+banco de dados.
 
 O que ele envia e quando:
 
-- Somente as alterações de contas mais novas que `hook_local_profile_account_age_days` (**Configurações do servidor** > **Federação** >
+- Apenas as alterações de contas com menos de `hook_local_profile_account_age_days` (**Configurações do servidor** >
   **Análise externa**, 7 dias por padrão; `0` envia as de todas as contas).
-- Somente uma alteração do que o hook vê: o nome de exibição, a bio, os campos do perfil, o avatar ou o cabeçalho. Uma alteração
-  que apenas tranca a conta ou muda as configurações de descoberta dela não é enviada.
+- Apenas uma alteração do que o hook vê: o nome de exibição, a bio, os campos do perfil, o avatar ou o cabeçalho. Uma alteração
+  que apenas bloqueia a conta ou muda as suas configurações de descoberta não é enviada.
 - O nome de exibição, a bio como digitada e como o servidor a renderiza, o nome e o valor de cada campo do perfil (como digitados e como
-  renderizados), se a alteração define, substitui ou remove o avatar ou o cabeçalho, o endereço e o nome de usuário da conta
+  renderizados), se a alteração define, substitui ou remove o avatar ou o cabeçalho, o endereço e o nome de usuário da conta,
   e quando a conta foi criada. Nenhuma imagem é enviada. O perfil é público, então o hook pode usar TCP simples.
 - A chave do assunto é o ID da conta, `#` e o ID da revisão do perfil que a alteração guardaria, então cada alteração
   é um assunto próprio.
 
-Quando o hook aplica o veredito, `reject` recusa somente essa alteração: o perfil continua como estava, e o dono vê um texto fixo (“Esta
-alteração do seu perfil não foi salva.”), nunca o motivo nem a nota. Não há recurso: o dono pode alterar o perfil
-e salvar de novo. `flag` salva a alteração e abre uma denúncia contra a conta, que não cita nenhuma publicação; o denunciante, a
+Quando o hook aplica o veredito, `reject` recusa apenas essa alteração: o perfil continua como estava, e o dono vê um texto fixo (“Esta
+alteração do seu perfil não foi salva.”), nunca o motivo nem a nota. Não há contestação: o dono pode alterar o perfil
+e salvá-lo de novo. `flag` salva a alteração e abre uma denúncia contra a conta, que não cita nenhuma publicação; o denunciante, a
 categoria e o comentário são os de [uma denúncia de publicação](#what-inboundstatus-reviews).
 
-<!-- source: modes 6133f824d202 -->
+<!-- source: modes 712db07d039e -->
 ## Modos
 
 Cada hook tem um modo, uma [configuração da instância](instance-settings.md) (`hook_inbound_status_mode` e assim por diante) que você altera em
-**Configurações do servidor** > **Federação** > **Análise externa**. As alterações vão para o registro de auditoria como `setting_changed`.
+**Configurações do servidor** > **Análise externa**, a qual oferece `enforce` somente quando o modo não é `off`. As alterações vão para o registro
+de auditoria como `setting_changed`.
 
 | Modo | O que faz |
 | --- | --- |

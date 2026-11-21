@@ -33,7 +33,11 @@ export type FakeData = {
  * what its server holds (`seed`, the scenario by default).
  */
 export function fakeData(options: FakeOptions = {}): FakeData {
-  const fake = createFakeApi(options);
+  return dataOn(createFakeApi(options));
+}
+
+/** The app's data on `fake`, with a cache of its own: another load of the app, or another device. */
+export function dataOn(fake: FakeApi): FakeData {
   const requests: string[] = [];
   const api = createClient({
     server: fakeOrigin,

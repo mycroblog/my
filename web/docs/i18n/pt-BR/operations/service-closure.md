@@ -1,8 +1,12 @@
-<!-- source: closing-the-service 30c438995ba1 -->
+<!-- source: closing-the-service cf650f5a468f -->
 # Encerrando o serviço
 
-O que fazer, em ordem, ao parar de executar o servidor: deixar os usuários levarem os seus dados, excluir as contas que restam em outros servidores, e então parar o servidor e trocar para uma página de encerramento estática.
-Cada comando é descrito com mais detalhes em [administradores e funções](admin-cli.md#announcing-the-end-of-the-service).
+O que fazer, em ordem, quando você deixa de executar o servidor: deixe os usuários retirarem seus dados, exclua as contas que restam em outros servidores,
+depois pare o servidor e passe para uma página estática de encerramento.
+Cada comando é descrito com mais detalhes em [administradores e papéis](admin-cli.md#announcing-the-end-of-the-service).
+No cliente web, **Administração > Encerramento do servidor** faz o mesmo para quem tem `manage_service_closure`: ele anuncia o
+encerramento, altera as datas dele ou o retira; depois que a data de encerramento passou, **Verificar e encerrar** mostra o que `check` mostra
+e encerra o servidor depois que você digita o domínio dele; depois disso, mostra o progresso das entregas que `status` mostra.
 
 <!-- source: the-sequence 4557c35b6851 -->
 ## A sequência
@@ -96,10 +100,10 @@ Mesmo depois que a entrega é concluída, o servidor continua executando encerra
 O servidor nunca apaga dados por conta própria, então continua rodando depois do prazo até você pará-lo.
 Se você ainda não exportou os registros sob bloqueios de retenção (§3), faça isso agora.
 
-<!-- source: 6-switching-to-the-static-page 9795c9aea7ae -->
-## 6. Trocando para a página estática
+<!-- source: 6-switching-to-the-static-page e1102fb5f56f -->
+## 6. Passando para a página estática
 
-Após o prazo de exportação, exporte a página de encerramento. **Isso lê o banco de dados, então execute antes de parar o `my serve` e descartar o banco.**
+Depois do prazo de exportação, exporte a página de encerramento. **Isso lê o banco de dados, então execute antes de parar o `my serve` e descartar o banco.**
 
 ```sh
 my admin closure export-html -out ./closure             # all locales; index.html starts from the instance's default locale
@@ -107,22 +111,26 @@ my admin closure export-html -out ./closure -lang ja,en # set the locales and th
 ```
 
 - O que ele grava:
-  - `<dir>/<locale>.html`, e `<dir>/index.html`, que lista todos os locales na ordem. Eles usam o mesmo template e o mesmo CSS da página de manutenção (`my maintenance export`) e mostram o nome do servidor (`maintenance_server_name`, senão o nome da instância, senão o nome do host), a data de encerramento, a mensagem do operador do anúncio e um link para a página de status (`status_page_url`).
-    O CSS é apenas inline; não há scripts nem recursos externos, e a CSP fica em uma tag `<meta>`. Os ajustes de cor do tema são incorporados.
-  - Exemplos de configuração do front end `nginx.conf`, `Caddyfile` e `cloudfront-function.js`. Cada um retorna `410` sem corpo para os caminhos de federação e descoberta (`/ap/*`, `/inbox`, `/.well-known/webfinger`, `/.well-known/host-meta`, `/.well-known/host-meta.json`, `/.well-known/nodeinfo`, `/nodeinfo/*`) e para perfis (`/@*`), e, para qualquer outro caminho, retorna a página do primeiro idioma em `Accept-Language` (ou `index.html`, se não houver nenhum).
-    Um idioma recebe a página do locale em que o app o mostraria: `zh`, `zh-SG` e `zh-Hans` recebem `zh-CN.html`, e `zh-Hant`, `zh-HK` e `zh-MO` recebem `zh-TW.html`.
-- O comando se recusa se o servidor não tiver sido encerrado (código de saída 1). Antes de `delivery_completed`, ele avisa que as entregas continuam (e mesmo assim grava os arquivos).
+  - `<dir>/<locale>.html` e `<dir>/index.html`, que lista todos os idiomas em ordem. Eles usam o mesmo modelo e o mesmo CSS da página de manutenção (`my maintenance export`) e mostram
+    o nome do servidor (`maintenance_server_name`, senão o nome da instância, senão o nome do host), a data de encerramento, a mensagem do operador do anúncio e um link para a página de status (`status_page_url`).
+    O CSS é apenas inline, não há scripts nem recursos externos, e a CSP está em uma tag `<meta>`. As substituições de cor do tema publicado já vêm incorporadas.
+  - Exemplos de configuração do front-end `nginx.conf`, `Caddyfile` e `cloudfront-function.js`. Cada um retorna `410` sem corpo para os caminhos de federação e de descoberta (`/ap/*`, `/inbox`, `/.well-known/webfinger`,
+    `/.well-known/host-meta`, `/.well-known/host-meta.json`, `/.well-known/nodeinfo`, `/nodeinfo/*`) e para os perfis (`/@*`),
+    e para qualquer outro caminho retorna a página do primeiro idioma em `Accept-Language` (ou `index.html` se não houver nenhum).
+    Um idioma chega à página do locale em que o app o mostraria: `zh`, `zh-SG` e `zh-Hans` recebem `zh-CN.html`, e `zh-Hant`, `zh-HK` e `zh-MO` recebem `zh-TW.html`.
+- O comando se recusa se o servidor não foi encerrado (código de saída 1). Antes de `delivery_completed`, ele avisa que as entregas continuam (e ainda grava os arquivos).
 
-Troque o front end. Coloque apenas as páginas (`*.html`) no local público, e ajuste o nome do host e os caminhos de diretório e de certificados no exemplo ao seu ambiente.
+Passe o front-end. Coloque apenas as páginas (`*.html`) no local público e ajuste o nome do host, o diretório e os caminhos dos certificados do exemplo para o seu ambiente.
 
-| Front end | Como configurar |
+| Front-end | Como configurar |
 | --- | --- |
-| nginx | Coloque as páginas em `/srv/closure` e inclua `nginx.conf` no bloco `http`. As páginas também são servidas com `410` |
+| nginx | Coloque as páginas em `/srv/closure` e inclua `nginx.conf` a partir do bloco `http`. As páginas também são servidas com `410` |
 | Caddy | Coloque as páginas em `/srv/closure` e use o `Caddyfile`. O Caddy obtém o certificado, e as páginas também são servidas com `410` |
-| CloudFront | Coloque as páginas diretamente em um bucket do S3, faça desse bucket a origem do comportamento de cache padrão, e associe `cloudfront-function.js` como uma CloudFront Function de viewer request (`cloudfront-js-2.0`). Coloque `Accept-Language` na chave de cache da política de cache. As páginas são servidas com `200` (uma função de viewer request não consegue mudar o status da resposta da origem) |
+| CloudFront | Coloque as páginas diretamente sob um bucket do S3, faça desse bucket a origem do comportamento de cache padrão e associe `cloudfront-function.js` como uma CloudFront Function de viewer-request (`cloudfront-js-2.0`). Coloque `Accept-Language` na chave de cache da política de cache. As páginas são servidas com `200` (uma função de viewer-request não pode mudar o status da resposta da origem) |
 
-Depois de trocar, verifique se `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` retorna `410` e se `curl -i https://social.example/` retorna a página de encerramento. Depois, pare o `my serve` e os workers.
-Para o monitoramento de disponibilidade, ou pare os monitores de verificação de saúde, ou aponte-os para a página de encerramento.
+Depois de passar, confira que `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` retorna `410` e
+que `curl -i https://social.example/` retorna a página de encerramento. Depois pare o `my serve` e os workers.
+Para o monitoramento de disponibilidade, pare os monitores de verificação de saúde ou aponte-os para a página de encerramento.
 
 <!-- source: 7-discarding-the-db-blobs-and-backups c7c55aac56e0 -->
 ## 7. Descartando o banco, os blobs e os backups

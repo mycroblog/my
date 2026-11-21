@@ -1,9 +1,12 @@
-<!-- source: closing-the-service 30c438995ba1 -->
+<!-- source: closing-the-service cf650f5a468f -->
 # Cerrar el servicio
 
-Qué hacer, en orden, cuando dejas de ejecutar el servidor: permitir que los usuarios se lleven sus datos, eliminar las cuentas que quedan en otros servidores,
-y después detener el servidor y pasar a una página estática de cierre.
+Qué hacer, en orden, cuando dejas de ejecutar el servidor: dejar que los usuarios saquen sus datos, eliminar las cuentas que quedan en otros servidores,
+y luego detener el servidor y pasar a una página estática de cierre.
 Cada comando se describe con más detalle en [administradores y roles](admin-cli.md#announcing-the-end-of-the-service).
+En el cliente web, **Administración > Cierre del servidor** hace lo mismo para cualquiera con `manage_service_closure`: anuncia el
+cierre, cambia sus fechas o lo retira; una vez pasada la fecha de cierre, **Comprobar y cerrar** muestra lo que muestra `check`
+y cierra el servidor después de que escribas su dominio; después muestra el progreso de las entregas que muestra `status`.
 
 <!-- source: the-sequence 4557c35b6851 -->
 ## La secuencia
@@ -103,37 +106,37 @@ Incluso después de completarse la entrega, el servidor sigue funcionando cerrad
 El servidor nunca elimina datos por sí solo, así que sigue funcionando pasada la fecha límite hasta que lo detengas.
 Si todavía no has exportado los registros sujetos a retención (§3), hazlo ahora.
 
-<!-- source: 6-switching-to-the-static-page 9795c9aea7ae -->
-## 6. Cambiar a la página estática
+<!-- source: 6-switching-to-the-static-page e1102fb5f56f -->
+## 6. Pasar a la página estática
 
-Después de la fecha límite de exportación, exporta la página de cierre. **Esto lee la base de datos, así que ejecútalo antes de detener `my serve` y descartar la base de datos.**
+Pasado el plazo de exportación, exporta la página de cierre. **Esto lee la BD, así que ejecútalo antes de detener `my serve` y descartar la BD.**
 
 ```sh
 my admin closure export-html -out ./closure             # all locales; index.html starts from the instance's default locale
 my admin closure export-html -out ./closure -lang ja,en # set the locales and the order in index.html
 ```
 
-- Qué escribe:
-  - `<dir>/<locale>.html` y `<dir>/index.html`, que lista todos los idiomas en orden. Usan la misma plantilla y el mismo CSS que la página de mantenimiento (`my maintenance export`) y muestran
-    el nombre del servidor (`maintenance_server_name`, o si no el nombre de la instancia, o si no el nombre de host), la fecha de cierre, el mensaje del operador del anuncio y un enlace a la página de estado (`status_page_url`).
-    El CSS es solo en línea, no hay scripts ni recursos externos, y la CSP está en una etiqueta `<meta>`. Se incorporan las sobrescrituras de colores del tema.
+- Lo que escribe:
+  - `<dir>/<locale>.html` y `<dir>/index.html`, que enumera todos los idiomas en orden. Usan la misma plantilla y CSS que la página de mantenimiento (`my maintenance export`) y muestran
+    el nombre del servidor (`maintenance_server_name`, si no el nombre de la instancia, si no el nombre de host), la fecha de cierre, el mensaje del operador del anuncio y un enlace a la página de estado (`status_page_url`).
+    El CSS es solo en línea, no hay scripts ni recursos externos, y la CSP está en una etiqueta `<meta>`. Las sustituciones de color del tema publicado están incorporadas.
   - Ejemplos de configuración del front end `nginx.conf`, `Caddyfile` y `cloudfront-function.js`. Cada uno devuelve `410` sin cuerpo para las rutas de federación y descubrimiento (`/ap/*`, `/inbox`, `/.well-known/webfinger`,
     `/.well-known/host-meta`, `/.well-known/host-meta.json`, `/.well-known/nodeinfo`, `/nodeinfo/*`) y para los perfiles (`/@*`),
-    y para cualquier otra ruta devuelve la página del primer idioma de `Accept-Language` (o `index.html` si no hay ninguno).
-    Un idioma llega a la página de la configuración regional en la que lo mostraría la aplicación: `zh`, `zh-SG` y `zh-Hans` obtienen `zh-CN.html`, y `zh-Hant`, `zh-HK` y `zh-MO` obtienen `zh-TW.html`.
+    y para toda otra ruta devuelve la página del primer idioma de `Accept-Language` (o `index.html` si no hay ninguno).
+    Un idioma llega a la página del idioma en el que la aplicación lo mostraría: `zh`, `zh-SG` y `zh-Hans` reciben `zh-CN.html`, y `zh-Hant`, `zh-HK` y `zh-MO` reciben `zh-TW.html`.
 - El comando se niega si el servidor no se ha cerrado (código de salida 1). Antes de `delivery_completed`, avisa de que las entregas continúan (y aun así escribe los archivos).
 
-Cambia el front end. Pon solo las páginas (`*.html`) en la ubicación pública, y adapta a tu entorno el nombre de host, el directorio y las rutas de los certificados del ejemplo.
+Cambia el front end. Pon solo las páginas (`*.html`) en la ubicación pública, y ajusta el nombre de host, el directorio y las rutas de los certificados del ejemplo a tu entorno.
 
 | Front end | Cómo configurarlo |
 | --- | --- |
 | nginx | Pon las páginas en `/srv/closure` e incluye `nginx.conf` desde el bloque `http`. Las páginas también se sirven con `410` |
 | Caddy | Pon las páginas en `/srv/closure` y usa el `Caddyfile`. Caddy obtiene el certificado, y las páginas también se sirven con `410` |
-| CloudFront | Pon las páginas directamente bajo un bucket de S3, haz de ese bucket el origen del comportamiento de caché predeterminado y asocia `cloudfront-function.js` como una función de CloudFront de tipo viewer-request (`cloudfront-js-2.0`). Pon `Accept-Language` en la clave de caché de la política de caché. Las páginas se sirven con `200` (una función viewer-request no puede cambiar el estado de la respuesta del origen) |
+| CloudFront | Pon las páginas directamente bajo un bucket de S3, haz de ese bucket el origen del comportamiento de caché predeterminado y asocia `cloudfront-function.js` como CloudFront Function de solicitud del espectador (`cloudfront-js-2.0`). Pon `Accept-Language` en la clave de caché de la política de caché. Las páginas se sirven con `200` (una función de solicitud del espectador no puede cambiar el estado de la respuesta del origen) |
 
-Después del cambio, comprueba que `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` devuelve `410` y
-que `curl -i https://social.example/` devuelve la página de cierre. Después, detén `my serve` y los procesos de trabajo.
-Para la monitorización de disponibilidad, detén los monitores de comprobación de estado o apúntalos a la página de cierre.
+Tras el cambio, comprueba que `curl -i https://social.example/.well-known/webfinger?resource=acct:alice@social.example` devuelve `410` y
+que `curl -i https://social.example/` devuelve la página de cierre. Luego detén `my serve` y los workers.
+Para la monitorización de disponibilidad, detén los monitores de comprobación de salud o apúntalos a la página de cierre.
 
 <!-- source: 7-discarding-the-db-blobs-and-backups c7c55aac56e0 -->
 ## 7. Descartar la base de datos, los blobs y las copias de seguridad

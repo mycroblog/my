@@ -6,27 +6,28 @@ föderiert; `my` ist seine Server-Software, eine einzige Binary, die den Server,
 kümmern. Diese Seite zeigt, woraus ein Server besteht, was du per Konfiguration wählst, wie ein kleiner Server zu einem großen wächst
 und wo du als Nächstes weiterliest.
 
-<!-- source: what-a-server-is-made-of 1210fe6ac0c4 -->
+<!-- source: what-a-server-is-made-of 51fb6c4e4a24 -->
 ## Woraus ein Server besteht
 
 ![Die Architektur eines mycroblog-Servers: Clients erreichen die my-Prozesse über HTTPS; die Prozesse nutzen die per Konfiguration gewählten Teile und die Dienste außerhalb des Servers, die du einschaltest. Die Abschnitte unten beschreiben jeden Teil.](images/architecture.svg)
 
-Vom oberen Rand des Diagramms nach unten:
+Im Diagramm von oben nach unten:
 
 - **Wer sich verbindet.** Menschen nutzen den Web-Client in ihrem Browser (er lässt sich als App installieren), Apps und Bots nutzen die
-  Client-API, und andere Fediverse-Server stellen Beiträge über ActivityPub zu und rufen sie ab. Alle erreichen den Server über
+  Client-API, und andere Fediverse-Server liefern und holen Beiträge über ActivityPub. Alle erreichen den Server über
   HTTPS.
-- **Vor dem Server.** `my` spricht einfaches HTTP, daher beendet ein Reverse-Proxy oder Load Balancer davor das HTTPS.
+- **Vor dem Server.** Standardmäßig spricht `my` reines HTTP, daher beendet ein Reverse-Proxy oder Load Balancer HTTPS vor ihm.
+  Auf einer einzelnen Maschine kann `my` stattdessen selbst HTTPS ausliefern ([HTTPS vom Server aus ausliefern](running.md#serving-https-from-the-server)).
   Ein CDN vor den Mediendateien ist optional.
-- **Die `my`-Prozesse.** Jeder Prozess führt `my serve` aus, und seine [`role`](../reference/configuration.md#role) bestimmt, was er
+- **Die `my`-Prozesse.** Jeder Prozess führt `my serve` aus, und seine [`role`](../reference/configuration.md#role) legt fest, was er
   ausführt: `web` den HTTP-Server, `worker` den Job-Worker, der Beiträge zustellt, von anderen Servern abruft, E-Mails sendet,
   Medien verarbeitet und die periodischen Jobs ausführt, und `all`, der Standard, beides in einem Prozess.
 - **Die Teile, die du wählst.** Jeder Teil in der Mitte des Diagramms hat eine Einstellung, die seinen Adapter wählt, aufgelistet im
   [nächsten Abschnitt](#parts-you-choose-by-configuration).
-- **Dienste außerhalb des Servers.** CAPTCHA, Sprach-Chat, Zahlungen, Plugins und der Import von Cloud-Kosten bleiben jeweils aus,
+- **Dienste außerhalb des Servers.** CAPTCHA, Sprachchat, Zahlungen, Plugins und der Import der Cloud-Kosten bleiben jeweils aus,
   bis du sie einstellst, und der Server ruft dann den Dienst auf, den du nennst.
 
-<!-- source: parts-you-choose-by-configuration de382d807c25 -->
+<!-- source: parts-you-choose-by-configuration 34d13fdad524 -->
 ## Teile, die du per Konfiguration wählst
 
 Jeder Teil ist eine Einstellung der [Konfigurationsreferenz](../reference/configuration.md), gesetzt in einer TOML-Datei oder als
@@ -37,54 +38,53 @@ Wo ein Teil Daten hält, wähle ihn vor dem ersten Start: Die Daten ziehen nicht
 | --- | --- | --- | --- |
 | Datenbank | [`database`](../reference/configuration.md#database) | `sqlite` (eine Datei), `postgres` (PostgreSQL und kompatible Dienste) | [Datenbank](database.md), [Backup](backup.md) |
 | Job-Queue | [`queue`](../reference/configuration.md#queue) | `db` (eine Tabelle in der Datenbank), `inline` (führt jeden Job sofort im selben Prozess aus, für Tests und Entwicklung), `cloudtasks` (Google Cloud Tasks weckt den Server für jeden Job; braucht PostgreSQL) | [Die Job-Queue](running.md#the-job-queue-and-failed-dead-jobs) |
-| Key-Value-Speicher, für Caches und Ratenlimits | [`kv`](../reference/configuration.md#kv) | `db` (eine Tabelle in der Datenbank), `memory` (jeder Prozess für sich), `valkey` (Valkey oder ein anderer Server mit Redis-Protokoll, von jedem Prozess geteilt) | [`kv`](../reference/configuration.md#kv) |
-| Medienspeicher | [`blob`](../reference/configuration.md#blob) | `fs` (ein Verzeichnis), `s3` (Amazon S3, Cloudflare R2, MinIO, Garage und andere S3-kompatible Stores), `gcs` (Google Cloud Storage) | [Docker-Compose-Dateien](running.md#docker-compose-files), [Medien sichern](backup.md#media-in-a-bucket) |
-| Medienverarbeitung | [`media_image`](../reference/configuration.md#media_image), [`media_video`](../reference/configuration.md#media_video), [`media_audio`](../reference/configuration.md#media_audio), je eine für jede Art von Datei | `native` (im Server), `plugin` (ein Plugin von dir wandelt die Dateien dieser Art um) | [Medien umwandeln](plugins.md#converting-media) |
+| Key-Value-Store, für Caches, Rate Limits und die Antworten, die einen Tag lang für erneut gesendete Schreibvorgänge aufbewahrt werden | [`kv`](../reference/configuration.md#kv) | `db` (eine Tabelle in der Datenbank), `memory` (jeder Prozess für sich), `valkey` (Valkey oder ein anderer Server mit Redis-Protokoll, von allen Prozessen geteilt) | [`kv`](../reference/configuration.md#kv) |
+| Medienspeicher | [`blob`](../reference/configuration.md#blob) | `fs` (ein Verzeichnis), `s3` (Amazon S3, Cloudflare R2, MinIO, Garage und andere S3-kompatible Speicher), `gcs` (Google Cloud Storage) | [Docker-Compose-Dateien](running.md#docker-compose-files), [Medien sichern](backup.md#media-in-a-bucket) |
+| Medienverarbeitung | [`media_image`](../reference/configuration.md#media_image), [`media_video`](../reference/configuration.md#media_video), [`media_audio`](../reference/configuration.md#media_audio), je eine für jede Dateiart | `native` (im Server), `plugin` (ein Plugin von dir wandelt die Dateien dieser Art um) | [Medien umwandeln](plugins.md#converting-media) |
 | Echtzeit-Stream zwischen Prozessen | [`stream`](../reference/configuration.md#stream) | `hub` (innerhalb eines Prozesses), `postgres` (`LISTEN` / `NOTIFY`), `valkey`, `sns` (Amazon SNS und SQS), `pubsub` (Google Cloud Pub/Sub) | [`stream`](../reference/configuration.md#stream) |
-| Key Manager, der die privaten Schlüssel der Konten verschlüsselt | [`key_manager`](../reference/configuration.md#key_manager) | `local` (ein Key-Encryption-Key, den du aufbewahrst), `gcpkms` (Google Cloud KMS), `awskms` (AWS KMS), `plugin` | [Den Schlüssel verwalten](key-management.md) |
-| E-Mail | [`mail`](../reference/configuration.md#mail) | `none`, `smtp`, `ses` (Amazon SES), `plugin` | [E-Mails senden](email.md) |
+| Key-Manager, der die privaten Schlüssel der Konten verschlüsselt | [`key_manager`](../reference/configuration.md#key_manager) | `local` (ein Schlüsselverschlüsselungsschlüssel, den du aufbewahrst), `gcpkms` (Google Cloud KMS), `awskms` (AWS KMS), `plugin` | [Den Schlüssel verwalten](key-management.md) |
+| E-Mail | [`mail`](../reference/configuration.md#mail) | `none`, `smtp`, `ses` (Amazon SES), `plugin` | [E-Mails versenden](email.md) |
 | CAPTCHA | [`captcha`](../reference/configuration.md#captcha) | `none`, `turnstile` (Cloudflare Turnstile), `hcaptcha`, `recaptcha` (Google reCAPTCHA v2) | [CAPTCHA](captcha.md) |
 | Sprachchat | [`voice`](../reference/configuration.md#voice) | `off`, `p2p` (Browser zu Browser, mit TURN aus `voice_turn`: `none`, `coturn` oder `cloudflare`), `livekit`, `sora` | [Sprachchat](voice.md) |
 | Zahlungen von Unterstützern | [`payments`](../reference/configuration.md#payments) | `none`, `stripe`, `payjp` (PAY.JP) | [Unterstützer](supporters.md), [Stripe](payments-stripe.md), [PAY.JP](payments-payjp.md) |
 | Plugins | `plugin_<kind>_address` | standardmäßig keine; eine Adresse für jede Art: `translator`, `search`, `billing`, `mailer`, `media_image`, `media_video`, `media_audio`, `key_manager` und die Entscheidungs-Hooks `inbound.status`, `local.status`, `inbound.follow`, `signup.check`, `media.check`, `inbound.actor`, `local.profile` | [Plugins](plugins.md), [Entscheidungs-Hooks](decision-hooks.md) |
 | Übersetzung von Beiträgen | `translator_<provider>_*`, [`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | keine (nur die eigene Übersetzung des Browsers); `libretranslate`, `deepl`, `google` (Google Cloud Translation), `aws` (Amazon Translate) oder ein Plugin von dir vor dem Dienst, den du wählst | [Beiträge übersetzen](translation.md), [ein Übersetzer-Plugin](plugins.md#translating-posts) |
-| Volltextsuche von Beiträgen | [`search`](../reference/configuration.md#search) | `none`; oder `elasticsearch`, `opensearch` oder `meilisearch` ([Suchmaschinen](search-engines.md)); oder `plugin`, ein Plugin von dir vor einer anderen Engine | [Volltextsuche](search.md), [ein Such-Plugin](plugins.md#searching-posts) |
+| Volltextsuche der Beiträge | [`search`](../reference/configuration.md#search) | `none`; oder `elasticsearch`, `opensearch` oder `meilisearch` ([Suchmaschinen](search-engines.md)); oder `plugin`, ein Plugin von dir vor einer anderen Suchmaschine | [Volltextsuche](search.md), [ein Such-Plugin](plugins.md#searching-posts) |
 | CDN für Medien | [`media_origin`](../reference/configuration.md#media_origin) | nicht gesetzt (der Server liefert Medien von seinem eigenen Origin aus) oder der Origin deines CDN | [Medien über ein CDN ausliefern](cdn.md) |
-| Cloud-Kosten | [`billing_sources`](../reference/configuration.md#billing_sources) | keine oder beliebige von `aws` (AWS Cost Explorer), `gcp` (Billing-Export oder Budget von Google Cloud), `cloudflare` (Nutzungsentgelte von Cloudflare), `plugin` | [Cloud-Kosten importieren](billing-import.md) |
+| Cloud-Kosten | [`billing_sources`](../reference/configuration.md#billing_sources) | keine, oder beliebige von `aws` (AWS Cost Explorer), `gcp` (Billing-Export oder Budget von Google Cloud), `cloudflare` (Nutzungskosten von Cloudflare), `plugin` | [Cloud-Kosten importieren](billing-import.md) |
 | Metriken | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`, `prometheus`, `otlp` (OpenTelemetry), `emf` (CloudWatch) | [Metriken](running.md#metrics), [Alarme](alerts.md) |
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
 | Fehlerberichte | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (nur die Logzeile und die Fehlergruppen), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Fehlerberichte](error-reporting.md) |
 
-Das veröffentlichte Binary und das Container-Image enthalten jeden Adapter der Tabelle.
+Die veröffentlichte Binärdatei und das Container-Image enthalten jeden Adapter der Tabelle.
 
-`my config check` meldet jedes Problem der Konfiguration auf einmal, bevor du den Server startest
+`my config check` meldet alle Probleme der Konfiguration auf einmal, bevor du den Server startest
 ([Produktions-Checkliste](production-checklist.md)).
 
-<!-- source: from-a-small-server-to-a-large-one 42bbd3f2a76e -->
-## Von einem kleinen Server zu einem großen
+<!-- source: from-a-small-server-to-a-large-one 2f46b66f047c -->
+## Vom kleinen Server zum großen
 
-![Drei Schritte von einem kleinen zu einem großen Server: ein Prozess auf SQLite und dem Dateisystem, dann PostgreSQL und Objektspeicher hinter einem CDN, dann getrennte Web- und Worker-Prozesse mit einem Stream-Broker. Die Liste unten beschreibt jeden Schritt.](images/growth.svg)
+![Drei Schritte vom kleinen zum großen Server: ein Prozess auf SQLite und dem Dateisystem, dann PostgreSQL und Objektspeicher hinter einem CDN, dann getrennte Web- und Worker-Prozesse mit einem Stream-Broker. Die Liste unten beschreibt jeden Schritt.](images/growth.svg)
 
 1. **Klein anfangen.** Ein Prozess mit `role = all`, auf SQLite, mit Medien im Dateisystem und den Standardwerten für den
-   Rest: die Queue und der Key-Value-Speicher in der Datenbank und der Echtzeit-Stream innerhalb des Prozesses. Die Docker-
-   Compose-Dateien in `deploy/docker` starten dieses Setup auf einer Maschine ([Deployment mit Docker Compose](deploy-docker-compose.md)).
-   Es eignet sich für einen persönlichen oder kleinen Server. `stream = hub` erreicht nur den Prozess, in dem er läuft, daher bleibt dieses Setup bei einem
+   Rest: Queue und Key-Value-Store in der Datenbank und der Echtzeit-Stream innerhalb des Prozesses. Die Docker-Compose-Dateien in `deploy/docker` starten dieses Setup auf einer Maschine ([Bereitstellung mit Docker Compose](deploy-docker-compose.md)).
+   Es passt zu einem persönlichen oder kleinen Server. `stream = hub` erreicht nur den Prozess, in dem er läuft, daher bleibt dieses Setup bei einem
    Prozess.
 2. **Die Daten auslagern.** PostgreSQL für die Datenbank, ein S3-kompatibler Bucket oder Google Cloud Storage für die Medien
-   und ein CDN vor den Medien. Der Server ist weiterhin ein Prozess, hängt aber nicht mehr an einer Festplatte, und die
-   Prozesse des nächsten Schritts können die Daten teilen. Entscheide dich dafür möglichst vor dem ersten Start: Die Daten
-   später von SQLite und dem Dateisystem umzuziehen, ist eine eigene Aufgabe ([Was zu sichern ist](backup.md#what-to-back-up) listet auf,
+   und ein CDN vor den Medien. Der Server ist noch ein Prozess, hängt aber nicht mehr an einer Platte, und die
+   Prozesse des nächsten Schritts können die Daten teilen. Entscheide das nach Möglichkeit vor dem ersten Start: Die Daten
+   später von SQLite und dem Dateisystem umzuziehen, ist eine Aufgabe für sich ([Was zu sichern ist](backup.md#what-to-back-up) listet auf,
    was umziehen muss).
-3. **Horizontal skalieren.** Betreibe Prozesse mit `role = web` für die Anfragen und `role = worker` für die Jobs, so viele, wie jede Rolle
+3. **Skalieren.** Führe Prozesse mit `role = web` für die Anfragen und `role = worker` für die Jobs aus, so viele, wie jede Art
    braucht, und teile die Worker nach Job-Typ auf ([Worker aufteilen](running.md#splitting-workers-by-job-type)).
    Mit mehr als einem Prozess braucht der Echtzeit-Stream einen Broker, der jeden Prozess erreicht (`postgres`, `valkey`,
-   `sns` oder `pubsub`), und der Key-Value-Speicher sollte geteilt sein (`db` oder `valkey`), da `memory` die Ratenbegrenzungen
-   jedes Prozesses getrennt hält. Die Job-Queue bleibt in
+   `sns` oder `pubsub`), und der Key-Value-Store sollte geteilt werden (`db` oder `valkey`), da `memory` die Rate Limits
+   und die Antworten auf erneut gesendete Schreibvorgänge jedes Prozesses getrennt hält. Die Job-Queue bleibt in
    PostgreSQL oder zieht zu Google Cloud Tasks um ([Cloud Tasks](running.md#cloud-tasks)).
 
-Das [Deployment auf Cloud Run](deploy-cloud-run.md) ist ein Beispiel für ein Setup zwischen dem zweiten und dem dritten Schritt:
+Die [Bereitstellung auf Cloud Run](deploy-cloud-run.md) ist ein Beispiel für ein Setup zwischen dem zweiten und dem dritten Schritt:
 `role = all` auf Cloud Run, PostgreSQL auf Neon, Medien in Cloud Storage, Cloud Tasks für die Jobs und Pub/Sub für den
-Stream, ohne laufenden Server, solange niemand den Server nutzt.
+Stream, ohne laufende Instanz, solange niemand den Server nutzt.
 
 <!-- source: where-to-go-next 2f1d25c01f8a -->
 ## Wie es weitergeht

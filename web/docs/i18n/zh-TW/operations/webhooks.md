@@ -3,22 +3,33 @@
 
 Webhook 會把檢舉、註冊申請、帳號建立與個人檔案變更、審核處置、申訴、網域處置、本站的公開貼文，以及自訂表情符號的管理操作，送到 Slack 或 Discord 的轉送服務、工單系統，或 n8n 之類的自動化工具。沒有設定任何 Webhook 的伺服器，不會儲存額外的資料列，也不會執行額外的任務。接收端會收到什麼（標頭、簽章、事件、內文），請參閱 [Webhook 參考文件](../reference/webhooks.md)。
 
-<!-- source: set-up-a-webhook c8a80bc40038 -->
+<!-- source: set-up-a-webhook 20c889b84876 -->
 ## 設定 Webhook
 
-擁有 `manage_webhooks` 權限的人，都可以在管理畫面「Webhook」（`/admin/webhooks`）設定 Webhook。內建的 `admin` 角色擁有這個權限。「新增 Webhook」會開啟表單；在列表中選擇一個 Webhook 會開啟它的頁面，你可以在那裡修改、測試、啟用、停用和刪除它，為它產生新的密鑰，以及查看它的傳送記錄。
+擁有 `manage_webhooks` 權限的人，都可以在管理畫面「Webhook」（`/admin/webhooks`）設定 Webhook。
+內建的 `admin` 角色擁有這個權限。「設定 Webhook」會開啟表單；在列表中選擇一個 Webhook 會開啟它的頁面，你可以在那裡
+測試它、關閉和開啟它、修改它、查看它最近 14 天的傳送記錄並重新傳送、為它產生新的
+密鑰，以及在輸入它的 URL 的主機名稱後刪除它。當傳送持續失敗，以及伺服器
+關閉了該 Webhook 時，頁面都會說明。傳送記錄會顯示每次傳送的事件、狀態、嘗試次數和最後一次嘗試，以及
+它送出的內文；內文可能含有個人資料，只會顯示給同時擁有該事件所需權限的人（見下文）。
 
-1. 建立 Webhook，填入目的地 URL、說明，以及要訂閱的事件。除了 `manage_webhooks` 之外，每種事件還各自需要對應的權限：檢舉需要 `manage_reports`，註冊、帳號、審核處置和申訴需要 `manage_accounts`，網域處置需要 `manage_domains`，自訂表情符號需要 `manage_custom_emojis`，錯誤群組需要 `manage_errors`。
+1. 建立 Webhook，填入目的地 URL、說明，以及要訂閱的事件。除了 `manage_webhooks` 之外，每種事件還各自需要對應的
+   權限：檢舉需要 `manage_reports`，註冊、帳號、審核處置和申訴需要 `manage_accounts`，網域處置需要 `manage_domains`，自訂表情符號需要 `manage_custom_emojis`，
+   錯誤群組需要 `manage_errors`。
    公開貼文不需要額外的權限。你無法選擇自己缺少權限的事件。
 2. 密鑰（`whsec_...`）只會在建立 Webhook 時顯示一次。請把它設定在接收端。之後無法再次顯示。
 3. 在 Webhook 的頁面選擇「傳送測試」來傳送 `webhook.test`，並在傳送記錄中確認它已送達。
 
-建立、修改、刪除、啟用、停用 Webhook，以及輪替它的密鑰，都會記錄在稽核日誌中。目標會以說明和 URL 的主機名稱顯示；URL 本身不會被記錄。
+建立、修改、刪除、啟用、停用 Webhook，以及輪替它的密鑰，都會記錄在稽核紀錄中。
+目標會以說明和 URL 的主機名稱顯示；URL 本身不會被記錄。
 
-<!-- source: rotate-the-secret 928c62f87538 -->
+<!-- source: rotate-the-secret fc0bedd73653 -->
 ## 輪替密鑰
 
-「新密鑰」會建立新的密鑰並顯示一次。接下來的 24 小時內，訊息也會用舊的密鑰簽章（`webhook-signature` 會帶有兩個簽章），因此你可以在這段期間把接收端切換到新的密鑰。密鑰在存入資料庫之前，會先以 `kernel.Sealer` 加密封存；所用的金鑰是 [KEK](key-management.md)。
+「建立新密鑰」會建立新的密鑰並顯示一次。接下來的 24 小時內，訊息也會用舊的密鑰簽章
+（`webhook-signature` 會帶有兩個簽章），因此你可以在這段期間把接收端切換到新的密鑰。
+密鑰在存入資料庫之前，會先以 `kernel.Sealer` 加密封存；所用的金鑰是
+[KEK](key-management.md)。
 
 <!-- source: failures-and-redelivery 65aba0d2089e -->
 ## 失敗與重新傳送

@@ -1,16 +1,17 @@
-<!-- source: external-login-providers 48a582ab87ec -->
+<!-- source: external-login-providers e0088b122632 -->
 # Provedores de login externos
 
-Um provedor de login externo permite que os usuários entrem com uma conta que já têm em outro lugar: um provedor OpenID
-Connect (Google Workspace, Microsoft Entra ID, Keycloak e semelhantes), o GitHub, o Discord ou um único servidor Mastodon.
+Um provedor de login externo permite que os usuários entrem com uma conta que têm em outro lugar: um provedor OpenID Connect
+(Google Workspace, Microsoft Entra ID, Keycloak e semelhantes), o GitHub, o Discord ou um servidor Mastodon.
 Você configura os provedores com o comando `my login-provider` em um host que tenha a configuração do servidor, ou pela
-API de administração (`/api/v1/admin/login_providers`) com a permissão `manage_login_providers`, que somente a função
-integrada `admin` tem. O comando funciona antes de qualquer administrador conseguir entrar, então você pode usá-lo na
-primeira configuração.
-No cliente web, os administradores com essa permissão usam “Provedores de login” no menu de administração. A lista mostra
-o tipo de cada provedor, o estado e se o cadastro é permitido; “Adicionar um provedor” abre o formulário que cria um.
-Ao escolher um provedor, abre-se a página dele, que mostra a URL de callback com um botão para copiá-la e quantos usuários
-estão vinculados, e onde você altera as configurações, gera um novo segredo do cliente, ativa, desativa e exclui o provedor.
+API de administração (`/api/v1/admin/login_providers`) com a permissão `manage_login_providers`, que apenas o papel
+`admin` embutido tem. O comando funciona antes de qualquer administrador conseguir entrar, então você pode usá-lo na primeira configuração.
+No cliente web, os administradores com essa permissão usam “Provedores de login” no menu de administração. A lista
+mostra o tipo, o estado, quantos usuários estão vinculados e se o cadastro é permitido de cada provedor, sob um resumo do
+[limite aos provedores de login](#limit-sign-in-to-login-providers) enquanto ele está ativo; “Adicionar um provedor de login” abre o formulário que
+cria um. Escolher um provedor abre a página dele, que mostra a URL de callback com um botão que a copia, e onde você
+altera as configurações, ativa ou desativa o provedor e dá a ele um novo segredo de cliente, tudo salvo com um botão, e o exclui, o que
+pede que você digite o nome dele.
 
 <!-- source: what-external-sign-in-does 25fa37e22a50 -->
 ## O que o login externo faz

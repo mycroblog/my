@@ -62,6 +62,54 @@ func (q *Queries) InsertRelayedStatus(ctx context.Context, arg InsertRelayedStat
 	return err
 }
 
+const listDueStatusContentPurges = `-- name: ListDueStatusContentPurges :many
+SELECT p.status_id, d.author_account_id, CAST(s.id IS NOT NULL AS INTEGER) AS present
+FROM status_content_purges p
+  JOIN status_deletions d ON d.status_id = p.status_id
+  LEFT JOIN statuses s ON s.id = p.status_id
+WHERE p.due_at <= CAST(?1 AS INTEGER)
+ORDER BY p.due_at, p.status_id
+LIMIT ?2
+`
+
+type ListDueStatusContentPurgesParams struct {
+	DueBefore  int64
+	BatchLimit int64
+}
+
+type ListDueStatusContentPurgesRow struct {
+	StatusID        string
+	AuthorAccountID string
+	Present         int64
+}
+
+// ListDueStatusContentPurges returns, the earliest first, up to @batch_limit purges of deleted
+// statuses due at @due_before or earlier, with the author of each status and whether its row is
+// still there. It reads status_content_purges_due_at_status_id from its start, and the primary
+// keys of the deletions and the statuses.
+func (q *Queries) ListDueStatusContentPurges(ctx context.Context, arg ListDueStatusContentPurgesParams) ([]ListDueStatusContentPurgesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listDueStatusContentPurges, arg.DueBefore, arg.BatchLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDueStatusContentPurgesRow{}
+	for rows.Next() {
+		var i ListDueStatusContentPurgesRow
+		if err := rows.Scan(&i.StatusID, &i.AuthorAccountID, &i.Present); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRelayedStatusesToPurge = `-- name: ListRelayedStatusesToPurge :many
 SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM relayed_statuses rs JOIN statuses s ON s.id = rs.status_id
@@ -221,6 +269,22 @@ func (q *Queries) ListRemoteStatusesToPurge(ctx context.Context, arg ListRemoteS
 	return items, nil
 }
 
+const postponeStatusContentPurges = `-- name: PostponeStatusContentPurges :exec
+UPDATE status_content_purges SET due_at = CAST(?1 AS INTEGER)
+WHERE status_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT)))
+`
+
+type PostponeStatusContentPurgesParams struct {
+	DueAt int64
+	Ids   string
+}
+
+// PostponeStatusContentPurges moves the purges of the statuses @ids, a JSON array, to @due_at.
+func (q *Queries) PostponeStatusContentPurges(ctx context.Context, arg PostponeStatusContentPurgesParams) error {
+	_, err := q.db.ExecContext(ctx, postponeStatusContentPurges, arg.DueAt, arg.Ids)
+	return err
+}
+
 const purgePollOptions = `-- name: PurgePollOptions :exec
 DELETE FROM poll_options WHERE poll_id IN (
   SELECT p.id FROM polls p JOIN status_revisions r ON r.id = p.revision_id
@@ -323,6 +387,15 @@ DELETE FROM remote_status_revisions WHERE revision_id IN (
 
 func (q *Queries) PurgeRemoteStatusRevisions(ctx context.Context, ids string) error {
 	_, err := q.db.ExecContext(ctx, purgeRemoteStatusRevisions, ids)
+	return err
+}
+
+const purgeStatusContentPurges = `-- name: PurgeStatusContentPurges :exec
+DELETE FROM status_content_purges WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) PurgeStatusContentPurges(ctx context.Context, ids string) error {
+	_, err := q.db.ExecContext(ctx, purgeStatusContentPurges, ids)
 	return err
 }
 

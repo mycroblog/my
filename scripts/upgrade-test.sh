@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 # The upgrade test of the release gate (slow-suite.yml's image-upgrade job): for each dialect, make a
-# database with the images of the previous release PREVIOUS (a tag), fill it through that release's server (two local
+# database with the images of the previous release PREVIOUS (a tag), as its operators did (its schema, then its
+# `my db upgrade` when it has one), fill it through that release's server (two local
 # accounts, posts, a local follow, and a follow request to an account of remote.test, which the server fetches), then
 # upgrade it with the server image of the working tree in the order that deploy/docker/compose.yaml runs (my db upgrade
 # -check, my schema apply, my db upgrade, then the server) and check readiness, `my projection verify`, and that the data
@@ -97,6 +98,11 @@ else
 	fi
 fi
 export MY_PREVIOUS_SCHEMA_IMAGE="$previous_schema_image"
+# Whether the previous release has `my db upgrade` (a subcommand of its `my db`).
+previous_db_upgrade=0
+if git -C "$root" show "$previous:cmd/my/db.go" 2>/dev/null | grep -q '"upgrade"'; then
+	previous_db_upgrade=1
+fi
 echo "upgrade-test: building the image of $candidate" >&2
 candidate_image="my-upgrade-test:candidate"
 docker build -q --build-arg "VERSION=$candidate" --target app -t "$candidate_image" "$root" >/dev/null
@@ -157,14 +163,17 @@ run() {
 		export SCHEMA_DEV_URL='postgres://my:my@db:5432/my_dev?sslmode=disable&search_path=public'
 	fi
 
-	# The previous release: apply its schema (with its schema image if it has one), start its server, and fill the
-	# database through it.
+	# The previous release: apply its schema (with its schema image if it has one), run its data upgrade steps if it
+	# has `my db upgrade` (its readiness needs their record), start its server, and fill the database through it.
 	export MY_IMAGE="$previous_image"
 	"${compose[@]}" up -d --wait db remote
 	if [[ -n "$previous_schema_image" ]]; then
 		"${compose[@]}" run --rm --no-deps previous-schema >/dev/null
 	else
 		"${compose[@]}" run --rm --no-deps schema >/dev/null
+	fi
+	if [[ "$previous_db_upgrade" == 1 ]]; then
+		"${compose[@]}" run --rm --no-deps upgrade >/dev/null
 	fi
 	"${compose[@]}" up -d --no-deps my
 	wait_ready

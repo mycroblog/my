@@ -123,81 +123,41 @@
     "defaultMessage": "General",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
-  "staff_settings.topic.general.hint": {
-    "defaultMessage": "Name, descriptions, contact and images",
-    "description": "The line under General in the list of Server settings: what its page holds. Read by administrators."
-  },
   "staff_settings.topic.branding": {
     "defaultMessage": "Icon and logo",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
-  },
-  "staff_settings.topic.branding.hint": {
-    "defaultMessage": "The pictures that stand for this server",
-    "description": "The line under Icon and logo in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.topic.registration": {
     "defaultMessage": "Registration",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
-  "staff_settings.topic.registration.hint": {
-    "defaultMessage": "Who can join, invites, and apps",
-    "description": "The line under Sign-up in the list of Server settings: what its page holds. Read by administrators."
-  },
   "staff_settings.topic.content": {
-    "defaultMessage": "Posts and features",
+    "defaultMessage": "Posts, timelines, and events",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
-  },
-  "staff_settings.topic.content.hint": {
-    "defaultMessage": "Limits of posts, timelines, link cards, articles and events",
-    "description": "The line under Posts and features in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.topic.federation": {
     "defaultMessage": "Federation",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
-  "staff_settings.topic.federation.hint": {
-    "defaultMessage": "Which servers this server talks to, and what it keeps of theirs",
-    "description": "The line under Federation in the list of Server settings: what its page holds. Read by administrators."
-  },
   "staff_settings.topic.hooks": {
     "defaultMessage": "External review",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
-  },
-  "staff_settings.topic.hooks.hint": {
-    "defaultMessage": "How far each decision hook acts",
-    "description": "The line under Automated review in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.topic.discovery": {
     "defaultMessage": "Search and crawlers",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
-  "staff_settings.topic.discovery.hint": {
-    "defaultMessage": "What search engines and AI may do, the security contact, and what search covers",
-    "description": "The line under Search engines and AI in the list of Server settings: what its page holds. Read by administrators."
-  },
   "staff_settings.topic.voice": {
     "defaultMessage": "Voice chat",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
-  },
-  "staff_settings.topic.voice.hint": {
-    "defaultMessage": "Who can open rooms, and what a room shows outside",
-    "description": "The line under Voice chat in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.topic.auto_delete": {
     "defaultMessage": "Post deletion",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
-  "staff_settings.topic.auto_delete.hint": {
-    "defaultMessage": "The default for new accounts, and a maximum for everyone",
-    "description": "The line under Deleting old posts in the list of Server settings: what its page holds. Read by administrators."
-  },
   "staff_settings.topic.records": {
-    "defaultMessage": "Appeals and records",
+    "defaultMessage": "Appeals and record keeping",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
-  },
-  "staff_settings.topic.records.hint": {
-    "defaultMessage": "How long people can appeal, and how long records are kept",
-    "description": "The line under Appeals and records in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.group.server": {
     "defaultMessage": "This server",
@@ -623,6 +583,14 @@
     "defaultMessage": "Show the server's numbers",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
+  "staff_settings.setting.landing_fediverse_explanation": {
+    "defaultMessage": "Explain how the fediverse works",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.landing_features": {
+    "defaultMessage": "Show the features members can use",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
   "staff_settings.setting.featured_accounts": {
     "defaultMessage": "Suggested accounts",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
@@ -852,7 +820,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_local": {
-    "defaultMessage": "Local posts",
+    "defaultMessage": "Posts for neighbors",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_unlisted": {
@@ -1076,7 +1044,7 @@
     "description": "An option in the select of which media of other servers the server keeps copies of on a page of Server settings. Read by administrators."
   },
   "staff_settings.option.search_visibilities": {
-    "defaultMessage": "{value, select, public {Public posts} local {Local posts} other {Public and local posts}}",
+    "defaultMessage": "{value, select, public {Public posts} local {Posts for neighbors} other {Public posts and posts for neighbors}}",
     "description": "An option in the select of the posts full-text search covers on a page of Server settings. Read by administrators."
   },
   "staff_settings.option.hook_mode": {
@@ -1147,10 +1115,6 @@
     "defaultMessage": "{document, select, terms {Terms of service} privacy_policy {Privacy policy} other {Commerce disclosure}}",
     "description": "The name of a document in the list at /admin/documents and the title of its page. Read by administrators."
   },
-  "staff_settings.document.hint": {
-    "defaultMessage": "{document, select, terms {What people agree to when they sign up} privacy_policy {What this server does with personal data} other {The seller's details for the supporter plans}}",
-    "description": "The line under a document's name in the list at /admin/documents. Read by administrators."
-  },
   "staff_settings.document.text": {
     "defaultMessage": "Text",
     "description": "The heading of the section of a document's text on its page. Read by administrators."
@@ -1192,7 +1156,7 @@
     "description": "Under the heading of the rules in effect while they are at the limit. Read by administrators."
   },
   "staff_settings.rules.empty": {
-    "defaultMessage": "No rule yet. The rules show on this server's About page and when people sign up and report.",
+    "defaultMessage": "No rule yet.",
     "description": "In place of the list of rules while there is none. Read by administrators."
   },
   "staff_settings.rules.numbered": {
@@ -1584,7 +1548,7 @@
     "description": "The checkbox of whether posts are sent to a translation provider. Read by administrators."
   },
   "staff_settings.providers.audience": {
-    "defaultMessage": "{audience, select, public {Public} local {Local} unlisted {Quiet public} private {Followers only} other {Direct}}",
+    "defaultMessage": "{audience, select, public {Public} local {Neighbors} unlisted {Quiet public} private {Followers only} other {Direct}}",
     "description": "A visibility a translation provider may receive, the same words as a post's visibility. Read by administrators."
   },
   "staff_settings.providers.first": {
@@ -1612,7 +1576,7 @@
     "description": "The heading of the list of OAuth apps. Read by administrators."
   },
   "staff_settings.apps.empty": {
-    "defaultMessage": "No app here.",
+    "defaultMessage": "No apps.",
     "description": "In place of the list of OAuth apps while it shows none. Read by administrators."
   },
   "staff_settings.apps.registration": {

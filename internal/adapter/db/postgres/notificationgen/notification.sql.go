@@ -53,6 +53,7 @@ WHERE n.recipient_account_id = $1
   AND n.id > COALESCE($2::uuid, '00000000-0000-0000-0000-000000000000')
   AND NOT (n.type = ANY($3::text[]))
   AND NOT EXISTS (SELECT 1 FROM notification_dismissals d WHERE d.notification_id = n.id)
+  AND NOT EXISTS (SELECT 1 FROM notification_reads r WHERE r.account_id = n.recipient_account_id AND r.notification_id = n.id)
   AND NOT EXISTS (SELECT 1 FROM notification_exclusions x
     WHERE x.viewer_account_id = n.recipient_account_id AND x.target_account_id = n.source_account_id
       AND (x.expires_at IS NULL OR x.expires_at > $4::timestamptz))
@@ -77,8 +78,9 @@ type CountNotificationsAfterParams struct {
 }
 
 // CountNotificationsAfter counts the notifications of a recipient after the ID after that
-// ListNotifications would return; an empty after counts them all. hidden_types is that of
-// ListNotifications.
+// ListNotifications would return and that the recipient did not read on its own
+// (notification_reads): the unread notifications when after is the read marker (domain
+// ReadMarker.Unread). An empty after counts them all. hidden_types is that of ListNotifications.
 func (q *Queries) CountNotificationsAfter(ctx context.Context, arg CountNotificationsAfterParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countNotificationsAfter,
 		arg.RecipientAccountID,
@@ -175,6 +177,22 @@ type DeleteNotificationExclusionsOfParams struct {
 
 func (q *Queries) DeleteNotificationExclusionsOf(ctx context.Context, arg DeleteNotificationExclusionsOfParams) error {
 	_, err := q.db.Exec(ctx, deleteNotificationExclusionsOf, arg.Reason, arg.ViewerAccountIds, arg.TargetAccountIds)
+	return err
+}
+
+const deleteNotificationReadsThrough = `-- name: DeleteNotificationReadsThrough :exec
+DELETE FROM notification_reads WHERE account_id = $1 AND notification_id <= $2::uuid
+`
+
+type DeleteNotificationReadsThroughParams struct {
+	AccountID string
+	Through   string
+}
+
+// DeleteNotificationReadsThrough deletes the reads of an account that the marker at through
+// passes.
+func (q *Queries) DeleteNotificationReadsThrough(ctx context.Context, arg DeleteNotificationReadsThroughParams) error {
+	_, err := q.db.Exec(ctx, deleteNotificationReadsThrough, arg.AccountID, arg.Through)
 	return err
 }
 
@@ -465,6 +483,29 @@ func (q *Queries) InsertNotificationDomainExclusion(ctx context.Context, arg Ins
 	return err
 }
 
+const insertNotificationRead = `-- name: InsertNotificationRead :exec
+
+INSERT INTO notification_reads (account_id, notification_id)
+SELECT $1::uuid, $2::uuid
+WHERE NOT EXISTS (SELECT 1 FROM notification_read_markers m
+  WHERE m.account_id = $1::uuid AND m.last_read_id >= $2::uuid)
+ON CONFLICT (account_id, notification_id) DO NOTHING
+`
+
+type InsertNotificationReadParams struct {
+	AccountID      string
+	NotificationID string
+}
+
+// Reads (current value): the notifications newer than the marker that the account read on its
+// own.
+// InsertNotificationRead inserts nothing when the notification is already read, or the account's
+// marker is at or past it.
+func (q *Queries) InsertNotificationRead(ctx context.Context, arg InsertNotificationReadParams) error {
+	_, err := q.db.Exec(ctx, insertNotificationRead, arg.AccountID, arg.NotificationID)
+	return err
+}
+
 const insertNotificationsFor = `-- name: InsertNotificationsFor :many
 INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, gathering_id, dedupe_key, created_at)
 SELECT unnest($1::uuid[]), unnest($2::uuid[]), $3::text,
@@ -651,6 +692,38 @@ func (q *Queries) InsertNotificationsForEach(ctx context.Context, arg InsertNoti
 			return nil, err
 		}
 		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listNotificationReadsAmong = `-- name: ListNotificationReadsAmong :many
+SELECT notification_id FROM notification_reads
+WHERE account_id = $1 AND notification_id = ANY($2::uuid[])
+ORDER BY notification_id
+`
+
+type ListNotificationReadsAmongParams struct {
+	AccountID       string
+	NotificationIds []string
+}
+
+// ListNotificationReadsAmong returns which of the notifications the account read on its own.
+func (q *Queries) ListNotificationReadsAmong(ctx context.Context, arg ListNotificationReadsAmongParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listNotificationReadsAmong, arg.AccountID, arg.NotificationIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var notification_id string
+		if err := rows.Scan(&notification_id); err != nil {
+			return nil, err
+		}
+		items = append(items, notification_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

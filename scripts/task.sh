@@ -34,6 +34,25 @@ if [ -z "${CI:-}" ] && [ -z "${TASK_CONCURRENCY:-}" ]; then
   export TASK_CONCURRENCY
 fi
 
+# Locally, the Go commands of check and check:changed take a third of the physical cores each (GOMAXPROCS, which
+# also sets go build's and go test's -p): about three of them compile or test at once, and each sized to every core
+# put several runnable threads on each core, which a second check beside it doubled until bun's tests passed their
+# limits. Set GOMAXPROCS to override.
+if [ -z "${CI:-}" ] && [ -z "${GOMAXPROCS:-}" ]; then
+  for arg in "$@"; do
+    case "$arg" in
+      check | check:changed)
+        cores="$( (lscpu -p=core,socket 2>/dev/null || true) | awk '!/^#/' | sort -u | wc -l)"
+        [ "$cores" -ge 1 ] || cores="$(sysctl -n hw.physicalcpu 2>/dev/null || echo 2)"
+        GOMAXPROCS=$((cores / 3))
+        [ "$GOMAXPROCS" -ge 2 ] || GOMAXPROCS=2
+        export GOMAXPROCS
+        break
+        ;;
+    esac
+  done
+fi
+
 output=()
 if [ -n "${CI:-}" ] && [ -z "${TASK_OUTPUT:-}" ]; then
   output=(--output interleaved)

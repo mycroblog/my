@@ -102,6 +102,20 @@ describe("useHomeTimeline", () => {
     expect(column(data)).toEqual({ status: "success", hasNextPage: false, ids });
   });
 
+  test("after its next page failed, it keeps the pages before and says the next page failed", async () => {
+    const { fake, data, ids } = timeline();
+    await load(data);
+    fake.script("GET /timelines/home", { times: 1, fail: 500 });
+    await new InfiniteQueryObserver(data.queryClient, homeTimelineQuery(data)).fetchNextPage();
+    const { failedNextPage } = probe(data, useHomeTimeline);
+    expect({ ...column(data), failedNextPage }).toEqual({
+      status: "error",
+      hasNextPage: true,
+      ids: ids.slice(0, 20),
+      failedNextPage: true,
+    });
+  });
+
   test("fails outside AppDataProvider", () => {
     expect(() => {
       probeOutside(useHomeTimeline);

@@ -220,7 +220,7 @@
     "description": "The question of the confirmation before removing an account from the reader's followers. handle is its @handle."
   },
   "profile.remove_follower_text": {
-    "defaultMessage": "相手はフォロワー限定の投稿を見られなくなります。もう一度フォローすることはできます。",
+    "defaultMessage": "相手はフォロワーのみの投稿を見られなくなります。もう一度フォローすることはできます。",
     "description": "What removing a follower does, in its confirmation."
   },
   "profile.remove_follower_confirm": {

@@ -49,10 +49,10 @@ curl -H 'Accept: application/activity+json' http://localhost:8080/ap/actors/<the
 - ログインの Cookie は `Secure` です。Chrome と Firefox は `http://localhost` でもこれを受け入れますが、Safari（WebKit）は受け入れません。ローカルでは Chrome か Firefox を使ってください。
 - 投稿の本文にあるハッシュタグとメンションのリンクは、連合で使う URL なので `https://` になります。
 
-<!-- source: going-public be2475df6407 -->
+<!-- source: going-public a59510155d91 -->
 ## 公開する
 
-- `.env` の `MY_HOST` を実際のドメインにし、`MY_WEB_ORIGIN` を削除して（既定値は `https://{MY_HOST}` です）、サーバーの前段で TLS を終端してください。そのためにはレイヤー `compose.caddy.yaml` が Caddy を動かします（[Docker Compose のファイル](running.md#docker-compose-files)）。`MY_HOST` は最初の起動時にデータベースに保存され、あとから変えることはできません。
+- `.env` の `MY_HOST` を実際のドメインにし、`MY_WEB_ORIGIN` を削除して（既定値は `https://{MY_HOST}` です）、サーバーの前段で TLS を終端してください。そのためにはレイヤー `compose.caddy.yaml` が Caddy を動かします（[Docker Compose のファイル](running.md#docker-compose-files)）。サーバー自身に HTTPS を提供させることもできます（[サーバー自身が HTTPS を提供する](running.md#serving-https-from-the-server)）。`MY_HOST` は最初の起動時にデータベースに保存され、あとから変えることはできません。
 - 自分で用意したリバースプロキシの後ろに置く場合は、`.env` に `MY_TRUSTED_PROXIES` を設定してください。そうすると、ログインのレート制限などがプロキシではなくクライアントの IP アドレスごとにかかります（[`trusted_proxies`](../reference/configuration.md#trusted_proxies)）。
 - サーバーを利用者に公開する前に、[本番運用前のチェックリスト](production-checklist.md)を確認してください。
 - `docker compose down` でスタックが止まります。`down -v` はデータのボリュームも削除します。

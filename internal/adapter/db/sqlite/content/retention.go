@@ -91,7 +91,7 @@ func (r *StatusRepository) PurgeStatuses(ctx context.Context, tx uow.Tx, statusI
 		return err
 	}
 	// Children before their parents: the revisions' rows, the polls', then the boosts, the
-	// quotes, and the statuses.
+	// quotes, the purge of a deleted status, and the statuses.
 	steps := []func(context.Context, string) error{
 		q.PurgeStatusSensitivityOverrides, q.PurgeStatusRevisionBodies, q.PurgeStatusRevisionSources, q.PurgeStatusRevisionAttachments,
 		q.PurgeStatusRevisionMentions, q.PurgeStatusRevisionTags, q.PurgeStatusRevisionEmojis,
@@ -100,7 +100,7 @@ func (r *StatusRepository) PurgeStatuses(ctx context.Context, tx uow.Tx, statusI
 		q.PurgePollVotes, q.PurgePollTallies, q.PurgePollOptions, q.PurgePolls, q.PurgeStatusRevisions,
 		q.PurgeRemoteBoostRetractions, q.PurgeRemoteBoosts, q.PurgeRelayedStatuses, q.PurgeInteractionRequestEvents,
 		q.PurgeInteractionRequestStates, q.PurgeInteractionRequests, q.PurgeStatusQuoteDetachments, q.PurgeStatusQuotes,
-		q.PurgeStatusInteractionPolicies, q.PurgeInteractionAuthorizationRevocations, q.PurgeInteractionAuthorizations, q.PurgeStatusConversations, q.PurgeStatuses,
+		q.PurgeStatusInteractionPolicies, q.PurgeInteractionAuthorizationRevocations, q.PurgeInteractionAuthorizations, q.PurgeStatusConversations, q.PurgeStatusContentPurges, q.PurgeStatuses,
 	}
 	for _, step := range steps {
 		if err := step(ctx, ids); err != nil {

@@ -291,6 +291,14 @@
     "defaultMessage": "アカウントを作成",
     "description": "The landing page's primary action for a visitor while the server takes new accounts; it opens the server's registration page."
   },
+  "app.landing_sign_up_invite": {
+    "defaultMessage": "招待でアカウントを作成",
+    "description": "The landing page's primary action while the server takes new accounts by invite only; it opens the registration page, which asks for the invite."
+  },
+  "app.landing_account": {
+    "defaultMessage": "アカウント",
+    "description": "On the landing page, the name for assistive technology of the part that offers creating an account or signing in."
+  },
   "app.landing_approval": {
     "defaultMessage": "新しいアカウントは、モデレーターが確認してから使えるようになります。",
     "description": "On the landing page, under Create an account and Sign in, when the registration mode is approval."
@@ -302,6 +310,98 @@
   "app.landing_closed": {
     "defaultMessage": "このサーバーは新しいアカウントを受け付けていません。",
     "description": "On the landing page, under Sign in, when the server takes no new accounts (registration closed, a one-person server, a closure)."
+  },
+  "app.landing_counts": {
+    "defaultMessage": "このサーバーの数字",
+    "description": "On the landing page, the name for assistive technology of the server's counts (members, public posts this week)."
+  },
+  "app.landing_members": {
+    "defaultMessage": "{count, plural, other {メンバー}}",
+    "description": "On the landing page, the label under the number of the server's members; the number itself stands above it."
+  },
+  "app.landing_week_posts": {
+    "defaultMessage": "{count, plural, other {直近 7 日間の公開投稿}}",
+    "description": "On the landing page, the label under the number of public posts the server's members made in the last 7 days; the number stands above it."
+  },
+  "app.landing_fediverse_heading": {
+    "defaultMessage": "フェディバースの一員",
+    "description": "On the landing page, the heading of the software's explanation of the fediverse (independent servers that follow one another)."
+  },
+  "app.landing_fediverse": {
+    "defaultMessage": "ここのアカウントには @you@{domain} のようなアドレスがつきます。このアドレスで、Mastodon などフェディバースのほかのサーバーの人をフォローでき、その人たちもあなたをフォローできます。",
+    "description": "On the landing page, under Part of the fediverse: how an account of this server follows and is followed by people on other servers. {domain} is this server's domain; @you is a sample name."
+  },
+  "app.landing_features_heading": {
+    "defaultMessage": "ここでできること",
+    "description": "On the landing page, the heading of the list of what members of this server can do besides posting (articles, events, voice rooms…), of what the server has on."
+  },
+  "app.landing_feature_articles": {
+    "defaultMessage": "投稿とは別に、見出しや画像のある長い記事を書けます。",
+    "description": "On the landing page, an item of What you can do here, shown while every member may write articles."
+  },
+  "app.landing_feature_events": {
+    "defaultMessage": "イベントを企画して、参加する人を確かめられます。",
+    "description": "On the landing page, an item of What you can do here, shown while every member may create events."
+  },
+  "app.landing_feature_voice": {
+    "defaultMessage": "通話のルームで、ほかの人とその場で話せます。",
+    "description": "On the landing page, an item of What you can do here, shown while the server's voice rooms are on."
+  },
+  "app.landing_feature_search": {
+    "defaultMessage": "ハッシュタグだけでなく、言葉で投稿を検索できます。",
+    "description": "On the landing page, an item of What you can do here, shown while the server has full-text search."
+  },
+  "app.landing_feature_translation": {
+    "defaultMessage": "どこの投稿も、自分の言語に翻訳して読めます。",
+    "description": "On the landing page, an item of What you can do here, shown while the server has a translation provider."
+  },
+  "app.landing_feature_supporters": {
+    "defaultMessage": "このサーバーの運営資金を支えられます。",
+    "description": "On the landing page, an item of What you can do here, shown while the server takes supporters or tips."
+  },
+  "app.landing_feature_articles_name": {
+    "defaultMessage": "記事",
+    "description": "On the landing page, the name of a sample of the articles' screens, over the sentence of What you can do here on articles."
+  },
+  "app.landing_feature_translation_name": {
+    "defaultMessage": "翻訳",
+    "description": "On the landing page, the name of a sample of a translated post, over the sentence of What you can do here on translation."
+  },
+  "app.landing_sample_room": {
+    "defaultMessage": "土曜の夜のラジオ",
+    "description": "On the landing page, the name of a sample voice room in a miniature of the rooms' list; not a real room."
+  },
+  "app.landing_sample_event": {
+    "defaultMessage": "川沿いの朝さんぽ",
+    "description": "On the landing page, the title of a sample event in a miniature of the events' list; not a real event."
+  },
+  "app.landing_sample_article_title": {
+    "defaultMessage": "小さな庭の十年",
+    "description": "On the landing page, the title of a sample article in a miniature of a timeline; not a real article."
+  },
+  "app.landing_sample_article_summary": {
+    "defaultMessage": "育ったもの、育たなかったもの、また植えたいもの。",
+    "description": "On the landing page, the summary of the sample article whose title is app.landing_sample_article_title."
+  },
+  "app.landing_sample_post": {
+    "defaultMessage": "今朝はパンを焼きました。台所にまだいい匂いが残っています。",
+    "description": "On the landing page, the text of a sample post, shown translated in a miniature and found by a sample search; it must hold the word of app.landing_sample_search."
+  },
+  "app.landing_sample_search": {
+    "defaultMessage": "パン",
+    "description": "On the landing page, the words in a sample search field, which the sample post (app.landing_sample_post) holds."
+  },
+  "app.landing_sample_plan": {
+    "defaultMessage": "サポーター",
+    "description": "On the landing page, the name of a sample supporters' plan in a miniature of the plans; not a real plan."
+  },
+  "app.landing_sample_month": {
+    "defaultMessage": "/ 月",
+    "description": "On the landing page, after the price of the sample supporters' plan: the period it is paid for."
+  },
+  "app.landing_sample_translated": {
+    "defaultMessage": "投稿を{language}から翻訳",
+    "description": "On the landing page, under a sample post shown translated in a miniature of a timeline: the language it was written in ({language}, a language's name)."
   },
   "app.landing_without_account": {
     "defaultMessage": "アカウントなしで",

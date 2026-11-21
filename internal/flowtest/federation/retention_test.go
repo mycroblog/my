@@ -34,10 +34,21 @@ func retentionHarness(db *sqlite.DB) federationtest.RetentionHarness {
 		Interactions: sqlitecontent.NewInteractionRepository(db),
 		Federation:   sqlitefederation.NewRepository(db),
 		Retention:    sqlitecontent.NewStatusRepository(db),
+		Deleted:      sqlitecontent.NewStatusRepository(db),
 		Purges:       sqlitefederation.NewRepository(db),
 		Instances:    sqlitefederation.NewRepository(db),
 		Profiles:     sqliteaccount.NewRepository(db),
 		Emojis:       sqlitecontent.NewCustomEmojiRepository(db),
+		Rows: func(t *testing.T, table, column, value string) int {
+			t.Helper()
+			var n int
+			// The table and column names come from the flows, never from input.
+			q := "SELECT count(*) FROM " + table + " WHERE " + column + " = ?"
+			if err := db.SQLDB().QueryRowContext(t.Context(), q, value).Scan(&n); err != nil {
+				t.Fatalf("count %s: %v", table, err)
+			}
+			return n
+		},
 	}
 }
 

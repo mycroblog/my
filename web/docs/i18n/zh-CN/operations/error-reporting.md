@@ -41,7 +41,7 @@
 
 其他任何日志行都不带堆栈。
 
-<!-- source: google-cloud-cloud-run 925c99683713 -->
+<!-- source: google-cloud-cloud-run a263d8621ca1 -->
 ### Google Cloud（Cloud Run）
 
 Cloud Error Reporting 无需任何设置即可读取这一行，并在控制台的 Error Reporting 下列出错误。它是免费的；你只需为 Cloud Logging 付费。
@@ -50,7 +50,9 @@ Cloud Error Reporting 无需任何设置即可读取这一行，并在控制台�
 - 它保留分组 30 天，并在出现新错误以及已解决的错误再次发生时通知你，整个项目每小时最多 20 条通知。请在 Google Cloud 控制台中设置它的通知渠道。
 - 要查看报告前后发生了什么，在 Cloud Logging 中搜索 `jsonPayload."request_id"="<id>"`，或以同样方式搜索 `trace_id`。
 
-<!-- source: aws 6ca6594afd7e -->
+使用 OpenTofu 模块 [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) 时，`observability` 部分默认把报告发送到这里（`errors = "error-reporting"`）：它会启用 Error Reporting API，并让 `errors_exporter` 保持为 `none`。
+
+<!-- source: aws bc7e48e1321b -->
 ### AWS
 
 CloudWatch Logs 会把这一行当作普通 JSON 读取。
@@ -58,6 +60,8 @@ CloudWatch Logs 会把这一行当作普通 JSON 读取。
 - 为日志组开启日志异常检测。它会标记从未见过的日志行模式，并可以通过 SNS 发出告警。它只读取一行的前 1,500 个字符，这就是 `message` 放在最后一个字段的原因。它不保留已解决的状态。
 - 要统计报告数量，可以创建一个指标筛选器，例如 `{ $.msg = "error report" }`。不要使用取自 `my.error.fingerprint` 的维度：维度的每个取值都会作为一个单独的指标计费。`my.error.source` 和 `my.error.kind` 是安全的。
 - 用 Logs Insights 查找上下文：``filter `request_id` = "<id>"``。
+
+使用 OpenTofu 模块 [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) 时，`observability` 部分默认把报告保存在 CloudWatch Logs 中（`errors = "cloudwatch"`），`errors_exporter` 保持为 `none`。日志异常检测仍需你自己设置。
 
 <!-- source: self-hosted 90de7a419474 -->
 ### 自托管
@@ -69,14 +73,14 @@ CloudWatch Logs 会把这一行当作普通 JSON 读取。
 
 服务器在数据库中按指纹统计报告。它不需要任何设置，也不需要额外的服务，写入量也很小：某个指纹的第一份报告会立即写入，后续的报告在内存中累加，每分钟写入一次。强制终止进程可能会丢失最后一分钟的计数；日志行不会因此丢失。超过 90 天的计数每天删除。如果出故障的正是数据库，报告就只保留在日志行中。
 
-<!-- source: the-administration-screen 09092782a7c1 -->
+<!-- source: the-administration-screen e7dacd037150 -->
 ### 管理界面
 
 角色拥有 `manage_errors` 权限的人（内置的 `admin` 角色拥有该权限）会在管理菜单中看到“错误”（`/admin/errors`）。
 
-- 列表显示各个分组，默认显示未处理的分组。可以按状态（未处理、已解决、已静默、所有状态）和来源（服务器、Web 客户端）筛选。每一行显示错误类型、发生位置、消息的前几行、最近 24 小时和 7 天的次数，以及首次和最近一次出现的时间和版本。
-- 分组页面显示最近一次出现的详情（时间、版本、进程角色、请求 ID、跟踪 ID、类型、消息和调用栈）、最近 90 天按小时统计的出现次数，以及其状态变更的历史。请求 ID 和跟踪 ID 旁有“复制”按钮：把它们粘贴到你的日志搜索中。
-- “标记为已解决”用于你已修复的错误。如果它在服务器的另一个版本上再次发生，该分组会重新打开并再次通知。在被标记为已解决的那个版本上发生的同一错误只会被计数，因此旧版本的最后一些请求不会让它重新打开。
+- 列表显示各个分组，默认显示未处理的分组，最近出现的排在最前。可以按状态（未处理、已解决、已静默、所有状态）和来源（服务器、Web 客户端）筛选。每一行显示消息的第一行、发生位置、最近 24 小时和 7 天的次数、最近一次出现的时间，以及状态。
+- 分组页面开头是该状态下你可以执行的操作（未处理的分组有“解决”和“静默”，已解决的分组有“静默”，已静默的分组有“取消静默”）。页面显示该分组的基本信息（发生位置、消息、首次和最近一次出现的时间和版本、指纹）、最近 24 小时和 7 天的次数、最近一次出现的详情（时间、版本、进程角色、类型、请求 ID 和跟踪 ID，以及调用栈）、最近 90 天按小时统计的出现次数（最新的在前），以及其状态变更的历史。指纹、请求 ID、跟踪 ID 和调用栈旁有复制按钮：把这些 ID 粘贴到你的日志搜索中。
+- “解决”用于你已修复的错误。如果它在服务器的另一个版本上再次发生，该分组会重新打开并再次通知。在被解决的那个版本上发生的同一错误只会被计数，因此旧版本的最后一些请求不会让它重新打开。
 - “静默”会继续计数，但不发送通知或 webhook 事件。“取消静默”会重新打开该分组。
 
 同样的操作也可以通过 `GET /api/v1/admin/error_groups` 和 `POST /api/v1/admin/error_groups/{id}/resolve`（`/mute`、`/unmute`）完成。
@@ -92,6 +96,15 @@ CloudWatch Logs 会把这一行当作普通 JSON 读取。
 ### 来自 Web 客户端的错误
 
 Web 客户端会把其页面未处理的错误发送到你自己服务器上的 `POST /api/v1/client_errors`，因此任何第三方都看不到它们，内容安全相关的设置也无需更改。服务器对所有请求都回答 `204`，并丢弃它不接受的内容：超过 16 KiB 的正文、不包含你自己 Web 客户端文件的调用栈，以及同一 IP 地址每分钟超过 10 份的报告。同一错误每次页面浏览只发送一次，每次页面浏览最多发送 20 个。没有登录会话时发送的报告会被计数和记录日志，但它本身不会通知任何人，因此匿名脚本无法塞满你的收件箱。当已登录用户的浏览器也报告该错误时，分组才会发送通知。调用栈来自压缩后的构建产物，不会映射回源代码，因此请先看路由和消息。版本（release）是提供该页面的服务器的版本。离线打开的页面，或在 3 秒内没有得到响应后打开的页面，来自浏览器保存的副本，其中记录的是浏览器保存 Web 客户端时的版本：一个 Web 客户端相同的旧版本。
+
+<!-- source: ux-measurements 2edcd05329e6 -->
+## UX 测量
+
+Web 客户端会把它响应速度的样本发送到你自己服务器上的 `POST /api/v1/client_measurements`，方式与它的错误相同：每个路由上一个界面出现需要多久（LCP）、响应一次按压需要多久（INP）、它的长帧、按类型区分的每次导航、按 ID 区分的每个操作（`post.reply`），以及语音通话的往返时间、抖动和丢包。样本只包含路由、类型、操作或通话传输方式的名称，不带任何账号、地址或 URL。服务器对所有请求都回答 `204`，并对同一 IP 地址每分钟最多接受 10 个请求。
+服务器按小时在数据库中统计样本，每分钟写入一次，30 天后删除。`GET /api/v1/admin/ux_measurements`（`manage_errors`）汇总最近 24 小时的数据，或由 `hours` 指定的最多 720 小时的数据，并给出每个名称的第 75 百分位；指标 `my.ux.duration` 和 `my.ux.call.packet_loss` 导出同样的样本（[指标](running.md#metrics)）。每种类型在一个进程中保留最先出现的 200 个名称，之后的计为 `other`。
+该功能默认关闭；实例设置 `ux_measurement` 可以打开它，关闭时服务器不采集任何样本（[实例设置](instance-settings.md)）。打开时，只有一部分浏览器会话会发送样本，默认为 10 %，除非 `ux_measurement_share` 另行设置；每个会话在 Web 客户端启动时抽取一次。
+
+角色拥有 `manage_errors` 权限的人会在管理菜单中看到“UX 测量”（`/admin/ux-measurements`）。可以选择最近 24 小时、7 天或 30 天；每个有样本的指标都有一张表，列出各个名称及其样本和第 75 百分位；对于 LCP 和 INP，还显示良好样本和较差样本所占的比例（LCP 为 2.5 秒以内和超过 4 秒，INP 为 200 毫秒以内和超过 500 毫秒），第 75 百分位超过良好阈值的会被标出。表格下方的“测量 Web 客户端”就是设置 `ux_measurement`，只有角色同时拥有 `manage_settings` 权限的人才能在这里更改，并有它自己的“保存”。
 
 <!-- source: sending-reports-to-a-service eb5f208ca8fc -->
 ## 把报告发送到服务
@@ -117,12 +130,20 @@ Web 客户端会把其页面未处理的错误发送到你自己服务器上的 
 
 关注计数器 `my.errors.exported`：`my.outcome` 为 `success`、`dropped`（超出限制、队列已满，或服务要求降速）或 `failed`（无法连接服务，或服务拒绝了报告）（[运行服务器](running.md#metrics)）。
 
-<!-- source: sentry-glitchtip-and-datadog 12c935ec3c05 -->
+<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
 ### Sentry、GlitchTip 和 Datadog
 
 ```sh
 MY_ERRORS_EXPORTER=sentry
 MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; the DSN is a secret
+```
+
+使用 OpenTofu 模块时，把 `observability` 部分的错误交给设置，模块会为 DSN 创建机密供你填写，其输出 `secrets_to_fill` 会列出它：
+
+```hcl
+  observability = { errors = "settings" }
+  settings      = { errors_exporter = "sentry" }
+  secrets       = ["errors_sentry_dsn"]
 ```
 
 服务器自己实现了 Sentry 协议，因此不涉及 Sentry SDK，也不会读取任何 `SENTRY_*` 环境变量。它会设置指纹，让服务按指纹分组，并设置标签 `service`（`my`）、`my.role`、`my.error.where` 和 `error.fingerprint`。版本（release）是服务器的版本，环境是 `errors_environment`。

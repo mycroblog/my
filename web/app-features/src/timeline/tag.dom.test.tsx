@@ -82,14 +82,10 @@ test("a hashtag with no posts says so, in en and ja, and shows no feed", async (
   const { data } = await opened({ posts: false });
 
   shown(data);
-  expect(
-    screen.getByText("No posts with #baking yet. Posts with #baking that reach this server show here."),
-  ).not.toBeNull();
+  expect(screen.getByText("No posts with #baking yet.")).not.toBeNull();
   expect(screen.queryAllByRole("feed")).toHaveLength(0);
   shown(data, "ja");
-  expect(
-    screen.getByText("まだ #baking の投稿はありません。このサーバーに届いた #baking の投稿がここに表示されます。"),
-  ).not.toBeNull();
+  expect(screen.getByText("まだ #baking の投稿はありません。")).not.toBeNull();
 });
 
 test("a visitor reads the posts, and is offered Follow", async () => {

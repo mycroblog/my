@@ -125,7 +125,30 @@ func (r *Repository) AdvanceReadMarker(ctx context.Context, tx uow.Tx, m notific
 	if err != nil {
 		return false, postgres.Wrap(err, "advance notification read marker")
 	}
+	err = q.DeleteNotificationReadsThrough(ctx, notificationgen.DeleteNotificationReadsThroughParams{AccountID: m.AccountID, Through: m.LastReadID})
+	if err != nil {
+		return false, postgres.Wrap(err, "delete the notification reads the marker passed")
+	}
 	return rows == 1, nil
+}
+
+// InsertRead implements notification.Repository.
+func (r *Repository) InsertRead(ctx context.Context, tx uow.Tx, accountID, notificationID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.InsertNotificationRead(ctx, notificationgen.InsertNotificationReadParams{AccountID: accountID, NotificationID: notificationID})
+	return postgres.Wrap(err, "insert notification read")
+}
+
+// ReadAmong implements notification.Repository.
+func (r *Repository) ReadAmong(ctx context.Context, accountID string, ids []string) ([]string, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	read, err := r.db.reader().ListNotificationReadsAmong(ctx, notificationgen.ListNotificationReadsAmongParams{AccountID: accountID, NotificationIds: ids})
+	return read, postgres.Wrap(err, "list notification reads")
 }
 
 // UpsertExclusion implements notification.Repository.

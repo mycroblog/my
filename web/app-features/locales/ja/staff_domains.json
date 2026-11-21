@@ -11,17 +11,9 @@
     "defaultMessage": "ドメインへの処分",
     "description": "The name of the moderators' screen of the actions on remote domains, in the list of moderation screens and as its title. Read by moderators."
   },
-  "staff_domains.entry.domain_actions.hint": {
-    "defaultMessage": "リモートのドメインの凍結・制限と、ブロックリストの管理",
-    "description": "The line under Domain actions in the list of moderation screens. Read by moderators."
-  },
   "staff_domains.entry.instances": {
     "defaultMessage": "連合先",
     "description": "The name of the moderators' screen of the remote servers, in the list of moderation screens and as its title. Read by moderators."
-  },
-  "staff_domains.entry.instances.hint": {
-    "defaultMessage": "ほかのサーバーへの配送が届いているか",
-    "description": "The line under Remote servers in the list of moderation screens. Read by moderators."
   },
   "staff_domains.forbidden": {
     "defaultMessage": "あなたのアカウントには、もうドメインを処分する権限がありません。",
@@ -952,7 +944,7 @@
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under a delivery with no attempt yet. Read by moderators."
   },
   "staff_domains.delivery.masked": {
-    "defaultMessage": "{mask, select, private {フォロワー限定の投稿について} direct {ダイレクトメッセージについて} local {ローカル限定の投稿について} approves_followers {フォロワーを承認するアカウントのフォローについて} other {削除されたものについて}}のため、送信者・アクティビティ・inbox を伏せています",
+    "defaultMessage": "{mask, select, private {フォロワーのみの投稿について} direct {ダイレクトメッセージについて} local {ご近所向けの投稿について} approves_followers {フォロワーを承認するアカウントのフォローについて} other {削除されたものについて}}のため、送信者・アクティビティ・inbox を伏せています",
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under a masked delivery, why it is masked. Read by moderators."
   },
   "staff_domains.delivery.reveal.audited": {

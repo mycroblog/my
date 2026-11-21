@@ -5,12 +5,12 @@
 
 robots.txt とメタタグは、クローラーが従うことも従わないこともある意思表示であり、技術的にアクセスを止めるものではありません。止める必要があるときは、WAF やレート制限を使ってください。
 
-<!-- source: settings 13dfb1b04948 -->
+<!-- source: settings 470e02c5f395 -->
 ## 設定
 
 | 範囲 | 設定 | 変更する場所 | 未設定のとき |
 | --- | --- | --- | --- |
-| サーバー | `search_indexing`（`allow` / `deny`） | 管理画面のサーバー設定の「検索とクローラー」ページにある「検索エンジンと AI」セクション、`my instance set`、`PATCH /api/v1/admin/settings`（[インスタンス設定](instance-settings.md)） | `deny` |
+| サーバー | `search_indexing`（`allow` / `deny`） | 管理画面のサーバー設定の「検索とクローラー」ページにある「検索エンジン」と「AI」のセクション、`my instance set`、`PATCH /api/v1/admin/settings`（[インスタンス設定](instance-settings.md)） | `deny` |
 | サーバー | `ai_usage`（`allow` / `deny_training` / `deny`） | 同上 | `deny` |
 | サーバー | `indexable_default`（新しいアカウントの `indexable`） | 同上 | `false` |
 | サーバー | `security_contact`（脆弱性の報告先） | 同上 | 空（`security.txt` は返しません） |

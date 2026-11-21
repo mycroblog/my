@@ -38,9 +38,7 @@ test("a writer writes an article with a cover, a body image and a hashtag, previ
   await signIn(writer);
   const editor = new ArticleEditor(page);
   await editor.openNew();
-  await expect(
-    editor.previewParagraph("Nothing written yet. Write the body, and its preview shows here."),
-  ).toBeVisible();
+  await expect(editor.previewParagraph("Nothing written yet.")).toBeVisible();
   await expect(editor.images).toHaveText("0 of 20 images");
 
   await editor.title.fill(title);

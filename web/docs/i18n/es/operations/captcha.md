@@ -1,10 +1,10 @@
-<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 2c065ac1d2fb -->
+<!-- source: captcha-bot-protection-turnstile--hcaptcha--recaptcha 5931f1f78fe3 -->
 # Protección contra bots con CAPTCHA (Turnstile / hCaptcha / reCAPTCHA)
 
-CAPTCHA está desactivado de forma predeterminada: la configuración [`captcha`](../reference/configuration.md#captcha) es `none`. Las páginas de inicio de sesión, registro y restablecimiento de contraseña funcionan entonces sin JavaScript y no envían nada a terceros.
-Cuando eliges un servicio de CAPTCHA, el widget del servicio aparece en tres formularios: inicio de sesión (`/auth/sign_in`), registro (`/auth/sign_up`) y la solicitud de un enlace para restablecer la contraseña
+El CAPTCHA está desactivado por defecto: el ajuste [`captcha`](../reference/configuration.md#captcha) es `none`. Las páginas de inicio de sesión, registro y restablecimiento de contraseña no envían entonces nada a terceros.
+Cuando eliges un servicio de CAPTCHA, el widget del servicio aparece en tres formularios: inicio de sesión (`/auth/sign_in`), registro (`/auth/sign_up`) y la solicitud de un enlace de restablecimiento de contraseña
 (`/auth/forgot_password`, solo en servidores que envían correo). El servidor verifica el token que produce el widget con la API siteverify del servicio.
-No puedes proteger solo algunos de los formularios.
+No se puede proteger solo algunos de los formularios.
 
 <!-- source: choosing-a-service 22ddd3cc639f -->
 ## Elegir un servicio
@@ -74,17 +74,17 @@ El inicio de sesión se deja pasar para que una caída del servicio o una clave 
 Por encima del nivel gratuito de 10 000 evaluaciones al mes, el siteverify de reCAPTCHA **siempre tiene éxito** (así que CAPTCHA no ofrece protección en ese tiempo).
 El servidor no puede detectar el exceso, así que comprueba tu uso en la consola de Google Cloud.
 
-<!-- source: pages-and-content-security-policy b0cf9741b2ce -->
+<!-- source: pages-and-content-security-policy 666bab0dd33b -->
 ## Páginas y Content-Security-Policy
 
-- El idioma del widget sigue la configuración regional de la página y su tema sigue el esquema de color del navegador (claro u oscuro).
+- El idioma del widget sigue el idioma de la página y su tema sigue el esquema de color del navegador (claro u oscuro).
   El widget de Turnstile sigue el esquema de color por sí mismo. hCaptcha y reCAPTCHA se eligen con la pista de cliente `Sec-CH-Prefers-Color-Scheme`, que envía el navegador; los navegadores que no la envían reciben el tema claro.
-- Junto al widget, la página indica qué servicio realiza la comprobación, que el servicio recibe la dirección IP y la información del navegador, y enlaza con la política de privacidad del servicio
-  (y con los términos, en hCaptcha y reCAPTCHA). En reCAPTCHA esto también cumple la frase que exige Google: «This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.»
-- En un navegador sin JavaScript, un mensaje de `<noscript>` indica que la comprobación necesita JavaScript. Un usuario que no puede resolver el CAPTCHA no puede registrarse ni iniciar sesión,
-  y solo puedes ayudarle por otros medios, como crear la cuenta con `my admin create` o definir `captcha = none` durante un tiempo.
-- La `Content-Security-Policy` (CSP) se amplía solo en las páginas de inicio de sesión, registro y solicitud de restablecimiento de contraseña mientras CAPTCHA está activado. Nunca se añaden `'unsafe-inline'` ni `'unsafe-eval'`.
-  La CSP del cliente web, la API de cliente, la pantalla de consentimiento, la confirmación del correo electrónico y otras páginas no cambia.
+- Junto al widget, la página dice qué servicio realiza la comprobación, que el servicio recibe la dirección IP y la información del navegador, y enlaza a la política de privacidad del servicio
+  (y a los términos de hCaptcha y reCAPTCHA). Para reCAPTCHA esto sirve también como la frase que exige Google: «This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.»
+- Una persona que no puede resolver el CAPTCHA no puede registrarse ni iniciar sesión,
+  y solo puedes ayudarla por otros medios, como crear la cuenta con `my admin create` o definir `captcha = none` durante un tiempo.
+- La `Content-Security-Policy` (CSP) se amplía solo en las páginas de inicio de sesión, registro y solicitud de restablecimiento de contraseña mientras el CAPTCHA está activado. Nunca se añaden `'unsafe-inline'` ni `'unsafe-eval'`.
+  La CSP del cliente web, la API de cliente, la pantalla de consentimiento, la confirmación de correo y otras páginas no cambia.
 
 | `captcha` | Orígenes añadidos |
 | --- | --- |

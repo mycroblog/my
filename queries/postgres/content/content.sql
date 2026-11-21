@@ -22,6 +22,12 @@ INSERT INTO status_revision_sources (revision_id, source_text, source_format) VA
 INSERT INTO status_deletions (status_id, uri, author_account_id, origin, moderation_action_id, deleted_at)
 VALUES ($1, $2, $3, $4, $5, $6);
 
+-- InsertStatusContentPurge records that the rows of a deleted status go at @due_at; a purge
+-- recorded already keeps its time.
+-- name: InsertStatusContentPurge :exec
+INSERT INTO status_content_purges (status_id, due_at) VALUES (@status_id, @due_at)
+ON CONFLICT (status_id) DO NOTHING;
+
 -- name: InsertTagIfAbsent :exec
 INSERT INTO tags (id, name, name_normalized, created_at) VALUES ($1, $2, $3, $4)
 ON CONFLICT (name_normalized) DO NOTHING;

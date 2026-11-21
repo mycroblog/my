@@ -12,6 +12,24 @@ import (
 	"database/sql"
 )
 
+const insertStatusContentPurges = `-- name: InsertStatusContentPurges :exec
+INSERT INTO status_content_purges (status_id, due_at)
+SELECT value, CAST(?1 AS INTEGER) FROM json_each(CAST(?2 AS TEXT)) WHERE true
+ON CONFLICT (status_id) DO NOTHING
+`
+
+type InsertStatusContentPurgesParams struct {
+	DueAt     int64
+	StatusIds string
+}
+
+// InsertStatusContentPurges is InsertStatusContentPurge of many statuses with one time, a JSON
+// array; WHERE true keeps ON CONFLICT from reading as a join constraint.
+func (q *Queries) InsertStatusContentPurges(ctx context.Context, arg InsertStatusContentPurgesParams) error {
+	_, err := q.db.ExecContext(ctx, insertStatusContentPurges, arg.DueAt, arg.StatusIds)
+	return err
+}
+
 const insertStatusDeletions = `-- name: InsertStatusDeletions :exec
 INSERT INTO status_deletions (status_id, uri, author_account_id, origin, moderation_action_id, deleted_at)
 SELECT value ->> '$.status_id', value ->> '$.uri', value ->> '$.author_account_id',

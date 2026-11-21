@@ -43,16 +43,18 @@ Ihre Felder und was das Bereinigen mit ihnen macht, stehen unter [Den Server bet
 
 Keine andere Zeile trägt einen Stack.
 
-<!-- source: google-cloud-cloud-run 925c99683713 -->
+<!-- source: google-cloud-cloud-run a263d8621ca1 -->
 ### Google Cloud (Cloud Run)
 
 Cloud Error Reporting liest die Zeile ohne jede Einrichtung und listet die Fehler in der Konsole unter Error Reporting auf. Es ist kostenlos; du zahlst nur für Cloud Logging.
 
-- Es gruppiert Fehler nach dem Typ und den obersten Frames des Stacks. Es kann den Fingerprint des Servers nicht übernehmen, daher kann sich eine Gruppe in Error Reporting von einer Gruppe in der Administrationsoberfläche unterscheiden.
+- Es gruppiert Fehler nach dem Typ und den obersten Frames des Stacks. Es kann den Fingerprint des Servers nicht übernehmen, daher kann sich eine Gruppe in Error Reporting von einer Gruppe im Administrationsbildschirm unterscheiden.
 - Es behält Gruppen 30 Tage lang und benachrichtigt dich über neue Fehler und über erledigte Fehler, die erneut auftreten, höchstens 20 Benachrichtigungen pro Stunde für das Projekt. Richte seinen Benachrichtigungskanal in der Google-Cloud-Konsole ein.
 - Um herauszufinden, was um einen Bericht herum geschah, suche in Cloud Logging nach `jsonPayload."request_id"="<id>"` oder nach dem Gleichen mit `trace_id`.
 
-<!-- source: aws 6ca6594afd7e -->
+Mit dem OpenTofu-Modul [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) schickt der Abschnitt `observability` die Berichte standardmäßig hierher (`errors = "error-reporting"`): Er aktiviert die Error-Reporting-API und lässt `errors_exporter` auf `none`.
+
+<!-- source: aws bc7e48e1321b -->
 ### AWS
 
 CloudWatch Logs liest die Zeile als einfaches JSON.
@@ -60,6 +62,8 @@ CloudWatch Logs liest die Zeile als einfaches JSON.
 - Schalte die Log-Anomalieerkennung für die Loggruppe ein. Sie markiert ein Zeilenmuster, das sie noch nie gesehen hat, und kann per SNS Alarm schlagen. Sie liest nur die ersten 1.500 Zeichen einer Zeile, weshalb `message` das letzte Feld ist. Einen Zustand „erledigt“ führt sie nicht.
 - Um Berichte zu zählen, lege einen Metrikfilter an, etwa `{ $.msg = "error report" }`. Verwende keine Dimension, die aus `my.error.fingerprint` stammt: Jeder Wert einer Dimension wird als eigene Metrik abgerechnet. `my.error.source` und `my.error.kind` sind unbedenklich.
 - Den Kontext findest du mit Logs Insights: ``filter `request_id` = "<id>"``.
+
+Mit dem OpenTofu-Modul [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) hält der Abschnitt `observability` die Berichte standardmäßig in CloudWatch Logs (`errors = "cloudwatch"`), mit `errors_exporter` auf `none`. Die Log-Anomalieerkennung bleibt ein Schritt von dir.
 
 <!-- source: self-hosted 90de7a419474 -->
 ### Selbst gehostet
@@ -74,13 +78,13 @@ Für Benachrichtigungen, die keinen externen Dienst brauchen, nutze die Administ
 Der Server zählt die Berichte nach Fingerprint in der Datenbank. Er braucht dafür keine Einstellung und keinen zusätzlichen Dienst und schreibt wenig: Der erste Bericht eines Fingerprints wird sofort geschrieben, die folgenden werden im Speicher addiert und einmal pro Minute geschrieben. Ein harter Abbruch des Prozesses kann die Zählungen der letzten Minute verlieren; die Logzeilen gehen auf diese Weise nicht verloren.
 Zählungen, die älter als 90 Tage sind, werden täglich gelöscht. Wenn die Datenbank der Grund für den Fehler ist, bleibt der Bericht nur in der Logzeile.
 
-<!-- source: the-administration-screen 09092782a7c1 -->
+<!-- source: the-administration-screen e7dacd037150 -->
 ### Die Administrationsoberfläche
 
 Personen, deren Rolle `manage_errors` hat (die eingebaute Rolle `admin` hat es), sehen „Fehler“ im Administrationsmenü (`/admin/errors`).
 
-- Die Liste zeigt die Gruppen, standardmäßig die offenen. Filtere nach Zustand (offen, erledigt, stummgeschaltet, jeder Zustand) und nach Quelle (der Server, der Web-Client). Jede Zeile zeigt den Fehlertyp, wo er aufgetreten ist, die ersten Zeilen der Meldung, die Zählungen der letzten 24 Stunden und 7 Tage sowie den ersten und letzten Zeitpunkt und die erste und letzte Version.
-- Die Seite einer Gruppe zeigt das jüngste Auftreten (Zeit, Version, Prozessrolle, Request-ID, Trace-ID, die Typen, die Meldung und den Stack), die Vorkommen pro Stunde der letzten 90 Tage und den Verlauf ihrer Zustandsänderungen. Die Request-ID und die Trace-ID haben eine Schaltfläche „Kopieren“: Füge sie in deine Log-Suche ein.
+- Die Liste zeigt die Gruppen, standardmäßig die offenen, die zuletzt gesehene zuerst. Filtere nach Zustand (offen, erledigt, stummgeschaltet, jeder Zustand) und nach Quelle (der Server, der Web-Client). Jede Zeile zeigt die erste Zeile der Meldung, wo der Fehler aufgetreten ist, die Zählungen der letzten 24 Stunden und 7 Tage, wann er zuletzt gesehen wurde und seinen Zustand.
+- Die Seite einer Gruppe beginnt mit dem, was du in ihrem Zustand tun kannst („Als erledigt markieren“ und „Stummschalten“ bei einer offenen Gruppe, „Stummschalten“ bei einer erledigten, „Stummschaltung aufheben“ bei einer stummgeschalteten). Sie zeigt die Fakten der Gruppe (wo, die Meldung, erster und letzter Zeitpunkt und erste und letzte Version, den Fingerprint), ihre Zählungen der letzten 24 Stunden und 7 Tage, das jüngste Auftreten (Zeit, Version, Prozessrolle, die Typen, die Request-ID und die Trace-ID sowie den Stack), die Vorkommen pro Stunde der letzten 90 Tage, das neueste zuerst, und den Verlauf ihrer Zustandsänderungen. Der Fingerprint, die Request-ID, die Trace-ID und der Stack haben eine Schaltfläche „Kopieren“: Füge die IDs in deine Log-Suche ein.
 - „Als erledigt markieren“ ist für einen Fehler gedacht, den du behoben hast. Tritt er in einer anderen Version des Servers erneut auf, öffnet sich die Gruppe wieder und benachrichtigt erneut. Derselbe Fehler in der Version, die erledigt wurde, wird nur gezählt, damit die letzten Anfragen der alten Version ihn nicht wieder öffnen.
 - „Stummschalten“ zählt weiter, sendet aber keine Benachrichtigung und kein Webhook-Ereignis. „Stummschaltung aufheben“ öffnet die Gruppe wieder.
 
@@ -99,6 +103,15 @@ Dieselben Aktionen sind als `GET /api/v1/admin/error_groups` und `POST /api/v1/a
 Der Web-Client schickt die Fehler, die seine Bildschirme nicht behandelt haben, an `POST /api/v1/client_errors` auf deinem eigenen Server, sodass kein Dritter sie sieht und sich keine Content-Security-Einstellung ändert. Der Server antwortet auf alles mit `204` und verwirft, was er nicht annimmt: einen Body über 16 KiB, einen Stack ohne eine Datei deines eigenen Web-Clients und mehr als 10 Berichte pro Minute von einer IP-Adresse. Derselbe Fehler wird einmal pro Seitenaufruf gesendet, höchstens 20 pro Seitenaufruf.
 Ein Bericht ohne angemeldete Sitzung wird gezählt und geloggt, benachrichtigt aber von sich aus niemanden, damit ein anonymes Skript dein Postfach nicht füllen kann. Die Gruppe benachrichtigt, wenn auch der Browser einer angemeldeten Person sie meldet.
 Die Stacks stammen aus dem minifizierten Build und werden nicht in den Quellcode zurückübersetzt; lies also zuerst die Route und die Meldung. Das Release ist die Version des Servers, der die Seite ausgeliefert hat. Eine Seite, die offline oder nach 3 Sekunden ohne Antwort geöffnet wurde, stammt aus der Kopie des Browsers, die die Version nennt, aus der der Browser den Web-Client gespeichert hat: eine ältere Version mit demselben Web-Client.
+
+<!-- source: ux-measurements 2edcd05329e6 -->
+## UX-Messungen
+
+Der Web-Client schickt Stichproben dazu, wie schnell er antwortet, an `POST /api/v1/client_measurements` auf deinem eigenen Server, auf dieselbe Weise wie seine Fehler: wie lange ein Bildschirm braucht, um zu erscheinen (LCP) und auf einen Druck zu antworten (INP), pro Route, seine langen Frames, jede Navigation nach Art, jede Aktion nach ihrer ID (`post.reply`) sowie Laufzeit, Jitter und Paketverlust von Sprachanrufen. Eine Stichprobe nennt nur die Route, die Art, die Aktion oder den Transport des Anrufs; sie trägt kein Konto, keine Adresse und keine URL. Der Server antwortet auf alles mit `204` und nimmt höchstens 10 Anfragen pro Minute von einer IP-Adresse an.
+Der Server zählt die Stichproben stundenweise in der Datenbank, einmal pro Minute geschrieben, und löscht sie nach 30 Tagen. `GET /api/v1/admin/ux_measurements` (`manage_errors`) summiert die letzten 24 Stunden oder `hours` bis zu 720, mit dem 75. Perzentil jedes Namens; die Metriken `my.ux.duration` und `my.ux.call.packet_loss` exportieren dieselben Stichproben ([Metriken](running.md#metrics)). Jede Art behält in einem Prozess ihre ersten 200 Namen; die späteren zählen als `other`.
+Sie ist standardmäßig aus; die Instanzeinstellung `ux_measurement` schaltet sie ein, und solange sie aus ist, nimmt der Server keine Stichprobe ([Instanzeinstellungen](instance-settings.md)). Solange sie an ist, sendet nur ein Teil der Browsersitzungen Stichproben, 10 %, sofern `ux_measurement_share` keinen anderen Wert setzt, jede Sitzung einmal beim Start des Web-Clients ausgelost.
+
+Personen, deren Rolle `manage_errors` hat, sehen „UX-Messungen“ im Administrationsmenü (`/admin/ux-measurements`). Wähle die letzten 24 Stunden, 7 Tage oder 30 Tage; jede Metrik mit Stichproben hat eine Tabelle ihrer Namen mit ihren Stichproben und dem 75. Perzentil sowie, für LCP und INP, dem Anteil der guten und der schlechten Stichproben (innerhalb von 2,5 s und über 4 s bei LCP, innerhalb von 200 ms und über 500 ms bei INP), wobei ein 75. Perzentil über der Schwelle für „gut“ markiert ist. „Den Web-Client messen“ unter den Tabellen ist die Einstellung `ux_measurement`, die dort nur Personen ändern, deren Rolle auch `manage_settings` hat, mit einem eigenen „Speichern“.
 
 <!-- source: sending-reports-to-a-service eb5f208ca8fc -->
 ## Berichte an einen Dienst senden
@@ -124,12 +137,20 @@ Der Server begrenzt, was er sendet, damit der Dienst nicht überflutet wird:
 
 Beobachte den Zähler `my.errors.exported`: `my.outcome` ist `success`, `dropped` (über einem Limit, die Queue war voll oder der Dienst bat um Verlangsamung) oder `failed` (der Dienst war nicht erreichbar oder hat den Bericht abgelehnt) ([Den Server betreiben](running.md#metrics)).
 
-<!-- source: sentry-glitchtip-and-datadog 12c935ec3c05 -->
+<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
 ### Sentry, GlitchTip und Datadog
 
 ```sh
 MY_ERRORS_EXPORTER=sentry
 MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; the DSN is a secret
+```
+
+Lass bei den OpenTofu-Modulen die Fehler des Abschnitts `observability` bei den Einstellungen, und das Modul legt das Secret des DSN zum Ausfüllen für dich an, das seine Ausgabe `secrets_to_fill` auflistet:
+
+```hcl
+  observability = { errors = "settings" }
+  settings      = { errors_exporter = "sentry" }
+  secrets       = ["errors_sentry_dsn"]
 ```
 
 Der Server spricht das Sentry-Protokoll selbst, es ist also kein Sentry-SDK beteiligt, und es wird keine Umgebungsvariable `SENTRY_*` gelesen. Er setzt den Fingerprint, damit der Dienst danach gruppiert, und die Tags `service` (`my`), `my.role`, `my.error.where` und `error.fingerprint`. Das Release ist die Version des Servers und die Umgebung ist `errors_environment`.

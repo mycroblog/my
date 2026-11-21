@@ -1,0 +1,131 @@
+name: UI preview deploy
+
+# Publishes the builds of ui-preview.yml on the Cloudflare Worker my-ui of scripts/ui-preview/wrangler.jsonc
+# (ADR-0165 §2, §3): a push to main's as the Worker itself, the full catalog, and a pull request's on its Preview
+# pr-<number>, with the one comment of the pull request that gives its URL and the stories it changes
+# (ui-preview-cleanup.yml deletes the Previews of closed pull requests). workflow_run always runs main's workflow,
+# script, and Worker config, so the jobs can use the environment `doc-site` (deployment refs: main and the tags v*),
+# which holds the secret CLOUDFLARE_API_TOKEN and the variable CLOUDFLARE_ACCOUNT_ID, as the documentation site's
+# deploys do.
+#
+# A pull request's build (forks included) is untrusted data: it is downloaded as an artifact and only ever read as
+# files by scripts/ui-preview.sh, never executed, sourced, or used as a config.
+
+on:
+  workflow_run:
+    workflows: [UI preview]
+    types: [completed]
+
+permissions: {}
+
+# One run at a time for each branch, in order.
+concurrency:
+  group: ui-preview-deploy-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-main:
+    if: >-
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: doc-site
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download the build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ui-preview
+          path: ${{ runner.temp }}/build
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      # Wrangler runs on Bun (ADR-0025 §10). The job installs no package of the workspace, so it restores no cache.
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+        with:
+          restore: "false"
+      - name: Install wrangler
+        run: scripts/ui-preview.sh install
+      - name: Deploy main's catalog
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          UI_PREVIEW_WORK: ${{ runner.temp }}/ui-preview
+        run: scripts/ui-preview.sh deploy "$RUNNER_TEMP/build"
+
+  deploy-pr:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: doc-site
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # workflow_run lists no pull request for a fork's branch, so the pull request is the open one of the build's
+      # head repository and branch whose head is still the built commit; a newer push builds and deploys again.
+      - name: Find the pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "not a commit: $HEAD_SHA" >&2; exit 1; }
+          number="$(gh api --method GET "repos/$GITHUB_REPOSITORY/pulls" -f state=open \
+            -f head="$HEAD_OWNER:$HEAD_BRANCH" --jq "map(select(.head.sha == \"$HEAD_SHA\")) | .[0].number // empty")"
+          if [ -z "$number" ]; then
+            echo "no open pull request has $HEAD_SHA as its head"
+          else
+            gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$number/files" --jq '.[].filename' > "$RUNNER_TEMP/changed"
+          fi
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+      - name: Download the build
+        if: steps.pr.outputs.number != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ui-preview
+          path: ${{ runner.temp }}/build
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      # Wrangler runs on Bun (ADR-0025 §10). The job installs no package of the workspace, so it restores no cache.
+      - name: Set up Bun
+        if: steps.pr.outputs.number != ''
+        uses: ./.github/actions/setup-bun
+        with:
+          restore: "false"
+      - name: Install wrangler
+        if: steps.pr.outputs.number != ''
+        run: scripts/ui-preview.sh install
+      - name: Deploy the Preview
+        if: steps.pr.outputs.number != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          UI_PREVIEW_WORK: ${{ runner.temp }}/ui-preview
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: scripts/ui-preview.sh deploy-pr "$RUNNER_TEMP/build" "$PR" "$RUNNER_TEMP/changed"
+      - name: Comment on the pull request
+        if: steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: scripts/ui-preview.sh comment "$PR" "$RUNNER_TEMP/ui-preview/pr/comment.md"

@@ -1,7 +1,7 @@
-<!-- source: administrators-and-roles 1baeba6d67b4 -->
+<!-- source: administrators-and-roles f6df0418210b -->
 # Administratoren und Rollen
 
-So legst du den ersten Administrator an, verwaltest Rollen auf der Kommandozeile, kündigst das Ende des Dienstes an und führst es durch, verarbeitest hochgeladene Bilder erneut, baust den Suchindex neu auf und exportierst die Wartungsseite.
+So legst du den ersten Administrator an, verwaltest Rollen auf der Kommandozeile, kündigst das Ende des Dienstes an und führst es durch, verarbeitest hochgeladene Bilder erneut, baust den Suchindex neu auf, behandelst die TLS-Zertifikate, die der Server selbst ausliefert, und exportierst die Wartungsseite.
 
 <!-- source: prerequisites b7ae62128809 -->
 ## Voraussetzungen
@@ -10,7 +10,7 @@ So legst du den ersten Administrator an, verwaltest Rollen auf der Kommandozeile
 - Das Schema ist auf die Datenbank angewendet (`my schema apply`; siehe [database.md](database.md)).
 - `host` und `account_domain` sind endgültig. Der erste Befehl, der die Datenbank verwendet, merkt sie sich, und jeder spätere Befehl weigert sich zu laufen, wenn die Konfiguration abweicht (siehe [Einstellungen, die du später nicht mehr ändern kannst](production-checklist.md#settings-you-cannot-change-later)).
 
-<!-- source: creating-an-administrator e5fec2e3d287 -->
+<!-- source: creating-an-administrator 9be8b2ee8d85 -->
 ## Einen Administrator anlegen
 
 ```sh
@@ -37,7 +37,7 @@ my admin create -username alice -email alice@example.com
 - Ein fehlgeschlagener Lauf schreibt nichts, du kannst also die Ursache beheben und denselben Befehl erneut ausführen.
 - Exit-Code 2 bedeutet einen Aufruffehler.
 
-<!-- source: granting-and-revoking-roles a8783994c097 -->
+<!-- source: granting-and-revoking-roles 83f3a38172a4 -->
 ## Rollen vergeben und entziehen
 
 Rollen bündeln Berechtigungen. Die eingebauten Rollen sind `admin` (`position` 1000, jede Berechtigung) und
@@ -63,6 +63,10 @@ my admin role revoke alice moderator
 - Vergaben und Entzüge werden als `role_granted` und `role_revoked` (Zielart `role`) in das Audit-Log geschrieben. Der Akteur einer CLI-Operation ist `cli` (`my admin audit list -target-kind role`).
 - Eine Rolle zu vergeben, die der Benutzer schon hat, oder eine zu entziehen, die er nicht hat, ändert und protokolliert nichts.
 - Der letzte Inhaber von `admin` kann sie nicht verlieren (Exit-Code 1). Vergib `admin` zuerst an einen anderen Benutzer.
+- Der Administrationsbildschirm „Rollen“ (`/admin/roles`) listet jede Rolle auf und erstellt, ändert und löscht sie: Die Seite einer Rolle legt
+  ihren Rang, ihre Berechtigungen und ihr Abzeichen fest. Er bietet nur an, was die folgenden Regeln erlauben: einen Rang nicht über deiner höchsten
+  Rolle, die Berechtigungen, die du selbst hast (die übrigen, die eine Rolle hat, werden genannt und beibehalten), nur das Abzeichen von `admin`, und kein Löschen
+  von `admin` oder `moderator`. Beim Löschen einer Rolle musst du ihren Namen eintippen. Die Rollen eines Tarifs werden im Tarif festgelegt.
 - Die Admin-API ist `GET /api/v1/admin/roles`, `GET /api/v1/admin/accounts/{id}/roles` und `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`, und sie braucht die Berechtigung `manage_roles`.
   Über die API kannst du keine Rolle vergeben oder entziehen, die über der höchsten `position` deiner eigenen Rollen liegt (403). Den letzten `admin` zu entziehen, liefert 409.
 - Das Personal handelt nur gegenüber niedrigeren Rängen. Über die API braucht es für Moderationsmaßnahmen und deren Aufhebung, das Entscheiden über Einsprüche, das Aufheben von E-Mail-Sperren, das Einsehen privater Daten eines Kontos, das Ausstellen eines Links zum Zurücksetzen des Passworts und das Entfernen der Zwei-Faktor-Authentifizierung, dass die höchste `position` unter deinen Rollen über der jeder Rolle des Ziels liegt; ein höherer oder gleicher Rang, auch dein eigenes Konto, liefert 403. Ein Moderator kann nicht auf einen Administrator einwirken, und ein Administrator nicht auf einen anderen. Diese Befehle (`my admin account ...`) haben keine solche Grenze; nutze sie, wenn Administratoren uneins sind.
@@ -157,24 +161,47 @@ my search status               # the backend and the progress and failures of th
 
 Führe `my search rebuild` erneut aus, um einen abgebrochenen Aufbau fortzusetzen. Er macht beim zuletzt bearbeiteten Beitrag weiter und leert den Index nicht noch einmal. Solange einer unfertig ist, wird der jeweils andere Modus mit Exit-Code 1 abgelehnt. [Volltextsuche von Beiträgen](search.md) sagt, wann du welchen verwendest.
 
-<!-- source: exporting-the-maintenance-page 1756fcf1e02e -->
+<!-- source: tls-certificates 76e79e7fd3c0 -->
+## TLS-Zertifikate
+
+`my tls` behandelt die Zertifikate eines Servers, der HTTPS selbst ausliefert (`tls = acme` oder `tls = files`; siehe
+[HTTPS vom Server ausliefern](running.md#serving-https-from-the-server)).
+
+```sh
+my tls status                                          # each host: certificate, renewal, failures, latest orders
+my tls renew -host social.example                      # order a certificate now, without waiting
+my tls revoke -host social.example -reason key_compromise  # replace, then revoke the current certificate
+```
+
+- `status` zeigt für jeden Host das aktuelle Zertifikat (Seriennummer, Aussteller, Ablauf), wann es erneuert wird, wie viele Bestellungen
+  in Folge kein Zertifikat erbracht haben, und die letzten Bestellungen mit ihren Fehlern. Mit `tls = files` zeigt es das
+  Zertifikat von `tls_cert_file`; mit `tls = off` sagt es das.
+- `renew` und `revoke` brauchen `tls = acme`, den laufenden Server (er beantwortet die Prüfungen der Zertifizierungsstelle) und ein
+  `kv` außer `memory`. Sie enden mit Exit-Code 1, wenn sie fehlschlagen, wenn gerade ein anderer Prozess das Zertifikat des
+  Hosts bestellt, und mit `tls = files` oder `tls = off`.
+- `-reason` ist `key_compromise`, wenn der private Schlüssel anderen bekannt sein könnte, sonst `superseded` oder `operator`.
+  `revoke` endet mit Exit-Code 0 und gibt eine Warnung aus, wenn es das Zertifikat widerrufen, aber das Ersatzzertifikat nicht bestellen konnte.
+
+[Befehle und Metriken](running.md#commands-and-metrics) erklärt, was jeder davon mit den laufenden Prozessen macht.
+
+<!-- source: exporting-the-maintenance-page c0661d4bb0d0 -->
 ## Die Wartungsseite exportieren
 
 `my maintenance export` schreibt die Seite des Wartungsmodus als statisches HTML,
-damit ein Load Balancer, CDN oder Reverse-Proxy sie ausliefern kann, während `my serve` selbst nicht laufen kann (ein Image wird ersetzt, eine Revision startet nicht).
-Sie verwendet dieselbe Vorlage wie der Wartungsmodus, beide zeigen also dieselben Worte und denselben Look.
+damit ein Load Balancer, CDN oder Reverse-Proxy sie ausliefern kann, solange `my serve` selbst nicht laufen kann (ein Image wird ersetzt, eine Revision startet nicht).
+Es verwendet dieselbe Vorlage wie der Wartungsmodus, sodass beide dieselben Worte und dasselbe Aussehen zeigen.
 
 ```sh
 my maintenance export -out ./maintenance -lang en,ja            # reads the database for at most 5 seconds
 my maintenance export -out ./maintenance -lang en,ja -offline   # the configuration and the default theme only
 ```
 
-- Ausgabe: `<dir>/<locale>.html` für jede Locale aus `-lang`, für Front-Ends, die eine Seite per `Accept-Language` wählen,
+- Ausgabe: `<dir>/<locale>.html` für jedes Locale aus `-lang`, für Frontends, die eine Seite nach `Accept-Language` wählen,
   und `<dir>/index.html` mit allen Locales nacheinander, für solche, die das nicht können.
   Die Seiten haben Inline-CSS, kein Skript und keine externe Ressource; ihre Content-Security-Policy steht in einem `<meta>`-Element.
 - Worte: die Einstellungen `maintenance_server_name`, `maintenance_message`, `maintenance_until` und `status_page_url`
   ([Konfigurationsreferenz](../reference/configuration.md)).
-- Ohne `-offline` liest der Befehl außerdem den Namen des Servers (wenn `maintenance_server_name` nicht gesetzt ist), ihre Standard-Locale (wenn `-lang` nicht angegeben ist)
-  und die Token-Überschreibungen ihres Themes. Kann die Datenbank nicht gelesen werden,
-  gibt er eine Warnung aus, schreibt die Seiten aus der Konfiguration und dem Standard-Theme und endet mit 0.
-- Führe ihn erneut aus, wenn sich diese Einstellungen oder das Theme ändern, und vor jeder Wartung, damit die Seiten im Front-End aktuell bleiben.
+- Ohne `-offline` liest es außerdem den Namen der Instanz (wenn `maintenance_server_name` nicht gesetzt ist), ihr Standard-Locale (wenn `-lang` nicht angegeben ist)
+  und die Token-Überschreibungen ihres veröffentlichten Themes. Kann die Datenbank nicht gelesen werden,
+  gibt es eine Warnung aus, schreibt die Seiten aus der Konfiguration und dem Standard-Theme und endet mit 0.
+- Führe es erneut aus, sobald sich diese Einstellungen oder das Theme ändern, und vor jeder Wartung, damit die Seiten im Frontend aktuell bleiben.

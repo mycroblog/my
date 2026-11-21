@@ -41,7 +41,7 @@
 
 其他日誌行都不帶堆疊。
 
-<!-- source: google-cloud-cloud-run 925c99683713 -->
+<!-- source: google-cloud-cloud-run a263d8621ca1 -->
 ### Google Cloud（Cloud Run）
 
 Cloud Error Reporting 不需任何設定就能讀取這一行，並在主控台的 Error Reporting 下列出錯誤。它是免費的；你只需支付 Cloud Logging 的費用。
@@ -50,7 +50,9 @@ Cloud Error Reporting 不需任何設定就能讀取這一行，並在主控台�
 - 它會保留群組 30 天，並在出現新錯誤以及已解決的錯誤再次發生時通知你，每個專案每小時最多 20 則通知。請在 Google Cloud 主控台設定它的通知管道。
 - 若要找出某份回報前後發生了什麼事，請在 Cloud Logging 搜尋 `jsonPayload."request_id"="<id>"`，或以 `trace_id` 做同樣的搜尋。
 
-<!-- source: aws 6ca6594afd7e -->
+使用 OpenTofu 模組 [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) 時，`observability` 區段預設會把回報送到這裡（`errors = "error-reporting"`）：它會啟用 Error Reporting API，並讓 `errors_exporter` 維持 `none`。
+
+<!-- source: aws bc7e48e1321b -->
 ### AWS
 
 CloudWatch Logs 會把這一行當作一般的 JSON 讀取。
@@ -58,6 +60,8 @@ CloudWatch Logs 會把這一行當作一般的 JSON 讀取。
 - 為日誌群組開啟日誌異常偵測。它會標示從未見過的日誌行模式，並可透過 SNS 發出警報。它只讀取一行的前 1,500 個字元，這就是 `message` 放在最後一個欄位的原因。它不會保存「已解決」的狀態。
 - 若要計算回報數量，請建立指標篩選器，例如 `{ $.msg = "error report" }`。不要使用取自 `my.error.fingerprint` 的維度：維度的每個值都會被當作一個獨立的指標計費。`my.error.source` 和 `my.error.kind` 則是安全的。
 - 用 Logs Insights 找出前後脈絡：``filter `request_id` = "<id>"``。
+
+使用 OpenTofu 模組 [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) 時，`observability` 區段預設會把回報保留在 CloudWatch Logs 中（`errors = "cloudwatch"`），並讓 `errors_exporter` 維持 `none`。日誌異常偵測仍需由你自行設定。
 
 <!-- source: self-hosted 90de7a419474 -->
 ### 自行架設
@@ -69,13 +73,13 @@ CloudWatch Logs 會把這一行當作一般的 JSON 讀取。
 
 伺服器會在資料庫中依指紋計算回報數量。它不需要任何設定或額外的服務，寫入量也很少：某個指紋的第一份回報會立即寫入，之後的回報則在記憶體中累加，每分鐘寫入一次。強制終止處理程序可能會遺失最後一分鐘的計數；日誌行則不會因此遺失。超過 90 天的計數每天都會被刪除。如果故障的正是資料庫，回報就只會留在日誌行中。
 
-<!-- source: the-administration-screen 09092782a7c1 -->
+<!-- source: the-administration-screen e7dacd037150 -->
 ### 管理畫面
 
 角色擁有 `manage_errors`（內建的 `admin` 角色擁有它）的人，會在管理選單中看到「錯誤」（`/admin/errors`）。
 
-- 列表會顯示群組，預設只顯示未解決的群組。可以依狀態（未解決、已解決、已靜音、所有狀態）和來源（伺服器、網頁用戶端）篩選。每一列顯示錯誤類型、發生位置、訊息的前幾行、最近 24 小時和 7 天的次數，以及首次和最後一次發生的時間與版本。
-- 群組的頁面會顯示最近一次發生的情況（時間、版本、處理程序角色、請求 ID、追蹤 ID、類型、訊息和堆疊追蹤）、最近 90 天每小時的發生次數，以及其狀態變更的歷史。請求 ID 和追蹤 ID 旁有「複製」按鈕：把它們貼到你的日誌搜尋中。
+- 列表會顯示群組，預設只顯示未解決的群組，最近看到的排在最前面。可以依狀態（未解決、已解決、已靜音、所有狀態）和來源（伺服器、網頁用戶端）篩選。每一列顯示訊息的第一行、發生位置、最近 24 小時和 7 天的次數、最後一次看到的時間，以及狀態。
+- 群組的頁面一開始會顯示在該狀態下可以做的事（未解決的群組有「標為已解決」和「靜音」，已解決的群組有「靜音」，已靜音的群組有「取消靜音」）。接著顯示群組的基本資訊（位置、訊息、首次和最後一次發生的時間與版本、指紋）、最近 24 小時和 7 天的次數、最近一次發生的情況（時間、版本、處理程序角色、類型、請求 ID 與追蹤 ID，以及堆疊）、最近 90 天每小時的發生次數（最新的在前），以及其狀態變更的歷史。指紋、請求 ID、追蹤 ID 和堆疊旁都有複製按鈕：把這些 ID 貼到你的日誌搜尋中。
 - 「標為已解決」用於你已修正的錯誤。如果它在另一個版本的伺服器上再次發生，群組會重新開啟並再次通知。在已標記為解決的版本上發生的相同錯誤只會被計數，因此舊版本的最後幾個請求不會讓它重新開啟。
 - 「靜音」會繼續計數，但不傳送通知或 Webhook 事件。「取消靜音」會重新開啟群組。
 
@@ -92,6 +96,15 @@ CloudWatch Logs 會把這一行當作一般的 JSON 讀取。
 ### 來自網頁用戶端的錯誤
 
 網頁用戶端會把畫面未處理的錯誤送到你自己伺服器上的 `POST /api/v1/client_errors`，因此不會有第三方看到它們，也不需要變更任何內容安全設定。伺服器對所有請求都回應 `204`，並捨棄它不接受的內容：超過 16 KiB 的內文、不含你自己網頁用戶端檔案的堆疊追蹤，以及同一個 IP 位址每分鐘超過 10 份的回報。同一個錯誤在每次頁面瀏覽中只會送出一次，每次頁面瀏覽最多 20 份。沒有登入工作階段而送出的回報會被計數並記錄，但本身不會通知任何人，因此匿名的程式碼無法塞爆你的收件匣。當已登入者的瀏覽器也回報同一個錯誤時，群組才會發出通知。堆疊追蹤是壓縮後建置版本的內容，不會被還原成原始碼，因此請先閱讀路由和訊息。版本（release）是提供該頁面的伺服器版本。離線時開啟的頁面，或等待 3 秒仍無回應後開啟的頁面，來自瀏覽器保存的副本，它標示的是瀏覽器保存網頁用戶端時的版本：也就是具有相同網頁用戶端的較舊版本。
+
+<!-- source: ux-measurements 2edcd05329e6 -->
+## UX 量測
+
+網頁用戶端會像送出錯誤一樣，把它回應速度的樣本送到你自己伺服器上的 `POST /api/v1/client_measurements`：每個路由上畫面出現（LCP）和回應按下操作（INP）所需的時間、長影格、依種類區分的每次導覽、依 ID（`post.reply`）區分的每個操作，以及語音通話的往返時間、抖動和封包遺失。樣本只標明路由、種類、操作或通話的傳輸方式，不帶有帳號、位址或 URL。伺服器對所有請求都回應 `204`，並且對同一個 IP 位址每分鐘最多接受 10 個請求。
+伺服器會在資料庫中依小時計算樣本數，每分鐘寫入一次，並在 30 天後刪除。`GET /api/v1/admin/ux_measurements`（`manage_errors`）會彙總最近 24 小時，或以 `hours` 指定的最多 720 小時，並給出每個名稱的第 75 百分位數；指標 `my.ux.duration` 和 `my.ux.call.packet_loss` 會匯出相同的樣本（[指標](running.md#metrics)）。每種類別在一個處理程序中保留前 200 個名稱，之後的名稱會計為 `other`。
+它預設是關閉的；實例設定 `ux_measurement` 可以開啟它，關閉時伺服器不會取得任何樣本（[實例設定](instance-settings.md)）。開啟時，只有一部分瀏覽器工作階段會送出樣本，預設為 10 %，除非 `ux_measurement_share` 設定了其他比例，每個工作階段會在網頁用戶端啟動時抽籤一次。
+
+角色擁有 `manage_errors` 的人，會在管理選單中看到「UX 量測」（`/admin/ux-measurements`）。可以選擇最近 24 小時、7 天或 30 天；每個有樣本的指標都有一張表，列出各名稱的樣本數和第 75 百分位數，而對於 LCP 和 INP，還會列出良好和不佳的樣本比例（LCP 為 2.5 秒內與超過 4 秒，INP 為 200 毫秒內與超過 500 毫秒），第 75 百分位數超過良好門檻時會加上標記。表格下方的「量測網頁用戶端」就是設定 `ux_measurement`，只有角色同時擁有 `manage_settings` 的人才能在那裡變更，並有自己的「儲存」。
 
 <!-- source: sending-reports-to-a-service eb5f208ca8fc -->
 ## 把回報送到服務
@@ -117,12 +130,20 @@ CloudWatch Logs 會把這一行當作一般的 JSON 讀取。
 
 請留意計數器 `my.errors.exported`：`my.outcome` 為 `success`、`dropped`（超過限制、佇列已滿，或服務要求放慢速度）或 `failed`（無法連線到服務，或服務拒絕了回報）（[執行伺服器](running.md#metrics)）。
 
-<!-- source: sentry-glitchtip-and-datadog 12c935ec3c05 -->
+<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
 ### Sentry、GlitchTip 與 Datadog
 
 ```sh
 MY_ERRORS_EXPORTER=sentry
 MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; the DSN is a secret
+```
+
+使用 OpenTofu 模組時，請讓 `observability` 區段的錯誤交由設定處理，模組會建立 DSN 的密鑰讓你填入，其輸出 `secrets_to_fill` 會列出它：
+
+```hcl
+  observability = { errors = "settings" }
+  settings      = { errors_exporter = "sentry" }
+  secrets       = ["errors_sentry_dsn"]
 ```
 
 伺服器本身就使用 Sentry 協定，因此不涉及任何 Sentry SDK，也不會讀取任何 `SENTRY_*` 環境變數。它會設定指紋，讓服務依指紋分組，並設定標籤 `service`（`my`）、`my.role`、`my.error.where` 和 `error.fingerprint`。版本（release）是伺服器的版本，環境（environment）是 `errors_environment`。

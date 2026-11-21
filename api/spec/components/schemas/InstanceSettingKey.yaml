@@ -68,6 +68,8 @@ enum:
   - member_invite_max_uses
   - member_invite_max_lifetime_seconds
   - public_counts
+  - landing_fediverse_explanation
+  - landing_features
   - featured_accounts
   - login_providers_only
   - remote_media_cache_max_bytes

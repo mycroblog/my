@@ -59,7 +59,7 @@ fan-out 任務會為每位使用者記錄 `service_closure_emails` 的一列，�
 
 請以環境變數或檔案（`MY_MAIL_SMTP_PASSWORD` 或 `MY_MAIL_SMTP_PASSWORD_FILE`）傳入機密。不要寫在設定檔中。
 
-<!-- source: amazon-ses-api 1cef4371e61c -->
+<!-- source: amazon-ses-api f2d42a2b8b19 -->
 ### Amazon SES（API）
 
 在 AWS 上執行時，`mail = ses` 會使用 SES v2 API。憑證來自 AWS SDK 的預設憑證鏈（ECS 的任務角色、環境變數、共用設定檔），因此沒有需要設定的機密。
@@ -67,6 +67,8 @@ fan-out 任務會為每位使用者記錄 `service_closure_emails` 的一列，�
 1. 在 SES 中將 `mail_from` 的網域驗證為身分（identity），並啟用 Easy DKIM（見下文）。
 2. 申請正式環境存取權以離開沙盒。在沙盒中只能寄送給已驗證的地址。
 3. 允許執行角色對 `mail_from` 的身分（若使用 configuration set，也包括該 configuration set）執行 `ses:SendEmail`。
+
+[透過 Amazon SES 寄送電子郵件](email-ses.md)會逐步說明各項紀錄、沙盒和正式環境存取權的申請，以及 AWS 的 OpenTofu 模組替你完成了其中哪些部分。
 
 ```sh
 MY_MAIL=ses
@@ -294,13 +296,13 @@ _dmarc.social.example.  TXT  "v=DMARC1; p=none; rua=mailto:dmarc@social.example"
 - **交易型郵件無法取消訂閱**。取消確認、重設和密碼變更通知，會使與安全性相關的通知無法送達。這些郵件也不帶這些標頭。
 - 使用者也可以在設定的 **通知** 頁面切換相同的設定。
 
-<!-- source: the-html-version 2ca008b1a48a -->
+<!-- source: the-html-version fc06d2fa37c4 -->
 ## HTML 版本
 
 每封郵件都是 `multipart/alternative`，以 `text/plain` 和 `text/html`（皆為 UTF-8）提供相同的內容。在 `development` 設定檔中使用 `mail = none` 時，只會將文字版本寫入日誌。
 
 - 有一個外層版面，包含段落、按鈕和署名（伺服器名稱、URL、聯絡方式、寄送這封郵件的原因，以及取消訂閱連結）。`<html lang dir>` 來自收件者的語系，`ar` 等語言會以由右至左的方式排版。
-- 不會載入外部字型或樣式表。顏色使用預設的設計 token，淺色和深色依照 `color-scheme` 和 `prefers-color-scheme`。管理員的主題覆寫不會影響郵件。
+- 不會載入外部字型或樣式表。顏色使用已發布的[主題](instance-settings.md#theme)的顏色（沒有主題時為預設的設計 token），淺色和深色依照 `color-scheme` 和 `prefers-color-scheme`。
 - 不會載入圖片，但設定了實例自己的標誌時例外（[標誌與圖示](instance-settings.md#logo-and-icon)）：這時 HTML 版本會以標誌開頭（`https://<host>/brand/...`，在電子郵件用戶端採用深色配色時改用深色標誌），每位收件者都是相同的 URL，因此不會透露是誰開啟了郵件。不載入外部圖片的用戶端會改為顯示伺服器名稱（圖片的替代文字）。沒有標誌，或伺服器 URL 不是 `https` 時，郵件不含任何圖片。
 - 只有 `https` URL 會變成連結。URL 為 `http` 時（例如 `web_origin` 為 `http://{host}` 的開發環境），URL 會以文字呈現，而不是按鈕或取消訂閱連結，署名中的伺服器 URL 也會省略。
 - 版面是執行檔的一部分，因此伺服器在執行時不會執行任何 JavaScript。

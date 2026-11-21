@@ -2690,6 +2690,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark one notification read
+         * @description Marks one notification read, wherever it is in the list, for every client of the user. A
+         *     notification is unread while it is newer than the marker's `last_read_id` and not marked
+         *     read here; marking it again, or marking one the marker already passed, changes nothing. A
+         *     notification that is not the user's is a 404.
+         */
+        post: operations["readNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notifications/requests": {
         parameters: {
             query?: never;
@@ -4255,6 +4278,8 @@ export interface paths {
          *     - `notification_requests`: the counts of the notification requests changed (a notification
          *       was filtered into one, or one was accepted or dismissed). `data` is a
          *       `NotificationRequestSummary`.
+         *     - `notifications_read`: the user read notifications on a device: the marker moved, or one
+         *       notification was read on its own. `data` is a `NotificationsRead`.
          *     - `conversation`: a conversation of the direct messages changed: a `direct` post that the
          *       user sent or received arrived in it, or the user read it on a device. `data` is a
          *       `Conversation`, as `listConversations` shows it; nothing is sent for a conversation that it
@@ -15670,6 +15695,17 @@ export interface components {
              */
             link_cards_ignore_robots_txt: boolean;
             /**
+             * @description Whether the landing page (`/`, signed out) explains how the fediverse works: that an account
+             *     here follows and is followed by people on other servers (the instance setting
+             *     `landing_fediverse_explanation`).
+             */
+            landing_fediverse_explanation: boolean;
+            /**
+             * @description Whether the landing page shows what the software does on this instance, a sample of each
+             *     feature that is on (the instance setting `landing_features`).
+             */
+            landing_features: boolean;
+            /**
              * @description Whether the server takes samples of how fast the web client responds
              *     (`POST /client_measurements`). While it is false, the server takes none and the client sends
              *     none.
@@ -15959,7 +15995,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators" | "event_records_retention_days" | "funding_meter_visibility" | "funding_meter_target_amount" | "funding_meter_target_currency" | "funding_meter_rail" | "ux_measurement" | "ux_measurement_share";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "landing_fediverse_explanation" | "landing_features" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators" | "event_records_retention_days" | "funding_meter_visibility" | "funding_meter_target_amount" | "funding_meter_target_currency" | "funding_meter_rail" | "ux_measurement" | "ux_measurement_share";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -16635,6 +16671,11 @@ export interface components {
              * @description When it happened.
              */
             created_at: string;
+            /**
+             * @description Whether the user has read it: it is older than or at the marker's `last_read_id`, or
+             *     it was marked read on its own (`POST /notifications/{id}/read`).
+             */
+            read: boolean;
             account?: components["schemas"]["Account"];
             /**
              * @description The post that the notification is about, as the user sees it; omitted when the user
@@ -16732,7 +16773,7 @@ export interface components {
             last_read_id?: components["schemas"]["Id"];
             /**
              * Format: int64
-             * @description The number of listed notifications newer than `last_read_id`.
+             * @description The number of listed notifications that are unread, as `Notification.read` tells.
              */
             unread_count: number;
         };
@@ -16819,6 +16860,24 @@ export interface components {
              * @description The number of notifications in them.
              */
             notifications_count: number;
+        };
+        /**
+         * @description The data of the stream event `notifications_read`: the user read notifications on a device,
+         *     and the read marker and the unread count are now these.
+         */
+        NotificationsRead: {
+            /** @description The newest notification read up to the marker; omitted when the user has read none. */
+            last_read_id?: components["schemas"]["Id"];
+            /**
+             * Format: int64
+             * @description The number of listed notifications that are unread, as `Notification.read` tells.
+             */
+            unread_count: number;
+            /**
+             * @description The notification read on its own past the marker (`POST /notifications/{id}/read`);
+             *     omitted when the marker moved.
+             */
+            id?: components["schemas"]["Id"];
         };
         /** @description One channel of one row of the notification settings. */
         NotificationSettingCell: {
@@ -24459,6 +24518,41 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The notification is dismissed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    readNotification: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description The ID of the notification. */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The notification is read. */
             204: {
                 headers: {
                     [name: string]: unknown;

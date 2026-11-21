@@ -15,6 +15,7 @@ type Notification = components["schemas"]["Notification"];
 type Conversation = components["schemas"]["Conversation"];
 type Announcement = components["schemas"]["Announcement"];
 type NotificationRequestSummary = components["schemas"]["NotificationRequestSummary"];
+type NotificationsRead = components["schemas"]["NotificationsRead"];
 
 /** A timeline whose new posts GET /streaming/timelines/{timeline} streams. */
 export type StreamTimeline = "local" | "federated";
@@ -32,6 +33,7 @@ export type StreamEvent =
   | { type: "announcement_removed"; id: string }
   | { type: "delete"; id: string }
   | { type: "notification_requests"; summary: NotificationRequestSummary }
+  | { type: "notifications_read"; read: NotificationsRead }
   | { type: "unknown"; event: string; data: string };
 
 /** How long a stream may stay silent before the client drops it: two of the server's heartbeats, 30 seconds apart. */
@@ -284,7 +286,10 @@ function dispatch(events: ServerSentEvent[], options: StreamOptions): void {
   }
 }
 
-/** The events of the spec, whose data is an object with an `id`, but `list_update`'s and `notification_requests`'s. */
+/**
+ * The events of the spec, whose data is an object with an `id`, but `list_update`'s, `notification_requests`'s and
+ * `notifications_read`'s.
+ */
 const knownEvents: ReadonlySet<string> = new Set([
   "update",
   "list_update",
@@ -294,6 +299,7 @@ const knownEvents: ReadonlySet<string> = new Set([
   "announcement_removed",
   "delete",
   "notification_requests",
+  "notifications_read",
 ]);
 
 /**
@@ -301,9 +307,10 @@ const knownEvents: ReadonlySet<string> = new Set([
  * server's Status, Notification, Conversation, and Announcement, that of `list_update` a list's ID and a Status (once for each of the user's lists
  * whose timeline shows the post of an `update`), that of `announcement_removed` the announcement's ID, that of `delete`
  * the ID of a deleted status that the user may have seen (remove it and its boosts wherever they show), and that of
- * `notification_requests` the counts of the notification requests. An unknown name is an `unknown` event. It throws
+ * `notification_requests` the counts of the notification requests, and that of `notifications_read` the read marker
+ * and the unread count after the user read notifications on a device. An unknown name is an `unknown` event. It throws
  * for a known event whose data is no JSON object with an `id` (for `list_update`, with a `list_id` and a `status` that
- * has an `id`; for `notification_requests`, with the two counts).
+ * has an `id`; for `notification_requests`, with the two counts; for `notifications_read`, with its `unread_count`).
  */
 export function parseStreamEvent({ event, data }: ServerSentEvent): StreamEvent {
   if (!knownEvents.has(event)) return { type: "unknown", event, data };
@@ -331,6 +338,13 @@ export function parseStreamEvent({ event, data }: ServerSentEvent): StreamEvent 
       throw new Error(`mykit: the data of a stream event "${event}" has no counts`);
     }
     return { type: "notification_requests", summary: summary as NotificationRequestSummary };
+  }
+  if (event === "notifications_read") {
+    const read = (value ?? {}) as Record<string, unknown>;
+    if (typeof read["unread_count"] !== "number") {
+      throw new Error(`mykit: the data of a stream event "${event}" has no unread_count`);
+    }
+    return { type: "notifications_read", read: read as NotificationsRead };
   }
   if (typeof value !== "object" || value === null || typeof (value as Record<string, unknown>)["id"] !== "string") {
     throw new Error(`mykit: the data of a stream event "${event}" has no id`);

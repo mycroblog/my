@@ -5,12 +5,12 @@ Was der Server Suchmaschinen und KI-Crawlern mitteilt, welche Einstellungen das 
 
 robots.txt und Meta-Tags sind Aussagen, die Crawler beachten können oder nicht; sie sind keine technische Sperre. Wenn du sperren musst, nutze eine WAF oder Rate Limiting.
 
-<!-- source: settings 13dfb1b04948 -->
+<!-- source: settings 470e02c5f395 -->
 ## Einstellungen
 
 | Bereich | Einstellung | Wo du sie änderst | Wenn nicht gesetzt |
 | --- | --- | --- | --- |
-| Server | `search_indexing` (`allow` / `deny`) | Der Abschnitt „Suchmaschinen und KI“ auf der Seite „Suche und Crawler“ der Server-Einstellungen für Administratoren, `my instance set`, `PATCH /api/v1/admin/settings` ([Servereinstellungen](instance-settings.md)) | `deny` |
+| Server | `search_indexing` (`allow` / `deny`) | Die Abschnitte „Suchmaschinen“ und „KI“ auf der Seite „Suche und Crawler“ der Server-Einstellungen in der Administration, `my instance set`, `PATCH /api/v1/admin/settings` ([Servereinstellungen](instance-settings.md)) | `deny` |
 | Server | `ai_usage` (`allow` / `deny_training` / `deny`) | Gleich | `deny` |
 | Server | `indexable_default` (das `indexable` neuer Konten) | Gleich | `false` |
 | Server | `security_contact` (wohin Sicherheitslücken gemeldet werden) | Gleich | Leer (es wird kein `security.txt` ausgeliefert) |
@@ -19,8 +19,8 @@ robots.txt und Meta-Tags sind Aussagen, die Crawler beachten können oder nicht;
 
 - Die Aussage einer Seite ist die strengere aus der Einstellung des Servers und der Einstellung des Seiteninhabers. Eine Person kann nicht mehr erlauben als der Server.
 - Suchmaschinen wird mitgeteilt, dass sie nur die Profile und `public`-Beiträge von Konten mit `indexable = true` indexieren dürfen, auf einem Server mit `search_indexing = allow`.
-  Ein Server, der durchsuchbar sein will, ändert sowohl `search_indexing` als auch `indexable_default`. Personen, die sich registriert haben, bevor du `indexable_default` geändert hast, sind nicht eingeschlossen, bis sie selbst `indexable` wählen.
-- Eine geänderte Einstellung wirkt ohne Neustart in `/robots.txt`, in Seiten und in Medienantworten.
+  Ein Server, der auffindbar sein will, ändert sowohl `search_indexing` als auch `indexable_default`. Personen, die sich registriert haben, bevor du `indexable_default` geändert hast, sind nicht enthalten, bis sie selbst `indexable` wählen.
+- Eine geänderte Einstellung wirkt in `/robots.txt`, auf Seiten und in Medienantworten ohne Neustart.
 
 <!-- source: what-the-server-returns 31584e03601b -->
 ## Was der Server zurückgibt

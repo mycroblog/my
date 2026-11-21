@@ -3,10 +3,14 @@
 
 中繼站（relay）是一種伺服器，會把加入它的伺服器的公開貼文轉送給其他加入的伺服器。即使是追蹤關係不多的小型實例，聯邦時間軸和主題標籤時間軸也會因此充實起來，自己的公開貼文也能傳得更遠。沒有加入中繼站的實例不會因此增加任何資料列或任務。
 
-<!-- source: join-a-relay 147b07e65534 -->
+<!-- source: join-a-relay 551373ffaed6 -->
 ## 加入中繼站
 
-請使用管理區的「中繼站」（`/admin/relays`）。這需要 `manage_settings` 權限，內建的 `admin` 角色具有此權限。「加入中繼站」會開啟登錄中繼站的表單。列表會顯示每個中繼站的狀態，並附有退出或重新加入的按鈕；選擇某個中繼站會開啟它的頁面，顯示它的網址、過去 24 小時帶進來的內容，以及刪除它的按鈕。CLI 是 `my admin relay`（`my admin relay -help`）：
+請使用管理區的「中繼站」（`/admin/relays`）。這需要 `manage_settings` 權限，內建的 `admin` 角色具有此權限。
+「加入中繼站」會開啟登錄中繼站的表單。列表會顯示每個中繼站的狀態，以及它在過去 24
+小時帶進來的內容；選擇某個中繼站會開啟它的頁面，顯示它的網址和退出它的按鈕，如果伺服器已經退出該中繼站，或該中繼站拒絕了伺服器，
+則顯示重新加入和刪除它的按鈕。退出和刪除都會先詢問確認。
+CLI 是 `my admin relay`（`my admin relay -help`）：
 
 ```sh
 my admin relay list                                               # every relay, its state, and what it brought in during the last 24 hours
@@ -20,15 +24,17 @@ my admin relay delete <relay id>                                  # delete a rel
    - **Mastodon**：中繼站的 **inbox URL**（例如 `https://relay.example/inbox`）。包括 pub-relay 和 Activity-Relay 在內，許多中繼站都接受這種方式。
    - **LitePub**：中繼站的 **actor URL**（例如 `https://relay.example/relay`）。這是 Pleroma 和 Akkoma 中繼站使用的協定。
    如果你沒有選擇協定（「自動偵測」），當該 URL 提供 actor 文件時，伺服器會使用 LitePub，否則使用 Mastodon。
-2. 登錄之後，實例 actor 會向中繼站送出 `Follow`，狀態為「等待中繼站回應」（`pending`）。中繼站接受後，狀態會變成「已加入」（`accepted`）；拒絕時則為「已被中繼站拒絕」（`rejected`）。有些中繼站由營運者逐一手動核准申請，因此可能需要一段時間。
+2. 登錄之後，實例 actor 會向中繼站送出 `Follow`，狀態為「等待中繼站回應」（`pending`）。
+   中繼站接受後，狀態會變成「已加入」（`accepted`）；拒絕時則為「已被中繼站拒絕」（`rejected`）。有些中繼站由營運者逐一手動核准申請，因此可能需要一段時間。
 3. 如果登錄時關閉「接收中繼站的貼文」，伺服器就只會送出。要變更這項設定，請退出中繼站後重新登錄。
 
-你無法登錄受到網域處置（`suspend`）的伺服器上的中繼站。如果已加入的中繼站所在的伺服器之後被停權，狀態不會改變，但伺服器不會再與該中繼站互相傳送任何內容，管理區也會顯示警告。
+你無法登錄受到網域處置（`suspend`）的伺服器上的中繼站。如果已加入的中繼站所在的伺服器之後被停權，狀態不會改變，
+但伺服器不會再與該中繼站互相傳送任何內容，管理區也會在該中繼站的狀態中說明這一點。
 
-<!-- source: what-the-server-sends 1db52c508f9c -->
+<!-- source: what-the-server-sends c55ab0a5b079 -->
 ## 伺服器送出的內容
 
-- 只會送出本站**公開**（`public`）貼文的建立、編輯與刪除。`unlisted`、僅追蹤者、私訊或僅限本站（`local`）的貼文，以及轉發，一律不會送出。若不想讓貼文進入中繼站，請以 `unlisted` 或 `local` 發布。沒有個別使用者選擇退出的設定。
+- 只會送出本站**公開**（`public`）貼文的建立、編輯與刪除。`unlisted`、僅追蹤者、私訊或鄰里（`local`）的貼文，以及轉發，一律不會送出。若不想讓貼文進入中繼站，請以 `unlisted` 或 `local` 發布。沒有個別使用者選擇退出的設定。
 - 公開貼文的文件帶有 Linked Data Signature（`RsaSignature2017`），讓 Mastodon 和 Misskey 能接受由中繼站原封不動轉送的貼文。
 - 傳送次數會增加「已加入的中繼站數量 × 公開貼文數量」（對同一個中繼站的傳送會合併為一次）。
 

@@ -344,3 +344,23 @@ func TestValidateErrorGroupNotifications(t *testing.T) {
 		t.Errorf("ErrorGroupHour = %v, want %v", got, hour)
 	}
 }
+
+func TestReadMarkerUnread(t *testing.T) {
+	const older, at, newer = "01890a5d-0000-7000-8000-000000000001", "01890a5d-0000-7000-8000-000000000002", "01890a5d-0000-7000-8000-000000000003"
+	for _, c := range []struct {
+		marker, id string
+		read, want bool
+	}{
+		{"", older, false, true},    // nothing read yet
+		{"", older, true, false},    // read on its own
+		{at, older, false, false},   // behind the marker
+		{at, at, false, false},      // at the marker
+		{at, newer, false, true},    // past the marker
+		{at, newer, true, false},    // past the marker, read on its own
+		{newer, older, true, false}, // a read the marker passed
+	} {
+		if got := (ReadMarker{LastReadID: c.marker}).Unread(c.id, c.read); got != c.want {
+			t.Errorf("ReadMarker{%q}.Unread(%q, %v) = %v, want %v", c.marker, c.id, c.read, got, c.want)
+		}
+	}
+}

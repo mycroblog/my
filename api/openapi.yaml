@@ -4072,6 +4072,33 @@ paths:
           description: The notification is dismissed.
         default:
           $ref: '#/components/responses/Problem'
+  /notifications/{id}/read:
+    post:
+      operationId: readNotification
+      summary: Mark one notification read
+      description: |
+        Marks one notification read, wherever it is in the list, for every client of the user. A
+        notification is unread while it is newer than the marker's `last_read_id` and not marked
+        read here; marking it again, or marking one the marker already passed, changes nothing. A
+        notification that is not the user's is a 404.
+      tags:
+        - notifications
+      security:
+        - oauth2:
+            - write:notifications
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the notification.
+          schema:
+            $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '204':
+          description: The notification is read.
+        default:
+          $ref: '#/components/responses/Problem'
   /notifications/requests:
     get:
       operationId: listNotificationRequests
@@ -6180,6 +6207,8 @@ paths:
         - `notification_requests`: the counts of the notification requests changed (a notification
           was filtered into one, or one was accepted or dismissed). `data` is a
           `NotificationRequestSummary`.
+        - `notifications_read`: the user read notifications on a device: the marker moved, or one
+          notification was read on its own. `data` is a `NotificationsRead`.
         - `conversation`: a conversation of the direct messages changed: a `direct` post that the
           user sent or received arrived in it, or the user read it on a device. `data` is a
           `Conversation`, as `listConversations` shows it; nothing is sent for a conversation that it
@@ -24868,6 +24897,8 @@ components:
         - full_text_search
         - translation
         - single_user
+        - landing_fediverse_explanation
+        - landing_features
       properties:
         domain:
           description: The domain that serves the instance.
@@ -25031,6 +25062,17 @@ components:
           description: |
             Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
             link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
+          type: boolean
+        landing_fediverse_explanation:
+          description: |
+            Whether the landing page (`/`, signed out) explains how the fediverse works: that an account
+            here follows and is followed by people on other servers (the instance setting
+            `landing_fediverse_explanation`).
+          type: boolean
+        landing_features:
+          description: |
+            Whether the landing page shows what the software does on this instance, a sample of each
+            feature that is on (the instance setting `landing_features`).
           type: boolean
         ux_measurement:
           description: |
@@ -25495,6 +25537,8 @@ components:
         - member_invite_max_uses
         - member_invite_max_lifetime_seconds
         - public_counts
+        - landing_fediverse_explanation
+        - landing_features
         - featured_accounts
         - login_providers_only
         - remote_media_cache_max_bytes
@@ -26606,6 +26650,7 @@ components:
         - id
         - type
         - created_at
+        - read
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -26615,6 +26660,11 @@ components:
           description: When it happened.
           type: string
           format: date-time
+        read:
+          description: |
+            Whether the user has read it: it is older than or at the marker's `last_read_id`, or
+            it was marked read on its own (`POST /notifications/{id}/read`).
+          type: boolean
         account:
           $ref: '#/components/schemas/Account'
         status:
@@ -26765,7 +26815,7 @@ components:
           description: The newest notification read; omitted when the user has read none.
           $ref: '#/components/schemas/Id'
         unread_count:
-          description: The number of listed notifications newer than `last_read_id`.
+          description: The number of listed notifications that are unread, as `Notification.read` tells.
           type: integer
           format: int64
           minimum: 0
@@ -26903,6 +26953,27 @@ components:
           type: integer
           format: int64
           minimum: 0
+    NotificationsRead:
+      description: |
+        The data of the stream event `notifications_read`: the user read notifications on a device,
+        and the read marker and the unread count are now these.
+      type: object
+      required:
+        - unread_count
+      properties:
+        last_read_id:
+          description: The newest notification read up to the marker; omitted when the user has read none.
+          $ref: '#/components/schemas/Id'
+        unread_count:
+          description: The number of listed notifications that are unread, as `Notification.read` tells.
+          type: integer
+          format: int64
+          minimum: 0
+        id:
+          description: |
+            The notification read on its own past the marker (`POST /notifications/{id}/read`);
+            omitted when the marker moved.
+          $ref: '#/components/schemas/Id'
     NotificationSettingCell:
       description: One channel of one row of the notification settings.
       type: object

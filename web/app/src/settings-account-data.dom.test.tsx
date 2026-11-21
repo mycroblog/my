@@ -211,7 +211,7 @@ describe("Export", () => {
   test("with no archive, says so and offers Request an archive; a request says it once, and the new archive's row says it is being prepared, with no Request meanwhile", async () => {
     const app = await renderApp(exportAt);
     const archive = await sectionRead("Archive");
-    expect(words(archive)).toContain("You have no archive. Request one, and download it here once it is ready.");
+    expect(words(archive)).toContain("You have no archive.");
     const requested = app.fake.script("POST /exports");
 
     await app.user.click(within(archive).getByRole("button", { name: "Request an archive" }));

@@ -39,6 +39,12 @@ INSERT INTO status_deletions (status_id, uri, author_account_id, origin, moderat
 SELECT unnest(sqlc.arg(status_ids)::uuid[]), unnest(sqlc.arg(uris)::text[]), unnest(sqlc.arg(author_account_ids)::uuid[]),
   sqlc.arg(origin)::text, sqlc.narg(moderation_action_id)::uuid, sqlc.arg(deleted_at)::timestamptz;
 
+-- InsertStatusContentPurges is InsertStatusContentPurge of many statuses with one time.
+-- name: InsertStatusContentPurges :exec
+INSERT INTO status_content_purges (status_id, due_at)
+SELECT unnest(sqlc.arg(status_ids)::uuid[]), sqlc.arg(due_at)::timestamptz
+ON CONFLICT (status_id) DO NOTHING;
+
 -- InsertStatusSensitivityOverrides is InsertStatusSensitivityOverride of many statuses.
 -- name: InsertStatusSensitivityOverrides :exec
 INSERT INTO status_sensitivity_overrides (status_id, source_kind, source_id)

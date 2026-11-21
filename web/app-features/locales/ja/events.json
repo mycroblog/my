@@ -16,7 +16,7 @@
     "description": "The button after a sentence that says something of an event's screens could not be loaded."
   },
   "events.empty": {
-    "defaultMessage": "これからのイベントはありません。あなたに見えるイベントをこのサーバーの誰かが計画すると、ここに表示されます。",
+    "defaultMessage": "これからのイベントはありません。",
     "description": "In place of the list of events when there is none the reader sees."
   },
   "events.create": {

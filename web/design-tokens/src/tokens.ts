@@ -222,23 +222,25 @@ export const focusRing = { gap: 2, width: 2, halo: 3, haloShare: 0.35 } as const
  */
 export const press = { shade: "#000000", hover: 0.1, pressed: 0.2, shift: 1, disabledOpacity: 0.4 } as const;
 
-/** A motion: its duration in ms, and whether it stands `still` or keeps turning with reduced motion. */
-export type Motion = { duration: number; reduced: "still" | "turn" };
+/** A motion: its duration in ms, its easing, and whether it stands `still` or keeps turning with reduced motion. */
+export type Motion = { duration: number; ease: string; reduced: "still" | "turn" };
 
 /**
- * Motion. The spinner of a control in flight turns once in `duration` ms; with reduced motion it stands `still`,
- * since a ring with one arc reads as busy without turning.
+ * Motion. The spinner of a control in flight turns once in `duration` ms at an even pace, since a turn that loops has
+ * no start to leave nor end to slow into; with reduced motion it stands `still`, since a ring with one arc reads as
+ * busy without turning.
  */
-export const motion: { readonly spin: Motion } = { spin: { duration: 800, reduced: "still" } };
+export const motion: { readonly spin: Motion } = { spin: { duration: 800, ease: "linear", reduced: "still" } };
 
 /**
  * The motion of a change of screen, by its kind (ADR-0025 §4): how long a push, a pop, a modal and a replace take, in
- * ms; the easing of the screen that enters, which slows into place, and of the one that leaves, which speeds away; and
- * how far a screen moves, in rem: sideways on a push or a pop, up on a modal. With reduced motion no screen moves.
+ * ms; the easing of the screen that enters, which slows into place, of the one that leaves, which speeds away, and of
+ * a crossfade, at an even pace since nothing moves; and how far a screen moves, in rem: sideways on a push or a pop,
+ * up on a modal. With reduced motion no screen moves.
  */
 export const transition = {
   duration: { push: 300, pop: 250, modal: 300, replace: 150 },
-  ease: { enter: "cubic-bezier(0.05, 0.7, 0.1, 1)", exit: "cubic-bezier(0.3, 0, 0.8, 0.15)" },
+  ease: { enter: "cubic-bezier(0.05, 0.7, 0.1, 1)", exit: "cubic-bezier(0.3, 0, 0.8, 0.15)", crossfade: "linear" },
   shift: 2,
   rise: 3,
 } as const;
@@ -524,6 +526,23 @@ export const formPage = {
 } as const;
 
 /**
+ * A server's landing page, in rem: the least width of a sample of a screen in the grid of what a member can do, and
+ * the padding around the screen and inside it; and the share of its size a sample is drawn at, a screen a step
+ * smaller than the app's, its smallest text still read.
+ */
+export const landing = { sample: 15, samplePadding: 0.75, sampleScale: 0.875 } as const;
+
+/**
+ * The motion of the landing page's figure of the fediverse, without end: a post travels along a follow from someone
+ * on this server to someone on another, and half a `cycle` (ms) later another comes back. Each comes out at its
+ * author in `fade` ms, travels for `travel` ms with `ease`, starting and stopping gently as a thing sent from one place
+ * to another, and goes into the follower it reaches in `fade` ms; the rest of the cycle nothing moves, so that the
+ * figure is still most of the time and the way to an account keeps the eye. With reduced motion the posts stand half
+ * way.
+ */
+export const figureMotion = { cycle: 9000, fade: 300, travel: 1800, ease: "cubic-bezier(0.4, 0, 0.2, 1)" } as const;
+
+/**
  * The parts of the app's screens over and among the entries of a feed, in rem: the space between the tabs of a row
  * and before what ends it; above a heading of a group of a list; around a thread's focused post and between its
  * lines; a step of a reply's indent, and the width of the column from which replies indent; the room between a profile's avatar and its banner's edge or its actions; the
@@ -612,7 +631,9 @@ export const shell = {
  * avatar; the size of a reaction's emoji, the width of a lane reactions rise in and how far they rise; the size of a
  * control of the room's bar, the least width of one with its name, so that a name that changes with its state moves
  * nothing beside it, and the space between its controls; and the box of a room's emoji at the start of a line
- * of a list, and the emoji's size in it. Durations in ms: a reaction's rise, and the halo's swell while one speaks.
+ * of a list, and the emoji's size in it. Durations in ms and easings: a reaction's rise, which slows as it fades, and,
+ * with reduced motion, its fade where it is, at an even pace; and the halo's swell while one speaks, which eases at
+ * both ends as it swells and settles.
  */
 export const voice = {
   stage: 4.75,
@@ -634,6 +655,7 @@ export const voice = {
   roomBox: 2.5,
   roomEmoji: 1.5,
   duration: { reaction: 3200, speaking: 900 },
+  ease: { reaction: "ease-out", reactionStill: "linear", speaking: "ease-in-out" },
 } as const;
 
 /**
@@ -690,7 +712,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * region's family), `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--toggle-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*`, `--voice-*`, `--event-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--ease-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--toggle-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*`, `--voice-*`, `--event-*`, `--form-page-*` and `--landing-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Object.fromEntries<string>([
@@ -723,10 +745,14 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--press-pressed", percent(press.pressed)],
   ["--press-shift", `${press.shift}px`],
   ["--press-disabled-opacity", `${press.disabledOpacity}`],
-  ...Object.entries(motion).map(([name, m]): [string, string] => [`--duration-${name}`, `${m.duration}ms`]),
+  ...Object.entries(motion).flatMap(([name, m]): [string, string][] => [
+    [`--duration-${name}`, `${m.duration}ms`],
+    [`--ease-${name}`, m.ease],
+  ]),
   ...Object.entries(transition.duration).map(([kind, ms]): [string, string] => [`--transition-${kind}`, `${ms}ms`]),
   ["--transition-ease-enter", transition.ease.enter],
   ["--transition-ease-exit", transition.ease.exit],
+  ["--transition-ease-crossfade", transition.ease.crossfade],
   ["--transition-shift", `${transition.shift}rem`],
   ["--transition-rise", `${transition.rise}rem`],
   ["--spinner-size", `${spinner.size}em`],
@@ -859,11 +885,20 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ...Object.entries(voice).flatMap(([name, value]): [string, string][] =>
     typeof value === "number"
       ? [[`--voice-${kebab(name)}`, name === "haloShare" ? percent(value) : `${value}rem`]]
-      : Object.entries(value).map(([kind, ms]): [string, string] => [`--voice-${kind}-duration`, `${ms}ms`]),
+      : [],
   ),
+  ...Object.entries(voice.duration).map(([kind, ms]): [string, string] => [
+    `--voice-${kebab(kind)}-duration`,
+    `${ms}ms`,
+  ]),
+  ...Object.entries(voice.ease).map(([kind, ease]): [string, string] => [`--voice-${kebab(kind)}-ease`, ease]),
   ...Object.entries(event).map(([name, value]): [string, string] => [`--event-${kebab(name)}`, `${value}rem`]),
   ...Object.entries(formPage).map(([name, value]): [string, string] => [
     `--form-page-${kebab(name)}`,
     name === "bannerRatio" ? `${value}` : `${value}rem`,
+  ]),
+  ...Object.entries(landing).map(([name, value]): [string, string] => [
+    `--landing-${kebab(name)}`,
+    name === "sampleScale" ? `${value}` : `${value}rem`,
   ]),
 ]);

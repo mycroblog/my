@@ -7,6 +7,7 @@
 
 import { dateFormat, timeZoneName, useLocale, useTimeZone, wallTime } from "@my/design-system";
 import { stringsIn } from "./locale";
+import { zoneOf } from "./zone-links";
 
 /** What the time of an event reads of it (the API's Event, and a candidate date with its event's zone). */
 export type EventTimed = { readonly starts_at: string; readonly time_zone: string };
@@ -45,13 +46,13 @@ const momentOptions: Intl.DateTimeFormatOptions = {
 };
 
 /**
- * The name the platform resolves the zone `zone` to (it throws for a zone it does not know). Two names of one zone
- * (Asia/Calcutta, Asia/Kolkata) are one where the platform resolves them alike; where it keeps the name it was given,
- * an alias shows its second time, which says the first again, while two zones whose clocks agree (Tokyo, Seoul) are
- * never taken for one.
+ * The IANA zone that `zone` names (it throws for a zone the platform does not know): the name the platform resolves it
+ * to, then the zone of that name when it is another name of one (zone-links.ts), so that two names of one zone
+ * (Asia/Calcutta, Asia/Kolkata) are one on every platform, while two zones whose clocks agree (Tokyo, Seoul) are never
+ * taken for one.
  */
 const resolved = (locale: string, zone: string) =>
-  dateFormat(locale, undefined, { timeZone: zone }).resolvedOptions().timeZone;
+  zoneOf(dateFormat(locale, undefined, { timeZone: zone }).resolvedOptions().timeZone);
 
 /**
  * The moment `at` of an event of the zone `eventZone`, in `locale`, for a reader in `timeZone` (an IANA name; the
