@@ -27,7 +27,7 @@ CREATE TABLE notifications (
     'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit', 'scheduled_status_failed',
     'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected',
     'event_invited', 'event_schedule_confirmed', 'event_changed', 'event_cancelled', 'event_reminder', 'event_started',
-    'event_room_unavailable'
+    'event_room_unavailable', 'event_board_posted'
   )),
   source_account_id TEXT,
   -- the domain of a remote source account; NULL for a local source or none.
@@ -76,7 +76,8 @@ CREATE TABLE notifications (
   -- scheduled_status_failed: the draft_schedules row of the schedule that could not be published.
   draft_schedule_id TEXT,
   -- event_invited, event_schedule_confirmed, event_changed, event_cancelled, event_reminder,
-  -- event_started, event_room_unavailable: the gatherings row of the event.
+  -- event_started, event_room_unavailable, event_board_posted: the gatherings row of the event
+  -- (and status_id the post of its board, of an event_board_posted).
   gathering_id TEXT,
   dedupe_key TEXT NOT NULL,
   created_at INTEGER NOT NULL,
@@ -176,7 +177,7 @@ CREATE TABLE push_subscription_alerts (
     'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit', 'scheduled_status_failed',
     'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected',
     'event_invited', 'event_schedule_confirmed', 'event_changed', 'event_cancelled', 'event_reminder', 'event_started',
-    'event_room_unavailable'
+    'event_room_unavailable', 'event_board_posted'
   )),
   PRIMARY KEY (subscription_id, notification_type)
 ) STRICT;

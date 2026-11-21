@@ -79,6 +79,10 @@
     "defaultMessage": "[Ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧǿǿřş ǿǿƒ {instance} řḗḗṽīḗḗẇḗḗḓ ẏǿǿŭŭř ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī řḗḗɋŭŭḗḗşŧ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.event_board_posted": {
+    "defaultMessage": "[{name} ẇřǿǿŧḗḗ ǿǿƞ ŧħḗḗ ƀǿǿȧȧřḓ ǿǿƒ {title}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.event_cancelled": {
     "defaultMessage": "[{title} ẇȧȧş ƈȧȧƞƈḗḗŀŀḗḗḓ]",
     "description": "Generated from en by tools/i18n; do not edit."

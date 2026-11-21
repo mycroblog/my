@@ -17,6 +17,7 @@ import (
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/federation"
+	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/gathering"
@@ -150,7 +151,7 @@ func TestEventBoardPostsNeverLeaveTheEvent(t *testing.T) {
 	}
 	e.drain()
 	// A step on the board enqueues no fan-out, no delivery, and no job of federation or of the
-	// timelines that names a board post.
+	// timelines that names a board post; only the notification of its readers (ADR-0161 §11).
 	seen := map[string]bool{}
 	for _, j := range e.pendingJobs() {
 		seen[j.ID] = true
@@ -165,6 +166,9 @@ func TestEventBoardPostsNeverLeaveTheEvent(t *testing.T) {
 			names := slices.ContainsFunc(ids, func(id string) bool {
 				return strings.Contains(string(j.Payload), id) || strings.Contains(j.IdempotencyKey, id)
 			})
+			if j.Type == appgathering.JobNotify {
+				continue
+			}
 			if j.Type != appcontent.JobFetchLinkCard && (names || j.Type == federation.JobFanOut || j.Type == federation.JobDeliver) {
 				t.Errorf("%s enqueues the job %s %s %s", step, j.Type, j.IdempotencyKey, j.Payload)
 			}

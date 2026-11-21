@@ -105,8 +105,8 @@ const (
 	EventBoardStatusPosted = "content.board_status_posted"
 	// EventBoardStatusRevised follows an edit of a board post.
 	EventBoardStatusRevised = "content.board_status_revised"
-	// EventBoardStatusesDeleted follows the deletion of board posts: by their author, or with the
-	// records of their event.
+	// EventBoardStatusesDeleted follows the deletion of board posts: by their author, by a
+	// moderation action, or with the records of their event.
 	EventBoardStatusesDeleted = "content.board_statuses_deleted"
 )
 

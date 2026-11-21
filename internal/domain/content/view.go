@@ -209,13 +209,14 @@ func CanView(ctx ViewContext, viewer Viewer, status StatusFacts, author AuthorRe
 
 // canViewOnBoard reports whether viewer may see status, a post of the board of an event or a
 // status asked for in ContextBoard: only a board post, of a local author, in ContextBoard, to a
-// local viewer who reads the board. Its visibility, follows, and mentions grant nothing; blocks
-// either way and the author's profile_view hide it from everyone but the author.
+// local viewer who reads the board, or to the moderators reviewing a report, whom the caller lets
+// read it. Its visibility, follows, and mentions grant nothing; blocks either way and the author's
+// profile_view hide it from everyone but the author.
 func canViewOnBoard(ctx ViewContext, viewer Viewer, status StatusFacts, author AuthorRestrictions, rel Relation) bool {
 	if ctx != ContextBoard || status.Board == nil || !status.Board.Reads || !status.AuthorIsLocal {
 		return false
 	}
-	if viewer.Kind != ViewerLocal || viewer.AccountID == "" {
+	if viewer.Kind != ViewerLocal || (viewer.AccountID == "" && !viewer.Moderator) {
 		return false
 	}
 	if viewer.AccountID == status.AuthorAccountID {

@@ -714,7 +714,7 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 		p.Title = l.ServerPushScheduledStatusFailed(i18n.ServerPushScheduledStatusFailedArgs{Instance: instance, Reason: n.DraftFailureReason})
 	case notification.TypeEventInvited, notification.TypeEventScheduleConfirmed, notification.TypeEventChanged,
 		notification.TypeEventCancelled, notification.TypeEventReminder, notification.TypeEventStarted,
-		notification.TypeEventRoomUnavailable:
+		notification.TypeEventRoomUnavailable, notification.TypeEventBoardPosted:
 		p.Title = describeEvent(l, n, name)
 	default:
 		p.Title = l.ServerPushOther(instance)

@@ -553,6 +553,7 @@ leaves the report as it is.
 - A holder of `manage_reports` can cancel an event with `POST /api/v1/admin/events/{id}/cancel` (body `{"reason": "..."}`, optional, up to 500 characters).
   The reason is shown with the cancellation to everyone who sees the event. The users who answered going or maybe and the invited users are notified, as of the organizer's own cancellation, and the audit log records `event_cancelled`.
   An event cancelled already answers `409` `event-closed`. In the web client, the report's page of an event has "Cancel the event", which asks first, with the reason.
+- A post on the board of an event is reported, reviewed, and deleted like any other post (`status_ids`, with `account_id` set to its writer). Its report is never forwarded, and its deletion never leaves the server.
 - Suspending or deleting the organizer cancels the organizer's events that have not started yet, including those still polling for a date (`gathering.cancel_organized`), and notifies their attendees. These cancellations name nobody as the one who cancelled them, and lifting the suspension does not restore them. Events that started already are not cancelled.
 
 ## Notifications for moderators and the pending counts

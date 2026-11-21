@@ -162,13 +162,17 @@ const (
 	// TypeEventRoomUnavailable tells the organizer that the voice chat room of an event cannot
 	// open, or could not. It is the server's notice, with no source account.
 	TypeEventRoomUnavailable Type = "event_room_unavailable"
+	// TypeEventBoardPosted tells the readers of the board of an event who answered going or maybe
+	// of a new post on it (ADR-0161 §11, §17). StatusID is the post and SourceAccountID its
+	// writer.
+	TypeEventBoardPosted Type = "event_board_posted"
 )
 
 // Event reports whether t is one of the notifications of an event (ADR-0161 §11).
 func (t Type) Event() bool {
 	switch t {
 	case TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
-		TypeEventStarted, TypeEventRoomUnavailable:
+		TypeEventStarted, TypeEventRoomUnavailable, TypeEventBoardPosted:
 		return true
 	}
 	return false
@@ -177,7 +181,7 @@ func (t Type) Event() bool {
 // EventTypes are the notifications of an event, in a stable order.
 var EventTypes = []Type{
 	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
-	TypeEventStarted, TypeEventRoomUnavailable,
+	TypeEventStarted, TypeEventRoomUnavailable, TypeEventBoardPosted,
 }
 
 // ErrorGroupChange is what an admin_error_group tells of (notifications.error_group_change).
@@ -283,7 +287,7 @@ var Types = []Type{
 	TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
 	TypeAdminDomainListFailing,
 	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
-	TypeEventStarted, TypeEventRoomUnavailable,
+	TypeEventStarted, TypeEventRoomUnavailable, TypeEventBoardPosted,
 }
 
 // Valid reports whether t is a known notification type.
@@ -454,6 +458,9 @@ func (n Notification) Validate() error {
 	if event := n.Type.Event(); event != (n.GatheringID != "") ||
 		(event && (n.SourceAccountID == "") != (n.Type == TypeEventRoomUnavailable)) {
 		return errors.New("notification: the notifications of an event, and only they, name an event, and they have a source account but an event_room_unavailable, which has none")
+	}
+	if n.Type == TypeEventBoardPosted && n.StatusID == "" {
+		return errors.New("notification: an event_board_posted names the post of the board")
 	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),
@@ -752,6 +759,12 @@ func EventStartedKey(confirmationID string) string {
 // the end of the wait).
 func EventRoomUnavailableKey(confirmationID, reason, checkpoint string) string {
 	return string(TypeEventRoomUnavailable) + ":" + confirmationID + ":" + reason + ":" + checkpoint
+}
+
+// EventBoardPostedKey is the dedupe key of an event_board_posted notification: one per post of
+// the board and recipient.
+func EventBoardPostedKey(statusID string) string {
+	return string(TypeEventBoardPosted) + ":" + statusID
 }
 
 // AdminHookAppealKey is the dedupe key of an admin_hook_appeal notification: one per appeal.

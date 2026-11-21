@@ -54,6 +54,15 @@ func (a *App) setUpGathering(repo appgathering.Repository, statuses content.Repo
 		end := e.(appvoice.RoomEnded).Ending
 		return a.Events.RoomEnded(ctx, tx, end.RoomID, end.Reason == voice.EndUnattended)
 	})
+	// The readers of a board hear of its new posts (ADR-0161 §11, §17); the gathering module does
+	// not know the posts.
+	a.Projectors.Register(content.EventBoardStatusPosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(content.BoardStatusPosted)
+		return a.Events.BoardPosted(ctx, tx, appgathering.BoardPost{
+			StatusID: ev.Status.ID, GatheringID: ev.GatheringID, WriterAccountID: ev.Status.AuthorAccountID,
+			MentionedReaderIDs: ev.MentionedReaderIDs, PostedAt: ev.Revision.RevisedAt,
+		})
+	})
 	// The posts of the boards go with the records of their events (ADR-0161 §17): the content
 	// module asks the gathering module which boards are due, and the gathering module does not
 	// know the posts.

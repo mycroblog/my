@@ -17131,12 +17131,16 @@ export interface components {
          *     nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
          *     that the user answered going or maybe to starts soon, at each time before the start that the
          *     user chose (`getEventReminders`), once per date and time, and never for a date that changed
-         *     since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
-         *     the organizer that the voice chat room of the event cannot open. Their `account` is the
-         *     organizer, except for `event_invited`. Each is sent only while the user sees the event.
+         *     since; `event_started` that it starts now, once per date; `event_room_unavailable` tells
+         *     the organizer that the voice chat room of the event cannot open; and `event_board_posted`
+         *     tells a user who answered going or maybe that `account` wrote a new post (`status`) on the
+         *     board of the event, once per post, but not when the post mentions the user, who gets the
+         *     `mention` instead. Their `account` is the organizer, except for `event_invited` and
+         *     `event_board_posted`. Each is sent only while the user sees the event, and an
+         *     `event_board_posted` only while the user reads its board.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "scheduled_status_failed" | "event_invited" | "event_schedule_confirmed" | "event_changed" | "event_cancelled" | "event_reminder" | "event_started" | "event_room_unavailable" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "scheduled_status_failed" | "event_invited" | "event_schedule_confirmed" | "event_changed" | "event_cancelled" | "event_reminder" | "event_started" | "event_room_unavailable" | "event_board_posted" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
         /**
          * @description An OAuth app that the authenticated user registered. Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.

@@ -49,6 +49,7 @@ const (
 	EventReminder          EventKind = "reminder"
 	EventStarted           EventKind = "started"
 	EventRoomUnavailable   EventKind = "room_unavailable"
+	EventBoardPosted       EventKind = "board_posted"
 )
 
 // EventNotice is a notification of an event to many recipients: everything but the recipient.
@@ -58,8 +59,9 @@ type EventNotice struct {
 	// SourceAccountID is the account the notification is from.
 	SourceAccountID string
 	// Ref is what the notification is about, which its dedupe key names: the invitation of an
-	// invited, the revision or the confirmation of a changed, and the confirmation of the others.
-	// The event of a cancelled needs none.
+	// invited, the revision or the confirmation of a changed, the post of a board_posted, which the
+	// notification is about too, and the confirmation of the others. The event of a cancelled
+	// needs none.
 	Ref string
 	// Reason and Checkpoint are why the room of a room_unavailable cannot open and when the server
 	// found it out.
@@ -86,6 +88,8 @@ func (n EventNotice) typeAndKey() (notification.Type, string, bool) {
 		return notification.TypeEventStarted, notification.EventStartedKey(n.Ref), true
 	case EventRoomUnavailable:
 		return notification.TypeEventRoomUnavailable, notification.EventRoomUnavailableKey(n.Ref, n.Reason, n.Checkpoint), true
+	case EventBoardPosted:
+		return notification.TypeEventBoardPosted, notification.EventBoardPostedKey(n.Ref), true
 	}
 	return "", "", false
 }
@@ -111,9 +115,15 @@ func (g *GatheringNotifier) NotifyEventTx(ctx context.Context, tx uow.Tx, n Even
 		return ErrUnknownEventKind
 	}
 	mail := n.Mail
-	return g.p.notifyAllWith(ctx, tx, notification.Notification{
+	one := notification.Notification{
 		SourceAccountID: n.SourceAccountID, Type: t, GatheringID: n.GatheringID, DedupeKey: key, CreatedAt: n.At,
-	}, recipientIDs, func(job *pushJob) { job.Event = &mail })
+	}
+	if t == notification.TypeEventBoardPosted {
+		// The post of the board, which the Web Push message and the email check that the
+		// recipient still reads when they are sent, and whose deletion hides the notification.
+		one.StatusID = n.Ref
+	}
+	return g.p.notifyAllWith(ctx, tx, one, recipientIDs, func(job *pushJob) { job.Event = &mail })
 }
 
 // The units of the time before the start of a reminder, as push.event_reminder selects them.
@@ -160,6 +170,8 @@ func describeEvent(l *i18n.Localizer, n Wording, name string) string {
 		return l.ServerPushEventReminder(i18n.ServerPushEventReminderArgs{Unit: unit, Count: count, Title: title})
 	case notification.TypeEventStarted:
 		return l.ServerPushEventStarted(title)
+	case notification.TypeEventBoardPosted:
+		return l.ServerPushEventBoardPosted(i18n.ServerPushEventBoardPostedArgs{Name: name, Title: title})
 	default:
 		return l.ServerPushEventRoomUnavailable(title)
 	}

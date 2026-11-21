@@ -226,6 +226,10 @@ func TestValidateEventNotifications(t *testing.T) {
 			// The server's notice to the organizer, from nobody.
 			ok.SourceAccountID = ""
 		}
+		if typ == TypeEventBoardPosted {
+			// The post of the board.
+			ok.StatusID = idR
+		}
 		if err := ok.Validate(); err != nil {
 			t.Errorf("Validate(%+v) = %v", ok, err)
 		}
