@@ -25,6 +25,10 @@ screen_field() {
 	echo "$2" | sed -n 's|.*<script type="application/json" id="auth">\(.*\)</script>.*|\1|p' | head -n 1 | jq -r ".$1 // empty"
 }
 
+# A hidden field of an HTML form: the sign-in page of a release before the auth screens' data block (the upgrade
+# test signs in to its previous release).
+form_field() { echo "$2" | grep -o "name=\"$1\" value=\"[^\"]*\"" | head -n 1 | sed 's/.*value="//; s/"$//; s/&amp;/\&/g'; }
+
 web_sign_in() {
 	local api_origin="$1" web_origin="$2" email="$3" password="$4"
 	local verifier challenge state callback jar
@@ -45,6 +49,8 @@ web_sign_in() {
 	form="$("${browser[@]}" "$sign_in")"
 	csrf="$(screen_field csrfToken "$form")"
 	return_to="$(screen_field returnTo "$form")"
+	[[ -n "$csrf" ]] || csrf="$(form_field csrf_token "$form")"
+	[[ -n "$return_to" ]] || return_to="$(form_field return_to "$form")"
 	[[ -n "$csrf" && -n "$return_to" ]] || fail "the sign-in page has no csrf_token or return_to: $form"
 	authorize="$("${redirect[@]}" -H "Origin: $api_origin" --data-urlencode "csrf_token=$csrf" --data-urlencode "return_to=$return_to" \
 		--data-urlencode "email=$email" --data-urlencode "password=$password" "$api_origin/auth/sign_in")"

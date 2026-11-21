@@ -9,7 +9,7 @@
 // (web/app/src/supporters-routes.dom.test.tsx); this is that the catalog shows each state for a review and a shot.
 
 import type { Page } from "@playwright/test";
-import { expect, pc, test } from "../test";
+import { expect, groupsOf, pc, test } from "../test";
 
 /** The story of the supporter's screens named `name`. */
 const story = (name: string) => `screens-supporters--${name}`;
@@ -221,11 +221,16 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
   ["tip-error", (page) => says(page, /^The amounts could not be loaded\./)],
 ];
 
-// One page walks the stories, a step each: a page of its own per story would cost the catalog's run its time limit.
-test("each story of the supporter's screens shows its state", async ({ page, open }) => {
-  for (const [name, shows] of states)
-    await test.step(name, async () => {
-      await open(story(name), { width: pc });
-      await shows(page);
-    });
-});
+// One page walks a group of the stories, a step each (groupsOf).
+const groups = groupsOf(states, 8);
+for (const [i, group] of groups.entries())
+  test(`each story of the supporter's screens shows its state (${i + 1} of ${groups.length})`, async ({
+    page,
+    open,
+  }) => {
+    for (const [name, shows] of group)
+      await test.step(name, async () => {
+        await open(story(name), { width: pc });
+        await shows(page);
+      });
+  });

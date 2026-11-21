@@ -5,10 +5,10 @@
 # (upgrade-check, schema, upgrade, then the server), on SQLite or PostgreSQL. The script sets the images and the
 # dialect, generates the private CA and the remote server's files, and runs this file in two phases:
 #
-#   previous   the previous release applies its schema, and its server starts (`up --no-deps my`): its own
-#              `my schema apply` (`run --no-deps schema`), or, for a release that shipped a separate schema image with
-#              Atlas, that image (`run --no-deps previous-schema`); a release may lack `my db upgrade`, so the one-off
-#              my db services do not run
+#   previous   the previous release applies its schema, runs its data upgrade steps, and its server starts
+#              (`up --no-deps my`): its own `my schema apply` (`run --no-deps schema`), or, for a release that shipped a
+#              separate schema image with Atlas, that image (`run --no-deps previous-schema`); then its `my db upgrade`
+#              (`run --no-deps upgrade`) when it has one, since its readiness needs the record of its steps
 #   candidate  `up my` with the candidate's image runs upgrade-check, schema (`my schema apply`), and upgrade, then
 #              starts the server
 #

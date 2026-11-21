@@ -24,7 +24,8 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 #   image-upgrade, image-restore             an upgrade from the previous release; a backup restored
 #   tofu-test                                the OpenTofu modules under tofu (validate and the tests)
 #   web-test                                 the tests of every web package, where ci.yml runs those a change reaches
-#   web-stories-scan                         every story of the catalog, for an error, sideways scrolling and axe
+#   web-stories-scan                         every story of the catalog, for an error, sideways scrolling and axe, in
+#                                            four shards
 #   web-e2e-build, web-e2e                   the E2E tests twice over, never run again when they fail
 #   web-browser-image                        not a check: the image the browser jobs run in, when the registry has it
 #   code-scan                                CodeQL (codeql.yml)
@@ -420,7 +421,12 @@ jobs:
     # The check of every story at once (ADR-0171 §6): each story of the built catalog at the minimum width, in both
     # directions and in the dark theme, for an error, sideways scrolling and axe, with the E2E tests' runner and no
     # server. No pull request runs it: it finds what the tests of the lower layers missed, and the fix adds a test
-    # there.
+    # there. Four jobs, each building the catalog and checking one of Playwright's shards of its tests, so that each
+    # stays well within the run's limit (`--global-timeout` of web:stories-check-built) as the catalog grows.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -454,7 +460,9 @@ jobs:
       - name: Build the catalog
         run: scripts/task.sh web:stories
       - name: web:stories-check-built
-        run: scripts/task.sh web:stories-check-built
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: scripts/task.sh web:stories-check-built -- --shard="$SHARD/4"
 
   web-e2e-build:
     if: inputs.scope == 'all'

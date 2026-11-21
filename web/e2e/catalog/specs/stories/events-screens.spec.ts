@@ -12,7 +12,7 @@
 // a review and a shot.
 
 import type { Page } from "@playwright/test";
-import { expect, pc, test } from "../test";
+import { expect, groupsOf, pc, test } from "../test";
 
 /** The story of the events' screens named `name`. */
 const story = (name: string) => `screens-events--${name}`;
@@ -325,11 +325,13 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
   ],
 ];
 
-// One page walks the stories, a step each: a page of its own per story would cost the catalog's run its time limit.
-test("each story of the events shows its state", async ({ page, open }) => {
-  for (const [name, shows] of states)
-    await test.step(name, async () => {
-      await open(story(name), { width: pc });
-      await shows(page);
-    });
-});
+// One page walks a group of the stories, a step each (groupsOf).
+const groups = groupsOf(states, 8);
+for (const [i, group] of groups.entries())
+  test(`each story of the events shows its state (${i + 1} of ${groups.length})`, async ({ page, open }) => {
+    for (const [name, shows] of group)
+      await test.step(name, async () => {
+        await open(story(name), { width: pc });
+        await shows(page);
+      });
+  });
