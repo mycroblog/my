@@ -50,6 +50,18 @@ if VISUAL_PICKS="$keep/picks.jsonl" VISUAL_MAIN="$keep" "$script" keep <<<"${rec
 fi
 check "keep: one record" "1" "$(wc -l <"$keep/picks.jsonl" | tr -d ' ')"
 
+# A pick with no shots (a motion's) is logged as it is, once, and is no pick to replay.
+still='{"options":"fade","variants":["at-once","slide"],"pick":"at-once","reason":null,"context":null,"evaluator":"not run: motion","from":"b10","shots":null,"date":"2026-11-22"}'
+check "keep, no shots" "kept the record of fade, with no shots" \
+  "$(VISUAL_PICKS="$keep/picks.jsonl" VISUAL_MAIN="$keep" "$script" keep <<<"$still")"
+check "keep, no shots: the record" "$still" "$(tail -n 1 "$keep/picks.jsonl")"
+if VISUAL_PICKS="$keep/picks.jsonl" VISUAL_MAIN="$keep" "$script" keep <<<"$still" 2>/dev/null; then
+  echo "FAIL: keep logged a pick with no shots twice" >&2
+  fail=1
+fi
+check "keep, no shots: not replayed" "badge" \
+  "$(VISUAL_PICKS="$keep/picks.jsonl" VISUAL_MAIN="$keep" "$script" scenes | cut -d: -f1)"
+
 cat >"$tmp/picks.jsonl" <<'EOF'
 {"options":"swatch-shape","variants":["pill","round","square"],"pick":"square","reason":"round read as a button","context":null,"evaluator":"fix round","from":"b1.2","shots":".tmp/picks/visual/swatch-shape","date":"2026-11-12"}
 {"options":"swatch-color","variants":["cool","warm"],"pick":null,"reason":"retune warm","context":null,"evaluator":"ship warm","from":"n1","shots":".tmp/picks/visual/swatch-color","date":"2026-11-12"}
