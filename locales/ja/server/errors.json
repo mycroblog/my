@@ -1053,7 +1053,7 @@
   },
   "errors.event.board_closed": {
     "defaultMessage": "このイベントの掲示板は読むだけになっています。イベントが中止されたか、終わってから 7 日が過ぎました。",
-    "description": "API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or more than 7 days after it ended."
+    "description": "API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or from 7 days after its end (the board is writable for the 7 days after the end)."
   },
   "errors.idempotency_key_reused": {
     "defaultMessage": "このキーはすでに別のリクエストに使われています。新しいリクエストには新しいキーを付けて送ってください。",

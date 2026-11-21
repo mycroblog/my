@@ -5543,8 +5543,8 @@ export interface paths {
          *     post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
          *     user who sees the event but does not read its board, a 403
          *     `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-         *     409 `/api/v1/problems/event-board-closed` once the event is cancelled or more than 7 days
-         *     after it ended. The post is checked as `createStatus` checks a new status, and retrying with
+         *     409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+         *     after its end. The post is checked as `createStatus` checks a new status, and retrying with
          *     the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
          *     same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
          */
@@ -17967,7 +17967,7 @@ export interface components {
          *     - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the
          *       user post on its board.
          *     - `/api/v1/problems/event-board-closed` (409): the board of the event is read-only: the event was
-         *       cancelled, or ended more than 7 days ago.
+         *       cancelled, or 7 days have passed since its end (it is writable for the 7 days after the end).
          *     - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
          *     - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
          *       takes no more candidates, answers, or confirmations.

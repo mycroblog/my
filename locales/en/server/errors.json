@@ -1052,8 +1052,8 @@
     "description": "API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, organizers, or readers) leave the reader out."
   },
   "errors.event.board_closed": {
-    "defaultMessage": "This event's board is read-only: the event was cancelled or ended more than 7 days ago.",
-    "description": "API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or more than 7 days after it ended."
+    "defaultMessage": "This event's board is read-only: the event was cancelled, or 7 days have passed since it ended.",
+    "description": "API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or from 7 days after its end (the board is writable for the 7 days after the end)."
   },
   "errors.idempotency_key_reused": {
     "defaultMessage": "This key was already used for a different request. Send the new request with a new key.",

@@ -15834,7 +15834,7 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the
 //     user post on its board.
 //   - `/api/v1/problems/event-board-closed` (409): the board of the event is read-only: the event was
-//     cancelled, or ended more than 7 days ago.
+//     cancelled, or 7 days have passed since its end (it is writable for the 7 days after the end).
 //   - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
 //   - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
 //     takes no more candidates, answers, or confirmations.

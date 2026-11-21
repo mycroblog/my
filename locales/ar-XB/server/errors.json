@@ -152,7 +152,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.event.board_closed": {
-    "defaultMessage": "‮⊥ɥıs ǝʌǝuʇ''s qoɐɹp ıs ɹǝɐp-ouʅʎ: ʇɥǝ ǝʌǝuʇ ʍɐs ɔɐuɔǝʅʅǝp oɹ ǝupǝp ɯoɹǝ ʇɥɐu 7 pɐʎs ɐƃo.‬",
+    "defaultMessage": "‮⊥ɥıs ǝʌǝuʇ''s qoɐɹp ıs ɹǝɐp-ouʅʎ: ʇɥǝ ǝʌǝuʇ ʍɐs ɔɐuɔǝʅʅǝp, oɹ 7 pɐʎs ɥɐʌǝ dɐssǝp sıuɔǝ ıʇ ǝupǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.event.board_not_reader": {

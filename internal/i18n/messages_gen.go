@@ -1258,9 +1258,9 @@ func (l *Localizer) ServerErrorsEventAlreadyInvited() string {
 	return l.format("server:errors.event.already_invited", nil)
 }
 
-// ServerErrorsEventBoardClosed formats "server:errors.event.board_closed". API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or more than 7 days after it ended.
+// ServerErrorsEventBoardClosed formats "server:errors.event.board_closed". API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or from 7 days after its end (the board is writable for the 7 days after the end).
 //
-//	en: This event's board is read-only: the event was cancelled or ended more than 7 days ago.
+//	en: This event's board is read-only: the event was cancelled, or 7 days have passed since it ended.
 func (l *Localizer) ServerErrorsEventBoardClosed() string {
 	return l.format("server:errors.event.board_closed", nil)
 }
