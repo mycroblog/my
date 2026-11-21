@@ -16,35 +16,68 @@ import (
 // DeleteByModeration records inside tx that the moderation action actionID deleted st: the
 // deletion (origin moderation, naming the action), which stays as the tombstone of its URI, and
 // the removal from every projection, the same as the author's deletion; a local status's Delete
-// goes out like the author's (ADR-0058 §6). A status that is already deleted fails with
-// ErrAlreadyDeleted, which abandons tx.
+// goes out like the author's (ADR-0058 §6). A post of the board of an event is deleted alike but
+// announced as BoardStatusesDeleted, so that its deletion never leaves the event either
+// (board.go). A status that is already deleted fails with ErrAlreadyDeleted, which abandons tx.
 func (s *Service) DeleteByModeration(ctx context.Context, tx uow.Tx, st Status, actionID string, at time.Time) error {
 	d := content.Deletion{
 		StatusID: st.ID, URI: st.URI, AuthorAccountID: st.AuthorAccountID, Origin: content.DeletedByModeration,
 		ModerationActionID: actionID, DeletedAt: at,
 	}
+	gid, err := boardOf(ctx, s.d.Repository, tx, st)
+	if err != nil {
+		return err
+	}
 	if err := s.d.Repository.InsertDeletion(ctx, tx, d); err != nil {
 		return err
+	}
+	if gid != "" {
+		return tx.Emit(ctx, BoardStatusesDeleted{Deletions: []StatusDeleted{{Deletion: d, Status: st}}})
 	}
 	return tx.Emit(ctx, StatusDeleted{Deletion: d, Status: st})
 }
 
-// DeleteManyByModeration is DeleteByModeration of sts, with one insert of their deletions and one
-// StatusesDeleted for all of them.
+// DeleteManyByModeration is DeleteByModeration of sts, with one insert of their deletions, one
+// StatusesDeleted for the ordinary statuses, and one BoardStatusesDeleted for the posts of the
+// boards of events among them.
 func (s *Service) DeleteManyByModeration(ctx context.Context, tx uow.Tx, sts []Status, actionID string, at time.Time) error {
 	ds := make([]content.Deletion, len(sts))
+	var local []string
 	for i, st := range sts {
 		ds[i] = content.Deletion{
 			StatusID: st.ID, URI: st.URI, AuthorAccountID: st.AuthorAccountID, Origin: content.DeletedByModeration,
 			ModerationActionID: actionID, DeletedAt: at,
 		}
+		if st.IsLocal {
+			local = append(local, st.ID)
+		}
+	}
+	boards := map[string]string{}
+	if len(local) > 0 {
+		var err error
+		if boards, err = s.d.Repository.StatusBoardsAmong(ctx, tx, local); err != nil {
+			return err
+		}
 	}
 	if err := s.d.Repository.InsertDeletions(ctx, tx, ds); err != nil {
 		return err
 	}
-	ev := StatusesDeleted{Deletions: make([]StatusDeleted, len(sts))}
+	ev := StatusesDeleted{Deletions: make([]StatusDeleted, 0, len(sts))}
+	var onBoards BoardStatusesDeleted
 	for i, st := range sts {
-		ev.Deletions[i] = StatusDeleted{Deletion: ds[i], Status: st}
+		if _, ok := boards[st.ID]; ok {
+			onBoards.Deletions = append(onBoards.Deletions, StatusDeleted{Deletion: ds[i], Status: st})
+		} else {
+			ev.Deletions = append(ev.Deletions, StatusDeleted{Deletion: ds[i], Status: st})
+		}
+	}
+	if len(onBoards.Deletions) > 0 {
+		if err := tx.Emit(ctx, onBoards); err != nil {
+			return err
+		}
+		if len(ev.Deletions) == 0 {
+			return nil
+		}
 	}
 	return tx.Emit(ctx, ev)
 }

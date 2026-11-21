@@ -20,7 +20,8 @@ import (
 // The notifications of the events (ADR-0161 §11). A command, or gathering.tick, enqueues
 // JobNotify through the outbox in its transaction; the job decides the recipients when it runs,
 // up to RecipientsPerJob of them per job, and notifies in each transaction only those who see the
-// event (gathering.CanSee), through the notification module, whose exclusions apply. A job of an
+// event (gathering.CanSee), or for a post of its board those who read the board
+// (gathering.CanReadBoard), through the notification module, whose exclusions apply. A job of an
 // old date, of an invitation revoked, or of an event cancelled meanwhile notifies nobody, and the
 // dedupe keys of the notifications make every run after the first notify nobody twice.
 
@@ -44,8 +45,12 @@ type notifyPayload struct {
 	Kind      appnotification.EventKind `json:"kind"`
 	Gathering string                    `json:"gathering"`
 	// Ref is what the notification is about: the invitation of an invited, the revision or the
-	// confirmation of a changed, and the confirmation of a reminder and of a started.
+	// confirmation of a changed, the confirmation of a reminder and of a started, and the post of a
+	// board_posted.
 	Ref string `json:"ref,omitempty"`
+	// Skip are the accounts that the notification leaves out: those whom the post of a
+	// board_posted mentions, whom the mention notifies of it instead.
+	Skip []string `json:"skip,omitempty"`
 	// To is the invitee of an invited, and the organizer of a room_unavailable.
 	To string `json:"to,omitempty"`
 	// Source is the account the notification is from, and Actor the account that made the change,
@@ -249,8 +254,9 @@ func (s *Service) notifyBatch(ctx context.Context, p notifyPayload, ids []string
 			// The one notification to the organizer, of its own event (ADR-0161 §11).
 			return id != rec.OrganizerAccountID
 		}
-		// Nobody is notified of what they did, and the organizer of its own event.
-		return id == "" || id == p.Source || id == p.Actor || id == rec.OrganizerAccountID
+		// Nobody is notified of what they did, and the organizer of its own event, nor twice of a
+		// post that mentions them.
+		return id == "" || id == p.Source || id == p.Actor || id == rec.OrganizerAccountID || slices.Contains(p.Skip, id)
 	})
 	if p.Kind == appnotification.EventReminder && len(ids) > 0 {
 		chosen, err := s.d.Repository.Reminders(ctx, nil, ids)
@@ -262,7 +268,7 @@ func (s *Service) notifyBatch(ctx context.Context, p notifyPayload, ids []string
 	if len(ids) == 0 {
 		return nil
 	}
-	sees, err := s.seesAmong(ctx, rec, ids)
+	sees, err := s.seesAmong(ctx, rec, ids, p.Kind == appnotification.EventBoardPosted)
 	if err != nil {
 		return err
 	}
@@ -310,8 +316,9 @@ func noticeOf(p notifyPayload, rec Record) appnotification.EventNotice {
 }
 
 // seesAmong reports, by account, whether each of ids sees the event rec now (gathering.CanSee),
-// reading the facts of all of them together.
-func (s *Service) seesAmong(ctx context.Context, rec Record, ids []string) (map[string]bool, error) {
+// or with board whether each reads its board (gathering.CanReadBoard), reading the facts of all
+// of them together.
+func (s *Service) seesAmong(ctx context.Context, rec Record, ids []string, board bool) (map[string]bool, error) {
 	own, err := s.d.Repository.AudienceFacts(ctx, nil, rec.ID, ids)
 	if err != nil {
 		return nil, err
@@ -346,9 +353,14 @@ func (s *Service) seesAmong(ctx context.Context, rec Record, ids []string) (map[
 		}
 		f := gathering.Facts{
 			Blocked: blocked[id], Coorganizer: rec.Coorganizes(id), Invited: own[id].Invited, Answered: own[id].Answer != "",
-			Approved: own[id].Approved, Voted: own[id].Voted, FollowsOrganizer: follows[id], FollowedByOrganizer: followed[id],
+			Attending: own[id].Answer.Attending(), Approved: own[id].Approved, Voted: own[id].Voted,
+			FollowsOrganizer: follows[id], FollowedByOrganizer: followed[id],
 		}
-		out[id] = gathering.CanSee(e, viewer, f)
+		if board {
+			out[id] = gathering.CanReadBoard(e, viewer, f)
+		} else {
+			out[id] = gathering.CanSee(e, viewer, f)
+		}
 	}
 	return out, nil
 }

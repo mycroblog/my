@@ -216,13 +216,14 @@ func (r *Reader) Visible(ctx context.Context, viewer Viewer, statusID string) (c
 }
 
 // VisibleAmong is Visible of each of ids, by ID, reading the statuses and their authors once
-// (Reader.page); those that viewer may not see, missing or deleted, are left out.
+// (Reader.page); those that viewer may not see, missing or deleted, are left out. Like Visible,
+// it admits the posts of the boards that the viewer reads, so that a report points at them.
 func (r *Reader) VisibleAmong(ctx context.Context, viewer Viewer, ids []string) (map[string]content.Status, error) {
 	out := make(map[string]content.Status, len(ids))
 	if len(ids) == 0 {
 		return out, nil
 	}
-	page, err := r.page(ctx, viewer, ids)
+	page, err := r.onBoard().page(ctx, viewer, ids)
 	if err != nil {
 		return nil, err
 	}

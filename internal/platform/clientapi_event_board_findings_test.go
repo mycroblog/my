@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/domain/gathering"
 	"github.com/mycroblog/my/internal/platform"
 )
@@ -28,7 +29,8 @@ func TestEventBoardPostsFetchNoLinkCard(t *testing.T) {
 		t.Fatalf("edit = %s", e.outcome(edited))
 	}
 	for _, j := range e.pendingJobs() {
-		if j.Type == appcontent.JobFetchLinkCard || strings.Contains(string(j.Payload), board.Id) {
+		// The notification of the board's readers names the post (ADR-0161 §11).
+		if j.Type == appcontent.JobFetchLinkCard || j.Type != appgathering.JobNotify && strings.Contains(string(j.Payload), board.Id) {
 			t.Errorf("a board post with a link enqueues the job %s %s %s", j.Type, j.IdempotencyKey, j.Payload)
 		}
 	}

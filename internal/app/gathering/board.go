@@ -5,12 +5,39 @@ package gathering
 import (
 	"context"
 	"errors"
+	"time"
 
+	appnotification "github.com/mycroblog/my/internal/app/notification"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/gathering"
 )
 
 // The board of an event (ADR-0161 §17) holds posts of the content module, which asks the
 // functions below who reads and who writes on it; this module never reads the posts.
+
+// BoardPost is a new post on the board of an event, as the composition root passes it on from
+// the content module, whose domain event this module does not import.
+type BoardPost struct {
+	StatusID    string
+	GatheringID string
+	// WriterAccountID is the author of the post, which is not notified of it.
+	WriterAccountID string
+	// MentionedReaderIDs are the readers of the board that the post mentions, whom the mention
+	// notifies of it instead.
+	MentionedReaderIDs []string
+	PostedAt           time.Time
+}
+
+// BoardPosted is what the composition root calls in the transaction of a new post on the board
+// of an event: it enqueues the post's event_board_posted (ADR-0161 §11, §17), whose job tells the
+// readers of the board who answered going or maybe of it, deciding them when it runs, but the
+// writer, the organizer, and those whom the post mentions.
+func (s *Service) BoardPosted(ctx context.Context, tx uow.Tx, p BoardPost) error {
+	return s.enqueueNotify(ctx, tx, notifyPayload{
+		Kind: appnotification.EventBoardPosted, Gathering: p.GatheringID, Ref: p.StatusID,
+		Skip: p.MentionedReaderIDs, Source: p.WriterAccountID, Actor: p.WriterAccountID, At: p.PostedAt,
+	})
+}
 
 // Board returns what accountID may do with the board of the event id at the time of the clock
 // (gathering.Board): the zero BoardAccess for an unknown event and for a viewer who is not

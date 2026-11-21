@@ -70,4 +70,4 @@ The server's moderators can cancel an event too; its page then says so, with the
 people create events: when you may not, creating one says "You can't create events on this server".
 
 If you answered "Going" or "Maybe", reminders come one day and one hour before the event starts. For every
-notification of events (invitations, changes, cancellations, and reminders), see [Notifications](notifications.md).
+notification of events (invitations, changes, cancellations, reminders, and new posts on the board), see [Notifications](notifications.md).

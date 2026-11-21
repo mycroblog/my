@@ -563,10 +563,11 @@ CREATE TABLE user_tokens (
   email_address_id uuid,
   unsubscribe_category text CHECK (unsubscribe_category IN (
     'mention', 'follow', 'follow_request', 'follow_accepted', 'boost', 'favourite', 'reaction', 'quote', 'poll_closed',
-    'account_moved', 'voice',
+    'account_moved', 'voice', 'event',
     'admin_report', 'admin_sign_up', 'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request',
-    'admin_account_moved', 'admin_service_closure_due', 'admin_error_group',
-    'moderation'
+    'admin_account_moved', 'admin_service_closure_due', 'admin_error_group', 'admin_hook_failing', 'admin_hook_appeal',
+    'admin_domain_list_failing',
+    'moderation', 'auto_delete_limit'
   )),
   token_hash bytea NOT NULL,
   expires_at timestamptz NOT NULL,

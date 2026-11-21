@@ -155,7 +155,9 @@ func (a audience) unpublished(ctx context.Context, st content.Status) (bool, err
 // reviewable reports whether the moderators, who review a report, may read st, which the report
 // does not point at, and returns its author. They read it when reviewer may under the visibility st
 // was posted with: no relation of a moderator counts, for or against, and the restrictions on its
-// author, which moderators handle, do not hide it. An unknown author leaves nothing to present.
+// author, which moderators handle, do not hide it. A post of the board of an event they read as
+// its readers do (ADR-0161 §17): the review of a report is the one place where the moderators
+// read the boards. An unknown author leaves nothing to present.
 func (a audience) reviewable(ctx context.Context, st content.Status) (bool, appaccount.Actor, error) {
 	author, err := a.accounts.FindByID(ctx, st.AuthorAccountID)
 	if errors.Is(err, appaccount.ErrNotFound) {
@@ -165,7 +167,15 @@ func (a audience) reviewable(ctx context.Context, st content.Status) (bool, appa
 		return false, appaccount.Actor{}, err
 	}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
-	return content.CanView(content.ContextStatus, reviewer, facts, content.AuthorRestrictions{}, content.Relation{}), author, nil
+	in := content.ContextStatus
+	gid, err := boardOf(ctx, a.statuses, nil, st)
+	if err != nil {
+		return false, appaccount.Actor{}, err
+	}
+	if gid != "" {
+		facts.Board, in = &content.BoardFacts{Reads: true}, content.ContextBoard
+	}
+	return content.CanView(in, reviewer, facts, content.AuthorRestrictions{}, content.Relation{}), author, nil
 }
 
 // visibleStatus returns statusID with its author when viewer may see it. A status that is

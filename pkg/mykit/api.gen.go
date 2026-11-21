@@ -4237,6 +4237,7 @@ const (
 	NotificationTypeBoost                      NotificationType = "boost"
 	NotificationTypeBoostRequest               NotificationType = "boost_request"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
+	NotificationTypeEventBoardPosted           NotificationType = "event_board_posted"
 	NotificationTypeEventCancelled             NotificationType = "event_cancelled"
 	NotificationTypeEventChanged               NotificationType = "event_changed"
 	NotificationTypeEventInvited               NotificationType = "event_invited"
@@ -4309,6 +4310,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeBoostRequest:
 		return true
 	case NotificationTypeCustomEmojiRequestDecided:
+		return true
+	case NotificationTypeEventBoardPosted:
 		return true
 	case NotificationTypeEventCancelled:
 		return true
@@ -14509,9 +14512,13 @@ type Notification struct {
 	// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
 	// that the user answered going or maybe to starts soon, at each time before the start that the
 	// user chose (`getEventReminders`), once per date and time, and never for a date that changed
-	// since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
-	// the organizer that the voice chat room of the event cannot open. Their `account` is the
-	// organizer, except for `event_invited`. Each is sent only while the user sees the event.
+	// since; `event_started` that it starts now, once per date; `event_room_unavailable` tells
+	// the organizer that the voice chat room of the event cannot open; and `event_board_posted`
+	// tells a user who answered going or maybe that `account` wrote a new post (`status`) on the
+	// board of the event, once per post, but not when the post mentions the user, who gets the
+	// `mention` instead. Their `account` is the organizer, except for `event_invited` and
+	// `event_board_posted`. Each is sent only while the user sees the event, and an
+	// `event_board_posted` only while the user reads its board.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -14922,9 +14929,13 @@ type NotificationSettingsUpdateChangesChannel string
 // nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
 // that the user answered going or maybe to starts soon, at each time before the start that the
 // user chose (`getEventReminders`), once per date and time, and never for a date that changed
-// since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
-// the organizer that the voice chat room of the event cannot open. Their `account` is the
-// organizer, except for `event_invited`. Each is sent only while the user sees the event.
+// since; `event_started` that it starts now, once per date; `event_room_unavailable` tells
+// the organizer that the voice chat room of the event cannot open; and `event_board_posted`
+// tells a user who answered going or maybe that `account` wrote a new post (`status`) on the
+// board of the event, once per post, but not when the post mentions the user, who gets the
+// `mention` instead. Their `account` is the organizer, except for `event_invited` and
+// `event_board_posted`. Each is sent only while the user sees the event, and an
+// `event_board_posted` only while the user reads its board.
 type NotificationType string
 
 // NotificationsRead The data of the stream event `notifications_read`: the user read notifications on a device,
