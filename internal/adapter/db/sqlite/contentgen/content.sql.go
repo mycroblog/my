@@ -727,6 +727,7 @@ func (q *Queries) InsertTagIfAbsent(ctx context.Context, arg InsertTagIfAbsentPa
 const latestLivePublishedAt = `-- name: LatestLivePublishedAt :one
 SELECT s.published_at FROM statuses s
 WHERE s.author_account_id = ? AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
+  AND NOT EXISTS (SELECT 1 FROM status_gathering_boards g WHERE g.status_id = s.id)
 ORDER BY s.published_at DESC
 LIMIT 1
 `
@@ -1473,6 +1474,7 @@ INSERT INTO account_post_counters (account_id, statuses_count, last_status_at)
 SELECT s.author_account_id, COUNT(*), MAX(s.published_at)
 FROM statuses s
 WHERE NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
+  AND NOT EXISTS (SELECT 1 FROM status_gathering_boards g WHERE g.status_id = s.id)
 GROUP BY s.author_account_id
 `
 
@@ -1487,6 +1489,7 @@ SELECT p.account_id, COUNT(*) FROM (
   SELECT s.author_account_id AS account_id FROM statuses s
   WHERE s.is_local = 1 AND s.visibility <> 'direct'
     AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
+    AND NOT EXISTS (SELECT 1 FROM status_gathering_boards g WHERE g.status_id = s.id)
   UNION ALL
   SELECT b.booster_account_id AS account_id FROM boosts b
   WHERE b.is_local = 1
@@ -1497,7 +1500,8 @@ GROUP BY p.account_id
 `
 
 // RebuildLocalPostCounters states the projectors' rules: the local statuses that are not deleted
-// and not direct, and the local boosts that are not retracted, of statuses that are not deleted.
+// and neither direct nor on the board of an event, and the local boosts that are not retracted,
+// of statuses that are not deleted.
 func (q *Queries) RebuildLocalPostCounters(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, rebuildLocalPostCounters)
 	return err

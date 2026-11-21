@@ -157,7 +157,7 @@ func registerBoardProjectors(r *uow.Projectors, repo Repository) {
 		if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(ev.Status, false)); err != nil {
 			return err
 		}
-		return projectCreated(ctx, tx, repo, ev.Status, ev.Revision, false)
+		return projectCreated(ctx, tx, repo, ev.Status, ev.Revision, false, false)
 	})
 	r.Register(EventBoardStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		rev := e.(BoardStatusRevised).Revision
