@@ -11,12 +11,34 @@
 // one bar at the board's top, their avatar and the prompt, which opens the app's composer, the event named over the
 // text as a reply's post is. Where the bar would be, a reader who does not write now is told why.
 //
+// How it moves (the motion decisions: screens, states, frequency); with reduced motion nothing moves:
+//
+// - Details and Board are tabs of one screen, as the notifications' and a profile's: the panel changes at once, the
+//   head and the row stay, kind `none`. The board's address is the event's with a search alone (`?tab=board`), which
+//   navigationKind reads as `none`; a path of its own would read as a push. From the notification an event is deeper,
+//   `push` (300 ms), and Back `pop` (250 ms); from its Web Push it is the first screen, `none`.
+// - The bar opens the app's composer as a `modal` (ModalPresence: 300 ms, rising `transition.rise`), from the app's
+//   state with no address; posting, saving an edit and cancelling close it the same way back. The bar: rest on the
+//   raised surface, the surface's hover and press shades, the press's 1px shift (`translate-y-press`), the focus
+//   ring; no busy, since the composer opens at once.
+// - A post the reader posted, edited or deleted, and a page the feed loads near its end, come in, change or go at
+//   once, as in a timeline (ADR-0013): the new post at the board's top, where the reader is when the composer closes,
+//   the focus back on the bar; an edit and a deletion in their place, said by the post's actions' notice. Deleting
+//   asks first in the post's confirmation (the dialog's motion); a failure is said with Try again.
+// - What the board shows changes in place at once: the bar gives way to the read-only line when the event is
+//   cancelled meanwhile, the focus on the bar going to the Board tab. A reader who loses the board on its tab is on
+//   the page without tabs at once, the address replaced by the event's, the focus on the screen's heading.
+// - The answer that gives or takes the board saves as it does (its SaveState), and the tabs come or go once it is
+//   saved, the focus staying on the answer pressed; how the answer keeps its place is AnswerChangesTheBoard's options.
+// - Who writes is a ChoiceList: hover, the focus ring, the checked mark, at once.
+//
 // What the design system lacks yet (a post of the board, whose actions have no boost and whose More has no bookmark,
 // and the bar that opens the composer) is drawn here as a stand-in, and the words are samples in English.
 
 import { color } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState, type ReactNode } from "react";
+import { Options } from "@my/devtools/options";
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Button as Press } from "react-aria-components";
 import { Avatar } from "./avatar";
 import { ChoiceList } from "./choice";
@@ -58,6 +80,8 @@ import {
   SectionList,
 } from "./shell";
 import { ShowMore } from "./pager";
+import { SaveState } from "./save-state";
+import { scrollerOf } from "./scroll";
 import { HeadcountMark } from "./voice";
 
 const minute = 60_000;
@@ -452,8 +476,16 @@ function Board({ state, access, empty }: { state: EventState; access: Access; em
 }
 
 /** The tabs of `tabs`, the board's current at first, as its address (the notification's) opens it. */
-function Tabbed({ details, board }: { details: ReactNode; board: ReactNode }) {
-  const [current, setCurrent] = useState<"details" | "board">("board");
+function Tabbed({
+  details,
+  board,
+  initial = "board",
+}: {
+  details: ReactNode;
+  board: ReactNode;
+  initial?: "details" | "board";
+}) {
+  const [current, setCurrent] = useState<"details" | "board">(initial);
   return (
     <TabRow
       label="Picnic by the river"
@@ -489,6 +521,73 @@ function EventPage({ state = "open", access = "writer", empty = false }: PagePro
           details
         ) : (
           <Tabbed details={details} board={<Board state={state} access={access} empty={empty} />} />
+        )}
+      </ScreenStack>
+    </Shell>
+  );
+}
+
+/**
+ * How the page keeps the answer's place when the tabs come or go above it: `at-once`, the page as it is laid out, the
+ * answers moving by the row; `in-place`, the page scrolled by as much as the answers moved, so that they stay under
+ * the finger where the page scrolls that far.
+ */
+type AnswerPlace = "at-once" | "in-place";
+
+/**
+ * The reader on Details, a writer going: Not going takes the board once it is saved (600 ms here), Going or Maybe
+ * gives it back. The focus stays on the answer pressed.
+ */
+function AnswerChangesBoard({ place }: { place: AnswerPlace }) {
+  const id = useId();
+  const [answer, setAnswer] = useState<Answer>("yes");
+  const [saving, setSaving] = useState<"saving" | "saved" | null>(null);
+  const [reads, setReads] = useState(true);
+  const before = useRef<{ top: number; focused: boolean } | null>(null);
+  useLayoutEffect(() => {
+    const was = before.current;
+    const el = document.getElementById(id);
+    before.current = null;
+    if (was === null || el === null) return;
+    if (place === "in-place") scrollerOf(el).scrollBy({ top: el.getBoundingClientRect().top - was.top });
+    if (was.focused) el.querySelector<HTMLInputElement>("input:checked")?.focus();
+  }, [id, place, reads]);
+  const onChange = (a: Answer) => {
+    setAnswer(a);
+    setSaving("saving");
+    window.setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el !== null)
+        before.current = { top: el.getBoundingClientRect().top, focused: el.contains(document.activeElement) };
+      setSaving("saved");
+      setReads(a !== "no");
+    }, 600);
+  };
+  const details = (
+    <>
+      <About />
+      <Stack id={id} gap="entry-line">
+        <GroupHeading>Your answer</GroupHeading>
+        <AnswerChoice
+          label="Your answer"
+          names={going}
+          value={answer}
+          onChange={onChange}
+          save={saving === null ? null : <SaveState state={saving} />}
+        />
+      </Stack>
+      <Organizers />
+      <Attendees />
+    </>
+  );
+  return (
+    <Shell current="/events">
+      <ScreenStack>
+        <Head state="open" />
+        {reads ? (
+          <Tabbed initial="details" details={details} board={<Board state="open" access="writer" empty={false} />} />
+        ) : (
+          details
         )}
       </ScreenStack>
     </Shell>
@@ -678,6 +777,22 @@ export const WritersInTheForm: Story = { render: () => <FormEnd organizer /> };
 
 /** The same for a co-organizer: who writes, said, the organizer's to change. */
 export const WritersSaidToCoOrganizer: Story = { render: () => <FormEnd organizer={false} /> };
+
+/**
+ * The reader on Details answers Not going, and the tabs go once it is saved; Going or Maybe brings them back. How the
+ * answers keep their place, as options.
+ */
+export const AnswerChangesTheBoard: Story = {
+  render: () => (
+    <Options
+      id="event-board-answer-place"
+      variants={{
+        "at-once": <AnswerChangesBoard place="at-once" />,
+        "in-place": <AnswerChangesBoard place="in-place" />,
+      }}
+    />
+  ),
+};
 
 /** The notifications of new posts on a board: the board's glyph, the writer, the event, the post's first words. */
 export const Notification: Story = { render: () => <Notifications /> };
