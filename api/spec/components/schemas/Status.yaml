@@ -194,10 +194,15 @@ properties:
       `quoted_status`.
     allOf:
       - $ref: ./StatusQuote.yaml
+  event_board:
+    description: The board of an event that the status is posted on; omitted for any other status.
+    allOf:
+      - $ref: ./StatusEventBoard.yaml
   permissions:
     description: |
       What the authenticated user may do with the status: reply to it, boost it, and quote it.
-      Omitted for anonymous requests.
+      Omitted for anonymous requests. A post of the board of an event (`event_board`) is never
+      boosted or quoted, and is replied to (on its board) only by the users who may post there.
     allOf:
       - $ref: ./InteractionPermissions.yaml
   interaction_policy:

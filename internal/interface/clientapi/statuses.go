@@ -440,6 +440,9 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		p := newInteractionPermissions(*v.Permissions)
 		out.Permissions = &p
 	}
+	if v.BoardGatheringID != "" {
+		out.EventBoard = &StatusEventBoard{EventId: v.BoardGatheringID}
+	}
 	if v.InteractionPolicy != nil {
 		policy := newInteractionPolicy(*v.InteractionPolicy)
 		out.InteractionPolicy = &policy

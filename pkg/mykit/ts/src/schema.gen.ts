@@ -18653,6 +18653,14 @@ export interface components {
             summary: string;
         };
         /**
+         * @description The board of an event that a status is posted on (`listEventBoard`). A board post is seen only
+         *     by the readers of the board, is never boosted or quoted, and is replied to only from the
+         *     board, by the users who may post on it.
+         */
+        StatusEventBoard: {
+            event_id: components["schemas"]["Id"];
+        };
+        /**
          * @description A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
          *     `muted` describe the authenticated user's relation to it and are omitted for anonymous
          *     requests; `pinned` is only given to the author.
@@ -18788,9 +18796,12 @@ export interface components {
              *     `quoted_status`.
              */
             quote?: components["schemas"]["StatusQuote"];
+            /** @description The board of an event that the status is posted on; omitted for any other status. */
+            event_board?: components["schemas"]["StatusEventBoard"];
             /**
              * @description What the authenticated user may do with the status: reply to it, boost it, and quote it.
-             *     Omitted for anonymous requests.
+             *     Omitted for anonymous requests. A post of the board of an event (`event_board`) is never
+             *     boosted or quoted, and is replied to (on its board) only by the users who may post there.
              */
             permissions?: components["schemas"]["InteractionPermissions"];
             /** @description Who may reply to, boost, and quote the status; given only to its author. */

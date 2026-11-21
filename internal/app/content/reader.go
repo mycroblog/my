@@ -120,6 +120,9 @@ type StatusView struct {
 	// InteractionPolicy is who may reply to, boost, and quote the status (ADR-0155 §10), for the
 	// author of a local status only; nil for anyone else.
 	InteractionPolicy *content.InteractionSettings
+	// BoardGatheringID is the event whose board the status is posted on (ADR-0161 §17), "" for
+	// any other status.
+	BoardGatheringID string
 }
 
 // Edited reports whether the status has a revision after its first.
@@ -536,6 +539,35 @@ func (r *Reader) presentWith(ctx context.Context, viewer Viewer, st content.Stat
 	}
 	if out.Permissions, out.InteractionPolicy, err = r.permissions(ctx, viewer, st, out.InReplyTo); err != nil {
 		return StatusView{}, err
+	}
+	if out.BoardGatheringID, err = boardOf(ctx, r.d.Statuses, nil, st); err != nil {
+		return StatusView{}, err
+	}
+	if out.BoardGatheringID != "" && out.Permissions != nil {
+		if *out.Permissions, err = r.boardPermissions(ctx, viewer.AccountID, out.BoardGatheringID); err != nil {
+			return StatusView{}, err
+		}
+	}
+	return out, nil
+}
+
+// boardPermissions returns what accountID may do with a post of the board of gatheringID: never
+// boost or quote it, and reply to it, on the board, only while the account may post there
+// (ADR-0161 §17).
+func (r *Reader) boardPermissions(ctx context.Context, accountID, gatheringID string) (InteractionPermissions, error) {
+	out := InteractionPermissions{Reply: content.InteractionDenied, Announce: content.InteractionDenied, Quote: content.InteractionDenied}
+	var a BoardAccess
+	switch k := r.aud.known; {
+	case k != nil && k.gatheringID == gatheringID && k.viewerID == accountID:
+		a = k.access
+	case r.d.Boards != nil:
+		var err error
+		if a, err = r.d.Boards.Board(ctx, accountID, gatheringID); err != nil {
+			return InteractionPermissions{}, err
+		}
+	}
+	if a.Writes {
+		out.Reply = content.InteractionAllowed
 	}
 	return out, nil
 }

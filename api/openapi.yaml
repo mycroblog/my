@@ -29640,6 +29640,17 @@ components:
         summary:
           description: The summary of the revision.
           type: string
+    StatusEventBoard:
+      description: |
+        The board of an event that a status is posted on (`listEventBoard`). A board post is seen only
+        by the readers of the board, is never boosted or quoted, and is replied to only from the
+        board, by the users who may post on it.
+      type: object
+      required:
+        - event_id
+      properties:
+        event_id:
+          $ref: '#/components/schemas/Id'
     Status:
       description: |
         A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
@@ -29836,10 +29847,15 @@ components:
             `quoted_status`.
           allOf:
             - $ref: '#/components/schemas/StatusQuote'
+        event_board:
+          description: The board of an event that the status is posted on; omitted for any other status.
+          allOf:
+            - $ref: '#/components/schemas/StatusEventBoard'
         permissions:
           description: |
             What the authenticated user may do with the status: reply to it, boost it, and quote it.
-            Omitted for anonymous requests.
+            Omitted for anonymous requests. A post of the board of an event (`event_board`) is never
+            boosted or quoted, and is replied to (on its board) only by the users who may post there.
           allOf:
             - $ref: '#/components/schemas/InteractionPermissions'
         interaction_policy:

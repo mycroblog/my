@@ -16542,6 +16542,9 @@ type Status struct {
 	// image, and the rest as text. Empty for a boost, whose emoji are those of `boost`.
 	Emojis []CustomEmoji `json:"emojis"`
 
+	// EventBoard The board of an event that the status is posted on; omitted for any other status.
+	EventBoard *StatusEventBoard `json:"event_board,omitempty"`
+
 	// Favourited Whether the authenticated user favourited the status.
 	Favourited *bool `json:"favourited,omitempty"`
 
@@ -16600,7 +16603,8 @@ type Status struct {
 	OmittedMediaCount *int `json:"omitted_media_count,omitempty"`
 
 	// Permissions What the authenticated user may do with the status: reply to it, boost it, and quote it.
-	// Omitted for anonymous requests.
+	// Omitted for anonymous requests. A post of the board of an event (`event_board`) is never
+	// boosted or quoted, and is replied to (on its board) only by the users who may post there.
 	Permissions *InteractionPermissions `json:"permissions,omitempty"`
 
 	// Pinned Whether the status is pinned to the author's profile; given only to the author.
@@ -16701,6 +16705,16 @@ type StatusEditArticle struct {
 
 	// Title The title of the revision.
 	Title string `json:"title"`
+}
+
+// StatusEventBoard The board of an event that a status is posted on (`listEventBoard`). A board post is seen only
+// by the readers of the board, is never boosted or quoted, and is replied to only from the
+// board, by the users who may post on it.
+type StatusEventBoard struct {
+	// EventId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	EventId Id `json:"event_id"`
 }
 
 // StatusHistory The revisions of a status.

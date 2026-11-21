@@ -2426,6 +2426,8 @@ components:
       $ref: ./components/schemas/StatusArticle.yaml
     StatusEditArticle:
       $ref: ./components/schemas/StatusEditArticle.yaml
+    StatusEventBoard:
+      $ref: ./components/schemas/StatusEventBoard.yaml
     Status:
       $ref: ./components/schemas/Status.yaml
     StatusContext:
