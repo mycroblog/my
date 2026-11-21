@@ -27,7 +27,7 @@ func TestSettingKeysInSchema(t *testing.T) {
 	}
 	for _, dialect := range []string{"sqlite", "postgres"} {
 		file := "schema/09-instance/" + dialect + ".sql"
-		text, err := os.ReadFile(filepath.Join("..", "..", "..", filepath.FromSlash(file))) //nolint:gosec // fixed path inside the repository
+		text, err := os.ReadFile(filepath.Join("..", "..", "..", filepath.FromSlash(file)))
 		if err != nil {
 			t.Fatal(err)
 		}
