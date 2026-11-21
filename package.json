@@ -6,9 +6,9 @@
   "workspaces": ["web/*", "tools/i18n", "pkg/mykit/ts", "pkg/mybot/ts"],
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
-    "knip": "6.44.2",
-    "oxlint": "1.92.0",
-    "oxlint-tsgolint": "7.0.2006",
+    "knip": "6.45.1",
+    "oxlint": "1.94.0",
+    "oxlint-tsgolint": "7.0.2007",
     "typescript": "7.0.2"
   },
   "patchedDependencies": {

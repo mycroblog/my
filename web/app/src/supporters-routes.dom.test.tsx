@@ -138,7 +138,7 @@ test("Keep my plan cancels the change scheduled for the period's end", async () 
 
 test("the reader's choice to be listed saves at once, and lists them under their plan", async () => {
   const app = await at("/settings/supporter", { subscription: "active" });
-  const listed = (await main().findByRole("switch", { name: "List me among the supporters" })) as HTMLInputElement;
+  const listed = await main().findByRole<HTMLInputElement>("switch", { name: "List me among the supporters" });
   expect(listed.checked).toBe(false);
   await app.user.click(listed);
   await waitFor(() => {

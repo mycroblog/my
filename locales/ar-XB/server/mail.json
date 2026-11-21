@@ -128,7 +128,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.auto_delete_limit.detail": {
-    "defaultMessage": "‮∩uʇıʅ ʇɥǝu, ʎonɹ oʍu sǝʇʇıuƃs ɐddʅʎ. ⊥ɥǝ sǝʇʇıuƃs oɟ ʇɥǝ ɐnʇoɯɐʇıɔ pǝʅǝʇıou sɥoʍ ʍɥıɔɥ oɟ ʎonɹ dosʇs ʍıʅʅ qǝ pǝʅǝʇǝp, ɐup ʎon ɔɐu ɔɥɐuƃǝ ʇɥǝɯ ʍıʇɥıu ʇɥǝ sǝɹʌǝɹ's ɯɐxıɯnɯ. ᗡǝʅǝʇǝp dosʇs ɔɐuuoʇ qǝ ɹǝsʇoɹǝp.‬",
+    "defaultMessage": "‮∩uʇıʅ ʇɥǝu, ʎonɹ oʍu sǝʇʇıuƃs ɐddʅʎ. ⊥ɥǝ sǝʇʇıuƃs oɟ ʇɥǝ ɐnʇoɯɐʇıɔ pǝʅǝʇıou sɥoʍ ʍɥıɔɥ oɟ ʎonɹ dosʇs ʍıʅʅ qǝ pǝʅǝʇǝp, ɐup ʎon ɔɐu ɔɥɐuƃǝ ʇɥǝɯ ʍıʇɥıu ʇɥǝ sǝɹʌǝɹ''s ɯɐxıɯnɯ. ᗡǝʅǝʇǝp dosʇs ɔɐuuoʇ qǝ ɹǝsʇoɹǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.event.coorganizer": {
@@ -304,7 +304,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.service_closure.export": {
-    "defaultMessage": "‮⅄on ɔɐu sıƃu ıu ɐup ǝxdoɹʇ ʎonɹ pɐʇɐ nuʇıʅ {exportUntil}. ∀ɟʇǝɹ ʇɥɐʇ, ʇɥǝ ɐpɯıuısʇɹɐʇoɹs pǝʅǝʇǝ ʇɥǝ sǝɹʌǝɹ's pɐʇɐ.‬",
+    "defaultMessage": "‮⅄on ɔɐu sıƃu ıu ɐup ǝxdoɹʇ ʎonɹ pɐʇɐ nuʇıʅ {exportUntil}. ∀ɟʇǝɹ ʇɥɐʇ, ʇɥǝ ɐpɯıuısʇɹɐʇoɹs pǝʅǝʇǝ ʇɥǝ sǝɹʌǝɹ''s pɐʇɐ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.service_closure.message": {
@@ -332,7 +332,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.service_closure_closed.detail": {
-    "defaultMessage": "‮∀ɟʇǝɹ ʇɥɐʇ, ʇɥǝ ɐpɯıuısʇɹɐʇoɹs pǝʅǝʇǝ ʇɥǝ sǝɹʌǝɹ's pɐʇɐ, ɐup ıʇ ɔɐuuoʇ qǝ ɹǝɔoʌǝɹǝp.‬",
+    "defaultMessage": "‮∀ɟʇǝɹ ʇɥɐʇ, ʇɥǝ ɐpɯıuısʇɹɐʇoɹs pǝʅǝʇǝ ʇɥǝ sǝɹʌǝɹ''s pɐʇɐ, ɐup ıʇ ɔɐuuoʇ qǝ ɹǝɔoʌǝɹǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.service_closure_closed.subject": {
@@ -396,7 +396,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_payment_failed.detail": {
-    "defaultMessage": "‮⅄on ʞǝǝd ʇɥǝ dʅɐu's qǝuǝɟıʇs nuʇıʅ {endsAt} (∩⊥Ↄ). Iɟ uo dɐʎɯǝuʇ snɔɔǝǝps qʎ ʇɥǝu, ʇɥǝʎ ǝup.‬",
+    "defaultMessage": "‮⅄on ʞǝǝd ʇɥǝ dʅɐu''s qǝuǝɟıʇs nuʇıʅ {endsAt} (∩⊥Ↄ). Iɟ uo dɐʎɯǝuʇ snɔɔǝǝps qʎ ʇɥǝu, ʇɥǝʎ ǝup.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_payment_failed.subject": {
@@ -408,7 +408,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_plan_retired.detail": {
-    "defaultMessage": "‮⅄onɹ snqsɔɹıdʇıou ıs ɔɐuɔǝʅʅǝp ɐup ʍıʅʅ uoʇ ɹǝuǝʍ. ⅄on ʞǝǝd ʇɥǝ dʅɐu's qǝuǝɟıʇs nuʇıʅ ʇɥǝ ǝup oɟ ʇɥǝ dǝɹıop ʎon dɐıp ɟoɹ, nuʅǝss ɐ dɐʎɯǝuʇ ıs oʌǝɹpnǝ.‬",
+    "defaultMessage": "‮⅄onɹ snqsɔɹıdʇıou ıs ɔɐuɔǝʅʅǝp ɐup ʍıʅʅ uoʇ ɹǝuǝʍ. ⅄on ʞǝǝd ʇɥǝ dʅɐu''s qǝuǝɟıʇs nuʇıʅ ʇɥǝ ǝup oɟ ʇɥǝ dǝɹıop ʎon dɐıp ɟoɹ, nuʅǝss ɐ dɐʎɯǝuʇ ıs oʌǝɹpnǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_plan_retired.subject": {
@@ -420,7 +420,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_service_closure.detail": {
-    "defaultMessage": "‮⅄onɹ snqsɔɹıdʇıou ʍıʅʅ uoʇ ɹǝuǝʍ. ⅄on ʞǝǝd ʇɥǝ dʅɐu's qǝuǝɟıʇs nuʇıʅ ʇɥǝ ǝup oɟ ʇɥǝ dǝɹıop ʎon dɐıp ɟoɹ, nuʅǝss ɐ dɐʎɯǝuʇ ıs oʌǝɹpnǝ.‬",
+    "defaultMessage": "‮⅄onɹ snqsɔɹıdʇıou ʍıʅʅ uoʇ ɹǝuǝʍ. ⅄on ʞǝǝd ʇɥǝ dʅɐu''s qǝuǝɟıʇs nuʇıʅ ʇɥǝ ǝup oɟ ʇɥǝ dǝɹıop ʎon dɐıp ɟoɹ, nuʅǝss ɐ dɐʎɯǝuʇ ıs oʌǝɹpnǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.supporter_service_closure.subject": {

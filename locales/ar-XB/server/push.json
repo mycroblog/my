@@ -184,7 +184,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.scheduled_status_failed": {
-    "defaultMessage": "‮{instance}: ʎonɹ sɔɥǝpnʅǝp dosʇ ɔonʅp uoʇ qǝ dnqʅısɥǝp{reason,select,invalid{ qǝɔɐnsǝ ıʇ poǝs uoʇ ɯǝǝʇ ʇɥǝ ɹǝbnıɹǝɯǝuʇs ɟoɹ ɐ dosʇ} media_unavailable{ qǝɔɐnsǝ ɐu ɐʇʇɐɔɥǝp ɟıʅǝ ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} other{} quote_unavailable{ qǝɔɐnsǝ ʇɥǝ dosʇ ıʇ bnoʇǝs ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} rejected{ qǝɔɐnsǝ ʇɥǝ sǝɹʌǝɹ's ɐnʇoɯɐʇǝp ɹǝʌıǝʍ pıp uoʇ ɐɔɔǝdʇ ıʇ} reply_unavailable{ qǝɔɐnsǝ ʇɥǝ dosʇ ıʇ ɹǝdʅıǝs ʇo ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} restricted{ qǝɔɐnsǝ ʎonɹ ɐɔɔonuʇ ɔɐuuoʇ dosʇ uoʍ}}; ıʇ sʇɐʎs ıu ʎonɹ pɹɐɟʇs‬",
+    "defaultMessage": "‮{instance}: ʎonɹ sɔɥǝpnʅǝp dosʇ ɔonʅp uoʇ qǝ dnqʅısɥǝp{reason,select,invalid{ qǝɔɐnsǝ ıʇ poǝs uoʇ ɯǝǝʇ ʇɥǝ ɹǝbnıɹǝɯǝuʇs ɟoɹ ɐ dosʇ} media_unavailable{ qǝɔɐnsǝ ɐu ɐʇʇɐɔɥǝp ɟıʅǝ ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} other{} quote_unavailable{ qǝɔɐnsǝ ʇɥǝ dosʇ ıʇ bnoʇǝs ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} rejected{ qǝɔɐnsǝ ʇɥǝ sǝɹʌǝɹ''s ɐnʇoɯɐʇǝp ɹǝʌıǝʍ pıp uoʇ ɐɔɔǝdʇ ıʇ} reply_unavailable{ qǝɔɐnsǝ ʇɥǝ dosʇ ıʇ ɹǝdʅıǝs ʇo ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} restricted{ qǝɔɐnsǝ ʎonɹ ɐɔɔonuʇ ɔɐuuoʇ dosʇ uoʍ}}; ıʇ sʇɐʎs ıu ʎonɹ pɹɐɟʇs‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.service_closure_announced": {

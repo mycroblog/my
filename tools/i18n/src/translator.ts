@@ -61,8 +61,10 @@ function memoized<A extends unknown[], T>(make: (...args: A) => T): (...args: A)
  */
 const formatters: Formatters = {
   getNumberFormat: memoized(
-    (locales?: string | string[], opts?: Intl.NumberFormatOptions) =>
-      new Intl.NumberFormat(locales, { useGrouping: "always", ...opts }),
+    // FormatJS's options type is wider than TypeScript's Intl lib (trailingZeroDisplay "stripToMinimum"); the
+    // runtime's Intl.NumberFormat takes or rejects each value itself.
+    (...[locales, opts]: Parameters<Formatters["getNumberFormat"]>) =>
+      new Intl.NumberFormat(locales, { useGrouping: "always", ...opts } as Intl.NumberFormatOptions),
   ),
   getDateTimeFormat: memoized(
     (...args: ConstructorParameters<typeof Intl.DateTimeFormat>) => new Intl.DateTimeFormat(...args),
