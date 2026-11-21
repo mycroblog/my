@@ -160,7 +160,7 @@ func runToEnd(t *testing.T, p *appcontent.DeletedPurge) int {
 }
 
 // retentionRepoQueuesContentPurges checks that a deletion queues the purge of its status's rows
-// DeletedContentRetention later, as ContentPurgeDue says, for every origin but retention and the
+// DeletedContentRetention later, as PurgeDue says, for every origin but retention and the
 // erasure of an account, singly and in bulk.
 func retentionRepoQueuesContentPurges(t *testing.T, r *retentionRepo) {
 	deletedAt := r.clock.Now()
@@ -179,9 +179,9 @@ func retentionRepoQueuesContentPurges(t *testing.T, r *retentionRepo) {
 	} {
 		s := r.status(t, tc.origin != content.DeletedByRemote, time.Hour, "")
 		d := r.deleteStatus(t, s, tc.origin)
-		due, ok := appcontent.ContentPurgeDue(d)
+		due, ok := appcontent.PurgeDue(d)
 		if ok != tc.queued || (ok && !due.Equal(wantDue)) {
-			t.Errorf("ContentPurgeDue(%s) = %v, %v; want %v, %v", tc.origin, due, ok, wantDue, tc.queued)
+			t.Errorf("PurgeDue(%s) = %v, %v; want %v, %v", tc.origin, due, ok, wantDue, tc.queued)
 		}
 		want := 0
 		if tc.queued {

@@ -16,9 +16,9 @@ import (
 var _ appcontent.DeletedPurgeRepository = (*StatusRepository)(nil)
 
 // insertContentPurge records, with the deletion d, the purge of its status's rows that
-// appcontent.ContentPurgeDue says is due; a deletion without one records nothing.
+// appcontent.PurgeDue says is due; a deletion without one records nothing.
 func insertContentPurge(ctx context.Context, q *contentgen.Queries, d content.Deletion) error {
-	due, ok := appcontent.ContentPurgeDue(d)
+	due, ok := appcontent.PurgeDue(d)
 	if !ok {
 		return nil
 	}
@@ -28,7 +28,7 @@ func insertContentPurge(ctx context.Context, q *contentgen.Queries, d content.De
 
 // insertContentPurges is insertContentPurge of deletions with one origin and time.
 func insertContentPurges(ctx context.Context, q *contentgen.Queries, ds []content.Deletion) error {
-	due, ok := appcontent.ContentPurgeDue(ds[0])
+	due, ok := appcontent.PurgeDue(ds[0])
 	if !ok {
 		return nil
 	}

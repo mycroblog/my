@@ -28,10 +28,10 @@ const (
 	DeletedContentRecheck = 24 * time.Hour
 )
 
-// ContentPurgeDue returns when the rows of the status that d deletes are due to go, and false
+// PurgeDue returns when the rows of the status that d deletes are due to go, and false
 // for a deletion by retention or by the erasure of an account, which purge the rows themselves.
 // The database adapters record the purge with the deletion (InsertDeletion, InsertDeletions).
-func ContentPurgeDue(d content.Deletion) (time.Time, bool) {
+func PurgeDue(d content.Deletion) (time.Time, bool) {
 	switch d.Origin {
 	case content.DeletedByRetention, content.DeletedByAccountDeletion:
 		return time.Time{}, false
