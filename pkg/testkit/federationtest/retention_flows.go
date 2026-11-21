@@ -23,16 +23,19 @@ import (
 
 // RetentionHarness is one database under test for the purges of federated data: the harness of
 // the remote status contract, plus the interaction and federation repositories and the
-// repositories of the purges on the same database.
+// repositories of the purges on the same database, and Rows, which counts the rows of a table
+// whose column equals value.
 type RetentionHarness struct {
 	RemoteStatusHarness
 	Interactions appcontent.InteractionRepository
 	Federation   appfederation.Repository
 	Retention    appcontent.RetentionRepository
+	Deleted      appcontent.DeletedPurgeRepository
 	Purges       appfederation.PurgeRepository
 	Instances    appfederation.InstanceRepository
 	Profiles     appaccount.ProfilePruneRepository
 	Emojis       EmojiPurgeStore
+	Rows         func(t *testing.T, table, column, value string) int
 }
 
 // EmojiPurgeStore is the content module's custom emoji repository, which the purge of remote
@@ -61,7 +64,8 @@ type RetentionFactory func(t *testing.T, opts uow.Options) RetentionHarness
 // remote media of their images, while the referenced and the disabled ones stay, and a disabled
 // one stays disabled when it arrives again. The statuses that only a relay brought in go after
 // relay_status_retention_days unless something local refers to them or a local account follows their
-// author (ADR-0006).
+// author (ADR-0006). A status deleted by its author, a moderator, or its server loses the rows of
+// its content DeletedContentRetention later, keeping its deletion as the tombstone.
 func RetentionFlows(t *testing.T, newHarness RetentionFactory) {
 	t.Helper()
 	cases := []struct {
@@ -83,6 +87,7 @@ func RetentionFlows(t *testing.T, newHarness RetentionFactory) {
 		{"PurgesOutboundActivities", retentionOutboundActivities},
 		{"PurgesObservationsOfServers", retentionObservations},
 		{"PurgesDeletionsByRetention", retentionDeletions},
+		{"PurgesTheContentOfDeletedStatuses", retentionPurgesDeletedStatuses},
 		{"PurgesHandleVerifications", retentionHandleVerifications},
 	}
 	for _, tc := range cases {

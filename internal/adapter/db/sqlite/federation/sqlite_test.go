@@ -93,10 +93,21 @@ func TestRetentionContract(t *testing.T) {
 			Interactions: sqlitecontent.NewInteractionRepository(db),
 			Federation:   NewRepository(db),
 			Retention:    sqlitecontent.NewStatusRepository(db),
+			Deleted:      sqlitecontent.NewStatusRepository(db),
 			Purges:       NewRepository(db),
 			Instances:    NewRepository(db),
 			Profiles:     sqliteaccount.NewRepository(db),
 			Emojis:       sqlitecontent.NewCustomEmojiRepository(db),
+			Rows: func(t *testing.T, table, column, value string) int {
+				t.Helper()
+				var n int
+				// The table and column names come from the contract, never from input.
+				q := "SELECT count(*) FROM " + table + " WHERE " + column + " = ?"
+				if err := db.SQLDB().QueryRowContext(t.Context(), q, value).Scan(&n); err != nil {
+					t.Fatalf("count %s: %v", table, err)
+				}
+				return n
+			},
 		}
 	})
 }

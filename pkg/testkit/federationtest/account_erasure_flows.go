@@ -27,8 +27,8 @@ import (
 )
 
 // AccountErasureHarness is one database under test for the erasure of deleted accounts: the
-// harness of the retention contract, the modules' erasure repositories on the same database,
-// and Rows, which counts the rows of a table whose column equals value.
+// harness of the retention contract, with its Rows, and the modules' erasure repositories on the
+// same database.
 type AccountErasureHarness struct {
 	RetentionHarness
 	AccountErasure      appaccount.ErasureRepository
@@ -37,7 +37,6 @@ type AccountErasureHarness struct {
 	GraphErasure        appgraph.ErasureRepository
 	TimelineErasure     apptimeline.ErasureRepository
 	NotificationErasure appnotification.ErasureRepository
-	Rows                func(t *testing.T, table, column, value string) int
 }
 
 // AccountErasureFactory returns a harness on a new, empty database whose UnitOfWork uses opts.

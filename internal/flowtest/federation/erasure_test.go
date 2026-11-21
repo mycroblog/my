@@ -33,24 +33,25 @@ func TestAccountErasureFlows(t *testing.T) {
 			t.Fatalf("open SQLite: %v", err)
 		}
 		t.Cleanup(func() { _ = raw.Close() })
+		rh := retentionHarness(db)
+		rh.Rows = func(t *testing.T, table, column, value string) int {
+			t.Helper()
+			var n int
+			// The table and column names come from the flows, never from input.
+			q := "SELECT count(*) FROM " + table + " WHERE " + column + " = ?"
+			if err := raw.QueryRowContext(t.Context(), q, value).Scan(&n); err != nil {
+				t.Fatalf("count %s: %v", table, err)
+			}
+			return n
+		}
 		return federationtest.AccountErasureHarness{
-			RetentionHarness:    retentionHarness(db),
+			RetentionHarness:    rh,
 			AccountErasure:      sqliteaccount.NewRepository(db),
 			IdentityErasure:     sqliteidentity.NewRepository(db),
 			ContentErasure:      sqlitecontent.NewStatusRepository(db),
 			GraphErasure:        sqlitegraph.NewRepository(db),
 			TimelineErasure:     sqlitetimeline.NewRepository(db),
 			NotificationErasure: sqlitenotification.NewRepository(db),
-			Rows: func(t *testing.T, table, column, value string) int {
-				t.Helper()
-				var n int
-				// The table and column names come from the flows, never from input.
-				q := "SELECT count(*) FROM " + table + " WHERE " + column + " = ?"
-				if err := raw.QueryRowContext(t.Context(), q, value).Scan(&n); err != nil {
-					t.Fatalf("count %s: %v", table, err)
-				}
-				return n
-			},
 		}
 	})
 }
