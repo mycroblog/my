@@ -8,6 +8,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/db/postgres"
 	"github.com/mycroblog/my/internal/adapter/db/postgres/contentgen"
 	"github.com/mycroblog/my/internal/app/uow"
+	"github.com/mycroblog/my/internal/domain/content"
 )
 
 // The posts of the boards of the events (ADR-0161 §17): status_gathering_boards.
@@ -72,8 +73,8 @@ func (r *StatusRepository) ListLiveBoardStatusIDsOfAuthor(ctx context.Context, a
 	return ids, nil
 }
 
-// ListLiveBoardStatusIDsOf implements content.BoardRepository.
-func (r *StatusRepository) ListLiveBoardStatusIDsOf(ctx context.Context, tx uow.Tx, gatheringIDs []string, limit int) ([]string, error) {
+// ListLiveBoardStatusesOf implements content.BoardRepository.
+func (r *StatusRepository) ListLiveBoardStatusesOf(ctx context.Context, tx uow.Tx, gatheringIDs []string, limit int) ([]content.Status, error) {
 	if len(gatheringIDs) == 0 {
 		return nil, nil
 	}
@@ -85,11 +86,15 @@ func (r *StatusRepository) ListLiveBoardStatusIDsOf(ctx context.Context, tx uow.
 	if err != nil {
 		return nil, err
 	}
-	ids, err := q.ListLiveBoardStatusIDsOfGatherings(ctx, contentgen.ListLiveBoardStatusIDsOfGatheringsParams{GatheringIds: gatheringIDs, Lim: lim})
+	rows, err := q.ListLiveBoardStatusesOfGatherings(ctx, contentgen.ListLiveBoardStatusesOfGatheringsParams{GatheringIds: gatheringIDs, Lim: lim})
 	if err != nil {
 		return nil, postgres.Wrap(err, "list board statuses of events")
 	}
-	return ids, nil
+	out := make([]content.Status, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, statusFrom(row))
+	}
+	return out, nil
 }
 
 // ListBoardStatusIDs implements content.BoardRepository.

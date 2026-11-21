@@ -32,13 +32,14 @@ WHERE s.author_account_id = sqlc.arg(author_account_id)
 ORDER BY b.status_id DESC
 LIMIT sqlc.arg(lim);
 
--- ListLiveBoardStatusIDsOfGatherings returns at most lim posts that are not deleted of the boards
+-- ListLiveBoardStatusesOfGatherings returns at most lim posts that are not deleted of the boards
 -- of the events gathering_ids, in ID order.
--- name: ListLiveBoardStatusIDsOfGatherings :many
-SELECT b.status_id FROM status_gathering_boards b
-WHERE b.gathering_id IN (SELECT value FROM json_each(CAST(sqlc.arg(gathering_ids) AS TEXT)))
-  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = b.status_id)
-ORDER BY b.status_id
+-- name: ListLiveBoardStatusesOfGatherings :many
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
+FROM statuses s
+WHERE s.id IN (SELECT b.status_id FROM status_gathering_boards b WHERE b.gathering_id IN (SELECT value FROM json_each(CAST(sqlc.arg(gathering_ids) AS TEXT))))
+  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
+ORDER BY s.id
 LIMIT sqlc.arg(lim);
 
 -- ListBoardStatusIDs returns every board post, in ID order: those that the replay of the statuses

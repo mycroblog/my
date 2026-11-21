@@ -116,22 +116,14 @@ func (b *BoardPurge) Purge(ctx context.Context, gatheringIDs []string) (int, err
 
 // purgeBatch deletes up to BoardPurgeBatch posts inside tx and returns how many it deleted.
 func (b *BoardPurge) purgeBatch(ctx context.Context, tx uow.Tx, gatheringIDs []string) (int, error) {
-	ids, err := b.d.Repository.ListLiveBoardStatusIDsOf(ctx, tx, gatheringIDs, BoardPurgeBatch)
-	if err != nil || len(ids) == 0 {
-		return 0, err
-	}
-	statuses, err := b.d.Repository.FindStatuses(ctx, ids)
-	if err != nil {
+	statuses, err := b.d.Repository.ListLiveBoardStatusesOf(ctx, tx, gatheringIDs, BoardPurgeBatch)
+	if err != nil || len(statuses) == 0 {
 		return 0, err
 	}
 	now := b.d.Clock.Now()
-	ds := make([]content.Deletion, 0, len(ids))
-	events := make([]StatusDeleted, 0, len(ids))
-	for _, id := range ids {
-		st, ok := statuses[id]
-		if !ok {
-			continue
-		}
+	ds := make([]content.Deletion, 0, len(statuses))
+	events := make([]StatusDeleted, 0, len(statuses))
+	for _, st := range statuses {
 		d := content.Deletion{
 			StatusID: st.ID, URI: st.URI, AuthorAccountID: st.AuthorAccountID, Origin: content.DeletedByEventRecords, DeletedAt: now,
 		}

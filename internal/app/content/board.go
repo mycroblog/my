@@ -87,9 +87,9 @@ type BoardRepository interface {
 	// ListLiveBoardStatusIDsOfAuthor returns up to limit board posts of an author that are not
 	// deleted, newest first, whose ID is below before ("" for the first page).
 	ListLiveBoardStatusIDsOfAuthor(ctx context.Context, authorAccountID, before string, limit int) ([]string, error)
-	// ListLiveBoardStatusIDsOf returns up to limit posts that are not deleted of the boards of
+	// ListLiveBoardStatusesOf returns up to limit posts that are not deleted of the boards of
 	// gatheringIDs, in ID order, in tx.
-	ListLiveBoardStatusIDsOf(ctx context.Context, tx uow.Tx, gatheringIDs []string, limit int) ([]string, error)
+	ListLiveBoardStatusesOf(ctx context.Context, tx uow.Tx, gatheringIDs []string, limit int) ([]content.Status, error)
 	// ListBoardStatusIDs returns every board post, deleted or not, in ID order, in tx.
 	ListBoardStatusIDs(ctx context.Context, tx uow.Tx) ([]string, error)
 	// ListBoardGatheringIDs returns up to limit events whose boards have posts that are not

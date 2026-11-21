@@ -165,34 +165,44 @@ func (q *Queries) ListLiveBoardStatusIDsOfAuthor(ctx context.Context, arg ListLi
 	return items, nil
 }
 
-const listLiveBoardStatusIDsOfGatherings = `-- name: ListLiveBoardStatusIDsOfGatherings :many
-SELECT b.status_id FROM status_gathering_boards b
-WHERE b.gathering_id = ANY($1::uuid[])
-  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = b.status_id)
-ORDER BY b.status_id
+const listLiveBoardStatusesOfGatherings = `-- name: ListLiveBoardStatusesOfGatherings :many
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
+FROM statuses s
+WHERE s.id IN (SELECT b.status_id FROM status_gathering_boards b WHERE b.gathering_id = ANY($1::uuid[]))
+  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
+ORDER BY s.id
 LIMIT $2
 `
 
-type ListLiveBoardStatusIDsOfGatheringsParams struct {
+type ListLiveBoardStatusesOfGatheringsParams struct {
 	GatheringIds []string
 	Lim          int32
 }
 
-// ListLiveBoardStatusIDsOfGatherings returns at most lim posts that are not deleted of the boards
+// ListLiveBoardStatusesOfGatherings returns at most lim posts that are not deleted of the boards
 // of the events gathering_ids, in ID order.
-func (q *Queries) ListLiveBoardStatusIDsOfGatherings(ctx context.Context, arg ListLiveBoardStatusIDsOfGatheringsParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, listLiveBoardStatusIDsOfGatherings, arg.GatheringIds, arg.Lim)
+func (q *Queries) ListLiveBoardStatusesOfGatherings(ctx context.Context, arg ListLiveBoardStatusesOfGatheringsParams) ([]Status, error) {
+	rows, err := q.db.Query(ctx, listLiveBoardStatusesOfGatherings, arg.GatheringIds, arg.Lim)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []string{}
+	items := []Status{}
 	for rows.Next() {
-		var status_id string
-		if err := rows.Scan(&status_id); err != nil {
+		var i Status
+		if err := rows.Scan(
+			&i.ID,
+			&i.Uri,
+			&i.Url,
+			&i.AuthorAccountID,
+			&i.IsLocal,
+			&i.Visibility,
+			&i.InReplyToUri,
+			&i.PublishedAt,
+		); err != nil {
 			return nil, err
 		}
-		items = append(items, status_id)
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
