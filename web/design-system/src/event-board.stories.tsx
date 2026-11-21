@@ -28,8 +28,8 @@
 // - What the board shows changes in place at once: the bar gives way to the read-only line when the event is
 //   cancelled meanwhile, the focus on the bar going to the Board tab. A reader who loses the board on its tab is on
 //   the page without tabs at once, the address replaced by the event's, the focus on the screen's heading.
-// - The answer that gives or takes the board saves as it does (its SaveState), and the tabs come or go once it is
-//   saved, the focus staying on the answer pressed; how the answer keeps its place is AnswerChangesTheBoard's options.
+// - The answer that gives or takes the board saves as it does (its SaveState), and once it is saved the tabs come or
+//   go at once, the page as it is laid out (the answers move by the row), the focus staying on the answer pressed.
 // - Who writes is a ChoiceList: hover, the focus ring, the checked mark, at once.
 //
 // What the design system lacks yet (a post of the board, whose actions have no boost and whose More has no bookmark,
@@ -37,7 +37,6 @@
 
 import { color } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Options } from "@my/devtools/options";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Button as Press } from "react-aria-components";
 import { Avatar } from "./avatar";
@@ -81,7 +80,6 @@ import {
 } from "./shell";
 import { ShowMore } from "./pager";
 import { SaveState } from "./save-state";
-import { scrollerOf } from "./scroll";
 import { HeadcountMark } from "./voice";
 
 const minute = 60_000;
@@ -528,37 +526,25 @@ function EventPage({ state = "open", access = "writer", empty = false }: PagePro
 }
 
 /**
- * How the page keeps the answer's place when the tabs come or go above it: `at-once`, the page as it is laid out, the
- * answers moving by the row; `in-place`, the page scrolled by as much as the answers moved, so that they stay under
- * the finger where the page scrolls that far.
- */
-type AnswerPlace = "at-once" | "in-place";
-
-/**
  * The reader on Details, a writer going: Not going takes the board once it is saved (600 ms here), Going or Maybe
- * gives it back. The focus stays on the answer pressed.
+ * gives it back. The tabs go or come at once and the page is as it is laid out, the answers moving by the row; the
+ * focus stays on the answer pressed.
  */
-function AnswerChangesBoard({ place }: { place: AnswerPlace }) {
+function AnswerChangesBoard() {
   const id = useId();
   const [answer, setAnswer] = useState<Answer>("yes");
   const [saving, setSaving] = useState<"saving" | "saved" | null>(null);
   const [reads, setReads] = useState(true);
-  const before = useRef<{ top: number; focused: boolean } | null>(null);
+  const focused = useRef(false);
   useLayoutEffect(() => {
-    const was = before.current;
-    const el = document.getElementById(id);
-    before.current = null;
-    if (was === null || el === null) return;
-    if (place === "in-place") scrollerOf(el).scrollBy({ top: el.getBoundingClientRect().top - was.top });
-    if (was.focused) el.querySelector<HTMLInputElement>("input:checked")?.focus();
-  }, [id, place, reads]);
+    if (focused.current) document.getElementById(id)?.querySelector<HTMLInputElement>("input:checked")?.focus();
+    focused.current = false;
+  }, [id, reads]);
   const onChange = (a: Answer) => {
     setAnswer(a);
     setSaving("saving");
     window.setTimeout(() => {
-      const el = document.getElementById(id);
-      if (el !== null)
-        before.current = { top: el.getBoundingClientRect().top, focused: el.contains(document.activeElement) };
+      focused.current = document.getElementById(id)?.contains(document.activeElement) ?? false;
       setSaving("saved");
       setReads(a !== "no");
     }, 600);
@@ -779,20 +765,10 @@ export const WritersInTheForm: Story = { render: () => <FormEnd organizer /> };
 export const WritersSaidToCoOrganizer: Story = { render: () => <FormEnd organizer={false} /> };
 
 /**
- * The reader on Details answers Not going, and the tabs go once it is saved; Going or Maybe brings them back. How the
- * answers keep their place, as options.
+ * The reader on Details answers Not going, and once it is saved the tabs go at once, the answers moving up by the
+ * row; Going or Maybe brings them back.
  */
-export const AnswerChangesTheBoard: Story = {
-  render: () => (
-    <Options
-      id="event-board-answer-place"
-      variants={{
-        "at-once": <AnswerChangesBoard place="at-once" />,
-        "in-place": <AnswerChangesBoard place="in-place" />,
-      }}
-    />
-  ),
-};
+export const AnswerChangesTheBoard: Story = { render: () => <AnswerChangesBoard /> };
 
 /** The notifications of new posts on a board: the board's glyph, the writer, the event, the post's first words. */
 export const Notification: Story = { render: () => <Notifications /> };
