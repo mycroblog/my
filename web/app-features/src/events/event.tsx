@@ -33,6 +33,7 @@
 
 import { nameOf, useEventWhen, useGoingCount } from "@my/app-components";
 import {
+  eventBoardClosesAt,
   eventBoardQuery,
   eventPhase,
   eventQuery,
@@ -54,6 +55,7 @@ import {
   EventDescription,
   EventTime,
   FeedNotice,
+  focusFrameHeading,
   FrameFoot,
   GroupHeading,
   HeadcountMark,
@@ -78,7 +80,7 @@ import { CancelDialog, EventMenu } from "./manage";
 import { Attendees, Organizers } from "./people";
 import { hasPlaces, Places, RoomFoot, type JoinRoom, type Say } from "./places";
 import { Poll, PollAskDialog, type PollAsk } from "./poll";
-import { Retry, useEventStrings, type T } from "./parts";
+import { focusWhenFree, Retry, useEventStrings, type T } from "./parts";
 
 /**
  * What the page's loader waits for: the event, from the cache unless a write marked it stale; on the Board tab, the
@@ -103,12 +105,13 @@ const isFull = (event: ServerEvent) =>
   event.capacity > 0 && event.going_count >= event.capacity && event.viewer.answer !== "going";
 
 /**
- * The moment the page draws at, drawn again as the event starts and as it ends, so that what follows from it (the
- * answers closed at the start, the voice room, that it ended) changes with the time and not with the next read.
+ * The moment the page draws at, drawn again as the event starts, as it ends and as its board's 7 days after the end
+ * pass, so that what follows from it (the answers closed at the start, the voice room, that it ended, the board
+ * read-only) changes with the time and not with the next read.
  */
 function useMoment(event: ServerEvent): number {
   const [now, setNow] = useState(() => Date.now());
-  const next = [Date.parse(event.starts_at), Date.parse(event.ends_at)]
+  const next = [Date.parse(event.starts_at), Date.parse(event.ends_at), eventBoardClosesAt(event)]
     .filter((at) => at > now)
     .toSorted((a, b) => a - b)[0];
   useEffect(() => {
@@ -391,7 +394,8 @@ function Shown({
   const answers = useId();
   const pressedAnswer = useAnswerKept(readable, answers);
   // A reader who loses the board on its tab is on the page without tabs, the address the event's, the focus on the
-  // title; one who opens the Board tab's address without the board is on the event's address.
+  // screen's h1, once the composer that may hold it is gone; one who opens the Board tab's address without the board is
+  // on the event's address.
   const hadBoard = useRef(readable);
   const leaveBoard = useEffectEvent(() => {
     onTab("details");
@@ -401,7 +405,10 @@ function Shown({
     hadBoard.current = readable;
     if (readable || tab !== "board") return;
     leaveBoard();
-    if (lost) title.current?.focus();
+    if (lost)
+      focusWhenFree(() => {
+        focusFrameHeading(document);
+      });
   }, [readable, tab]);
   const [cancelling, setCancelling] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -482,7 +489,7 @@ function Shown({
           current={tab}
           onChange={onTab}
         >
-          {tab === "board" ? <Board event={event} t={t} /> : <ScreenStack>{details}</ScreenStack>}
+          {tab === "board" ? <Board event={event} now={now} t={t} /> : <ScreenStack>{details}</ScreenStack>}
         </TabRow>
       ) : (
         details

@@ -16,8 +16,10 @@ import { ScreenHeading } from "../shell/heading";
 import { signInReturningTo } from "../sign-in";
 
 export const Route = createFileRoute("/events/$id")({
-  validateSearch: (search: Record<string, unknown>): { tab?: "board" } =>
-    search["tab"] === "board" ? { tab: "board" } : {},
+  // Any other tab is Details: the address's own value is set aside, since the router lays this over the raw search.
+  validateSearch: (search: Record<string, unknown>): { tab?: "board" | undefined } => ({
+    tab: search["tab"] === "board" ? "board" : undefined,
+  }),
   loaderDeps: ({ search }) => ({ tab: search.tab }),
   loader: ({ context, params, deps }) => screenLoad(context, (data) => loadEvent(data, params.id, deps.tab)),
   component: EventPage,
@@ -48,7 +50,7 @@ function EventPage() {
         <EventScreen
           key={id}
           id={id}
-          tab={tab ?? "details"}
+          tab={tab === "board" ? "board" : "details"}
           onTab={(to) => {
             void router.navigate({ href: to === "board" ? eventBoardPath(id) : eventPath(id), replace: true });
           }}

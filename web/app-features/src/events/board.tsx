@@ -6,16 +6,17 @@
 // cancelled, or 7 days passed since its end), or that its writers leave the reader out. Under it, its posts, newest
 // first, as any timeline's column draws them: they load, fail with Try again, ask for more near the end, and say when
 // there are none. A post the reader writes comes in at the top at once (app-data), and its actions are every post's
-// (post-actions.tsx), but boost and quote, which no post of a board has. When the bar gives way to the read-only line
-// while it holds the focus (the event was cancelled meanwhile), the focus goes to the Board tab.
+// (post-actions.tsx), but boost and quote, which no post of a board has. The bar gives way to the line as the server
+// says the reader writes no more, and as the 7 days after the end pass while the page is open (the page's moment);
+// the focus it held, or the composer it opened, goes then to the Board tab.
 
 import { Column, nameOf, type PostStatus } from "@my/app-components";
-import { useEventBoard, useViewer, type ServerEvent } from "@my/app-data";
+import { useEventBoard, useViewer, writesOnEventBoard, type ServerEvent } from "@my/app-data";
 import { Avatar, Box, FeedNotice, PromptBar, Stack } from "@my/design-system";
 import { useId, useLayoutEffect, useRef } from "react";
 import { useCompose, usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost } from "../post-translation";
-import type { T } from "./parts";
+import { focusWhenFree, type T } from "./parts";
 
 /** Whether the board's writers (`board_writers`) admit the reader, whatever the board's period says. */
 function admitted(event: ServerEvent): boolean {
@@ -41,7 +42,17 @@ function whyNot(event: ServerEvent, t: T): string {
 }
 
 /** The bar that opens the composer for a post on the board, the reader's avatar at its start. */
-function WriteBar({ event, onFocusChange, t }: { event: ServerEvent; onFocusChange: (f: boolean) => void; t: T }) {
+function WriteBar({
+  event,
+  onOpen,
+  onFocusChange,
+  t,
+}: {
+  event: ServerEvent;
+  onOpen: () => void;
+  onFocusChange: (f: boolean) => void;
+  t: T;
+}) {
   const compose = useCompose();
   const viewer = useViewer(compose !== undefined);
   return (
@@ -55,6 +66,7 @@ function WriteBar({ event, onFocusChange, t }: { event: ServerEvent; onFocusChan
         />
       }
       onPress={() => {
+        onOpen();
         compose?.({ kind: "board", event: event.id, title: event.title });
       }}
       onFocusChange={onFocusChange}
@@ -64,31 +76,42 @@ function WriteBar({ event, onFocusChange, t }: { event: ServerEvent; onFocusChan
   );
 }
 
-/** The board of `event`, which the reader reads. */
-export function Board({ event, t }: { event: ServerEvent; t: T }) {
-  const writes = event.viewer.board.writable;
+/** The board of `event`, which the reader reads, at the page's moment `now`. */
+export function Board({ event, now, t }: { event: ServerEvent; now: number; t: T }) {
+  const writes = writesOnEventBoard(event, now);
   const onAction = usePostActions();
   const votingOf = usePostVoting();
   const ownOf = usePostOwn();
   const picker = usePostPicker();
   const board = useEventBoard(event.id);
-  // Whether the bar holds the focus, kept from its own events: when it gives way to the line, the focus it had goes to
-  // the Board tab, which labels the panel the line is in.
+  // Whether the focus is the bar's, kept from its own events: while it holds the focus, or while the composer it
+  // opened does. When the bar gives way to the line, that focus goes to the Board tab, which labels the panel the line
+  // is in: at once, or as the composer closes, which would give it back to the bar that is gone.
   const barFocused = useRef(false);
+  const opened = useRef(false);
   const line = useId();
   useLayoutEffect(() => {
-    if (writes || !barFocused.current) return;
+    if (writes || (!barFocused.current && !opened.current)) return;
     barFocused.current = false;
+    opened.current = false;
     const tab = document.getElementById(line)?.closest("[role=tabpanel]")?.getAttribute("aria-labelledby");
-    if (tab !== null && tab !== undefined) document.getElementById(tab)?.focus();
+    if (tab === null || tab === undefined) return;
+    focusWhenFree(() => {
+      document.getElementById(tab)?.focus();
+    });
   }, [writes, line]);
   return (
     <Stack gap="entry-room">
       {writes ? (
         <WriteBar
           event={event}
+          onOpen={() => {
+            opened.current = true;
+          }}
           onFocusChange={(focused) => {
             barFocused.current = focused;
+            // The focus back on the bar: the composer it opened has closed.
+            if (focused) opened.current = false;
           }}
           t={t}
         />

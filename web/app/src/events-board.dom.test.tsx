@@ -658,3 +658,108 @@ test("the address of the notification a push opens leads on to the Board tab", a
   await main().findByRole("feed", { name: "The event's board" });
   expect(tab("Sourdough class", "Board").getAttribute("aria-selected")).toBe("true");
 });
+
+// ---- An unknown tab, and the board changing under an open page ---------------------------------------------------
+
+// Any other tab of the address is Details.
+test("any other tab in the address opens the Details, with the answers and no board", async () => {
+  const on = fakeApp();
+  const id = on.fake.events.id("bread-class");
+  await renderApp(`/events/${id}?tab=elsewhere`, { on });
+  await main().findByRole("tablist", { name: "Sourdough class" });
+  await waitFor(() => {
+    if (tab("Sourdough class", "Details").getAttribute("aria-selected") !== "true")
+      throw new Error("test: the Details tab is not chosen");
+  });
+  expect(main().getAllByRole("radiogroup", { name: "Your answer" })).toHaveLength(1);
+  expect(main().queryAllByRole("feed", { name: "The event's board" })).toHaveLength(0);
+});
+
+// A page left open past the 7 days after the end closes the board as the answers close at the start.
+test("the bar that has the focus gives way to the read-only line as the 7 days pass, the focus going to the Board tab", async () => {
+  const { app } = await atBoard("bread-class", {}, (on) => {
+    // The 7 days after the end pass a second and a half after the page opened.
+    const ended = Date.now() - 7 * day + 1500;
+    on.fake.script("GET /events/{id}", {
+      change: (event) => ({
+        ...event,
+        starts_at: new Date(ended - 3 * 3_600_000).toISOString(),
+        ends_at: new Date(ended).toISOString(),
+      }),
+    });
+  });
+  const bar = main().getByRole("button", { name: "Write on the board" });
+  act(() => {
+    bar.focus();
+  });
+  expect(app.focused()).toBe(bar);
+  await waitFor(
+    () => {
+      if (main().queryAllByRole("button", { name: "Write on the board" }).length > 0)
+        throw new Error("test: the bar is still there");
+    },
+    { timeout: 4000 },
+  );
+  await says(readOnly.ended);
+  await waitFor(() => {
+    if (focused() !== "tab: Board") throw new Error(`test: the focus is on ${focused()}`);
+  });
+});
+
+// A post refused as `event-board-not-writer`: the event read again puts the line in the bar's place, and the composer,
+// closed, gives the focus to the Board tab in place of the bar that is gone.
+test("the composer closed after its bar gave way to the read-only line leaves the focus on the Board tab", async () => {
+  const on = fakeApp({ viewer: "hana" });
+  const opened = on.fake.script("GET /events/{id}", {
+    change: (event) => ({
+      ...event,
+      board_writers: "readers" as const,
+      viewer: { ...event.viewer, board: { readable: true, writable: true } },
+    }),
+  });
+  const app = await renderApp(boardPath(on.fake.events.id("bread-class")), { on });
+  await main().findByRole("feed", { name: "The event's board" });
+  const composer = await writeOnTheBoard(app);
+  opened.end();
+  await paste(app, composer.text, "Refused, as it turns out.");
+  await app.user.click(within(composer.dialog).getByRole("button", { name: "Post" }));
+  await says(readOnly.organizers);
+  await app.user.keyboard("{Escape}");
+  await waitFor(() => {
+    if (screen.queryAllByRole("dialog").length > 0) throw new Error("test: the composer is open");
+  });
+  await waitFor(() => {
+    if (focused() !== "tab: Board") throw new Error(`test: the focus is on ${focused()}`);
+  });
+});
+
+// A post refused as `event-board-not-reader` (the reader answered not going elsewhere): the address is the event's,
+// and once the composer closes the focus is on the screen's title.
+test("a reader who lost the board while on the Board tab has the focus on the screen's title once the composer closes", async () => {
+  const on = fakeApp();
+  const id = on.fake.events.id("cooking-night");
+  const app = await from(boardPath(id), on);
+  await main().findByRole("tabpanel", { name: "Board" });
+  await on.fake.serve(
+    new Request(`https://demo.test/api/v1/events/${id}/rsvp`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answer: "declined" }),
+    }),
+  );
+  const composer = await writeOnTheBoard(app);
+  await paste(app, composer.text, "Who brings the flour?");
+  await app.user.click(within(composer.dialog).getByRole("button", { name: "Post" }));
+  await waitFor(() => {
+    if (app.path() !== `/events/${id}`) throw new Error(`test: the app is at ${app.path()}`);
+  });
+  const during = focused();
+  await app.user.keyboard("{Escape}");
+  await waitFor(() => {
+    if (screen.queryAllByRole("dialog").length > 0) throw new Error("test: the composer is open");
+  });
+  await waitFor(() => {
+    if (focused() !== "h1: Cooking night")
+      throw new Error(`test: the focus is on ${focused()} (with the composer open, ${during})`);
+  });
+});

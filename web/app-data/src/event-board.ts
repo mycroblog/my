@@ -7,6 +7,7 @@
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
+import type { ServerEvent } from "./around";
 import { eventQuery } from "./events";
 import { pagedQuery } from "./paged";
 import { useAppData } from "./provider";
@@ -23,6 +24,19 @@ export type EventBoardWriters = components["schemas"]["EventBoardWriters"];
 
 /** The choices of who writes on a board, from the fewest people. */
 export const eventBoardWriters = ["organizer", "organizers", "readers"] as const satisfies readonly EventBoardWriters[];
+
+/** How long after an event's end its board takes posts: 7 days, as the server counts them. */
+const boardOpenMs = 7 * 24 * 60 * 60_000;
+
+/** When the board of `event` turns read-only by its period (ms since the epoch): 7 days after its end. */
+export const eventBoardClosesAt = (event: { readonly ends_at: string }) => Date.parse(event.ends_at) + boardOpenMs;
+
+/**
+ * Whether the reader writes on the board of `event` at `now`: as the server last said, and until the 7 days after its
+ * end pass, which a page left open sees as they pass.
+ */
+export const writesOnEventBoard = (event: ServerEvent, now: number) =>
+  event.viewer.board.writable && now < eventBoardClosesAt(event);
 
 /** The posts of the board of the event `id`, newest first, a page at a time. */
 export function eventBoardQuery({ api, queries }: AppData, id: string) {
