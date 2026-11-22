@@ -111,7 +111,7 @@ const field = tv({
     // color seen on a light page (3:1, WCAG 1.4.11).
     swatch: [
       "box-border size-control-form cursor-pointer appearance-none rounded-control border-solid border-1",
-      "border-muted-text bg-transparent p-0 outline-hidden focus-visible:shadow-focus",
+      "border-muted-text bg-transparent p-0 outline-hidden focus-visible:shadow-focus enabled:active:translate-y-press",
       "[&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-[calc(var(--radius-control)-1px)]",
       "[&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-[calc(var(--radius-control)-1px)]",
       "[&::-moz-color-swatch]:border-0",

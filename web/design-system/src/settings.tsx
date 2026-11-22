@@ -74,7 +74,7 @@ const menu = tv({
     // The whole row is the link: a surface on hover and press, the ring on focus.
     item: [
       "rounded-control px-screen-row-inline py-screen-row-block",
-      "text-body text-text no-underline outline-hidden data-focus-visible:shadow-focus",
+      "text-body text-text no-underline outline-hidden data-pressed:translate-y-press data-focus-visible:shadow-focus",
     ],
     glyph: "text-muted-text",
     title: "[word-break:auto-phrase]",
@@ -648,7 +648,7 @@ const list = tv({
     link: [
       "min-h-icon-button-touch rounded-control px-screen-row-inline py-screen-air text-text no-underline",
       "outline-hidden data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
-      "data-focus-visible:shadow-focus",
+      "data-pressed:translate-y-press data-focus-visible:shadow-focus",
     ],
     glyph: "text-muted-text",
     title: "[word-break:auto-phrase]",

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The controls of a choice: the options open to one answer and to several, held while an answer is in flight, an
-// option as it is written, and a share as a bar. The words are samples in English.
+// The controls of a choice: the options open to one answer and to several, one of them pressed, held while an answer
+// is in flight, an option as it is written, and a share as a bar. The words are samples in English.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import { ChoiceField, ChoiceList, ShareBar } from "./choice";
+import { PreviewItems } from "./preview";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
@@ -42,6 +43,17 @@ export const Several: Story = {
   render: () => (
     <Column>
       <ChoiceList label="Bread" multiple items={items} chosen={[0, 2]} onChange={none} />
+    </Column>
+  ),
+};
+
+/** One answer, the third option pressed: the surface's pressed step, moved down as a button is. */
+export const Pressed: Story = {
+  render: () => (
+    <Column>
+      <PreviewItems states={{ c: "pressed" }}>
+        <ChoiceList label="Bread" multiple={false} items={items} chosen={[1]} onChange={none} />
+      </PreviewItems>
     </Column>
   ),
 };

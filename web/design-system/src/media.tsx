@@ -125,6 +125,7 @@ const file = tv({
   base: [
     "rounded-control bg-surface-raised px-embed py-disclosure-padding",
     "text-body text-text no-underline outline-hidden data-focus-visible:shadow-focus hover:bg-surface-raised-hover",
+    "active:translate-y-press active:bg-surface-raised-pressed",
   ],
 });
 

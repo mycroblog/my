@@ -106,7 +106,7 @@ const frame = tv({
     tabs: "[view-transition-name:tab-bar]",
     mark: [
       "flex h-shell-item flex-none items-center justify-center rounded-control outline-hidden",
-      "data-focus-visible:shadow-focus desktop:justify-start desktop:px-shell-item-inline",
+      "data-pressed:translate-y-press data-focus-visible:shadow-focus desktop:justify-start desktop:px-shell-item-inline",
     ],
     markImage: "h-shell-mark",
     // An instance's own logo: square, at the mark's height, in the rail and the sidebar alike.
@@ -135,6 +135,8 @@ const nav = tv({
           // At the full width of the rail or the sidebar, so that the menu's popover opens beside the navigation.
           "box-border h-shell-item w-full flex-none justify-center gap-shell-edge data-hovered:bg-surface-hover",
           "data-hovered:[--face-cut-color:var(--color-surface-hover)]",
+          "data-pressed:translate-y-press data-pressed:bg-surface-pressed",
+          "data-pressed:[--face-cut-color:var(--color-surface-pressed)]",
           // The body's leading, not the font's `normal`, which the fallback fonts set to the size alone, so that the
           // label's truncation clips no descender.
           "desktop:justify-start desktop:px-shell-item-inline desktop:text-[length:var(--shell-label)]",
@@ -149,7 +151,10 @@ const nav = tv({
       // (ADR-0110 §11), and the label names the place for assistive technology. The item is the bar's height and its
       // share of the bar's width, with no padding of a button's own, so that the whole of it takes a press.
       tabs: {
-        item: "min-h-shell-bar w-full justify-center p-0 pointer-coarse:data-pressed:bg-surface-pressed",
+        item: [
+          "min-h-shell-bar w-full justify-center p-0 data-pressed:translate-y-press",
+          "pointer-coarse:data-pressed:bg-surface-pressed",
+        ],
         label: "sr-only",
         corner: "inline-flex",
         end: "hidden",
@@ -579,7 +584,7 @@ const fold = tv({
       "box-border rounded-overlay bg-surface-raised px-embed",
       "py-target-line text-body text-text no-underline outline-hidden",
       "pointer-coarse:min-h-icon-button-touch data-hovered:bg-surface-raised-hover",
-      "data-pressed:bg-surface-raised-hover data-focus-visible:shadow-focus",
+      "data-pressed:translate-y-press data-pressed:bg-surface-raised-hover data-focus-visible:shadow-focus",
     ],
     glyph: "text-muted-text",
   },
@@ -899,12 +904,15 @@ const toast = tv({
     ],
     action: [
       "h-control-timeline cursor-pointer rounded-control border-0 bg-transparent px-control-timeline-inline",
-      "font-sans text-body font-label text-inherit outline-hidden hover:underline",
+      "font-sans text-body font-label text-inherit outline-hidden hover:underline active:translate-y-press",
       "focus-visible:shadow-[inset_0_0_0_var(--focus-ring-width)_var(--color-surface)]",
     ],
     close: [
       "size-control-timeline cursor-pointer rounded-control border-0",
-      "bg-transparent p-0 text-inherit outline-hidden hover:bg-[color-mix(in_srgb,var(--color-surface)_15%,transparent)]",
+      // Knocked out, it answers as a button does with the page's color for the shade: hovered a share, pressed twice it.
+      "bg-transparent p-0 text-inherit outline-hidden",
+      "hover:bg-[color-mix(in_srgb,var(--color-surface)_var(--press-hover),transparent)]",
+      "active:translate-y-press active:bg-[color-mix(in_srgb,var(--color-surface)_var(--press-pressed),transparent)]",
       "focus-visible:shadow-[inset_0_0_0_var(--focus-ring-width)_var(--color-surface)]",
     ],
   },
@@ -1287,10 +1295,11 @@ const call = tv({
           "desktop:items-stretch desktop:p-shell-inset",
         ],
         room: [
-          "flex-none justify-center bg-surface data-hovered:bg-surface-hover",
+          "flex-none justify-center bg-surface data-hovered:bg-surface-hover data-pressed:bg-surface-pressed",
           callTarget,
           "desktop:size-auto desktop:justify-start desktop:bg-transparent desktop:px-shell-inset desktop:pt-shell-inset",
-          "desktop:data-hovered:bg-transparent desktop:data-hovered:[&_[dir]]:underline",
+          "desktop:data-hovered:bg-transparent desktop:data-pressed:bg-transparent",
+          "desktop:data-hovered:[&_[dir]]:underline",
         ],
         // In the rail, the room's name and detail name its link for assistive technology, and its tooltip shows them.
         lines: "sr-only desktop:not-sr-only desktop:grid",
@@ -1332,18 +1341,22 @@ const call = tv({
 // glyph: it reads at rest, without a hue, as the room's own microphone control does (voice.tsx).
 const callLook = tv({
   slots: {
-    room: "rounded-control text-text no-underline outline-hidden data-focus-visible:shadow-focus",
+    room: [
+      "rounded-control text-text no-underline outline-hidden data-pressed:translate-y-press",
+      "data-focus-visible:shadow-focus",
+    ],
     name: "font-label",
     detail: "text-caption text-muted-text",
     button: [
       "cursor-pointer rounded-control",
-      "border-0 p-0 font-sans text-caption font-label text-text outline-hidden data-focus-visible:shadow-focus",
+      "border-0 p-0 font-sans text-caption font-label text-text outline-hidden data-pressed:translate-y-press",
+      "data-focus-visible:shadow-focus",
       "data-on:bg-text data-on:text-surface data-on:data-hovered:bg-text data-on:data-pressed:bg-text",
     ],
     // Knocked out of the text's color, as a toggle on is: it is what the reader must do to hear the room.
     hear: [
       "cursor-pointer rounded-control border-0 bg-text font-sans text-caption font-label text-surface",
-      "outline-hidden data-focus-visible:shadow-focus",
+      "outline-hidden data-pressed:translate-y-press data-focus-visible:shadow-focus",
     ],
     tooltip: "rounded-control bg-text px-shell-inset py-shell-toast-inset text-caption text-surface",
     // The room's glyph while the call connects again: a spinner of its size.

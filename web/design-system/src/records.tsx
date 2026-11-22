@@ -395,7 +395,9 @@ const table = tv({
       // The record marks its extent while its link is hovered or focused (the link covers the row), the open one with
       // the raised surface.
       "has-[[data-open][data-hovered]]:bg-surface-hover has-[[data-open][data-focus-visible]]:shadow-focus",
+      "has-[[data-open][data-pressed]]:translate-y-press has-[[data-open][data-pressed]]:bg-surface-pressed",
       "has-[[data-open][aria-current]]:bg-surface-raised",
+      "has-[[data-open][aria-current][data-pressed]]:bg-surface-raised-pressed",
     ],
     headLine: "px-screen-row-inline",
     // A head, a link or a button, in the page's face and type, whatever element it is.
@@ -415,9 +417,13 @@ const table = tv({
       "box-border min-h-control-timeline cursor-pointer rounded-control border-0 bg-transparent px-control-timeline-inline",
       "font-sans text-caption whitespace-nowrap text-muted-text outline-hidden",
       "data-hovered:bg-surface-hover data-hovered:text-text data-focus-visible:shadow-focus",
+      "data-pressed:translate-y-press data-pressed:bg-surface-pressed data-pressed:text-text",
     ],
     sorted: "font-label text-text",
-    pick: "cursor-pointer rounded-control has-[:focus-visible]:shadow-focus",
+    pick: [
+      "cursor-pointer rounded-control has-[:focus-visible]:shadow-focus",
+      "has-[input:enabled]:active:translate-y-press",
+    ],
     // Not drawn: the mark beside it shows its state, the target its focus.
     pickInput: "cursor-pointer opacity-0",
     pickWords: "text-caption text-muted-text",

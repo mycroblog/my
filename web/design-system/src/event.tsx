@@ -67,7 +67,8 @@ const line = tv({
     // The whole line is the link: the surface on hover and the ring on focus.
     root: [
       "rounded-control px-screen-row-inline py-screen-row-block text-text no-underline outline-hidden",
-      "data-hovered:bg-surface-hover data-focus-visible:shadow-focus",
+      "data-hovered:bg-surface-hover data-pressed:translate-y-press data-pressed:bg-surface-pressed",
+      "data-focus-visible:shadow-focus",
     ],
     box: "size-event-date-box rounded-control bg-surface-raised",
     month: "text-caption leading-none text-muted-text",

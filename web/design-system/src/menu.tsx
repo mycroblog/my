@@ -73,11 +73,11 @@ const menu = tv({
       wrapped: { item: "min-h-control-form py-menu-wrapped-block" },
       described: { item: "min-h-control-form py-menu-described-block" },
     },
-    // Hovered or focused, the item steps a surface up from the menu's; pressed, one more.
+    // Hovered or focused, the item steps a surface up from the menu's; pressed, one more, and it moves down.
     state: {
       rest: {},
       hover: { item: "bg-surface-raised" },
-      pressed: { item: "bg-surface-raised-hover" },
+      pressed: { item: "translate-y-press bg-surface-raised-hover" },
     },
     // Inside a menu, whose rows touch, the focus ring is drawn within the item.
     ring: { true: { item: "shadow-focus-inset" } },
