@@ -74,5 +74,8 @@ test("a person a moderator kept from posting sees the action in the settings and
   await expect(alert).toHaveText(
     "A moderation action keeps your account from posting for now. To see why or to appeal, open “Account status” under “Account and data” in the settings. Account status",
   );
-  await expect(alert.getByRole("link", { name: "Account status" })).toHaveAttribute("href", "/settings/account/status");
+  await expect(alert.getByRole("link", { name: "Account status", exact: true })).toHaveAttribute(
+    "href",
+    "/settings/account/status",
+  );
 });
