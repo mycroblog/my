@@ -5639,7 +5639,8 @@ export interface paths {
          *     from now on, whatever its visibility. A user is invited to an event once (a 409
          *     `/api/v1/problems/event-already-invited`, also after a revocation). A 422
          *     `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-         *     the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+         *     the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+         *     not see (moderation hides the profile); nothing is stored then. An event sends at
          *     most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
          */
         post: operations["inviteToEvent"];

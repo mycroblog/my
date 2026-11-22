@@ -632,7 +632,18 @@ func (s *Server) InviteToEvent(ctx context.Context, req InviteToEventRequestObje
 	if p != nil || err != nil {
 		return respond[InviteToEventdefaultApplicationProblemPlusJSONResponse](p, err)
 	}
-	inv, err := events.Invite(ctx, v.AccountID, req.Id, knownID(req.Body.AccountId))
+	// An invitee whom the viewer may not see is refused before anything is stored, as one that
+	// may not be invited.
+	_, ok, err := s.presentableByID(ctx, &v, knownID(req.Body.AccountId), true)
+	if err != nil {
+		return nil, err
+	}
+	var inv appgathering.Invitation
+	if ok {
+		inv, err = events.Invite(ctx, v.AccountID, req.Id, knownID(req.Body.AccountId))
+	} else {
+		err = s.refusedInvitee(ctx, events, v, req.Id)
+	}
 	if err != nil {
 		p, err := s.eventFail(ctx, err)
 		return respond[InviteToEventdefaultApplicationProblemPlusJSONResponse](p, err)
@@ -646,6 +657,22 @@ func (s *Server) InviteToEvent(ctx context.Context, req InviteToEventRequestObje
 		return InviteToEventdefaultApplicationProblemPlusJSONResponse(p), nil
 	}
 	return InviteToEvent201JSONResponse{Body: items[0], Headers: InviteToEvent201ResponseHeaders{CacheControl: eventCache()}}, nil
+}
+
+// refusedInvitee returns the error of an invitation to the event id of an account that the viewer
+// v may not see, in the order that Invite checks: the event's own errors first, then
+// ErrInvalidInvitee.
+func (s *Server) refusedInvitee(ctx context.Context, events Events, v Viewer, id string) error {
+	view, err := events.Get(ctx, v.AccountID, id)
+	switch {
+	case err != nil:
+		return err
+	case !view.Organizes():
+		return appgathering.ErrNotOrganizer
+	case view.Cancellation != nil:
+		return appgathering.ErrClosed
+	}
+	return appgathering.ErrInvalidInvitee
 }
 
 // RevokeEventInvitation serves DELETE /api/v1/events/{id}/invitations/{account_id}.

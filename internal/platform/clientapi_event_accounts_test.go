@@ -78,3 +78,24 @@ func TestEventAccountsFollowThePresentabilityRule(t *testing.T) {
 		t.Errorf("the organizer after the suspension = %+v, want alice's ID, unavailable, and nothing of her profile", o)
 	}
 }
+
+// TestInviteSomeoneTheUserMayNotSee checks that an invitation of an account that the inviter may
+// not see is refused as an invitee who may not be invited, before anything is stored.
+func TestInviteSomeoneTheUserMayNotSee(t *testing.T) {
+	t.Parallel()
+	e := newEventBoardEnv(t, platform.AppOptions{}, "alice", "ivy")
+	ev := e.createEvent("readers", map[string]any{"visibility": "invited"})
+	e.suspend("ivy")
+	e.drain()
+	if got, want := e.outcome(e.send("alice", http.MethodPost, "/events/"+ev.Id+"/invitations", map[string]any{"account_id": e.ids["ivy"]}, nil, nil)),
+		"422 "+clientapi.ProblemTypeEventInvalidInvitee; got != want {
+		t.Errorf("invite a suspended account = %s, want %s", got, want)
+	}
+	invs, _, err := e.app.Events.Invitations(t.Context(), e.ids["alice"], ev.Id, "", 10)
+	if err != nil || len(invs) != 0 {
+		t.Errorf("stored invitations = %+v, %v; want none", invs, err)
+	}
+	if got := e.outcome(e.send("alice", http.MethodPost, "/events/"+eventBoardMissingID+"/invitations", map[string]any{"account_id": e.ids["ivy"]}, nil, nil)); got[:3] != "404" {
+		t.Errorf("invite a suspended account to a missing event = %s, want the 404 of the event", got)
+	}
+}

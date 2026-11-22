@@ -27215,7 +27215,8 @@ type ClientInterface interface {
 	// from now on, whatever its visibility. A user is invited to an event once (a 409
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+	// not see (moderation hides the profile); nothing is stored then. An event sends at
 	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes any type of body and a specified content type.
@@ -27229,7 +27230,8 @@ type ClientInterface interface {
 	// from now on, whatever its visibility. A user is invited to an event once (a 409
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+	// not see (moderation hides the profile); nothing is stored then. An event sends at
 	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes a body of the `application/json` content type.
@@ -38610,7 +38612,8 @@ func (c *Client) ListEventInvitations(ctx context.Context, id EventId, params *L
 // from now on, whatever its visibility. A user is invited to an event once (a 409
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+// not see (moderation hides the profile); nothing is stored then. An event sends at
 // most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes any type of body and a specified content type.
@@ -38634,7 +38637,8 @@ func (c *Client) InviteToEventWithBody(ctx context.Context, id EventId, contentT
 // from now on, whatever its visibility. A user is invited to an event once (a 409
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+// not see (moderation hides the profile); nothing is stored then. An event sends at
 // most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes a body of the `application/json` content type.
@@ -69967,7 +69971,8 @@ type ClientWithResponsesInterface interface {
 	// from now on, whatever its visibility. A user is invited to an event once (a 409
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+	// not see (moderation hides the profile); nothing is stored then. An event sends at
 	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -69981,7 +69986,8 @@ type ClientWithResponsesInterface interface {
 	// from now on, whatever its visibility. A user is invited to an event once (a 409
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+	// not see (moderation hides the profile); nothing is stored then. An event sends at
 	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -111223,7 +111229,8 @@ func (c *ClientWithResponses) ListEventInvitationsWithResponse(ctx context.Conte
 // from now on, whatever its visibility. A user is invited to an event once (a 409
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+// not see (moderation hides the profile); nothing is stored then. An event sends at
 // most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -111243,7 +111250,8 @@ func (c *ClientWithResponses) InviteToEventWithBodyWithResponse(ctx context.Cont
 // from now on, whatever its visibility. A user is invited to an event once (a 409
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+// not see (moderation hides the profile); nothing is stored then. An event sends at
 // most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
