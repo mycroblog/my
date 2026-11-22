@@ -751,7 +751,7 @@ Com `queue = cloudtasks`, os jobs permanecem no banco de dados (`database = post
 ### Com que atraso os jobs periódicos executam
 
 Um job periódico executa até um período do seu gatilho depois do horário dele, mais o tempo que a plataforma leva para iniciá-lo. É isso que
-decide com que atraso chegam os lembretes e as notificações de início dos eventos e abrem as salas de chat de voz deles, já que `gathering.tick` os inicia: um lembrete
+decide com que atraso chegam os lembretes e as notificações de início dos eventos e abrem as salas de chat de voz deles, já que `gathering.queue_due` os inicia: um lembrete
 se atrasa em até o intervalo da tabela. Os valores são os que o código do agendador e o gatilho de cada plataforma dão; eles
 não foram medidos em um servidor em execução.
 

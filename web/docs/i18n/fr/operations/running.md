@@ -731,7 +731,7 @@ Avec `queue = cloudtasks`, les tâches restent dans la base de données (`databa
 <!-- source: how-late-periodic-jobs-run 3f0a97bda72d -->
 ### Avec quel retard s’exécutent les tâches périodiques
 
-Une tâche périodique s’exécute avec jusqu’à une période de son déclencheur après son heure, plus le temps que met la plateforme à la démarrer. C’est ce qui détermine le retard avec lequel arrivent les rappels et les notifications de début des événements et avec lequel s’ouvrent leurs salons de chat vocal, puisque `gathering.tick` les démarre : un rappel a un retard pouvant aller jusqu’à l’intervalle du tableau. Les valeurs sont celles que donnent le code de l’ordonnanceur et le déclencheur de chaque plateforme ; elles n’ont pas été mesurées sur un serveur en fonctionnement.
+Une tâche périodique s’exécute avec jusqu’à une période de son déclencheur après son heure, plus le temps que met la plateforme à la démarrer. C’est ce qui détermine le retard avec lequel arrivent les rappels et les notifications de début des événements et avec lequel s’ouvrent leurs salons de chat vocal, puisque `gathering.queue_due` les démarre : un rappel a un retard pouvant aller jusqu’à l’intervalle du tableau. Les valeurs sont celles que donnent le code de l’ordonnanceur et le déclencheur de chaque plateforme ; elles n’ont pas été mesurées sur un serveur en fonctionnement.
 
 | Plateforme | Ce qui démarre les tâches périodiques | Retard attendu d’un rappel ou du début d’un événement |
 | --- | --- | --- |

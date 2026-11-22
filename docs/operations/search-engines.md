@@ -18,7 +18,7 @@ How to run each search engine that the full-text search of posts can use, how la
      elasticsearch:9.5.3
    ```
 
-   With security on, which is the default, Elasticsearch serves HTTPS with a certificate of its own authority. Copy that authority out of the container for `search_elasticsearch_ca_file`:
+   With security on, which is the default, Elasticsearch serves HTTPS with a certificate of its own authority. Copy that authority out of the container for `search_elasticsearch_tls_ca_file`:
 
    ```sh
    docker cp elasticsearch:/usr/share/elasticsearch/config/certs/http_ca.crt /etc/my/elasticsearch-ca.crt
@@ -42,7 +42,7 @@ How to run each search engine that the full-text search of posts can use, how la
    MY_SEARCH=elasticsearch
    MY_SEARCH_ELASTICSEARCH_URL=https://localhost:9200
    MY_SEARCH_ELASTICSEARCH_API_KEY=<the encoded value>
-   MY_SEARCH_ELASTICSEARCH_CA_FILE=/etc/my/elasticsearch-ca.crt
+   MY_SEARCH_ELASTICSEARCH_TLS_CA_FILE=/etc/my/elasticsearch-ca.crt
    ```
 
 4. Run `my search rebuild` to add the existing posts, as in [turning it on](search.md#turning-it-on).
@@ -56,7 +56,7 @@ The settings:
 | [`search_elasticsearch_username`](../reference/configuration.md#search_elasticsearch_username), [`search_elasticsearch_password`](../reference/configuration.md#search_elasticsearch_password) | A user and password for basic authentication instead of a key. |
 | [`search_elasticsearch_index`](../reference/configuration.md#search_elasticsearch_index) | The name of the alias, `my-statuses` by default. Give each server that shares a cluster its own name, and grant its key that name followed by `*`. |
 | [`search_elasticsearch_index_settings_file`](../reference/configuration.md#search_elasticsearch_index_settings_file) | A JSON file of your own settings of the index, as in [tuning the analysis](#tuning-the-analysis-of-elasticsearch). |
-| [`search_elasticsearch_ca_file`](../reference/configuration.md#search_elasticsearch_ca_file) | The certificate authority of an HTTPS cluster whose certificate the system does not trust. |
+| [`search_elasticsearch_tls_ca_file`](../reference/configuration.md#search_elasticsearch_tls_ca_file) | The certificate authority of an HTTPS cluster whose certificate the system does not trust. |
 
 The credentials are read only from the environment, as secrets, and never appear in the server's logs or errors. An error of the cluster reaches the logs as the request's path, its status, and the type of the error, such as `index_not_found_exception`, never with the text of a post or a query. Only when the cluster refuses to create the index does the error quote its reason, which names nothing but the settings and the fields.
 
@@ -288,8 +288,8 @@ docker run -d --name meilisearch --restart unless-stopped \
 ```toml
 search = "meilisearch"
 search_meilisearch_url = "http://meilisearch:7700"
-# search_meilisearch_index = "my_statuses"
-# search_meilisearch_settings_file = "/etc/my/meilisearch-settings.json"
+# search_meilisearch_index = "my-statuses"
+# search_meilisearch_index_settings_file = "/etc/my/meilisearch-settings.json"
 ```
 
 Set the key through the environment (`MY_SEARCH_MEILISEARCH_API_KEY`, or `MY_SEARCH_MEILISEARCH_API_KEY_FILE`), never in the config file. It may be the master key, but a key that can do only what `my` needs is safer. Create one with the master key:
@@ -297,7 +297,7 @@ Set the key through the environment (`MY_SEARCH_MEILISEARCH_API_KEY`, or `MY_SEA
 ```sh
 curl -X POST http://meilisearch:7700/keys \
   -H "Authorization: Bearer $MEILI_MASTER_KEY" -H 'Content-Type: application/json' \
-  --data '{"description": "my", "indexes": ["my_statuses"],
+  --data '{"description": "my", "indexes": ["my-statuses"],
     "actions": ["search", "documents.add", "documents.get", "documents.delete", "indexes.create", "indexes.get",
       "indexes.delete", "settings.update", "tasks.get"],
     "expiresAt": null}'
@@ -332,7 +332,7 @@ The query of a search is fixed, whatever the settings file says: `matchingStrate
 
 ### Tuning Meilisearch
 
-Tune the engine with a JSON file of [Meilisearch index settings](https://www.meilisearch.com/docs/reference/api/settings), named by `search_meilisearch_settings_file`. The server checks it at start, when `search = meilisearch`: it must exist and be a JSON object, must not set the four settings the server sets itself, and its `rankingRules`, when it has them, must start with `sort`, which keeps the results newest first. Meilisearch checks the values when the server sends them. The server never logs the file's content.
+Tune the engine with a JSON file of [Meilisearch index settings](https://www.meilisearch.com/docs/reference/api/settings), named by `search_meilisearch_index_settings_file`. The server checks it at start, when `search = meilisearch`: it must exist and be a JSON object, must not set the four settings the server sets itself, and its `rankingRules`, when it has them, must start with `sort`, which keeps the results newest first. Meilisearch checks the values when the server sends them. The server never logs the file's content.
 
 An example that narrows the languages to Japanese, treats `・` as a separator, makes proximity cheaper to index, and turns typo tolerance on for long words:
 

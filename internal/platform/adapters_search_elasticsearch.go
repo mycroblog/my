@@ -33,14 +33,14 @@ const elasticsearchTimeout = time.Minute
 // upgraded to the mapping of this build.
 func newElasticsearchIndex(ctx context.Context, cfg *config.Config, logger *slog.Logger, _ kernel.Meter) (search.Index, error) {
 	client := searchHTTPClient(elasticsearchTimeout)
-	if cfg.SearchElasticsearchCAFile != "" {
-		pem, err := os.ReadFile(cfg.SearchElasticsearchCAFile)
+	if cfg.SearchElasticsearchTLSCAFile != "" {
+		pem, err := os.ReadFile(cfg.SearchElasticsearchTLSCAFile)
 		if err != nil {
-			return nil, fmt.Errorf("search_elasticsearch_ca_file: %w", err)
+			return nil, fmt.Errorf("search_elasticsearch_tls_ca_file: %w", err)
 		}
 		roots := x509.NewCertPool()
 		if !roots.AppendCertsFromPEM(pem) {
-			return nil, errors.New("search_elasticsearch_ca_file: no PEM certificate in the file")
+			return nil, errors.New("search_elasticsearch_tls_ca_file: no PEM certificate in the file")
 		}
 		transport := http.DefaultTransport.(*http.Transport).Clone()
 		transport.TLSClientConfig = &tls.Config{RootCAs: roots, MinVersion: tls.VersionTLS12}

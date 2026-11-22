@@ -175,7 +175,7 @@ func (e *roomEnv) drain(t *testing.T) []string {
 	return nil
 }
 
-// at moves the clock to at, runs gathering.tick, and runs the jobs.
+// at moves the clock to at, runs gathering.queue_due, and runs the jobs.
 func (e *roomEnv) at(t *testing.T, at time.Time) {
 	t.Helper()
 	e.clock.Set(at)

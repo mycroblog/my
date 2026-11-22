@@ -750,7 +750,7 @@ Mit `queue = cloudtasks` bleiben die Jobs in der Datenbank (`database = postgres
 ### Wie spät periodische Jobs laufen
 
 Ein periodischer Job läuft bis zu einen Zeitraum seines Triggers nach seiner Zeit, plus die Zeit, die die Plattform zum Starten braucht. Das
-bestimmt, wie spät die Erinnerungen und Beginn-Benachrichtigungen von Veranstaltungen ankommen und ihre Sprachchat-Räume öffnen, da `gathering.tick` sie startet: Eine Erinnerung
+bestimmt, wie spät die Erinnerungen und Beginn-Benachrichtigungen von Veranstaltungen ankommen und ihre Sprachchat-Räume öffnen, da `gathering.queue_due` sie startet: Eine Erinnerung
 kommt bis zum Intervall der Tabelle zu spät. Die Werte sind das, was der Scheduler-Code und der Trigger jeder Plattform ergeben; sie wurden
 nicht auf einem laufenden Server gemessen.
 

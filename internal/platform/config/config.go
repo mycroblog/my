@@ -247,7 +247,7 @@ type Config struct {
 	// SearchElasticsearchIndexSettings is the content of SearchElasticsearchIndexSettingsFile,
 	// read and checked by Load; nil without the file.
 	SearchElasticsearchIndexSettings []byte
-	SearchElasticsearchCAFile        string
+	SearchElasticsearchTLSCAFile     string
 	// The cluster of search = opensearch: the URL of its REST API, the alias of the index, the
 	// HTTP Basic authentication, and the AWS request signing ("off" or "es") with its region.
 	// Empty is the default of each: opensearch.DefaultIndex, no signing, and the SDK's region.
@@ -267,11 +267,11 @@ type Config struct {
 	SearchMeilisearchURL    string
 	SearchMeilisearchAPIKey string
 	SearchMeilisearchIndex  string
-	// SearchMeilisearchSettingsFile is the path of the operator's index settings, read at start.
-	SearchMeilisearchSettingsFile string
-	// SearchMeilisearchSettings is the content of SearchMeilisearchSettingsFile, read and checked
+	// SearchMeilisearchIndexSettingsFile is the path of the operator's index settings, read at start.
+	SearchMeilisearchIndexSettingsFile string
+	// SearchMeilisearchIndexSettings is the content of SearchMeilisearchIndexSettingsFile, read and checked
 	// by Load; nil without the file.
-	SearchMeilisearchSettings []byte
+	SearchMeilisearchIndexSettings []byte
 	// PaymentsProvider is the payment provider of the supporters (ADR-0074 §5): "none" or a
 	// provider's name. PaymentsReconcileInterval and PaymentsReconcileMaxRequests bound the
 	// reconciliation with it (§4).
@@ -547,7 +547,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("search_elasticsearch_password", redact(c.SearchElasticsearchPassword != "")),
 		slog.String("search_elasticsearch_index", c.SearchElasticsearchIndex),
 		slog.String("search_elasticsearch_index_settings_file", c.SearchElasticsearchIndexSettingsFile),
-		slog.String("search_elasticsearch_ca_file", c.SearchElasticsearchCAFile),
+		slog.String("search_elasticsearch_tls_ca_file", c.SearchElasticsearchTLSCAFile),
 		slog.String("search_opensearch_url", c.SearchOpenSearchURL),
 		slog.String("search_opensearch_index", c.SearchOpenSearchIndex),
 		slog.String("search_opensearch_index_settings_file", c.SearchOpenSearchIndexSettingsFile),
@@ -558,7 +558,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("search_meilisearch_url", c.SearchMeilisearchURL),
 		slog.String("search_meilisearch_api_key", redact(c.SearchMeilisearchAPIKey != "")),
 		slog.String("search_meilisearch_index", c.SearchMeilisearchIndex),
-		slog.String("search_meilisearch_settings_file", c.SearchMeilisearchSettingsFile),
+		slog.String("search_meilisearch_index_settings_file", c.SearchMeilisearchIndexSettingsFile),
 		slog.String("translator_deepl_api_key", redact(c.TranslatorDeepLAPIKey != "")),
 		slog.String("translator_deepl_url", c.TranslatorDeepLURL),
 		slog.String("voice", c.Voice),

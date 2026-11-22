@@ -2683,7 +2683,7 @@ Its help is the help of [`my maintenance`](#my-maintenance).
 Subcommands: [`test`](#my-plugin-test).
 
 ```text
-Usage: my plugin test --kind <kind> [flags] <address>
+Usage: my plugin test -kind <kind> [flags] <address>
 
 Run the contract cases of a kind against a running plugin, and report PASS, FAIL, or
 SKIP per case. Exits 1 when a case fails. The plugin may be a real one: a case with a
@@ -2692,22 +2692,22 @@ side effect beyond the call runs only when a flag asks for it.
 <address> is unix:///path/to.sock, https://host[:port], or http://host[:port].
 
 Flags:
-  --kind           probe, translator, search, billing, mailer, media_image, media_video, media_audio, key_manager, inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor, local.profile
-  --protocol       json, proto, or grpc (default: the kind's; the media kinds take proto or grpc)
-  --token-file     a file that holds the bearer token (https:// and unix:// only)
-  --tls-ca-file    verify the plugin against this CA (default: the system's roots)
-  --tls-cert-file  the client certificate of mTLS
-  --tls-key-file   the key of the client certificate
-  --timeout        the deadline of one call, such as 5s (default: the kind's)
-  --billed         --kind billing: also run the case that may cost money at the plugin's
-                   providers
-  --mail-to        --kind mailer: run the cases that send real mail, to this address
-  --mail-from      --kind mailer: the sender of that mail, as mail_from (default: the
-                   --mail-to address)
-  --translate-from --kind translator: the source language of the cases (default: en)
-  --translate-to   --kind translator: the target language of the cases (default: ja)
-  --clear-index    --kind search: also run the cases that remove every document of a
-                   visibility or of the whole index, against an index for testing
+  -kind           probe, translator, search, billing, mailer, media_image, media_video, media_audio, key_manager, inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor, local.profile
+  -protocol       json, proto, or grpc (default: the kind's; the media kinds take proto or grpc)
+  -token-file     a file that holds the bearer token (https:// and unix:// only)
+  -tls-ca-file    verify the plugin against this CA (default: the system's roots)
+  -tls-cert-file  the client certificate of mTLS
+  -tls-key-file   the key of the client certificate
+  -timeout        the deadline of one call, such as 5s (default: the kind's)
+  -billed         -kind billing: also run the case that may cost money at the plugin's
+                  providers
+  -mail-to        -kind mailer: run the cases that send real mail, to this address
+  -mail-from      -kind mailer: the sender of that mail, as mail_from (default: the
+                  -mail-to address)
+  -translate-from -kind translator: the source language of the cases (default: en)
+  -translate-to   -kind translator: the target language of the cases (default: ja)
+  -clear-index    -kind search: also run the cases that remove every document of a
+                  visibility or of the whole index, against an index for testing
 
 The flags mean what the settings plugin_<kind>_* mean, and this command reads no
 configuration.
@@ -2716,24 +2716,24 @@ configuration.
 ### `my plugin test`
 
 ```text
-my plugin test --kind <kind> [flags] <address>
+my plugin test -kind <kind> [flags] <address>
 ```
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `-billed` | `false` | --kind billing: also run the case that may cost money at the plugin's providers |
-| `-clear-index` | `false` | --kind search: also run the cases that remove every document of the index, against an index for testing |
+| `-billed` | `false` | -kind billing: also run the case that may cost money at the plugin's providers |
+| `-clear-index` | `false` | -kind search: also run the cases that remove every document of a visibility or of the whole index, against an index for testing |
 | `-kind <string>` |  | the kind of the plugin: probe, translator, search, billing, mailer, media_image, media_video, media_audio, key_manager, inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor, local.profile |
-| `-mail-from <string>` |  | --kind mailer: the sender of that mail, as mail_from (default: the --mail-to address) |
-| `-mail-to <string>` |  | --kind mailer: run the cases that send real mail, to this address |
+| `-mail-from <string>` |  | -kind mailer: the sender of that mail, as mail_from (default: the -mail-to address) |
+| `-mail-to <string>` |  | -kind mailer: run the cases that send real mail, to this address |
 | `-protocol <string>` |  | json, proto, or grpc (default: the kind's) |
 | `-timeout <duration>` | `0s` | the deadline of one call (default: the kind's) |
 | `-tls-ca-file <string>` |  | verify the plugin against this CA (default: the system's roots) |
 | `-tls-cert-file <string>` |  | the client certificate of mTLS |
 | `-tls-key-file <string>` |  | the key of the client certificate |
 | `-token-file <string>` |  | a file that holds the bearer token |
-| `-translate-from <string>` |  | --kind translator: the source language of the cases (default: en) |
-| `-translate-to <string>` |  | --kind translator: the target language of the cases (default: ja) |
+| `-translate-from <string>` |  | -kind translator: the source language of the cases (default: en) |
+| `-translate-to <string>` |  | -kind translator: the target language of the cases (default: ja) |
 
 Its help is the help of [`my plugin`](#my-plugin).
 
