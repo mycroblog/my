@@ -20,7 +20,8 @@ type InteractionRequests interface {
 	FindInteractionRequest(ctx context.Context, accountID, id string) (appcontent.InteractionRequestPage, content.InteractionState, error)
 }
 
-// ListInteractionRequests serves GET /api/v1/interaction_requests.
+// ListInteractionRequests serves GET /api/v1/interaction_requests; a 404, as the answers to the
+// requests, on a server without them.
 func (s *Server) ListInteractionRequests(ctx context.Context, req ListInteractionRequestsRequestObject) (ListInteractionRequestsResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
@@ -38,10 +39,10 @@ func (s *Server) ListInteractionRequests(ctx context.Context, req ListInteractio
 		}
 		kinds = []content.InteractionKind{kind}
 	}
-	out := InteractionRequestPage{Items: []InteractionRequest{}}
 	if s.o.InteractionRequests == nil {
-		return ListInteractionRequests200JSONResponse{Body: out, Headers: ListInteractionRequests200ResponseHeaders{CacheControl: interactionRequestCache()}}, nil
+		return ListInteractionRequestsdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	}
+	out := InteractionRequestPage{Items: []InteractionRequest{}}
 	page, err := s.o.InteractionRequests.PendingInteractionRequests(ctx, v.AccountID, kinds, q.before, q.limit)
 	if err != nil {
 		return nil, err
