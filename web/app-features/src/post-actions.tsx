@@ -4,7 +4,8 @@
 // notifications, a profile): Reply and Quote ask the app to open the composer, favourite, boost, bookmark and a
 // reaction chip set the reader's mark, or take it back, and Vote sends the reader's vote in the post's poll, each
 // through @my/app-data, which every cached copy of the post shows at once. While a vote is in flight every copy of the
-// post holds its choices (usePostVoting). A mark or a vote that fails shows again as it was, and a notice at the
+// post holds its choices (usePostVoting). A bookmark, set or taken back, which the post shows no mark of, is told by a
+// notice at the bottom of the page. A mark or a vote that fails shows again as it was, and a notice at the
 // bottom of the page says so, in the server's words when it refused, with Try again for a moment. The react action
 // opens the emoji picker (emoji/picker.ts, usePostPicker) where the app decides, a sheet on a phone or a popover
 // beside the button, and a reaction counts its emoji as used on this device.
@@ -360,6 +361,12 @@ export function PostActions({
     }
     setNotice(undefined);
     write(id, w)
+      .then(() => {
+        // A bookmark shows no mark on the post, only in its menu: the notice says what it did.
+        if (w.kind === "mark" && w.mark.type === "bookmark") {
+          setNotice({ text: t(w.mark.on ? "post_actions.bookmarked" : "post_actions.unbookmarked") });
+        }
+      })
       .catch((e: unknown) => {
         setNotice({
           text: refusal(e) ?? t("post_actions.failed", { action: w.kind === "vote" ? "vote" : w.mark.type }),

@@ -23,6 +23,14 @@
     "defaultMessage": "The link could not be copied.",
     "description": "The notice at the bottom of the page when the browser refused to copy the link to the post (Copy link, or Share on a device that cannot share); it offers no Try again, since a refused clipboard refuses again."
   },
+  "post_actions.bookmarked": {
+    "defaultMessage": "Post bookmarked",
+    "description": "The notice at the bottom of the page after Bookmark in a post's more menu bookmarked it; the post is in Bookmarks."
+  },
+  "post_actions.unbookmarked": {
+    "defaultMessage": "Bookmark removed",
+    "description": "The notice at the bottom of the page after Remove bookmark in a post's more menu took the reader's bookmark of the post back; the post is no longer in Bookmarks."
+  },
   "post_actions.history_failed": {
     "defaultMessage": "The edit history could not be loaded.",
     "description": "The notice at the bottom of the page when an edited post's edit history did not load from the server, beside Try again, which loads it again."
