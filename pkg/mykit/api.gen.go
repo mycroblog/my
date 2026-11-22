@@ -27402,7 +27402,7 @@ type ClientInterface interface {
 	//
 	// Takes any type of body and a specified content type.
 	//
-	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 	UpdateKeywordFilterWithBody(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateKeywordFilter Change a keyword filter
@@ -27413,7 +27413,7 @@ type ClientInterface interface {
 	//
 	// Takes a body of the `application/json` content type.
 	//
-	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 	UpdateKeywordFilter(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetFinanceCostTotals Total the costs by period for the finance viewers
@@ -38969,7 +38969,7 @@ func (c *Client) GetKeywordFilter(ctx context.Context, id KeywordFilterId, reqEd
 //
 // Takes any type of body and a specified content type.
 //
-// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 func (c *Client) UpdateKeywordFilterWithBody(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateKeywordFilterRequestWithBody(c.Server, id, contentType, body)
 	if err != nil {
@@ -38990,7 +38990,7 @@ func (c *Client) UpdateKeywordFilterWithBody(ctx context.Context, id KeywordFilt
 //
 // Takes a body of the `application/json` content type.
 //
-// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 func (c *Client) UpdateKeywordFilter(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateKeywordFilterRequest(c.Server, id, body)
 	if err != nil {
@@ -57434,7 +57434,7 @@ func NewUpdateKeywordFilterRequestWithBody(server string, id KeywordFilterId, co
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -70176,7 +70176,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 	UpdateKeywordFilterWithBodyWithResponse(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error)
 
 	// UpdateKeywordFilterWithResponse Change a keyword filter
@@ -70187,7 +70187,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 	UpdateKeywordFilterWithResponse(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error)
 
 	// GetFinanceCostTotalsWithResponse Total the costs by period for the finance viewers
@@ -111536,7 +111536,7 @@ func (c *ClientWithResponses) GetKeywordFilterWithResponse(ctx context.Context, 
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 func (c *ClientWithResponses) UpdateKeywordFilterWithBodyWithResponse(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error) {
 	rsp, err := c.UpdateKeywordFilterWithBody(ctx, id, contentType, body, reqEditors...)
 	if err != nil {
@@ -111553,7 +111553,7 @@ func (c *ClientWithResponses) UpdateKeywordFilterWithBodyWithResponse(ctx contex
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 func (c *ClientWithResponses) UpdateKeywordFilterWithResponse(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error) {
 	rsp, err := c.UpdateKeywordFilter(ctx, id, body, reqEditors...)
 	if err != nil {

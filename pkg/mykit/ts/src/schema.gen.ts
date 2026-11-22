@@ -3888,7 +3888,13 @@ export interface paths {
          * @description A keyword filter of the user. Another user's filter is a 404, as if it did not exist.
          */
         get: operations["getKeywordFilter"];
-        put?: never;
+        /**
+         * Change a keyword filter
+         * @description Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+         *     `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+         *     user's filter is a 404.
+         */
+        put: operations["updateKeywordFilter"];
         post?: never;
         /**
          * Delete a keyword filter
@@ -3897,13 +3903,7 @@ export interface paths {
         delete: operations["deleteKeywordFilter"];
         options?: never;
         head?: never;
-        /**
-         * Change a keyword filter
-         * @description Replaces the title, action, contexts, words, and expiry of the filter, checked as in
-         *     `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
-         *     user's filter is a 404.
-         */
-        patch: operations["updateKeywordFilter"];
+        patch?: never;
         trace?: never;
     };
     "/featured_tags": {
@@ -26539,6 +26539,39 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    updateKeywordFilter: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description The ID of the keyword filter. */
+                id: components["parameters"]["KeywordFilterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeywordFilterRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["KeywordFilter"];
+            default: components["responses"]["Problem"];
+        };
+    };
     deleteKeywordFilter: {
         parameters: {
             query?: never;
@@ -26571,39 +26604,6 @@ export interface operations {
                 };
                 content?: never;
             };
-            default: components["responses"]["Problem"];
-        };
-    };
-    updateKeywordFilter: {
-        parameters: {
-            query?: never;
-            header?: {
-                /**
-                 * @description A key the client chooses per request, which makes the request safe to send again. Within
-                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
-                 *     anonymous client: the same address) already sent to the operation gets the first answer
-                 *     again instead of being carried out again. The same key with another request (another
-                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
-                 *     while the first request is still being carried out is a 409
-                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
-                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
-                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
-                 */
-                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
-            };
-            path: {
-                /** @description The ID of the keyword filter. */
-                id: components["parameters"]["KeywordFilterId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["KeywordFilterRequest"];
-            };
-        };
-        responses: {
-            200: components["responses"]["KeywordFilter"];
             default: components["responses"]["Problem"];
         };
     };

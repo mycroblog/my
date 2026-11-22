@@ -24738,7 +24738,7 @@ type ServerInterface interface {
 	// (GET /filters/{id})
 	GetKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId)
 	// UpdateKeywordFilter Change a keyword filter
-	// (PATCH /filters/{id})
+	// (PUT /filters/{id})
 	UpdateKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId, params UpdateKeywordFilterParams)
 	// GetFinanceCostTotals Total the costs by period for the finance viewers
 	// (GET /finance/cost_totals)
@@ -45887,7 +45887,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/filters", wrapper.CreateKeywordFilter)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/filters/{id}", wrapper.DeleteKeywordFilter)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/filters/{id}", wrapper.GetKeywordFilter)
-	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/filters/{id}", wrapper.UpdateKeywordFilter)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/filters/{id}", wrapper.UpdateKeywordFilter)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/featured_tags", wrapper.ListFeaturedTags)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/featured_tags", wrapper.SetFeaturedTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/home", wrapper.GetHomeTimeline)
@@ -76327,7 +76327,7 @@ type StrictServerInterface interface {
 	// (GET /filters/{id})
 	GetKeywordFilter(ctx context.Context, request GetKeywordFilterRequestObject) (GetKeywordFilterResponseObject, error)
 	// UpdateKeywordFilter Change a keyword filter
-	// (PATCH /filters/{id})
+	// (PUT /filters/{id})
 	UpdateKeywordFilter(ctx context.Context, request UpdateKeywordFilterRequestObject) (UpdateKeywordFilterResponseObject, error)
 	// GetFinanceCostTotals Total the costs by period for the finance viewers
 	// (GET /finance/cost_totals)

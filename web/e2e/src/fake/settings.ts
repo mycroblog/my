@@ -864,7 +864,7 @@ export function createSettings(env: SettingsEnv): SettingsState {
       const found = filters.find((f) => f.id === params.id);
       return found === undefined ? notFound() : { status: 200, body: nowFilter(found) };
     },
-    "PATCH /filters/{id}": ({ params, body }) => {
+    "PUT /filters/{id}": ({ params, body }) => {
       if (settings.filterSave === "waits") return new Promise<never>(() => undefined);
       const at_ = filters.findIndex((f) => f.id === params.id);
       const old = filters[at_];

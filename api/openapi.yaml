@@ -5731,7 +5731,7 @@ paths:
           $ref: '#/components/responses/KeywordFilter'
         default:
           $ref: '#/components/responses/Problem'
-    patch:
+    put:
       operationId: updateKeywordFilter
       summary: Change a keyword filter
       description: |

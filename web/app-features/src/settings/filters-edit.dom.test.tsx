@@ -527,15 +527,15 @@ describe("Save, for one of the reader's filters", () => {
   ];
 
   for (const { what, filter, change, sends } of changes)
-    test(`sends one PATCH of the filter, whole: ${what}`, async () => {
+    test(`sends one PUT of the filter, whole: ${what}`, async () => {
       const form = await filterForm({}, { filter });
       const as = await held(form, filter);
-      const sent = form.fake.script("PATCH /filters/{id}");
+      const sent = form.fake.script("PUT /filters/{id}");
       await change(form);
 
       await saved(form);
 
-      expect(writes(form)).toEqual([`PATCH /filters/${form.id ?? ""}`]);
+      expect(writes(form)).toEqual([`PUT /filters/${form.id ?? ""}`]);
       expect(sent.seen.map((request) => request.body)).toEqual([sends(as)]);
       expect(Object.keys(sent.seen[0]?.body ?? {}).includes("expires_at")).toBe("expires_at" in sends(as));
       expect(form.told.slice(-2)).toEqual(["unsaved:false", "back"]);
@@ -544,7 +544,7 @@ describe("Save, for one of the reader's filters", () => {
   for (const filter of [0, 1, 2])
     test(`nothing changed of filter ${String(filter)}: Save sends nothing and goes back`, async () => {
       const form = await filterForm({}, { filter });
-      const sent = form.fake.script("PATCH /filters/{id}");
+      const sent = form.fake.script("PUT /filters/{id}");
 
       await saved(form);
 
@@ -564,7 +564,7 @@ describe("Save, for one of the reader's filters", () => {
   ] as const)
     test(`${choice} sends the moment that long after the press as the filter's end`, async () => {
       const form = await filterForm({}, { filter: 2 });
-      const sent = form.fake.script("PATCH /filters/{id}");
+      const sent = form.fake.script("PUT /filters/{id}");
       await form.user.selectOptions(endsChoice(), choice);
       const before = Date.now();
 
@@ -579,7 +579,7 @@ describe("Save, for one of the reader's filters", () => {
   // (web/app/src/settings-filters.dom.test.tsx); drawn alone, the editor reads it on the device's.
   test("At a date and time sends the moment written as the filter's end", async () => {
     const form = await filterForm({}, { filter: 0 });
-    const sent = form.fake.script("PATCH /filters/{id}");
+    const sent = form.fake.script("PUT /filters/{id}");
     await form.user.selectOptions(endsChoice(), "At a date and time");
 
     setEndsAt("2099-02-03T04:05");
@@ -618,7 +618,7 @@ describe("Save, for one of the reader's filters", () => {
     // The way back stays.
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Keyword filters" }).disabled).toBe(false);
     // A second press sends no second change.
-    const sent = form.fake.script("PATCH /filters/{id}");
+    const sent = form.fake.script("PUT /filters/{id}");
     await form.user.click(submitButton());
     expect(sent.seen).toHaveLength(0);
     expect(form.told.includes("back")).toBe(false);
@@ -827,7 +827,7 @@ describe("what the server refuses shows where it belongs", () => {
   async function saveRefused({ fail }: { fail: Failure }, bar: string | RegExp = marked) {
     const form = await filterForm({}, { filter: 0 });
     await rewrite(form.user, nameField(), "Spoilers and more");
-    form.fake.script("PATCH /filters/{id}", { times: 1, fail });
+    form.fake.script("PUT /filters/{id}", { times: 1, fail });
     await refused(form, bar);
     return form;
   }
@@ -841,7 +841,7 @@ describe("what the server refuses shows where it belongs", () => {
     expect(invalid()).toEqual(["Name"]);
     expect(describedBy(nameField())).toEqual([nameHint, nameRule]);
     expect(said()).toEqual([marked]);
-    expect(writes(form)).toEqual([`PATCH /filters/${form.id ?? ""}`]);
+    expect(writes(form)).toEqual([`PUT /filters/${form.id ?? ""}`]);
     expect(nameField().value).toBe("Spoilers\tand more");
     expect(form.told.includes("back")).toBe(false);
     expect(form.told.filter((word) => word.startsWith("unsaved")).at(-1)).toBe("unsaved:true");
@@ -863,7 +863,7 @@ describe("what the server refuses shows where it belongs", () => {
     await form.user.click(addWord());
     await rewrite(form.user, wordField(4), "season 4");
     expect(words().map(([word]) => word)).toEqual(["finale", "season 3", "", "season 4"]);
-    form.fake.script("PATCH /filters/{id}", { times: 1, fail: refusal("keywords[2].keyword", "Not this one.") });
+    form.fake.script("PUT /filters/{id}", { times: 1, fail: refusal("keywords[2].keyword", "Not this one.") });
 
     await refused(form);
 
@@ -904,7 +904,7 @@ describe("what the server refuses shows where it belongs", () => {
     expect(describedBy(wordsList())).toEqual([]);
     // A filter saved unchanged sends nothing: a change of its name makes the request.
     await rewrite(form.user, nameField(), "Spoilers and more");
-    form.fake.script("PATCH /filters/{id}", {
+    form.fake.script("PUT /filters/{id}", {
       times: 1,
       fail: refusal("keywords", "The server does not take these words."),
     });
@@ -944,7 +944,7 @@ describe("what the server refuses shows where it belongs", () => {
     expect(screen.queryAllByText("The server does not take these places.")).toHaveLength(0);
     expect(alerts()).toEqual([]);
     // Nothing was sent by the change: the first Save alone.
-    expect(writes(form)).toEqual([`PATCH /filters/${form.id ?? ""}`]);
+    expect(writes(form)).toEqual([`PUT /filters/${form.id ?? ""}`]);
   });
 
   test("more filters than a reader can have: the sentence of the limit beside the button, and nothing is marked", async () => {
@@ -987,8 +987,8 @@ describe("what the server refuses shows where it belongs", () => {
 
   test("a save the server fails says so beside the button, and the next Save sends the filter again", async () => {
     const form = await filterForm({}, { filter: 0 });
-    const sent = form.fake.script("PATCH /filters/{id}");
-    const failing = form.fake.script("PATCH /filters/{id}", { times: 1, fail: 500 });
+    const sent = form.fake.script("PUT /filters/{id}");
+    const failing = form.fake.script("PUT /filters/{id}", { times: 1, fail: 500 });
     await rewrite(form.user, nameField(), "Spoilers and more");
 
     // A problem of a status alone has a title of the fake's: the bar says something.
@@ -1171,7 +1171,7 @@ describe("the editor tells its owner whether it holds unsaved changes", () => {
 
   test("a save the server refuses leaves them unsaved", async () => {
     const form = await filterForm({}, { filter: 0 });
-    form.fake.script("PATCH /filters/{id}", { times: 1, fail: 500 });
+    form.fake.script("PUT /filters/{id}", { times: 1, fail: 500 });
     await form.user.type(nameField(), "!");
 
     await refused(form, /./);

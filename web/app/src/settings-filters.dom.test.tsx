@@ -228,7 +228,7 @@ describe("after the editor's write, the app is at the list, which shows it", () 
     const on = fakeApp();
     const app = await renderApp(on.fake.filterPath(0), { on });
     await editorRead();
-    const sent = on.fake.script("PATCH /filters/{id}");
+    const sent = on.fake.script("PUT /filters/{id}");
 
     await app.user.click(main().getByRole("button", { name: "Save" }));
 
@@ -369,7 +369,7 @@ describe("the date and time a filter ends at", () => {
     });
     const app = await renderApp(on.fake.filterPath(0), { on });
     await editorRead();
-    const sent = on.fake.script("PATCH /filters/{id}");
+    const sent = on.fake.script("PUT /filters/{id}");
     await app.user.selectOptions(main().getByRole("combobox", { name: "Ends" }), "At a date and time");
     const field = await main().findByLabelText<HTMLInputElement>("Ends at");
 
@@ -442,7 +442,7 @@ describe("leaving the editor with unsaved changes", () => {
 
     test(`${way} asks first, and Leave goes there without saving`, async () => {
       const app = await unsaved();
-      const sent = app.fake.script("PATCH /filters/{id}");
+      const sent = app.fake.script("PUT /filters/{id}");
 
       await leave(app);
       await app.user.click(within(await asked()).getByRole("button", { name: "Leave" }));
@@ -527,7 +527,7 @@ describe("a write of the editor answered after the reader left it", () => {
     const app = await renderApp(at, { on });
     await editorRead();
     await rewrite(app, nameField(), "Spoilers and more");
-    const sent = on.fake.script("PATCH /filters/{id}", script);
+    const sent = on.fake.script("PUT /filters/{id}", script);
     await app.user.click(main().getByRole("button", { name: "Save" }));
     await sent.arrived();
     await app.navigate("/lists");

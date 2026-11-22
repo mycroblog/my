@@ -137,7 +137,7 @@ export async function saveKeywordFilter(
   const { data: saved } =
     id === undefined
       ? await api.POST("/filters", { body: filter })
-      : await api.PATCH("/filters/{id}", { params: { path: { id } }, body: filter });
+      : await api.PUT("/filters/{id}", { params: { path: { id } }, body: filter });
   if (saved === undefined) throw new Error("app-data: the filter was saved without an answer");
   queryClient.setQueryData(keywordFilterQuery(data, saved.id).queryKey, saved);
   await Promise.all([
