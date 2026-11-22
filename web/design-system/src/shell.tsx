@@ -909,8 +909,10 @@ const toast = tv({
     ],
     close: [
       "size-control-timeline cursor-pointer rounded-control border-0",
-      "bg-transparent p-0 text-inherit outline-hidden hover:bg-[color-mix(in_srgb,var(--color-surface)_15%,transparent)]",
-      "active:translate-y-press",
+      // Knocked out, it answers as a button does with the page's color for the shade: hovered a share, pressed twice it.
+      "bg-transparent p-0 text-inherit outline-hidden",
+      "hover:bg-[color-mix(in_srgb,var(--color-surface)_var(--press-hover),transparent)]",
+      "active:translate-y-press active:bg-[color-mix(in_srgb,var(--color-surface)_var(--press-pressed),transparent)]",
       "focus-visible:shadow-[inset_0_0_0_var(--focus-ring-width)_var(--color-surface)]",
     ],
   },
