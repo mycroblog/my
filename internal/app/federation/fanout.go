@@ -424,8 +424,8 @@ func (s subject) phases() []phase {
 	switch s.act.ObjectKind {
 	case federation.OutboundRelay, federation.OutboundRefusal:
 		return []phase{phaseRelay}
-	case federation.OutboundReply, federation.OutboundAnnounce, federation.OutboundQuote:
-		if s.followersToo || s.act.ObjectKind == federation.OutboundQuote && s.act.Type == federation.ActivityDelete {
+	case federation.OutboundReplyApproval, federation.OutboundAnnounceApproval, federation.OutboundQuoteApproval:
+		if s.followersToo || s.act.ObjectKind == federation.OutboundQuoteApproval && s.act.Type == federation.ActivityDelete {
 			return []phase{phaseRelay, phaseFollowers}
 		}
 		return []phase{phaseRelay}

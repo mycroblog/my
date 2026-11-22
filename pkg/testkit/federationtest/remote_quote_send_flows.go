@@ -355,7 +355,7 @@ func remoteSendsQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	if s := e.quoteState(t, l.ID); s.Approval != content.QuoteApprovalLegacy {
 		t.Errorf("state = %+v, want legacy", s)
 	}
-	if got := e.quoteActivities(t, federation.OutboundQuote, l.ID); len(got) != 0 {
+	if got := e.quoteActivities(t, federation.OutboundQuoteApproval, l.ID); len(got) != 0 {
 		t.Errorf("activities of a legacy quote = %+v, want none", got)
 	}
 
@@ -367,7 +367,7 @@ func remoteSendsQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	if s := e.quoteState(t, q.ID); s.Approval != content.QuoteApprovalPending {
 		t.Errorf("state = %+v, want pending", s)
 	}
-	sent := e.quoteActivities(t, federation.OutboundQuote, q.ID)
+	sent := e.quoteActivities(t, federation.OutboundQuoteApproval, q.ID)
 	if len(sent) != 1 || sent[0].Type != federation.ActivityQuoteRequest || !slices.Equal(sent[0].Inboxes, []string{alice + "/inbox"}) {
 		t.Fatalf("activities = %+v, want a QuoteRequest to alice", sent)
 	}
@@ -461,7 +461,7 @@ func remoteSendsQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	if s := e.quoteState(t, h.ID); s.Approval != content.QuoteApprovalPending {
 		t.Errorf("state of a quote approved by hand = %+v, want pending", s)
 	}
-	if sent := e.quoteActivities(t, federation.OutboundQuote, h.ID); len(sent) != 1 || sent[0].Type != federation.ActivityQuoteRequest {
+	if sent := e.quoteActivities(t, federation.OutboundQuoteApproval, h.ID); len(sent) != 1 || sent[0].Type != federation.ActivityQuoteRequest {
 		t.Errorf("activities of a quote approved by hand = %+v, want a QuoteRequest", sent)
 	}
 	revised := remoteNote(byHand.URI, alice, published, map[string]any{"updated": published.Add(time.Minute).Format(time.RFC3339),
@@ -494,7 +494,7 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	e.expect(t, remoteActivity(t, "Create", quoting+"/activity", bob, remoteNote(quoting, bob, remoteNow.Add(-time.Hour), map[string]any{"quote": public.URI})), appfederation.InboxHandled)
 	stored := e.post(t, quoting).Status
 	e.expect(t, request(bob+"/quote_requests/1", public.URI), appfederation.InboxHandled)
-	sent := e.quoteActivities(t, federation.OutboundQuote, public.ID)
+	sent := e.quoteActivities(t, federation.OutboundQuoteApproval, public.ID)
 	if len(sent) != 1 || sent[0].Type != federation.ActivityAccept || !slices.Equal(sent[0].Inboxes, []string{bob + "/inbox"}) {
 		t.Fatalf("answers = %+v, want an Accept to bob", sent)
 	}
@@ -511,13 +511,13 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	// The same request again gets the same approval, also when it names the status by the Create
 	// of this server's document, embedded or by its IRI (Bonfire).
 	e.expect(t, request(bob+"/quote_requests/2", public.URI), appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 2 || sent[1].Doc.Result != result {
+	if sent := e.quoteActivities(t, federation.OutboundQuoteApproval, public.ID); len(sent) != 2 || sent[1].Doc.Result != result {
 		t.Errorf("answers = %+v, want the same QuoteAuthorization twice", sent)
 	}
 	e.expect(t, mustJSON(t, map[string]any{"@context": "https://www.w3.org/ns/activitystreams", "id": bob + "/quote_requests/7", "type": "QuoteRequest", "actor": bob,
 		"object": map[string]any{"id": public.URI + "/activity", "type": "Create", "actor": e.localIRI(author), "object": public.URI}, "instrument": quoting}), appfederation.InboxHandled)
 	e.expect(t, request(bob+"/quote_requests/8", public.URI+"/activity"), appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 4 || sent[2].Doc.Result != result || sent[3].Doc.Result != result {
+	if sent := e.quoteActivities(t, federation.OutboundQuoteApproval, public.ID); len(sent) != 4 || sent[2].Doc.Result != result || sent[3].Doc.Result != result {
 		t.Errorf("answers to requests naming the Create, embedded and by its IRI = %+v, want the same QuoteAuthorization", sent)
 	}
 	// The approval is bob's: it approves no quote of another account.
@@ -540,7 +540,7 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 		t.Fatal(err)
 	}
 	e.expect(t, daveRequest, appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 5 || sent[4].Type != federation.ActivityReject {
+	if sent := e.quoteActivities(t, federation.OutboundQuoteApproval, public.ID); len(sent) != 5 || sent[4].Type != federation.ActivityReject {
 		t.Errorf("answers = %+v, want a Reject of dave's request for bob's post", sent)
 	}
 	if s := e.quoteState(t, other.ID); s.Approval != content.QuoteApprovalPending {
@@ -550,7 +550,7 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	// A local-only post, and a post of nobody, are refused.
 	local := e.localPost(t, author, content.VisibilityLocal)
 	e.expect(t, request(bob+"/quote_requests/3", local.URI), appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, local.ID); len(sent) != 1 || sent[0].Type != federation.ActivityReject {
+	if sent := e.quoteActivities(t, federation.OutboundQuoteApproval, local.ID); len(sent) != 1 || sent[0].Type != federation.ActivityReject {
 		t.Errorf("answers about a local-only post = %+v, want a Reject", sent)
 	}
 	closed := e.localPost(t, author, content.VisibilityPublic)
@@ -558,7 +558,7 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 		t.Fatal(err)
 	}
 	e.expect(t, request(bob+"/quote_requests/4", closed.URI), appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, closed.ID); len(sent) != 1 || sent[0].Type != federation.ActivityReject {
+	if sent := e.quoteActivities(t, federation.OutboundQuoteApproval, closed.ID); len(sent) != 1 || sent[0].Type != federation.ActivityReject {
 		t.Errorf("answers about a post of nobody = %+v, want a Reject", sent)
 	}
 	// A request that a manual rule admits waits for the author, who answers it.
@@ -568,7 +568,7 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 		t.Fatal(err)
 	}
 	e.expect(t, request(bob+"/quote_requests/5", byHand.URI), appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, byHand.ID); len(sent) != 0 {
+	if sent := e.quoteActivities(t, federation.OutboundQuoteApproval, byHand.ID); len(sent) != 0 {
 		t.Errorf("answers about a post approved by hand = %+v, want none yet", sent)
 	}
 	// A quoting post that names no quote until it is approved (Bonfire) is answered all the same.
@@ -588,7 +588,7 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 			t.Errorf("approving the quote of a post that names none = %+v, %v; want accepted", st, err)
 		}
 	}
-	if sent := e.quoteActivities(t, federation.OutboundQuote, byHand.ID); len(sent) != 1 || sent[0].Type != federation.ActivityAccept ||
+	if sent := e.quoteActivities(t, federation.OutboundQuoteApproval, byHand.ID); len(sent) != 1 || sent[0].Type != federation.ActivityAccept ||
 		!strings.HasPrefix(string(sent[0].Doc.Result), "https://"+testkit.ContractHost+"/ap/quote_authorizations/") {
 		t.Errorf("answers after approving the quote of a post that names none = %+v, want an Accept with a QuoteAuthorization", sent)
 	} else {
@@ -619,7 +619,7 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 		t.Errorf("state after the revocation = %+v, want revoked", s)
 	}
 	id := string(result)[strings.LastIndexByte(string(result), '/')+1:]
-	deletes := e.quoteActivities(t, federation.OutboundQuote, id)
+	deletes := e.quoteActivities(t, federation.OutboundQuoteApproval, id)
 	if len(deletes) != 1 || deletes[0].Type != federation.ActivityDelete || deletes[0].Doc.Object().ID != result ||
 		!slices.Equal(deletes[0].Inboxes, []string{bob + "/inbox", carol + "/inbox"}) {
 		t.Errorf("activities after the revocation = %+v, want the Delete of %s to bob and carol", deletes, result)
