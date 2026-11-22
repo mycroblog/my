@@ -475,16 +475,44 @@
     "defaultMessage": "‮⊥ɥǝ sǝɹʌǝɹ''s ɐpɯıuısʇɹɐʇoɹs ɥɐʌǝ pısɐqʅǝp ʇɥıs ɐdd.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.oauth_app.first_party_scope": {
+    "defaultMessage": "‮ɐpɯıu, ɐpɯıu:ɹǝɐp, ɐpɯıu:ʍɹıʇǝ ɐup ʍɹıʇǝ:snddoɹʇǝɹs ɐɹǝ ouʅʎ ɟoɹ ʇɥıs sǝɹʌǝɹ''s oʍu ɐdds. ᴚǝɯoʌǝ ʇɥǝɯ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.oauth_app.public": {
     "defaultMessage": "‮⊥ɥıs ɐdd ɥɐs uo sǝɔɹǝʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.oauth_app.redirect_uri_form": {
+    "defaultMessage": "‮Ouǝ oɟ ʇɥǝ ɐppɹǝssǝs ıs uoʇ ɐu ɥʇʇds ɐppɹǝss, ɐu ɐppɹǝss ʍıʇɥ ɐ sɔɥǝɯǝ oɟ ʎonɹ oʍu snɔɥ ɐs ɔoɯ.ǝxɐɯdʅǝ.ɐdd:/ɔɐʅʅqɐɔʞ, oɹ ɥʇʇd://127.0.0.1 ou ɐuʎ doɹʇ. Ↄɥɐuƃǝ ıʇ ʇo ouǝ oɟ ʇɥǝsǝ ɟoɹɯs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.oauth_app.redirect_uri_fragment": {
+    "defaultMessage": "‮Ouǝ oɟ ʇɥǝ ɐppɹǝssǝs ɥɐs ɐ #, ʍɥıɔɥ ɐ ɹǝpıɹǝɔʇ ∩ᴚI ɔɐuuoʇ ɥɐʌǝ. ᴚǝɯoʌǝ ʇɥǝ # ɐup ǝʌǝɹʎʇɥıuƃ ɐɟʇǝɹ ıʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.registration_disabled": {
     "defaultMessage": "‮⊥ɥıs sǝɹʌǝɹ poǝs uoʇ ʅǝʇ nsǝɹs ɹǝƃısʇǝɹ ɐdds.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.oauth_app.scope_beyond_app": {
+    "defaultMessage": "‮Ouǝ oɟ ʇɥǝ sɔodǝs ıs uoʇ ɐɯouƃ ʇɥǝ ɐdd''s. ∀ ʇoʞǝu ɔɐu ɥɐʌǝ ouʅʎ ʇɥǝ sɔodǝs oɟ ıʇs ɐdd. ᴚǝɯoʌǝ ıʇ, oɹ ɐpp ıʇ ʇo ʇɥǝ ɐdd ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.oauth_app.too_many": {
     "defaultMessage": "‮⅄on ɥɐʌǝ ɐs ɯɐuʎ ɐdds ɐs ɐʅʅoʍǝp. ᗡǝʅǝʇǝ ouǝ ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.oauth_app.too_many_redirect_uris": {
+    "defaultMessage": "‮{max,plural,one{∀u ɐdd ɔɐu ɥɐʌǝ ɐʇ ɯosʇ # ɹǝpıɹǝɔʇ ∩ᴚI. ᴚǝɯoʌǝ ʇɥǝ oʇɥǝɹs.} other{∀u ɐdd ɔɐu ɥɐʌǝ ɐʇ ɯosʇ # ɹǝpıɹǝɔʇ ∩ᴚIs. ᴚǝɯoʌǝ soɯǝ.}}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.oauth_app.unknown_scope": {
+    "defaultMessage": "‮Ouǝ oɟ ʇɥǝ sɔodǝs ıs uoʇ ouǝ ʇɥıs sǝɹʌǝɹ ʞuoʍs. Ↄɥǝɔʞ ıʇs sdǝʅʅıuƃ, ɐup sǝdɐɹɐʇǝ sɔodǝs ʍıʇɥ sdɐɔǝs, ɐs ıu ɹǝɐp ʍɹıʇǝ:sʇɐʇnsǝs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.oauth_app.website_not_http": {
+    "defaultMessage": "‮⊥ɥıs ıs uoʇ ɐu ɥʇʇds oɹ ɥʇʇd ɐppɹǝss. Ǝuʇǝɹ ouǝ snɔɥ ɐs ɥʇʇds://ǝxɐɯdʅǝ.ɔoɯ/.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.passkey.confirmation_expired": {

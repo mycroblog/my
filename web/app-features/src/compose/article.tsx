@@ -14,8 +14,9 @@
 // tells the app it was kept; Close keeps a new article that was written or changed as a draft on the server, without a
 // word, so that a long text is never lost, and leaves an edit as it was. A reader the server keeps from writing new
 // articles (`article_authoring`) gets the one sentence why in place of the form; an edit of an earlier one still opens.
+// One a restriction of the account refused leads to Account status from its alert, keeping what was written as Close.
 
-import { PostContent, scheduleTime, ScheduleTime, ScheduleZone } from "@my/app-components";
+import { accountStatusPath, PostContent, scheduleTime, ScheduleTime, ScheduleZone } from "@my/app-components";
 import {
   articleFieldLimits,
   useArticleAuthoring,
@@ -56,6 +57,7 @@ import {
   ModalPresence,
   TagInput,
   TextButton,
+  TextLink,
   useLocale,
   useTimeZone,
 } from "@my/design-system";
@@ -447,6 +449,17 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
             action={
               phase.kind === "conflict" ? (
                 <TextButton onPress={() => onNewer?.()}>{t("compose.conflict.open")}</TextButton>
+              ) : refused?.restricted ? (
+                // An article a restriction of the account refused: its alert leads to Account status, where the
+                // reader sees why and appeals; what was written is kept as Close keeps it.
+                <TextLink
+                  href={accountStatusPath}
+                  onPress={() => {
+                    void e.keepQuietly();
+                  }}
+                >
+                  {t("settings.account.status")}
+                </TextLink>
               ) : undefined
             }
           >

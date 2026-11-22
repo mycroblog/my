@@ -60,7 +60,6 @@ import {
   type AccountPosts,
   type AppData,
   type Relationship,
-  type RelationshipChange,
   type Status,
 } from "@my/app-data";
 import {
@@ -159,9 +158,10 @@ const openOriginal = (account: Account) => () => {
 /** The main action of another account's profile: the follow in its state, or unblock. */
 function Follow({ account, relationship, t }: { account: Account; relationship: Relationship; t: T }) {
   const change = useChangeRelationship();
+  const write = useAccountWrite(t);
   const [busy, press] = usePress();
-  const on = (c: RelationshipChange) => () => {
-    press(() => change(account.id, c));
+  const on = (c: "follow" | "unfollow" | "unblock") => () => {
+    press(() => write(c, () => change(account.id, c)).then(() => undefined));
   };
   if (relationship.blocking)
     return (
@@ -186,6 +186,8 @@ function Follow({ account, relationship, t }: { account: Account; relationship: 
 
 /** Which action on an account failed, as profile.action_failed names it. */
 type Failure =
+  | "follow"
+  | "unfollow"
   | "mute"
   | "unmute"
   | "block"

@@ -18,12 +18,14 @@
 // a line over the row says when, and Schedule takes Post's place, which stays alone at the row's end. A menu in the
 // head, before close, keeps it as a draft or opens the drafts (drafts.tsx). A draft whose scheduled post failed says
 // why and what Post does now, and a save refused for a newer draft saved elsewhere says so and opens that one. A new
-// post the server's automated review refused offers its appeal in the error's place (refused.tsx). A post on an event's
+// post the server's automated review refused offers its appeal in the error's place (refused.tsx), and one a restriction of
+// the reader's account refused leads to Account status, where it is appealed. A post on an event's
 // board names the board over the text, and has no audience, time or drafts: the board decides who reads it. Its state
 // is the hook's (use-composer.ts).
 
 import { useHookAppeal } from "@my/app-data";
 import {
+  accountStatusPath,
   isRemote,
   PollCard,
   PollOption,
@@ -53,6 +55,7 @@ import {
   MenuItem,
   PollSettings,
   TextButton,
+  TextLink,
   useLocale,
   useTimeZone,
   WarningField,
@@ -420,6 +423,12 @@ export function ComposerView({
             action={
               c.phase.kind === "conflict" ? (
                 <TextButton onPress={() => onNewer?.()}>{t("compose.conflict.open")}</TextButton>
+              ) : refused?.restricted ? (
+                // A post a restriction of the account refused: its alert leads to Account status, where the reader
+                // sees why and appeals; the composer is left as by accident, which keeps what was written.
+                <TextLink href={accountStatusPath} onPress={onDismiss}>
+                  {t("settings.account.status")}
+                </TextLink>
               ) : undefined
             }
           >

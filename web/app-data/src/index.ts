@@ -1351,6 +1351,7 @@ export {
   hookAppealQuery,
   hookRefusalOf,
   ownModerationActionsQuery,
+  restrictionRefused,
   useActionStatuses,
   useAppeals,
   useHookAppeal,

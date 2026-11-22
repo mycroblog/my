@@ -6,7 +6,8 @@
 // through @my/app-data, which every cached copy of the post shows at once. While a vote is in flight every copy of the
 // post holds its choices (usePostVoting). A bookmark or a thread's mute, set or taken back, which the post shows no mark
 // of, is told by a notice at the bottom of the page. A mark or a vote that fails shows again as it was, and a notice at the
-// bottom of the page says so, in the server's words when it refused, with Try again for a moment. The react action
+// bottom of the page says so, in the server's words when it refused, with Try again for a moment, or, for one a
+// restriction of the reader's account refused, which would be refused again, a link to Account status. The react action
 // opens the emoji picker (emoji/picker.ts, usePostPicker) where the app decides, a sheet on a phone or a popover
 // beside the button, and a reaction counts its emoji as used on this device.
 //
@@ -28,6 +29,7 @@
 // The posts' link cards show in the size the reader chose (FR-007, usePostCardSize).
 
 import {
+  accountStatusPath,
   DeleteConfirm,
   EditHistory,
   sentenceHandleOf,
@@ -41,6 +43,7 @@ import {
 import {
   RedraftError,
   refusal,
+  restrictionRefused,
   useChangeRelationship,
   useInstance,
   useMuteDomain,
@@ -274,8 +277,13 @@ export function usePostCardSize(): LinkCardSize {
 /** The address of a post to hand on: its own page where it was posted, else its page here. */
 const linkOf = (status: Status) => status.url ?? new URL(statusPath(status), location.href).href;
 
-/** A notice at the bottom of the page, with Try again when the same may succeed. */
-type Notice = { readonly text: string; readonly retry?: (() => void) | undefined };
+/** A notice at the bottom of the page, with Try again when the same may succeed, or a link where it cannot. */
+type Notice = {
+  readonly text: string;
+  readonly retry?: (() => void) | undefined;
+  /** Where the reader can do something about it: Account status, for a write a restriction of their account refused. */
+  readonly link?: string | undefined;
+};
 
 /** The confirmation open over the page: of deleting the post of `id`, or of deleting it to write it again. */
 type Confirm = { readonly id: string; readonly redraft: boolean; readonly poll: boolean; readonly busy: boolean };
@@ -354,6 +362,14 @@ export function PostActions({
       return next;
     });
   };
+  /**
+   * Tells that `what` failed, in the server's words when it refused, with Try again doing `again`; a write a
+   * restriction of the reader's account refused would be refused again, and leads to Account status instead.
+   */
+  const failed: Failed = (e, what, again) => {
+    const text = refusal(e) ?? what;
+    setNotice(restrictionRefused(e) ? { text, link: accountStatusPath } : { text, retry: again });
+  };
   const send: Send = (id, w) => {
     if (w.kind === "vote") {
       if (voting.has(id)) return;
@@ -372,20 +388,13 @@ export function PostActions({
         }
       })
       .catch((e: unknown) => {
-        setNotice({
-          text: refusal(e) ?? t("post_actions.failed", { action: w.kind === "vote" ? "vote" : w.mark.type }),
-          retry: () => {
-            send(id, w);
-          },
+        failed(e, t("post_actions.failed", { action: w.kind === "vote" ? "vote" : w.mark.type }), () => {
+          send(id, w);
         });
       })
       .finally(() => {
         if (w.kind === "vote") hold(id, undefined);
       });
-  };
-  /** Tells that `what` failed, in the server's words when it refused, with Try again doing `again`. */
-  const failed: Failed = (e, what, again) => {
-    setNotice({ text: refusal(e) ?? what, retry: again });
   };
   /** Copies the post's address, and tells whether it was. */
   const copy = (url: string) => {
@@ -611,7 +620,11 @@ export function PostActions({
         )}
       </ModalPresence>
       {notice && (
-        <UndoNotice action={notice.retry && t("post_actions.retry")} onAction={notice.retry}>
+        <UndoNotice
+          action={notice.link === undefined ? notice.retry && t("post_actions.retry") : t("settings.account.status")}
+          onAction={notice.retry}
+          href={notice.link}
+        >
           {notice.text}
         </UndoNotice>
       )}

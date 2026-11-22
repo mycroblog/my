@@ -20,7 +20,7 @@
 // day the server's maximum starts to apply). And moving to this account: Aliases (account-aliases.tsx), with how
 // many there are. A door is there whether or not its read answered; its screen says what could not be read.
 
-import { autoDeletePath, dataExportPath } from "@my/app-components";
+import { accountStatusPath, autoDeletePath, dataExportPath } from "@my/app-components";
 import {
   ownModerationActionsQuery,
   useAccountAliasList,
@@ -49,9 +49,6 @@ import { useMoment as useActionDate } from "./parts";
 
 /** The address of the entry's screen. */
 const accountPath = "/settings/account";
-
-/** The address of Account status, the screen under the entry that lists the moderators' actions on the account. */
-export const accountStatusPath = `${accountPath}/status`;
 
 /** The address of the screen of the moderators' action of `id`, under Account status. */
 export const moderationActionPath = (id: string): string => `${accountStatusPath}/${id}`;
