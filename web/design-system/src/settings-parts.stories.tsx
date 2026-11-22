@@ -3,7 +3,8 @@
 // The parts of a settings screen (ADR-0110 §5), each in its states, in a column of the main column's width, in the
 // reader's language (the toolbar's locale; ja, else en): the save state of a control that saves at once, in a
 // setting's row and in a switch; the status summary, with something to do and with all well; a list with its one add
-// action, and empty, where what stands in its place leads to adding; the submit bar of a form saved as a whole, at
+// action, and empty, where what stands in its place leads to adding; rows whose glyph and name lead to the page of
+// what they name, beside their own button (the followed hashtags); the submit bar of a form saved as a whole, at
 // rest, sending, saved and refused, and with what saving does beside its button; rows that say what came of their own
 // action, and facts apart under a name of their own; a choice from a long list and a number; the confirmation that
 // asks the reader to authenticate again, by each proof, with no way to prove it, and in flight; a setting that cannot
@@ -164,6 +165,9 @@ const en = {
   facts: ["7 new accounts to follow", "2 accounts you already follow"],
   removes: "What “Replace” removes",
   removed: "5 accounts to unfollow, which the file does not list",
+  hashtags: "Followed hashtags",
+  unfollow: "Unfollow",
+  tags: ["photography", "baking"],
 };
 
 const ja: typeof en = {
@@ -291,6 +295,9 @@ const ja: typeof en = {
   facts: ["7 件のアカウントを新しくフォローします", "2 件のアカウントはすでにフォローしています"],
   removes: "「置き換え」で削除されるもの",
   removed: "ファイルにない 5 件のアカウントのフォローを解除します",
+  hashtags: "フォロー中のハッシュタグ",
+  unfollow: "フォローを解除",
+  tags: ["写真", "baking"],
 };
 
 const useWords = () => (new Intl.Locale(useLocale().locale).language === "ja" ? ja : en);
@@ -437,6 +444,20 @@ function Lists() {
         <SettingsList label={w.filters}>
           {w.filterRows.map(([title = "", caption], i) => (
             <SettingsListRow key={title} title={title} caption={caption} href={`/settings/filters/${String(i)}`} />
+          ))}
+        </SettingsList>
+      </SettingsSection>
+      {/* Rows whose glyph and name lead to the page of what they name, their own button beside the link. */}
+      <SettingsSection heading={w.hashtags} count={String(w.tags.length)}>
+        <SettingsList label={w.hashtags}>
+          {w.tags.map((tag) => (
+            <SettingsListRow
+              key={tag}
+              icon="hashtag"
+              title={`#${tag}`}
+              href={`/tags/${encodeURIComponent(tag)}`}
+              end={<Button size="timeline">{w.unfollow}</Button>}
+            />
           ))}
         </SettingsList>
       </SettingsSection>
