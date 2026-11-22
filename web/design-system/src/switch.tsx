@@ -3,7 +3,7 @@
 // The switch (React Aria Components' SwitchField and SwitchButton): a setting that is on or off and takes effect as it
 // is pressed, with no form to send. Its label and a line that describes it stand at the row's start, the track at its
 // end beside both, in the page's direction, as every word of the interface; the label and the track press it. On differs from off by shape and fill, with no hue (the accent
-// is the primary action's and the links'): off, a muted thumb at the track's start on a track a step off its surface; on, the
+// is the primary action's and the links'): off, a muted thumb at the track's start on a control's neutral surface; on, the
 // thumb of the page's color at its end, on a track knocked out of the text's color. The thumb's side follows the
 // reading direction. Disabled, the label turns muted, the thumb dims on the track, and the line under the label says
 // why; assistive technology reads the line as the switch's description. A switch saves as it is pressed, so it
@@ -26,6 +26,7 @@ import {
 } from "react";
 import { SwitchButton, SwitchField, Text } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
+import { usePreviewState } from "./preview";
 import { SaveControlContext } from "./save-state";
 
 const toggle = tv({
@@ -43,14 +44,12 @@ const toggle = tv({
     covered: "invisible",
     track: [
       "box-border h-toggle-height w-toggle-width rounded-[calc(var(--toggle-height)/2)]",
-      // Off, the track is a step off the surface it stands on: a control's neutral surface on the page and, on a
-      // raised surface (a section of the settings), the page's own, as every neutral control there, so that it shows
-      // on either in both schemes. The step is held in a property, which on never reads.
-      "bg-(--toggle-track) [--toggle-track:var(--color-surface-raised-hover)]",
-      "group-data-hovered:[--toggle-track:var(--color-surface-raised-pressed)]",
-      "[[data-surface-raised]_&]:[--toggle-track:var(--color-surface)]",
-      "[[data-surface-raised]_&]:group-data-hovered:[--toggle-track:var(--color-surface-hover)]",
-      "[[data-surface-raised]_&]:group-data-pressed:[--toggle-track:var(--color-surface-pressed)]",
+      // Off, the track is a control's neutral surface, on the page and on a raised surface (a section of the
+      // settings) alike, its outline bounding it where it stands on its own color; hovered and pressed, it takes the
+      // surface's next steps. The step is held in a property, which on never reads.
+      "bg-(--toggle-track) [--toggle-track:var(--color-surface-raised)]",
+      "group-data-hovered:[--toggle-track:var(--color-surface-raised-hover)]",
+      "group-data-pressed:[--toggle-track:var(--color-surface-raised-pressed)]",
       // Pressed, the track moves down, as a button does; the label it goes with stays on its line.
       "group-data-pressed:translate-y-press",
       "group-data-selected:bg-text",
@@ -145,6 +144,7 @@ export function Switch({
   save,
 }: SwitchProps) {
   const s = toggle();
+  const preview = usePreviewState();
   const stateId = useId();
   const input = useRef<HTMLInputElement>(null);
   const note = useRef<HTMLElement>(null);
@@ -190,7 +190,16 @@ export function Switch({
       inputRef={input}
       {...(saying ? { "aria-describedby": stateId } : {})}
     >
-      <SwitchButton className={s.button()}>
+      <SwitchButton
+        className={s.button()}
+        render={(props, { isHovered, isPressed }) => (
+          <label
+            {...props}
+            data-hovered={isHovered || preview === "hover" || undefined}
+            data-pressed={isPressed || preview === "pressed" || undefined}
+          />
+        )}
+      >
         <TogglePlace at="label" className={s.label()}>
           {label}
         </TogglePlace>
