@@ -1792,7 +1792,7 @@ func (l *Localizer) ServerErrorsMoveAliasMissing() string {
 
 // ServerErrorsMoveRepeated formats "server:errors.move_repeated". API error title for HTTP 422 when a user moves their account to an account it moved to before (also if that move was cancelled); an account moves to each account once.
 //
-//	en: Your account moved to that account before, and it can move to each account only once. Choose another account.
+//	en: Your account has moved to that account before, and can move to each account only once, even if that move was cancelled. Choose another account.
 func (l *Localizer) ServerErrorsMoveRepeated() string {
 	return l.format("server:errors.move_repeated", nil)
 }

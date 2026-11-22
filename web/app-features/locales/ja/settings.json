@@ -2036,16 +2036,12 @@
     "description": "The summary at the end of the settings page Move account, in place of the field and the button Move account, while the server says the account cannot move yet (30 days after its last move, also a cancelled one); settings.account.move.later.about says until when under it. A sentence as a heading: no full stop."
   },
   "settings.account.move.later.about": {
-    "defaultMessage": "このアカウントが最後に移転したのは {moved} で、取り消した移転も数えます。{date} から再び移転できます。",
+    "defaultMessage": "このアカウントが最後に移転したのは {moved} です (取り消した移転も数えます)。{date} から再び移転できます。",
     "description": "The muted line under the summary This account cannot move now on the settings page Move account, in place of the field and the button Move account, while the server says the account cannot move yet: the last move counts even if it was cancelled. moved is the day of that move, date the day and time from which the account can move again, as the reader's locale writes them. A move waits 30 days after the last one."
   },
   "settings.account.move.later.about.unknown": {
-    "defaultMessage": "取り消した移転も数えます。このアカウントは {date} から再び移転できます。",
+    "defaultMessage": "このアカウントは {date} から再び移転できます。次の移転までの期間は、取り消した移転も含めて前回の移転から数えます。",
     "description": "The muted line under the summary This account cannot move now on the settings page Move account, as settings.account.move.later.about when the server does not say when the account last moved. date is the day and time from which the account can move again, as the reader's locale writes it."
-  },
-  "settings.account.move.later.cancelled": {
-    "defaultMessage": "このアカウントは移転してから {days, number} 日たっていません。前回の移転から {days, number} 日たつと再び移転できます。",
-    "description": "The muted line under the summary This account cannot move now on the settings page Move account, once the reader cancelled the move there: a cancelled move still counts. days is 30."
   },
   "settings.account.deactivate.effect": {
     "defaultMessage": "無効化で起きること",

@@ -2036,16 +2036,12 @@
     "description": "The summary at the end of the settings page Move account, in place of the field and the button Move account, while the server says the account cannot move yet (30 days after its last move, also a cancelled one); settings.account.move.later.about says until when under it. A sentence as a heading: no full stop."
   },
   "settings.account.move.later.about": {
-    "defaultMessage": "This account last moved on {moved}, and a cancelled move counts too. You can move it again from {date}.",
+    "defaultMessage": "This account last moved on {moved} (a cancelled move counts too). It can move again from {date}.",
     "description": "The muted line under the summary This account cannot move now on the settings page Move account, in place of the field and the button Move account, while the server says the account cannot move yet: the last move counts even if it was cancelled. moved is the day of that move, date the day and time from which the account can move again, as the reader's locale writes them. A move waits 30 days after the last one."
   },
   "settings.account.move.later.about.unknown": {
-    "defaultMessage": "A move counts even when it is cancelled. You can move this account again from {date}.",
+    "defaultMessage": "This account can move again from {date}. The wait counts from its last move, even if that move was cancelled.",
     "description": "The muted line under the summary This account cannot move now on the settings page Move account, as settings.account.move.later.about when the server does not say when the account last moved. date is the day and time from which the account can move again, as the reader's locale writes it."
-  },
-  "settings.account.move.later.cancelled": {
-    "defaultMessage": "This account moved less than {days, plural, one {# day} other {# days}} ago. It can move again {days, plural, one {# day} other {# days}} after its last move.",
-    "description": "The muted line under the summary This account cannot move now on the settings page Move account, once the reader cancelled the move there: a cancelled move still counts. days is 30."
   },
   "settings.account.deactivate.effect": {
     "defaultMessage": "What deactivating does",

@@ -764,7 +764,7 @@
     "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move, also a cancelled one; the problem carries the time from which it can move again."
   },
   "errors.move_repeated": {
-    "defaultMessage": "Your account moved to that account before, and it can move to each account only once. Choose another account.",
+    "defaultMessage": "Your account has moved to that account before, and can move to each account only once, even if that move was cancelled. Choose another account.",
     "description": "API error title for HTTP 422 when a user moves their account to an account it moved to before (also if that move was cancelled); an account moves to each account once."
   },
   "errors.voice.not_eligible": {

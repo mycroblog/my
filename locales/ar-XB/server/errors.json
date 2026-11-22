@@ -452,7 +452,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.move_repeated": {
-    "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ɯoʌǝp ʇo ʇɥɐʇ ɐɔɔonuʇ qǝɟoɹǝ, ɐup ıʇ ɔɐu ɯoʌǝ ʇo ǝɐɔɥ ɐɔɔonuʇ ouʅʎ ouɔǝ. Ↄɥoosǝ ɐuoʇɥǝɹ ɐɔɔonuʇ.‬",
+    "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ɥɐs ɯoʌǝp ʇo ʇɥɐʇ ɐɔɔonuʇ qǝɟoɹǝ, ɐup ɔɐu ɯoʌǝ ʇo ǝɐɔɥ ɐɔɔonuʇ ouʅʎ ouɔǝ, ǝʌǝu ıɟ ʇɥɐʇ ɯoʌǝ ʍɐs ɔɐuɔǝʅʅǝp. Ↄɥoosǝ ɐuoʇɥǝɹ ɐɔɔonuʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.move_target_moved": {

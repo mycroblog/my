@@ -288,7 +288,7 @@ const endWords: Record<
       too_soon:
         "Your account moved less than 30 days ago, counting a cancelled move too. Try again once 30 days have passed since that move.",
       repeated:
-        "Your account moved to that account before, and it can move to each account only once. Choose another account.",
+        "Your account has moved to that account before, and can move to each account only once, even if that move was cancelled. Choose another account.",
     },
     deactivation: {
       refused: "This account cannot be deactivated now.",
@@ -316,7 +316,7 @@ const endWords: Record<
       too_soon:
         "このアカウントは 30 日以内に移転しています (取り消した移転も数えます)。その移転から 30 日たってから、もう一度試してください。",
       repeated:
-        "このアカウントは以前にそのアカウントへ移転しています。同じアカウントへは一度しか移転できません。別のアカウントを選んでください。",
+        "このアカウントは以前にそのアカウントへ移転しています。同じアカウントへは、取り消した移転を含めて一度しか移転できません。別のアカウントを選んでください。",
     },
     deactivation: {
       refused: "このアカウントはいま無効化できません。",
