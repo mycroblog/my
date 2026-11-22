@@ -30,6 +30,7 @@ import {
   TabRow,
   UnreadMark,
 } from "./list";
+import { PreviewItems } from "./preview";
 
 /** Whether `later` comes after `earlier` in the reading order. */
 const follows = (later: Element, earlier: Element) =>
@@ -154,6 +155,40 @@ test("where the text runs right to left, the left arrow goes to the next tab", a
   expect(document.activeElement).toBe(tab("All"));
 
   expect(asked).toEqual(["mentions", "all"]);
+});
+
+/** The names of the tabs that show pressed. */
+const pressedTabs = () =>
+  screen
+    .getAllByRole("tab")
+    .filter((each) => each.hasAttribute("data-pressed"))
+    .map((each) => each.textContent);
+
+test("a tab shows pressed while a pointer holds it, and rests once it lets go", async () => {
+  const user = userEvent.setup();
+  render(<Tabs asked={[]} />);
+  expect(pressedTabs()).toEqual([]);
+
+  await user.pointer({ keys: "[MouseLeft>]", target: tab("Mentions") });
+  expect(pressedTabs()).toEqual(["Mentions"]);
+  await user.pointer({ keys: "[/MouseLeft]", target: tab("Mentions") });
+  expect(pressedTabs()).toEqual([]);
+});
+
+test("a tab a story's preview presses by its id shows pressed, the current one too, and the others rest", () => {
+  const { rerender } = render(
+    <PreviewItems states={{ mentions: "pressed" }}>
+      <Tabs asked={[]} />
+    </PreviewItems>,
+  );
+  expect(pressedTabs()).toEqual(["Mentions"]);
+
+  rerender(
+    <PreviewItems states={{ all: "pressed" }}>
+      <Tabs asked={[]} />
+    </PreviewItems>,
+  );
+  expect(pressedTabs()).toEqual(["All"]);
 });
 
 test("a screen's stack says it is busy while what it holds loads, and not once it has", () => {
