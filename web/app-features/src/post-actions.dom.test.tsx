@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What a post's actions do under PostActions, pressed on a screen that shows posts (the home timeline): which open
-// the composer, which reach the server and show at once, and which write nothing.
+// the composer, which reach the server and show at once, which say what they did once the server answered, and which
+// write nothing.
 
-import { expect, test } from "bun:test";
+import { describe, expect, onTestFinished, test } from "bun:test";
 import type { PostAction } from "@my/app-components";
 import { preferencesQuery, updatePreferences, type LinkCardSize } from "@my/app-data";
-import { scenario } from "@my/e2e/fake";
+import { fakeOrigin, scenario, type FakeApi } from "@my/e2e/fake";
 import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import { PostActions, usePostActions, usePostCardSize, type ComposeRequest } from "./post-actions";
 import { fakeData, renderFeature } from "./test/feature";
@@ -15,9 +16,13 @@ import { HomeTimeline, loadHomeTimeline } from "./timeline/home";
 /**
  * A server where the reader follows sam: the reader's own post and poll, sam's first loaf, and sam's poll of several
  * choices.
- * The home timeline is loaded and drawn under PostActions; `post(text)` is the post that says `text`.
+ * `before` acts on the server before the home timeline is loaded and drawn under PostActions, in `locale`; `post(text)`
+ * is the post that says `text`.
  */
-async function timeline() {
+async function timeline({
+  locale = "en",
+  before,
+}: { locale?: string | undefined; before?: ((fake: FakeApi) => Promise<void>) | undefined } = {}) {
   const made = fakeData({
     seed: {
       people: scenario.people,
@@ -44,6 +49,7 @@ async function timeline() {
       ],
     },
   });
+  await before?.(made.fake);
   await loadHomeTimeline(made.data);
   made.requests.length = 0;
   const composed: ComposeRequest[] = [];
@@ -58,6 +64,7 @@ async function timeline() {
     <PostActions onCompose={(to) => composed.push(to)}>
       <Screen />
     </PostActions>,
+    locale,
   );
   const post = (text: string) => {
     const found = screen.getAllByRole("article").find((article) => within(article).queryAllByText(text).length > 0);
@@ -294,6 +301,238 @@ test("a reaction that does not finish puts back the favourite it took, and Try a
   });
   expect(await reaction()).not.toBeNull();
   expect(favourited()).toBeNull();
+});
+
+// What the More menu's writes that leave no mark on the post say (#3367): Bookmark, Remove bookmark, Mute thread and
+// Unmute thread each tell the reader in the page's live region, once the server has answered, and a failure offers
+// Try again.
+
+/** What the page's live regions say now: the words of each status that says something. */
+const notices = () =>
+  screen
+    .queryAllByRole("status")
+    .map((region) => region.textContent)
+    .filter((words) => words !== "");
+
+/** The status that says `words`, beside what it offers, or nothing. */
+const noticeOf = (words: string) =>
+  screen.queryAllByRole("status").find((region) => region.textContent.includes(words));
+
+/**
+ * Keeps every notice the live regions say from now until the test ends, each once as it comes: what a wait for the
+ * end state cannot see, a notice that showed and went.
+ */
+function heard() {
+  const said: string[] = [];
+  const listen = () => {
+    for (const words of notices()) if (!said.includes(words)) said.push(words);
+  };
+  const observer = new MutationObserver(listen);
+  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  onTestFinished(() => {
+    observer.disconnect();
+  });
+  return () => {
+    listen();
+    return said;
+  };
+}
+
+/**
+ * Keeps what the page waits about six seconds for (from 5 s to 7 s) until the test lets it come, from now until the
+ * test ends: `asked()` is how many such waits began, and `pass()` lets them come at once. What Testing Library waits
+ * for is shorter, what the data's cache waits for longer, and both keep their time.
+ */
+function sixSecondWaits() {
+  const wait = globalThis.setTimeout;
+  const held: (() => void)[] = [];
+  const holding = ((handler: TimerHandler, timeout?: number, ...rest: unknown[]) => {
+    if (typeof handler !== "function" || timeout === undefined || timeout < 5000 || timeout > 7000)
+      return wait(handler, timeout, ...rest);
+    held.push(() => {
+      (handler as (...given: unknown[]) => void)(...rest);
+    });
+    return wait(() => undefined, 0);
+  }) as typeof setTimeout;
+  globalThis.setTimeout = Object.assign(holding, wait);
+  onTestFinished(() => {
+    globalThis.setTimeout = wait;
+  });
+  return {
+    asked: () => held.length,
+    pass: () => {
+      act(() => {
+        for (const come of held.splice(0)) come();
+      });
+    },
+  };
+}
+
+/** Bookmarks the post `key` and mutes its thread on the server, past the app, as another device of the reader's does. */
+const bookmarkedAndMuted = (key: string) => async (fake: FakeApi) => {
+  for (const what of ["bookmark", "mute"]) {
+    const answer = await fake.serve(
+      new Request(`${fakeOrigin}/api/v1/statuses/${fake.idOf(key)}/${what}`, { method: "POST" }),
+    );
+    if (!answer.ok) throw new Error(`test: the fake answered ${String(answer.status)} to POST …/${what}`);
+  }
+};
+
+type Write = {
+  /** The item of the More menu. */
+  item: string;
+  route:
+    | "POST /statuses/{id}/bookmark"
+    | "DELETE /statuses/{id}/bookmark"
+    | "POST /statuses/{id}/mute"
+    | "DELETE /statuses/{id}/mute";
+  /** What the live region says once the server did it. */
+  done: string;
+  /** What it says when the write did not finish. */
+  failed: string;
+  /** Whether the post is bookmarked and its thread muted before. */
+  undoes: boolean;
+};
+
+const writes: readonly Write[] = [
+  {
+    item: "Bookmark",
+    route: "POST /statuses/{id}/bookmark",
+    done: "Post bookmarked",
+    failed: "The bookmark did not finish.",
+    undoes: false,
+  },
+  {
+    item: "Remove bookmark",
+    route: "DELETE /statuses/{id}/bookmark",
+    done: "Bookmark removed",
+    failed: "The bookmark did not finish.",
+    undoes: true,
+  },
+  {
+    item: "Mute thread",
+    route: "POST /statuses/{id}/mute",
+    done: "Thread muted",
+    failed: "The thread's mute did not finish.",
+    undoes: false,
+  },
+  {
+    item: "Unmute thread",
+    route: "DELETE /statuses/{id}/mute",
+    done: "Thread unmuted",
+    failed: "The thread's mute did not finish.",
+    undoes: true,
+  },
+];
+
+/** The home timeline, where sam's first loaf is bookmarked and its thread muted when `undoes`; `choose` presses an item of its More menu. */
+async function loafMenu({ undoes, locale }: { undoes: boolean; locale?: string }) {
+  const drawn = await timeline({ locale, before: undoes ? bookmarkedAndMuted("loaf") : undefined });
+  const { user, post } = drawn;
+  const more = locale === "ja" ? "その他" : "More";
+  const choose = async (name: string) => {
+    await user.click(post("The first loaf.").getByRole("button", { name: more }));
+    await user.click(within(await screen.findByRole("menu", { name: more })).getByRole("menuitem", { name }));
+    await waitFor(() => {
+      if (screen.queryAllByRole("menu").length > 0) throw new Error("the menu is still open");
+    });
+  };
+  return { ...drawn, choose };
+}
+
+describe.each(writes)("$item from a post's More menu", ({ item, route, done, failed, undoes }) => {
+  test(`says "${done}" in the live region once the server has answered, with no action, for six seconds`, async () => {
+    const { fake, choose } = await loafMenu({ undoes });
+    const said = heard();
+    const waits = sixSecondWaits();
+    const sent = fake.script(route, { hold: "request" });
+
+    await choose(item);
+    const { url } = await sent.arrived();
+    expect(url.pathname).toEndWith(
+      `/statuses/${fake.idOf("loaf")}/${route.endsWith("bookmark") ? "bookmark" : "mute"}`,
+    );
+    // Not before the server has answered.
+    expect(said()).toEqual([]);
+
+    sent.release();
+    await waitFor(() => {
+      if (noticeOf(done) === undefined) throw new Error(`the live region does not say "${done}"`);
+    });
+    expect(said()).toEqual([done]);
+    expect(within(noticeOf(done) ?? document.body).queryAllByRole("button")).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: "Try again" })).toHaveLength(0);
+    // It stays for as long as the page waits, six seconds, and no longer.
+    expect(waits.asked()).toBe(1);
+
+    waits.pass();
+    await waitFor(() => {
+      if (noticeOf(done) !== undefined) throw new Error(`the live region still says "${done}"`);
+    });
+  });
+
+  test(`a write that gets no answer says "${failed}", never "${done}", and Try again sends it again`, async () => {
+    const { fake, user, choose } = await loafMenu({ undoes });
+    const said = heard();
+    const every = fake.script(route);
+    const lost = fake.script(route, { times: 1, hold: "request", fail: "network" });
+
+    await choose(item);
+    await lost.arrived();
+    expect(said()).toEqual([]);
+    lost.release();
+    await waitFor(() => {
+      if (noticeOf(failed) === undefined) throw new Error(`the live region does not say "${failed}"`);
+    });
+    expect(said().filter((words) => words.includes(done))).toEqual([]);
+    expect(within(noticeOf(failed) ?? document.body).getAllByRole("button", { name: "Try again" })).toHaveLength(1);
+
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      if (noticeOf(done) === undefined) throw new Error(`the live region does not say "${done}" after Try again`);
+    });
+    // The same write, of the same post, twice.
+    const path = `/api/v1/statuses/${fake.idOf("loaf")}/${route.endsWith("bookmark") ? "bookmark" : "mute"}`;
+    expect(every.seen.map((request) => request.url.pathname)).toEqual([path, path]);
+  });
+
+  test("a write the server refuses says the server's own words, and offers Try again", async () => {
+    const { fake, choose } = await loafMenu({ undoes });
+    const said = heard();
+    const title = "This post cannot be changed right now.";
+    fake.script(route, { times: 1, fail: { type: "about:blank", title, status: 422 } });
+
+    await choose(item);
+    await waitFor(() => {
+      if (noticeOf(title) === undefined) throw new Error("the live region does not say the server's refusal");
+    });
+    expect(said().filter((words) => words.includes(done))).toEqual([]);
+    expect(within(noticeOf(title) ?? document.body).getAllByRole("button", { name: "Try again" })).toHaveLength(1);
+  });
+});
+
+test("the notices are in the reader's language: ja", async () => {
+  const { choose } = await loafMenu({ undoes: false, locale: "ja" });
+  const said = heard();
+  /** Chooses `item` and waits until the live region says `words`. */
+  const says = async (item: string, words: string) => {
+    await choose(item);
+    await waitFor(() => {
+      if (noticeOf(words) === undefined) throw new Error(`the live region does not say "${words}"`);
+    });
+  };
+
+  await says("ブックマーク", "投稿をブックマークしました");
+  await says("ブックマークを外す", "ブックマークを外しました");
+  await says("スレッドをミュート", "スレッドをミュートしました");
+  await says("スレッドのミュートを解除", "スレッドのミュートを解除しました");
+
+  expect(said()).toEqual([
+    "投稿をブックマークしました",
+    "ブックマークを外しました",
+    "スレッドをミュートしました",
+    "スレッドのミュートを解除しました",
+  ]);
 });
 
 // The size of a post's link card (#3199): the reader's choice, which every screen's post asks PostActions for. A
