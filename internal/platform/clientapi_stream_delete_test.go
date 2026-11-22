@@ -99,3 +99,41 @@ func TestStreamsSendTheDeletions(t *testing.T) {
 		}
 	}
 }
+
+// TestStreamsSendNoDeletionOfADirectPostWithoutReadDirect checks that the deletion of the user's
+// own direct post reaches the stream of a token with read:direct and not that of one without it,
+// which never saw the post.
+func TestStreamsSendNoDeletionOfADirectPostWithoutReadDirect(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	e := newTimelineAPI(t)
+	bob := e.user(t, "bob")
+	e.user(t, "alice")
+	narrow := bob
+	narrow.token = issueTokens(t, e.app, bob.userID, "read:statuses read:notifications").AccessToken
+	direct := e.post(t, bob, "secret @alice", domcontent.VisibilityDirect, "en")
+	public := e.post(t, bob, "for everyone", domcontent.VisibilityPublic, "en")
+
+	srv := httptest.NewServer(e.h)
+	t.Cleanup(srv.Close)
+	streamCtx, disconnect := context.WithCancel(ctx)
+	defer disconnect()
+	wide := openTimelineStream(streamCtx, t, e, srv, bob, "/streaming")
+	without := openTimelineStream(streamCtx, t, e, srv, narrow, "/streaming")
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return e.app.Streams.Len() >= 2 }) {
+		t.Fatal("the streams did not subscribe")
+	}
+	for _, id := range []string{direct, public} {
+		if _, err := e.app.Content.Delete(ctx, bob.accountID, id); err != nil {
+			t.Fatalf("Delete(%s): %v", id, err)
+		}
+	}
+	for _, id := range []string{direct, public} {
+		if got := nextDeleted(t, "with read:direct", wide); got != id {
+			t.Errorf("with read:direct: delete %s, want %s", got, id)
+		}
+	}
+	if got := nextDeleted(t, "without read:direct", without); got != public {
+		t.Errorf("without read:direct: delete %s, want only the public %s", got, public)
+	}
+}

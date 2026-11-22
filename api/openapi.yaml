@@ -6261,7 +6261,7 @@ paths:
           or its remote server. `data` is `{"id": "<status id>"}`; remove the status, and the boosts
           of it, wherever they show. It is sent to the users who may see the status now (its
           visibility, their follows, and blocks apply), not to the recipients of a `direct` post
-          other than its author. Purges of many statuses at once (an account's deletion, the
+          other than its author, nor without the `read:direct` scope for a `direct` post. Purges of many statuses at once (an account's deletion, the
           automatic deletion of old posts) send none.
 
         A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
