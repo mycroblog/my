@@ -31,6 +31,14 @@
     "defaultMessage": "ブックマークを外しました",
     "description": "The notice at the bottom of the page after Remove bookmark in a post's more menu took the reader's bookmark of the post back; the post is no longer in Bookmarks."
   },
+  "post_actions.thread_muted": {
+    "defaultMessage": "スレッドをミュートしました",
+    "description": "The notice at the bottom of the page after Mute thread in a post's more menu muted the thread the post is in; its notifications stop, and its posts still show in timelines."
+  },
+  "post_actions.thread_unmuted": {
+    "defaultMessage": "スレッドのミュートを解除しました",
+    "description": "The notice at the bottom of the page after Unmute thread in a post's more menu let the notifications of the thread the post is in come again."
+  },
   "post_actions.history_failed": {
     "defaultMessage": "編集履歴を読み込めませんでした。",
     "description": "The notice at the bottom of the page when an edited post's edit history did not load from the server, beside Try again, which loads it again."
