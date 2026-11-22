@@ -28663,7 +28663,9 @@ type ClientInterface interface {
 	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 	// reminders of the upcoming events that the user answered going or maybe follow the change. A
 	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-	// longer than 7 days, or the same one twice; nothing is changed then.
+	// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+	// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+	// off.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -28675,7 +28677,9 @@ type ClientInterface interface {
 	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 	// reminders of the upcoming events that the user answered going or maybe follow the change. A
 	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-	// longer than 7 days, or the same one twice; nothing is changed then.
+	// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+	// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+	// off.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -41228,7 +41232,9 @@ func (c *Client) GetEventReminders(ctx context.Context, reqEditors ...RequestEdi
 // Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 // reminders of the upcoming events that the user answered going or maybe follow the change. A
 // 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-// longer than 7 days, or the same one twice; nothing is changed then.
+// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+// off.
 //
 // Takes any type of body and a specified content type.
 //
@@ -41250,7 +41256,9 @@ func (c *Client) UpdateEventRemindersWithBody(ctx context.Context, contentType s
 // Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 // reminders of the upcoming events that the user answered going or maybe follow the change. A
 // 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-// longer than 7 days, or the same one twice; nothing is changed then.
+// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+// off.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -71565,7 +71573,9 @@ type ClientWithResponsesInterface interface {
 	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 	// reminders of the upcoming events that the user answered going or maybe follow the change. A
 	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-	// longer than 7 days, or the same one twice; nothing is changed then.
+	// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+	// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+	// off.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -71577,7 +71587,9 @@ type ClientWithResponsesInterface interface {
 	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 	// reminders of the upcoming events that the user answered going or maybe follow the change. A
 	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-	// longer than 7 days, or the same one twice; nothing is changed then.
+	// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+	// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+	// off.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -113560,7 +113572,9 @@ func (c *ClientWithResponses) GetEventRemindersWithResponse(ctx context.Context,
 // Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 // reminders of the upcoming events that the user answered going or maybe follow the change. A
 // 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-// longer than 7 days, or the same one twice; nothing is changed then.
+// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+// off.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -113578,7 +113592,9 @@ func (c *ClientWithResponses) UpdateEventRemindersWithBodyWithResponse(ctx conte
 // Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 // reminders of the upcoming events that the user answered going or maybe follow the change. A
 // 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-// longer than 7 days, or the same one twice; nothing is changed then.
+// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+// off.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //

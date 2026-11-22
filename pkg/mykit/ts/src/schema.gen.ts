@@ -690,7 +690,9 @@ export interface paths {
          * @description Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
          *     reminders of the upcoming events that the user answered going or maybe follow the change. A
          *     422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-         *     longer than 7 days, or the same one twice; nothing is changed then.
+         *     longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+         *     nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+         *     off.
          */
         put: operations["updateEventReminders"];
         post?: never;
