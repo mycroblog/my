@@ -24,7 +24,7 @@ AP の `id` には UUIDv7 だけを使い、`/ap/` 名前空間に置く。人�
 | 投稿の replies / likes / shares | `{object}/replies` など | `…/ap/objects/0192f3b0-…/replies` |
 | その他のアクティビティ（Follow / Like / Announce / Block / Undo / Update / Delete / Accept / Reject / Flag） | `https://{host}/ap/activities/{uuid}` | `https://social.example.org/ap/activities/0192f3c1-…` |
 | カスタム絵文字（ADR-0051） | `https://{host}/ap/emojis/{uuid}` | — |
-| 引用の承認（ADR-0069 §1） | `https://{host}/ap/quote_authorizations/{uuid}` | — |
+| 交流の承認（引用・返信・ブースト。ADR-0069 §1、ADR-0155 §8） | `https://{host}/ap/quote_authorizations/{uuid}`、`…/ap/reply_authorizations/{uuid}`、`…/ap/announce_authorizations/{uuid}` | — |
 | 交流の依頼（`ReplyRequest` / `AnnounceRequest`。ADR-0155） | `https://{host}/ap/interaction_requests/{uuid}` | — |
 | 会話（`context`。ADR-0154） | `https://{host}/ap/contexts/{uuid}`（`{uuid}` は会話の ID） | `https://social.example.org/ap/contexts/0192f3b0-2c3d-7e4f-8a00-112233445566` |
 | プロフィール（HTML、`url`） | `https://{host}/@{username}` | `https://social.example.org/@alice` |
@@ -185,7 +185,7 @@ AP の `id` には UUIDv7 だけを使い、`/ap/` 名前空間に置く。人�
   最初のページ（`?page=true`）と次のページ（`?min_id={カーソル}&page=true`）を持ち、古い順に 40 件ずつ並べる。署名・Authorized Fetch・キャッシュの扱いはほかのコレクションと同じ（ADR-0154 §9、ADR-0006 §31）。
 - 配信するのは、このサーバーが作った、併合されていない会話だけ。併合されたローカルの会話の IRI は、併合先がローカルならその IRI へ `308`、そうでなければ `404`。
 - 一度送った形は変えない（ADR-0023 §9）。併合された会話の IRI も、併合先の会話を指し続ける。
-- 受信した文書中のこの形の IRI は、`parseLocalURI` が接頭辞 `/ap/contexts/` と `kernel.ValidID` でパースする。リモートの投稿がこの IRI を宣言しても、その宣言は使わない（ADR-0154 §2）。
+- リモートの投稿が接頭辞 `https://{host}/ap/contexts/` の IRI を宣言しても、ID の形によらずその宣言は使わない（ADR-0154 §2）。
 
 ## 経緯
 
