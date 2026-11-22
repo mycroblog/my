@@ -47,6 +47,11 @@ func TestScopeGrants(t *testing.T) {
 		{"read:statuses", identity.ScopeReadDirect, false},
 		{"read:direct", identity.ScopeReadStatuses, false},
 		{"write", identity.ScopeReadDirect, false},
+		{"read", identity.ScopeReadFavourites, true},
+		{"read:favourites", identity.ScopeReadFavourites, true},
+		{"read:bookmarks", identity.ScopeReadFavourites, false},
+		{"write:favourites", identity.ScopeReadFavourites, false},
+		{"write", identity.ScopeReadFavourites, false},
 		{"push", identity.ScopeReadNotifications, false},
 		{"", identity.ScopeReadAccounts, false},
 	}
