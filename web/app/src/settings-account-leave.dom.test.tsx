@@ -10,7 +10,7 @@
 
 import { confirmationKeptKey } from "@my/app-features";
 import { settingsFindings } from "@my/design-system/test/settings";
-import { fakeExternalConfirmation, type FakeOptions } from "@my/e2e/fake";
+import { fakeExternalConfirmation, type FakeApi, type FakeOptions } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, onTestFinished, test } from "bun:test";
 import {
@@ -18,8 +18,10 @@ import {
   buttons,
   closed,
   confirmations,
+  dayOf,
   describedBy,
   focusOn,
+  heldBy,
   section,
   sectionRead,
   sections,
@@ -92,6 +94,56 @@ const refusedWith = (rule: string) =>
 /** A provider's return to `at`, which confirmed `operation` there. */
 const confirmedAt = (app: { fake: { loginProviderId: (kind: "github") => string } }, at: string, operation: string) =>
   `${at}#external_confirmation=${fakeExternalConfirmation}&operation=${operation}&provider=${app.fake.loginProviderId("github")}`;
+
+/** When the reader's account last moved and from when it can move again, as the server says them now. */
+async function moveWait(fake: FakeApi): Promise<{ last: string | undefined; next: string }> {
+  const account = await heldBy<{ last_moved_at?: string; can_move_at?: string }>(fake, "/accounts/verify_credentials");
+  if (account.can_move_at === undefined) throw new Error("test: the account can move now");
+  return { last: account.last_moved_at, next: account.can_move_at };
+}
+
+/** `text` with its isolating marks taken out and every run of spaces as one space. */
+const spaced = (text: string) =>
+  text
+    .replace(new RegExp(`[${String.fromCodePoint(0x2068)}${String.fromCodePoint(0x2069)}]`, "gu"), "")
+    .replace(/\s+/gu, " ");
+
+const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** `iso` as a day, and as a day and a time, in English, as patterns. */
+const dayEn = (iso: string) => escaped(dayOf(iso));
+const dayTimeEn = (iso: string) =>
+  `${dayEn(iso)},? (?:at )?${escaped(spaced(new Intl.DateTimeFormat("en", { timeStyle: "short" }).format(new Date(iso))))}`;
+
+/** `iso` as a day, and as a day and a time, in Japanese, as patterns by its numbers (2026/11/10 or 2026年11月10日). */
+const partsOf = (iso: string) => {
+  const parts = new Intl.DateTimeFormat("en", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(iso));
+  const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)?.value ?? "");
+  return { year: part("year"), month: part("month"), day: part("day"), hour: part("hour"), minute: part("minute") };
+};
+const dayJa = (iso: string) => {
+  const { year, month, day } = partsOf(iso);
+  return `${String(year)}[/年]0?${String(month)}[/月]0?${String(day)}日?(?:\\([^)]*\\))?`;
+};
+const dayTimeJa = (iso: string) => {
+  const { hour, minute } = partsOf(iso);
+  return `${dayJa(iso)} ?0?${String(hour)}:${String(minute).padStart(2, "0")}`;
+};
+
+/** The line under "This account cannot move now" that says from when it can move again, in English. */
+const laterAbout = ({ last, next }: { last: string | undefined; next: string }) =>
+  new RegExp(
+    last === undefined
+      ? `This account can move again from ${dayTimeEn(next)}\\. The wait counts from its last move, even if that move was cancelled\\.`
+      : `This account last moved on ${dayEn(last)} \\(a cancelled move counts too\\)\\. It can move again from ${dayTimeEn(next)}\\.`,
+  );
 
 // ---- Move account ---------------------------------------------------------------------------------------------------
 
@@ -195,7 +247,7 @@ describe("Move account", () => {
       expect(targetField().value).toBe(target);
     });
 
-  test("a move too soon after the last takes the place of the form: the account cannot move now, with no field and no button", async () => {
+  test("a move too soon after the last takes the place of the form: the account cannot move now, with the dates the account read again says, no field and no button", async () => {
     const app = await renderApp(moveAt, { settings: { moveRefusal: "too_soon" } });
     await sectionRead("Move this account");
     await moving(app, target);
@@ -203,12 +255,77 @@ describe("Move account", () => {
     await confirmWith(app, await dialogTitled(`Move this account to ${targetHandle}?`), "Move account");
 
     const later = await sectionRead("This account cannot move now");
+    await closed();
     expect(sections().at(-1)).toBe("This account cannot move now");
-    expect(words(later)).toContain(
-      `This account moved less than 30 days ago, or has moved to ${targetHandle} before. It can move again 30 days after its last move, and never to the same account twice.`,
-    );
+    expect(spaced(words(later))).toMatch(laterAbout(await moveWait(app.fake)));
     expect(main().queryAllByRole("textbox")).toHaveLength(0);
     expect(main().queryAllByRole("button", { name: "Move account" })).toHaveLength(0);
+  });
+
+  test("a move to an account it moved to before is refused under the field, which takes the focus, and the form stays", async () => {
+    const app = await renderApp(moveAt, { settings: { moveRefusal: "repeated" } });
+    await sectionRead("Move this account");
+    await moving(app, target);
+
+    await confirmWith(app, await dialogTitled(`Move this account to ${targetHandle}?`), "Move account");
+
+    await closed();
+    await refusedWith(
+      `This account has moved to ${targetHandle} before, and can move to each account only once, even if that move was cancelled. Choose another account.`,
+    );
+    expect(targetField().getAttribute("aria-invalid")).toBe("true");
+    await focusOn(targetField);
+    expect(sections()).not.toContain("This account cannot move now");
+    expect(main().queryAllByRole("button", { name: "Move account" }).length).toBeGreaterThan(0);
+  });
+
+  describe("of an account that moved within 30 days, the dates in the act's place and no form", () => {
+    test("with the day it last moved, and the day and time from which it can move again", async () => {
+      const app = await renderApp(moveAt, { settings: { lastMoved: "-12d" } });
+
+      const later = await sectionRead("This account cannot move now");
+
+      const wait = await moveWait(app.fake);
+      expect(wait.last).toBeDefined();
+      expect(sections().at(-1)).toBe("This account cannot move now");
+      expect(sections()).not.toContain("Move this account");
+      expect(spaced(words(later))).toMatch(laterAbout(wait));
+      expect(main().queryAllByRole("textbox")).toHaveLength(0);
+      expect(main().queryAllByRole("button", { name: "Move account" })).toHaveLength(0);
+    });
+
+    test("where the account does not say when it last moved, from when it can move again alone", async () => {
+      const on = fakeApp({ settings: { lastMoved: "-12d" } });
+      const { next } = await moveWait(on.fake);
+      on.fake.script("GET /accounts/verify_credentials", {
+        change: ({ last_moved_at: _left, ...account }) => account,
+      });
+      await renderApp(moveAt, { on });
+
+      const later = await sectionRead("This account cannot move now");
+
+      expect(spaced(words(later))).toMatch(laterAbout({ last: undefined, next }));
+      expect(spaced(words(later))).not.toMatch(/last moved on/);
+      expect(main().queryAllByRole("textbox")).toHaveLength(0);
+      expect(main().queryAllByRole("button", { name: "Move account" })).toHaveLength(0);
+    });
+
+    test("in Japanese", async () => {
+      const app = await renderApp(moveAt, {
+        settings: { lastMoved: "-12d" },
+        preferences: { locale: "ja", locale_follows_browser: false },
+      });
+
+      const later = await sectionRead("このアカウントは今は移転できません");
+
+      const { last, next } = await moveWait(app.fake);
+      expect(spaced(words(later))).toMatch(
+        new RegExp(
+          `このアカウントが最後に移転したのは ?${dayJa(last ?? "")} ?です ?\\(取り消した移転も数えます\\)。 ?${dayTimeJa(next)} ?から再び移転できます。`,
+        ),
+      );
+      expect(main().queryAllByRole("textbox")).toHaveLength(0);
+    });
   });
 
   describe("back from a login provider that confirmed the move", () => {
@@ -321,7 +438,7 @@ describe("Move account", () => {
       expect(cancelled.seen).toHaveLength(0);
     });
 
-    test("confirmed, the move is cancelled, and for this visit the account cannot move now", async () => {
+    test("confirmed, the move is cancelled, and the account read again says from when it can move again", async () => {
       const app = await renderApp(moveAt, moved);
       await sectionRead("Cancelling the move");
       const cancelled = app.fake.script("DELETE /accounts/move");
@@ -334,11 +451,12 @@ describe("Move account", () => {
       );
 
       await sectionRead("The move is cancelled");
+      const later = await sectionRead("This account cannot move now");
       expect(cancelled.seen).toHaveLength(1);
       expect(sections().at(-1)).toBe("This account cannot move now");
-      expect(words(section("This account cannot move now"))).toContain(
-        "This account moved less than 30 days ago. It can move again 30 days after its last move.",
-      );
+      const wait = await moveWait(app.fake);
+      expect(wait.last).toBeDefined();
+      expect(spaced(words(later))).toMatch(laterAbout(wait));
       expect(main().queryAllByRole("textbox")).toHaveLength(0);
       expect(main().queryAllByRole("button", { name: "Move account" })).toHaveLength(0);
     });
