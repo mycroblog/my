@@ -85,7 +85,8 @@ export type SchemeColor = Record<Scheme, string>;
  * focus ring, darker than the fill in light, where the coral reaches only 2.8:1 on the surface. Coral means the
  * primary action and links only. `surface-raised` and its hovered and pressed steps are the neutral surface of a
  * control, drawn from the warmth of the palette; `surface-hover` and `surface-pressed` answer a control without a
- * surface, lighter than `surface-raised`, so that it never reads as one with a surface.
+ * surface, each a step darker than the last and both lighter than `surface-raised`, so that it never reads as one with
+ * a surface, and a pressed tab never as the current one.
  */
 export const color = {
   surface: { light: "#ffffff", dark: "#221c1b" },
@@ -98,7 +99,7 @@ export const color = {
   "surface-raised-hover": { light: "#e6ddd9", dark: "#43302d" },
   "surface-raised-pressed": { light: "#d9cdc8", dark: "#503835" },
   "surface-hover": { light: "#f9f6f5", dark: "#2b201f" },
-  "surface-pressed": { light: "#f1ebe9", dark: "#332624" },
+  "surface-pressed": { light: "#f7f3f2", dark: "#332624" },
   // The backing under an avatar's image: light in both schemes, so that a dark logo on transparency stays seen.
   "avatar-backing": { light: "#f4efed", dark: "#f4efed" },
   // The bar at the start of a quote in what people write: a mark, at 3:1 on every surface a post or a quoted post has.

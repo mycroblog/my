@@ -6,6 +6,7 @@ import {
   breakpoint,
   chip,
   color,
+  type ColorName,
   contrast,
   content,
   badgeColor,
@@ -69,12 +70,12 @@ describe("press", () => {
   }
 });
 
-test("a control without a surface stays lighter on hover than one with a surface at rest", () => {
+test("a control without a surface steps darker from hover to press, and stays lighter than one with a surface at rest", () => {
   for (const scheme of ["light", "dark"] as const) {
     const surface = color.surface[scheme];
-    expect(contrast(color["surface-hover"][scheme], surface)).toBeLessThan(
-      contrast(color["surface-raised"][scheme], surface),
-    );
+    const off = (name: ColorName) => contrast(color[name][scheme], surface);
+    expect(off("surface-hover")).toBeLessThan(off("surface-pressed"));
+    expect(off("surface-pressed")).toBeLessThan(off("surface-raised"));
   }
 });
 

@@ -165,10 +165,29 @@ export function SettingsGroup({ heading, children }: { heading: string; children
   );
 }
 
-/** A row that is one link, as `as`: its parts in its middle, its surface reaching past what it holds. */
-function LinkRow({ as, children }: { as: ReactElement<{ className?: unknown }>; children: ReactNode }) {
+/**
+ * A row that is one link, as `as`: its parts in its middle, its surface reaching past what it holds. `beside`, the
+ * link of a row that holds its buttons too: it takes the room they leave, and its surface reaches past its start
+ * alone, so that it stops short of them by its padding.
+ */
+function LinkRow({
+  as,
+  beside = false,
+  children,
+}: {
+  as: ReactElement<{ className?: unknown }>;
+  beside?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <Row as={as} align="center" gap="screen-row-gap" bleedInline="screen-row-inline">
+    <Row
+      as={as}
+      grow={beside}
+      align="center"
+      gap="screen-row-gap"
+      bleedInline={beside ? undefined : "screen-row-inline"}
+      bleedStart={beside ? "screen-row-inline" : undefined}
+    >
       {children}
     </Row>
   );
@@ -775,8 +794,10 @@ function FactLine({ line }: { line: SettingsFactLine }) {
  * row as it was (a download) is its last line, in the text's color, and `end` stays: the place is a polite live
  * region from the start (`null` while it has nothing to say), so that it is read where it happened, the focus staying
  * on the button. With `href`, the whole row opens the screen under the entry that holds it (changing the password,
- * one filter), a chevron at its end in place of buttons. `inactive`, a thing that does not work now (a revoked
- * invite): its title in the muted color, so that the ones that work stand out in a list of both.
+ * one filter), a chevron at its end in place of buttons; with `href` and `end`, its glyph and title are the link to
+ * the page of what it names (a followed hashtag's), with no chevron, and `end` stays beside it, the result in its
+ * place, out of the link's name. `inactive`, a thing that does not work now (a revoked invite): its title in the
+ * muted color, so that the ones that work stand out in a list of both.
  */
 export function SettingsListRow({
   icon,
@@ -828,6 +849,8 @@ export function SettingsListRow({
   const s = list({ inactive });
   const titleId = useId();
   const value = use(ValuesContext);
+  // A row whose title is a link to what it names, beside its buttons.
+  const linked = href !== undefined && end !== undefined && end !== null && end !== false;
   const named = (
     <bdi id={titleId} className={facts === undefined ? s.title() : `${s.title()} ${s.named()}`}>
       {title}
@@ -860,7 +883,7 @@ export function SettingsListRow({
             {stated}
           </Row>
         )}
-        {result !== undefined ? (
+        {result !== undefined && !linked ? (
           <>
             {" "}
             <RowResult result={result} />
@@ -899,6 +922,21 @@ export function SettingsListRow({
       {facts === undefined && stated}
     </>
   );
+  if (linked)
+    return (
+      <Row as="li" align="center" gap="screen-row-gap">
+        <LinkRow beside as={<Link ref={itemRef} href={href} className={s.link()} />}>
+          {parts}
+        </LinkRow>
+        {result !== undefined ? (
+          <RowResult result={result} />
+        ) : (
+          <Row as="span" inline rigid align="center" gap="screen-tabs-gap" role="group" aria-labelledby={titleId}>
+            {end}
+          </Row>
+        )}
+      </Row>
+    );
   if (href !== undefined)
     return (
       <Stack as="li">
