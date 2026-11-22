@@ -80,7 +80,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `status_auto_delete_limit_notices` | イベント | `id`, `account_id`, `max_age_days`（通知した上限）, `noticed_at`, `enforce_from`（`noticed_at` + 猶予） | インデックス `(account_id, id DESC)` |
-| `status_auto_delete_limits` | 投影 | `account_id`（PK）, `notice_id`, `max_age_days`, `enforce_from` | 今縛られているアカウントだけが行を持つ |
+| `status_auto_delete_limits` | 現在値 | `account_id`（PK）, `notice_id`, `max_age_days`, `enforce_from` | 今縛られているアカウントだけが行を持つ |
 
 - 猶予の始まりを NULL 可の時刻の列で持たず、通知のイベントと、今効いている通知の投影で表す。
 - 検出: 1 時間ごとのジョブ `content.auto_delete_statuses` は、上限が有効な間、有効な設定のアカウントだけでなく `active` なローカルのアカウントをすべて同じカーソルで読む。アカウントごとに:

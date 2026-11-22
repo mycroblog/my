@@ -12,6 +12,15 @@ import (
 	"database/sql"
 )
 
+const deleteAllStatusLinkCards = `-- name: DeleteAllStatusLinkCards :exec
+DELETE FROM status_link_cards
+`
+
+func (q *Queries) DeleteAllStatusLinkCards(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteAllStatusLinkCards)
+	return err
+}
+
 const deleteLinkCard = `-- name: DeleteLinkCard :exec
 DELETE FROM link_cards WHERE url = ?1
 `

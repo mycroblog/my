@@ -467,9 +467,10 @@ CREATE TABLE status_auto_delete_limit_notices (
 );
 CREATE INDEX status_auto_delete_limit_notices_account_id_id ON status_auto_delete_limit_notices (account_id, id DESC);
 
--- Projection of status_auto_delete_limit_notices: the notice in effect of each account that the
--- maximum binds now; an account that it does not bind has no row. The hourly job rebuilds it from
--- the latest notice and the current policy, permissions, and maximum.
+-- Current value: the notice in effect (status_auto_delete_limit_notices) of each account that the
+-- maximum binds now; an account that it does not bind has no row. The hourly job writes it from
+-- the latest notice and the current policy, permissions, and maximum; no row records when a
+-- notice stopped binding, so it cannot be rebuilt from the notices.
 CREATE TABLE status_auto_delete_limits (
   account_id uuid NOT NULL PRIMARY KEY,
   notice_id uuid NOT NULL,
@@ -574,7 +575,7 @@ CREATE UNIQUE INDEX link_card_media_remote_url ON link_card_media (remote_url);
 
 -- Projection: the URL whose card each status shows (ADR-0062 §1), chosen from the current
 -- revision of a status that is not deleted. The status shows no card while link_cards has no
--- row of the URL.
+-- row of the URL. my projection rebuild status_link_cards chooses again.
 CREATE TABLE status_link_cards (
   status_id uuid NOT NULL PRIMARY KEY,
   url text NOT NULL

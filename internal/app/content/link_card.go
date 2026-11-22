@@ -69,6 +69,8 @@ type LinkCardRepository interface {
 	DeleteStatusLinkCard(ctx context.Context, tx uow.Tx, statusID string) error
 	// DeleteStatusLinkCardsOf is DeleteStatusLinkCard of each of statusIDs, with one statement.
 	DeleteStatusLinkCardsOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
+	// DeleteAllStatusLinkCards empties status_link_cards, for its rebuild.
+	DeleteAllStatusLinkCards(ctx context.Context, tx uow.Tx) error
 	// StatusLinkCardURL returns the URL whose card a status shows.
 	StatusLinkCardURL(ctx context.Context, statusID string) (string, error)
 	// StatusLinkCardURLs, FindLinkCards, and FindLinkCardMedias return those of many statuses, URLs,
@@ -246,6 +248,42 @@ func (l *LinkCards) RegisterProjectors(r *uow.Projectors) {
 	r.Register(EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return l.d.Repository.DeleteStatusLinkCardsOf(ctx, tx, deletedIDs(e.(StatusesDeleted).Deletions))
 	})
+}
+
+// RebuildStatusLinkCards empties status_link_cards and derives it again, in one transaction of u,
+// as the projectors left it: the URL chosen from the current revision of each status that is not
+// deleted and is no board post. It enqueues no fetch; the cards stay as they are.
+func (l *LinkCards) RebuildStatusLinkCards(ctx context.Context, u uow.UnitOfWork) error {
+	err := u.Tx(ctx, func(tx uow.Tx) error {
+		if err := l.d.Repository.DeleteAllStatusLinkCards(ctx, tx); err != nil {
+			return err
+		}
+		posts, err := l.d.Statuses.ListCurrentPosts(ctx, tx)
+		if err != nil {
+			return err
+		}
+		boardIDs, err := l.d.Statuses.ListBoardStatusIDs(ctx, tx)
+		if err != nil {
+			return err
+		}
+		for _, p := range posts {
+			if _, board := slices.BinarySearch(boardIDs, p.Status.ID); board {
+				continue
+			}
+			u := LinkCardURL(p.Revision, l.d.LocalHosts)
+			if u == "" {
+				continue
+			}
+			if err := l.d.Repository.UpsertStatusLinkCard(ctx, tx, content.StatusLinkCard{StatusID: p.Status.ID, URL: u}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("rebuild status_link_cards: %w", err)
+	}
+	return nil
 }
 
 // deletedIDs returns the IDs of the statuses of ds.

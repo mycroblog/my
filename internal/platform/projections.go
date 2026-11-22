@@ -146,6 +146,14 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				},
 			},
 			{
+				// a.LinkCards is built after the projections, before any rebuild runs.
+				Name: "status_link_cards", Module: "content",
+				Tables: []string{"status_link_cards"},
+				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
+					return a.LinkCards.RebuildStatusLinkCards(ctx, u)
+				},
+			},
+			{
 				Name: "boost_edges", Module: "content",
 				Tables: []string{"boost_edges", "status_reaction_counts"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {

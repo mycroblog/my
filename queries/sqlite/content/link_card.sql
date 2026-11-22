@@ -9,6 +9,9 @@ ON CONFLICT (status_id) DO UPDATE SET url = excluded.url;
 -- name: DeleteStatusLinkCard :exec
 DELETE FROM status_link_cards WHERE status_id = @status_id;
 
+-- name: DeleteAllStatusLinkCards :exec
+DELETE FROM status_link_cards;
+
 -- name: GetStatusLinkCardURL :one
 SELECT url FROM status_link_cards WHERE status_id = @status_id;
 

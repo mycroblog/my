@@ -33,6 +33,15 @@ func (r *StatusRepository) DeleteStatusLinkCard(ctx context.Context, tx uow.Tx, 
 	return sqlite.Wrap(q.DeleteStatusLinkCard(ctx, statusID), "delete status link card")
 }
 
+// DeleteAllStatusLinkCards implements content.LinkCardRepository.
+func (r *StatusRepository) DeleteAllStatusLinkCards(ctx context.Context, tx uow.Tx) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.DeleteAllStatusLinkCards(ctx), "delete all status link cards")
+}
+
 // StatusLinkCardURL implements content.LinkCardRepository.
 func (r *StatusRepository) StatusLinkCardURL(ctx context.Context, statusID string) (string, error) {
 	u, err := r.db.reader().GetStatusLinkCardURL(ctx, statusID)

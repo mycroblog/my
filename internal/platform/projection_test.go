@@ -149,6 +149,7 @@ func fillProjections(t *testing.T, a *platform.App, clock laterClock) {
 	first := post(alice, "hi @bob #projections")
 	gone := post(alice, "soon gone")
 	hello := post(bob, "hello")
+	post(alice, "read https://news.example/story")
 	for _, id := range []string{first, gone} {
 		if _, err := a.Interactions.Favourite(ctx, bob, id); err != nil {
 			t.Fatalf("Favourite: %v", err)
@@ -526,7 +527,7 @@ func checkProjections(t *testing.T, a *platform.App, exec func(string), count fu
 		"notification_exclusions", "notification_deleted_statuses", "poll_tallies",
 		"account_restrictions", "domain_restrictions", "report_states", "appeal_states", "status_sensitivity_overrides",
 		"feed_author_restrictions", "feed_domain_restrictions", "user_roles", "user_registration_states", "user_primary_emails",
-		"webhook_endpoint_heads", "webhook_endpoint_failures", "relay_states", "cost_item_heads", "imported_cost_heads",
+		"webhook_endpoint_heads", "webhook_endpoint_failures", "relay_states", "cost_item_heads", "imported_cost_heads", "status_link_cards",
 	} {
 		if held[table] == 0 {
 			t.Errorf("%s holds no rows", table)
@@ -557,6 +558,7 @@ func checkProjections(t *testing.T, a *platform.App, exec func(string), count fu
 	exec("UPDATE cost_item_heads SET ends_on = NULL")
 	exec("DELETE FROM imported_cost_heads WHERE service = 'Tax'")
 	exec("UPDATE status_reaction_counts SET count = count + 1")
+	exec("UPDATE status_link_cards SET url = 'https://elsewhere.example/'")
 	exec("INSERT INTO service_closure_heads (id, state, event_id, announcement_event_id) VALUES (1, 'announced', '" + testkit.NamedID("no-such-event") + "', '" + testkit.NamedID("no-such-event") + "')")
 	exec("INSERT INTO custom_emoji_pending_requests (request_id, requester_user_id, reserved_shortcode) VALUES ('" + testkit.NamedID("no-such-request") + "', '" + testkit.NamedID("no-such-user") + "', 'ghost')")
 
@@ -576,7 +578,7 @@ func checkProjections(t *testing.T, a *platform.App, exec func(string), count fu
 	want := []string{
 		"account_restrictions", "appeal_states", "cost_item_heads", "custom_emoji_pending_requests", "domain_restrictions", "feed_author_restrictions", "feed_domain_restrictions",
 		"feed_tag_entries", "follow_counters", "imported_cost_heads", "local_post_counters", "notification_deleted_statuses", "notification_exclusions",
-		"poll_tallies", "relay_states", "remote_account_heads", "report_states", "service_closure_heads", "status_counters", "status_reaction_counts", "status_sensitivity_overrides",
+		"poll_tallies", "relay_states", "remote_account_heads", "report_states", "service_closure_heads", "status_counters", "status_link_cards", "status_reaction_counts", "status_sensitivity_overrides",
 		"user_primary_emails", "user_registration_states", "user_roles", "webhook_endpoint_failures", "webhook_endpoint_heads",
 	}
 	if !slices.Equal(drifted, want) {
