@@ -3047,7 +3047,8 @@ export interface paths {
         /**
          * List the user's drafts, newest first
          * @description The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-         *     ones (`true`) or the others (`false`).
+         *     ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+         *     out, and a page may be shorter than `limit`.
          */
         get: operations["listDrafts"];
         put?: never;
@@ -3073,7 +3074,8 @@ export interface paths {
         };
         /**
          * Get a draft
-         * @description A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+         * @description A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+         *     is a `direct` draft without `read:direct`.
          */
         get: operations["getDraft"];
         /**

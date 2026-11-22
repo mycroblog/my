@@ -4556,7 +4556,8 @@ paths:
       summary: List the user's drafts, newest first
       description: |
         The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-        ones (`true`) or the others (`false`).
+        ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+        out, and a page may be shorter than `limit`.
       tags:
         - drafts
       security:
@@ -4609,7 +4610,9 @@ paths:
     get:
       operationId: getDraft
       summary: Get a draft
-      description: A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+      description: |
+        A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+        is a `direct` draft without `read:direct`.
       tags:
         - drafts
       security:
@@ -14740,9 +14743,10 @@ components:
 
         `read:statuses` does not show posts whose visibility is `direct`, in timelines, in a post's
         thread, or in a post's own response, nor in the posts of a notification; `read:direct` (which
-        `read` grants) does. The same holds for bookmarks, favourites, a post's source, and the posts that quote
-        a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`,
-        and the response shows the post just sent.
+        `read` grants) does. The same holds for bookmarks, favourites, a post's source, the posts that quote
+        a post, and the user's drafts, the user's own `direct` posts included. Sending a `direct` post, or
+        saving or publishing a `direct` draft, needs only `write:statuses`, and the response shows the post
+        or the draft just written.
 
         The posts of the board of an event need `read:events` in the same way: without it, one is a
         404 by its ID (the post, its history, source, reactions, translation, and thread), is left
@@ -14751,9 +14755,9 @@ components:
 
         A write scope reads the post it acts on: the response to an action on a post, such as
         favouriting it with `write:favourites`, is the whole post. A token without `read:direct`
-        cannot act on a `direct` post, nor one without `read:events` on a post of the board of an
-        event, the user's own included (editing or deleting it, or setting who may quote it, say):
-        it gets a 404 and nothing changes. It can still take back
+        cannot act on a `direct` post or draft, nor one without `read:events` on a post of the board
+        of an event, the user's own included (editing or deleting it, or setting who may quote it,
+        say): it gets a 404 and nothing changes. Publishing a draft is the exception above. It can still take back
         what the user had on one (a favourite, say), and the answer is the same 404, which shows
         nothing of the post.
 

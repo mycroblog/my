@@ -26763,7 +26763,8 @@ type ClientInterface interface {
 	// ListDrafts List the user's drafts, newest first
 	//
 	// The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-	// ones (`true`) or the others (`false`).
+	// ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+	// out, and a page may be shorter than `limit`.
 	//
 	// Corresponds with GET /drafts (the `ListDrafts` operationId).
 	ListDrafts(ctx context.Context, params *ListDraftsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -26800,7 +26801,8 @@ type ClientInterface interface {
 
 	// GetDraft Get a draft
 	//
-	// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+	// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+	// is a `direct` draft without `read:direct`.
 	//
 	// Corresponds with GET /drafts/{id} (the `GetDraft` operationId).
 	GetDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -37780,7 +37782,8 @@ func (c *Client) UnmuteDomain(ctx context.Context, domain string, reqEditors ...
 // ListDrafts List the user's drafts, newest first
 //
 // The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-// ones (`true`) or the others (`false`).
+// ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+// out, and a page may be shorter than `limit`.
 //
 // Corresponds with GET /drafts (the `ListDrafts` operationId).
 func (c *Client) ListDrafts(ctx context.Context, params *ListDraftsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -37857,7 +37860,8 @@ func (c *Client) DeleteDraft(ctx context.Context, id DraftId, reqEditors ...Requ
 
 // GetDraft Get a draft
 //
-// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+// is a `direct` draft without `read:direct`.
 //
 // Corresponds with GET /drafts/{id} (the `GetDraft` operationId).
 func (c *Client) GetDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -69461,7 +69465,8 @@ type ClientWithResponsesInterface interface {
 	// ListDraftsWithResponse List the user's drafts, newest first
 	//
 	// The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-	// ones (`true`) or the others (`false`).
+	// ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+	// out, and a page may be shorter than `limit`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69502,7 +69507,8 @@ type ClientWithResponsesInterface interface {
 
 	// GetDraftWithResponse Get a draft
 	//
-	// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+	// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+	// is a `direct` draft without `read:direct`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -110487,7 +110493,8 @@ func (c *ClientWithResponses) UnmuteDomainWithResponse(ctx context.Context, doma
 // ListDraftsWithResponse List the user's drafts, newest first
 //
 // The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-// ones (`true`) or the others (`false`).
+// ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+// out, and a page may be shorter than `limit`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -110552,7 +110559,8 @@ func (c *ClientWithResponses) DeleteDraftWithResponse(ctx context.Context, id Dr
 
 // GetDraftWithResponse Get a draft
 //
-// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+// is a `direct` draft without `read:direct`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
