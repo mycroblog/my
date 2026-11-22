@@ -6,12 +6,13 @@
 // notifications/notifications.dom.test.tsx, waiting.dom.test.tsx).
 
 import { expect, test } from "bun:test";
+import { scenario } from "@my/e2e/fake";
 import { within } from "@testing-library/react";
 import { main, renderApp } from "./test/app";
 
 test("the row over the notifications opens the screen of what waits; once the reader approved one request and declined another there, Back returns to the notifications, where the row counts the one left", async () => {
-  // marco asked to reply to and to boost yuki's post, and mio to quote it.
-  const app = await renderApp("/notifications", { approvals: true });
+  // marco asked to reply to and to boost yuki's post, and mio to quote it, on a server of the posts of `approvals` alone.
+  const app = await renderApp("/notifications", { approvals: true, seed: { people: scenario.people } });
 
   await app.user.click(await main().findByRole("link", { name: "3 waiting for your approval" }));
 

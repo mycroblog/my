@@ -96,7 +96,13 @@ test("from a profile's menu, the report names the account and no post until one 
 });
 
 test("from a notification's menu, the report names the account that acted, and not the reader's own post it is about", async () => {
-  const app = await renderApp("/notifications");
+  const app = await renderApp("/notifications", {
+    seed: {
+      people: scenario.people,
+      posts: [{ key: "ridge", author: "yuki", text: "The ridge at dawn.", visibility: "public", language: "en" }],
+      interactions: [{ kind: "reaction", by: "layla", post: "ridge", emoji: "🌄" }],
+    },
+  });
   const row = within(await main().findByRole("article", { name: /Layla reacted to your post$/ }));
   await app.user.click(row.getByRole("button", { name: "More actions for this notification" }));
   await chooseReport(app, await screen.findByRole("menu", { name: "More actions for this notification" }));

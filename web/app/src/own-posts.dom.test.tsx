@@ -5,6 +5,7 @@
 // features' (post-actions.dom.test.tsx).
 
 import { expect, test } from "bun:test";
+import { scenario } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
 import { renderApp } from "./test/app";
 import { composerOf, heldBy } from "./test/composer";
@@ -19,7 +20,13 @@ const items = (menu: HTMLElement) =>
 const bread = "Day 3 of the sourdough experiment. The crumb is finally open enough to call it bread. #baking";
 
 test("delete and redraft takes the post away and opens it as a new post", async () => {
-  const app = await renderApp("/", { viewer: "sam" });
+  const app = await renderApp("/", {
+    viewer: "sam",
+    seed: {
+      people: scenario.people,
+      posts: [{ key: "bread", author: "sam", text: bread, visibility: "public", language: "en" }],
+    },
+  });
   const feed = await feedOf("Home timeline");
   const deleted = app.fake.script("DELETE /statuses/{id}");
 
