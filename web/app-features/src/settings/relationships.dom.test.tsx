@@ -4,13 +4,15 @@
 // they mute and the hashtags they follow, each a section read from its list of the server, with its count, its rows
 // and the button that takes a row out; a long list cut to its first rows with the way to the whole list, which is a
 // screen of its own and pages through the server's list; and undoing, which acts at once and leaves the row where it
-// was, saying what was done, until the reader leaves. Before the lists are read the screen says that it loads them,
+// was, saying what was done, until the reader leaves; a followed hashtag is a link to its tag's page beside its
+// Unfollow (#3368). Before the lists are read the screen says that it loads them,
 // and when they cannot be read, that. Where the focus goes after an undo is relationships.jsdom.test.tsx; the rows
 // themselves are the design system's (settings-rows.dom.test.tsx); the entry's place in the settings and its
 // addresses are the app's (web/app/src/settings-relationships.dom.test.tsx).
 
 import { describe, expect, test } from "bun:test";
 import { blocksQuery } from "@my/app-data";
+import type { FakeOptions } from "@my/e2e/fake";
 import { cleanup, isInaccessible, screen, waitFor, within } from "@testing-library/react";
 import { fakeData } from "../test/feature";
 import {
@@ -277,6 +279,114 @@ function expectUndone(kind: ListKind, before: readonly string[], count: string) 
   // The count is the server's.
   expect(headed(kind.name)).toBe(count);
 }
+
+// A followed hashtag (#3368) is a link to its tag's page, by its name with its `#`, its glyph inside the link and
+// nothing after the name, which would say that the whole row leads there; Unfollow stands beside the link, in a group
+// the hashtag names. 東京 is written in the address as its UTF-8, percent-encoded.
+const tagged: FakeOptions = { ...some, followedTags: ["baking", "東京"] };
+
+/** The glyphs drawn inside `link`: decorations with no role and no words, so found by what they are. */
+const glyphs = (link: HTMLElement) => [...link.querySelectorAll("svg")];
+
+/** That the row of `tag` in `part` is a link to the tag's page beside the group that holds `Unfollow`. */
+function expectTagRow(part: HTMLElement, tag: string) {
+  const name = `#${tag}`;
+  const [row, ...others] = rows(part).filter((item) => within(item).queryAllByRole("link", { name }).length > 0);
+  expect(others).toEqual([]);
+  if (row === undefined) throw new Error(`test: no row links to ${name}`);
+  const link = within(row).getByRole("link", { name });
+  expect(link.getAttribute("href")).toBe(`/tags/${encodeURIComponent(tag)}`);
+  expect(within(row).getAllByRole("link")).toHaveLength(1);
+  // Its glyph is inside the link, before the name, and nothing is drawn after the name: no chevron.
+  const title = within(link).getByText(name);
+  expect(glyphs(link).map((glyph) => [before(glyph, title), isInaccessible(glyph)])).toEqual([[true, true]]);
+  // Unfollow is beside the link, not in it.
+  const group = within(row).getByRole("group", { name });
+  expect(within(group).getAllByRole("button", { name: "Unfollow" })).toHaveLength(1);
+  expect(link.contains(group)).toBe(false);
+  expect(within(link).queryAllByRole("button")).toHaveLength(0);
+  return { row, link };
+}
+
+/** Whether `first` stands before `second` in the page. */
+const before = (first: Element, second: Element) =>
+  (first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+
+describe("a followed hashtag", () => {
+  test("in the entry, is a link named by the hashtag with its #, to its tag's page, its glyph inside, beside the group named by the hashtag that holds Unfollow", async () => {
+    await entry(tagged);
+
+    const part = section("Followed hashtags");
+    expect(rows(part)).toHaveLength(2);
+    for (const tag of ["東京", "baking"]) expectTagRow(part, tag);
+    // Latest first.
+    expect(rows(part).map((row) => within(row).getByRole("link").getAttribute("href"))).toEqual([
+      `/tags/${encodeURIComponent("東京")}`,
+      "/tags/baking",
+    ]);
+  });
+
+  test("on the whole list, is the same link beside the same group", async () => {
+    await whole("hashtags", tagged);
+
+    const part = screen.getByRole("region", { name: "2 hashtags" });
+    expect(rows(part)).toHaveLength(2);
+    for (const tag of ["東京", "baking"]) expectTagRow(part, tag);
+  });
+
+  for (const [where, open, part] of [
+    ["the entry", () => entry(tagged), () => section("Followed hashtags")],
+    ["the whole list", () => whole("hashtags", tagged), () => screen.getByRole("region", { name: /^\d+ hashtags?$/ })],
+  ] as const)
+    test(`after Unfollow on ${where}, the group is gone and the result stands outside the link, says Unfollowed, is read as the whole sentence, and has the focus`, async () => {
+      const on = await open();
+      const from = on.requests.length;
+
+      await on.user.click(undoOf(part(), "#東京", "Unfollow"));
+
+      await waitFor(() => {
+        if (within(part()).queryAllByText("Unfollowed").length === 0)
+          throw new Error("test: the row does not say it yet");
+      });
+      await read(on);
+      expect(writes(on, from)).toEqual([`DELETE /tags/${encodeURIComponent("東京")}/follow`]);
+      const [row] = rows(part());
+      if (row === undefined) throw new Error("test: the list has no row");
+      // The link is as it was.
+      const link = within(row).getByRole("link", { name: "#東京" });
+      expect(link.getAttribute("href")).toBe(`/tags/${encodeURIComponent("東京")}`);
+      // Its group and its button are gone.
+      expect(within(part()).queryAllByRole("group", { name: "#東京" })).toHaveLength(0);
+      expect(within(row).queryAllByRole("button")).toHaveLength(0);
+      // The result is beside the link: a word for the eye, the sentence for assistive technology.
+      const shown = within(row).getByText("Unfollowed");
+      const spoken = within(row).getByText("You unfollowed #東京.");
+      expect([link.contains(shown), link.contains(spoken)]).toEqual([false, false]);
+      expect([isInaccessible(shown), isInaccessible(spoken)]).toEqual([true, false]);
+      expect(plain(row.textContent)).toMatch(inOrder("#東京", "Unfollowed", "You unfollowed #東京."));
+      // The link's name is still the hashtag alone.
+      expect(
+        within(row)
+          .getAllByRole("link")
+          .map((l) => plain(l.textContent)),
+      ).toEqual(["#東京"]);
+      // The focus is on the result, where the button was.
+      await waitFor(() => {
+        const has = document.activeElement;
+        if (
+          has === null ||
+          !row.contains(has) ||
+          link.contains(has) ||
+          !inOrder("Unfollowed", "You unfollowed #東京.").test(plain(has.textContent))
+        )
+          throw new Error(
+            `test: the focus is on <${has?.tagName.toLowerCase() ?? "nothing"}> "${plain(has?.textContent)}"`,
+          );
+      });
+      // The other row keeps its button.
+      expectTagRow(part(), "baking");
+    });
+});
 
 describe("undoing", () => {
   for (const kind of lists) {
