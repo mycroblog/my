@@ -39,7 +39,8 @@ type DomainListRepository interface {
 	// InsertDomainListDeletion fails with ErrAlreadyRecorded when the subscription is already
 	// deleted.
 	InsertDomainListDeletion(ctx context.Context, tx uow.Tx, d moderation.DomainListDeletion) error
-	// PutDomainListHead writes the current value of a subscription.
+	// PutDomainListHead writes the current value of a subscription: its validators and digest.
+	// The head's ConsecutiveFailures and LastFetchID derive from the fetches, and are not written.
 	PutDomainListHead(ctx context.Context, tx uow.Tx, h moderation.DomainListHead) error
 	// LockDomainListSubscription serializes, inside tx, the transactions that write the entries
 	// and the actions of one subscription.
@@ -51,6 +52,10 @@ type DomainListRepository interface {
 	// first, whose ID is below before (from the newest when empty).
 	ListDomainListSubscriptions(ctx context.Context, before string, limit int) ([]moderation.DomainListSubscriptionRecord, error)
 	InsertDomainListFetch(ctx context.Context, tx uow.Tx, f moderation.DomainListFetch) error
+	// DeleteDomainListFetchesBefore deletes inside tx at most limit fetches made before t, the
+	// oldest first, in one statement, except the last fetch of each subscription that did not
+	// fail and the failed ones after it, and returns how many it deleted.
+	DeleteDomainListFetchesBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
 	// ListDomainListFetches returns up to limit fetches of a subscription, newest first, whose ID
 	// is below before (from the newest when empty).
 	ListDomainListFetches(ctx context.Context, subscriptionID, before string, limit int) ([]moderation.DomainListFetch, error)

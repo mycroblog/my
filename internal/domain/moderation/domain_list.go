@@ -262,10 +262,11 @@ type DomainListHead struct {
 	LastModified string
 	// Digest is the hex SHA-256 of the last list read, "" before the first one.
 	Digest string
-	// ConsecutiveFailures counts the failed fetches since the last one that did not fail.
+	// ConsecutiveFailures counts the failed fetches since the last one that did not fail, and
+	// LastFetchID is the last fetch ("" before the first one); both derive from
+	// domain_list_fetches.
 	ConsecutiveFailures int
-	// LastFetchID is the last fetch, "" before the first one.
-	LastFetchID string
+	LastFetchID         string
 }
 
 // DomainListEntry is one domain of the list as the last fetch that read it listed it

@@ -661,6 +661,7 @@ You can change the periods in the instance settings, but not below the lower lim
 | Actions against accounts (reason, note, target posts, lifting) and appeals | `moderation_actions_retention_days` | 365 days | 180 days | The end of the action |
 | Audit log | `audit_log_retention_days` | 730 days | 365 days | The record |
 | Sign-up blocks | None (cannot be changed) | 30 days | n/a | The earlier of lifting and expiry |
+| The fetches of a blocklist subscription; the last one that did not fail, and the failures after it, stay | None (cannot be changed) | 30 days | n/a | The fetch |
 | Who took part in a voice chat room (participations, speakers and listeners, raised hands, invitations, removals) | `voice_participants_retention_days` | 90 days | 30 days | The end of the room |
 | The decisions of the [decision hooks](decision-hooks.md#the-decisions) | `hook_decisions_retention_days` | 90 days | 30 days | The decision |
 | The answers, approvals, invitations, votes on the candidate dates, and board posts of an event | `event_records_retention_days` | 90 days | 30 days | The earlier of the end of the event (for an event whose date was never fixed, the end of its last candidate date) and its cancellation |

@@ -35,6 +35,36 @@ func (q *Queries) DeleteDomainListEntry(ctx context.Context, arg DeleteDomainLis
 	return err
 }
 
+const deleteDomainListFetchesBefore = `-- name: DeleteDomainListFetchesBefore :execrows
+DELETE FROM domain_list_fetches WHERE id IN (
+  SELECT f.id FROM domain_list_fetches f
+  WHERE f.id < CAST(?1 AS TEXT) AND f.fetched_at < CAST(?2 AS INTEGER)
+    AND EXISTS (
+      SELECT 1 FROM domain_list_fetches k
+      WHERE k.subscription_id = f.subscription_id AND k.outcome <> 'failed' AND k.id > f.id
+    )
+  ORDER BY f.id
+  LIMIT ?3
+)
+`
+
+type DeleteDomainListFetchesBeforeParams struct {
+	IDBefore      string
+	FetchedBefore int64
+	BatchLimit    int64
+}
+
+// DeleteDomainListFetchesBefore deletes at most @batch_limit fetches below @id_before made before
+// @fetched_before, the oldest first, except the last one of their subscription that did not fail
+// and the failed ones after it, from which the head's last fetch and count of failures derive.
+func (q *Queries) DeleteDomainListFetchesBefore(ctx context.Context, arg DeleteDomainListFetchesBeforeParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteDomainListFetchesBefore, arg.IDBefore, arg.FetchedBefore, arg.BatchLimit)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const getDomainListEntry = `-- name: GetDomainListEntry :one
 SELECT subscription_id, domain, severity, reject_media, reject_reports, public_comment, obfuscate, since_fetch_id
 FROM domain_list_entries WHERE subscription_id = ? AND domain = ?
@@ -65,7 +95,10 @@ const getDomainListSubscription = `-- name: GetDomainListSubscription :one
 SELECT s.id, s.url, s.format, s.created_by_user_id, s.created_at,
   r.id AS revision_id, r.title, r.mode, r.suspend_as, r.silence_as, r.apply_reject_media, r.apply_reject_reports,
   r.public_comment_from_list, r.revised_by_user_id, r.revised_at,
-  h.etag, h.last_modified, h.digest, h.consecutive_failures, h.last_fetch_id,
+  h.etag, h.last_modified, h.digest, f.id AS last_fetch_id,
+  (SELECT COUNT(*) FROM domain_list_fetches g WHERE g.subscription_id = s.id AND g.outcome = 'failed'
+    AND NOT EXISTS (SELECT 1 FROM domain_list_fetches k WHERE k.subscription_id = s.id AND k.outcome <> 'failed' AND k.id > g.id)
+  ) AS consecutive_failures,
   f.outcome AS last_outcome, f.http_status AS last_http_status, f.error_code AS last_error_code,
   f.entry_count AS last_entry_count, f.fetched_at AS last_fetched_at,
   d.subscription_id AS deletion_subscription_id, d.lift_actions, d.deleted_by_user_id, d.deleted_at
@@ -73,7 +106,9 @@ FROM domain_list_subscriptions s
 JOIN domain_list_subscription_revisions r ON r.subscription_id = s.id
   AND NOT EXISTS (SELECT 1 FROM domain_list_subscription_revisions rr WHERE rr.subscription_id = s.id AND rr.id > r.id)
 JOIN domain_list_subscription_heads h ON h.subscription_id = s.id
-LEFT JOIN domain_list_fetches f ON f.id = h.last_fetch_id
+LEFT JOIN domain_list_fetches f ON f.id = (
+  SELECT g.id FROM domain_list_fetches g WHERE g.subscription_id = s.id ORDER BY g.id DESC LIMIT 1
+)
 LEFT JOIN domain_list_subscription_deletions d ON d.subscription_id = s.id
 WHERE s.id = ?
 `
@@ -97,8 +132,8 @@ type GetDomainListSubscriptionRow struct {
 	Etag                   sql.NullString
 	LastModified           sql.NullString
 	Digest                 sql.NullString
-	ConsecutiveFailures    int64
 	LastFetchID            sql.NullString
+	ConsecutiveFailures    int64
 	LastOutcome            sql.NullString
 	LastHttpStatus         sql.NullInt64
 	LastErrorCode          sql.NullString
@@ -111,7 +146,8 @@ type GetDomainListSubscriptionRow struct {
 }
 
 // GetDomainListSubscription returns a subscription with its settings in effect (the newest
-// revision), its head, its last fetch, and its deletion.
+// revision), its head, its last fetch, and its deletion. The last fetch is the newest, and
+// consecutive_failures counts the failed fetches after the last one that did not fail.
 func (q *Queries) GetDomainListSubscription(ctx context.Context, id string) (GetDomainListSubscriptionRow, error) {
 	row := q.db.QueryRowContext(ctx, getDomainListSubscription, id)
 	var i GetDomainListSubscriptionRow
@@ -134,8 +170,8 @@ func (q *Queries) GetDomainListSubscription(ctx context.Context, id string) (Get
 		&i.Etag,
 		&i.LastModified,
 		&i.Digest,
-		&i.ConsecutiveFailures,
 		&i.LastFetchID,
+		&i.ConsecutiveFailures,
 		&i.LastOutcome,
 		&i.LastHttpStatus,
 		&i.LastErrorCode,
@@ -459,7 +495,10 @@ const listDomainListSubscriptions = `-- name: ListDomainListSubscriptions :many
 SELECT s.id, s.url, s.format, s.created_by_user_id, s.created_at,
   r.id AS revision_id, r.title, r.mode, r.suspend_as, r.silence_as, r.apply_reject_media, r.apply_reject_reports,
   r.public_comment_from_list, r.revised_by_user_id, r.revised_at,
-  h.etag, h.last_modified, h.digest, h.consecutive_failures, h.last_fetch_id,
+  h.etag, h.last_modified, h.digest, f.id AS last_fetch_id,
+  (SELECT COUNT(*) FROM domain_list_fetches g WHERE g.subscription_id = s.id AND g.outcome = 'failed'
+    AND NOT EXISTS (SELECT 1 FROM domain_list_fetches k WHERE k.subscription_id = s.id AND k.outcome <> 'failed' AND k.id > g.id)
+  ) AS consecutive_failures,
   f.outcome AS last_outcome, f.http_status AS last_http_status, f.error_code AS last_error_code,
   f.entry_count AS last_entry_count, f.fetched_at AS last_fetched_at,
   d.subscription_id AS deletion_subscription_id, d.lift_actions, d.deleted_by_user_id, d.deleted_at
@@ -467,7 +506,9 @@ FROM domain_list_subscriptions s
 JOIN domain_list_subscription_revisions r ON r.subscription_id = s.id
   AND NOT EXISTS (SELECT 1 FROM domain_list_subscription_revisions rr WHERE rr.subscription_id = s.id AND rr.id > r.id)
 JOIN domain_list_subscription_heads h ON h.subscription_id = s.id
-LEFT JOIN domain_list_fetches f ON f.id = h.last_fetch_id
+LEFT JOIN domain_list_fetches f ON f.id = (
+  SELECT g.id FROM domain_list_fetches g WHERE g.subscription_id = s.id ORDER BY g.id DESC LIMIT 1
+)
 LEFT JOIN domain_list_subscription_deletions d ON d.subscription_id = s.id
 WHERE d.subscription_id IS NULL
   AND (CAST(?1 AS TEXT) = '' OR s.id < ?1)
@@ -499,8 +540,8 @@ type ListDomainListSubscriptionsRow struct {
 	Etag                   sql.NullString
 	LastModified           sql.NullString
 	Digest                 sql.NullString
-	ConsecutiveFailures    int64
 	LastFetchID            sql.NullString
+	ConsecutiveFailures    int64
 	LastOutcome            sql.NullString
 	LastHttpStatus         sql.NullInt64
 	LastErrorCode          sql.NullString
@@ -543,8 +584,8 @@ func (q *Queries) ListDomainListSubscriptions(ctx context.Context, arg ListDomai
 			&i.Etag,
 			&i.LastModified,
 			&i.Digest,
-			&i.ConsecutiveFailures,
 			&i.LastFetchID,
+			&i.ConsecutiveFailures,
 			&i.LastOutcome,
 			&i.LastHttpStatus,
 			&i.LastErrorCode,
@@ -657,20 +698,17 @@ func (q *Queries) UpsertDomainListEntry(ctx context.Context, arg UpsertDomainLis
 
 const upsertDomainListSubscriptionHead = `-- name: UpsertDomainListSubscriptionHead :exec
 INSERT INTO domain_list_subscription_heads (
-  subscription_id, etag, last_modified, digest, consecutive_failures, last_fetch_id
-) VALUES (?, ?, ?, ?, ?, ?)
+  subscription_id, etag, last_modified, digest
+) VALUES (?, ?, ?, ?)
 ON CONFLICT (subscription_id) DO UPDATE SET
-  etag = EXCLUDED.etag, last_modified = EXCLUDED.last_modified, digest = EXCLUDED.digest,
-  consecutive_failures = EXCLUDED.consecutive_failures, last_fetch_id = EXCLUDED.last_fetch_id
+  etag = EXCLUDED.etag, last_modified = EXCLUDED.last_modified, digest = EXCLUDED.digest
 `
 
 type UpsertDomainListSubscriptionHeadParams struct {
-	SubscriptionID      string
-	Etag                sql.NullString
-	LastModified        sql.NullString
-	Digest              sql.NullString
-	ConsecutiveFailures int64
-	LastFetchID         sql.NullString
+	SubscriptionID string
+	Etag           sql.NullString
+	LastModified   sql.NullString
+	Digest         sql.NullString
 }
 
 func (q *Queries) UpsertDomainListSubscriptionHead(ctx context.Context, arg UpsertDomainListSubscriptionHeadParams) error {
@@ -679,8 +717,6 @@ func (q *Queries) UpsertDomainListSubscriptionHead(ctx context.Context, arg Upse
 		arg.Etag,
 		arg.LastModified,
 		arg.Digest,
-		arg.ConsecutiveFailures,
-		arg.LastFetchID,
 	)
 	return err
 }

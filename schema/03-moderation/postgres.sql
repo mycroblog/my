@@ -494,21 +494,21 @@ CREATE TABLE domain_list_subscription_deletions (
   deleted_at timestamptz NOT NULL
 );
 
--- Current value: what the next fetch of a subscription sends and counts. etag and last_modified
--- are the validators of the last list read, digest its hex SHA-256 (NULL before the first),
--- consecutive_failures the failed fetches since the last one that did not fail.
+-- Current value: what the next fetch of a subscription sends. etag and last_modified are the
+-- validators of the last list read, digest its hex SHA-256 (NULL before the first). The last
+-- fetch and the failed fetches since the last one that did not fail derive from
+-- domain_list_fetches.
 CREATE TABLE domain_list_subscription_heads (
   subscription_id uuid NOT NULL PRIMARY KEY,
   etag text,
   last_modified text,
-  digest text,
-  consecutive_failures integer NOT NULL,
-  last_fetch_id uuid
+  digest text
 );
 
 -- Event: one fetch of a subscribed list. error_code is set exactly for a failed fetch;
 -- http_status is NULL when no answer came. entry_count is the entries the subscription holds
--- after the fetch.
+-- after the fetch. moderation.purge_records deletes the fetches older than 30 days but the last
+-- one of each subscription that did not fail and the failed ones after it.
 CREATE TABLE domain_list_fetches (
   id uuid NOT NULL PRIMARY KEY,
   subscription_id uuid NOT NULL,
