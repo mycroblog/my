@@ -127,7 +127,10 @@ func (s *Server) PostToEventBoard(ctx context.Context, req PostToEventBoardReque
 		}
 		return nil, err
 	}
-	view, err := s.o.StatusReader.View(ctx, localContentViewer(v), post.Status.ID)
+	// write:events alone posts on a board, and the post just written is the user's own.
+	viewer := localContentViewer(v)
+	viewer.BoardDenied = false
+	view, err := s.o.StatusReader.View(ctx, viewer, post.Status.ID)
 	var out Status
 	if err == nil {
 		out, err = s.presentStatus(ctx, view)

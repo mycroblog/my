@@ -910,10 +910,16 @@ components:
         a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`,
         and the response shows the post just sent.
 
+        The posts of the board of an event need `read:events` in the same way: without it, one is a
+        404 by its ID (the post, its history, source, reactions, translation, and thread), is left
+        out of a thread, and is not shown in a notification, the user's own included. Posting on a
+        board needs only `write:events`, and the response shows the post just sent.
+
         A write scope reads the post it acts on: the response to an action on a post, such as
         favouriting it with `write:favourites`, is the whole post. A token without `read:direct`
-        cannot act on a `direct` post, the user's own included (editing or deleting it, or setting who
-        may quote it, say): it gets a 404 and nothing changes. It can still take back
+        cannot act on a `direct` post, nor one without `read:events` on a post of the board of an
+        event, the user's own included (editing or deleting it, or setting who may quote it, say):
+        it gets a 404 and nothing changes. It can still take back
         what the user had on one (a favourite, say), and the answer is the same 404, which shows
         nothing of the post.
 
@@ -947,7 +953,7 @@ components:
         notification list, the stream, or the unread count, and they are dropped from the alerts of
         its Web Push subscription.
 
-        `read:notifications` shows a notification's `status`, under the rule of `read:direct` above,
+        `read:notifications` shows a notification's `status`, under the rules of `read:direct` and `read:events` above,
         and its `type` tells what happened. The other objects that a notification carries need the
         scope that reads them elsewhere, and are omitted without it: `report` needs `read:reports`,
         `supporter_subscription` `read:supporters`, `custom_emoji_request` `read:custom_emojis`,

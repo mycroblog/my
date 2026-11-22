@@ -14473,7 +14473,8 @@ type Notification struct {
 	ServiceClosure *ServiceClosureNotice `json:"service_closure,omitempty"`
 
 	// Status The post that the notification is about, as the user sees it; omitted when the user
-	// may not see it.
+	// may not see it, for a `direct` post without `read:direct`, and for a post of the board of
+	// an event without `read:events`.
 	Status *Status `json:"status,omitempty"`
 
 	// SupporterSubscription The user's supporter subscription that a `supporter_payment_failed`, a

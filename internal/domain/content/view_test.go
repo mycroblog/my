@@ -584,6 +584,31 @@ func TestCanViewDirectDenied(t *testing.T) {
 	}
 }
 
+// TestCanViewBoardDenied checks that a viewer without read:events sees no post of the board of an
+// event, its author's own included, while a reader of the board with it does (ADR-0090 §4).
+func TestCanViewBoardDenied(t *testing.T) {
+	post := content.StatusFacts{AuthorAccountID: localAuthorID, AuthorIsLocal: true, Visibility: content.VisibilityPublic,
+		Board: &content.BoardFacts{Reads: true}}
+	author := content.Viewer{Kind: content.ViewerLocal, AccountID: localAuthorID}
+	reader := content.Viewer{Kind: content.ViewerLocal, AccountID: "01890a5d-ac96-774b-bcce-b302099a8099"}
+	for _, v := range []content.Viewer{author, reader} {
+		if !content.CanView(content.ContextBoard, v, post, content.AuthorRestrictions{}, content.Relation{}) {
+			t.Fatalf("%s does not see a board post with read:events", v.AccountID)
+		}
+		v.BoardDenied = true
+		for _, ctx := range content.ViewContexts() {
+			if content.CanView(ctx, v, post, content.AuthorRestrictions{}, content.Relation{}) {
+				t.Errorf("%v: %s sees a board post without read:events", ctx, v.AccountID)
+			}
+		}
+	}
+	public := content.StatusFacts{AuthorAccountID: localAuthorID, AuthorIsLocal: true, Visibility: content.VisibilityPublic}
+	if !content.CanView(content.ContextStatus, content.Viewer{Kind: content.ViewerLocal, AccountID: reader.AccountID, BoardDenied: true},
+		public, content.AuthorRestrictions{}, content.Relation{}) {
+		t.Error("BoardDenied hides an ordinary public post")
+	}
+}
+
 func TestCanViewFailsClosed(t *testing.T) {
 	author := content.Viewer{Kind: content.ViewerLocal, AccountID: localAuthorID}
 	public := content.StatusFacts{AuthorAccountID: localAuthorID, AuthorIsLocal: true, Visibility: content.VisibilityPublic}

@@ -16843,7 +16843,8 @@ export interface components {
             account?: components["schemas"]["Account"];
             /**
              * @description The post that the notification is about, as the user sees it; omitted when the user
-             *     may not see it.
+             *     may not see it, for a `direct` post without `read:direct`, and for a post of the board of
+             *     an event without `read:events`.
              */
             status?: components["schemas"]["Status"];
             /** @description The user's report that a `report_resolved` tells of; omitted without `read:reports`. */
