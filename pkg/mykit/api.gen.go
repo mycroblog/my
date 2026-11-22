@@ -22622,7 +22622,8 @@ type ClientInterface interface {
 	// 5 minutes (429 with `Retry-After`); finding a known account is not limited. While the
 	// instance takes nothing in from other servers (`Instance.federation.mode` `off` or
 	// `outbound`), only the known accounts are found: resolving one that the instance does
-	// not know is a 403 `/api/v1/problems/federation-restricted`, and nothing is fetched.
+	// not know, or one that is a 404 as above, is a 403 `/api/v1/problems/federation-restricted`,
+	// and nothing is fetched.
 	//
 	// Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 	LookupAccount(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -30399,7 +30400,8 @@ func (c *Client) ResendVerificationEmail(ctx context.Context, reqEditors ...Requ
 // 5 minutes (429 with `Retry-After`); finding a known account is not limited. While the
 // instance takes nothing in from other servers (`Instance.federation.mode` `off` or
 // `outbound`), only the known accounts are found: resolving one that the instance does
-// not know is a 403 `/api/v1/problems/federation-restricted`, and nothing is fetched.
+// not know, or one that is a 404 as above, is a 403 `/api/v1/problems/federation-restricted`,
+// and nothing is fetched.
 //
 // Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -64974,7 +64976,8 @@ type ClientWithResponsesInterface interface {
 	// 5 minutes (429 with `Retry-After`); finding a known account is not limited. While the
 	// instance takes nothing in from other servers (`Instance.federation.mode` `off` or
 	// `outbound`), only the known accounts are found: resolving one that the instance does
-	// not know is a 403 `/api/v1/problems/federation-restricted`, and nothing is fetched.
+	// not know, or one that is a 404 as above, is a 403 `/api/v1/problems/federation-restricted`,
+	// and nothing is fetched.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -104060,7 +104063,8 @@ func (c *ClientWithResponses) ResendVerificationEmailWithResponse(ctx context.Co
 // 5 minutes (429 with `Retry-After`); finding a known account is not limited. While the
 // instance takes nothing in from other servers (`Instance.federation.mode` `off` or
 // `outbound`), only the known accounts are found: resolving one that the instance does
-// not know is a 403 `/api/v1/problems/federation-restricted`, and nothing is fetched.
+// not know, or one that is a 404 as above, is a 403 `/api/v1/problems/federation-restricted`,
+// and nothing is fetched.
 //
 // Returns a wrapper object for the known response body format(s).
 //

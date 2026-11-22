@@ -2651,7 +2651,8 @@ paths:
         5 minutes (429 with `Retry-After`); finding a known account is not limited. While the
         instance takes nothing in from other servers (`Instance.federation.mode` `off` or
         `outbound`), only the known accounts are found: resolving one that the instance does
-        not know is a 403 `/api/v1/problems/federation-restricted`, and nothing is fetched.
+        not know, or one that is a 404 as above, is a 403 `/api/v1/problems/federation-restricted`,
+        and nothing is fetched.
       tags:
         - accounts
       security:
