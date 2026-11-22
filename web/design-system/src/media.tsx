@@ -20,7 +20,7 @@
 // of the layout. A link card's sensitive image takes the same line.
 
 import { useReducedMotion } from "motion/react";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Button as AriaButton } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Blurhash } from "./blurhash";
@@ -29,6 +29,8 @@ import { IconButton } from "./icon-button";
 import { Icon } from "./icons";
 import { Box, Pin, Row, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
+import { usePreviewState } from "./preview";
+import { usePicturesLook } from "./press-options";
 
 export type MediaKind = "image" | "gifv" | "video" | "audio" | "unknown";
 
@@ -148,6 +150,18 @@ const takeFocus = (player: HTMLVideoElement | null) => {
   player?.focus({ preventScroll: true });
 };
 
+/** A press layer's button, hovered or pressed as a story's preview asks. */
+function usePreviewed() {
+  const preview = usePreviewState();
+  return (props: ComponentProps<"button">, { isHovered, isPressed }: { isHovered: boolean; isPressed: boolean }) => (
+    <button
+      {...props}
+      data-hovered={isHovered || preview === "hover" || undefined}
+      data-pressed={isPressed || preview === "pressed" || undefined}
+    />
+  );
+}
+
 /** One picture of the grid: what it draws, what pressing it does, and its marks. */
 function Cell({
   item,
@@ -162,6 +176,8 @@ function Cell({
 }) {
   const kind = kindOf(item);
   const s = grid();
+  const look = usePicturesLook();
+  const previewed = usePreviewed();
   const [playing, setPlaying] = useState(false);
   const still = useReducedMotion() ?? false;
   const named =
@@ -248,14 +264,19 @@ function Cell({
               onPress={() => {
                 setPlaying(true);
               }}
+              render={previewed}
             />
           }
           cover
-          className={s.press()}
+          className={`${s.press()} ${look}`}
         />
       ) : (
         onOpen !== undefined && (
-          <Pin as={<AriaButton aria-label={named} onPress={onOpen} />} cover className={s.press()} />
+          <Pin
+            as={<AriaButton aria-label={named} onPress={onOpen} render={previewed} />}
+            cover
+            className={`${s.press()} ${look}`}
+          />
         )
       )}
       {kind === "video" && (
@@ -523,6 +544,8 @@ export function MediaGrid({
   const { t } = stringsIn(lang);
   const [shown, setShown] = useState(defaultShown);
   const covers = useId();
+  const look = usePicturesLook();
+  const previewed = usePreviewed();
   if (items.length === 0) return null;
   const pictures = items.filter(isPicture);
   const sounds = items.filter((m) => kindOf(m) === "audio");
@@ -598,10 +621,11 @@ export function MediaGrid({
                       onPress={() => {
                         setShown(true);
                       }}
+                      render={previewed}
                     />
                   }
                   cover
-                  className={veil}
+                  className={`${veil} ${look}`}
                 />
               </div>
             )}

@@ -14,6 +14,7 @@ import { tv } from "tailwind-variants/lite";
 import { Box, Pin, Row, Spoken, type Gap, type RowProps } from "./layout";
 import { timePress } from "./measure";
 import { usePreviewState } from "./preview";
+import { useWordsLook } from "./press-options";
 
 export type ButtonKind = "primary" | "secondary" | "quiet";
 /**
@@ -319,17 +320,20 @@ export type TextButtonProps = Omit<AriaButtonProps, "className" | "style" | "ren
 /** An action inside a line of text (a translation's "Show original"), underlined in the line's own color. */
 export function TextButton({ children, ...rest }: TextButtonProps) {
   const preview = usePreviewState();
+  const look = useWordsLook("underlined");
   return (
     <Box
       bleedBlock="target-line"
       as={
         <AriaButton
           {...rest}
-          className={textButton()}
-          render={(props, { isFocusVisible }) => (
+          className={`${textButton()} ${look}`}
+          render={(props, { isHovered, isPressed, isFocusVisible }) => (
             <button
               {...props}
               onPointerDown={heardPointerDown(props)}
+              data-hovered={isHovered || preview === "hover" || undefined}
+              data-pressed={isPressed || preview === "pressed" || undefined}
               data-focus-visible={isFocusVisible || preview === "focus-visible" || undefined}
             />
           )}
@@ -341,13 +345,33 @@ export function TextButton({ children, ...rest }: TextButtonProps) {
   );
 }
 
+type LinkRender = NonNullable<ComponentProps<typeof AriaLink>["render"]>;
+
+/** A link's element, hovered, pressed or focused from the keyboard as a story's preview asks. */
+export function usePreviewedLink(): LinkRender {
+  const preview = usePreviewState();
+  return (props, { isHovered, isPressed, isFocusVisible }) => {
+    const shown = {
+      "data-hovered": isHovered || preview === "hover" || undefined,
+      "data-pressed": isPressed || preview === "pressed" || undefined,
+      "data-focus-visible": isFocusVisible || preview === "focus-visible" || undefined,
+    };
+    return "href" in props ? <a {...props} {...shown} /> : <span {...props} {...shown} />;
+  };
+}
+
 /**
  * A link inside a line of text that leads to another screen (a notice's Sign in), drawn as the text button is, so that
  * an action and a link in a line read alike.
  */
 export function TextLink({ href, children }: { href: string; children: ReactNode }) {
+  const previewed = usePreviewedLink();
+  const look = useWordsLook("underlined");
   return (
-    <Box bleedBlock="target-line" as={<AriaLink href={href} className={textButton()} />}>
+    <Box
+      bleedBlock="target-line"
+      as={<AriaLink href={href} className={`${textButton()} ${look}`} render={previewed} />}
+    >
       {children}
     </Box>
   );

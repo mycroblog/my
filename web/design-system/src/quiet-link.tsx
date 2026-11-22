@@ -7,7 +7,9 @@
 import type { ReactNode } from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
+import { usePreviewedLink } from "./button";
 import { Box } from "./layout";
+import { useWordsLook } from "./press-options";
 
 const quiet = tv({ base: "rounded-control no-underline outline-hidden data-focus-visible:shadow-focus" });
 
@@ -21,8 +23,10 @@ export function QuietLink({
   tone?: "text" | "muted";
   children: ReactNode;
 }) {
+  const previewed = usePreviewedLink();
+  const look = useWordsLook("bare");
   return (
-    <Box as={<Link href={href} className={quiet()} />} tone={tone}>
+    <Box as={<Link href={href} className={`${quiet()} ${look}`} render={previewed} />} tone={tone}>
       {children}
     </Box>
   );

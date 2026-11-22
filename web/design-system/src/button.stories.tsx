@@ -2,13 +2,17 @@
 
 // The button: Default, driven by its props in the Controls, a story per kind and state (hover, press and keyboard
 // focus shown at rest), and one sheet, Variants, of every kind in every state with its label's contrast in the
-// toolbar's theme, at the sizes of a timeline and a form, beside a text field; and the text button and link in a line.
+// toolbar's theme, at the sizes of a timeline and a form, beside a text field; the text button and link in a line; and
+// the live options of how words (a text link, a text button, a quiet link) answer a hover and a press (#3369).
 
 import { color, contrast, mix, press, rootPx, text, type ColorName, type Scheme } from "@my/design-tokens";
+import { Options } from "@my/devtools/options";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Button, TextButton, TextLink, type ButtonKind, type ButtonSize } from "./button";
 import { Preview, type PreviewState } from "./preview";
+import { PressOptions, type WordsLook } from "./press-options";
+import { QuietLink } from "./quiet-link";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
@@ -220,5 +224,55 @@ export const InText: Story = {
       Sign in to see this screen.{" "}
       <TextLink href="#sign-in">Sign in</TextLink> · <TextButton onPress={() => undefined}>Try again</TextButton>
     </p>
+  ),
+};
+
+const wordSteps = [
+  { label: "At rest", state: undefined },
+  { label: "Hovered", state: "hover" },
+  { label: "Pressed", state: "pressed" },
+] as const satisfies readonly { label: string; state: PreviewState | undefined }[];
+
+/**
+ * Words at rest, hovered and pressed in a look of the options: a text link and a text button in a notice's line of
+ * muted text, and quiet links in a line of facts, in the text's color and muted.
+ */
+function WordSteps({ look }: { look: WordsLook }) {
+  return (
+    <PressOptions words={look}>
+      <div style={{ display: "grid", gap: rem(16), padding: rem(16) }}>
+        {wordSteps.map(({ label, state }) => (
+          <Preview key={label} state={state}>
+            <div style={{ display: "grid", gap: rem(4) }}>
+              <p className="m-0 text-caption font-label text-text">{label}</p>
+              <p className="m-0 text-caption text-muted-text">
+                Sign in to see this screen. <TextLink href="#sign-in">Sign in</TextLink> ·{" "}
+                <TextButton onPress={() => undefined}>Try again</TextButton>
+              </p>
+              <p className="m-0 text-body text-muted-text">
+                <QuietLink href="#posts">1,204 posts</QuietLink> ·{" "}
+                <QuietLink href="#followers" tone="muted">
+                  318 followers
+                </QuietLink>
+              </p>
+            </div>
+          </Preview>
+        ))}
+      </div>
+    </PressOptions>
+  );
+}
+
+/** The hover and press looks of words, as live options: none of them moves. */
+export const WordPress: Story = {
+  render: () => (
+    <Options
+      id="word-press"
+      variants={{
+        underline: <WordSteps look="underline" />,
+        ink: <WordSteps look="ink" />,
+        wash: <WordSteps look="wash" />,
+      }}
+    />
   ),
 };

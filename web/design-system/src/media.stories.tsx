@@ -2,13 +2,17 @@
 
 // The media of an entry: Default, driven by the Controls (how many pictures, their kinds, and sensitive), and a story
 // per state: one to four images, a video and a GIF with their marks, a sound and a file, the previews of a quoted post,
-// and sensitive media of each kind under its line, in a column of a post's width.
+// and sensitive media of each kind under its line, in a column of a post's width; and the live options of how the press
+// layers over pictures answer a hover and a press (#3369).
 
 import { rootPx } from "@my/design-tokens";
+import { Options } from "@my/devtools/options";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import { MediaGrid, type MediaItem } from "./media";
 import { pictures } from "./media.samples";
+import { Preview, type PreviewState } from "./preview";
+import { PressOptions, type PicturesLook } from "./press-options";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
@@ -142,5 +146,47 @@ export const Sensitive: Story = {
       <MediaGrid items={[audio]} sensitive />
       <MediaGrid items={[samples[0] ?? video, gif, audio]} sensitive onOpen={open} />
     </Column>
+  ),
+};
+
+const pictureSteps = [
+  { label: "At rest", state: undefined },
+  { label: "Hovered", state: "hover" },
+  { label: "Pressed", state: "pressed" },
+] as const satisfies readonly { label: string; state: PreviewState | undefined }[];
+
+/** Pictures at rest, hovered and pressed in a look of the options: an image that opens, and one still covered. */
+function PictureSteps({ look }: { look: PicturesLook }) {
+  return (
+    <PressOptions pictures={look}>
+      <div
+        style={{ display: "grid", gap: rem(16), gridTemplateColumns: `repeat(auto-fill, minmax(${rem(160)}, 1fr))` }}
+      >
+        {pictureSteps.map(({ label, state }) => (
+          <Preview key={label} state={state}>
+            <div style={{ display: "grid", gap: rem(4), alignContent: "start" }}>
+              <p className="m-0 text-caption font-label text-text">{label}</p>
+              <MediaGrid items={samples.slice(0, 1)} onOpen={open} />
+              <MediaGrid items={samples.slice(2, 3)} sensitive onOpen={open} />
+            </div>
+          </Preview>
+        ))}
+      </div>
+    </PressOptions>
+  );
+}
+
+/** The hover and press looks of the press layers over pictures, as live options: none of them moves. */
+export const PicturePress: Story = {
+  ...fixed,
+  render: () => (
+    <Options
+      id="picture-press"
+      variants={{
+        shade: <PictureSteps look="shade" />,
+        wash: <PictureSteps look="wash" />,
+        edge: <PictureSteps look="edge" />,
+      }}
+    />
   ),
 };
