@@ -15,7 +15,7 @@ import (
 // due time came (gathering_dues), enqueues through the outbox the jobs of the reminders, of the
 // check of the voice chat room one day before the start, and of the start and the opening of its
 // room that came since, and writes the next due time. No payload.
-const JobTick = "gathering.tick"
+const JobTick = "gathering.queue_due"
 
 // TickInterval is the period of the JobTick schedule. A reminder or a start is late by up to the
 // period of the platform's tick, as docs/operations/running.md says per platform.

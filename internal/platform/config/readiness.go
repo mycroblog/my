@@ -107,6 +107,9 @@ func Readiness(c *Config) []Finding {
 	for _, f := range PluginWarnings(c) {
 		warnf(f.Key, "%s", f.Message)
 	}
+	if c.PprofListen != "" && !onLoopback(c.PprofListen) {
+		warnf("pprof_listen", "is %s, not a loopback address, so anyone who reaches it reads the profiles without authentication; listen on 127.0.0.1 and reach it through a tunnel", c.PprofListen)
+	}
 	if c.VAPIDPrivateKey == "" {
 		warnf("vapid_private_key", "is not set, so the server sends no Web Push notifications; generate one with `my config vapid-key`")
 	}
@@ -118,6 +121,20 @@ func Readiness(c *Config) []Finding {
 		warnf("payments_payjp_secret_key", "is a test-mode key, so supporters are not charged")
 	}
 	return append(errs, warns...)
+}
+
+// onLoopback says whether the listen address addr (host:port) is on a loopback address only: an
+// empty host listens on every interface, and a name other than localhost may resolve anywhere.
+func onLoopback(addr string) bool {
+	h, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false
+	}
+	if h == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(h)
+	return ip != nil && ip.IsLoopback()
 }
 
 // publicDomainProblem describes why domain (host or account_domain, valid by checkDomain) is not

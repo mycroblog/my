@@ -1,0 +1,141 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+package platform_test
+
+import (
+	"slices"
+	"testing"
+
+	"github.com/mycroblog/my/internal/platform"
+)
+
+// shippedJobTypes lists the job types that a release shipped, by release. A queue of an instance
+// that runs a release holds jobs of these types, and the worker of the next release must still
+// run them. A release that ships new types adds a list of them.
+var shippedJobTypes = map[string][]string{
+	"v0.1.0": {
+		"account.erase_deleted",
+		"account.execute_deletions",
+		"account.prune_remote_profiles",
+		"content.auto_delete_statuses",
+		"content.close_poll",
+		"content.fetch_link_card",
+		"content.publish_scheduled_draft",
+		"content.purge_boards",
+		"content.purge_deleted_statuses",
+		"content.purge_link_cards",
+		"content.purge_relayed_statuses",
+		"content.purge_remote_emojis",
+		"content.purge_remote_statuses",
+		"diagnostics.purge_error_counts",
+		"diagnostics.purge_ux_counts",
+		"hook.purge_decisions",
+		"federation.deliver",
+		"federation.fanout",
+		"federation.fetch_featured",
+		"federation.fetch_featured_tags",
+		"federation.fetch_object",
+		"federation.fetch_outbox",
+		"federation.inbox",
+		"federation.observe_instance",
+		"federation.probe_instances",
+		"federation.purge_records",
+		"federation.refetch_status",
+		"federation.refetch_walk",
+		"federation.refresh_actor",
+		"federation.refresh_stale_actors",
+		"federation.update_poll",
+		"federation.verify_quote",
+		"finance.import_billing",
+		"gathering.cancel_organized",
+		"gathering.end_rooms",
+		"gathering.notify",
+		"gathering.open_room",
+		"gathering.purge_records",
+		"gathering.queue_due",
+		"graph.expire_mutes",
+		"graph.migrate_follows",
+		"identity.build_export",
+		"identity.closure_email",
+		"identity.closure_email_fanout",
+		"identity.deactivation_email",
+		"identity.expire_exports",
+		"identity.expire_imports",
+		"identity.password_notice_email",
+		"identity.password_reset_email",
+		"identity.process_import",
+		"identity.purge_auth_records",
+		"identity.purge_origins",
+		"identity.purge_unused_oauth_clients",
+		"identity.queue_closure_reminders",
+		"identity.reject_for_closure",
+		"identity.verification_email",
+		"instance.check_closure_delivery",
+		"instance.closure_delete_actors",
+		"instance.notify_announcement",
+		"kv.purge_expired",
+		"media.process",
+		"media.purge_remote_cache",
+		"media.purge_replaced",
+		"media.purge_unattached",
+		"media.reprocess",
+		"media.reprocess_walk",
+		"metrics.snapshot",
+		"moderation.expire_restrictions",
+		"moderation.fetch_domain_list",
+		"moderation.fetch_domain_lists",
+		"moderation.purge_records",
+		"moderation.sever_allowlist",
+		"moderation.sever_domain",
+		"notification.closure_due",
+		"notification.closure_fanout",
+		"notification.email",
+		"notification.moderator_email",
+		"notification.post_subscribers",
+		"notification.purge_error_group_notices",
+		"notification.push",
+		"notification.supporter_email",
+		"projection.verify",
+		"queue.purge_dead_jobs",
+		"search.narrow",
+		"search.rebuild",
+		"search.sync_author",
+		"search.sync_domain",
+		"search.sync_status",
+		"stream.sweep",
+		"supporters.apply_payment_event",
+		"supporters.cancel_for_closure",
+		"supporters.command",
+		"supporters.ensure_prices",
+		"supporters.purge_payment_receipts",
+		"supporters.reconcile_payments",
+		"supporters.sync",
+		"supporters.sync_due",
+		"supporters.sync_tip",
+		"translation.purge_cache",
+		"voice.apply",
+		"voice.apply_media_event",
+		"voice.check_account",
+		"voice.check_block",
+		"voice.check_hosts",
+		"voice.invite_scheduled",
+		"voice.notify_started",
+		"voice.purge_records",
+		"voice.sweep",
+		"webhook.deliver",
+		"webhook.purge_messages",
+	},
+}
+
+// TestShippedJobTypesStay fails when a job type that a release shipped is renamed or removed: the
+// jobs of that type still queued on an instance would have no handler after the upgrade.
+func TestShippedJobTypesStay(t *testing.T) {
+	types := platform.JobTypes()
+	for release, shipped := range shippedJobTypes {
+		for _, typ := range shipped {
+			if !slices.Contains(types, typ) {
+				t.Errorf("job type %s shipped in %s is gone: its queued jobs would have no handler; keep the type, or drain or migrate its queued jobs first, with a data upgrade step that moves them to the new type", typ, release)
+			}
+		}
+	}
+}

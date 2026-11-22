@@ -25,6 +25,6 @@ func init() { searchIndexAdapters["meilisearch"] = newMeilisearchIndex }
 func newMeilisearchIndex(_ context.Context, cfg *config.Config, _ *slog.Logger, _ kernel.Meter) (search.Index, error) {
 	return meilisearch.New(meilisearch.Options{
 		URL: cfg.SearchMeilisearchURL, APIKey: cfg.SearchMeilisearchAPIKey, Index: cfg.SearchMeilisearchIndex,
-		Settings: cfg.SearchMeilisearchSettings, HTTPClient: searchHTTPClient(10 * time.Second),
+		Settings: cfg.SearchMeilisearchIndexSettings, HTTPClient: searchHTTPClient(10 * time.Second),
 	})
 }

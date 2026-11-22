@@ -21,7 +21,7 @@ import (
 )
 
 // setUpGathering builds the events of the local users (ADR-0161): the projectors of their
-// projections, their notifications and gathering.tick, their voice chat rooms, and the Service of
+// projections, their notifications and gathering.queue_due, their voice chat rooms, and the Service of
 // the client API. It comes after the voice chat, whose hosts it reads and whose rooms it opens,
 // and after the notifications, which it creates, and after the statuses, whose board posts go with
 // the records of the events.

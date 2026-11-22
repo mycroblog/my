@@ -21,7 +21,7 @@ Como executar cada mecanismo de busca que a busca de texto completo das publica�
      elasticsearch:9.5.3
    ```
 
-   Com a segurança ativada, que é o padrão, o Elasticsearch serve HTTPS com um certificado de uma autoridade própria. Copie essa autoridade para fora do contêiner para `search_elasticsearch_ca_file`:
+   Com a segurança ativada, que é o padrão, o Elasticsearch serve HTTPS com um certificado de uma autoridade própria. Copie essa autoridade para fora do contêiner para `search_elasticsearch_tls_ca_file`:
 
    ```sh
    docker cp elasticsearch:/usr/share/elasticsearch/config/certs/http_ca.crt /etc/my/elasticsearch-ca.crt
@@ -45,7 +45,7 @@ Como executar cada mecanismo de busca que a busca de texto completo das publica�
    MY_SEARCH=elasticsearch
    MY_SEARCH_ELASTICSEARCH_URL=https://localhost:9200
    MY_SEARCH_ELASTICSEARCH_API_KEY=<the encoded value>
-   MY_SEARCH_ELASTICSEARCH_CA_FILE=/etc/my/elasticsearch-ca.crt
+   MY_SEARCH_ELASTICSEARCH_TLS_CA_FILE=/etc/my/elasticsearch-ca.crt
    ```
 
 4. Execute `my search rebuild` para adicionar as publicações existentes, como em [ativar a busca](search.md#turning-it-on).
@@ -59,7 +59,7 @@ As configurações:
 | [`search_elasticsearch_username`](../reference/configuration.md#search_elasticsearch_username), [`search_elasticsearch_password`](../reference/configuration.md#search_elasticsearch_password) | Um usuário e uma senha para autenticação básica no lugar de uma chave. |
 | [`search_elasticsearch_index`](../reference/configuration.md#search_elasticsearch_index) | O nome do alias, `my-statuses` por padrão. Dê a cada servidor que compartilha um cluster o seu próprio nome e conceda à chave dele esse nome seguido de `*`. |
 | [`search_elasticsearch_index_settings_file`](../reference/configuration.md#search_elasticsearch_index_settings_file) | Um arquivo JSON com configurações próprias do índice, como em [ajustar a análise](#tuning-the-analysis-of-elasticsearch). |
-| [`search_elasticsearch_ca_file`](../reference/configuration.md#search_elasticsearch_ca_file) | A autoridade certificadora de um cluster HTTPS cujo certificado o sistema não reconhece. |
+| [`search_elasticsearch_tls_ca_file`](../reference/configuration.md#search_elasticsearch_tls_ca_file) | A autoridade certificadora de um cluster HTTPS cujo certificado o sistema não reconhece. |
 
 As credenciais são lidas somente do ambiente, como segredos, e nunca aparecem nos logs ou nos erros do servidor. Um erro do cluster chega aos logs como o caminho da requisição, seu status e o tipo do erro, como `index_not_found_exception`, nunca com o texto de uma publicação ou de uma consulta. Somente quando o cluster se recusa a criar o índice o erro cita o motivo, que nomeia apenas as configurações e os campos.
 
@@ -305,8 +305,8 @@ docker run -d --name meilisearch --restart unless-stopped \
 ```toml
 search = "meilisearch"
 search_meilisearch_url = "http://meilisearch:7700"
-# search_meilisearch_index = "my_statuses"
-# search_meilisearch_settings_file = "/etc/my/meilisearch-settings.json"
+# search_meilisearch_index = "my-statuses"
+# search_meilisearch_index_settings_file = "/etc/my/meilisearch-settings.json"
 ```
 
 Defina a chave pelo ambiente (`MY_SEARCH_MEILISEARCH_API_KEY` ou `MY_SEARCH_MEILISEARCH_API_KEY_FILE`), nunca no arquivo de configuração. Pode ser a chave mestra, mas uma chave que faz apenas o que o `my` precisa é mais segura. Crie uma com a chave mestra:
@@ -314,7 +314,7 @@ Defina a chave pelo ambiente (`MY_SEARCH_MEILISEARCH_API_KEY` ou `MY_SEARCH_MEIL
 ```sh
 curl -X POST http://meilisearch:7700/keys \
   -H "Authorization: Bearer $MEILI_MASTER_KEY" -H 'Content-Type: application/json' \
-  --data '{"description": "my", "indexes": ["my_statuses"],
+  --data '{"description": "my", "indexes": ["my-statuses"],
     "actions": ["search", "documents.add", "documents.get", "documents.delete", "indexes.create", "indexes.get",
       "indexes.delete", "settings.update", "tasks.get"],
     "expiresAt": null}'
@@ -352,7 +352,7 @@ A consulta de uma busca é fixa, seja qual for o conteúdo do arquivo de configu
 <!-- source: tuning-meilisearch df827448e06c -->
 ### Ajustar o Meilisearch
 
-Ajuste o mecanismo com um arquivo JSON de [configurações de índice do Meilisearch](https://www.meilisearch.com/docs/reference/api/settings), nomeado por `search_meilisearch_settings_file`. O servidor o verifica na inicialização, quando `search = meilisearch`: ele deve existir e ser um objeto JSON, não deve definir as quatro configurações que o próprio servidor define, e seus `rankingRules`, quando os tem, devem começar com `sort`, o que mantém os resultados das mais recentes para as mais antigas. O Meilisearch verifica os valores quando o servidor os envia. O servidor nunca registra o conteúdo do arquivo no log.
+Ajuste o mecanismo com um arquivo JSON de [configurações de índice do Meilisearch](https://www.meilisearch.com/docs/reference/api/settings), nomeado por `search_meilisearch_index_settings_file`. O servidor o verifica na inicialização, quando `search = meilisearch`: ele deve existir e ser um objeto JSON, não deve definir as quatro configurações que o próprio servidor define, e seus `rankingRules`, quando os tem, devem começar com `sort`, o que mantém os resultados das mais recentes para as mais antigas. O Meilisearch verifica os valores quando o servidor os envia. O servidor nunca registra o conteúdo do arquivo no log.
 
 Um exemplo que restringe os idiomas ao japonês, trata `・` como separador, torna a proximidade mais barata de indexar e ativa a tolerância a erros de digitação para palavras longas:
 

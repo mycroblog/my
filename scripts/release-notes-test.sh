@@ -79,7 +79,7 @@ git tag v0.1.0-rc.1
 
 first="$(draft v0.1.0)"
 expect_has "first release" "$first" \
-  "## Upgrading" "None. This is the first release" "## Breaking changes" "## API changes" "first release of the client API" \
+  "## Upgrading" "None. This is the first release" "An instance that ran a pre-release is not migrated" "## Breaking changes" "## API changes" "first release of the client API" \
   "None. This is the first release of mykit." "None. This is the first release of mybot." \
   "go get github.com/mycroblog/my/pkg/mykit@v0.1.0"
 [[ "$first" =~ :\ [0-9]{3,}\ operations ]] || fail "first release: no count of the operations: $first"

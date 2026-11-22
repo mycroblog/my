@@ -29,8 +29,8 @@ func searchElasticsearchChecks(vals map[string]string, present map[string]bool) 
 	if present["search_elasticsearch_password"] && !present["search_elasticsearch_username"] {
 		issues = append(issues, Issue{Key: "search_elasticsearch_username", Missing: true, Message: "required when search_elasticsearch_password is set"})
 	}
-	if present["search_elasticsearch_ca_file"] && present["search_elasticsearch_url"] && !strings.HasPrefix(strings.TrimSpace(vals["search_elasticsearch_url"]), "https://") {
-		issues = append(issues, Issue{Key: "search_elasticsearch_ca_file", Message: "needs an https search_elasticsearch_url"})
+	if present["search_elasticsearch_tls_ca_file"] && present["search_elasticsearch_url"] && !strings.HasPrefix(strings.TrimSpace(vals["search_elasticsearch_url"]), "https://") {
+		issues = append(issues, Issue{Key: "search_elasticsearch_tls_ca_file", Message: "needs an https search_elasticsearch_url"})
 	}
 	return issues
 }

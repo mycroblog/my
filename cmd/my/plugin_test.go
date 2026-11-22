@@ -124,7 +124,7 @@ func TestPluginTestRefusesABadDestination(t *testing.T) {
 	}{
 		{"plain TCP for a kind that refuses it", []string{"--kind", "key_manager", "http://127.0.0.1:1"}, 1, "address must not be http://"},
 		{"a token over plain TCP", []string{"--kind", "probe", "--token-file", file, "http://127.0.0.1:1"}, 1, "token must not"},
-		{"an unknown kind", []string{"--kind", "nope", "unix:///s"}, 2, "--kind must be one of"},
+		{"an unknown kind", []string{"--kind", "nope", "unix:///s"}, 2, "-kind must be one of"},
 		{"no address", []string{"--kind", "probe"}, 2, "want the address"},
 		{"no such flag", []string{"--nope"}, 2, "not defined"},
 	} {
@@ -139,7 +139,7 @@ func TestPluginTestRefusesABadDestination(t *testing.T) {
 
 func TestPluginUsage(t *testing.T) {
 	var out, errOut bytes.Buffer
-	if code := run([]string{"plugin", "-help"}, &out, &errOut); code != 0 || !strings.Contains(errOut.String(), "my plugin test --kind") {
+	if code := run([]string{"plugin", "-help"}, &out, &errOut); code != 0 || !strings.Contains(errOut.String(), "my plugin test -kind") {
 		t.Errorf("code = %d, stderr = %s", code, errOut.String())
 	}
 	errOut.Reset()

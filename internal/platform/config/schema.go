@@ -1195,10 +1195,10 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.SearchElasticsearchIndexSettingsFile = strings.TrimSpace(v) },
 	},
 	{
-		key:   "search_elasticsearch_ca_file",
+		key:   "search_elasticsearch_tls_ca_file",
 		doc:   "PEM file of the certificate authorities that the TLS certificate of `search_elasticsearch_url` chains to, such as the `http_ca.crt` that Elasticsearch generates when it starts with security on. Empty uses the system roots; it needs an `https:` URL.",
 		check: checkNotBlank,
-		set:   func(c *Config, v string) { c.SearchElasticsearchCAFile = strings.TrimSpace(v) },
+		set:   func(c *Config, v string) { c.SearchElasticsearchTLSCAFile = strings.TrimSpace(v) },
 	},
 	{
 		key:          "search_opensearch_url",
@@ -1234,9 +1234,9 @@ var schema = []field{
 		set:          func(c *Config, v string) { c.SearchOpenSearchPassword = v },
 	},
 	{
-		key:    "search_opensearch_aws_signing",
-		doc:    "Whether the server signs the requests of `search = opensearch` with AWS Signature Version 4, as a domain of Amazon OpenSearch Service with an IAM access policy needs. The credentials come from the AWS SDK's default chain: the environment, the shared files, the execution role.",
-		defDoc: "`off`",
+		key: "search_opensearch_aws_signing",
+		doc: "Whether the server signs the requests of `search = opensearch` with AWS Signature Version 4, as a domain of Amazon OpenSearch Service with an IAM access policy needs. The credentials come from the AWS SDK's default chain: the environment, the shared files, the execution role.",
+		def: "off",
 		choices: []choice{
 			{value: "off", doc: "No signing."},
 			{value: "es", doc: "Sign for a domain of Amazon OpenSearch Service (the service name `es`) in `search_opensearch_aws_region`. OpenSearch Serverless (`aoss`) is not supported."},
@@ -1266,14 +1266,14 @@ var schema = []field{
 	{
 		key:    "search_meilisearch_index",
 		doc:    "The uid of the Meilisearch index of the posts, which the server creates when it does not exist: letters, digits, hyphens, and underscores. Servers that share a Meilisearch server need different ones.",
-		defDoc: "`my_statuses`",
+		defDoc: "`my-statuses`",
 		check:  checkMeilisearchIndex,
 		set:    func(c *Config, v string) { c.SearchMeilisearchIndex = v },
 	},
 	{
-		key: "search_meilisearch_settings_file",
+		key: "search_meilisearch_index_settings_file",
 		doc: "The path of a JSON object of Meilisearch index settings, to tune the engine: `rankingRules` (which must start with `sort`), `typoTolerance`, `stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `localizedAttributes`, `proximityPrecision`, `pagination`, and the like. The server sets `searchableAttributes`, `displayedAttributes`, `filterableAttributes`, and `sortableAttributes` itself and refuses a file that sets them. A setting the file leaves out takes the server's default. The server reads the file at start and sends the settings when they differ from what the index has. Empty uses the server's defaults.",
-		set: func(c *Config, v string) { c.SearchMeilisearchSettingsFile = v },
+		set: func(c *Config, v string) { c.SearchMeilisearchIndexSettingsFile = v },
 	},
 	{
 		key: "voice",
@@ -1603,7 +1603,7 @@ var schema = []field{
 	},
 	{
 		key:   "pprof_listen",
-		doc:   "TCP address, as `host:port`, of a listener that serves the Go runtime's profiles (heap, allocations, goroutines, CPU, execution trace) under `/debug/pprof/`, for `go tool pprof`, apart from `listen`. Empty opens no such listener. It has no authentication, and a profile shows the internals of the process and costs CPU while it is taken: keep it on loopback, and reach it through a tunnel.",
+		doc:   "TCP address, as `host:port`, of a listener that serves the Go runtime's profiles (heap, allocations, goroutines, CPU, execution trace) under `/debug/pprof/`, for `go tool pprof`, apart from `listen`. Empty opens no such listener. It has no authentication, and a profile shows the internals of the process and costs CPU while it is taken: keep it on loopback, and reach it through a tunnel. The `production` profile warns when it is not on a loopback address.",
 		check: checkListen,
 		set:   func(c *Config, v string) { c.PprofListen = v },
 	},
