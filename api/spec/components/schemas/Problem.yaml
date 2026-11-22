@@ -282,6 +282,8 @@ description: |
   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
     it can.
   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+  - `/api/v1/problems/event-attendee-organizes` (422): the account organizes or co-organizes the
+    event, so it always sees the places and is not approved or revoked.
   - `/api/v1/problems/event-board-not-reader` (403): the user sees the event but does not read its
     board: the user neither organizes it nor answers `going` or `maybe`.
   - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the

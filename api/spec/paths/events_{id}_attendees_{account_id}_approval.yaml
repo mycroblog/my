@@ -9,8 +9,9 @@ put:
     Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
     co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
     the approved. An approval ends when the attendee answers `declined`. A 422
-    `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
-    A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+    `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
+    422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
+    always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
   tags: [events]
   security:
     - oauth2: ["write:events"]
@@ -33,7 +34,8 @@ delete:
   summary: Revoke the approval of an attendee of an event
   description: |
     Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
-    did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+    did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
+    co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
   tags: [events]
   security:
     - oauth2: ["write:events"]

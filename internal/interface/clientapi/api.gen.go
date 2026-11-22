@@ -11793,8 +11793,13 @@ type EventAttendee struct {
 	// Answer An answer to an event.
 	Answer EventAnswer `json:"answer"`
 
-	// Approved Whether the organizer or a co-organizer approved the answer.
+	// Approved Whether the attendee sees the places shown to the approved: the organizer or a co-organizer
+	// approved the answer, or the attendee organizes the event (`organizes`).
 	Approved bool `json:"approved"`
+
+	// Organizes Whether the attendee is the organizer or a co-organizer of the event now. Such an attendee
+	// is always `approved`, and their approval cannot be changed.
+	Organizes bool `json:"organizes"`
 }
 
 // EventAttendeePage A page of the attendees of an event, in the order of their answers.
@@ -12121,7 +12126,8 @@ type EventViewer struct {
 	// Answer The user's answer; omitted before the user answers.
 	Answer *EventAnswer `json:"answer,omitempty"`
 
-	// Approved Whether the organizer or a co-organizer approved the user's answer.
+	// Approved Whether the user sees the places shown to the approved: the organizer or a co-organizer
+	// approved the user's answer, or the user is the organizer or a co-organizer.
 	Approved bool `json:"approved"`
 
 	// Board What the user may do with the board of an event.
@@ -15841,6 +15847,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
 //     it can.
 //   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+//   - `/api/v1/problems/event-attendee-organizes` (422): the account organizes or co-organizes the
+//     event, so it always sees the places and is not approved or revoked.
 //   - `/api/v1/problems/event-board-not-reader` (403): the user sees the event but does not read its
 //     board: the user neither organizes it nor answers `going` or `maybe`.
 //   - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the

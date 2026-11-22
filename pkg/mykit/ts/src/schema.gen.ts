@@ -5573,15 +5573,17 @@ export interface paths {
          * @description Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
          *     co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
          *     the approved. An approval ends when the attendee answers `declined`. A 422
-         *     `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
-         *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         *     `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
+         *     422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
+         *     always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
          */
         put: operations["approveEventAttendee"];
         post?: never;
         /**
          * Revoke the approval of an attendee of an event
          * @description Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
-         *     did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         *     did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
+         *     co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
          */
         delete: operations["revokeEventAttendeeApproval"];
         options?: never;
@@ -14987,8 +14989,16 @@ export interface components {
         EventAttendee: {
             account: components["schemas"]["Account"];
             answer: components["schemas"]["EventAnswer"];
-            /** @description Whether the organizer or a co-organizer approved the answer. */
+            /**
+             * @description Whether the attendee sees the places shown to the approved: the organizer or a co-organizer
+             *     approved the answer, or the attendee organizes the event (`organizes`).
+             */
             approved: boolean;
+            /**
+             * @description Whether the attendee is the organizer or a co-organizer of the event now. Such an attendee
+             *     is always `approved`, and their approval cannot be changed.
+             */
+            organizes: boolean;
         };
         /** @description A page of the attendees of an event, in the order of their answers. */
         EventAttendeePage: components["schemas"]["PageInfo"] & {
@@ -15273,7 +15283,10 @@ export interface components {
             invited: boolean;
             /** @description The user's answer; omitted before the user answers. */
             answer?: components["schemas"]["EventAnswer"];
-            /** @description Whether the organizer or a co-organizer approved the user's answer. */
+            /**
+             * @description Whether the user sees the places shown to the approved: the organizer or a co-organizer
+             *     approved the user's answer, or the user is the organizer or a co-organizer.
+             */
             approved: boolean;
             board: components["schemas"]["EventBoardAccess"];
         };
@@ -17967,6 +17980,8 @@ export interface components {
          *     - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
          *       it can.
          *     - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+         *     - `/api/v1/problems/event-attendee-organizes` (422): the account organizes or co-organizes the
+         *       event, so it always sees the places and is not approved or revoked.
          *     - `/api/v1/problems/event-board-not-reader` (403): the user sees the event but does not read its
          *       board: the user neither organizes it nor answers `going` or `maybe`.
          *     - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the

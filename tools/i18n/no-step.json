@@ -29,6 +29,7 @@
     "server:errors.event.unscheduled",
     "server:errors.event.scheduled",
     "server:errors.event.board_closed",
+    "server:errors.event.attendee_organizes",
     "appfeatures:events.poll.act_failed#closed",
     "appfeatures:events.poll.act_failed#scheduled",
     "server:errors.status.edit_rejected",
