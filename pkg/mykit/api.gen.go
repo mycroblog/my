@@ -14760,7 +14760,8 @@ type NotificationRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// LastNotification The newest notification of the request; omitted when it can no longer be shown.
+	// LastNotification The newest notification of the request; omitted when it can no longer be shown, or a hide
+	// keyword filter of the notifications leaves it out.
 	LastNotification *Notification `json:"last_notification,omitempty"`
 
 	// NotificationsCount The number of notifications waiting in the request.
@@ -28202,8 +28203,9 @@ type ClientInterface interface {
 	//
 	// The sources whose notifications the user's notification policy filtered, one request per
 	// source, the one with the newest notification first. The sources that the user blocks, is
-	// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-	// left out.
+	// blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+	// deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+	// fewer than `limit` requests before the last.
 	//
 	// Corresponds with GET /notifications/requests (the `ListNotificationRequests` operationId).
 	ListNotificationRequests(ctx context.Context, params *ListNotificationRequestsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -40384,8 +40386,9 @@ func (c *Client) UpdateNotificationMarker(ctx context.Context, body UpdateNotifi
 //
 // The sources whose notifications the user's notification policy filtered, one request per
 // source, the one with the newest notification first. The sources that the user blocks, is
-// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-// left out.
+// blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+// deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+// fewer than `limit` requests before the last.
 //
 // Corresponds with GET /notifications/requests (the `ListNotificationRequests` operationId).
 func (c *Client) ListNotificationRequests(ctx context.Context, params *ListNotificationRequestsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -71058,8 +71061,9 @@ type ClientWithResponsesInterface interface {
 	//
 	// The sources whose notifications the user's notification policy filtered, one request per
 	// source, the one with the newest notification first. The sources that the user blocks, is
-	// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-	// left out.
+	// blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+	// deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+	// fewer than `limit` requests before the last.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -112789,8 +112793,9 @@ func (c *ClientWithResponses) UpdateNotificationMarkerWithResponse(ctx context.C
 //
 // The sources whose notifications the user's notification policy filtered, one request per
 // source, the one with the newest notification first. The sources that the user blocks, is
-// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-// left out.
+// blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+// deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+// fewer than `limit` requests before the last.
 //
 // Returns a wrapper object for the known response body format(s).
 //

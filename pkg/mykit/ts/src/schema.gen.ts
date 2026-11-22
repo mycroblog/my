@@ -2727,8 +2727,9 @@ export interface paths {
          * List the notification requests
          * @description The sources whose notifications the user's notification policy filtered, one request per
          *     source, the one with the newest notification first. The sources that the user blocks, is
-         *     blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-         *     left out.
+         *     blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+         *     deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+         *     fewer than `limit` requests before the last.
          */
         get: operations["listNotificationRequests"];
         put?: never;
@@ -17037,7 +17038,10 @@ export interface components {
              * @description The number of notifications waiting in the request.
              */
             notifications_count: number;
-            /** @description The newest notification of the request; omitted when it can no longer be shown. */
+            /**
+             * @description The newest notification of the request; omitted when it can no longer be shown, or a hide
+             *     keyword filter of the notifications leaves it out.
+             */
             last_notification?: components["schemas"]["Notification"];
         };
         /** @description A page of notification requests, the one with the newest notification first. */

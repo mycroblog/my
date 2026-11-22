@@ -14756,7 +14756,8 @@ type NotificationRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// LastNotification The newest notification of the request; omitted when it can no longer be shown.
+	// LastNotification The newest notification of the request; omitted when it can no longer be shown, or a hide
+	// keyword filter of the notifications leaves it out.
 	LastNotification *Notification `json:"last_notification,omitempty"`
 
 	// NotificationsCount The number of notifications waiting in the request.
