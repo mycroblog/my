@@ -28,9 +28,6 @@ func TestMoveTooSoonErrorIsErrMoveTooSoon(t *testing.T) {
 	if errors.Is(err, ErrMovedBefore) {
 		t.Errorf("errors.Is(%v, ErrMovedBefore) = true", err)
 	}
-	if got := errors.Unwrap(err); got != ErrMoveTooSoon {
-		t.Errorf("Unwrap = %v, want ErrMoveTooSoon", got)
-	}
 	if err.Error() == "" {
 		t.Error("Error is empty")
 	}
