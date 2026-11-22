@@ -14,7 +14,7 @@ import (
 )
 
 // The due times of the events and the reminders of the accounts (ADR-0161 §12, §13):
-// gathering_dues holds, for each event with something ahead, the next time that gathering.tick
+// gathering_dues holds, for each event with something ahead, the next time that gathering.queue_due
 // handles it, a reminder, the check of its voice chat room, or the start. The commands derive it
 // again in their transactions: the creation and a new date from scratch, an answer, a change of
 // the reminders of an attendee, and a revision that adds or removes the voice place keeping a time
@@ -89,7 +89,7 @@ func duesOf(ctx context.Context, tx uow.Tx, repo DueRepository, rec Record) ([]g
 }
 
 // refreshDue derives the due time of the event id again inside tx, as of now. Unless fresh, a due
-// time that came already stays, so that the next gathering.tick still handles what was due before
+// time that came already stays, so that the next gathering.queue_due still handles what was due before
 // the change; fresh (the creation and a new date) derives it from now.
 func refreshDue(ctx context.Context, tx uow.Tx, repo Repository, id string, now time.Time, fresh bool) error {
 	rec, err := repo.FindGathering(ctx, tx, id)

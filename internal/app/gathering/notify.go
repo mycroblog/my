@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/gathering"
 )
 
-// The notifications of the events (ADR-0161 §11). A command, or gathering.tick, enqueues
+// The notifications of the events (ADR-0161 §11). A command, or gathering.queue_due, enqueues
 // JobNotify through the outbox in its transaction; the job decides the recipients when it runs,
 // up to RecipientsPerJob of them per job, and notifies in each transaction only those who see the
 // event (gathering.CanSee), or for a post of its board those who read the board

@@ -21,7 +21,7 @@
      elasticsearch:9.5.3
    ```
 
-   既定どおりセキュリティが有効だと、Elasticsearch は独自の認証局の証明書で HTTPS を提供します。`search_elasticsearch_ca_file` のために、その認証局をコンテナーからコピーします。
+   既定どおりセキュリティが有効だと、Elasticsearch は独自の認証局の証明書で HTTPS を提供します。`search_elasticsearch_tls_ca_file` のために、その認証局をコンテナーからコピーします。
 
    ```sh
    docker cp elasticsearch:/usr/share/elasticsearch/config/certs/http_ca.crt /etc/my/elasticsearch-ca.crt
@@ -45,7 +45,7 @@
    MY_SEARCH=elasticsearch
    MY_SEARCH_ELASTICSEARCH_URL=https://localhost:9200
    MY_SEARCH_ELASTICSEARCH_API_KEY=<the encoded value>
-   MY_SEARCH_ELASTICSEARCH_CA_FILE=/etc/my/elasticsearch-ca.crt
+   MY_SEARCH_ELASTICSEARCH_TLS_CA_FILE=/etc/my/elasticsearch-ca.crt
    ```
 
 4. [有効にする](search.md#turning-it-on)のとおり、`my search rebuild` を実行して既存の投稿を追加します。
@@ -59,7 +59,7 @@
 | [`search_elasticsearch_username`](../reference/configuration.md#search_elasticsearch_username)、[`search_elasticsearch_password`](../reference/configuration.md#search_elasticsearch_password) | キーの代わりに使う、Basic 認証のユーザーとパスワード。 |
 | [`search_elasticsearch_index`](../reference/configuration.md#search_elasticsearch_index) | エイリアスの名前。既定は `my-statuses` です。クラスターを共有するサーバーにはそれぞれ別の名前を付け、そのキーにはその名前に `*` を付けたものを許可します。 |
 | [`search_elasticsearch_index_settings_file`](../reference/configuration.md#search_elasticsearch_index_settings_file) | [解析を調整する](#tuning-the-analysis-of-elasticsearch)のとおりの、インデックスの独自の設定を書いた JSON ファイル。 |
-| [`search_elasticsearch_ca_file`](../reference/configuration.md#search_elasticsearch_ca_file) | システムが信頼していない証明書を使う HTTPS クラスターの認証局。 |
+| [`search_elasticsearch_tls_ca_file`](../reference/configuration.md#search_elasticsearch_tls_ca_file) | システムが信頼していない証明書を使う HTTPS クラスターの認証局。 |
 
 認証情報はシークレットとして環境変数からだけ読まれ、サーバーのログやエラーに現れることはありません。クラスターのエラーは、リクエストのパス、ステータス、`index_not_found_exception` のようなエラーの種類としてログに記録され、投稿やクエリの本文が含まれることはありません。クラスターがインデックスの作成を拒否したときだけ、エラーはその理由を引用しますが、そこに出てくるのは設定とフィールドだけです。
 
@@ -305,8 +305,8 @@ docker run -d --name meilisearch --restart unless-stopped \
 ```toml
 search = "meilisearch"
 search_meilisearch_url = "http://meilisearch:7700"
-# search_meilisearch_index = "my_statuses"
-# search_meilisearch_settings_file = "/etc/my/meilisearch-settings.json"
+# search_meilisearch_index = "my-statuses"
+# search_meilisearch_index_settings_file = "/etc/my/meilisearch-settings.json"
 ```
 
 キーは設定ファイルには書かず、環境変数（`MY_SEARCH_MEILISEARCH_API_KEY` または `MY_SEARCH_MEILISEARCH_API_KEY_FILE`）で設定します。マスターキーでもかまいませんが、`my` に必要なことだけができるキーのほうが安全です。マスターキーを使って、次のように作成します。
@@ -314,7 +314,7 @@ search_meilisearch_url = "http://meilisearch:7700"
 ```sh
 curl -X POST http://meilisearch:7700/keys \
   -H "Authorization: Bearer $MEILI_MASTER_KEY" -H 'Content-Type: application/json' \
-  --data '{"description": "my", "indexes": ["my_statuses"],
+  --data '{"description": "my", "indexes": ["my-statuses"],
     "actions": ["search", "documents.add", "documents.get", "documents.delete", "indexes.create", "indexes.get",
       "indexes.delete", "settings.update", "tasks.get"],
     "expiresAt": null}'
@@ -352,7 +352,7 @@ Meilisearch 自体をアップグレードするには、そのアップグレ�
 <!-- source: tuning-meilisearch df827448e06c -->
 ### Meilisearch を調整する
 
-`search_meilisearch_settings_file` で指定する [Meilisearch のインデックスの設定](https://www.meilisearch.com/docs/reference/api/settings)の JSON ファイルで、エンジンを調整します。`search = meilisearch` のとき、サーバーは起動時にこれを確認します。ファイルが存在して JSON オブジェクトであること、サーバー自身が設定する 4 つの設定を含まないこと、`rankingRules` があるならそれが `sort` で始まること（結果を新しい順に保つため）が必要です。値は、サーバーが送ったときに Meilisearch が確認します。サーバーがファイルの内容をログに記録することはありません。
+`search_meilisearch_index_settings_file` で指定する [Meilisearch のインデックスの設定](https://www.meilisearch.com/docs/reference/api/settings)の JSON ファイルで、エンジンを調整します。`search = meilisearch` のとき、サーバーは起動時にこれを確認します。ファイルが存在して JSON オブジェクトであること、サーバー自身が設定する 4 つの設定を含まないこと、`rankingRules` があるならそれが `sort` で始まること（結果を新しい順に保つため）が必要です。値は、サーバーが送ったときに Meilisearch が確認します。サーバーがファイルの内容をログに記録することはありません。
 
 言語を日本語に絞り、`・` を区切りとして扱い、近接度のインデックスを軽くし、長い語でタイポ許容を有効にする例です。
 

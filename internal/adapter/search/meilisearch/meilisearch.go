@@ -48,7 +48,7 @@ import (
 )
 
 // DefaultIndex is the uid of the index when the operator sets none.
-const DefaultIndex = "my_statuses"
+const DefaultIndex = "my-statuses"
 
 // The fields of a document.
 const (
@@ -100,7 +100,7 @@ type Options struct {
 	APIKey string
 	// Index is the uid of the index (search_meilisearch_index), DefaultIndex when empty.
 	Index string
-	// Settings is the content of the settings file (search_meilisearch_settings_file), a JSON
+	// Settings is the content of the settings file (search_meilisearch_index_settings_file), a JSON
 	// object of index settings, nil for the adapter's defaults.
 	Settings []byte
 	// HTTPClient calls the API: the operator configured the server, which may be on a private

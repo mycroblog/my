@@ -186,7 +186,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`search_elasticsearch_password`](#search_elasticsearch_password) | `MY_SEARCH_ELASTICSEARCH_PASSWORD` | none | when `search_elasticsearch_username` is set | yes |
 | [`search_elasticsearch_index`](#search_elasticsearch_index) | `MY_SEARCH_ELASTICSEARCH_INDEX` | `my-statuses` | no | no |
 | [`search_elasticsearch_index_settings_file`](#search_elasticsearch_index_settings_file) | `MY_SEARCH_ELASTICSEARCH_INDEX_SETTINGS_FILE` | none | no | no |
-| [`search_elasticsearch_ca_file`](#search_elasticsearch_ca_file) | `MY_SEARCH_ELASTICSEARCH_CA_FILE` | none | no | no |
+| [`search_elasticsearch_tls_ca_file`](#search_elasticsearch_tls_ca_file) | `MY_SEARCH_ELASTICSEARCH_TLS_CA_FILE` | none | no | no |
 | [`search_opensearch_url`](#search_opensearch_url) | `MY_SEARCH_OPENSEARCH_URL` | none | when `search = opensearch` | no |
 | [`search_opensearch_index`](#search_opensearch_index) | `MY_SEARCH_OPENSEARCH_INDEX` | `my-statuses` | no | no |
 | [`search_opensearch_index_settings_file`](#search_opensearch_index_settings_file) | `MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE` | none | no | no |
@@ -196,8 +196,8 @@ An instance setting that has never been set reads as its default, which is defin
 | [`search_opensearch_aws_region`](#search_opensearch_aws_region) | `MY_SEARCH_OPENSEARCH_AWS_REGION` | the region of the AWS SDK's default chain (`AWS_REGION`) | no | no |
 | [`search_meilisearch_url`](#search_meilisearch_url) | `MY_SEARCH_MEILISEARCH_URL` | none | when `search = meilisearch` | no |
 | [`search_meilisearch_api_key`](#search_meilisearch_api_key) | `MY_SEARCH_MEILISEARCH_API_KEY` | none | no | yes |
-| [`search_meilisearch_index`](#search_meilisearch_index) | `MY_SEARCH_MEILISEARCH_INDEX` | `my_statuses` | no | no |
-| [`search_meilisearch_settings_file`](#search_meilisearch_settings_file) | `MY_SEARCH_MEILISEARCH_SETTINGS_FILE` | none | no | no |
+| [`search_meilisearch_index`](#search_meilisearch_index) | `MY_SEARCH_MEILISEARCH_INDEX` | `my-statuses` | no | no |
+| [`search_meilisearch_index_settings_file`](#search_meilisearch_index_settings_file) | `MY_SEARCH_MEILISEARCH_INDEX_SETTINGS_FILE` | none | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1615,11 +1615,11 @@ JSON file of the settings of each index that the server creates for `search = el
 - Default: none
 - Required: no
 
-### `search_elasticsearch_ca_file`
+### `search_elasticsearch_tls_ca_file`
 
 PEM file of the certificate authorities that the TLS certificate of `search_elasticsearch_url` chains to, such as the `http_ca.crt` that Elasticsearch generates when it starts with security on. Empty uses the system roots; it needs an `https:` URL.
 
-- Environment variable: `MY_SEARCH_ELASTICSEARCH_CA_FILE`
+- Environment variable: `MY_SEARCH_ELASTICSEARCH_TLS_CA_FILE`
 - Default: none
 - Required: no
 
@@ -1705,14 +1705,14 @@ The master key of the Meilisearch server, or an API key with the actions `search
 The uid of the Meilisearch index of the posts, which the server creates when it does not exist: letters, digits, hyphens, and underscores. Servers that share a Meilisearch server need different ones.
 
 - Environment variable: `MY_SEARCH_MEILISEARCH_INDEX`
-- Default: `my_statuses`
+- Default: `my-statuses`
 - Required: no
 
-### `search_meilisearch_settings_file`
+### `search_meilisearch_index_settings_file`
 
 The path of a JSON object of Meilisearch index settings, to tune the engine: `rankingRules` (which must start with `sort`), `typoTolerance`, `stopWords`, `synonyms`, `dictionary`, `separatorTokens`, `nonSeparatorTokens`, `localizedAttributes`, `proximityPrecision`, `pagination`, and the like. The server sets `searchableAttributes`, `displayedAttributes`, `filterableAttributes`, and `sortableAttributes` itself and refuses a file that sets them. A setting the file leaves out takes the server's default. The server reads the file at start and sends the settings when they differ from what the index has. Empty uses the server's defaults.
 
-- Environment variable: `MY_SEARCH_MEILISEARCH_SETTINGS_FILE`
+- Environment variable: `MY_SEARCH_MEILISEARCH_INDEX_SETTINGS_FILE`
 - Default: none
 - Required: no
 
@@ -2092,7 +2092,7 @@ Name of the environment that every error report carries, such as `staging`, to t
 
 ### `pprof_listen`
 
-TCP address, as `host:port`, of a listener that serves the Go runtime's profiles (heap, allocations, goroutines, CPU, execution trace) under `/debug/pprof/`, for `go tool pprof`, apart from `listen`. Empty opens no such listener. It has no authentication, and a profile shows the internals of the process and costs CPU while it is taken: keep it on loopback, and reach it through a tunnel.
+TCP address, as `host:port`, of a listener that serves the Go runtime's profiles (heap, allocations, goroutines, CPU, execution trace) under `/debug/pprof/`, for `go tool pprof`, apart from `listen`. Empty opens no such listener. It has no authentication, and a profile shows the internals of the process and costs CPU while it is taken: keep it on loopback, and reach it through a tunnel. The `production` profile warns when it is not on a loopback address.
 
 - Environment variable: `MY_PPROF_LISTEN`
 - Default: none

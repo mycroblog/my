@@ -40,12 +40,12 @@ func pluginTest(args []string, stdout, stderr io.Writer) int {
 	fs.StringVar(&d.TLSCertFile, "tls-cert-file", "", "the client certificate of mTLS")
 	fs.StringVar(&d.TLSKeyFile, "tls-key-file", "", "the key of the client certificate")
 	fs.DurationVar(&d.Timeout, "timeout", 0, "the deadline of one call (default: the kind's)")
-	billed := fs.Bool("billed", false, "--kind billing: also run the case that may cost money at the plugin's providers")
-	mailTo := fs.String("mail-to", "", "--kind mailer: run the cases that send real mail, to this address")
-	mailFrom := fs.String("mail-from", "", "--kind mailer: the sender of that mail, as mail_from (default: the --mail-to address)")
-	translateFrom := fs.String("translate-from", "", "--kind translator: the source language of the cases (default: en)")
-	translateTo := fs.String("translate-to", "", "--kind translator: the target language of the cases (default: ja)")
-	clearIndex := fs.Bool("clear-index", false, "--kind search: also run the cases that remove every document of the index, against an index for testing")
+	billed := fs.Bool("billed", false, "-kind billing: also run the case that may cost money at the plugin's providers")
+	mailTo := fs.String("mail-to", "", "-kind mailer: run the cases that send real mail, to this address")
+	mailFrom := fs.String("mail-from", "", "-kind mailer: the sender of that mail, as mail_from (default: the -mail-to address)")
+	translateFrom := fs.String("translate-from", "", "-kind translator: the source language of the cases (default: en)")
+	translateTo := fs.String("translate-to", "", "-kind translator: the target language of the cases (default: ja)")
+	clearIndex := fs.Bool("clear-index", false, "-kind search: also run the cases that remove every document of a visibility or of the whole index, against an index for testing")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
@@ -59,7 +59,7 @@ func pluginTest(args []string, stdout, stderr io.Writer) int {
 	}
 	k, ok := kind.ByName(*name)
 	if !ok {
-		_, _ = fmt.Fprintf(stderr, "my plugin test: --kind must be one of %s\n", strings.Join(kind.Names(), ", "))
+		_, _ = fmt.Fprintf(stderr, "my plugin test: -kind must be one of %s\n", strings.Join(kind.Names(), ", "))
 		return 2
 	}
 	d.Address = fs.Arg(0)
@@ -111,7 +111,7 @@ func pluginTest(args []string, stdout, stderr io.Writer) int {
 }
 
 func pluginUsage(w io.Writer) {
-	_, _ = fmt.Fprintf(w, `Usage: my plugin test --kind <kind> [flags] <address>
+	_, _ = fmt.Fprintf(w, `Usage: my plugin test -kind <kind> [flags] <address>
 
 Run the contract cases of a kind against a running plugin, and report PASS, FAIL, or
 SKIP per case. Exits 1 when a case fails. The plugin may be a real one: a case with a
@@ -120,22 +120,22 @@ side effect beyond the call runs only when a flag asks for it.
 <address> is unix:///path/to.sock, https://host[:port], or http://host[:port].
 
 Flags:
-  --kind           %s
-  --protocol       json, proto, or grpc (default: the kind's; the media kinds take proto or grpc)
-  --token-file     a file that holds the bearer token (https:// and unix:// only)
-  --tls-ca-file    verify the plugin against this CA (default: the system's roots)
-  --tls-cert-file  the client certificate of mTLS
-  --tls-key-file   the key of the client certificate
-  --timeout        the deadline of one call, such as 5s (default: the kind's)
-  --billed         --kind billing: also run the case that may cost money at the plugin's
-                   providers
-  --mail-to        --kind mailer: run the cases that send real mail, to this address
-  --mail-from      --kind mailer: the sender of that mail, as mail_from (default: the
-                   --mail-to address)
-  --translate-from --kind translator: the source language of the cases (default: en)
-  --translate-to   --kind translator: the target language of the cases (default: ja)
-  --clear-index    --kind search: also run the cases that remove every document of a
-                   visibility or of the whole index, against an index for testing
+  -kind           %s
+  -protocol       json, proto, or grpc (default: the kind's; the media kinds take proto or grpc)
+  -token-file     a file that holds the bearer token (https:// and unix:// only)
+  -tls-ca-file    verify the plugin against this CA (default: the system's roots)
+  -tls-cert-file  the client certificate of mTLS
+  -tls-key-file   the key of the client certificate
+  -timeout        the deadline of one call, such as 5s (default: the kind's)
+  -billed         -kind billing: also run the case that may cost money at the plugin's
+                  providers
+  -mail-to        -kind mailer: run the cases that send real mail, to this address
+  -mail-from      -kind mailer: the sender of that mail, as mail_from (default: the
+                  -mail-to address)
+  -translate-from -kind translator: the source language of the cases (default: en)
+  -translate-to   -kind translator: the target language of the cases (default: ja)
+  -clear-index    -kind search: also run the cases that remove every document of a
+                  visibility or of the whole index, against an index for testing
 
 The flags mean what the settings plugin_<kind>_* mean, and this command reads no
 configuration.

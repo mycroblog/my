@@ -99,7 +99,7 @@ type Deps struct {
 	RateLimiter *kernel.RateLimiter
 	Members     Members
 	Relations   Relations
-	// Outbox enqueues the jobs of the notifications and of gathering.tick in the transactions of
+	// Outbox enqueues the jobs of the notifications and of gathering.queue_due in the transactions of
 	// the commands, and Notifier creates the notifications (ADR-0161 §11, §12); with either nil the
 	// events notify nobody.
 	Outbox   queue.Outbox

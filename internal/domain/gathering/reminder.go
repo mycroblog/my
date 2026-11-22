@@ -10,7 +10,7 @@ import (
 
 // The reminders and the due times of an event (ADR-0161 §12): an attendee who answers going or
 // maybe is reminded at the times before the start that it chose, one day and one hour before by
-// default; gathering.tick handles an event at its next due time, a reminder or the start.
+// default; gathering.queue_due handles an event at its next due time, a reminder or the start.
 
 // Bounds of the reminders of an account.
 const (
@@ -49,7 +49,7 @@ func NormalizeReminders(minutes []int) ([]int, error) {
 	return out, nil
 }
 
-// DueKind is what gathering.tick does at a due time of an event.
+// DueKind is what gathering.queue_due does at a due time of an event.
 type DueKind string
 
 // Due kinds.
@@ -66,7 +66,7 @@ const (
 // RoomCheckBefore is how long before the start of an event with a voice place DueRoomCheck is.
 const RoomCheckBefore = 24 * time.Hour
 
-// Due is one thing that gathering.tick does for an event, at At.
+// Due is one thing that gathering.queue_due does for an event, at At.
 type Due struct {
 	Kind DueKind
 	At   time.Time
@@ -106,7 +106,7 @@ func NextDue(dues []Due, after time.Time) (time.Time, bool) {
 }
 
 // DuesBetween returns the dues from since through until, both included, from the earliest: what a
-// run of gathering.tick at until does for an event that was due at since.
+// run of gathering.queue_due at until does for an event that was due at since.
 func DuesBetween(dues []Due, since, until time.Time) []Due {
 	var out []Due
 	for _, d := range dues {

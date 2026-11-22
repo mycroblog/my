@@ -21,7 +21,7 @@
      elasticsearch:9.5.3
    ```
 
-   安全功能开启时（这是默认设置），Elasticsearch 使用由它自己的证书颁发机构签发的证书提供 HTTPS。把该证书颁发机构从容器中复制出来，用于 `search_elasticsearch_ca_file`：
+   安全功能开启时（这是默认设置），Elasticsearch 使用由它自己的证书颁发机构签发的证书提供 HTTPS。把该证书颁发机构从容器中复制出来，用于 `search_elasticsearch_tls_ca_file`：
 
    ```sh
    docker cp elasticsearch:/usr/share/elasticsearch/config/certs/http_ca.crt /etc/my/elasticsearch-ca.crt
@@ -45,7 +45,7 @@
    MY_SEARCH=elasticsearch
    MY_SEARCH_ELASTICSEARCH_URL=https://localhost:9200
    MY_SEARCH_ELASTICSEARCH_API_KEY=<the encoded value>
-   MY_SEARCH_ELASTICSEARCH_CA_FILE=/etc/my/elasticsearch-ca.crt
+   MY_SEARCH_ELASTICSEARCH_TLS_CA_FILE=/etc/my/elasticsearch-ca.crt
    ```
 
 4. 按照[开启](search.md#turning-it-on)中的说明，运行 `my search rebuild` 加入现有的帖子。
@@ -59,7 +59,7 @@
 | [`search_elasticsearch_username`](../reference/configuration.md#search_elasticsearch_username)、[`search_elasticsearch_password`](../reference/configuration.md#search_elasticsearch_password) | 用于基本认证的用户名和密码，代替密钥。 |
 | [`search_elasticsearch_index`](../reference/configuration.md#search_elasticsearch_index) | 别名的名称，默认为 `my-statuses`。共用一个集群的每台服务器都要使用自己的名称，并授予其密钥对该名称加 `*` 的权限。 |
 | [`search_elasticsearch_index_settings_file`](../reference/configuration.md#search_elasticsearch_index_settings_file) | 你自己的索引设置的 JSON 文件，见[调整分析](#tuning-the-analysis-of-elasticsearch)。 |
-| [`search_elasticsearch_ca_file`](../reference/configuration.md#search_elasticsearch_ca_file) | HTTPS 集群的证书颁发机构，用于系统不信任其证书的情况。 |
+| [`search_elasticsearch_tls_ca_file`](../reference/configuration.md#search_elasticsearch_tls_ca_file) | HTTPS 集群的证书颁发机构，用于系统不信任其证书的情况。 |
 
 凭据只作为机密从环境中读取，绝不会出现在服务器的日志或错误中。集群的错误只以请求的路径、状态和错误类型（例如 `index_not_found_exception`）出现在日志中，绝不会带有帖子或查询的文本。只有在集群拒绝创建索引时，错误才会引用其原因，而原因只涉及设置和字段。
 
@@ -305,8 +305,8 @@ docker run -d --name meilisearch --restart unless-stopped \
 ```toml
 search = "meilisearch"
 search_meilisearch_url = "http://meilisearch:7700"
-# search_meilisearch_index = "my_statuses"
-# search_meilisearch_settings_file = "/etc/my/meilisearch-settings.json"
+# search_meilisearch_index = "my-statuses"
+# search_meilisearch_index_settings_file = "/etc/my/meilisearch-settings.json"
 ```
 
 通过环境变量设置密钥（`MY_SEARCH_MEILISEARCH_API_KEY` 或 `MY_SEARCH_MEILISEARCH_API_KEY_FILE`），绝不要写在配置文件中。它可以是主密钥，但只能做 `my` 所需操作的密钥更安全。用主密钥创建一个：
@@ -314,7 +314,7 @@ search_meilisearch_url = "http://meilisearch:7700"
 ```sh
 curl -X POST http://meilisearch:7700/keys \
   -H "Authorization: Bearer $MEILI_MASTER_KEY" -H 'Content-Type: application/json' \
-  --data '{"description": "my", "indexes": ["my_statuses"],
+  --data '{"description": "my", "indexes": ["my-statuses"],
     "actions": ["search", "documents.add", "documents.get", "documents.delete", "indexes.create", "indexes.get",
       "indexes.delete", "settings.update", "tasks.get"],
     "expiresAt": null}'
@@ -352,7 +352,7 @@ curl -X POST http://meilisearch:7700/keys \
 <!-- source: tuning-meilisearch df827448e06c -->
 ### 调整 Meilisearch
 
-用一个 [Meilisearch 索引设置](https://www.meilisearch.com/docs/reference/api/settings)的 JSON 文件调整引擎，由 `search_meilisearch_settings_file` 指定。当 `search = meilisearch` 时，服务器在启动时检查它：文件必须存在且是一个 JSON 对象，不得设置服务器自行设置的四项设置，并且如果有 `rankingRules`，它必须以 `sort` 开头，以保持结果从新到旧排列。Meilisearch 会在服务器发送这些值时检查它们。服务器绝不会记录该文件的内容。
+用一个 [Meilisearch 索引设置](https://www.meilisearch.com/docs/reference/api/settings)的 JSON 文件调整引擎，由 `search_meilisearch_index_settings_file` 指定。当 `search = meilisearch` 时，服务器在启动时检查它：文件必须存在且是一个 JSON 对象，不得设置服务器自行设置的四项设置，并且如果有 `rankingRules`，它必须以 `sort` 开头，以保持结果从新到旧排列。Meilisearch 会在服务器发送这些值时检查它们。服务器绝不会记录该文件的内容。
 
 下面的示例把语言限定为日语，把 `・` 视为分隔符，降低邻近度的索引成本，并为长词开启拼写容错：
 

@@ -70,7 +70,7 @@ func TestLoadSearchElasticsearch(t *testing.T) {
 		{"a password without a user", base("MY_SEARCH_ELASTICSEARCH_PASSWORD", "p"), "search_elasticsearch_username"},
 		{"an index name in capitals", base("MY_SEARCH_ELASTICSEARCH_INDEX", "Statuses"), "search_elasticsearch_index"},
 		{"a missing settings file", base("MY_SEARCH_ELASTICSEARCH_INDEX_SETTINGS_FILE", "/nowhere.json"), "search_elasticsearch_index_settings_file"},
-		{"a CA file over http", base("MY_SEARCH_ELASTICSEARCH_URL", "http://es:9200", "MY_SEARCH_ELASTICSEARCH_CA_FILE", "/ca.pem"), "search_elasticsearch_ca_file"},
+		{"a CA file over http", base("MY_SEARCH_ELASTICSEARCH_URL", "http://es:9200", "MY_SEARCH_ELASTICSEARCH_TLS_CA_FILE", "/ca.pem"), "search_elasticsearch_tls_ca_file"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, _, err := Load(source(tc.env, nil))

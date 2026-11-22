@@ -110,6 +110,22 @@ func TestReadiness(t *testing.T) {
 			want: nil,
 		},
 	}
+	for _, addr := range []string{"127.0.0.1:6060", "[::1]:6060", "localhost:6060"} {
+		tests = append(tests, readinessCase{name: "pprof_listen on loopback " + addr, env: with(ready(), "MY_PPROF_LISTEN", addr), want: base})
+	}
+	for _, addr := range []string{":6060", "0.0.0.0:6060", "10.0.0.5:6060", "pprof.internal:6060"} {
+		tests = append(tests, readinessCase{
+			name:        "pprof_listen off loopback " + addr,
+			env:         with(ready(), "MY_PPROF_LISTEN", addr),
+			want:        []string{"warning mail", "warning pprof_listen", "warning vapid_private_key"},
+			wantMessage: "not a loopback address",
+		})
+	}
+	tests = append(tests, readinessCase{
+		name: "pprof_listen off loopback in the development profile",
+		env:  with(minimal(), "MY_PROFILE", "development", "MY_HOST", "localhost:8080", "MY_DATABASE_URL", ":memory:", "MY_PPROF_LISTEN", ":6060"),
+		want: nil,
+	})
 	for _, key := range []string{"sk_test_abc", "rk_test_abc"} {
 		tests = append(tests, readinessCase{
 			name: "Stripe test key " + key,

@@ -7,6 +7,7 @@ touches, each `decisions/<area>.md`, and `exemplars.md`:
 - `schema`: a table, a column, an index, or a change of their data.
 - `api`: the client API's contract as the server keeps it (the spec, the guard).
 - `runtime`: what the server costs while it runs (memory, pools, the work of startup).
+- `naming`: the names that are stored or set by operators (job types, settings, defaults).
 
 - The OpenAPI spec is the contract with the web client: when an issue crosses into it, the spec is fixed first, and
   you implement it as given (ADR-0170 §4).

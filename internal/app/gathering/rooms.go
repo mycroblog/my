@@ -120,7 +120,7 @@ func (r Record) HasVoice() bool {
 // JobRoom opens the room of a date of an event at its start (checkpoint start), or checks that
 // it will open (confirmed, day_before). Its payload names the event, the date, and the
 // checkpoint; its idempotency key is the date and the checkpoint.
-const JobRoom = "gathering.room"
+const JobRoom = "gathering.open_room"
 
 // JobEndRooms ends the rooms of an event that was canceled or whose voice place was removed.
 const JobEndRooms = "gathering.end_rooms"

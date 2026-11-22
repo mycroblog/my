@@ -235,7 +235,7 @@ CREATE TABLE gathering_coorganizers (
 -- The events an account co-organizes.
 CREATE INDEX gathering_coorganizers_account_id ON gathering_coorganizers (account_id, gathering_id);
 
--- Projection: the next time that gathering.tick handles an event (ADR-0161 §12, §13), for the
+-- Projection: the next time that gathering.queue_due handles an event (ADR-0161 §12, §13), for the
 -- events that have one: a reminder or the start that is still ahead. The confirmations, the
 -- answers, the reminder settings, and the cancellation derive it; an event with nothing ahead
 -- has no row.

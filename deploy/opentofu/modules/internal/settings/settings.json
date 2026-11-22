@@ -871,10 +871,6 @@
     "env": "MY_SEARCH_ELASTICSEARCH_API_KEY",
     "secret": true
   },
-  "search_elasticsearch_ca_file": {
-    "env": "MY_SEARCH_ELASTICSEARCH_CA_FILE",
-    "secret": false
-  },
   "search_elasticsearch_index": {
     "env": "MY_SEARCH_ELASTICSEARCH_INDEX",
     "secret": false
@@ -886,6 +882,10 @@
   "search_elasticsearch_password": {
     "env": "MY_SEARCH_ELASTICSEARCH_PASSWORD",
     "secret": true
+  },
+  "search_elasticsearch_tls_ca_file": {
+    "env": "MY_SEARCH_ELASTICSEARCH_TLS_CA_FILE",
+    "secret": false
   },
   "search_elasticsearch_url": {
     "env": "MY_SEARCH_ELASTICSEARCH_URL",
@@ -903,8 +903,8 @@
     "env": "MY_SEARCH_MEILISEARCH_INDEX",
     "secret": false
   },
-  "search_meilisearch_settings_file": {
-    "env": "MY_SEARCH_MEILISEARCH_SETTINGS_FILE",
+  "search_meilisearch_index_settings_file": {
+    "env": "MY_SEARCH_MEILISEARCH_INDEX_SETTINGS_FILE",
     "secret": false
   },
   "search_meilisearch_url": {

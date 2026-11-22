@@ -57,7 +57,7 @@ func newEventEnv(t *testing.T, users ...string) *eventEnv {
 	return e
 }
 
-// at moves the clock to d after the start, runs gathering.tick, and runs the jobs.
+// at moves the clock to d after the start, runs gathering.queue_due, and runs the jobs.
 func (e *eventEnv) at(t *testing.T, d time.Duration) {
 	t.Helper()
 	e.clock.Set(e.start.Add(d))

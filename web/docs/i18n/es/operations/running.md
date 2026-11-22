@@ -751,7 +751,7 @@ Con `queue = cloudtasks` los trabajos permanecen en la base de datos (`database 
 ### Con cuánto retraso se ejecutan los trabajos periódicos
 
 Un trabajo periódico se ejecuta hasta un periodo de su disparador después de su hora, más el tiempo que tarda la plataforma en iniciarlo. Esto es lo
-que decide con cuánto retraso llegan los recordatorios y las notificaciones de inicio de los eventos y se abren sus salas de chat de voz, ya que `gathering.tick` las inicia: un recordatorio
+que decide con cuánto retraso llegan los recordatorios y las notificaciones de inicio de los eventos y se abren sus salas de chat de voz, ya que `gathering.queue_due` las inicia: un recordatorio
 se retrasa hasta el intervalo de la tabla. Los valores son los que dan el código del planificador y el disparador de cada plataforma; no se
 midieron en un servidor en funcionamiento.
 

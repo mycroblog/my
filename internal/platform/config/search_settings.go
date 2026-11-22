@@ -32,9 +32,9 @@ var searchSettingsFiles = map[string]struct {
 		check: checkIndexSettings,
 	},
 	"meilisearch": {
-		key:   "search_meilisearch_settings_file",
-		path:  func(c *Config) string { return c.SearchMeilisearchSettingsFile },
-		keep:  func(c *Config, b []byte) { c.SearchMeilisearchSettings = b },
+		key:   "search_meilisearch_index_settings_file",
+		path:  func(c *Config) string { return c.SearchMeilisearchIndexSettingsFile },
+		keep:  func(c *Config, b []byte) { c.SearchMeilisearchIndexSettings = b },
 		check: checkMeilisearchSettings,
 	},
 }
