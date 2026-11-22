@@ -1825,11 +1825,32 @@ func (l *Localizer) ServerErrorsOauthAppDisabled() string {
 	return l.format("server:errors.oauth_app.disabled", nil)
 }
 
+// ServerErrorsOauthAppFirstPartyScope formats "server:errors.oauth_app.first_party_scope". Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes, or of the token the user issues for their own app (Scopes): a scope that only the server's own clients may have. admin, admin:read, admin:write and write:supporters are names of scopes, to keep as they are.
+//
+//	en: admin, admin:read, admin:write and write:supporters are only for this server's own apps. Remove them.
+func (l *Localizer) ServerErrorsOauthAppFirstPartyScope() string {
+	return l.format("server:errors.oauth_app.first_party_scope", nil)
+}
+
 // ServerErrorsOauthAppPublic formats "server:errors.oauth_app.public". Title of the HTTP 409 API error when the user asks for a new client secret of a public OAuth app, which has none.
 //
 //	en: This app has no secret.
 func (l *Localizer) ServerErrorsOauthAppPublic() string {
 	return l.format("server:errors.oauth_app.public", nil)
+}
+
+// ServerErrorsOauthAppRedirectUriForm formats "server:errors.oauth_app.redirect_uri_form". Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes (Redirect URIs): one of the redirect URIs is of none of the three allowed forms (http is allowed only on 127.0.0.1 or [::1]). com.example.app:/callback and http://127.0.0.1 are examples to keep as they are.
+//
+//	en: One of the addresses is not an https address, an address with a scheme of your own such as com.example.app:/callback, or http://127.0.0.1 on any port. Change it to one of these forms.
+func (l *Localizer) ServerErrorsOauthAppRedirectUriForm() string {
+	return l.format("server:errors.oauth_app.redirect_uri_form", nil)
+}
+
+// ServerErrorsOauthAppRedirectUriFragment formats "server:errors.oauth_app.redirect_uri_fragment". Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes (Redirect URIs): one of the redirect URIs has a fragment (the part after #).
+//
+//	en: One of the addresses has a #, which a redirect URI cannot have. Remove the # and everything after it.
+func (l *Localizer) ServerErrorsOauthAppRedirectUriFragment() string {
+	return l.format("server:errors.oauth_app.redirect_uri_fragment", nil)
 }
 
 // ServerErrorsOauthAppRegistrationDisabled formats "server:errors.oauth_app.registration_disabled". Title of the HTTP 403 API error when the user registers an OAuth app while the server's administrators have turned off app registration by users.
@@ -1839,11 +1860,39 @@ func (l *Localizer) ServerErrorsOauthAppRegistrationDisabled() string {
 	return l.format("server:errors.oauth_app.registration_disabled", nil)
 }
 
+// ServerErrorsOauthAppScopeBeyondApp formats "server:errors.oauth_app.scope_beyond_app". Detail of the HTTP 422 API error, shown under the field Scopes on the page Issue token of the user's own OAuth app: the token asks for a scope that the app does not have.
+//
+//	en: One of the scopes is not among the app's. A token can have only the scopes of its app. Remove it, or add it to the app first.
+func (l *Localizer) ServerErrorsOauthAppScopeBeyondApp() string {
+	return l.format("server:errors.oauth_app.scope_beyond_app", nil)
+}
+
 // ServerErrorsOauthAppTooMany formats "server:errors.oauth_app.too_many". Title of the HTTP 409 API error when the user registers an OAuth app while having the most apps allowed (25).
 //
 //	en: You have as many apps as allowed. Delete one first.
 func (l *Localizer) ServerErrorsOauthAppTooMany() string {
 	return l.format("server:errors.oauth_app.too_many", nil)
+}
+
+// ServerErrorsOauthAppTooManyRedirectUris formats "server:errors.oauth_app.too_many_redirect_uris". Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes (Redirect URIs): the app has more redirect URIs than allowed. {max} is how many an app may have (10).
+//
+//	en: {max, plural, one {An app can have at most # redirect URI. Remove the others.} other {An app can have at most # redirect URIs. Remove some.}}
+func (l *Localizer) ServerErrorsOauthAppTooManyRedirectUris(max int) string {
+	return l.format("server:errors.oauth_app.too_many_redirect_uris", map[string]any{"max": max})
+}
+
+// ServerErrorsOauthAppUnknownScope formats "server:errors.oauth_app.unknown_scope". Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes, or of the token the user issues for their own app (Scopes): one of the scopes is unknown to the server. read and write:statuses are names of scopes, to keep as they are.
+//
+//	en: One of the scopes is not one this server knows. Check its spelling, and separate scopes with spaces, as in read write:statuses.
+func (l *Localizer) ServerErrorsOauthAppUnknownScope() string {
+	return l.format("server:errors.oauth_app.unknown_scope", nil)
+}
+
+// ServerErrorsOauthAppWebsiteNotHttp formats "server:errors.oauth_app.website_not_http". Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes (Website): the website is not an https or http address with a host. https://example.com/ is an example to keep as it is.
+//
+//	en: This is not an https or http address. Enter one such as https://example.com/.
+func (l *Localizer) ServerErrorsOauthAppWebsiteNotHttp() string {
+	return l.format("server:errors.oauth_app.website_not_http", nil)
 }
 
 // ServerErrorsPasskeyConfirmationExpired formats "server:errors.passkey.confirmation_expired". Title of the HTTP 422 API error when the user confirms an operation on their own account (such as deleting it or removing the password) with a passkey after the confirmation expired (5 minutes) or was already used.

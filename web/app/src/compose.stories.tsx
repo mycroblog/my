@@ -115,6 +115,9 @@ const words = {
     // The server's words of a post its automated review refused (server:errors.status.rejected.detail).
     reviewRefused:
       "This server's automated review did not accept this post. If you think this is a mistake, you can appeal.",
+    // The server's words of a post a restriction of the account refused (server:errors.status.posting_restricted).
+    restricted:
+      "A moderation action keeps your account from posting for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.",
   },
   ja: {
     typing: "今朝は川沿いを歩いた。初霜で道の葉っぱがぜんぶ銀色になっていて、",
@@ -136,6 +139,8 @@ const words = {
     refusedDetail: "正しくない値です。入力した内容を確かめてください。",
     reviewRefused:
       "このサーバーの自動審査で、この投稿は受け付けられませんでした。誤りだと思うときは、異議を申し立てられます。",
+    restricted:
+      "モデレーションの処分により、今はこのアカウントで投稿できません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。",
   },
 };
 
@@ -173,6 +178,8 @@ type State = {
    * made already, which waits for the moderators (`appealed`).
    */
   reviewed?: "refused" | "appealed";
+  /** It opens refused for a restriction of the reader's account, in the server's words, with Account status. */
+  restricted?: true;
 };
 
 /** A moment `days` days from now at `hour` o'clock, local time, as an ISO 8601 string. */
@@ -323,6 +330,8 @@ const states = {
   // Refused by the server's automated review: the error says so with Appeal; once appealed, where the appeal stands.
   "refused-review": { name: "Refused by the review", target: nw, draft: typed, reviewed: "refused" },
   "refused-appealed": { name: "Refusal appealed", target: nw, draft: typed, reviewed: "appealed" },
+  // Refused for a restriction of the account: the error says so, and leads to Account status.
+  "refused-restricted": { name: "Posting restricted", target: nw, draft: typed, restricted: true },
   // Being sent: Close, Post and the tools wait for the answer.
   posting: { name: "Posting", target: nw, draft: typed, specimen: { phase: { kind: "posting" } } },
   // The chunk of the composer's view, or of its editor, could not be fetched (the network).
@@ -374,12 +383,18 @@ function Specimen({ id, text }: { id: StateId; text: string }) {
             appeal: { decision: reviewDecision, deadline: new Date(Date.now() + 180 * 86_400_000).toISOString() },
           },
         }
-      : state.refusedAt === undefined
-        ? state.specimen
-        : {
-            ...state.specimen,
-            phase: { kind: "failed", reason: w.refusedTitle, field: { input: state.refusedAt, text: w.refusedDetail } },
-          };
+      : state.restricted
+        ? { phase: { kind: "failed", reason: w.restricted, restricted: true } }
+        : state.refusedAt === undefined
+          ? state.specimen
+          : {
+              ...state.specimen,
+              phase: {
+                kind: "failed",
+                reason: w.refusedTitle,
+                field: { input: state.refusedAt, text: w.refusedDetail },
+              },
+            };
   return (
     <AppDataProvider data={data}>
       <MenuSheet sheet={narrow}>
@@ -492,6 +507,8 @@ export const DescriptionRefused: Story = shows("refused-description");
 export const ReviewRefused: Story = shows("refused-review");
 /** The refusal appealed: in the error's place, that the appeal was sent and waits for a moderator. */
 export const ReviewAppealed: Story = shows("refused-appealed");
+/** A post a restriction of the account refused: the error in the server's words, with Account status after them. */
+export const PostingRestricted: Story = shows("refused-restricted");
 /** The composer's view could not be fetched: its frame as tall as one line, that it could not be loaded, and Try again. */
 export const PostFormNotLoaded: Story = shows("unloaded-composer");
 /**

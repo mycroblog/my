@@ -380,8 +380,20 @@ func (s Scope) WithoutSelfIssuedOnly() Scope {
 // KnownScopes returns every scope the server knows, sorted.
 func KnownScopes() []string { return slices.Clone(knownScopes) }
 
-// ErrInvalidScope reports a scope string that ParseScope rejects.
+// ErrInvalidScope reports a scope string that ParseScope rejects. ErrUnknownScope wraps it for a
+// scope the server does not know.
 var ErrInvalidScope = errors.New("invalid scope")
+
+// Errors of the rule a scope breaks.
+var (
+	// ErrUnknownScope reports a scope the server does not know.
+	ErrUnknownScope = fmt.Errorf("%w: unknown scope", ErrInvalidScope)
+	// ErrFirstPartyOnlyScope reports a first-party-only scope where only a third-party client's
+	// scope may be (FirstPartyOnlyScope).
+	ErrFirstPartyOnlyScope = errors.New("identity: a scope for first-party clients only")
+	// ErrScopeBeyondClient reports a scope of a token beyond the scope of its client.
+	ErrScopeBeyondClient = errors.New("identity: a scope beyond the client's")
+)
 
 // Scope is a set of scopes in its normal form: the scope tokens sorted, without duplicates,
 // separated by one space (RFC 6749 §3.3). It is stored and compared as a whole.
@@ -402,7 +414,7 @@ func ParseScope(s string) (Scope, error) {
 			return "", fmt.Errorf("%w: empty scope token", ErrInvalidScope)
 		}
 		if !slices.Contains(knownScopes, t) {
-			return "", fmt.Errorf("%w: unknown scope %q", ErrInvalidScope, t)
+			return "", fmt.Errorf("%w %q", ErrUnknownScope, t)
 		}
 	}
 	slices.Sort(tokens)

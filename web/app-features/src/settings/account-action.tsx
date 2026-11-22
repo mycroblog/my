@@ -31,7 +31,7 @@
 // that can still be sent is the app's to notice (`onUnsaved`): it holds the reader back and gives `leaving`, and the
 // screen asks whether to leave.
 
-import { plainText, statusPath } from "@my/app-components";
+import { accountStatusPath, plainText, statusPath } from "@my/app-components";
 import {
   appealLimits,
   appealRefusalOf,
@@ -69,7 +69,6 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
 import { LimitCount } from "../profile-identity";
 import { formatParts } from "../slots";
-import { accountStatusPath } from "./account";
 import { appealPassed, endsLine, useStatusWords } from "./account-status";
 import { ReadingNotice, useFocusOnArrival, useMoment } from "./parts";
 

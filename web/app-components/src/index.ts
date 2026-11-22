@@ -71,6 +71,7 @@ export { languageName } from "./locale";
 export {
   accountMovePath,
   accountPath,
+  accountStatusPath,
   adminPath,
   autoDeletePath,
   dataExportPath,

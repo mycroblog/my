@@ -16,7 +16,7 @@
 // resizes the viewport itself (`interactive-widget=resizes-content`).
 
 import { Suspense, useId, useRef, type KeyboardEvent, type ReactNode } from "react";
-import { Button as AriaButton, Dialog, Heading } from "react-aria-components";
+import { Button as AriaButton, Dialog, Heading, Link as AriaLink } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
 import { FieldError } from "./form-page";
@@ -705,26 +705,34 @@ const noticeAction = tv({
     "text-body font-label text-inherit outline-hidden hover:underline active:translate-y-press",
     "focus-visible:shadow-[inset_0_0_0_var(--focus-ring-width)_var(--color-surface)]",
   ],
+  variants: {
+    // A link looks as the button does: underlined only while hovered.
+    link: { true: "no-underline" },
+  },
 });
 
 /**
  * A short notice at the bottom of the page, with its action when it has one (a discarded post, with Undo): knocked out
- * and neutral, at the start on a phone, clear of the action floating at the end. Its action keeps its words on one
- * line, as a button does, and its sentence gives way beside it. `inline` keeps it in the flow (a specimen).
+ * and neutral, at the start on a phone, clear of the action floating at the end. Its action is a button doing
+ * `onAction`, or a link to `href` where the reader can do something about what the notice says (a refusal of a
+ * restricted account, Account status); either keeps its words on one line, and its sentence gives way beside it.
+ * `inline` keeps it in the flow (a specimen).
  */
 export function UndoNotice({
   action,
   onAction,
+  href,
   inline = false,
   children,
 }: {
   action?: string | undefined;
   onAction?: (() => void) | undefined;
+  href?: string | undefined;
   inline?: boolean | undefined;
   children: string;
 }) {
   const { direction } = useReader(undefined);
-  const acts = action !== undefined && onAction !== undefined;
+  const acts = action !== undefined && (onAction !== undefined || href !== undefined);
   return (
     <NoticePlace inline={inline} bare={!acts} dir={direction}>
       {acts ? (
@@ -742,7 +750,13 @@ export function UndoNotice({
           rigid
           align="center"
           justify="center"
-          as={<button type="button" className={noticeAction()} onClick={onAction} />}
+          as={
+            href === undefined ? (
+              <button type="button" className={noticeAction()} onClick={onAction} />
+            ) : (
+              <AriaLink href={href} className={noticeAction({ link: true })} />
+            )
+          }
         >
           {action}
         </Row>

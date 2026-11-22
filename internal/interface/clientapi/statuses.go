@@ -21,6 +21,17 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
+// Problem types of the partial restrictions of a moderation action (FR-708), which the user
+// appeals from Account status in the settings.
+const (
+	// ProblemTypePostingRestricted is the problem of a post, an edit, or a boost by an account
+	// that may not post.
+	ProblemTypePostingRestricted = "/api/v1/problems/posting-restricted"
+	// ProblemTypeInteractionRestricted is the problem of a follow, a favourite, a boost, a
+	// reaction, a reply, a quote, or a vote by an account that may not interact.
+	ProblemTypeInteractionRestricted = "/api/v1/problems/interaction-restricted"
+)
+
 // Statuses runs the posting use cases of local statuses. *appcontent.Service implements it.
 type Statuses interface {
 	Create(ctx context.Context, in appcontent.CreateInput) (appcontent.Post, error)
@@ -187,9 +198,9 @@ func (s *Server) contentProblem(ctx context.Context, err error, article string) 
 		errors.Is(err, appcontent.ErrRemoteAccount):
 		return s.problem(ctx, http.StatusForbidden, ProblemTypeAccountUnavailable, l.ServerErrorsAccountUnavailable(), ""), true
 	case errors.Is(err, appcontent.ErrPostingRestricted):
-		return s.problem(ctx, http.StatusForbidden, ProblemTypeBlank, l.ServerErrorsForbidden(), l.ServerErrorsStatusPostingRestricted()), true
+		return s.problem(ctx, http.StatusForbidden, ProblemTypePostingRestricted, l.ServerErrorsForbidden(), l.ServerErrorsStatusPostingRestricted()), true
 	case errors.Is(err, appcontent.ErrInteractionRestricted):
-		return s.problem(ctx, http.StatusForbidden, ProblemTypeBlank, l.ServerErrorsForbidden(), l.ServerErrorsInteractionRestricted()), true
+		return s.problem(ctx, http.StatusForbidden, ProblemTypeInteractionRestricted, l.ServerErrorsForbidden(), l.ServerErrorsInteractionRestricted()), true
 	case errors.Is(err, appcontent.ErrNotAuthor):
 		return s.problem(ctx, http.StatusForbidden, ProblemTypeBlank, l.ServerErrorsForbidden(), l.ServerErrorsStatusNotAuthor()), true
 	case errors.Is(err, appcontent.ErrAlreadyDeleted):

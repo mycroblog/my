@@ -60,6 +60,12 @@ export const dataExportPath = "/settings/account/export";
 /** The address of the settings' screen that moves the reader's account to another account. */
 export const accountMovePath = "/settings/account/move";
 
+/**
+ * The address of Account status, the settings' screen that lists the moderators' actions on the reader's account,
+ * where they see why one restricts them and appeal it.
+ */
+export const accountStatusPath = "/settings/account/status";
+
 /** The address of the settings' screen of the automatic deletion of the reader's old posts. */
 export const autoDeletePath = "/settings/account/auto-delete";
 

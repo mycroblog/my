@@ -15,6 +15,7 @@ import {
   DraftConflictError,
   DraftGoneError,
   hookRefusalOf,
+  restrictionRefused,
   useComposeSettings,
   useComposeWrites,
   useStatus,
@@ -54,7 +55,12 @@ import { rememberTags } from "./recent-tags";
 export type Phase =
   | { kind: "editing" }
   | { kind: "posting" }
-  | ({ kind: "failed"; appeal?: HookRefusal | undefined } & Refused<string>)
+  | ({
+      kind: "failed";
+      appeal?: HookRefusal | undefined;
+      /** A moderation action on the reader's account keeps them from posting: the alert leads to Account status. */
+      restricted?: true | undefined;
+    } & Refused<string>)
   | { kind: "conflict" }
   | { kind: "gone" };
 
@@ -92,13 +98,18 @@ export type ComposerEvents = {
 
 /**
  * The phase of a write refused with `e`: for a newer draft saved elsewhere, for a draft gone, or with what the server
- * said, beside the input of `members` it is about.
+ * said, beside the input of `members` it is about, and whether a restriction of the reader's account refused it.
  */
 export function failedPhase(e: unknown, members: FieldMembers<string>): Phase {
   if (e instanceof DraftConflictError) return { kind: "conflict" };
   if (e instanceof DraftGoneError) return { kind: "gone" };
   const appeal = hookRefusalOf(e);
-  return { kind: "failed", ...placeRefusal(e, members), ...(appeal === undefined ? {} : { appeal }) };
+  return {
+    kind: "failed",
+    ...placeRefusal(e, members),
+    ...(appeal === undefined ? {} : { appeal }),
+    ...(restrictionRefused(e) ? { restricted: true } : {}),
+  };
 }
 
 /**
