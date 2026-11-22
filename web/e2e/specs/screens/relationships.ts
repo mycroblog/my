@@ -59,7 +59,7 @@ export class Relationships {
 
   /**
    * The button that takes a row out of `list`, in the group that `named` names: an account's handle (`@sam`, with its
-   * server for one of another server), a server's domain, or a hashtag's name.
+   * server for one of another server), a server's domain, or a hashtag as `#tag`.
    */
   undoButton(list: List, named: string): Locator {
     return this.section(list)
