@@ -29277,7 +29277,9 @@ type ClientInterface interface {
 	// answers with a translation that it keeps, or asks the providers that its operator enabled.
 	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 	// Characters sent count against monthly limits of the user and of the server, whichever app
-	// asks.
+	// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+	// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+	// bounds what one app can spend.
 	//
 	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 	// is enabled, or none is allowed its visibility. A 422
@@ -29304,7 +29306,9 @@ type ClientInterface interface {
 	// answers with a translation that it keeps, or asks the providers that its operator enabled.
 	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 	// Characters sent count against monthly limits of the user and of the server, whichever app
-	// asks.
+	// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+	// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+	// bounds what one app can spend.
 	//
 	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 	// is enabled, or none is allowed its visibility. A 422
@@ -42355,7 +42359,9 @@ func (c *Client) GetStatusSource(ctx context.Context, id StatusId, reqEditors ..
 // answers with a translation that it keeps, or asks the providers that its operator enabled.
 // Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 // Characters sent count against monthly limits of the user and of the server, whichever app
-// asks.
+// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+// bounds what one app can spend.
 //
 // A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 // is enabled, or none is allowed its visibility. A 422
@@ -42392,7 +42398,9 @@ func (c *Client) TranslateStatusWithBody(ctx context.Context, id StatusId, conte
 // answers with a translation that it keeps, or asks the providers that its operator enabled.
 // Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 // Characters sent count against monthly limits of the user and of the server, whichever app
-// asks.
+// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+// bounds what one app can spend.
 //
 // A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 // is enabled, or none is allowed its visibility. A 422
@@ -72225,7 +72233,9 @@ type ClientWithResponsesInterface interface {
 	// answers with a translation that it keeps, or asks the providers that its operator enabled.
 	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 	// Characters sent count against monthly limits of the user and of the server, whichever app
-	// asks.
+	// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+	// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+	// bounds what one app can spend.
 	//
 	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 	// is enabled, or none is allowed its visibility. A 422
@@ -72252,7 +72262,9 @@ type ClientWithResponsesInterface interface {
 	// answers with a translation that it keeps, or asks the providers that its operator enabled.
 	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 	// Characters sent count against monthly limits of the user and of the server, whichever app
-	// asks.
+	// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+	// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+	// bounds what one app can spend.
 	//
 	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 	// is enabled, or none is allowed its visibility. A 422
@@ -114492,7 +114504,9 @@ func (c *ClientWithResponses) GetStatusSourceWithResponse(ctx context.Context, i
 // answers with a translation that it keeps, or asks the providers that its operator enabled.
 // Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 // Characters sent count against monthly limits of the user and of the server, whichever app
-// asks.
+// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+// bounds what one app can spend.
 //
 // A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 // is enabled, or none is allowed its visibility. A 422
@@ -114525,7 +114539,9 @@ func (c *ClientWithResponses) TranslateStatusWithBodyWithResponse(ctx context.Co
 // answers with a translation that it keeps, or asks the providers that its operator enabled.
 // Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 // Characters sent count against monthly limits of the user and of the server, whichever app
-// asks.
+// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+// bounds what one app can spend.
 //
 // A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 // is enabled, or none is allowed its visibility. A 422
