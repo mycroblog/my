@@ -987,7 +987,7 @@ components:
             write: Change everything the user can change.
             follow: Read and change follows, blocks, and mutes.
             push: Receive Web Push notifications.
-            "read:accounts": Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings and policy, aliases, and automatic deletion policy.
+            "read:accounts": Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings and policy, aliases, automatic deletion policy, and private notes on accounts.
             "read:blocks": Read the accounts the user blocks.
             "read:bookmarks": Read the user's bookmarks.
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
@@ -1003,7 +1003,7 @@ components:
             "read:statuses": Read posts and timelines.
             "read:supporters": Read the user's own supporter subscription.
             "read:voice": Read the voice chat rooms the user sees.
-            "write:accounts": Change the user's profile, featured hashtags, preferences, notification settings and policy, badges, and supporter listing.
+            "write:accounts": Change the user's profile, featured hashtags, preferences, notification settings and policy, badges, supporter listing, and private notes on accounts.
             "write:blocks": Block and unblock accounts.
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.
