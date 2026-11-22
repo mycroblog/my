@@ -257,6 +257,11 @@ func contextShows(ctx ViewContext, vis Visibility, isAuthor bool, author AuthorR
 		return !author.PublicDiscovery && vis == VisibilityPublic
 	case ContextDirectMessages:
 		return vis == VisibilityDirect
+	case ContextProfile:
+		// A direct post belongs to its conversation (the direct messages), not to its author's
+		// profile, so no profile lists it, not even to its author or the people it is addressed to;
+		// they read it in the conversation and on its own page.
+		return vis != VisibilityDirect
 	default:
 		return true
 	}
