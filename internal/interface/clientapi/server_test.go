@@ -86,6 +86,8 @@ func TestGetInstance(t *testing.T) {
 		EventCreators:  clientapi.InstanceEventCreatorsEveryone,
 		FullTextSearch: clientapi.InstanceFullTextSearch{Visibilities: []clientapi.Visibility{}},
 		Translation:    clientapi.InstanceTranslation{Providers: []clientapi.InstanceTranslationProvider{}},
+		// None of the optional features is on.
+		Features: []string{},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("instance = %+v, want %+v", got, want)

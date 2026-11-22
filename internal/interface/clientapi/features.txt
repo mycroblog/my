@@ -1,0 +1,8 @@
+# Every identifier that Instance.features has ever issued, one per line, in the order issued.
+# Append only: an identifier is never removed or reused while /api/v1 lasts (features.go).
+voice_rooms
+full_text_search
+supporters
+tips
+web_push
+translation
