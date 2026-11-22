@@ -15729,6 +15729,20 @@ export interface components {
             /** @description The server version. */
             version: string;
             /**
+             * @description The identifiers of the features that this server offers now, in no particular order. Detect a
+             *     feature by its identifier rather than by `version`. An identifier is listed only while its
+             *     feature is on, so the list can change with the instance's settings; it is never removed from
+             *     the API or reused for something else. Ignore the identifiers you do not know. The identifiers:
+             *
+             *     - `voice_rooms`: the voice chat rooms (`/voice/...`).
+             *     - `full_text_search`: the full-text search of statuses (`searchStatuses`).
+             *     - `supporters`: the supporter program and its plans (`GET /instance/supporter_plans`).
+             *     - `tips`: one-time tips to the server's operation (`GET /instance/tip_amounts`).
+             *     - `web_push`: Web Push subscriptions (`push_server_key`).
+             *     - `translation`: the translation of statuses through this server (`translateStatus`).
+             */
+            features: string[];
+            /**
              * Format: uri
              * @description Where users get the source code of the running server (AGPL-3.0 section 13), as an https URL to read it at or a mailto URI to request it by email.
              */

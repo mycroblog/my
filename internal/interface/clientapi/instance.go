@@ -284,6 +284,8 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 			}
 		}
 	}
+	// The features this server offers now, from what the fields above tell of (features.go).
+	out.Features = offeredFeatures(&out)
 
 	cache := cachePublic
 	if _, ok := ViewerFrom(ctx); ok {

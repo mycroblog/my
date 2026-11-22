@@ -12789,6 +12789,19 @@ type Instance struct {
 	// Absent when there is none. The information page states this.
 	ExternalReviews *[]HookName `json:"external_reviews,omitempty"`
 
+	// Features The identifiers of the features that this server offers now, in no particular order. Detect a
+	// feature by its identifier rather than by `version`. An identifier is listed only while its
+	// feature is on, so the list can change with the instance's settings; it is never removed from
+	// the API or reused for something else. Ignore the identifiers you do not know. The identifiers:
+	//
+	// - `voice_rooms`: the voice chat rooms (`/voice/...`).
+	// - `full_text_search`: the full-text search of statuses (`searchStatuses`).
+	// - `supporters`: the supporter program and its plans (`GET /instance/supporter_plans`).
+	// - `tips`: one-time tips to the server's operation (`GET /instance/tip_amounts`).
+	// - `web_push`: Web Push subscriptions (`push_server_key`).
+	// - `translation`: the translation of statuses through this server (`translateStatus`).
+	Features []string `json:"features"`
+
 	// Federation How the instance federates with other servers, so that clients offer only the
 	// operations on remote accounts and posts that can work.
 	Federation InstanceFederation `json:"federation"`

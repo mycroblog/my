@@ -3,3 +3,5 @@ docs: ["docs/adr/0016-client-api-style.md", "docs/adr/0016-client-api-style.md#8
 userdocs: ["docs/developers/client-api.md", "docs/developers/paging.md", "docs/developers/errors.md", "docs/developers/streaming.md", "docs/developers/rate-limits.md", "docs/developers/stability.md"]
 checks: [go, api, web, mykit]
 shared: true
+# A client API change that adds what a client may need to detect adds an Instance.features identifier
+# (internal/interface/clientapi/features.go); identifiers are never removed or reused.

@@ -2304,6 +2304,15 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       providers: o.translation?.provider === undefined ? [] : [translationProvider],
       ...(o.translation?.reports === true ? { reports_to_server: true } : {}),
     },
+    // The features on, as the server derives them from the fields above (clientapi/features.go).
+    features: [
+      ...(o.voiceOff !== true ? ["voice_rooms"] : []),
+      ...(o.search?.posts === true ? ["full_text_search"] : []),
+      ...(supporting.instance.supporters_enabled ? ["supporters"] : []),
+      ...(supporting.instance.tips_enabled ? ["tips"] : []),
+      ...(o.push === true ? ["web_push"] : []),
+      ...(o.translation?.provider !== undefined ? ["translation"] : []),
+    ],
     single_user: o.singleUser === true,
     ...(o.singleUser === true ? { single_user_account: fullAccount(personOf(admin)) } : {}),
     ...(o.logo === true ? { logo: brandImage(logoSvg("#2f6f8f")), logo_dark: brandImage(logoSvg("#8fc7e0")) } : {}),

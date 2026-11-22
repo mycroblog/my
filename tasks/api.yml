@@ -22,7 +22,7 @@ tasks:
 
   check:
     desc: Check and lint the client API spec and fail on a stale bundle or generated Go code, in parallel
-    deps: [spec-check, license-scope, live-calls, lint, generate-check, plugin-lint, plugin-generate-check, plugin-breaking, plugin-docs-test]
+    deps: [spec-check, license-scope, live-calls, lint, generate-check, plugin-lint, plugin-generate-check, plugin-breaking, features-issued, plugin-docs-test]
 
   generate:
     desc: Bundle api/spec into api/openapi.yaml and regenerate the client API code from it (scripts/generate.sh)
@@ -101,6 +101,11 @@ tasks:
     desc: Fail if api/plugin breaks the plugin protocol of the latest release from v0.1.0 on (scripts/plugin-breaking.sh)
     cmds:
       - scripts/plugin-breaking.sh
+
+  features-issued:
+    desc: Fail if the record of Instance.features lost or reordered an identifier of the latest release from v0.1.0 on (scripts/features-issued.sh)
+    cmds:
+      - scripts/features-issued.sh
 
   license-scope:
     desc: Fail if an SPDX identifier is outside the license scope, MIT for api/spec, api/openapi.yaml, api/plugin, pkg/mykit and pkg/mybot and AGPL-3.0-only elsewhere (scripts/license-scope-check.sh)

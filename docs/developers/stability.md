@@ -13,3 +13,14 @@ From the v0 release, `/api/v1` keeps these promises:
 - Version 1.0 makes no breaking change to `/api/v1`; one would go to `/api/v2`.
 
 The OpenAPI document of the running server is at `GET /api/v1/openapi.yaml`, with the scopes of each operation; generate your client from it.
+
+## Detecting features
+
+An app keeps meeting servers older or newer than itself, and servers that have parts of the API off. Do not compare
+`version` to decide what a server can do: read `features` of `GET /api/v1/instance`, a list of identifiers such as
+`voice_rooms` or `full_text_search`, and offer a feature only while its identifier is listed. The OpenAPI document
+says what each identifier means.
+
+- An identifier is listed only while the feature is on, so read the list again when you refresh the instance information.
+- Ignore the identifiers you do not know: new ones appear as the server gains features.
+- An identifier is never removed from the API or reused for something else while `/api/v1` lasts.
