@@ -671,7 +671,7 @@ func timelineProfile(t *testing.T, e *timelineEnv) {
 	loc := e.post(t, author, content.VisibilityLocal, postOpts{})
 	unl := e.post(t, author, content.VisibilityUnlisted, postOpts{})
 	prv := e.post(t, author, content.VisibilityPrivate, postOpts{})
-	dir := e.post(t, author, content.VisibilityDirect, postOpts{mentions: []string{mentioned}})
+	e.post(t, author, content.VisibilityDirect, postOpts{mentions: []string{mentioned}})
 	other := e.public(t, stranger)
 	boost := e.boost(t, author, other)
 	profile := func(viewer appcontent.Viewer, want ...string) {
@@ -679,9 +679,11 @@ func timelineProfile(t *testing.T, e *timelineEnv) {
 		p, err := e.svc.Profile(t.Context(), viewer, author, apptimeline.ProfileFilter{}, apptimeline.Query{Limit: apptimeline.MaxLimit})
 		expectPage(t, "Profile", p, err, want...)
 	}
-	profile(viewerOf(author), pub.ID, loc.ID, unl.ID, prv.ID, dir.ID, boost.ID)
+	// A direct post belongs to its conversation: no profile lists it, not even to its author or to
+	// the people it is addressed to.
+	profile(viewerOf(author), pub.ID, loc.ID, unl.ID, prv.ID, boost.ID)
 	profile(viewerOf(follower), pub.ID, loc.ID, unl.ID, prv.ID, boost.ID)
-	profile(viewerOf(mentioned), pub.ID, loc.ID, unl.ID, dir.ID, boost.ID)
+	profile(viewerOf(mentioned), pub.ID, loc.ID, unl.ID, boost.ID)
 	profile(viewerOf(stranger), pub.ID, loc.ID, unl.ID, boost.ID)
 	profile(anonymous, pub.ID, unl.ID, boost.ID)
 
@@ -700,7 +702,7 @@ func timelineProfile(t *testing.T, e *timelineEnv) {
 	profile(viewerOf(follower), pub.ID, loc.ID, unl.ID, prv.ID)
 	e.restrict(t, author, timeline.RestrictProfileView)
 	profile(viewerOf(follower))
-	profile(viewerOf(author), pub.ID, loc.ID, unl.ID, prv.ID, dir.ID, boost.ID)
+	profile(viewerOf(author), pub.ID, loc.ID, unl.ID, prv.ID, boost.ID)
 }
 
 func timelineProfileFilters(t *testing.T, e *timelineEnv) {
