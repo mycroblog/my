@@ -224,6 +224,19 @@ describe("the permissions", () => {
     expect(listed(reads)).toEqual(["Read posts and timelines"]);
     expect(listed(changes)).toEqual(["Receive push notifications"]);
   });
+
+  test("the scope `read:favourites` reads the reader's favourites, and only reads", async () => {
+    await read(byDocument, {
+      before: ({ fake }) => {
+        fake.script("GET /authorized_apps", {
+          change: (body) => ({ ...body, items: body.items.map((app) => ({ ...app, scope: "read:favourites" })) }),
+        });
+      },
+    });
+
+    expect(sections()).toEqual(["About this app", `${reads} 1`, "Revoke access"]);
+    expect(listed(reads)).toEqual(["Read your favourites"]);
+  });
 });
 
 describe("as it stands, the screen keeps the rules of a settings screen (ADR-0110 §6)", () => {

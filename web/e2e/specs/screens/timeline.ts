@@ -292,6 +292,11 @@ export function bookmarks(page: Page): Timeline {
   return new Timeline(page, page.getByRole("feed", { name: "Bookmarks", exact: true }));
 }
 
+/** The reader's favourites: the posts they favourited, the newest favourite first. */
+export function favourites(page: Page): Timeline {
+  return new Timeline(page, page.getByRole("feed", { name: "Favourites", exact: true }));
+}
+
 /** The home timeline: the posts of the people the reader follows, and their own. */
 export function homeTimeline(page: Page): Timeline {
   return new Timeline(page, page.getByRole("feed", { name: "Home timeline", exact: true }));
