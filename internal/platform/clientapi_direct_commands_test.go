@@ -76,3 +76,18 @@ func TestAuthorCommandsOnDirectPostsNeedReadDirect(t *testing.T) {
 
 // nobodyQuotes is the body of a change of a status's quote rules to the author's alone.
 var nobodyQuotes = map[string]any{"quote": map[string]any{"automatic": "nobody"}}
+
+// TestEditArticleOfADirectPostNeedsReadDirect checks that PUT /articles/{id} of the user's own
+// direct post answers 404 to a token without read:direct, as PUT /statuses/{id} does, rather than
+// telling the post apart from a missing one.
+func TestEditArticleOfADirectPostNeedsReadDirect(t *testing.T) {
+	t.Parallel()
+	c := newStatusesClient(t, "alice", "bob")
+	narrow := c.appToken("alice", "write:statuses")
+	sent := c.post("alice", map[string]any{"text": "sent @bob", "visibility": "direct"})
+	missing := c.do(narrow, http.MethodPut, "/articles/0192f0c1-0000-7000-8000-000000000000", map[string]any{"title": "T", "text": "body"}, nil)
+	res := c.do(narrow, http.MethodPut, "/articles/"+sent.Id, map[string]any{"title": "T", "text": "body"}, nil)
+	if res.StatusCode != http.StatusNotFound || res.StatusCode != missing.StatusCode {
+		t.Errorf("PUT /articles/{id} of the own direct post without read:direct = %d, want 404 as for a missing one (%d)", res.StatusCode, missing.StatusCode)
+	}
+}

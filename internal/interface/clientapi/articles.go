@@ -208,10 +208,13 @@ func (s *Server) EditArticle(ctx context.Context, req EditArticleRequestObject) 
 		return fail(s.invalidParameterResponse(ctx, "body"))
 	}
 	b := req.Body
-	_, err = s.o.Articles.EditArticle(ctx, appcontent.EditArticleInput{
-		ArticleInput: articleInput(b.Title, b.Summary, b.Cover, b.Text, b.Tags, b.Language, b.Sensitive),
-		AccountID:    v.AccountID, StatusID: req.Id,
-	})
+	err = s.refuseUnseen(ctx, v, req.Id)
+	if err == nil {
+		_, err = s.o.Articles.EditArticle(ctx, appcontent.EditArticleInput{
+			ArticleInput: articleInput(b.Title, b.Summary, b.Cover, b.Text, b.Tags, b.Language, b.Sensitive),
+			AccountID:    v.AccountID, StatusID: req.Id,
+		})
+	}
 	if err == nil {
 		var out Status
 		if out, err = s.articleView(ctx, req.Id); err == nil {

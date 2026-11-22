@@ -147,7 +147,10 @@ func TestPartialRestrictionProblems(t *testing.T) {
 			e := newAuthEnv(t, func(o *clientapi.Options) { o.Articles = restrictedArticles{err: c.postingErr} })
 			res := e.send(t, http.MethodPost, "/articles", "write", `{"title":"T","text":"body","visibility":"public"}`)
 			checkRestrictionProblem(t, c.name+" create article", res, posting, title)
-			res = e.send(t, http.MethodPut, "/articles/"+sampleStatusID, "write", `{"title":"T","text":"body"}`)
+			// A token without read:direct or read:events would first read the post, which this env
+			// does not hold.
+			e.auth.tokens["edit"] = bearer("write read:direct read:events", aliceAccountID)
+			res = e.send(t, http.MethodPut, "/articles/"+sampleStatusID, "edit", `{"title":"T","text":"body"}`)
 			checkRestrictionProblem(t, c.name+" edit article", res, posting, title)
 		}
 	})
