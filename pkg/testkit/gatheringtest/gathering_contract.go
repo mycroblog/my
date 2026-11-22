@@ -36,7 +36,8 @@ type Factory func(t *testing.T, opts uow.Options) Harness
 // of appgathering.Service (ADR-0161): an event reads back with its settings,
 // places, date, and co-organizers; each visibility shows it to exactly the accounts it names, and
 // a block hides it both ways; a physical or URL place reaches only the approved attendees unless
-// the event shows it to every viewer; a place URL other than http or https is refused; a full
+// the event shows it to every viewer; the organizer and the co-organizers are approved
+// attendees whose approval cannot change; a place URL other than http or https is refused; a full
 // event refuses new answers of going; a cancelled or started event takes no answers; the
 // co-organizers are bounded and change what they may; the upcoming events list by the nearest
 // start; the erasure empties the revisions of an account; and the projections rebuild from the
@@ -52,6 +53,7 @@ func GatheringContract(t *testing.T, newHarness Factory) {
 		{"HidesTheEventAcrossBlocks", blocks},
 		{"KeepsTheEventForTheInvitedAndTheAnswered", invitedAndAnswered},
 		{"ShowsPlacesToTheApproved", places},
+		{"NeverAsksTheOrganizersForApproval", organizersApproved},
 		{"RefusesURLsOtherThanHTTP", urls},
 		{"RefusesGoingToAFullEvent", capacity},
 		{"ClosesCancelledAndStartedEvents", closed},
@@ -412,6 +414,136 @@ func places(t *testing.T, e *env) {
 	as, more, err := e.svc.Attendees(t.Context(), carol, v.ID, "", 10)
 	if err != nil || more || len(as) != 1 || as[0].AccountID != bob || as[0].Answer != gathering.AnswerGoing {
 		t.Errorf("Attendees = %+v, %v, %v", as, more, err)
+	}
+}
+
+// attendee is the attendee accountID of the Service's list of the event id as viewer, and whether
+// the list has them.
+func (e *env) attendee(t *testing.T, viewer, id, accountID string) (appgathering.Attendee, bool) {
+	t.Helper()
+	as, _, err := e.svc.Attendees(t.Context(), viewer, id, "", 10)
+	if err != nil {
+		t.Fatalf("Attendees: %v", err)
+	}
+	for _, a := range as {
+		if a.AccountID == accountID {
+			return a, true
+		}
+	}
+	return appgathering.Attendee{}, false
+}
+
+// organizersApproved checks that the organizer and the co-organizers are never waiting for an
+// approval (ADR-0161 §6): they are listed as organizing and approved, their event says they are
+// approved, their approval is neither given nor revoked, and a change of the co-organizers shows
+// at once, a removed one going back to the approval recorded of them.
+func organizersApproved(t *testing.T, e *env) {
+	v := e.create(t, alice, settings("Organizers", gathering.VisibilityPublic))
+	// bob is named after answering, carol before answering, dave never answers; erin attends.
+	e.answer(t, alice, v.ID, gathering.AnswerGoing)
+	e.answer(t, bob, v.ID, gathering.AnswerMaybe)
+	e.answer(t, erin, v.ID, gathering.AnswerGoing)
+	for _, id := range []string{bob, carol, dave} {
+		if _, err := e.svc.AssignCoorganizer(t.Context(), alice, v.ID, id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.answer(t, carol, v.ID, gathering.AnswerGoing)
+
+	rec, err := e.h.Gathering.FindGathering(t.Context(), nil, v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for id, want := range map[string]bool{alice: true, bob: true, carol: true, dave: true, erin: false, frank: false} {
+		if got := rec.Organizes(id); got != want {
+			t.Errorf("Record.Organizes(%s) = %v, want %v", id, got, want)
+		}
+	}
+
+	for _, id := range []string{alice, bob, carol} {
+		a, ok := e.attendee(t, erin, v.ID, id)
+		if !ok || !a.Organizes || !a.Approved {
+			t.Errorf("the organizing attendee %s is listed as %+v (listed %v), want organizes and approved", id, a, ok)
+		}
+	}
+	if a, ok := e.attendee(t, erin, v.ID, erin); !ok || a.Organizes || a.Approved {
+		t.Errorf("the attendee erin is listed as %+v (listed %v), want neither organizing nor approved", a, ok)
+	}
+	if _, ok := e.attendee(t, erin, v.ID, dave); ok {
+		t.Error("a co-organizer who never answered is listed among the attendees")
+	}
+	for _, id := range []string{alice, bob, carol, dave} {
+		got, err := e.svc.Get(t.Context(), id, v.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !got.Viewer.Approved || len(got.Places) != 3 {
+			t.Errorf("the event as %s: viewer %+v and %d places, want approved and every place", id, got.Viewer, len(got.Places))
+		}
+	}
+
+	// Neither the organizer nor a co-organizer approves or revokes one who organizes, even one who
+	// never answered.
+	for _, by := range []string{alice, bob} {
+		for _, id := range []string{alice, bob, carol, dave} {
+			if _, err := e.svc.Approve(t.Context(), by, v.ID, id); !errors.Is(err, appgathering.ErrAttendeeOrganizes) {
+				t.Errorf("Approve(%s) by %s = %v, want ErrAttendeeOrganizes", id, by, err)
+			}
+			if _, err := e.svc.RevokeApproval(t.Context(), by, v.ID, id); !errors.Is(err, appgathering.ErrAttendeeOrganizes) {
+				t.Errorf("RevokeApproval(%s) by %s = %v, want ErrAttendeeOrganizes", id, by, err)
+			}
+		}
+	}
+
+	// An ordinary attendee is approved and revoked as before.
+	if a, err := e.svc.Approve(t.Context(), bob, v.ID, erin); err != nil || !a.Approved || a.Organizes {
+		t.Errorf("Approve(erin) = %+v, %v", a, err)
+	}
+	if a, ok := e.attendee(t, alice, v.ID, erin); !ok || !a.Approved {
+		t.Errorf("an approved attendee is listed as %+v (listed %v)", a, ok)
+	}
+	if a, err := e.svc.RevokeApproval(t.Context(), alice, v.ID, erin); err != nil || a.Approved {
+		t.Errorf("RevokeApproval(erin) = %+v, %v", a, err)
+	}
+	if got, err := e.svc.Get(t.Context(), erin, v.ID); err != nil || got.Viewer.Approved || len(got.Places) != 1 {
+		t.Errorf("the event as a revoked attendee: %+v, %d places, %v", got.Viewer, len(got.Places), err)
+	}
+
+	// An attendee approved before being named goes back to that approval once removed; one never
+	// approved goes back to waiting.
+	e.answer(t, frank, v.ID, gathering.AnswerGoing)
+	if _, err := e.svc.RemoveCoorganizer(t.Context(), alice, v.ID, dave); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.Approve(t.Context(), alice, v.ID, frank); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.AssignCoorganizer(t.Context(), alice, v.ID, frank); err != nil {
+		t.Fatal(err)
+	}
+	if a, ok := e.attendee(t, erin, v.ID, frank); !ok || !a.Organizes || !a.Approved {
+		t.Errorf("an approved attendee named a co-organizer is listed as %+v (listed %v)", a, ok)
+	}
+	for _, id := range []string{frank, carol} {
+		if _, err := e.svc.RemoveCoorganizer(t.Context(), alice, v.ID, id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if a, ok := e.attendee(t, erin, v.ID, frank); !ok || a.Organizes || !a.Approved {
+		t.Errorf("a removed co-organizer approved before is listed as %+v (listed %v), want approved", a, ok)
+	}
+	if got, _ := e.svc.Get(t.Context(), frank, v.ID); !got.Viewer.Approved || got.Viewer.Coorganizer || len(got.Places) != 3 {
+		t.Errorf("the event as a removed co-organizer approved before: %+v, %d places", got.Viewer, len(got.Places))
+	}
+	if a, ok := e.attendee(t, erin, v.ID, carol); !ok || a.Organizes || a.Approved {
+		t.Errorf("a removed co-organizer never approved is listed as %+v (listed %v), want waiting", a, ok)
+	}
+	if got, _ := e.svc.Get(t.Context(), carol, v.ID); got.Viewer.Approved || got.Viewer.Coorganizer || len(got.Places) != 1 {
+		t.Errorf("the event as a removed co-organizer never approved: %+v, %d places", got.Viewer, len(got.Places))
+	}
+	// Once removed, their approval is theirs to change again.
+	if a, err := e.svc.Approve(t.Context(), alice, v.ID, carol); err != nil || !a.Approved || a.Organizes {
+		t.Errorf("Approve(a removed co-organizer) = %+v, %v", a, err)
 	}
 }
 
