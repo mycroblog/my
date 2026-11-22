@@ -557,7 +557,8 @@ const select = tv({
   base: [
     "h-control-timeline cursor-pointer rounded-control border-0 bg-surface",
     "px-control-timeline-inline font-sans text-body text-text outline-hidden [&>svg]:text-muted-text",
-    "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-focus-visible:shadow-focus",
+    "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-pressed:translate-y-press",
+    "data-focus-visible:shadow-focus",
   ],
 });
 
@@ -701,7 +702,7 @@ function NoticePlace({
 const noticeAction = tv({
   base: [
     "h-control-timeline cursor-pointer rounded-control border-0 bg-transparent px-control-timeline-inline font-sans",
-    "text-body font-label text-inherit outline-hidden hover:underline",
+    "text-body font-label text-inherit outline-hidden hover:underline active:translate-y-press",
     "focus-visible:shadow-[inset_0_0_0_var(--focus-ring-width)_var(--color-surface)]",
   ],
 });

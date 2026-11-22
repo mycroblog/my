@@ -63,6 +63,7 @@ const link = tv({
   base: [
     "rounded-control bg-surface-raised px-chip-inline text-body leading-[var(--chip-height)] text-text no-underline",
     "outline-hidden data-hovered:bg-surface-raised-hover data-focus-visible:shadow-focus",
+    "data-pressed:translate-y-press data-pressed:bg-surface-raised-pressed",
   ],
 });
 

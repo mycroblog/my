@@ -49,6 +49,7 @@ const card = tv({
     root: [
       "box-border rounded-control bg-surface-raised text-text no-underline outline-hidden",
       "data-[hovered]:bg-surface-raised-hover hover:bg-surface-raised-hover focus-visible:shadow-focus",
+      "active:translate-y-press active:bg-surface-raised-pressed",
     ],
     figure: "bg-surface-raised-pressed",
     image: "object-cover",

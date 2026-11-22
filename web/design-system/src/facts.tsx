@@ -201,7 +201,9 @@ const tiles = tv({
     link: [
       "px-screen-row-inline bg-surface-raised text-text no-underline outline-hidden",
       "data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed data-focus-visible:shadow-focus",
+      "data-pressed:translate-y-press",
       "[[data-surface-raised]_&]:bg-surface [[data-surface-raised]_&]:data-hovered:bg-surface-hover",
+      "[[data-surface-raised]_&]:data-pressed:bg-surface-pressed",
     ],
     figure: "text-title font-strong tabular-nums",
     label: "text-caption text-muted-text [word-break:auto-phrase]",

@@ -130,7 +130,7 @@ const table = tv({
 const mark = tv({
   base: [
     "box-border size-form-page-check rounded-[3px] border-[length:var(--composer-mark-line)] border-solid",
-    "peer-focus-visible:shadow-focus",
+    "peer-focus-visible:shadow-focus peer-enabled:peer-active:translate-y-press",
   ],
   variants: {
     on: { true: "text-surface", false: "" },

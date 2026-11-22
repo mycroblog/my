@@ -24,6 +24,9 @@ const ItemsContext = createContext<Readonly<Record<string, PreviewState>>>({});
 /** The state an item of a collection (a menu's) shows, by its id, the real ones aside. */
 export const usePreviewItemState = (id: string) => useContext(ItemsContext)[id];
 
+/** The states the items of a collection show by their ids, for a component that draws its items in a loop (the tabs). */
+export const usePreviewItemStates = () => useContext(ItemsContext);
+
 /**
  * Shows the items of the collections inside by their ids in a state each, so that a menu shows one item hovered and
  * another focused from the keyboard.

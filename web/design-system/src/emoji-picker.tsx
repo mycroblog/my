@@ -153,13 +153,15 @@ const picker = tv({
     tone: [
       "box-border size-control-form cursor-pointer rounded-control",
       "border-0 bg-transparent p-0 text-[length:var(--emoji-picker-glyph)] leading-none outline-hidden",
-      "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-focus-visible:shadow-focus",
+      "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-pressed:translate-y-press",
+      "data-focus-visible:shadow-focus",
     ],
     tab: [
       "box-border h-emoji-picker-tab cursor-pointer rounded-control",
       "border-0 bg-transparent p-0 text-muted-text outline-hidden",
       "data-hovered:bg-surface-hover data-hovered:text-text data-focus-visible:shadow-focus",
-      "aria-current:bg-surface-raised aria-current:text-text",
+      "data-pressed:translate-y-press data-pressed:bg-surface-pressed data-pressed:text-text",
+      "aria-current:bg-surface-raised aria-current:text-text aria-current:data-pressed:bg-surface-raised-pressed",
       "data-disabled:cursor-default data-disabled:opacity-disabled data-disabled:bg-transparent",
     ],
     // The grid is its own scroll; the rows are placed in it by the virtualizer (ADR-0091 §15), never by CSS scrolling.
@@ -172,9 +174,10 @@ const picker = tv({
       "box-border h-emoji-picker-cell cursor-pointer rounded-control",
       "font-sans text-[length:var(--emoji-picker-glyph)] leading-none outline-hidden select-none",
       "pointer-coarse:h-emoji-picker-cell-coarse",
-      "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-focus-visible:shadow-focus-inset",
+      "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-pressed:translate-y-press",
+      "data-focus-visible:shadow-focus-inset",
       // The reader's own reaction, knocked out as its chip is: the text's color as its fill.
-      "data-current:bg-text data-current:data-hovered:bg-text",
+      "data-current:bg-text data-current:data-hovered:bg-text data-current:data-pressed:bg-text",
     ],
     // A custom emoji's image, as large against the cell's font size as a post draws one against its text.
     image: "size-content-emoji object-contain",
@@ -186,6 +189,7 @@ const picker = tv({
       "box-border h-control-form cursor-default rounded-control",
       "px-control-timeline-inline text-body whitespace-nowrap outline-hidden",
       "data-hovered:bg-surface-raised data-focused:bg-surface-raised data-focus-visible:shadow-focus-inset",
+      "data-pressed:translate-y-press data-pressed:bg-surface-raised-hover",
     ],
     menuGlyph: "w-emoji-picker-glyph text-[length:var(--emoji-picker-glyph)] leading-none",
     menuCheck: "text-muted-text",

@@ -220,7 +220,8 @@ const mode = tv({
       "box-border h-control-timeline cursor-pointer rounded-control border-0 bg-transparent",
       "px-control-timeline-inline font-sans text-body font-label whitespace-nowrap text-muted-text outline-hidden",
       "data-hovered:bg-surface-hover data-hovered:text-text data-focus-visible:shadow-focus",
-      "data-selected:bg-surface-raised data-selected:text-text",
+      "data-pressed:translate-y-press data-pressed:bg-surface-pressed data-pressed:text-text",
+      "data-selected:bg-surface-raised data-selected:text-text data-selected:data-pressed:bg-surface-raised-pressed",
     ],
   },
 });

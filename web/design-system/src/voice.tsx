@@ -36,7 +36,7 @@ const tile = tv({
       "data-hovered:bg-surface-hover data-hovered:[--face-cut-color:var(--color-surface-hover)]",
       "data-hovered:[--voice-cut:var(--color-surface-hover)]",
       "data-pressed:bg-surface-pressed data-pressed:[--face-cut-color:var(--color-surface-pressed)]",
-      "data-pressed:[--voice-cut:var(--color-surface-pressed)]",
+      "data-pressed:[--voice-cut:var(--color-surface-pressed)] data-pressed:translate-y-press",
     ],
     face: "rounded-full",
     badge: "rounded-full bg-text text-surface shadow-face-cut",
@@ -388,6 +388,8 @@ const line = tv({
       "rounded-control px-screen-row-inline py-screen-row-block text-text no-underline outline-hidden",
       "[--face-cut-color:var(--color-surface)]",
       "data-hovered:bg-surface-hover data-hovered:[--face-cut-color:var(--color-surface-hover)]",
+      "data-pressed:translate-y-press data-pressed:bg-surface-pressed",
+      "data-pressed:[--face-cut-color:var(--color-surface-pressed)]",
       "data-focus-visible:shadow-focus",
     ],
     box: "size-voice-room-box text-[length:var(--voice-room-emoji)] leading-none",
@@ -463,7 +465,7 @@ const control = tv({
     root: [
       "group box-border min-w-voice-control-width cursor-pointer rounded-control border-0 bg-transparent p-0",
       "font-sans text-caption font-label text-text outline-hidden data-focus-visible:shadow-focus",
-      "data-disabled:cursor-not-allowed data-disabled:opacity-disabled",
+      "data-pressed:translate-y-press data-disabled:cursor-not-allowed data-disabled:opacity-disabled",
     ],
     tile: [
       "size-voice-control rounded-overlay bg-surface-raised",

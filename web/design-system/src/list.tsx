@@ -14,6 +14,7 @@ import { Byline, Stamp } from "./entry";
 import { Icon, type IconName } from "./icons";
 import { Box, Row, Stack, type Gap } from "./layout";
 import { useReader } from "./locale";
+import { usePreviewItemStates } from "./preview";
 
 /**
  * A screen's parts one under another (a head, the tabs, a row, the feed), apart by the room a feed entry's ring needs;
@@ -29,12 +30,16 @@ export function ScreenStack({ busy = false, children }: { busy?: boolean | undef
 
 const tabs = tv({
   slots: {
+    // The row the tabs scroll in, which cuts what reaches above or below it: room under them for a pressed tab's move.
+    list: "pb-press",
     // A tab: muted text on the page; the current one on the raised surface, in the text's color, as a tonal control.
+    // Pressed, it takes the pressed step of the surface it shows and moves down, as a button does.
     tab: [
       "box-border h-control-timeline cursor-pointer rounded-control px-control-timeline-inline",
       "text-body font-label whitespace-nowrap text-muted-text outline-hidden",
       "data-hovered:bg-surface-hover data-hovered:text-text data-focus-visible:shadow-focus",
-      "data-selected:bg-surface-raised data-selected:text-text",
+      "data-pressed:translate-y-press data-pressed:bg-surface-pressed data-pressed:text-text",
+      "data-selected:bg-surface-raised data-selected:text-text data-selected:data-pressed:bg-surface-raised-pressed",
     ],
     panel: "outline-hidden",
     // How many things wait under a tab, as the navigation's and the menu's badges draw it.
@@ -96,6 +101,7 @@ function TabCount({
 export function TabRow<T extends string>({ label, tabs: items, current, onChange, end, children }: TabRowProps<T>) {
   const s = tabs();
   const { direction } = useReader(undefined);
+  const preview = usePreviewItemStates();
   return (
     <Stack
       gap="entry-room"
@@ -119,9 +125,24 @@ export function TabRow<T extends string>({ label, tabs: items, current, onChange
           scroll="x"
           clip="y"
           as={<TabList aria-label={label} />}
+          className={s.list()}
         >
           {items.map((tab) => (
-            <Row key={tab.id} rigid align="center" gap="screen-tab-gap" as={<Tab id={tab.id} className={s.tab()} />}>
+            <Row
+              key={tab.id}
+              rigid
+              align="center"
+              gap="screen-tab-gap"
+              as={
+                <Tab
+                  id={tab.id}
+                  className={s.tab()}
+                  render={(props: object, { isPressed }: { isPressed: boolean }) => (
+                    <div {...props} data-pressed={isPressed || preview[tab.id] === "pressed" || undefined} />
+                  )}
+                />
+              }
+            >
               {tab.name}
               <TabCount count={tab.count} label={tab.countLabel} className={s.badge()} />
             </Row>
@@ -531,6 +552,7 @@ const row = tv({
     root: [
       "rounded-control px-screen-row-inline py-screen-row-block",
       "text-text no-underline outline-hidden data-hovered:bg-surface-hover data-focus-visible:shadow-focus",
+      "data-pressed:translate-y-press data-pressed:bg-surface-pressed",
     ],
     title: "text-body font-label",
     hint: "text-caption text-muted-text",
@@ -587,6 +609,8 @@ const faces = tv({
       "rounded-control px-screen-row-inline py-screen-row-block",
       "text-text no-underline outline-hidden [--face-cut-color:var(--color-surface)]",
       "data-hovered:bg-surface-hover data-hovered:[--face-cut-color:var(--color-surface-hover)]",
+      "data-pressed:translate-y-press data-pressed:bg-surface-pressed",
+      "data-pressed:[--face-cut-color:var(--color-surface-pressed)]",
       "data-focus-visible:shadow-focus",
     ],
     lead: "min-w-screen-faces-lead text-body",
@@ -787,7 +811,7 @@ const back = tv({
     root: "",
     button: [
       "cursor-pointer rounded-control border-0 bg-transparent p-0",
-      "outline-hidden [font-family:inherit] data-focus-visible:shadow-focus",
+      "outline-hidden [font-family:inherit] data-pressed:translate-y-press data-focus-visible:shadow-focus",
     ],
   },
   variants: {
@@ -826,7 +850,7 @@ const press = tv({
   base: [
     "cursor-pointer rounded-control border-0 bg-transparent px-screen-row-inline py-screen-row-block text-start",
     "font-sans outline-hidden data-hovered:bg-surface-hover data-pressed:bg-surface-pressed",
-    "data-focus-visible:shadow-focus",
+    "data-pressed:translate-y-press data-focus-visible:shadow-focus",
   ],
 });
 

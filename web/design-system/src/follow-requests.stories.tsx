@@ -2,7 +2,7 @@
 
 // Follow requests (#3125, FR-302) on a screen of their own, apart from what waits for the reader's approval (#3113),
 // in the reader's language (the toolbar's locale; ja, else en): over the notifications, a row for each screen, the
-// follow requests first; the screen, under its back link to the notifications, with a request answered in place and
+// follow requests first, and with a tab pressed; the screen, under its back link to the notifications, with a request answered in place and
 // the rest waiting for Decline or Approve; and its states (none, loading, failed). The words are placeholders of the
 // feature's.
 
@@ -16,6 +16,7 @@ import { Entry } from "./entry";
 import { FeedNotice } from "./feed";
 import { IconButton } from "./icon-button";
 import { AccountRow, BackButton, NoticeLine, OpenRow, ScreenStack, ScreenTitle, StateText, TabRow } from "./list";
+import { PreviewItems } from "./preview";
 import { ago, images } from "./samples";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -196,6 +197,14 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const InNotificationsRows: Story = { render: () => <InNotifications /> };
+/** The tab that is not current, pressed: the surface's pressed step, moved down as a button is. */
+export const InNotificationsTabPressed: Story = {
+  render: () => (
+    <PreviewItems states={{ mentions: "pressed" }}>
+      <InNotifications />
+    </PreviewItems>
+  ),
+};
 export const FollowRequests: Story = { render: () => <Requests state="normal" /> };
 export const RequestsEmpty: Story = { render: () => <Requests state="empty" /> };
 export const RequestsLoading: Story = { render: () => <Requests state="loading" /> };

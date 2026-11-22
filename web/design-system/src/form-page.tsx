@@ -227,7 +227,7 @@ const form = tv({
     // A statement under a field, no error: the text's color, a caption on a raised surface, at its own weight.
     fieldNote: "text-text [word-break:auto-phrase] [[data-surface-raised]_&]:text-caption",
     checkInput: [
-      "size-form-page-check accent-text",
+      "size-form-page-check accent-text enabled:active:translate-y-press",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
       "aria-invalid:outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],

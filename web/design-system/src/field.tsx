@@ -57,8 +57,10 @@ const field = tv({
     box: [
       "box-border h-control-form rounded-control bg-surface-raised px-control-timeline-inline",
       "font-sans text-body text-text hover:bg-surface-raised-hover has-[:focus-visible]:shadow-focus",
+      "has-[select:enabled]:active:translate-y-press has-[select:enabled]:active:bg-surface-raised-pressed",
       "has-[:disabled]:opacity-disabled",
       "[[data-surface-raised]_&]:bg-surface [[data-surface-raised]_&]:hover:bg-surface-hover",
+      "[[data-surface-raised]_&]:has-[select:enabled]:active:bg-surface-pressed",
       // A wrong value: a line of the text's color, as a text field's.
       "has-[[aria-invalid=true]]:outline-solid has-[[aria-invalid=true]]:outline-[length:var(--form-page-invalid)]",
       "has-[[aria-invalid=true]]:-outline-offset-[var(--form-page-invalid)] has-[[aria-invalid=true]]:outline-text",

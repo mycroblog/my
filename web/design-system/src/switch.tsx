@@ -50,6 +50,9 @@ const toggle = tv({
       "group-data-hovered:[--toggle-track:var(--color-surface-raised-pressed)]",
       "[[data-surface-raised]_&]:[--toggle-track:var(--color-surface)]",
       "[[data-surface-raised]_&]:group-data-hovered:[--toggle-track:var(--color-surface-hover)]",
+      "[[data-surface-raised]_&]:group-data-pressed:[--toggle-track:var(--color-surface-pressed)]",
+      // Pressed, the track moves down, as a button does; the label it goes with stays on its line.
+      "group-data-pressed:translate-y-press",
       "group-data-selected:bg-text",
       // The track's edge is a line of the muted text's color, which keeps 3:1 on every surface (ADR-0110 §12, §13):
       // the step alone is too faint to bound a control. On, the line is the fill's; with forced colors it is what

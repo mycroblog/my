@@ -11,15 +11,19 @@ import { tv } from "tailwind-variants/lite";
 import { FieldError } from "./form-page";
 import { IconButton } from "./icon-button";
 import { Box, Layers, Pin, Row, Stack } from "./layout";
+import { usePreviewItemStates } from "./preview";
 
 const choice = tv({
   slots: {
     // The options on the page's surface: a row's own padding lines its mark up with the composer's.
     options: "list-none rounded-control bg-surface p-poll-padding",
-    // As tall as a form's control on one line; an option that wraps keeps its mark by its first line.
+    // As tall as a form's control on one line; an option that wraps keeps its mark by its first line. Pressed, it
+    // takes the surface's pressed step and moves down, as a button does.
     row: [
       "box-border rounded-control px-poll-option-inline py-control-form-line text-body text-text",
       "cursor-pointer has-[input:enabled]:hover:bg-surface-hover has-[input:focus-visible]:shadow-focus",
+      "has-[input:enabled]:active:translate-y-press has-[input:enabled]:active:bg-surface-pressed",
+      "data-pressed:translate-y-press data-pressed:bg-surface-pressed",
       "has-[input:disabled]:cursor-default",
     ],
     // Over the whole of its row and not drawn: a press or a click anywhere on the option lands on the control itself.
@@ -128,6 +132,7 @@ export function ChoiceList({
 }) {
   const s = choice();
   const name = useId();
+  const preview = usePreviewItemStates();
   return (
     <Stack
       id={id}
@@ -140,7 +145,15 @@ export function ChoiceList({
       {items.map((item, i) => {
         const on = chosen.includes(i);
         return (
-          <Row key={item.key} as="label" anchor="isolate" align="start" gap="entry-caption" className={s.row()}>
+          <Row
+            key={item.key}
+            as="label"
+            anchor="isolate"
+            align="start"
+            gap="entry-caption"
+            className={s.row()}
+            data-pressed={(!disabled && preview[item.key] === "pressed") || undefined}
+          >
             <Pin
               cover
               full="both"
@@ -236,6 +249,7 @@ export const segmentClassName = tv({
     "box-border cursor-pointer rounded-control bg-surface-raised font-sans font-label text-text outline-hidden",
     "has-[input:enabled:not(:checked)]:hover:bg-surface-raised-hover",
     "has-[input:enabled:not(:checked)]:active:bg-surface-raised-pressed has-[input:focus-visible]:shadow-focus",
+    "has-[input:enabled]:active:translate-y-press",
     "[[data-surface-raised]_&]:bg-surface",
     "[[data-surface-raised]_&]:has-[input:enabled:not(:checked)]:hover:bg-surface-hover",
     "[[data-surface-raised]_&]:has-[input:enabled:not(:checked)]:active:bg-surface-pressed",

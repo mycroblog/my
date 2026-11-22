@@ -45,7 +45,10 @@ const titleWrap = "[word-break:auto-phrase] text-balance";
 
 const card = tv({
   slots: {
-    link: "group box-border rounded-control text-text no-underline outline-hidden focus-visible:shadow-focus",
+    link: [
+      "group box-border rounded-control text-text no-underline outline-hidden focus-visible:shadow-focus",
+      "data-pressed:translate-y-press",
+    ],
     figure: "rounded-control bg-surface-raised-pressed",
     image: "object-cover",
     kind: "text-caption text-muted-text",
