@@ -28262,7 +28262,8 @@ type ClientInterface interface {
 	// DismissNotification Dismiss a notification
 	//
 	// Removes the notification from the list and the unread count. Dismissing it again
-	// changes nothing; a notification that is not the user's is a 404.
+	// changes nothing; a notification that is not the user's is a 404, and so is a moderator
+	// notification to another client than the server's own.
 	//
 	// Corresponds with POST /notifications/{id}/dismiss (the `DismissNotification` operationId).
 	DismissNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -28272,7 +28273,8 @@ type ClientInterface interface {
 	// Marks one notification read, wherever it is in the list, for every client of the user. A
 	// notification is unread while it is newer than the marker's `last_read_id` and not marked
 	// read here; marking it again, or marking one the marker already passed, changes nothing. A
-	// notification that is not the user's is a 404.
+	// notification that is not the user's is a 404, and so is a moderator notification to another
+	// client than the server's own, which does not get it.
 	//
 	// Corresponds with POST /notifications/{id}/read (the `ReadNotification` operationId).
 	ReadNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -40515,7 +40517,8 @@ func (c *Client) GetNotification(ctx context.Context, id Id, reqEditors ...Reque
 // DismissNotification Dismiss a notification
 //
 // Removes the notification from the list and the unread count. Dismissing it again
-// changes nothing; a notification that is not the user's is a 404.
+// changes nothing; a notification that is not the user's is a 404, and so is a moderator
+// notification to another client than the server's own.
 //
 // Corresponds with POST /notifications/{id}/dismiss (the `DismissNotification` operationId).
 func (c *Client) DismissNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -40535,7 +40538,8 @@ func (c *Client) DismissNotification(ctx context.Context, id Id, reqEditors ...R
 // Marks one notification read, wherever it is in the list, for every client of the user. A
 // notification is unread while it is newer than the marker's `last_read_id` and not marked
 // read here; marking it again, or marking one the marker already passed, changes nothing. A
-// notification that is not the user's is a 404.
+// notification that is not the user's is a 404, and so is a moderator notification to another
+// client than the server's own, which does not get it.
 //
 // Corresponds with POST /notifications/{id}/read (the `ReadNotification` operationId).
 func (c *Client) ReadNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -71134,7 +71138,8 @@ type ClientWithResponsesInterface interface {
 	// DismissNotificationWithResponse Dismiss a notification
 	//
 	// Removes the notification from the list and the unread count. Dismissing it again
-	// changes nothing; a notification that is not the user's is a 404.
+	// changes nothing; a notification that is not the user's is a 404, and so is a moderator
+	// notification to another client than the server's own.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -71146,7 +71151,8 @@ type ClientWithResponsesInterface interface {
 	// Marks one notification read, wherever it is in the list, for every client of the user. A
 	// notification is unread while it is newer than the marker's `last_read_id` and not marked
 	// read here; marking it again, or marking one the marker already passed, changes nothing. A
-	// notification that is not the user's is a 404.
+	// notification that is not the user's is a 404, and so is a moderator notification to another
+	// client than the server's own, which does not get it.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -112908,7 +112914,8 @@ func (c *ClientWithResponses) GetNotificationWithResponse(ctx context.Context, i
 // DismissNotificationWithResponse Dismiss a notification
 //
 // Removes the notification from the list and the unread count. Dismissing it again
-// changes nothing; a notification that is not the user's is a 404.
+// changes nothing; a notification that is not the user's is a 404, and so is a moderator
+// notification to another client than the server's own.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -112926,7 +112933,8 @@ func (c *ClientWithResponses) DismissNotificationWithResponse(ctx context.Contex
 // Marks one notification read, wherever it is in the list, for every client of the user. A
 // notification is unread while it is newer than the marker's `last_read_id` and not marked
 // read here; marking it again, or marking one the marker already passed, changes nothing. A
-// notification that is not the user's is a 404.
+// notification that is not the user's is a 404, and so is a moderator notification to another
+// client than the server's own, which does not get it.
 //
 // Returns a wrapper object for the known response body format(s).
 //

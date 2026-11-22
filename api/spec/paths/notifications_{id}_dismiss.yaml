@@ -4,7 +4,8 @@ post:
   summary: Dismiss a notification
   description: |
     Removes the notification from the list and the unread count. Dismissing it again
-    changes nothing; a notification that is not the user's is a 404.
+    changes nothing; a notification that is not the user's is a 404, and so is a moderator
+    notification to another client than the server's own.
   tags: [notifications]
   security:
     - oauth2: ["write:notifications"]
