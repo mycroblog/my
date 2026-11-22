@@ -23,6 +23,7 @@ const sentences: Readonly<Record<string, MessageId>> = {
   "read:custom_emojis": "settings.apps.scope.read_custom_emojis",
   "read:direct": "settings.apps.scope.read_direct",
   "read:events": "settings.apps.scope.read_events",
+  "read:favourites": "settings.apps.scope.read_favourites",
   "read:filters": "settings.apps.scope.read_filters",
   "read:finance": "settings.apps.scope.read_finance",
   "read:follows": "settings.apps.scope.read_follows",

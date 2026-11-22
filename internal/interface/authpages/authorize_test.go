@@ -51,7 +51,11 @@ func (f *fakeOAuth) ValidateAuthorization(_ context.Context, req appidentity.Aut
 	if req.RedirectURI != c.uri {
 		return appidentity.Authorization{}, appidentity.ErrInvalidRedirectURI
 	}
-	a := appidentity.Authorization{Client: c.c, RedirectURI: c.uri, State: req.State, CodeChallenge: req.CodeChallenge, Scope: "read write", OwnerUsername: "carol"}
+	scope := identity.Scope("read write")
+	if req.Scope != "" {
+		scope = identity.Scope(req.Scope)
+	}
+	a := appidentity.Authorization{Client: c.c, RedirectURI: c.uri, State: req.State, CodeChallenge: req.CodeChallenge, Scope: scope, OwnerUsername: "carol"}
 	if req.ResponseType != "code" {
 		return a, &appidentity.OAuthError{Code: appidentity.OAuthUnsupportedResponseType}
 	}
@@ -239,6 +243,21 @@ func TestAuthorizeAsksConsentForThirdPartyClients(t *testing.T) {
 	}
 	if len(oauth.issued) != 1 || oauth.issued[0].Client.ClientID != "app" {
 		t.Errorf("issued = %+v, want one code for app", oauth.issued)
+	}
+}
+
+// TestConsentDescribesTheFavouritesScope asks consent for read:favourites alone: the page
+// describes it in the user's language.
+func TestConsentDescribesTheFavouritesScope(t *testing.T) {
+	b := signedIn(t, newOAuthServer(t, newFakeIdentity(), &fakeOAuth{}))
+	page := b.do(http.MethodGet, authorizeQuery("app", appRedirect)+"&scope="+url.QueryEscape(identity.ScopeReadFavourites), nil, map[string]string{"Accept-Language": "en"})
+	bundle, err := i18n.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := bundle.Localizer("en").ServerAuthAuthorizeScopeReadFavourites()
+	if page.Code != http.StatusOK || text(screenData(t, page), "screen") != "authorize" || !strings.Contains(page.Body.String(), want) {
+		t.Fatalf("consent page for %s = %d, want it to say %q\n%s", identity.ScopeReadFavourites, page.Code, want, page.Body.String())
 	}
 }
 

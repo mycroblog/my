@@ -103,6 +103,14 @@
     "defaultMessage": "まだブックマークはありません。",
     "description": "In place of the reader's bookmarks when they have none."
   },
+  "timeline.favourites": {
+    "defaultMessage": "お気に入り",
+    "description": "The name of the column of the posts the reader favourited, for assistive technology."
+  },
+  "timeline.favourites_empty": {
+    "defaultMessage": "まだお気に入りはありません。",
+    "description": "In place of the reader's favourites when they have none."
+  },
   "timeline.list_new": {
     "defaultMessage": "新しいリスト",
     "description": "The button of the lists' screen that opens the field to make a list."

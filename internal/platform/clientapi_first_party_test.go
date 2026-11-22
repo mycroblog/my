@@ -15,9 +15,7 @@ import (
 	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
-	"github.com/mycroblog/my/internal/app/identity"
 	domcontent "github.com/mycroblog/my/internal/domain/content"
-	domain "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/pkg/testkit"
@@ -343,28 +341,5 @@ func TestRelationshipFieldsFollowTheScopes(t *testing.T) {
 	wantFields("write:accounts", noted, notes)
 	if noted["note"] != "Bob" {
 		t.Errorf("the answer of the note = %v", noted)
-	}
-}
-
-// TestReadFavouritesIsNotAScope checks that the scope without an operation is gone: an app that
-// asks for it gets invalid_scope, and read still works without it.
-func TestReadFavouritesIsNotAScope(t *testing.T) {
-	t.Parallel()
-	if slices.Contains(domain.KnownScopes(), "read:favourites") {
-		t.Error("KnownScopes holds read:favourites")
-	}
-	c := newStatusesClient(t, "alice")
-	const redirect = "https://app.example/callback"
-	reg, err := c.app.Identity.RegisterOAuthApp(t.Context(), c.userIDs["alice"], identity.OAuthAppInput{
-		Name: "App", RedirectURIs: []string{redirect}, Scope: "read",
-	})
-	if err != nil {
-		t.Fatalf("RegisterOAuthApp: %v", err)
-	}
-	if _, err := c.app.Identity.ValidateAuthorization(t.Context(), identity.AuthorizationRequest{
-		ResponseType: "code", ClientID: reg.Client.ClientID, RedirectURI: redirect, Scope: "read:favourites",
-		CodeChallenge: domain.S256Challenge("verifier"), CodeChallengeMethod: domain.CodeChallengeMethodS256,
-	}); err == nil {
-		t.Error("the authorization request for read:favourites passed")
 	}
 }

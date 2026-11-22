@@ -21721,6 +21721,15 @@ type RequestDataExportParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// ListFavouritesParams defines parameters for ListFavourites.
+type ListFavouritesParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // SetFeaturedTagsParams defines parameters for SetFeaturedTags.
 type SetFeaturedTagsParams struct {
 	// IdempotencyKey A key the client chooses per request, which makes the request safe to send again. Within
@@ -24629,6 +24638,9 @@ type ServerInterface interface {
 	// DownloadDataExport Download the archive of a data export
 	// (GET /exports/{id}/archive)
 	DownloadDataExport(w http.ResponseWriter, r *http.Request, id Id)
+	// ListFavourites List the posts the authenticated user favourited, newest favourite first
+	// (GET /favourites)
+	ListFavourites(w http.ResponseWriter, r *http.Request, params ListFavouritesParams)
 	// ListFeaturedTags List the hashtags the user features
 	// (GET /featured_tags)
 	ListFeaturedTags(w http.ResponseWriter, r *http.Request)
@@ -38268,6 +38280,52 @@ func (siw *ServerInterfaceWrapper) DownloadDataExport(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ListFavourites operation middleware
+func (siw *ServerInterfaceWrapper) ListFavourites(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListFavouritesParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListFavourites(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListFeaturedTags operation middleware
 func (siw *ServerInterfaceWrapper) ListFeaturedTags(w http.ResponseWriter, r *http.Request) {
 
@@ -45702,6 +45760,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/push/subscription", wrapper.GetPushSubscription)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/push/subscription", wrapper.PutPushSubscription)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/bookmarks", wrapper.ListBookmarks)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/favourites", wrapper.ListFavourites)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statuses", wrapper.CreateStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/articles", wrapper.CreateArticle)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/articles/preview", wrapper.PreviewArticle)
@@ -64566,6 +64625,68 @@ func (response DownloadDataExportdefaultApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type ListFavouritesRequestObject struct {
+	Params ListFavouritesParams
+}
+
+type ListFavouritesResponseObject interface {
+	VisitListFavouritesResponse(w http.ResponseWriter) error
+}
+
+type ListFavourites200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListFavourites200JSONResponse struct {
+	Body    StatusPage
+	Headers ListFavourites200ResponseHeaders
+}
+
+func (response ListFavourites200JSONResponse) VisitListFavouritesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListFavouritesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListFavouritesdefaultApplicationProblemPlusJSONResponse) VisitListFavouritesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListFeaturedTagsRequestObject struct {
 }
 
@@ -76074,6 +76195,9 @@ type StrictServerInterface interface {
 	// DownloadDataExport Download the archive of a data export
 	// (GET /exports/{id}/archive)
 	DownloadDataExport(ctx context.Context, request DownloadDataExportRequestObject) (DownloadDataExportResponseObject, error)
+	// ListFavourites List the posts the authenticated user favourited, newest favourite first
+	// (GET /favourites)
+	ListFavourites(ctx context.Context, request ListFavouritesRequestObject) (ListFavouritesResponseObject, error)
 	// ListFeaturedTags List the hashtags the user features
 	// (GET /featured_tags)
 	ListFeaturedTags(ctx context.Context, request ListFeaturedTagsRequestObject) (ListFeaturedTagsResponseObject, error)
@@ -85083,6 +85207,32 @@ func (sh *strictHandler) DownloadDataExport(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DownloadDataExportResponseObject); ok {
 		if err := validResponse.VisitDownloadDataExportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListFavourites operation middleware
+func (sh *strictHandler) ListFavourites(w http.ResponseWriter, r *http.Request, params ListFavouritesParams) {
+	var request ListFavouritesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListFavourites(ctx, request.(ListFavouritesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListFavourites")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListFavouritesResponseObject); ok {
+		if err := validResponse.VisitListFavouritesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

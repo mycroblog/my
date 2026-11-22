@@ -141,6 +141,23 @@ export function bookmarksQuery({ api, queries }: AppData) {
   });
 }
 
+/** The posts the reader favourited, the newest favourite first, a page per cursor. */
+export function favouritesQuery({ api, queries }: AppData) {
+  return infiniteQueryOptions({
+    queryKey: queries.queryOptions("get", "/favourites").queryKey,
+    queryFn: async ({ pageParam, signal }): Promise<StatusPage> => {
+      const { data } = await api.GET("/favourites", {
+        params: { query: pageParam === undefined ? {} : { cursor: pageParam } },
+        signal,
+      });
+      if (data === undefined) throw new Error("app-data: the favourites answered without a page");
+      return data;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => nextCursor(page),
+  });
+}
+
 /** A timeline's column of the query `options`. */
 function useTimelineColumn<Key extends readonly unknown[]>(
   options: UseInfiniteQueryOptions<StatusPage, Error, InfiniteData<StatusPage>, Key, string | undefined>,
@@ -190,4 +207,13 @@ export function useListTimeline(id: string): HomeTimeline {
 export function useBookmarks(): HomeTimeline {
   const column = useTimelineColumn(bookmarksQuery(useAppData()));
   return { ...column, statuses: column.statuses.filter((s) => (s.boost ?? s).bookmarked !== false) };
+}
+
+/**
+ * The posts the reader favourited, for their column: a post whose favourite the reader takes back (or trades for a
+ * reaction) leaves it at once, as it shows (shadow.ts).
+ */
+export function useFavourites(): HomeTimeline {
+  const column = useTimelineColumn(favouritesQuery(useAppData()));
+  return { ...column, statuses: column.statuses.filter((s) => (s.boost ?? s).favourited !== false) };
 }

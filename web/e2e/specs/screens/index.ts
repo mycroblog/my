@@ -50,5 +50,5 @@ export { connectedPeers, keepPeerConnections, openPeers, receivedAudio, VoiceRoo
 export { Welcome } from "./welcome";
 export { Notice } from "./notice";
 export { Operations } from "./operations";
-export { bookmarks, homeTimeline, localTimeline, Post, Timeline } from "./timeline";
+export { bookmarks, favourites, homeTimeline, localTimeline, Post, Timeline } from "./timeline";
 export { AnnouncementsAdmin } from "./announcements-admin";

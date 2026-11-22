@@ -2,9 +2,9 @@
 
 // The places of the navigation (ADR-0110 §11, ADR-0058 §2, ADR-0070 §1, ADR-0152 §2): one list in one order, the
 // timelines the instance offers, notifications, the direct messages and search, then the reader's own places (profile,
-// bookmarks, settings), then apart the places of their rights (moderation, admin, finance). The tab bar holds the first
-// part but the direct messages, and Menu; the menu's sheet holds the rest, the direct messages first, and the
-// announcements. A visitor without a session has the timelines the instance shows everyone, and search.
+// bookmarks, favourites, settings), then apart the places of their rights (moderation, admin, finance). The tab bar
+// holds the first part but the direct messages, and Menu; the menu's sheet holds the rest, the direct messages first,
+// and the announcements. A visitor without a session has the timelines the instance shows everyone, and search.
 
 import { costsPagePath, supportersPagePath } from "@my/app-components";
 import type { Instance, Rights } from "@my/app-data";
@@ -52,6 +52,7 @@ const trees: ReadonlySet<Place> = new Set([settings, moderation, admin]);
 const ownPlaces: readonly Place[] = [
   { href: "/profile", icon: "profile", label: "app.profile" },
   { href: "/bookmarks", icon: "bookmark", label: "app.bookmarks" },
+  { href: "/favourites", icon: "favourite", label: "app.favourites" },
   settings,
 ];
 

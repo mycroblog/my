@@ -102,9 +102,10 @@ approval" lets everyone else ask instead of being refused.
 
 Under a post you find "Reply", "Boost", "Quote", "Favourite", "React", and "More". "More" has "Copy link", "Open
 original page" (for a post from another server), "Share", and "Bookmark"; your bookmarks are on the "Bookmarks" page,
-and only you see them. On your own post it also has "Edit" (not for a post with a poll), "Delete and redraft…", and
-"Delete…". Both deletions ask first. "Delete…" removes the post for everyone, along with its boosts and favourites;
-"Delete and redraft…" does the same and opens the form with its text, images, and poll as a new post.
+and only you see them; the posts you favourited are on the "Favourites" page. On your own post "More" also has "Edit"
+(not for a post with a poll), "Delete and redraft…", and "Delete…". Both deletions ask first. "Delete…" removes the
+post for everyone, along with its boosts and favourites; "Delete and redraft…" does the same and opens the form with
+its text, images, and poll as a new post.
 
 An edited post shows "· edited" after its time; choose it to open "Edit history", newest version first, with the
 changes marked.

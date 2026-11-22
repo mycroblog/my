@@ -193,6 +193,13 @@ type BookmarkPage struct {
 	Next string
 }
 
+// FavouritePage is a page of favourited statuses.
+type FavouritePage struct {
+	Statuses []StatusView
+	// Next is the cursor of the next page, "" on the last page.
+	Next string
+}
+
 // View returns a status as viewer sees it.
 func (r *Reader) View(ctx context.Context, viewer Viewer, statusID string) (StatusView, error) {
 	return r.onBoard().view(ctx, viewer, statusID)
@@ -448,22 +455,52 @@ func (r *Reader) Bookmarks(ctx context.Context, viewer Viewer, before string, li
 	if err != nil {
 		return BookmarkPage{}, err
 	}
-	var out BookmarkPage
+	statuses, next, err := markedPage(ctx, r, viewer, marks, limit, func(b content.Bookmark) (string, string) { return b.ID, b.StatusID })
+	if err != nil {
+		return BookmarkPage{}, err
+	}
+	return BookmarkPage{Statuses: statuses, Next: next}, nil
+}
+
+// Favourites returns a page of the statuses that the local account viewer favourited, newest
+// favourite first (FR-107): up to limit favourites older than the cursor before ("" for the
+// newest). Statuses that viewer may not see, and the posts of the boards of events, are left
+// out, so a page may be shorter than limit and still have a next page; the last page has none.
+func (r *Reader) Favourites(ctx context.Context, viewer Viewer, before string, limit int) (FavouritePage, error) {
+	favs, err := r.d.Interactions.ListFavourites(ctx, viewer.AccountID, before, limit+1)
+	if err != nil {
+		return FavouritePage{}, err
+	}
+	statuses, next, err := markedPage(ctx, r, viewer, favs, limit, func(f content.Favourite) (string, string) { return f.ID, f.StatusID })
+	if err != nil {
+		return FavouritePage{}, err
+	}
+	return FavouritePage{Statuses: statuses, Next: next}, nil
+}
+
+// markedPage presents the statuses of marks, at most limit+1 rows newest first, that viewer may
+// see, and returns them with the cursor of the next page ("" when marks holds no more than
+// limit). key gives a mark's own ID (the cursor) and the ID of its status. A post of the board of
+// an event is left out, as in every list but the board's.
+func markedPage[M any](ctx context.Context, r *Reader, viewer Viewer, marks []M, limit int, key func(M) (id, statusID string)) ([]StatusView, string, error) {
+	var next string
 	if len(marks) > limit {
 		marks = marks[:limit]
-		out.Next = marks[limit-1].ID
+		next, _ = key(marks[limit-1])
 	}
-	for _, b := range marks {
-		view, err := r.view(ctx, viewer, b.StatusID)
+	var out []StatusView
+	for _, m := range marks {
+		_, statusID := key(m)
+		view, err := r.view(ctx, viewer, statusID)
 		if errors.Is(err, ErrNotFound) {
 			continue
 		}
 		if err != nil {
-			return BookmarkPage{}, err
+			return nil, "", err
 		}
-		out.Statuses = append(out.Statuses, view)
+		out = append(out, view)
 	}
-	return out, nil
+	return out, next, nil
 }
 
 // present returns st, which viewer may see, with everything a client shows of it.

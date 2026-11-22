@@ -2894,6 +2894,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/favourites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the posts the authenticated user favourited, newest favourite first */
+        get: operations["listFavourites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/statuses": {
         parameters: {
             query?: never;
@@ -24977,6 +24994,37 @@ export interface operations {
              * @description A page of bookmarked posts. Posts that the user can no longer see are left out, so
              *     a page may hold fewer posts than `limit` and still have a `next_cursor`. `direct` posts
              *     need `read:direct`.
+             */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listFavourites: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /**
+             * @description A page of favourited posts. Posts that the user can no longer see, and the posts of the
+             *     boards of events, are left out, so a page may hold fewer posts than `limit` and still have
+             *     a `next_cursor`. `direct` posts need `read:direct`.
              */
             200: {
                 headers: {

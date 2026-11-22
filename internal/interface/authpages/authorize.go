@@ -360,6 +360,7 @@ var scopeDescriptions = map[string]func(*i18n.Localizer) string{
 	identity.ScopeReadCustomEmojis:   (*i18n.Localizer).ServerAuthAuthorizeScopeReadCustomEmojis,
 	identity.ScopeReadDirect:         (*i18n.Localizer).ServerAuthAuthorizeScopeReadDirect,
 	identity.ScopeReadEvents:         (*i18n.Localizer).ServerAuthAuthorizeScopeReadEvents,
+	identity.ScopeReadFavourites:     (*i18n.Localizer).ServerAuthAuthorizeScopeReadFavourites,
 	identity.ScopeReadFilters:        (*i18n.Localizer).ServerAuthAuthorizeScopeReadFilters,
 	identity.ScopeReadFinance:        (*i18n.Localizer).ServerAuthAuthorizeScopeReadFinance,
 	identity.ScopeReadFollows:        (*i18n.Localizer).ServerAuthAuthorizeScopeReadFollows,

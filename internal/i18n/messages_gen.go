@@ -172,6 +172,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeReadEvents() string {
 	return l.format("server:auth.authorize.scope.read_events", nil)
 }
 
+// ServerAuthAuthorizeScopeReadFavourites formats "server:auth.authorize.scope.read_favourites". Permission (OAuth scope read:favourites) listed on the authorization page.
+//
+//	en: Read your favourites
+func (l *Localizer) ServerAuthAuthorizeScopeReadFavourites() string {
+	return l.format("server:auth.authorize.scope.read_favourites", nil)
+}
+
 // ServerAuthAuthorizeScopeReadFilters formats "server:auth.authorize.scope.read_filters". Permission (OAuth scope read:filters) listed on the authorization page.
 //
 //	en: Read your keyword filters

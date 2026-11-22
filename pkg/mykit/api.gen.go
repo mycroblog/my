@@ -19361,6 +19361,15 @@ type ListEventInvitationsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListFavouritesParams defines parameters for ListFavourites.
+type ListFavouritesParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // GetFinanceCostTotalsParams defines parameters for GetFinanceCostTotals.
 type GetFinanceCostTotalsParams struct {
 	Granularity CostGranularity `form:"granularity" json:"granularity"`
@@ -27055,6 +27064,11 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /exports/{id}/archive (the `DownloadDataExport` operationId).
 	DownloadDataExport(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListFavourites List the posts the authenticated user favourited, newest favourite first
+	//
+	// Corresponds with GET /favourites (the `ListFavourites` operationId).
+	ListFavourites(ctx context.Context, params *ListFavouritesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListFeaturedTags List the hashtags the user features
 	//
@@ -38504,6 +38518,21 @@ func (c *Client) RequestDataExport(ctx context.Context, reqEditors ...RequestEdi
 // Corresponds with GET /exports/{id}/archive (the `DownloadDataExport` operationId).
 func (c *Client) DownloadDataExport(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDownloadDataExportRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListFavourites List the posts the authenticated user favourited, newest favourite first
+//
+// Corresponds with GET /favourites (the `ListFavourites` operationId).
+func (c *Client) ListFavourites(ctx context.Context, params *ListFavouritesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListFavouritesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -56841,6 +56870,72 @@ func NewDownloadDataExportRequest(server string, id Id) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListFavouritesRequest constructs an http.Request for the ListFavourites method
+func NewListFavouritesRequest(server string, params *ListFavouritesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/favourites")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListFeaturedTagsRequest constructs an http.Request for the ListFeaturedTags method
 func NewListFeaturedTagsRequest(server string) (*http.Request, error) {
 	var err error
@@ -69705,6 +69800,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /exports/{id}/archive (the `DownloadDataExport` operationId).
 	DownloadDataExportWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*DownloadDataExportResponse, error)
+
+	// ListFavouritesWithResponse List the posts the authenticated user favourited, newest favourite first
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /favourites (the `ListFavourites` operationId).
+	ListFavouritesWithResponse(ctx context.Context, params *ListFavouritesParams, reqEditors ...RequestEditorFn) (*ListFavouritesResponse, error)
 
 	// ListFeaturedTagsWithResponse List the hashtags the user features
 	//
@@ -92002,6 +92104,71 @@ func (r DownloadDataExportResponse) ContentType() string {
 	return ""
 }
 
+// ListFavouritesResponse200Headers the declared response headers of an HTTP 200 response for ListFavourites
+type ListFavouritesResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListFavouritesResponseDefaultHeaders the declared response headers of an HTTP default response for ListFavourites
+type ListFavouritesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListFavouritesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *StatusPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListFavouritesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListFavouritesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListFavouritesResponse) GetJSON200() *StatusPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListFavouritesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListFavouritesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListFavouritesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListFavouritesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListFavouritesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListFeaturedTagsResponse200Headers the declared response headers of an HTTP 200 response for ListFeaturedTags
 type ListFeaturedTagsResponse200Headers struct {
 	CacheControl *string
@@ -110909,6 +111076,19 @@ func (c *ClientWithResponses) DownloadDataExportWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseDownloadDataExportResponse(rsp)
+}
+
+// ListFavouritesWithResponse List the posts the authenticated user favourited, newest favourite first
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /favourites (the `ListFavourites` operationId).
+func (c *ClientWithResponses) ListFavouritesWithResponse(ctx context.Context, params *ListFavouritesParams, reqEditors ...RequestEditorFn) (*ListFavouritesResponse, error) {
+	rsp, err := c.ListFavourites(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListFavouritesResponse(rsp)
 }
 
 // ListFeaturedTagsWithResponse List the hashtags the user features
@@ -138434,6 +138614,83 @@ func ParseDownloadDataExportResponse(rsp *http.Response) (*DownloadDataExportRes
 		response.Headers200 = &headers
 	case true:
 		var headers DownloadDataExportResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListFavouritesResponse parses an HTTP response from a ListFavouritesWithResponse call
+func ParseListFavouritesResponse(rsp *http.Response) (*ListFavouritesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListFavouritesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StatusPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListFavouritesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListFavouritesResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

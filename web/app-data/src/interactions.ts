@@ -181,6 +181,9 @@ export async function markStatus(data: AppData, id: string, mark: StatusMark): P
   // and keeps its place otherwise.
   if (mark.type === "bookmark")
     void data.queryClient.invalidateQueries({ queryKey: ["get", "/bookmarks"], refetchType: "none" });
+  // So are the favourites, which a reaction also changes, since it takes back a favourite.
+  if (mark.type === "favourite" || mark.type === "reaction")
+    void data.queryClient.invalidateQueries({ queryKey: ["get", "/favourites"], refetchType: "none" });
 }
 
 /** Whether `key` is a list of the reactions to the status of `id` (statusReactorsQuery). */

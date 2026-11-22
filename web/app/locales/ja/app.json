@@ -1,7 +1,7 @@
 {
   "app.navigation": {
     "defaultMessage": "メイン",
-    "description": "The name of the app's main navigation (the places: home, local, federated, notifications, search, profile, bookmarks, settings), for assistive technology."
+    "description": "The name of the app's main navigation (the places: home, local, federated, notifications, search, profile, bookmarks, favourites, settings), for assistive technology."
   },
   "app.home": {
     "defaultMessage": "ホーム",
@@ -55,13 +55,17 @@
     "defaultMessage": "ブックマーク",
     "description": "The place of the navigation, and the heading of its screen, that lists the posts the reader bookmarked."
   },
+  "app.favourites": {
+    "defaultMessage": "お気に入り",
+    "description": "The place of the navigation, and the heading of its screen, that lists the posts the reader favourited."
+  },
   "app.settings": {
     "defaultMessage": "設定",
     "description": "The place of the navigation that shows the reader's settings."
   },
   "app.menu": {
     "defaultMessage": "メニュー",
-    "description": "The last item of the tab bar on a phone and of the rail and the sidebar, and the title of what it opens, which holds the places the navigation does not (profile, bookmarks, lists, settings, announcements, voice rooms, events)."
+    "description": "The last item of the tab bar on a phone and of the rail and the sidebar, and the title of what it opens, which holds the places the navigation does not (profile, bookmarks, favourites, lists, settings, announcements, voice rooms, events)."
   },
   "app.announcements": {
     "defaultMessage": "お知らせ",
