@@ -26,7 +26,7 @@ properties:
     description: How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
     type: integer
   board_writers:
-    description: Who posts on the event's board; `organizers` when omitted.
+    description: Who posts on the event's board; `coorganizers` when omitted.
     allOf:
       - $ref: ./EventBoardWriters.yaml
   places:

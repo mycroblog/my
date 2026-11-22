@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 description: |
   Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
-  `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+  `coorganizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
   The board is read by the organizer, the co-organizers, and the users who see the event and
   answer `going` or `maybe`.
 type: string
-enum: [organizer, organizers, readers]
+enum: [organizer, coorganizers, readers]

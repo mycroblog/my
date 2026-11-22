@@ -15088,12 +15088,12 @@ export interface components {
         };
         /**
          * @description Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
-         *     `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+         *     `coorganizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
          *     The board is read by the organizer, the co-organizers, and the users who see the event and
          *     answer `going` or `maybe`.
          * @enum {string}
          */
-        EventBoardWriters: "organizer" | "organizers" | "readers";
+        EventBoardWriters: "organizer" | "coorganizers" | "readers";
         /** @description A page of the answers to a candidate date, in the order of the users' IDs. */
         EventBallotPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["EventBallot"][];
@@ -15169,7 +15169,7 @@ export interface components {
             place_disclosure?: components["schemas"]["EventPlaceDisclosure"];
             /** @description How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit. */
             capacity?: number;
-            /** @description Who posts on the event's board; `organizers` when omitted. */
+            /** @description Who posts on the event's board; `coorganizers` when omitted. */
             board_writers?: components["schemas"]["EventBoardWriters"];
             /** @description Up to 3 places, one of each kind. */
             places?: components["schemas"]["EventPlace"][];

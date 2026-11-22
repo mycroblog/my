@@ -261,8 +261,8 @@ func TestEventBoardWritersThroughTheAPI(t *testing.T) {
 		writes  []string
 	}{
 		{"organizer", clientapi.EventBoardWritersOrganizer, []string{"alice"}},
-		{"", clientapi.EventBoardWritersOrganizers, []string{"alice", "cora"}},
-		{"organizers", clientapi.EventBoardWritersOrganizers, []string{"alice", "cora"}},
+		{"", clientapi.EventBoardWritersCoorganizers, []string{"alice", "cora"}},
+		{"coorganizers", clientapi.EventBoardWritersCoorganizers, []string{"alice", "cora"}},
 		{"readers", clientapi.EventBoardWritersReaders, readers},
 	} {
 		ev := e.createEvent(tc.writers, nil)
@@ -506,7 +506,7 @@ func TestEventBoardPostsThroughTheAPI(t *testing.T) {
 
 	// Once board_writers leaves the author out, the author no longer edits nor replies, and still
 	// deletes the post.
-	if res := e.send("alice", http.MethodPatch, "/events/"+ev.Id, map[string]any{"board_writers": "organizers"}, nil, nil); res.StatusCode != http.StatusOK {
+	if res := e.send("alice", http.MethodPatch, "/events/"+ev.Id, map[string]any{"board_writers": "coorganizers"}, nil, nil); res.StatusCode != http.StatusOK {
 		t.Fatalf("PATCH board_writers = %d", res.StatusCode)
 	}
 	if got := e.outcome(e.send("gina", http.MethodPut, "/statuses/"+withMedia.Id, map[string]any{"text": "again"}, nil, nil)); got != "403 "+clientapi.ProblemTypeEventBoardNotWriter {

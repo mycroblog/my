@@ -55,7 +55,7 @@ func TestCanReadBoard(t *testing.T) {
 		{"going, suspended", gathering.VisibilityPublic, gathering.Viewer{AccountID: viewerID, Local: true}, boardGoing, false},
 		{"the organizer, suspended", gathering.VisibilityPublic, gathering.Viewer{AccountID: organizer, Local: true}, boardOrganizer, false},
 	} {
-		for _, w := range []gathering.BoardWriters{gathering.BoardWritersOrganizer, gathering.BoardWritersOrganizers, gathering.BoardWritersReaders} {
+		for _, w := range []gathering.BoardWriters{gathering.BoardWritersOrganizer, gathering.BoardWritersCoorganizers, gathering.BoardWritersReaders} {
 			if got := gathering.CanReadBoard(boardEvent(tc.vis, w), tc.viewer, tc.f); got != tc.want {
 				t.Errorf("%s (writers %s): CanReadBoard = %v, want %v", tc.name, w, got, tc.want)
 			}
@@ -72,7 +72,7 @@ func TestCanWriteBoard(t *testing.T) {
 		want    roles
 	}{
 		{gathering.BoardWritersOrganizer, roles{organizer: true}},
-		{gathering.BoardWritersOrganizers, roles{organizer: true, coorganizer: true}},
+		{gathering.BoardWritersCoorganizers, roles{organizer: true, coorganizer: true}},
 		{gathering.BoardWritersReaders, roles{organizer: true, coorganizer: true, going: true}},
 		{"", roles{organizer: true}},
 		{"everyone", roles{organizer: true}},
@@ -145,7 +145,7 @@ func TestBoard(t *testing.T) {
 	open := gathering.BoardTerm{EndsAt: end}
 	canceled := gathering.BoardTerm{EndsAt: end, Canceled: true, CanceledAt: end.Add(-48 * time.Hour)}
 	now := end.Add(-time.Hour)
-	organizers := boardEvent(gathering.VisibilityPublic, gathering.BoardWritersOrganizers)
+	organizers := boardEvent(gathering.VisibilityPublic, gathering.BoardWritersCoorganizers)
 	invited := boardEvent(gathering.VisibilityInvited, gathering.BoardWritersReaders)
 	for _, tc := range []struct {
 		name   string
@@ -183,11 +183,11 @@ func TestBoard(t *testing.T) {
 // TestBoardWriters checks the choices of board_writers, their default, and that the settings of an
 // event refuse an unknown one.
 func TestBoardWriters(t *testing.T) {
-	if gathering.DefaultBoardWriters != gathering.BoardWritersOrganizers {
+	if gathering.DefaultBoardWriters != gathering.BoardWritersCoorganizers {
 		t.Errorf("DefaultBoardWriters = %q, want organizers", gathering.DefaultBoardWriters)
 	}
 	for w, want := range map[gathering.BoardWriters]bool{
-		"organizer": true, "organizers": true, "readers": true, "": false, "everyone": false, "Readers": false,
+		"organizer": true, "coorganizers": true, "readers": true, "": false, "everyone": false, "Readers": false,
 	} {
 		if got := w.Valid(); got != want {
 			t.Errorf("BoardWriters(%q).Valid() = %v, want %v", w, got, want)

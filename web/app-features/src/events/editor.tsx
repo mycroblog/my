@@ -163,7 +163,7 @@ function newDraft(timeZone: string): Draft {
     onlineUrl: "",
     disclosure: "approved",
     visibility: "public",
-    boardWriters: "organizers",
+    boardWriters: "coorganizers",
     capacity: 0,
   };
 }

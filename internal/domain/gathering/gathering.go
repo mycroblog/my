@@ -124,15 +124,15 @@ type BoardWriters string
 const (
 	// BoardWritersOrganizer is the organizer alone.
 	BoardWritersOrganizer BoardWriters = "organizer"
-	// BoardWritersOrganizers is the organizer and the co-organizers.
-	BoardWritersOrganizers BoardWriters = "organizers"
+	// BoardWritersCoorganizers is the organizer and the co-organizers.
+	BoardWritersCoorganizers BoardWriters = "coorganizers"
 	// BoardWritersReaders is everyone who reads the board.
 	BoardWritersReaders BoardWriters = "readers"
 )
 
 // Valid reports whether w is one of the writers of a board.
 func (w BoardWriters) Valid() bool {
-	return w == BoardWritersOrganizer || w == BoardWritersOrganizers || w == BoardWritersReaders
+	return w == BoardWritersOrganizer || w == BoardWritersCoorganizers || w == BoardWritersReaders
 }
 
 // Defaults of a new event (ADR-0161 §5, §6).
@@ -140,7 +140,7 @@ const (
 	DefaultVisibility      = VisibilityPublic
 	DefaultPlaceDisclosure = DisclosureApproved
 	DefaultSpeakers        = SpeakersManual
-	DefaultBoardWriters    = BoardWritersOrganizers
+	DefaultBoardWriters    = BoardWritersCoorganizers
 )
 
 // Answer is an attendee's answer (gathering_rsvps.answer).

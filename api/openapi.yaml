@@ -24081,13 +24081,13 @@ components:
     EventBoardWriters:
       description: |
         Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
-        `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+        `coorganizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
         The board is read by the organizer, the co-organizers, and the users who see the event and
         answer `going` or `maybe`.
       type: string
       enum:
         - organizer
-        - organizers
+        - coorganizers
         - readers
     EventBallotPage:
       description: A page of the answers to a candidate date, in the order of the users' IDs.
@@ -24222,7 +24222,7 @@ components:
           description: How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
           type: integer
         board_writers:
-          description: Who posts on the event's board; `organizers` when omitted.
+          description: Who posts on the event's board; `coorganizers` when omitted.
           allOf:
             - $ref: '#/components/schemas/EventBoardWriters'
         places:

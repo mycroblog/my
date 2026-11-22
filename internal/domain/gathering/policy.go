@@ -144,7 +144,7 @@ func CanWriteBoard(e Event, viewer Viewer, f Facts) bool {
 	switch e.BoardWriters {
 	case BoardWritersReaders:
 		return true
-	case BoardWritersOrganizers:
+	case BoardWritersCoorganizers:
 		return Organizes(e, viewer, f)
 	}
 	return viewer.AccountID == e.OrganizerAccountID

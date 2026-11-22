@@ -23,7 +23,11 @@ export type EventBoardPost = components["schemas"]["EventBoardPostCreate"];
 export type EventBoardWriters = components["schemas"]["EventBoardWriters"];
 
 /** The choices of who writes on a board, from the fewest people. */
-export const eventBoardWriters = ["organizer", "organizers", "readers"] as const satisfies readonly EventBoardWriters[];
+export const eventBoardWriters = [
+  "organizer",
+  "coorganizers",
+  "readers",
+] as const satisfies readonly EventBoardWriters[];
 
 /** How long after an event's end its board takes posts: 7 days, as the server counts them. */
 const boardOpenMs = 7 * 24 * 60 * 60_000;

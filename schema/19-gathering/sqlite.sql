@@ -35,7 +35,7 @@ CREATE TABLE gathering_revisions (
   capacity INTEGER NOT NULL CHECK (capacity BETWEEN 0 AND 10000),
   revised_by_account_id TEXT NOT NULL,
   revised_at INTEGER NOT NULL,
-  board_writers TEXT NOT NULL DEFAULT 'organizers' CHECK (board_writers IN ('organizer', 'organizers', 'readers'))
+  board_writers TEXT NOT NULL DEFAULT 'coorganizers' CHECK (board_writers IN ('organizer', 'coorganizers', 'readers'))
 ) STRICT;
 CREATE INDEX gathering_revisions_gathering_id_id ON gathering_revisions (gathering_id, id DESC);
 -- The revisions that an account wrote, which its erasure empties.

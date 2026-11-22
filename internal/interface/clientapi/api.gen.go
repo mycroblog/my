@@ -2457,17 +2457,17 @@ func (e EventAnswer) Valid() bool {
 
 // Defines values for EventBoardWriters.
 const (
-	EventBoardWritersOrganizer  EventBoardWriters = "organizer"
-	EventBoardWritersOrganizers EventBoardWriters = "organizers"
-	EventBoardWritersReaders    EventBoardWriters = "readers"
+	EventBoardWritersCoorganizers EventBoardWriters = "coorganizers"
+	EventBoardWritersOrganizer    EventBoardWriters = "organizer"
+	EventBoardWritersReaders      EventBoardWriters = "readers"
 )
 
 // Valid indicates whether the value is a known member of the EventBoardWriters enum.
 func (e EventBoardWriters) Valid() bool {
 	switch e {
-	case EventBoardWritersOrganizer:
+	case EventBoardWritersCoorganizers:
 		return true
-	case EventBoardWritersOrganizers:
+	case EventBoardWritersOrganizer:
 		return true
 	case EventBoardWritersReaders:
 		return true
@@ -11718,7 +11718,7 @@ type ErrorGroupState string
 // reach the client.
 type Event struct {
 	// BoardWriters Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
-	// `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+	// `coorganizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
 	// The board is read by the organizer, the co-organizers, and the users who see the event and
 	// answer `going` or `maybe`.
 	BoardWriters EventBoardWriters `json:"board_writers"`
@@ -11883,7 +11883,7 @@ type EventBoardPostCreate struct {
 }
 
 // EventBoardWriters Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
-// `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+// `coorganizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
 // The board is read by the organizer, the co-organizers, and the users who see the event and
 // answer `going` or `maybe`.
 type EventBoardWriters string
@@ -11947,7 +11947,7 @@ type EventCandidateList struct {
 // EventCreate A new event, either with a fixed date (`starts_at` and `ends_at`) or with the candidate dates
 // of a date poll (`candidates`), not both.
 type EventCreate struct {
-	// BoardWriters Who posts on the event's board; `organizers` when omitted.
+	// BoardWriters Who posts on the event's board; `coorganizers` when omitted.
 	BoardWriters *EventBoardWriters `json:"board_writers,omitempty"`
 
 	// Candidates 1 to 20 different candidate dates, each checked as a fixed date: the event is

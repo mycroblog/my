@@ -62,7 +62,7 @@
 | 場所 | 0〜3 個。§6 | なし |
 | 現地の場所の見せ方 `place_disclosure` | `approved`（承認した参加者だけ）/ `viewers`（イベントが見える全員） | `approved` |
 | 定員 | 0（なし）か 1〜10,000 | 0 |
-| 掲示板に書く人 `board_writers` | `organizer`（主催者だけ）/ `organizers`（主催者と共同主催者）/ `readers`（読める人の全員）。§17 | `organizers` |
+| 掲示板に書く人 `board_writers` | `organizer`（主催者だけ）/ `coorganizers`（主催者と共同主催者）/ `readers`（読める人の全員）。§17 | `coorganizers` |
 
 - **時刻は UTC で持ち、イベントのタイムゾーンの名前を一緒に持つ**。画面は閲覧者のタイムゾーンで出し、イベントのタイムゾーンと違えば両方を出す。タイムゾーンの名前は Go の `time.LoadLocation` で検証する（`cmd/my` は `time/tzdata` を埋め込むので、コンテナに tzdata がなくても読める）。
 - 開始は終了より前で、長さは 7 日まで。作るときと日時を変えるときに、開始が今より後で、1 年先まで。

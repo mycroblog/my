@@ -24,7 +24,7 @@ function admitted(event: ServerEvent): boolean {
   switch (event.board_writers) {
     case "organizer":
       return organizer;
-    case "organizers":
+    case "coorganizers":
       return organizer || coorganizer;
     case "readers":
       return true;

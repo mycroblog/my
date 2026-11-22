@@ -1286,7 +1286,7 @@ func (l *Localizer) ServerErrorsEventBoardNotReader() string {
 	return l.format("server:errors.event.board_not_reader", nil)
 }
 
-// ServerErrorsEventBoardNotWriter formats "server:errors.event.board_not_writer". API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, organizers, or readers) leave the reader out.
+// ServerErrorsEventBoardNotWriter formats "server:errors.event.board_not_writer". API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, coorganizers, or readers) leave the reader out.
 //
 //	en: Only the people this event's organizer chose can write on its board.
 func (l *Localizer) ServerErrorsEventBoardNotWriter() string {

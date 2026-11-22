@@ -50,7 +50,7 @@ func (f *fakeEvents) view() appgathering.View {
 			},
 			Revision: appgathering.Revision{Settings: gathering.Settings{
 				Title: "Picnic", Visibility: gathering.VisibilityPublic, TimeZone: "Asia/Tokyo", PlaceDisclosure: gathering.DisclosureApproved,
-				BoardWriters: gathering.BoardWritersOrganizers,
+				BoardWriters: gathering.BoardWritersCoorganizers,
 				Places: []gathering.Place{
 					{Kind: gathering.PlacePhysical, Name: "Secret park", Address: "1-1 Hidden"},
 					{Kind: gathering.PlaceVoice, Speakers: gathering.SpeakersManual},

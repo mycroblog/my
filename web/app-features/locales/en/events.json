@@ -281,7 +281,7 @@
   },
   "events.board.not_writer": {
     "defaultMessage": "{writers, select, organizer {Only the organizer can write on this board.} other {Only the organizer and the co-organizers can write on this board.}}",
-    "description": "In muted words at the top of an event's board, where the bar to write on it would be, for a reader the event's board_writers leave out: organizer, only the organizer writes on it; other (organizers), the organizer and the co-organizers."
+    "description": "In muted words at the top of an event's board, where the bar to write on it would be, for a reader the event's board_writers leave out: organizer, only the organizer writes on it; other (coorganizers), the organizer and the co-organizers."
   },
   "events.create.submit": {
     "defaultMessage": "Create the event",
@@ -496,15 +496,15 @@
     "description": "The heading of the choice of who writes on an event's board, in the form that creates or changes the event, after who sees it; and the choice's name."
   },
   "events.form.board_writers_choice": {
-    "defaultMessage": "{writers, select, organizer {Only you} organizers {You and the co-organizers} other {Everyone who reads the board}}",
-    "description": "An option of who writes on an event's board, in the form its organizer creates or changes it with (you is the organizer): writers is organizer, organizers (the organizer and the co-organizers), or other (readers: everyone who reads the board)."
+    "defaultMessage": "{writers, select, organizer {Only you} coorganizers {You and the co-organizers} other {Everyone who reads the board}}",
+    "description": "An option of who writes on an event's board, in the form its organizer creates or changes it with (you is the organizer): writers is organizer, coorganizers (the organizer and the co-organizers), or other (readers: everyone who reads the board)."
   },
   "events.form.board_writers_hint": {
     "defaultMessage": "You, the co-organizers, and the people who answered going or maybe can read the board.",
     "description": "Under the choice of who writes on an event's board, in the form its organizer creates or changes it with: who reads the board, as server:errors.event.board_not_reader says it."
   },
   "events.form.board_writers_organizer": {
-    "defaultMessage": "{writers, select, organizer {Only the organizer can write on the board} organizers {The organizer and the co-organizers can write on the board} other {Everyone who reads the board can write on it}}. Only the organizer, {organizer}, changes who can write on it.",
+    "defaultMessage": "{writers, select, organizer {Only the organizer can write on the board} coorganizers {The organizer and the co-organizers can write on the board} other {Everyone who reads the board can write on it}}. Only the organizer, {organizer}, changes who can write on it.",
     "description": "In place of the choice of who writes on an event's board, in the form a co-organizer changes it with: who writes on it now (writers as events.form.board_writers_choice), and that only the organizer, organizer (the organizer's name), changes it."
   },
   "events.form.board_writers_rule": {
