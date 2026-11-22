@@ -280,7 +280,8 @@ func (s *Service) RotateOAuthAppSecret(ctx context.Context, userID, id string) (
 // usual pair with the usual lifetimes, refreshed and revoked as any other. An empty scope
 // means the client's whole scope; a scope beyond the client's, with a first-party-only scope,
 // or with a permission scope whose permission the user's roles lack, fails with an *OAuthError
-// invalid_scope. A disabled client fails with
+// invalid_scope, which wraps identity.ErrUnknownScope, identity.ErrFirstPartyOnlyScope, or
+// identity.ErrScopeBeyondClient for those rules. A disabled client fails with
 // ErrOAuthAppDisabled.
 func (s *Service) IssueOAuthAppTokens(ctx context.Context, userID, id, scope string) (IssuedTokens, error) {
 	app, err := s.OAuthApp(ctx, userID, id)
@@ -293,13 +294,16 @@ func (s *Service) IssueOAuthAppTokens(ctx context.Context, userID, id, scope str
 	c := app.Client
 	granted, err := identity.ParseScope(scope)
 	if err != nil {
-		return IssuedTokens{}, oauthError(OAuthInvalidScope, "unknown scope")
+		return IssuedTokens{}, fmt.Errorf("%w: %w", oauthError(OAuthInvalidScope, "unknown scope"), err)
 	}
 	if granted == "" {
 		granted = c.Scope
 	}
-	if !granted.Within(c.Scope) || granted.HasFirstPartyOnly() {
-		return IssuedTokens{}, oauthError(OAuthInvalidScope, "the client may not have this scope")
+	if granted.HasFirstPartyOnly() {
+		return IssuedTokens{}, fmt.Errorf("%w: %w", oauthError(OAuthInvalidScope, "the client may not have this scope"), identity.ErrFirstPartyOnlyScope)
+	}
+	if !granted.Within(c.Scope) {
+		return IssuedTokens{}, fmt.Errorf("%w: %w", oauthError(OAuthInvalidScope, "the scope exceeds the client's"), identity.ErrScopeBeyondClient)
 	}
 	// A permission scope needs the permission on the owner's roles now; each call checks the
 	// roles again (ADR-0090 §17).

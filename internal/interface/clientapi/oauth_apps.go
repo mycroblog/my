@@ -10,6 +10,7 @@ import (
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The OAuth apps that the viewer registers (ADR-0090 §1, §2): registering, listing, changing,
@@ -69,11 +70,12 @@ func oauthAppResponse(a appidentity.OAuthApp) OAuthAppJSONResponse {
 }
 
 // oauthAppProblem returns the problem of an error of the OAuth app use cases, or nil for an
-// unexpected error.
+// unexpected error. A refused setting is a 422 that names its field, with the sentence of the
+// rule it breaks as its detail.
 func (s *Server) oauthAppProblem(ctx context.Context, err error) *problem {
 	l := s.Localizer(ctx)
 	invalid := func(name string) *problem {
-		p := s.fieldProblem(ctx, name, l.ServerErrorsInvalidValue())
+		p := s.fieldProblem(ctx, name, oauthAppSettingDetail(l, err))
 		return &p
 	}
 	var oauthErr *appidentity.OAuthError
@@ -102,6 +104,28 @@ func (s *Server) oauthAppProblem(ctx context.Context, err error) *problem {
 		return nil
 	}
 	return &p
+}
+
+// oauthAppSettingDetail is the sentence of the rule that a refused setting of an OAuth app, or
+// the scope of one of its tokens, breaks; errors.invalid_value for a rule without one of its own.
+func oauthAppSettingDetail(l *i18n.Localizer, err error) string {
+	switch {
+	case errors.Is(err, identity.ErrOAuthClientWebsiteNotHTTP):
+		return l.ServerErrorsOauthAppWebsiteNotHttp()
+	case errors.Is(err, identity.ErrTooManyOAuthClientRedirectURIs):
+		return l.ServerErrorsOauthAppTooManyRedirectUris(identity.MaxOAuthClientRedirectURIs)
+	case errors.Is(err, identity.ErrRedirectURIFragment):
+		return l.ServerErrorsOauthAppRedirectUriFragment()
+	case errors.Is(err, identity.ErrRedirectURIForm):
+		return l.ServerErrorsOauthAppRedirectUriForm()
+	case errors.Is(err, identity.ErrUnknownScope):
+		return l.ServerErrorsOauthAppUnknownScope()
+	case errors.Is(err, identity.ErrFirstPartyOnlyScope):
+		return l.ServerErrorsOauthAppFirstPartyScope()
+	case errors.Is(err, identity.ErrScopeBeyondClient):
+		return l.ServerErrorsOauthAppScopeBeyondApp()
+	}
+	return l.ServerErrorsInvalidValue()
 }
 
 // ListOAuthApps serves GET /api/v1/oauth_apps: the viewer's apps, and whether the viewer may
