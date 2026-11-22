@@ -42,6 +42,9 @@ const words = {
     empty: "No suggestions",
     failed: "The notification could not be dismissed.",
     retry: "Try again",
+    restricted:
+      "A moderation action keeps your account from following, favouriting, boosting, or replying for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.",
+    status: "Account status",
     uses: (n: number) => `${new Intl.NumberFormat("en").format(n)} posts`,
   },
   ja: {
@@ -62,6 +65,9 @@ const words = {
     empty: "候補はありません",
     failed: "通知を消せませんでした。",
     retry: "もう一度試す",
+    restricted:
+      "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。",
+    status: "アカウントの状態",
     uses: (n: number) => `${new Intl.NumberFormat("ja").format(n)} 件`,
   },
   ar: {
@@ -82,6 +88,9 @@ const words = {
     empty: "لا توجد اقتراحات",
     failed: "تعذّر تجاهل الإشعار.",
     retry: "حاول مرة أخرى",
+    restricted:
+      "يمنع إجراء إشرافي حسابك من المتابعة والتفضيل والترقية والرد حاليًا. لمعرفة السبب أو للطعن، افتح «حالة الحساب» في الإعدادات.",
+    status: "حالة الحساب",
     uses: (n: number) => `${new Intl.NumberFormat("ar").format(n)} منشور`,
   },
 } as const;
@@ -244,6 +253,18 @@ function Noticed() {
   );
 }
 
+/** A notice in the flow whose action is a link: a refusal of a restricted account, and Account status. */
+function NoticedLink() {
+  const w = words[useLang()];
+  return (
+    <div style={{ padding: "1rem" }}>
+      <UndoNotice inline action={w.status} href="/settings/account/status">
+        {w.restricted}
+      </UndoNotice>
+    </div>
+  );
+}
+
 // Tagged `themes`: the check of every story shows each in dark too.
 const meta = {
   title: "Composer",
@@ -270,3 +291,5 @@ export const Loading: Story = { render: () => <Suggesting kind="accounts" status
 export const Empty: Story = { render: () => <Suggesting kind="hashtags" status="empty" /> };
 /** The notice at the bottom of the page after a write that failed: what failed, and its action. */
 export const NoticeWithAction: Story = { render: () => <Noticed /> };
+/** The notice of a refusal the reader can appeal: the server's sentence, and a link to Account status. */
+export const NoticeWithLink: Story = { render: () => <NoticedLink /> };

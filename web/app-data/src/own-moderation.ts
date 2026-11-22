@@ -2,8 +2,8 @@
 // What moderators did to the viewer's own account, and appealing it: the actions on their account and posts, newest
 // first, each with its reason, whether it can be appealed now, and the appeal and its outcome; and the appeal of a post
 // that a server hook refused. A write puts what the server answered into the cache. What the server refuses of an
-// appeal is told by its kind (`appealRefusalOf`), and a refused post that can be appealed by its decision
-// (`hookRefusalOf`).
+// appeal is told by its kind (`appealRefusalOf`), a refused post that can be appealed by its decision
+// (`hookRefusalOf`), and a write a restriction of the account keeps the viewer from by `restrictionRefused`.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -43,6 +43,19 @@ export function appealRefusalOf(error: unknown): AppealRefusal | undefined {
   if (error.type === "/api/v1/problems/appeal-window-closed") return "closed";
   if (error.type === "/api/v1/problems/not-appealable") return "not_appealable";
   return error.status === 404 ? "gone" : undefined;
+}
+
+/**
+ * Whether `error` is the server's refusal of a write that a moderation action on the viewer's account keeps them from
+ * (the 403 `/api/v1/problems/posting-restricted` of posting, editing or boosting, or
+ * `/api/v1/problems/interaction-restricted` of following, favouriting, reacting, replying, quoting or voting), which
+ * they see and appeal on Account status.
+ */
+export function restrictionRefused(error: unknown): boolean {
+  return (
+    error instanceof ProblemError &&
+    (error.type === "/api/v1/problems/posting-restricted" || error.type === "/api/v1/problems/interaction-restricted")
+  );
 }
 
 /** A post the server's automated review refused, as its author may appeal it. */

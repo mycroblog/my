@@ -371,14 +371,30 @@ export function usePreviewedLink(): LinkRender {
 
 /**
  * A link inside a line of text that leads to another screen (a notice's Sign in), drawn as the text button is, so that
- * an action and a link in a line read alike.
+ * an action and a link in a line read alike. `onPress` hears the press before the screen changes (a layer over the
+ * page that leaves as the reader follows the link).
  */
-export function TextLink({ href, children }: { href: string; children: ReactNode }) {
+export function TextLink({
+  href,
+  onPress,
+  children,
+}: {
+  href: string;
+  onPress?: (() => void) | undefined;
+  children: ReactNode;
+}) {
   const previewed = usePreviewedLink();
   return (
     <Box
       bleedBlock="target-line"
-      as={<AriaLink href={href} className={`${textButton()} ${wordPress}`} render={previewed} />}
+      as={
+        <AriaLink
+          href={href}
+          {...(onPress === undefined ? {} : { onPress })}
+          className={`${textButton()} ${wordPress}`}
+          render={previewed}
+        />
+      }
     >
       {children}
     </Box>

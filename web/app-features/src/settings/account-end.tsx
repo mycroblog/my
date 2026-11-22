@@ -24,7 +24,7 @@
 // The act's sentence follows what a press does now: back from a login provider that confirmed it's them, it no longer
 // says they are asked to, and the press still asks, plainly, what the act is (confirmation.tsx).
 
-import { accountMovePath, dataExportPath } from "@my/app-components";
+import { accountMovePath, accountStatusPath, dataExportPath } from "@my/app-components";
 import {
   confirmationFields,
   deactivationRefused,
@@ -56,7 +56,7 @@ import {
 } from "@my/design-system";
 import { useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-import { accountStatusPath, tied, useActionDate } from "./account";
+import { tied, useActionDate } from "./account";
 import { accountDeactivatePath, accountDeletePath } from "./account-leave";
 import { saidOf, useConfirmation, useProviderReturn } from "./confirmation";
 import type { SettingsSessionProps, SettingsSubProps } from "./entries";
