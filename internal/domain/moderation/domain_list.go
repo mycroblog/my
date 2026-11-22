@@ -269,7 +269,7 @@ type DomainListHead struct {
 }
 
 // DomainListEntry is one domain of the list as the last fetch that read it listed it
-// (domain_list_entries, a projection of the fetches). The kinds of actions it stands for depend
+// (domain_list_entries, a cache of the subscribed list). The kinds of actions it stands for depend
 // on the settings in effect (DomainListSettings.Kinds).
 type DomainListEntry struct {
 	SubscriptionID string

@@ -521,11 +521,11 @@ CREATE TABLE domain_list_fetches (
 ) STRICT;
 CREATE INDEX domain_list_fetches_subscription_id_id ON domain_list_fetches (subscription_id, id DESC);
 
--- Projection: the domains of a subscribed list as the last fetch that read it listed them, one
--- row per domain (canonical), with the severity as listed (one this server does not know too).
--- since_fetch_id is the fetch from which the domain is listed with this content without a
--- break. A fetch that reads the list rewrites the rows of the subscription; the next fetch
--- rebuilds them.
+-- Current value: a cache of the subscribed list, its domains as the last fetch that read it
+-- listed them, one row per domain (canonical), with the severity as listed (one this server does
+-- not know too). since_fetch_id is the fetch from which the domain is listed with this content
+-- without a break. A fetch that reads the list rewrites the rows of the subscription; no fetch
+-- keeps the list it read, so nothing rebuilds them but the next fetch.
 CREATE TABLE domain_list_entries (
   subscription_id TEXT NOT NULL,
   domain TEXT NOT NULL,
