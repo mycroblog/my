@@ -54,6 +54,7 @@ func AccountMoveFlows(t *testing.T, newHarness RemoteFollowFactory) {
 		{"AcceptsAMoveToALocalAccountWithTheAlias", movesToLocalAlias},
 		{"SendsALocalMove", movesSendLocal},
 		{"RefusesAndCancelsLocalMoves", movesRefuseAndCancelLocal},
+		{"SaysWhenALocalAccountCanMoveAgain", movesSayWhenTheyCanMoveAgain},
 		{"MovesWithinTheServer", movesWithinTheServer},
 		{"AcceptsTheMoveOfAkkoma", movesFromAkkoma},
 	}
