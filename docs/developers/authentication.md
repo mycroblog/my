@@ -174,7 +174,7 @@ Scopes are the same as the first-party web client's, in two levels: broad scopes
 The list the instance offers is `scopes_supported` in the [authorization server metadata](#discovery).
 A request without enough scope gets `403` with `WWW-Authenticate: Bearer error="insufficient_scope"`.
 
-- **Direct messages:** reading posts of the `direct` visibility needs `read:direct` (the broad `read` includes it). A token with only `read:statuses` never receives a `direct` post in a timeline, thread, notification, bookmark list, post source, or list of quotes, the user's own posts included.
+- **Direct messages:** reading posts of the `direct` visibility needs `read:direct` (the broad `read` includes it). A token with only `read:statuses` never receives a `direct` post in a timeline, thread, notification, bookmark or favourite list, post source, or list of quotes, the user's own posts included.
   Sending a direct post needs only `write:statuses`. A token without `read:direct` cannot favourite, bookmark, boost, react to, or vote on a `direct` post: it gets `404` and nothing changes. It can still take back what the user already had on one, such as a favourite: that takes effect and the answer is the same `404`, which shows nothing of the post.
 - **Voice chat rooms:** opening a room with a start post (`post`) publishes a post, so it needs `write:statuses` besides `write:voice`; without it the request gets `403` `/api/v1/problems/insufficient-scope`.
 - **Reading through a write scope:** a write scope reads the post it acts on, because the response to an action on a post (favouriting it with `write:favourites`, for example) is the whole post, followers-only content included.

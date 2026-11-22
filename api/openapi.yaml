@@ -4348,6 +4348,33 @@ paths:
                 $ref: '#/components/schemas/StatusPage'
         default:
           $ref: '#/components/responses/Problem'
+  /favourites:
+    get:
+      operationId: listFavourites
+      summary: List the posts the authenticated user favourited, newest favourite first
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - read:favourites
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: |
+            A page of favourited posts. Posts that the user can no longer see, and the posts of the
+            boards of events, are left out, so a page may hold fewer posts than `limit` and still have
+            a `next_cursor`. `direct` posts need `read:direct`.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusPage'
+        default:
+          $ref: '#/components/responses/Problem'
   /statuses:
     post:
       operationId: createStatus
@@ -14709,7 +14736,7 @@ components:
 
         `read:statuses` does not show posts whose visibility is `direct`, in timelines, in a post's
         thread, or in a post's own response, nor in the posts of a notification; `read:direct` (which
-        `read` grants) does. The same holds for bookmarks, a post's source, and the posts that quote
+        `read` grants) does. The same holds for bookmarks, favourites, a post's source, and the posts that quote
         a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`,
         and the response shows the post just sent.
 
@@ -14789,6 +14816,7 @@ components:
             read:custom_emojis: Read the custom emoji the user made and their requests for new ones.
             read:direct: Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
             read:events: Read the events the user sees, their attendees, and the invitations of the events the user organizes.
+            read:favourites: Read the posts the user favourited.
             read:filters: Read the user's keyword filters.
             read:finance: Read the totals of the instance's costs and income, as far as the user's roles allow.
             read:follows: Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.

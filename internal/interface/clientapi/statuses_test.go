@@ -146,6 +146,11 @@ func (f *fakeStatuses) Bookmarks(_ context.Context, v appcontent.Viewer, _ strin
 	return appcontent.BookmarkPage{Statuses: []appcontent.StatusView{view}, Next: fmt.Sprintf("next-%d", limit)}, nil
 }
 
+func (f *fakeStatuses) Favourites(ctx context.Context, v appcontent.Viewer, before string, limit int) (appcontent.FavouritePage, error) {
+	page, err := f.Bookmarks(ctx, v, before, limit)
+	return appcontent.FavouritePage(page), err
+}
+
 func (f *fakeStatuses) Reactions(_ context.Context, v appcontent.Viewer, id, emoji, before string, limit int) (appcontent.ReactedPage, error) {
 	if f.reactions != nil {
 		return f.reactions(v, id, emoji, before, limit)

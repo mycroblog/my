@@ -55,6 +55,7 @@ type StatusReader interface {
 	// ArticleBody returns the body of a revision of an article as clients show it, "" for a post.
 	ArticleBody(ctx context.Context, rev content.Revision) (string, error)
 	Bookmarks(ctx context.Context, viewer appcontent.Viewer, before string, limit int) (appcontent.BookmarkPage, error)
+	Favourites(ctx context.Context, viewer appcontent.Viewer, before string, limit int) (appcontent.FavouritePage, error)
 	Reactions(ctx context.Context, viewer appcontent.Viewer, statusID, emoji, before string, limit int) (appcontent.ReactedPage, error)
 	ReactionEmoji(ctx context.Context, e appcontent.ReactionEmoji) (appcontent.EmojiView, error)
 	// ReactionEmojis returns many reactions' emoji, by key, as ReactionEmoji returns one, reading
@@ -878,15 +879,49 @@ func (s *Server) ListBookmarks(ctx context.Context, req ListBookmarksRequestObje
 		}
 		return nil, err
 	}
-	items, err := s.presentStatuses(ctx, page.Statuses)
+	out, err := s.markedStatusPage(ctx, page.Statuses, page.Next)
 	if err != nil {
 		return nil, err
 	}
-	out := StatusPage{Items: items}
-	if page.Next != "" {
-		out.NextCursor = &page.Next
-	}
 	return ListBookmarks200JSONResponse{Body: out, Headers: ListBookmarks200ResponseHeaders{CacheControl: statusCache(ctx)}}, nil
+}
+
+// ListFavourites serves GET /api/v1/favourites.
+func (s *Server) ListFavourites(ctx context.Context, req ListFavouritesRequestObject) (ListFavouritesResponseObject, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if p := s.plainPageProblem(ctx, req.Params.Cursor, req.Params.Limit); p != nil {
+		return ListFavouritesdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	limit, _ := pageLimit(req.Params.Limit)
+	page, err := s.o.StatusReader.Favourites(ctx, localContentViewer(v), deref(req.Params.Cursor), limit)
+	if err != nil {
+		if p, ok := s.statusProblem(ctx, err); ok {
+			return ListFavouritesdefaultApplicationProblemPlusJSONResponse(p), nil
+		}
+		return nil, err
+	}
+	out, err := s.markedStatusPage(ctx, page.Statuses, page.Next)
+	if err != nil {
+		return nil, err
+	}
+	return ListFavourites200JSONResponse{Body: out, Headers: ListFavourites200ResponseHeaders{CacheControl: statusCache(ctx)}}, nil
+}
+
+// markedStatusPage presents statuses as a page whose next page starts at the cursor next ("" on the
+// last page).
+func (s *Server) markedStatusPage(ctx context.Context, statuses []appcontent.StatusView, next string) (StatusPage, error) {
+	items, err := s.presentStatuses(ctx, statuses)
+	if err != nil {
+		return StatusPage{}, err
+	}
+	out := StatusPage{Items: items}
+	if next != "" {
+		out.NextCursor = &next
+	}
+	return out, nil
 }
 
 // act runs an interaction of the viewer with a status and returns the status afterwards, or
