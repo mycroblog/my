@@ -472,7 +472,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.first_party_scope": {
-    "defaultMessage": "[Ȧƞ ȧȧƥƥ ƈȧȧƞƞǿǿŧ ħȧȧṽḗḗ ȧȧḓḿīƞ, ȧȧḓḿīƞ:řḗḗȧȧḓ, ȧȧḓḿīƞ:ẇřīŧḗḗ ǿǿř ẇřīŧḗḗ:şŭŭƥƥǿǿřŧḗḗřş. Řḗḗḿǿǿṽḗḗ ŧħḗḗḿ.]",
+    "defaultMessage": "[ȧȧḓḿīƞ, ȧȧḓḿīƞ:řḗḗȧȧḓ, ȧȧḓḿīƞ:ẇřīŧḗḗ ȧȧƞḓ ẇřīŧḗḗ:şŭŭƥƥǿǿřŧḗḗřş ȧȧřḗḗ ǿǿƞŀẏ ƒǿǿř ŧħīş şḗḗřṽḗḗř''ş ǿǿẇƞ ȧȧƥƥş. Řḗḗḿǿǿṽḗḗ ŧħḗḗḿ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.public": {
@@ -480,11 +480,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.redirect_uri_form": {
-    "defaultMessage": "[Ǿƞḗḗ ǿǿƒ ŧħḗḗ ȧȧḓḓřḗḗşşḗḗş īş ƞǿǿŧ ȧȧƞ ħŧŧƥş ȧȧḓḓřḗḗşş, ȧȧƞ ȧȧḓḓřḗḗşş ẇīŧħ ȧȧ şƈħḗḗḿḗḗ ǿǿƒ ẏǿǿŭŭř ǿǿẇƞ şŭŭƈħ ȧȧş ƈǿǿḿ.ḗḗẋȧȧḿƥŀḗḗ.ȧȧƥƥ:/ƈȧȧŀŀƀȧȧƈķ, ǿǿř ħŧŧƥ://127.0.0.1. Ƈħȧȧƞɠḗḗ īŧ ŧǿǿ ǿǿƞḗḗ ǿǿƒ ŧħḗḗşḗḗ.]",
+    "defaultMessage": "[Ǿƞḗḗ ǿǿƒ ŧħḗḗ ȧȧḓḓřḗḗşşḗḗş īş ƞǿǿŧ ȧȧƞ ħŧŧƥş ȧȧḓḓřḗḗşş, ȧȧƞ ȧȧḓḓřḗḗşş ẇīŧħ ȧȧ şƈħḗḗḿḗḗ ǿǿƒ ẏǿǿŭŭř ǿǿẇƞ şŭŭƈħ ȧȧş ƈǿǿḿ.ḗḗẋȧȧḿƥŀḗḗ.ȧȧƥƥ:/ƈȧȧŀŀƀȧȧƈķ, ǿǿř ħŧŧƥ://127.0.0.1 ǿǿƞ ȧȧƞẏ ƥǿǿřŧ. Ƈħȧȧƞɠḗḗ īŧ ŧǿǿ ǿǿƞḗḗ ǿǿƒ ŧħḗḗşḗḗ ƒǿǿřḿş.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.redirect_uri_fragment": {
-    "defaultMessage": "[Ǿƞḗḗ ǿǿƒ ŧħḗḗ ȧȧḓḓřḗḗşşḗḗş ħȧȧş ȧȧ ƥȧȧřŧ ȧȧƒŧḗḗř #, ẇħīƈħ ȧȧ řḗḗḓīřḗḗƈŧ ŬŘĪ ƈȧȧƞƞǿǿŧ ħȧȧṽḗḗ. Řḗḗḿǿǿṽḗḗ ŧħȧȧŧ ƥȧȧřŧ.]",
+    "defaultMessage": "[Ǿƞḗḗ ǿǿƒ ŧħḗḗ ȧȧḓḓřḗḗşşḗḗş ħȧȧş ȧȧ #, ẇħīƈħ ȧȧ řḗḗḓīřḗḗƈŧ ŬŘĪ ƈȧȧƞƞǿǿŧ ħȧȧṽḗḗ. Řḗḗḿǿǿṽḗḗ ŧħḗḗ # ȧȧƞḓ ḗḗṽḗḗřẏŧħīƞɠ ȧȧƒŧḗḗř īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.registration_disabled": {
@@ -492,7 +492,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.scope_beyond_app": {
-    "defaultMessage": "[Ȧ ŧǿǿķḗḗƞ ƈȧȧƞ ħȧȧṽḗḗ ǿǿƞŀẏ ŧħḗḗ şƈǿǿƥḗḗş ǿǿƒ īŧş ȧȧƥƥ. Řḗḗḿǿǿṽḗḗ ŧħḗḗ ǿǿŧħḗḗřş, ǿǿř ȧȧḓḓ ŧħḗḗḿ ŧǿǿ ŧħḗḗ ȧȧƥƥ ƒīřşŧ.]",
+    "defaultMessage": "[Ǿƞḗḗ ǿǿƒ ŧħḗḗ şƈǿǿƥḗḗş īş ƞǿǿŧ ȧȧḿǿǿƞɠ ŧħḗḗ ȧȧƥƥ''ş. Ȧ ŧǿǿķḗḗƞ ƈȧȧƞ ħȧȧṽḗḗ ǿǿƞŀẏ ŧħḗḗ şƈǿǿƥḗḗş ǿǿƒ īŧş ȧȧƥƥ. Řḗḗḿǿǿṽḗḗ īŧ, ǿǿř ȧȧḓḓ īŧ ŧǿǿ ŧħḗḗ ȧȧƥƥ ƒīřşŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.too_many": {
@@ -504,11 +504,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.unknown_scope": {
-    "defaultMessage": "[Ǿƞḗḗ ǿǿƒ ŧħḗḗ şƈǿǿƥḗḗş īş ƞǿǿŧ ȧȧ şƈǿǿƥḗḗ ŧħīş şḗḗřṽḗḗř ķƞǿǿẇş. Ƈħḗḗƈķ īŧş şƥḗḗŀŀīƞɠ, şŭŭƈħ ȧȧş řḗḗȧȧḓ ǿǿř ẇřīŧḗḗ:şŧȧȧŧŭŭşḗḗş.]",
+    "defaultMessage": "[Ǿƞḗḗ ǿǿƒ ŧħḗḗ şƈǿǿƥḗḗş īş ƞǿǿŧ ǿǿƞḗḗ ŧħīş şḗḗřṽḗḗř ķƞǿǿẇş. Ƈħḗḗƈķ īŧş şƥḗḗŀŀīƞɠ, ȧȧƞḓ şḗḗƥȧȧřȧȧŧḗḗ şƈǿǿƥḗḗş ẇīŧħ şƥȧȧƈḗḗş, ȧȧş īƞ řḗḗȧȧḓ ẇřīŧḗḗ:şŧȧȧŧŭŭşḗḗş.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.oauth_app.website_not_http": {
-    "defaultMessage": "[Ḗƞŧḗḗř ȧȧƞ ħŧŧƥş ǿǿř ħŧŧƥ ȧȧḓḓřḗḗşş, şŭŭƈħ ȧȧş ħŧŧƥş://ḗḗẋȧȧḿƥŀḗḗ.ƈǿǿḿ/.]",
+    "defaultMessage": "[Ŧħīş īş ƞǿǿŧ ȧȧƞ ħŧŧƥş ǿǿř ħŧŧƥ ȧȧḓḓřḗḗşş. Ḗƞŧḗḗř ǿǿƞḗḗ şŭŭƈħ ȧȧş ħŧŧƥş://ḗḗẋȧȧḿƥŀḗḗ.ƈǿǿḿ/.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.passkey.confirmation_expired": {
