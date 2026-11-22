@@ -10,7 +10,7 @@ import { accountStatusPath } from "@my/app-components";
 import { defaultComposeSettings } from "@my/app-data";
 import { scenario } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
-import { RouterProvider } from "react-aria-components";
+import { NavigationProvider } from "@my/design-system";
 import { fakeData, pasteInto, renderFeature, type FakeData } from "../test/feature";
 import { ArticleEditor } from "./article";
 import { ComposerView } from "./composer";
@@ -65,9 +65,9 @@ function composer({
   }
   const user = renderFeature(
     on.data,
-    <RouterProvider navigate={(to) => went.push(String(to))}>
+    <NavigationProvider navigate={(to) => went.push(String(to))}>
       <Composing />
-    </RouterProvider>,
+    </NavigationProvider>,
     locale,
   );
   return { form: within(screen.getByRole("dialog")), user, on, went, left };
@@ -169,9 +169,9 @@ test("an article the server refuses with posting-restricted: the editor's alert 
   const sent = on.fake.script("POST /articles", { fail: refusal("posting-restricted", posting) });
   const user = renderFeature(
     on.data,
-    <RouterProvider navigate={none}>
+    <NavigationProvider navigate={none}>
       <ArticleEditor opening={{ kind: "new" }} onLeave={none} onOpenDraft={none} />
-    </RouterProvider>,
+    </NavigationProvider>,
   );
   const body = await screen.findByRole("textbox", { name: "Body" });
   await user.type(screen.getByRole("textbox", { name: "Title" }), "Market day");

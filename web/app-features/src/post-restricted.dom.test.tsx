@@ -8,7 +8,7 @@ import { describe, expect, test } from "bun:test";
 import { accountStatusPath } from "@my/app-components";
 import { scenario } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
-import { RouterProvider } from "react-aria-components";
+import { NavigationProvider } from "@my/design-system";
 import { PostActions } from "./post-actions";
 import { fakeData, renderFeature } from "./test/feature";
 import { HomeTimeline, loadHomeTimeline } from "./timeline/home";
@@ -44,11 +44,11 @@ async function timeline() {
   const went: string[] = [];
   const user = renderFeature(
     made.data,
-    <RouterProvider navigate={(to) => went.push(String(to))}>
+    <NavigationProvider navigate={(to) => went.push(String(to))}>
       <PostActions onCompose={() => undefined}>
         <HomeTimeline />
       </PostActions>
-    </RouterProvider>,
+    </NavigationProvider>,
   );
   const post = () => {
     const found = screen.getAllByRole("article").find((article) => within(article).queryAllByText("Which loaves?").length > 0);

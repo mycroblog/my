@@ -8,7 +8,7 @@ import { expect, test } from "bun:test";
 import { accountStatusPath } from "@my/app-components";
 import { scenario } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
-import { RouterProvider } from "react-aria-components";
+import { NavigationProvider } from "@my/design-system";
 import type { ReactNode } from "react";
 import { PostActions } from "../post-actions";
 import { fakeData, renderFeature, type FakeData } from "../test/feature";
@@ -34,9 +34,9 @@ function drawnOn(made: FakeData, children: ReactNode) {
   const went: string[] = [];
   const user = renderFeature(
     made.data,
-    <RouterProvider navigate={(to) => went.push(String(to))}>
+    <NavigationProvider navigate={(to) => went.push(String(to))}>
       <PostActions onCompose={() => undefined}>{children}</PostActions>
-    </RouterProvider>,
+    </NavigationProvider>,
   );
   return { ...made, user, went };
 }
