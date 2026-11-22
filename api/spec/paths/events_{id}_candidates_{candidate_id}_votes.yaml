@@ -7,7 +7,9 @@ get:
   summary: List the answers to a candidate date of an event
   description: |
     Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-    the event.
+    the event. Accounts that
+    block the user, are deactivated or suspended, or whose profile moderation hides are left
+    out, so a page may hold fewer than `limit` items before the last.
   tags: [events]
   security:
     - oauth2: ["read:events"]

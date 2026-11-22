@@ -5524,7 +5524,9 @@ export interface paths {
         /**
          * List the attendees of an event
          * @description The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-         *     sees the event.
+         *     sees the event. Accounts that
+         *     block the user, are deactivated or suspended, or whose profile moderation hides are left
+         *     out, so a page may hold fewer than `limit` items before the last.
          */
         get: operations["listEventAttendees"];
         put?: never;
@@ -5625,7 +5627,9 @@ export interface paths {
         /**
          * List the invitations of an event
          * @description The invitations of the event that were not revoked, oldest first, for the organizer and the
-         *     co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+         *     co-organizers. Accounts that
+         *     block the user, are deactivated or suspended, or whose profile moderation hides are left
+         *     out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
          */
         get: operations["listEventInvitations"];
         put?: never;
@@ -5815,7 +5819,9 @@ export interface paths {
         /**
          * List the answers to a candidate date of an event
          * @description Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-         *     the event.
+         *     the event. Accounts that
+         *     block the user, are deactivated or suspended, or whose profile moderation hides are left
+         *     out, so a page may hold fewer than `limit` items before the last.
          */
         get: operations["listEventCandidateVotes"];
         put?: never;
@@ -10385,6 +10391,12 @@ export interface components {
              *     chains).
              */
             moved?: components["schemas"]["Account"];
+            /**
+             * @description True for an account that the user may not see but that a field must name (an event's
+             *     `organizer`): its `id`, `uri`, `domain`, and `created_at` are its own, `url` is its `uri`,
+             *     `locked` and `bot` are false, and its texts and lists are empty. Omitted otherwise.
+             */
+            unavailable?: boolean;
             /**
              * @description The open voice chat room where the account is the host or a speaker, when the user sees
              *     it. Present only on `GET /accounts/{id}`.
@@ -14983,8 +14995,15 @@ export interface components {
          */
         Event: {
             id: components["schemas"]["Id"];
+            /**
+             * @description The organizer; `unavailable` when the user may not see the account (it blocks the user, is
+             *     deactivated or suspended, or moderation hides its profile).
+             */
             organizer: components["schemas"]["Account"];
-            /** @description The co-organizers, in the order the organizer named them; up to 3. */
+            /**
+             * @description The co-organizers, in the order the organizer named them; up to 3. Those the user may not
+             *     see, as for `organizer`, are left out.
+             */
             coorganizers: components["schemas"]["Account"][];
             title: string;
             /** @description Plain text; empty for none. */

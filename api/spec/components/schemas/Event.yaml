@@ -10,9 +10,15 @@ properties:
   id:
     $ref: ./Id.yaml
   organizer:
-    $ref: ./Account.yaml
+    description: |
+      The organizer; `unavailable` when the user may not see the account (it blocks the user, is
+      deactivated or suspended, or moderation hides its profile).
+    allOf:
+      - $ref: ./Account.yaml
   coorganizers:
-    description: The co-organizers, in the order the organizer named them; up to 3.
+    description: |
+      The co-organizers, in the order the organizer named them; up to 3. Those the user may not
+      see, as for `organizer`, are left out.
     type: array
     items:
       $ref: ./Account.yaml

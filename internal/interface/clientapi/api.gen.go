@@ -5881,6 +5881,11 @@ type Account struct {
 	// Note The profile text as sanitized HTML; empty when there is none.
 	Note string `json:"note"`
 
+	// Unavailable True for an account that the user may not see but that a field must name (an event's
+	// `organizer`): its `id`, `uri`, `domain`, and `created_at` are its own, `url` is its `uri`,
+	// `locked` and `bot` are false, and its texts and lists are empty. Omitted otherwise.
+	Unavailable *bool `json:"unavailable,omitempty"`
+
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
 
@@ -10677,6 +10682,11 @@ type CredentialAccount struct {
 	// adds one to it, so a count of 1 after the create is the account's first post.
 	StatusesCount int64 `json:"statuses_count"`
 
+	// Unavailable True for an account that the user may not see but that a field must name (an event's
+	// `organizer`): its `id`, `uri`, `domain`, and `created_at` are its own, `url` is its `uri`,
+	// `locked` and `bot` are false, and its texts and lists are empty. Omitted otherwise.
+	Unavailable *bool `json:"unavailable,omitempty"`
+
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
 
@@ -11729,7 +11739,8 @@ type Event struct {
 	// Capacity How many attendees may answer `going`; 0 for no limit.
 	Capacity int `json:"capacity"`
 
-	// Coorganizers The co-organizers, in the order the organizer named them; up to 3.
+	// Coorganizers The co-organizers, in the order the organizer named them; up to 3. Those the user may not
+	// see, as for `organizer`, are left out.
 	Coorganizers []Account `json:"coorganizers"`
 	CreatedAt    time.Time `json:"created_at"`
 
@@ -11750,7 +11761,8 @@ type Event struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Organizer An account, as clients show it.
+	// Organizer The organizer; `unavailable` when the user may not see the account (it blocks the user, is
+	// deactivated or suspended, or moderation hides its profile).
 	Organizer Account `json:"organizer"`
 
 	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the

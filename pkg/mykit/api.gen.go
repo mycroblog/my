@@ -5879,6 +5879,11 @@ type Account struct {
 	// Note The profile text as sanitized HTML; empty when there is none.
 	Note string `json:"note"`
 
+	// Unavailable True for an account that the user may not see but that a field must name (an event's
+	// `organizer`): its `id`, `uri`, `domain`, and `created_at` are its own, `url` is its `uri`,
+	// `locked` and `bot` are false, and its texts and lists are empty. Omitted otherwise.
+	Unavailable *bool `json:"unavailable,omitempty"`
+
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
 
@@ -10676,6 +10681,11 @@ type CredentialAccount struct {
 	// adds one to it, so a count of 1 after the create is the account's first post.
 	StatusesCount int64 `json:"statuses_count"`
 
+	// Unavailable True for an account that the user may not see but that a field must name (an event's
+	// `organizer`): its `id`, `uri`, `domain`, and `created_at` are its own, `url` is its `uri`,
+	// `locked` and `bot` are false, and its texts and lists are empty. Omitted otherwise.
+	Unavailable *bool `json:"unavailable,omitempty"`
+
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
 
@@ -11730,7 +11740,8 @@ type Event struct {
 	// Capacity How many attendees may answer `going`; 0 for no limit.
 	Capacity int `json:"capacity"`
 
-	// Coorganizers The co-organizers, in the order the organizer named them; up to 3.
+	// Coorganizers The co-organizers, in the order the organizer named them; up to 3. Those the user may not
+	// see, as for `organizer`, are left out.
 	Coorganizers []Account `json:"coorganizers"`
 	CreatedAt    time.Time `json:"created_at"`
 
@@ -11751,7 +11762,8 @@ type Event struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Organizer An account, as clients show it.
+	// Organizer The organizer; `unavailable` when the user may not see the account (it blocks the user, is
+	// deactivated or suspended, or moderation hides its profile).
 	Organizer Account `json:"organizer"`
 
 	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
@@ -26960,7 +26972,9 @@ type ClientInterface interface {
 	// ListEventAttendees List the attendees of an event
 	//
 	// The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-	// sees the event.
+	// sees the event. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last.
 	//
 	// Corresponds with GET /events/{id}/attendees (the `ListEventAttendees` operationId).
 	ListEventAttendees(ctx context.Context, id EventId, params *ListEventAttendeesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -27158,7 +27172,9 @@ type ClientInterface interface {
 	// ListEventCandidateVotes List the answers to a candidate date of an event
 	//
 	// Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-	// the event.
+	// the event. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last.
 	//
 	// Corresponds with GET /events/{id}/candidates/{candidate_id}/votes (the `ListEventCandidateVotes` operationId).
 	ListEventCandidateVotes(ctx context.Context, id EventId, candidateId EventCandidateId, params *ListEventCandidateVotesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -27186,7 +27202,9 @@ type ClientInterface interface {
 	// ListEventInvitations List the invitations of an event
 	//
 	// The invitations of the event that were not revoked, oldest first, for the organizer and the
-	// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+	// co-organizers. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
 	//
 	// Corresponds with GET /events/{id}/invitations (the `ListEventInvitations` operationId).
 	ListEventInvitations(ctx context.Context, id EventId, params *ListEventInvitationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -38149,7 +38167,9 @@ func (c *Client) UpdateEvent(ctx context.Context, id EventId, body UpdateEventJS
 // ListEventAttendees List the attendees of an event
 //
 // The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-// sees the event.
+// sees the event. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last.
 //
 // Corresponds with GET /events/{id}/attendees (the `ListEventAttendees` operationId).
 func (c *Client) ListEventAttendees(ctx context.Context, id EventId, params *ListEventAttendeesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38507,7 +38527,9 @@ func (c *Client) VoteEventCandidate(ctx context.Context, id EventId, candidateId
 // ListEventCandidateVotes List the answers to a candidate date of an event
 //
 // Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-// the event.
+// the event. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last.
 //
 // Corresponds with GET /events/{id}/candidates/{candidate_id}/votes (the `ListEventCandidateVotes` operationId).
 func (c *Client) ListEventCandidateVotes(ctx context.Context, id EventId, candidateId EventCandidateId, params *ListEventCandidateVotesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38565,7 +38587,9 @@ func (c *Client) AssignEventCoorganizer(ctx context.Context, id EventId, account
 // ListEventInvitations List the invitations of an event
 //
 // The invitations of the event that were not revoked, oldest first, for the organizer and the
-// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+// co-organizers. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
 //
 // Corresponds with GET /events/{id}/invitations (the `ListEventInvitations` operationId).
 func (c *Client) ListEventInvitations(ctx context.Context, id EventId, params *ListEventInvitationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -69676,7 +69700,9 @@ type ClientWithResponsesInterface interface {
 	// ListEventAttendeesWithResponse List the attendees of an event
 	//
 	// The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-	// sees the event.
+	// sees the event. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69890,7 +69916,9 @@ type ClientWithResponsesInterface interface {
 	// ListEventCandidateVotesWithResponse List the answers to a candidate date of an event
 	//
 	// Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-	// the event.
+	// the event. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69924,7 +69952,9 @@ type ClientWithResponsesInterface interface {
 	// ListEventInvitationsWithResponse List the invitations of an event
 	//
 	// The invitations of the event that were not revoked, oldest first, for the organizer and the
-	// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+	// co-organizers. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -110806,7 +110836,9 @@ func (c *ClientWithResponses) UpdateEventWithResponse(ctx context.Context, id Ev
 // ListEventAttendeesWithResponse List the attendees of an event
 //
 // The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-// sees the event.
+// sees the event. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -111116,7 +111148,9 @@ func (c *ClientWithResponses) VoteEventCandidateWithResponse(ctx context.Context
 // ListEventCandidateVotesWithResponse List the answers to a candidate date of an event
 //
 // Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-// the event.
+// the event. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -111168,7 +111202,9 @@ func (c *ClientWithResponses) AssignEventCoorganizerWithResponse(ctx context.Con
 // ListEventInvitationsWithResponse List the invitations of an event
 //
 // The invitations of the event that were not revoked, oldest first, for the organizer and the
-// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+// co-organizers. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
 //
 // Returns a wrapper object for the known response body format(s).
 //

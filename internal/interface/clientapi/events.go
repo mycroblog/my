@@ -14,6 +14,7 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/gathering"
 )
 
@@ -128,37 +129,72 @@ func eventCache() *string {
 	return &c
 }
 
-// accountsOf presents the accounts of ids, read together, by ID; an account that is gone is
-// left out.
+// accountsOf presents the accounts of ids that the viewer of ctx may see (presentable, with the
+// block check), read together, by ID; the others are left out.
 func (s *Server) accountsOf(ctx context.Context, ids []string) (map[string]Account, error) {
+	out, _, err := s.eventAccounts(ctx, ids)
+	return out, err
+}
+
+// eventAccounts is accountsOf, with the accounts of ids that exist, shown or not.
+func (s *Server) eventAccounts(ctx context.Context, ids []string) (map[string]Account, map[string]appaccount.Actor, error) {
 	var unique []string
 	for _, id := range ids {
 		if !slices.Contains(unique, id) {
 			unique = append(unique, id)
 		}
 	}
+	if len(unique) == 0 {
+		return map[string]Account{}, map[string]appaccount.Actor{}, nil
+	}
 	found, err := s.o.Accounts.FindByIDs(ctx, unique)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	var viewer *Viewer
+	if v, ok := ViewerFrom(ctx); ok {
+		viewer = &v
+	}
+	shown, err := s.presentableOf(ctx, viewer, found, unique, true)
+	if err != nil {
+		return nil, nil, err
 	}
 	actors := make([]appaccount.Actor, 0, len(unique))
 	for _, id := range unique {
-		if a, ok := found[id]; ok {
+		if a, ok := shown[id]; ok {
 			actors = append(actors, a)
 		}
 	}
 	accounts, err := s.newAccounts(ctx, actors)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	out := make(map[string]Account, len(actors))
 	for i, a := range actors {
 		out[a.Account.ID] = accounts[i]
 	}
-	return out, nil
+	return out, found, nil
 }
 
-// newEvents presents views, reading the accounts of their organizers and co-organizers together.
+// unavailableAccount presents the local account id, which the viewer may not see, as the Account
+// schema of an account that a field must name: its own id, uri, domain, and creation, and nothing
+// of its profile. found is the account when it exists.
+func (s *Server) unavailableAccount(id string, found map[string]appaccount.Actor) Account {
+	unavailable := true
+	out := Account{
+		Id: id, Uri: account.ActorURI(s.o.Host, id), Domain: s.accountDomain(), Unavailable: &unavailable,
+		Fields: []ProfileField{}, Emojis: []CustomEmoji{}, Badges: []AccountBadge{},
+	}
+	if a, ok := found[id]; ok {
+		out.Uri, out.CreatedAt = a.Account.URI, a.Account.CreatedAt
+	}
+	out.Url = out.Uri
+	return out
+}
+
+// newEvents presents views, reading the accounts of their organizers and co-organizers together:
+// an organizer that the viewer may not see is shown as unavailable, and such a co-organizer is
+// left out.
 func (s *Server) newEvents(ctx context.Context, views []appgathering.View) ([]Event, error) {
 	var ids []string
 	for _, v := range views {
@@ -167,15 +203,19 @@ func (s *Server) newEvents(ctx context.Context, views []appgathering.View) ([]Ev
 			ids = append(ids, c.AccountID)
 		}
 	}
-	accounts, err := s.accountsOf(ctx, ids)
+	accounts, found, err := s.eventAccounts(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]Event, 0, len(views))
 	for _, v := range views {
 		st := v.Revision.Settings
+		organizer, ok := accounts[v.OrganizerAccountID]
+		if !ok {
+			organizer = s.unavailableAccount(v.OrganizerAccountID, found)
+		}
 		e := Event{
-			Id: v.ID, Organizer: accounts[v.OrganizerAccountID], Coorganizers: make([]Account, 0, len(v.Coorganizers)),
+			Id: v.ID, Organizer: organizer, Coorganizers: make([]Account, 0, len(v.Coorganizers)),
 			Title: st.Title, Description: st.Description, Visibility: EventVisibility(st.Visibility), TimeZone: st.TimeZone,
 			PlaceDisclosure: EventPlaceDisclosure(st.PlaceDisclosure), Capacity: st.Capacity,
 			Places: make([]EventPlace, 0, len(v.Places)), HiddenPlaces: make([]EventPlaceKind, 0, len(v.HiddenPlaces)),
@@ -450,7 +490,7 @@ func (s *Server) AnswerEvent(ctx context.Context, req AnswerEventRequestObject) 
 	return AnswerEvent200JSONResponse{Body: out, Headers: AnswerEvent200ResponseHeaders{CacheControl: eventCache()}}, nil
 }
 
-// newEventAttendees presents attendees, leaving out the accounts that are gone.
+// newEventAttendees presents attendees, leaving out the accounts that the viewer may not see.
 func (s *Server) newEventAttendees(ctx context.Context, as []appgathering.Attendee) ([]EventAttendee, error) {
 	ids := make([]string, len(as))
 	for i, a := range as {
@@ -541,7 +581,7 @@ func (s *Server) RevokeEventAttendeeApproval(ctx context.Context, req RevokeEven
 	return respond[RevokeEventAttendeeApprovaldefaultApplicationProblemPlusJSONResponse](p, err)
 }
 
-// newEventInvitations presents invitations, leaving out the accounts that are gone.
+// newEventInvitations presents invitations, leaving out the accounts that the viewer may not see.
 func (s *Server) newEventInvitations(ctx context.Context, invs []appgathering.Invitation) ([]EventInvitation, error) {
 	ids := make([]string, len(invs))
 	for i, inv := range invs {
