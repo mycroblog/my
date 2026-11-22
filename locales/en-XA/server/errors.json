@@ -151,6 +151,10 @@
     "defaultMessage": "[Ŧħȧȧŧ ŭŭşḗḗř īş ȧȧŀřḗḗȧȧḓẏ īƞṽīŧḗḗḓ ŧǿǿ ŧħḗḗ ḗḗṽḗḗƞŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.event.attendee_organizes": {
+    "defaultMessage": "[Ŧħḗḗ ǿǿřɠȧȧƞīẑḗḗř ȧȧƞḓ ŧħḗḗ ƈǿǿ-ǿǿřɠȧȧƞīẑḗḗřş ȧȧŀẇȧȧẏş şḗḗḗḗ ŧħḗḗ ƥŀȧȧƈḗḗş, şǿǿ ŧħḗḗīř ȧȧƞşẇḗḗřş ȧȧřḗḗ ƞǿǿŧ ȧȧƥƥřǿǿṽḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.event.board_closed": {
     "defaultMessage": "[Ŧħīş ḗḗṽḗḗƞŧ''ş ƀǿǿȧȧřḓ īş řḗḗȧȧḓ-ǿǿƞŀẏ: ŧħḗḗ ḗḗṽḗḗƞŧ ẇȧȧş ƈȧȧƞƈḗḗŀŀḗḗḓ, ǿǿř 7 ḓȧȧẏş ħȧȧṽḗḗ ƥȧȧşşḗḗḓ şīƞƈḗḗ īŧ ḗḗƞḓḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."

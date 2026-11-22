@@ -118,9 +118,14 @@ type Attendee struct {
 	GatheringID string
 	AccountID   string
 	// RSVPID is the newest answer, whose ID orders the attendee list.
-	RSVPID   string
-	Answer   gathering.Answer
+	RSVPID string
+	Answer gathering.Answer
+	// Approved is true for an attendee whom the organizer or a co-organizer approved, and, from
+	// the Service, for one who organizes the event, who always sees its places (ADR-0161 §6).
 	Approved bool
+	// Organizes is whether the attendee is the organizer or a co-organizer of the event now; the
+	// Service sets it, and the approval of such an attendee cannot change (ErrAttendeeOrganizes).
+	Organizes bool
 }
 
 // Coorganizer is a current co-organizer of an event (gathering_coorganizers); ChangeID, the
@@ -170,6 +175,11 @@ func (r Record) Coorganizes(accountID string) bool {
 		}
 	}
 	return false
+}
+
+// Organizes reports whether accountID is the organizer or a co-organizer of the event.
+func (r Record) Organizes(accountID string) bool {
+	return accountID == r.OrganizerAccountID || r.Coorganizes(accountID)
 }
 
 // organizerIDs returns the organizer and the co-organizers, in that order.

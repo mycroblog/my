@@ -11794,8 +11794,13 @@ type EventAttendee struct {
 	// Answer An answer to an event.
 	Answer EventAnswer `json:"answer"`
 
-	// Approved Whether the organizer or a co-organizer approved the answer.
+	// Approved Whether the attendee sees the places shown to the approved: the organizer or a co-organizer
+	// approved the answer, or the attendee organizes the event (`organizes`).
 	Approved bool `json:"approved"`
+
+	// Organizes Whether the attendee is the organizer or a co-organizer of the event now. Such an attendee
+	// is always `approved`, and their approval cannot be changed.
+	Organizes bool `json:"organizes"`
 }
 
 // EventAttendeePage A page of the attendees of an event, in the order of their answers.
@@ -12122,7 +12127,8 @@ type EventViewer struct {
 	// Answer The user's answer; omitted before the user answers.
 	Answer *EventAnswer `json:"answer,omitempty"`
 
-	// Approved Whether the organizer or a co-organizer approved the user's answer.
+	// Approved Whether the user sees the places shown to the approved: the organizer or a co-organizer
+	// approved the user's answer, or the user is the organizer or a co-organizer.
 	Approved bool `json:"approved"`
 
 	// Board What the user may do with the board of an event.
@@ -15844,6 +15850,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
 //     it can.
 //   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+//   - `/api/v1/problems/event-attendee-organizes` (422): the account organizes or co-organizes the
+//     event, so it always sees the places and is not approved or revoked.
 //   - `/api/v1/problems/event-board-not-reader` (403): the user sees the event but does not read its
 //     board: the user neither organizes it nor answers `going` or `maybe`.
 //   - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the
@@ -26726,7 +26734,8 @@ type ClientInterface interface {
 	// RevokeEventAttendeeApproval Revoke the approval of an attendee of an event
 	//
 	// Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
-	// did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
+	// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
 	//
 	// Corresponds with DELETE /events/{id}/attendees/{account_id}/approval (the `RevokeEventAttendeeApproval` operationId).
 	RevokeEventAttendeeApproval(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -26736,8 +26745,9 @@ type ClientInterface interface {
 	// Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
 	// co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
 	// the approved. An approval ends when the attendee answers `declined`. A 422
-	// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
-	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
+	// 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
+	// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
 	//
 	// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 	ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -37912,7 +37922,8 @@ func (c *Client) ListEventAttendees(ctx context.Context, id EventId, params *Lis
 // RevokeEventAttendeeApproval Revoke the approval of an attendee of an event
 //
 // Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
-// did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
+// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
 //
 // Corresponds with DELETE /events/{id}/attendees/{account_id}/approval (the `RevokeEventAttendeeApproval` operationId).
 func (c *Client) RevokeEventAttendeeApproval(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -37932,8 +37943,9 @@ func (c *Client) RevokeEventAttendeeApproval(ctx context.Context, id EventId, ac
 // Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
 // co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
 // the approved. An approval ends when the attendee answers `declined`. A 422
-// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
-// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
+// 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
+// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
 //
 // Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 func (c *Client) ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -69342,7 +69354,8 @@ type ClientWithResponsesInterface interface {
 	// RevokeEventAttendeeApprovalWithResponse Revoke the approval of an attendee of an event
 	//
 	// Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
-	// did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
+	// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69354,8 +69367,9 @@ type ClientWithResponsesInterface interface {
 	// Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
 	// co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
 	// the approved. An approval ends when the attendee answers `declined`. A 422
-	// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
-	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
+	// 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
+	// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -110383,7 +110397,8 @@ func (c *ClientWithResponses) ListEventAttendeesWithResponse(ctx context.Context
 // RevokeEventAttendeeApprovalWithResponse Revoke the approval of an attendee of an event
 //
 // Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
-// did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
+// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -110401,8 +110416,9 @@ func (c *ClientWithResponses) RevokeEventAttendeeApprovalWithResponse(ctx contex
 // Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
 // co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
 // the approved. An approval ends when the attendee answers `declined`. A 422
-// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
-// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
+// 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
+// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
 //
 // Returns a wrapper object for the known response body format(s).
 //
