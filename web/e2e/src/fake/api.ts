@@ -14,8 +14,8 @@
 // boost, a follow, a block, a mute, a private note, being notified of a person's posts, a follower removed, a server
 // muted as ADR-0013 §30 hides it, the answers of follow requests, the read marker and the notifications read past it,
 // the announcements read, the
-// conversations of the direct messages read and hidden, the reader's bookmarks, the threads they mute and followed
-// hashtags, the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft
+// conversations of the direct messages read and hidden, the reader's bookmarks and favourites, the threads they mute
+// and followed hashtags, the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft
 // published, the reader's articles posted and edited, the images they upload, their preferences, their profile, and
 // their personal settings of settings.ts) are kept in memory; a post's edit history holds the scenario's versions of
 // it, then the reader's edits. An article's body comes only with the status read alone, as the server's does, and its
@@ -383,6 +383,8 @@ export type FakeOptions = {
   uxMeasurementShare?: number;
   /** The keys of the posts the reader bookmarked besides the seed's, the newest bookmark first. */
   bookmarks?: readonly string[];
+  /** The keys of the posts the reader favourited besides the seed's, the newest favourite first. */
+  favourites?: readonly string[];
   /** The most hashtags the reader may follow, the server's 100 by default; 0 refuses every follow. */
   followedTagLimit?: number;
   /**
@@ -1086,6 +1088,29 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const ownFavourite = new Map<string, boolean>();
   const ownReaction = new Map<string, string | null>();
   const mineSet = (key: string) => ownFavourite.has(key) || ownReaction.has(key);
+  for (const key of o.favourites ?? []) {
+    ownFavourite.set(key, true);
+    ownReaction.set(key, null);
+  }
+  /**
+   * The keys of the posts the reader favourited, the newest favourite first: the options', then the seed's; whether a
+   * post is still favourited is read from its favouriters (favouritersOf).
+   */
+  const favourites: string[] = [
+    ...new Set([
+      ...(o.favourites ?? []),
+      ...interactions
+        .filter((i) => i.kind === "favourite" && i.by === viewer)
+        .map((i) => i.post)
+        .toReversed(),
+    ]),
+  ];
+  /** Puts the post of `key` first among the reader's favourites, or takes it out of them. */
+  const favouriteListed = (key: string, on: boolean) => {
+    const at = favourites.indexOf(key);
+    if (at >= 0) favourites.splice(at, 1);
+    if (on) favourites.unshift(key);
+  };
   /** The threads the reader muted (ADR-0158 §8), by the key of the post that starts each. */
   const mutedThreads = new Set<string>();
   const threadOf = (key: string): string => {
@@ -3107,6 +3132,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
           .map((p) => statusOf(p)),
         query,
       ),
+    "GET /favourites": ({ query }) =>
+      statusPage(
+        favourites
+          .map(postOf)
+          .filter((p) => visible(p) && favouritersOf(p.key).includes(viewer))
+          .map((p) => statusOf(p)),
+        query,
+      ),
     "GET /tags/{hashtag}": ({ params }) => ({ status: 200, body: tagOf(params.hashtag.replace(/^#/, "")) }),
     "POST /tags/{hashtag}/follow": ({ params }) => {
       // One more than the most the reader may follow is refused as the server refuses it.
@@ -3763,6 +3796,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         keepOwn(p.key);
         ownFavourite.set(p.key, true);
         ownReaction.set(p.key, null);
+        favouriteListed(p.key, true);
         return undefined;
       }),
     "DELETE /statuses/{id}/favourite": ({ params }) =>
@@ -3770,6 +3804,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       acted(params.id, (p) => {
         keepOwn(p.key);
         ownFavourite.set(p.key, false);
+        favouriteListed(p.key, false);
         return undefined;
       }),
     "PUT /statuses/{id}/reaction": ({ params, body }) =>
@@ -3780,6 +3815,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         keepOwn(p.key);
         ownReaction.set(p.key, named);
         ownFavourite.set(p.key, false);
+        favouriteListed(p.key, false);
         return undefined;
       }),
     "DELETE /statuses/{id}/reaction": ({ params }) =>

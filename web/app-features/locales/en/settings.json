@@ -3107,6 +3107,10 @@
     "defaultMessage": "Read the events you can see",
     "description": "A permission on the page of an authorized app (the scope read:events). The same words as the consent page's (server:auth.authorize.scope.read_events)."
   },
+  "settings.apps.scope.read_favourites": {
+    "defaultMessage": "Read your favourites",
+    "description": "A permission on the page of an authorized app (the scope read:favourites). The same words as the consent page's (server:auth.authorize.scope.read_favourites)."
+  },
   "settings.apps.scope.read_filters": {
     "defaultMessage": "Read your keyword filters",
     "description": "A permission on the page of an authorized app (the scope read:filters). The same words as the consent page's (server:auth.authorize.scope.read_filters)."

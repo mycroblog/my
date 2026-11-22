@@ -17,10 +17,10 @@ const hrefs = (places: readonly Place[]) => places.map((p) => p.href);
 const none: Rights = rightsOf([]);
 const staff: Rights = rightsOf(["manage_reports", "manage_settings", "manage_finance"]);
 
-test("a signed-in reader's tab bar is Home, Local, Federated, Notifications, Search, then Direct messages, Profile, Bookmarks, Settings", async () => {
+test("a signed-in reader's tab bar is Home, Local, Federated, Notifications, Search, then Direct messages, Profile, Bookmarks, Favourites, Settings", async () => {
   const places = placesFor(true, await instanceOf(), none);
   expect(hrefs(places.tabs)).toEqual(["/", "/local", "/public", "/notifications", "/search"]);
-  expect(hrefs(places.own)).toEqual(["/conversations", "/profile", "/bookmarks", "/settings"]);
+  expect(hrefs(places.own)).toEqual(["/conversations", "/profile", "/bookmarks", "/favourites", "/settings"]);
   expect(places.rights).toEqual([]);
 });
 
@@ -34,6 +34,7 @@ test("the rail and the sidebar put Direct messages after Notifications (ADR-0110
     "/search",
     "/profile",
     "/bookmarks",
+    "/favourites",
     "/settings",
   ]);
 });

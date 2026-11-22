@@ -698,11 +698,13 @@ export {
 } from "./translation";
 export {
   bookmarksQuery,
+  favouritesQuery,
   homeTimelineQuery,
   listTimelineQuery,
   publicTimelineQuery,
   tagTimelineQuery,
   useBookmarks,
+  useFavourites,
   useHomeTimeline,
   useListTimeline,
   usePublicTimeline,

@@ -199,6 +199,7 @@ export { loadThread, Thread } from "./thread/thread";
 export { HomeTimeline, loadHomeTimeline } from "./timeline/home";
 export { loadPublicTimeline, PublicTimeline } from "./timeline/public";
 export { Bookmarks, loadBookmarks } from "./timeline/bookmarks";
+export { Favourites, loadFavourites } from "./timeline/favourites";
 export { ListIndex, ListTimeline, loadLists, loadListTimeline } from "./timeline/lists";
 export { FindPeople, loadPeople } from "./people/people";
 export { Search } from "./search/search";
