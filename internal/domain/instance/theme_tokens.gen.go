@@ -33,7 +33,7 @@ var themeTokens = []ThemeToken{
 	{Name: "color-surface-raised-hover", Kind: ThemeTokenColor, Light: "#e6ddd9", Dark: "#43302d"},
 	{Name: "color-surface-raised-pressed", Kind: ThemeTokenColor, Light: "#d9cdc8", Dark: "#503835"},
 	{Name: "color-surface-hover", Kind: ThemeTokenColor, Light: "#f9f6f5", Dark: "#2b201f"},
-	{Name: "color-surface-pressed", Kind: ThemeTokenColor, Light: "#f1ebe9", Dark: "#332624"},
+	{Name: "color-surface-pressed", Kind: ThemeTokenColor, Light: "#f7f3f2", Dark: "#332624"},
 	{Name: "color-quote-bar", Kind: ThemeTokenColor, Light: "#938882", Dark: "#7e726f"},
 	{Name: "radius-control", Kind: ThemeTokenLength, Default: "0.375rem", Min: 0, Max: 2},
 	{Name: "radius-overlay", Kind: ThemeTokenLength, Default: "0.5rem", Min: 0, Max: 2},

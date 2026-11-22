@@ -2,13 +2,15 @@
 
 // The button: Default, driven by its props in the Controls, a story per kind and state (hover, press and keyboard
 // focus shown at rest), and one sheet, Variants, of every kind in every state with its label's contrast in the
-// toolbar's theme, at the sizes of a timeline and a form, beside a text field; and the text button and link in a line.
+// toolbar's theme, at the sizes of a timeline and a form, beside a text field; the text button and link in a line; and
+// how words in a line (a text link, a text button, quiet links) look at rest, hovered and pressed.
 
 import { color, contrast, mix, press, rootPx, text, type ColorName, type Scheme } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Button, TextButton, TextLink, type ButtonKind, type ButtonSize } from "./button";
 import { Preview, type PreviewState } from "./preview";
+import { QuietLink } from "./quiet-link";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
@@ -222,3 +224,40 @@ export const InText: Story = {
     </p>
   ),
 };
+
+const wordSteps = [
+  { label: "At rest", state: undefined },
+  { label: "Hovered", state: "hover" },
+  { label: "Pressed", state: "pressed" },
+] as const satisfies readonly { label: string; state: PreviewState | undefined }[];
+
+/**
+ * Words at rest, hovered and pressed: a text link and a text button in a notice's line of muted text, and quiet links in
+ * a line of facts, in the text's color and muted.
+ */
+function WordSteps() {
+  return (
+    <div style={{ display: "grid", gap: rem(16), padding: rem(16) }}>
+      {wordSteps.map(({ label, state }) => (
+        <Preview key={label} state={state}>
+          <div style={{ display: "grid", gap: rem(4) }}>
+            <p className="m-0 text-caption font-label text-text">{label}</p>
+            <p className="m-0 text-caption text-muted-text">
+              Sign in to see this screen. <TextLink href="#sign-in">Sign in</TextLink> ·{" "}
+              <TextButton onPress={() => undefined}>Try again</TextButton>
+            </p>
+            <p className="m-0 text-body text-muted-text">
+              <QuietLink href="#posts">1,204 posts</QuietLink> ·{" "}
+              <QuietLink href="#followers" tone="muted">
+                318 followers
+              </QuietLink>
+            </p>
+          </div>
+        </Preview>
+      ))}
+    </div>
+  );
+}
+
+/** How words answer a hover and a press: their underline thickens, one bar under the word; they do not move. */
+export const WordPress: Story = { render: () => <WordSteps /> };

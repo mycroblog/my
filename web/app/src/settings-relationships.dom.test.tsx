@@ -114,6 +114,23 @@ describe("the entry", () => {
       if (app.path() !== "/@quickdeals") throw new Error(`test: the app is at ${app.path()}`);
     });
   });
+
+  // #3368: a followed hashtag is a link to its tag's page, written in the address as its UTF-8, percent-encoded.
+  for (const [where, at, read] of [
+    ["the entry", entry, entryRead],
+    ["the whole list", `${entry}/hashtags`, listRead],
+  ] as const)
+    test(`a followed hashtag on ${where} leads to its tag's page`, async () => {
+      const app = await renderApp(at, { ...some, followedTags: ["baking", "東京"] });
+      await read();
+
+      await app.user.click(main().getByRole("link", { name: "#東京" }));
+
+      await waitFor(() => {
+        if (app.path() !== `/tags/${encodeURIComponent("東京")}`) throw new Error(`test: the app is at ${app.path()}`);
+      });
+      await main().findByRole("heading", { level: 1, name: /東京/ });
+    });
 });
 
 describe("the whole of a list", () => {

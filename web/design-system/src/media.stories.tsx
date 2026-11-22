@@ -2,13 +2,15 @@
 
 // The media of an entry: Default, driven by the Controls (how many pictures, their kinds, and sensitive), and a story
 // per state: one to four images, a video and a GIF with their marks, a sound and a file, the previews of a quoted post,
-// and sensitive media of each kind under its line, in a column of a post's width.
+// and sensitive media of each kind under its line, in a column of a post's width; and how a picture and a covered one
+// look at rest, hovered and pressed.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import { MediaGrid, type MediaItem } from "./media";
 import { pictures } from "./media.samples";
+import { Preview, type PreviewState } from "./preview";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
@@ -144,3 +146,34 @@ export const Sensitive: Story = {
     </Column>
   ),
 };
+
+const pictureSteps = [
+  { label: "At rest", state: undefined },
+  { label: "Hovered", state: "hover" },
+  { label: "Pressed", state: "pressed" },
+] as const satisfies readonly { label: string; state: PreviewState | undefined }[];
+
+/**
+ * Pictures at rest, hovered and pressed, a column each, three across where they fit: an image that opens, and apart
+ * from it, sensitive media under its line.
+ */
+function PictureSteps() {
+  return (
+    <div style={{ display: "grid", gap: rem(28), gridTemplateColumns: `repeat(auto-fit, minmax(${rem(240)}, 1fr))` }}>
+      {pictureSteps.map(({ label, state }) => (
+        <Preview key={label} state={state}>
+          <div style={{ display: "grid", gap: rem(28), alignContent: "start" }}>
+            <div style={{ display: "grid", gap: rem(4) }}>
+              <p className="m-0 text-caption font-label text-text">{label}</p>
+              <MediaGrid items={samples.slice(0, 1)} onOpen={open} />
+            </div>
+            <MediaGrid items={samples.slice(2, 3)} sensitive onOpen={open} />
+          </div>
+        </Preview>
+      ))}
+    </div>
+  );
+}
+
+/** How a picture answers a hover and a press: the press tokens' shade over it, 10% and 20%; it does not move. */
+export const PicturePress: Story = { ...fixed, render: () => <PictureSteps /> };

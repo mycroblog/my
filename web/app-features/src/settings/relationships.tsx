@@ -6,8 +6,8 @@
 // entry shows every list at once with its count once the whole of it is read: a list of seven rows or fewer whole, a
 // longer one by its first five and the door to the whole list (a row that leads on, with its chevron), on a screen
 // under the entry (/settings/relationships/<list>) that pages through it, its section named by what it lists, since
-// the screen's title names the list. An account leads to its profile, and a muted one says what the mute covers (its
-// notifications too, until when) where the server says it.
+// the screen's title names the list. An account leads to its profile, a hashtag (#tag) to its page, and a muted
+// account says what the mute covers (its notifications too, until when) where the server says it.
 //
 // The entry reads the four lists itself, once, and gives each to its section: it says that it loads until every one
 // answered, and that the settings could not be read when none could. From then on its sections stay, and a list that
@@ -24,7 +24,7 @@
 // and the focus as they were; the sentence goes as the next press on that row begins. An empty list says what it
 // would hold and how something comes to be in it.
 
-import { AccountLine, sentenceHandleOf } from "@my/app-components";
+import { AccountLine, sentenceHandleOf, tagPath } from "@my/app-components";
 import {
   blocksQuery,
   domainMutesQuery,
@@ -428,7 +428,7 @@ function Servers({ items, capped, t }: SectionProps<string>) {
   );
 }
 
-/** The followed hashtags: each its name, with Unfollow. */
+/** The followed hashtags: each its name as `#tag`, leading to its page, with Unfollow. */
 function Hashtags({ items, capped, t }: SectionProps<FollowedHashtag>) {
   const follow = useFollowTag();
   return (
@@ -438,21 +438,25 @@ function Hashtags({ items, capped, t }: SectionProps<FollowedHashtag>) {
       keyOf={(tag) => tag.name.toLowerCase()}
       capped={capped}
       t={t}
-      row={(tag, state) => (
-        <SettingsListRow
-          icon="hashtag"
-          title={tag.name}
-          result={state.result}
-          itemRef={state.itemRef}
-          end={
-            <RemoveButton
-              label={t("settings.relationships.unfollow")}
-              state={state}
-              removal={removalOf("unfollow", `#${tag.name}`, () => follow(tag.name, false), t)}
-            />
-          }
-        />
-      )}
+      row={(tag, state) => {
+        const name = `#${tag.name}`;
+        return (
+          <SettingsListRow
+            icon="hashtag"
+            title={name}
+            href={tagPath(tag.name)}
+            result={state.result}
+            itemRef={state.itemRef}
+            end={
+              <RemoveButton
+                label={t("settings.relationships.unfollow")}
+                state={state}
+                removal={removalOf("unfollow", name, () => follow(tag.name, false), t)}
+              />
+            }
+          />
+        );
+      }}
     />
   );
 }

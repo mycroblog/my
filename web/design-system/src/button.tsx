@@ -304,13 +304,24 @@ export function LinkButton({ href, kind = "secondary", size = "form", children }
 
 // It takes the font and the color of the line it sits in, and keeps no surface, so the line reads as one. Its press
 // target reaches the target minimum above and below the text (its padding), and it reaches as far past its line, which
-// gives the room back, so the line keeps its height.
+// gives the room back, so the line keeps its height. It answers with its line alone, never moving: 1px at rest, 2px
+// hovered and 3px pressed (`wordPress`).
 const textButton = tv({
   base: [
     "cursor-pointer rounded-control border-0 bg-transparent px-0 py-target-line text-current [font:inherit]",
     "underline underline-offset-[0.15em] outline-hidden data-focus-visible:shadow-focus",
+    "decoration-1",
   ],
 });
+
+/**
+ * How words in a line (a text button, a text link, a quiet link) answer the pointer: their underline, in their own
+ * color, thickens to 2px hovered and 3px pressed, one bar under the whole word, which no descender cuts.
+ */
+export const wordPress = [
+  "data-hovered:underline data-hovered:decoration-2 data-hovered:[text-decoration-skip-ink:none]",
+  "data-pressed:underline data-pressed:decoration-3 data-pressed:[text-decoration-skip-ink:none]",
+].join(" ");
 
 export type TextButtonProps = Omit<AriaButtonProps, "className" | "style" | "render" | "isPending" | "children"> & {
   children: ReactNode;
@@ -325,11 +336,13 @@ export function TextButton({ children, ...rest }: TextButtonProps) {
       as={
         <AriaButton
           {...rest}
-          className={textButton()}
-          render={(props, { isFocusVisible }) => (
+          className={`${textButton()} ${wordPress}`}
+          render={(props, { isHovered, isPressed, isFocusVisible }) => (
             <button
               {...props}
               onPointerDown={heardPointerDown(props)}
+              data-hovered={isHovered || preview === "hover" || undefined}
+              data-pressed={isPressed || preview === "pressed" || undefined}
               data-focus-visible={isFocusVisible || preview === "focus-visible" || undefined}
             />
           )}
@@ -341,13 +354,32 @@ export function TextButton({ children, ...rest }: TextButtonProps) {
   );
 }
 
+type LinkRender = NonNullable<ComponentProps<typeof AriaLink>["render"]>;
+
+/** A link's element, hovered, pressed or focused from the keyboard as a story's preview asks. */
+export function usePreviewedLink(): LinkRender {
+  const preview = usePreviewState();
+  return (props, { isHovered, isPressed, isFocusVisible }) => {
+    const shown = {
+      "data-hovered": isHovered || preview === "hover" || undefined,
+      "data-pressed": isPressed || preview === "pressed" || undefined,
+      "data-focus-visible": isFocusVisible || preview === "focus-visible" || undefined,
+    };
+    return "href" in props ? <a {...props} {...shown} /> : <span {...props} {...shown} />;
+  };
+}
+
 /**
  * A link inside a line of text that leads to another screen (a notice's Sign in), drawn as the text button is, so that
  * an action and a link in a line read alike.
  */
 export function TextLink({ href, children }: { href: string; children: ReactNode }) {
+  const previewed = usePreviewedLink();
   return (
-    <Box bleedBlock="target-line" as={<AriaLink href={href} className={textButton()} />}>
+    <Box
+      bleedBlock="target-line"
+      as={<AriaLink href={href} className={`${textButton()} ${wordPress}`} render={previewed} />}
+    >
       {children}
     </Box>
   );
