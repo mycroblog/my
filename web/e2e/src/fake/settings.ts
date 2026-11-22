@@ -11,7 +11,8 @@
 // An import started stays in progress for a moment (`importSeconds`), then reads as finished. A confirmation (a move,
 // a deactivation, a deletion) holds with the reader's password, a passkey or the confirmation of an external login;
 // what the server refuses of them it refuses by the server's problem types, in the server's words. A move made stays
-// until it is canceled: the reader's account names where it moved (`movedTo`), and cannot be deactivated meanwhile.
+// until it is canceled: the reader's account names where it moved (`movedTo`), and cannot be deactivated meanwhile;
+// it says when it last moved, and, for 30 days after that move, canceled or not, from when it can move again.
 
 import { day, idAt, notFound, page, problem, type PageQuery } from "./common";
 import type { Answer, Handlers, Schema } from "./spec";
@@ -172,11 +173,17 @@ export type FakeSettings = {
   /** The person the reader's account moved to, by username; none for an account that has not moved. */
   movedTo?: string | undefined;
   /**
+   * When the account last moved, also when that move was canceled, as a time of the seed (`-12d`); none for one that
+   * never moved, and two days ago for one that moved (`movedTo`). Within 30 days of it the account cannot move again.
+   */
+  lastMoved?: string | undefined;
+  /**
    * Why every move is refused once its confirmation holds, where the server would take it: the target does not list
    * the account among its aliases (`alias_missing`), moved itself (`target_moved`), cannot be moved to
-   * (`target_unavailable`), or the account moved in the last 30 days or to that target before (`too_soon`).
+   * (`target_unavailable`), the account moved to that target before (`repeated`), or the account moved in the last 30
+   * days (`too_soon`): it moved a day ago since the screen read it, as in another tab, and the move was canceled.
    */
-  moveRefusal?: "alias_missing" | "target_moved" | "target_unavailable" | "too_soon" | undefined;
+  moveRefusal?: "alias_missing" | "target_moved" | "target_unavailable" | "repeated" | "too_soon" | undefined;
   /**
    * Why the account cannot be deactivated; none if it can, unless it moved, which the server refuses by itself
    * (`moved`). One reactivated lately (`recently_reactivated`) can be deactivated again in 20 hours.
@@ -278,7 +285,10 @@ const endWords: Record<
         "The account to move to does not list your account as an alias. Add your account as an alias on that account first.",
       target_moved: "The account to move to has moved itself. Move to the account it moved to.",
       target_unavailable: "You cannot move to that account.",
-      too_soon: "Your account can move again 30 days after its last move, and not to an account it moved to before.",
+      too_soon:
+        "Your account moved less than 30 days ago, counting a cancelled move too. Try again once 30 days have passed since that move.",
+      repeated:
+        "Your account moved to that account before, and it can move to each account only once. Choose another account.",
     },
     deactivation: {
       refused: "This account cannot be deactivated now.",
@@ -304,7 +314,9 @@ const endWords: Record<
       target_moved: "移転先のアカウントは移転済みです。そのアカウントの移転先へ移転してください。",
       target_unavailable: "そのアカウントへは移転できません。",
       too_soon:
-        "アカウントは、前回の移転から 30 日たつと再び移転できます。以前に移転したことのあるアカウントには移転できません。",
+        "このアカウントは 30 日以内に移転しています (取り消した移転も数えます)。その移転から 30 日たってから、もう一度試してください。",
+      repeated:
+        "このアカウントは以前にそのアカウントへ移転しています。同じアカウントへは一度しか移転できません。別のアカウントを選んでください。",
     },
     deactivation: {
       refused: "このアカウントはいま無効化できません。",
@@ -504,6 +516,8 @@ export type SettingsState = {
   filterId: (index: number) => string | undefined;
   /** The ID of the account the reader's account moved to; none while it has not moved. */
   movedTo: () => string | undefined;
+  /** When the reader's account last moved, and from when it can move again while it cannot, as the account says them. */
+  moveWait: () => Pick<Schema<"CredentialAccount">, "last_moved_at" | "can_move_at">;
 };
 
 /** Creates the state of the personal settings from `env.settings`, and the handlers that answer for it. */
@@ -745,6 +759,21 @@ export function createSettings(env: SettingsEnv): SettingsState {
   const aliases: AccountAlias[] = settings.aliases.map((a) => aliasOf(a, started));
   const aliasLimit = 5;
   let moveTarget = settings.movedTo === undefined ? undefined : env.accountId(settings.movedTo);
+  /** When the account last moved, canceled or not, in ms; and the accounts it moved to. */
+  let lastMovedAt = ((text) => (text === undefined ? undefined : Date.parse(at(text))))(
+    settings.lastMoved ?? (settings.movedTo === undefined ? undefined : "-2d"),
+  );
+  const movedTargets = new Set(moveTarget === undefined ? [] : [moveTarget]);
+  /** From when the account can move again, in ms; none when it can move now. */
+  const canMoveAt = () =>
+    lastMovedAt === undefined || Date.now() >= lastMovedAt + 30 * day ? undefined : lastMovedAt + 30 * day;
+  const moveWait = () => {
+    const next = canMoveAt();
+    return {
+      ...(lastMovedAt === undefined ? {} : { last_moved_at: new Date(lastMovedAt).toISOString() }),
+      ...(next === undefined ? {} : { can_move_at: new Date(next).toISOString() }),
+    };
+  };
   const confirmed = (p: {
     password?: string | undefined;
     passkey?: unknown;
@@ -757,8 +786,14 @@ export function createSettings(env: SettingsEnv): SettingsState {
   const wrongProof = (request: Request) =>
     problem(422, said(request).wrongPassword, { type: "/api/v1/problems/wrong-password", field: "password" });
   /** A refused move, by the problem type the server tells it by (clientapi's moveProblem). */
-  const moveRefused = (reason: NonNullable<FakeSettings["moveRefusal"]>, request: Request) =>
-    refused(said(request).move[reason], `move-${reason.replace("_", "-")}`, 422);
+  const moveRefused = (reason: NonNullable<FakeSettings["moveRefusal"]>, request: Request) => {
+    const next = canMoveAt();
+    const more: Partial<Schema<"MoveProblem">> = {
+      type: `/api/v1/problems/move-${reason.replace("_", "-")}`,
+      ...(reason === "too_soon" && next !== undefined ? { can_move_at: new Date(next).toISOString() } : {}),
+    };
+    return problem(422, said(request).move[reason], more);
+  };
 
   // ---- Deactivation ------------------------------------------------------------------------------------------------
 
@@ -972,11 +1007,17 @@ export function createSettings(env: SettingsEnv): SettingsState {
     },
     "POST /accounts/move": ({ body, request }) => {
       if (!confirmed(body)) return wrongProof(request);
+      // A move made since the screen read the account, and canceled, as in another tab.
+      if (settings.moveRefusal === "too_soon") lastMovedAt = Date.now() - day;
       if (settings.moveRefusal !== undefined) return moveRefused(settings.moveRefusal, request);
       // The reader's own account, and one the server does not find, cannot be moved to.
       if (!env.accountExists(body.target_account_id) || body.target_account_id === env.viewerId)
         return moveRefused("target_unavailable", request);
+      if (canMoveAt() !== undefined) return moveRefused("too_soon", request);
+      if (movedTargets.has(body.target_account_id)) return moveRefused("repeated", request);
       moveTarget = body.target_account_id;
+      movedTargets.add(moveTarget);
+      lastMovedAt = Date.now();
       return { status: 204 };
     },
     "DELETE /accounts/move": ({ request }) => {
@@ -1077,5 +1118,14 @@ export function createSettings(env: SettingsEnv): SettingsState {
     badges.filter((b) => b.displayed).map(({ role_id, label, color }) => ({ role_id, label, color }));
   const filterId = (index: number) => filters[index]?.id;
   const actionId = (index: number) => actions[index]?.id;
-  return { handlers, judged, featured: featuredBody, shownBadges, filterId, actionId, movedTo: () => moveTarget };
+  return {
+    handlers,
+    judged,
+    featured: featuredBody,
+    shownBadges,
+    filterId,
+    actionId,
+    movedTo: () => moveTarget,
+    moveWait,
+  };
 }

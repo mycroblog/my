@@ -1314,6 +1314,7 @@ export {
   moveCooldownDays,
   moveOwnAccount,
   moveRefusalOf,
+  nextMoveAt,
   removeAccountAlias,
   useAccountAliases,
   useAccountAliasList,

@@ -3,11 +3,13 @@
 //: the accounts the viewer says are also theirs; moving this account to one; and canceling the move. The
 // confirmation of a move is the viewer's password, a passkey or the confirmation of an external login. A write puts what
 // the server answered into the cache and reads the viewer's account again, which says whether it moved. What the
-// server refuses of a move is told by its kind (`moveRefusalOf`).
+// server refuses of a move is told by its kind (`moveRefusalOf`); from when the account can move again, by
+// `nextMoveAt`.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import { loadAccount, viewerQuery, type Account } from "./accounts";
 import type { AppData } from "./app-data";
+import type { CredentialAccount } from "./profile";
 import { useAppData } from "./provider";
 
 /** An account the viewer says is also theirs: its ActivityPub ID, its handle, and when they added it. */
@@ -96,22 +98,32 @@ export const moveCooldownDays = 30;
 
 /**
  * Why the server refuses a move: the target does not list the viewer's account among its aliases (`alias_missing`),
- * moved itself (`target_moved`), or cannot be moved to (`target_unavailable`: the viewer's own account, one the
- * server cannot fetch, one suspended here); or the account moved less than `moveCooldownDays` days ago or moved to
- * that target before (`too_soon`).
+ * moved itself (`target_moved`), cannot be moved to (`target_unavailable`: the viewer's own account, one the server
+ * cannot fetch, one suspended here), or is one the account moved to before (`repeated`); or the account moved less
+ * than `moveCooldownDays` days ago, canceled or not (`too_soon`).
  */
-export type MoveRefusal = "alias_missing" | "target_moved" | "target_unavailable" | "too_soon";
+export type MoveRefusal = "alias_missing" | "target_moved" | "target_unavailable" | "repeated" | "too_soon";
 
 const moveRefusals: Readonly<Record<string, MoveRefusal>> = {
   "/api/v1/problems/move-alias-missing": "alias_missing",
   "/api/v1/problems/move-target-moved": "target_moved",
   "/api/v1/problems/move-target-unavailable": "target_unavailable",
+  "/api/v1/problems/move-repeated": "repeated",
   "/api/v1/problems/move-too-soon": "too_soon",
 };
 
 /** The kind of the server's refusal of a move that `error` is; undefined for any other failure. */
 export function moveRefusalOf(error: unknown): MoveRefusal | undefined {
   return error instanceof ProblemError ? moveRefusals[error.type] : undefined;
+}
+
+/**
+ * From when the viewer's account can move again, while that is ahead of `now`; undefined when it can move now. The
+ * server says it for 30 days after the account's last move, canceled or not (`last_moved_at`).
+ */
+export function nextMoveAt(account: CredentialAccount, now: Date = new Date()): string | undefined {
+  const at = account.can_move_at;
+  return at !== undefined && Date.parse(at) > now.getTime() ? at : undefined;
 }
 
 /** Whether the server found no account at the address the viewer named (a 404, or its 410 for one that is gone). */
@@ -131,10 +143,17 @@ async function readMoved(data: AppData): Promise<void> {
 /**
  * Moves the viewer's account to the account of `targetAccountId` (which must have the viewer's account as an alias),
  * and resolves once the viewer's account is read again. It rejects with the server's problem (a wrong confirmation,
- * a refusal that `moveRefusalOf` tells).
+ * a refusal that `moveRefusalOf` tells); of a move too soon, once the viewer's account is read again, which then says
+ * from when it can move (`nextMoveAt`).
  */
 export async function moveOwnAccount(data: AppData, targetAccountId: string, proof: Reauthentication): Promise<void> {
-  await data.api.POST("/accounts/move", { body: { target_account_id: targetAccountId, ...proof } });
+  try {
+    await data.api.POST("/accounts/move", { body: { target_account_id: targetAccountId, ...proof } });
+  } catch (error) {
+    if (moveRefusalOf(error) === "too_soon")
+      await data.queryClient.invalidateQueries({ queryKey: viewerQuery(data).queryKey });
+    throw error;
+  }
   await readMoved(data);
 }
 
