@@ -50,6 +50,7 @@ type Notification struct {
 	AutoDeleteLimitNoticeID *string
 	DraftScheduleID         *string
 	GatheringID             *string
+	InteractionRequestID    *string
 	DedupeKey               string
 	CreatedAt               time.Time
 }

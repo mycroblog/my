@@ -26988,6 +26988,13 @@ components:
             The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
             it is open and the user sees it; omitted otherwise, and without `read:voice`.
           $ref: '#/components/schemas/VoiceRoom'
+        interaction_request_id:
+          description: |
+            The interaction request that a `reply_request`, a `boost_request`, a `quote_request`, an
+            `interaction_accepted`, or an `interaction_rejected` is about, which the interaction
+            requests answer by.
+          allOf:
+            - $ref: '#/components/schemas/Id'
         event_id:
           description: The event that an `event_*` notification is about.
           allOf:

@@ -14435,6 +14435,11 @@ type Notification struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
+	// InteractionRequestId The interaction request that a `reply_request`, a `boost_request`, a `quote_request`, an
+	// `interaction_accepted`, or an `interaction_rejected` is about, which the interaction
+	// requests answer by.
+	InteractionRequestId *Id `json:"interaction_request_id,omitempty"`
+
 	// ModerationAction The action on the user's account that a `moderation_notice` tells of, or whose
 	// appeal an `appeal_decided` tells of, with the appeal; first-party clients only.
 	ModerationAction *ModerationAction `json:"moderation_action,omitempty"`

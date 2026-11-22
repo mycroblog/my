@@ -79,6 +79,9 @@ CREATE TABLE notifications (
   -- event_started, event_room_unavailable, event_board_posted: the gatherings row of the event
   -- (and status_id the post of its board, of an event_board_posted).
   gathering_id TEXT,
+  -- reply_request, boost_request, quote_request, interaction_accepted, interaction_rejected: the
+  -- interaction_requests row.
+  interaction_request_id TEXT,
   dedupe_key TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   -- nobody is notified of their own actions.

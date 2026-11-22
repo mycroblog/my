@@ -16889,6 +16889,12 @@ export interface components {
              *     it is open and the user sees it; omitted otherwise, and without `read:voice`.
              */
             voice_room?: components["schemas"]["VoiceRoom"];
+            /**
+             * @description The interaction request that a `reply_request`, a `boost_request`, a `quote_request`, an
+             *     `interaction_accepted`, or an `interaction_rejected` is about, which the interaction
+             *     requests answer by.
+             */
+            interaction_request_id?: components["schemas"]["Id"];
             /** @description The event that an `event_*` notification is about. */
             event_id?: components["schemas"]["Id"];
             /**
