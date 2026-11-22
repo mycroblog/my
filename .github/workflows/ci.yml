@@ -632,6 +632,8 @@ jobs:
         run: scripts/task.sh api:plugin-generate-check
       - name: api:plugin-breaking
         run: scripts/task.sh api:plugin-breaking
+      - name: api:features-issued
+        run: scripts/task.sh api:features-issued
       - name: api:live-calls
         run: scripts/task.sh api:live-calls
       - name: api:plugin-docs-test
