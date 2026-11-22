@@ -132,10 +132,10 @@ describe("the entry", () => {
       expect(undoOf(section("Muted servers"), server, "Unmute")).not.toBeNull();
     // Followed in the order baking, photography.
     expect(texts(section("Followed hashtags")).map((row) => row.replace(/\s/g, ""))).toEqual([
-      "photographyUnfollow",
-      "bakingUnfollow",
+      "#photographyUnfollow",
+      "#bakingUnfollow",
     ]);
-    for (const hashtag of ["photography", "baking"])
+    for (const hashtag of ["#photography", "#baking"])
       expect(undoOf(section("Followed hashtags"), hashtag, "Unfollow")).not.toBeNull();
   });
 
@@ -496,7 +496,7 @@ describe("the whole list", () => {
     const part = screen.getByRole("region", { name: "9 hashtags" });
     expect(rows(part)).toHaveLength(9);
     // Latest first.
-    expect(plain(rows(part)[0]?.textContent).replace(/\s/g, "")).toBe("tag09Unfollow");
+    expect(plain(rows(part)[0]?.textContent).replace(/\s/g, "")).toBe("#tag09Unfollow");
   });
 
   for (const [list, kind, route] of [

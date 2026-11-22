@@ -192,8 +192,8 @@ export const first: Record<
     failed: "Unmuting the server spam.example did not finish. Try again.",
   },
   hashtags: {
-    group: "photography",
-    title: ["photography"],
+    group: "#photography",
+    title: ["#photography"],
     path: () => "DELETE /tags/photography/follow",
     said: "You unfollowed #photography.",
     failed: "Unfollowing #photography did not finish. Try again.",
