@@ -212,6 +212,7 @@ export function eventRoom(event: ServerEvent, now: number): EventRoom {
  * - `not-organizer`: a reader who neither organizes nor co-organizes it;
  * - `organizer-only`: what only the organizer does (the visibility, the co-organizers, the cancellation);
  * - `not-attending`: the approval of an account that did not answer going or maybe;
+ * - `attendee-organizes`: the approval of the organizer or a co-organizer, who always see the places;
  * - `rate-limited`: more events or invitations an hour than the server takes (`eventRetryAfterMs` says how long);
  * - `invalid`: a value it does not take (`eventFaultField` names it).
  */
@@ -231,6 +232,7 @@ export type EventRefusal =
   | "not-organizer"
   | "organizer-only"
   | "not-attending"
+  | "attendee-organizes"
   | "rate-limited"
   | "invalid";
 
@@ -249,6 +251,7 @@ const refusals: Readonly<Record<string, EventRefusal>> = {
   "/api/v1/problems/event-not-organizer": "not-organizer",
   "/api/v1/problems/event-organizer-only": "organizer-only",
   "/api/v1/problems/event-not-attending": "not-attending",
+  "/api/v1/problems/event-attendee-organizes": "attendee-organizes",
 };
 
 /** What the server's refusal of a write of an event was; null for another failure (the network, a 5xx). */
@@ -734,8 +737,9 @@ function changeAttendee(data: AppData, id: string, accountId: string, change: (a
 /**
  * Approves the answer of the attendee `accountId` of the event `id` (`approved`), or ends the approval, which shows
  * from the press on; the attendee as the server answers it once the writes on their way ended. It rejects with the
- * server's refusal (`not-attending` for an account that did not answer going or maybe, `not-found` for one that did not
- * answer, `closed`), and the attendee shows as the server holds it.
+ * server's refusal (`not-attending` for an account that did not answer going or maybe, `attendee-organizes` for the
+ * organizer or a co-organizer, `not-found` for one that did not answer, `closed`), and the attendee shows as the server
+ * holds it.
  */
 export async function setEventApproval(
   data: AppData,
