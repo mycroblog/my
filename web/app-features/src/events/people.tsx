@@ -2,9 +2,9 @@
 
 // Who an event is of, on its page (ADR-0161 §4, §6, §8, FR-943): its organizer and co-organizers, in the organizer's
 // order, and who answered going and maybe, each list in the order of their answers, a page at a time. For its
-// organizers, each attendee says whether they approved them, and a menu on the attendee approves them (their place in
-// person and online then shows to them) or takes the approval back; what came of it is said in the page's live region,
-// the focus back on the attendee's menu.
+// organizers, each attendee who does not organize it says whether they approved them, and a menu on the attendee
+// approves them (their place in person and online then shows to them) or takes the approval back; what came of it is
+// said in the page's live region, the focus back on the attendee's menu.
 
 import { AccountLine, nameOf } from "@my/app-components";
 import {
@@ -203,12 +203,15 @@ export function Attendees({
   const going = list.items.filter((a) => a.answer === "going");
   const maybe = list.items.filter((a) => a.answer === "maybe");
   const approves = organizesEvent(event) && phase !== "cancelled" && phase !== "ended";
+  // An organizer or co-organizer who answered always sees the places (ADR-0161 §6): nothing asks to approve them.
   const end = approves
-    ? (attendee: EventAttendee) => (
-        <Approval attendee={attendee} approve={writes.approve} reread={writes.reread} say={say} t={t} />
-      )
+    ? (attendee: EventAttendee) =>
+        attendee.organizes ? null : (
+          <Approval attendee={attendee} approve={writes.approve} reread={writes.reread} say={say} t={t} />
+        )
     : organizesEvent(event)
-      ? (attendee: EventAttendee) => (attendee.approved ? <StateText>{t("events.approval.approved")}</StateText> : null)
+      ? (attendee: EventAttendee) =>
+          attendee.approved && !attendee.organizes ? <StateText>{t("events.approval.approved")}</StateText> : null
       : undefined;
   return (
     <Stack gap="entry-room">

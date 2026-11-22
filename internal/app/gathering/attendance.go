@@ -13,6 +13,10 @@ import (
 // ErrNotAttending reports an approval of an account that does not answer going or maybe.
 var ErrNotAttending = errors.New("gathering: the account does not attend the event")
 
+// ErrAttendeeOrganizes reports an approval, or its revocation, of the organizer or a co-organizer,
+// who always sees the places of the event (ADR-0161 §6).
+var ErrAttendeeOrganizes = errors.New("gathering: the account organizes the event")
+
 // Answer records the answer of accountID to the event id (ADR-0161 §8): going, maybe, or
 // declined, changed as often as the account likes until the event starts. A new answer of going
 // to an event whose attendees who answer going reached its capacity fails with ErrFull; maybe
@@ -71,25 +75,42 @@ func (s *Service) Answer(ctx context.Context, accountID, id string, answer gathe
 
 // Attendees returns at most limit attendees of the event id who answer going or maybe, in the
 // order of their answers, after the answer afterRSVPID unless it is "", and whether more follow;
-// every viewer of the event sees them (ADR-0161 §8). It fails with ErrNotFound.
+// every viewer of the event sees them (ADR-0161 §8). The organizer and the co-organizers among
+// them are Organizes and Approved, whatever was recorded of their approval. It fails with
+// ErrNotFound.
 func (s *Service) Attendees(ctx context.Context, accountID, id, afterRSVPID string, limit int) ([]Attendee, bool, error) {
-	if _, err := s.Get(ctx, accountID, id); err != nil {
+	v, err := s.Get(ctx, accountID, id)
+	if err != nil {
 		return nil, false, err
 	}
 	as, err := s.d.Repository.Attendees(ctx, nil, id, afterRSVPID, limit+1)
 	if err != nil {
 		return nil, false, err
 	}
-	if len(as) > limit {
-		return as[:limit], true, nil
+	more := len(as) > limit
+	if more {
+		as = as[:limit]
 	}
-	return as, false, nil
+	for i := range as {
+		as[i] = withOrganizes(v.Record, as[i])
+	}
+	return as, more, nil
+}
+
+// withOrganizes returns a with Organizes set from rec, and Approved with it: the organizer and the
+// co-organizers always see the places, so they never wait for an approval (ADR-0161 §6).
+func withOrganizes(rec Record, a Attendee) Attendee {
+	if rec.Organizes(a.AccountID) {
+		a.Organizes, a.Approved = true, true
+	}
+	return a
 }
 
 // Approve approves the answer of accountID, an attendee who answers going or maybe, by
 // byAccountID, the organizer or a co-organizer (ADR-0161 §6): the attendee sees the places that
 // the event shows to the approved. An approved attendee stays approved. It fails with ErrNotFound,
-// ErrNotOrganizer, ErrClosed, and ErrNotAttending.
+// ErrNotOrganizer, ErrClosed, ErrAttendeeOrganizes for an accountID that organizes or
+// co-organizes the event, and ErrNotAttending.
 func (s *Service) Approve(ctx context.Context, byAccountID, id, accountID string) (Attendee, error) {
 	return s.changeApproval(ctx, byAccountID, id, accountID, gathering.Approved)
 }
@@ -109,6 +130,14 @@ func (s *Service) changeApproval(ctx context.Context, byAccountID, id, accountID
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if err := s.d.Repository.LockGathering(ctx, tx, id); err != nil {
 			return err
+		}
+		// Under the lock, so that a co-organizer named or removed meanwhile counts.
+		rec, err := s.d.Repository.FindGathering(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if rec.Organizes(accountID) {
+			return ErrAttendeeOrganizes
 		}
 		a, err := s.d.Repository.FindAttendee(ctx, tx, id, accountID)
 		switch {

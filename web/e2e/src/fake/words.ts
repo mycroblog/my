@@ -13,6 +13,9 @@ const japanese: Readonly<Record<string, string>> = {
   "This could not be done.": "この操作はできませんでした。",
   // errors.invalid_value
   "This value is not valid. Check what you entered.": "正しくない値です。入力した内容を確かめてください。",
+  // errors.event.attendee_organizes
+  "The organizer and the co-organizers always see the places, so their answers are not approved.":
+    "主催者と共同主催者には場所が常に見えるため、出欠の承認はありません。",
   // errors.media_corrupt
   "The file could not be read as an image. Choose another file.":
     "ファイルを画像として読み込めませんでした。ほかのファイルを選んでください。",

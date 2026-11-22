@@ -1031,6 +1031,10 @@
     "defaultMessage": "その利用者は「行く」か「たぶん」と答えていません。",
     "description": "API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event."
   },
+  "errors.event.attendee_organizes": {
+    "defaultMessage": "主催者と共同主催者には場所が常に見えるため、出欠の承認はありません。",
+    "description": "API error title for HTTP 422 when an organizer approves, or takes back the approval of, the organizer or a co-organizer of the event (ADR-0161 §6: they always see the places)."
+  },
   "errors.event.unscheduled": {
     "defaultMessage": "そのイベントの日時はまだ決まっていません。",
     "description": "API error title for HTTP 409 when a user answers an event, or asks for its calendar file, before its organizers confirmed a date from its date poll."

@@ -16,7 +16,7 @@
 // reader who may not), changing an event as its organizer and as a co-organizer (and the address for another reader
 // and for a cancelled event), the invitations and the co-organizers (and their addresses for a reader who does not
 // choose them), and the voice room that could not open, said to its organizer. The poll's dates' actions and the
-// approvals show in Poll and CoOrganized.
+// approvals show in Poll and CoOrganized, and none asked of its organizers in OrganizersAttending.
 
 import { scenario, type FakeEventPlan } from "@my/e2e/fake";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -57,6 +57,32 @@ export const Invited: Story = { parameters: screen({ at: "/events/{event:garden-
 export const Full: Story = { parameters: screen({ at: "/events/{event:tiny-concert}" }) };
 /** One the reader co-organizes, for the organizer's followers, with a capacity: every place shows, its organizers. */
 export const CoOrganized: Story = { parameters: screen({ at: "/events/{event:bread-class}" }) };
+/**
+ * The same with its organizer going and the reader, its co-organizer, maybe: neither waits for an approval nor carries
+ * Approve or its menu (ADR-0161 §6).
+ */
+export const OrganizersAttending: Story = {
+  parameters: screen({
+    at: "/events/{event:bread-class}",
+    server: {
+      seed: {
+        ...scenario,
+        events: scenario.events.map((plan) =>
+          plan.key === "bread-class"
+            ? {
+                ...plan,
+                attendees: [
+                  { by: "sam", answer: "going" as const },
+                  ...(plan.attendees ?? []),
+                  { by: "yuki", answer: "maybe" as const },
+                ],
+              }
+            : plan,
+        ),
+      },
+    },
+  }),
+};
 /**
  * A date poll the reader organizes: no answer to the event and no calendar file, the dates' table with the reader's
  * answers, and who answered each date, folded.

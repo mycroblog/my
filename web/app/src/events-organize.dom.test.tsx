@@ -8,7 +8,9 @@
 // most), the dates on the event's clock and what a change sends of them; the voice room by the organizer's right and
 // the event's place; the places' fields and links; the server's refusals by field; Cancel for the organizer alone; an
 // approval removed; a date withdrawn, the last kept, and a refused confirmation read again; and the invitations' and
-// co-organizers' order, focus and limit. What each state looks like is the stories' (events.stories.tsx).
+// co-organizers' order, focus and limit; and no approval asked of an attendee who organizes, the event open, cancelled
+// or ended, and an approval refused as they organize read again. What each state looks like is the stories'
+// (events.stories.tsx).
 
 import { scenario, type FakeEventPlan, type FakeOptions } from "@my/e2e/fake";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
@@ -744,5 +746,124 @@ describe("the invitations and the co-organizers", () => {
     await atEvent("three-co", "/coorganizers", "Co-organizers", withEvents(fullyCoorganized));
     expect(main().getByRole("group", { name: "Co-organizers (3 of 3)" })).not.toBeNull();
     expect(main().queryAllByRole("searchbox")).toHaveLength(0);
+  });
+});
+
+describe("an attendee who organizes the event (ADR-0161 §6, #3359)", () => {
+  /** The rows of those going and maybe, each by the handle it shows. */
+  const attendeeRow = (handle: string): HTMLElement => {
+    const rows = main()
+      .getAllByRole("list", { name: /^(Going|Maybe)/ })
+      .flatMap((list) => within(list).getAllByRole("listitem"))
+      .filter((row) => words(row).includes(`@${handle}@`));
+    const [row] = rows;
+    if (row === undefined || rows.length !== 1) throw new Error(`test: ${rows.length} rows of @${handle}`);
+    return row;
+  };
+
+  /** What the end of the row of `handle` carries of the approval: its words and its buttons. */
+  const approvalOf = (handle: string) => {
+    const row = attendeeRow(handle);
+    return {
+      waiting: words(row).includes("Waiting for approval"),
+      buttons: within(row)
+        .queryAllByRole("button")
+        .map((b) => b.getAttribute("aria-label") ?? words(b))
+        .filter((name) => name.startsWith("Approve") || name.startsWith("Actions for")),
+    };
+  };
+
+  const none = { waiting: false, buttons: [] };
+
+  /** The class the reader co-organizes, with its organizer going and the reader maybe (the story OrganizersAttending). */
+  const organizersAttending: FakeOptions = {
+    seed: {
+      ...scenario,
+      events: scenario.events.map((plan) =>
+        plan.key === "bread-class"
+          ? {
+              ...plan,
+              attendees: [
+                { by: "sam", answer: "going" as const },
+                ...(plan.attendees ?? []),
+                { by: "yuki", answer: "maybe" as const },
+              ],
+            }
+          : plan,
+      ),
+    },
+  };
+
+  test("while the event is open, neither the organizer nor the co-organizer waits, nor carries Approve or its menu", async () => {
+    await atEvent("bread-class", "", undefined, organizersAttending);
+    await waitFor(() => {
+      expect(attendeeRow("sam")).toBeDefined();
+    });
+    expect(approvalOf("sam")).toEqual(none);
+    expect(approvalOf("yuki")).toEqual(none);
+    // The others keep theirs: the approved one its mark and menu, the one waiting Approve.
+    expect(approvalOf("hana")).toEqual({ waiting: false, buttons: ["Actions for Hana 花"] });
+    expect(approvalOf("layla")).toEqual({ waiting: true, buttons: ["Approve ليلى Layla"] });
+  });
+
+  /** An event the reader organizes and sam co-organizes, both attending, beside one attendee approved and one not. */
+  const organized = (key: string, title: string, more: Partial<FakeEventPlan>): FakeEventPlan => ({
+    key,
+    organizer: "yuki",
+    coorganizers: ["sam"],
+    title,
+    description: "",
+    timeZone: "UTC",
+    inDays: 3,
+    hour: 12,
+    hours: 1,
+    attendees: [
+      { by: "yuki", answer: "going" },
+      { by: "sam", answer: "maybe" },
+      { by: "hana", answer: "going", approved: true },
+      { by: "layla", answer: "going" },
+    ],
+    ...more,
+  });
+
+  for (const [what, plan] of [
+    ["cancelled", organized("organized-cancelled", "Kite day", { cancelled: { reason: "organizer" } })],
+    ["ended", organized("organized-ended", "Picnic done", { inDays: 0, hour: 0, startsInMinutes: -2 * 24 * 60 })],
+  ] as const)
+    test(`once the event is ${what}, neither the organizer nor the co-organizer waits, nor carries Approve or its menu`, async () => {
+      await atEvent(plan.key, "", plan.title, withEvents(plan));
+      await waitFor(() => {
+        expect(attendeeRow("yuki")).toBeDefined();
+      });
+      expect(approvalOf("yuki")).toEqual(none);
+      expect(approvalOf("sam")).toEqual(none);
+      // The approved one keeps their mark.
+      expect(words(attendeeRow("hana"))).toContain("Approved");
+    });
+
+  test("an approval refused as the attendee now organizes reads the attendees again and says it did not finish", async () => {
+    const { app } = await atEvent("bread-class");
+    const approve = await main().findByRole("button", { name: "Approve ليلى Layla" });
+    // Meanwhile the organizer named layla a co-organizer: the server refuses, and its attendees say she organizes.
+    app.fake.script("PUT /events/{id}/attendees/{account_id}/approval", {
+      times: 1,
+      fail: {
+        status: 422,
+        type: "/api/v1/problems/event-attendee-organizes",
+        title: "The attendee organizes the event",
+      },
+    });
+    const reads = app.fake.script("GET /events/{id}/attendees", {
+      change: (page) => ({
+        ...page,
+        items: page.items.map((a) => (a.account.username === "layla" ? { ...a, organizes: true, approved: true } : a)),
+      }),
+    });
+    await app.user.click(approve);
+    await reads.arrived();
+    await says("Approving ليلى Layla did not finish.");
+    await waitFor(() => {
+      expect(approvalOf("layla")).toEqual(none);
+    });
   });
 });

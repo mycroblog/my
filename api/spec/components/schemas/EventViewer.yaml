@@ -17,7 +17,9 @@ properties:
     allOf:
       - $ref: ./EventAnswer.yaml
   approved:
-    description: Whether the organizer or a co-organizer approved the user's answer.
+    description: |
+      Whether the user sees the places shown to the approved: the organizer or a co-organizer
+      approved the user's answer, or the user is the organizer or a co-organizer.
     type: boolean
   board:
     $ref: ./EventBoardAccess.yaml

@@ -1258,6 +1258,13 @@ func (l *Localizer) ServerErrorsEventAlreadyInvited() string {
 	return l.format("server:errors.event.already_invited", nil)
 }
 
+// ServerErrorsEventAttendeeOrganizes formats "server:errors.event.attendee_organizes". API error title for HTTP 422 when an organizer approves, or takes back the approval of, the organizer or a co-organizer of the event (ADR-0161 §6: they always see the places).
+//
+//	en: The organizer and the co-organizers always see the places, so their answers are not approved.
+func (l *Localizer) ServerErrorsEventAttendeeOrganizes() string {
+	return l.format("server:errors.event.attendee_organizes", nil)
+}
+
 // ServerErrorsEventBoardClosed formats "server:errors.event.board_closed". API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or from 7 days after its end (the board is writable for the 7 days after the end).
 //
 //	en: This event's board is read-only: the event was cancelled, or 7 days have passed since it ended.

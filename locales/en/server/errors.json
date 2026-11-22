@@ -1031,6 +1031,10 @@
     "defaultMessage": "That user has not answered going or maybe.",
     "description": "API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event."
   },
+  "errors.event.attendee_organizes": {
+    "defaultMessage": "The organizer and the co-organizers always see the places, so their answers are not approved.",
+    "description": "API error title for HTTP 422 when an organizer approves, or takes back the approval of, the organizer or a co-organizer of the event (ADR-0161 §6: they always see the places)."
+  },
   "errors.event.unscheduled": {
     "defaultMessage": "That event has no date yet.",
     "description": "API error title for HTTP 409 when a user answers an event, or asks for its calendar file, before its organizers confirmed a date from its date poll."

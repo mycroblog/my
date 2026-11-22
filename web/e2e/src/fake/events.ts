@@ -575,7 +575,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
         coorganizer: e.coorganizers.includes(viewer),
         invited: invited(e),
         ...(rsvp === undefined ? {} : { answer: rsvp.answer }),
-        approved: rsvp?.approved === true,
+        approved: organizes(e) || rsvp?.approved === true,
         board: { readable: readsBoard(e), writable: writesBoard(e) },
       },
     };
@@ -687,11 +687,19 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       confirmed: e.confirmed === cand.id,
     };
   };
-  const attendeeShown = (r: Held["rsvps"][number]): Schema<"EventAttendee"> => ({
+  /** An attendee of `e`: its organizer and co-organizers always see the places, approved whatever was recorded (§6). */
+  const attendeeShown = (e: Held, r: Held["rsvps"][number]): Schema<"EventAttendee"> => ({
     account: accountIn(r.by),
     answer: r.answer,
-    approved: r.approved,
+    approved: organizes(e, r.by) || r.approved,
+    organizes: organizes(e, r.by),
   });
+  const attendeeOrganizes = () =>
+    refused(
+      422,
+      "event-attendee-organizes",
+      "The organizer and the co-organizers always see the places, so their answers are not approved.",
+    );
   const invitationShown = (i: Held["invitations"][number]): Schema<"EventInvitation"> => ({
     id: i.id,
     account: accountIn(i.by),
@@ -903,27 +911,29 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
     "GET /events/{id}/attendees": ({ params, query }) => {
       const e = seen(params.id);
       if ("problem" in e) return e;
-      const items = e.rsvps.filter((r) => r.answer !== "declined").map(attendeeShown);
+      const items = e.rsvps.filter((r) => r.answer !== "declined").map((r) => attendeeShown(e, r));
       return { status: 200, body: c.page(items, query, (a) => a.account.id).body };
     },
     "PUT /events/{id}/attendees/{account_id}/approval": ({ params }) => {
       const e = managed(params.id);
       if ("problem" in e) return e;
       const u = c.usernameOf(params.account_id);
+      if (u !== undefined && organizes(e, u)) return attendeeOrganizes();
       const r = u === undefined ? undefined : rsvpOf(e, u);
       if (r === undefined || r.answer === "declined")
         return refused(422, "event-not-attending", "This account does not attend the event");
       r.approved = true;
-      return { status: 200, body: attendeeShown(r) };
+      return { status: 200, body: attendeeShown(e, r) };
     },
     "DELETE /events/{id}/attendees/{account_id}/approval": ({ params }) => {
       const e = managed(params.id);
       if ("problem" in e) return e;
       const u = c.usernameOf(params.account_id);
+      if (u !== undefined && organizes(e, u)) return attendeeOrganizes();
       const r = u === undefined ? undefined : rsvpOf(e, u);
       if (r === undefined) return c.notFound();
       r.approved = false;
-      return { status: 200, body: attendeeShown(r) };
+      return { status: 200, body: attendeeShown(e, r) };
     },
     "GET /events/{id}/calendar.ics": ({ params }) => {
       const e = seen(params.id);

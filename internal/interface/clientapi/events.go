@@ -35,6 +35,7 @@ const (
 	ProblemTypeEventInvalidCoorganizer  = "/api/v1/problems/event-invalid-coorganizer"
 	ProblemTypeEventTooManyCoorganizers = "/api/v1/problems/event-too-many-coorganizers"
 	ProblemTypeEventNotAttending        = "/api/v1/problems/event-not-attending"
+	ProblemTypeEventAttendeeOrganizes   = "/api/v1/problems/event-attendee-organizes"
 )
 
 // Events runs the events: *appgathering.Service implements it.
@@ -108,6 +109,8 @@ func (s *Server) eventProblem(ctx context.Context, err error) (problem, bool) {
 		return s.problem(ctx, http.StatusConflict, ProblemTypeEventTooManyCoorganizers, l.ServerErrorsEventTooManyCoorganizers(), ""), true
 	case errors.Is(err, appgathering.ErrNotAttending):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeEventNotAttending, l.ServerErrorsEventNotAttending(), ""), true
+	case errors.Is(err, appgathering.ErrAttendeeOrganizes):
+		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeEventAttendeeOrganizes, l.ServerErrorsEventAttendeeOrganizes(), ""), true
 	}
 	return s.eventPollProblem(ctx, err)
 }
@@ -460,7 +463,7 @@ func (s *Server) newEventAttendees(ctx context.Context, as []appgathering.Attend
 	out := make([]EventAttendee, 0, len(as))
 	for _, a := range as {
 		if acct, ok := accounts[a.AccountID]; ok {
-			out = append(out, EventAttendee{Account: acct, Answer: EventAnswer(a.Answer), Approved: a.Approved})
+			out = append(out, EventAttendee{Account: acct, Answer: EventAnswer(a.Answer), Approved: a.Approved, Organizes: a.Organizes})
 		}
 	}
 	return out, nil

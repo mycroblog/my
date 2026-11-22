@@ -155,7 +155,9 @@ type ViewerState struct {
 	Coorganizer bool
 	Invited     bool
 	// Answer is the viewer's current answer, "" for none.
-	Answer   gathering.Answer
+	Answer gathering.Answer
+	// Approved is whether the organizer or a co-organizer approved the viewer's answer; it is true
+	// for the organizer and the co-organizers, who always see the places (ADR-0161 §6).
 	Approved bool
 	// Board is what the viewer may do with the event's board (ADR-0161 §17).
 	Board gathering.BoardAccess
@@ -258,9 +260,10 @@ func (s *Service) present(ctx context.Context, viewer gathering.Viewer, recs []R
 		if !gathering.CanSee(e, viewer, f) {
 			continue
 		}
+		organizer := viewer.AccountID == r.OrganizerAccountID
 		v := View{Record: r, Viewer: ViewerState{
-			Organizer: viewer.AccountID == r.OrganizerAccountID, Coorganizer: f.Coorganizer, Invited: f.Invited,
-			Answer: own[r.ID].Answer, Approved: f.Approved, Board: gathering.Board(e, r.BoardTerm(), viewer, f, now),
+			Organizer: organizer, Coorganizer: f.Coorganizer, Invited: f.Invited,
+			Answer: own[r.ID].Answer, Approved: f.Approved || organizer || f.Coorganizer, Board: gathering.Board(e, r.BoardTerm(), viewer, f, now),
 		}}
 		for _, p := range r.Revision.Settings.Places {
 			if gathering.CanSeePlace(e, p.Kind, viewer, f) {
