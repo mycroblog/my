@@ -25,11 +25,11 @@ SELECT id, set_id, published_by_user_id, published_at FROM instance_theme_public
 WHERE id < sqlc.arg(before_id) AND set_id <> sqlc.arg(set_id) ORDER BY id DESC LIMIT 1;
 
 -- name: GetInstanceThemeHead :one
-SELECT revision_id FROM instance_theme WHERE id = 1;
+SELECT publication_id FROM instance_theme WHERE id = 1;
 
 -- name: UpsertInstanceThemeHead :exec
-INSERT INTO instance_theme (id, revision_id) VALUES (1, $1)
-ON CONFLICT (id) DO UPDATE SET revision_id = excluded.revision_id;
+INSERT INTO instance_theme (id, publication_id) VALUES (1, $1)
+ON CONFLICT (id) DO UPDATE SET publication_id = excluded.publication_id;
 
 -- name: DeleteInstanceThemeHead :exec
 DELETE FROM instance_theme;
