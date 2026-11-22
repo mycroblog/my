@@ -20292,6 +20292,7 @@ export interface components {
         Draft: {
             headers: {
                 ETag: components["headers"]["ETag"];
+                "Cache-Control": components["headers"]["CacheControl"];
                 [name: string]: unknown;
             };
             content: {
@@ -23946,6 +23947,7 @@ export interface operations {
             /** @description A page of interaction requests. */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23983,6 +23985,7 @@ export interface operations {
             /** @description The request, answered. */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24020,6 +24023,7 @@ export interface operations {
             /** @description The request, answered. */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25317,6 +25321,7 @@ export interface operations {
             /** @description A page of drafts. */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {

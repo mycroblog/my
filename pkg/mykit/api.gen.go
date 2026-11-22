@@ -90238,6 +90238,11 @@ func (r UnmuteDomainResponse) ContentType() string {
 	return ""
 }
 
+// ListDraftsResponse200Headers the declared response headers of an HTTP 200 response for ListDrafts
+type ListDraftsResponse200Headers struct {
+	CacheControl *string
+}
+
 // ListDraftsResponseDefaultHeaders the declared response headers of an HTTP default response for ListDrafts
 type ListDraftsResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -90253,6 +90258,8 @@ type ListDraftsResponse struct {
 	JSON200 *DraftPage
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListDraftsResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *ListDraftsResponseDefaultHeaders
 }
@@ -90298,7 +90305,8 @@ func (r ListDraftsResponse) ContentType() string {
 
 // CreateDraftResponse201Headers the declared response headers of an HTTP 201 response for CreateDraft
 type CreateDraftResponse201Headers struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 
 // CreateDraftResponseDefaultHeaders the declared response headers of an HTTP default response for CreateDraft
@@ -90414,7 +90422,8 @@ func (r DeleteDraftResponse) ContentType() string {
 
 // GetDraftResponse200Headers the declared response headers of an HTTP 200 response for GetDraft
 type GetDraftResponse200Headers struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 
 // GetDraftResponseDefaultHeaders the declared response headers of an HTTP default response for GetDraft
@@ -90479,7 +90488,8 @@ func (r GetDraftResponse) ContentType() string {
 
 // UpdateDraftResponse200Headers the declared response headers of an HTTP 200 response for UpdateDraft
 type UpdateDraftResponse200Headers struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 
 // UpdateDraftResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateDraft
@@ -90624,7 +90634,8 @@ func (r PublishDraftResponse) ContentType() string {
 
 // UnscheduleDraftResponse200Headers the declared response headers of an HTTP 200 response for UnscheduleDraft
 type UnscheduleDraftResponse200Headers struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 
 // UnscheduleDraftResponseDefaultHeaders the declared response headers of an HTTP default response for UnscheduleDraft
@@ -90689,7 +90700,8 @@ func (r UnscheduleDraftResponse) ContentType() string {
 
 // ScheduleDraftResponse200Headers the declared response headers of an HTTP 200 response for ScheduleDraft
 type ScheduleDraftResponse200Headers struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 
 // ScheduleDraftResponseDefaultHeaders the declared response headers of an HTTP default response for ScheduleDraft
@@ -94304,6 +94316,11 @@ func (r GetInstanceTipAmountsResponse) ContentType() string {
 	return ""
 }
 
+// ListInteractionRequestsResponse200Headers the declared response headers of an HTTP 200 response for ListInteractionRequests
+type ListInteractionRequestsResponse200Headers struct {
+	CacheControl *string
+}
+
 // ListInteractionRequestsResponseDefaultHeaders the declared response headers of an HTTP default response for ListInteractionRequests
 type ListInteractionRequestsResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -94319,6 +94336,8 @@ type ListInteractionRequestsResponse struct {
 	JSON200 *InteractionRequestPage
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListInteractionRequestsResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *ListInteractionRequestsResponseDefaultHeaders
 }
@@ -94362,6 +94381,11 @@ func (r ListInteractionRequestsResponse) ContentType() string {
 	return ""
 }
 
+// AcceptInteractionRequestResponse200Headers the declared response headers of an HTTP 200 response for AcceptInteractionRequest
+type AcceptInteractionRequestResponse200Headers struct {
+	CacheControl *string
+}
+
 // AcceptInteractionRequestResponseDefaultHeaders the declared response headers of an HTTP default response for AcceptInteractionRequest
 type AcceptInteractionRequestResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -94377,6 +94401,8 @@ type AcceptInteractionRequestResponse struct {
 	JSON200 *InteractionRequest
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *AcceptInteractionRequestResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *AcceptInteractionRequestResponseDefaultHeaders
 }
@@ -94420,6 +94446,11 @@ func (r AcceptInteractionRequestResponse) ContentType() string {
 	return ""
 }
 
+// RejectInteractionRequestResponse200Headers the declared response headers of an HTTP 200 response for RejectInteractionRequest
+type RejectInteractionRequestResponse200Headers struct {
+	CacheControl *string
+}
+
 // RejectInteractionRequestResponseDefaultHeaders the declared response headers of an HTTP default response for RejectInteractionRequest
 type RejectInteractionRequestResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -94435,6 +94466,8 @@ type RejectInteractionRequestResponse struct {
 	JSON200 *InteractionRequest
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RejectInteractionRequestResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *RejectInteractionRequestResponseDefaultHeaders
 }
@@ -136424,6 +136457,16 @@ func ParseListDraftsResponse(rsp *http.Response) (*ListDraftsResponse, error) {
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers ListDraftsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers ListDraftsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -136493,6 +136536,13 @@ func ParseCreateDraftResponse(rsp *http.Response) (*CreateDraftResponse, error) 
 	switch {
 	case rsp.StatusCode == 201:
 		var headers CreateDraftResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -136633,6 +136683,13 @@ func ParseGetDraftResponse(rsp *http.Response) (*GetDraftResponse, error) {
 	switch {
 	case rsp.StatusCode == 200:
 		var headers GetDraftResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -136710,6 +136767,13 @@ func ParseUpdateDraftResponse(rsp *http.Response) (*UpdateDraftResponse, error) 
 	switch {
 	case rsp.StatusCode == 200:
 		var headers UpdateDraftResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -136888,6 +136952,13 @@ func ParseUnscheduleDraftResponse(rsp *http.Response) (*UnscheduleDraftResponse,
 	switch {
 	case rsp.StatusCode == 200:
 		var headers UnscheduleDraftResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -136965,6 +137036,13 @@ func ParseScheduleDraftResponse(rsp *http.Response) (*ScheduleDraftResponse, err
 	switch {
 	case rsp.StatusCode == 200:
 		var headers ScheduleDraftResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -141288,6 +141366,16 @@ func ParseListInteractionRequestsResponse(rsp *http.Response) (*ListInteractionR
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers ListInteractionRequestsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers ListInteractionRequestsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -141355,6 +141443,16 @@ func ParseAcceptInteractionRequestResponse(rsp *http.Response) (*AcceptInteracti
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers AcceptInteractionRequestResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers AcceptInteractionRequestResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -141422,6 +141520,16 @@ func ParseRejectInteractionRequestResponse(rsp *http.Response) (*RejectInteracti
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers RejectInteractionRequestResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers RejectInteractionRequestResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {

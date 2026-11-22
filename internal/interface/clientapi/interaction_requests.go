@@ -40,7 +40,7 @@ func (s *Server) ListInteractionRequests(ctx context.Context, req ListInteractio
 	}
 	out := InteractionRequestPage{Items: []InteractionRequest{}}
 	if s.o.InteractionRequests == nil {
-		return ListInteractionRequests200JSONResponse(out), nil
+		return ListInteractionRequests200JSONResponse{Body: out, Headers: ListInteractionRequests200ResponseHeaders{CacheControl: interactionRequestCache()}}, nil
 	}
 	page, err := s.o.InteractionRequests.PendingInteractionRequests(ctx, v.AccountID, kinds, q.before, q.limit)
 	if err != nil {
@@ -56,7 +56,7 @@ func (s *Server) ListInteractionRequests(ctx context.Context, req ListInteractio
 	if page.Next != "" {
 		out.NextCursor = encodeCursor(page.Next)
 	}
-	return ListInteractionRequests200JSONResponse(out), nil
+	return ListInteractionRequests200JSONResponse{Body: out, Headers: ListInteractionRequests200ResponseHeaders{CacheControl: interactionRequestCache()}}, nil
 }
 
 // AcceptInteractionRequest serves POST /api/v1/interaction_requests/{id}/accept.
@@ -68,7 +68,7 @@ func (s *Server) AcceptInteractionRequest(ctx context.Context, req AcceptInterac
 	case p != nil:
 		return AcceptInteractionRequestdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	return AcceptInteractionRequest200JSONResponse(*res), nil
+	return AcceptInteractionRequest200JSONResponse{Body: *res, Headers: AcceptInteractionRequest200ResponseHeaders{CacheControl: interactionRequestCache()}}, nil
 }
 
 // RejectInteractionRequest serves POST /api/v1/interaction_requests/{id}/reject.
@@ -80,7 +80,13 @@ func (s *Server) RejectInteractionRequest(ctx context.Context, req RejectInterac
 	case p != nil:
 		return RejectInteractionRequestdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	return RejectInteractionRequest200JSONResponse(*res), nil
+	return RejectInteractionRequest200JSONResponse{Body: *res, Headers: RejectInteractionRequest200ResponseHeaders{CacheControl: interactionRequestCache()}}, nil
+}
+
+// interactionRequestCache is the Cache-Control of the interaction requests, which are the user's.
+func interactionRequestCache() *string {
+	c := cacheNoStore
+	return &c
 }
 
 // answerInteractionRequest answers the request id of the viewer and presents it as it is then. A

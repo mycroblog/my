@@ -58,7 +58,8 @@ func (s *Server) ListDrafts(ctx context.Context, req ListDraftsRequestObject) (L
 	if last >= 0 {
 		out.NextCursor = encodeCursor(views[last].Draft.ID)
 	}
-	return ListDrafts200JSONResponse(out), nil
+	cache := cacheNoStore
+	return ListDrafts200JSONResponse{Body: out, Headers: ListDrafts200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // CreateDraft serves POST /api/v1/drafts.
@@ -324,10 +325,10 @@ func draftInput(body *DraftRequest) appcontent.DraftInput {
 	return in
 }
 
-// draftResponse returns the body and the ETag of a draft.
+// draftResponse returns the body and the ETag of a draft, which no cache keeps.
 func draftResponse(v appcontent.DraftView) DraftJSONResponse {
-	tag := draftETag(v.Content.UpdatedAt)
-	return DraftJSONResponse{Body: presentDraft(v), Headers: DraftResponseHeaders{ETag: &tag}}
+	tag, cache := draftETag(v.Content.UpdatedAt), cacheNoStore
+	return DraftJSONResponse{Body: presentDraft(v), Headers: DraftResponseHeaders{ETag: &tag, CacheControl: &cache}}
 }
 
 // draftETag is the ETag of a draft saved at updatedAt: the time of the save, to the millisecond

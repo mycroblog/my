@@ -16,6 +16,9 @@ post:
   responses:
     "200":
       description: The request, answered.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
       content:
         application/json:
           schema:

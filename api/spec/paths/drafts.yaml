@@ -21,6 +21,9 @@ get:
   responses:
     "200":
       description: A page of drafts.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
       content:
         application/json:
           schema:

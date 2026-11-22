@@ -46533,7 +46533,8 @@ type CustomEmojiRequestProblemApplicationProblemPlusJSONResponse struct {
 }
 
 type DraftResponseHeaders struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 type DraftJSONResponse struct {
 	Body Draft
@@ -62627,15 +62628,25 @@ type ListDraftsResponseObject interface {
 	VisitListDraftsResponse(w http.ResponseWriter) error
 }
 
-type ListDrafts200JSONResponse DraftPage
+type ListDrafts200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListDrafts200JSONResponse struct {
+	Body    DraftPage
+	Headers ListDrafts200ResponseHeaders
+}
 
 func (response ListDrafts200JSONResponse) VisitListDraftsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -62689,6 +62700,9 @@ func (response CreateDraft201JSONResponse) VisitCreateDraftResponse(w http.Respo
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	if response.Headers.ETag != nil {
 		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
 	}
@@ -62791,6 +62805,9 @@ func (response GetDraft200JSONResponse) VisitGetDraftResponse(w http.ResponseWri
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	if response.Headers.ETag != nil {
 		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
 	}
@@ -62848,6 +62865,9 @@ func (response UpdateDraft200JSONResponse) VisitUpdateDraftResponse(w http.Respo
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	if response.Headers.ETag != nil {
 		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
 	}
@@ -62989,6 +63009,9 @@ func (response UnscheduleDraft200JSONResponse) VisitUnscheduleDraftResponse(w ht
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	if response.Headers.ETag != nil {
 		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
 	}
@@ -63046,6 +63069,9 @@ func (response ScheduleDraft200JSONResponse) VisitScheduleDraftResponse(w http.R
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	if response.Headers.ETag != nil {
 		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
 	}
@@ -66498,15 +66524,25 @@ type ListInteractionRequestsResponseObject interface {
 	VisitListInteractionRequestsResponse(w http.ResponseWriter) error
 }
 
-type ListInteractionRequests200JSONResponse InteractionRequestPage
+type ListInteractionRequests200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListInteractionRequests200JSONResponse struct {
+	Body    InteractionRequestPage
+	Headers ListInteractionRequests200ResponseHeaders
+}
 
 func (response ListInteractionRequests200JSONResponse) VisitListInteractionRequestsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -66551,15 +66587,25 @@ type AcceptInteractionRequestResponseObject interface {
 	VisitAcceptInteractionRequestResponse(w http.ResponseWriter) error
 }
 
-type AcceptInteractionRequest200JSONResponse InteractionRequest
+type AcceptInteractionRequest200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type AcceptInteractionRequest200JSONResponse struct {
+	Body    InteractionRequest
+	Headers AcceptInteractionRequest200ResponseHeaders
+}
 
 func (response AcceptInteractionRequest200JSONResponse) VisitAcceptInteractionRequestResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -66604,15 +66650,25 @@ type RejectInteractionRequestResponseObject interface {
 	VisitRejectInteractionRequestResponse(w http.ResponseWriter) error
 }
 
-type RejectInteractionRequest200JSONResponse InteractionRequest
+type RejectInteractionRequest200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RejectInteractionRequest200JSONResponse struct {
+	Body    InteractionRequest
+	Headers RejectInteractionRequest200ResponseHeaders
+}
 
 func (response RejectInteractionRequest200JSONResponse) VisitRejectInteractionRequestResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err

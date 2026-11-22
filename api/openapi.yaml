@@ -3306,6 +3306,9 @@ paths:
       responses:
         '200':
           description: A page of interaction requests.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
           content:
             application/json:
               schema:
@@ -3332,6 +3335,9 @@ paths:
       responses:
         '200':
           description: The request, answered.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
           content:
             application/json:
               schema:
@@ -3358,6 +3364,9 @@ paths:
       responses:
         '200':
           description: The request, answered.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
           content:
             application/json:
               schema:
@@ -4579,6 +4588,9 @@ paths:
       responses:
         '200':
           description: A page of drafts.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
           content:
             application/json:
               schema:
@@ -15419,6 +15431,8 @@ components:
       headers:
         ETag:
           $ref: '#/components/headers/ETag'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
       content:
         application/json:
           schema:

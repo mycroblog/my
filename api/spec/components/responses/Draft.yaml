@@ -3,6 +3,8 @@ description: The draft.
 headers:
   ETag:
     $ref: ../headers/ETag.yaml
+  Cache-Control:
+    $ref: ../headers/CacheControl.yaml
 content:
   application/json:
     schema:
