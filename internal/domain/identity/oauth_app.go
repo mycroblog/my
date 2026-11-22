@@ -30,12 +30,20 @@ const (
 	maxRedirectURILength = 2048
 )
 
-// Errors of ValidateOAuthClientSettings, one per setting.
+// Errors of ValidateOAuthClientSettings, one per setting. The error of a rule that a setting
+// breaks wraps the error of the setting: ErrOAuthClientWebsiteNotHTTP; ErrTooManyOAuthClientRedirectURIs,
+// ErrRedirectURIForm, or ErrRedirectURIFragment; ErrUnknownScope or ErrFirstPartyOnlyScope.
 var (
 	ErrInvalidOAuthClientName         = errors.New("identity: invalid OAuth client name")
 	ErrInvalidOAuthClientWebsite      = errors.New("identity: invalid OAuth client website")
 	ErrInvalidOAuthClientRedirectURIs = errors.New("identity: invalid OAuth client redirect URIs")
 	ErrInvalidOAuthClientScope        = errors.New("identity: invalid OAuth client scope")
+
+	// ErrOAuthClientWebsiteNotHTTP reports a website that is not an absolute http or https URL
+	// with a host.
+	ErrOAuthClientWebsiteNotHTTP = fmt.Errorf("%w: not an http or https URL", ErrInvalidOAuthClientWebsite)
+	// ErrTooManyOAuthClientRedirectURIs reports more than MaxOAuthClientRedirectURIs redirect URIs.
+	ErrTooManyOAuthClientRedirectURIs = fmt.Errorf("%w: more than %d", ErrInvalidOAuthClientRedirectURIs, MaxOAuthClientRedirectURIs)
 )
 
 // OAuthClientSettings is what the user who registers a client chooses for it and may change
@@ -60,14 +68,19 @@ func ValidateOAuthClientSettings(name, website string, redirectURIs []string, sc
 		strings.ContainsFunc(name, unicode.IsControl) {
 		return OAuthClientSettings{}, ErrInvalidOAuthClientName
 	}
-	if website != "" && !validWebsite(website) {
-		return OAuthClientSettings{}, ErrInvalidOAuthClientWebsite
+	if website != "" {
+		if err := validateWebsite(website); err != nil {
+			return OAuthClientSettings{}, err
+		}
 	}
 	uris := slices.Clone(redirectURIs)
 	slices.Sort(uris)
 	uris = slices.Compact(uris)
-	if len(uris) == 0 || len(uris) > MaxOAuthClientRedirectURIs {
+	if len(uris) == 0 {
 		return OAuthClientSettings{}, ErrInvalidOAuthClientRedirectURIs
+	}
+	if len(uris) > MaxOAuthClientRedirectURIs {
+		return OAuthClientSettings{}, ErrTooManyOAuthClientRedirectURIs
 	}
 	for _, u := range uris {
 		if len(u) > maxRedirectURILength || !utf8.ValidString(u) || strings.ContainsRune(u, 0) {
@@ -78,24 +91,33 @@ func ValidateOAuthClientSettings(name, website string, redirectURIs []string, sc
 		}
 	}
 	s, err := ParseScope(scope)
-	if err != nil || s == "" || s.HasFirstPartyOnly() {
+	switch {
+	case err != nil:
+		return OAuthClientSettings{}, fmt.Errorf("%w: %w", ErrInvalidOAuthClientScope, err)
+	case s == "":
 		return OAuthClientSettings{}, ErrInvalidOAuthClientScope
+	case s.HasFirstPartyOnly():
+		return OAuthClientSettings{}, fmt.Errorf("%w: %w", ErrInvalidOAuthClientScope, ErrFirstPartyOnlyScope)
 	}
 	return OAuthClientSettings{Name: name, Website: website, RedirectURIs: uris, Scope: s}, nil
 }
 
-// validWebsite reports whether w is an absolute https or http URL with a host, without user
-// info or a fragment, of at most MaxOAuthClientWebsiteLength bytes.
-func validWebsite(w string) bool {
+// validateWebsite checks that w is an absolute https or http URL with a host, without user info
+// or a fragment, of at most MaxOAuthClientWebsiteLength bytes. A URL of another scheme or without
+// a host fails with ErrOAuthClientWebsiteNotHTTP, any other with ErrInvalidOAuthClientWebsite.
+func validateWebsite(w string) error {
 	if len(w) > MaxOAuthClientWebsiteLength || !utf8.ValidString(w) || strings.ContainsFunc(w, unicode.IsControl) ||
 		strings.TrimSpace(w) != w {
-		return false
+		return ErrInvalidOAuthClientWebsite
 	}
 	u, err := url.Parse(w)
-	if err != nil || u.User != nil || u.Fragment != "" || u.Hostname() == "" {
-		return false
+	switch {
+	case err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Hostname() == "":
+		return ErrOAuthClientWebsiteNotHTTP
+	case u.User != nil || u.Fragment != "":
+		return ErrInvalidOAuthClientWebsite
 	}
-	return u.Scheme == "https" || u.Scheme == "http"
+	return nil
 }
 
 // OAuthClientRevision records that the user who registered a client changed its name,

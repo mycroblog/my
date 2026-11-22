@@ -12,8 +12,18 @@ import (
 )
 
 // ErrInvalidRedirectURI is returned by ValidateRedirectURI for a redirect URI that a client may
-// not register.
+// not register. ErrRedirectURIForm and ErrRedirectURIFragment wrap it for the rule that the URI
+// breaks; a URI that is empty, padded, unparsable, or with userinfo or a backslash is
+// ErrInvalidRedirectURI alone.
 var ErrInvalidRedirectURI = errors.New("identity: invalid redirect URI")
+
+var (
+	// ErrRedirectURIForm reports a redirect URI that is not one of the three forms: an https
+	// URL, a private-use URI scheme in reverse domain notation, or an http loopback URL.
+	ErrRedirectURIForm = fmt.Errorf("%w: not https, a private-use scheme, or http on a loopback address", ErrInvalidRedirectURI)
+	// ErrRedirectURIFragment reports a redirect URI with a fragment.
+	ErrRedirectURIFragment = fmt.Errorf("%w: with a fragment", ErrInvalidRedirectURI)
+)
 
 // deniedRedirectSchemes are schemes that never make a redirect URI, even though they look like
 // a private-use scheme (ADR-0090 §3).
@@ -24,28 +34,31 @@ var deniedRedirectSchemes = []string{"http", "javascript", "data", "file", "vbsc
 // domain notation, or an http loopback URL on 127.0.0.1 or [::1] ("localhost" is refused).
 // Fragments, userinfo, and the out-of-band URN are refused for every form.
 func ValidateRedirectURI(raw string) error {
-	bad := func(why string) error { return fmt.Errorf("%w: %q: %s", ErrInvalidRedirectURI, raw, why) }
-	if raw == "" || strings.TrimSpace(raw) != raw || strings.ContainsAny(raw, "#\\") {
-		return bad("empty, padded, or with a fragment")
+	bad := func(rule error, why string) error { return fmt.Errorf("%w: %q: %s", rule, raw, why) }
+	if strings.ContainsRune(raw, '#') {
+		return bad(ErrRedirectURIFragment, "a fragment is not allowed")
+	}
+	if raw == "" || strings.TrimSpace(raw) != raw || strings.ContainsRune(raw, '\\') {
+		return bad(ErrInvalidRedirectURI, "empty, padded, or with a backslash")
 	}
 	u, err := url.Parse(raw)
-	if err != nil || u.User != nil || u.Fragment != "" {
-		return bad("not a valid URL without userinfo or fragment")
+	if err != nil || u.User != nil {
+		return bad(ErrInvalidRedirectURI, "not a valid URL without userinfo")
 	}
 	scheme := strings.ToLower(u.Scheme)
 	switch {
 	case scheme == "https":
 		if u.Hostname() == "" {
-			return bad("no host")
+			return bad(ErrRedirectURIForm, "no host")
 		}
 	case scheme == "http":
 		if !isLoopbackIP(u.Hostname()) {
-			return bad("http is for 127.0.0.1 and [::1] only")
+			return bad(ErrRedirectURIForm, "http is for 127.0.0.1 and [::1] only")
 		}
 	case slices.Contains(deniedRedirectSchemes, scheme):
-		return bad("scheme is not allowed")
+		return bad(ErrRedirectURIForm, "scheme is not allowed")
 	case !validPrivateUseScheme(scheme):
-		return bad("a private-use scheme must be in reverse domain notation")
+		return bad(ErrRedirectURIForm, "a private-use scheme must be in reverse domain notation")
 	}
 	return nil
 }

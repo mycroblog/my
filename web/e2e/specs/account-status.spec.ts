@@ -3,7 +3,7 @@
 // An account a moderator restricted in part, on the real server (#3204, #3115): a moderator keeps a person from
 // posting; that person, who can still use the app, finds the action in the settings, from the count on the menu's
 // row down to the action's own screen, and appeals it there; the server keeps the appeal, which shows after a reload;
-// and a post the person sends is refused with the sentence that names the place they appealed at. Both people are
+// and a post the person sends is refused with the sentence that names the place they appealed at, and a link to it. Both people are
 // fresh. What each screen shows of every kind of action and appeal, and what the form says of an appeal it could not
 // send, is a component test on the fake (app-features, settings/account-status*.dom.test.tsx).
 
@@ -70,7 +70,12 @@ test("a person a moderator kept from posting sees the action in the settings and
   await composer.postButton.click();
   const answer = await refused;
   expect(answer.status()).toBe(403);
-  await expect(composer.dialog.getByRole("alert")).toHaveText(
-    "A moderation action keeps your account from posting for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.",
+  const alert = composer.dialog.getByRole("alert");
+  await expect(alert).toHaveText(
+    "A moderation action keeps your account from posting for now. To see why or to appeal, open “Account status” under “Account and data” in the settings. Account status",
+  );
+  await expect(alert.getByRole("link", { name: "Account status", exact: true })).toHaveAttribute(
+    "href",
+    "/settings/account/status",
   );
 });

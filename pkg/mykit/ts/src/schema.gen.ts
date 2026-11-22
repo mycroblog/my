@@ -17945,6 +17945,12 @@ export interface components {
          *       an administrator. Make another user an administrator first.
          *     - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
          *       (`DELETE /accounts/move`).
+         *     - `/api/v1/problems/posting-restricted` (403): a moderation action keeps the user's account
+         *       from posting: a post, an article, a post on an event's board, an edit, or a boost. The user
+         *       appeals it from Account status in the settings (`/settings/account/status` of the web client).
+         *     - `/api/v1/problems/interaction-restricted` (403): a moderation action keeps the user's
+         *       account from interacting: following, favouriting, boosting, reacting, replying, quoting, or
+         *       voting in a poll. The user appeals it as a posting restriction.
          *     - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
          *       `DELETE /sessions/{id}`; signing out ends it.
          *     - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
