@@ -35,8 +35,12 @@ const (
 	// ProblemTypeMoveTargetUnavailable is the problem of a move to an account that cannot be
 	// moved to.
 	ProblemTypeMoveTargetUnavailable = "/api/v1/problems/move-target-unavailable"
-	// ProblemTypeMoveTooSoon is the problem of a move within the wait after the last one.
+	// ProblemTypeMoveTooSoon is the problem of a move within the wait after the last one; its
+	// can_move_at says when the account can move again.
 	ProblemTypeMoveTooSoon = "/api/v1/problems/move-too-soon"
+	// ProblemTypeMoveRepeated is the problem of a move to an account that the account moved to
+	// before.
+	ProblemTypeMoveRepeated = "/api/v1/problems/move-repeated"
 )
 
 // MoveAccountLimit bounds the attempts to move the own account, which check a password or a
@@ -88,6 +92,9 @@ func (s *Server) MoveOwnAccount(ctx context.Context, req MoveOwnAccountRequestOb
 	_, err = s.o.LocalMoves.Move(ctx, appfederation.LocalMoveRequest{
 		AccountID: v.AccountID, UserID: v.UserID, TargetAccountID: knownID(req.Body.TargetAccountId),
 	})
+	if p, ok := s.moveRefusal(ctx, err); ok {
+		return p, nil
+	}
 	if p := s.moveProblem(ctx, err); p != nil {
 		return MoveOwnAccountdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
@@ -97,19 +104,47 @@ func (s *Server) MoveOwnAccount(ctx context.Context, req MoveOwnAccountRequestOb
 	return MoveOwnAccount204Response{}, nil
 }
 
-// moveProblem returns the problem of a refused move, nil for any other err.
+// moveRefusal returns the 422 of a move that the checks of the target or the wait refuse, with
+// can_move_at for ProblemTypeMoveTooSoon; it reports false for any other err.
+func (s *Server) moveRefusal(ctx context.Context, err error) (MoveOwnAccount422ApplicationProblemPlusJSONResponse, bool) {
+	l := s.Localizer(ctx)
+	var (
+		typ, title string
+		canMoveAt  *time.Time
+	)
+	switch tooSoon := (*appaccount.MoveTooSoonError)(nil); {
+	case errors.Is(err, appfederation.ErrMoveAliasMissing):
+		typ, title = ProblemTypeMoveAliasMissing, l.ServerErrorsMoveAliasMissing()
+	case errors.Is(err, appfederation.ErrMoveTargetMoved):
+		typ, title = ProblemTypeMoveTargetMoved, l.ServerErrorsMoveTargetMoved()
+	case errors.Is(err, appfederation.ErrMoveTargetUnavailable):
+		typ, title = ProblemTypeMoveTargetUnavailable, l.ServerErrorsMoveTargetUnavailable()
+	case errors.Is(err, appaccount.ErrMoveTooSoon):
+		typ, title = ProblemTypeMoveTooSoon, l.ServerErrorsMoveTooSoon()
+		if errors.As(err, &tooSoon) {
+			t := tooSoon.CanMoveAt.UTC()
+			canMoveAt = &t
+		}
+	case errors.Is(err, appaccount.ErrMovedBefore):
+		typ, title = ProblemTypeMoveRepeated, l.ServerErrorsMoveRepeated()
+	default:
+		return MoveOwnAccount422ApplicationProblemPlusJSONResponse{}, false
+	}
+	body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, typ, title, "")
+	return MoveOwnAccount422ApplicationProblemPlusJSONResponse{MoveProblemApplicationProblemPlusJSONResponse{
+		Body: MoveProblem{
+			Type: body.Type, Title: body.Title, Status: body.Status, Detail: body.Detail, RequestId: body.RequestId,
+			CanMoveAt: canMoveAt,
+		},
+		Headers: MoveProblemResponseHeaders{CacheControl: headers.CacheControl, ContentLanguage: headers.ContentLanguage},
+	}}, true
+}
+
+// moveProblem returns the problem of a move that the account may not make, nil for any other err.
 func (s *Server) moveProblem(ctx context.Context, err error) *problem {
 	l := s.Localizer(ctx)
 	var p problem
 	switch {
-	case errors.Is(err, appfederation.ErrMoveAliasMissing):
-		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeMoveAliasMissing, l.ServerErrorsMoveAliasMissing(), "")
-	case errors.Is(err, appfederation.ErrMoveTargetMoved):
-		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeMoveTargetMoved, l.ServerErrorsMoveTargetMoved(), "")
-	case errors.Is(err, appfederation.ErrMoveTargetUnavailable):
-		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeMoveTargetUnavailable, l.ServerErrorsMoveTargetUnavailable(), "")
-	case errors.Is(err, appaccount.ErrMoveTooSoon), errors.Is(err, appaccount.ErrMovedBefore):
-		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeMoveTooSoon, l.ServerErrorsMoveTooSoon(), "")
 	case errors.Is(err, appfederation.ErrMoveSourceUnavailable):
 		p = s.problem(ctx, http.StatusForbidden, ProblemTypeAccountUnavailable, l.ServerErrorsAccountUnavailable(), "")
 	default:

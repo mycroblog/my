@@ -1790,6 +1790,13 @@ func (l *Localizer) ServerErrorsMoveAliasMissing() string {
 	return l.format("server:errors.move_alias_missing", nil)
 }
 
+// ServerErrorsMoveRepeated formats "server:errors.move_repeated". API error title for HTTP 422 when a user moves their account to an account it moved to before (also if that move was cancelled); an account moves to each account once.
+//
+//	en: Your account moved to that account before, and it can move to each account only once. Choose another account.
+func (l *Localizer) ServerErrorsMoveRepeated() string {
+	return l.format("server:errors.move_repeated", nil)
+}
+
 // ServerErrorsMoveTargetMoved formats "server:errors.move_target_moved". API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account.
 //
 //	en: The account to move to has moved itself. Move to the account it moved to.
@@ -1804,9 +1811,9 @@ func (l *Localizer) ServerErrorsMoveTargetUnavailable() string {
 	return l.format("server:errors.move_target_unavailable", nil)
 }
 
-// ServerErrorsMoveTooSoon formats "server:errors.move_too_soon". API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before.
+// ServerErrorsMoveTooSoon formats "server:errors.move_too_soon". API error title for HTTP 422 when a user moves their account within 30 days of its last move, also a cancelled one; the problem carries the time from which it can move again.
 //
-//	en: Your account can move again 30 days after its last move, and not to an account it moved to before.
+//	en: Your account moved less than 30 days ago, counting a cancelled move too. Try again once 30 days have passed since that move.
 func (l *Localizer) ServerErrorsMoveTooSoon() string {
 	return l.format("server:errors.move_too_soon", nil)
 }

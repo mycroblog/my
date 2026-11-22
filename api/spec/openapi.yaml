@@ -1214,6 +1214,8 @@ components:
       $ref: ./components/responses/LoginProviderProblem.yaml
     InvitesNotAllowedProblem:
       $ref: ./components/responses/InvitesNotAllowedProblem.yaml
+    MoveProblem:
+      $ref: ./components/responses/MoveProblem.yaml
     OAuthApp:
       $ref: ./components/responses/OAuthApp.yaml
     OwnCustomEmoji:
@@ -1519,6 +1521,8 @@ components:
       $ref: ./components/schemas/InvitesNotAllowedProblem.yaml
     InvitesNotAllowedReason:
       $ref: ./components/schemas/InvitesNotAllowedReason.yaml
+    MoveProblem:
+      $ref: ./components/schemas/MoveProblem.yaml
     OwnInvite:
       $ref: ./components/schemas/OwnInvite.yaml
     OwnInvitePage:

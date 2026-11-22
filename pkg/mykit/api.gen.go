@@ -10570,6 +10570,10 @@ type CredentialAccount struct {
 	// Bot Whether the account is automated.
 	Bot bool `json:"bot"`
 
+	// CanMoveAt From when the account can move again, 30 days after its last move; omitted when it
+	// can move now.
+	CanMoveAt *time.Time `json:"can_move_at,omitempty"`
+
 	// CreatedAt When the account was created.
 	CreatedAt time.Time `json:"created_at"`
 
@@ -10637,6 +10641,10 @@ type CredentialAccount struct {
 	// instance's search and, when the instance's `search_indexing` is `allow`, by search
 	// engines. New accounts take the instance's default.
 	Indexable bool `json:"indexable"`
+
+	// LastMovedAt When the account last moved to another account, also when that move was canceled;
+	// omitted when it never moved.
+	LastMovedAt *time.Time `json:"last_moved_at,omitempty"`
 
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
@@ -14277,6 +14285,38 @@ type MoveOwnAccountRequest struct {
 	TargetAccountId Id `json:"target_account_id"`
 }
 
+// MoveProblem The problem of a refused move of the user's account (422). Of
+// `/api/v1/problems/move-too-soon`, `can_move_at` says from when the account can move again;
+// another 422 has none.
+type MoveProblem struct {
+	// CanMoveAt When the account can move again, 30 days after its last move.
+	CanMoveAt *time.Time `json:"can_move_at,omitempty"`
+
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type                 string                 `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
 // MuteAccountRequest The settings of a mute.
 type MuteAccountRequest struct {
 	// Duration How long the mute lasts, in seconds; 0 mutes until unmuted.
@@ -15794,7 +15834,9 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/move-target-unavailable` (422): the account to move to is the user's
 //     own, is not found, cannot be fetched from its server, or is suspended here.
 //   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
-//     or moved to that account before.
+//     also counting a canceled move; `can_move_at` says from when it can move again.
+//   - `/api/v1/problems/move-repeated` (422): the user's account moved to that account before,
+//     and it moves to an account once.
 //   - `/api/v1/problems/maintenance` (503): the server is under maintenance and
 //     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
 //     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
@@ -20874,6 +20916,158 @@ func (a LoginProviderProblem) MarshalJSON() ([]byte, error) {
 	return json.Marshal(object)
 }
 
+// Getter for additional properties for MoveProblem. Returns the specified
+// element and whether it was found
+func (a MoveProblem) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for MoveProblem
+func (a *MoveProblem) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for MoveProblem to handle AdditionalProperties
+func (a *MoveProblem) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["can_move_at"]; found {
+		err = json.Unmarshal(raw, &a.CanMoveAt)
+		if err != nil {
+			return fmt.Errorf("error reading 'can_move_at': %w", err)
+		}
+		delete(object, "can_move_at")
+	}
+
+	if raw, found := object["detail"]; found {
+		err = json.Unmarshal(raw, &a.Detail)
+		if err != nil {
+			return fmt.Errorf("error reading 'detail': %w", err)
+		}
+		delete(object, "detail")
+	}
+
+	if raw, found := object["field"]; found {
+		err = json.Unmarshal(raw, &a.Field)
+		if err != nil {
+			return fmt.Errorf("error reading 'field': %w", err)
+		}
+		delete(object, "field")
+	}
+
+	if raw, found := object["request_id"]; found {
+		err = json.Unmarshal(raw, &a.RequestId)
+		if err != nil {
+			return fmt.Errorf("error reading 'request_id': %w", err)
+		}
+		delete(object, "request_id")
+	}
+
+	if raw, found := object["status"]; found {
+		err = json.Unmarshal(raw, &a.Status)
+		if err != nil {
+			return fmt.Errorf("error reading 'status': %w", err)
+		}
+		delete(object, "status")
+	}
+
+	if raw, found := object["title"]; found {
+		err = json.Unmarshal(raw, &a.Title)
+		if err != nil {
+			return fmt.Errorf("error reading 'title': %w", err)
+		}
+		delete(object, "title")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for MoveProblem to handle AdditionalProperties
+func (a MoveProblem) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.CanMoveAt != nil {
+		object["can_move_at"], err = json.Marshal(a.CanMoveAt)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'can_move_at': %w", err)
+		}
+	}
+
+	if a.Detail != nil {
+		object["detail"], err = json.Marshal(a.Detail)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'detail': %w", err)
+		}
+	}
+
+	if a.Field != nil {
+		object["field"], err = json.Marshal(a.Field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'field': %w", err)
+		}
+	}
+
+	if a.RequestId != nil {
+		object["request_id"], err = json.Marshal(a.RequestId)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'request_id': %w", err)
+		}
+	}
+
+	object["status"], err = json.Marshal(a.Status)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'status': %w", err)
+	}
+
+	object["title"], err = json.Marshal(a.Title)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'title': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
 // Getter for additional properties for Problem. Returns the specified
 // element and whether it was found
 func (a Problem) Get(fieldName string) (value interface{}, found bool) {
@@ -22421,7 +22615,9 @@ type ClientInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was canceled, or for a target the account moved to before. An account that may not
+	// move was canceled, with `can_move_at`, and `/api/v1/problems/move-repeated` for a target the
+	// account moved to before. `CredentialAccount.can_move_at` says beforehand from when the
+	// account can move again. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -22459,7 +22655,9 @@ type ClientInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was canceled, or for a target the account moved to before. An account that may not
+	// move was canceled, with `can_move_at`, and `/api/v1/problems/move-repeated` for a target the
+	// account moved to before. `CredentialAccount.can_move_at` says beforehand from when the
+	// account can move again. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -30204,7 +30402,9 @@ func (c *Client) CancelOwnAccountMove(ctx context.Context, reqEditors ...Request
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was canceled, or for a target the account moved to before. An account that may not
+// move was canceled, with `can_move_at`, and `/api/v1/problems/move-repeated` for a target the
+// account moved to before. `CredentialAccount.can_move_at` says beforehand from when the
+// account can move again. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -30252,7 +30452,9 @@ func (c *Client) MoveOwnAccountWithBody(ctx context.Context, contentType string,
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was canceled, or for a target the account moved to before. An account that may not
+// move was canceled, with `can_move_at`, and `/api/v1/problems/move-repeated` for a target the
+// account moved to before. `CredentialAccount.can_move_at` says beforehand from when the
+// account can move again. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -64749,7 +64951,9 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was canceled, or for a target the account moved to before. An account that may not
+	// move was canceled, with `can_move_at`, and `/api/v1/problems/move-repeated` for a target the
+	// account moved to before. `CredentialAccount.can_move_at` says beforehand from when the
+	// account can move again. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -64787,7 +64991,9 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was canceled, or for a target the account moved to before. An account that may not
+	// move was canceled, with `can_move_at`, and `/api/v1/problems/move-repeated` for a target the
+	// account moved to before. `CredentialAccount.can_move_at` says beforehand from when the
+	// account can move again. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -73396,6 +73602,12 @@ func (r CancelOwnAccountMoveResponse) ContentType() string {
 	return ""
 }
 
+// MoveOwnAccountResponse422Headers the declared response headers of an HTTP 422 response for MoveOwnAccount
+type MoveOwnAccountResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
 // MoveOwnAccountResponseDefaultHeaders the declared response headers of an HTTP default response for MoveOwnAccount
 type MoveOwnAccountResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -73407,10 +73619,19 @@ type MoveOwnAccountResponseDefaultHeaders struct {
 type MoveOwnAccountResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *MoveProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *MoveOwnAccountResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *MoveOwnAccountResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r MoveOwnAccountResponse) GetApplicationproblemJSON422() *MoveProblem {
+	return r.ApplicationproblemJSON422
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -103818,7 +104039,9 @@ func (c *ClientWithResponses) CancelOwnAccountMoveWithResponse(ctx context.Conte
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was canceled, or for a target the account moved to before. An account that may not
+// move was canceled, with `can_move_at`, and `/api/v1/problems/move-repeated` for a target the
+// account moved to before. `CredentialAccount.can_move_at` says beforehand from when the
+// account can move again. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -103862,7 +104085,9 @@ func (c *ClientWithResponses) MoveOwnAccountWithBodyWithResponse(ctx context.Con
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was canceled, or for a target the account moved to before. An account that may not
+// move was canceled, with `can_move_at`, and `/api/v1/problems/move-repeated` for a target the
+// account moved to before. `CredentialAccount.can_move_at` says beforehand from when the
+// account can move again. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -116171,6 +116396,13 @@ func ParseMoveOwnAccountResponse(rsp *http.Response) (*MoveOwnAccountResponse, e
 	case rsp.StatusCode == 204:
 		break // No content-type
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest MoveProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -116181,6 +116413,23 @@ func ParseMoveOwnAccountResponse(rsp *http.Response) (*MoveOwnAccountResponse, e
 	}
 
 	switch {
+	case rsp.StatusCode == 422:
+		var headers MoveOwnAccountResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
 	case true:
 		var headers MoveOwnAccountResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {

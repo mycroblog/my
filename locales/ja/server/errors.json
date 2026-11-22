@@ -760,8 +760,12 @@
     "description": "API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server."
   },
   "errors.move_too_soon": {
-    "defaultMessage": "アカウントは、前回の移転から 30 日たつと再び移転できます。以前に移転したことのあるアカウントには移転できません。",
-    "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before."
+    "defaultMessage": "このアカウントは 30 日以内に移転しています (取り消した移転も数えます)。その移転から 30 日たってから、もう一度試してください。",
+    "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move, also a cancelled one; the problem carries the time from which it can move again."
+  },
+  "errors.move_repeated": {
+    "defaultMessage": "このアカウントは以前にそのアカウントへ移転しています。同じアカウントへは一度しか移転できません。別のアカウントを選んでください。",
+    "description": "API error title for HTTP 422 when a user moves their account to an account it moved to before (also if that move was cancelled); an account moves to each account once."
   },
   "errors.voice.not_eligible": {
     "defaultMessage": "通話のルームを開く権限がありません。",

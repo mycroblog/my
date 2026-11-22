@@ -451,6 +451,10 @@
     "defaultMessage": "[Ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ ŧǿǿ ḿǿǿṽḗḗ ŧǿǿ ḓǿǿḗḗş ƞǿǿŧ ŀīşŧ ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ȧȧş ȧȧƞ ȧȧŀīȧȧş. Ȧḓḓ ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ȧȧş ȧȧƞ ȧȧŀīȧȧş ǿǿƞ ŧħȧȧŧ ȧȧƈƈǿǿŭŭƞŧ ƒīřşŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.move_repeated": {
+    "defaultMessage": "[Ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ḿǿǿṽḗḗḓ ŧǿǿ ŧħȧȧŧ ȧȧƈƈǿǿŭŭƞŧ ƀḗḗƒǿǿřḗḗ, ȧȧƞḓ īŧ ƈȧȧƞ ḿǿǿṽḗḗ ŧǿǿ ḗḗȧȧƈħ ȧȧƈƈǿǿŭŭƞŧ ǿǿƞŀẏ ǿǿƞƈḗḗ. Ƈħǿǿǿǿşḗḗ ȧȧƞǿǿŧħḗḗř ȧȧƈƈǿǿŭŭƞŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.move_target_moved": {
     "defaultMessage": "[Ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ ŧǿǿ ḿǿǿṽḗḗ ŧǿǿ ħȧȧş ḿǿǿṽḗḗḓ īŧşḗḗŀƒ. Ḿǿǿṽḗḗ ŧǿǿ ŧħḗḗ ȧȧƈƈǿǿŭŭƞŧ īŧ ḿǿǿṽḗḗḓ ŧǿǿ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -460,7 +464,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.move_too_soon": {
-    "defaultMessage": "[Ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ƈȧȧƞ ḿǿǿṽḗḗ ȧȧɠȧȧīƞ 30 ḓȧȧẏş ȧȧƒŧḗḗř īŧş ŀȧȧşŧ ḿǿǿṽḗḗ, ȧȧƞḓ ƞǿǿŧ ŧǿǿ ȧȧƞ ȧȧƈƈǿǿŭŭƞŧ īŧ ḿǿǿṽḗḗḓ ŧǿǿ ƀḗḗƒǿǿřḗḗ.]",
+    "defaultMessage": "[Ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ḿǿǿṽḗḗḓ ŀḗḗşş ŧħȧȧƞ 30 ḓȧȧẏş ȧȧɠǿǿ, ƈǿǿŭŭƞŧīƞɠ ȧȧ ƈȧȧƞƈḗḗŀŀḗḗḓ ḿǿǿṽḗḗ ŧǿǿǿǿ. Ŧřẏ ȧȧɠȧȧīƞ ǿǿƞƈḗḗ 30 ḓȧȧẏş ħȧȧṽḗḗ ƥȧȧşşḗḗḓ şīƞƈḗḗ ŧħȧȧŧ ḿǿǿṽḗḗ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.not_found": {

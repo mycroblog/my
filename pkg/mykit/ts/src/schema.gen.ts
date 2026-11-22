@@ -830,7 +830,9 @@ export interface paths {
          *     `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
          *     cannot be fetched, or is suspended here (it or its server), and
          *     `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-         *     move was canceled, or for a target the account moved to before. An account that may not
+         *     move was canceled, with `can_move_at`, and `/api/v1/problems/move-repeated` for a target the
+         *     account moved to before. `CredentialAccount.can_move_at` says beforehand from when the
+         *     account can move again. An account that may not
          *     move (under a moderation action that stops it, say) is a 403
          *     `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
          *     hour for the user, past which the answer is 429.
@@ -12143,6 +12145,18 @@ export interface components {
          * @enum {string}
          */
         InvitesNotAllowedReason: "registration_closed" | "not_permitted" | "not_approved" | "restricted";
+        /**
+         * @description The problem of a refused move of the user's account (422). Of
+         *     `/api/v1/problems/move-too-soon`, `can_move_at` says from when the account can move again;
+         *     another 422 has none.
+         */
+        MoveProblem: components["schemas"]["Problem"] & {
+            /**
+             * Format: date-time
+             * @description When the account can move again, 30 days after its last move.
+             */
+            can_move_at?: string;
+        };
         /** @description An invite that the user created as a member, which always has a limit of uses and an expiry. */
         OwnInvite: {
             id: components["schemas"]["Id"];
@@ -14363,6 +14377,18 @@ export interface components {
              *     leaves out.
              */
             follow_requests_count: number;
+            /**
+             * Format: date-time
+             * @description When the account last moved to another account, also when that move was canceled;
+             *     omitted when it never moved.
+             */
+            last_moved_at?: string;
+            /**
+             * Format: date-time
+             * @description From when the account can move again, 30 days after its last move; omitted when it
+             *     can move now.
+             */
+            can_move_at?: string;
             /**
              * @description The permissions that the user's roles grant, which the admin operations need; empty
              *     for a user without roles. Clients show the admin screens by them; the server checks
@@ -17941,7 +17967,9 @@ export interface components {
          *     - `/api/v1/problems/move-target-unavailable` (422): the account to move to is the user's
          *       own, is not found, cannot be fetched from its server, or is suspended here.
          *     - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
-         *       or moved to that account before.
+         *       also counting a canceled move; `can_move_at` says from when it can move again.
+         *     - `/api/v1/problems/move-repeated` (422): the user's account moved to that account before,
+         *       and it moves to an account once.
          *     - `/api/v1/problems/maintenance` (503): the server is under maintenance and
          *       answers every operation with this problem and `Retry-After`. Keep the tokens, show the
          *       maintenance, and retry after `Retry-After`. Its members besides the standard ones,
@@ -20522,6 +20550,18 @@ export interface components {
                 "application/problem+json": components["schemas"]["InvitesNotAllowedProblem"];
             };
         };
+        /** @description The move is refused; nothing moved. */
+        MoveProblem: {
+            headers: {
+                /** @description The locale of `title` and `detail`. */
+                "Content-Language"?: string;
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["MoveProblem"];
+            };
+        };
         /** @description The OAuth app. */
         OAuthApp: {
             headers: {
@@ -22100,6 +22140,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            422: components["responses"]["MoveProblem"];
             default: components["responses"]["Problem"];
         };
     };
