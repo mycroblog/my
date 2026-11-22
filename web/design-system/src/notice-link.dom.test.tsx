@@ -16,7 +16,7 @@ import { UndoNotice } from "./composer";
 /** `children` under the app's navigation; `went` holds where a link asked to go, in order. */
 function navigating(children: ReactNode) {
   const went: string[] = [];
-  render(<RouterProvider navigate={(to) => went.push(String(to))}>{children}</RouterProvider>);
+  render(<RouterProvider navigate={(to) => went.push(to)}>{children}</RouterProvider>);
   return { user: userEvent.setup(), went };
 }
 
@@ -44,9 +44,9 @@ test("the notice at the bottom of the page offers its link too", () => {
     </UndoNotice>,
   );
 
-  expect(
-    within(screen.getByRole("status")).getByRole("link", { name: "Account status" }).getAttribute("href"),
-  ).toBe("/settings/account/status");
+  expect(within(screen.getByRole("status")).getByRole("link", { name: "Account status" }).getAttribute("href")).toBe(
+    "/settings/account/status",
+  );
 });
 
 test("a notice with an action to call and no address still offers a button, and no link", async () => {

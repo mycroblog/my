@@ -44,14 +44,16 @@ async function timeline() {
   const went: string[] = [];
   const user = renderFeature(
     made.data,
-    <NavigationProvider navigate={(to) => went.push(String(to))}>
+    <NavigationProvider navigate={(to) => went.push(to)}>
       <PostActions onCompose={() => undefined}>
         <HomeTimeline />
       </PostActions>
     </NavigationProvider>,
   );
   const post = () => {
-    const found = screen.getAllByRole("article").find((article) => within(article).queryAllByText("Which loaves?").length > 0);
+    const found = screen
+      .getAllByRole("article")
+      .find((article) => within(article).queryAllByText("Which loaves?").length > 0);
     if (found === undefined) throw new Error("test: the timeline shows no post of sam's poll");
     return within(found);
   };
@@ -125,7 +127,9 @@ const actions: readonly Action[] = [
     route: "POST /statuses/{id}/bookmark",
     press: async ({ user, post }) => {
       await user.click(post().getByRole("button", { name: "More" }));
-      await user.click(within(await screen.findByRole("menu", { name: "More" })).getByRole("menuitem", { name: "Bookmark" }));
+      await user.click(
+        within(await screen.findByRole("menu", { name: "More" })).getByRole("menuitem", { name: "Bookmark" }),
+      );
     },
   },
 ];
@@ -159,7 +163,9 @@ describe.each(actions)("$name", ({ route, press }) => {
     await press(drawn);
 
     const notice = await waitFor(() => {
-      const found = screen.queryAllByRole("status").find((region) => within(region).queryAllByRole("button").length > 0);
+      const found = screen
+        .queryAllByRole("status")
+        .find((region) => within(region).queryAllByRole("button").length > 0);
       if (found === undefined) throw new Error("test: no status offers an action");
       return found;
     });

@@ -55,17 +55,12 @@ function composer({
   function Composing() {
     const c = useComposer(initial, { onPosted: none, onKept: none }, phase);
     return (
-      <ComposerView
-        c={c}
-        layer={false}
-        onClose={() => left.push("close")}
-        onDismiss={() => left.push("dismiss")}
-      />
+      <ComposerView c={c} layer={false} onClose={() => left.push("close")} onDismiss={() => left.push("dismiss")} />
     );
   }
   const user = renderFeature(
     on.data,
-    <NavigationProvider navigate={(to) => went.push(String(to))}>
+    <NavigationProvider navigate={(to) => went.push(to)}>
       <Composing />
     </NavigationProvider>,
     locale,

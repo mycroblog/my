@@ -34,7 +34,7 @@ function drawnOn(made: FakeData, children: ReactNode) {
   const went: string[] = [];
   const user = renderFeature(
     made.data,
-    <NavigationProvider navigate={(to) => went.push(String(to))}>
+    <NavigationProvider navigate={(to) => went.push(to)}>
       <PostActions onCompose={() => undefined}>{children}</PostActions>
     </NavigationProvider>,
   );
