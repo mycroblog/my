@@ -130,7 +130,9 @@ const table = tv({
 const mark = tv({
   base: [
     "box-border size-form-page-check rounded-[3px] border-[length:var(--composer-mark-line)] border-solid",
-    "peer-focus-visible:shadow-focus peer-enabled:peer-active:translate-y-press",
+    // The shift on press makes the mark a layer of its own over the checkbox, which takes the press, so the mark
+    // never takes the pointer itself.
+    "pointer-events-none peer-focus-visible:shadow-focus peer-enabled:peer-active:translate-y-press",
   ],
   variants: {
     on: { true: "text-surface", false: "" },
