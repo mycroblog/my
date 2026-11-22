@@ -55,7 +55,7 @@ test("an event's line is one link to it, named by its date, its title, its state
       places={[{ kind: "physical", label: "In person" }]}
       organizer="By Aoi"
       going={{ shown: "4", label: "4 going" }}
-      state={{ kind: "cancelled", label: "Cancelled" }}
+      state={{ kind: "canceled", label: "Cancelled" }}
     />,
   );
 

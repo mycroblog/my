@@ -499,7 +499,7 @@
     "defaultMessage": "未定",
     "description": "In a report's facts of an event that has no date yet."
   },
-  "staff.report.event.cancelled": {
+  "staff.report.event.canceled": {
     "defaultMessage": "中止",
     "description": "The term, in a report's facts, of who or what cancelled the event it points at."
   },
@@ -515,11 +515,11 @@
     "defaultMessage": "イベントの変更",
     "description": "The heading, and the name for assistive technology, of the log of the changes of the event a report points at."
   },
-  "staff.report.event.cancelled_by": {
+  "staff.report.event.canceled_by": {
     "defaultMessage": "{reason, select, moderator {モデレーターによる} organizer_suspended {主催者の凍結による} organizer_deleted {主催者の削除による} other {主催者による}}",
     "description": "In a report's facts of a cancelled event: who or what cancelled it."
   },
-  "staff.report.event.cancelled_at": {
+  "staff.report.event.canceled_at": {
     "defaultMessage": "中止の日時",
     "description": "The term, in a report's facts, of when the event it points at was cancelled."
   },

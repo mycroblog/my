@@ -429,8 +429,8 @@ test("a post refused as the board closed meanwhile reads the event again, and th
   app.fake.script("GET /events/{id}", {
     change: (event) => ({
       ...event,
-      state: "cancelled" as const,
-      cancellation: { reason: "organizer" as const, cancelled_at: new Date().toISOString() },
+      state: "canceled" as const,
+      cancellation: { reason: "organizer" as const, canceled_at: new Date().toISOString() },
       viewer: { ...event.viewer, board: { readable: true, writable: false } },
     }),
   });

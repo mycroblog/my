@@ -383,7 +383,7 @@ func endsRoom(t *testing.T, e *roomEnv) {
 		t.Errorf("ends = %+v, want %+v", e.rooms.ends, want)
 	}
 
-	// An event cancelled before its start opens no room.
+	// An event canceled before its start opens no room.
 	c := e.createLater(t, voiceSettings(gathering.VisibilityPublic))
 	e.drain(t)
 	if _, err := e.svc.Cancel(t.Context(), alice, c.ID, ""); err != nil {
@@ -392,6 +392,6 @@ func endsRoom(t *testing.T, e *roomEnv) {
 	e.drain(t)
 	e.at(t, c.Confirmation.Schedule.StartsAt.Add(time.Minute))
 	if _, ok := e.rooms.opened[appgathering.RoomKey(c.ID, c.Confirmation.ID)]; ok {
-		t.Error("a cancelled event opened its room")
+		t.Error("a canceled event opened its room")
 	}
 }

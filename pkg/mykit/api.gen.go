@@ -335,7 +335,7 @@ const (
 	AdminAuditActionDomainListSubscriptionUpdated   AdminAuditAction = "domain_list_subscription_updated"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
-	AdminAuditActionEventCancelled                  AdminAuditAction = "event_cancelled"
+	AdminAuditActionEventCanceled                   AdminAuditAction = "event_canceled"
 	AdminAuditActionHookAppealUpheld                AdminAuditAction = "hook_appeal_upheld"
 	AdminAuditActionHookDecisionApplied             AdminAuditAction = "hook_decision_applied"
 	AdminAuditActionHookDecisionOverridden          AdminAuditAction = "hook_decision_overridden"
@@ -498,7 +498,7 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
 		return true
-	case AdminAuditActionEventCancelled:
+	case AdminAuditActionEventCanceled:
 		return true
 	case AdminAuditActionHookAppealUpheld:
 		return true
@@ -2275,14 +2275,14 @@ func (e DraftFailureReason) Valid() bool {
 
 // Defines values for DraftScheduleOutcomeOutcome.
 const (
-	DraftScheduleOutcomeOutcomeCancelled DraftScheduleOutcomeOutcome = "cancelled"
-	DraftScheduleOutcomeOutcomeFailed    DraftScheduleOutcomeOutcome = "failed"
+	DraftScheduleOutcomeOutcomeCanceled DraftScheduleOutcomeOutcome = "canceled"
+	DraftScheduleOutcomeOutcomeFailed   DraftScheduleOutcomeOutcome = "failed"
 )
 
 // Valid indicates whether the value is a known member of the DraftScheduleOutcomeOutcome enum.
 func (e DraftScheduleOutcomeOutcome) Valid() bool {
 	switch e {
-	case DraftScheduleOutcomeOutcomeCancelled:
+	case DraftScheduleOutcomeOutcomeCanceled:
 		return true
 	case DraftScheduleOutcomeOutcomeFailed:
 		return true
@@ -2563,7 +2563,7 @@ func (e EventRoomUnavailableReason) Valid() bool {
 
 // Defines values for EventState.
 const (
-	EventStateCancelled   EventState = "cancelled"
+	EventStateCanceled    EventState = "canceled"
 	EventStateScheduled   EventState = "scheduled"
 	EventStateUnscheduled EventState = "unscheduled"
 )
@@ -2571,7 +2571,7 @@ const (
 // Valid indicates whether the value is a known member of the EventState enum.
 func (e EventState) Valid() bool {
 	switch e {
-	case EventStateCancelled:
+	case EventStateCanceled:
 		return true
 	case EventStateScheduled:
 		return true
@@ -4238,7 +4238,7 @@ const (
 	NotificationTypeBoostRequest               NotificationType = "boost_request"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
 	NotificationTypeEventBoardPosted           NotificationType = "event_board_posted"
-	NotificationTypeEventCancelled             NotificationType = "event_cancelled"
+	NotificationTypeEventCanceled              NotificationType = "event_canceled"
 	NotificationTypeEventChanged               NotificationType = "event_changed"
 	NotificationTypeEventInvited               NotificationType = "event_invited"
 	NotificationTypeEventReminder              NotificationType = "event_reminder"
@@ -4313,7 +4313,7 @@ func (e NotificationType) Valid() bool {
 		return true
 	case NotificationTypeEventBoardPosted:
 		return true
-	case NotificationTypeEventCancelled:
+	case NotificationTypeEventCanceled:
 		return true
 	case NotificationTypeEventChanged:
 		return true
@@ -6473,7 +6473,7 @@ type AdminAppealPage struct {
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 // `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
 // and left state; the actor is the system), `hook_decision_overridden` (a moderator
-// cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+// canceled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
 // moderator upheld the appeal of a refused post, and the decision stays). On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -6525,7 +6525,7 @@ type AdminAppealPage struct {
 // `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
 // `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
 // that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
-// the `system` as the actor. On an `event`: `event_cancelled`, a moderator's cancellation of
+// the `system` as the actor. On an `event`: `event_canceled`, a moderator's cancellation of
 // the event; the ID and the label are the event's ID.
 type AdminAuditAction string
 
@@ -6568,7 +6568,7 @@ type AdminAuditEntry struct {
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 	// `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
 	// and left state; the actor is the system), `hook_decision_overridden` (a moderator
-	// cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+	// canceled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
 	// moderator upheld the appeal of a refused post, and the decision stays). On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -6620,7 +6620,7 @@ type AdminAuditEntry struct {
 	// `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
 	// `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
 	// that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
-	// the `system` as the actor. On an `event`: `event_cancelled`, a moderator's cancellation of
+	// the `system` as the actor. On an `event`: `event_canceled`, a moderator's cancellation of
 	// the event; the ID and the label are the event's ID.
 	Action AdminAuditAction `json:"action"`
 
@@ -7237,22 +7237,22 @@ type AdminDomainListSuspendAs string
 
 // AdminEventCancel A moderator cancelling an event.
 type AdminEventCancel struct {
-	// Reason Why the event is cancelled, as plain text of up to 500 characters. The event shows it
+	// Reason Why the event is canceled, as plain text of up to 500 characters. The event shows it
 	// with its cancellation to everyone who sees the event.
 	Reason *string `json:"reason,omitempty"`
 }
 
 // AdminEventCancellation The cancellation of an event as the moderators see it.
 type AdminEventCancellation struct {
-	CancelledAt time.Time `json:"cancelled_at"`
+	CanceledAt time.Time `json:"canceled_at"`
 
-	// CancelledByAccountId Who cancelled the event; omitted for an automatic cancellation.
-	CancelledByAccountId *Id `json:"cancelled_by_account_id,omitempty"`
+	// CanceledByAccountId Who canceled the event; omitted for an automatic cancellation.
+	CanceledByAccountId *Id `json:"canceled_by_account_id,omitempty"`
 
 	// Note The reason given for the cancellation; omitted for none.
 	Note *string `json:"note,omitempty"`
 
-	// Reason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+	// Reason Why an event was canceled: by its `organizer`, by a `moderator`, or because the organizer was
 	// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
 	Reason EventCancelReason `json:"reason"`
 }
@@ -7336,7 +7336,7 @@ type AdminHookAppeal struct {
 	Id Id `json:"id"`
 
 	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
-	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+	// `upheld` when the refusal stays, `overturned` when the moderator canceled it. After
 	// `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
 	// post is not restored.
 	State HookAppealState `json:"state"`
@@ -7390,7 +7390,7 @@ type AdminHookDecision struct {
 	// something. A `reject` of `local.status` goes through its appeal instead.
 	Overridable bool `json:"overridable"`
 
-	// OverriddenAt When a moderator cancelled the decision; absent while it stands.
+	// OverriddenAt When a moderator canceled the decision; absent while it stands.
 	OverriddenAt *time.Time `json:"overridden_at,omitempty"`
 
 	// Reason The coded reason of a verdict.
@@ -8166,7 +8166,7 @@ type AdminReportDetail struct {
 // date, its cancellation, and every revision of its settings with all its places, whoever the
 // places were shown to. `reported_revision_id` is the revision that the reporter saw.
 type AdminReportEvent struct {
-	// Cancellation How the event was cancelled; omitted while it is not.
+	// Cancellation How the event was canceled; omitted while it is not.
 	Cancellation *AdminEventCancellation `json:"cancellation,omitempty"`
 	CreatedAt    time.Time               `json:"created_at"`
 
@@ -8193,7 +8193,7 @@ type AdminReportEvent struct {
 	StartsAt *time.Time `json:"starts_at,omitempty"`
 
 	// State Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
-	// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+	// `scheduled`, or `canceled`. An event that ended is still `scheduled`: its `ends_at` is in the
 	// past.
 	State EventState `json:"state"`
 }
@@ -11405,7 +11405,7 @@ type DraftScheduleOutcome struct {
 	// OccurredAt When the schedule ended.
 	OccurredAt time.Time `json:"occurred_at"`
 
-	// Outcome `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+	// Outcome `canceled`: the user canceled the schedule or scheduled another time. `failed`: the post
 	// could not be published at its time, for `reason`.
 	Outcome DraftScheduleOutcomeOutcome `json:"outcome"`
 
@@ -11422,7 +11422,7 @@ type DraftScheduleOutcome struct {
 	Reason *DraftFailureReason `json:"reason,omitempty"`
 }
 
-// DraftScheduleOutcomeOutcome `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+// DraftScheduleOutcomeOutcome `canceled`: the user canceled the schedule or scheduled another time. `failed`: the post
 // could not be published at its time, for `reason`.
 type DraftScheduleOutcomeOutcome string
 
@@ -11772,7 +11772,7 @@ type Event struct {
 	StartsAt time.Time `json:"starts_at"`
 
 	// State Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
-	// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+	// `scheduled`, or `canceled`. An event that ended is still `scheduled`: its `ends_at` is in the
 	// past.
 	State EventState `json:"state"`
 
@@ -11844,7 +11844,7 @@ type EventBoardAccess struct {
 
 	// Writable Whether the user may post on the board and edit their posts on it now: the event's
 	// `board_writers` admit the user, and the board is not read-only. The board is read-only once
-	// the event is cancelled, and from 7 days after its end (for an `unscheduled` event, the end of
+	// the event is canceled, and from 7 days after its end (for an `unscheduled` event, the end of
 	// its last candidate date, its `ends_at`).
 	Writable bool `json:"writable"`
 }
@@ -11889,7 +11889,7 @@ type EventBoardPostCreate struct {
 // answer `going` or `maybe`.
 type EventBoardWriters string
 
-// EventCancelReason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+// EventCancelReason Why an event was canceled: by its `organizer`, by a `moderator`, or because the organizer was
 // suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
 type EventCancelReason string
 
@@ -11901,12 +11901,12 @@ type EventCancelRequest struct {
 
 // EventCancellation The cancellation of an event.
 type EventCancellation struct {
-	CancelledAt time.Time `json:"cancelled_at"`
+	CanceledAt time.Time `json:"canceled_at"`
 
 	// Note The reason given for the cancellation; omitted for none.
 	Note *string `json:"note,omitempty"`
 
-	// Reason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+	// Reason Why an event was canceled: by its `organizer`, by a `moderator`, or because the organizer was
 	// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
 	Reason EventCancelReason `json:"reason"`
 }
@@ -12098,7 +12098,7 @@ type EventRemindersUpdate struct {
 type EventRoomUnavailableReason string
 
 // EventState Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
-// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+// `scheduled`, or `canceled`. An event that ended is still `scheduled`: its `ends_at` is in the
 // past.
 type EventState string
 
@@ -12472,7 +12472,7 @@ type Hashtag struct {
 }
 
 // HookAppealState Where an appeal of a refused post stands: `pending` until a moderator decides it,
-// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+// `upheld` when the refusal stays, `overturned` when the moderator canceled it. After
 // `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
 // post is not restored.
 type HookAppealState string
@@ -14568,7 +14568,7 @@ type Notification struct {
 	// user answered or to which the user was invited, once per date; `event_changed` that the date,
 	// the places, or the voice chat room of an event that the user answered going or maybe to, or was
 	// invited to, changed, once per change (a change of the title or the description sends
-	// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+	// nothing); `event_canceled` that such an event was canceled; `event_reminder` that an event
 	// that the user answered going or maybe to starts soon, at each time before the start that the
 	// user chose (`getEventReminders`), once per date and time, and never for a date that changed
 	// since; `event_started` that it starts now, once per date; `event_room_unavailable` tells
@@ -14985,7 +14985,7 @@ type NotificationSettingsUpdateChangesChannel string
 // user answered or to which the user was invited, once per date; `event_changed` that the date,
 // the places, or the voice chat room of an event that the user answered going or maybe to, or was
 // invited to, changed, once per change (a change of the title or the description sends
-// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+// nothing); `event_canceled` that such an event was canceled; `event_reminder` that an event
 // that the user answered going or maybe to starts soon, at each time before the start that the
 // user chose (`getEventReminders`), once per date and time, and never for a date that changed
 // since; `event_started` that it starts now, once per date; `event_room_unavailable` tells
@@ -15184,7 +15184,7 @@ type OwnHookAppeal struct {
 	Id Id `json:"id"`
 
 	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
-	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+	// `upheld` when the refusal stays, `overturned` when the moderator canceled it. After
 	// `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
 	// post is not restored.
 	State       HookAppealState `json:"state"`
@@ -15901,7 +15901,7 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-not-organizer` (403): the operation is for the organizer and the
 //     co-organizers of the event.
 //   - `/api/v1/problems/event-organizer-only` (403): the operation is for the organizer of the event.
-//   - `/api/v1/problems/event-closed` (409): the event was cancelled, or has started for an answer.
+//   - `/api/v1/problems/event-closed` (409): the event was canceled, or has started for an answer.
 //   - `/api/v1/problems/event-full` (409): the attendees who answer `going` reached the capacity.
 //   - `/api/v1/problems/event-voice-unavailable` (422): the event cannot be held in a voice chat
 //     room: the voice chat is off, or its organizer may not host rooms.
@@ -15918,7 +15918,7 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the
 //     user post on its board.
 //   - `/api/v1/problems/event-board-closed` (409): the board of the event is read-only: the event was
-//     cancelled, or 7 days have passed since its end (it is writable for the 7 days after the end).
+//     canceled, or 7 days have passed since its end (it is writable for the 7 days after the end).
 //   - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
 //   - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
 //     takes no more candidates, answers, or confirmations.
@@ -24457,7 +24457,7 @@ type ClientInterface interface {
 	//
 	// Cancels an event with an optional reason, which the event shows with its cancellation, and
 	// notifies the users who answered going or maybe and the invited users. Recorded in the audit
-	// log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+	// log (`event_canceled`). An unknown event is a 404, an event canceled already a 409
 	// `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
 	// `manage_reports` permission.
 	//
@@ -24470,7 +24470,7 @@ type ClientInterface interface {
 	//
 	// Cancels an event with an optional reason, which the event shows with its cancellation, and
 	// notifies the users who answered going or maybe and the invited users. Recorded in the audit
-	// log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+	// log (`event_canceled`). An unknown event is a 404, an event canceled already a 409
 	// `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
 	// `manage_reports` permission.
 	//
@@ -24544,7 +24544,7 @@ type ClientInterface interface {
 	// OverrideHookDecision Cancel a decision
 	//
 	// Records the cancellation as its own event and in the audit log, and undoes what the hook
-	// can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+	// can: what happens depends on the verdict. Cancelling a canceled decision again changes
 	// nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
 	// a `reject` of `local.status`, which goes through its appeal, is a 409
 	// `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
@@ -26929,7 +26929,7 @@ type ClientInterface interface {
 	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 	// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
-	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event. Invalid settings are a 422.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -26942,7 +26942,7 @@ type ClientInterface interface {
 	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 	// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
-	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event. Invalid settings are a 422.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -26961,7 +26961,7 @@ type ClientInterface interface {
 	//
 	// Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
 	// did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
-	// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Corresponds with DELETE /events/{id}/attendees/{account_id}/approval (the `RevokeEventAttendeeApproval` operationId).
 	RevokeEventAttendeeApproval(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -26973,7 +26973,7 @@ type ClientInterface interface {
 	// the approved. An approval ends when the attendee answers `declined`. A 422
 	// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
 	// 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
-	// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 	ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -26998,7 +26998,7 @@ type ClientInterface interface {
 	// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
 	// user who sees the event but does not read its board, a 403
 	// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-	// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+	// 409 `/api/v1/problems/event-board-closed` once the event is canceled, and from 7 days
 	// after its end. The post is checked as `createStatus` checks a new status, and retrying with
 	// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
 	// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
@@ -27014,7 +27014,7 @@ type ClientInterface interface {
 	// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
 	// user who sees the event but does not read its board, a 403
 	// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-	// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+	// 409 `/api/v1/problems/event-board-closed` once the event is canceled, and from 7 days
 	// after its end. The post is checked as `createStatus` checks a new status, and retrying with
 	// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
 	// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
@@ -27029,7 +27029,7 @@ type ClientInterface interface {
 	// The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
 	// the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
 	// updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
-	// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+	// zone; `SEQUENCE` is the number of revisions of the settings; a canceled event has
 	// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
 	// user sees: a hidden place never appears in the file. A 404 for an event that the user does
 	// not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
@@ -27041,7 +27041,7 @@ type ClientInterface interface {
 	//
 	// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
 	// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
-	// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+	// A 409 `/api/v1/problems/event-closed` for an event canceled already.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -27052,7 +27052,7 @@ type ClientInterface interface {
 	//
 	// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
 	// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
-	// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+	// A 409 `/api/v1/problems/event-closed` for an event canceled already.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -27074,7 +27074,7 @@ type ClientInterface interface {
 	// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
 	// the past are a 422.
 	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 	//
 	// Takes any type of body and a specified content type.
@@ -27088,7 +27088,7 @@ type ClientInterface interface {
 	// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
 	// the past are a 422.
 	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 	//
 	// Takes a body of the `application/json` content type.
@@ -27102,7 +27102,7 @@ type ClientInterface interface {
 	// users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
 	// `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
 	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 	//
 	// Corresponds with DELETE /events/{id}/candidates/{candidate_id} (the `WithdrawEventCandidate` operationId).
@@ -27115,7 +27115,7 @@ type ClientInterface interface {
 	// answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
 	// change of the date is a `PATCH` of the event. A candidate that has started is a 422.
 	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 	//
 	// Corresponds with POST /events/{id}/candidates/{candidate_id}/confirm (the `ConfirmEventCandidate` operationId).
@@ -27127,7 +27127,7 @@ type ClientInterface interface {
 	// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
 	// name to everyone who sees the event and keeps the event visible to the user. A 409
 	// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
-	// `/api/v1/problems/event-closed` for a cancelled event.
+	// `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -27140,7 +27140,7 @@ type ClientInterface interface {
 	// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
 	// name to everyone who sees the event and keeps the event visible to the user. A 409
 	// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
-	// `/api/v1/problems/event-closed` for a cancelled event.
+	// `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -27158,7 +27158,7 @@ type ClientInterface interface {
 	// RemoveEventCoorganizer Remove a co-organizer of an event
 	//
 	// Removes a co-organizer of the event, by its organizer. A 403
-	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Corresponds with DELETE /events/{id}/coorganizers/{account_id} (the `RemoveEventCoorganizer` operationId).
 	RemoveEventCoorganizer(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -27170,7 +27170,7 @@ type ClientInterface interface {
 	// co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
 	// `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
 	// organizer, or is in a block relation with the organizer or a co-organizer. A 403
-	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Corresponds with PUT /events/{id}/coorganizers/{account_id} (the `AssignEventCoorganizer` operationId).
 	AssignEventCoorganizer(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -27190,7 +27190,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
 	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
-	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -27204,7 +27204,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
 	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
-	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -27215,7 +27215,7 @@ type ClientInterface interface {
 	//
 	// Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
 	// only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
-	// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Corresponds with DELETE /events/{id}/invitations/{account_id} (the `RevokeEventInvitation` operationId).
 	RevokeEventInvitation(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -27227,7 +27227,7 @@ type ClientInterface interface {
 	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 	// `declined` are never refused. `declined` ends an approval. A 409
-	// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+	// `/api/v1/problems/event-closed` for an event that started or was canceled, and a 409
 	// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 	//
 	// Takes any type of body and a specified content type.
@@ -27242,7 +27242,7 @@ type ClientInterface interface {
 	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 	// `declined` are never refused. `declined` ends an approval. A 409
-	// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+	// `/api/v1/problems/event-closed` for an event that started or was canceled, and a 409
 	// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 	//
 	// Takes a body of the `application/json` content type.
@@ -33644,7 +33644,7 @@ func (c *Client) UnmuteErrorGroup(ctx context.Context, id ErrorGroupId, reqEdito
 //
 // Cancels an event with an optional reason, which the event shows with its cancellation, and
 // notifies the users who answered going or maybe and the invited users. Recorded in the audit
-// log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+// log (`event_canceled`). An unknown event is a 404, an event canceled already a 409
 // `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
 // `manage_reports` permission.
 //
@@ -33667,7 +33667,7 @@ func (c *Client) CancelEventAsModeratorWithBody(ctx context.Context, id EventId,
 //
 // Cancels an event with an optional reason, which the event shows with its cancellation, and
 // notifies the users who answered going or maybe and the invited users. Recorded in the audit
-// log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+// log (`event_canceled`). An unknown event is a 404, an event canceled already a 409
 // `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
 // `manage_reports` permission.
 //
@@ -33821,7 +33821,7 @@ func (c *Client) GetHookDecision(ctx context.Context, id HookDecisionId, reqEdit
 // OverrideHookDecision Cancel a decision
 //
 // Records the cancellation as its own event and in the audit log, and undoes what the hook
-// can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+// can: what happens depends on the verdict. Cancelling a canceled decision again changes
 // nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
 // a `reject` of `local.status`, which goes through its appeal, is a 409
 // `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
@@ -38096,7 +38096,7 @@ func (c *Client) GetEvent(ctx context.Context, id EventId, reqEditors ...Request
 // on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 // organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
-// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event. Invalid settings are a 422.
 //
 // Takes any type of body and a specified content type.
 //
@@ -38119,7 +38119,7 @@ func (c *Client) UpdateEventWithBody(ctx context.Context, id EventId, contentTyp
 // on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 // organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
-// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event. Invalid settings are a 422.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -38158,7 +38158,7 @@ func (c *Client) ListEventAttendees(ctx context.Context, id EventId, params *Lis
 //
 // Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
 // did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
-// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Corresponds with DELETE /events/{id}/attendees/{account_id}/approval (the `RevokeEventAttendeeApproval` operationId).
 func (c *Client) RevokeEventAttendeeApproval(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38180,7 +38180,7 @@ func (c *Client) RevokeEventAttendeeApproval(ctx context.Context, id EventId, ac
 // the approved. An approval ends when the attendee answers `declined`. A 422
 // `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
 // 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
-// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 func (c *Client) ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38225,7 +38225,7 @@ func (c *Client) ListEventBoard(ctx context.Context, id EventId, params *ListEve
 // post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
 // user who sees the event but does not read its board, a 403
 // `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+// 409 `/api/v1/problems/event-board-closed` once the event is canceled, and from 7 days
 // after its end. The post is checked as `createStatus` checks a new status, and retrying with
 // the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
 // same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
@@ -38251,7 +38251,7 @@ func (c *Client) PostToEventBoardWithBody(ctx context.Context, id EventId, conte
 // post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
 // user who sees the event but does not read its board, a 403
 // `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+// 409 `/api/v1/problems/event-board-closed` once the event is canceled, and from 7 days
 // after its end. The post is checked as `createStatus` checks a new status, and retrying with
 // the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
 // same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
@@ -38276,7 +38276,7 @@ func (c *Client) PostToEventBoard(ctx context.Context, id EventId, body PostToEv
 // The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
 // the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
 // updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
-// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+// zone; `SEQUENCE` is the number of revisions of the settings; a canceled event has
 // `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
 // user sees: a hidden place never appears in the file. A 404 for an event that the user does
 // not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
@@ -38298,7 +38298,7 @@ func (c *Client) GetEventCalendar(ctx context.Context, id EventId, reqEditors ..
 //
 // Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
 // more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
-// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+// A 409 `/api/v1/problems/event-closed` for an event canceled already.
 //
 // Takes any type of body and a specified content type.
 //
@@ -38319,7 +38319,7 @@ func (c *Client) CancelEventWithBody(ctx context.Context, id EventId, contentTyp
 //
 // Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
 // more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
-// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+// A 409 `/api/v1/problems/event-closed` for an event canceled already.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -38361,7 +38361,7 @@ func (c *Client) ListEventCandidates(ctx context.Context, id EventId, reqEditors
 // a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
 // the past are a 422.
 // A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 // `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 //
 // Takes any type of body and a specified content type.
@@ -38385,7 +38385,7 @@ func (c *Client) AddEventCandidateWithBody(ctx context.Context, id EventId, cont
 // a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
 // the past are a 422.
 // A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 // `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 //
 // Takes a body of the `application/json` content type.
@@ -38409,7 +38409,7 @@ func (c *Client) AddEventCandidate(ctx context.Context, id EventId, body AddEven
 // users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
 // `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
 // A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 // `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 //
 // Corresponds with DELETE /events/{id}/candidates/{candidate_id} (the `WithdrawEventCandidate` operationId).
@@ -38432,7 +38432,7 @@ func (c *Client) WithdrawEventCandidate(ctx context.Context, id EventId, candida
 // answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
 // change of the date is a `PATCH` of the event. A candidate that has started is a 422.
 // A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 // `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 //
 // Corresponds with POST /events/{id}/candidates/{candidate_id}/confirm (the `ConfirmEventCandidate` operationId).
@@ -38454,7 +38454,7 @@ func (c *Client) ConfirmEventCandidate(ctx context.Context, id EventId, candidat
 // organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
 // name to everyone who sees the event and keeps the event visible to the user. A 409
 // `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
-// `/api/v1/problems/event-closed` for a cancelled event.
+// `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes any type of body and a specified content type.
 //
@@ -38477,7 +38477,7 @@ func (c *Client) VoteEventCandidateWithBody(ctx context.Context, id EventId, can
 // organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
 // name to everyone who sees the event and keeps the event visible to the user. A 409
 // `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
-// `/api/v1/problems/event-closed` for a cancelled event.
+// `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -38515,7 +38515,7 @@ func (c *Client) ListEventCandidateVotes(ctx context.Context, id EventId, candid
 // RemoveEventCoorganizer Remove a co-organizer of an event
 //
 // Removes a co-organizer of the event, by its organizer. A 403
-// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Corresponds with DELETE /events/{id}/coorganizers/{account_id} (the `RemoveEventCoorganizer` operationId).
 func (c *Client) RemoveEventCoorganizer(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38537,7 +38537,7 @@ func (c *Client) RemoveEventCoorganizer(ctx context.Context, id EventId, account
 // co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
 // `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
 // organizer, or is in a block relation with the organizer or a co-organizer. A 403
-// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Corresponds with PUT /events/{id}/coorganizers/{account_id} (the `AssignEventCoorganizer` operationId).
 func (c *Client) AssignEventCoorganizer(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38577,7 +38577,7 @@ func (c *Client) ListEventInvitations(ctx context.Context, id EventId, params *L
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
 // the event, or is in a block relation with the organizer or a co-organizer. An event sends at
-// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes any type of body and a specified content type.
 //
@@ -38601,7 +38601,7 @@ func (c *Client) InviteToEventWithBody(ctx context.Context, id EventId, contentT
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
 // the event, or is in a block relation with the organizer or a co-organizer. An event sends at
-// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -38622,7 +38622,7 @@ func (c *Client) InviteToEvent(ctx context.Context, id EventId, body InviteToEve
 //
 // Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
 // only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
-// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Corresponds with DELETE /events/{id}/invitations/{account_id} (the `RevokeEventInvitation` operationId).
 func (c *Client) RevokeEventInvitation(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38644,7 +38644,7 @@ func (c *Client) RevokeEventInvitation(ctx context.Context, id EventId, accountI
 // reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 // answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 // `declined` are never refused. `declined` ends an approval. A 409
-// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+// `/api/v1/problems/event-closed` for an event that started or was canceled, and a 409
 // `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 //
 // Takes any type of body and a specified content type.
@@ -38669,7 +38669,7 @@ func (c *Client) AnswerEventWithBody(ctx context.Context, id EventId, contentTyp
 // reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 // answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 // `declined` are never refused. `declined` ends an approval. A 409
-// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+// `/api/v1/problems/event-closed` for an event that started or was canceled, and a 409
 // `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 //
 // Takes a body of the `application/json` content type.
@@ -66945,7 +66945,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Cancels an event with an optional reason, which the event shows with its cancellation, and
 	// notifies the users who answered going or maybe and the invited users. Recorded in the audit
-	// log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+	// log (`event_canceled`). An unknown event is a 404, an event canceled already a 409
 	// `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
 	// `manage_reports` permission.
 	//
@@ -66958,7 +66958,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Cancels an event with an optional reason, which the event shows with its cancellation, and
 	// notifies the users who answered going or maybe and the invited users. Recorded in the audit
-	// log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+	// log (`event_canceled`). An unknown event is a 404, an event canceled already a 409
 	// `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
 	// `manage_reports` permission.
 	//
@@ -67046,7 +67046,7 @@ type ClientWithResponsesInterface interface {
 	// OverrideHookDecisionWithResponse Cancel a decision
 	//
 	// Records the cancellation as its own event and in the audit log, and undoes what the hook
-	// can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+	// can: what happens depends on the verdict. Cancelling a canceled decision again changes
 	// nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
 	// a `reject` of `local.status`, which goes through its appeal, is a 409
 	// `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
@@ -69641,7 +69641,7 @@ type ClientWithResponsesInterface interface {
 	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 	// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
-	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event. Invalid settings are a 422.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -69654,7 +69654,7 @@ type ClientWithResponsesInterface interface {
 	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 	// organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
-	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event. Invalid settings are a 422.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -69675,7 +69675,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
 	// did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
-	// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69689,7 +69689,7 @@ type ClientWithResponsesInterface interface {
 	// the approved. An approval ends when the attendee answers `declined`. A 422
 	// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
 	// 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
-	// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69718,7 +69718,7 @@ type ClientWithResponsesInterface interface {
 	// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
 	// user who sees the event but does not read its board, a 403
 	// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-	// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+	// 409 `/api/v1/problems/event-board-closed` once the event is canceled, and from 7 days
 	// after its end. The post is checked as `createStatus` checks a new status, and retrying with
 	// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
 	// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
@@ -69734,7 +69734,7 @@ type ClientWithResponsesInterface interface {
 	// post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
 	// user who sees the event but does not read its board, a 403
 	// `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-	// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+	// 409 `/api/v1/problems/event-board-closed` once the event is canceled, and from 7 days
 	// after its end. The post is checked as `createStatus` checks a new status, and retrying with
 	// the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
 	// same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
@@ -69749,7 +69749,7 @@ type ClientWithResponsesInterface interface {
 	// The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
 	// the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
 	// updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
-	// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+	// zone; `SEQUENCE` is the number of revisions of the settings; a canceled event has
 	// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
 	// user sees: a hidden place never appears in the file. A 404 for an event that the user does
 	// not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
@@ -69763,7 +69763,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
 	// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
-	// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+	// A 409 `/api/v1/problems/event-closed` for an event canceled already.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -69774,7 +69774,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
 	// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
-	// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+	// A 409 `/api/v1/problems/event-closed` for an event canceled already.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -69798,7 +69798,7 @@ type ClientWithResponsesInterface interface {
 	// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
 	// the past are a 422.
 	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -69812,7 +69812,7 @@ type ClientWithResponsesInterface interface {
 	// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
 	// the past are a 422.
 	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -69826,7 +69826,7 @@ type ClientWithResponsesInterface interface {
 	// users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
 	// `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
 	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -69841,7 +69841,7 @@ type ClientWithResponsesInterface interface {
 	// answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
 	// change of the date is a `PATCH` of the event. A candidate that has started is a 422.
 	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -69855,7 +69855,7 @@ type ClientWithResponsesInterface interface {
 	// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
 	// name to everyone who sees the event and keeps the event visible to the user. A 409
 	// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
-	// `/api/v1/problems/event-closed` for a cancelled event.
+	// `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -69868,7 +69868,7 @@ type ClientWithResponsesInterface interface {
 	// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
 	// name to everyone who sees the event and keeps the event visible to the user. A 409
 	// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
-	// `/api/v1/problems/event-closed` for a cancelled event.
+	// `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -69888,7 +69888,7 @@ type ClientWithResponsesInterface interface {
 	// RemoveEventCoorganizerWithResponse Remove a co-organizer of an event
 	//
 	// Removes a co-organizer of the event, by its organizer. A 403
-	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69902,7 +69902,7 @@ type ClientWithResponsesInterface interface {
 	// co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
 	// `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
 	// organizer, or is in a block relation with the organizer or a co-organizer. A 403
-	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69926,7 +69926,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
 	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
-	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -69940,7 +69940,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
 	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
-	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -69951,7 +69951,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
 	// only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
-	// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69965,7 +69965,7 @@ type ClientWithResponsesInterface interface {
 	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 	// `declined` are never refused. `declined` ends an approval. A 409
-	// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+	// `/api/v1/problems/event-closed` for an event that started or was canceled, and a 409
 	// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -69980,7 +69980,7 @@ type ClientWithResponsesInterface interface {
 	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 	// `declined` are never refused. `declined` ends an approval. A 409
-	// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+	// `/api/v1/problems/event-closed` for an event that started or was canceled, and a 409
 	// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -106873,7 +106873,7 @@ func (c *ClientWithResponses) UnmuteErrorGroupWithResponse(ctx context.Context, 
 //
 // Cancels an event with an optional reason, which the event shows with its cancellation, and
 // notifies the users who answered going or maybe and the invited users. Recorded in the audit
-// log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+// log (`event_canceled`). An unknown event is a 404, an event canceled already a 409
 // `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
 // `manage_reports` permission.
 //
@@ -106892,7 +106892,7 @@ func (c *ClientWithResponses) CancelEventAsModeratorWithBodyWithResponse(ctx con
 //
 // Cancels an event with an optional reason, which the event shows with its cancellation, and
 // notifies the users who answered going or maybe and the invited users. Recorded in the audit
-// log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+// log (`event_canceled`). An unknown event is a 404, an event canceled already a 409
 // `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
 // `manage_reports` permission.
 //
@@ -107028,7 +107028,7 @@ func (c *ClientWithResponses) GetHookDecisionWithResponse(ctx context.Context, i
 // OverrideHookDecisionWithResponse Cancel a decision
 //
 // Records the cancellation as its own event and in the audit log, and undoes what the hook
-// can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+// can: what happens depends on the verdict. Cancelling a canceled decision again changes
 // nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
 // a `reject` of `local.status`, which goes through its appeal, is a 409
 // `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
@@ -110757,7 +110757,7 @@ func (c *ClientWithResponses) GetEventWithResponse(ctx context.Context, id Event
 // on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 // organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
-// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event. Invalid settings are a 422.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -110776,7 +110776,7 @@ func (c *ClientWithResponses) UpdateEventWithBodyWithResponse(ctx context.Contex
 // on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 // organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
-// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event. Invalid settings are a 422.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -110809,7 +110809,7 @@ func (c *ClientWithResponses) ListEventAttendeesWithResponse(ctx context.Context
 //
 // Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
 // did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
-// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -110829,7 +110829,7 @@ func (c *ClientWithResponses) RevokeEventAttendeeApprovalWithResponse(ctx contex
 // the approved. An approval ends when the attendee answers `declined`. A 422
 // `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
 // 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
-// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -110870,7 +110870,7 @@ func (c *ClientWithResponses) ListEventBoardWithResponse(ctx context.Context, id
 // post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
 // user who sees the event but does not read its board, a 403
 // `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+// 409 `/api/v1/problems/event-board-closed` once the event is canceled, and from 7 days
 // after its end. The post is checked as `createStatus` checks a new status, and retrying with
 // the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
 // same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
@@ -110892,7 +110892,7 @@ func (c *ClientWithResponses) PostToEventBoardWithBodyWithResponse(ctx context.C
 // post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
 // user who sees the event but does not read its board, a 403
 // `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-// 409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+// 409 `/api/v1/problems/event-board-closed` once the event is canceled, and from 7 days
 // after its end. The post is checked as `createStatus` checks a new status, and retrying with
 // the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
 // same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
@@ -110913,7 +110913,7 @@ func (c *ClientWithResponses) PostToEventBoardWithResponse(ctx context.Context, 
 // The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
 // the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
 // updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
-// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+// zone; `SEQUENCE` is the number of revisions of the settings; a canceled event has
 // `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
 // user sees: a hidden place never appears in the file. A 404 for an event that the user does
 // not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
@@ -110933,7 +110933,7 @@ func (c *ClientWithResponses) GetEventCalendarWithResponse(ctx context.Context, 
 //
 // Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
 // more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
-// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+// A 409 `/api/v1/problems/event-closed` for an event canceled already.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -110950,7 +110950,7 @@ func (c *ClientWithResponses) CancelEventWithBodyWithResponse(ctx context.Contex
 //
 // Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
 // more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
-// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+// A 409 `/api/v1/problems/event-closed` for an event canceled already.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -110986,7 +110986,7 @@ func (c *ClientWithResponses) ListEventCandidatesWithResponse(ctx context.Contex
 // a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
 // the past are a 422.
 // A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 // `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -111006,7 +111006,7 @@ func (c *ClientWithResponses) AddEventCandidateWithBodyWithResponse(ctx context.
 // a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
 // the past are a 422.
 // A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 // `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -111026,7 +111026,7 @@ func (c *ClientWithResponses) AddEventCandidateWithResponse(ctx context.Context,
 // users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
 // `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
 // A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 // `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -111047,7 +111047,7 @@ func (c *ClientWithResponses) WithdrawEventCandidateWithResponse(ctx context.Con
 // answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
 // change of the date is a `PATCH` of the event. A candidate that has started is a 422.
 // A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
 // `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -111067,7 +111067,7 @@ func (c *ClientWithResponses) ConfirmEventCandidateWithResponse(ctx context.Cont
 // organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
 // name to everyone who sees the event and keeps the event visible to the user. A 409
 // `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
-// `/api/v1/problems/event-closed` for a cancelled event.
+// `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -111086,7 +111086,7 @@ func (c *ClientWithResponses) VoteEventCandidateWithBodyWithResponse(ctx context
 // organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
 // name to everyone who sees the event and keeps the event visible to the user. A 409
 // `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
-// `/api/v1/problems/event-closed` for a cancelled event.
+// `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -111118,7 +111118,7 @@ func (c *ClientWithResponses) ListEventCandidateVotesWithResponse(ctx context.Co
 // RemoveEventCoorganizerWithResponse Remove a co-organizer of an event
 //
 // Removes a co-organizer of the event, by its organizer. A 403
-// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -111138,7 +111138,7 @@ func (c *ClientWithResponses) RemoveEventCoorganizerWithResponse(ctx context.Con
 // co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
 // `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
 // organizer, or is in a block relation with the organizer or a co-organizer. A 403
-// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -111174,7 +111174,7 @@ func (c *ClientWithResponses) ListEventInvitationsWithResponse(ctx context.Conte
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
 // the event, or is in a block relation with the organizer or a co-organizer. An event sends at
-// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -111194,7 +111194,7 @@ func (c *ClientWithResponses) InviteToEventWithBodyWithResponse(ctx context.Cont
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
 // the event, or is in a block relation with the organizer or a co-organizer. An event sends at
-// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -111211,7 +111211,7 @@ func (c *ClientWithResponses) InviteToEventWithResponse(ctx context.Context, id 
 //
 // Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
 // only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
-// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -111231,7 +111231,7 @@ func (c *ClientWithResponses) RevokeEventInvitationWithResponse(ctx context.Cont
 // reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 // answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 // `declined` are never refused. `declined` ends an approval. A 409
-// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+// `/api/v1/problems/event-closed` for an event that started or was canceled, and a 409
 // `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -111252,7 +111252,7 @@ func (c *ClientWithResponses) AnswerEventWithBodyWithResponse(ctx context.Contex
 // reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 // answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 // `declined` are never refused. `declined` ends an approval. A 409
-// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+// `/api/v1/problems/event-closed` for an event that started or was canceled, and a 409
 // `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).

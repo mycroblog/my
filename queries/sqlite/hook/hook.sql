@@ -182,7 +182,7 @@ WHERE appeal_id IN (SELECT id FROM hook_decision_appeals WHERE account_id = ?);
 DELETE FROM hook_decision_appeals WHERE account_id = ?;
 
 -- ListHookSensitivityMarks returns the statuses of the mark_sensitive decisions that enforce and that
--- no moderator cancelled, the source of the rebuild of status_sensitivity_overrides (ADR-0147 8).
+-- no moderator canceled, the source of the rebuild of status_sensitivity_overrides (ADR-0147 8).
 -- name: ListHookSensitivityMarks :many
 SELECT s.status_id, s.decision_id
 FROM hook_decision_statuses s

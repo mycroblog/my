@@ -39,7 +39,7 @@ post:
     post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
     user who sees the event but does not read its board, a 403
     `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-    409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+    409 `/api/v1/problems/event-board-closed` once the event is canceled, and from 7 days
     after its end. The post is checked as `createStatus` checks a new status, and retrying with
     the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
     same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.

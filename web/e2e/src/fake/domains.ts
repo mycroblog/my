@@ -169,7 +169,7 @@ const actionTargets: Readonly<Record<AuditAction, TargetKind>> = {
   domain_list_draft_accepted: "domain_list_subscription",
   domain_list_draft_rejected: "domain_list_subscription",
   domain_list_fetch_queued: "domain_list_subscription",
-  event_cancelled: "event",
+  event_canceled: "event",
 };
 
 /** The name a target of each kind has in the fake's log (its label), and whether it is still there. */

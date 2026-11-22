@@ -29,8 +29,8 @@ const (
 	EventApprovalChanged = "gathering.approval_changed"
 	// EventCoorganizerChanged follows a co-organizer assigned or removed.
 	EventCoorganizerChanged = "gathering.coorganizer_changed"
-	// EventCancelled follows the cancellation of an event.
-	EventCancelled = "gathering.cancelled"
+	// EventCanceled follows the cancellation of an event.
+	EventCanceled = "gathering.canceled"
 )
 
 // Created carries an event that was created, with its date (Confirmation), or with the
@@ -96,11 +96,11 @@ type CoorganizerChanged struct{ Change CoorganizerChange }
 // EventType implements uow.Event.
 func (CoorganizerChanged) EventType() string { return EventCoorganizerChanged }
 
-// Cancelled carries the cancellation of an event.
-type Cancelled struct{ Cancellation Cancellation }
+// Canceled carries the cancellation of an event.
+type Canceled struct{ Cancellation Cancellation }
 
 // EventType implements uow.Event.
-func (Cancelled) EventType() string { return EventCancelled }
+func (Canceled) EventType() string { return EventCanceled }
 
 // RegisterProjectors registers the projectors of the module's own projections: each event that
 // changes them derives again the rows of gathering_heads, gathering_attendees, and
@@ -115,8 +115,8 @@ func RegisterProjectors(r *uow.Projectors, repo ProjectionRepository) {
 	r.Register(EventRescheduled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return repo.RefreshHead(ctx, tx, e.(Rescheduled).Confirmation.GatheringID)
 	})
-	r.Register(EventCancelled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		return repo.RefreshHead(ctx, tx, e.(Cancelled).Cancellation.GatheringID)
+	r.Register(EventCanceled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return repo.RefreshHead(ctx, tx, e.(Canceled).Cancellation.GatheringID)
 	})
 	r.Register(EventAnswered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		a := e.(Answered).RSVP

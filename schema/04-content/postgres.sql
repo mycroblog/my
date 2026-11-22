@@ -993,7 +993,7 @@ CREATE TABLE draft_article_images (
 CREATE INDEX draft_article_images_media_id ON draft_article_images (media_id);
 
 -- Resource: one schedule of a draft, to publish it at publish_at. A new time is a new schedule
--- after the outcome cancelled of the one before.
+-- after the outcome canceled of the one before.
 CREATE TABLE draft_schedules (
   id uuid NOT NULL PRIMARY KEY,
   draft_id uuid NOT NULL,
@@ -1006,7 +1006,7 @@ CREATE INDEX draft_schedules_draft_id_id ON draft_schedules (draft_id, id);
 -- publish, for the author's screens and notification.
 CREATE TABLE draft_schedule_outcomes (
   schedule_id uuid NOT NULL PRIMARY KEY,
-  outcome text NOT NULL CHECK (outcome IN ('published', 'failed', 'cancelled')),
+  outcome text NOT NULL CHECK (outcome IN ('published', 'failed', 'canceled')),
   failure_reason text CHECK (failure_reason IN ('restricted', 'reply_unavailable', 'quote_unavailable', 'media_unavailable', 'invalid', 'rejected')),
   occurred_at timestamptz NOT NULL,
   CONSTRAINT draft_schedule_outcomes_failed_check CHECK ((outcome = 'failed') = (failure_reason IS NOT NULL))

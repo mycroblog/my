@@ -23,7 +23,7 @@ import (
 // cases of appgathering.Service (ADR-0161 §14): a report points at the revision that the reporter
 // sees and the moderators read every revision with its places; a moderator's cancellation records
 // the moderator, the reason, and its audit log entry once, for a date poll too; the events of a
-// suspended organizer that have not started, its date polls included, are cancelled, and nothing
+// suspended organizer that have not started, its date polls included, are canceled, and nothing
 // else; and the answers, votes, and invitations of the events that ended (a date poll at the end
 // of its candidates) longer than the retention ago are erased, except those of a reported event
 // and those that name a held account, while the candidates stay.
@@ -180,14 +180,14 @@ func reportsAndCancels(t *testing.T, e *modEnv) {
 		t.Fatalf("CancelByModerator = %v", err)
 	}
 	c := e.record(t, v.ID).Cancellation
-	if c == nil || c.Reason != gathering.CancelModerator || c.CancelledByAccountID != moderator || c.Note != "Harassment" {
+	if c == nil || c.Reason != gathering.CancelModerator || c.CanceledByAccountID != moderator || c.Note != "Harassment" {
 		t.Errorf("cancellation = %+v, want the moderator's", c)
 	}
 	if err := e.svc.CancelByModerator(ctx, in); !errors.Is(err, appgathering.ErrClosed) {
-		t.Errorf("CancelByModerator(a cancelled event) = %v, want ErrClosed", err)
+		t.Errorf("CancelByModerator(a canceled event) = %v, want ErrClosed", err)
 	}
 
-	// A date poll, which has no date yet, is reported and cancelled the same way.
+	// A date poll, which has no date yet, is reported and canceled the same way.
 	poll := e.createPoll(t, alice, settings("Poll", gathering.VisibilityPublic))
 	if target, err := e.svc.ReportTarget(ctx, bob, poll.ID); err != nil || target.RevisionID != poll.Revision.ID || target.OrganizerAccountID != alice {
 		t.Errorf("ReportTarget(a poll) = %+v, %v", target, err)
@@ -195,15 +195,15 @@ func reportsAndCancels(t *testing.T, e *modEnv) {
 	if err := e.svc.CancelByModerator(ctx, appgathering.ModeratorCancelInput{GatheringID: poll.ID, ByUserID: in.ByUserID, ByAccountID: moderator}); err != nil {
 		t.Fatalf("CancelByModerator(a poll) = %v", err)
 	}
-	if rec := e.record(t, poll.ID); rec.Cancellation == nil || rec.Cancellation.Reason != gathering.CancelModerator || rec.Head.State != gathering.StateCancelled {
-		t.Errorf("the poll = %+v, want it cancelled by the moderator", rec)
+	if rec := e.record(t, poll.ID); rec.Cancellation == nil || rec.Cancellation.Reason != gathering.CancelModerator || rec.Head.State != gathering.StateCanceled {
+		t.Errorf("the poll = %+v, want it canceled by the moderator", rec)
 	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if len(e.audits) != 2 || e.audits[1].TargetID != poll.ID {
 		t.Fatalf("audit log = %+v, want the two cancellations", e.audits)
 	}
-	if a := e.audits[0]; a.Action != moderation.AuditEventCancelled || a.TargetKind != moderation.AuditTargetEvent || a.TargetID != v.ID ||
+	if a := e.audits[0]; a.Action != moderation.AuditEventCanceled || a.TargetKind != moderation.AuditTargetEvent || a.TargetID != v.ID ||
 		a.ActorKind != moderation.AuditActorUser || a.ActorUserID != in.ByUserID || a.SourceEventID != v.ID {
 		t.Errorf("audit entry = %+v", a)
 	}
@@ -213,8 +213,8 @@ func cancelsOrganized(t *testing.T, e *modEnv) {
 	ctx := t.Context()
 	a := e.create(t, alice, settings("A", gathering.VisibilityPublic))
 	b := e.create(t, alice, settings("B", gathering.VisibilityInvited))
-	cancelled := e.create(t, alice, settings("Cancelled", gathering.VisibilityPublic))
-	if _, err := e.svc.Cancel(ctx, alice, cancelled.ID, "Rain"); err != nil {
+	canceled := e.create(t, alice, settings("Canceled", gathering.VisibilityPublic))
+	if _, err := e.svc.Cancel(ctx, alice, canceled.ID, "Rain"); err != nil {
 		t.Fatal(err)
 	}
 	soon := gathering.Schedule{StartsAt: e.clock.Now().Add(time.Hour), EndsAt: e.clock.Now().Add(5 * time.Hour)}
@@ -242,16 +242,16 @@ func cancelsOrganized(t *testing.T, e *modEnv) {
 	}
 	for _, id := range want {
 		c := e.record(t, id).Cancellation
-		if c == nil || c.Reason != gathering.CancelOrganizerSuspended || c.CancelledByAccountID != "" || c.Note != "" {
+		if c == nil || c.Reason != gathering.CancelOrganizerSuspended || c.CanceledByAccountID != "" || c.Note != "" {
 			t.Errorf("cancellation of %s = %+v, want organizer_suspended by nobody", id, c)
 		}
 	}
-	if c := e.record(t, cancelled.ID).Cancellation; c == nil || c.Reason != gathering.CancelOrganizer {
-		t.Errorf("the cancellation of a cancelled event = %+v, want the organizer's", c)
+	if c := e.record(t, canceled.ID).Cancellation; c == nil || c.Reason != gathering.CancelOrganizer {
+		t.Errorf("the cancellation of a canceled event = %+v, want the organizer's", c)
 	}
 	for _, id := range []string{started.ID, other.ID} {
 		if c := e.record(t, id).Cancellation; c != nil {
-			t.Errorf("event %s = %+v, want it not cancelled", id, c)
+			t.Errorf("event %s = %+v, want it not canceled", id, c)
 		}
 	}
 	if n, err := e.svc.CancelOrganized(ctx, alice, gathering.CancelOrganizerSuspended); err != nil || n != 0 {
@@ -272,9 +272,9 @@ func purgesRecords(t *testing.T, e *modEnv) {
 	if err := e.svc.RevokeInvitation(ctx, alice, ended.ID, carol); err != nil {
 		t.Fatal(err)
 	}
-	cancelled := e.create(t, alice, settings("Cancelled", gathering.VisibilityPublic))
-	e.answer(t, bob, cancelled.ID, gathering.AnswerMaybe)
-	if _, err := e.svc.Cancel(ctx, alice, cancelled.ID, ""); err != nil {
+	canceled := e.create(t, alice, settings("Canceled", gathering.VisibilityPublic))
+	e.answer(t, bob, canceled.ID, gathering.AnswerMaybe)
+	if _, err := e.svc.Cancel(ctx, alice, canceled.ID, ""); err != nil {
 		t.Fatal(err)
 	}
 	reported := e.create(t, alice, settings("Reported", gathering.VisibilityPublic))
@@ -304,7 +304,7 @@ func purgesRecords(t *testing.T, e *modEnv) {
 		t.Errorf("RecordAccounts(a poll) = %v, %v; want the voter", accounts, err)
 	}
 	if n, err := e.svc.PurgeRecords(ctx); err != nil || n != 3 {
-		t.Errorf("PurgeRecords = %d, %v; want the ended and the cancelled event and the poll past its candidates", n, err)
+		t.Errorf("PurgeRecords = %d, %v; want the ended and the canceled event and the poll past its candidates", n, err)
 	}
 	if accounts, err := e.h.Gathering.RecordAccounts(ctx, nil, poll.ID); err != nil || len(accounts) != 0 {
 		t.Errorf("RecordAccounts(a purged poll) = %v, %v; want none", accounts, err)
@@ -312,7 +312,7 @@ func purgesRecords(t *testing.T, e *modEnv) {
 	if cs, err := e.svc.Candidates(ctx, alice, poll.ID); err != nil || len(cs) != 2 || cs[0].Yes != 0 {
 		t.Errorf("Candidates after the purge = %+v, %v; want both candidates kept without their votes", cs, err)
 	}
-	for _, id := range []string{ended.ID, cancelled.ID} {
+	for _, id := range []string{ended.ID, canceled.ID} {
 		if _, err := e.h.Gathering.FindAttendee(ctx, nil, id, bob); !errors.Is(err, appgathering.ErrNotFound) {
 			t.Errorf("FindAttendee(%s) = %v, want the answer gone", id, err)
 		}

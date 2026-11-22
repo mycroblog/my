@@ -287,7 +287,7 @@ CREATE TABLE audit_log_entries (
     'domain_allow_added', 'domain_allow_removed',
     'domain_list_subscription_created', 'domain_list_subscription_updated', 'domain_list_subscription_deleted',
     'domain_list_draft_accepted', 'domain_list_draft_rejected', 'domain_list_fetch_queued',
-    'event_cancelled'
+    'event_canceled'
   )),
   target_kind text NOT NULL CHECK (target_kind IN (
     'account', 'status', 'domain', 'report', 'appeal', 'user', 'role', 'setting', 'rule',

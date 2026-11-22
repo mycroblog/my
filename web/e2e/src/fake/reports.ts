@@ -695,14 +695,14 @@ export function reportHandlers(c: ReportContext): { handlers: Handlers; reports:
       cancelEvent: (id, note) => {
         const events = reports.flatMap((r) => (r.event?.id === id ? [r.event] : []));
         if (events.length === 0) return "missing";
-        if (events.some((e) => e.state === "cancelled")) return "closed";
+        if (events.some((e) => e.state === "canceled")) return "closed";
         for (const e of events) {
-          e.state = "cancelled";
+          e.state = "canceled";
           e.cancellation = {
             reason: "moderator",
-            cancelled_by_account_id: c.accountId(c.viewer),
+            canceled_by_account_id: c.accountId(c.viewer),
             ...(note === undefined || note === "" ? {} : { note }),
-            cancelled_at: iso(Date.now()),
+            canceled_at: iso(Date.now()),
           };
         }
         return "cancelled";

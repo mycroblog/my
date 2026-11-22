@@ -483,7 +483,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
           : {
               reason: plan.cancelled.reason,
               ...(plan.cancelled.note === undefined ? {} : { note: plan.cancelled.note }),
-              cancelled_at: iso(c.started - 60 * minute),
+              canceled_at: iso(c.started - 60 * minute),
             },
       createdAt: created,
       revisedAt: created,
@@ -564,7 +564,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       hidden_places: e.places.filter((p) => !seesPlace(e, p)).map((p) => p.kind),
       starts_at: iso(startOf(e)),
       ends_at: iso(endOf(e)),
-      state: e.cancellation !== undefined ? "cancelled" : e.schedule === undefined ? "unscheduled" : "scheduled",
+      state: e.cancellation !== undefined ? "canceled" : e.schedule === undefined ? "unscheduled" : "scheduled",
       ...(e.cancellation === undefined ? {} : { cancellation: e.cancellation }),
       going_count: goingCount(e),
       created_at: iso(e.createdAt),
@@ -887,7 +887,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       e.cancellation = {
         reason: "organizer",
         ...(note === undefined || note === "" ? {} : { note }),
-        cancelled_at: iso(Date.now()),
+        canceled_at: iso(Date.now()),
       };
       return ok(e);
     },

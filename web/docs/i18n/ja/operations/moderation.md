@@ -564,7 +564,7 @@ Web クライアントでは、**モデレーション → 通報**（`/moderati
 - 通報の詳細（`GET /api/v1/admin/reports/{id}`）にはイベント（`event`）が表示されます。日程、中止されたかどうかとその方法、設定のすべての変更が古い順に、すべての場所とともに表示され、承認された参加者にだけ見えていた場所も含まれます。
   `reported_revision_id` は通報者が見た版なので、通報のあとに変えられたタイトルや住所も、あなたの目の前にあります。
 - `manage_reports` を持つ人は、`POST /api/v1/admin/events/{id}/cancel`（本文 `{"reason": "..."}`、省略可、最大 500 文字）でイベントを中止できます。
-  理由は、中止とともに、そのイベントが見える全員に表示されます。参加する、または未定と答えた利用者と招待された利用者には、主催者自身が中止した場合と同じように通知が届き、監査ログには `event_cancelled` が記録されます。
+  理由は、中止とともに、そのイベントが見える全員に表示されます。参加する、または未定と答えた利用者と招待された利用者には、主催者自身が中止した場合と同じように通知が届き、監査ログには `event_canceled` が記録されます。
   すでに中止されたイベントには `409` `event-closed` を返します。Web クライアントでは、イベントの通報のページに、理由を付けて先に確認される「イベントを中止する」があります。
 - 主催者を凍結または削除すると、まだ始まっていない主催者のイベント（日程を調整中のものも含みます）が中止され（`gathering.cancel_organized`）、参加者に通知します。これらの中止は、中止した人を誰とも記録せず、凍結を解除しても元には戻りません。すでに始まったイベントは中止されません。
 
@@ -633,7 +633,7 @@ Web クライアントでは、**モデレーション → 通報**（`/moderati
 | `oauth_client_host` | `oauth_client_host_denied`、`oauth_client_host_allowed`（Client ID Metadata Document のホストの拒否とその取り消し。拒否するとそのホストのクライアントのトークンが無効になる。対象の名前はホスト） |
 | `instance` | `service_closure_announced`、`service_closure_withdrawn`、`service_closure_closed`、`service_closure_delivery_completed`（サービスの終了の告知または日付の変更、告知の取り下げ、終了、終了の配送の完了。対象の名前は `service_closure`） |
 | `voice_room` | `voice_room_ended`（モデレーターが開いている通話のルームを終了した。名前は書いたアカウントが消去されるとなくなるため、対象の名前はルームの ID。通報の詳細には名前が表示される） |
-| `event` | `event_cancelled`（モデレーターがイベントを中止した。タイトルは書いたアカウントが消去されるとなくなるため、対象の名前はイベントの ID。通報の詳細にはタイトルが表示される） |
+| `event` | `event_canceled`（モデレーターがイベントを中止した。タイトルは書いたアカウントが消去されるとなくなるため、対象の名前はイベントの ID。通報の詳細にはタイトルが表示される） |
 | `domain_allow` | `domain_allow_added`、`domain_allow_removed`（連合の許可リストへのドメインの追加と削除。[許可したサーバーとだけ連合する](#federating-only-with-allowed-servers)を参照。対象の名前はドメイン） |
 | `link_card_domain` | `link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`（ドメインへのリンクカードのクローラーのルールの設定と削除。[リンクカードのドメイン](instance-settings.md#link-card-domains)を参照） |
 | `login_provider` | `login_provider_created`、`login_provider_updated`、`login_provider_deleted`、`login_provider_enabled`、`login_provider_disabled`、`login_provider_secret_rotated`（外部のログインプロバイダーの追加、変更、削除、有効化、無効化、クライアントシークレットの差し替え。対象の名前はプロバイダーの表示名） |

@@ -150,8 +150,8 @@ func RegisterDueProjectors(r *uow.Projectors, repo Repository) {
 		}
 		return refreshDue(ctx, tx, repo, ev.Revision.GatheringID, ev.Revision.RevisedAt, false)
 	})
-	r.Register(EventCancelled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		return repo.DeleteDue(ctx, tx, e.(Cancelled).Cancellation.GatheringID)
+	r.Register(EventCanceled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return repo.DeleteDue(ctx, tx, e.(Canceled).Cancellation.GatheringID)
 	})
 	registerPollDueProjectors(r, repo)
 }

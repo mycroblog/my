@@ -151,9 +151,9 @@ const (
 	// TypeEventChanged tells the attendees who answered going or maybe, and the invitees, that the
 	// date, the places, or the voice chat room of an event changed.
 	TypeEventChanged Type = "event_changed"
-	// TypeEventCancelled tells the attendees who answered going or maybe, and the invitees, that an
-	// event was cancelled.
-	TypeEventCancelled Type = "event_cancelled"
+	// TypeEventCanceled tells the attendees who answered going or maybe, and the invitees, that an
+	// event was canceled.
+	TypeEventCanceled Type = "event_canceled"
 	// TypeEventReminder reminds an attendee who answered going or maybe of an event that is about
 	// to start, at the time before the start that the attendee chose.
 	TypeEventReminder Type = "event_reminder"
@@ -171,7 +171,7 @@ const (
 // Event reports whether t is one of the notifications of an event (ADR-0161 §11).
 func (t Type) Event() bool {
 	switch t {
-	case TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
+	case TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCanceled, TypeEventReminder,
 		TypeEventStarted, TypeEventRoomUnavailable, TypeEventBoardPosted:
 		return true
 	}
@@ -180,7 +180,7 @@ func (t Type) Event() bool {
 
 // EventTypes are the notifications of an event, in a stable order.
 var EventTypes = []Type{
-	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
+	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCanceled, TypeEventReminder,
 	TypeEventStarted, TypeEventRoomUnavailable, TypeEventBoardPosted,
 }
 
@@ -286,7 +286,7 @@ var Types = []Type{
 	TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit, TypeScheduledStatusFailed,
 	TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
 	TypeAdminDomainListFailing,
-	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
+	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCanceled, TypeEventReminder,
 	TypeEventStarted, TypeEventRoomUnavailable, TypeEventBoardPosted,
 }
 
@@ -735,10 +735,10 @@ func EventScheduleConfirmedKey(confirmationID string) string {
 // that made it.
 func EventChangedKey(changeID string) string { return string(TypeEventChanged) + ":" + changeID }
 
-// EventCancelledKey is the dedupe key of an event_cancelled notification: one per event, which is
-// cancelled once, and recipient.
-func EventCancelledKey(gatheringID string) string {
-	return string(TypeEventCancelled) + ":" + gatheringID
+// EventCanceledKey is the dedupe key of an event_canceled notification: one per event, which is
+// canceled once, and recipient.
+func EventCanceledKey(gatheringID string) string {
+	return string(TypeEventCanceled) + ":" + gatheringID
 }
 
 // EventReminderKey is the dedupe key of an event_reminder notification: one per confirmation of

@@ -9,10 +9,10 @@ properties:
     format: date-time
   outcome:
     description: |
-      `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+      `canceled`: the user canceled the schedule or scheduled another time. `failed`: the post
       could not be published at its time, for `reason`.
     type: string
-    enum: [cancelled, failed]
+    enum: [canceled, failed]
   reason:
     $ref: ./DraftFailureReason.yaml
   occurred_at:

@@ -642,7 +642,7 @@ describe("the events", () => {
     )) as Answered<Event>;
     expect(removed.body.coorganizers.map((a) => a.username)).toEqual(["hana", "layla"]);
     const cancelled = (await ask(fake, "POST", `/events/${own}/cancel`, { note: "Too much snow" })) as Answered<Event>;
-    expect([cancelled.body.state, cancelled.body.cancellation?.note]).toEqual(["cancelled", "Too much snow"]);
+    expect([cancelled.body.state, cancelled.body.cancellation?.note]).toEqual(["canceled", "Too much snow"]);
     expect(problemOf(await ask(fake, "PATCH", `/events/${own}`, { title: "Again" }))).toEqual([
       409,
       "/api/v1/problems/event-closed",

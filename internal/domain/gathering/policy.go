@@ -63,7 +63,7 @@ type Facts struct {
 //     following when the organizer follows the viewer, mutuals when they follow each other,
 //     and invited is not.
 //
-// A cancelled or ended event is seen by the same viewers.
+// A canceled or ended event is seen by the same viewers.
 func CanSee(e Event, viewer Viewer, f Facts) bool {
 	switch {
 	case viewer.AccountID == "" || !viewer.Local || !viewer.Active:
@@ -160,9 +160,9 @@ type BoardTerm struct {
 	// EndsAt is the end of the event: of its date, or, while it polls its date, of its last
 	// candidate date (gathering_heads.ends_at).
 	EndsAt time.Time
-	// Cancelled reports a cancelled event, cancelled at CancelledAt.
-	Cancelled   bool
-	CancelledAt time.Time
+	// Canceled reports a canceled event, canceled at CanceledAt.
+	Canceled   bool
+	CanceledAt time.Time
 }
 
 // Ended returns the end that the retention of the records of the event counts from
@@ -171,8 +171,8 @@ type BoardTerm struct {
 // board's posts (§17) follows it. False for an event with neither an end nor a cancellation.
 func (t BoardTerm) Ended() (time.Time, bool) {
 	switch {
-	case t.Cancelled && (t.EndsAt.IsZero() || t.CancelledAt.Before(t.EndsAt)):
-		return t.CancelledAt, true
+	case t.Canceled && (t.EndsAt.IsZero() || t.CanceledAt.Before(t.EndsAt)):
+		return t.CanceledAt, true
 	case !t.EndsAt.IsZero():
 		return t.EndsAt, true
 	}
@@ -180,10 +180,10 @@ func (t BoardTerm) Ended() (time.Time, bool) {
 }
 
 // BoardOpen reports whether the board of an event takes new posts and edits at now: it is
-// read-only as soon as the event is cancelled, and from BoardWritableAfterEnd after its end, the
+// read-only as soon as the event is canceled, and from BoardWritableAfterEnd after its end, the
 // end of its last candidate date while it polls its date.
 func BoardOpen(t BoardTerm, now time.Time) bool {
-	if t.Cancelled || t.EndsAt.IsZero() {
+	if t.Canceled || t.EndsAt.IsZero() {
 		return false
 	}
 	return now.Before(t.EndsAt.Add(BoardWritableAfterEnd))

@@ -499,7 +499,7 @@
     "defaultMessage": "Not decided yet",
     "description": "In a report's facts of an event that has no date yet."
   },
-  "staff.report.event.cancelled": {
+  "staff.report.event.canceled": {
     "defaultMessage": "Cancelled",
     "description": "The term, in a report's facts, of who or what cancelled the event it points at."
   },
@@ -515,11 +515,11 @@
     "defaultMessage": "Changes of the event",
     "description": "The heading, and the name for assistive technology, of the log of the changes of the event a report points at."
   },
-  "staff.report.event.cancelled_by": {
+  "staff.report.event.canceled_by": {
     "defaultMessage": "{reason, select, moderator {By a moderator} organizer_suspended {When the organizer was suspended} organizer_deleted {When the organizer was deleted} other {By the organizer}}",
     "description": "In a report's facts of a cancelled event: who or what cancelled it."
   },
-  "staff.report.event.cancelled_at": {
+  "staff.report.event.canceled_at": {
     "defaultMessage": "When cancelled",
     "description": "The term, in a report's facts, of when the event it points at was cancelled."
   },

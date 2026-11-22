@@ -227,7 +227,7 @@ func (s *Service) polling(ctx context.Context, accountID, id string) (View, erro
 	return v, nil
 }
 
-// lockedPoll locks the event id in tx and returns it, checking again that it was not cancelled
+// lockedPoll locks the event id in tx and returns it, checking again that it was not canceled
 // (ErrClosed) and that it still polls its date (ErrScheduled).
 func (s *Service) lockedPoll(ctx context.Context, tx uow.Tx, id string) (Record, error) {
 	if err := s.d.Repository.LockGathering(ctx, tx, id); err != nil {
@@ -327,7 +327,7 @@ func (s *Service) WithdrawCandidate(ctx context.Context, accountID, id, candidat
 // or no, changed as often as the account likes until a candidate is confirmed (ADR-0161 §7).
 // Everyone who sees the event may answer, and the answer keeps the event visible to the account
 // (gathering.CanSee). It fails with ErrNotFound for an event the account does not see and for an
-// unknown or withdrawn candidate, ErrInvalidVote, ErrClosed for a cancelled event, and
+// unknown or withdrawn candidate, ErrInvalidVote, ErrClosed for a canceled event, and
 // ErrScheduled once the date was confirmed.
 func (s *Service) Vote(ctx context.Context, accountID, id, candidateID string, vote gathering.Vote) (CandidateTally, error) {
 	if !vote.Valid() {

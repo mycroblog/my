@@ -482,8 +482,8 @@ func draftCancels(t *testing.T, e *draftEnv) {
 	first := e.schedule(t, alice, v.Draft.ID, e.Clock.Now().Add(time.Hour))
 	second := e.schedule(t, alice, v.Draft.ID, e.Clock.Now().Add(2*time.Hour))
 	if second.Scheduled.ScheduleID == first.Scheduled.ScheduleID || second.LastOutcome == nil ||
-		second.LastOutcome.Schedule.ID != first.Scheduled.ScheduleID || second.LastOutcome.Outcome.Outcome != content.DraftCancelled {
-		t.Errorf("moved schedule = %+v, want a new schedule after the first one cancelled", second)
+		second.LastOutcome.Schedule.ID != first.Scheduled.ScheduleID || second.LastOutcome.Outcome.Outcome != content.DraftCanceled {
+		t.Errorf("moved schedule = %+v, want a new schedule after the first one canceled", second)
 	}
 	// The job of the first schedule does nothing at its time.
 	e.Clock.Advance(time.Hour + time.Second)
@@ -503,7 +503,7 @@ func draftCancels(t *testing.T, e *draftEnv) {
 	e.Clock.Advance(2 * time.Hour)
 	e.runJobs(t, 1)
 	if _, ok := e.published(t, alice, v.Draft.ID); ok {
-		t.Error("a cancelled schedule published the draft")
+		t.Error("a canceled schedule published the draft")
 	}
 	scheduled := true
 	if list, err := e.drafts.List(ctx, alice, "", &scheduled, 10); err != nil || len(list) != 0 {

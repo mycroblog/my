@@ -153,11 +153,11 @@ export function isEventPlaceUrl(url: string): boolean {
  * Where an event is at `now`: its date polled (`polling`), cancelled, ended, started, or to come (`upcoming`). The
  * reader answers it only while it is to come, and its `.ics` exists once its date is fixed (not while it polls).
  */
-export type EventPhase = "polling" | "upcoming" | "started" | "ended" | "cancelled";
+export type EventPhase = "polling" | "upcoming" | "started" | "ended" | "canceled";
 
 /** Where `event` is at `now` (ms since the epoch). */
 export function eventPhase(event: ServerEvent, now: number): EventPhase {
-  if (event.state === "cancelled") return "cancelled";
+  if (event.state === "canceled") return "canceled";
   if (event.state === "unscheduled") return "polling";
   if (Date.parse(event.ends_at) <= now) return "ended";
   return Date.parse(event.starts_at) <= now ? "started" : "upcoming";
@@ -187,7 +187,7 @@ export function eventRoom(event: ServerEvent, now: number): EventRoom {
   if (place === undefined) return { state: "none" };
   if (place.room_id !== undefined) return { state: "open", roomId: place.room_id };
   if (place.room_unavailable !== undefined) return { state: "unavailable", reason: place.room_unavailable };
-  if (event.state === "cancelled") return { state: "none" };
+  if (event.state === "canceled") return { state: "none" };
   if (event.state === "unscheduled" || Date.parse(event.starts_at) > now)
     return { state: "opens", at: event.starts_at };
   return { state: "opening" };

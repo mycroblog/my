@@ -77,8 +77,8 @@ func cancellationOf(row gatheringgen.GetGatheringRow) *appgathering.Cancellation
 		return nil
 	}
 	return &appgathering.Cancellation{
-		GatheringID: row.ID, Reason: gathering.CancelReason(row.CancelReason.String), CancelledByAccountID: fromRef(row.CancelledByAccountID),
-		Note: fromRef(row.CancelNote), CancelledAt: fromTime(row.CancelledAt.Int64),
+		GatheringID: row.ID, Reason: gathering.CancelReason(row.CancelReason.String), CanceledByAccountID: fromRef(row.CanceledByAccountID),
+		Note: fromRef(row.CancelNote), CanceledAt: fromTime(row.CanceledAt.Int64),
 	}
 }
 

@@ -62,7 +62,7 @@ const glyphs: Readonly<Record<NotificationType, IconName>> = {
   event_invited: "events",
   event_schedule_confirmed: "eventConfirmed",
   event_changed: "eventChanged",
-  event_cancelled: "eventCancelled",
+  event_canceled: "eventCancelled",
   event_reminder: "eventReminder",
   event_started: "eventStarted",
   event_room_unavailable: "roomUnavailable",

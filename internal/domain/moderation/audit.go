@@ -419,10 +419,10 @@ const (
 	// AuditDomainListFetchQueued: a moderator asked for a fetch of a subscribed list now; the
 	// operation has no row of its own until the fetch (domain_list_fetches).
 	AuditDomainListFetchQueued AuditAction = "domain_list_fetch_queued"
-	// AuditEventCancelled: a holder of manage_reports cancelled an event (gathering_cancellations
+	// AuditEventCanceled: a holder of manage_reports cancelled an event (gathering_cancellations
 	// with the reason moderator, ADR-0161 §14); the source event is the cancellation, whose ID is
 	// the event's.
-	AuditEventCancelled AuditAction = "event_cancelled"
+	AuditEventCanceled AuditAction = "event_canceled"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -544,7 +544,7 @@ var auditActions = []struct {
 	{AuditDomainListDraftAccepted, AuditTargetDomainListSubscription},
 	{AuditDomainListDraftRejected, AuditTargetDomainListSubscription},
 	{AuditDomainListFetchQueued, AuditTargetDomainListSubscription},
-	{AuditEventCancelled, AuditTargetEvent},
+	{AuditEventCanceled, AuditTargetEvent},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

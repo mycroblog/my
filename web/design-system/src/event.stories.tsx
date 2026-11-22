@@ -119,7 +119,7 @@ function Lines() {
           date={{ month: "Nov", day: "28" }}
           time={times.meetup}
           organizer="By Aoi"
-          state={{ kind: "cancelled", label: "Cancelled" }}
+          state={{ kind: "canceled", label: "Cancelled" }}
         />
       </RowItem>
       <RowItem>

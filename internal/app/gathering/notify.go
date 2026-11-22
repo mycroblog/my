@@ -22,7 +22,7 @@ import (
 // up to RecipientsPerJob of them per job, and notifies in each transaction only those who see the
 // event (gathering.CanSee), or for a post of its board those who read the board
 // (gathering.CanReadBoard), through the notification module, whose exclusions apply. A job of an
-// old date, of an invitation revoked, or of an event cancelled meanwhile notifies nobody, and the
+// old date, of an invitation revoked, or of an event canceled meanwhile notifies nobody, and the
 // dedupe keys of the notifications make every run after the first notify nobody twice.
 
 // Notifier creates the notifications of the events inside the transactions of their jobs.
@@ -74,7 +74,7 @@ func (p notifyPayload) key() string {
 		return JobNotify + ":" + string(p.Kind) + ":" + p.Gathering + ":" + strconv.FormatInt(p.At.UnixMilli(), 10)
 	case appnotification.EventReminder:
 		return JobNotify + ":" + string(p.Kind) + ":" + p.Ref + ":" + strconv.Itoa(p.Minutes)
-	case appnotification.EventCancelled:
+	case appnotification.EventCanceled:
 		return JobNotify + ":" + string(p.Kind) + ":" + p.Gathering
 	case appnotification.EventRoomUnavailable:
 		return JobNotify + ":" + string(p.Kind) + ":" + p.Ref + ":" + string(p.Reason) + ":" + string(p.Checkpoint)
@@ -84,7 +84,7 @@ func (p notifyPayload) key() string {
 
 // invitees reports whether the notification of kind goes to the invitees too (ADR-0161 §11).
 func invitees(kind appnotification.EventKind) bool {
-	return kind == appnotification.EventChanged || kind == appnotification.EventCancelled
+	return kind == appnotification.EventChanged || kind == appnotification.EventCanceled
 }
 
 // job returns the job of p.
@@ -135,15 +135,15 @@ func (s *Service) RegisterNotificationProjectors(r *uow.Projectors) {
 		c := e.(Rescheduled).Confirmation
 		return s.enqueueChanged(ctx, tx, c.GatheringID, c.ID, c.ConfirmedByAccountID, c.ConfirmedAt)
 	})
-	r.Register(EventCancelled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		c := e.(Cancelled).Cancellation
+	r.Register(EventCanceled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		c := e.(Canceled).Cancellation
 		rec, err := s.d.Repository.FindGathering(ctx, tx, c.GatheringID)
 		if err != nil {
 			return err
 		}
 		return s.enqueueNotify(ctx, tx, notifyPayload{
-			Kind: appnotification.EventCancelled, Gathering: c.GatheringID, Ref: c.GatheringID,
-			Source: rec.OrganizerAccountID, Actor: c.CancelledByAccountID, At: c.CancelledAt,
+			Kind: appnotification.EventCanceled, Gathering: c.GatheringID, Ref: c.GatheringID,
+			Source: rec.OrganizerAccountID, Actor: c.CanceledByAccountID, At: c.CanceledAt,
 		})
 	})
 	s.registerPollNotificationProjectors(r)
@@ -218,25 +218,25 @@ func (s *Service) notify(ctx context.Context, p notifyPayload) error {
 }
 
 // current reports whether the notification p is still to be sent for the event rec at now: the
-// invitation stands, the date is the one it is about, and the event was not cancelled (or, for a
+// invitation stands, the date is the one it is about, and the event was not canceled (or, for a
 // cancellation, was).
 func current(p notifyPayload, rec Record, inv *InvitationRecord, now time.Time) bool {
-	cancelled := rec.Cancellation != nil
+	canceled := rec.Cancellation != nil
 	switch p.Kind {
-	case appnotification.EventCancelled:
-		return cancelled
+	case appnotification.EventCanceled:
+		return canceled
 	case appnotification.EventInvited:
-		return !cancelled && inv != nil && inv.ID == p.Ref && !inv.Revoked
+		return !canceled && inv != nil && inv.ID == p.Ref && !inv.Revoked
 	case appnotification.EventReminder:
 		// A reminder that would arrive after the start is of no use.
-		return !cancelled && rec.Confirmation.ID == p.Ref && now.Before(rec.Confirmation.Schedule.StartsAt)
+		return !canceled && rec.Confirmation.ID == p.Ref && now.Before(rec.Confirmation.Schedule.StartsAt)
 	case appnotification.EventStarted:
-		return !cancelled && rec.Confirmation.ID == p.Ref && now.Before(rec.Confirmation.Schedule.EndsAt)
+		return !canceled && rec.Confirmation.ID == p.Ref && now.Before(rec.Confirmation.Schedule.EndsAt)
 	case appnotification.EventRoomUnavailable:
 		// A room that the organizer removed, or of an old date, is of no concern.
-		return !cancelled && rec.Confirmation.ID == p.Ref && rec.HasVoice()
+		return !canceled && rec.Confirmation.ID == p.Ref && rec.HasVoice()
 	}
-	return !cancelled
+	return !canceled
 }
 
 // notifyBatch notifies, in one transaction, those of ids who are to get the notification p and

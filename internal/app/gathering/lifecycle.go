@@ -286,7 +286,7 @@ func (s *Service) Update(ctx context.Context, accountID, id string, p Patch) (Vi
 
 // Cancel cancels the event id, by its organizer, with the reason note ("" for none, at most
 // gathering.MaxNoteLength characters). It fails with ErrNotFound, ErrNotOrganizer,
-// ErrOrganizerOnly, ErrClosed for an event cancelled already, and a *gathering.SettingsError of
+// ErrOrganizerOnly, ErrClosed for an event canceled already, and a *gathering.SettingsError of
 // the note.
 func (s *Service) Cancel(ctx context.Context, accountID, id, note string) (View, error) {
 	v, err := s.organizing(ctx, accountID, id)
@@ -299,7 +299,7 @@ func (s *Service) Cancel(ctx context.Context, accountID, id, note string) (View,
 	if !gathering.ValidNote(note) {
 		return View{}, &gathering.SettingsError{Field: gathering.FieldNote}
 	}
-	c := Cancellation{GatheringID: id, Reason: gathering.CancelOrganizer, CancelledByAccountID: accountID, Note: note, CancelledAt: s.now()}
+	c := Cancellation{GatheringID: id, Reason: gathering.CancelOrganizer, CanceledByAccountID: accountID, Note: note, CanceledAt: s.now()}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		ok, err := s.d.Repository.InsertCancellation(ctx, tx, c)
 		if err != nil {
@@ -308,7 +308,7 @@ func (s *Service) Cancel(ctx context.Context, accountID, id, note string) (View,
 		if !ok {
 			return ErrClosed
 		}
-		return tx.Emit(ctx, Cancelled{Cancellation: c})
+		return tx.Emit(ctx, Canceled{Cancellation: c})
 	})
 	if err != nil {
 		return View{}, err

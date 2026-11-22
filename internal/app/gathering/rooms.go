@@ -122,7 +122,7 @@ func (r Record) HasVoice() bool {
 // checkpoint; its idempotency key is the date and the checkpoint.
 const JobRoom = "gathering.room"
 
-// JobEndRooms ends the rooms of an event that was cancelled or whose voice place was removed.
+// JobEndRooms ends the rooms of an event that was canceled or whose voice place was removed.
 const JobEndRooms = "gathering.end_rooms"
 
 // roomPayload is the payload of JobRoom.
@@ -205,9 +205,9 @@ func (s *Service) RegisterRoomProjectors(r *uow.Projectors) {
 		// The event stays; only its room goes.
 		return s.enqueueEndRooms(ctx, tx, endRoomsPayload{Gathering: ev.Revision.GatheringID, By: ev.Revision.RevisedByAccountID, Cause: ev.Revision.ID})
 	})
-	r.Register(EventCancelled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		c := e.(Cancelled).Cancellation
-		p := endRoomsPayload{Gathering: c.GatheringID, By: c.CancelledByAccountID, Cause: "cancelled"}
+	r.Register(EventCanceled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		c := e.(Canceled).Cancellation
+		p := endRoomsPayload{Gathering: c.GatheringID, By: c.CanceledByAccountID, Cause: "canceled"}
 		if c.Reason == gathering.CancelModerator {
 			p.Moderator, p.Note = true, c.Note
 		}
@@ -240,7 +240,7 @@ func (s *Service) RegisterRoomJobs(reg *queue.JobHandlerRegistry) {
 }
 
 // roomCurrent reports whether the room of the date ref of rec is still to open: the event was
-// not cancelled, the date is its current one, and it has a voice place.
+// not canceled, the date is its current one, and it has a voice place.
 func roomCurrent(rec Record, ref string) bool {
 	return rec.Cancellation == nil && rec.Confirmation.ID == ref && rec.HasVoice()
 }
@@ -310,11 +310,11 @@ func (s *Service) room(ctx context.Context, p roomPayload) error {
 		if roomCurrent(cur, p.Ref) {
 			return nil
 		}
-		// Cancelled, or the voice place removed, while the room opened: the job of that change
+		// Canceled, or the voice place removed, while the room opened: the job of that change
 		// may have run before the room was recorded, so the room ends now.
 		end := endRoomsPayload{Gathering: rec.ID, By: rec.OrganizerAccountID, Cause: "late:" + roomID}
 		if c := cur.Cancellation; c != nil && c.Reason == gathering.CancelModerator {
-			end.Moderator, end.By, end.Note = true, c.CancelledByAccountID, c.Note
+			end.Moderator, end.By, end.Note = true, c.CanceledByAccountID, c.Note
 		}
 		return s.enqueueEndRooms(ctx, tx, end)
 	})

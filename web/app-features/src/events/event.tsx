@@ -135,20 +135,20 @@ function useMoment(event: ServerEvent): number {
  * the word); under a cancellation, who or what cancelled it and the organizer's note, as the page's text.
  */
 function State({ event, phase, t }: { event: ServerEvent; phase: EventPhase; t: T }) {
-  if (phase !== "cancelled" && phase !== "ended") return null;
+  if (phase !== "canceled" && phase !== "ended") return null;
   const note = event.cancellation?.note;
   return (
     <Stack gap="entry-line">
       <Row align="center" gap="entry-caption" weight="label" text="body">
-        <Icon name={phase === "cancelled" ? "eventCancelled" : "eventEnded"} place="action" />
+        <Icon name={phase === "canceled" ? "eventCancelled" : "eventEnded"} place="action" />
         <span>{t("events.mark", { state: phase })}</span>
       </Row>
-      {phase === "cancelled" && (
+      {phase === "canceled" && (
         <Box as="p" text="body" dir="auto">
-          {t("events.cancelled", { reason: event.cancellation?.reason ?? "organizer" })}
+          {t("events.canceled", { reason: event.cancellation?.reason ?? "organizer" })}
         </Box>
       )}
-      {phase === "cancelled" && note !== undefined && note !== "" && (
+      {phase === "canceled" && note !== undefined && note !== "" && (
         <Box as="p" text="body" keeps="lines" dir="auto">
           {note}
         </Box>

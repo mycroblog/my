@@ -60,7 +60,7 @@ export type PlaceKind = "voice" | "physical" | "url";
 const placeIcon: Record<PlaceKind, IconName> = { voice: "room", physical: "inPerson", url: "link" };
 
 /** How an event ended: cancelled or ended, each marked alike, its glyph and its words in the text's color. */
-export type EventState = { kind: "cancelled" | "ended"; label: string };
+export type EventState = { kind: "canceled" | "ended"; label: string };
 
 const line = tv({
   slots: {
@@ -137,7 +137,7 @@ export function EventLine({ href, title, date, time, places = [], organizer, goi
         <Row as="span" wrap align="center" gapX="entry-caption" className={s.caption()}>
           {state !== undefined && (
             <Row as="span" rigid align="center" gap="hair" className={s.state()}>
-              <Icon name={state.kind === "cancelled" ? "eventCancelled" : "eventEnded"} place="caption" />
+              <Icon name={state.kind === "canceled" ? "eventCancelled" : "eventEnded"} place="caption" />
               <span>{state.label}</span>
             </Row>
           )}

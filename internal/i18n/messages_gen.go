@@ -4379,11 +4379,11 @@ func (l *Localizer) ServerPushEventBoardPosted(args ServerPushEventBoardPostedAr
 	return l.format("server:push.event_board_posted", map[string]any{"name": args.Name, "title": args.Title})
 }
 
-// ServerPushEventCancelled formats "server:push.event_cancelled". Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that an event was cancelled. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none.
+// ServerPushEventCanceled formats "server:push.event_canceled". Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that an event was cancelled. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none.
 //
 //	en: {title} was cancelled
-func (l *Localizer) ServerPushEventCancelled(title string) string {
-	return l.format("server:push.event_cancelled", map[string]any{"title": title})
+func (l *Localizer) ServerPushEventCanceled(title string) string {
+	return l.format("server:push.event_canceled", map[string]any{"title": title})
 }
 
 // ServerPushEventChanged formats "server:push.event_changed". Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that the organizers changed the date, the places, or the voice chat room of an event. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none.

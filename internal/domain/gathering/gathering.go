@@ -184,14 +184,14 @@ const (
 // Valid reports whether c is a known co-organizer change.
 func (c CoorganizerChange) Valid() bool { return c == CoorganizerAssigned || c == CoorganizerRemoved }
 
-// CancelReason is why an event was cancelled (gathering_cancellations.reason).
+// CancelReason is why an event was canceled (gathering_cancellations.reason).
 type CancelReason string
 
 // The reasons of a cancellation.
 const (
-	// CancelOrganizer: the organizer cancelled it.
+	// CancelOrganizer: the organizer canceled it.
 	CancelOrganizer CancelReason = "organizer"
-	// CancelModerator: a moderator cancelled it.
+	// CancelModerator: a moderator canceled it.
 	CancelModerator CancelReason = "moderator"
 	// CancelOrganizerSuspended: the organizer was suspended before it started.
 	CancelOrganizerSuspended CancelReason = "organizer_suspended"
@@ -208,7 +208,7 @@ func (r CancelReason) Valid() bool {
 	return false
 }
 
-// State is whether an event is unscheduled, scheduled, or cancelled (gathering_heads.state). An
+// State is whether an event is unscheduled, scheduled, or canceled (gathering_heads.state). An
 // event that ended is still scheduled: its end is in the past.
 type State string
 
@@ -217,7 +217,7 @@ const (
 	// StateUnscheduled: the event polls its date and no candidate was confirmed yet.
 	StateUnscheduled State = "unscheduled"
 	StateScheduled   State = "scheduled"
-	StateCancelled   State = "cancelled"
+	StateCanceled    State = "canceled"
 )
 
 // Place is a place of an event (ADR-0161 §6). Name, Address, and URL are those of a physical

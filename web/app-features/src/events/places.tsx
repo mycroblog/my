@@ -150,7 +150,7 @@ function VoicePlace({ event, now, refetch, t }: { event: ServerEvent; now: numbe
         />
       );
     case "none":
-      return <PlaceLine kind="voice" label={label} note={t("events.room_cancelled")} />;
+      return <PlaceLine kind="voice" label={label} note={t("events.room_canceled")} />;
   }
 }
 

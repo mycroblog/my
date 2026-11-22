@@ -145,8 +145,8 @@ func (r *Repository) InsertCancellation(ctx context.Context, tx uow.Tx, c appgat
 		return false, err
 	}
 	n, err := q.InsertGatheringCancellation(ctx, gatheringgen.InsertGatheringCancellationParams{
-		GatheringID: c.GatheringID, Reason: string(c.Reason), CancelledByAccountID: toRef(c.CancelledByAccountID), Note: c.Note,
-		CancelledAt: toTime(c.CancelledAt),
+		GatheringID: c.GatheringID, Reason: string(c.Reason), CanceledByAccountID: toRef(c.CanceledByAccountID), Note: c.Note,
+		CanceledAt: toTime(c.CanceledAt),
 	})
 	return n > 0, wrap(err, "insert gathering cancellation")
 }

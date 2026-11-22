@@ -494,7 +494,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 - 檢舉詳細資料（`GET /api/v1/admin/reports/{id}`）會顯示活動（`event`）：它的日期、是否以及如何被取消，以及它設定的每一次變更（依最舊順序），附有它所有的地點，包括只有已核准的參加者才看得到的地點。
   `reported_revision_id` 是檢舉者所看到的版本，所以在檢舉之後被變更的標題或地址，仍然會呈現在你面前。
 - 持有 `manage_reports` 的人可以用 `POST /api/v1/admin/events/{id}/cancel` 取消活動（內容為 `{"reason": "..."}`，可省略，最多 500 個字元）。
-  原因會連同取消一起顯示給所有看得到該活動的人。回覆要參加或可能參加的使用者與受邀的使用者會收到通知，與主辦人自己取消時相同，而稽核記錄會記錄 `event_cancelled`。
+  原因會連同取消一起顯示給所有看得到該活動的人。回覆要參加或可能參加的使用者與受邀的使用者會收到通知，與主辦人自己取消時相同，而稽核記錄會記錄 `event_canceled`。
   已經取消的活動會回應 `409` `event-closed`。在 Web 用戶端中，活動的檢舉頁面有「取消活動」，會先詢問確認，並附上理由。
 - 停權或刪除主辦人，會取消該主辦人尚未開始的活動，包括仍在以投票挑選日期的活動（`gathering.cancel_organized`），並通知它們的參加者。這些取消不會指名任何人是取消者，而解除停權也不會恢復它們。已經開始的活動不會被取消。
 
@@ -566,7 +566,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `oauth_client_host` | `oauth_client_host_denied`、`oauth_client_host_allowed`（拒絕與撤銷拒絕 Client ID Metadata Document 的主機；拒絕會撤銷該主機用戶端的權杖；目標名稱為主機） |
 | `instance` | `service_closure_announced`、`service_closure_withdrawn`、`service_closure_closed`、`service_closure_delivery_completed`（公告服務關閉或變更日期、撤回公告、關閉，以及完成關閉通知的傳送；目標名稱為 `service_closure`） |
 | `voice_room` | `voice_room_ended`（版主結束了開放中的語音聊天室；由於撰寫名稱的帳號被清除時名稱也會消失，目標名稱為聊天室 ID；檢舉詳細資料會顯示名稱） |
-| `event` | `event_cancelled`（版主取消了一個活動；由於撰寫標題的帳號被清除時標題也會消失，所以目標名稱是活動 ID；檢舉詳細資料會顯示標題） |
+| `event` | `event_canceled`（版主取消了一個活動；由於撰寫標題的帳號被清除時標題也會消失，所以目標名稱是活動 ID；檢舉詳細資料會顯示標題） |
 | `domain_allow` | `domain_allow_added`、`domain_allow_removed`（將網域加入聯邦的允許清單與移除它；請參閱[只與被允許的伺服器聯邦](#federating-only-with-allowed-servers)；目標名稱是該網域） |
 | `link_card_domain` | `link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`（為網域設定連結卡片爬蟲的規則，以及移除規則；請參閱[連結卡片網域](instance-settings.md#link-card-domains)） |
 | `login_provider` | `login_provider_created`、`login_provider_updated`、`login_provider_deleted`、`login_provider_enabled`、`login_provider_disabled`、`login_provider_secret_rotated`（新增、變更、刪除、啟用與停用外部登入服務，以及替換其用戶端密鑰；目標名稱為服務的顯示名稱） |

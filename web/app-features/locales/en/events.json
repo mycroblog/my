@@ -47,7 +47,7 @@
     "defaultMessage": "Sign in",
     "description": "The button on an event's page for a visitor, which signs in and comes back to the event."
   },
-  "events.cancelled": {
+  "events.canceled": {
     "defaultMessage": "{reason, select, moderator {This event was cancelled by a moderator.} organizer_suspended {This event was cancelled: its organizer's account was suspended.} organizer_deleted {This event was cancelled: its organizer's account was deleted.} other {This event was cancelled by its organizer.}}",
     "description": "At the top of a cancelled event's page, by who or what cancelled it; the organizer's note, if any, follows on its own line."
   },
@@ -103,7 +103,7 @@
     "defaultMessage": "The room has ended",
     "description": "Under an event's voice chat room once the room it opened ended."
   },
-  "events.room_cancelled": {
+  "events.room_canceled": {
     "defaultMessage": "Does not open: the event was cancelled",
     "description": "Under the voice chat room of a cancelled event."
   },
@@ -256,7 +256,7 @@
     "description": "Under an event's date poll when the answer to one date could not be saved, beside a button to try it again: date is the candidate's date and time."
   },
   "events.mark": {
-    "defaultMessage": "{state, select, cancelled {Cancelled} other {Ended}}",
+    "defaultMessage": "{state, select, canceled {Cancelled} other {Ended}}",
     "description": "At the top of an event's page, beside its glyph, as its line in a list marks it: it was cancelled (the reason follows under it) or it ended."
   },
   "events.tab": {
@@ -276,8 +276,8 @@
     "description": "In place of the posts of an event's board when nothing is on it."
   },
   "events.board.closed": {
-    "defaultMessage": "{reason, select, cancelled {The event was cancelled, so the board is read-only.} other {7 days have passed since the event ended, so the board is read-only.}}",
-    "description": "In muted words at the top of an event's board, where the bar to write on it would be, when nobody writes on it any more: cancelled, the event was cancelled; other, 7 days passed since the event's end (it is writable for the 7 days after the end). Its words are those of the error server:errors.event.board_closed."
+    "defaultMessage": "{reason, select, canceled {The event was cancelled, so the board is read-only.} other {7 days have passed since the event ended, so the board is read-only.}}",
+    "description": "In muted words at the top of an event's board, where the bar to write on it would be, when nobody writes on it any more: canceled, the event was cancelled; other, 7 days passed since the event's end (it is writable for the 7 days after the end). Its words are those of the error server:errors.event.board_closed."
   },
   "events.board.not_writer": {
     "defaultMessage": "{writers, select, organizer {Only the organizer can write on this board.} other {Only the organizer and the co-organizers can write on this board.}}",
@@ -307,7 +307,7 @@
     "defaultMessage": "Save",
     "description": "The button at the foot of the form that changes an event."
   },
-  "events.edit.cancelled": {
+  "events.edit.canceled": {
     "defaultMessage": "This event was cancelled, so it can no longer be changed.",
     "description": "In place of the form that changes an event, when the event was cancelled."
   },
@@ -723,7 +723,7 @@
     "defaultMessage": "Organizer",
     "description": "In place of the button beside an account found that organizes the event."
   },
-  "events.people.cancelled": {
+  "events.people.canceled": {
     "defaultMessage": "This event was cancelled, so no one can be invited or named a co-organizer.",
     "description": "In place of an event's invitations or co-organizers, when it was cancelled."
   },

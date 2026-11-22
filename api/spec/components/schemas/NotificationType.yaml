@@ -92,7 +92,7 @@ description: |
   user answered or to which the user was invited, once per date; `event_changed` that the date,
   the places, or the voice chat room of an event that the user answered going or maybe to, or was
   invited to, changed, once per change (a change of the title or the description sends
-  nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+  nothing); `event_canceled` that such an event was canceled; `event_reminder` that an event
   that the user answered going or maybe to starts soon, at each time before the start that the
   user chose (`getEventReminders`), once per date and time, and never for a date that changed
   since; `event_started` that it starts now, once per date; `event_room_unavailable` tells
@@ -145,7 +145,7 @@ enum:
   - event_invited
   - event_schedule_confirmed
   - event_changed
-  - event_cancelled
+  - event_canceled
   - event_reminder
   - event_started
   - event_room_unavailable

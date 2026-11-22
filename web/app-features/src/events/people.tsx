@@ -202,7 +202,7 @@ export function Attendees({
     );
   const going = list.items.filter((a) => a.answer === "going");
   const maybe = list.items.filter((a) => a.answer === "maybe");
-  const approves = organizesEvent(event) && phase !== "cancelled" && phase !== "ended";
+  const approves = organizesEvent(event) && phase !== "canceled" && phase !== "ended";
   // An organizer or co-organizer who answered always sees the places (ADR-0161 §6): nothing asks to approve them.
   const end = approves
     ? (attendee: EventAttendee) =>

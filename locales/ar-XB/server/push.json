@@ -83,7 +83,7 @@
     "defaultMessage": "‮{name} ʍɹoʇǝ ou ʇɥǝ qoɐɹp oɟ {title}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
-  "push.event_cancelled": {
+  "push.event_canceled": {
     "defaultMessage": "‮{title} ʍɐs ɔɐuɔǝʅʅǝp‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },

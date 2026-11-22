@@ -2821,7 +2821,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const notices: Kinds = [
       ["event_schedule_confirmed", undefined, about],
       ["event_changed", undefined, about],
-      ["event_cancelled", undefined, about],
+      ["event_canceled", undefined, about],
       ["event_reminder", undefined, about],
       ["event_started", undefined, about],
       ["event_room_unavailable", undefined, about],
@@ -4176,7 +4176,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const { scheduled_at: at, ...rest } = d;
       const unscheduled: Draft = {
         ...rest,
-        last_schedule: { publish_at: at, outcome: "cancelled", occurred_at: new Date().toISOString() },
+        last_schedule: { publish_at: at, outcome: "canceled", occurred_at: new Date().toISOString() },
       };
       putDraft(unscheduled);
       return draftAnswer(200, unscheduled);

@@ -6,7 +6,7 @@ post:
   description: |
     Cancels an event with an optional reason, which the event shows with its cancellation, and
     notifies the users who answered going or maybe and the invited users. Recorded in the audit
-    log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+    log (`event_canceled`). An unknown event is a 404, an event canceled already a 409
     `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
     `manage_reports` permission.
   tags: [admin-moderation]
@@ -22,6 +22,6 @@ post:
           $ref: ../components/schemas/AdminEventCancel.yaml
   responses:
     "204":
-      description: The event is cancelled.
+      description: The event is canceled.
     default:
       $ref: ../components/responses/Problem.yaml

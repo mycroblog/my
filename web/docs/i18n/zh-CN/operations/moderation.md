@@ -417,7 +417,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 
 - 本站用户可以举报自己能看到的活动，包括已取消的活动（带有 `event_id` 的 `POST /api/v1/reports`，并把 `account_id` 设为该活动的主办者）。该举报以主办者为目标，并指向举报者所见的活动设置（标题、描述和地点）。仍在为日期投票的活动，可以像其他任何活动一样被举报和取消。它不指向任何帖子，也从不转发到其他服务器。
 - 举报详情（`GET /api/v1/admin/reports/{id}`）会显示该活动（`event`）：它的日期、是否以及如何被取消，以及其设置的每一次更改（最旧在前），包括它的所有地点，也包括只有已获批准的参加者才能看到的地点。`reported_revision_id` 是举报者所见的版本，因此举报之后更改的标题或地址仍然摆在你面前。
-- 拥有 `manage_reports` 的人可以用 `POST /api/v1/admin/events/{id}/cancel` 取消活动（请求体 `{"reason": "..."}`，可选，最多 500 个字符）。该理由会与取消一起显示给所有能看到该活动的人。回复了参加或可能参加的用户以及受邀的用户会收到通知，与主办者自己取消时相同，审计日志会记录 `event_cancelled`。已经取消的活动会返回 `409` `event-closed`。在 Web 客户端中，活动的举报页面上有“取消活动”，会先询问确认，并附有理由。
+- 拥有 `manage_reports` 的人可以用 `POST /api/v1/admin/events/{id}/cancel` 取消活动（请求体 `{"reason": "..."}`，可选，最多 500 个字符）。该理由会与取消一起显示给所有能看到该活动的人。回复了参加或可能参加的用户以及受邀的用户会收到通知，与主办者自己取消时相同，审计日志会记录 `event_canceled`。已经取消的活动会返回 `409` `event-closed`。在 Web 客户端中，活动的举报页面上有“取消活动”，会先询问确认，并附有理由。
 - 封禁或删除主办者会取消该主办者尚未开始的活动，包括仍在为日期投票的活动（`gathering.cancel_organized`），并通知它们的参加者。这些取消不会指明是谁取消的，解除封禁也不会恢复它们。已经开始的活动不会被取消。
 
 <!-- source: notifications-for-moderators-and-the-pending-counts 0d1c327abe83 -->
@@ -473,7 +473,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `oauth_client_host` | `oauth_client_host_denied`、`oauth_client_host_allowed`（拒绝 Client ID Metadata Document 主机和撤销拒绝；拒绝会撤销该主机上客户端的令牌；目标名称为主机） |
 | `instance` | `service_closure_announced`、`service_closure_withdrawn`、`service_closure_closed`、`service_closure_delivery_completed`（公告关闭服务或更改日期、撤回公告、关闭，以及完成关闭的投递；目标名称为 `service_closure`） |
 | `voice_room` | `voice_room_ended`（审核员结束了正在进行的语音聊天房间；目标名称为房间 ID，因为名称会在写下它的账号被抹除时消失；举报详情会显示名称） |
-| `event` | `event_cancelled`（审核员取消了一个活动；目标名称是活动 ID，因为标题会在撰写它的账号被清除时消失；举报详情会显示标题） |
+| `event` | `event_canceled`（审核员取消了一个活动；目标名称是活动 ID，因为标题会在撰写它的账号被清除时消失；举报详情会显示标题） |
 | `domain_allow` | `domain_allow_added`、`domain_allow_removed`（把域名加入联邦允许列表和把它移除；请参阅[只与被允许的服务器联邦](#federating-only-with-allowed-servers)；目标名称是域名） |
 | `link_card_domain` | `link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`（为某个域名设置链接卡片爬虫的规则，以及移除规则；见[链接卡片域名](instance-settings.md#link-card-domains)） |
 | `login_provider` | `login_provider_created`、`login_provider_updated`、`login_provider_deleted`、`login_provider_enabled`、`login_provider_disabled`、`login_provider_secret_rotated`（添加、更改、删除、启用和停用外部登录提供方，以及替换其客户端密钥；目标名称为提供方的显示名称） |

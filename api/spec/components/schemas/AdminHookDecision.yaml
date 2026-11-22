@@ -31,7 +31,7 @@ properties:
     type: string
     format: date-time
   overridden_at:
-    description: When a moderator cancelled the decision; absent while it stands.
+    description: When a moderator canceled the decision; absent while it stands.
     type: string
     format: date-time
   restorable_until:

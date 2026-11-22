@@ -484,7 +484,7 @@ export function Poll({
   // What came of the answer to each date, so that a failed one is never hidden by a later one to another date.
   const [saving, setSaving] = useState<ReadonlyMap<string, Saving>>(new Map());
   const [last, setLast] = useState<string | null>(null);
-  const closed = event.state === "cancelled";
+  const closed = event.state === "canceled";
   const manages = organizesEvent(event) && !closed;
   const mark = (candidateId: string, state: Saving) => {
     setSaving((before) => new Map(before).set(candidateId, state));

@@ -130,7 +130,7 @@ func keepsDues(t *testing.T, e *dueEnv) {
 	if _, err := e.svc.Cancel(t.Context(), alice, v.ID, ""); err != nil {
 		t.Fatalf("Cancel: %v", err)
 	}
-	wantDue(t, "cancelled", e.due(t, v.ID), time.Time{})
+	wantDue(t, "canceled", e.due(t, v.ID), time.Time{})
 }
 
 // jobKinds returns the kinds and minutes of the gathering.notify jobs among jobs, sorted.
@@ -311,5 +311,5 @@ func rebuildDues(t *testing.T, e *dueEnv) {
 		t.Fatalf("RebuildDues: %v", err)
 	}
 	wantDue(t, "rebuilt", e.due(t, v.ID), before)
-	wantDue(t, "rebuilt, cancelled", e.due(t, w.ID), time.Time{})
+	wantDue(t, "rebuilt, canceled", e.due(t, w.ID), time.Time{})
 }

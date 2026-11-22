@@ -15,14 +15,14 @@ import (
 )
 
 // The retention of the answers and the invitations of the events (ADR-0161 §14): the hourly
-// JobPurgeRecords erases them event_records_retention_days after an event ended or was cancelled,
+// JobPurgeRecords erases them event_records_retention_days after an event ended or was canceled,
 // except those of an event that a report points at and those that name an account that a
 // retention hold preserves. The events, their revisions, dates, co-organizers, and cancellations
 // stay.
 
 const (
 	// JobPurgeRecords erases the answers, approvals, and invitations of the events that ended or
-	// were cancelled longer than event_records_retention_days ago (ADR-0161 §14); no payload.
+	// were canceled longer than event_records_retention_days ago (ADR-0161 §14); no payload.
 	JobPurgeRecords = "gathering.purge_records"
 	// RecordPurgeInterval is the period of the purge's schedule.
 	RecordPurgeInterval = time.Hour
@@ -49,7 +49,7 @@ type Retention interface {
 // RecordsRepository is the part of Repository that the purge of the records uses.
 type RecordsRepository interface {
 	// GatheringsToPurge returns at most limit events, in ID order after the event after ("" for
-	// the first), that ended or were cancelled before endedBefore and still have answers or
+	// the first), that ended or were canceled before endedBefore and still have answers or
 	// invitations.
 	GatheringsToPurge(ctx context.Context, tx uow.Tx, endedBefore time.Time, after string, limit int) ([]string, error)
 	// RecordAccounts returns the accounts that the answers, the approvals, and the invitations of
@@ -70,7 +70,7 @@ const (
 )
 
 // PurgeRecords erases the answers, the approvals, and the invitations of the events that ended or
-// were cancelled longer than event_records_retention_days ago, and returns how many events it
+// were canceled longer than event_records_retention_days ago, and returns how many events it
 // erased them of. It keeps those of an event that a report points at, until the moderation module
 // erases the report after its retention, and those of an event whose records name an account that
 // a retention hold preserves. Each batch is one short transaction that locks its events and reads

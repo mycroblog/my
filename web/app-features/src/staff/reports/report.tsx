@@ -359,10 +359,10 @@ function useEventFacts(event: ReportedEvent | undefined): Fact[] {
       ? []
       : [
           {
-            term: t("staff.report.event.cancelled"),
-            value: t("staff.report.event.cancelled_by", { reason: event.cancellation.reason }),
+            term: t("staff.report.event.canceled"),
+            value: t("staff.report.event.canceled_by", { reason: event.cancellation.reason }),
           },
-          { term: t("staff.report.event.cancelled_at"), value: moment(event.cancellation.cancelled_at) },
+          { term: t("staff.report.event.canceled_at"), value: moment(event.cancellation.canceled_at) },
         ]),
   ];
 }

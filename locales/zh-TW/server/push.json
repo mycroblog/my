@@ -175,7 +175,7 @@
     "defaultMessage": "{title} 的日期或地點已變更",
     "description": "Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that the organizers changed the date, the places, or the voice chat room of an event. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
   },
-  "push.event_cancelled": {
+  "push.event_canceled": {
     "defaultMessage": "{title} 已取消",
     "description": "Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that an event was cancelled. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
   },

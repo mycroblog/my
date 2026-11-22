@@ -337,7 +337,7 @@ const (
 	AdminAuditActionDomainListSubscriptionUpdated   AdminAuditAction = "domain_list_subscription_updated"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
-	AdminAuditActionEventCancelled                  AdminAuditAction = "event_cancelled"
+	AdminAuditActionEventCanceled                   AdminAuditAction = "event_canceled"
 	AdminAuditActionHookAppealUpheld                AdminAuditAction = "hook_appeal_upheld"
 	AdminAuditActionHookDecisionApplied             AdminAuditAction = "hook_decision_applied"
 	AdminAuditActionHookDecisionOverridden          AdminAuditAction = "hook_decision_overridden"
@@ -500,7 +500,7 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
 		return true
-	case AdminAuditActionEventCancelled:
+	case AdminAuditActionEventCanceled:
 		return true
 	case AdminAuditActionHookAppealUpheld:
 		return true
@@ -2277,14 +2277,14 @@ func (e DraftFailureReason) Valid() bool {
 
 // Defines values for DraftScheduleOutcomeOutcome.
 const (
-	DraftScheduleOutcomeOutcomeCancelled DraftScheduleOutcomeOutcome = "cancelled"
-	DraftScheduleOutcomeOutcomeFailed    DraftScheduleOutcomeOutcome = "failed"
+	DraftScheduleOutcomeOutcomeCanceled DraftScheduleOutcomeOutcome = "canceled"
+	DraftScheduleOutcomeOutcomeFailed   DraftScheduleOutcomeOutcome = "failed"
 )
 
 // Valid indicates whether the value is a known member of the DraftScheduleOutcomeOutcome enum.
 func (e DraftScheduleOutcomeOutcome) Valid() bool {
 	switch e {
-	case DraftScheduleOutcomeOutcomeCancelled:
+	case DraftScheduleOutcomeOutcomeCanceled:
 		return true
 	case DraftScheduleOutcomeOutcomeFailed:
 		return true
@@ -2565,7 +2565,7 @@ func (e EventRoomUnavailableReason) Valid() bool {
 
 // Defines values for EventState.
 const (
-	EventStateCancelled   EventState = "cancelled"
+	EventStateCanceled    EventState = "canceled"
 	EventStateScheduled   EventState = "scheduled"
 	EventStateUnscheduled EventState = "unscheduled"
 )
@@ -2573,7 +2573,7 @@ const (
 // Valid indicates whether the value is a known member of the EventState enum.
 func (e EventState) Valid() bool {
 	switch e {
-	case EventStateCancelled:
+	case EventStateCanceled:
 		return true
 	case EventStateScheduled:
 		return true
@@ -4240,7 +4240,7 @@ const (
 	NotificationTypeBoostRequest               NotificationType = "boost_request"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
 	NotificationTypeEventBoardPosted           NotificationType = "event_board_posted"
-	NotificationTypeEventCancelled             NotificationType = "event_cancelled"
+	NotificationTypeEventCanceled              NotificationType = "event_canceled"
 	NotificationTypeEventChanged               NotificationType = "event_changed"
 	NotificationTypeEventInvited               NotificationType = "event_invited"
 	NotificationTypeEventReminder              NotificationType = "event_reminder"
@@ -4315,7 +4315,7 @@ func (e NotificationType) Valid() bool {
 		return true
 	case NotificationTypeEventBoardPosted:
 		return true
-	case NotificationTypeEventCancelled:
+	case NotificationTypeEventCanceled:
 		return true
 	case NotificationTypeEventChanged:
 		return true
@@ -6475,7 +6475,7 @@ type AdminAppealPage struct {
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 // `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
 // and left state; the actor is the system), `hook_decision_overridden` (a moderator
-// cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+// canceled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
 // moderator upheld the appeal of a refused post, and the decision stays). On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -6527,7 +6527,7 @@ type AdminAppealPage struct {
 // `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
 // `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
 // that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
-// the `system` as the actor. On an `event`: `event_cancelled`, a moderator's cancellation of
+// the `system` as the actor. On an `event`: `event_canceled`, a moderator's cancellation of
 // the event; the ID and the label are the event's ID.
 type AdminAuditAction string
 
@@ -6570,7 +6570,7 @@ type AdminAuditEntry struct {
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 	// `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
 	// and left state; the actor is the system), `hook_decision_overridden` (a moderator
-	// cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+	// canceled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
 	// moderator upheld the appeal of a refused post, and the decision stays). On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -6622,7 +6622,7 @@ type AdminAuditEntry struct {
 	// `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
 	// `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
 	// that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
-	// the `system` as the actor. On an `event`: `event_cancelled`, a moderator's cancellation of
+	// the `system` as the actor. On an `event`: `event_canceled`, a moderator's cancellation of
 	// the event; the ID and the label are the event's ID.
 	Action AdminAuditAction `json:"action"`
 
@@ -7239,22 +7239,22 @@ type AdminDomainListSuspendAs string
 
 // AdminEventCancel A moderator cancelling an event.
 type AdminEventCancel struct {
-	// Reason Why the event is cancelled, as plain text of up to 500 characters. The event shows it
+	// Reason Why the event is canceled, as plain text of up to 500 characters. The event shows it
 	// with its cancellation to everyone who sees the event.
 	Reason *string `json:"reason,omitempty"`
 }
 
 // AdminEventCancellation The cancellation of an event as the moderators see it.
 type AdminEventCancellation struct {
-	CancelledAt time.Time `json:"cancelled_at"`
+	CanceledAt time.Time `json:"canceled_at"`
 
-	// CancelledByAccountId Who cancelled the event; omitted for an automatic cancellation.
-	CancelledByAccountId *Id `json:"cancelled_by_account_id,omitempty"`
+	// CanceledByAccountId Who canceled the event; omitted for an automatic cancellation.
+	CanceledByAccountId *Id `json:"canceled_by_account_id,omitempty"`
 
 	// Note The reason given for the cancellation; omitted for none.
 	Note *string `json:"note,omitempty"`
 
-	// Reason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+	// Reason Why an event was canceled: by its `organizer`, by a `moderator`, or because the organizer was
 	// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
 	Reason EventCancelReason `json:"reason"`
 }
@@ -7338,7 +7338,7 @@ type AdminHookAppeal struct {
 	Id Id `json:"id"`
 
 	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
-	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+	// `upheld` when the refusal stays, `overturned` when the moderator canceled it. After
 	// `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
 	// post is not restored.
 	State HookAppealState `json:"state"`
@@ -7392,7 +7392,7 @@ type AdminHookDecision struct {
 	// something. A `reject` of `local.status` goes through its appeal instead.
 	Overridable bool `json:"overridable"`
 
-	// OverriddenAt When a moderator cancelled the decision; absent while it stands.
+	// OverriddenAt When a moderator canceled the decision; absent while it stands.
 	OverriddenAt *time.Time `json:"overridden_at,omitempty"`
 
 	// Reason The coded reason of a verdict.
@@ -8168,7 +8168,7 @@ type AdminReportDetail struct {
 // date, its cancellation, and every revision of its settings with all its places, whoever the
 // places were shown to. `reported_revision_id` is the revision that the reporter saw.
 type AdminReportEvent struct {
-	// Cancellation How the event was cancelled; omitted while it is not.
+	// Cancellation How the event was canceled; omitted while it is not.
 	Cancellation *AdminEventCancellation `json:"cancellation,omitempty"`
 	CreatedAt    time.Time               `json:"created_at"`
 
@@ -8195,7 +8195,7 @@ type AdminReportEvent struct {
 	StartsAt *time.Time `json:"starts_at,omitempty"`
 
 	// State Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
-	// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+	// `scheduled`, or `canceled`. An event that ended is still `scheduled`: its `ends_at` is in the
 	// past.
 	State EventState `json:"state"`
 }
@@ -11404,7 +11404,7 @@ type DraftScheduleOutcome struct {
 	// OccurredAt When the schedule ended.
 	OccurredAt time.Time `json:"occurred_at"`
 
-	// Outcome `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+	// Outcome `canceled`: the user canceled the schedule or scheduled another time. `failed`: the post
 	// could not be published at its time, for `reason`.
 	Outcome DraftScheduleOutcomeOutcome `json:"outcome"`
 
@@ -11421,7 +11421,7 @@ type DraftScheduleOutcome struct {
 	Reason *DraftFailureReason `json:"reason,omitempty"`
 }
 
-// DraftScheduleOutcomeOutcome `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+// DraftScheduleOutcomeOutcome `canceled`: the user canceled the schedule or scheduled another time. `failed`: the post
 // could not be published at its time, for `reason`.
 type DraftScheduleOutcomeOutcome string
 
@@ -11771,7 +11771,7 @@ type Event struct {
 	StartsAt time.Time `json:"starts_at"`
 
 	// State Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
-	// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+	// `scheduled`, or `canceled`. An event that ended is still `scheduled`: its `ends_at` is in the
 	// past.
 	State EventState `json:"state"`
 
@@ -11843,7 +11843,7 @@ type EventBoardAccess struct {
 
 	// Writable Whether the user may post on the board and edit their posts on it now: the event's
 	// `board_writers` admit the user, and the board is not read-only. The board is read-only once
-	// the event is cancelled, and from 7 days after its end (for an `unscheduled` event, the end of
+	// the event is canceled, and from 7 days after its end (for an `unscheduled` event, the end of
 	// its last candidate date, its `ends_at`).
 	Writable bool `json:"writable"`
 }
@@ -11888,7 +11888,7 @@ type EventBoardPostCreate struct {
 // answer `going` or `maybe`.
 type EventBoardWriters string
 
-// EventCancelReason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+// EventCancelReason Why an event was canceled: by its `organizer`, by a `moderator`, or because the organizer was
 // suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
 type EventCancelReason string
 
@@ -11900,12 +11900,12 @@ type EventCancelRequest struct {
 
 // EventCancellation The cancellation of an event.
 type EventCancellation struct {
-	CancelledAt time.Time `json:"cancelled_at"`
+	CanceledAt time.Time `json:"canceled_at"`
 
 	// Note The reason given for the cancellation; omitted for none.
 	Note *string `json:"note,omitempty"`
 
-	// Reason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+	// Reason Why an event was canceled: by its `organizer`, by a `moderator`, or because the organizer was
 	// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
 	Reason EventCancelReason `json:"reason"`
 }
@@ -12097,7 +12097,7 @@ type EventRemindersUpdate struct {
 type EventRoomUnavailableReason string
 
 // EventState Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
-// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+// `scheduled`, or `canceled`. An event that ended is still `scheduled`: its `ends_at` is in the
 // past.
 type EventState string
 
@@ -12471,7 +12471,7 @@ type Hashtag struct {
 }
 
 // HookAppealState Where an appeal of a refused post stands: `pending` until a moderator decides it,
-// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+// `upheld` when the refusal stays, `overturned` when the moderator canceled it. After
 // `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
 // post is not restored.
 type HookAppealState string
@@ -14564,7 +14564,7 @@ type Notification struct {
 	// user answered or to which the user was invited, once per date; `event_changed` that the date,
 	// the places, or the voice chat room of an event that the user answered going or maybe to, or was
 	// invited to, changed, once per change (a change of the title or the description sends
-	// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+	// nothing); `event_canceled` that such an event was canceled; `event_reminder` that an event
 	// that the user answered going or maybe to starts soon, at each time before the start that the
 	// user chose (`getEventReminders`), once per date and time, and never for a date that changed
 	// since; `event_started` that it starts now, once per date; `event_room_unavailable` tells
@@ -14981,7 +14981,7 @@ type NotificationSettingsUpdateChangesChannel string
 // user answered or to which the user was invited, once per date; `event_changed` that the date,
 // the places, or the voice chat room of an event that the user answered going or maybe to, or was
 // invited to, changed, once per change (a change of the title or the description sends
-// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+// nothing); `event_canceled` that such an event was canceled; `event_reminder` that an event
 // that the user answered going or maybe to starts soon, at each time before the start that the
 // user chose (`getEventReminders`), once per date and time, and never for a date that changed
 // since; `event_started` that it starts now, once per date; `event_room_unavailable` tells
@@ -15180,7 +15180,7 @@ type OwnHookAppeal struct {
 	Id Id `json:"id"`
 
 	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
-	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+	// `upheld` when the refusal stays, `overturned` when the moderator canceled it. After
 	// `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
 	// post is not restored.
 	State       HookAppealState `json:"state"`
@@ -15897,7 +15897,7 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-not-organizer` (403): the operation is for the organizer and the
 //     co-organizers of the event.
 //   - `/api/v1/problems/event-organizer-only` (403): the operation is for the organizer of the event.
-//   - `/api/v1/problems/event-closed` (409): the event was cancelled, or has started for an answer.
+//   - `/api/v1/problems/event-closed` (409): the event was canceled, or has started for an answer.
 //   - `/api/v1/problems/event-full` (409): the attendees who answer `going` reached the capacity.
 //   - `/api/v1/problems/event-voice-unavailable` (422): the event cannot be held in a voice chat
 //     room: the voice chat is off, or its organizer may not host rooms.
@@ -15914,7 +15914,7 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the
 //     user post on its board.
 //   - `/api/v1/problems/event-board-closed` (409): the board of the event is read-only: the event was
-//     cancelled, or 7 days have passed since its end (it is writable for the 7 days after the end).
+//     canceled, or 7 days have passed since its end (it is writable for the 7 days after the end).
 //   - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
 //   - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
 //     takes no more candidates, answers, or confirmations.

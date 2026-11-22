@@ -21,7 +21,7 @@ var ErrAttendeeOrganizes = errors.New("gathering: the account organizes the even
 // declined, changed as often as the account likes until the event starts. A new answer of going
 // to an event whose attendees who answer going reached its capacity fails with ErrFull; maybe
 // and declined never do. An answer of declined ends an approval. It fails with ErrNotFound,
-// ErrInvalidAnswer, ErrClosed for an event that started or was cancelled, and ErrUnscheduled for
+// ErrInvalidAnswer, ErrClosed for an event that started or was canceled, and ErrUnscheduled for
 // an event whose date poll was not confirmed yet.
 func (s *Service) Answer(ctx context.Context, accountID, id string, answer gathering.Answer) (View, error) {
 	if !answer.Valid() {

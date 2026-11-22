@@ -106,7 +106,7 @@ func TestCanWriteBoard(t *testing.T) {
 }
 
 // TestBoardOpen checks the term of a board: open from the creation, read-only at once when the
-// event is cancelled, and BoardWritableAfterEnd after a fixed end; an event that polls its date has
+// event is canceled, and BoardWritableAfterEnd after a fixed end; an event that polls its date has
 // no end yet.
 func TestBoardOpen(t *testing.T) {
 	if gathering.BoardWritableAfterEnd != 7*24*time.Hour {
@@ -127,8 +127,8 @@ func TestBoardOpen(t *testing.T) {
 		{"a second before 7 days after the end", scheduled, end.Add(gathering.BoardWritableAfterEnd - time.Second), true},
 		{"a second after 7 days after the end", scheduled, end.Add(gathering.BoardWritableAfterEnd + time.Second), false},
 		{"a month after the end", scheduled, end.Add(30 * 24 * time.Hour), false},
-		{"cancelled before the start", gathering.BoardTerm{EndsAt: end, Cancelled: true, CancelledAt: end.Add(-48 * time.Hour)}, end.Add(-24 * time.Hour), false},
-		{"cancelled while polling", gathering.BoardTerm{EndsAt: end, Cancelled: true, CancelledAt: end.Add(-48 * time.Hour)}, end.Add(-24 * time.Hour), false},
+		{"canceled before the start", gathering.BoardTerm{EndsAt: end, Canceled: true, CanceledAt: end.Add(-48 * time.Hour)}, end.Add(-24 * time.Hour), false},
+		{"canceled while polling", gathering.BoardTerm{EndsAt: end, Canceled: true, CanceledAt: end.Add(-48 * time.Hour)}, end.Add(-24 * time.Hour), false},
 		{"polling, a year after its last candidate", scheduled, end.Add(365 * 24 * time.Hour), false},
 		{"no end", gathering.BoardTerm{}, end, false},
 	} {
@@ -143,7 +143,7 @@ func TestBoardOpen(t *testing.T) {
 func TestBoard(t *testing.T) {
 	end := time.Date(2026, 12, 1, 14, 0, 0, 0, time.UTC)
 	open := gathering.BoardTerm{EndsAt: end}
-	cancelled := gathering.BoardTerm{EndsAt: end, Cancelled: true, CancelledAt: end.Add(-48 * time.Hour)}
+	canceled := gathering.BoardTerm{EndsAt: end, Canceled: true, CanceledAt: end.Add(-48 * time.Hour)}
 	now := end.Add(-time.Hour)
 	organizers := boardEvent(gathering.VisibilityPublic, gathering.BoardWritersOrganizers)
 	invited := boardEvent(gathering.VisibilityInvited, gathering.BoardWritersReaders)
@@ -156,7 +156,7 @@ func TestBoard(t *testing.T) {
 		want   gathering.BoardAccess
 	}{
 		{"the organizer", organizers, open, local(organizer), boardOrganizer, gathering.BoardAccess{Sees: true, Reads: true, Open: true, Writes: true}},
-		{"the organizer of a cancelled event", organizers, cancelled, local(organizer), boardOrganizer, gathering.BoardAccess{Sees: true, Reads: true}},
+		{"the organizer of a canceled event", organizers, canceled, local(organizer), boardOrganizer, gathering.BoardAccess{Sees: true, Reads: true}},
 		{"going, among organizers' writers", organizers, open, local(viewerID), boardGoing, gathering.BoardAccess{Sees: true, Reads: true, Open: true}},
 		{"going, among readers' writers", invited, open, local(viewerID), boardInvitedGoes, gathering.BoardAccess{Sees: true, Reads: true, Open: true, Writes: true}},
 		{"going, after the term", invited, open, local(viewerID), boardInvitedGoes, gathering.BoardAccess{Sees: true, Reads: true}},

@@ -187,7 +187,7 @@ const kinds: Record<Action, readonly [says: string, leads: Leads | null]> = {
     "asked to fetch the blocklist Shared block list now",
     { under: "/moderation/domain-actions/subscriptions/" },
   ],
-  event_cancelled: ["cancelled the event Book swap", { under: "/events/" }],
+  event_canceled: ["cancelled the event Book swap", { under: "/events/" }],
 };
 
 /** Who an entry says did it: the person's handle, the command line, the server, or another server. */

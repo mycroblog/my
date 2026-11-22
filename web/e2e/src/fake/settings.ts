@@ -86,7 +86,7 @@ export const memberNotificationRows: readonly FakeNotificationRow[] = [
       "event_invited",
       "event_schedule_confirmed",
       "event_changed",
-      "event_cancelled",
+      "event_canceled",
       "event_reminder",
       "event_started",
       "event_room_unavailable",

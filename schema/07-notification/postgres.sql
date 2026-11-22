@@ -26,7 +26,7 @@ CREATE TABLE notifications (
     'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'admin_domain_list_failing', 'status', 'announcement',
     'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit', 'scheduled_status_failed',
     'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected',
-    'event_invited', 'event_schedule_confirmed', 'event_changed', 'event_cancelled', 'event_reminder', 'event_started',
+    'event_invited', 'event_schedule_confirmed', 'event_changed', 'event_canceled', 'event_reminder', 'event_started',
     'event_room_unavailable', 'event_board_posted'
   )),
   source_account_id uuid,
@@ -75,7 +75,7 @@ CREATE TABLE notifications (
   auto_delete_limit_notice_id uuid,
   -- scheduled_status_failed: the draft_schedules row of the schedule that could not be published.
   draft_schedule_id uuid,
-  -- event_invited, event_schedule_confirmed, event_changed, event_cancelled, event_reminder,
+  -- event_invited, event_schedule_confirmed, event_changed, event_canceled, event_reminder,
   -- event_started, event_room_unavailable, event_board_posted: the gatherings row of the event
   -- (and status_id the post of its board, of an event_board_posted).
   gathering_id uuid,
@@ -176,7 +176,7 @@ CREATE TABLE push_subscription_alerts (
     'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'admin_domain_list_failing', 'status', 'announcement',
     'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit', 'scheduled_status_failed',
     'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected',
-    'event_invited', 'event_schedule_confirmed', 'event_changed', 'event_cancelled', 'event_reminder', 'event_started',
+    'event_invited', 'event_schedule_confirmed', 'event_changed', 'event_canceled', 'event_reminder', 'event_started',
     'event_room_unavailable', 'event_board_posted'
   )),
   PRIMARY KEY (subscription_id, notification_type)

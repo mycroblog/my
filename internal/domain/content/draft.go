@@ -221,11 +221,11 @@ type DraftSchedule struct {
 type DraftOutcome string
 
 // Outcomes of a schedule. A published draft leaves no rows (its schedules go with it), so the
-// outcomes that stay are cancelled and failed.
+// outcomes that stay are canceled and failed.
 const (
 	DraftPublished DraftOutcome = "published"
 	DraftFailed    DraftOutcome = "failed"
-	DraftCancelled DraftOutcome = "cancelled"
+	DraftCanceled  DraftOutcome = "canceled"
 )
 
 // DraftFailureReason is why a scheduled draft was not published

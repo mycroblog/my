@@ -71,7 +71,7 @@ func writeEventCalendar(b *bytes.Buffer, v appgathering.View, src calendarSource
 		w.line("LAST-MODIFIED", icalTime(m))
 	}
 	w.line("SEQUENCE", strconv.Itoa(v.Revisions))
-	if v.Cancellation != nil || v.Head.State == gathering.StateCancelled {
+	if v.Cancellation != nil || v.Head.State == gathering.StateCanceled {
 		w.line("STATUS", "CANCELLED")
 	} else {
 		w.line("STATUS", "CONFIRMED")
@@ -97,8 +97,8 @@ func lastModified(r appgathering.Record) time.Time {
 	if r.Confirmation.ConfirmedAt.After(m) {
 		m = r.Confirmation.ConfirmedAt
 	}
-	if r.Cancellation != nil && r.Cancellation.CancelledAt.After(m) {
-		m = r.Cancellation.CancelledAt
+	if r.Cancellation != nil && r.Cancellation.CanceledAt.After(m) {
+		m = r.Cancellation.CanceledAt
 	}
 	return m
 }

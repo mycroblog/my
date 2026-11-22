@@ -94,7 +94,7 @@ const listGatheringsToPurge = `-- name: ListGatheringsToPurge :many
 SELECT h.gathering_id FROM gathering_heads h
 LEFT JOIN gathering_cancellations x ON x.gathering_id = h.gathering_id
 WHERE ($1::text = '' OR h.gathering_id::text > $1::text)
-  AND (h.ends_at < $2 OR x.cancelled_at < $2)
+  AND (h.ends_at < $2 OR x.canceled_at < $2)
   AND (EXISTS (SELECT 1 FROM gathering_rsvps r WHERE r.gathering_id = h.gathering_id)
     OR EXISTS (SELECT 1 FROM gathering_rsvp_approvals a WHERE a.gathering_id = h.gathering_id)
     OR EXISTS (SELECT 1 FROM gathering_votes v WHERE v.gathering_id = h.gathering_id)
@@ -110,7 +110,7 @@ type ListGatheringsToPurgeParams struct {
 }
 
 // ListGatheringsToPurge returns at most row_limit events, in ID order after the event after (”
-// for the first), that ended or were cancelled before ended_before, whichever came first, and
+// for the first), that ended or were canceled before ended_before, whichever came first, and
 // still have answers, votes, or invitations. The end of an unscheduled event is the end of the span
 // of its candidates.
 func (q *Queries) ListGatheringsToPurge(ctx context.Context, arg ListGatheringsToPurgeParams) ([]string, error) {
@@ -149,7 +149,7 @@ type ListOrganizedUpcomingGatheringsParams struct {
 }
 
 // ListOrganizedUpcomingGatherings returns at most row_limit events, in ID order, that an account
-// organizes, that were not cancelled, and that have not started at now: the scheduled events whose
+// organizes, that were not canceled, and that have not started at now: the scheduled events whose
 // start is ahead, and every unscheduled event, whose date poll has no date yet.
 func (q *Queries) ListOrganizedUpcomingGatherings(ctx context.Context, arg ListOrganizedUpcomingGatheringsParams) ([]string, error) {
 	rows, err := q.db.Query(ctx, listOrganizedUpcomingGatherings, arg.AccountID, arg.Now, arg.RowLimit)

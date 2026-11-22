@@ -42,8 +42,8 @@ CREATE TABLE hook_decision_statuses (
   PRIMARY KEY (decision_id, status_id)
 ) STRICT;
 
--- Event: a moderator cancelled a decision (ADR-0147 §9). A decision is cancelled once.
--- overridden_by_user_id is NULL when the CLI cancelled it.
+-- Event: a moderator canceled a decision (ADR-0147 §9). A decision is canceled once.
+-- overridden_by_user_id is NULL when the CLI canceled it.
 CREATE TABLE hook_decision_overrides (
   decision_id TEXT NOT NULL PRIMARY KEY,
   overridden_by_user_id TEXT,

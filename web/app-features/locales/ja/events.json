@@ -47,7 +47,7 @@
     "defaultMessage": "ログイン",
     "description": "The button on an event's page for a visitor, which signs in and comes back to the event."
   },
-  "events.cancelled": {
+  "events.canceled": {
     "defaultMessage": "{reason, select, moderator {このイベントはモデレーターが中止しました。} organizer_suspended {このイベントは中止されました。主催者のアカウントが凍結されたためです。} organizer_deleted {このイベントは中止されました。主催者のアカウントが削除されたためです。} other {このイベントは主催者が中止しました。}}",
     "description": "At the top of a cancelled event's page, by who or what cancelled it; the organizer's note, if any, follows on its own line."
   },
@@ -103,7 +103,7 @@
     "defaultMessage": "ルームは終了しました",
     "description": "Under an event's voice chat room once the room it opened ended."
   },
-  "events.room_cancelled": {
+  "events.room_canceled": {
     "defaultMessage": "開きません。イベントは中止されました",
     "description": "Under the voice chat room of a cancelled event."
   },
@@ -256,7 +256,7 @@
     "description": "Under an event's date poll when the answer to one date could not be saved, beside a button to try it again: date is the candidate's date and time."
   },
   "events.mark": {
-    "defaultMessage": "{state, select, cancelled {中止} other {終了}}",
+    "defaultMessage": "{state, select, canceled {中止} other {終了}}",
     "description": "At the top of an event's page, beside its glyph, as its line in a list marks it: it was cancelled (the reason follows under it) or it ended."
   },
   "events.tab": {
@@ -276,8 +276,8 @@
     "description": "In place of the posts of an event's board when nothing is on it."
   },
   "events.board.closed": {
-    "defaultMessage": "{reason, select, cancelled {イベントが中止されたため、掲示板は読むだけになっています。} other {イベントが終わってから 7 日が過ぎたため、掲示板は読むだけになっています。}}",
-    "description": "In muted words at the top of an event's board, where the bar to write on it would be, when nobody writes on it any more: cancelled, the event was cancelled; other, 7 days passed since the event's end (it is writable for the 7 days after the end). Its words are those of the error server:errors.event.board_closed."
+    "defaultMessage": "{reason, select, canceled {イベントが中止されたため、掲示板は読むだけになっています。} other {イベントが終わってから 7 日が過ぎたため、掲示板は読むだけになっています。}}",
+    "description": "In muted words at the top of an event's board, where the bar to write on it would be, when nobody writes on it any more: canceled, the event was cancelled; other, 7 days passed since the event's end (it is writable for the 7 days after the end). Its words are those of the error server:errors.event.board_closed."
   },
   "events.board.not_writer": {
     "defaultMessage": "{writers, select, organizer {この掲示板に書けるのは主催者だけです。} other {この掲示板に書けるのは主催者と共同主催者だけです。}}",
@@ -307,7 +307,7 @@
     "defaultMessage": "保存",
     "description": "The button at the foot of the form that changes an event."
   },
-  "events.edit.cancelled": {
+  "events.edit.canceled": {
     "defaultMessage": "このイベントは中止されたため、変更できません。",
     "description": "In place of the form that changes an event, when the event was cancelled."
   },
@@ -723,7 +723,7 @@
     "defaultMessage": "主催者",
     "description": "In place of the button beside an account found that organizes the event."
   },
-  "events.people.cancelled": {
+  "events.people.canceled": {
     "defaultMessage": "このイベントは中止されたため、招待も共同主催者の指名もできません。",
     "description": "In place of an event's invitations or co-organizers, when it was cancelled."
   },
