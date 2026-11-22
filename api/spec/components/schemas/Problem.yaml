@@ -232,7 +232,9 @@ description: |
   - `/api/v1/problems/move-target-unavailable` (422): the account to move to is the user's
     own, is not found, cannot be fetched from its server, or is suspended here.
   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
-    or moved to that account before.
+    also counting a canceled move; `can_move_at` says from when it can move again.
+  - `/api/v1/problems/move-repeated` (422): the user's account moved to that account before,
+    and it moves to an account once.
   - `/api/v1/problems/maintenance` (503): the server is under maintenance and
     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
     maintenance, and retry after `Retry-After`. Its members besides the standard ones,

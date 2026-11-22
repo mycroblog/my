@@ -1976,8 +1976,8 @@
     "description": "Under the field Account you are moving to on the settings page Move account, when the reader entered this account itself."
   },
   "settings.account.move.refused": {
-    "defaultMessage": "{reason, select, alias_missing {{handle} の別名に、このアカウントがまだありません。移転先のアカウントで「別名」にこのアカウントを追加してから、もう一度試してください。} target_moved {{handle} は別のアカウントへ移転済みです。その移転先のアカウントを入力してください。} target_unavailable {{handle} へは移転できません。このサーバーからそのアカウントに接続できないか、このサーバーが受け入れていません。ハンドルを確認するか、別のアカウントを選んでください。} other {このアカウントは移転してから {days, number} 日たっていないか、以前 {handle} に移転したことがあります。前回の移転から {days, number} 日たつと再び移転できますが、同じアカウントへは二度移転できません。}}",
-    "description": "On the settings page Move account, why the server refused the move, once the reader confirmed it: under the field Account you are moving to (alias_missing, target_moved, target_unavailable), or before the button Move account (anything else: the wait after a move, days is 30). {handle} is the handle of the account, as @name@example.com. Aliases is settings.account.aliases: the same word."
+    "defaultMessage": "{reason, select, alias_missing {{handle} の別名に、このアカウントがまだありません。移転先のアカウントで「別名」にこのアカウントを追加してから、もう一度試してください。} target_moved {{handle} は別のアカウントへ移転済みです。その移転先のアカウントを入力してください。} target_unavailable {{handle} へは移転できません。このサーバーからそのアカウントに接続できないか、このサーバーが受け入れていません。ハンドルを確認するか、別のアカウントを選んでください。} other {このアカウントは以前 {handle} に移転したことがあります。同じアカウントへは、取り消した移転を含めて一度しか移転できません。別のアカウントを選んでください。}}",
+    "description": "On the settings page Move account, why the server refused the move to the account named, once the reader confirmed it, under the field Account you are moving to: it does not list this account as an alias (alias_missing), moved itself (target_moved), cannot be moved to (target_unavailable), or this account moved to it before (anything else: repeated). {handle} is the handle of the account, as @name@example.com. Aliases is settings.account.aliases: the same word."
   },
   "settings.account.move.confirm": {
     "defaultMessage": "フォロワーが {handle} へ移り、それ以外はこのアカウントに残ります。あとで移転を取り消してもフォロワーは戻らず、{days, number} 日間は再び移転できません。",
@@ -2033,11 +2033,15 @@
   },
   "settings.account.move.later": {
     "defaultMessage": "このアカウントは今は移転できません",
-    "description": "The summary at the end of the settings page Move account, in place of the field and the button Move account, once the page knows the account cannot move now: the reader cancelled the move there, or the server refused a move as too soon. A sentence as a heading: no full stop."
+    "description": "The summary at the end of the settings page Move account, in place of the field and the button Move account, while the server says the account cannot move yet (30 days after its last move, also a cancelled one); settings.account.move.later.about says until when under it. A sentence as a heading: no full stop."
   },
-  "settings.account.move.later.cancelled": {
-    "defaultMessage": "このアカウントは移転してから {days, number} 日たっていません。前回の移転から {days, number} 日たつと再び移転できます。",
-    "description": "The muted line under the summary This account cannot move now on the settings page Move account, once the reader cancelled the move there: a cancelled move still counts. days is 30."
+  "settings.account.move.later.about": {
+    "defaultMessage": "このアカウントが最後に移転したのは {moved} です (取り消した移転も数えます)。{date} から再び移転できます。",
+    "description": "The muted line under the summary This account cannot move now on the settings page Move account, in place of the field and the button Move account, while the server says the account cannot move yet: the last move counts even if it was cancelled. moved is the day of that move, date the day and time from which the account can move again, as the reader's locale writes them. A move waits 30 days after the last one."
+  },
+  "settings.account.move.later.about.unknown": {
+    "defaultMessage": "このアカウントは {date} から再び移転できます。次の移転までの期間は、取り消した移転も含めて前回の移転から数えます。",
+    "description": "The muted line under the summary This account cannot move now on the settings page Move account, as settings.account.move.later.about when the server does not say when the account last moved. date is the day and time from which the account can move again, as the reader's locale writes it."
   },
   "settings.account.deactivate.effect": {
     "defaultMessage": "無効化で起きること",

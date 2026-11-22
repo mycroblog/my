@@ -245,6 +245,9 @@ type AccountMoves interface {
 	MoveState(ctx context.Context, accountID string) (appaccount.MoveState, error)
 	// FindMove returns a move by ID, failing with appaccount.ErrNotFound when there is none.
 	FindMove(ctx context.Context, id string) (appaccount.Move, error)
+	// MoveWait returns when an account last moved, canceled or not, and from when it can move
+	// again.
+	MoveWait(ctx context.Context, accountID string) (appaccount.MoveWait, error)
 }
 
 // movedTo presents the account that accountID moved to, nil when it has not moved, its target

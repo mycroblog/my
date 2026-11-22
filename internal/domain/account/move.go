@@ -80,16 +80,33 @@ func (m Move) FollowsRemote(latest *Move) (bool, error) {
 	return true, nil
 }
 
+// MoveTooSoonError is the ErrMoveTooSoon of a local move: errors.Is(err, ErrMoveTooSoon) holds,
+// and CanMoveAt is when the account can move again.
+type MoveTooSoonError struct {
+	CanMoveAt time.Time
+}
+
+func (e *MoveTooSoonError) Error() string {
+	return ErrMoveTooSoon.Error() + "; it can move again at " + e.CanMoveAt.UTC().Format(time.RFC3339)
+}
+
+// Unwrap returns ErrMoveTooSoon.
+func (e *MoveTooSoonError) Unwrap() error { return ErrMoveTooSoon }
+
+// NextLocalMoveAt returns when the local account that made move m can move again,
+// LocalMoveInterval after m, whether m is canceled or not.
+func (m Move) NextLocalMoveAt() time.Time { return m.OccurredAt.Add(LocalMoveInterval) }
+
 // FollowsLocal reports whether a local move m may follow the account's newest move latest (nil
-// for none): it must come LocalMoveInterval after latest, canceled or not (ErrMoveTooSoon), and
-// go to a target the account never moved to (ErrMovedBefore, which the repository reports for
-// the older moves).
+// for none): it must come LocalMoveInterval after latest, canceled or not (a *MoveTooSoonError),
+// and go to a target the account never moved to (ErrMovedBefore, which the repository reports
+// for the older moves).
 func (m Move) FollowsLocal(latest *Move) error {
 	switch {
 	case latest == nil:
 		return nil
-	case m.OccurredAt.Sub(latest.OccurredAt) < LocalMoveInterval:
-		return ErrMoveTooSoon
+	case m.OccurredAt.Before(latest.NextLocalMoveAt()):
+		return &MoveTooSoonError{CanMoveAt: latest.NextLocalMoveAt()}
 	case latest.TargetAccountID == m.TargetAccountID:
 		return ErrMovedBefore
 	}

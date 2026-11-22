@@ -788,8 +788,12 @@
     "description": "API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server."
   },
   "errors.move_too_soon": {
-    "defaultMessage": "Your account can move again 30 days after its last move, and not to an account it moved to before.",
-    "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before."
+    "defaultMessage": "Your account moved less than 30 days ago, counting a cancelled move too. Try again once 30 days have passed since that move.",
+    "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move, also a cancelled one; the problem carries the time from which it can move again."
+  },
+  "errors.move_repeated": {
+    "defaultMessage": "Your account has moved to that account before, and can move to each account only once, even if that move was cancelled. Choose another account.",
+    "description": "API error title for HTTP 422 when a user moves their account to an account it moved to before (also if that move was cancelled); an account moves to each account once."
   },
   "errors.voice.not_eligible": {
     "defaultMessage": "You may not host voice chat rooms.",

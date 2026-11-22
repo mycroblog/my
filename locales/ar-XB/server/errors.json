@@ -451,6 +451,10 @@
     "defaultMessage": "‮⊥ɥǝ ɐɔɔonuʇ ʇo ɯoʌǝ ʇo poǝs uoʇ ʅısʇ ʎonɹ ɐɔɔonuʇ ɐs ɐu ɐʅıɐs. ∀pp ʎonɹ ɐɔɔonuʇ ɐs ɐu ɐʅıɐs ou ʇɥɐʇ ɐɔɔonuʇ ɟıɹsʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.move_repeated": {
+    "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ɥɐs ɯoʌǝp ʇo ʇɥɐʇ ɐɔɔonuʇ qǝɟoɹǝ, ɐup ɔɐu ɯoʌǝ ʇo ǝɐɔɥ ɐɔɔonuʇ ouʅʎ ouɔǝ, ǝʌǝu ıɟ ʇɥɐʇ ɯoʌǝ ʍɐs ɔɐuɔǝʅʅǝp. Ↄɥoosǝ ɐuoʇɥǝɹ ɐɔɔonuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.move_target_moved": {
     "defaultMessage": "‮⊥ɥǝ ɐɔɔonuʇ ʇo ɯoʌǝ ʇo ɥɐs ɯoʌǝp ıʇsǝʅɟ. Woʌǝ ʇo ʇɥǝ ɐɔɔonuʇ ıʇ ɯoʌǝp ʇo.‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -460,7 +464,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.move_too_soon": {
-    "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ɔɐu ɯoʌǝ ɐƃɐıu 30 pɐʎs ɐɟʇǝɹ ıʇs ʅɐsʇ ɯoʌǝ, ɐup uoʇ ʇo ɐu ɐɔɔonuʇ ıʇ ɯoʌǝp ʇo qǝɟoɹǝ.‬",
+    "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ɯoʌǝp ʅǝss ʇɥɐu 30 pɐʎs ɐƃo, ɔonuʇıuƃ ɐ ɔɐuɔǝʅʅǝp ɯoʌǝ ʇoo. ⊥ɹʎ ɐƃɐıu ouɔǝ 30 pɐʎs ɥɐʌǝ dɐssǝp sıuɔǝ ʇɥɐʇ ɯoʌǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.not_found": {

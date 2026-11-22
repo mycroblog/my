@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The problem of a refused move of the user's account (422). Of
+  `/api/v1/problems/move-too-soon`, `can_move_at` says from when the account can move again;
+  another 422 has none.
+allOf:
+  - $ref: ./Problem.yaml
+  - type: object
+    properties:
+      can_move_at:
+        description: When the account can move again, 30 days after its last move.
+        type: string
+        format: date-time

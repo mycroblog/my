@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -149,6 +150,10 @@ var ErrNotMoved = errors.New("account: the account has not moved")
 // account.ErrMovedBefore.
 var ErrMovedBefore = account.ErrMovedBefore
 
+// MoveTooSoonError is the ErrMoveTooSoon of a local move, with when the account can move again;
+// see account.MoveTooSoonError.
+type MoveTooSoonError = account.MoveTooSoonError
+
 // LocalMoveInput is the move of a local account that the federation module checked: its target
 // names the account among its aliases, has not moved, and is not suspended (ADR-0089).
 type LocalMoveInput struct {
@@ -164,9 +169,9 @@ type LocalMoveInput struct {
 // RecordLocalMove records the move of local account in.AccountID to in.TargetAccountID
 // (initiated_by self) and emits Moved, which points the account's move state at the target, so
 // that its actor carries movedTo from the commit on; the federation module sends the Move and
-// the Update of the actor, and the graph module moves the local followers. It fails with
-// account.ErrMoveTooSoon within account.LocalMoveInterval after the account's newest move,
-// canceled or not, with ErrMovedBefore for a target that the account moved to before, and
+// the Update of the actor, and the graph module moves the local followers. It fails with a
+// *MoveTooSoonError (ErrMoveTooSoon) within account.LocalMoveInterval after the account's newest
+// move, canceled or not, with ErrMovedBefore for a target that the account moved to before, and
 // with ErrNotLocal for an account that is not a local user's.
 func (s *Service) RecordLocalMove(ctx context.Context, in LocalMoveInput) (account.Move, error) {
 	m := account.Move{
@@ -264,12 +269,44 @@ func (s *Service) MoveState(ctx context.Context, accountID string) (account.Move
 	return s.d.Repository.FindMoveState(ctx, accountID)
 }
 
-// FindMove returns a move by ID; ErrNotFound means there is none.
+// MoveWait is when a local account last moved and from when it can move again (ADR-0089).
+type MoveWait struct {
+	// LastMovedAt is the time of the account's newest move, also a canceled one; zero when it
+	// never moved.
+	LastMovedAt time.Time
+	// CanMoveAt is when the account can move again, account.LocalMoveInterval after
+	// LastMovedAt; zero when it can move now.
+	CanMoveAt time.Time
+}
+
+// MoveWait returns when account accountID last moved, canceled or not, and from when it can
+// move again, as RecordLocalMove counts the wait.
+func (s *Service) MoveWait(ctx context.Context, accountID string) (MoveWait, error) {
+	var latest account.Move
+	err := s.d.UnitOfWork.Read(ctx, func(tx uow.Tx) error {
+		var err error
+		latest, err = s.d.Repository.LatestMove(ctx, tx, accountID)
+		return err
+	})
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return MoveWait{}, nil
+	case err != nil:
+		return MoveWait{}, err
+	}
+	w := MoveWait{LastMovedAt: latest.OccurredAt}
+	if next := latest.NextLocalMoveAt(); kernel.Normalize(s.d.Clock.Now()).Before(next) {
+		w.CanMoveAt = next
+	}
+	return w, nil
+}
+
 // FindMoves returns the moves of ids that exist, by ID, as FindMove returns one, with one query.
 func (s *Service) FindMoves(ctx context.Context, ids []string) (map[string]account.Move, error) {
 	return s.d.Repository.FindMoves(ctx, ids)
 }
 
+// FindMove returns a move by ID; ErrNotFound means there is none.
 func (s *Service) FindMove(ctx context.Context, id string) (account.Move, error) {
 	return s.d.Repository.FindMove(ctx, id)
 }

@@ -2094,6 +2094,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
       statuses_count: posts.filter((x) => x.author === username).length,
       follow_requests_count: [...requested].filter((edge) => edge.endsWith(`>${username}`)).length,
+      ...personal.moveWait(),
       permissions: permissionsOf(username),
     });
   };

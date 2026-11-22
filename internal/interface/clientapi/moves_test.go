@@ -16,10 +16,16 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
-// fakeMoves holds moves by ID and the moves in force by account.
+// fakeMoves holds moves by ID, the moves in force by account, and the waits before the next
+// move by account.
 type fakeMoves struct {
 	moves  map[string]account.Move
 	states map[string]account.MoveState
+	waits  map[string]appaccount.MoveWait
+}
+
+func (f fakeMoves) MoveWait(_ context.Context, accountID string) (appaccount.MoveWait, error) {
+	return f.waits[accountID], nil
 }
 
 func (f fakeMoves) MoveState(_ context.Context, accountID string) (appaccount.MoveState, error) {

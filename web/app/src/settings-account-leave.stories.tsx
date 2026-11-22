@@ -11,9 +11,11 @@
 //   that types and presses: the field filled; an address the fake finds no account at (nobody@nowhere.example), and
 //   the reader's own (yuki), each refused under the field; the confirmation open (sora@photos.example), and back
 //   from the provider the plain question of the act; and, on a fake that refuses every move once it is confirmed,
-//   each refusal: the account named does not list this one among its aliases, moved itself, or cannot be moved to,
-//   under the field, and a move too soon after the last, which takes the act's place. On the moved account, the
-//   question before the move is cancelled, and once it is, the screen again with the act's place saying the wait.
+//   each refusal: the account named does not list this one among its aliases, moved itself, cannot be moved to, or
+//   is one this account moved to before, under the field, and a move too soon after the last, which takes the act's
+//   place. An account that moved 12 days ago, whose act's place says from when it can move again. On the moved
+//   account, the question before the move is cancelled, and once it is, the screen again with the act's place saying
+//   from when it can move again.
 // - Deactivate account: what it does and until when it can be undone, the door to Export, and the act; each state in
 //   which the server refuses, said in the act's place with what to do first; while it loads, and when it could not
 //   be read. The confirmation open, and back from the provider the plain question of the act, are shot by a script
@@ -94,11 +96,18 @@ export const MoveAliasMissing: Story = { parameters: moveRefused("alias_missing"
 export const MoveTargetMoved: Story = { parameters: moveRefused("target_moved") };
 /** A fake that refuses the move because the account named cannot be moved to. */
 export const MoveTargetUnavailable: Story = { parameters: moveRefused("target_unavailable") };
+/** A fake that refuses the move because this account moved to the account named before. */
+export const MoveRepeated: Story = { parameters: moveRefused("repeated") };
 /**
- * A fake that refuses the move because the account moved in the last 30 days, or to that account before: once
- * pressed, the act's place says the wait, with no field and no button.
+ * A fake that refuses the move because the account moved in the last 30 days, since the screen read it: once pressed,
+ * the act's place says from when it can move again, with no field and no button.
  */
 export const MoveTooSoon: Story = { parameters: moveRefused("too_soon") };
+/**
+ * An account that moved 12 days ago, and cancelled that move: the act's place says when it last moved and from when
+ * it can move again, with no field and no button.
+ */
+export const MoveLater: Story = { parameters: screen({ at: moveAt, server: { settings: { lastMoved: "-12d" } } }) };
 /** An account that has moved: where, what it can still do, and, in a section of its own, cancelling the move. */
 export const Moved: Story = { parameters: screen({ at: moveAt, server: { settings: { movedTo } } }) };
 /** Move account while the account is on its way. */

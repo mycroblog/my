@@ -10571,6 +10571,10 @@ type CredentialAccount struct {
 	// Bot Whether the account is automated.
 	Bot bool `json:"bot"`
 
+	// CanMoveAt From when the account can move again, 30 days after its last move; omitted when it
+	// can move now.
+	CanMoveAt *time.Time `json:"can_move_at,omitempty"`
+
 	// CreatedAt When the account was created.
 	CreatedAt time.Time `json:"created_at"`
 
@@ -10638,6 +10642,10 @@ type CredentialAccount struct {
 	// instance's search and, when the instance's `search_indexing` is `allow`, by search
 	// engines. New accounts take the instance's default.
 	Indexable bool `json:"indexable"`
+
+	// LastMovedAt When the account last moved to another account, also when that move was canceled;
+	// omitted when it never moved.
+	LastMovedAt *time.Time `json:"last_moved_at,omitempty"`
 
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
@@ -14274,6 +14282,37 @@ type MoveOwnAccountRequest struct {
 	TargetAccountId Id `json:"target_account_id"`
 }
 
+// MoveProblem The problem of a refused move of the user's account (422). Of
+// `/api/v1/problems/move-too-soon`, `can_move_at` says from when the account can move again;
+// another 422 has none.
+type MoveProblem struct {
+	// CanMoveAt When the account can move again, 30 days after its last move.
+	CanMoveAt *time.Time `json:"can_move_at,omitempty"`
+
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type string `json:"type"`
+}
+
 // MuteAccountRequest The settings of a mute.
 type MuteAccountRequest struct {
 	// Duration How long the mute lasts, in seconds; 0 mutes until unmuted.
@@ -15797,7 +15836,9 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/move-target-unavailable` (422): the account to move to is the user's
 //     own, is not found, cannot be fetched from its server, or is suspended here.
 //   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
-//     or moved to that account before.
+//     also counting a canceled move; `can_move_at` says from when it can move again.
+//   - `/api/v1/problems/move-repeated` (422): the user's account moved to that account before,
+//     and it moves to an account once.
 //   - `/api/v1/problems/maintenance` (503): the server is under maintenance and
 //     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
 //     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
@@ -46560,6 +46601,16 @@ type LoginProviderProblemApplicationProblemPlusJSONResponse struct {
 	Headers LoginProviderProblemResponseHeaders
 }
 
+type MoveProblemResponseHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+type MoveProblemApplicationProblemPlusJSONResponse struct {
+	Body MoveProblem
+
+	Headers MoveProblemResponseHeaders
+}
+
 type OAuthAppResponseHeaders struct {
 	CacheControl *string
 }
@@ -47194,6 +47245,28 @@ type MoveOwnAccount204Response struct {
 func (response MoveOwnAccount204Response) VisitMoveOwnAccountResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
+}
+
+type MoveOwnAccount422ApplicationProblemPlusJSONResponse struct {
+	MoveProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MoveOwnAccount422ApplicationProblemPlusJSONResponse) VisitMoveOwnAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type MoveOwnAccountdefaultApplicationProblemPlusJSONResponse struct {

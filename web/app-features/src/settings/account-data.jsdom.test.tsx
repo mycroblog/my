@@ -3,7 +3,7 @@
 // Where the focus lands on the screens under the entry Account and data when it lands on what is no control (#3203):
 // the status that says an archive was requested, that an import started, that an alias was added; the row of an
 // alias removed; the title of a summary that takes the place of a form (the account moved, its move cancelled, a
-// deactivation or a deletion refused once confirmed). jsdom gives the focus only to what can take it, which happy-dom
+// move refused as too soon, a deactivation or a deletion refused once confirmed). jsdom gives the focus only to what can take it, which happy-dom
 // does not ask; what each screen says and sends is the app's route tests (web/app, settings-account-data.dom.test.tsx
 // and settings-account-leave.dom.test.tsx).
 
@@ -139,6 +139,21 @@ describe("a summary that takes the place of the form takes the focus on its titl
     await user.click(within(asking).getAllByRole("button", { name: "Cancel the move" }).at(-1) ?? document.body);
 
     await focusSays("heading: The move is cancelled");
+  });
+
+  test("Move account: refused as too soon, once the dialog has left", async () => {
+    const { user } = await drawn(
+      (props) => <AccountMoveScreen {...props} />,
+      () => screen.findByRole("textbox", { name: "Account you are moving to" }),
+      { server: { settings: { moveRefusal: "too_soon" } } },
+    );
+    await user.type(screen.getByRole("textbox", { name: "Account you are moving to" }), target);
+    await user.click(screen.getAllByRole("button", { name: "Move account" }).at(-1) ?? document.body);
+
+    await confirm(user, `Move this account to @${target}?`, "Move account");
+
+    await focusSays("heading: This account cannot move now");
+    expect(screen.queryAllByRole("dialog")).toHaveLength(0);
   });
 
   test("Deactivate account: refused once confirmed, after the server learned why", async () => {

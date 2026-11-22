@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -39,8 +40,8 @@ type PostCounts interface {
 
 // newCredentialAccount presents the viewer's own actor as the CredentialAccount schema: the
 // account with its follow counts and images (newProfile), the source of its profile, its
-// posting limits, the count of its own posts and of its pending follow requests, and the
-// permissions of the user's roles.
+// posting limits, the count of its own posts and of its pending follow requests, when it last
+// moved and from when it can move again, and the permissions of the user's roles.
 func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appaccount.Actor) (CredentialAccount, error) {
 	base, err := s.newProfile(ctx, a)
 	if err != nil {
@@ -62,6 +63,10 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 	if err != nil {
 		return CredentialAccount{}, fmt.Errorf("clientapi: follow request count of %s: %w", a.Account.ID, err)
 	}
+	lastMovedAt, canMoveAt, err := s.moveWait(ctx, a.Account.ID)
+	if err != nil {
+		return CredentialAccount{}, err
+	}
 	out := CredentialAccount{
 		Id: base.Id, Username: base.Username, Acct: base.Acct, Domain: base.Domain, DisplayName: base.DisplayName,
 		Note: base.Note, Uri: base.Uri, Url: base.Url, Moved: base.Moved, Locked: base.Locked, Bot: base.Bot, CreatedAt: base.CreatedAt, Fields: base.Fields, Emojis: base.Emojis,
@@ -69,7 +74,7 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 		Avatar: base.Avatar, Header: base.Header,
 		FollowersCount: base.FollowersCount, FollowingCount: base.FollowingCount,
 		Source: AccountSource{Fields: []AccountFieldSource{}}, Posting: posting, Permissions: permissions,
-		StatusesCount: statuses, FollowRequestsCount: requests,
+		StatusesCount: statuses, FollowRequestsCount: requests, LastMovedAt: lastMovedAt, CanMoveAt: canMoveAt,
 		// Without a profile, the owner has made no choice about the feed.
 		FeedFollowsIndexable: true, FollowsVisibility: FollowsVisibilityPublic,
 	}
@@ -97,6 +102,19 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 		out.Source.HeaderMediaId = &p.HeaderMediaID
 	}
 	return out, nil
+}
+
+// moveWait presents when accountID last moved and from when it can move again, each nil for
+// none; without Options.Moves both are nil.
+func (s *Server) moveWait(ctx context.Context, accountID string) (lastMovedAt, canMoveAt *time.Time, err error) {
+	if s.o.Moves == nil {
+		return nil, nil, nil
+	}
+	w, err := s.o.Moves.MoveWait(ctx, accountID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("clientapi: the move wait of %s: %w", accountID, err)
+	}
+	return optionalTime(w.LastMovedAt), optionalTime(w.CanMoveAt), nil
 }
 
 // postCount presents the count of accountID's own posts; without Options.PostCounts it is 0.

@@ -11,14 +11,11 @@
 //   server looks the account up, the reader confirms it's them (confirmation.tsx), and the move is sent.
 // - What is wrong stands where it is wrong: an empty field, an address the server finds no account at, this account
 //   itself, and what the server refuses of the account named (it does not list this account among its aliases, it
-//   moved itself, it cannot be moved to) under the field, which takes the focus; anything else before the button, in
-//   the server's words.
-// - Where the screen knows the account cannot move now (it cancelled the move here, or the server refused a move as
-//   too soon after the last one), the act's place says so, with no field and no button. The API says neither when the
-//   account moved nor when it may move again, so the screen says the wait in days and no date, and keeps it for this
-//   visit alone: after a reload the form is back, and a press finds it out again. The server's refusal names one kind
-//   for the two causes it has (moved in the last 30 days, or to that account before), so its sentence leads with the
-//   likelier and names both.
+//   moved itself, it cannot be moved to, this account moved to it before) under the field, which takes the focus;
+//   anything else before the button, in the server's words.
+// - While the account cannot move yet (for 30 days after its last move, also a cancelled one, as the server says of
+//   the account), the act's place says from when it can, and when it last moved, with no field and no button. A move
+//   the server refuses as too soon reads the account again, which then says it, and the summary takes the focus.
 // - Once the account has moved, the screen is its state: where it moved and what it can still do, and, in a section
 //   of its own, cancelling the move, which asks first and says what it does not undo.
 //
@@ -33,6 +30,7 @@ import {
   loadOwnAccount,
   moveCooldownDays,
   moveRefusalOf,
+  nextMoveAt,
   useAccountMove,
   useOwnAccountRead,
   type Account,
@@ -55,7 +53,7 @@ import {
 } from "@my/design-system";
 import { useId, useRef, useState, type RefObject } from "react";
 import { stringsIn } from "../locale";
-import { tied } from "./account";
+import { tied, useActionDate } from "./account";
 import { saidOf, useConfirmation, useProviderReturn } from "./confirmation";
 import type { SettingsSubProps } from "./entries";
 import { Asking, Kept, ReadingNotice, useFaultFocus, useFocusAfterDialog } from "./parts";
@@ -116,24 +114,31 @@ function AliasFirst({ account, t }: { account: Account; t: T }) {
 type Arrived = "moved" | "cancelled";
 
 /**
- * Why the screen knows the account cannot move now: it cancelled the move here, or the server refused a move to the
- * account of `handle` as too soon.
+ * In the act's place while the account cannot move yet: that it cannot, from when it can (`until`), and when it last
+ * moved where the server says it (`lastMoved`). `titleRef` is given where a refused move led here.
  */
-type Later = { readonly cause: "cancelled" } | { readonly cause: "refused"; readonly handle: string };
-
-/** In the act's place while the account cannot move now: that it cannot, and until when, in days. */
-function MoveLater({ later, titleRef, t }: { later: Later; titleRef: RefObject<HTMLHeadingElement | null>; t: T }) {
-  const days = moveCooldownDays;
+function MoveLater({
+  until,
+  lastMoved,
+  titleRef,
+}: {
+  until: string;
+  lastMoved: string | undefined;
+  titleRef?: RefObject<HTMLHeadingElement | null> | undefined;
+}) {
+  const { t } = stringsIn(useLocale().locale);
+  const moment = useActionDate();
+  const day = useActionDate(false);
   return (
     <StatusSummary
       icon="caution"
       title={t("settings.account.move.later")}
-      titleRef={later.cause === "refused" ? titleRef : undefined}
-      about={tied(
-        later.cause === "cancelled"
-          ? t("settings.account.move.later.cancelled", { days })
-          : t("settings.account.move.refused", { reason: "too_soon", handle: later.handle, days }),
-      )}
+      titleRef={titleRef}
+      about={
+        lastMoved === undefined
+          ? t("settings.account.move.later.about.unknown", { date: moment(until) })
+          : t("settings.account.move.later.about", { moved: day(lastMoved), date: moment(until) })
+      }
     />
   );
 }
@@ -146,8 +151,8 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
   const returned = useProviderReturn({ fragment, onFragmentRead });
   /** What the reader entered in the field; until they change it, what came back with them from a provider. */
   const [entered, setEntered] = useState<string>();
-  /** The account cannot move now, as this visit found out. */
-  const [later, setLater] = useState<Later>();
+  /** The server refused a move as too soon: the act's place, which says until when, takes the focus. */
+  const [late, setLate] = useState(false);
   /** The account the server found at what the reader entered, which the confirmation names. */
   const [target, setTarget] = useState<Account>();
   const [finding, setFinding] = useState(false);
@@ -188,9 +193,10 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
     focusFault();
   };
   const submit = () => {
-    if (account === undefined || finding || moving.busy || later !== undefined) return;
+    if (account === undefined || finding || moving.busy) return;
     const address = typed.trim();
     setArrived(undefined);
+    setLate(false);
     setSaid(undefined);
     if (address === "") {
       refuse(t("settings.account.move.target.missing"));
@@ -214,16 +220,17 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
           },
           failed: (error) => {
             const reason = moveRefusalOf(error);
-            if (reason === undefined) setSaid(saidOf(error, t));
-            // The account cannot move now: the act's place says so, and its title takes the focus once the dialog
-            // left.
-            else if (reason === "too_soon") {
+            // The account cannot move yet, which the account read again says: the act's place says until when, and
+            // its title takes the focus once the dialog left. Where the account read again does not say it, the
+            // form stays, with the server's words before the button.
+            if (reason === "too_soon") {
               after.expect();
-              setLater({ cause: "refused", handle });
-            }
+              setLate(true);
+              setSaid(saidOf(error, t));
+            } else if (reason === undefined) setSaid(saidOf(error, t));
             // What the server refused of the account named stands under its field, which takes the focus once the
             // dialog left.
-            else setFault(t("settings.account.move.refused", { reason, handle, days }));
+            else setFault(t("settings.account.move.refused", { reason, handle }));
           },
           left: () => {
             focusFault();
@@ -253,8 +260,6 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
               cancel().then(() => {
                 after.expect();
                 setArrived("cancelled");
-                // A cancelled move still counts: the account cannot move again until 30 days after it.
-                setLater({ cause: "cancelled" });
               })
             }
             onClose={() => {
@@ -326,15 +331,16 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
       />
     ) : null;
 
-  // The account cannot move now: what a move does and what to do first stand, and the act's place says so.
-  if (later !== undefined)
+  // The account cannot move yet: what a move does and what to do first stand, and the act's place says until when.
+  const until = nextMoveAt(account);
+  if (until !== undefined)
     return (
       <>
         <SettingsScreen sub title={title} back={back}>
           {cancelled}
           <MoveEffect t={t} />
           <AliasFirst account={account} t={t} />
-          <MoveLater later={later} titleRef={summary} t={t} />
+          <MoveLater until={until} lastMoved={account.last_moved_at} titleRef={late ? summary : undefined} />
         </SettingsScreen>
         {dialogs}
       </>

@@ -7,12 +7,13 @@
 // account itself for those that move and delete it, with what deactivating would do for the one that deactivates it
 // (deactivation.ts).
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { viewerQuery, type Account } from "./accounts";
+import { viewerQuery } from "./accounts";
 import type { AppData } from "./app-data";
 import { browserSessionsQuery } from "./browser-sessions";
 import { linkedIdentitiesQuery } from "./linked-identities";
 import { passkeysQuery } from "./passkeys";
 import { passwordStatusQuery } from "./password";
+import type { CredentialAccount } from "./profile";
 import { useAppData } from "./provider";
 import { readOf, type ScreenRead } from "./reads";
 import { twoFactorQuery } from "./two-factor";
@@ -51,7 +52,7 @@ export async function loadOwnAccount(data: AppData): Promise<void> {
  * `moved` is the account it moved to: `read` once the server answered the account and what it confirms with,
  * `failed` when it did not answer one, with `retry`, which reads again those that failed, and `loading` until then.
  */
-export function useOwnAccountRead(): ScreenRead & { account: Account | undefined } {
+export function useOwnAccountRead(): ScreenRead & { account: CredentialAccount | undefined } {
   const data = useAppData();
   const account = useQuery(viewerQuery(data));
   const ways = useQueries({ queries: [...confirmationQueries(data)] });
