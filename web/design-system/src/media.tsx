@@ -30,7 +30,6 @@ import { Icon } from "./icons";
 import { Box, Pin, Row, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { usePreviewState } from "./preview";
-import { usePicturesLook } from "./press-options";
 
 export type MediaKind = "image" | "gifv" | "video" | "audio" | "unknown";
 
@@ -51,14 +50,19 @@ export type MediaItem = {
   blurhash?: string | undefined;
 };
 
+// How a picture answers the pointer, never moving: the press tokens' shade over it, at the share a filled control mixes
+// in hovered and pressed; and the ring inside it on keyboard focus.
+const pictureShade = [
+  "data-hovered:bg-[color-mix(in_srgb,var(--press-shade)_var(--press-hover),transparent)]",
+  "data-pressed:bg-[color-mix(in_srgb,var(--press-shade)_var(--press-pressed),transparent)]",
+  "data-focus-visible:shadow-focus-inset",
+].join(" ");
+
 const grid = tv({
   slots: {
     cell: "bg-surface-raised",
     picture: "object-cover",
-    press: [
-      "cursor-zoom-in rounded-control border-0 bg-transparent p-0 outline-hidden",
-      "data-focus-visible:shadow-focus-inset",
-    ],
+    press: ["cursor-zoom-in rounded-control border-0 bg-transparent p-0 outline-hidden", pictureShade],
     marks: "pointer-events-none",
     mark: "rounded-control bg-media-badge px-media-mark text-caption font-label text-on-media",
     play: "pointer-events-none size-media-play rounded-full bg-media-badge text-on-media",
@@ -108,10 +112,7 @@ const line = tv({
 // The covered pictures' own button: a press anywhere on them shows them, as the line does; out of the tab order and
 // hidden from a screen reader, since the line is the one a keyboard reaches and a screen reader hears. It goes as it is
 // pressed, so it never takes the focus, which stays where it was.
-const veil = [
-  "cursor-pointer rounded-control border-0 bg-transparent p-0 outline-hidden",
-  "data-focus-visible:shadow-focus-inset",
-].join(" ");
+const veil = `cursor-pointer rounded-control border-0 bg-transparent p-0 outline-hidden ${pictureShade}`;
 
 const audio = tv({
   slots: {
@@ -176,7 +177,6 @@ function Cell({
 }) {
   const kind = kindOf(item);
   const s = grid();
-  const look = usePicturesLook();
   const previewed = usePreviewed();
   const [playing, setPlaying] = useState(false);
   const still = useReducedMotion() ?? false;
@@ -268,15 +268,11 @@ function Cell({
             />
           }
           cover
-          className={`${s.press()} ${look}`}
+          className={s.press()}
         />
       ) : (
         onOpen !== undefined && (
-          <Pin
-            as={<AriaButton aria-label={named} onPress={onOpen} render={previewed} />}
-            cover
-            className={`${s.press()} ${look}`}
-          />
+          <Pin as={<AriaButton aria-label={named} onPress={onOpen} render={previewed} />} cover className={s.press()} />
         )
       )}
       {kind === "video" && (
@@ -544,7 +540,6 @@ export function MediaGrid({
   const { t } = stringsIn(lang);
   const [shown, setShown] = useState(defaultShown);
   const covers = useId();
-  const look = usePicturesLook();
   const previewed = usePreviewed();
   if (items.length === 0) return null;
   const pictures = items.filter(isPicture);
@@ -625,7 +620,7 @@ export function MediaGrid({
                     />
                   }
                   cover
-                  className={`${veil} ${look}`}
+                  className={veil}
                 />
               </div>
             )}

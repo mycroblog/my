@@ -3,7 +3,8 @@
 // A real press on a tab and on a choice's row (#3358): while the mouse holds it down, it takes another shade than at
 // rest and moves down 1px, and the tab row keeps the moved tab whole; the current tab, pressed, takes a shade of its
 // own too; a choice that is held while an answer is in flight takes no press at all; an off switch's track steps
-// through the raised surface's shades (#3369). Only a browser's mouse makes the state (`:active`, React Aria's press),
+// through the raised surface's shades; words thicken their underline and a picture takes the press shade, neither
+// moving (#3369). Only a browser's mouse makes the state (`:active`, React Aria's press),
 // which no DOM simulation paints.
 
 import { colorOf, cutAtBottom, holdDown, lookOf, slack } from "../press";
@@ -110,5 +111,78 @@ test("an off switch's track rests on the raised surface and takes its hovered an
         await page.mouse.move(0, 0);
         expect([rest, hovered, pressed]).toEqual(steps);
       });
+  }
+});
+
+test("words in a line thicken their underline from 1px to 2px hovered and 3px pressed, unbroken, and stay where they are", async ({
+  page,
+  open,
+}) => {
+  await open("design-system-button--in-text");
+  const line = (name: string, role: "link" | "button") => page.getByRole(role, { name, exact: true });
+  for (const [name, role] of [
+    ["Sign in", "link"],
+    ["Try again", "button"],
+  ] as const)
+    await test.step(name, async () => {
+      const word = line(name, role);
+      const read = () =>
+        word.evaluate((el) => {
+          const style = getComputedStyle(el);
+          return {
+            thickness: style.textDecorationThickness,
+            skip: style.textDecorationSkipInk,
+            top: el.getBoundingClientRect().top,
+          };
+        });
+      const rest = await read();
+      const box = await word.boundingBox();
+      if (box === null) throw new Error(`${name} is not drawn`);
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      const hovered = await read();
+      await page.mouse.down();
+      const pressed = await read();
+      await page.mouse.up();
+      await page.mouse.move(0, 0);
+      expect([rest.thickness, hovered.thickness, pressed.thickness]).toEqual(["1px", "2px", "3px"]);
+      expect([hovered.skip, pressed.skip]).toEqual(["none", "none"]);
+      expect(Math.abs(pressed.top - rest.top)).toBeLessThanOrEqual(slack);
+    });
+});
+
+test("a picture takes the press tokens' shade over it, as a filled control's share, hovered and pressed, and stays", async ({
+  page,
+  open,
+}) => {
+  for (const theme of ["light", "dark"] as const) {
+    await open("design-system-media--default", { theme });
+    const shades = await page.evaluate(() =>
+      ["--press-hover", "--press-pressed"].map((share) => {
+        const probe = document.createElement("div");
+        probe.style.cssText = `position: absolute; visibility: hidden; background-color: color-mix(in srgb, var(--press-shade) var(${share}), transparent)`;
+        document.body.append(probe);
+        const color = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return color;
+      }),
+    );
+    await test.step(`in the ${theme} theme`, async () => {
+      const picture = page.getByRole("button", {
+        name: "Open image: Low hills at dawn under a peach sky",
+        exact: true,
+      });
+      const rest = await lookOf(picture);
+      await holdDown(page, picture);
+      const pressed = await lookOf(picture);
+      await page.mouse.up();
+      await page.mouse.move(0, 0);
+      const box = await picture.boundingBox();
+      if (box === null) throw new Error("the picture is not drawn");
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      const hovered = await lookOf(picture);
+      await page.mouse.move(0, 0);
+      expect([hovered.own, pressed.own]).toEqual(shades);
+      expect(Math.abs(pressed.top - rest.top)).toBeLessThanOrEqual(slack);
+    });
   }
 });
