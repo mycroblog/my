@@ -6,9 +6,10 @@
 // picture fits the room left and keeps its shape; it zooms by the zoom button, a double click or tap, the wheel, a
 // pinch, or + and -, up to `viewer.maxZoom`, and pans by dragging while zoomed. The reader moves between the media by
 // the arrow keys, which follow the reading direction, by a swipe while not zoomed, or by the buttons at the stage's
-// sides from `tablet` (a phone swipes). A video plays with the browser's controls; a GIF loops, muted. Escape or close
-// closes it, and focus goes back to what opened it (the caller's, as with every modal). A move is announced to a screen
-// reader: where the reader is, and the start of the description, or the kind without one.
+// sides from `tablet` (a phone swipes). A video plays with the browser's controls; a GIF loops, muted. Escape, close,
+// or a press on the backing around the picture closes it, and focus goes back to what opened it (the caller's, as with
+// every modal). A move is announced to a screen reader: where the reader is, and the start of the description, or the
+// kind without one.
 //
 // The description (alternative text) of what is shown sits under the picture at all times, as plain text, and is read
 // there alone, the picture carrying no name of its own beside it; the two one
@@ -107,6 +108,9 @@ export type MediaViewerProps = {
 
 const clamp = (z: number) => Math.min(tokens.maxZoom, Math.max(1, z));
 
+// How far a pointer may move between down and up and still be a press (on the backing, which closes), in CSS pixels.
+const pressSlop = 8;
+
 // How much of a description a move announces: its start, so that a long one does not hold the reader up.
 const announcedLength = 100;
 
@@ -160,9 +164,19 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
   // The pointers down on the room, and where the gesture started; `pinch` once two pointers were down in it, which
-  // makes it never a swipe.
+  // makes it never a swipe nor a press; `backing` while the one pointer down is on the backing around what is shown.
   const pointers = useRef(new Map<number, Point>());
-  const start = useRef<{ x: number; y: number; pan: Point; spread: number; zoom: number; pinch: boolean } | null>(null);
+  // A press on the backing ended: the click it makes closes the viewer, so that no click lands on the page under it.
+  const pressedBacking = useRef(false);
+  const start = useRef<{
+    x: number;
+    y: number;
+    pan: Point;
+    spread: number;
+    zoom: number;
+    pinch: boolean;
+    backing: boolean;
+  } | null>(null);
   // What a screen reader hears on a move: empty until the reader moves, so that opening announces nothing twice.
   const [moved, setMoved] = useState(false);
   const item = items[index];
@@ -194,19 +208,26 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
     const [a, b] = [...pointers.current.values()];
     return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
   };
+  // The backing: the room itself, or the stage around the picture, not the picture or the video.
+  const onBacking = (e: ReactPointerEvent) => {
+    const target = e.target as Element;
+    return target === e.currentTarget || target.hasAttribute("data-viewer-stage");
+  };
   const down = (e: ReactPointerEvent) => {
+    pressedBacking.current = false;
     if (!gesture(e)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     e.currentTarget.setPointerCapture(e.pointerId);
     const apart = spread();
-    start.current = { x: e.clientX, y: e.clientY, pan, spread: apart, zoom, pinch: apart > 0 };
+    const backing = apart === 0 && onBacking(e);
+    start.current = { x: e.clientX, y: e.clientY, pan, spread: apart, zoom, pinch: apart > 0, backing };
   };
   // A pointer left: from two to one, the one left goes on from where it is, as a drag of the pinch's end, never a swipe.
   const lift = (pointerId: number) => {
     if (!pointers.current.delete(pointerId)) return false;
     const [rest, ...others] = [...pointers.current.values()];
     if (rest !== undefined && others.length === 0 && start.current !== null)
-      start.current = { x: rest.x, y: rest.y, pan, spread: 0, zoom, pinch: true };
+      start.current = { x: rest.x, y: rest.y, pan, spread: 0, zoom, pinch: true, backing: false };
     return true;
   };
   const move = (e: ReactPointerEvent) => {
@@ -228,6 +249,10 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
     if (from === null) return;
     start.current = null;
     const dx = e.clientX - from.x;
+    // A press on the backing, as a press outside any modal, closes the viewer, by the click it makes; a swipe, a drag
+    // or a pinch does not.
+    pressedBacking.current = from.backing && !from.pinch && Math.hypot(dx, e.clientY - from.y) <= pressSlop;
+    if (pressedBacking.current) return;
     if (zoom === 1 && !from.pinch && Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(e.clientY - from.y)) {
       // A swipe toward the start of the line brings the next, as a page turns.
       go(index + ((direction === "rtl" ? dx > 0 : dx < 0) ? 1 : -1));
@@ -272,6 +297,11 @@ export function MediaViewer({ items, index, onIndexChange, onClose, layer = true
         onPointerMove={move}
         onPointerUp={up}
         onPointerCancel={cancel}
+        onClick={() => {
+          if (!pressedBacking.current) return;
+          pressedBacking.current = false;
+          onClose();
+        }}
         onWheel={(e) => {
           if (!isImage || !gesture(e)) return;
           zoomTo(zoom + (e.deltaY < 0 ? tokens.zoomStep : -tokens.zoomStep));
