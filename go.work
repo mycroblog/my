@@ -9,7 +9,7 @@
 // pkg/mybot are published, and their go.mod reaches their users; tools/go.mod and tools/buf/go.mod pin the tools apart
 // from the product.
 // scripts/go-work-check.sh keeps this list and the go line true.
-go 1.27.3
+go 1.27.4
 
 use (
 	.

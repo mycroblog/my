@@ -1,4 +1,4 @@
-golang 1.27.3
+golang 1.27.4
 golangci-lint 2.14.0
 bun 1.4.4
 shellcheck 0.9.0

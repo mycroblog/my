@@ -4,7 +4,7 @@
 // uses, and protoc-gen-go in tools/go.mod stays on the product's version.
 module github.com/mycroblog/my/tools/buf
 
-go 1.27.3
+go 1.27.4
 
 tool github.com/bufbuild/buf/cmd/buf
 
