@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     go build -trimpath -ldflags="-s -w" -o /out/bot "./examples/${EXAMPLE}" \
     && mkdir /out/data
 
-FROM gcr.io/distroless/static-debian13:nonroot@sha256:aafe993665bf6200db38a02c11a9351e782a84b6a45e7f33b6695638c88e3931
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:8ce6dd87e9823c5b48dcfb2c8604714ccb351ce59607327bcc4957448da279b5
 COPY --from=build /out/bot /bot
 # The volume's directory belongs to the user nonroot, so that a new named volume takes its owner.
 COPY --from=build --chown=65532:65532 /out/data /data
