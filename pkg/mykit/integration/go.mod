@@ -3,7 +3,7 @@
 // pkg/mykit's takes in the other.
 module github.com/mycroblog/my/pkg/mykit/integration
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/mycroblog/my v0.0.0

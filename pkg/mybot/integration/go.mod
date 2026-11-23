@@ -3,7 +3,7 @@
 // nor the libraries' take in the others.
 module github.com/mycroblog/my/pkg/mybot/integration
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/mycroblog/my v0.0.0
