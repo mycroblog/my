@@ -182,7 +182,7 @@ function Ring({ phase, arc }: { phase: Pull["phase"]; arc: number }) {
 }
 
 /** Where the mark rests by default: in the room above the feed, its bottom at the feed's top. */
-export const pullRest = -tokens.pullMark;
+const pullRest = -tokens.pullMark;
 
 /**
  * The mark of a pull: it comes down a diameter to its `rest` (where its top stands from the top of what holds it, in
