@@ -43,6 +43,7 @@ export { inNativeShell } from "./shell";
 export { adoptStyleSheet } from "./style-sheet";
 export { playSound, trySound } from "./sound";
 export { joinTabGroup, type TabGroup } from "./tabs";
+export { followThemeChoice, keepThemeChoice, readThemeChoice, watchThemeChoice, type ThemeChoice } from "./theme";
 export {
   browserName,
   browserTranslatorAvailability,

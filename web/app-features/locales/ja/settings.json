@@ -191,6 +191,26 @@
     "defaultMessage": "小さい",
     "description": "An option of Link previews in posts: the card has a small square picture beside its text."
   },
+  "settings.display.theme": {
+    "defaultMessage": "ライト・ダーク",
+    "description": "The label of the choice of whether the app is light or dark, on the Display and posting page of the settings: Same as the device, Light, or Dark. Not Theme: that is the server's colors, type and corners, which administrators set (staff.entry.theme); this choice picks the light or the dark colors of that theme."
+  },
+  "settings.display.theme.about": {
+    "defaultMessage": "アカウントではなく、この端末にだけ保存します。",
+    "description": "The line under Light or dark on the Display and posting page: unlike the other settings of the page, which are the account's, this choice is kept in this browser and does not follow the account to other devices."
+  },
+  "settings.display.theme.system": {
+    "defaultMessage": "端末と同じ",
+    "description": "The first option of Light or dark on the Display and posting page: the app is light or dark as the device's system setting says, and changes with it. Not Same as the browser (settings.display.browser): the reader sets dark mode on the device."
+  },
+  "settings.display.theme.light": {
+    "defaultMessage": "ライト",
+    "description": "An option of Light or dark on the Display and posting page: the app is always light."
+  },
+  "settings.display.theme.dark": {
+    "defaultMessage": "ダーク",
+    "description": "An option of Light or dark on the Display and posting page: the app is always dark."
+  },
   "settings.display.audience": {
     "defaultMessage": "見られる人",
     "description": "The label of the choice of the visibility a new post starts with, in the New posts section of the Display and posting page of the settings; the composer's words for it (compose.audience). Its options are the composer's visibilities (compose.visibility.*)."

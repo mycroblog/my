@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Display and posting, the entry of the settings at /settings/display (FR-007, FR-110, FR-114, FR-208): the language
-// and the time zone the app shows, each the account's choice or the browser's; how large a link's preview is; what a
-// new post starts with (who can see it, its language, whether media needs a description, and who can reply to, boost
-// and quote it, each with the choices the composer offers for one post); and what
-// the timelines show (the languages, none chosen meaning all, and new posts as they arrive). Where the server itself
+// and the time zone the app shows, each the account's choice or the browser's; the colour scheme, light, dark or the
+// device's, kept on this device alone (@my/platform's theme.ts); how large a link's preview is; what a new post starts
+// with (who can see it, its language, whether media needs a description, and who can reply to, boost and quote it,
+// each with the choices the composer offers for one post); and what the timelines show (the languages, none chosen meaning all, and new posts as they arrive). Where the server itself
 // requires a description of media, the switch of it stands on and cannot be changed. Every control saves at
 // once and says so in the line under its name (controls.tsx, saving.tsx): the change shows at once, as the account's preferences show
 // it everywhere (app-data), and goes back to what the server has when the server does not take it. The language
@@ -38,7 +38,8 @@ import {
   useLocale,
   type SelectOption,
 } from "@my/design-system";
-import { useId } from "react";
+import { keepThemeChoice, readThemeChoice, watchThemeChoice, type ThemeChoice } from "@my/platform";
+import { useId, useSyncExternalStore } from "react";
 import { asksApproval, choiceText, interactionChoices, interactions } from "../interactions";
 import { stringsIn } from "../locale";
 import type { MessageId } from "../messages.gen";
@@ -201,6 +202,29 @@ function TimelineLanguages({
   );
 }
 
+/** The device's choice of the app's colour scheme, kept on this device and shown at once (@my/platform's theme.ts). */
+function Theme({ t }: { t: T }) {
+  const choice = useSyncExternalStore(watchThemeChoice, readThemeChoice, () => "system" as const);
+  const options: readonly { value: ThemeChoice; label: string }[] = [
+    { value: "system", label: t("settings.display.theme.system") },
+    { value: "light", label: t("settings.display.theme.light") },
+    { value: "dark", label: t("settings.display.theme.dark") },
+  ];
+  return (
+    <Choice
+      page={page}
+      label={t("settings.display.theme")}
+      about={t("settings.display.theme.about")}
+      options={options}
+      value={choice}
+      onChoose={(value) => {
+        keepThemeChoice(options.find((o) => o.value === value)?.value ?? "system");
+        return Promise.resolve();
+      }}
+    />
+  );
+}
+
 /** The sections of the screen, once the preferences are read. */
 function Sections({ preferences, languages }: { preferences: Preferences; languages: readonly string[] }) {
   const { locale } = useLocale();
@@ -243,6 +267,7 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
         />
       </SettingsSection>
       <SettingsSection heading={t("settings.display.section.display")}>
+        <Theme t={t} />
         <Choice
           page={page}
           label={t("settings.display.link_cards")}
