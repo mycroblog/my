@@ -262,10 +262,16 @@ func (i *Inbox) Receive(ctx context.Context, in InboxRequest) (Received, error) 
 		outcome = InboxOutcomeDuplicate
 	}
 	l := kernel.NewLabels(LabelActivityType, typ, LabelOutcome, outcome)
+	line := []slog.Attr{slog.String(LabelActivityType, typ), slog.String(LabelOutcome, outcome)}
 	if outcome == InboxOutcomeRejected {
-		l = l.With(LabelInboxRejection, rec.Rejection.MetricReason())
+		reason := rec.Rejection.MetricReason()
+		l = l.With(LabelInboxRejection, reason)
+		line = append(line, slog.String(LabelInboxRejection, reason))
 	}
 	i.activities.Add(ctx, 1, l)
+	// The line of the request carries the labels of the metric, from which a log-based metric
+	// counts the activities as the metric does (ADR-0055 §5).
+	kernel.AddUnitAttrs(ctx, line...)
 	return rec, err
 }
 

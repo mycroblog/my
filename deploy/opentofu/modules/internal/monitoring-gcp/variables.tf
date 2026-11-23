@@ -133,7 +133,7 @@ variable "database_size_limit_bytes" {
 }
 
 variable "media_size_limit_bytes" {
-  description = "MyMediaStorageLarge fires when the local media go over this size. Null leaves the alert out."
+  description = "MyMediaStorageLarge fires when the media files, local and remote cache together, go over this size. Null leaves the alert out."
   type        = number
   default     = null
 }

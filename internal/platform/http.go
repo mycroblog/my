@@ -438,7 +438,8 @@ func validRequestID(id string) bool {
 // and its duration in seconds (ADR-0055 §5), so that a log-based metric counts the requests as
 // the metric does: http.route and my.surface are those that problemFallback found, and are absent
 // when the request reached no route (the probes of the platform, the requests refused before routing),
-// which the metric does not measure either. With the HTTP metrics, it also records the request's
+// which the metric does not measure either. The handler adds its own attributes to the line
+// with kernel.AddUnitAttrs (the inbox its outcome). With the HTTP metrics, it also records the request's
 // http.server.request.duration in a unit of work of the Meter (ADR-0055 §3), which the line
 // carries with metrics_exporter = emf (§5). The request is a span of the Tracer
 // (HTTPServerSpan, ADR-0055 §13), which the line names by trace_id and span_id. A server error
@@ -467,6 +468,7 @@ func (a *App) accessLog(next http.Handler) http.Handler {
 				}
 			}()
 		}
+		ctx, _ = kernel.WithUnitAttrs(ctx)
 		r = r.WithContext(context.WithValue(ctx, requestRouteKey{}, rr))
 		next.ServeHTTP(rw, r)
 		if rw.status >= http.StatusInternalServerError && !rr.panicked && clientLeft(r.Context()) {
