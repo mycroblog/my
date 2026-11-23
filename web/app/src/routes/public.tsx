@@ -11,8 +11,8 @@ import { PublicTimelineScreen } from "../shell/public-timeline";
 export const Route = createFileRoute("/public")({
   loader: ({ context }) => screenLoad(context, (data) => loadPublicTimeline(data, "federated")),
   component: FederatedScreen,
-  // Back on the timeline, the reader is where they left it.
-  staticData: { scroll: "restore" },
+  // A place of the navigation opens at its newest; going back to the timeline, the reader is where they left it.
+  staticData: { scroll: "back" },
 });
 
 function FederatedScreen() {

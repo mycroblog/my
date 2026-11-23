@@ -14,8 +14,8 @@ import { SignedOut } from "../shell/signed-out";
 export const Route = createFileRoute("/profile")({
   loader: ({ context }) => screenLoad(context, loadOwnProfile),
   component: OwnProfileScreen,
-  // Back on the profile, the reader is where they left it.
-  staticData: { scroll: "restore" },
+  // A place of the navigation opens at its newest; going back to the profile, the reader is where they left it.
+  staticData: { scroll: "back" },
 });
 
 function OwnProfileScreen() {

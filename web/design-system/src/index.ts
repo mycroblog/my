@@ -98,7 +98,7 @@ export {
   type EntryProps,
   type StampProps,
 } from "./entry";
-export { Feed, FeedItem, FeedNotice, moveFeedFocus, type FeedProps, type NewItems } from "./feed";
+export { Feed, FeedItem, FeedNotice, moveFeedFocus, showNewest, type FeedProps, type NewItems } from "./feed";
 export { Faces, type FacesProps } from "./faces";
 export {
   BareTextArea,
