@@ -94,6 +94,8 @@ expect "a document, in the merge queue" full "docs-static" CONTRIBUTING.md
 expect "a published document, in the merge queue" full "docs-static site-test site-build" docs/guide/posting.md
 expect "a decision, on a pull request" pr "source-license docs-lint docs-change" docs/adr/0079-ci-single-gate-merge-queue.md
 expect "a context map" pr "source-license docs-change" internal/app/content/context-map.yaml
+expect "an agents' instruction file in the server's code" pr "source-license docs-lint docs-change" internal/adapter/db/postgres/AGENTS.md
+expect "a shell script outside scripts/, on a pull request" pr "source-license shell-lint" test/federation-live/postgres-init.sh
 expect "the server's code, on a pull request" pr "go-format source-license server-test" internal/app/content/text.go
 expect "the server's code, in the merge queue" full "server-test server-static docs-static web-browser-image web-e2e-build web-e2e" internal/app/content/text.go
 expect "the server's code, on a pull request labelled allow:full-ci" both \
