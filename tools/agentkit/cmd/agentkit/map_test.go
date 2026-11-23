@@ -29,11 +29,11 @@ func TestCheckContextsAreTheScripts(t *testing.T) {
 
 func TestCheckContextsOfAScript(t *testing.T) {
 	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, "scripts"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(root, "scripts"), 0o750); err != nil {
 		t.Fatal(err)
 	}
 	write := func(body string) {
-		if err := os.WriteFile(filepath.Join(root, contextsScript), []byte(body), 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(root, contextsScript), []byte(body), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
