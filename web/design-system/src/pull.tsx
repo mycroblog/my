@@ -8,13 +8,14 @@
 // the page scrolls. While a feed that pulls is on the page, the page has no pull of its own at its top (styles.css:
 // no reload, no stretch or bounce under the mark).
 //
-// The mark follows the finger down with resistance (a share of its way, to a farthest point), its arc growing with the
-// pull toward a full ring, muted until it is past the threshold, then whole in the accent; let go there, it goes back
-// to its rest at the top of the feed, level with the first entry's author, and turns a three-quarter arc while the
-// feed is read, then leaves up the way it came, as it does when let go short of it. With reduced motion it stands at
-// its rest from the start of the pull, still: its arc says how far the pull is, the full ring that it is past the
-// threshold, and the three-quarter arc that the feed is read. While the feed is
-// read, a polite live region says so; the mark itself is hidden from assistive technology.
+// The mark comes down from above the feed into the room over it as the pull nears the threshold, clear as it comes,
+// its arc growing toward a ring, muted until the pull is past the threshold, then a closed ring in the accent; it goes
+// no lower, past the threshold nor while the feed is read, when it turns a three-quarter arc, so that it covers none
+// of the entries' words. Where the room above the feed is shorter than the mark (no title or tabs over it), it stands
+// as high as the view lets it, over the top of the first entry. It leaves up the way it came. With reduced motion it
+// stands at its rest from the start of the pull, still: its arc says how far the pull is, the closed ring that it is
+// past the threshold, and the three-quarter arc that the feed is read. While the feed is read, a polite live region
+// says so; the mark itself is hidden from assistive technology.
 
 import { feed as tokens, motion, transition } from "@my/design-tokens";
 import { AnimatePresence, domMin, LazyMotion, m, useReducedMotion } from "motion/react";
@@ -23,7 +24,7 @@ import { tv } from "tailwind-variants/lite";
 import { Layers, Spoken } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { curve } from "./modal";
-import { scrollerOf } from "./scroll";
+import { scrollerOf, viewTopOf } from "./scroll";
 
 const Pulls = createContext(false);
 
@@ -131,7 +132,10 @@ const pull = tv({
   },
   variants: {
     phase: {
-      pulling: { ring: "text-muted-text" },
+      // In dark, the muted arc on the raised disc reads faintly: it is drawn in the text's color there.
+      pulling: {
+        ring: "text-muted-text [:root[data-theme=dark]_&]:text-text dark:[:root:not([data-theme=light])_&]:text-text",
+      },
       armed: { ring: "text-accent-text" },
       loading: { ring: "animate-spin text-accent-text" },
     },
@@ -145,7 +149,7 @@ const follow = { duration: 0 };
 const settle = { duration: transition.duration.pop / 1000, ease: curve(transition.ease.enter) };
 const leave = { duration: transition.duration.pop / 1000, ease: curve(transition.ease.exit) };
 
-/** The ring of a pull: its track, and over it from the top the share `arc` of the ring. */
+/** The ring of a pull: its track, and over it from the top the share `arc` of the ring, a closed circle when whole. */
 function Ring({ phase, arc }: { phase: Pull["phase"]; arc: number }) {
   const s = pull({ phase });
   const size = tokens.pullRing;
@@ -165,25 +169,34 @@ function Ring({ phase, arc }: { phase: Pull["phase"]; arc: number }) {
         cy={middle}
         r={r}
         strokeWidth={tokens.pullStroke}
-        pathLength={1}
-        strokeDasharray={`${String(arc)} 1`}
-        transform={`rotate(-90 ${String(middle)} ${String(middle)})`}
+        {...(arc < 1
+          ? {
+              pathLength: 1,
+              strokeDasharray: `${String(arc)} 1`,
+              transform: `rotate(-90 ${String(middle)} ${String(middle)})`,
+            }
+          : {})}
       />
     </svg>
   );
 }
 
+/** Where the mark rests by default: in the room above the feed, its bottom at the feed's top. */
+export const pullRest = -tokens.pullMark;
+
 /**
- * The mark of a pull: down by its `distance` from the top of what holds it (its top a diameter above it), clear as
- * the pull nears the threshold and whole past it, its arc the share of the threshold pulled; let go past it, it goes
- * back to its rest at the top of the feed. With reduced motion it stands at its rest, whole, from the start.
+ * The mark of a pull: it comes down a diameter to its `rest` (where its top stands from the top of what holds it, in
+ * rem) as the pull nears the threshold, clear as it comes, and stays there past it and while the feed is read, so
+ * that it never covers an entry's words; its arc is the share of the threshold pulled. With reduced motion it stands
+ * at its rest, whole, from the start.
  */
-function PullMark({ phase, distance }: Pull) {
+function PullMark({ phase, distance, rest }: Pull & { rest: number }) {
   const s = pull({ phase });
   const reduced = useReducedMotion() ?? false;
-  const shown = reduced || phase === "loading" ? tokens.pullRest : distance;
-  const y = `${String(shown - tokens.pullMark)}rem`;
   const share = Math.min(1, distance / pullMeasure.threshold);
+  const away = reduced || phase !== "pulling" ? 0 : 1 - share;
+  const y = `${String(rest - away * tokens.pullMark)}rem`;
+  const above = `${String(rest - tokens.pullMark)}rem`;
   const arc = phase === "loading" ? loadingArc : phase === "armed" ? 1 : share;
   return (
     <Layers
@@ -191,13 +204,9 @@ function PullMark({ phase, distance }: Pull) {
       as={
         <m.div
           aria-hidden="true"
-          initial={reduced || phase !== "pulling" ? false : { y: `${String(-tokens.pullMark)}rem`, opacity: 0 }}
+          initial={reduced || phase !== "pulling" ? false : { y: above, opacity: 0 }}
           animate={{ y, opacity: reduced || phase !== "pulling" ? 1 : share }}
-          exit={
-            reduced
-              ? { opacity: 0, transition: follow }
-              : { y: `${String(-tokens.pullMark)}rem`, opacity: 0, transition: leave }
-          }
+          exit={reduced ? { opacity: 0, transition: follow } : { y: above, opacity: 0, transition: leave }}
           transition={phase === "loading" ? settle : follow}
         />
       }
@@ -208,11 +217,14 @@ function PullMark({ phase, distance }: Pull) {
   );
 }
 
-/** The mark of `pull` while there is one, which leaves by its motion as the pull ends. */
-export function PullIndicator({ pull: shown }: { pull: Pull | undefined }) {
+/**
+ * The mark of `pull` while there is one, which leaves by its motion as the pull ends; `rest` is where its top stands
+ * from the feed's top, in rem (`pullRest`: in the room above the feed).
+ */
+export function PullIndicator({ pull: shown, rest = pullRest }: { pull: Pull | undefined; rest?: number }) {
   return (
     <LazyMotion features={domMin} strict>
-      <AnimatePresence>{shown && <PullMark key="mark" {...shown} />}</AnimatePresence>
+      <AnimatePresence>{shown && <PullMark key="mark" {...shown} rest={rest} />}</AnimatePresence>
     </LazyMotion>
   );
 }
@@ -248,6 +260,8 @@ export function FeedPull({
   onPull: () => Promise<unknown>;
 }) {
   const [shown, show] = useState<Pull>();
+  // Where the mark rests: above the feed, or as high as the view lets it where the room above the feed is short.
+  const [rest, setRest] = useState(pullRest);
   const reading = useRef(false);
   const { t, lang } = stringsIn(useReader(undefined).lang);
   const read = useEffectEvent(() => {
@@ -270,6 +284,8 @@ export function FeedPull({
       const touch = point(e);
       if (reading.current || !touch) return;
       rem = remOf(el);
+      const room = (el.getBoundingClientRect().top - viewTopOf(scroller)) / rem;
+      setRest(Math.max(pullRest, tokens.pullInset - room));
       gesture.start(touch.clientX / rem, touch.clientY / rem, e.touches.length);
     };
     const onMove = (e: TouchEvent) => {
@@ -302,7 +318,7 @@ export function FeedPull({
   }, [target]);
   return (
     <PullPlace>
-      <PullIndicator pull={shown} />
+      <PullIndicator pull={shown} rest={rest} />
       {shown?.phase === "loading" && (
         <Spoken>
           <span lang={lang}>{t("feed.loading_newer")}</span>
