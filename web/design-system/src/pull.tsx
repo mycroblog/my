@@ -8,17 +8,19 @@
 // the page scrolls. While a feed that pulls is on the page, the page has no pull of its own at its top (styles.css:
 // no reload, no stretch or bounce under the mark).
 //
-// The mark follows the finger down with resistance (a share of its way, to a farthest point), its ring turning with
-// the pull, muted until it is past the threshold, then in the accent; let go there, it holds at the threshold and
-// spins while the feed is read, then leaves up the way it came, as it does when let go short of it. With reduced
-// motion it stands at the threshold from the start of the pull, still, in the state of the pull. While the feed is
+// The mark follows the finger down with resistance (a share of its way, to a farthest point), its arc growing with the
+// pull toward a full ring, muted until it is past the threshold, then whole in the accent; let go there, it goes back
+// to its rest at the top of the feed, level with the first entry's author, and turns a three-quarter arc while the
+// feed is read, then leaves up the way it came, as it does when let go short of it. With reduced motion it stands at
+// its rest from the start of the pull, still: its arc says how far the pull is, the full ring that it is past the
+// threshold, and the three-quarter arc that the feed is read. While the feed is
 // read, a polite live region says so; the mark itself is hidden from assistive technology.
 
 import { feed as tokens, motion, transition } from "@my/design-tokens";
 import { AnimatePresence, domMin, LazyMotion, m, useReducedMotion } from "motion/react";
 import { createContext, use, useEffect, useEffectEvent, useRef, useState, type ReactNode, type RefObject } from "react";
 import { tv } from "tailwind-variants/lite";
-import { Box, Layers, Spoken } from "./layout";
+import { Layers, Spoken } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { curve } from "./modal";
 import { scrollerOf } from "./scroll";
@@ -114,38 +116,75 @@ export function pullGesture(measure: PullMeasure, atTop: () => boolean): PullGes
   };
 }
 
-// The mark: a disc of the raised surface, its ring the spinner's, muted until the pull is past the threshold.
+// The mark: a disc of the raised surface, bounded by a line so that it stands off the page in light, holding an arc
+// that grows with the pull toward a full ring, muted until the pull is past the threshold, then whole in the accent;
+// while the feed is read, a three-quarter arc that turns (and stands still with reduced motion).
 const pull = tv({
   slots: {
-    mark: "size-feed-pull-mark rounded-full bg-surface-raised text-body shadow-overlay",
-    ring: [
-      "box-border size-spinner rounded-full border-spinner border-solid border-spinner-track border-t-current",
-      motion.spin.reduced === "still" ? "motion-reduce:animate-none" : "",
+    mark: [
+      "size-feed-pull-mark rounded-full bg-surface-raised shadow-overlay",
+      "outline-1 -outline-offset-1 outline-solid outline-surface-raised-pressed",
     ],
+    ring: motion.spin.reduced === "still" ? "motion-reduce:animate-none" : "",
+    track: "fill-none stroke-spinner-track",
+    arc: "fill-none stroke-current",
   },
   variants: {
     phase: {
-      pulling: { mark: "text-muted-text" },
-      armed: { mark: "text-accent-text" },
-      loading: { mark: "text-accent-text", ring: "animate-spin" },
+      pulling: { ring: "text-muted-text" },
+      armed: { ring: "text-accent-text" },
+      loading: { ring: "animate-spin text-accent-text" },
     },
   },
 });
+
+/** The share of the ring the arc draws while the feed is read. */
+const loadingArc = 0.75;
 
 const follow = { duration: 0 };
 const settle = { duration: transition.duration.pop / 1000, ease: curve(transition.ease.enter) };
 const leave = { duration: transition.duration.pop / 1000, ease: curve(transition.ease.exit) };
 
+/** The ring of a pull: its track, and over it from the top the share `arc` of the ring. */
+function Ring({ phase, arc }: { phase: Pull["phase"]; arc: number }) {
+  const s = pull({ phase });
+  const size = tokens.pullRing;
+  const r = (size - tokens.pullStroke) / 2;
+  const middle = size / 2;
+  return (
+    <svg
+      width={`${String(size)}rem`}
+      height={`${String(size)}rem`}
+      viewBox={`0 0 ${String(size)} ${String(size)}`}
+      className={s.ring()}
+    >
+      <circle className={s.track()} cx={middle} cy={middle} r={r} strokeWidth={tokens.pullStroke} />
+      <circle
+        className={s.arc()}
+        cx={middle}
+        cy={middle}
+        r={r}
+        strokeWidth={tokens.pullStroke}
+        pathLength={1}
+        strokeDasharray={`${String(arc)} 1`}
+        transform={`rotate(-90 ${String(middle)} ${String(middle)})`}
+      />
+    </svg>
+  );
+}
+
 /**
  * The mark of a pull: down by its `distance` from the top of what holds it (its top a diameter above it), clear as
- * the pull nears the threshold, its ring turned by the pull; with reduced motion at the threshold, whole and still.
+ * the pull nears the threshold and whole past it, its arc the share of the threshold pulled; let go past it, it goes
+ * back to its rest at the top of the feed. With reduced motion it stands at its rest, whole, from the start.
  */
 function PullMark({ phase, distance }: Pull) {
   const s = pull({ phase });
   const reduced = useReducedMotion() ?? false;
-  const shown = reduced || phase === "loading" ? pullMeasure.threshold : distance;
+  const shown = reduced || phase === "loading" ? tokens.pullRest : distance;
   const y = `${String(shown - tokens.pullMark)}rem`;
-  const share = Math.min(1, shown / pullMeasure.threshold);
+  const share = Math.min(1, distance / pullMeasure.threshold);
+  const arc = phase === "loading" ? loadingArc : phase === "armed" ? 1 : share;
   return (
     <Layers
       center
@@ -153,7 +192,7 @@ function PullMark({ phase, distance }: Pull) {
         <m.div
           aria-hidden="true"
           initial={reduced || phase !== "pulling" ? false : { y: `${String(-tokens.pullMark)}rem`, opacity: 0 }}
-          animate={{ y, opacity: reduced ? 1 : share }}
+          animate={{ y, opacity: reduced || phase !== "pulling" ? 1 : share }}
           exit={
             reduced
               ? { opacity: 0, transition: follow }
@@ -164,18 +203,7 @@ function PullMark({ phase, distance }: Pull) {
       }
       className={s.mark()}
     >
-      <Box
-        display="block"
-        as={
-          <m.span
-            initial={false}
-            animate={{ rotate: reduced || phase === "loading" ? 0 : share * 270 }}
-            transition={follow}
-          />
-        }
-      >
-        <Box display="block" as="span" className={s.ring()} />
-      </Box>
+      <Ring phase={phase} arc={arc} />
     </Layers>
   );
 }

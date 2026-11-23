@@ -59,9 +59,10 @@ export type HomeTimeline = {
   readonly refetch: () => void;
   /**
    * Reads the timeline's newest again, which the reader at its top asked for (a pull): its first page alone, in place
-   * of every page fetched. It resolves once the page arrived or failed.
+   * of every page fetched. It resolves once the page arrived or failed. The timelines have it; an event's board,
+   * read as one, does not.
    */
-  readonly refresh: () => Promise<void>;
+  readonly refresh?: (() => Promise<void>) | undefined;
 };
 
 /** A public timeline of the instance: its local posts, or the posts it knows from every server. */

@@ -368,8 +368,8 @@ export const entry = {
  *
  * Its pull from the top on a phone, in rem but the resistance: how far a finger moves before the feed tells a pull
  * from a scroll or a swipe, how far its mark must come down for a release to read the feed anew, the farthest the mark
- * comes, the share of the finger's way the mark follows, and the mark's diameter, a finger's target (as
- * `iconButton.touch`).
+ * comes, the share of the finger's way the mark follows, where the mark rests while the feed is read (its top at the
+ * feed's, level with the first entry's author), the mark's diameter, and the ring it draws: its diameter and stroke.
  */
 export const feed = {
   gap: 1.75,
@@ -379,7 +379,10 @@ export const feed = {
   pullThreshold: 4,
   pullMost: 6,
   pullResistance: 0.5,
-  pullMark: 2.75,
+  pullRest: 2.5,
+  pullMark: 2.5,
+  pullRing: 1.25,
+  pullStroke: 0.15625,
 } as const;
 
 /** Something embedded in an entry (a quoted post) on the raised surface, in rem: its padding and the space between its parts. */

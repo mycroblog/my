@@ -15,7 +15,7 @@ import { useSyncExternalStore } from "react";
 import type { AppData } from "./app-data";
 import { receiveInteractionRequests } from "./approvals";
 import { receiveFollowRequests } from "./follow-requests";
-import { pagedQuery, usePagedList, type PagedList, type Pages } from "./paged";
+import { pagedQuery, useFirstPageAgain, usePagedList, type PagedList, type Pages } from "./paged";
 import { useAppData } from "./provider";
 import { useShadow } from "./shadow";
 import type { Status } from "./statuses";
@@ -441,7 +441,9 @@ const shownNotifications = new WeakMap<NotificationItem, { status: Status; shown
  * status gone leaves the list, as the server leaves it out.
  */
 export function useNotifications(filter: NotificationFilter): PagedList<NotificationItem> {
-  const list = usePagedList(notificationsQuery(useAppData(), filter));
+  const options = notificationsQuery(useAppData(), filter);
+  const list = usePagedList(options);
+  const refresh = useFirstPageAgain(options.queryKey);
   const show = useShadow();
   const items = list.items.flatMap((n) => {
     if (n.status === undefined) return [n];
@@ -454,7 +456,7 @@ export function useNotifications(filter: NotificationFilter): PagedList<Notifica
     shownNotifications.set(n, { status, shown });
     return [shown];
   });
-  return { ...list, items };
+  return { ...list, items, refresh };
 }
 
 /** What the list reads of the marker, and how the reader reads notifications. */

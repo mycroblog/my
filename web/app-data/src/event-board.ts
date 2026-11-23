@@ -9,7 +9,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import type { ServerEvent } from "./around";
 import { eventQuery } from "./events";
-import { pagedQuery, readFirstPageAgain } from "./paged";
+import { pagedQuery } from "./paged";
 import { useAppData } from "./provider";
 import { cachedStatus, shadowStatus, showList, useShadow } from "./shadow";
 import type { Status } from "./statuses";
@@ -61,9 +61,7 @@ export function eventBoardQuery({ api, queries }: AppData, id: string) {
  * nothing is read while `enabled` is false.
  */
 export function useEventBoard(id: string, enabled = true): HomeTimeline {
-  const data = useAppData();
-  const options = eventBoardQuery(data, id);
-  const query = useInfiniteQuery({ ...options, enabled });
+  const query = useInfiniteQuery({ ...eventBoardQuery(useAppData(), id), enabled });
   const show = useShadow();
   return {
     statuses: showList(show, query.data?.pages.flatMap((page) => page.items) ?? []),
@@ -78,7 +76,6 @@ export function useEventBoard(id: string, enabled = true): HomeTimeline {
     refetch: () => {
       void query.refetch();
     },
-    refresh: () => readFirstPageAgain(data.queryClient, options.queryKey),
   };
 }
 

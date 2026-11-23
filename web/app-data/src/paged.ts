@@ -65,7 +65,8 @@ export type PagedList<T> = {
   readonly refetch: () => void;
   /**
    * Reads the list's newest again, which the reader at its top asked for (a pull): its first page alone, in place of
-   * every page fetched. It resolves once the page arrived or failed. A list read whole leaves it out.
+   * every page fetched. It resolves once the page arrived or failed. Only a list a reader pulls has it: a profile's
+   * posts and the notifications (`useFirstPageAgain`).
    */
   readonly refresh?: (() => Promise<void>) | undefined;
 };
@@ -80,6 +81,12 @@ export async function readFirstPageAgain(queryClient: QueryClient, queryKey: Que
     (cached) => cached && { pages: cached.pages.slice(0, 1), pageParams: cached.pageParams.slice(0, 1) },
   );
   await queryClient.invalidateQueries({ queryKey, exact: true });
+}
+
+/** What reads the first page of the infinite query of `queryKey` again (`readFirstPageAgain`), for a screen. */
+export function useFirstPageAgain(queryKey: QueryKey): () => Promise<void> {
+  const queryClient = useQueryClient();
+  return () => readFirstPageAgain(queryClient, queryKey);
 }
 
 /**
@@ -121,7 +128,6 @@ export function usePagedListOf<T, P extends Page<T>>(
   options: ReturnType<typeof pagedQuery<T, P>>,
   enabled = true,
 ): PagedListOf<T, P> {
-  const queryClient = useQueryClient();
   const query = useInfiniteQuery({ ...options, enabled });
   return {
     items: query.data?.pages.flatMap((page) => page.items) ?? [],
@@ -137,7 +143,6 @@ export function usePagedListOf<T, P extends Page<T>>(
     refetch: () => {
       void query.refetch();
     },
-    refresh: () => readFirstPageAgain(queryClient, options.queryKey),
   };
 }
 

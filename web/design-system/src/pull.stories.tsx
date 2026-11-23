@@ -69,17 +69,17 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Pulled halfway to the threshold: the mark half clear, its ring turned, muted. */
+/** Pulled halfway to the threshold: the mark half clear, its arc half a ring, muted. */
 export const Pulling: Story = {
   render: () => <Pulled pull={{ phase: "pulling", distance: pullMeasure.threshold / 2 }} />,
 };
 
-/** Pulled past the threshold: let go now, the feed is read anew; the mark whole, in the accent. */
+/** Pulled past the threshold: let go now, the feed is read anew; the mark whole, its ring full, in the accent. */
 export const PastTheThreshold: Story = {
   render: () => <Pulled pull={{ phase: "armed", distance: (pullMeasure.threshold + pullMeasure.most) / 2 }} />,
 };
 
-/** Let go past the threshold: the mark holds at it and spins while the feed is read. */
+/** Let go past the threshold: the mark rests at the top of the feed and turns a three-quarter arc while it is read. */
 export const Loading: Story = { render: () => <Pulled pull={{ phase: "loading", distance: pullMeasure.threshold }} /> };
 
 /** How long the story's feed takes to be read anew. */
