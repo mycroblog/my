@@ -98,7 +98,7 @@ CREATE TABLE instance_texts (
 -- overrides with their light and dark values, replaced as a whole by the next set. The token names
 -- are checked by the domain against the list generated from @my/design-tokens
 -- (internal/domain/instance/theme_tokens.gen.go), never by a constraint, so that a renamed or
--- retired token needs no schema change. saved_by_user_id is NULL for the CLI and the data upgrade.
+-- retired token needs no schema change. saved_by_user_id is NULL for the CLI.
 CREATE TABLE instance_theme_sets (
   id uuid NOT NULL PRIMARY KEY,
   document bytea NOT NULL,
@@ -107,8 +107,7 @@ CREATE TABLE instance_theme_sets (
 );
 
 -- Event: one publication of a set, which makes it the theme in effect. Its ID is the theme's
--- revision, which names the stylesheet. published_by_user_id is NULL for the CLI and the data
--- upgrade.
+-- revision, which names the stylesheet. published_by_user_id is NULL for the CLI.
 CREATE TABLE instance_theme_publications (
   id uuid NOT NULL PRIMARY KEY,
   set_id uuid NOT NULL,
@@ -120,7 +119,7 @@ CREATE TABLE instance_theme_publications (
 -- been published.
 CREATE TABLE instance_theme (
   id integer NOT NULL PRIMARY KEY CHECK (id = 1),
-  revision_id uuid NOT NULL
+  publication_id uuid NOT NULL
 );
 
 -- Projection: the draft, the set with the greatest ID, one row once a set has been saved.

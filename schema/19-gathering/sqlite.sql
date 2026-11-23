@@ -35,7 +35,7 @@ CREATE TABLE gathering_revisions (
   capacity INTEGER NOT NULL CHECK (capacity BETWEEN 0 AND 10000),
   revised_by_account_id TEXT NOT NULL,
   revised_at INTEGER NOT NULL,
-  board_writers TEXT NOT NULL DEFAULT 'organizers' CHECK (board_writers IN ('organizer', 'organizers', 'readers'))
+  board_writers TEXT NOT NULL DEFAULT 'coorganizers' CHECK (board_writers IN ('organizer', 'coorganizers', 'readers'))
 ) STRICT;
 CREATE INDEX gathering_revisions_gathering_id_id ON gathering_revisions (gathering_id, id DESC);
 -- The revisions that an account wrote, which its erasure empties.
@@ -162,14 +162,14 @@ CREATE TABLE gathering_coorganizer_changes (
 ) STRICT;
 CREATE INDEX gathering_coorganizer_changes_gathering_account ON gathering_coorganizer_changes (gathering_id, account_id, id DESC);
 
--- Event: the cancellation of an event, once. cancelled_by_account_id is NULL for an automatic
+-- Event: the cancellation of an event, once. canceled_by_account_id is NULL for an automatic
 -- cancellation; note is the reason a moderator or the organizer gave, '' for none.
 CREATE TABLE gathering_cancellations (
   gathering_id TEXT NOT NULL PRIMARY KEY,
   reason TEXT NOT NULL CHECK (reason IN ('organizer', 'moderator', 'organizer_suspended', 'organizer_deleted')),
-  cancelled_by_account_id TEXT,
+  canceled_by_account_id TEXT,
   note TEXT NOT NULL DEFAULT '' CHECK (length(note) <= 500),
-  cancelled_at INTEGER NOT NULL
+  canceled_at INTEGER NOT NULL
 ) STRICT;
 
 -- Resource: the voice chat room (voice_rooms.id) that the start of a date of an event opened,
@@ -192,7 +192,7 @@ CREATE TABLE gathering_voice_room_failures (
   PRIMARY KEY (gathering_id, confirmation_id)
 ) STRICT;
 
--- Projection: the current revision and date of each event, whether it was cancelled, and how
+-- Projection: the current revision and date of each event, whether it was canceled, and how
 -- many attendees answer going. The list reads it. An event without a confirmed date is
 -- unscheduled: it has no confirmation_id, and starts_at and ends_at span the candidates of its
 -- date poll that were not withdrawn.
@@ -201,7 +201,7 @@ CREATE TABLE gathering_heads (
   organizer_account_id TEXT NOT NULL,
   revision_id TEXT NOT NULL,
   confirmation_id TEXT,
-  state TEXT NOT NULL CHECK (state IN ('unscheduled', 'scheduled', 'cancelled')),
+  state TEXT NOT NULL CHECK (state IN ('unscheduled', 'scheduled', 'canceled')),
   starts_at INTEGER NOT NULL,
   ends_at INTEGER NOT NULL,
   going_count INTEGER NOT NULL CHECK (going_count >= 0)

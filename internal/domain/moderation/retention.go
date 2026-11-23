@@ -32,6 +32,11 @@ const (
 	DefaultAuditLogRetention = 730 * 24 * time.Hour
 )
 
+// DomainListFetchRetention is how long the fetches of a subscribed list are kept, but the last one
+// that did not fail and the failed ones after it, which the head derives from. It is not an
+// instance setting.
+const DomainListFetchRetention = 30 * 24 * time.Hour
+
 // SignupBlockRetention is how long a sign-up block is kept after it ends (ADR-0058). It is not
 // an instance setting.
 const SignupBlockRetention = 30 * 24 * time.Hour

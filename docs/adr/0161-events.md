@@ -62,7 +62,7 @@
 | 場所 | 0〜3 個。§6 | なし |
 | 現地の場所の見せ方 `place_disclosure` | `approved`（承認した参加者だけ）/ `viewers`（イベントが見える全員） | `approved` |
 | 定員 | 0（なし）か 1〜10,000 | 0 |
-| 掲示板に書く人 `board_writers` | `organizer`（主催者だけ）/ `organizers`（主催者と共同主催者）/ `readers`（読める人の全員）。§17 | `organizers` |
+| 掲示板に書く人 `board_writers` | `organizer`（主催者だけ）/ `coorganizers`（主催者と共同主催者）/ `readers`（読める人の全員）。§17 | `coorganizers` |
 
 - **時刻は UTC で持ち、イベントのタイムゾーンの名前を一緒に持つ**。画面は閲覧者のタイムゾーンで出し、イベントのタイムゾーンと違えば両方を出す。タイムゾーンの名前は Go の `time.LoadLocation` で検証する（`cmd/my` は `time/tzdata` を埋め込むので、コンテナに tzdata がなくても読める）。
 - 開始は終了より前で、長さは 7 日まで。作るときと日時を変えるときに、開始が今より後で、1 年先まで。
@@ -133,7 +133,7 @@
 | `event_invited` | 招待された人 | （招待, 宛先） |
 | `event_schedule_confirmed` | 日程の候補に答えた人と、招待された人 | （確定, 宛先） |
 | `event_changed` | 「行く」「たぶん」の人と、招待された人。日時・場所・通話のルームが変わったときだけ（題名・説明の改版では送らない） | （改版, 宛先） |
-| `event_cancelled` | 「行く」「たぶん」の人と、招待された人 | （中止, 宛先） |
+| `event_canceled` | 「行く」「たぶん」の人と、招待された人 | （中止, 宛先） |
 | `event_reminder` | 「行く」「たぶん」の人（§12） | （確定, 前もっての時間, 宛先） |
 | `event_started` | 「行く」「たぶん」の人。通話のルームがあればそのリンクを持つ | （確定, 宛先） |
 | `event_room_unavailable` | 主催者（§10） | （確定, 理由, 検査の時点） |
@@ -174,7 +174,7 @@
 | `gathering_coorganizer_changes` | イベント | イベント、アカウント、`assigned` / `removed`、時刻 |
 | `gathering_cancellations` | イベント | イベント（一意）、理由（`organizer` / `moderator` / `organizer_suspended` / `organizer_deleted`）、操作した人（NULL 可: 自動の中止）、理由の文 `note`（500 文字まで）、時刻 |
 | `gathering_voice_rooms` | リソース | イベント、確定、ルーム（`voice_rooms.id`）、時刻。（イベント, 確定）で一意（ルームを 2 度開かない） |
-| `gathering_heads` | 投影 | イベント、主催者、最新の改版、今の確定、状態（`unscheduled` / `scheduled` / `cancelled`）、開始、終了、「行く」の数 |
+| `gathering_heads` | 投影 | イベント、主催者、最新の改版、今の確定、状態（`unscheduled` / `scheduled` / `canceled`）、開始、終了、「行く」の数 |
 | `gathering_attendees` | 投影 | イベント、アカウント、今の答え、承認されているか |
 | `gathering_coorganizers` | 投影 | イベント、アカウント、指名の順 |
 | `gathering_dues` | 投影 | 次に `gathering.queue_due` が扱う時刻があるイベントだけの行: イベント、`next_due_at`。開始・リマインダー・検査が残らなければ行を消す |
@@ -190,7 +190,7 @@
 ### 14. モデレーション
 
 - **通報**: 利用者は見えるイベントを通報できる。通報の対象のアカウントは主催者で、子の表 `report_gatherings`（通報, イベント, 通報の時点の改版）がイベントとその時の題名・説明・場所を指す。リモートへの転送は使わない。
-- **モデレーターによる中止**: `manage_reports` を持つ人がイベントを中止する（理由 `moderator`、理由の文 500 文字まで）。監査ログ（[ADR-0058](0058-moderation-admin-separation.md)）に、対象の種類 `event` と操作 `event_cancelled` で残す。
+- **モデレーターによる中止**: `manage_reports` を持つ人がイベントを中止する（理由 `moderator`、理由の文 500 文字まで）。監査ログ（[ADR-0058](0058-moderation-admin-separation.md)）に、対象の種類 `event` と操作 `event_canceled` で残す。
 - **主催者の凍結・削除**: 凍結の domain event を受けたジョブが、主催者の開始前のイベントを理由 `organizer_suspended` で中止する。削除は `organizer_deleted`。凍結の解除で中止は戻らない。
 - **改版は証拠として残す**。モデレーターは通報の画面から、そのイベントの改版の並びを見る。アカウントの消去（ADR-0020 規約 6）は、そのアカウントが書いた改版の題名・説明・場所を消し、data-model の消去の表に載せる。
 - 出欠・投票・招待の記録は、イベントの終わり（終了の時刻か中止）から 90 日で消す（`instance_settings` の `event_records_retention_days`、下限 30 日。ADR-0100 §13 の形）。通報が参照するイベントの記録は、その通報の保持の期限まで残す。

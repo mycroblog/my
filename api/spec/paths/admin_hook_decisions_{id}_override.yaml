@@ -5,7 +5,7 @@ post:
   summary: Cancel a decision
   description: |
     Records the cancellation as its own event and in the audit log, and undoes what the hook
-    can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+    can: what happens depends on the verdict. Cancelling a canceled decision again changes
     nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
     a `reject` of `local.status`, which goes through its appeal, is a 409
     `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.

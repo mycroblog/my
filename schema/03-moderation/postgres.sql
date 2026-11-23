@@ -287,7 +287,7 @@ CREATE TABLE audit_log_entries (
     'domain_allow_added', 'domain_allow_removed',
     'domain_list_subscription_created', 'domain_list_subscription_updated', 'domain_list_subscription_deleted',
     'domain_list_draft_accepted', 'domain_list_draft_rejected', 'domain_list_fetch_queued',
-    'event_cancelled'
+    'event_canceled'
   )),
   target_kind text NOT NULL CHECK (target_kind IN (
     'account', 'status', 'domain', 'report', 'appeal', 'user', 'role', 'setting', 'rule',
@@ -494,21 +494,21 @@ CREATE TABLE domain_list_subscription_deletions (
   deleted_at timestamptz NOT NULL
 );
 
--- Current value: what the next fetch of a subscription sends and counts. etag and last_modified
--- are the validators of the last list read, digest its hex SHA-256 (NULL before the first),
--- consecutive_failures the failed fetches since the last one that did not fail.
+-- Current value: what the next fetch of a subscription sends. etag and last_modified are the
+-- validators of the last list read, digest its hex SHA-256 (NULL before the first). The last
+-- fetch and the failed fetches since the last one that did not fail derive from
+-- domain_list_fetches.
 CREATE TABLE domain_list_subscription_heads (
   subscription_id uuid NOT NULL PRIMARY KEY,
   etag text,
   last_modified text,
-  digest text,
-  consecutive_failures integer NOT NULL,
-  last_fetch_id uuid
+  digest text
 );
 
 -- Event: one fetch of a subscribed list. error_code is set exactly for a failed fetch;
 -- http_status is NULL when no answer came. entry_count is the entries the subscription holds
--- after the fetch.
+-- after the fetch. moderation.purge_records deletes the fetches older than 30 days but the last
+-- one of each subscription that did not fail and the failed ones after it.
 CREATE TABLE domain_list_fetches (
   id uuid NOT NULL PRIMARY KEY,
   subscription_id uuid NOT NULL,
@@ -523,11 +523,11 @@ CREATE TABLE domain_list_fetches (
 );
 CREATE INDEX domain_list_fetches_subscription_id_id ON domain_list_fetches (subscription_id, id DESC);
 
--- Projection: the domains of a subscribed list as the last fetch that read it listed them, one
--- row per domain (canonical), with the severity as listed (one this server does not know too).
--- since_fetch_id is the fetch from which the domain is listed with this content without a
--- break. A fetch that reads the list rewrites the rows of the subscription; the next fetch
--- rebuilds them.
+-- Current value: a cache of the subscribed list, its domains as the last fetch that read it
+-- listed them, one row per domain (canonical), with the severity as listed (one this server does
+-- not know too). since_fetch_id is the fetch from which the domain is listed with this content
+-- without a break. A fetch that reads the list rewrites the rows of the subscription; no fetch
+-- keeps the list it read, so nothing rebuilds them but the next fetch.
 CREATE TABLE domain_list_entries (
   subscription_id uuid NOT NULL,
   domain text COLLATE "C" NOT NULL,

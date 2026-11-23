@@ -28,7 +28,7 @@ export type EventShown = {
   readonly time_zone: string;
   readonly starts_at: string;
   readonly ends_at: string;
-  readonly state: "unscheduled" | "scheduled" | "cancelled";
+  readonly state: "unscheduled" | "scheduled" | "canceled";
   readonly places: readonly { readonly kind: PlaceKind }[];
   readonly hidden_places: readonly PlaceKind[];
   readonly going_count: number;
@@ -53,7 +53,7 @@ export function EventListLine({ event, now }: { event: EventShown; now: number }
   const timeZone = useTimeZone();
   const { t } = stringsIn(locale);
   const when = useEventWhen(event);
-  const ended = event.state !== "cancelled" && event.state !== "unscheduled" && Date.parse(event.ends_at) <= now;
+  const ended = event.state !== "canceled" && event.state !== "unscheduled" && Date.parse(event.ends_at) <= now;
   const going = useGoingCount(event.going_count, ended);
   const polled = event.state === "unscheduled";
   const start = new Date(event.starts_at);
@@ -75,8 +75,8 @@ export function EventListLine({ event, now }: { event: EventShown; now: number }
       organizer={t("event.by", { name: nameOf(event.organizer) })}
       going={event.going_count > 0 ? going : undefined}
       state={
-        event.state === "cancelled"
-          ? { kind: "cancelled", label: t("event.state", { state: "cancelled" }) }
+        event.state === "canceled"
+          ? { kind: "canceled", label: t("event.state", { state: "canceled" }) }
           : ended
             ? { kind: "ended", label: t("event.state", { state: "ended" }) }
             : undefined

@@ -61,13 +61,13 @@ func TestModeratorCancelsAReportedEvent(t *testing.T) {
 		t.Fatalf("CancelByModerator = %v", err)
 	}
 	e.drain(t)
-	entries, err := e.app.Moderation.AuditLog(ctx, appmoderation.AuditQuery{Action: moderation.AuditEventCancelled}, 10)
+	entries, err := e.app.Moderation.AuditLog(ctx, appmoderation.AuditQuery{Action: moderation.AuditEventCanceled}, 10)
 	if err != nil || len(entries) != 1 || entries[0].TargetKind != moderation.AuditTargetEvent || entries[0].TargetID != e.event.ID ||
 		entries[0].ActorUserID != mod.Local.UserID {
 		t.Errorf("audit log = %+v, %v; want the moderator's cancellation of the event", entries, err)
 	}
-	cancelled := eventNotice{domainnotification.TypeEventCancelled, domainnotification.EventCancelledKey(e.event.ID)}
-	wantNotices(t, "bob", e.notices(t, "bob"), cancelled)
+	canceled := eventNotice{domainnotification.TypeEventCanceled, domainnotification.EventCanceledKey(e.event.ID)}
+	wantNotices(t, "bob", e.notices(t, "bob"), canceled)
 	wantNotices(t, "mod", e.notices(t, "mod"))
 }
 
@@ -94,11 +94,11 @@ func TestSuspendingAnOrganizerCancelsTheirEvents(t *testing.T) {
 	}
 	e.drain(t)
 	rec, err := e.app.Events.EventRecords(ctx, e.event.ID)
-	if err != nil || rec.Cancellation == nil || rec.Cancellation.Reason != gathering.CancelOrganizerSuspended || rec.Cancellation.CancelledByAccountID != "" {
-		t.Errorf("the upcoming event = %+v, %v; want it cancelled as organizer_suspended", rec.Cancellation, err)
+	if err != nil || rec.Cancellation == nil || rec.Cancellation.Reason != gathering.CancelOrganizerSuspended || rec.Cancellation.CanceledByAccountID != "" {
+		t.Errorf("the upcoming event = %+v, %v; want it canceled as organizer_suspended", rec.Cancellation, err)
 	}
 	if rec, err := e.app.Events.EventRecords(ctx, soon.ID); err != nil || rec.Cancellation != nil {
 		t.Errorf("the started event = %+v, %v; want it kept", rec.Cancellation, err)
 	}
-	wantNotices(t, "bob", e.notices(t, "bob"), eventNotice{domainnotification.TypeEventCancelled, domainnotification.EventCancelledKey(e.event.ID)})
+	wantNotices(t, "bob", e.notices(t, "bob"), eventNotice{domainnotification.TypeEventCanceled, domainnotification.EventCanceledKey(e.event.ID)})
 }

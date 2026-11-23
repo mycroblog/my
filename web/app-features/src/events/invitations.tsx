@@ -268,11 +268,7 @@ function UnderEvent({
         )}
       </ScreenStack>
     );
-  const words = !may(event)
-    ? notAllowed(event)
-    : event.state === "cancelled"
-      ? t("events.people.cancelled")
-      : undefined;
+  const words = !may(event) ? notAllowed(event) : event.state === "canceled" ? t("events.people.canceled") : undefined;
   return (
     <ScreenStack>
       {head}

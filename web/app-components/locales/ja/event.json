@@ -20,7 +20,7 @@
     "description": "In place of an event's time in its line of a list, while its organizers poll its date."
   },
   "event.state": {
-    "defaultMessage": "{state, select, cancelled {中止} other {終了}}",
+    "defaultMessage": "{state, select, canceled {中止} other {終了}}",
     "description": "Marks an event in its line of a list and on its page: it was cancelled, or it ended."
   },
   "event.place_kind": {

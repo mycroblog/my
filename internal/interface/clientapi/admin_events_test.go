@@ -25,7 +25,7 @@ const (
 // fakeEventModeration sees the event reportedEventID, organized by reportTargetID, for every
 // reporter, and cancels it once.
 type fakeEventModeration struct {
-	cancelled []appgathering.ModeratorCancelInput
+	canceled []appgathering.ModeratorCancelInput
 }
 
 func (f *fakeEventModeration) ReportTarget(_ context.Context, _, id string) (appgathering.ReportTarget, error) {
@@ -41,10 +41,10 @@ func (f *fakeEventModeration) CancelByModerator(_ context.Context, in appgatheri
 		return &gathering.SettingsError{Field: gathering.FieldNote}
 	case in.GatheringID != reportedEventID:
 		return appgathering.ErrNotFound
-	case len(f.cancelled) > 0:
+	case len(f.canceled) > 0:
 		return appgathering.ErrClosed
 	}
-	f.cancelled = append(f.cancelled, in)
+	f.canceled = append(f.canceled, in)
 	return nil
 }
 
@@ -64,9 +64,9 @@ func (f *fakeEventModeration) EventRecords(_ context.Context, id string) (appgat
 	return appgathering.EventRecords{
 		Record: appgathering.Record{
 			Gathering: appgathering.Gathering{ID: id, OrganizerAccountID: reportTargetID, CreatedAt: at},
-			Head:      appgathering.Head{GatheringID: id, State: gathering.StateCancelled, Schedule: sched},
+			Head:      appgathering.Head{GatheringID: id, State: gathering.StateCanceled, Schedule: sched},
 			Cancellation: &appgathering.Cancellation{
-				GatheringID: id, Reason: gathering.CancelModerator, CancelledByAccountID: aliceAccountID, Note: "spam", CancelledAt: at.Add(time.Hour),
+				GatheringID: id, Reason: gathering.CancelModerator, CanceledByAccountID: aliceAccountID, Note: "spam", CanceledAt: at.Add(time.Hour),
 			},
 		},
 		Revisions: []appgathering.Revision{
@@ -146,11 +146,11 @@ func TestCancelEventAsModerator(t *testing.T) {
 		t.Fatalf("cancel = %d, want 204", res.StatusCode)
 	}
 	want := appgathering.ModeratorCancelInput{GatheringID: reportedEventID, ByUserID: userOf(aliceAccountID), ByAccountID: aliceAccountID, Note: "spam"}
-	if len(events.cancelled) != 1 || events.cancelled[0] != want {
-		t.Errorf("cancelled %+v, want %+v", events.cancelled, want)
+	if len(events.canceled) != 1 || events.canceled[0] != want {
+		t.Errorf("canceled %+v, want %+v", events.canceled, want)
 	}
 	if res := e.sendJSON(t, http.MethodPost, path, "admin", ""); res.StatusCode != http.StatusConflict {
-		t.Errorf("cancel of a cancelled event = %d, want 409", res.StatusCode)
+		t.Errorf("cancel of a canceled event = %d, want 409", res.StatusCode)
 	}
 	if res := e.sendJSON(t, http.MethodPost, "/admin/events/"+reportOne+"/cancel", "admin", ""); res.StatusCode != http.StatusNotFound {
 		t.Errorf("cancel of an unknown event = %d, want 404", res.StatusCode)
@@ -171,8 +171,8 @@ func TestReportDetailShowsTheEvent(t *testing.T) {
 		ev.Revisions[1].Title != "Meetup (moved)" || len(ev.Revisions[1].Places) != 0 {
 		t.Errorf("revisions = %+v, want both with the places of the reported one", ev.Revisions)
 	}
-	if c := ev.Cancellation; ev.State != "cancelled" || c == nil || c.Reason != "moderator" || c.Note == nil || *c.Note != "spam" ||
-		c.CancelledByAccountId == nil || *c.CancelledByAccountId != aliceAccountID {
+	if c := ev.Cancellation; ev.State != "canceled" || c == nil || c.Reason != "moderator" || c.Note == nil || *c.Note != "spam" ||
+		c.CanceledByAccountId == nil || *c.CanceledByAccountId != aliceAccountID {
 		t.Errorf("event = %+v, want its cancellation by the moderator", ev)
 	}
 	res = e.sendJSON(t, http.MethodGet, "/admin/reports/"+reportTwo, "admin-read", "")

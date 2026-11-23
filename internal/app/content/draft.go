@@ -389,7 +389,7 @@ func (s *DraftService) cancelTx(ctx context.Context, tx uow.Tx, draftID string, 
 		return err
 	}
 	return s.d.Drafts.InsertDraftScheduleOutcome(ctx, tx, content.DraftScheduleOutcome{
-		ScheduleID: cur.ScheduleID, Outcome: content.DraftCancelled, OccurredAt: now,
+		ScheduleID: cur.ScheduleID, Outcome: content.DraftCanceled, OccurredAt: now,
 	})
 }
 

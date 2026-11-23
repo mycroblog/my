@@ -45,7 +45,7 @@ const (
 	EventInvited           EventKind = "invited"
 	EventScheduleConfirmed EventKind = "schedule_confirmed"
 	EventChanged           EventKind = "changed"
-	EventCancelled         EventKind = "cancelled"
+	EventCanceled          EventKind = "canceled"
 	EventReminder          EventKind = "reminder"
 	EventStarted           EventKind = "started"
 	EventRoomUnavailable   EventKind = "room_unavailable"
@@ -60,7 +60,7 @@ type EventNotice struct {
 	SourceAccountID string
 	// Ref is what the notification is about, which its dedupe key names: the invitation of an
 	// invited, the revision or the confirmation of a changed, the post of a board_posted, which the
-	// notification is about too, and the confirmation of the others. The event of a cancelled
+	// notification is about too, and the confirmation of the others. The event of a canceled
 	// needs none.
 	Ref string
 	// Reason and Checkpoint are why the room of a room_unavailable cannot open and when the server
@@ -80,8 +80,8 @@ func (n EventNotice) typeAndKey() (notification.Type, string, bool) {
 		return notification.TypeEventScheduleConfirmed, notification.EventScheduleConfirmedKey(n.Ref), true
 	case EventChanged:
 		return notification.TypeEventChanged, notification.EventChangedKey(n.Ref), true
-	case EventCancelled:
-		return notification.TypeEventCancelled, notification.EventCancelledKey(n.GatheringID), true
+	case EventCanceled:
+		return notification.TypeEventCanceled, notification.EventCanceledKey(n.GatheringID), true
 	case EventReminder:
 		return notification.TypeEventReminder, notification.EventReminderKey(n.Ref, n.Mail.MinutesBefore), true
 	case EventStarted:
@@ -163,8 +163,8 @@ func describeEvent(l *i18n.Localizer, n Wording, name string) string {
 		return l.ServerPushEventScheduleConfirmed(title)
 	case notification.TypeEventChanged:
 		return l.ServerPushEventChanged(title)
-	case notification.TypeEventCancelled:
-		return l.ServerPushEventCancelled(title)
+	case notification.TypeEventCanceled:
+		return l.ServerPushEventCanceled(title)
 	case notification.TypeEventReminder:
 		unit, count := reminderUnit(minutes)
 		return l.ServerPushEventReminder(i18n.ServerPushEventReminderArgs{Unit: unit, Count: count, Title: title})

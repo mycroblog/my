@@ -102,10 +102,10 @@ func TestSends(t *testing.T) {
 		{"Undo of a relay", act(federation.OutboundRelay, federation.ActivityUndo), false, "x o o o"},
 		{"Accept of a relay's Follow", act(federation.OutboundRelay, federation.ActivityAccept), false, "x x o o"},
 		{"Reject of a Follow of the instance actor", act(federation.OutboundRelay, federation.ActivityReject), false, "x o o o"},
-		{"QuoteRequest", act(federation.OutboundQuote, federation.ActivityQuoteRequest), false, "x x o o"},
-		{"Accept of a QuoteRequest", act(federation.OutboundQuote, federation.ActivityAccept), false, "x x o o"},
-		{"Reject of a QuoteRequest", act(federation.OutboundQuote, federation.ActivityReject), false, "x x o o"},
-		{"Delete of a QuoteAuthorization", act(federation.OutboundQuote, federation.ActivityDelete), false, "x o o o"},
+		{"QuoteRequest", act(federation.OutboundQuoteApproval, federation.ActivityQuoteRequest), false, "x x o o"},
+		{"Accept of a QuoteRequest", act(federation.OutboundQuoteApproval, federation.ActivityAccept), false, "x x o o"},
+		{"Reject of a QuoteRequest", act(federation.OutboundQuoteApproval, federation.ActivityReject), false, "x x o o"},
+		{"Delete of a QuoteAuthorization", act(federation.OutboundQuoteApproval, federation.ActivityDelete), false, "x o o o"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

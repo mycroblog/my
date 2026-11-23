@@ -11,7 +11,7 @@ put:
     co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
     `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
     organizer, or is in a block relation with the organizer or a co-organizer. A 403
-    `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+    `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
   tags: [events]
   security:
     - oauth2: ["write:events"]
@@ -34,7 +34,7 @@ delete:
   summary: Remove a co-organizer of an event
   description: |
     Removes a co-organizer of the event, by its organizer. A 403
-    `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+    `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
   tags: [events]
   security:
     - oauth2: ["write:events"]

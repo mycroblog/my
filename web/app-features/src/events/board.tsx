@@ -24,7 +24,7 @@ function admitted(event: ServerEvent): boolean {
   switch (event.board_writers) {
     case "organizer":
       return organizer;
-    case "organizers":
+    case "coorganizers":
       return organizer || coorganizer;
     case "readers":
       return true;
@@ -36,7 +36,7 @@ function admitted(event: ServerEvent): boolean {
  * end (its writers admit the reader, so the period alone closes it); or its writers leave the reader out.
  */
 function whyNot(event: ServerEvent, t: T): string {
-  if (event.state === "cancelled") return t("events.board.closed", { reason: "cancelled" });
+  if (event.state === "canceled") return t("events.board.closed", { reason: "canceled" });
   if (admitted(event)) return t("events.board.closed", { reason: "ended" });
   return t("events.board.not_writer", { writers: event.board_writers });
 }

@@ -235,7 +235,7 @@ func (h *QuoteHandlers) recordAnnounceRequest(ctx context.Context, tx uow.Tx, r 
 	announce := announceDocument(boost, appcontent.Status{URI: target.URI}, actor, vis, []federation.IRI{author}).Embedded()
 	act, err := h.rec.insert(ctx, tx, federation.OutboundActivity{
 		ActivityURI: federation.IRI(appcontent.InteractionRequestURI(h.d.Recorder.Host, r.ID)), Type: federation.ActivityAnnounceRequest,
-		ActorAccountID: r.InteractingAccountID, ObjectKind: federation.OutboundAnnounce, ObjectID: r.ID, CreatedAt: h.d.Clock.Now(),
+		ActorAccountID: r.InteractingAccountID, ObjectKind: federation.OutboundAnnounceApproval, ObjectID: r.ID, CreatedAt: h.d.Clock.Now(),
 	})
 	if err != nil {
 		return err
@@ -258,7 +258,7 @@ func (h *QuoteHandlers) recordWithdrawal(ctx context.Context, tx uow.Tx, r appco
 		return err
 	}
 	actor := federation.IRI(appaccount.ActorURI(h.d.Recorder.Host, r.InteractingAccountID))
-	typ, kind := federation.ActivityDelete, federation.OutboundReply
+	typ, kind := federation.ActivityDelete, federation.OutboundReplyApproval
 	var object any = federation.TombstoneOf(federation.IRI(r.InteractingURI))
 	if r.Kind == appcontent.InteractionAnnounce {
 		vis := r.Visibility
@@ -266,7 +266,7 @@ func (h *QuoteHandlers) recordWithdrawal(ctx context.Context, tx uow.Tx, r appco
 			vis = appcontent.VisibilityPublic
 		}
 		boost := appcontent.Boost{URI: r.InteractingURI, BoosterAccountID: r.InteractingAccountID, Visibility: vis, BoostedAt: r.CreatedAt}
-		typ, kind = federation.ActivityUndo, federation.OutboundAnnounce
+		typ, kind = federation.ActivityUndo, federation.OutboundAnnounceApproval
 		object = announceDocument(boost, appcontent.Status{URI: r.TargetURI}, actor, vis, []federation.IRI{author}).Embedded()
 	}
 	act, err := h.rec.insert(ctx, tx, federation.OutboundActivity{

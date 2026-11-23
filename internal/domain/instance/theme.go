@@ -113,7 +113,7 @@ type ThemeSet struct {
 	// Stale are the stored overrides that no longer apply, which the stylesheet leaves out and the
 	// administrator is shown (ReadThemeSet).
 	Stale []StaleOverride
-	// SavedByUserID is the user who saved the set, or "" for the CLI and the data upgrade.
+	// SavedByUserID is the user who saved the set, or "" for the CLI.
 	SavedByUserID string
 	SavedAt       time.Time
 }
@@ -204,7 +204,7 @@ func inTokenOrder(byToken map[string]ThemeTokenValue) []ThemeTokenValue {
 type ThemePublication struct {
 	ID    string
 	SetID string
-	// PublishedByUserID is the user who published the set, or "" for the CLI and the data upgrade.
+	// PublishedByUserID is the user who published the set, or "" for the CLI.
 	PublishedByUserID string
 	PublishedAt       time.Time
 }

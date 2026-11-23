@@ -38,7 +38,7 @@ type ModerationRepository interface {
 	// first.
 	Revisions(ctx context.Context, tx uow.Tx, gatheringID string) ([]Revision, error)
 	// OrganizedUpcoming returns at most limit events, in ID order, that accountID organizes,
-	// that were not cancelled, and that have not started at now.
+	// that were not canceled, and that have not started at now.
 	OrganizedUpcoming(ctx context.Context, tx uow.Tx, accountID string, now time.Time, limit int) ([]string, error)
 }
 
@@ -51,7 +51,7 @@ type ReportTarget struct {
 }
 
 // ReportTarget returns the target of a report of an event that accountID sees
-// (gathering.CanSee), a cancelled one included; ErrNotFound for any other event.
+// (gathering.CanSee), a canceled one included; ErrNotFound for any other event.
 func (s *Service) ReportTarget(ctx context.Context, accountID, id string) (ReportTarget, error) {
 	v, err := s.Get(ctx, accountID, id)
 	if err != nil {
@@ -74,10 +74,10 @@ type ModeratorCancelInput struct {
 
 // CancelByModerator cancels an event for a holder of manage_reports, whom the caller checked
 // (moderator, ADR-0161 §14): the cancellation records the moderator and the reason, and the audit
-// log records event_cancelled in the same transaction, labelled with the event's ID: the title
+// log records event_canceled in the same transaction, labelled with the event's ID: the title
 // goes with the erasure of the account that wrote it, and the moderators read it from the report.
 // The attendees and the invited users are notified as of any cancellation. An unknown event fails
-// with ErrNotFound, one cancelled already with ErrClosed, and a reason that does not hold with a
+// with ErrNotFound, one canceled already with ErrClosed, and a reason that does not hold with a
 // *gathering.SettingsError of the note.
 func (s *Service) CancelByModerator(ctx context.Context, in ModeratorCancelInput) error {
 	if !gathering.ValidNote(in.Note) {
@@ -90,8 +90,8 @@ func (s *Service) CancelByModerator(ctx context.Context, in ModeratorCancelInput
 	actor, user := moderation.AuditActor(in.ByUserID)
 	auditID := s.d.IDs.NewID()
 	c := Cancellation{
-		GatheringID: in.GatheringID, Reason: gathering.CancelModerator, CancelledByAccountID: in.ByAccountID,
-		Note: in.Note, CancelledAt: now,
+		GatheringID: in.GatheringID, Reason: gathering.CancelModerator, CanceledByAccountID: in.ByAccountID,
+		Note: in.Note, CanceledAt: now,
 	}
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if err := s.d.Repository.LockGathering(ctx, tx, in.GatheringID); err != nil {
@@ -104,11 +104,11 @@ func (s *Service) CancelByModerator(ctx context.Context, in ModeratorCancelInput
 		if !ok {
 			return ErrClosed
 		}
-		if err := tx.Emit(ctx, Cancelled{Cancellation: c}); err != nil {
+		if err := tx.Emit(ctx, Canceled{Cancellation: c}); err != nil {
 			return err
 		}
 		return tx.Emit(ctx, moderation.AuditRecorded{Entry: moderation.AuditEntry{
-			ID: auditID, ActorKind: actor, ActorUserID: user, Action: moderation.AuditEventCancelled,
+			ID: auditID, ActorKind: actor, ActorUserID: user, Action: moderation.AuditEventCanceled,
 			TargetKind: moderation.AuditTargetEvent, TargetID: in.GatheringID,
 			TargetLabel: in.GatheringID, SourceEventID: in.GatheringID, OccurredAt: now,
 		}})
@@ -207,9 +207,9 @@ func (s *Service) runCancelOrganized(ctx context.Context, j queue.Job) queue.Res
 	return queue.Done()
 }
 
-// CancelOrganized cancels, with reason and no one who cancelled them, the events that accountID
+// CancelOrganized cancels, with reason and no one who canceled them, the events that accountID
 // organizes and that have not started, one transaction for each, and returns how many it
-// cancelled. It cancels nothing while the account is active again, that is, while it is neither
+// canceled. It cancels nothing while the account is active again, that is, while it is neither
 // suspended nor deleted: a suspension lifted before the job ran keeps the events. Each
 // cancellation notifies as the organizer's own does. It is safe to repeat.
 func (s *Service) CancelOrganized(ctx context.Context, accountID string, reason gathering.CancelReason) (int, error) {
@@ -228,7 +228,7 @@ func (s *Service) CancelOrganized(ctx context.Context, accountID string, reason 
 			return n, err
 		}
 		for _, id := range ids {
-			c := Cancellation{GatheringID: id, Reason: reason, CancelledAt: now}
+			c := Cancellation{GatheringID: id, Reason: reason, CanceledAt: now}
 			var did bool
 			err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 				if err := s.d.Repository.LockGathering(ctx, tx, id); err != nil {
@@ -238,7 +238,7 @@ func (s *Service) CancelOrganized(ctx context.Context, accountID string, reason 
 				if did = ok; err != nil || !ok {
 					return err
 				}
-				return tx.Emit(ctx, Cancelled{Cancellation: c})
+				return tx.Emit(ctx, Canceled{Cancellation: c})
 			})
 			if err != nil {
 				return n, fmt.Errorf("gathering: cancel the event %s of its organizer: %w", id, err)

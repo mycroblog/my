@@ -38,7 +38,7 @@ type Factory func(t *testing.T, opts uow.Options) Harness
 // a block hides it both ways; a physical or URL place reaches only the approved attendees unless
 // the event shows it to every viewer; the organizer and the co-organizers are approved
 // attendees whose approval cannot change; a place URL other than http or https is refused; a full
-// event refuses new answers of going; a cancelled or started event takes no answers; the
+// event refuses new answers of going; a canceled or started event takes no answers; the
 // co-organizers are bounded and change what they may; the upcoming events list by the nearest
 // start; the erasure empties the revisions of an account; and the projections rebuild from the
 // events alone.
@@ -56,7 +56,7 @@ func GatheringContract(t *testing.T, newHarness Factory) {
 		{"NeverAsksTheOrganizersForApproval", organizersApproved},
 		{"RefusesURLsOtherThanHTTP", urls},
 		{"RefusesGoingToAFullEvent", capacity},
-		{"ClosesCancelledAndStartedEvents", closed},
+		{"ClosesCanceledAndStartedEvents", closed},
 		{"BoundsTheCoorganizers", coorganizers},
 		{"ChecksTheOrganizer", eligibility},
 		{"ReschedulesAnEvent", reschedule},
@@ -591,7 +591,7 @@ func closed(t *testing.T, e *env) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Head.State != gathering.StateCancelled || got.Cancellation == nil || got.Cancellation.Note != "Rain" ||
+	if got.Head.State != gathering.StateCanceled || got.Cancellation == nil || got.Cancellation.Note != "Rain" ||
 		got.Cancellation.Reason != gathering.CancelOrganizer {
 		t.Errorf("Cancel = %+v", got)
 	}
@@ -603,7 +603,7 @@ func closed(t *testing.T, e *env) {
 		t.Errorf("Update after the cancellation = %v, want ErrClosed", err)
 	}
 	if !e.sees(t, bob, v.ID) {
-		t.Error("a cancelled event is not seen")
+		t.Error("a canceled event is not seen")
 	}
 	started := e.create(t, alice, settings("Started", gathering.VisibilityPublic))
 	e.clock.Advance(25 * time.Hour)

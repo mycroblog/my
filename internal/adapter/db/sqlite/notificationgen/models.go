@@ -50,6 +50,7 @@ type Notification struct {
 	AutoDeleteLimitNoticeID sql.NullString
 	DraftScheduleID         sql.NullString
 	GatheringID             sql.NullString
+	InteractionRequestID    sql.NullString
 	DedupeKey               string
 	CreatedAt               int64
 }

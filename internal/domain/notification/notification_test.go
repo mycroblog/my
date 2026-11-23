@@ -219,6 +219,25 @@ func TestValidateScheduledStatusFailed(t *testing.T) {
 	}
 }
 
+func TestValidateApprovalNotifications(t *testing.T) {
+	const idS = "00000000-0000-7000-8000-0000000000c5"
+	for _, typ := range []Type{TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected} {
+		ok := Notification{ID: idN, RecipientAccountID: idA, Type: typ, SourceAccountID: idB, StatusID: idS, InteractionRequestID: idR, DedupeKey: ApprovalKey(typ, idR)}
+		if err := ok.Validate(); err != nil {
+			t.Errorf("Validate(%+v) = %v", ok, err)
+		}
+		missing := ok
+		missing.InteractionRequestID = ""
+		if err := missing.Validate(); err == nil {
+			t.Errorf("Validate(%s without its request) = nil, want an error", typ)
+		}
+	}
+	other := Notification{ID: idN, RecipientAccountID: idA, Type: TypeFollow, SourceAccountID: idB, InteractionRequestID: idR, DedupeKey: "k"}
+	if err := other.Validate(); err == nil {
+		t.Errorf("Validate(%+v) = nil, want an error", other)
+	}
+}
+
 func TestValidateEventNotifications(t *testing.T) {
 	for _, typ := range EventTypes {
 		ok := Notification{ID: idN, RecipientAccountID: idA, SourceAccountID: idB, Type: typ, GatheringID: idR, DedupeKey: "k"}

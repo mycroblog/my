@@ -34,7 +34,7 @@ INSERT INTO gathering_rsvp_approvals (id, gathering_id, account_id, change, chan
 INSERT INTO gathering_coorganizer_changes (id, gathering_id, account_id, change, changed_at) VALUES (?, ?, ?, ?, ?);
 
 -- name: InsertGatheringCancellation :execrows
-INSERT INTO gathering_cancellations (gathering_id, reason, cancelled_by_account_id, note, cancelled_at) VALUES (?, ?, ?, ?, ?)
+INSERT INTO gathering_cancellations (gathering_id, reason, canceled_by_account_id, note, canceled_at) VALUES (?, ?, ?, ?, ?)
 ON CONFLICT (gathering_id) DO NOTHING;
 
 -- GetGathering returns an event with its head, its current revision and date ('' and the zero
@@ -45,7 +45,7 @@ SELECT g.id, g.organizer_account_id, g.created_at,
   h.revision_id, CAST(COALESCE(h.confirmation_id, '') AS TEXT) AS confirmation_id, h.state, h.starts_at, h.ends_at, h.going_count,
   v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.board_writers, v.revised_by_account_id, v.revised_at,
   CAST(COALESCE(c.confirmed_by_account_id, '') AS TEXT) AS confirmed_by_account_id, CAST(COALESCE(c.confirmed_at, 0) AS INTEGER) AS confirmed_at,
-  x.reason AS cancel_reason, x.cancelled_by_account_id, x.note AS cancel_note, x.cancelled_at,
+  x.reason AS cancel_reason, x.canceled_by_account_id, x.note AS cancel_note, x.canceled_at,
   (SELECT COUNT(*) FROM gathering_revisions n WHERE n.gathering_id = g.id) AS revision_count
 FROM gatherings g
 JOIN gathering_heads h ON h.gathering_id = g.id
@@ -62,7 +62,7 @@ SELECT g.id, g.organizer_account_id, g.created_at,
   h.revision_id, CAST(COALESCE(h.confirmation_id, '') AS TEXT) AS confirmation_id, h.state, h.starts_at, h.ends_at, h.going_count,
   v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.board_writers, v.revised_by_account_id, v.revised_at,
   CAST(COALESCE(c.confirmed_by_account_id, '') AS TEXT) AS confirmed_by_account_id, CAST(COALESCE(c.confirmed_at, 0) AS INTEGER) AS confirmed_at,
-  x.reason AS cancel_reason, x.cancelled_by_account_id, x.note AS cancel_note, x.cancelled_at,
+  x.reason AS cancel_reason, x.canceled_by_account_id, x.note AS cancel_note, x.canceled_at,
   (SELECT COUNT(*) FROM gathering_revisions n WHERE n.gathering_id = g.id) AS revision_count
 FROM gathering_heads h
 JOIN gatherings g ON g.id = h.gathering_id
@@ -153,14 +153,14 @@ DELETE FROM gathering_revision_places WHERE revision_id = ?;
 DELETE FROM gathering_heads WHERE gathering_id = ?;
 
 -- InsertGatheringHead derives the head of an event: its newest revision and confirmation,
--- cancelled when it has a cancellation, unscheduled without a confirmation (its times then span
+-- canceled when it has a cancellation, unscheduled without a confirmation (its times then span
 -- the candidates that were not withdrawn), and its attendees who answer going.
 -- name: InsertGatheringHead :exec
 INSERT INTO gathering_heads (gathering_id, organizer_account_id, revision_id, confirmation_id, state, starts_at, ends_at, going_count)
 SELECT g.id, g.organizer_account_id,
   (SELECT v.id FROM gathering_revisions v WHERE v.gathering_id = g.id ORDER BY v.id DESC LIMIT 1),
   c.id,
-  CASE WHEN EXISTS (SELECT 1 FROM gathering_cancellations x WHERE x.gathering_id = g.id) THEN 'cancelled'
+  CASE WHEN EXISTS (SELECT 1 FROM gathering_cancellations x WHERE x.gathering_id = g.id) THEN 'canceled'
     WHEN c.id IS NULL THEN 'unscheduled' ELSE 'scheduled' END,
   COALESCE(c.starts_at, (SELECT MIN(k.starts_at) FROM gathering_candidates k WHERE k.gathering_id = g.id AND NOT EXISTS (SELECT 1 FROM gathering_candidate_withdrawals w WHERE w.candidate_id = k.id))),
   COALESCE(c.ends_at, (SELECT MAX(k.ends_at) FROM gathering_candidates k WHERE k.gathering_id = g.id AND NOT EXISTS (SELECT 1 FROM gathering_candidate_withdrawals w WHERE w.candidate_id = k.id))),
@@ -179,7 +179,7 @@ INSERT INTO gathering_heads (gathering_id, organizer_account_id, revision_id, co
 SELECT g.id, g.organizer_account_id,
   (SELECT v.id FROM gathering_revisions v WHERE v.gathering_id = g.id ORDER BY v.id DESC LIMIT 1),
   c.id,
-  CASE WHEN EXISTS (SELECT 1 FROM gathering_cancellations x WHERE x.gathering_id = g.id) THEN 'cancelled'
+  CASE WHEN EXISTS (SELECT 1 FROM gathering_cancellations x WHERE x.gathering_id = g.id) THEN 'canceled'
     WHEN c.id IS NULL THEN 'unscheduled' ELSE 'scheduled' END,
   COALESCE(c.starts_at, (SELECT MIN(k.starts_at) FROM gathering_candidates k WHERE k.gathering_id = g.id AND NOT EXISTS (SELECT 1 FROM gathering_candidate_withdrawals w WHERE w.candidate_id = k.id))),
   COALESCE(c.ends_at, (SELECT MAX(k.ends_at) FROM gathering_candidates k WHERE k.gathering_id = g.id AND NOT EXISTS (SELECT 1 FROM gathering_candidate_withdrawals w WHERE w.candidate_id = k.id))),

@@ -214,7 +214,7 @@ func (s *Server) newEvents(ctx context.Context, views []appgathering.View) ([]Ev
 			e.Viewer.Answer = &a
 		}
 		if c := v.Cancellation; c != nil {
-			e.Cancellation = &EventCancellation{Reason: EventCancelReason(c.Reason), CancelledAt: c.CancelledAt.UTC()}
+			e.Cancellation = &EventCancellation{Reason: EventCancelReason(c.Reason), CanceledAt: c.CanceledAt.UTC()}
 			if c.Note != "" {
 				e.Cancellation.Note = &c.Note
 			}

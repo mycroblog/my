@@ -99,7 +99,7 @@ const (
 	AuditServiceClosureClosed            = moderation.AuditServiceClosureClosed
 	AuditServiceClosureDeliveryCompleted = moderation.AuditServiceClosureDeliveryCompleted
 	AuditVoiceRoomEnded                  = moderation.AuditVoiceRoomEnded
-	AuditEventCancelled                  = moderation.AuditEventCancelled
+	AuditEventCanceled                   = moderation.AuditEventCanceled
 	AuditLoginProviderCreated            = moderation.AuditLoginProviderCreated
 	AuditLoginProviderUpdated            = moderation.AuditLoginProviderUpdated
 	AuditLoginProviderDeleted            = moderation.AuditLoginProviderDeleted

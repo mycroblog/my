@@ -81,10 +81,10 @@ func (s *Server) reportEvent(ctx context.Context, r moderation.Report) (*AdminRe
 		out.StartsAt, out.EndsAt = &starts, &ends
 	}
 	if c := rec.Cancellation; c != nil {
-		out.Cancellation = &AdminEventCancellation{Reason: EventCancelReason(c.Reason), CancelledAt: c.CancelledAt.UTC()}
-		if c.CancelledByAccountID != "" {
-			by := c.CancelledByAccountID
-			out.Cancellation.CancelledByAccountId = &by
+		out.Cancellation = &AdminEventCancellation{Reason: EventCancelReason(c.Reason), CanceledAt: c.CanceledAt.UTC()}
+		if c.CanceledByAccountID != "" {
+			by := c.CanceledByAccountID
+			out.Cancellation.CanceledByAccountId = &by
 		}
 		if c.Note != "" {
 			note := c.Note

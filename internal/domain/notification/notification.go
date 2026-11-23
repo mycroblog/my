@@ -132,13 +132,14 @@ const (
 	TypeScheduledStatusFailed Type = "scheduled_status_failed"
 	// TypeReplyRequest, TypeBoostRequest, and TypeQuoteRequest tell the author of a local status
 	// of a reply, a boost, or a quote of it that waits for the author's approval (ADR-0155 §10).
-	// StatusID is the status, SourceAccountID the account that interacts.
+	// StatusID is the status, SourceAccountID the account that interacts, and
+	// InteractionRequestID the request.
 	TypeReplyRequest Type = "reply_request"
 	TypeBoostRequest Type = "boost_request"
 	TypeQuoteRequest Type = "quote_request"
 	// TypeInteractionAccepted and TypeInteractionRejected tell a local account that the author of
 	// a status approved or refused its reply, boost, or quote of it (ADR-0155 §10). StatusID is
-	// the status interacted with, SourceAccountID its author.
+	// the status interacted with, SourceAccountID its author, and InteractionRequestID the request.
 	TypeInteractionAccepted Type = "interaction_accepted"
 	TypeInteractionRejected Type = "interaction_rejected"
 	// The notifications of an event (ADR-0161 §11): GatheringID is the event and SourceAccountID
@@ -151,9 +152,9 @@ const (
 	// TypeEventChanged tells the attendees who answered going or maybe, and the invitees, that the
 	// date, the places, or the voice chat room of an event changed.
 	TypeEventChanged Type = "event_changed"
-	// TypeEventCancelled tells the attendees who answered going or maybe, and the invitees, that an
-	// event was cancelled.
-	TypeEventCancelled Type = "event_cancelled"
+	// TypeEventCanceled tells the attendees who answered going or maybe, and the invitees, that an
+	// event was canceled.
+	TypeEventCanceled Type = "event_canceled"
 	// TypeEventReminder reminds an attendee who answered going or maybe of an event that is about
 	// to start, at the time before the start that the attendee chose.
 	TypeEventReminder Type = "event_reminder"
@@ -171,7 +172,7 @@ const (
 // Event reports whether t is one of the notifications of an event (ADR-0161 §11).
 func (t Type) Event() bool {
 	switch t {
-	case TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
+	case TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCanceled, TypeEventReminder,
 		TypeEventStarted, TypeEventRoomUnavailable, TypeEventBoardPosted:
 		return true
 	}
@@ -180,7 +181,7 @@ func (t Type) Event() bool {
 
 // EventTypes are the notifications of an event, in a stable order.
 var EventTypes = []Type{
-	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
+	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCanceled, TypeEventReminder,
 	TypeEventStarted, TypeEventRoomUnavailable, TypeEventBoardPosted,
 }
 
@@ -286,7 +287,7 @@ var Types = []Type{
 	TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit, TypeScheduledStatusFailed,
 	TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
 	TypeAdminDomainListFailing,
-	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
+	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCanceled, TypeEventReminder,
 	TypeEventStarted, TypeEventRoomUnavailable, TypeEventBoardPosted,
 }
 
@@ -371,8 +372,11 @@ type Notification struct {
 	DraftScheduleID string
 	// GatheringID is the event (gatherings) of the event_* types, "" for the other types.
 	GatheringID string
-	DedupeKey   string
-	CreatedAt   time.Time
+	// InteractionRequestID is the request (interaction_requests) of the notifications of the
+	// approvals of interactions, "" for the other types.
+	InteractionRequestID string
+	DedupeKey            string
+	CreatedAt            time.Time
 }
 
 var (
@@ -441,8 +445,8 @@ func (n Notification) Validate() error {
 	if n.Type == TypeStatus && (n.StatusID == "" || n.SourceAccountID == "") {
 		return errors.New("notification: a status names its post and its author")
 	}
-	if n.Type.Approval() && (n.StatusID == "" || n.SourceAccountID == "") {
-		return errors.New("notification: the notifications of the approvals of interactions name a status and an account")
+	if approval := n.Type.Approval(); approval != (n.InteractionRequestID != "") || (approval && (n.StatusID == "" || n.SourceAccountID == "")) {
+		return errors.New("notification: the notifications of the approvals of interactions, and only they, name a request, and they name a status and an account")
 	}
 	if (n.Type == TypeAnnouncement) != (n.AnnouncementID != "") || (n.Type == TypeAnnouncement && n.SourceAccountID != "") {
 		return errors.New("notification: an announcement, and only it, names an announcement, and it has no source account")
@@ -735,10 +739,10 @@ func EventScheduleConfirmedKey(confirmationID string) string {
 // that made it.
 func EventChangedKey(changeID string) string { return string(TypeEventChanged) + ":" + changeID }
 
-// EventCancelledKey is the dedupe key of an event_cancelled notification: one per event, which is
-// cancelled once, and recipient.
-func EventCancelledKey(gatheringID string) string {
-	return string(TypeEventCancelled) + ":" + gatheringID
+// EventCanceledKey is the dedupe key of an event_canceled notification: one per event, which is
+// canceled once, and recipient.
+func EventCanceledKey(gatheringID string) string {
+	return string(TypeEventCanceled) + ":" + gatheringID
 }
 
 // EventReminderKey is the dedupe key of an event_reminder notification: one per confirmation of

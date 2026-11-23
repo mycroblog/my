@@ -68,12 +68,12 @@ var (
 
 // cancellationOf returns the cancellation of a row of GetGathering, nil for none.
 func cancellationOf(row gatheringgen.GetGatheringRow) *appgathering.Cancellation {
-	if row.CancelReason == nil || row.CancelledAt == nil {
+	if row.CancelReason == nil || row.CanceledAt == nil {
 		return nil
 	}
 	return &appgathering.Cancellation{
-		GatheringID: row.ID, Reason: gathering.CancelReason(*row.CancelReason), CancelledByAccountID: fromRef(row.CancelledByAccountID),
-		Note: fromRef(row.CancelNote), CancelledAt: fromTime(*row.CancelledAt),
+		GatheringID: row.ID, Reason: gathering.CancelReason(*row.CancelReason), CanceledByAccountID: fromRef(row.CanceledByAccountID),
+		Note: fromRef(row.CancelNote), CanceledAt: fromTime(*row.CanceledAt),
 	}
 }
 

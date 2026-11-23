@@ -302,7 +302,7 @@ type GetLatestDraftScheduleOutcomeRow struct {
 }
 
 // The newest schedule of a draft that has an outcome, with it: what the author's screens show of
-// a schedule that failed or was cancelled.
+// a schedule that failed or was canceled.
 func (q *Queries) GetLatestDraftScheduleOutcome(ctx context.Context, draftID string) (GetLatestDraftScheduleOutcomeRow, error) {
 	row := q.db.QueryRow(ctx, getLatestDraftScheduleOutcome, draftID)
 	var i GetLatestDraftScheduleOutcomeRow

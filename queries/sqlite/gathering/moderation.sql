@@ -11,7 +11,7 @@ FROM gathering_revisions WHERE gathering_id = sqlc.arg(gathering_id)
 ORDER BY id;
 
 -- ListOrganizedUpcomingGatherings returns at most row_limit events, in ID order, that an account
--- organizes, that were not cancelled, and that have not started at now: the scheduled events whose
+-- organizes, that were not canceled, and that have not started at now: the scheduled events whose
 -- start is ahead, and every unscheduled event, whose date poll has no date yet.
 -- name: ListOrganizedUpcomingGatherings :many
 SELECT g.id FROM gatherings g
@@ -22,14 +22,14 @@ ORDER BY g.id
 LIMIT sqlc.arg(row_limit);
 
 -- ListGatheringsToPurge returns at most row_limit events, in ID order after the event after (''
--- for the first), that ended or were cancelled before ended_before, whichever came first, and
+-- for the first), that ended or were canceled before ended_before, whichever came first, and
 -- still have answers, votes, or invitations. The end of an unscheduled event is the end of the span
 -- of its candidates.
 -- name: ListGatheringsToPurge :many
 SELECT h.gathering_id FROM gathering_heads h
 LEFT JOIN gathering_cancellations x ON x.gathering_id = h.gathering_id
 WHERE (CAST(sqlc.arg(after) AS TEXT) = '' OR h.gathering_id > CAST(sqlc.arg(after) AS TEXT))
-  AND (h.ends_at < sqlc.arg(ended_before) OR x.cancelled_at < sqlc.arg(ended_before))
+  AND (h.ends_at < sqlc.arg(ended_before) OR x.canceled_at < sqlc.arg(ended_before))
   AND (EXISTS (SELECT 1 FROM gathering_rsvps r WHERE r.gathering_id = h.gathering_id)
     OR EXISTS (SELECT 1 FROM gathering_rsvp_approvals a WHERE a.gathering_id = h.gathering_id)
     OR EXISTS (SELECT 1 FROM gathering_votes v WHERE v.gathering_id = h.gathering_id)

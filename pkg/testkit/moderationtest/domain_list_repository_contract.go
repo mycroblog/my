@@ -21,7 +21,9 @@ import (
 // recorded once; the subscriptions that are not deleted list newest first in keyset pages; the
 // fetches list newest first; the entries are written over and removed by domain or all at once;
 // the actions of a subscription in effect are those it issued, neither lifted nor expired, on a
-// domain or every one, and an action names its subscription; and the rejections read back by ID.
+// domain or every one, and an action names its subscription; the rejections read back by ID; and
+// the fetches before a time go, but the last one of a subscription that did not fail and the
+// failed ones after it, from which its head derives.
 // The use cases on top of it are DomainListFlows, which internal/flowtest/moderation runs once on
 // SQLite.
 func DomainListContract(t *testing.T, newHarness ModerationFactory) {
@@ -30,6 +32,7 @@ func DomainListContract(t *testing.T, newHarness ModerationFactory) {
 		{"ReadsBackTheSubscription", domainListRepoSubscription},
 		{"KeepsTheEntries", domainListRepoEntries},
 		{"KeepsTheActionsAndRejections", domainListRepoActions},
+		{"DeletesTheOldFetches", domainListRepoFetchPurge},
 	})
 }
 
@@ -70,7 +73,7 @@ func domainListRepoSubscription(t *testing.T, r *modRepo) {
 		ID: r.ids.NewID(), SubscriptionID: a.Subscription.ID, Outcome: moderation.DomainListFailed, HTTPStatus: 404,
 		ErrorCode: moderation.DomainListErrorHTTPStatus, EntryCount: 3, FetchedAt: r.clock.Now(),
 	}
-	head := moderation.DomainListHead{SubscriptionID: a.Subscription.ID, ETag: `"e"`, LastModified: "Tue, 10 Nov 2026 09:00:00 GMT", Digest: "abc", ConsecutiveFailures: 2, LastFetchID: fetch.ID}
+	head := moderation.DomainListHead{SubscriptionID: a.Subscription.ID, ETag: `"e"`, LastModified: "Tue, 10 Nov 2026 09:00:00 GMT", Digest: "abc"}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if err := repo.LockDomainListSubscription(ctx, tx, a.Subscription.ID); err != nil {
 			return err
@@ -83,8 +86,10 @@ func domainListRepoSubscription(t *testing.T, r *modRepo) {
 		}
 		return repo.PutDomainListHead(ctx, tx, head)
 	})
+	// The last fetch and the count of failures derive from the fetches.
 	want := a
 	want.Revision, want.Head, want.LastFetch = rev, head, &fetch
+	want.Head.ConsecutiveFailures, want.Head.LastFetchID = 1, fetch.ID
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		got, err := repo.DomainListSubscription(ctx, tx, a.Subscription.ID)
 		if err != nil || !reflect.DeepEqual(got, want) {
@@ -102,6 +107,7 @@ func domainListRepoSubscription(t *testing.T, r *modRepo) {
 	if fetches, err := repo.ListDomainListFetches(ctx, a.Subscription.ID, ok.ID, 10); err != nil || len(fetches) != 1 || fetches[0].ID != fetch.ID {
 		t.Errorf("ListDomainListFetches(before) = %+v, %v; want the older one", fetches, err)
 	}
+	want.Head.ConsecutiveFailures, want.Head.LastFetchID, want.LastFetch = 0, ok.ID, &ok
 
 	b := r.domainListSubscription(t, "https://lists.example/b.csv")
 	c := r.domainListSubscription(t, "https://lists.example/c.csv")
@@ -122,6 +128,57 @@ func domainListRepoSubscription(t *testing.T, r *modRepo) {
 	}
 	if page, err = repo.ListDomainListSubscriptions(ctx, "", 10); err != nil || len(page) != 2 {
 		t.Errorf("ListDomainListSubscriptions = %d, %v; want the 2 not deleted", len(page), err)
+	}
+}
+
+func domainListRepoFetchPurge(t *testing.T, r *modRepo) {
+	ctx := t.Context()
+	repo := r.h.Moderation
+	fetch := func(subscriptionID string, outcome moderation.DomainListFetchOutcome) moderation.DomainListFetch {
+		f := moderation.DomainListFetch{ID: r.ids.NewID(), SubscriptionID: subscriptionID, Outcome: outcome, HTTPStatus: 200, FetchedAt: r.clock.Now()}
+		if outcome == moderation.DomainListFailed {
+			f.HTTPStatus, f.ErrorCode = 500, moderation.DomainListErrorHTTPStatus
+		}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error { return repo.InsertDomainListFetch(ctx, tx, f) })
+		r.clock.Advance(time.Hour)
+		return f
+	}
+	a := r.domainListSubscription(t, "https://lists.example/a.csv")
+	b := r.domainListSubscription(t, "https://lists.example/b.csv")
+	// a: two old fetches before its last success, then two failures; b: only failures.
+	fetch(a.Subscription.ID, moderation.DomainListApplied)
+	fetch(a.Subscription.ID, moderation.DomainListFailed)
+	ok := fetch(a.Subscription.ID, moderation.DomainListNotModified)
+	failed := []moderation.DomainListFetch{fetch(a.Subscription.ID, moderation.DomainListFailed), fetch(a.Subscription.ID, moderation.DomainListFailed)}
+	onlyFailed := fetch(b.Subscription.ID, moderation.DomainListFailed)
+	cutoff := r.clock.Now()
+	r.clock.Advance(time.Hour)
+	recent := fetch(a.Subscription.ID, moderation.DomainListFailed)
+	var n int64
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		var err error
+		n, err = repo.DeleteDomainListFetchesBefore(ctx, tx, cutoff, 1)
+		return err
+	})
+	if n != 1 {
+		t.Errorf("DeleteDomainListFetchesBefore(limit 1) = %d, want 1", n)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		var err error
+		n, err = repo.DeleteDomainListFetchesBefore(ctx, tx, cutoff, 10)
+		return err
+	})
+	if n != 1 {
+		t.Errorf("DeleteDomainListFetchesBefore = %d, want the other fetch before the last success", n)
+	}
+	if got, err := repo.ListDomainListFetches(ctx, a.Subscription.ID, "", 10); err != nil || !reflect.DeepEqual(got, []moderation.DomainListFetch{recent, failed[1], failed[0], ok}) {
+		t.Errorf("fetches of a = %+v, %v; want the last success and what came after it", got, err)
+	}
+	if got, err := repo.ListDomainListFetches(ctx, b.Subscription.ID, "", 10); err != nil || !reflect.DeepEqual(got, []moderation.DomainListFetch{onlyFailed}) {
+		t.Errorf("fetches of b = %+v, %v; want its failure kept", got, err)
+	}
+	if got, err := repo.DomainListSubscription(ctx, nil, a.Subscription.ID); err != nil || got.Head.ConsecutiveFailures != 3 || got.Head.LastFetchID != recent.ID {
+		t.Errorf("head of a = %+v, %v; want 3 failures since the last success, the last fetch %s", got.Head, err, recent.ID)
 	}
 }
 

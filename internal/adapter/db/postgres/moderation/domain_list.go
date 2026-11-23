@@ -76,14 +76,26 @@ func (r *Repository) PutDomainListHead(ctx context.Context, tx uow.Tx, h moderat
 	if err != nil {
 		return err
 	}
-	failures, err := postgres.ToInt32(h.ConsecutiveFailures, "consecutive failures")
-	if err != nil {
-		return err
-	}
 	return postgres.Wrap(q.UpsertDomainListSubscriptionHead(ctx, moderationgen.UpsertDomainListSubscriptionHeadParams{
 		SubscriptionID: h.SubscriptionID, Etag: postgres.ToNullString(h.ETag), LastModified: postgres.ToNullString(h.LastModified),
-		Digest: postgres.ToNullString(h.Digest), ConsecutiveFailures: failures, LastFetchID: postgres.ToNullString(h.LastFetchID),
+		Digest: postgres.ToNullString(h.Digest),
 	}), "put domain list subscription head")
+}
+
+// DeleteDomainListFetchesBefore implements appmoderation.DomainListRepository.
+func (r *Repository) DeleteDomainListFetchesBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	batch, err := postgres.ToInt32(limit, "batch limit")
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteDomainListFetchesBefore(ctx, moderationgen.DeleteDomainListFetchesBeforeParams{
+		IDBefore: idBelow(t), FetchedBefore: t, BatchLimit: batch,
+	})
+	return n, postgres.Wrap(err, "delete domain list fetches")
 }
 
 // LockDomainListSubscription implements appmoderation.DomainListRepository with a

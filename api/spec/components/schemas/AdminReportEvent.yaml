@@ -24,7 +24,7 @@ properties:
     type: string
     format: date-time
   cancellation:
-    description: How the event was cancelled; omitted while it is not.
+    description: How the event was canceled; omitted while it is not.
     allOf:
       - $ref: ./AdminEventCancellation.yaml
   reported_revision_id:

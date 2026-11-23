@@ -1085,7 +1085,7 @@
   },
   "errors.event.board_not_writer": {
     "defaultMessage": "Only the people this event's organizer chose can write on its board.",
-    "description": "API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, organizers, or readers) leave the reader out."
+    "description": "API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, coorganizers, or readers) leave the reader out."
   },
   "errors.event.board_closed": {
     "defaultMessage": "This event's board is read-only: the event was cancelled, or 7 days have passed since it ended.",

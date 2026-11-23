@@ -570,10 +570,10 @@ function AnswerChangesBoard() {
 
 // ---- Who writes, in the event's form --------------------------------------------------------------------------------
 
-const writers = ["organizer", "organizers", "readers"] as const;
+const writers = ["organizer", "coorganizers", "readers"] as const;
 const writerWords: Record<(typeof writers)[number], string> = {
   organizer: "Only you",
-  organizers: "You and the co-organizers",
+  coorganizers: "You and the co-organizers",
   readers: "Everyone who reads the board",
 };
 

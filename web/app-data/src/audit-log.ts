@@ -208,7 +208,7 @@ export const auditActionTargets = {
   domain_list_draft_accepted: "domain_list_subscription",
   domain_list_draft_rejected: "domain_list_subscription",
   domain_list_fetch_queued: "domain_list_subscription",
-  event_cancelled: "event",
+  event_canceled: "event",
 } as const satisfies Readonly<Record<AuditAction, AuditTargetKind>>;
 
 /** Every kind of operation, in the server's order. */

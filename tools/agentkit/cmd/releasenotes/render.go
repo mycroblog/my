@@ -132,6 +132,7 @@ func upgrading(b *strings.Builder, o options, old, cur facts) {
 
 	fmt.Fprintf(b, "## Upgrading\n\nFollow %s. Run `my db upgrade -check` and `my db upgrade` even when this section lists no step; they then do nothing.\n\n",
 		doc(o.version, "docs/operations/database.md#upgrading", "Upgrading"))
+	b.WriteString("Each new value of a `CHECK` makes `my schema apply` rewrite its table on SQLite and check every row again on PostgreSQL, which takes as long as the table is large: read the plan of `my schema apply -dry-run` for them.\n\n")
 	list(b, "Data upgrade steps", steps)
 	list(b, "Projections that `my db upgrade` rebuilds", projections)
 	if minorOf(o.version) == minorOf(o.previous) {

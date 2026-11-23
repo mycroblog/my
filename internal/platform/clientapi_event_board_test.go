@@ -261,8 +261,8 @@ func TestEventBoardWritersThroughTheAPI(t *testing.T) {
 		writes  []string
 	}{
 		{"organizer", clientapi.EventBoardWritersOrganizer, []string{"alice"}},
-		{"", clientapi.EventBoardWritersOrganizers, []string{"alice", "cora"}},
-		{"organizers", clientapi.EventBoardWritersOrganizers, []string{"alice", "cora"}},
+		{"", clientapi.EventBoardWritersCoorganizers, []string{"alice", "cora"}},
+		{"coorganizers", clientapi.EventBoardWritersCoorganizers, []string{"alice", "cora"}},
 		{"readers", clientapi.EventBoardWritersReaders, readers},
 	} {
 		ev := e.createEvent(tc.writers, nil)
@@ -506,7 +506,7 @@ func TestEventBoardPostsThroughTheAPI(t *testing.T) {
 
 	// Once board_writers leaves the author out, the author no longer edits nor replies, and still
 	// deletes the post.
-	if res := e.send("alice", http.MethodPatch, "/events/"+ev.Id, map[string]any{"board_writers": "organizers"}, nil, nil); res.StatusCode != http.StatusOK {
+	if res := e.send("alice", http.MethodPatch, "/events/"+ev.Id, map[string]any{"board_writers": "coorganizers"}, nil, nil); res.StatusCode != http.StatusOK {
 		t.Fatalf("PATCH board_writers = %d", res.StatusCode)
 	}
 	if got := e.outcome(e.send("gina", http.MethodPut, "/statuses/"+withMedia.Id, map[string]any{"text": "again"}, nil, nil)); got != "403 "+clientapi.ProblemTypeEventBoardNotWriter {
@@ -586,38 +586,38 @@ func TestEventBoardReadersFollowTheirAnswers(t *testing.T) {
 }
 
 // TestEventBoardTerm checks the term of a board (ADR-0161 §17): it is read-only at once when the
-// event is cancelled and from 7 days after its end, it is still read then, and an author still
+// event is canceled and from 7 days after its end, it is still read then, and an author still
 // deletes a post.
 func TestEventBoardTerm(t *testing.T) {
 	t.Parallel()
 	e := newEventBoardEnv(t, platform.AppOptions{}, "alice", "gina")
 	ctx := t.Context()
-	cancelled := e.createEvent("readers", nil)
+	canceled := e.createEvent("readers", nil)
 	ended := e.createEvent("readers", nil)
 	posts := map[string][]string{}
-	for _, id := range []string{cancelled.Id, ended.Id} {
+	for _, id := range []string{canceled.Id, ended.Id} {
 		e.answer("gina", id, gathering.AnswerGoing)
 		posts[id] = append(posts[id], e.mustPostOnBoard("gina", id, map[string]any{"text": "going!"}).Id)
 	}
 
-	// Cancelled: read-only at once.
-	if _, err := e.app.Events.Cancel(ctx, e.ids["alice"], cancelled.Id, ""); err != nil {
+	// Canceled: read-only at once.
+	if _, err := e.app.Events.Cancel(ctx, e.ids["alice"], canceled.Id, ""); err != nil {
 		t.Fatalf("Cancel = %v", err)
 	}
 	closed := "409 " + clientapi.ProblemTypeEventBoardClosed
 	for _, user := range []string{"alice", "gina"} {
-		if got := e.outcome(e.postOnBoard(user, cancelled.Id, map[string]any{"text": "still on?"}, nil)); got != closed {
-			t.Errorf("POST on the board of a cancelled event as %s = %s, want %s", user, got, closed)
+		if got := e.outcome(e.postOnBoard(user, canceled.Id, map[string]any{"text": "still on?"}, nil)); got != closed {
+			t.Errorf("POST on the board of a canceled event as %s = %s, want %s", user, got, closed)
 		}
-		if got := e.event(user, cancelled.Id).Viewer.Board; !got.Readable || got.Writable {
-			t.Errorf("a cancelled event as %s: viewer.board %+v, want readable, not writable", user, got)
+		if got := e.event(user, canceled.Id).Viewer.Board; !got.Readable || got.Writable {
+			t.Errorf("a canceled event as %s: viewer.board %+v, want readable, not writable", user, got)
 		}
-		if got := e.boardIDs(user, cancelled.Id); !slices.Equal(got, posts[cancelled.Id]) {
-			t.Errorf("the board of a cancelled event as %s = %v, want %v", user, got, posts[cancelled.Id])
+		if got := e.boardIDs(user, canceled.Id); !slices.Equal(got, posts[canceled.Id]) {
+			t.Errorf("the board of a canceled event as %s = %v, want %v", user, got, posts[canceled.Id])
 		}
 	}
-	if got := e.outcome(e.send("gina", http.MethodPut, "/statuses/"+posts[cancelled.Id][0], map[string]any{"text": "edited"}, nil, nil)); got != closed {
-		t.Errorf("an edit on the board of a cancelled event = %s, want %s", got, closed)
+	if got := e.outcome(e.send("gina", http.MethodPut, "/statuses/"+posts[canceled.Id][0], map[string]any{"text": "edited"}, nil, nil)); got != closed {
+		t.Errorf("an edit on the board of a canceled event = %s, want %s", got, closed)
 	}
 	// A post that its author deletes once the board is read-only.
 	gone := e.mustPostOnBoard("gina", ended.Id, map[string]any{"text": "to delete later"})
@@ -652,20 +652,20 @@ func TestEventBoardTerm(t *testing.T) {
 
 }
 
-// eventBoardRecords are events whose boards go with their records: one cancelled at the start of
+// eventBoardRecords are events whose boards go with their records: one canceled at the start of
 // the clock, one that ends, one that nobody answered nor was invited to, and one that still polls
 // its date; and the posts on each, and an ordinary post.
 type eventBoardRecords struct {
-	cancelled, ended, quiet, polling string
-	posts                            map[string][]string
-	ordinary                         string
+	canceled, ended, quiet, polling string
+	posts                           map[string][]string
+	ordinary                        string
 }
 
 func (e *eventBoardEnv) records() eventBoardRecords {
 	e.t.Helper()
 	ctx := e.t.Context()
 	r := eventBoardRecords{
-		cancelled: e.createEvent("readers", nil).Id, ended: e.createEvent("readers", nil).Id, quiet: e.createEvent("readers", nil).Id,
+		canceled: e.createEvent("readers", nil).Id, ended: e.createEvent("readers", nil).Id, quiet: e.createEvent("readers", nil).Id,
 		posts: map[string][]string{},
 	}
 	polling, err := e.app.Events.Create(ctx, e.ids["alice"], appgathering.CreateInput{
@@ -679,14 +679,14 @@ func (e *eventBoardEnv) records() eventBoardRecords {
 		e.t.Fatalf("Create a date poll = %v", err)
 	}
 	r.polling = polling.ID
-	for _, id := range []string{r.cancelled, r.ended} {
+	for _, id := range []string{r.canceled, r.ended} {
 		e.answer("gina", id, gathering.AnswerGoing)
 		r.posts[id] = []string{e.mustPostOnBoard("gina", id, map[string]any{"text": "going!"}).Id}
 	}
 	r.posts[r.quiet] = []string{e.mustPostOnBoard("alice", r.quiet, map[string]any{"text": "anyone?"}).Id}
 	r.posts[r.polling] = []string{e.mustPostOnBoard("alice", r.polling, map[string]any{"text": "vote for a date"}).Id}
 	r.ordinary = e.post("alice", map[string]any{"text": "an ordinary post", "visibility": "public"}).Id
-	if _, err := e.app.Events.Cancel(ctx, e.ids["alice"], r.cancelled, ""); err != nil {
+	if _, err := e.app.Events.Cancel(ctx, e.ids["alice"], r.canceled, ""); err != nil {
 		e.t.Fatalf("Cancel = %v", err)
 	}
 	return r
@@ -694,30 +694,30 @@ func (e *eventBoardEnv) records() eventBoardRecords {
 
 // TestEventBoardsToPurge checks which boards are due to go with their events' records (ADR-0161
 // §14, §17): none within event_records_retention_days of the end or the cancellation; after it,
-// those of the ended and the cancelled events, that of an event nobody answered too, and an
+// those of the ended and the canceled events, that of an event nobody answered too, and an
 // unknown event; never that of an event that still polls its date.
 func TestEventBoardsToPurge(t *testing.T) {
 	t.Parallel()
 	e := newEventBoardEnv(t, platform.AppOptions{}, "alice", "gina")
 	r := e.records()
-	all := []string{r.cancelled, r.ended, r.quiet, r.polling, eventBoardMissingID}
+	all := []string{r.canceled, r.ended, r.quiet, r.polling, eventBoardMissingID}
 	e.at(eventBoardEndsIn + 89*24*time.Hour)
 	if due, err := e.app.Events.BoardsToPurge(t.Context(), all); err != nil || !slices.Equal(due, []string{eventBoardMissingID}) {
 		t.Errorf("BoardsToPurge within the retention = %v, %v, want the unknown event alone", due, err)
 	}
 	e.at(eventBoardEndsIn + 91*24*time.Hour)
-	want := []string{r.cancelled, r.ended, r.quiet, eventBoardMissingID}
+	want := []string{r.canceled, r.ended, r.quiet, eventBoardMissingID}
 	if due, err := e.app.Events.BoardsToPurge(t.Context(), all); err != nil || !slices.Equal(due, want) {
 		t.Errorf("BoardsToPurge after the retention = %v, %v, want %v", due, err, want)
 	}
 	// A date poll ends with its last candidate date, as the purge of the records counts.
 	e.at(eventBoardPollEndsIn + 91*24*time.Hour)
-	want = []string{r.cancelled, r.ended, r.quiet, r.polling, eventBoardMissingID}
+	want = []string{r.canceled, r.ended, r.quiet, r.polling, eventBoardMissingID}
 	if due, err := e.app.Events.BoardsToPurge(t.Context(), all); err != nil || !slices.Equal(due, want) {
 		t.Errorf("BoardsToPurge after the retention of the last candidate = %v, %v, want %v", due, err, want)
 	}
 	// Answering deletes nothing: the posts go with the purge alone.
-	for _, id := range []string{r.cancelled, r.ended, r.quiet, r.polling} {
+	for _, id := range []string{r.canceled, r.ended, r.quiet, r.polling} {
 		if got := e.boardIDs("alice", id); !slices.Equal(got, r.posts[id]) {
 			t.Errorf("after BoardsToPurge, the board of %s = %v, want %v", id, got, r.posts[id])
 		}

@@ -7,7 +7,7 @@ post:
   description: |
     Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
     more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
-    A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+    A 409 `/api/v1/problems/event-closed` for an event canceled already.
   tags: [events]
   security:
     - oauth2: ["write:events"]

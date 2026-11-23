@@ -5421,7 +5421,7 @@ export interface paths {
          *     on an `unscheduled` event ends its date poll, as a confirmation does. Only the
          *     organizer changes the visibility and `board_writers` (a 403 `/api/v1/problems/event-organizer-only`). Adding a
          *     `voice` place needs the organizer to be able to host rooms (a 422
-         *     `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+         *     `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event. Invalid settings are a 422.
          */
         patch: operations["updateEvent"];
         trace?: never;
@@ -5441,7 +5441,7 @@ export interface paths {
          * @description The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
          *     the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
          *     updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
-         *     zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+         *     zone; `SEQUENCE` is the number of revisions of the settings; a canceled event has
          *     `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
          *     user sees: a hidden place never appears in the file. A 404 for an event that the user does
          *     not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
@@ -5471,7 +5471,7 @@ export interface paths {
          * Cancel an event
          * @description Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
          *     more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
-         *     A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+         *     A 409 `/api/v1/problems/event-closed` for an event canceled already.
          */
         post: operations["cancelEvent"];
         delete?: never;
@@ -5498,7 +5498,7 @@ export interface paths {
          *     reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
          *     answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
          *     `declined` are never refused. `declined` ends an approval. A 409
-         *     `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+         *     `/api/v1/problems/event-closed` for an event that started or was canceled, and a 409
          *     `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
          */
         put: operations["answerEvent"];
@@ -5562,7 +5562,7 @@ export interface paths {
          *     post, while the board is not read-only. A 403 `/api/v1/problems/event-board-not-reader` for a
          *     user who sees the event but does not read its board, a 403
          *     `/api/v1/problems/event-board-not-writer` for a reader whom `board_writers` leave out, and a
-         *     409 `/api/v1/problems/event-board-closed` once the event is cancelled, and from 7 days
+         *     409 `/api/v1/problems/event-board-closed` once the event is canceled, and from 7 days
          *     after its end. The post is checked as `createStatus` checks a new status, and retrying with
          *     the same `Idempotency-Key` returns the status posted with it. A reply replies to a post of the
          *     same board (a 422 otherwise). A mention notifies only the mentioned users who read the board.
@@ -5594,7 +5594,7 @@ export interface paths {
          *     the approved. An approval ends when the attendee answers `declined`. A 422
          *     `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`. A
          *     422 `/api/v1/problems/event-attendee-organizes` for the organizer or a co-organizer, who
-         *     always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         *     always sees the places. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
          */
         put: operations["approveEventAttendee"];
         post?: never;
@@ -5602,7 +5602,7 @@ export interface paths {
          * Revoke the approval of an attendee of an event
          * @description Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
          *     did not answer. A 422 `/api/v1/problems/event-attendee-organizes` for the organizer or a
-         *     co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         *     co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
          */
         delete: operations["revokeEventAttendeeApproval"];
         options?: never;
@@ -5634,7 +5634,7 @@ export interface paths {
          *     `/api/v1/problems/event-already-invited`, also after a revocation). A 422
          *     `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
          *     the event, or is in a block relation with the organizer or a co-organizer. An event sends at
-         *     most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         *     most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
          */
         post: operations["inviteToEvent"];
         delete?: never;
@@ -5662,7 +5662,7 @@ export interface paths {
          * Revoke an invitation to an event
          * @description Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
          *     only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
-         *     invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         *     invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
          */
         delete: operations["revokeEventInvitation"];
         options?: never;
@@ -5690,14 +5690,14 @@ export interface paths {
          *     co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
          *     `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
          *     organizer, or is in a block relation with the organizer or a co-organizer. A 403
-         *     `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         *     `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
          */
         put: operations["assignEventCoorganizer"];
         post?: never;
         /**
          * Remove a co-organizer of an event
          * @description Removes a co-organizer of the event, by its organizer. A 403
-         *     `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         *     `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
          */
         delete: operations["removeEventCoorganizer"];
         options?: never;
@@ -5729,7 +5729,7 @@ export interface paths {
          *     a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
          *     the past are a 422.
          *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-         *     the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+         *     the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
          *     `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
          */
         post: operations["addEventCandidate"];
@@ -5760,7 +5760,7 @@ export interface paths {
          *     users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
          *     `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
          *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-         *     the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+         *     the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
          *     `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
          */
         delete: operations["withdrawEventCandidate"];
@@ -5788,7 +5788,7 @@ export interface paths {
          *     organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
          *     name to everyone who sees the event and keeps the event visible to the user. A 409
          *     `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
-         *     `/api/v1/problems/event-closed` for a cancelled event.
+         *     `/api/v1/problems/event-closed` for a canceled event.
          */
         put: operations["voteEventCandidate"];
         post?: never;
@@ -5845,7 +5845,7 @@ export interface paths {
          *     answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
          *     change of the date is a `PATCH` of the event. A candidate that has started is a 422.
          *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-         *     the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+         *     the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
          *     `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
          */
         post: operations["confirmEventCandidate"];
@@ -6575,7 +6575,7 @@ export interface paths {
         /**
          * Cancel a decision
          * @description Records the cancellation as its own event and in the audit log, and undoes what the hook
-         *     can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+         *     can: what happens depends on the verdict. Cancelling a canceled decision again changes
          *     nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
          *     a `reject` of `local.status`, which goes through its appeal, is a 409
          *     `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
@@ -7128,7 +7128,7 @@ export interface paths {
          * Cancel an event as a moderator
          * @description Cancels an event with an optional reason, which the event shows with its cancellation, and
          *     notifies the users who answered going or maybe and the invited users. Recorded in the audit
-         *     log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+         *     log (`event_canceled`). An unknown event is a 404, an event canceled already a 409
          *     `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
          *     `manage_reports` permission.
          */
@@ -10713,11 +10713,11 @@ export interface components {
              */
             publish_at: string;
             /**
-             * @description `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+             * @description `canceled`: the user canceled the schedule or scheduled another time. `failed`: the post
              *     could not be published at its time, for `reason`.
              * @enum {string}
              */
-            outcome: "cancelled" | "failed";
+            outcome: "canceled" | "failed";
             reason?: components["schemas"]["DraftFailureReason"];
             /**
              * Format: date-time
@@ -11423,7 +11423,7 @@ export interface components {
          *     `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
          *     `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
          *     and left state; the actor is the system), `hook_decision_overridden` (a moderator
-         *     cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+         *     canceled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
          *     moderator upheld the appeal of a refused post, and the decision stays). On a
          *     `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
          *     `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -11475,11 +11475,11 @@ export interface components {
          *     `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
          *     `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
          *     that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
-         *     the `system` as the actor. On an `event`: `event_cancelled`, a moderator's cancellation of
+         *     the `system` as the actor. On an `event`: `event_canceled`, a moderator's cancellation of
          *     the event; the ID and the label are the event's ID.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "announcement_deleted" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_tips_enabled" | "supporter_tips_revised" | "supporter_tips_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "delivery_revealed" | "account_deliveries_viewed" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued" | "event_cancelled";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "announcement_deleted" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_tips_enabled" | "supporter_tips_revised" | "supporter_tips_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "delivery_revealed" | "account_deliveries_viewed" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued" | "event_canceled";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -12618,7 +12618,7 @@ export interface components {
              * @description When the event ends; omitted while it has no date.
              */
             ends_at?: string;
-            /** @description How the event was cancelled; omitted while it is not. */
+            /** @description How the event was canceled; omitted while it is not. */
             cancellation?: components["schemas"]["AdminEventCancellation"];
             /** @description The revision of the settings that the reporter saw. */
             reported_revision_id: components["schemas"]["Id"];
@@ -12628,7 +12628,7 @@ export interface components {
         /** @description A moderator cancelling an event. */
         AdminEventCancel: {
             /**
-             * @description Why the event is cancelled, as plain text of up to 500 characters. The event shows it
+             * @description Why the event is canceled, as plain text of up to 500 characters. The event shows it
              *     with its cancellation to everyone who sees the event.
              */
             reason?: string;
@@ -12636,12 +12636,12 @@ export interface components {
         /** @description The cancellation of an event as the moderators see it. */
         AdminEventCancellation: {
             reason: components["schemas"]["EventCancelReason"];
-            /** @description Who cancelled the event; omitted for an automatic cancellation. */
-            cancelled_by_account_id?: components["schemas"]["Id"];
+            /** @description Who canceled the event; omitted for an automatic cancellation. */
+            canceled_by_account_id?: components["schemas"]["Id"];
             /** @description The reason given for the cancellation; omitted for none. */
             note?: string;
             /** Format: date-time */
-            cancelled_at: string;
+            canceled_at: string;
         };
         /**
          * @description A revision of the settings of an event with all its places. The title and the description
@@ -12933,7 +12933,7 @@ export interface components {
             decided_at: string;
             /**
              * Format: date-time
-             * @description When a moderator cancelled the decision; absent while it stands.
+             * @description When a moderator canceled the decision; absent while it stands.
              */
             overridden_at?: string;
             /**
@@ -12989,7 +12989,7 @@ export interface components {
         };
         /**
          * @description Where an appeal of a refused post stands: `pending` until a moderator decides it,
-         *     `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+         *     `upheld` when the refusal stays, `overturned` when the moderator canceled it. After
          *     `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
          *     post is not restored.
          * @enum {string}
@@ -15062,7 +15062,7 @@ export interface components {
             /**
              * @description Whether the user may post on the board and edit their posts on it now: the event's
              *     `board_writers` admit the user, and the board is not read-only. The board is read-only once
-             *     the event is cancelled, and from 7 days after its end (for an `unscheduled` event, the end of
+             *     the event is canceled, and from 7 days after its end (for an `unscheduled` event, the end of
              *     its last candidate date, its `ends_at`).
              */
             writable: boolean;
@@ -15088,18 +15088,18 @@ export interface components {
         };
         /**
          * @description Who posts on the board of an event, among those who read it: `organizer` the organizer alone,
-         *     `organizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
+         *     `coorganizers` the organizer and the co-organizers, and `readers` everyone who reads the board.
          *     The board is read by the organizer, the co-organizers, and the users who see the event and
          *     answer `going` or `maybe`.
          * @enum {string}
          */
-        EventBoardWriters: "organizer" | "organizers" | "readers";
+        EventBoardWriters: "organizer" | "coorganizers" | "readers";
         /** @description A page of the answers to a candidate date, in the order of the users' IDs. */
         EventBallotPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["EventBallot"][];
         };
         /**
-         * @description Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+         * @description Why an event was canceled: by its `organizer`, by a `moderator`, or because the organizer was
          *     suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
          * @enum {string}
          */
@@ -15115,7 +15115,7 @@ export interface components {
             /** @description The reason given for the cancellation; omitted for none. */
             note?: string;
             /** Format: date-time */
-            cancelled_at: string;
+            canceled_at: string;
         };
         /**
          * @description A candidate date of an event's date poll, with how many users answered it each way. Times are
@@ -15169,7 +15169,7 @@ export interface components {
             place_disclosure?: components["schemas"]["EventPlaceDisclosure"];
             /** @description How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit. */
             capacity?: number;
-            /** @description Who posts on the event's board; `organizers` when omitted. */
+            /** @description Who posts on the event's board; `coorganizers` when omitted. */
             board_writers?: components["schemas"]["EventBoardWriters"];
             /** @description Up to 3 places, one of each kind. */
             places?: components["schemas"]["EventPlace"][];
@@ -15291,11 +15291,11 @@ export interface components {
         };
         /**
          * @description Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
-         *     `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+         *     `scheduled`, or `canceled`. An event that ended is still `scheduled`: its `ends_at` is in the
          *     past.
          * @enum {string}
          */
-        EventState: "unscheduled" | "scheduled" | "cancelled";
+        EventState: "unscheduled" | "scheduled" | "canceled";
         /**
          * @description Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
          *     date (`starts_at` and `ends_at` together) is checked as a new event's; on an `unscheduled`
@@ -16889,6 +16889,12 @@ export interface components {
              *     it is open and the user sees it; omitted otherwise, and without `read:voice`.
              */
             voice_room?: components["schemas"]["VoiceRoom"];
+            /**
+             * @description The interaction request that a `reply_request`, a `boost_request`, a `quote_request`, an
+             *     `interaction_accepted`, or an `interaction_rejected` is about, which the interaction
+             *     requests answer by.
+             */
+            interaction_request_id?: components["schemas"]["Id"];
             /** @description The event that an `event_*` notification is about. */
             event_id?: components["schemas"]["Id"];
             /**
@@ -17198,7 +17204,7 @@ export interface components {
          *     user answered or to which the user was invited, once per date; `event_changed` that the date,
          *     the places, or the voice chat room of an event that the user answered going or maybe to, or was
          *     invited to, changed, once per change (a change of the title or the description sends
-         *     nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+         *     nothing); `event_canceled` that such an event was canceled; `event_reminder` that an event
          *     that the user answered going or maybe to starts soon, at each time before the start that the
          *     user chose (`getEventReminders`), once per date and time, and never for a date that changed
          *     since; `event_started` that it starts now, once per date; `event_room_unavailable` tells
@@ -17210,7 +17216,7 @@ export interface components {
          *     `event_board_posted` only while the user reads its board.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "scheduled_status_failed" | "event_invited" | "event_schedule_confirmed" | "event_changed" | "event_cancelled" | "event_reminder" | "event_started" | "event_room_unavailable" | "event_board_posted" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "scheduled_status_failed" | "event_invited" | "event_schedule_confirmed" | "event_changed" | "event_canceled" | "event_reminder" | "event_started" | "event_room_unavailable" | "event_board_posted" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
         /**
          * @description An OAuth app that the authenticated user registered. Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -18035,7 +18041,7 @@ export interface components {
          *     - `/api/v1/problems/event-not-organizer` (403): the operation is for the organizer and the
          *       co-organizers of the event.
          *     - `/api/v1/problems/event-organizer-only` (403): the operation is for the organizer of the event.
-         *     - `/api/v1/problems/event-closed` (409): the event was cancelled, or has started for an answer.
+         *     - `/api/v1/problems/event-closed` (409): the event was canceled, or has started for an answer.
          *     - `/api/v1/problems/event-full` (409): the attendees who answer `going` reached the capacity.
          *     - `/api/v1/problems/event-voice-unavailable` (422): the event cannot be held in a voice chat
          *       room: the voice chat is off, or its organizer may not host rooms.
@@ -18052,7 +18058,7 @@ export interface components {
          *     - `/api/v1/problems/event-board-not-writer` (403): the event's `board_writers` do not let the
          *       user post on its board.
          *     - `/api/v1/problems/event-board-closed` (409): the board of the event is read-only: the event was
-         *       cancelled, or 7 days have passed since its end (it is writable for the 7 days after the end).
+         *       canceled, or 7 days have passed since its end (it is writable for the 7 days after the end).
          *     - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
          *     - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
          *       takes no more candidates, answers, or confirmations.
@@ -31022,7 +31028,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The event is cancelled. */
+            /** @description The event is canceled. */
             204: {
                 headers: {
                     [name: string]: unknown;

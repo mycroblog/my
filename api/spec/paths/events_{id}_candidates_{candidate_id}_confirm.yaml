@@ -11,7 +11,7 @@ post:
     answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
     change of the date is a `PATCH` of the event. A candidate that has started is a 422.
     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
-    the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+    the event. A 409 `/api/v1/problems/event-closed` for a canceled event, and a 409
     `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
   tags: [events]
   security:

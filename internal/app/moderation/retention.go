@@ -18,7 +18,8 @@ import (
 // The retention of the moderation records (ADR-0058): the hourly
 // JobPurgeRecords erases the actions on accounts with their appeals, the reports, and the audit
 // log entries past the retention periods of the instance settings, and the sign-up blocks
-// moderation.SignupBlockRetention after they end (internal/domain/moderation retention.go says
+// moderation.SignupBlockRetention after they end, and the fetches of the subscribed lists
+// moderation.DomainListFetchRetention after they ran (internal/domain/moderation retention.go says
 // when each period starts), in bounded batches like the other purges (FR-803). An
 // operator's hold on an account stops the erasure of its records, of its sign-in and
 // registration origins (the identity module asks HeldAccountIDs), and of its statuses (the
@@ -254,12 +255,13 @@ func (s *Service) retentionPeriods(ctx context.Context) (RetentionPeriods, error
 // PurgedRecords counts what one run of PurgeRecords erased.
 type PurgedRecords struct {
 	Actions, Reports, SignupBlocks, RetentionHolds int
-	AuditEntries                                   int64
+	AuditEntries, DomainListFetches                int64
 }
 
 // PurgeRecords erases the moderation records past their retention: the actions with their
 // appeals first, so that a report they followed from is erased in the same run, then the
-// reports, then the sign-up blocks, then the released retention holds, then the audit log entries. Each batch is one short
+// reports, then the sign-up blocks, then the released retention holds, then the audit log entries,
+// then the fetches of the subscribed lists (moderation.DomainListFetchRetention). Each batch is one short
 // transaction, and one run deletes a bounded number of rows of each kind; the next run
 // continues. It is safe to repeat.
 func (s *Service) PurgeRecords(ctx context.Context) (PurgedRecords, error) {
@@ -306,21 +308,30 @@ func (s *Service) PurgeRecords(ctx context.Context) (PurgedRecords, error) {
 	if out.RetentionHolds, err = purge("retention holds", now.Add(-periods.Actions), repo.ListRetentionHoldsToPurge, repo.PurgeRetentionHolds); err != nil {
 		return out, err
 	}
-	before := now.Add(-periods.AuditLog)
-	for range recordPurgeMaxBatches {
-		var n int64
-		err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			var err error
-			n, err = repo.DeleteAuditEntriesBefore(ctx, tx, before, AuditPurgeBatch)
-			return err
-		})
-		if err != nil {
-			return out, fmt.Errorf("moderation: purge audit log entries: %w", err)
+	deleteBefore := func(name string, before time.Time, del func(context.Context, uow.Tx, time.Time, int) (int64, error)) (int64, error) {
+		var total int64
+		for range recordPurgeMaxBatches {
+			var n int64
+			err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+				var err error
+				n, err = del(ctx, tx, before, AuditPurgeBatch)
+				return err
+			})
+			if err != nil {
+				return total, fmt.Errorf("moderation: purge %s: %w", name, err)
+			}
+			total += n
+			if n < AuditPurgeBatch {
+				break
+			}
 		}
-		out.AuditEntries += n
-		if n < AuditPurgeBatch {
-			break
-		}
+		return total, nil
+	}
+	if out.AuditEntries, err = deleteBefore("audit log entries", now.Add(-periods.AuditLog), repo.DeleteAuditEntriesBefore); err != nil {
+		return out, err
+	}
+	if out.DomainListFetches, err = deleteBefore("domain list fetches", now.Add(-moderation.DomainListFetchRetention), repo.DeleteDomainListFetchesBefore); err != nil {
+		return out, err
 	}
 	return out, nil
 }

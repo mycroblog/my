@@ -94,11 +94,11 @@ type CoorganizerChange struct {
 type Cancellation struct {
 	GatheringID string
 	Reason      gathering.CancelReason
-	// CancelledByAccountID is "" for an automatic cancellation.
-	CancelledByAccountID string
+	// CanceledByAccountID is "" for an automatic cancellation.
+	CanceledByAccountID string
 	// Note is the reason that the organizer or a moderator gave, "" for none.
-	Note        string
-	CancelledAt time.Time
+	Note       string
+	CanceledAt time.Time
 }
 
 // Head is the current revision and date of an event, its state, and how many attendees answer
@@ -143,7 +143,7 @@ type Record struct {
 	Revision     Revision
 	Confirmation Confirmation
 	Coorganizers []Coorganizer
-	// Cancellation is nil for an event that was not cancelled.
+	// Cancellation is nil for an event that was not canceled.
 	Cancellation *Cancellation
 	// Revisions counts the revisions of the settings, the first included.
 	Revisions int
@@ -162,7 +162,7 @@ func (r Record) Event() gathering.Event {
 func (r Record) BoardTerm() gathering.BoardTerm {
 	t := gathering.BoardTerm{EndsAt: r.Head.Schedule.EndsAt}
 	if c := r.Cancellation; c != nil {
-		t.Cancelled, t.CancelledAt = true, c.CancelledAt
+		t.Canceled, t.CanceledAt = true, c.CanceledAt
 	}
 	return t
 }
@@ -236,7 +236,7 @@ type Repository interface {
 	InsertApproval(ctx context.Context, tx uow.Tx, a Approval) error
 	// InsertCoorganizerChange records a co-organizer assigned or removed.
 	InsertCoorganizerChange(ctx context.Context, tx uow.Tx, c CoorganizerChange) error
-	// InsertCancellation cancels an event and reports whether it did: an event cancelled already
+	// InsertCancellation cancels an event and reports whether it did: an event canceled already
 	// keeps its first cancellation.
 	InsertCancellation(ctx context.Context, tx uow.Tx, c Cancellation) (bool, error)
 

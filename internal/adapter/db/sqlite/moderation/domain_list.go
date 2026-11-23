@@ -79,8 +79,20 @@ func (r *Repository) PutDomainListHead(ctx context.Context, tx uow.Tx, h moderat
 	}
 	return sqlite.Wrap(q.UpsertDomainListSubscriptionHead(ctx, moderationgen.UpsertDomainListSubscriptionHeadParams{
 		SubscriptionID: h.SubscriptionID, Etag: sqlite.ToNullString(h.ETag), LastModified: sqlite.ToNullString(h.LastModified),
-		Digest: sqlite.ToNullString(h.Digest), ConsecutiveFailures: int64(h.ConsecutiveFailures), LastFetchID: sqlite.ToNullString(h.LastFetchID),
+		Digest: sqlite.ToNullString(h.Digest),
 	}), "put domain list subscription head")
+}
+
+// DeleteDomainListFetchesBefore implements appmoderation.DomainListRepository.
+func (r *Repository) DeleteDomainListFetchesBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteDomainListFetchesBefore(ctx, moderationgen.DeleteDomainListFetchesBeforeParams{
+		IDBefore: idBelow(t), FetchedBefore: sqlite.ToMillis(t), BatchLimit: int64(limit),
+	})
+	return n, sqlite.Wrap(err, "delete domain list fetches")
 }
 
 // LockDomainListSubscription implements appmoderation.DomainListRepository: SQLite runs one

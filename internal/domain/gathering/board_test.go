@@ -55,7 +55,7 @@ func TestCanReadBoard(t *testing.T) {
 		{"going, suspended", gathering.VisibilityPublic, gathering.Viewer{AccountID: viewerID, Local: true}, boardGoing, false},
 		{"the organizer, suspended", gathering.VisibilityPublic, gathering.Viewer{AccountID: organizer, Local: true}, boardOrganizer, false},
 	} {
-		for _, w := range []gathering.BoardWriters{gathering.BoardWritersOrganizer, gathering.BoardWritersOrganizers, gathering.BoardWritersReaders} {
+		for _, w := range []gathering.BoardWriters{gathering.BoardWritersOrganizer, gathering.BoardWritersCoorganizers, gathering.BoardWritersReaders} {
 			if got := gathering.CanReadBoard(boardEvent(tc.vis, w), tc.viewer, tc.f); got != tc.want {
 				t.Errorf("%s (writers %s): CanReadBoard = %v, want %v", tc.name, w, got, tc.want)
 			}
@@ -72,7 +72,7 @@ func TestCanWriteBoard(t *testing.T) {
 		want    roles
 	}{
 		{gathering.BoardWritersOrganizer, roles{organizer: true}},
-		{gathering.BoardWritersOrganizers, roles{organizer: true, coorganizer: true}},
+		{gathering.BoardWritersCoorganizers, roles{organizer: true, coorganizer: true}},
 		{gathering.BoardWritersReaders, roles{organizer: true, coorganizer: true, going: true}},
 		{"", roles{organizer: true}},
 		{"everyone", roles{organizer: true}},
@@ -106,7 +106,7 @@ func TestCanWriteBoard(t *testing.T) {
 }
 
 // TestBoardOpen checks the term of a board: open from the creation, read-only at once when the
-// event is cancelled, and BoardWritableAfterEnd after a fixed end; an event that polls its date has
+// event is canceled, and BoardWritableAfterEnd after a fixed end; an event that polls its date has
 // no end yet.
 func TestBoardOpen(t *testing.T) {
 	if gathering.BoardWritableAfterEnd != 7*24*time.Hour {
@@ -127,8 +127,8 @@ func TestBoardOpen(t *testing.T) {
 		{"a second before 7 days after the end", scheduled, end.Add(gathering.BoardWritableAfterEnd - time.Second), true},
 		{"a second after 7 days after the end", scheduled, end.Add(gathering.BoardWritableAfterEnd + time.Second), false},
 		{"a month after the end", scheduled, end.Add(30 * 24 * time.Hour), false},
-		{"cancelled before the start", gathering.BoardTerm{EndsAt: end, Cancelled: true, CancelledAt: end.Add(-48 * time.Hour)}, end.Add(-24 * time.Hour), false},
-		{"cancelled while polling", gathering.BoardTerm{EndsAt: end, Cancelled: true, CancelledAt: end.Add(-48 * time.Hour)}, end.Add(-24 * time.Hour), false},
+		{"canceled before the start", gathering.BoardTerm{EndsAt: end, Canceled: true, CanceledAt: end.Add(-48 * time.Hour)}, end.Add(-24 * time.Hour), false},
+		{"canceled while polling", gathering.BoardTerm{EndsAt: end, Canceled: true, CanceledAt: end.Add(-48 * time.Hour)}, end.Add(-24 * time.Hour), false},
 		{"polling, a year after its last candidate", scheduled, end.Add(365 * 24 * time.Hour), false},
 		{"no end", gathering.BoardTerm{}, end, false},
 	} {
@@ -143,9 +143,9 @@ func TestBoardOpen(t *testing.T) {
 func TestBoard(t *testing.T) {
 	end := time.Date(2026, 12, 1, 14, 0, 0, 0, time.UTC)
 	open := gathering.BoardTerm{EndsAt: end}
-	cancelled := gathering.BoardTerm{EndsAt: end, Cancelled: true, CancelledAt: end.Add(-48 * time.Hour)}
+	canceled := gathering.BoardTerm{EndsAt: end, Canceled: true, CanceledAt: end.Add(-48 * time.Hour)}
 	now := end.Add(-time.Hour)
-	organizers := boardEvent(gathering.VisibilityPublic, gathering.BoardWritersOrganizers)
+	organizers := boardEvent(gathering.VisibilityPublic, gathering.BoardWritersCoorganizers)
 	invited := boardEvent(gathering.VisibilityInvited, gathering.BoardWritersReaders)
 	for _, tc := range []struct {
 		name   string
@@ -156,7 +156,7 @@ func TestBoard(t *testing.T) {
 		want   gathering.BoardAccess
 	}{
 		{"the organizer", organizers, open, local(organizer), boardOrganizer, gathering.BoardAccess{Sees: true, Reads: true, Open: true, Writes: true}},
-		{"the organizer of a cancelled event", organizers, cancelled, local(organizer), boardOrganizer, gathering.BoardAccess{Sees: true, Reads: true}},
+		{"the organizer of a canceled event", organizers, canceled, local(organizer), boardOrganizer, gathering.BoardAccess{Sees: true, Reads: true}},
 		{"going, among organizers' writers", organizers, open, local(viewerID), boardGoing, gathering.BoardAccess{Sees: true, Reads: true, Open: true}},
 		{"going, among readers' writers", invited, open, local(viewerID), boardInvitedGoes, gathering.BoardAccess{Sees: true, Reads: true, Open: true, Writes: true}},
 		{"going, after the term", invited, open, local(viewerID), boardInvitedGoes, gathering.BoardAccess{Sees: true, Reads: true}},
@@ -183,11 +183,11 @@ func TestBoard(t *testing.T) {
 // TestBoardWriters checks the choices of board_writers, their default, and that the settings of an
 // event refuse an unknown one.
 func TestBoardWriters(t *testing.T) {
-	if gathering.DefaultBoardWriters != gathering.BoardWritersOrganizers {
+	if gathering.DefaultBoardWriters != gathering.BoardWritersCoorganizers {
 		t.Errorf("DefaultBoardWriters = %q, want organizers", gathering.DefaultBoardWriters)
 	}
 	for w, want := range map[gathering.BoardWriters]bool{
-		"organizer": true, "organizers": true, "readers": true, "": false, "everyone": false, "Readers": false,
+		"organizer": true, "coorganizers": true, "readers": true, "": false, "everyone": false, "Readers": false,
 	} {
 		if got := w.Valid(); got != want {
 			t.Errorf("BoardWriters(%q).Valid() = %v, want %v", w, got, want)

@@ -44,7 +44,7 @@ export type FakeEventPlan = ServerEventPlan & {
   readonly cancelled?: { readonly reason: Schema<"EventCancelReason">; readonly note?: string };
   readonly startsInMinutes?: number;
   readonly room?: "open" | Schema<"EventRoomUnavailableReason">;
-  /** Who writes on its board; the server's default (`organizers`) without one. */
+  /** Who writes on its board; the server's default (`coorganizers`) without one. */
   readonly boardWriters?: Schema<"EventBoardWriters">;
   /** The posts on its board, oldest first, each by a person of the seed that many minutes before the seed runs. */
   readonly board?: readonly { readonly by: string; readonly text: string; readonly minutesAgo: number }[];
@@ -461,7 +461,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       timeZone: plan.timeZone,
       placeDisclosure: plan.placeDisclosure ?? "approved",
       capacity: plan.capacity ?? 0,
-      boardWriters: plan.boardWriters ?? "organizers",
+      boardWriters: plan.boardWriters ?? "coorganizers",
       places,
       schedule,
       candidates,
@@ -483,7 +483,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
           : {
               reason: plan.cancelled.reason,
               ...(plan.cancelled.note === undefined ? {} : { note: plan.cancelled.note }),
-              cancelled_at: iso(c.started - 60 * minute),
+              canceled_at: iso(c.started - 60 * minute),
             },
       createdAt: created,
       revisedAt: created,
@@ -543,7 +543,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
   const admitted = (e: Held) =>
     e.boardWriters === "readers" ||
     e.organizer === viewer ||
-    (e.boardWriters === "organizers" && e.coorganizers.includes(viewer));
+    (e.boardWriters === "coorganizers" && e.coorganizers.includes(viewer));
   const writesBoard = (e: Held) => readsBoard(e) && admitted(e) && !boardClosed(e);
 
   /** The event as the reader sees it. */
@@ -564,7 +564,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       hidden_places: e.places.filter((p) => !seesPlace(e, p)).map((p) => p.kind),
       starts_at: iso(startOf(e)),
       ends_at: iso(endOf(e)),
-      state: e.cancellation !== undefined ? "cancelled" : e.schedule === undefined ? "unscheduled" : "scheduled",
+      state: e.cancellation !== undefined ? "canceled" : e.schedule === undefined ? "unscheduled" : "scheduled",
       ...(e.cancellation === undefined ? {} : { cancellation: e.cancellation }),
       going_count: goingCount(e),
       created_at: iso(e.createdAt),
@@ -774,8 +774,8 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       };
       const fault = settingsFault(settings);
       if (fault !== null) return fault;
-      const boardWriters = body.board_writers ?? "organizers";
-      if (!["organizer", "organizers", "readers"].includes(boardWriters)) return invalid("board_writers");
+      const boardWriters = body.board_writers ?? "coorganizers";
+      if (!["organizer", "coorganizers", "readers"].includes(boardWriters)) return invalid("board_writers");
       const fixed = body.starts_at !== undefined || body.ends_at !== undefined;
       const polled = body.candidates !== undefined;
       if (fixed === polled) return invalid("candidates");
@@ -837,7 +837,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
         return organizerOnly();
       if (body.board_writers !== undefined && body.board_writers !== e.boardWriters && e.organizer !== viewer)
         return organizerOnly();
-      if (body.board_writers !== undefined && !["organizer", "organizers", "readers"].includes(body.board_writers))
+      if (body.board_writers !== undefined && !["organizer", "coorganizers", "readers"].includes(body.board_writers))
         return invalid("board_writers");
       const settings = {
         title: body.title ?? e.title,
@@ -887,7 +887,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       e.cancellation = {
         reason: "organizer",
         ...(note === undefined || note === "" ? {} : { note }),
-        cancelled_at: iso(Date.now()),
+        canceled_at: iso(Date.now()),
       };
       return ok(e);
     },

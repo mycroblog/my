@@ -334,8 +334,8 @@ func confirmsByUpdate(t *testing.T, e *dueEnv) {
 func rebuildsPoll(t *testing.T, e *dueEnv) {
 	ctx := t.Context()
 	v := e.createPoll(t, alice, settings("Meetup", gathering.VisibilityPublic), 2)
-	cancelled := e.createPoll(t, alice, settings("Off", gathering.VisibilityPublic), 1)
-	if _, err := e.svc.Cancel(ctx, alice, cancelled.ID, ""); err != nil {
+	canceled := e.createPoll(t, alice, settings("Off", gathering.VisibilityPublic), 1)
+	if _, err := e.svc.Cancel(ctx, alice, canceled.ID, ""); err != nil {
 		t.Fatalf("Cancel: %v", err)
 	}
 	before, err := e.svc.Get(ctx, alice, v.ID)
@@ -349,8 +349,8 @@ func rebuildsPoll(t *testing.T, e *dueEnv) {
 	if err != nil || !reflect.DeepEqual(after.Head, before.Head) {
 		t.Errorf("head after the rebuild = %+v, %v; want %+v", after.Head, err, before.Head)
 	}
-	off, err := e.svc.Get(ctx, alice, cancelled.ID)
-	if err != nil || off.Head.State != gathering.StateCancelled || off.Scheduled() {
-		t.Errorf("cancelled poll after the rebuild = %+v, %v", off.Head, err)
+	off, err := e.svc.Get(ctx, alice, canceled.ID)
+	if err != nil || off.Head.State != gathering.StateCanceled || off.Scheduled() {
+		t.Errorf("canceled poll after the rebuild = %+v, %v", off.Head, err)
 	}
 }

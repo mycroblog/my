@@ -928,7 +928,7 @@ type ListHookSensitivityMarksRow struct {
 }
 
 // ListHookSensitivityMarks returns the statuses of the mark_sensitive decisions that enforce and that
-// no moderator cancelled, the source of the rebuild of status_sensitivity_overrides (ADR-0147 8).
+// no moderator canceled, the source of the rebuild of status_sensitivity_overrides (ADR-0147 8).
 func (q *Queries) ListHookSensitivityMarks(ctx context.Context) ([]ListHookSensitivityMarksRow, error) {
 	rows, err := q.db.Query(ctx, listHookSensitivityMarks)
 	if err != nil {

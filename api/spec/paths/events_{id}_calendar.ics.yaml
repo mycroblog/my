@@ -8,7 +8,7 @@ get:
     The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
     the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
     updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
-    zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+    zone; `SEQUENCE` is the number of revisions of the settings; a canceled event has
     `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
     user sees: a hidden place never appears in the file. A 404 for an event that the user does
     not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.

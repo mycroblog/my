@@ -42,14 +42,14 @@ func (q *Queries) GetInstanceThemeDraft(ctx context.Context) (string, error) {
 }
 
 const getInstanceThemeHead = `-- name: GetInstanceThemeHead :one
-SELECT revision_id FROM instance_theme WHERE id = 1
+SELECT publication_id FROM instance_theme WHERE id = 1
 `
 
 func (q *Queries) GetInstanceThemeHead(ctx context.Context) (string, error) {
 	row := q.db.QueryRowContext(ctx, getInstanceThemeHead)
-	var revision_id string
-	err := row.Scan(&revision_id)
-	return revision_id, err
+	var publication_id string
+	err := row.Scan(&publication_id)
+	return publication_id, err
 }
 
 const getInstanceThemePublication = `-- name: GetInstanceThemePublication :one
@@ -185,11 +185,11 @@ func (q *Queries) UpsertInstanceThemeDraft(ctx context.Context, setID string) er
 }
 
 const upsertInstanceThemeHead = `-- name: UpsertInstanceThemeHead :exec
-INSERT INTO instance_theme (id, revision_id) VALUES (1, ?)
-ON CONFLICT (id) DO UPDATE SET revision_id = excluded.revision_id
+INSERT INTO instance_theme (id, publication_id) VALUES (1, ?)
+ON CONFLICT (id) DO UPDATE SET publication_id = excluded.publication_id
 `
 
-func (q *Queries) UpsertInstanceThemeHead(ctx context.Context, revisionID string) error {
-	_, err := q.db.ExecContext(ctx, upsertInstanceThemeHead, revisionID)
+func (q *Queries) UpsertInstanceThemeHead(ctx context.Context, publicationID string) error {
+	_, err := q.db.ExecContext(ctx, upsertInstanceThemeHead, publicationID)
 	return err
 }

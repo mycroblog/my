@@ -551,7 +551,7 @@ leaves the report as it is.
 - The report details (`GET /api/v1/admin/reports/{id}`) show the event (`event`): its date, whether and how it was cancelled, and every change of its settings, oldest first, with all its places, also those that only the approved attendees saw.
   `reported_revision_id` is the version the reporter saw, so a title or an address changed after the report is still in front of you.
 - A holder of `manage_reports` can cancel an event with `POST /api/v1/admin/events/{id}/cancel` (body `{"reason": "..."}`, optional, up to 500 characters).
-  The reason is shown with the cancellation to everyone who sees the event. The users who answered going or maybe and the invited users are notified, as of the organizer's own cancellation, and the audit log records `event_cancelled`.
+  The reason is shown with the cancellation to everyone who sees the event. The users who answered going or maybe and the invited users are notified, as of the organizer's own cancellation, and the audit log records `event_canceled`.
   An event cancelled already answers `409` `event-closed`. In the web client, the report's page of an event has "Cancel the event", which asks first, with the reason.
 - A post on the board of an event is reported, reviewed, and deleted like any other post (`status_ids`, with `account_id` set to its writer). Its report is never forwarded, and its deletion never leaves the server.
 - Suspending or deleting the organizer cancels the organizer's events that have not started yet, including those still polling for a date (`gathering.cancel_organized`), and notifies their attendees. These cancellations name nobody as the one who cancelled them, and lifting the suspension does not restore them. Events that started already are not cancelled.
@@ -622,7 +622,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (denying and revoking the denial of a Client ID Metadata Document host; denying revokes the tokens of that host's clients; the target name is the host) |
 | `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (announcing the closure of the service or changing the date, withdrawing the announcement, closing, and completing the delivery of the closure; the target name is `service_closure`) |
 | `voice_room` | `voice_room_ended` (a moderator ended an open voice chat room; the target name is the room ID, since the name goes when the account that wrote it is erased; the report details show the name) |
-| `event` | `event_cancelled` (a moderator cancelled an event; the target name is the event ID, since the title goes when the account that wrote it is erased; the report details show the title) |
+| `event` | `event_canceled` (a moderator cancelled an event; the target name is the event ID, since the title goes when the account that wrote it is erased; the report details show the title) |
 | `domain_allow` | `domain_allow_added`, `domain_allow_removed` (adding a domain to the allowlist of federation and removing it; see [federating only with allowed servers](#federating-only-with-allowed-servers); the target name is the domain) |
 | `link_card_domain` | `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed` (setting a rule of the link card crawler on a domain, and removing it; see [link card domains](instance-settings.md#link-card-domains)) |
 | `login_provider` | `login_provider_created`, `login_provider_updated`, `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`, `login_provider_secret_rotated` (adding, changing, deleting, enabling and disabling an external login provider, and replacing its client secret; the target name is the provider's display name) |
@@ -661,6 +661,7 @@ You can change the periods in the instance settings, but not below the lower lim
 | Actions against accounts (reason, note, target posts, lifting) and appeals | `moderation_actions_retention_days` | 365 days | 180 days | The end of the action |
 | Audit log | `audit_log_retention_days` | 730 days | 365 days | The record |
 | Sign-up blocks | None (cannot be changed) | 30 days | n/a | The earlier of lifting and expiry |
+| The fetches of a blocklist subscription; the last one that did not fail, and the failures after it, stay | None (cannot be changed) | 30 days | n/a | The fetch |
 | Who took part in a voice chat room (participations, speakers and listeners, raised hands, invitations, removals) | `voice_participants_retention_days` | 90 days | 30 days | The end of the room |
 | The decisions of the [decision hooks](decision-hooks.md#the-decisions) | `hook_decisions_retention_days` | 90 days | 30 days | The decision |
 | The answers, approvals, invitations, votes on the candidate dates, and board posts of an event | `event_records_retention_days` | 90 days | 30 days | The earlier of the end of the event (for an event whose date was never fixed, the end of its last candidate date) and its cancellation |

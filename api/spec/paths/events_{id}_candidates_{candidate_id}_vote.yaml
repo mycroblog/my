@@ -10,7 +10,7 @@ put:
     organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
     name to everyone who sees the event and keeps the event visible to the user. A 409
     `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
-    `/api/v1/problems/event-closed` for a cancelled event.
+    `/api/v1/problems/event-closed` for a canceled event.
   tags: [events]
   security:
     - oauth2: ["write:events"]

@@ -101,7 +101,7 @@ INSERT INTO draft_schedule_outcomes (schedule_id, outcome, failure_reason, occur
 VALUES (sqlc.arg(schedule_id), sqlc.arg(outcome), CAST(sqlc.narg(failure_reason) AS TEXT), sqlc.arg(occurred_at));
 
 -- The newest schedule of a draft that has an outcome, with it: what the author's screens show of
--- a schedule that failed or was cancelled.
+-- a schedule that failed or was canceled.
 -- name: GetLatestDraftScheduleOutcome :one
 SELECT s.id, s.draft_id, s.publish_at, s.created_at, o.outcome, o.failure_reason, o.occurred_at
 FROM draft_schedules s JOIN draft_schedule_outcomes o ON o.schedule_id = s.id

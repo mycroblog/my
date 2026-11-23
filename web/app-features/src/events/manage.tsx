@@ -27,7 +27,7 @@ import type { T } from "./parts";
 
 /** Whether the reader may manage `event` from its menu: they organize it, and it was not cancelled. */
 const managesEvent = (event: ServerEvent) =>
-  (event.viewer.organizer || event.viewer.coorganizer) && event.state !== "cancelled";
+  (event.viewer.organizer || event.viewer.coorganizer) && event.state !== "canceled";
 
 /**
  * The event's menu in its page's head, for its organizers: Change the event, Invitations, and for the organizer

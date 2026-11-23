@@ -20,12 +20,12 @@ func TestEventBoardPostsGoWithTheRecords(t *testing.T) {
 	e := newEventBoardEnv(t, platform.AppOptions{}, "alice", "gina")
 	ctx := t.Context()
 	r := e.records()
-	cancelled, ended, quiet, polling, posts, ordinary := r.cancelled, r.ended, r.quiet, r.polling, r.posts, r.ordinary
+	canceled, ended, quiet, polling, posts, ordinary := r.canceled, r.ended, r.quiet, r.polling, r.posts, r.ordinary
 	e.at(eventBoardEndsIn + 89*24*time.Hour)
 	if _, err := e.app.BoardPurge.Run(ctx); err != nil {
 		t.Fatalf("BoardPurge.Run = %v", err)
 	}
-	for _, id := range []string{cancelled, ended, quiet, polling} {
+	for _, id := range []string{canceled, ended, quiet, polling} {
 		if got := e.boardIDs("alice", id); !slices.Equal(got, posts[id]) {
 			t.Errorf("within the retention, the board of %s = %v, want %v", id, got, posts[id])
 		}
@@ -35,7 +35,7 @@ func TestEventBoardPostsGoWithTheRecords(t *testing.T) {
 		t.Fatalf("BoardPurge.Run = %v", err)
 	}
 	e.drain()
-	for _, id := range []string{cancelled, ended, quiet} {
+	for _, id := range []string{canceled, ended, quiet} {
 		if got := e.boardIDs("alice", id); len(got) != 0 {
 			t.Errorf("after the retention, the board of %s = %v, want none", id, got)
 		}

@@ -118,9 +118,9 @@ func TestEventCalendarPlacesAndText(t *testing.T) {
 		{Kind: gathering.PlaceURL, URL: "https://meet.example/abc"},
 	}
 	c.v.HiddenPlaces = nil
-	cancelledAt := eventStart.Add(-time.Hour)
-	c.v.Cancellation = &appgathering.Cancellation{GatheringID: eventID, Reason: gathering.CancelReason("organizer"), CancelledAt: cancelledAt}
-	c.v.Head.State = gathering.StateCancelled
+	canceledAt := eventStart.Add(-time.Hour)
+	c.v.Cancellation = &appgathering.Cancellation{GatheringID: eventID, Reason: gathering.CancelReason("organizer"), CanceledAt: canceledAt}
+	c.v.Head.State = gathering.StateCanceled
 	c.v.Revisions = 3
 	e := newEventsEnv(t, c)
 

@@ -576,7 +576,7 @@ func (p *projector) interactionRequested(ctx context.Context, tx uow.Tx, ev appc
 	t := requestTypes[r.Kind]
 	return p.notify(ctx, tx, notification.Notification{
 		RecipientAccountID: target.AuthorAccountID, SourceAccountID: r.InteractingAccountID, Type: t, StatusID: target.ID,
-		DedupeKey: notification.ApprovalKey(t, r.ID), CreatedAt: r.CreatedAt,
+		InteractionRequestID: r.ID, DedupeKey: notification.ApprovalKey(t, r.ID), CreatedAt: r.CreatedAt,
 	})
 }
 
@@ -608,7 +608,7 @@ func (p *projector) interactionAnswered(ctx context.Context, tx uow.Tx, ev appco
 	}
 	return p.notify(ctx, tx, notification.Notification{
 		RecipientAccountID: r.InteractingAccountID, SourceAccountID: target.AuthorAccountID, Type: t, StatusID: target.ID,
-		DedupeKey: notification.ApprovalKey(t, r.ID), CreatedAt: ev.Event.OccurredAt,
+		InteractionRequestID: r.ID, DedupeKey: notification.ApprovalKey(t, r.ID), CreatedAt: ev.Event.OccurredAt,
 	})
 }
 

@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: MIT
 description: The cancellation of an event as the moderators see it.
 type: object
-required: [reason, cancelled_at]
+required: [reason, canceled_at]
 properties:
   reason:
     $ref: ./EventCancelReason.yaml
-  cancelled_by_account_id:
-    description: Who cancelled the event; omitted for an automatic cancellation.
+  canceled_by_account_id:
+    description: Who canceled the event; omitted for an automatic cancellation.
     allOf:
       - $ref: ./Id.yaml
   note:
     description: The reason given for the cancellation; omitted for none.
     type: string
-  cancelled_at:
+  canceled_at:
     type: string
     format: date-time

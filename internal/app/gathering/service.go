@@ -27,7 +27,7 @@ var (
 	// ErrOrganizerOnly reports an operation of the organizer by someone else: naming and removing
 	// the co-organizers, changing the visibility, and cancelling (ADR-0161 §4).
 	ErrOrganizerOnly = errors.New("gathering: only the organizer may do this")
-	// ErrClosed reports a change of an event that was cancelled, or an answer after it started
+	// ErrClosed reports a change of an event that was canceled, or an answer after it started
 	// (ADR-0161 §8).
 	ErrClosed = errors.New("gathering: the event takes no more changes")
 	// ErrFull reports an answer of going to an event whose attendees who answer going reached its
@@ -323,7 +323,7 @@ func (s *Service) Get(ctx context.Context, accountID, id string) (View, error) {
 }
 
 // organizing returns the event id as accountID sees it, when the account organizes it or
-// co-organizes it (ErrNotOrganizer otherwise) and it was not cancelled (ErrClosed).
+// co-organizes it (ErrNotOrganizer otherwise) and it was not canceled (ErrClosed).
 func (s *Service) organizing(ctx context.Context, accountID, id string) (View, error) {
 	v, err := s.Get(ctx, accountID, id)
 	if err != nil {

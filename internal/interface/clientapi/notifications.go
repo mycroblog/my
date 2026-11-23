@@ -383,6 +383,10 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 				}
 			}
 		}
+		if n.InteractionRequestID != "" {
+			id := n.InteractionRequestID
+			item.InteractionRequestId = &id
+		}
 		out = append(out, item)
 	}
 	return out, nil

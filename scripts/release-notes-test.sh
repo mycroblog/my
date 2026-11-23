@@ -326,7 +326,8 @@ expect_has "upgrading" "$upgrading" \
   '`0001_new`: Carries the old rows over.' '`0002_contracted`: Done before. (only recorded' \
   '`counts`' '`feeds`' 'latest patch release of the previous one (`v0.1.1`)' \
   '`0000_old`: this release removes data that it carried over, so upgrade through `v0.1.1` first' \
-  '`host`: a new required setting' 'Fill by hand: roughly how long' 'my schema apply -dry-run'
+  '`host`: a new required setting' 'Fill by hand: roughly how long' 'my schema apply -dry-run' \
+  'Each new value of a `CHECK` makes `my schema apply` rewrite its table'
 expect_not "upgrading: an optional setting needs nothing" "$upgrading" "new_optional"
 [ "$(grep -c '`counts`' <<< "$upgrading")" = 1 ] || fail "a projection is listed once: $upgrading"
 

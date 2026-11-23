@@ -203,9 +203,9 @@ func TestEventBoardPostNotifiesItsReaders(t *testing.T) {
 	}
 }
 
-// TestEventBoardPostOfACancelledEventNotifiesNobody checks that a post on a board whose event is
-// cancelled before the job of its notifications runs notifies none of its readers (ADR-0161 §11).
-func TestEventBoardPostOfACancelledEventNotifiesNobody(t *testing.T) {
+// TestEventBoardPostOfACanceledEventNotifiesNobody checks that a post on a board whose event is
+// canceled before the job of its notifications runs notifies none of its readers (ADR-0161 §11).
+func TestEventBoardPostOfACanceledEventNotifiesNobody(t *testing.T) {
 	t.Parallel()
 	e := newEventBoardEnv(t, platform.AppOptions{}, "alice", "gina", "mona")
 	ev := e.createEvent("readers", nil)

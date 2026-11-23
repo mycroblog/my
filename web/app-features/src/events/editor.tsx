@@ -163,7 +163,7 @@ function newDraft(timeZone: string): Draft {
     onlineUrl: "",
     disclosure: "approved",
     visibility: "public",
-    boardWriters: "organizers",
+    boardWriters: "coorganizers",
     capacity: 0,
   };
 }
@@ -1134,7 +1134,7 @@ export function EventEditScreen({ id, onBack }: { id: string; onBack: () => void
     );
   if (!(event.viewer.organizer || event.viewer.coorganizer))
     return notice(<FeedNotice lead>{t("events.organizers_only", { organizer: nameOf(event.organizer) })}</FeedNotice>);
-  if (event.state === "cancelled") return notice(<FeedNotice lead>{t("events.edit.cancelled")}</FeedNotice>);
+  if (event.state === "canceled") return notice(<FeedNotice lead>{t("events.edit.canceled")}</FeedNotice>);
   return (
     <ScreenStack>
       {head}

@@ -190,7 +190,7 @@ func (h *QuoteHandlers) recordQuoteRequest(ctx context.Context, tx uow.Tx, st ap
 	actor := federation.IRI(appaccount.ActorURI(h.d.Recorder.Host, st.AuthorAccountID))
 	act, err := h.rec.insert(ctx, tx, federation.OutboundActivity{
 		ActivityURI: federation.IRI(st.URI + "/" + quoteRequestSegment), Type: federation.ActivityQuoteRequest,
-		ActorAccountID: st.AuthorAccountID, ObjectKind: federation.OutboundQuote, ObjectID: st.ID, CreatedAt: h.d.Clock.Now(),
+		ActorAccountID: st.AuthorAccountID, ObjectKind: federation.OutboundQuoteApproval, ObjectID: st.ID, CreatedAt: h.d.Clock.Now(),
 	})
 	if err != nil {
 		return err
@@ -210,7 +210,7 @@ func (h *QuoteHandlers) recordRevocation(ctx context.Context, tx uow.Tx, ev appc
 	actor := federation.IRI(appaccount.ActorURI(h.d.Recorder.Host, ev.Quoted.AuthorAccountID))
 	act, err := h.rec.insert(ctx, tx, federation.OutboundActivity{
 		Type: federation.ActivityDelete, ActorAccountID: ev.Quoted.AuthorAccountID,
-		ObjectKind: federation.OutboundQuote, ObjectID: ev.Authorization.ID, CreatedAt: h.d.Clock.Now(),
+		ObjectKind: federation.OutboundQuoteApproval, ObjectID: ev.Authorization.ID, CreatedAt: h.d.Clock.Now(),
 	})
 	if err != nil {
 		return err
@@ -271,7 +271,7 @@ func (f *FanOut) quoteSubject(ctx context.Context, s subject, p fanOutPayload) (
 		return subject{}, fmt.Errorf("%w: %s of quote %s without an inbox", federation.ErrInvalidOutbound, s.act.Type, s.act.ObjectID)
 	}
 	s.inbox, s.followersToo = federation.IRI(p.Inbox), p.Followers
-	if s.followersToo || s.act.ObjectKind == federation.OutboundQuote && s.act.Type == federation.ActivityDelete {
+	if s.followersToo || s.act.ObjectKind == federation.OutboundQuoteApproval && s.act.Type == federation.ActivityDelete {
 		var err error
 		if s.restrictions, err = f.d.Statuses.AuthorRestrictions(ctx, s.act.ActorAccountID); err != nil {
 			return subject{}, err
@@ -377,7 +377,7 @@ func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) err
 			return err
 		}
 		out, err := h.rec.insert(ctx, tx, federation.OutboundActivity{
-			Type: typ, ActorAccountID: st.AuthorAccountID, ObjectKind: federation.OutboundQuote, ObjectID: st.ID, CreatedAt: h.d.Clock.Now(),
+			Type: typ, ActorAccountID: st.AuthorAccountID, ObjectKind: federation.OutboundQuoteApproval, ObjectID: st.ID, CreatedAt: h.d.Clock.Now(),
 		})
 		if err != nil {
 			return err

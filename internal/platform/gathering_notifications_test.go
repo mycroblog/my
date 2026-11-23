@@ -217,10 +217,10 @@ func TestEventNotificationsExclusions(t *testing.T) {
 	e.at(t, 3*time.Hour+time.Minute)
 
 	conf := e.event.Confirmation.ID
-	cancelled := eventNotice{domainnotification.TypeEventCancelled, domainnotification.EventCancelledKey(e.event.ID)}
-	wantNotices(t, "bob", e.notices(t, "bob"), eventNotice{domainnotification.TypeEventReminder, domainnotification.EventReminderKey(conf, 60)}, cancelled)
+	canceled := eventNotice{domainnotification.TypeEventCanceled, domainnotification.EventCanceledKey(e.event.ID)}
+	wantNotices(t, "bob", e.notices(t, "bob"), eventNotice{domainnotification.TypeEventReminder, domainnotification.EventReminderKey(conf, 60)}, canceled)
 	wantNotices(t, "carol", e.notices(t, "carol"))
 	wantNotices(t, "dave", e.notices(t, "dave"))
-	wantNotices(t, "erin", e.notices(t, "erin"), eventNotice{domainnotification.TypeEventInvited, domainnotification.EventInvitedKey(inv.ID)}, cancelled)
+	wantNotices(t, "erin", e.notices(t, "erin"), eventNotice{domainnotification.TypeEventInvited, domainnotification.EventInvitedKey(inv.ID)}, canceled)
 	wantNotices(t, "alice", e.notices(t, "alice"))
 }

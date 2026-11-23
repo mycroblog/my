@@ -52,7 +52,7 @@ const events: readonly EventShown[] = [
     hidden_places: ["physical"],
     organizer: account("sora", "Sora"),
   }),
-  event({ id: "3", title: "Morning walk", state: "cancelled", going_count: 4 }),
+  event({ id: "3", title: "Morning walk", state: "canceled", going_count: 4 }),
   event({
     id: "4",
     title: "Sketch night",

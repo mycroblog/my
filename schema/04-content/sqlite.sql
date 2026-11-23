@@ -468,9 +468,10 @@ CREATE TABLE status_auto_delete_limit_notices (
 ) STRICT;
 CREATE INDEX status_auto_delete_limit_notices_account_id_id ON status_auto_delete_limit_notices (account_id, id DESC);
 
--- Projection of status_auto_delete_limit_notices: the notice in effect of each account that the
--- maximum binds now; an account that it does not bind has no row. The hourly job rebuilds it from
--- the latest notice and the current policy, permissions, and maximum.
+-- Current value: the notice in effect (status_auto_delete_limit_notices) of each account that the
+-- maximum binds now; an account that it does not bind has no row. The hourly job writes it from
+-- the latest notice and the current policy, permissions, and maximum; no row records when a
+-- notice stopped binding, so it cannot be rebuilt from the notices.
 CREATE TABLE status_auto_delete_limits (
   account_id TEXT NOT NULL PRIMARY KEY,
   notice_id TEXT NOT NULL,
@@ -575,7 +576,7 @@ CREATE UNIQUE INDEX link_card_media_remote_url ON link_card_media (remote_url);
 
 -- Projection: the URL whose card each status shows (ADR-0062 §1), chosen from the current
 -- revision of a status that is not deleted. The status shows no card while link_cards has no
--- row of the URL.
+-- row of the URL. my projection rebuild status_link_cards chooses again.
 CREATE TABLE status_link_cards (
   status_id TEXT NOT NULL PRIMARY KEY,
   url TEXT NOT NULL
@@ -994,7 +995,7 @@ CREATE TABLE draft_article_images (
 CREATE INDEX draft_article_images_media_id ON draft_article_images (media_id);
 
 -- Resource: one schedule of a draft, to publish it at publish_at. A new time is a new schedule
--- after the outcome cancelled of the one before.
+-- after the outcome canceled of the one before.
 CREATE TABLE draft_schedules (
   id TEXT NOT NULL PRIMARY KEY,
   draft_id TEXT NOT NULL,
@@ -1007,7 +1008,7 @@ CREATE INDEX draft_schedules_draft_id_id ON draft_schedules (draft_id, id);
 -- publish, for the author's screens and notification.
 CREATE TABLE draft_schedule_outcomes (
   schedule_id TEXT NOT NULL PRIMARY KEY,
-  outcome TEXT NOT NULL CHECK (outcome IN ('published', 'failed', 'cancelled')),
+  outcome TEXT NOT NULL CHECK (outcome IN ('published', 'failed', 'canceled')),
   failure_reason TEXT CHECK (failure_reason IN ('restricted', 'reply_unavailable', 'quote_unavailable', 'media_unavailable', 'invalid', 'rejected')),
   occurred_at INTEGER NOT NULL,
   CONSTRAINT draft_schedule_outcomes_failed_check CHECK ((outcome = 'failed') = (failure_reason IS NOT NULL))
