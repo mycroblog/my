@@ -199,3 +199,54 @@ func Unreachable(log string) map[string]int {
 	}
 	return nil
 }
+
+// containerErrors match the lines that say that Docker or a test container would not run: the daemon refused, or
+// testcontainers could not create or start a container or its reaper.
+var containerErrors = regexp.MustCompile(strings.Join([]string{
+	`Error response from daemon`,
+	`Cannot connect to the Docker daemon`,
+	`(?:create|start) container: `,
+	`wait for reaper`,
+	`toomanyrequests: `,
+}, "|"))
+
+// failedTest matches the line go test prints for a failed top-level test.
+var failedTest = regexp.MustCompile(`^--- FAIL: `)
+
+// ContainerFailure returns the first line of a GitHub Actions job's log that says a container would not run,
+// when the log shows Go tests that failed and each of them failed on such a line: what the test printed under
+// its `--- FAIL` line names a container error. It returns "" otherwise, also for a log with no failed Go test.
+func ContainerFailure(log string) string {
+	first := ""
+	tests, ok := 0, true // the failed tests, and whether each so far named a container error
+	inTest, named := false, false
+	end := func() {
+		if inTest {
+			ok = ok && named
+		}
+		inTest, named = false, false
+	}
+	for _, l := range strings.Split(log, "\n") {
+		l = plain(l)
+		switch {
+		case failedTest.MatchString(l):
+			end()
+			inTest = true
+			tests++
+		case inTest && (strings.HasPrefix(l, " ") || strings.HasPrefix(l, "\t")):
+			if m := containerErrors.FindString(l); m != "" {
+				named = true
+				if first == "" {
+					first = strings.TrimSpace(l)
+				}
+			}
+		default:
+			end()
+		}
+	}
+	end()
+	if tests == 0 || !ok {
+		return ""
+	}
+	return first
+}

@@ -154,6 +154,26 @@ func TestUnreachable(t *testing.T) {
 	}
 }
 
+func TestContainerFailure(t *testing.T) {
+	reaper := fixture(t, "job-container-reaper.txt")
+	daemon := "--- FAIL: TestA (1.00s)\n    a_test.go:9: run: Error response from daemon: no space left on device\nFAIL\n"
+	cases := []struct {
+		name, log string
+		want      string
+	}{
+		{"the reaper did not start", reaper, `pubsub_test.go:73: start container gcr.io/google.com/cloudsdktool/google-cloud-cli:587.0.0-emulators: run pubsub: generic container: create container: reaper: from container "34a8d25b": wait for reaper 34a8d25b: unexpected container status "removing"`},
+		{"the daemon refused", daemon, "a_test.go:9: run: Error response from daemon: no space left on device"},
+		{"another test failed on an assertion", daemon + "--- FAIL: TestB (0.00s)\n    b_test.go:4: got 1, want 2\nFAIL\n", ""},
+		{"no failed Go test", "##[group]Run a\nError response from daemon: boom\n##[error]Process completed with exit code 1.\n", ""},
+		{"a failed test", "--- FAIL: TestX (0.00s)\n    x_test.go:3: got 1, want 2\n", ""},
+	}
+	for _, c := range cases {
+		if got := ContainerFailure(c.log); got != c.want {
+			t.Errorf("%s: got %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
 func TestFailuresCap(t *testing.T) {
 	log := strings.Repeat("FAIL\tpkg/x\n--- FAIL: TestY\n", 100)
 	if got := Failures(log, 10); len(got) > 12 {
