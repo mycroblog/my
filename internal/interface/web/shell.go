@@ -69,12 +69,13 @@ var shellTemplate = template.Must(template.New("shell").Parse(shellSource))
 
 // shellSource is the source of shellTemplate. Its hash is part of the ETag of previews. Its viewport
 // shrinks with the software keyboard (interactive-widget=resizes-content), so that the composer's row
-// stays right above it in Chrome on Android.
+// stays right above it in Chrome on Android, and does not zoom (maximum-scale=1, user-scalable=no), as an
+// app's screen does: Safari on iOS then no longer zooms in on a focused field either.
 const shellSource = `<!doctype html>
 <html lang="{{.Lang}}" dir="{{.Dir}}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>{{.Title}}</title>
 {{- with .Crawlers.Robots}}
 <meta name="robots" content="{{.}}">

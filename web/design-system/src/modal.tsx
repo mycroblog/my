@@ -59,9 +59,12 @@ const modalBackdrop = {
   dim: "fixed inset-0 bg-scrim",
   always:
     "fixed inset-0 bg-scrim backdrop-blur-[var(--dialog-blur)] [@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none",
-  // Under `tablet` the modal is a screen of its own, with nothing to dim behind it.
-  tablet:
-    "fixed inset-0 bg-scrim backdrop-blur-[var(--dialog-blur)] [@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none max-tablet:hidden",
+  // Under `tablet` the modal is a screen of its own: under it the screen's surface, with nothing of the page showing
+  // around it (behind the translucent bar an installed app's software keyboard has over the page on iOS).
+  tablet: [
+    "fixed inset-0 bg-scrim backdrop-blur-[var(--dialog-blur)] [@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none",
+    "max-tablet:bg-surface max-tablet:backdrop-blur-none",
+  ].join(" "),
 };
 
 /**
@@ -158,8 +161,8 @@ export type ModalLayerProps = {
   /** The caller handles Escape itself (the composer, which tells leaving on purpose from by accident). */
   ownEscape?: boolean | undefined;
   /**
-   * The backdrop at every width, or from `tablet`, under which the panel is a screen of its own; or `dim`, at every
-   * width with no blur.
+   * The backdrop at every width, or from `tablet`, under which the panel is a screen of its own on the screen's
+   * surface; or `dim`, at every width with no blur.
    */
   backdrop?: "always" | "tablet" | "dim" | undefined;
   /** Where the panel stands over the viewport. */

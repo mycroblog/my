@@ -12,11 +12,11 @@
 // Its scroll (scroll.ts, ADR-0013 §4–§7): away from the top, entries inserted above leave what the reader sees where
 // it was; at the top they show. It says whether its top is in view (a mark at its top, seen by an
 // IntersectionObserver) and whether the reader is in it (focus or a selection inside), and floats the new entries'
-// button (NewItems) over its top, which brings the reader to the top and the focus to the screen's heading. When to
-// insert is its owner's to decide. Each entry carries its key as `data-scroll-key`, by which a screen restores its
-// position, and by which the feed tells which entry went out above the view (onPassed) or was clicked (onEntryClick).
-// Where the app lets feeds be pulled (a phone's, `FeedPulls`), one with `onPull` is read anew by a pull from its top
-// (pull.tsx).
+// button (NewItems) over its top, which brings the reader to the top and the focus to the screen's heading; so does
+// `showNewest`, as a press of that button, when the reader chooses the place already shown. When to insert is its
+// owner's to decide. Each entry carries its key as `data-scroll-key`, by which a screen restores its position, and by
+// which the feed tells which entry went out above the view (onPassed) or was clicked (onEntryClick). Where the app lets
+// feeds be pulled (a phone's, `FeedPulls`), one with `onPull` is read anew by a pull from its top (pull.tsx).
 
 import {
   createContext,
@@ -192,6 +192,23 @@ export type FeedProps = {
 // What says that the reader scrolls by hand.
 const takeOverEvents = ["wheel", "touchstart", "keydown"] as const;
 
+// What each feed on the page does to bring the reader to its newest, as a press of its new entries' button: it tells
+// whether it did, which a feed inside another leaves to the outer one.
+const toNewest = new Set<() => boolean>();
+
+/**
+ * Brings the shown screen to its newest, as the reader who chooses the place already shown asks: each feed on the
+ * page not inside another does what a press of its new entries' button does (what it holds goes in, the view goes to
+ * the top, the focus to the screen's heading); a screen without one goes to its top, the focus to its heading.
+ */
+export function showNewest(doc: Document): void {
+  let shown = false;
+  for (const show of toNewest) shown = show() || shown;
+  if (shown) return;
+  scrollToTop(doc.scrollingElement ?? doc.documentElement);
+  focusFrameHeading(doc);
+}
+
 /** Whether the document's selection, when there is one, starts or ends inside `el`. */
 function selectsIn(el: Element): boolean {
   const selection = el.ownerDocument.getSelection();
@@ -333,6 +350,19 @@ export function Feed({
     scrollToTop(a?.scroller ?? scrollerOf(el));
     focusFrameHeading(el.ownerDocument);
   };
+  const showOwnNewest = useEffectEvent(() => {
+    const el = list.current;
+    if (!el || el.parentElement?.closest('[role="feed"]')) return false;
+    goToTop();
+    return true;
+  });
+  useEffect(() => {
+    const show = () => showOwnNewest();
+    toNewest.add(show);
+    return () => {
+      toNewest.delete(show);
+    };
+  }, []);
   const asks = onNearEnd !== undefined;
   const nearEnd = useEffectEvent(() => {
     onNearEnd?.();

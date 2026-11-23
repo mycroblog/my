@@ -13,8 +13,8 @@ import { SignedOut } from "../shell/signed-out";
 export const Route = createFileRoute("/bookmarks")({
   loader: ({ context }) => screenLoad(context, loadBookmarks),
   component: BookmarksScreen,
-  // Back on the bookmarks, the reader is where they left them.
-  staticData: { scroll: "restore" },
+  // A place of the navigation opens at the newest; going back to the bookmarks, the reader is where they left it.
+  staticData: { scroll: "back" },
 });
 
 function BookmarksScreen() {

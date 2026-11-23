@@ -24,7 +24,15 @@ import { useEffect, useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import { EditorFailed, PostText, retryEditors } from "./editors";
 import { ComposerEmoji } from "./emoji";
-import { descriptionRequired, emptyDraft, maxAttachments, nearChars, usedChars, type Draft } from "./model";
+import {
+  descriptionRequired,
+  emptyDraft,
+  maxAttachments,
+  nearChars,
+  pastedMedia,
+  usedChars,
+  type Draft,
+} from "./model";
 import { useSuggestions } from "./suggest";
 import { useComposer } from "./use-composer";
 
@@ -88,6 +96,14 @@ function Box({ to, people, names, pickerSheet = false, onPosted }: InPlaceReplyP
   const [editorsTry, setEditorsTry] = useState(0);
   const suggest = useSuggestions({ field: textRef, text: draft.text, triggers: ["@", "#", ":"], locale });
   const busy = c.phase.kind === "posting";
+  // Ctrl+Enter or ⌘+Enter in the text sends it, while Send can be pressed; files pasted in it attach.
+  const send = () => {
+    if (!busy && !editorsFailed) c.submit();
+  };
+  const attach = (files: File[]) => {
+    const media = pastedMedia(files);
+    if (!busy && media.length > 0 && draft.attachments.length < maxAttachments) c.addFiles(media);
+  };
   const left = c.settings.maxChars - usedChars(draft);
   const over = problems.over > 0;
   const alert =
@@ -167,6 +183,8 @@ function Box({ to, people, names, pickerSheet = false, onPosted }: InPlaceReplyP
             handle={textRef}
             suggest={suggest.suggest}
             {...suggest.caret}
+            onSubmit={send}
+            onFiles={attach}
             onChange={(value) => {
               change({ text: value });
             }}

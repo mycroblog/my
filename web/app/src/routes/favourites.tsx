@@ -13,8 +13,8 @@ import { SignedOut } from "../shell/signed-out";
 export const Route = createFileRoute("/favourites")({
   loader: ({ context }) => screenLoad(context, loadFavourites),
   component: FavouritesScreen,
-  // Back on the favourites, the reader is where they left them.
-  staticData: { scroll: "restore" },
+  // A place of the navigation opens at the newest; going back to the favourites, the reader is where they left it.
+  staticData: { scroll: "back" },
 });
 
 function FavouritesScreen() {

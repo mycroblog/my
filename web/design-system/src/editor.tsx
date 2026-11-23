@@ -5,7 +5,7 @@
 // lines joined by "\n", and a node that stands for text (a custom emoji's image) read as the text it stands for. The
 // caller brings its nodes and its plugins (what it marks, what it shows as an image); this holds the mechanism and
 // the look: a text box with its name, its description and its states, each paragraph in its own direction, undo,
-// paste as plain text, the input method's composition left to the browser, and the characters over a limit marked
+// paste as plain text (files pasted, and Ctrl+Enter or ⌘+Enter, the caller's), the input method's composition left to the browser, and the characters over a limit marked
 // with the CSS Custom Highlight API, which adds no node, so that it never splits what the caller marks; and the
 // suggestions for the word at the caret (ADR-0092 §3): the caret and the composition told to the caller, the list
 // placed under the caret's line, the keys that move in it, and the ARIA of a text box that completes. It is a chunk
@@ -13,7 +13,6 @@
 
 import { HistoryExtension } from "@lexical/history";
 import { PlainTextExtension } from "@lexical/plain-text";
-import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
@@ -43,6 +42,7 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
   LineBreakNode,
+  PASTE_COMMAND,
   SKIP_DOM_SELECTION_TAG,
   type EditorThemeClasses,
   type Klass,
@@ -225,23 +225,29 @@ function ValuePlugin({ value, onChange }: { value: string; onChange: (value: str
 }
 
 /**
- * The focus of an editor drawn late, as its chunk comes: taken, as `AutoFocusPlugin` takes it, only while it is on the
- * page or on what holds the editor (the dialog that took it while the chunk came). A control the reader has gone to
- * meanwhile (a menu's trigger, which its menu gave the focus back to) keeps it.
+ * The focus an editor takes once drawn, its caret at the end of what it holds (a reply's mentions, a draft), so that
+ * what is typed follows it: the browser puts the caret at the start of a text box it focuses, and Lexical reads it from
+ * there, so the caret is set again once the text box has the focus. Drawn late (`late`), as its chunk comes, it takes
+ * the focus only while it is on the page or on what holds the editor (the dialog that took it while the chunk came); a
+ * control the reader has gone to meanwhile (a menu's trigger, which its menu gave the focus back to) keeps it.
  */
-function LateFocusPlugin() {
+function FocusPlugin({ late }: { late: boolean }) {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     const root = editor.getRootElement();
     const active = document.activeElement;
-    if (root === null || !(active === null || active === document.body || active.contains(root))) return;
+    if (root === null) return;
+    if (late && !(active === null || active === document.body || active.contains(root))) return;
     editor.focus(
       () => {
         if (!root.contains(document.activeElement)) root.focus({ preventScroll: true });
+        editor.update(() => {
+          $getRoot().selectEnd();
+        });
       },
       { defaultSelection: "rootEnd" },
     );
-  }, [editor]);
+  }, [editor, late]);
   return null;
 }
 
@@ -465,6 +471,56 @@ function SuggestPopup({ suggest, line }: { suggest: FieldSuggest; line: boolean 
       {suggest.list}
     </div>
   );
+}
+
+/**
+ * Ctrl+Enter, or ⌘+Enter, sends what is written (`onSubmit`) and writes no line break; not while an input method
+ * composes, where Enter commits the composition.
+ */
+function SubmitPlugin({ onSubmit }: { onSubmit: () => void }) {
+  const [editor] = useLexicalComposerContext();
+  const submit = useEffectEvent(onSubmit);
+  useEffect(
+    () =>
+      editor.registerCommand(
+        KEY_ENTER_COMMAND,
+        (event) => {
+          if (event === null || !(event.ctrlKey || event.metaKey) || event.isComposing || editor.isComposing())
+            return false;
+          event.preventDefault();
+          submit();
+          return true;
+        },
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+    [editor],
+  );
+  return null;
+}
+
+/**
+ * A paste of files (an image copied or a screenshot) goes to `onFiles` and writes nothing. A paste that has text too
+ * (a document's selection, which some apps also put as a picture) writes its text, as any paste does.
+ */
+function FilesPlugin({ onFiles }: { onFiles: (files: File[]) => void }) {
+  const [editor] = useLexicalComposerContext();
+  const files = useEffectEvent(onFiles);
+  useEffect(
+    () =>
+      editor.registerCommand(
+        PASTE_COMMAND,
+        (event) => {
+          const data = "clipboardData" in event ? event.clipboardData : null;
+          if (data === null || data.files.length === 0 || data.getData("text/plain") !== "") return false;
+          event.preventDefault();
+          files([...data.files]);
+          return true;
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
+    [editor],
+  );
+  return null;
 }
 
 /** One line: Enter writes nothing, and a line break pasted in is taken out, as a text input does. */
@@ -696,6 +752,10 @@ export type PlainTextEditorProps = {
   roomy?: boolean | undefined;
   /** A button sits at the end of its first line, which the text keeps clear of. */
   ended?: boolean | undefined;
+  /** Ctrl+Enter or ⌘+Enter: what is written is sent. */
+  onSubmit?: (() => void) | undefined;
+  /** Files pasted in (an image copied): they are the caller's, and write nothing. */
+  onFiles?: ((files: File[]) => void) | undefined;
   /** The caller's nodes (what it marks, what it shows as an image). */
   nodes?: readonly Klass<LexicalNode>[] | undefined;
   handle?: Ref<EditorHandle> | undefined;
@@ -725,6 +785,8 @@ export function PlainTextEditor({
   look,
   roomy = false,
   ended = false,
+  onSubmit,
+  onFiles,
   nodes = [],
   handle,
   completes = false,
@@ -783,8 +845,10 @@ export function PlainTextEditor({
       <ValuePlugin value={value} onChange={onChange} />
       <EditablePlugin editable={!readOnly} />
       <OverPlugin over={over} />
+      {onSubmit !== undefined && <SubmitPlugin onSubmit={onSubmit} />}
+      {onFiles !== undefined && <FilesPlugin onFiles={onFiles} />}
       {!multiline && <SingleLinePlugin />}
-      {autoFocus && (late ? <LateFocusPlugin /> : <AutoFocusPlugin />)}
+      {autoFocus && <FocusPlugin late={late} />}
       {handle !== undefined && <HandlePlugin handle={handle} />}
       {children}
     </LexicalExtensionComposer>

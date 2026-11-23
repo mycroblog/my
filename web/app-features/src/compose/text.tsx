@@ -305,6 +305,10 @@ export type PostTextProps = {
   handle: Ref<EditorHandle>;
   /** The suggestions for the word at its caret, while they are open (suggest.tsx). */
   suggest: FieldSuggest | undefined;
+  /** Ctrl+Enter or ⌘+Enter: what is written is sent, as its form's action does. */
+  onSubmit?: (() => void) | undefined;
+  /** Files pasted in (an image copied), to attach. */
+  onFiles?: ((files: File[]) => void) | undefined;
 } & FieldCaret;
 
 /**
@@ -335,6 +339,8 @@ export type WarningTextProps = {
   handle: Ref<EditorHandle>;
   /** The suggestions for the emoji at its caret, while they are open (suggest.tsx). */
   suggest: FieldSuggest | undefined;
+  /** Ctrl+Enter or ⌘+Enter: what is written is sent, as its form's action does. */
+  onSubmit?: (() => void) | undefined;
 } & FieldCaret;
 
 /** The content warning: one line, its custom emoji shown as their images; it completes emoji. */
