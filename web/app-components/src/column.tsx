@@ -6,7 +6,8 @@
 // the posts that more load or failed to (with a retry); near the end it asks for more. It fetches nothing: it takes a timeline in the shape of @my/app-data's (`useHomeTimeline()`), which a
 // feature passes on as it is, and each post's action goes to `onAction`. `moveFocus` moves the focus between the posts
 // of the column it is in, which the column's shortcuts of the next and the previous post use. The feed keeps the
-// reader's place as posts go in above; when they go in, and what the new posts' button says, is the feature's.
+// reader's place as posts go in above; when they go in, and what the new posts' button says, is the feature's. Pulled
+// down at its top on a phone, it reads its newest again (`refresh`), once its first posts are there.
 // `ListColumn` is the same column of any list (the notifications, a profile's posts), each item drawn by its feature.
 
 import {
@@ -41,6 +42,11 @@ export type ColumnTimeline = {
   readonly fetchNextPage: () => void;
   /** Fetches the timeline again from its first page, after the first page failed. */
   readonly refetch: () => void;
+  /**
+   * Reads the timeline's newest again, when the reader pulls the column down at its top on a phone; it resolves once
+   * they arrived or failed. Left out, the column cannot be pulled.
+   */
+  readonly refresh?: (() => Promise<unknown>) | undefined;
 };
 
 export type ColumnProps = ColumnTimeline & {
@@ -136,6 +142,7 @@ export function ListColumn<T>({
   failedNextPage,
   fetchNextPage,
   refetch,
+  refresh,
   words,
   empty,
   ...feed
@@ -175,6 +182,7 @@ export function ListColumn<T>({
       more={status !== "success" || hasNextPage}
       busy={status === "pending" || isFetchingNextPage}
       onNearEnd={asks ? fetchNextPage : undefined}
+      onPull={status === "pending" ? undefined : refresh}
       end={end}
       {...feed}
     >

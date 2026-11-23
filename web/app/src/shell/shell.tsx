@@ -14,8 +14,8 @@
 // the dock; the column beside the main one
 // holds what is around the reader, beside a screen of the settings their menu (settings.tsx), the settings staying
 // the marked place, and beside a report the page of the moderators' queue it was opened from (staff.tsx). Where the reader is comes from the router; the frame lays the regions out by the
-// viewport, and every menu and the emoji picker of a post and of the composer open as a sheet on a phone's
-// (viewport.ts).
+// viewport, and every menu and the emoji picker of a post and of the composer open as a sheet on a phone's, where a
+// timeline is read anew by a pull from its top (viewport.ts).
 
 import wordmarkDark from "../../../brand/Wordmark-DarkBg.svg";
 import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
@@ -47,6 +47,7 @@ import { useHeadcount, voiceRoomPath } from "@my/app-components";
 import {
   CallBar,
   Frame,
+  FeedPulls,
   FrameAction,
   FrameActions,
   FrameDock,
@@ -370,88 +371,90 @@ export function Shell({
   const footer = <ServerFooter instance={instance} />;
   return (
     <MenuSheet sheet={narrow}>
-      {signedIn && <AppBadge />}
-      {signedIn && <NotificationSound />}
-      <Frame>
-        <FrameSide label={t("app.navigation")}>
-          <Mark instance={instance} serverName={serverName} />
-          {primary}
-          <PlaceList items={side} pathname={pathname} />
-          <PlaceList items={staff} pathname={pathname} />
-          {/* The rail and the sidebar hold the reader's and the staff's places themselves; their menu holds the rest. */}
-          <NavList>
-            <NavMenu label={t("app.menu")} footer={footer}>
-              <PlaceList items={signedIn ? [listsPlace] : []} pathname={pathname} />
-              <PlaceList items={around} pathname={pathname} />
-            </NavMenu>
-          </NavList>
-          {callBar}
-        </FrameSide>
-        <FrameMain>
-          <ServerBanners instance={instance} />
-          {/* A reader without an account copies, shares and opens posts too; the rest leads them to sign in. */}
-          <PostActions
-            onCompose={signedIn ? open : undefined}
-            onEditArticle={(id) => {
-              go(editArticlePath(id));
-            }}
-            sheet={narrow}
-          >
-            {children}
-          </PostActions>
-        </FrameMain>
-        {signedIn && settingsEntryAt(pathname) !== undefined ? (
-          <SettingsAside pathname={pathname} instance={instance} />
-        ) : signedIn && reportAt(pathname) !== undefined ? (
-          <ReportAside id={reportAt(pathname) ?? ""} pathname={pathname} instance={instance} />
-        ) : (
-          <Around signedIn={signedIn} pathname={pathname} instance={instance} />
-        )}
-        <FrameDock
-          label={t("app.navigation")}
-          tabs={
+      <FeedPulls on={narrow}>
+        {signedIn && <AppBadge />}
+        {signedIn && <NotificationSound />}
+        <Frame>
+          <FrameSide label={t("app.navigation")}>
+            <Mark instance={instance} serverName={serverName} />
+            {primary}
+            <PlaceList items={side} pathname={pathname} />
+            <PlaceList items={staff} pathname={pathname} />
+            {/* The rail and the sidebar hold the reader's and the staff's places themselves; their menu holds the rest. */}
             <NavList>
-              <Places items={tabs} pathname={pathname} />
-              <TabMenu signedIn={signedIn} footer={footer}>
-                <PlaceList items={writesArticles ? [articlePlace] : []} pathname={pathname} />
-                <PlaceList items={signedIn ? [...own, listsPlace] : own} pathname={pathname} />
-                <PlaceList items={staff} pathname={pathname} />
+              <NavMenu label={t("app.menu")} footer={footer}>
+                <PlaceList items={signedIn ? [listsPlace] : []} pathname={pathname} />
                 <PlaceList items={around} pathname={pathname} />
-              </TabMenu>
+              </NavMenu>
             </NavList>
-          }
-          call={callBar}
-          action={
-            signedIn ? (
-              composesAt(pathname) ? (
-                // On a phone, New post floats alone; its menu (New post, New article) and the menu's sheet hold New article.
-                newPost(composeMenu)
-              ) : undefined
-            ) : (
-              <FrameAction icon="signIn" label={t("app.sign_in_action")} labelled onPress={signIn} />
-            )
-          }
-          toasts={
-            <>
-              {signedIn && <UnsavedSettings onOpen={go} />}
-              {signedIn && <CallEnds pathname={pathname} onOpen={go} />}
-              <UpdateToast inCall={call !== null} />
-            </>
-          }
-        />
-        {signedIn && (
-          <ComposeLayer
-            target={target}
-            onOpen={open}
-            onClose={close}
-            onOpenArticle={(id) => {
-              go(newArticlePath(id));
-            }}
-            phone="screen"
-            pickerSheet={narrow}
+            {callBar}
+          </FrameSide>
+          <FrameMain>
+            <ServerBanners instance={instance} />
+            {/* A reader without an account copies, shares and opens posts too; the rest leads them to sign in. */}
+            <PostActions
+              onCompose={signedIn ? open : undefined}
+              onEditArticle={(id) => {
+                go(editArticlePath(id));
+              }}
+              sheet={narrow}
+            >
+              {children}
+            </PostActions>
+          </FrameMain>
+          {signedIn && settingsEntryAt(pathname) !== undefined ? (
+            <SettingsAside pathname={pathname} instance={instance} />
+          ) : signedIn && reportAt(pathname) !== undefined ? (
+            <ReportAside id={reportAt(pathname) ?? ""} pathname={pathname} instance={instance} />
+          ) : (
+            <Around signedIn={signedIn} pathname={pathname} instance={instance} />
+          )}
+          <FrameDock
+            label={t("app.navigation")}
+            tabs={
+              <NavList>
+                <Places items={tabs} pathname={pathname} />
+                <TabMenu signedIn={signedIn} footer={footer}>
+                  <PlaceList items={writesArticles ? [articlePlace] : []} pathname={pathname} />
+                  <PlaceList items={signedIn ? [...own, listsPlace] : own} pathname={pathname} />
+                  <PlaceList items={staff} pathname={pathname} />
+                  <PlaceList items={around} pathname={pathname} />
+                </TabMenu>
+              </NavList>
+            }
+            call={callBar}
+            action={
+              signedIn ? (
+                composesAt(pathname) ? (
+                  // On a phone, New post floats alone; its menu (New post, New article) and the menu's sheet hold New article.
+                  newPost(composeMenu)
+                ) : undefined
+              ) : (
+                <FrameAction icon="signIn" label={t("app.sign_in_action")} labelled onPress={signIn} />
+              )
+            }
+            toasts={
+              <>
+                {signedIn && <UnsavedSettings onOpen={go} />}
+                {signedIn && <CallEnds pathname={pathname} onOpen={go} />}
+                <UpdateToast inCall={call !== null} />
+              </>
+            }
           />
-        )}
-      </Frame>
+          {signedIn && (
+            <ComposeLayer
+              target={target}
+              onOpen={open}
+              onClose={close}
+              onOpenArticle={(id) => {
+                go(newArticlePath(id));
+              }}
+              phone="screen"
+              pickerSheet={narrow}
+            />
+          )}
+        </Frame>
+      </FeedPulls>
     </MenuSheet>
   );
 }

@@ -365,8 +365,26 @@ export const entry = {
  * (twice an entry's reach), and the room kept above an entry the keyboard brings to the top of the view, which holds
  * its focus ring; and the space between the posts of a conversation of direct messages, which read as one exchange,
  * where a hovered post's surface stops short of the next post.
+ *
+ * Its pull from the top on a phone, in rem but the resistance: how far a finger moves before the feed tells a pull
+ * from a scroll or a swipe, how far its mark must come down for a release to read the feed anew, the farthest the mark
+ * comes, the share of the finger's way the mark follows, the least room the mark keeps from the top of the view where
+ * the room above the feed is shorter than the mark, the mark's diameter, and the ring it draws: its diameter and
+ * stroke.
  */
-export const feed = { gap: 1.75, scrollMargin: 0.75, tightGap: 1.25 } as const;
+export const feed = {
+  gap: 1.75,
+  scrollMargin: 0.75,
+  tightGap: 1.25,
+  pullSlop: 0.5,
+  pullThreshold: 4,
+  pullMost: 6,
+  pullResistance: 0.5,
+  pullInset: 0.5,
+  pullMark: 2.5,
+  pullRing: 1.25,
+  pullStroke: 0.15625,
+} as const;
 
 /** Something embedded in an entry (a quoted post) on the raised surface, in rem: its padding and the space between its parts. */
 export const embed = { padding: 0.75, gap: 0.375 } as const;
@@ -820,6 +838,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--feed-gap", `${feed.gap}rem`],
   ["--feed-scroll-margin", `${feed.scrollMargin}rem`],
   ["--feed-tight-gap", `${feed.tightGap}rem`],
+  ["--feed-pull-mark", `${feed.pullMark}rem`],
   ["--embed-padding", `${embed.padding}rem`],
   ["--embed-gap", `${embed.gap}rem`],
   ["--poll-padding", `${poll.padding}rem`],

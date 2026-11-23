@@ -6,9 +6,11 @@
 // again from its first page. While one shows it, the screen's policy decides at each arrival whether it goes in now;
 // what it does not take is held here, with a break when the held statuses no longer join those loaded (after a
 // reconnection, or past 200), until the policy takes them: inserted at the top, or, after a break, the first page read
-// again in place of every page loaded.
+// again in place of every page loaded. A reader who pulls the shown timeline at its top has its first page read again
+// as after a break, which brings what is held with it.
 import { useEffect, useEffectEvent, useSyncExternalStore } from "react";
 import type { AppData } from "./app-data";
+import { readFirstPageAgain } from "./paged";
 import { useAppData } from "./provider";
 import { receiveGone, shadowed } from "./shadow";
 import type { Status } from "./statuses";
@@ -102,13 +104,13 @@ export function prependHomeStatuses(data: AppData, statuses: readonly Status[]):
  * Keeps the timeline's first page alone and reads it again: at once while a screen shows it, else when one next opens
  * it.
  */
-async function reloadFirstPage(data: AppData, timeline: StreamedTimeline): Promise<void> {
-  const queryKey = queryKeyOf(data, timeline);
-  data.queryClient.setQueryData(
-    queryKey,
-    (cached) => cached && { pages: cached.pages.slice(0, 1), pageParams: cached.pageParams.slice(0, 1) },
-  );
-  await data.queryClient.invalidateQueries({ queryKey, exact: true });
+const reloadFirstPage = (data: AppData, timeline: StreamedTimeline): Promise<void> =>
+  readFirstPageAgain(data.queryClient, queryKeyOf(data, timeline));
+
+/** Puts in nothing that is held and reads the timeline's first page again, which brings what was held with the rest. */
+function refresh(data: AppData, store: Store): Promise<void> {
+  hold(store, none);
+  return reloadFirstPage(data, store.timeline);
 }
 
 /** Puts what is held into the timeline: the statuses at its top, or after a break its first page read again. */
@@ -205,6 +207,11 @@ type TimelineArrivals = {
   readonly held: HeldArrivals;
   /** Puts what is held into the timeline; it resolves once a first page read again after a break has arrived. */
   readonly take: () => Promise<void>;
+  /**
+   * Reads the timeline's first page again, which the reader at its top asked for (a pull), holding nothing from then
+   * on; it resolves once the page arrived or failed.
+   */
+  readonly refresh: () => Promise<void>;
 };
 
 /**
@@ -249,5 +256,5 @@ export function useTimelineArrivals(
     () => store.held,
     () => store.held,
   );
-  return { held, take: () => take(data, store) };
+  return { held, take: () => take(data, store), refresh: () => refresh(data, store) };
 }

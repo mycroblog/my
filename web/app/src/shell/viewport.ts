@@ -2,7 +2,7 @@
 
 // What the app decides by the viewport (ADR-0025 §4: only the app reads it; components and features follow their
 // container): whether it is a phone's, narrower than `tablet`, where a post's emoji picker opens as a sheet from the
-// bottom instead of a popover beside its button.
+// bottom instead of a popover beside its button, and a feed is read anew by a pull from its top.
 
 import { breakpoint } from "@my/design-tokens";
 import { useSyncExternalStore } from "react";

@@ -6,7 +6,7 @@
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery, type Query, type QueryClient } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
-import { pagedQuery, usePagedList, type PagedList } from "./paged";
+import { pagedQuery, useFirstPageAgain, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
 import { showList, useShadow } from "./shadow";
 import { copiesIn, type Status } from "./statuses";
@@ -190,8 +190,9 @@ export function useFeaturedHashtags(id: string): readonly FeaturedHashtag[] {
 
 /** The posts of the account of `id` of the kind given, as they show; nothing is fetched while `enabled` is false. */
 export function useAccountStatuses(id: string, kind: AccountPosts, enabled = true): PagedList<Status> {
-  const paged = usePagedList(accountStatusesQuery(useAppData(), id, kind), enabled);
-  const list = { ...paged, items: showList(useShadow(), paged.items) };
+  const options = accountStatusesQuery(useAppData(), id, kind);
+  const paged = usePagedList(options, enabled);
+  const list = { ...paged, items: showList(useShadow(), paged.items), refresh: useFirstPageAgain(options.queryKey) };
   if (kind !== "media") return list;
   return { ...list, items: list.items.filter((s) => (s.boost ?? s).media_attachments.length > 0) };
 }

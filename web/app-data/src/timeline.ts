@@ -7,6 +7,7 @@ import {
   type UseInfiniteQueryOptions,
 } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
+import { readFirstPageAgain } from "./paged";
 import { useAppData } from "./provider";
 import { showList, useShadow } from "./shadow";
 import type { Status, StatusPage } from "./statuses";
@@ -56,6 +57,12 @@ export type HomeTimeline = {
   readonly fetchNextPage: () => void;
   /** Fetches the timeline again from its first page: the reader's try again after the first page failed. */
   readonly refetch: () => void;
+  /**
+   * Reads the timeline's newest again, which the reader at its top asked for (a pull): its first page alone, in place
+   * of every page fetched. It resolves once the page arrived or failed. The timelines have it; an event's board,
+   * read as one, does not.
+   */
+  readonly refresh?: (() => Promise<void>) | undefined;
 };
 
 /** A public timeline of the instance: its local posts, or the posts it knows from every server. */
@@ -162,6 +169,7 @@ export function favouritesQuery({ api, queries }: AppData) {
 function useTimelineColumn<Key extends readonly unknown[]>(
   options: UseInfiniteQueryOptions<StatusPage, Error, InfiniteData<StatusPage>, Key, string | undefined>,
 ): HomeTimeline {
+  const { queryClient } = useAppData();
   const query = useInfiniteQuery(options);
   const show = useShadow();
   return {
@@ -177,6 +185,7 @@ function useTimelineColumn<Key extends readonly unknown[]>(
     refetch: () => {
       void query.refetch();
     },
+    refresh: () => readFirstPageAgain(queryClient, options.queryKey),
   };
 }
 

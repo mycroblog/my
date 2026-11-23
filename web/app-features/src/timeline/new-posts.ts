@@ -8,7 +8,8 @@
 // are read, so that nothing moves under a reader who chose to hold them. Once the setting is known to be on, what was
 // held meanwhile goes in as an arrival does. After a break (a reconnection, or more held than join those loaded), the
 // first page is read again at once at the top, else when the reader presses the button. The button tells how many are
-// held or went in above; the feed takes the reader to the top and the focus to the heading.
+// held or went in above; the feed takes the reader to the top and the focus to the heading. A pull at the top (a phone's)
+// reads the first page again, which brings every post held with the rest, and the button has nothing more to tell.
 
 import { usePreferences, useTimelineArrivals, type Arrival, type StreamedTimeline } from "@my/app-data";
 import { useLocale } from "@my/design-system";
@@ -33,6 +34,7 @@ type NewPosts = {
   onReaderChange: (inside: boolean) => void;
   told: NewPostsCount | undefined;
   onPress: () => void;
+  refresh: () => Promise<void>;
 };
 
 /**
@@ -79,22 +81,26 @@ function useNewPosts(timeline: StreamedTimeline, autoInsert: boolean): NewPosts 
       setAbove(0);
       void arrivals.take();
     },
+    refresh: () => {
+      setAbove(0);
+      return arrivals.refresh();
+    },
   };
 }
 
 /**
  * What the column of a streamed timeline takes for its new posts, by the reader's `timeline_auto_insert`, and as with
- * it off until their preferences are read: what its feed hears, and its button, worded.
+ * it off until their preferences are read: what its feed hears, its button, worded, and what a pull at its top reads.
  */
 export function useNewPostsColumn(timeline: StreamedTimeline) {
   const { t } = stringsIn(useLocale().locale);
   const autoInsert = usePreferences()?.timeline_auto_insert ?? false;
-  const { onTopChange, onReaderChange, told, onPress } = useNewPosts(timeline, autoInsert);
+  const { onTopChange, onReaderChange, told, onPress, refresh } = useNewPosts(timeline, autoInsert);
   const label =
     told === undefined
       ? undefined
       : told.count > 0
         ? t("timeline.new_posts", { count: told.count })
         : t("timeline.new_posts_missed");
-  return { onTopChange, onReaderChange, newPosts: label === undefined ? undefined : { label, onPress } };
+  return { onTopChange, onReaderChange, refresh, newPosts: label === undefined ? undefined : { label, onPress } };
 }
