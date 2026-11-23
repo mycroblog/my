@@ -56,7 +56,7 @@
     "description": "In place of an event's time on its page while its organizers poll its date; the poll follows below, under its own heading."
   },
   "events.visibility": {
-    "defaultMessage": "{visibility, select, public {このサーバーの全員に公開} followers {{organizer} さんのフォロワーに公開} following {{organizer} さんがフォローしている人に公開} mutuals {{organizer} さんと相互フォローの人に公開} other {招待された人だけに公開}}",
+    "defaultMessage": "{visibility, select, public {このサーバーの全員に公開} followers {{organizer} のフォロワーに公開} following {{organizer} がフォローしている人に公開} mutuals {{organizer} と相互フォローの人に公開} other {招待された人だけに公開}}",
     "description": "Who sees an event, under its time on its page: organizer is the organizer's display name. Those invited and those who answered always see it too."
   },
   "events.visibility.unavailable": {
