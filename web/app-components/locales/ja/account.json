@@ -18,5 +18,9 @@
   "account.requested": {
     "defaultMessage": "リクエスト済み",
     "description": "In place of the follow of a row of an account the reader asked to follow, while it waits."
+  },
+  "account.unavailable": {
+    "defaultMessage": "表示できないアカウント",
+    "description": "The name shown in place of an account's that the reader may not see but that a screen must name (an event's organizer): the account is suspended or deactivated, the moderators hide its profile, or it blocks the reader. It leads to no profile."
   }
 }

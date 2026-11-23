@@ -46,6 +46,11 @@ export type FakeEventPlan = ServerEventPlan & {
   readonly room?: "open" | Schema<"EventRoomUnavailableReason">;
   /** Who writes on its board; the server's default (`coorganizers`) without one. */
   readonly boardWriters?: Schema<"EventBoardWriters">;
+  /**
+   * The reader may not see its organizer (suspended, or its profile hidden by the moderators), whom the event names as
+   * the server does: an unavailable account, with its own ID, URI, domain and creation, and nothing of its profile.
+   */
+  readonly organizerUnavailable?: boolean;
   /** The posts on its board, oldest first, each by a person of the seed that many minutes before the seed runs. */
   readonly board?: readonly { readonly by: string; readonly text: string; readonly minutesAgo: number }[];
 };
@@ -335,6 +340,8 @@ type Held = {
   readonly key: string;
   readonly id: string;
   readonly organizer: string;
+  /** The reader may not see the organizer (`FakeEventPlan.organizerUnavailable`). */
+  readonly organizerUnavailable: boolean;
   coorganizers: string[];
   title: string;
   description: string;
@@ -454,6 +461,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
       key: plan.key,
       id,
       organizer: plan.organizer,
+      organizerUnavailable: plan.organizerUnavailable === true,
       coorganizers: people(plan.coorganizers),
       title: plan.title,
       description: plan.description,
@@ -534,6 +542,28 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
     if (account === undefined) throw new Error(`fake: no account of ${u}`);
     return account;
   };
+  /** The organizer of `e` as the reader sees it: an unavailable account where they may not see it, as the server's. */
+  const organizerIn = (e: Held): Account => {
+    const account = accountIn(e.organizer);
+    if (!e.organizerUnavailable) return account;
+    return {
+      id: account.id,
+      username: "",
+      acct: "",
+      domain: account.domain,
+      uri: account.uri,
+      display_name: "",
+      note: "",
+      url: account.uri,
+      locked: false,
+      bot: false,
+      created_at: account.created_at,
+      fields: [],
+      emojis: [],
+      badges: [],
+      unavailable: true,
+    };
+  };
 
   /** Whether the reader reads the board of `e` (§17): they organize it, or answer going or maybe. */
   const readsBoard = (e: Held) => organizes(e) || rsvpOf(e)?.answer === "going" || rsvpOf(e)?.answer === "maybe";
@@ -551,7 +581,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
     const rsvp = rsvpOf(e);
     return {
       id: e.id,
-      organizer: accountIn(e.organizer),
+      organizer: organizerIn(e),
       coorganizers: accountsOf(e.coorganizers),
       title: e.title,
       description: e.description,
@@ -801,6 +831,7 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
         key: body.title,
         id,
         organizer: viewer,
+        organizerUnavailable: false,
         coorganizers: [],
         ...settings,
         boardWriters,

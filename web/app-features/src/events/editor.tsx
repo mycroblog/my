@@ -19,7 +19,7 @@
 // what the server says of a field stands there too, and what names none (not allowed, too many events this hour, voice
 // chat off, a failure) before the button, in the frame's foot with it.
 
-import { localInput, localInstant, nameOf } from "@my/app-components";
+import { isUnavailable, localInput, localInstant, nameOf } from "@my/app-components";
 import {
   eventBoardWriters,
   eventFaultField,
@@ -451,7 +451,8 @@ function EventForm({
   creating: boolean;
   /** The reader is the organizer: they choose who sees the event. */
   organizer: boolean;
-  organizerName: string;
+  /** The organizer's name, which a co-organizer reads; none for an organizer the reader may not see. */
+  organizerName: string | undefined;
   /** The voice chat room may be a place: the reader may host rooms, or the event has one already. */
   voiceOffered: boolean;
   busy: boolean;
@@ -870,10 +871,9 @@ function EventForm({
           <Stack gap="entry-line">
             <GroupHeading>{t("events.form.visibility")}</GroupHeading>
             <Box as="p" text="body" dir="auto">
-              {t("events.form.visibility_organizer", {
-                visibility: draft.visibility,
-                organizer: organizerName,
-              })}
+              {organizerName === undefined
+                ? t("events.form.visibility_organizer.unavailable", { visibility: draft.visibility })
+                : t("events.form.visibility_organizer", { visibility: draft.visibility, organizer: organizerName })}
             </Box>
           </Stack>
         )}
@@ -895,10 +895,9 @@ function EventForm({
           <Stack gap="entry-line">
             <GroupHeading>{t("events.form.board_writers")}</GroupHeading>
             <Box as="p" text="body" dir="auto">
-              {t("events.form.board_writers_organizer", {
-                writers: draft.boardWriters,
-                organizer: organizerName,
-              })}
+              {organizerName === undefined
+                ? t("events.form.board_writers_organizer.unavailable", { writers: draft.boardWriters })
+                : t("events.form.board_writers_organizer", { writers: draft.boardWriters, organizer: organizerName })}
             </Box>
           </Stack>
         )}
@@ -1078,7 +1077,7 @@ function EditForm({ event, onSaved, t }: { event: ServerEvent; onSaved: () => vo
       initial={initial}
       creating={false}
       organizer={event.viewer.organizer}
-      organizerName={nameOf(event.organizer)}
+      organizerName={isUnavailable(event.organizer) ? undefined : nameOf(event.organizer)}
       voiceOffered={voiceOffered}
       busy={busy}
       refused={refused}
@@ -1133,7 +1132,13 @@ export function EventEditScreen({ id, onBack }: { id: string; onBack: () => void
       )
     );
   if (!(event.viewer.organizer || event.viewer.coorganizer))
-    return notice(<FeedNotice lead>{t("events.organizers_only", { organizer: nameOf(event.organizer) })}</FeedNotice>);
+    return notice(
+      <FeedNotice lead>
+        {isUnavailable(event.organizer)
+          ? t("events.organizers_only.unavailable")
+          : t("events.organizers_only", { organizer: nameOf(event.organizer) })}
+      </FeedNotice>,
+    );
   if (event.state === "canceled") return notice(<FeedNotice lead>{t("events.edit.canceled")}</FeedNotice>);
   return (
     <ScreenStack>

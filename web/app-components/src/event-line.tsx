@@ -3,7 +3,8 @@
 // An event as a line of a list (ADR-0161 §9, FR-951): the events' screen and the profile of its organizer draw it alike,
 // the design system's EventLine, from the event the API sends, whose shape is written here: the package depends on no
 // API client. Its date's box and its time are in the reader's zone, with the event's own time where its zone is
-// another; a date polled says so in their place; its places are named by kind, the ones the reader does not see too.
+// another; a date polled says so in their place; its places are named by kind, the ones the reader does not see too;
+// an organizer the reader may not see is named as unavailable.
 
 import {
   dateFormat,
@@ -14,7 +15,7 @@ import {
   type Headcount,
   type PlaceKind,
 } from "@my/design-system";
-import { nameOf } from "./account";
+import { isUnavailable, nameOf } from "./account";
 import { useEventWhen } from "./event-time";
 import { stringsIn } from "./locale";
 import { eventPath } from "./paths";
@@ -72,7 +73,9 @@ export function EventListLine({ event, now }: { event: EventShown; now: number }
       }
       time={polled ? t("event.date_polled") : <EventTime {...when} />}
       places={kinds.filter((k) => present.has(k)).map((kind) => ({ kind, label: t("event.place_kind", { kind }) }))}
-      organizer={t("event.by", { name: nameOf(event.organizer) })}
+      organizer={
+        isUnavailable(event.organizer) ? t("event.by.unavailable") : t("event.by", { name: nameOf(event.organizer) })
+      }
       going={event.going_count > 0 ? going : undefined}
       state={
         event.state === "canceled"

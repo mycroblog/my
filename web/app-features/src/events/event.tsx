@@ -13,7 +13,8 @@
 //   until the start; going is refused at capacity, and the line under the answers says why an answer cannot be given;
 //   and the calendar file of the event to download, a cancelled one's too. While its date is polled, the poll
 //   (poll.tsx) in their place.
-// - Its organizers, and who is going and maybe (people.tsx).
+// - Its organizers, and who is going and maybe (people.tsx); an organizer the reader may not see (`unavailable`) is
+//   named as unavailable here and wherever the event names its organizer, with no link and nothing to do with it.
 // - For another reader, More in its head, which reports the event and its organizer (manage.tsx, report.tsx).
 // - For its organizers (manage.tsx): the menu in its head, which leads to changing it, its invitations and its
 //   co-organizers, and cancels it, asked first; the approval of each attendee going or maybe (people.tsx); the poll's
@@ -31,7 +32,7 @@
 // download, a join that failed) is said once, in the one polite live region the page keeps from the start, a new
 // element of it each time; the focus stays on the control pressed.
 
-import { nameOf, useEventWhen, useGoingCount } from "@my/app-components";
+import { isUnavailable, nameOf, useEventWhen, useGoingCount } from "@my/app-components";
 import {
   eventBoardClosesAt,
   eventBoardQuery,
@@ -162,7 +163,6 @@ function When({ event, phase, t }: { event: ServerEvent; phase: EventPhase; t: T
   const { locale } = useLocale();
   const when = useEventWhen(event);
   const going = useGoingCount(event.going_count, phase === "ended");
-  const organizer = nameOf(event.organizer);
   const n = (v: number) => new Intl.NumberFormat(locale).format(v);
   const count =
     event.capacity > 0
@@ -183,7 +183,11 @@ function When({ event, phase, t }: { event: ServerEvent; phase: EventPhase; t: T
         </Box>
       )}
       <Row wrap align="center" gapX="entry-caption" text="caption" tone="muted">
-        <span dir="auto">{t("events.visibility", { visibility: event.visibility, organizer })}</span>
+        <span dir="auto">
+          {isUnavailable(event.organizer)
+            ? t("events.visibility.unavailable", { visibility: event.visibility })
+            : t("events.visibility", { visibility: event.visibility, organizer: nameOf(event.organizer) })}
+        </span>
         {(event.capacity > 0 || event.going_count > 0) && <HeadcountMark count={count} />}
       </Row>
     </Stack>

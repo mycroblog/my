@@ -23,6 +23,10 @@
     "defaultMessage": "{kind, select, room {The moderators of {instance} read your report. It is not public, and the room's host, {handle}, is never told who sent it.} event {The moderators of {instance} read your report. It is not public, and the event's organizer, {handle}, is never told who sent it.} other {The moderators of {instance} read your report. It is not public, and {handle} is never told who sent it.}}",
     "description": "The first sentences of the report panel: who reads the report, and that the reported account never learns who sent it. {kind} is room (a voice chat room, reported with its host), event (an event, reported with its organizer) or account. {instance} is the server's display name, or its domain name. {handle} is the account's handle."
   },
+  "report.intro.unavailable": {
+    "defaultMessage": "The moderators of {instance} read your report. It is not public, and the event's organizer is never told who sent it.",
+    "description": "The first sentences of the panel that reports an event whose organizer the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who reads the report, and that the organizer never learns who sent it; report.intro otherwise. {instance} is the server's display name, or its domain name."
+  },
   "report.category": {
     "defaultMessage": "Why are you reporting this?",
     "description": "The heading of the choice of why the reader reports the account, the room or the event."

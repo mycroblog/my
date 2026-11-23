@@ -9,7 +9,8 @@
 // and what the server refused right before Send. The forward choice, the refusal and the buttons are the panel's foot,
 // in sight under the choices as they scroll. Once sent, it says so in its title and offers to mute the account, done
 // at once, or to block it, which the feature asks first; each said in its place once done. It only displays: the
-// feature holds what the reader chose and sends it.
+// feature holds what the reader chose and sends it. An event whose organizer the reader may not see names no one, and
+// offers neither mute nor block once sent.
 //
 // For assistive technology: the choices are groups named by their headings; a missing choice or a comment the server
 // refused takes the focus with its error; once sent, the panel's live region, there from the start, says so, and the
@@ -38,7 +39,7 @@ import {
   useLocale,
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState } from "react";
-import { sentenceHandleOf } from "./account";
+import { isUnavailable, sentenceHandleOf } from "./account";
 import { stringsIn } from "./locale";
 import { excerptHtml, PostContent, type ContentEmoji } from "./post-content";
 
@@ -48,7 +49,14 @@ export type ReportCategory = "spam" | "legal" | "violation" | "other";
 const categories: readonly ReportCategory[] = ["spam", "legal", "violation", "other"];
 
 /** The account a report is about, as a status embeds it. */
-export type ReportAccount = { id: string; username: string; acct: string; domain: string };
+export type ReportAccount = {
+  id: string;
+  username: string;
+  acct: string;
+  domain: string;
+  /** One the reader may not see (an event's organizer, `isUnavailable`). */
+  unavailable?: boolean | undefined;
+};
 
 /** What is reported: an account (with its posts), a voice chat room and its host, or an event and its organizer. */
 export type ReportTarget =
@@ -129,9 +137,9 @@ export type ReportPanelProps = {
   onSend: () => void;
   /** Cancel, close, Escape, a press outside, or Done. */
   onClose: () => void;
-  /** Mute the account, once sent; none where the reader mutes it already. */
+  /** Mute the account, once sent; none where the reader mutes it already, nor for an account they may not see. */
   mute?: ReportAfter | undefined;
-  /** Block the account, once sent; none where the reader blocks it already. */
+  /** Block the account, once sent; none where the reader blocks it already, nor for an account they may not see. */
   block?: ReportAfter | undefined;
   /** Over the page, or in the flow of a page (a story's specimen). */
   layer?: boolean | undefined;
@@ -300,7 +308,7 @@ function Sent({
   t: T;
 }) {
   const handle = sentenceHandleOf(target.account);
-  if (mute === undefined && block === undefined) return null;
+  if (isUnavailable(target.account) || (mute === undefined && block === undefined)) return null;
   return (
     <Stack gap="entry-line">
       <GroupHeading>{t("report.also", { handle })}</GroupHeading>
@@ -448,7 +456,9 @@ export function ReportPanel({
       {said}
       <Stack gap="entry-room">
         <Box as="p" dir="auto">
-          {t("report.intro", { kind: target.kind, instance, handle })}
+          {target.kind === "event" && isUnavailable(target.account)
+            ? t("report.intro.unavailable", { instance })
+            : t("report.intro", { kind: target.kind, instance, handle })}
         </Box>
         <Stack gap="entry-line">
           <GroupHeading>{t("report.category")}</GroupHeading>
