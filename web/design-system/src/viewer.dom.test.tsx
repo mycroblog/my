@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { I18nProvider } from "react-aria-components";
@@ -211,18 +211,32 @@ const stageOf = (dialog: HTMLElement): HTMLElement => {
   return stage;
 };
 
-/** A pointer down on `target` at `from`, up at `to`, and the click that makes, as a mouse's press or drag does. */
-function press(target: Element, from: { x: number; y: number }, to = from) {
-  fireEvent.pointerDown(target, { pointerId: 1, clientX: from.x, clientY: from.y });
-  fireEvent.pointerUp(target, { pointerId: 1, clientX: to.x, clientY: to.y });
-  fireEvent.click(target, { clientX: to.x, clientY: to.y });
+/**
+ * A mouse's press on `target` at `from`, let go at `to`, with the focus and the click it makes, once the viewer has
+ * taken the focus as it opens.
+ */
+async function press(
+  user: ReturnType<typeof userEvent.setup>,
+  dialog: HTMLElement,
+  target: Element,
+  from: { x: number; y: number },
+  to = from,
+) {
+  await waitFor(() => {
+    expect(dialog.contains(document.activeElement)).toBe(true);
+  });
+  await user.pointer([
+    { keys: "[MouseLeft>]", target, coords: { clientX: from.x, clientY: from.y } },
+    { pointerName: "mouse", target, coords: { clientX: to.x, clientY: to.y } },
+    { keys: "[/MouseLeft]", target, coords: { clientX: to.x, clientY: to.y } },
+  ]);
 }
 
 test("a press on the backing around the picture closes the viewer, and the focus is back on what opened it", async () => {
   const user = userEvent.setup();
   const { dialog, calls } = await opened(user);
 
-  press(stageOf(dialog), { x: 10, y: 10 });
+  await press(user, dialog, stageOf(dialog), { x: 10, y: 10 });
 
   expect(calls.closes).toHaveLength(1);
   expect(screen.queryByRole("dialog")).toBeNull();
@@ -237,8 +251,8 @@ test("a drag from the backing, or a press on the picture, keeps the viewer open"
   const { dialog, calls } = await opened(user);
   const stage = stageOf(dialog);
 
-  press(stage, { x: 10, y: 10 }, { x: 10, y: 60 });
-  press(within(stage).getByRole("presentation"), { x: 10, y: 10 });
+  await press(user, dialog, stage, { x: 10, y: 10 }, { x: 10, y: 60 });
+  await press(user, dialog, within(stage).getByRole("presentation"), { x: 10, y: 10 });
 
   expect(calls.closes).toEqual([]);
   expect(screen.getByRole("dialog", { name: "Media" })).not.toBeNull();
