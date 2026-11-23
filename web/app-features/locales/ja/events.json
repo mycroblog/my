@@ -59,6 +59,10 @@
     "defaultMessage": "{visibility, select, public {このサーバーの全員に公開} followers {{organizer} さんのフォロワーに公開} following {{organizer} さんがフォローしている人に公開} mutuals {{organizer} さんと相互フォローの人に公開} other {招待された人だけに公開}}",
     "description": "Who sees an event, under its time on its page: organizer is the organizer's display name. Those invited and those who answered always see it too."
   },
+  "events.visibility.unavailable": {
+    "defaultMessage": "{visibility, select, public {このサーバーの全員に公開} followers {主催者のフォロワーに公開} following {主催者がフォローしている人に公開} mutuals {主催者と相互フォローの人に公開} other {招待された人だけに公開}}",
+    "description": "Who sees an event, under its time on its page, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.visibility otherwise. Those invited and those who answered always see it too."
+  },
   "events.capacity": {
     "defaultMessage": "{going, plural, other {定員 {capacity} 人のうち # 人が行く}}",
     "description": "How many answered going to an event that has a capacity, under its time on its page: going is how many, capacity the most it takes."
@@ -319,6 +323,10 @@
     "defaultMessage": "このイベントを変更できるのは、主催者の {organizer} と共同主催者だけです。",
     "description": "In place of the form that changes an event, for a reader who neither organizes nor co-organizes it: organizer is the organizer's name."
   },
+  "events.organizers_only.unavailable": {
+    "defaultMessage": "このイベントを変更できるのは、主催者と共同主催者だけです。",
+    "description": "In place of the form that changes an event, for a reader who neither organizes nor co-organizes it, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.organizers_only otherwise."
+  },
   "events.form.title": {
     "defaultMessage": "タイトル",
     "description": "The label of the field of an event's title, in the form that creates or changes an event."
@@ -507,6 +515,10 @@
     "defaultMessage": "{writers, select, organizer {掲示板に書けるのは主催者だけです} coorganizers {掲示板に書けるのは主催者と共同主催者です} other {掲示板を読める全員が書けます}}。書ける人を変えられるのは主催者の {organizer} だけです。",
     "description": "In place of the choice of who writes on an event's board, in the form a co-organizer changes it with: who writes on it now (writers as events.form.board_writers_choice), and that only the organizer, organizer (the organizer's name), changes it."
   },
+  "events.form.board_writers_organizer.unavailable": {
+    "defaultMessage": "{writers, select, organizer {掲示板に書けるのは主催者だけです} coorganizers {掲示板に書けるのは主催者と共同主催者です} other {掲示板を読める全員が書けます}}。書ける人を変えられるのは主催者だけです。",
+    "description": "In place of the choice of who writes on an event's board, in the form a co-organizer changes it with, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who writes on it now (writers as events.form.board_writers_choice), and that only the organizer changes it; events.form.board_writers_organizer otherwise."
+  },
   "events.form.board_writers_rule": {
     "defaultMessage": "掲示板に書ける人を選んでください。",
     "description": "Under the choice of who writes on an event's board, when the server refused it."
@@ -514,6 +526,10 @@
   "events.form.visibility_organizer": {
     "defaultMessage": "{visibility, select, public {このサーバーの全員に見えます} followers {{organizer} のフォロワーに見えます} following {{organizer} がフォローしている人に見えます} mutuals {{organizer} の相互フォローの人に見えます} other {招待された人だけに見えます}}。見られる人を変えられるのは主催者の {organizer} だけです。",
     "description": "In place of the choice of who sees an event, in the form a co-organizer changes it with: who sees it now (visibility as events.visibility), and that only the organizer, organizer, changes it."
+  },
+  "events.form.visibility_organizer.unavailable": {
+    "defaultMessage": "{visibility, select, public {このサーバーの全員に見えます} followers {主催者のフォロワーに見えます} following {主催者がフォローしている人に見えます} mutuals {主催者の相互フォローの人に見えます} other {招待された人だけに見えます}}。見られる人を変えられるのは主催者だけです。",
+    "description": "In place of the choice of who sees an event, in the form a co-organizer changes it with, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who sees it now (visibility as events.visibility), and that only the organizer changes it; events.form.visibility_organizer otherwise."
   },
   "events.form.capacity": {
     "defaultMessage": "定員",
@@ -759,6 +775,10 @@
     "defaultMessage": "このイベントに招待できるのは、主催者の {organizer} と共同主催者だけです。",
     "description": "In place of an event's invitations, for a reader who neither organizes nor co-organizes it: organizer is the organizer's name."
   },
+  "events.invitations.organizers_only.unavailable": {
+    "defaultMessage": "このイベントに招待できるのは、主催者と共同主催者だけです。",
+    "description": "In place of an event's invitations, for a reader who neither organizes nor co-organizes it, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.invitations.organizers_only otherwise."
+  },
   "events.invitations.list": {
     "defaultMessage": "招待した人",
     "description": "The heading of the list of the people invited to an event, on its invitations' screen, and the list's name."
@@ -846,6 +866,10 @@
   "events.coorganizers.organizer_only": {
     "defaultMessage": "共同主催者を指名できるのは主催者の {organizer} だけです。",
     "description": "In place of an event's co-organizers, for a reader who is not its organizer: organizer is the organizer's name."
+  },
+  "events.coorganizers.organizer_only.unavailable": {
+    "defaultMessage": "共同主催者を指名できるのは主催者だけです。",
+    "description": "In place of an event's co-organizers, for a reader who is not its organizer, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.coorganizers.organizer_only otherwise."
   },
   "events.coorganizers.remove_title": {
     "defaultMessage": "{name} を共同主催者から外しますか？",

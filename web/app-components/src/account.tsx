@@ -2,7 +2,8 @@
 
 // An account as the screens name it, from the API's Account (status.ts's PostAccount): the name it goes by with its
 // custom emoji, its handle, its row (who followed the reader, who asks to), whose name leads to its profile, and the
-// follow at a row's end, from the reader's relationship with it.
+// follow at a row's end, from the reader's relationship with it. An account the reader may not see that a field names
+// all the same (an event's organizer, `unavailable`) is named as unavailable, with no avatar and no link.
 
 import { AccountRow as Row, Avatar, Button, StateText, useLocale } from "@my/design-system";
 import { useRef, type ReactNode, type Ref } from "react";
@@ -24,11 +25,20 @@ export const handleOf = (account: PostAccount) =>
 export const sentenceHandleOf = (account: { username: string; acct: string; domain?: string }) =>
   account.username === "" ? (account.domain ?? account.acct) : `@${account.acct || account.username}`;
 
+/**
+ * Whether the account is one the reader may not see that a field names all the same (the API's `unavailable`: an
+ * event's organizer that is suspended, deactivated, hidden by the moderators, or blocks the reader). Its texts are
+ * empty: a screen names it with words of its own, links it nowhere, and offers nothing to do with it.
+ */
+export const isUnavailable = (account: { readonly unavailable?: boolean | undefined }) => account.unavailable === true;
+
 /** The name an account goes by: its display name, else its username. */
 export const nameOf = (account: PostAccount) => account.display_name || account.username || account.domain;
 
-/** The account's display name with its custom emoji. */
+/** The account's display name with its custom emoji; Unavailable account for one the reader may not see. */
 export function AccountName({ account }: { account: PostAccount }) {
+  const { t } = stringsIn(useLocale().locale);
+  if (isUnavailable(account)) return t("account.unavailable");
   return <EmojiText text={nameOf(account)} emojis={account.emojis} />;
 }
 
@@ -88,7 +98,9 @@ export function AccountFollow({
 
 /**
  * An account on a row of its own, what the reader may do with it at the end; `heading` makes its name the heading of
- * the screen it heads; `itemRef` the ref of the row, for a list that grows under Show more.
+ * the screen it heads; `itemRef` the ref of the row, for a list that grows under Show more. An account the reader may
+ * not see (`isUnavailable`) is Unavailable account over its domain, with an empty avatar, no link and nothing at the
+ * end.
  */
 export function AccountLine({
   account,
@@ -101,6 +113,16 @@ export function AccountLine({
   heading?: boolean;
   itemRef?: Ref<HTMLDivElement> | undefined;
 }) {
+  if (isUnavailable(account))
+    return (
+      <Row
+        avatar={<Avatar name="" size="post" decorative />}
+        name={<AccountName account={account} />}
+        handle={handleOf(account)}
+        heading={heading}
+        itemRef={itemRef}
+      />
+    );
   return (
     <Row
       avatar={<Avatar name={nameOf(account)} src={account.avatar?.small.url} size="post" decorative />}

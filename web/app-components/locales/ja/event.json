@@ -7,6 +7,10 @@
     "defaultMessage": "主催: {name}",
     "description": "Who organizes an event, in its line of a list (the events' screen, a profile): name is the organizer's display name."
   },
+  "event.by.unavailable": {
+    "defaultMessage": "主催: 表示できないアカウント",
+    "description": "Who organizes an event, in its line of a list (the events' screen, a profile), when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); event.by otherwise."
+  },
   "event.going": {
     "defaultMessage": "{count, plural, other {# 人が行く}}",
     "description": "How many answered going to an event, for assistive technology beside the people glyph and the figure, in its line of a list and on its page."

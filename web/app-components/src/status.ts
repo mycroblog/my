@@ -23,6 +23,11 @@ export type PostAccount = {
   emojis: readonly ContentEmoji[];
   /** The avatar's renditions; omitted when there is none. */
   avatar?: { small: { url: string } } | undefined;
+  /**
+   * True for an account the reader may not see that a field names all the same (an event's organizer): its texts are
+   * empty, and it leads to no profile.
+   */
+  unavailable?: boolean | undefined;
 };
 
 /** An attached media file (the API's MediaAttachment). */

@@ -8,6 +8,7 @@ export {
   AccountLine,
   AccountName,
   handleOf,
+  isUnavailable,
   nameOf,
   sentenceHandleOf,
   type FollowState,

@@ -18,7 +18,7 @@
 // removed), it goes to the search, or to the list while the search is gone (the most co-organizers named). Another
 // reader is told who chooses them, and an event that was cancelled that it has none to choose.
 
-import { AccountLine, nameOf } from "@my/app-components";
+import { AccountLine, isUnavailable, nameOf } from "@my/app-components";
 import {
   eventLimits,
   eventRefusal,
@@ -439,7 +439,11 @@ export function EventInvitationsScreen({ id, onBack }: { id: string; onBack: () 
       glyph="invite"
       onBack={onBack}
       may={(event) => event.viewer.organizer || event.viewer.coorganizer}
-      notAllowed={(event) => t("events.invitations.organizers_only", { organizer: nameOf(event.organizer) })}
+      notAllowed={(event) =>
+        isUnavailable(event.organizer)
+          ? t("events.invitations.organizers_only.unavailable")
+          : t("events.invitations.organizers_only", { organizer: nameOf(event.organizer) })
+      }
     >
       {(event) => <Invitations event={event} t={t} />}
     </UnderEvent>
@@ -582,7 +586,11 @@ export function EventCoorganizersScreen({ id, onBack }: { id: string; onBack: ()
       glyph="members"
       onBack={onBack}
       may={(event) => event.viewer.organizer}
-      notAllowed={(event) => t("events.coorganizers.organizer_only", { organizer: nameOf(event.organizer) })}
+      notAllowed={(event) =>
+        isUnavailable(event.organizer)
+          ? t("events.coorganizers.organizer_only.unavailable")
+          : t("events.coorganizers.organizer_only", { organizer: nameOf(event.organizer) })
+      }
     >
       {(event) => <Coorganizers event={event} t={t} />}
     </UnderEvent>

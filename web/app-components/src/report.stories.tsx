@@ -3,9 +3,10 @@
 // Reporting to the moderators (FR-701, FR-709), in the reader's language (the toolbar's locale), over the page as the
 // app opens it: from a post's menu (that post chosen, the account's other posts to add), from a profile's menu (none
 // chosen), from a notification's (a local account, so nothing to forward), from a voice chat room's and an event's
-// menu (no posts, never forwarded); a violation with the rules it breaks, a remote account's report sent to its server
-// too, the account's posts loading, failing and none, more posts on their way, failing, and read; sending, refused by the server, and a
-// comment it refused; and once sent, with mute and block, one muted and one that failed, and for an account the reader
+// menu (no posts, never forwarded), and an event's whose organizer the reader may not see, before and once sent; a
+// violation with the rules it breaks, a remote account's report sent to its server too, the account's posts loading,
+// failing and none, more posts on their way, failing, and read; sending, refused by the server, and a comment it
+// refused; and once sent, with mute and block, one muted and one that failed, and for an account the reader
 // mutes already. Each answers the reader's choices as the feature does, and sends nothing.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -42,6 +43,8 @@ if (first === undefined) throw new Error("no sample posts");
 
 const remote = accountOf({ name: "Lena Novak", handle: "@lena@toot.example.eu" });
 const local = accountOf({ name: "Kenji Watanabe", handle: "@kenji@my.example" });
+/** An event's organizer the reader may not see, as the server names it. */
+const unavailable = { id: "gone", username: "", acct: "", domain: "my.example", unavailable: true };
 
 const rules: ReportRule[] = [
   { id: "r1", text: "Be kind to each other.", hint: "No insults, threats or pile-ons." },
@@ -118,6 +121,19 @@ export const FromRoom: Story = {
 /** From an event's menu: the event and its organizer, with no posts, never forwarded. */
 export const FromEvent: Story = {
   args: { target: { kind: "event", account: local, name: "Book swap at the library" }, phase: "writing" },
+};
+/** An event whose organizer the reader may not see: who reads it said without naming the organizer. */
+export const FromEventOrganizerUnavailable: Story = {
+  args: { target: { kind: "event", account: unavailable, name: "Night market tour" }, phase: "writing" },
+};
+/** The same once sent: neither mute nor block is offered. */
+export const FromEventOrganizerUnavailableSent: Story = {
+  args: {
+    target: { kind: "event", account: unavailable, name: "Night market tour" },
+    phase: "sent",
+    mute: ready,
+    block: ready,
+  },
 };
 /** A break of the server's rules: the rules it breaks, two of them chosen. */
 export const Violation: Story = {

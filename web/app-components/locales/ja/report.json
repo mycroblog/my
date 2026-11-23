@@ -23,6 +23,10 @@
     "defaultMessage": "{kind, select, room {通報は {instance} のモデレーターが読みます。公開されることはなく、ルームのホストの {handle} に、誰が通報したかが伝わることもありません。} event {通報は {instance} のモデレーターが読みます。公開されることはなく、イベントの主催者の {handle} に、誰が通報したかが伝わることもありません。} other {通報は {instance} のモデレーターが読みます。公開されることはなく、{handle} に、誰が通報したかが伝わることもありません。}}",
     "description": "The first sentences of the report panel: who reads the report, and that the reported account never learns who sent it. {kind} is room (a voice chat room, reported with its host), event (an event, reported with its organizer) or account. {instance} is the server's display name, or its domain name. {handle} is the account's handle."
   },
+  "report.intro.unavailable": {
+    "defaultMessage": "通報は {instance} のモデレーターが読みます。公開されることはなく、イベントの主催者に、誰が通報したかが伝わることもありません。",
+    "description": "The first sentences of the panel that reports an event whose organizer the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who reads the report, and that the organizer never learns who sent it; report.intro otherwise. {instance} is the server's display name, or its domain name."
+  },
   "report.category": {
     "defaultMessage": "通報する理由",
     "description": "The heading of the choice of why the reader reports the account, the room or the event."

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // An event as a line of a list (ADR-0161 §9, FR-951), from the event the API sends: a date fixed in another zone than
-// the reader's, with every kind of place, one of them hidden from the reader; a date polled; cancelled; and ended. The
-// names are samples.
+// the reader's, with every kind of place, one of them hidden from the reader; a date polled; cancelled; ended; and one
+// whose organizer the reader may not see. The names are samples.
 
 import { RowItem, RowList } from "@my/design-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -77,6 +77,26 @@ export const Lines: Story = {
           <EventListLine event={e} now={now} />
         </RowItem>
       ))}
+    </RowList>
+  ),
+};
+
+/** An event whose organizer the reader may not see (suspended, deactivated, hidden, or blocking them). */
+export const OrganizerUnavailable: Story = {
+  render: () => (
+    <RowList label="Upcoming events">
+      <RowItem>
+        <EventListLine
+          event={event({
+            id: "5",
+            title: "Night market tour",
+            places: [{ kind: "physical" }],
+            going_count: 3,
+            organizer: { ...account("", ""), id: "gone", unavailable: true },
+          })}
+          now={now}
+        />
+      </RowItem>
     </RowList>
   ),
 };

@@ -15,7 +15,8 @@
 // And for the organizer (#3238): the list without Create an event, the form that creates one (and its address for a
 // reader who may not), changing an event as its organizer and as a co-organizer (and the address for another reader
 // and for a cancelled event), the invitations and the co-organizers (and their addresses for a reader who does not
-// choose them), and the voice room that could not open, said to its organizer. The poll's dates' actions and the
+// choose them), and the voice room that could not open, said to its organizer; and an event whose organizer the reader
+// may not see, in the list, on its page, in its form and at its co-organizers (#3387). The poll's dates' actions and the
 // approvals show in Poll and CoOrganized, and none asked of its organizers in OrganizersAttending.
 
 import { scenario, type FakeEventPlan } from "@my/e2e/fake";
@@ -213,6 +214,35 @@ export const Coorganizers: Story = { parameters: screen({ at: "/events/{event:ph
 /** The co-organizers' address for a co-organizer: only the organizer names them. */
 export const CoorganizersNotOrganizer: Story = {
   parameters: screen({ at: "/events/{event:bread-class}/coorganizers" }),
+};
+/** The scenario with the organizer of the class the reader co-organizes one they may not see (suspended, hidden). */
+const organizerUnavailable = {
+  seed: {
+    ...scenario,
+    events: scenario.events.map((plan) =>
+      plan.key === "bread-class" ? { ...plan, organizerUnavailable: true } : plan,
+    ),
+  },
+};
+
+/** The events, the class's line by an unavailable account. */
+export const EventsOrganizerUnavailable: Story = {
+  parameters: screen({ at: "/events", server: organizerUnavailable }),
+};
+/**
+ * The class the reader co-organizes, its organizer one they may not see: an unavailable account among its organizers,
+ * with no link, and who sees it said without a name.
+ */
+export const OrganizerUnavailable: Story = {
+  parameters: screen({ at: "/events/{event:bread-class}", server: organizerUnavailable }),
+};
+/** Changing it: who sees it and who writes on its board said without the organizer's name. */
+export const EditOrganizerUnavailable: Story = {
+  parameters: screen({ at: "/events/{event:bread-class}/edit", server: organizerUnavailable }),
+};
+/** Its co-organizers' address for the reader: only the organizer names them, said without a name. */
+export const CoorganizersOrganizerUnavailable: Story = {
+  parameters: screen({ at: "/events/{event:bread-class}/coorganizers", server: organizerUnavailable }),
 };
 /** An event the reader organizes whose voice room could not open, said to them with why. */
 export const VoiceUnavailableOrganizer: Story = {

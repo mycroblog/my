@@ -59,6 +59,10 @@
     "defaultMessage": "{visibility, select, public {Shown to everyone on this server} followers {Shown to the followers of {organizer}} following {Shown to the people {organizer} follows} mutuals {Shown to the mutual follows of {organizer}} other {Shown only to invited people}}",
     "description": "Who sees an event, under its time on its page: organizer is the organizer's display name. Those invited and those who answered always see it too."
   },
+  "events.visibility.unavailable": {
+    "defaultMessage": "{visibility, select, public {Shown to everyone on this server} followers {Shown to the followers of the organizer} following {Shown to the people the organizer follows} mutuals {Shown to the mutual follows of the organizer} other {Shown only to invited people}}",
+    "description": "Who sees an event, under its time on its page, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.visibility otherwise. Those invited and those who answered always see it too."
+  },
   "events.capacity": {
     "defaultMessage": "{going, plural, one {# of {capacity} going} other {# of {capacity} going}}",
     "description": "How many answered going to an event that has a capacity, under its time on its page: going is how many, capacity the most it takes."
@@ -319,6 +323,10 @@
     "defaultMessage": "Only the event's organizer, {organizer}, and its co-organizers can change it.",
     "description": "In place of the form that changes an event, for a reader who neither organizes nor co-organizes it: organizer is the organizer's name."
   },
+  "events.organizers_only.unavailable": {
+    "defaultMessage": "Only the event's organizer and its co-organizers can change it.",
+    "description": "In place of the form that changes an event, for a reader who neither organizes nor co-organizes it, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.organizers_only otherwise."
+  },
   "events.form.title": {
     "defaultMessage": "Title",
     "description": "The label of the field of an event's title, in the form that creates or changes an event."
@@ -507,6 +515,10 @@
     "defaultMessage": "{writers, select, organizer {Only the organizer can write on the board} coorganizers {The organizer and the co-organizers can write on the board} other {Everyone who reads the board can write on it}}. Only the organizer, {organizer}, changes who can write on it.",
     "description": "In place of the choice of who writes on an event's board, in the form a co-organizer changes it with: who writes on it now (writers as events.form.board_writers_choice), and that only the organizer, organizer (the organizer's name), changes it."
   },
+  "events.form.board_writers_organizer.unavailable": {
+    "defaultMessage": "{writers, select, organizer {Only the organizer can write on the board} coorganizers {The organizer and the co-organizers can write on the board} other {Everyone who reads the board can write on it}}. Only the organizer changes who can write on it.",
+    "description": "In place of the choice of who writes on an event's board, in the form a co-organizer changes it with, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who writes on it now (writers as events.form.board_writers_choice), and that only the organizer changes it; events.form.board_writers_organizer otherwise."
+  },
   "events.form.board_writers_rule": {
     "defaultMessage": "Choose who can write on the board.",
     "description": "Under the choice of who writes on an event's board, when the server refused it."
@@ -514,6 +526,10 @@
   "events.form.visibility_organizer": {
     "defaultMessage": "{visibility, select, public {Shown to everyone on this server} followers {Shown to the followers of {organizer}} following {Shown to the people {organizer} follows} mutuals {Shown to the mutual follows of {organizer}} other {Shown only to invited people}}. Only the organizer, {organizer}, changes who can see it.",
     "description": "In place of the choice of who sees an event, in the form a co-organizer changes it with: who sees it now (visibility as events.visibility), and that only the organizer, organizer, changes it."
+  },
+  "events.form.visibility_organizer.unavailable": {
+    "defaultMessage": "{visibility, select, public {Shown to everyone on this server} followers {Shown to the followers of the organizer} following {Shown to the people the organizer follows} mutuals {Shown to the mutual follows of the organizer} other {Shown only to invited people}}. Only the organizer changes who can see it.",
+    "description": "In place of the choice of who sees an event, in the form a co-organizer changes it with, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader): who sees it now (visibility as events.visibility), and that only the organizer changes it; events.form.visibility_organizer otherwise."
   },
   "events.form.capacity": {
     "defaultMessage": "Capacity",
@@ -759,6 +775,10 @@
     "defaultMessage": "Only the event's organizer, {organizer}, and its co-organizers can invite people to it.",
     "description": "In place of an event's invitations, for a reader who neither organizes nor co-organizes it: organizer is the organizer's name."
   },
+  "events.invitations.organizers_only.unavailable": {
+    "defaultMessage": "Only the event's organizer and its co-organizers can invite people to it.",
+    "description": "In place of an event's invitations, for a reader who neither organizes nor co-organizes it, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.invitations.organizers_only otherwise."
+  },
   "events.invitations.list": {
     "defaultMessage": "Invited",
     "description": "The heading of the list of the people invited to an event, on its invitations' screen, and the list's name."
@@ -846,6 +866,10 @@
   "events.coorganizers.organizer_only": {
     "defaultMessage": "Only the event's organizer, {organizer}, can name its co-organizers.",
     "description": "In place of an event's co-organizers, for a reader who is not its organizer: organizer is the organizer's name."
+  },
+  "events.coorganizers.organizer_only.unavailable": {
+    "defaultMessage": "Only the event's organizer can name its co-organizers.",
+    "description": "In place of an event's co-organizers, for a reader who is not its organizer, when the organizer is an account the reader may not see (suspended, deactivated, hidden by the moderators, or blocking the reader); events.coorganizers.organizer_only otherwise."
   },
   "events.coorganizers.remove_title": {
     "defaultMessage": "Remove {name} as co-organizer?",
