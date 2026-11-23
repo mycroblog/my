@@ -222,7 +222,7 @@ scan() {
   for platform in "${platforms[@]}"; do
     # Grype reads a file: the registry's credentials stay with this script's docker, and the container has only the image.
     docker pull -q --platform "$platform" "$ref" >/dev/null
-    docker save -o "$dir/image.tar" "$ref"
+    docker save --platform "$platform" -o "$dir/image.tar" "$ref"
     chmod 0644 "$dir/image.tar"
     docker rmi "$ref" >/dev/null
     result=0
