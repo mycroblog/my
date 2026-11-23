@@ -66,6 +66,22 @@ expect_stage no-iframe "iframe.html" "rm iframe.html"
 expect_stage no-index "index.json" "rm index.json"
 expect_stage too-many "more than 20000" "mkdir many && (cd many && seq 1 20001 | xargs touch)"
 
+# stage-pr: a Preview has no _headers, which `wrangler preview` refuses, and a robots tag at the top of the head of
+# every page instead; a page with no head fails.
+catalog "$tmp/pr-build"
+printf '%s\n' '<!doctype html><html><head lang="en"><title>x</title></head></html>' >"$tmp/pr-build/iframe.html"
+printf '%s\n' '<html><HEAD></HEAD><header>x</header></html>' >"$tmp/pr-build/index.html"
+if out="$("$script" stage-pr "$tmp/pr-build" "$tmp/work-pr" 2>&1)"; then
+  fail "stage-pr: passed with an index.html that has no <head>, want an error"
+fi
+[[ "$out" == *"index.html has no <head>"* ]] || fail "stage-pr: '$out', want an error that index.html has no <head>"
+printf '%s\n' '<html><head><title>x</title></head><body><head></head></body></html>' >"$tmp/pr-build/index.html"
+"$script" stage-pr "$tmp/pr-build" "$tmp/work-pr" 2>/dev/null || fail "stage-pr: a catalog with a head on each page failed"
+[[ ! -e "$tmp/work-pr/site/_headers" ]] || fail "stage-pr: the Preview has a _headers file"
+[[ "$(cat "$tmp/work-pr/site/iframe.html")" == '<!doctype html><html><head lang="en"><meta name="robots" content="noindex, nofollow"><title>x</title></head></html>' ]] ||
+  fail "stage-pr: iframe.html is '$(cat "$tmp/work-pr/site/iframe.html")', want the robots tag at the top of its head"
+[[ "$(grep -o 'noindex' "$tmp/work-pr/site/index.html" | wc -l)" == 1 ]] || fail "stage-pr: index.html has the robots tag more than once"
+
 url=https://pr-1-my-ui.example.workers.dev
 catalog "$tmp/site"
 
