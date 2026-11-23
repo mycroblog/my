@@ -34,15 +34,17 @@ done
 [ ! -t 0 ] || usage
 
 # wait_gcp_cloud_run MIGRATION waits until no execution of the job is running. An execution that has ended, whether it
-# succeeded, failed, or was cancelled, has a completion time.
+# succeeded, failed, or was cancelled, has a completion time. jq picks them out rather than --filter: gcloud parses the operand
+# of a filter on a timestamp as a time, so that 'NOT status.completionTime:*' fails with "Unknown string format: *".
 wait_gcp_cloud_run() {
-  local project region job running waited=0
+  local project region job executions running waited=0
   project="$(jq -er .project <<< "$1")" || return 1
   region="$(jq -er .region <<< "$1")" || return 1
   job="$(jq -er .job <<< "$1")" || return 1
   while :; do
-    running="$(gcloud run jobs executions list --job="$job" --project="$project" --region="$region" \
-      --filter='NOT status.completionTime:*' --format='value(metadata.name)')" || return 1
+    executions="$(gcloud run jobs executions list --job="$job" --project="$project" --region="$region" \
+      --format='json(metadata.name,status.completionTime)')" || return 1
+    running="$(jq -r '.[] | select(.status.completionTime == null) | .metadata.name' <<< "$executions")" || return 1
     [ -n "$running" ] || return 0
     if [ "$waited" = 0 ]; then
       echo "migrate.sh: waiting for $(echo "$running" | paste -sd' ' -) of $job, which an earlier apply started, to end"
