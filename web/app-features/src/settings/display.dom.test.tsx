@@ -7,6 +7,7 @@
 // on and fixed where the server requires them of everyone. Before the preferences are read the screen says that it
 // loads them, and when they cannot be read, that too. What a change does to the app (its language, its times, its
 // timelines) is the app's test and each feature's; what shows while a change is on its way, preferences.dom.test.tsx.
+// The theme is this device's alone: it shows at once, is kept in the browser, and sends nothing.
 
 import { describe, expect, onTestFinished, test } from "bun:test";
 import { instanceQuery, ruleOf, type PreferencesChange } from "@my/app-data";
@@ -565,5 +566,47 @@ describe("before the preferences are read", () => {
     await screen.findByRole("combobox", { name: "Display language" });
     expect(reading.seen).toHaveLength(2);
     expect(screen.queryAllByRole("alert")).toHaveLength(0);
+  });
+});
+
+describe("the theme is this device's, not the account's", () => {
+  test("it starts at the device's own scheme; Dark and Light show at once and are kept here, with no PATCH, and back to the device's forgets them", async () => {
+    // The shell's theme-color, one for each scheme of the system.
+    const metas = (["light", "dark"] as const).map((scheme) => {
+      const meta = document.createElement("meta");
+      meta.name = "theme-color";
+      meta.media = `(prefers-color-scheme: ${scheme})`;
+      document.head.append(meta);
+      return meta;
+    });
+    const applying = () => metas.map((meta) => meta.media);
+    onTestFinished(() => {
+      localStorage.removeItem("my:theme");
+      delete document.documentElement.dataset["theme"];
+      for (const meta of metas) meta.remove();
+    });
+    const { fake, user } = await read();
+    const sent = fake.script("PATCH /preferences");
+
+    expect(offered("Light or dark")).toEqual(["Same as the device", "Light", "Dark"]);
+    expect(chosen("Light or dark")).toBe("Same as the device");
+    expect(describedBy(choice("Light or dark"))).toContain("Kept on this device only, not with your account.");
+
+    await user.selectOptions(choice("Light or dark"), "Dark");
+    expect(chosen("Light or dark")).toBe("Dark");
+    expect(document.documentElement.dataset["theme"]).toBe("dark");
+    expect(localStorage.getItem("my:theme")).toBe("dark");
+    // The browser's bar takes the dark scheme's colour whatever the system's scheme.
+    expect(applying()).toEqual(["not all", "all"]);
+
+    await user.selectOptions(choice("Light or dark"), "Light");
+    expect(document.documentElement.dataset["theme"]).toBe("light");
+    expect(applying()).toEqual(["all", "not all"]);
+
+    await user.selectOptions(choice("Light or dark"), "Same as the device");
+    expect(document.documentElement.dataset["theme"]).toBeUndefined();
+    expect(localStorage.getItem("my:theme")).toBeNull();
+    expect(applying()).toEqual(["(prefers-color-scheme: light)", "(prefers-color-scheme: dark)"]);
+    expect(sent.seen).toHaveLength(0);
   });
 });

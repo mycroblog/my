@@ -5,7 +5,7 @@
 // which it places the app; the app shows the reader's own language and time zone, and puts the locale and its
 // direction on the <html>, in place of the shell's, which are those of what a page previews (reader.tsx). It opens the
 // browser's session with the server (ADR-0090 §16) as it loads the strings of the reader's locale (strings.ts), with
-// a session its stream (ADR-0028 §18), and starts the router.
+// a session its stream (ADR-0028 §18), and starts the router. The colour scheme the device chose shows before all of it.
 // A server that cannot say whether there is a session leaves the app signed out, as when there is none, but for what
 // the device keeps of the reader, which stays (reader.tsx). Signing out in another tab makes this one leave. Every request
 // goes through one watch of the server, which tells its maintenance, an outage and a too old build (ADR-0088, ADR-0028
@@ -19,7 +19,13 @@ import "@my/design-system/cjk.css";
 import { instanceQuery, onSignedOutElsewhere, openSession, startStream, visitorData, watchServer } from "@my/app-data";
 import { inCall } from "@my/app-features";
 import { claimPressableStyle, I18nProvider } from "@my/design-system";
-import { browserLanguages, readDeviceValue, registerServiceWorker, writeDeviceValue } from "@my/platform";
+import {
+  browserLanguages,
+  followThemeChoice,
+  readDeviceValue,
+  registerServiceWorker,
+  writeDeviceValue,
+} from "@my/platform";
 
 /** The device's key of when the page last loaded again for a chunk of an older build. */
 const reloadedKey = "my:reloaded-for-chunk";
@@ -34,6 +40,8 @@ import { createAppRouter } from "./router";
 import { followSignOut } from "./sign-out";
 import { loadStrings } from "./strings";
 
+// The colour scheme this device chose for the app, from the first paint (the shell's is the system's).
+followThemeChoice();
 const config = parseConfig(document.getElementById("config")?.textContent ?? null, location);
 // The browser's locale: what the requests name (Accept-Language), and what the app shows a reader whose account
 // chose no language.
