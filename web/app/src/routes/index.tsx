@@ -18,8 +18,8 @@ import { useVisitorSignIn } from "../shell/visitor";
 export const Route = createFileRoute("/")({
   loader: ({ context }) => screenLoad(context, loadHomeTimeline),
   component: Home,
-  // Back on the home timeline, the reader is where they left it.
-  staticData: { scroll: "restore" },
+  // A place of the navigation opens at its newest; going back to the home timeline, the reader is where they left it.
+  staticData: { scroll: "back" },
 });
 
 /** The first page of a visitor of a one-person server: its operator's profile (ADR-0152 §7). */

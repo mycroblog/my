@@ -7,7 +7,16 @@ import type { ReactNode } from "react";
 import { Button, TextButton } from "./button";
 import { Entry } from "./entry";
 import { IconButton } from "./icon-button";
-import { Feed, FeedItem, FeedNotice, moveFeedFocus, useFeedPosition, type FeedPosition, type FeedProps } from "./feed";
+import {
+  Feed,
+  FeedItem,
+  FeedNotice,
+  moveFeedFocus,
+  showNewest,
+  useFeedPosition,
+  type FeedPosition,
+  type FeedProps,
+} from "./feed";
 
 /** What an entry was asked to scroll with, by the entry's position in its feed. */
 type Scroll = { entry: string | null; options: ScrollIntoViewOptions | boolean | undefined };
@@ -225,6 +234,15 @@ describe("a feed", () => {
     // The same region tells it, so that assistive technology announces it.
     expect(screen.getByRole("status")).toBe(status);
     await user.click(within(status).getByRole("button", { name: "3 new posts" }));
+    expect(presses).toBe(1);
+  });
+
+  test("the place chosen again shows its newest as a press of the new posts' button does", () => {
+    let presses = 0;
+    timeline({ count: 2, newItems: { label: "3 new posts", onPress: () => presses++ } });
+    act(() => {
+      showNewest(document);
+    });
     expect(presses).toBe(1);
   });
 

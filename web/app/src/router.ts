@@ -6,10 +6,10 @@
 
 import type { AppData } from "@my/app-data";
 import { routerTransitions } from "@my/design-system";
-import type { ScrollMode } from "@my/design-system";
 import { settleSkippedTransitions, supportsViewTransitions } from "@my/platform";
 import { createMemoryHistory, createRouter } from "@tanstack/react-router";
 import type { RuntimeConfig } from "./config";
+import type { ScreenScroll } from "./shell/scroll";
 import { routeTree } from "./routeTree.gen";
 import { navigationKind } from "./transitions";
 
@@ -78,7 +78,10 @@ declare module "@tanstack/react-router" {
   }
   // What every route declares about itself.
   interface StaticDataRouteOption {
-    /** Whether the screen brings back the position it was left at, or opens at the top (ADR-0025 §4). */
-    scroll: ScrollMode;
+    /**
+     * Whether the screen brings back the position it was left at, opens at the top, or brings it back on going back
+     * alone (ADR-0025 §4, shell/scroll.ts).
+     */
+    scroll: ScreenScroll;
   }
 }

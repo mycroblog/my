@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The root of every screen: the app's shell around the screen's route, with the links of the design system's parts
-// navigating through the router (but to the server's own pages, with a page load), unless the server's maintenance or
-// its closure takes the place of every screen (ADR-0088 §2, §10). A visitor at / gets the landing page in place of the
-// shell, and the article editor stands without it, its menus in a sheet on a phone as the shell's; the welcome step of
-// a signed-in reader is a page of its own before the app, without the shell too. An address the app has no screen for
-// shows its own heading inside the shell.
+// navigating through the router (but to the server's own pages, with a page load, and to the place of the navigation
+// already shown, which shows its newest), unless the server's maintenance or its closure takes the place of every
+// screen (ADR-0088 §2, §10). A visitor at / gets the landing page in place of the shell, and the article editor stands
+// without it, its menus in a sheet on a phone as the shell's; the welcome step of a signed-in reader is a page of its
+// own before the app, without the shell too. An address the app has no screen for shows its own heading inside the
+// shell.
 
 import { useInstance, usePermissions, useServerState, useWritesInFlight } from "@my/app-data";
 import { useVoiceCall } from "@my/app-features";
-import { FeedNotice, MenuSheet, NavigationProvider } from "@my/design-system";
+import { FeedNotice, MenuSheet, NavigationProvider, showNewest } from "@my/design-system";
 import { watchKeyboardInset } from "@my/platform";
 import { createRootRouteWithContext, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -18,6 +19,7 @@ import type { RouterContext } from "../router";
 import { isArticleEditor } from "../shell/article";
 import { ScreenHeading, useFocusOnNavigation } from "../shell/heading";
 import { Landing } from "../shell/landing";
+import { navigationPaths } from "../shell/places";
 import { ClosedPage, MaintenancePage, pageServer } from "../shell/pages";
 import { useScreenScroll } from "../shell/scroll";
 import { Shell } from "../shell/shell";
@@ -150,6 +152,8 @@ function Root() {
     <NavigationProvider
       navigate={(href) => {
         if (isServerPage(href)) location.assign(href);
+        // The place of the navigation already shown, chosen again, shows its newest.
+        else if (navigationPaths.has(href) && href === router.state.location.href) showNewest(document);
         else void router.navigate({ href });
       }}
     >

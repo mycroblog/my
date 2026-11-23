@@ -11,6 +11,7 @@ then the areas your work touches, each `decisions/<area>.md`, and `exemplars.md`
 - `accessibility`: what a screen reader hears, and what loads before the reader asks.
 - `forms`: how a control saves, and the checks of a settings screen.
 - `strings`: what a message of the catalog holds, and how its key is named.
+- `scroll`: where a screen opens, and what brings its position back.
 
 - The OpenAPI spec is the contract with the server: when an issue crosses into it, the spec is fixed first, and you
   build against it as given (ADR-0170 §4).

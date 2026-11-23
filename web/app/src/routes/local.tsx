@@ -10,8 +10,8 @@ import { PublicTimelineScreen } from "../shell/public-timeline";
 export const Route = createFileRoute("/local")({
   loader: ({ context }) => screenLoad(context, (data) => loadPublicTimeline(data, "local")),
   component: LocalScreen,
-  // Back on the timeline, the reader is where they left it.
-  staticData: { scroll: "restore" },
+  // A place of the navigation opens at its newest; going back to the timeline, the reader is where they left it.
+  staticData: { scroll: "back" },
 });
 
 function LocalScreen() {
