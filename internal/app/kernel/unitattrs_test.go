@@ -44,7 +44,7 @@ func keys(attrs []slog.Attr) []string {
 }
 
 // logUnit writes the line of a unit with ctx and returns the keys of its attributes, in order.
-func logUnit(t *testing.T, ctx context.Context, attrs ...slog.Attr) []string {
+func logUnit(ctx context.Context, t *testing.T, attrs ...slog.Attr) []string {
 	t.Helper()
 	h := &recordHandler{}
 	kernel.LogUnit(ctx, slog.New(h), slog.LevelInfo, "unit", kernel.NopMeter{}, attrs)
@@ -61,7 +61,7 @@ func TestUnitAttrs(t *testing.T) {
 	t.Run("outside a unit", func(t *testing.T) {
 		ctx := t.Context()
 		kernel.AddUnitAttrs(ctx, slog.String("lost", "x"))
-		if got := logUnit(t, ctx, slog.String("a", "1")); !slices.Equal(got, []string{"a"}) {
+		if got := logUnit(ctx, t, slog.String("a", "1")); !slices.Equal(got, []string{"a"}) {
 			t.Errorf("line keys = %v, want [a]", got)
 		}
 	})
@@ -76,7 +76,7 @@ func TestUnitAttrs(t *testing.T) {
 		if got := keys(u.Attrs()); !slices.Equal(got, []string{"x", "y", "z"}) {
 			t.Errorf("Attrs() keys = %v, want [x y z]", got)
 		}
-		if got := logUnit(t, ctx, slog.String("a", "1"), slog.String("b", "2")); !slices.Equal(got, []string{"a", "b", "x", "y", "z"}) {
+		if got := logUnit(ctx, t, slog.String("a", "1"), slog.String("b", "2")); !slices.Equal(got, []string{"a", "b", "x", "y", "z"}) {
 			t.Errorf("line keys = %v, want [a b x y z]", got)
 		}
 	})
@@ -92,10 +92,10 @@ func TestUnitAttrs(t *testing.T) {
 		if got := keys(iu.Attrs()); !slices.Equal(got, []string{"inner"}) {
 			t.Errorf("inner Attrs() keys = %v, want [inner]", got)
 		}
-		if got := logUnit(t, inner, slog.String("a", "1")); !slices.Equal(got, []string{"a", "inner"}) {
+		if got := logUnit(inner, t, slog.String("a", "1")); !slices.Equal(got, []string{"a", "inner"}) {
 			t.Errorf("inner line keys = %v, want [a inner]", got)
 		}
-		if got := logUnit(t, outer, slog.String("a", "1")); !slices.Equal(got, []string{"a", "outer"}) {
+		if got := logUnit(outer, t, slog.String("a", "1")); !slices.Equal(got, []string{"a", "outer"}) {
 			t.Errorf("outer line keys = %v, want [a outer]", got)
 		}
 	})
