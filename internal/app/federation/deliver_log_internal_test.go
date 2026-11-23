@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
 )
@@ -87,7 +86,7 @@ func TestDeliverAddsItsAttributesToTheRunLog(t *testing.T) {
 				Keys:    logKeys{testSigningKey(t)},
 				Domains: domains, Clock: fixedClock{}, IDs: logIDs{},
 			})
-			ctx, run := queue.WithRunAttrs(t.Context())
+			ctx, run := kernel.WithUnitAttrs(t.Context())
 			if res := d.Deliver(ctx, "d1"); !res.IsDone() {
 				t.Fatalf("Deliver() = %+v, want done", res)
 			}
