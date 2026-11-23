@@ -31,10 +31,12 @@ locals {
         filter      = "${local.service} AND jsonPayload.msg=\"job\""
         labels      = { my_job_type = "EXTRACT(jsonPayload.\"my.job.type\")", my_outcome = "EXTRACT(jsonPayload.\"my.outcome\")" }
       }
-      inbox_requests = {
-        description = "POSTs to the inboxes by status."
-        filter      = "${local.service} AND jsonPayload.msg=\"http request\" AND jsonPayload.\"http.request.method\"=\"POST\" AND jsonPayload.\"http.route\"=~\"/inbox$\""
-        labels      = { status = "EXTRACT(jsonPayload.\"http.response.status_code\")" }
+      # Only the request lines of my.inbox.activities carry the inbox's outcome: a POST refused before the inbox read it
+      # has none.
+      inbox_activities = {
+        description = "Activities POSTed to the inboxes by outcome and reason of refusal."
+        filter      = "${local.service} AND jsonPayload.msg=\"http request\" AND jsonPayload.\"my.outcome\":*"
+        labels      = { my_outcome = "EXTRACT(jsonPayload.\"my.outcome\")", my_inbox_rejection = "EXTRACT(jsonPayload.\"my.inbox.rejection\")" }
       }
       error_reports = {
         description = "Error reports of the server."
@@ -52,13 +54,13 @@ locals {
         labels      = {}
       }
       queue_backlog = {
-        description = "Snapshots in which the oldest ready job has waited over 5 minutes."
-        filter      = "${local.snapshot} AND jsonPayload.\"my.queue.oldest_ready_age\">300"
+        description = "Snapshots in which the oldest ready job of any type has waited over 5 minutes."
+        filter      = "${local.snapshot} AND jsonPayload.\"my.queue.oldest_ready_age.max\">300"
         labels      = {}
       }
       queue_stalled = {
-        description = "Snapshots in which the oldest ready job has waited over 30 minutes."
-        filter      = "${local.snapshot} AND jsonPayload.\"my.queue.oldest_ready_age\">1800"
+        description = "Snapshots in which the oldest ready job of any type has waited over 30 minutes."
+        filter      = "${local.snapshot} AND jsonPayload.\"my.queue.oldest_ready_age.max\">1800"
         labels      = {}
       }
     },
@@ -71,8 +73,8 @@ locals {
     },
     var.media_size_limit_bytes == null ? {} : {
       media_large = {
-        description = "Snapshots in which the local media are over the limit."
-        filter      = "${local.snapshot} AND jsonPayload.\"my.media.stored_bytes\".local>${var.media_size_limit_bytes}"
+        description = "Snapshots in which the local media and the remote media cache together are over the limit."
+        filter      = "${local.snapshot} AND jsonPayload.\"my.media.stored_bytes.total\">${var.media_size_limit_bytes}"
         labels      = {}
       }
     },
@@ -104,7 +106,7 @@ locals {
   jobs    = "${local.log}_job_runs{${local.resource}"
   deliver = "${local.jobs},my_job_type=\"federation.deliver\""
   email   = "${local.jobs},my_job_type=~\".*[._]email.*\""
-  inbox   = "${local.log}_inbox_requests{${local.resource}"
+  inbox   = "${local.log}_inbox_activities{${local.resource}"
   errors  = "${local.log}_error_reports{${local.resource}}"
 
   # The names, thresholds, and durations of deploy/monitoring/prometheus/alerts.yml; the README says where each differs.
@@ -140,17 +142,17 @@ locals {
       MyInboxRejectionsHigh = {
         severity = "WARNING"
         for      = "1800s"
-        query    = "sum(rate(${local.inbox},status=~\"4..|503\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.25 and sum(rate(${local.inbox}}[15m])) > 0.01"
+        query    = "sum(rate(${local.inbox},my_outcome=\"rejected\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.25 and sum(rate(${local.inbox}}[15m])) > 0.01"
       }
       MyInboxSignatureFailures = {
         severity = "WARNING"
         for      = "1800s"
-        query    = "sum(rate(${local.inbox},status=\"401\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.1 and sum(rate(${local.inbox}}[15m])) > 0.01"
+        query    = "sum(rate(${local.inbox},my_outcome=\"rejected\",my_inbox_rejection=\"signature\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.1 and sum(rate(${local.inbox}}[15m])) > 0.01"
       }
       MyInboxErrors = {
         severity = "WARNING"
         for      = "900s"
-        query    = "sum(rate(${local.inbox},status=\"500\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.05"
+        query    = "sum(rate(${local.inbox},my_outcome=\"error\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.05"
       }
       MyErrorReportsIncreasing = {
         severity = "WARNING"

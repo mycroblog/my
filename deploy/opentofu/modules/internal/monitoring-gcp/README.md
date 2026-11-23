@@ -96,22 +96,22 @@ The default is `900s` because it is the longest there is, and it means up to abo
 | --- | --- | --- |
 | `MyTargetDown` | Covered differently | The uptime check instead of a scrape: more than one checker fails for one period, at least 5 minutes. It stays green in the maintenance mode |
 | `MyNotReady` | Covered differently | Lines `not ready`: more than one in 15 minutes for 5 minutes. A failure needs something to call `/health/ready`: a starting revision, or the check when `uptime_path` is `/health/ready`. More than one, because a database that wakes slowly fails the 3-second check once |
-| `MyQueueBacklog` | Covered differently | The snapshot line every 15 minutes, with the age compared in the filter. One sample over the threshold fires, in place of 10 minutes above it |
+| `MyQueueBacklog` | Covered differently | The snapshot line every 15 minutes, with the largest age over the job types compared in the filter; the line has the age of each type. One sample over the threshold fires, in place of 10 minutes above it |
 | `MyQueueStalled` | Covered differently | The same, at 30 minutes. A stalled queue also holds back the snapshot job, so `MyMetricsSnapshotStale` may come first |
-| `MyMetricsSnapshotStale` | Covered differently | The line's absence, instead of the age of each part |
+| `MyMetricsSnapshotStale` | Covered differently | The line's absence, instead of the age of each part. The job writes the line only once it has computed every part again |
 | `MyDeadJobsIncreasing` | Covered differently | Job lines with `dead` per hour, instead of the change of the gauge |
 | `MyDeliveryFailuresHigh` | Covered differently | Job lines of `federation.deliver`: `retry` and `dead` per run, instead of attempts by outcome |
 | `MyDeliveryAllFailing` | Covered differently | The same |
-| `MyInboxRejectionsHigh` | Covered differently | Status of POSTs to the inboxes: 4xx and 503 per POST |
-| `MyInboxSignatureFailures` | Covered differently | Status 401 per POST. A key that could not be fetched answers 503 and is left out |
-| `MyInboxErrors` | Covered differently | Status 500 per POST |
+| `MyInboxRejectionsHigh` | Covered | The outcome on the request lines of the inboxes |
+| `MyInboxSignatureFailures` | Covered | The outcome and the reason of the refusal on the same lines |
+| `MyInboxErrors` | Covered | The outcome on the same lines |
 | `MyErrorReportsIncreasing` | Covered | Lines `error report`. Error Reporting groups the same lines too |
 | `MyHTTPErrorsHigh` | Covered differently | Cloud Run's `request_count`, so it also counts what the platform answered itself, and the calls of Cloud Tasks and the tick |
 | `MyHTTPErrorsElevated` | Covered differently | The same |
 | `MyAPILatencyHigh` | Covered | The duration of the request lines of the client API, the streaming endpoint left out |
 | `MyMemoryNearLimit` | Covered differently | Cloud Run's memory utilization over 81% of the container's limit, instead of the Go runtime over 90% of `GOMEMLIMIT`, which the app module sets to 90% of that limit |
 | `MyDatabaseStorageLarge` | Covered differently | The snapshot line against `database_size_limit_bytes`. Neon's own usage alerts see more |
-| `MyMediaStorageLarge` | Covered differently | The snapshot line, local media alone against `media_size_limit_bytes`: a filter cannot add two fields |
+| `MyMediaStorageLarge` | Covered differently | The snapshot line's total against `media_size_limit_bytes` |
 | `MyRemoteMediaCacheOverLimit` | Covered differently | The snapshot line against `remote_media_cache_limit_bytes`, which you set to 1.2 times the setting |
 | `MyEmailFailing` | Covered | Job lines of the email jobs with `dead` |
 | `MyEmailRetrying` | Covered | Job lines of the email jobs with `retry` |
