@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A list the API pages with a cursor (a profile's posts, the notifications): the infinite query of one operation, keyed
 // as openapi-react-query keys it, and what a screen reads of it, in the shape of the home timeline's (timeline.ts).
-import { infiniteQueryOptions, useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
+import {
+  infiniteQueryOptions,
+  useInfiniteQuery,
+  useQueryClient,
+  type InfiniteData,
+  type QueryClient,
+  type QueryKey,
+} from "@tanstack/react-query";
 import { useState } from "react";
 
 /** A page of a list: its items and the cursor of the next page. */
@@ -56,7 +63,24 @@ export type PagedList<T> = {
   readonly fetchNextPage: () => void;
   /** Fetches the list again from its first page: the reader's try again after the first page failed. */
   readonly refetch: () => void;
+  /**
+   * Reads the list's newest again, which the reader at its top asked for (a pull): its first page alone, in place of
+   * every page fetched. It resolves once the page arrived or failed. A list read whole leaves it out.
+   */
+  readonly refresh?: (() => Promise<void>) | undefined;
 };
+
+/**
+ * Keeps the first page alone of the infinite query of `queryKey` and reads it again: at once while a screen shows the
+ * list, else when one next opens it. It resolves once the page arrived or failed.
+ */
+export async function readFirstPageAgain(queryClient: QueryClient, queryKey: QueryKey): Promise<void> {
+  queryClient.setQueryData<InfiniteData<unknown>>(
+    queryKey,
+    (cached) => cached && { pages: cached.pages.slice(0, 1), pageParams: cached.pageParams.slice(0, 1) },
+  );
+  await queryClient.invalidateQueries({ queryKey, exact: true });
+}
 
 /**
  * A list the server answers whole, or that is read whole (every page of it at once), in the shape of a paged one whose
@@ -97,6 +121,7 @@ export function usePagedListOf<T, P extends Page<T>>(
   options: ReturnType<typeof pagedQuery<T, P>>,
   enabled = true,
 ): PagedListOf<T, P> {
+  const queryClient = useQueryClient();
   const query = useInfiniteQuery({ ...options, enabled });
   return {
     items: query.data?.pages.flatMap((page) => page.items) ?? [],
@@ -112,6 +137,7 @@ export function usePagedListOf<T, P extends Page<T>>(
     refetch: () => {
       void query.refetch();
     },
+    refresh: () => readFirstPageAgain(queryClient, options.queryKey),
   };
 }
 

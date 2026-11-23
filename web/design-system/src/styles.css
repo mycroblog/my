@@ -52,4 +52,12 @@
   :where([data-react-aria-pressable]) {
     touch-action: pan-x pan-y pinch-zoom;
   }
+
+  /*
+   * While a feed that a pull from its top reads anew is on the page (on a phone, pull.tsx), the page has no pull of its
+   * own at its top: the browser neither reloads it nor stretches or bounces it under the feed's mark.
+   */
+  :where(html:has([data-feed-pulls])) {
+    overscroll-behavior-y: none;
+  }
 }

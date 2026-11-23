@@ -56,6 +56,7 @@ export const LAYOUT_PARTS = {
   "web/design-system/src/card.tsx": ["AuthorLine"],
   "web/design-system/src/content.tsx": ["ContentBody"],
   "web/design-system/src/feed.tsx": ["NewItemsPlace"],
+  "web/design-system/src/pull.tsx": ["PullPlace"],
   "web/design-system/src/media.tsx": ["PictureGrid"],
   "web/design-system/src/switch.tsx": ["ToggleFrame", "TogglePlace", "ToggleNote"],
   "web/design-system/src/settings.tsx": ["SettingFrame", "FieldLineFrame"],

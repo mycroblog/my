@@ -173,6 +173,7 @@ const theme = {
     feed: ref("--feed-gap"),
     "feed-scroll": ref("--feed-scroll-margin"),
     "feed-tight": ref("--feed-tight-gap"),
+    "feed-pull-mark": ref("--feed-pull-mark"),
     embed: ref("--embed-padding"),
     "embed-gap": ref("--embed-gap"),
     "poll-padding": ref("--poll-padding"),

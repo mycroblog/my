@@ -15,6 +15,8 @@
 // button (NewItems) over its top, which brings the reader to the top and the focus to the screen's heading. When to
 // insert is its owner's to decide. Each entry carries its key as `data-scroll-key`, by which a screen restores its
 // position, and by which the feed tells which entry went out above the view (onPassed) or was clicked (onEntryClick).
+// Where the app lets feeds be pulled (a phone's, `FeedPulls`), one with `onPull` is read anew by a pull from its top
+// (pull.tsx).
 
 import {
   createContext,
@@ -30,6 +32,7 @@ import { tv } from "tailwind-variants/lite";
 import { ButtonBase } from "./button";
 import { Box, Layers, Stack } from "./layout";
 import { anchoring, scrollerOf, scrollToTop, viewTopOf, type Anchoring } from "./scroll";
+import { FeedPull, useFeedPulls } from "./pull";
 import { focusFrameHeading } from "./shell";
 import { actionJoint } from "./sentence";
 import { ActionScope } from "./shortcuts";
@@ -157,6 +160,11 @@ export type FeedProps = {
   busy: boolean;
   /** Asks for more entries when its end comes within a view's height; left out while none should be asked for. */
   onNearEnd?: (() => void) | undefined;
+  /**
+   * Reads the feed's newest again, when the reader pulls it down from the page's top where the app lets feeds be
+   * pulled (`FeedPulls`); the mark shows until what it returns settles. Left out, the feed cannot be pulled.
+   */
+  onPull?: (() => Promise<unknown>) | undefined;
   /** The entries, each in a FeedItem. */
   children: ReactNode;
   /** What follows the entries, outside the feed: a FeedNotice of the loading, a failure, or no entries. */
@@ -267,6 +275,7 @@ export function Feed({
   more,
   busy,
   onNearEnd,
+  onPull,
   children,
   end,
   onTopChange,
@@ -277,6 +286,8 @@ export function Feed({
   tight = false,
 }: FeedProps) {
   const s = feed();
+  const root = useRef<HTMLDivElement>(null);
+  const pulls = useFeedPulls();
   const sentinel = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const top = useRef<HTMLDivElement>(null);
@@ -370,7 +381,7 @@ export function Feed({
     };
   }, [hears, count]);
   return (
-    <Stack gap="feed" className={s.root()}>
+    <Stack as={<div ref={root} />} gap="feed" className={s.root()}>
       {/* The list, the mark at its top and the new entries' button share the first row, so that neither the mark nor
           the button takes room or a gap. */}
       <Layers>
@@ -384,6 +395,7 @@ export function Feed({
             </span>
           )}
         </NewItemsPlace>
+        {pulls && onPull && <FeedPull target={root} onPull={onPull} />}
         <Box as={<div ref={top} />} self="start" aria-hidden="true" className={s.top()} />
         <FeedSize value={more ? -1 : count}>
           {/* A feed owns its articles: with none yet (loading, failed, empty), the list is no feed, and the notice of
