@@ -3,7 +3,7 @@
 // Which font draws a script (ADR-0009 §5, ADR-0091 §8–§10): Latin, Greek and Cyrillic with the self-hosted Noto Sans,
 // Han, kana and Hangul with Noto Sans CJK of the text's language's region, an emoji with Noto Color Emoji; and a page
 // fetches the files of the characters it shows and no other. Chromium tells which font drew a piece of text over the
-// DevTools protocol; it draws COLRv1, the first source of each emoji face.
+// DevTools protocol; it skips the OpenType-SVG source of each emoji face, which it cannot draw, for the COLRv1 one.
 
 import { drawing, FontFiles, notoCjk, notoEmoji, notoSans } from "../fonts";
 import { expect, test } from "../test";

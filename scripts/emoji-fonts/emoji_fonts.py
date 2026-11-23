@@ -264,9 +264,11 @@ def main() -> int:
         rel = "./" + rel
     rules = []
     for split in splits:
+        # OpenType-SVG first: WebKit accepts tech(color-COLRv1) but does not draw those glyphs, and Chromium, which
+        # cannot draw OpenType-SVG, skips to COLRv1 (ADR-0091 §10).
         srcs = ",\n    ".join(
             f'url("{rel}/noto-emoji-{kind}-{split.name}.woff2") format("woff2") tech({tech})'
-            for kind, _, _, tech in formats
+            for kind, _, _, tech in reversed(formats)
         )
         rules.append(
             "/* " + split.name + " */\n"
@@ -289,7 +291,7 @@ def main() -> int:
         f" and OpenType-SVG {version_of(args.svg)},\n"
         " * one split per group of emoji-test.txt, under the SIL Open Font License 1.1 (fonts/emoji/OFL.txt).\n"
         " * The browser loads a split only when the page draws one of the code points of its unicode-range, and picks\n"
-        " * the first src whose tech() it supports: COLRv1 in Chromium and Firefox, OpenType-SVG in WebKit. */\n"
+        " * the first src whose tech() it supports: OpenType-SVG in WebKit and Firefox, COLRv1 in Chromium. */\n"
     )
     args.css.write_text(header + "\n" + "\n".join(rules), encoding="utf-8")
 
