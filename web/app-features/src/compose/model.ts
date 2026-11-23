@@ -143,6 +143,10 @@ export const pollDurations = [300, 3600, 86400, 259200, 604800] as const;
 export const pollLimits = { min: 2, max: 4, length: 50 } as const;
 /** How many images a post attaches at most. */
 export const maxAttachments = 4;
+
+/** The files of a paste a post attaches, as its attach button takes them: images, video and audio. */
+export const pastedMedia = (files: readonly File[]): File[] =>
+  files.filter((f) => /^(?:image|video|audio)\//.test(f.type));
 /** How many characters left before the count stops being muted. */
 export const nearChars = 20;
 

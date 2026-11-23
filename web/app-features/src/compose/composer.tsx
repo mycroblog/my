@@ -77,6 +77,7 @@ import {
   maxAttachments,
   nearChars,
   newPoll,
+  pastedMedia,
   pollDurations,
   pollLimits,
   quotesRemote,
@@ -349,6 +350,16 @@ export function ComposerView({
   });
   const cwSuggest = useSuggestions({ field: cwRef, text: draft.cw ?? "", triggers: [":"], locale });
   const scheduled = draft.scheduledAt;
+  // Ctrl+Enter or ⌘+Enter in the text or the content warning does what Post does, while Post can be pressed.
+  const send = () => {
+    if (!busy && !editorsDown && !postHeld(appeal)) c.submit();
+  };
+  // Files pasted in the text attach as the attach button's do, while it takes them.
+  const attach = (files: File[]) => {
+    const media = pastedMedia(files);
+    if (!busy && media.length > 0 && draft.poll === undefined && draft.attachments.length < maxAttachments)
+      c.addFiles(media);
+  };
   const setSchedule = (o: boolean) => {
     setOpen(o ? "schedule" : undefined);
   };
@@ -570,6 +581,7 @@ export function ComposerView({
               suggest={cwSuggest.suggest}
               {...cwSuggest.caret}
               readOnly={busy}
+              onSubmit={send}
               onChange={(cw) => {
                 c.change({ cw });
               }}
@@ -610,6 +622,8 @@ export function ComposerView({
             handle={textRef}
             suggest={textSuggest.suggest}
             {...textSuggest.caret}
+            onSubmit={send}
+            onFiles={attach}
             onChange={(value) => {
               c.change({ text: value });
             }}
