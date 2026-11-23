@@ -174,14 +174,15 @@ function previewAssets(): Env["ASSETS"] & { requests: Request[] } {
 void test("on a Preview, the root and /latest/ open /next/", async () => {
   const runtime: Runtime = { cache: memoryCache(), fetch: github([]), now: () => 0 };
   const env = { ASSETS: previewAssets() };
-  for (const [from, to] of [
+  const redirects: [from: string, to: string][] = [
     ["https://pr-1-my-docs.example.workers.dev/", "https://pr-1-my-docs.example.workers.dev/next/"],
     ["https://pr-1-my-docs.example.workers.dev/latest", "https://pr-1-my-docs.example.workers.dev/next/"],
     [
       "https://pr-1-my-docs.example.workers.dev/latest/operations/running/?q=1",
       "https://pr-1-my-docs.example.workers.dev/next/operations/running/?q=1",
     ],
-  ]) {
+  ];
+  for (const [from, to] of redirects) {
     const response = await handle(new Request(from), env, context(), runtime);
     assert.equal(response.status, 302, from);
     assert.equal(response.headers.get("location"), to, from);
