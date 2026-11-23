@@ -1100,8 +1100,10 @@ export function eventHandlers(c: EventContext): { handlers: Handlers; events: Fa
         reminders = undefined;
         return { status: 200, body: remindersShown() };
       }
-      const chosen = body.minutes_before ?? [];
+      // A body with neither minutes_before nor defaults is refused, as the server does.
+      const chosen = body.minutes_before;
       if (
+        chosen === undefined ||
         chosen.length > 3 ||
         new Set(chosen).size !== chosen.length ||
         chosen.some((m) => !Number.isInteger(m) || m < 5 || m > reminderMax)

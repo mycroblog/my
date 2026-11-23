@@ -22,6 +22,9 @@ get:
   responses:
     "200":
       description: A page of interaction requests.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
       content:
         application/json:
           schema:

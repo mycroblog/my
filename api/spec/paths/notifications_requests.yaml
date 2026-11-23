@@ -5,8 +5,9 @@ get:
   description: |
     The sources whose notifications the user's notification policy filtered, one request per
     source, the one with the newest notification first. The sources that the user blocks, is
-    blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-    left out.
+    blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+    deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+    fewer than `limit` requests before the last.
   tags: [notifications]
   security:
     - oauth2: ["read:notifications"]

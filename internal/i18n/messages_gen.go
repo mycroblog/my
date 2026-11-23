@@ -132,7 +132,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeRead() string {
 
 // ServerAuthAuthorizeScopeReadAccounts formats "server:auth.authorize.scope.read_accounts". Permission (OAuth scope read:accounts) listed on the authorization page.
 //
-//	en: Read accounts, your profile, and your settings
+//	en: Read accounts, your profile, your settings, and your private notes
 func (l *Localizer) ServerAuthAuthorizeScopeReadAccounts() string {
 	return l.format("server:auth.authorize.scope.read_accounts", nil)
 }
@@ -251,7 +251,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeWrite() string {
 
 // ServerAuthAuthorizeScopeWriteAccounts formats "server:auth.authorize.scope.write_accounts". Permission (OAuth scope write:accounts) listed on the authorization page.
 //
-//	en: Change your profile and settings
+//	en: Change your profile, your settings, and your private notes
 func (l *Localizer) ServerAuthAuthorizeScopeWriteAccounts() string {
 	return l.format("server:auth.authorize.scope.write_accounts", nil)
 }

@@ -6,9 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
+	"slices"
 
-	appaccount "github.com/mycroblog/my/internal/app/account"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/domain/notification"
 )
@@ -143,7 +144,9 @@ func (s *Server) ListNotificationRequests(ctx context.Context, req ListNotificat
 }
 
 // newNotificationRequests presents reqs in order as the NotificationRequest schema, each with its
-// source account and newest notification; a request whose source account is gone is left out.
+// source account and newest notification; a request whose source account the viewer may not see
+// (presentable, with the block check) is left out, and one whose newest notification
+// newNotifications leaves out has none.
 func (s *Server) newNotificationRequests(ctx context.Context, v Viewer, reqs []notification.Request) ([]NotificationRequest, error) {
 	if len(reqs) == 0 {
 		return nil, nil
@@ -153,38 +156,35 @@ func (s *Server) newNotificationRequests(ctx context.Context, v Viewer, reqs []n
 	for i, r := range reqs {
 		ids[i], lasts[i] = r.SourceAccountID, r.Last
 	}
-	// The source accounts, read together, as the notifications present theirs.
-	actors, err := s.o.Accounts.FindByIDs(ctx, ids)
+	// The source accounts, read together, as the other account lists present theirs.
+	shown, err := s.presentableAmong(ctx, &v, ids, true)
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: the accounts of the notification requests of %s: %w", v.AccountID, err)
 	}
-	found := make([]appaccount.Actor, 0, len(actors))
-	for _, id := range ids {
-		if a, ok := actors[id]; ok {
-			found = append(found, a)
-		}
-	}
-	parts, err := s.accountParts(ctx, found...)
+	parts, err := s.accountParts(ctx, slices.Collect(maps.Values(shown))...)
 	if err != nil {
 		return nil, err
 	}
-	byID := make(map[string]Account, len(found))
-	for id, a := range actors {
+	byID := make(map[string]Account, len(shown))
+	for id, a := range shown {
 		byID[id] = s.newAccount(a, parts)
 	}
-	notified, err := s.newNotifications(ctx, v, lasts)
+	presented, err := s.newNotifications(ctx, v, lasts)
 	if err != nil {
 		return nil, err
 	}
+	notified := make(map[string]Notification, len(presented))
+	for _, n := range presented {
+		notified[n.Id] = n
+	}
 	out := make([]NotificationRequest, 0, len(reqs))
-	for i, r := range reqs {
+	for _, r := range reqs {
 		a, ok := byID[r.SourceAccountID]
 		if !ok {
 			continue
 		}
 		item := NotificationRequest{Id: r.SourceAccountID, Account: a, NotificationsCount: r.NotificationsCount}
-		if i < len(notified) && notified[i].Id == r.LastNotificationID {
-			last := notified[i]
+		if last, ok := notified[r.LastNotificationID]; ok {
 			item.LastNotification = &last
 		}
 		out = append(out, item)

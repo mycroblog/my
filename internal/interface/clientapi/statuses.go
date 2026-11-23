@@ -93,7 +93,8 @@ type Interactions interface {
 }
 
 // contentViewer returns the viewer of ctx for the content module: the authenticated local
-// account, or an anonymous visitor. A token without read:direct does not see direct posts.
+// account, or an anonymous visitor. A token without read:direct does not see direct posts, nor one
+// without read:events the posts of the boards of events.
 func contentViewer(ctx context.Context) appcontent.Viewer {
 	if v, ok := ViewerFrom(ctx); ok {
 		return localContentViewer(v)
@@ -102,10 +103,14 @@ func contentViewer(ctx context.Context) appcontent.Viewer {
 }
 
 // localContentViewer returns the content viewer of an authenticated request, which sees direct
-// posts only when its token grants read:direct (ADR-0090 §4). The visibility itself is still
-// decided by the single policy function.
+// posts only when its token grants read:direct, and the posts of the boards of events only when it
+// grants read:events (ADR-0090 §4). The visibility itself is still decided by the single policy
+// function.
 func localContentViewer(v Viewer) appcontent.Viewer {
-	return appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: v.AccountID, DirectDenied: !v.Scope.Grants(identity.ScopeReadDirect)}
+	return appcontent.Viewer{
+		Kind: appcontent.ViewerLocal, AccountID: v.AccountID,
+		DirectDenied: !v.Scope.Grants(identity.ScopeReadDirect), BoardDenied: !v.Scope.Grants(identity.ScopeReadEvents),
+	}
 }
 
 // statusCache returns the Cache-Control of a successful response about statuses. An anonymous
@@ -298,12 +303,13 @@ func (s *Server) viewStatus(ctx context.Context, statusID string) (Status, error
 	return s.presentStatus(ctx, view)
 }
 
-// refuseUnseenDirect fails with ErrNotFound when the token of v may not see statusID because it
-// lacks read:direct, so that an author's command on a direct post changes nothing and shows
-// nothing. A token with read:direct goes on to the command, which decides by itself.
-func (s *Server) refuseUnseenDirect(ctx context.Context, v Viewer, statusID string) error {
+// refuseUnseen fails with ErrNotFound when the token of v may not see statusID because it lacks
+// read:direct or read:events, so that an author's command on a direct post or a post of the board
+// of an event changes nothing and shows nothing. A token with both goes on to the command, which
+// decides by itself.
+func (s *Server) refuseUnseen(ctx context.Context, v Viewer, statusID string) error {
 	viewer := localContentViewer(v)
-	if !viewer.DirectDenied {
+	if !viewer.DirectDenied && !viewer.BoardDenied {
 		return nil
 	}
 	_, err := s.o.StatusReader.Visible(ctx, viewer, statusID)
@@ -724,7 +730,7 @@ func (s *Server) EditStatus(ctx context.Context, req EditStatusRequestObject) (E
 		return nil, err
 	}
 	body := req.Body
-	err = s.refuseUnseenDirect(ctx, v, req.Id)
+	err = s.refuseUnseen(ctx, v, req.Id)
 	if err == nil {
 		_, err = s.o.Statuses.Edit(ctx, appcontent.EditInput{
 			TextInput: appcontent.TextInput{
@@ -759,7 +765,7 @@ func (s *Server) DeleteStatus(ctx context.Context, req DeleteStatusRequestObject
 	if err != nil {
 		return nil, err
 	}
-	err = s.refuseUnseenDirect(ctx, v, req.Id)
+	err = s.refuseUnseen(ctx, v, req.Id)
 	if err == nil {
 		_, err = s.o.Statuses.Delete(ctx, v.AccountID, req.Id)
 	}
@@ -1103,7 +1109,7 @@ func (s *Server) SetStatusInteractionPolicy(ctx context.Context, req SetStatusIn
 	if err != nil {
 		return nil, err
 	}
-	err = s.refuseUnseenDirect(ctx, v, req.Id)
+	err = s.refuseUnseen(ctx, v, req.Id)
 	if err == nil {
 		_, err = s.o.Statuses.SetInteractionPolicy(ctx, v.AccountID, req.Id, interactionPolicyChange(req.Body))
 	}
@@ -1153,7 +1159,7 @@ func (s *Server) RevokeStatusQuoteApproval(ctx context.Context, req RevokeStatus
 	if err != nil {
 		return nil, err
 	}
-	err = s.refuseUnseenDirect(ctx, v, req.Id)
+	err = s.refuseUnseen(ctx, v, req.Id)
 	if err == nil {
 		err = s.o.Interactions.RevokeQuote(ctx, v.AccountID, req.Id, req.QuoteId)
 	}

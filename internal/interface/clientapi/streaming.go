@@ -304,15 +304,18 @@ type statusDeleted struct {
 }
 
 // deleted sends the deletion of the status of e (event delete) when the viewer may have seen the
-// status (DeletedAudience), which the streams of the process decide once together. A
-// cross-process broker may deliver the signal twice, and the client removes nothing the second
-// time.
+// status (DeletedAudience), which the streams of the process decide once together. A token
+// without read:direct, which sees no direct post, gets no deletion of one. A cross-process broker
+// may deliver the signal twice, and the client removes nothing the second time.
 func (st *streamState) deleted(ctx context.Context, e stream.Event) error {
 	da := st.s.o.DeletedAudience
 	if da == nil || e.EntryID == "" || e.AuthorAccountID == "" {
 		return nil
 	}
 	d := apptimeline.DeletedFrom(e)
+	if d.Visibility == appcontent.VisibilityDirect && localContentViewer(st.viewer).DirectDenied {
+		return nil
+	}
 	audience := func(ctx context.Context, ids []string) (map[string]bool, error) {
 		return da.DeletedAudience(ctx, d, ids)
 	}

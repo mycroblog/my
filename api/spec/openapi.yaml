@@ -906,14 +906,21 @@ components:
 
         `read:statuses` does not show posts whose visibility is `direct`, in timelines, in a post's
         thread, or in a post's own response, nor in the posts of a notification; `read:direct` (which
-        `read` grants) does. The same holds for bookmarks, favourites, a post's source, and the posts that quote
-        a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`,
-        and the response shows the post just sent.
+        `read` grants) does. The same holds for bookmarks, favourites, a post's source, the posts that quote
+        a post, and the user's drafts, the user's own `direct` posts included. Sending a `direct` post, or
+        saving or publishing a `direct` draft, needs only `write:statuses`, and the response shows the post
+        or the draft just written.
+
+        The posts of the board of an event need `read:events` in the same way: without it, one is a
+        404 by its ID (the post, its history, source, reactions, translation, and thread), is left
+        out of a thread, and is not shown in a notification, the user's own included. Posting on a
+        board needs only `write:events`, and the response shows the post just sent.
 
         A write scope reads the post it acts on: the response to an action on a post, such as
         favouriting it with `write:favourites`, is the whole post. A token without `read:direct`
-        cannot act on a `direct` post, the user's own included (editing or deleting it, or setting who
-        may quote it, say): it gets a 404 and nothing changes. It can still take back
+        cannot act on a `direct` post or draft, nor one without `read:events` on a post of the board
+        of an event, the user's own included (editing or deleting it, or setting who may quote it,
+        say): it gets a 404 and nothing changes. Publishing a draft is the exception above. It can still take back
         what the user had on one (a favourite, say), and the answer is the same 404, which shows
         nothing of the post.
 
@@ -947,7 +954,7 @@ components:
         notification list, the stream, or the unread count, and they are dropped from the alerts of
         its Web Push subscription.
 
-        `read:notifications` shows a notification's `status`, under the rule of `read:direct` above,
+        `read:notifications` shows a notification's `status`, under the rules of `read:direct` and `read:events` above,
         and its `type` tells what happened. The other objects that a notification carries need the
         scope that reads them elsewhere, and are omitted without it: `report` needs `read:reports`,
         `supporter_subscription` `read:supporters`, `custom_emoji_request` `read:custom_emojis`,
@@ -980,7 +987,7 @@ components:
             write: Change everything the user can change.
             follow: Read and change follows, blocks, and mutes.
             push: Receive Web Push notifications.
-            "read:accounts": Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings and policy, aliases, and automatic deletion policy.
+            "read:accounts": Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings and policy, aliases, automatic deletion policy, and private notes on accounts.
             "read:blocks": Read the accounts the user blocks.
             "read:bookmarks": Read the user's bookmarks.
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
@@ -996,7 +1003,7 @@ components:
             "read:statuses": Read posts and timelines.
             "read:supporters": Read the user's own supporter subscription.
             "read:voice": Read the voice chat rooms the user sees.
-            "write:accounts": Change the user's profile, featured hashtags, preferences, notification settings and policy, badges, and supporter listing.
+            "write:accounts": Change the user's profile, featured hashtags, preferences, notification settings and policy, badges, supporter listing, and private notes on accounts.
             "write:blocks": Block and unblock accounts.
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.

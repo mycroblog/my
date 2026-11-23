@@ -5879,6 +5879,11 @@ type Account struct {
 	// Note The profile text as sanitized HTML; empty when there is none.
 	Note string `json:"note"`
 
+	// Unavailable True for an account that the user may not see but that a field must name (an event's
+	// `organizer`): its `id`, `uri`, `domain`, and `created_at` are its own, `url` is its `uri`,
+	// `locked` and `bot` are false, and its texts and lists are empty. Omitted otherwise.
+	Unavailable *bool `json:"unavailable,omitempty"`
+
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
 
@@ -10676,6 +10681,11 @@ type CredentialAccount struct {
 	// adds one to it, so a count of 1 after the create is the account's first post.
 	StatusesCount int64 `json:"statuses_count"`
 
+	// Unavailable True for an account that the user may not see but that a field must name (an event's
+	// `organizer`): its `id`, `uri`, `domain`, and `created_at` are its own, `url` is its `uri`,
+	// `locked` and `bot` are false, and its texts and lists are empty. Omitted otherwise.
+	Unavailable *bool `json:"unavailable,omitempty"`
+
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
 
@@ -11730,7 +11740,8 @@ type Event struct {
 	// Capacity How many attendees may answer `going`; 0 for no limit.
 	Capacity int `json:"capacity"`
 
-	// Coorganizers The co-organizers, in the order the organizer named them; up to 3.
+	// Coorganizers The co-organizers, in the order the organizer named them; up to 3. Those the user may not
+	// see, as for `organizer`, are left out.
 	Coorganizers []Account `json:"coorganizers"`
 	CreatedAt    time.Time `json:"created_at"`
 
@@ -11751,7 +11762,8 @@ type Event struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Organizer An account, as clients show it.
+	// Organizer The organizer; `unavailable` when the user may not see the account (it blocks the user, is
+	// deactivated or suspended, or moderation hides its profile).
 	Organizer Account `json:"organizer"`
 
 	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
@@ -14473,7 +14485,8 @@ type Notification struct {
 	ServiceClosure *ServiceClosureNotice `json:"service_closure,omitempty"`
 
 	// Status The post that the notification is about, as the user sees it; omitted when the user
-	// may not see it.
+	// may not see it, for a `direct` post without `read:direct`, and for a post of the board of
+	// an event without `read:events`.
 	Status *Status `json:"status,omitempty"`
 
 	// SupporterSubscription The user's supporter subscription that a `supporter_payment_failed`, a
@@ -14747,7 +14760,8 @@ type NotificationRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// LastNotification The newest notification of the request; omitted when it can no longer be shown.
+	// LastNotification The newest notification of the request; omitted when it can no longer be shown, or a hide
+	// keyword filter of the notifications leaves it out.
 	LastNotification *Notification `json:"last_notification,omitempty"`
 
 	// NotificationsCount The number of notifications waiting in the request.
@@ -22609,7 +22623,8 @@ type ClientInterface interface {
 	// 5 minutes (429 with `Retry-After`); finding a known account is not limited. While the
 	// instance takes nothing in from other servers (`Instance.federation.mode` `off` or
 	// `outbound`), only the known accounts are found: resolving one that the instance does
-	// not know is a 403 `/api/v1/problems/federation-restricted`, and nothing is fetched.
+	// not know, or one that is a 404 as above, is a 403 `/api/v1/problems/federation-restricted`,
+	// and nothing is fetched.
 	//
 	// Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 	LookupAccount(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -26762,7 +26777,8 @@ type ClientInterface interface {
 	// ListDrafts List the user's drafts, newest first
 	//
 	// The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-	// ones (`true`) or the others (`false`).
+	// ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+	// out, and a page may be shorter than `limit`.
 	//
 	// Corresponds with GET /drafts (the `ListDrafts` operationId).
 	ListDrafts(ctx context.Context, params *ListDraftsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -26799,7 +26815,8 @@ type ClientInterface interface {
 
 	// GetDraft Get a draft
 	//
-	// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+	// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+	// is a `direct` draft without `read:direct`.
 	//
 	// Corresponds with GET /drafts/{id} (the `GetDraft` operationId).
 	GetDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -26957,7 +26974,9 @@ type ClientInterface interface {
 	// ListEventAttendees List the attendees of an event
 	//
 	// The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-	// sees the event.
+	// sees the event. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last.
 	//
 	// Corresponds with GET /events/{id}/attendees (the `ListEventAttendees` operationId).
 	ListEventAttendees(ctx context.Context, id EventId, params *ListEventAttendeesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -27155,7 +27174,9 @@ type ClientInterface interface {
 	// ListEventCandidateVotes List the answers to a candidate date of an event
 	//
 	// Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-	// the event.
+	// the event. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last.
 	//
 	// Corresponds with GET /events/{id}/candidates/{candidate_id}/votes (the `ListEventCandidateVotes` operationId).
 	ListEventCandidateVotes(ctx context.Context, id EventId, candidateId EventCandidateId, params *ListEventCandidateVotesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -27183,7 +27204,9 @@ type ClientInterface interface {
 	// ListEventInvitations List the invitations of an event
 	//
 	// The invitations of the event that were not revoked, oldest first, for the organizer and the
-	// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+	// co-organizers. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
 	//
 	// Corresponds with GET /events/{id}/invitations (the `ListEventInvitations` operationId).
 	ListEventInvitations(ctx context.Context, id EventId, params *ListEventInvitationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -27194,7 +27217,8 @@ type ClientInterface interface {
 	// from now on, whatever its visibility. A user is invited to an event once (a 409
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+	// not see (moderation hides the profile); nothing is stored then. An event sends at
 	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes any type of body and a specified content type.
@@ -27208,7 +27232,8 @@ type ClientInterface interface {
 	// from now on, whatever its visibility. A user is invited to an event once (a 409
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+	// not see (moderation hides the profile); nothing is stored then. An event sends at
 	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes a body of the `application/json` content type.
@@ -27379,7 +27404,7 @@ type ClientInterface interface {
 	//
 	// Takes any type of body and a specified content type.
 	//
-	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 	UpdateKeywordFilterWithBody(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateKeywordFilter Change a keyword filter
@@ -27390,7 +27415,7 @@ type ClientInterface interface {
 	//
 	// Takes a body of the `application/json` content type.
 	//
-	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 	UpdateKeywordFilter(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetFinanceCostTotals Total the costs by period for the finance viewers
@@ -28178,8 +28203,9 @@ type ClientInterface interface {
 	//
 	// The sources whose notifications the user's notification policy filtered, one request per
 	// source, the one with the newest notification first. The sources that the user blocks, is
-	// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-	// left out.
+	// blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+	// deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+	// fewer than `limit` requests before the last.
 	//
 	// Corresponds with GET /notifications/requests (the `ListNotificationRequests` operationId).
 	ListNotificationRequests(ctx context.Context, params *ListNotificationRequestsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -28236,7 +28262,8 @@ type ClientInterface interface {
 	// DismissNotification Dismiss a notification
 	//
 	// Removes the notification from the list and the unread count. Dismissing it again
-	// changes nothing; a notification that is not the user's is a 404.
+	// changes nothing; a notification that is not the user's is a 404, and so is a moderator
+	// notification to another client than the server's own.
 	//
 	// Corresponds with POST /notifications/{id}/dismiss (the `DismissNotification` operationId).
 	DismissNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -28246,7 +28273,8 @@ type ClientInterface interface {
 	// Marks one notification read, wherever it is in the list, for every client of the user. A
 	// notification is unread while it is newer than the marker's `last_read_id` and not marked
 	// read here; marking it again, or marking one the marker already passed, changes nothing. A
-	// notification that is not the user's is a 404.
+	// notification that is not the user's is a 404, and so is a moderator notification to another
+	// client than the server's own, which does not get it.
 	//
 	// Corresponds with POST /notifications/{id}/read (the `ReadNotification` operationId).
 	ReadNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -28635,7 +28663,9 @@ type ClientInterface interface {
 	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 	// reminders of the upcoming events that the user answered going or maybe follow the change. A
 	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-	// longer than 7 days, or the same one twice; nothing is changed then.
+	// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+	// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+	// off.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -28647,7 +28677,9 @@ type ClientInterface interface {
 	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 	// reminders of the upcoming events that the user answered going or maybe follow the change. A
 	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-	// longer than 7 days, or the same one twice; nothing is changed then.
+	// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+	// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+	// off.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -29253,7 +29285,9 @@ type ClientInterface interface {
 	// answers with a translation that it keeps, or asks the providers that its operator enabled.
 	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 	// Characters sent count against monthly limits of the user and of the server, whichever app
-	// asks.
+	// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+	// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+	// bounds what one app can spend.
 	//
 	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 	// is enabled, or none is allowed its visibility. A 422
@@ -29280,7 +29314,9 @@ type ClientInterface interface {
 	// answers with a translation that it keeps, or asks the providers that its operator enabled.
 	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 	// Characters sent count against monthly limits of the user and of the server, whichever app
-	// asks.
+	// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+	// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+	// bounds what one app can spend.
 	//
 	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 	// is enabled, or none is allowed its visibility. A 422
@@ -30376,7 +30412,8 @@ func (c *Client) ResendVerificationEmail(ctx context.Context, reqEditors ...Requ
 // 5 minutes (429 with `Retry-After`); finding a known account is not limited. While the
 // instance takes nothing in from other servers (`Instance.federation.mode` `off` or
 // `outbound`), only the known accounts are found: resolving one that the instance does
-// not know is a 403 `/api/v1/problems/federation-restricted`, and nothing is fetched.
+// not know, or one that is a 404 as above, is a 403 `/api/v1/problems/federation-restricted`,
+// and nothing is fetched.
 //
 // Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -37779,7 +37816,8 @@ func (c *Client) UnmuteDomain(ctx context.Context, domain string, reqEditors ...
 // ListDrafts List the user's drafts, newest first
 //
 // The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-// ones (`true`) or the others (`false`).
+// ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+// out, and a page may be shorter than `limit`.
 //
 // Corresponds with GET /drafts (the `ListDrafts` operationId).
 func (c *Client) ListDrafts(ctx context.Context, params *ListDraftsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -37856,7 +37894,8 @@ func (c *Client) DeleteDraft(ctx context.Context, id DraftId, reqEditors ...Requ
 
 // GetDraft Get a draft
 //
-// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+// is a `direct` draft without `read:direct`.
 //
 // Corresponds with GET /drafts/{id} (the `GetDraft` operationId).
 func (c *Client) GetDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38144,7 +38183,9 @@ func (c *Client) UpdateEvent(ctx context.Context, id EventId, body UpdateEventJS
 // ListEventAttendees List the attendees of an event
 //
 // The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-// sees the event.
+// sees the event. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last.
 //
 // Corresponds with GET /events/{id}/attendees (the `ListEventAttendees` operationId).
 func (c *Client) ListEventAttendees(ctx context.Context, id EventId, params *ListEventAttendeesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38502,7 +38543,9 @@ func (c *Client) VoteEventCandidate(ctx context.Context, id EventId, candidateId
 // ListEventCandidateVotes List the answers to a candidate date of an event
 //
 // Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-// the event.
+// the event. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last.
 //
 // Corresponds with GET /events/{id}/candidates/{candidate_id}/votes (the `ListEventCandidateVotes` operationId).
 func (c *Client) ListEventCandidateVotes(ctx context.Context, id EventId, candidateId EventCandidateId, params *ListEventCandidateVotesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38560,7 +38603,9 @@ func (c *Client) AssignEventCoorganizer(ctx context.Context, id EventId, account
 // ListEventInvitations List the invitations of an event
 //
 // The invitations of the event that were not revoked, oldest first, for the organizer and the
-// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+// co-organizers. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
 //
 // Corresponds with GET /events/{id}/invitations (the `ListEventInvitations` operationId).
 func (c *Client) ListEventInvitations(ctx context.Context, id EventId, params *ListEventInvitationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -38581,7 +38626,8 @@ func (c *Client) ListEventInvitations(ctx context.Context, id EventId, params *L
 // from now on, whatever its visibility. A user is invited to an event once (a 409
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+// not see (moderation hides the profile); nothing is stored then. An event sends at
 // most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes any type of body and a specified content type.
@@ -38605,7 +38651,8 @@ func (c *Client) InviteToEventWithBody(ctx context.Context, id EventId, contentT
 // from now on, whatever its visibility. A user is invited to an event once (a 409
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+// not see (moderation hides the profile); nothing is stored then. An event sends at
 // most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes a body of the `application/json` content type.
@@ -38936,7 +38983,7 @@ func (c *Client) GetKeywordFilter(ctx context.Context, id KeywordFilterId, reqEd
 //
 // Takes any type of body and a specified content type.
 //
-// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 func (c *Client) UpdateKeywordFilterWithBody(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateKeywordFilterRequestWithBody(c.Server, id, contentType, body)
 	if err != nil {
@@ -38957,7 +39004,7 @@ func (c *Client) UpdateKeywordFilterWithBody(ctx context.Context, id KeywordFilt
 //
 // Takes a body of the `application/json` content type.
 //
-// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 func (c *Client) UpdateKeywordFilter(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateKeywordFilterRequest(c.Server, id, body)
 	if err != nil {
@@ -40345,8 +40392,9 @@ func (c *Client) UpdateNotificationMarker(ctx context.Context, body UpdateNotifi
 //
 // The sources whose notifications the user's notification policy filtered, one request per
 // source, the one with the newest notification first. The sources that the user blocks, is
-// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-// left out.
+// blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+// deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+// fewer than `limit` requests before the last.
 //
 // Corresponds with GET /notifications/requests (the `ListNotificationRequests` operationId).
 func (c *Client) ListNotificationRequests(ctx context.Context, params *ListNotificationRequestsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -40473,7 +40521,8 @@ func (c *Client) GetNotification(ctx context.Context, id Id, reqEditors ...Reque
 // DismissNotification Dismiss a notification
 //
 // Removes the notification from the list and the unread count. Dismissing it again
-// changes nothing; a notification that is not the user's is a 404.
+// changes nothing; a notification that is not the user's is a 404, and so is a moderator
+// notification to another client than the server's own.
 //
 // Corresponds with POST /notifications/{id}/dismiss (the `DismissNotification` operationId).
 func (c *Client) DismissNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -40493,7 +40542,8 @@ func (c *Client) DismissNotification(ctx context.Context, id Id, reqEditors ...R
 // Marks one notification read, wherever it is in the list, for every client of the user. A
 // notification is unread while it is newer than the marker's `last_read_id` and not marked
 // read here; marking it again, or marking one the marker already passed, changes nothing. A
-// notification that is not the user's is a 404.
+// notification that is not the user's is a 404, and so is a moderator notification to another
+// client than the server's own, which does not get it.
 //
 // Corresponds with POST /notifications/{id}/read (the `ReadNotification` operationId).
 func (c *Client) ReadNotification(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -41182,7 +41232,9 @@ func (c *Client) GetEventReminders(ctx context.Context, reqEditors ...RequestEdi
 // Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 // reminders of the upcoming events that the user answered going or maybe follow the change. A
 // 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-// longer than 7 days, or the same one twice; nothing is changed then.
+// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+// off.
 //
 // Takes any type of body and a specified content type.
 //
@@ -41204,7 +41256,9 @@ func (c *Client) UpdateEventRemindersWithBody(ctx context.Context, contentType s
 // Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 // reminders of the upcoming events that the user answered going or maybe follow the change. A
 // 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-// longer than 7 days, or the same one twice; nothing is changed then.
+// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+// off.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -42320,7 +42374,9 @@ func (c *Client) GetStatusSource(ctx context.Context, id StatusId, reqEditors ..
 // answers with a translation that it keeps, or asks the providers that its operator enabled.
 // Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 // Characters sent count against monthly limits of the user and of the server, whichever app
-// asks.
+// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+// bounds what one app can spend.
 //
 // A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 // is enabled, or none is allowed its visibility. A 422
@@ -42357,7 +42413,9 @@ func (c *Client) TranslateStatusWithBody(ctx context.Context, id StatusId, conte
 // answers with a translation that it keeps, or asks the providers that its operator enabled.
 // Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 // Characters sent count against monthly limits of the user and of the server, whichever app
-// asks.
+// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+// bounds what one app can spend.
 //
 // A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 // is enabled, or none is allowed its visibility. A 422
@@ -57401,7 +57459,7 @@ func NewUpdateKeywordFilterRequestWithBody(server string, id KeywordFilterId, co
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -64941,7 +64999,8 @@ type ClientWithResponsesInterface interface {
 	// 5 minutes (429 with `Retry-After`); finding a known account is not limited. While the
 	// instance takes nothing in from other servers (`Instance.federation.mode` `off` or
 	// `outbound`), only the known accounts are found: resolving one that the instance does
-	// not know is a 403 `/api/v1/problems/federation-restricted`, and nothing is fetched.
+	// not know, or one that is a 404 as above, is a 403 `/api/v1/problems/federation-restricted`,
+	// and nothing is fetched.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69460,7 +69519,8 @@ type ClientWithResponsesInterface interface {
 	// ListDraftsWithResponse List the user's drafts, newest first
 	//
 	// The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-	// ones (`true`) or the others (`false`).
+	// ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+	// out, and a page may be shorter than `limit`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69501,7 +69561,8 @@ type ClientWithResponsesInterface interface {
 
 	// GetDraftWithResponse Get a draft
 	//
-	// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+	// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+	// is a `direct` draft without `read:direct`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69669,7 +69730,9 @@ type ClientWithResponsesInterface interface {
 	// ListEventAttendeesWithResponse List the attendees of an event
 	//
 	// The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-	// sees the event.
+	// sees the event. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69883,7 +69946,9 @@ type ClientWithResponsesInterface interface {
 	// ListEventCandidateVotesWithResponse List the answers to a candidate date of an event
 	//
 	// Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-	// the event.
+	// the event. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69917,7 +69982,9 @@ type ClientWithResponsesInterface interface {
 	// ListEventInvitationsWithResponse List the invitations of an event
 	//
 	// The invitations of the event that were not revoked, oldest first, for the organizer and the
-	// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+	// co-organizers. Accounts that
+	// block the user, are deactivated or suspended, or whose profile moderation hides are left
+	// out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -69930,7 +69997,8 @@ type ClientWithResponsesInterface interface {
 	// from now on, whatever its visibility. A user is invited to an event once (a 409
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+	// not see (moderation hides the profile); nothing is stored then. An event sends at
 	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -69944,7 +70012,8 @@ type ClientWithResponsesInterface interface {
 	// from now on, whatever its visibility. A user is invited to an event once (a 409
 	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+	// not see (moderation hides the profile); nothing is stored then. An event sends at
 	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -70133,7 +70202,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 	UpdateKeywordFilterWithBodyWithResponse(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error)
 
 	// UpdateKeywordFilterWithResponse Change a keyword filter
@@ -70144,7 +70213,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 	UpdateKeywordFilterWithResponse(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error)
 
 	// GetFinanceCostTotalsWithResponse Total the costs by period for the finance viewers
@@ -71004,8 +71073,9 @@ type ClientWithResponsesInterface interface {
 	//
 	// The sources whose notifications the user's notification policy filtered, one request per
 	// source, the one with the newest notification first. The sources that the user blocks, is
-	// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-	// left out.
+	// blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+	// deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+	// fewer than `limit` requests before the last.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -71076,7 +71146,8 @@ type ClientWithResponsesInterface interface {
 	// DismissNotificationWithResponse Dismiss a notification
 	//
 	// Removes the notification from the list and the unread count. Dismissing it again
-	// changes nothing; a notification that is not the user's is a 404.
+	// changes nothing; a notification that is not the user's is a 404, and so is a moderator
+	// notification to another client than the server's own.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -71088,7 +71159,8 @@ type ClientWithResponsesInterface interface {
 	// Marks one notification read, wherever it is in the list, for every client of the user. A
 	// notification is unread while it is newer than the marker's `last_read_id` and not marked
 	// read here; marking it again, or marking one the marker already passed, changes nothing. A
-	// notification that is not the user's is a 404.
+	// notification that is not the user's is a 404, and so is a moderator notification to another
+	// client than the server's own, which does not get it.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -71501,7 +71573,9 @@ type ClientWithResponsesInterface interface {
 	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 	// reminders of the upcoming events that the user answered going or maybe follow the change. A
 	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-	// longer than 7 days, or the same one twice; nothing is changed then.
+	// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+	// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+	// off.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -71513,7 +71587,9 @@ type ClientWithResponsesInterface interface {
 	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 	// reminders of the upcoming events that the user answered going or maybe follow the change. A
 	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-	// longer than 7 days, or the same one twice; nothing is changed then.
+	// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+	// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+	// off.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -72179,7 +72255,9 @@ type ClientWithResponsesInterface interface {
 	// answers with a translation that it keeps, or asks the providers that its operator enabled.
 	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 	// Characters sent count against monthly limits of the user and of the server, whichever app
-	// asks.
+	// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+	// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+	// bounds what one app can spend.
 	//
 	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 	// is enabled, or none is allowed its visibility. A 422
@@ -72206,7 +72284,9 @@ type ClientWithResponsesInterface interface {
 	// answers with a translation that it keeps, or asks the providers that its operator enabled.
 	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 	// Characters sent count against monthly limits of the user and of the server, whichever app
-	// asks.
+	// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+	// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+	// bounds what one app can spend.
 	//
 	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 	// is enabled, or none is allowed its visibility. A 422
@@ -90170,6 +90250,11 @@ func (r UnmuteDomainResponse) ContentType() string {
 	return ""
 }
 
+// ListDraftsResponse200Headers the declared response headers of an HTTP 200 response for ListDrafts
+type ListDraftsResponse200Headers struct {
+	CacheControl *string
+}
+
 // ListDraftsResponseDefaultHeaders the declared response headers of an HTTP default response for ListDrafts
 type ListDraftsResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -90185,6 +90270,8 @@ type ListDraftsResponse struct {
 	JSON200 *DraftPage
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListDraftsResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *ListDraftsResponseDefaultHeaders
 }
@@ -90230,7 +90317,8 @@ func (r ListDraftsResponse) ContentType() string {
 
 // CreateDraftResponse201Headers the declared response headers of an HTTP 201 response for CreateDraft
 type CreateDraftResponse201Headers struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 
 // CreateDraftResponseDefaultHeaders the declared response headers of an HTTP default response for CreateDraft
@@ -90346,7 +90434,8 @@ func (r DeleteDraftResponse) ContentType() string {
 
 // GetDraftResponse200Headers the declared response headers of an HTTP 200 response for GetDraft
 type GetDraftResponse200Headers struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 
 // GetDraftResponseDefaultHeaders the declared response headers of an HTTP default response for GetDraft
@@ -90411,7 +90500,8 @@ func (r GetDraftResponse) ContentType() string {
 
 // UpdateDraftResponse200Headers the declared response headers of an HTTP 200 response for UpdateDraft
 type UpdateDraftResponse200Headers struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 
 // UpdateDraftResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateDraft
@@ -90556,7 +90646,8 @@ func (r PublishDraftResponse) ContentType() string {
 
 // UnscheduleDraftResponse200Headers the declared response headers of an HTTP 200 response for UnscheduleDraft
 type UnscheduleDraftResponse200Headers struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 
 // UnscheduleDraftResponseDefaultHeaders the declared response headers of an HTTP default response for UnscheduleDraft
@@ -90621,7 +90712,8 @@ func (r UnscheduleDraftResponse) ContentType() string {
 
 // ScheduleDraftResponse200Headers the declared response headers of an HTTP 200 response for ScheduleDraft
 type ScheduleDraftResponse200Headers struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 
 // ScheduleDraftResponseDefaultHeaders the declared response headers of an HTTP default response for ScheduleDraft
@@ -94236,6 +94328,11 @@ func (r GetInstanceTipAmountsResponse) ContentType() string {
 	return ""
 }
 
+// ListInteractionRequestsResponse200Headers the declared response headers of an HTTP 200 response for ListInteractionRequests
+type ListInteractionRequestsResponse200Headers struct {
+	CacheControl *string
+}
+
 // ListInteractionRequestsResponseDefaultHeaders the declared response headers of an HTTP default response for ListInteractionRequests
 type ListInteractionRequestsResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -94251,6 +94348,8 @@ type ListInteractionRequestsResponse struct {
 	JSON200 *InteractionRequestPage
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListInteractionRequestsResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *ListInteractionRequestsResponseDefaultHeaders
 }
@@ -94294,6 +94393,11 @@ func (r ListInteractionRequestsResponse) ContentType() string {
 	return ""
 }
 
+// AcceptInteractionRequestResponse200Headers the declared response headers of an HTTP 200 response for AcceptInteractionRequest
+type AcceptInteractionRequestResponse200Headers struct {
+	CacheControl *string
+}
+
 // AcceptInteractionRequestResponseDefaultHeaders the declared response headers of an HTTP default response for AcceptInteractionRequest
 type AcceptInteractionRequestResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -94309,6 +94413,8 @@ type AcceptInteractionRequestResponse struct {
 	JSON200 *InteractionRequest
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *AcceptInteractionRequestResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *AcceptInteractionRequestResponseDefaultHeaders
 }
@@ -94352,6 +94458,11 @@ func (r AcceptInteractionRequestResponse) ContentType() string {
 	return ""
 }
 
+// RejectInteractionRequestResponse200Headers the declared response headers of an HTTP 200 response for RejectInteractionRequest
+type RejectInteractionRequestResponse200Headers struct {
+	CacheControl *string
+}
+
 // RejectInteractionRequestResponseDefaultHeaders the declared response headers of an HTTP default response for RejectInteractionRequest
 type RejectInteractionRequestResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -94367,6 +94478,8 @@ type RejectInteractionRequestResponse struct {
 	JSON200 *InteractionRequest
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RejectInteractionRequestResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *RejectInteractionRequestResponseDefaultHeaders
 }
@@ -104017,7 +104130,8 @@ func (c *ClientWithResponses) ResendVerificationEmailWithResponse(ctx context.Co
 // 5 minutes (429 with `Retry-After`); finding a known account is not limited. While the
 // instance takes nothing in from other servers (`Instance.federation.mode` `off` or
 // `outbound`), only the known accounts are found: resolving one that the instance does
-// not know is a 403 `/api/v1/problems/federation-restricted`, and nothing is fetched.
+// not know, or one that is a 404 as above, is a 403 `/api/v1/problems/federation-restricted`,
+// and nothing is fetched.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -110486,7 +110600,8 @@ func (c *ClientWithResponses) UnmuteDomainWithResponse(ctx context.Context, doma
 // ListDraftsWithResponse List the user's drafts, newest first
 //
 // The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-// ones (`true`) or the others (`false`).
+// ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+// out, and a page may be shorter than `limit`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -110551,7 +110666,8 @@ func (c *ClientWithResponses) DeleteDraftWithResponse(ctx context.Context, id Dr
 
 // GetDraftWithResponse Get a draft
 //
-// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+// is a `direct` draft without `read:direct`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -110797,7 +110913,9 @@ func (c *ClientWithResponses) UpdateEventWithResponse(ctx context.Context, id Ev
 // ListEventAttendeesWithResponse List the attendees of an event
 //
 // The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-// sees the event.
+// sees the event. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -111107,7 +111225,9 @@ func (c *ClientWithResponses) VoteEventCandidateWithResponse(ctx context.Context
 // ListEventCandidateVotesWithResponse List the answers to a candidate date of an event
 //
 // Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-// the event.
+// the event. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -111159,7 +111279,9 @@ func (c *ClientWithResponses) AssignEventCoorganizerWithResponse(ctx context.Con
 // ListEventInvitationsWithResponse List the invitations of an event
 //
 // The invitations of the event that were not revoked, oldest first, for the organizer and the
-// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+// co-organizers. Accounts that
+// block the user, are deactivated or suspended, or whose profile moderation hides are left
+// out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -111178,7 +111300,8 @@ func (c *ClientWithResponses) ListEventInvitationsWithResponse(ctx context.Conte
 // from now on, whatever its visibility. A user is invited to an event once (a 409
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+// not see (moderation hides the profile); nothing is stored then. An event sends at
 // most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -111198,7 +111321,8 @@ func (c *ClientWithResponses) InviteToEventWithBodyWithResponse(ctx context.Cont
 // from now on, whatever its visibility. A user is invited to an event once (a 409
 // `/api/v1/problems/event-already-invited`, also after a revocation). A 422
 // `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+// not see (moderation hides the profile); nothing is stored then. An event sends at
 // most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -111483,7 +111607,7 @@ func (c *ClientWithResponses) GetKeywordFilterWithResponse(ctx context.Context, 
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 func (c *ClientWithResponses) UpdateKeywordFilterWithBodyWithResponse(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error) {
 	rsp, err := c.UpdateKeywordFilterWithBody(ctx, id, contentType, body, reqEditors...)
 	if err != nil {
@@ -111500,7 +111624,7 @@ func (c *ClientWithResponses) UpdateKeywordFilterWithBodyWithResponse(ctx contex
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+// Corresponds with PUT /filters/{id} (the `UpdateKeywordFilter` operationId).
 func (c *ClientWithResponses) UpdateKeywordFilterWithResponse(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error) {
 	rsp, err := c.UpdateKeywordFilter(ctx, id, body, reqEditors...)
 	if err != nil {
@@ -112720,8 +112844,9 @@ func (c *ClientWithResponses) UpdateNotificationMarkerWithResponse(ctx context.C
 //
 // The sources whose notifications the user's notification policy filtered, one request per
 // source, the one with the newest notification first. The sources that the user blocks, is
-// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-// left out.
+// blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+// deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+// fewer than `limit` requests before the last.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -112834,7 +112959,8 @@ func (c *ClientWithResponses) GetNotificationWithResponse(ctx context.Context, i
 // DismissNotificationWithResponse Dismiss a notification
 //
 // Removes the notification from the list and the unread count. Dismissing it again
-// changes nothing; a notification that is not the user's is a 404.
+// changes nothing; a notification that is not the user's is a 404, and so is a moderator
+// notification to another client than the server's own.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -112852,7 +112978,8 @@ func (c *ClientWithResponses) DismissNotificationWithResponse(ctx context.Contex
 // Marks one notification read, wherever it is in the list, for every client of the user. A
 // notification is unread while it is newer than the marker's `last_read_id` and not marked
 // read here; marking it again, or marking one the marker already passed, changes nothing. A
-// notification that is not the user's is a 404.
+// notification that is not the user's is a 404, and so is a moderator notification to another
+// client than the server's own, which does not get it.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -113445,7 +113572,9 @@ func (c *ClientWithResponses) GetEventRemindersWithResponse(ctx context.Context,
 // Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 // reminders of the upcoming events that the user answered going or maybe follow the change. A
 // 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-// longer than 7 days, or the same one twice; nothing is changed then.
+// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+// off.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -113463,7 +113592,9 @@ func (c *ClientWithResponses) UpdateEventRemindersWithBodyWithResponse(ctx conte
 // Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
 // reminders of the upcoming events that the user answered going or maybe follow the change. A
 // 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-// longer than 7 days, or the same one twice; nothing is changed then.
+// longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+// nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+// off.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -114435,7 +114566,9 @@ func (c *ClientWithResponses) GetStatusSourceWithResponse(ctx context.Context, i
 // answers with a translation that it keeps, or asks the providers that its operator enabled.
 // Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 // Characters sent count against monthly limits of the user and of the server, whichever app
-// asks.
+// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+// bounds what one app can spend.
 //
 // A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 // is enabled, or none is allowed its visibility. A 422
@@ -114468,7 +114601,9 @@ func (c *ClientWithResponses) TranslateStatusWithBodyWithResponse(ctx context.Co
 // answers with a translation that it keeps, or asks the providers that its operator enabled.
 // Only the text is sent to a provider, with no address, author, viewer, mention, or link.
 // Characters sent count against monthly limits of the user and of the server, whichever app
-// asks.
+// asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+// nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+// bounds what one app can spend.
 //
 // A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
 // is enabled, or none is allowed its visibility. A 422
@@ -136338,6 +136473,16 @@ func ParseListDraftsResponse(rsp *http.Response) (*ListDraftsResponse, error) {
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers ListDraftsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers ListDraftsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -136407,6 +136552,13 @@ func ParseCreateDraftResponse(rsp *http.Response) (*CreateDraftResponse, error) 
 	switch {
 	case rsp.StatusCode == 201:
 		var headers CreateDraftResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -136547,6 +136699,13 @@ func ParseGetDraftResponse(rsp *http.Response) (*GetDraftResponse, error) {
 	switch {
 	case rsp.StatusCode == 200:
 		var headers GetDraftResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -136624,6 +136783,13 @@ func ParseUpdateDraftResponse(rsp *http.Response) (*UpdateDraftResponse, error) 
 	switch {
 	case rsp.StatusCode == 200:
 		var headers UpdateDraftResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -136802,6 +136968,13 @@ func ParseUnscheduleDraftResponse(rsp *http.Response) (*UnscheduleDraftResponse,
 	switch {
 	case rsp.StatusCode == 200:
 		var headers UnscheduleDraftResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -136879,6 +137052,13 @@ func ParseScheduleDraftResponse(rsp *http.Response) (*ScheduleDraftResponse, err
 	switch {
 	case rsp.StatusCode == 200:
 		var headers ScheduleDraftResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
 		if values := rsp.Header.Values("ETag"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -141202,6 +141382,16 @@ func ParseListInteractionRequestsResponse(rsp *http.Response) (*ListInteractionR
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers ListInteractionRequestsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers ListInteractionRequestsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -141269,6 +141459,16 @@ func ParseAcceptInteractionRequestResponse(rsp *http.Response) (*AcceptInteracti
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers AcceptInteractionRequestResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers AcceptInteractionRequestResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -141336,6 +141536,16 @@ func ParseRejectInteractionRequestResponse(rsp *http.Response) (*RejectInteracti
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers RejectInteractionRequestResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers RejectInteractionRequestResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {

@@ -5,6 +5,7 @@ package clientapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/domain/content"
+	"github.com/mycroblog/my/internal/domain/identity"
 )
 
 // Drafts runs the use cases of the viewer's drafts and scheduled posts (ADR-0156 §9).
@@ -28,7 +30,8 @@ type Drafts interface {
 }
 
 // ListDrafts serves GET /api/v1/drafts: a page of the viewer's drafts, newest first. The cursor
-// is the ID of the last draft of the previous page.
+// is the ID of the last draft of the previous page, read before the direct drafts are left out for
+// a token without read:direct, so a page may be shorter than its limit.
 func (s *Server) ListDrafts(ctx context.Context, req ListDraftsRequestObject) (ListDraftsResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
@@ -48,12 +51,15 @@ func (s *Server) ListDrafts(ctx context.Context, req ListDraftsRequestObject) (L
 	views, last := trim(views, q.limit)
 	out := DraftPage{Items: make([]Draft, 0, len(views))}
 	for _, view := range views {
-		out.Items = append(out.Items, presentDraft(view))
+		if !draftHidden(v, view) {
+			out.Items = append(out.Items, presentDraft(view))
+		}
 	}
 	if last >= 0 {
 		out.NextCursor = encodeCursor(views[last].Draft.ID)
 	}
-	return ListDrafts200JSONResponse(out), nil
+	cache := cacheNoStore
+	return ListDrafts200JSONResponse{Body: out, Headers: ListDrafts200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // CreateDraft serves POST /api/v1/drafts.
@@ -77,8 +83,8 @@ func (s *Server) CreateDraft(ctx context.Context, req CreateDraftRequestObject) 
 
 // GetDraft serves GET /api/v1/drafts/{id}.
 func (s *Server) GetDraft(ctx context.Context, req GetDraftRequestObject) (GetDraftResponseObject, error) {
-	view, p, err := s.draftOp(ctx, func(accountID string) (appcontent.DraftView, error) {
-		return s.o.Drafts.Get(ctx, accountID, req.Id)
+	view, p, err := s.draftOp(ctx, func(v Viewer) (appcontent.DraftView, error) {
+		return s.seenDraft(ctx, v, req.Id)
 	})
 	switch {
 	case err != nil:
@@ -98,16 +104,16 @@ func (s *Server) UpdateDraft(ctx context.Context, req UpdateDraftRequestObject) 
 			l.ServerErrorsPreconditionRequired(), l.ServerErrorsDraftIfMatchRequired())), nil
 	}
 	ifMatch, ok := parseDraftETag(*req.Params.IfMatch)
-	view, p, err := s.draftOp(ctx, func(accountID string) (appcontent.DraftView, error) {
+	view, p, err := s.draftOp(ctx, func(v Viewer) (appcontent.DraftView, error) {
+		if _, err := s.seenDraft(ctx, v, req.Id); err != nil {
+			return appcontent.DraftView{}, err
+		}
 		if !ok {
 			// A tag this server did not make matches no version: answered as a draft that changed,
 			// once the draft is known to be the viewer's.
-			if _, err := s.o.Drafts.Get(ctx, accountID, req.Id); err != nil {
-				return appcontent.DraftView{}, err
-			}
 			return appcontent.DraftView{}, appcontent.ErrDraftChanged
 		}
-		return s.o.Drafts.Update(ctx, accountID, req.Id, ifMatch, draftInput(req.Body))
+		return s.o.Drafts.Update(ctx, v.AccountID, req.Id, ifMatch, draftInput(req.Body))
 	})
 	switch {
 	case err != nil:
@@ -120,8 +126,11 @@ func (s *Server) UpdateDraft(ctx context.Context, req UpdateDraftRequestObject) 
 
 // DeleteDraft serves DELETE /api/v1/drafts/{id}.
 func (s *Server) DeleteDraft(ctx context.Context, req DeleteDraftRequestObject) (DeleteDraftResponseObject, error) {
-	_, p, err := s.draftOp(ctx, func(accountID string) (appcontent.DraftView, error) {
-		return appcontent.DraftView{}, s.o.Drafts.Delete(ctx, accountID, req.Id)
+	_, p, err := s.draftOp(ctx, func(v Viewer) (appcontent.DraftView, error) {
+		if _, err := s.seenDraft(ctx, v, req.Id); err != nil {
+			return appcontent.DraftView{}, err
+		}
+		return appcontent.DraftView{}, s.o.Drafts.Delete(ctx, v.AccountID, req.Id)
 	})
 	switch {
 	case err != nil:
@@ -134,8 +143,11 @@ func (s *Server) DeleteDraft(ctx context.Context, req DeleteDraftRequestObject) 
 
 // ScheduleDraft serves PUT /api/v1/drafts/{id}/schedule.
 func (s *Server) ScheduleDraft(ctx context.Context, req ScheduleDraftRequestObject) (ScheduleDraftResponseObject, error) {
-	view, p, err := s.draftOp(ctx, func(accountID string) (appcontent.DraftView, error) {
-		return s.o.Drafts.Schedule(ctx, accountID, req.Id, req.Body.PublishAt)
+	view, p, err := s.draftOp(ctx, func(v Viewer) (appcontent.DraftView, error) {
+		if _, err := s.seenDraft(ctx, v, req.Id); err != nil {
+			return appcontent.DraftView{}, err
+		}
+		return s.o.Drafts.Schedule(ctx, v.AccountID, req.Id, req.Body.PublishAt)
 	})
 	switch {
 	case err != nil:
@@ -148,8 +160,11 @@ func (s *Server) ScheduleDraft(ctx context.Context, req ScheduleDraftRequestObje
 
 // UnscheduleDraft serves DELETE /api/v1/drafts/{id}/schedule.
 func (s *Server) UnscheduleDraft(ctx context.Context, req UnscheduleDraftRequestObject) (UnscheduleDraftResponseObject, error) {
-	view, p, err := s.draftOp(ctx, func(accountID string) (appcontent.DraftView, error) {
-		return s.o.Drafts.Unschedule(ctx, accountID, req.Id)
+	view, p, err := s.draftOp(ctx, func(v Viewer) (appcontent.DraftView, error) {
+		if _, err := s.seenDraft(ctx, v, req.Id); err != nil {
+			return appcontent.DraftView{}, err
+		}
+		return s.o.Drafts.Unschedule(ctx, v.AccountID, req.Id)
 	})
 	switch {
 	case err != nil:
@@ -212,7 +227,7 @@ func (s *Server) PublishDraft(ctx context.Context, req PublishDraftRequestObject
 }
 
 // draftOp runs op for the viewer and returns its draft, or the problem of its failure.
-func (s *Server) draftOp(ctx context.Context, op func(accountID string) (appcontent.DraftView, error)) (appcontent.DraftView, *problem, error) {
+func (s *Server) draftOp(ctx context.Context, op func(v Viewer) (appcontent.DraftView, error)) (appcontent.DraftView, *problem, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return appcontent.DraftView{}, nil, err
@@ -221,7 +236,7 @@ func (s *Server) draftOp(ctx context.Context, op func(accountID string) (appcont
 		p := s.problem(ctx, http.StatusNotFound, ProblemTypeBlank, s.Localizer(ctx).ServerErrorsNotFound(), "")
 		return appcontent.DraftView{}, &p, nil
 	}
-	view, err := op(v.AccountID)
+	view, err := op(v)
 	if err != nil {
 		if p, ok := s.draftProblem(ctx, err); ok {
 			return appcontent.DraftView{}, &p, nil
@@ -229,6 +244,23 @@ func (s *Server) draftOp(ctx context.Context, op func(accountID string) (appcont
 		return appcontent.DraftView{}, nil, err
 	}
 	return view, nil, nil
+}
+
+// seenDraft returns the draft id of v, failing with ErrNotFound, as for another user's draft, when
+// it is direct and the token lacks read:direct (ADR-0090 §4). A token with write:statuses alone
+// still creates and publishes a direct draft, and sees one that it saves as direct.
+func (s *Server) seenDraft(ctx context.Context, v Viewer, id string) (appcontent.DraftView, error) {
+	view, err := s.o.Drafts.Get(ctx, v.AccountID, id)
+	if err == nil && draftHidden(v, view) {
+		return appcontent.DraftView{}, fmt.Errorf("draft %s: %w", id, appcontent.ErrNotFound)
+	}
+	return view, err
+}
+
+// draftHidden reports whether the token of v may not see the draft view: a direct one without
+// read:direct.
+func draftHidden(v Viewer, view appcontent.DraftView) bool {
+	return view.Content.Visibility == content.VisibilityDirect && !v.Scope.Grants(identity.ScopeReadDirect)
 }
 
 // draftProblem returns the problem that err of a drafts use case means to the client: those of
@@ -293,10 +325,10 @@ func draftInput(body *DraftRequest) appcontent.DraftInput {
 	return in
 }
 
-// draftResponse returns the body and the ETag of a draft.
+// draftResponse returns the body and the ETag of a draft, which no cache keeps.
 func draftResponse(v appcontent.DraftView) DraftJSONResponse {
-	tag := draftETag(v.Content.UpdatedAt)
-	return DraftJSONResponse{Body: presentDraft(v), Headers: DraftResponseHeaders{ETag: &tag}}
+	tag, cache := draftETag(v.Content.UpdatedAt), cacheNoStore
+	return DraftJSONResponse{Body: presentDraft(v), Headers: DraftResponseHeaders{ETag: &tag, CacheControl: &cache}}
 }
 
 // draftETag is the ETag of a draft saved at updatedAt: the time of the save, to the millisecond

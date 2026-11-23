@@ -244,7 +244,7 @@ describe("a Save the server refuses moves the focus to the field its problem nam
   ] as const)
     test(`${member}: ${name}`, async () => {
       const form = await renamed();
-      form.fake.script("PATCH /filters/{id}", { times: 1, fail: refusal(member) });
+      form.fake.script("PUT /filters/{id}", { times: 1, fail: refusal(member) });
 
       await form.user.click(submitButton());
 
@@ -254,7 +254,7 @@ describe("a Save the server refuses moves the focus to the field its problem nam
 
   test("more words than a filter or all the filters can have: the list Words", async () => {
     const form = await renamed();
-    form.fake.script("PATCH /filters/{id}", {
+    form.fake.script("PUT /filters/{id}", {
       times: 1,
       fail: {
         type: "/api/v1/problems/too-many-filter-keywords",
@@ -275,7 +275,7 @@ describe("a Save the server refuses moves the focus to the field its problem nam
 
   test("a refusal that names no field leaves the focus on the button", async () => {
     const form = await renamed();
-    form.fake.script("PATCH /filters/{id}", { times: 1, fail: 500 });
+    form.fake.script("PUT /filters/{id}", { times: 1, fail: 500 });
 
     await form.user.click(submitButton());
 

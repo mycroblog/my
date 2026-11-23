@@ -16,5 +16,7 @@ properties:
     format: int64
     minimum: 1
   last_notification:
-    description: The newest notification of the request; omitted when it can no longer be shown.
+    description: |
+      The newest notification of the request; omitted when it can no longer be shown, or a hide
+      keyword filter of the notifications leaves it out.
     $ref: ./Notification.yaml

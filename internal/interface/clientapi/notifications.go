@@ -816,13 +816,17 @@ func (s *Server) GetNotification(ctx context.Context, req GetNotificationRequest
 }
 
 // ReadNotification serves POST /api/v1/notifications/{id}/read: it marks one of the viewer's
-// notifications read, wherever it is in the list.
+// notifications read, wherever it is in the list. A moderator notification is a 404 to a
+// third-party client, which does not get it (ownNotification).
 func (s *Server) ReadNotification(ctx context.Context, req ReadNotificationRequestObject) (ReadNotificationResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return nil, err
 	}
-	err = s.o.Notifications.ReadOne(ctx, v.AccountID, req.Id)
+	err = s.ownNotification(ctx, v, req.Id)
+	if err == nil {
+		err = s.o.Notifications.ReadOne(ctx, v.AccountID, req.Id)
+	}
 	if errors.Is(err, appnotification.ErrNotFound) {
 		body, headers := s.notFound(ctx)
 		return ReadNotificationdefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusNotFound}, nil
@@ -833,13 +837,17 @@ func (s *Server) ReadNotification(ctx context.Context, req ReadNotificationReque
 	return ReadNotification204Response{}, nil
 }
 
-// DismissNotification serves POST /api/v1/notifications/{id}/dismiss.
+// DismissNotification serves POST /api/v1/notifications/{id}/dismiss; a moderator notification is
+// a 404 to a third-party client, as for ReadNotification.
 func (s *Server) DismissNotification(ctx context.Context, req DismissNotificationRequestObject) (DismissNotificationResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return nil, err
 	}
-	err = s.o.Notifications.Dismiss(ctx, v.AccountID, req.Id)
+	err = s.ownNotification(ctx, v, req.Id)
+	if err == nil {
+		err = s.o.Notifications.Dismiss(ctx, v.AccountID, req.Id)
+	}
 	if errors.Is(err, appnotification.ErrNotFound) {
 		body, headers := s.notFound(ctx)
 		return DismissNotificationdefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusNotFound}, nil
@@ -848,6 +856,17 @@ func (s *Server) DismissNotification(ctx context.Context, req DismissNotificatio
 		return nil, fmt.Errorf("clientapi: dismiss notification %s of %s: %w", req.Id, v.AccountID, err)
 	}
 	return DismissNotification204Response{}, nil
+}
+
+// ownNotification fails with appnotification.ErrNotFound when the client of v does not get the
+// notification id: a moderator notification, for a third-party client. A first-party client goes
+// on to the command, which decides by itself.
+func (s *Server) ownNotification(ctx context.Context, v Viewer, id string) error {
+	if v.FirstParty {
+		return nil
+	}
+	_, err := s.o.Notifications.Get(ctx, v.AccountID, id, true)
+	return err
 }
 
 // notifiedErrorGroup presents what an admin_error_group tells of, with the count of the groups

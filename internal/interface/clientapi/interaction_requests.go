@@ -20,7 +20,8 @@ type InteractionRequests interface {
 	FindInteractionRequest(ctx context.Context, accountID, id string) (appcontent.InteractionRequestPage, content.InteractionState, error)
 }
 
-// ListInteractionRequests serves GET /api/v1/interaction_requests.
+// ListInteractionRequests serves GET /api/v1/interaction_requests; a 404, as the answers to the
+// requests, on a server without them.
 func (s *Server) ListInteractionRequests(ctx context.Context, req ListInteractionRequestsRequestObject) (ListInteractionRequestsResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
@@ -38,10 +39,10 @@ func (s *Server) ListInteractionRequests(ctx context.Context, req ListInteractio
 		}
 		kinds = []content.InteractionKind{kind}
 	}
-	out := InteractionRequestPage{Items: []InteractionRequest{}}
 	if s.o.InteractionRequests == nil {
-		return ListInteractionRequests200JSONResponse(out), nil
+		return ListInteractionRequestsdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	}
+	out := InteractionRequestPage{Items: []InteractionRequest{}}
 	page, err := s.o.InteractionRequests.PendingInteractionRequests(ctx, v.AccountID, kinds, q.before, q.limit)
 	if err != nil {
 		return nil, err
@@ -56,7 +57,7 @@ func (s *Server) ListInteractionRequests(ctx context.Context, req ListInteractio
 	if page.Next != "" {
 		out.NextCursor = encodeCursor(page.Next)
 	}
-	return ListInteractionRequests200JSONResponse(out), nil
+	return ListInteractionRequests200JSONResponse{Body: out, Headers: ListInteractionRequests200ResponseHeaders{CacheControl: interactionRequestCache()}}, nil
 }
 
 // AcceptInteractionRequest serves POST /api/v1/interaction_requests/{id}/accept.
@@ -68,7 +69,7 @@ func (s *Server) AcceptInteractionRequest(ctx context.Context, req AcceptInterac
 	case p != nil:
 		return AcceptInteractionRequestdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	return AcceptInteractionRequest200JSONResponse(*res), nil
+	return AcceptInteractionRequest200JSONResponse{Body: *res, Headers: AcceptInteractionRequest200ResponseHeaders{CacheControl: interactionRequestCache()}}, nil
 }
 
 // RejectInteractionRequest serves POST /api/v1/interaction_requests/{id}/reject.
@@ -80,7 +81,13 @@ func (s *Server) RejectInteractionRequest(ctx context.Context, req RejectInterac
 	case p != nil:
 		return RejectInteractionRequestdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	return RejectInteractionRequest200JSONResponse(*res), nil
+	return RejectInteractionRequest200JSONResponse{Body: *res, Headers: RejectInteractionRequest200ResponseHeaders{CacheControl: interactionRequestCache()}}, nil
+}
+
+// interactionRequestCache is the Cache-Control of the interaction requests, which are the user's.
+func interactionRequestCache() *string {
+	c := cacheNoStore
+	return &c
 }
 
 // answerInteractionRequest answers the request id of the viewer and presents it as it is then. A

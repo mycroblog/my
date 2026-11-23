@@ -5881,6 +5881,11 @@ type Account struct {
 	// Note The profile text as sanitized HTML; empty when there is none.
 	Note string `json:"note"`
 
+	// Unavailable True for an account that the user may not see but that a field must name (an event's
+	// `organizer`): its `id`, `uri`, `domain`, and `created_at` are its own, `url` is its `uri`,
+	// `locked` and `bot` are false, and its texts and lists are empty. Omitted otherwise.
+	Unavailable *bool `json:"unavailable,omitempty"`
+
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
 
@@ -10677,6 +10682,11 @@ type CredentialAccount struct {
 	// adds one to it, so a count of 1 after the create is the account's first post.
 	StatusesCount int64 `json:"statuses_count"`
 
+	// Unavailable True for an account that the user may not see but that a field must name (an event's
+	// `organizer`): its `id`, `uri`, `domain`, and `created_at` are its own, `url` is its `uri`,
+	// `locked` and `bot` are false, and its texts and lists are empty. Omitted otherwise.
+	Unavailable *bool `json:"unavailable,omitempty"`
+
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
 
@@ -11729,7 +11739,8 @@ type Event struct {
 	// Capacity How many attendees may answer `going`; 0 for no limit.
 	Capacity int `json:"capacity"`
 
-	// Coorganizers The co-organizers, in the order the organizer named them; up to 3.
+	// Coorganizers The co-organizers, in the order the organizer named them; up to 3. Those the user may not
+	// see, as for `organizer`, are left out.
 	Coorganizers []Account `json:"coorganizers"`
 	CreatedAt    time.Time `json:"created_at"`
 
@@ -11750,7 +11761,8 @@ type Event struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Organizer An account, as clients show it.
+	// Organizer The organizer; `unavailable` when the user may not see the account (it blocks the user, is
+	// deactivated or suspended, or moderation hides its profile).
 	Organizer Account `json:"organizer"`
 
 	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
@@ -14469,7 +14481,8 @@ type Notification struct {
 	ServiceClosure *ServiceClosureNotice `json:"service_closure,omitempty"`
 
 	// Status The post that the notification is about, as the user sees it; omitted when the user
-	// may not see it.
+	// may not see it, for a `direct` post without `read:direct`, and for a post of the board of
+	// an event without `read:events`.
 	Status *Status `json:"status,omitempty"`
 
 	// SupporterSubscription The user's supporter subscription that a `supporter_payment_failed`, a
@@ -14743,7 +14756,8 @@ type NotificationRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// LastNotification The newest notification of the request; omitted when it can no longer be shown.
+	// LastNotification The newest notification of the request; omitted when it can no longer be shown, or a hide
+	// keyword filter of the notifications leaves it out.
 	LastNotification *Notification `json:"last_notification,omitempty"`
 
 	// NotificationsCount The number of notifications waiting in the request.
@@ -24725,7 +24739,7 @@ type ServerInterface interface {
 	// (GET /filters/{id})
 	GetKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId)
 	// UpdateKeywordFilter Change a keyword filter
-	// (PATCH /filters/{id})
+	// (PUT /filters/{id})
 	UpdateKeywordFilter(w http.ResponseWriter, r *http.Request, id KeywordFilterId, params UpdateKeywordFilterParams)
 	// GetFinanceCostTotals Total the costs by period for the finance viewers
 	// (GET /finance/cost_totals)
@@ -45874,7 +45888,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/filters", wrapper.CreateKeywordFilter)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/filters/{id}", wrapper.DeleteKeywordFilter)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/filters/{id}", wrapper.GetKeywordFilter)
-	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/filters/{id}", wrapper.UpdateKeywordFilter)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/filters/{id}", wrapper.UpdateKeywordFilter)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/featured_tags", wrapper.ListFeaturedTags)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/featured_tags", wrapper.SetFeaturedTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/home", wrapper.GetHomeTimeline)
@@ -46519,7 +46533,8 @@ type CustomEmojiRequestProblemApplicationProblemPlusJSONResponse struct {
 }
 
 type DraftResponseHeaders struct {
-	ETag *string
+	CacheControl *string
+	ETag         *string
 }
 type DraftJSONResponse struct {
 	Body Draft
@@ -62613,15 +62628,25 @@ type ListDraftsResponseObject interface {
 	VisitListDraftsResponse(w http.ResponseWriter) error
 }
 
-type ListDrafts200JSONResponse DraftPage
+type ListDrafts200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListDrafts200JSONResponse struct {
+	Body    DraftPage
+	Headers ListDrafts200ResponseHeaders
+}
 
 func (response ListDrafts200JSONResponse) VisitListDraftsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -62675,6 +62700,9 @@ func (response CreateDraft201JSONResponse) VisitCreateDraftResponse(w http.Respo
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	if response.Headers.ETag != nil {
 		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
 	}
@@ -62777,6 +62805,9 @@ func (response GetDraft200JSONResponse) VisitGetDraftResponse(w http.ResponseWri
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	if response.Headers.ETag != nil {
 		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
 	}
@@ -62834,6 +62865,9 @@ func (response UpdateDraft200JSONResponse) VisitUpdateDraftResponse(w http.Respo
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	if response.Headers.ETag != nil {
 		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
 	}
@@ -62975,6 +63009,9 @@ func (response UnscheduleDraft200JSONResponse) VisitUnscheduleDraftResponse(w ht
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	if response.Headers.ETag != nil {
 		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
 	}
@@ -63032,6 +63069,9 @@ func (response ScheduleDraft200JSONResponse) VisitScheduleDraftResponse(w http.R
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	if response.Headers.ETag != nil {
 		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
 	}
@@ -66484,15 +66524,25 @@ type ListInteractionRequestsResponseObject interface {
 	VisitListInteractionRequestsResponse(w http.ResponseWriter) error
 }
 
-type ListInteractionRequests200JSONResponse InteractionRequestPage
+type ListInteractionRequests200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListInteractionRequests200JSONResponse struct {
+	Body    InteractionRequestPage
+	Headers ListInteractionRequests200ResponseHeaders
+}
 
 func (response ListInteractionRequests200JSONResponse) VisitListInteractionRequestsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -66537,15 +66587,25 @@ type AcceptInteractionRequestResponseObject interface {
 	VisitAcceptInteractionRequestResponse(w http.ResponseWriter) error
 }
 
-type AcceptInteractionRequest200JSONResponse InteractionRequest
+type AcceptInteractionRequest200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type AcceptInteractionRequest200JSONResponse struct {
+	Body    InteractionRequest
+	Headers AcceptInteractionRequest200ResponseHeaders
+}
 
 func (response AcceptInteractionRequest200JSONResponse) VisitAcceptInteractionRequestResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -66590,15 +66650,25 @@ type RejectInteractionRequestResponseObject interface {
 	VisitRejectInteractionRequestResponse(w http.ResponseWriter) error
 }
 
-type RejectInteractionRequest200JSONResponse InteractionRequest
+type RejectInteractionRequest200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RejectInteractionRequest200JSONResponse struct {
+	Body    InteractionRequest
+	Headers RejectInteractionRequest200ResponseHeaders
+}
 
 func (response RejectInteractionRequest200JSONResponse) VisitRejectInteractionRequestResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -76314,7 +76384,7 @@ type StrictServerInterface interface {
 	// (GET /filters/{id})
 	GetKeywordFilter(ctx context.Context, request GetKeywordFilterRequestObject) (GetKeywordFilterResponseObject, error)
 	// UpdateKeywordFilter Change a keyword filter
-	// (PATCH /filters/{id})
+	// (PUT /filters/{id})
 	UpdateKeywordFilter(ctx context.Context, request UpdateKeywordFilterRequestObject) (UpdateKeywordFilterResponseObject, error)
 	// GetFinanceCostTotals Total the costs by period for the finance viewers
 	// (GET /finance/cost_totals)

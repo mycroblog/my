@@ -410,6 +410,13 @@ func (s *Server) LookupAccount(ctx context.Context, req LookupAccountRequestObje
 	if err != nil {
 		return nil, err
 	}
+	// A stored account that the viewer may not see is looked up as an unknown one, resolving
+	// included, so that no answer tells it is stored.
+	if found {
+		if found, err = s.presentable(ctx, a, v, true); err != nil {
+			return nil, err
+		}
+	}
 	if !found && resolve && s.o.Resolver != nil && s.resolvable(req.Params.Acct) {
 		// A mode that takes nothing in finds only the known accounts (ADR-0006).
 		if ok, err := s.federationAllows(ctx, remoteAccountFlows...); err != nil {

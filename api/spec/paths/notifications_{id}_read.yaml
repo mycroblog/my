@@ -6,7 +6,8 @@ post:
     Marks one notification read, wherever it is in the list, for every client of the user. A
     notification is unread while it is newer than the marker's `last_read_id` and not marked
     read here; marking it again, or marking one the marker already passed, changes nothing. A
-    notification that is not the user's is a 404.
+    notification that is not the user's is a 404, and so is a moderator notification to another
+    client than the server's own, which does not get it.
   tags: [notifications]
   security:
     - oauth2: ["write:notifications"]

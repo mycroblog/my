@@ -193,7 +193,7 @@ type Wrong = { readonly input: Input; readonly text: string };
 /** What a member of the request answers to: an input, or the word at an index of the words sent. */
 type Named = Exclude<Input, `word:${number}`> | `sent:${number}`;
 
-/** Which input answers to which member of the request (`POST /filters`, `PATCH /filters/{id}`). */
+/** Which input answers to which member of the request (`POST /filters`, `PUT /filters/{id}`). */
 const members: FieldMembers<Named> = {
   title: "title",
   keywords: "words",

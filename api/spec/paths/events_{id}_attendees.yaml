@@ -6,7 +6,9 @@ get:
   summary: List the attendees of an event
   description: |
     The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-    sees the event.
+    sees the event. Accounts that
+    block the user, are deactivated or suspended, or whose profile moderation hides are left
+    out, so a page may hold fewer than `limit` items before the last.
   tags: [events]
   security:
     - oauth2: ["read:events"]

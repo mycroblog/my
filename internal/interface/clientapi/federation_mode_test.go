@@ -4,6 +4,7 @@ package clientapi_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -161,5 +162,42 @@ func TestFederationModeKeepsRemoteFollowPreferences(t *testing.T) {
 	})
 	if res := e.send(t, http.MethodPost, "/accounts/"+remoteAccountID+"/follow", "write", ""); res.StatusCode != http.StatusOK {
 		t.Errorf("follow of a followed remote account = %d, want 200", res.StatusCode)
+	}
+}
+
+// hiddenProfiles hides the profiles of the accounts in it, as moderation does.
+type hiddenProfiles map[string]bool
+
+func (h hiddenProfiles) ProfileHidden(_ context.Context, accountID string) (bool, error) {
+	return h[accountID], nil
+}
+
+// TestLookupOfAHiddenAccountIsThatOfAnUnknownOne checks that, while the instance takes nothing
+// in, resolving a stored remote account that the viewer may not see answers as resolving an
+// unknown one does, so that the answer does not tell the account is stored.
+func TestLookupOfAHiddenAccountIsThatOfAnUnknownOne(t *testing.T) {
+	resolver := &fakeResolver{}
+	e := newAuthEnv(t, func(o *clientapi.Options) {
+		o.Instance = &fakeInstance{settings: []instance.CurrentSetting{
+			{Key: instance.SettingFederationMode, RevisionID: testkit.NamedID("revision-1"), Value: "off"},
+		}}
+		o.Resolver = resolver
+		o.Accounts.(fakeAccounts)[remoteAccountID] = remoteBob
+		o.ProfileRestrictions = hiddenProfiles{remoteAccountID: true}
+	})
+	answer := func(acct string) string {
+		t.Helper()
+		q := url.Values{"acct": {acct}, "resolve": {"true"}}
+		res := e.get(t, "/accounts/lookup?"+q.Encode(), map[string]string{"Authorization": "Bearer read-accounts"})
+		return fmt.Sprint(res.StatusCode, " ", decodeProblem(t, res).Type)
+	}
+	unknown := answer("carol@remote.example")
+	for _, acct := range []string{"bob@remote.example", remoteBob.Account.URI} {
+		if got := answer(acct); got != unknown {
+			t.Errorf("resolve the hidden %s = %s, want %s as for an unknown account", acct, got, unknown)
+		}
+	}
+	if got := resolver.calls(); len(got) != 0 {
+		t.Errorf("resolver asked %v, want nothing fetched", got)
 	}
 }

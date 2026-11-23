@@ -65,12 +65,16 @@ func (s *Server) UpdateEventReminders(ctx context.Context, req UpdateEventRemind
 		body, headers := s.notFound(ctx)
 		return UpdateEventRemindersdefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusNotFound}, nil
 	}
+	// minutes_before or defaults says what to do: a body with neither would turn the reminders
+	// off without asking.
 	var minutes []int
-	if req.Body == nil || req.Body.Defaults == nil || !*req.Body.Defaults {
-		minutes = []int{}
-		if req.Body != nil && req.Body.MinutesBefore != nil {
-			minutes = append(minutes, *req.Body.MinutesBefore...)
-		}
+	switch {
+	case req.Body != nil && req.Body.Defaults != nil && *req.Body.Defaults:
+	case req.Body != nil && req.Body.MinutesBefore != nil:
+		minutes = append([]int{}, *req.Body.MinutesBefore...)
+	default:
+		return UpdateEventRemindersdefaultApplicationProblemPlusJSONResponse(
+			s.fieldProblem(ctx, "minutes_before", s.Localizer(ctx).ServerErrorsInvalidValue())), nil
 	}
 	r, err := settings.SetReminders(ctx, v.AccountID, minutes)
 	if errors.Is(err, gathering.ErrInvalidReminders) {

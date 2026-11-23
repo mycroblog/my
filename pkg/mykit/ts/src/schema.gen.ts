@@ -690,7 +690,9 @@ export interface paths {
          * @description Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
          *     reminders of the upcoming events that the user answered going or maybe follow the change. A
          *     422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
-         *     longer than 7 days, or the same one twice; nothing is changed then.
+         *     longer than 7 days, or the same one twice, and when the request has neither `minutes_before`
+         *     nor `defaults` true; nothing is changed then. An empty `minutes_before` turns the reminders
+         *     off.
          */
         put: operations["updateEventReminders"];
         post?: never;
@@ -1693,7 +1695,8 @@ export interface paths {
          *     5 minutes (429 with `Retry-After`); finding a known account is not limited. While the
          *     instance takes nothing in from other servers (`Instance.federation.mode` `off` or
          *     `outbound`), only the known accounts are found: resolving one that the instance does
-         *     not know is a 403 `/api/v1/problems/federation-restricted`, and nothing is fetched.
+         *     not know, or one that is a 404 as above, is a 403 `/api/v1/problems/federation-restricted`,
+         *     and nothing is fetched.
          */
         get: operations["lookupAccount"];
         put?: never;
@@ -2683,7 +2686,8 @@ export interface paths {
         /**
          * Dismiss a notification
          * @description Removes the notification from the list and the unread count. Dismissing it again
-         *     changes nothing; a notification that is not the user's is a 404.
+         *     changes nothing; a notification that is not the user's is a 404, and so is a moderator
+         *     notification to another client than the server's own.
          */
         post: operations["dismissNotification"];
         delete?: never;
@@ -2706,7 +2710,8 @@ export interface paths {
          * @description Marks one notification read, wherever it is in the list, for every client of the user. A
          *     notification is unread while it is newer than the marker's `last_read_id` and not marked
          *     read here; marking it again, or marking one the marker already passed, changes nothing. A
-         *     notification that is not the user's is a 404.
+         *     notification that is not the user's is a 404, and so is a moderator notification to another
+         *     client than the server's own, which does not get it.
          */
         post: operations["readNotification"];
         delete?: never;
@@ -2726,8 +2731,9 @@ export interface paths {
          * List the notification requests
          * @description The sources whose notifications the user's notification policy filtered, one request per
          *     source, the one with the newest notification first. The sources that the user blocks, is
-         *     blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
-         *     left out.
+         *     blocked by, or mutes with notifications hidden, those of a domain the user mutes, and those
+         *     deactivated, suspended, or whose profile moderation hides are left out, so a page may hold
+         *     fewer than `limit` requests before the last.
          */
         get: operations["listNotificationRequests"];
         put?: never;
@@ -3047,7 +3053,8 @@ export interface paths {
         /**
          * List the user's drafts, newest first
          * @description The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
-         *     ones (`true`) or the others (`false`).
+         *     ones (`true`) or the others (`false`). Without `read:direct` the `direct` drafts are left
+         *     out, and a page may be shorter than `limit`.
          */
         get: operations["listDrafts"];
         put?: never;
@@ -3073,7 +3080,8 @@ export interface paths {
         };
         /**
          * Get a draft
-         * @description A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+         * @description A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+         *     is a `direct` draft without `read:direct`.
          */
         get: operations["getDraft"];
         /**
@@ -3587,7 +3595,9 @@ export interface paths {
          *     answers with a translation that it keeps, or asks the providers that its operator enabled.
          *     Only the text is sent to a provider, with no address, author, viewer, mention, or link.
          *     Characters sent count against monthly limits of the user and of the server, whichever app
-         *     asks.
+         *     asks. `read:statuses` is enough on purpose: a translation is a way to read a post and changes
+         *     nothing of the user's, so any app that shows posts may offer it, and the user's monthly limit
+         *     bounds what one app can spend.
          *
          *     A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
          *     is enabled, or none is allowed its visibility. A 422
@@ -3886,7 +3896,13 @@ export interface paths {
          * @description A keyword filter of the user. Another user's filter is a 404, as if it did not exist.
          */
         get: operations["getKeywordFilter"];
-        put?: never;
+        /**
+         * Change a keyword filter
+         * @description Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+         *     `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+         *     user's filter is a 404.
+         */
+        put: operations["updateKeywordFilter"];
         post?: never;
         /**
          * Delete a keyword filter
@@ -3895,13 +3911,7 @@ export interface paths {
         delete: operations["deleteKeywordFilter"];
         options?: never;
         head?: never;
-        /**
-         * Change a keyword filter
-         * @description Replaces the title, action, contexts, words, and expiry of the filter, checked as in
-         *     `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
-         *     user's filter is a 404.
-         */
-        patch: operations["updateKeywordFilter"];
+        patch?: never;
         trace?: never;
     };
     "/featured_tags": {
@@ -4316,7 +4326,7 @@ export interface paths {
          *       or its remote server. `data` is `{"id": "<status id>"}`; remove the status, and the boosts
          *       of it, wherever they show. It is sent to the users who may see the status now (its
          *       visibility, their follows, and blocks apply), not to the recipients of a `direct` post
-         *       other than its author. Purges of many statuses at once (an account's deletion, the
+         *       other than its author, nor without the `read:direct` scope for a `direct` post. Purges of many statuses at once (an account's deletion, the
          *       automatic deletion of old posts) send none.
          *
          *     A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
@@ -5522,7 +5532,9 @@ export interface paths {
         /**
          * List the attendees of an event
          * @description The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
-         *     sees the event.
+         *     sees the event. Accounts that
+         *     block the user, are deactivated or suspended, or whose profile moderation hides are left
+         *     out, so a page may hold fewer than `limit` items before the last.
          */
         get: operations["listEventAttendees"];
         put?: never;
@@ -5623,7 +5635,9 @@ export interface paths {
         /**
          * List the invitations of an event
          * @description The invitations of the event that were not revoked, oldest first, for the organizer and the
-         *     co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+         *     co-organizers. Accounts that
+         *     block the user, are deactivated or suspended, or whose profile moderation hides are left
+         *     out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
          */
         get: operations["listEventInvitations"];
         put?: never;
@@ -5633,7 +5647,8 @@ export interface paths {
          *     from now on, whatever its visibility. A user is invited to an event once (a 409
          *     `/api/v1/problems/event-already-invited`, also after a revocation). A 422
          *     `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-         *     the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+         *     the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+         *     not see (moderation hides the profile); nothing is stored then. An event sends at
          *     most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
          */
         post: operations["inviteToEvent"];
@@ -5813,7 +5828,9 @@ export interface paths {
         /**
          * List the answers to a candidate date of an event
          * @description Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
-         *     the event.
+         *     the event. Accounts that
+         *     block the user, are deactivated or suspended, or whose profile moderation hides are left
+         *     out, so a page may hold fewer than `limit` items before the last.
          */
         get: operations["listEventCandidateVotes"];
         put?: never;
@@ -10383,6 +10400,12 @@ export interface components {
              *     chains).
              */
             moved?: components["schemas"]["Account"];
+            /**
+             * @description True for an account that the user may not see but that a field must name (an event's
+             *     `organizer`): its `id`, `uri`, `domain`, and `created_at` are its own, `url` is its `uri`,
+             *     `locked` and `bot` are false, and its texts and lists are empty. Omitted otherwise.
+             */
+            unavailable?: boolean;
             /**
              * @description The open voice chat room where the account is the host or a speaker, when the user sees
              *     it. Present only on `GET /accounts/{id}`.
@@ -14981,8 +15004,15 @@ export interface components {
          */
         Event: {
             id: components["schemas"]["Id"];
+            /**
+             * @description The organizer; `unavailable` when the user may not see the account (it blocks the user, is
+             *     deactivated or suspended, or moderation hides its profile).
+             */
             organizer: components["schemas"]["Account"];
-            /** @description The co-organizers, in the order the organizer named them; up to 3. */
+            /**
+             * @description The co-organizers, in the order the organizer named them; up to 3. Those the user may not
+             *     see, as for `organizer`, are left out.
+             */
             coorganizers: components["schemas"]["Account"][];
             title: string;
             /** @description Plain text; empty for none. */
@@ -16843,7 +16873,8 @@ export interface components {
             account?: components["schemas"]["Account"];
             /**
              * @description The post that the notification is about, as the user sees it; omitted when the user
-             *     may not see it.
+             *     may not see it, for a `direct` post without `read:direct`, and for a post of the board of
+             *     an event without `read:events`.
              */
             status?: components["schemas"]["Status"];
             /** @description The user's report that a `report_resolved` tells of; omitted without `read:reports`. */
@@ -17011,7 +17042,10 @@ export interface components {
              * @description The number of notifications waiting in the request.
              */
             notifications_count: number;
-            /** @description The newest notification of the request; omitted when it can no longer be shown. */
+            /**
+             * @description The newest notification of the request; omitted when it can no longer be shown, or a hide
+             *     keyword filter of the notifications leaves it out.
+             */
             last_notification?: components["schemas"]["Notification"];
         };
         /** @description A page of notification requests, the one with the newest notification first. */
@@ -20260,6 +20294,7 @@ export interface components {
         Draft: {
             headers: {
                 ETag: components["headers"]["ETag"];
+                "Cache-Control": components["headers"]["CacheControl"];
                 [name: string]: unknown;
             };
             content: {
@@ -23914,6 +23949,7 @@ export interface operations {
             /** @description A page of interaction requests. */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23951,6 +23987,7 @@ export interface operations {
             /** @description The request, answered. */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23988,6 +24025,7 @@ export interface operations {
             /** @description The request, answered. */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25285,6 +25323,7 @@ export interface operations {
             /** @description A page of drafts. */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26516,6 +26555,39 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    updateKeywordFilter: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per request, which makes the request safe to send again. Within
+                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
+                 *     anonymous client: the same address) already sent to the operation gets the first answer
+                 *     again instead of being carried out again. The same key with another request (another
+                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
+                 *     while the first request is still being carried out is a 409
+                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
+                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
+                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description The ID of the keyword filter. */
+                id: components["parameters"]["KeywordFilterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeywordFilterRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["KeywordFilter"];
+            default: components["responses"]["Problem"];
+        };
+    };
     deleteKeywordFilter: {
         parameters: {
             query?: never;
@@ -26548,39 +26620,6 @@ export interface operations {
                 };
                 content?: never;
             };
-            default: components["responses"]["Problem"];
-        };
-    };
-    updateKeywordFilter: {
-        parameters: {
-            query?: never;
-            header?: {
-                /**
-                 * @description A key the client chooses per request, which makes the request safe to send again. Within
-                 *     24 hours, a request with a key that the same sign-in of the user in the same client (an
-                 *     anonymous client: the same address) already sent to the operation gets the first answer
-                 *     again instead of being carried out again. The same key with another request (another
-                 *     path, query, or body) is a 422 `/api/v1/problems/idempotency-key-reused`, and a repeat
-                 *     while the first request is still being carried out is a 409
-                 *     `/api/v1/problems/idempotency-key-in-use` with a `Retry-After` of a second. Only an answer below 400 is kept: after a 4xx
-                 *     or 5xx the key is free, so a request sent again with it is carried out. A key longer than
-                 *     256 characters, or one that is not UTF-8 without U+0000, is a 422.
-                 */
-                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
-            };
-            path: {
-                /** @description The ID of the keyword filter. */
-                id: components["parameters"]["KeywordFilterId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["KeywordFilterRequest"];
-            };
-        };
-        responses: {
-            200: components["responses"]["KeywordFilter"];
             default: components["responses"]["Problem"];
         };
     };

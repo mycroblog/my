@@ -170,10 +170,10 @@ func TestKeywordFiltersAPI(t *testing.T) {
 
 	// An expired filter stops applying at once and stays listed; a later expiry applies it again.
 	past := time.Now().Add(-time.Minute).UTC().Format(time.RFC3339)
-	res = e.listCall(t, alice, http.MethodPatch, "/filters/"+ads.Id, fmt.Sprintf(
+	res = e.listCall(t, alice, http.MethodPut, "/filters/"+ads.Id, fmt.Sprintf(
 		`{"title":"Ads","action":"hide","contexts":["home"],"keywords":[{"keyword":"sale","whole_word":false}],"expires_at":%q}`, past))
 	if f := decodeJSON[clientapi.KeywordFilter](t, res); res.StatusCode != http.StatusOK || !f.Expired || f.ExpiresAt == nil {
-		t.Fatalf("PATCH /filters/{ads} = %d %+v, want it expired", res.StatusCode, f)
+		t.Fatalf("PUT /filters/{ads} = %d %+v, want it expired", res.StatusCode, f)
 	}
 	if got := itemIDs(e.page(t, &alice, "/timelines/home")); !slices.Contains(got, hidden) {
 		t.Errorf("home after the expiry = %v, want the post back", got)
@@ -183,10 +183,10 @@ func TestKeywordFiltersAPI(t *testing.T) {
 		t.Errorf("GET /filters/{expired} = %d %+v, want it listed as expired", res.StatusCode, f)
 	}
 	future := time.Now().Add(time.Hour).UTC().Format(time.RFC3339)
-	res = e.listCall(t, alice, http.MethodPatch, "/filters/"+ads.Id, fmt.Sprintf(
+	res = e.listCall(t, alice, http.MethodPut, "/filters/"+ads.Id, fmt.Sprintf(
 		`{"title":"Ads","action":"hide","contexts":["home"],"keywords":[{"keyword":"sale","whole_word":false}],"expires_at":%q}`, future))
 	if f := decodeJSON[clientapi.KeywordFilter](t, res); res.StatusCode != http.StatusOK || f.Expired {
-		t.Fatalf("PATCH /filters/{ads} with a later expiry = %d %+v, want it active", res.StatusCode, f)
+		t.Fatalf("PUT /filters/{ads} with a later expiry = %d %+v, want it active", res.StatusCode, f)
 	}
 	if got := itemIDs(e.page(t, &alice, "/timelines/home")); slices.Contains(got, hidden) {
 		t.Errorf("home after the extension = %v, want the post hidden again", got)

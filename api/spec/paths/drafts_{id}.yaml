@@ -2,7 +2,9 @@
 get:
   operationId: getDraft
   summary: Get a draft
-  description: A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+  description: |
+    A draft of the user, with its `ETag` for the next save. Another user's draft is a 404, and so
+    is a `direct` draft without `read:direct`.
   tags: [drafts]
   security:
     - oauth2: ["read:statuses"]

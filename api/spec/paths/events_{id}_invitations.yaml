@@ -6,7 +6,9 @@ get:
   summary: List the invitations of an event
   description: |
     The invitations of the event that were not revoked, oldest first, for the organizer and the
-    co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+    co-organizers. Accounts that
+    block the user, are deactivated or suspended, or whose profile moderation hides are left
+    out, so a page may hold fewer than `limit` items before the last. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
   tags: [events]
   security:
     - oauth2: ["read:events"]
@@ -33,7 +35,8 @@ post:
     from now on, whatever its visibility. A user is invited to an event once (a 409
     `/api/v1/problems/event-already-invited`, also after a revocation). A 422
     `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
-    the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+    the event, is in a block relation with the organizer or a co-organizer, or whom the user may
+    not see (moderation hides the profile); nothing is stored then. An event sends at
     most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a canceled event.
   tags: [events]
   security:

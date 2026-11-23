@@ -208,13 +208,13 @@ describe("saveKeywordFilter", () => {
     ]);
   });
 
-  test("changes a filter with a PATCH of its id, and the list and the filter's own copy hold the change", async () => {
+  test("changes a filter with a PUT of its id, and the list and the filter's own copy hold the change", async () => {
     const { data, requests } = fakeData();
     const [spoilers] = await listed(data);
     const id = spoilers?.id ?? "";
     await data.queryClient.query(keywordFilterQuery(data, id));
     await saveKeywordFilter(data, { ...request, title: "Spoilers and more" }, id);
-    expect(requests.filter((r) => !r.startsWith("GET "))).toEqual([`PATCH /filters/${id}`]);
+    expect(requests.filter((r) => !r.startsWith("GET "))).toEqual([`PUT /filters/${id}`]);
     expect((await listed(data)).map((f) => f.title)).toEqual(["Spoilers and more", "Election season", "Marathon week"]);
     const copy = await data.queryClient.query({ ...keywordFilterQuery(data, id), staleTime: Infinity });
     expect(copy).toMatchObject({ id, title: "Spoilers and more", action: "hide" });
