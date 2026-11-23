@@ -239,8 +239,8 @@ func (l Labels) All() func(yield func(key, value string) bool) {
 	}
 }
 
-// NopMeter is a Meter that records nothing, the meter of metrics_exporter = none. Its
-// instruments cost a method call.
+// NopMeter is a Meter that records nothing, which the Meter of metrics_exporter = none embeds.
+// Its instruments cost a method call.
 type NopMeter struct{}
 
 var _ Meter = NopMeter{}
@@ -278,11 +278,16 @@ func MeterOrNop(m Meter) Meter {
 	return m
 }
 
-// IsNop reports whether m records nothing, so that a caller can skip the work of measuring.
+// recordsNothing marks NopMeter, and a Meter that embeds it, for IsNop.
+func (NopMeter) recordsNothing() {}
+
+// IsNop reports whether the instruments of m record nothing, so that a caller can skip the work
+// of measuring: m is nil, NopMeter, or a Meter that embeds NopMeter and only adds to the lines
+// of the units of work (LineMeter), as the Meter of metrics_exporter = none does.
 func IsNop(m Meter) bool {
 	if m == nil {
 		return true
 	}
-	_, ok := m.(NopMeter)
+	_, ok := m.(interface{ recordsNothing() })
 	return ok
 }

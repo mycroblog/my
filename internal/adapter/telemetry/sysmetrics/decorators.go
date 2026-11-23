@@ -18,7 +18,7 @@ import (
 // KV measures the operations of the key-value store s, whose adapter is named adapter (such
 // as kv.valkey). A Get of a missing key is a success.
 func KV(s kernel.KeyValueStore, m kernel.Meter, adapter string) kernel.KeyValueStore {
-	if kernel.IsNop(m) {
+	if !measures(m) {
 		return s
 	}
 	return &kv{next: s, ops: newOperations(m, adapter)}
@@ -104,7 +104,7 @@ func (s *kv) DeleteExpired(ctx context.Context, limit int) (int64, error) {
 // blob.fs). A Get or Head of a missing blob is a success; a Get measures the time until the
 // blob can be read, not the read.
 func Blobs(s blob.Store, m kernel.Meter, adapter string) blob.Store {
-	if kernel.IsNop(m) {
+	if !measures(m) {
 		return s
 	}
 	return &blobs{next: s, ops: newOperations(m, adapter)}
@@ -150,7 +150,7 @@ func (s *blobs) PublicURL(key string) string { return s.next.PublicURL(key) }
 // Jobs measures the enqueues of the job queue q, whose adapter is named adapter (such as
 // queue.db).
 func Jobs(q queue.JobQueue, m kernel.Meter, adapter string) queue.JobQueue {
-	if kernel.IsNop(m) {
+	if !measures(m) {
 		return q
 	}
 	return &jobs{next: q, ops: newOperations(m, adapter)}
@@ -173,7 +173,7 @@ func (q *jobs) Enqueue(ctx context.Context, js ...queue.NewJob) error {
 // finds no due job is not measured, so that an idle worker's polls record nothing (an
 // exporter that writes each measurement, emf, would write a line per poll).
 func Source(s queue.Source, m kernel.Meter, adapter string) queue.Source {
-	if kernel.IsNop(m) {
+	if !measures(m) {
 		return s
 	}
 	return &source{next: s, ops: newOperations(m, adapter)}
@@ -231,7 +231,7 @@ func (s *source) Bury(ctx context.Context, worker string, j queue.Job, lastErr s
 // Sweeping is not measured; take the Sweeper from b before wrapping it. reporter receives a
 // panic of the goroutine that waits for the listener's end (kernel.Go).
 func Bus(b stream.Bus, m kernel.Meter, adapter string, reporter kernel.ErrorReporter) stream.Bus {
-	if kernel.IsNop(m) {
+	if !measures(m) {
 		return b
 	}
 	return &bus{

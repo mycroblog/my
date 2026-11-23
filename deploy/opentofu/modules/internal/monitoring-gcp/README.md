@@ -118,10 +118,10 @@ The default is `900s` because it is the longest there is, and it means up to abo
 | `MyBillingImportFailing` | Covered differently | The snapshot line, for each of `billing_sources` |
 | `MyRemoteServersPaused` | Not expressible | It compares a gauge with its value a day before, and a counter of lines holds no value. See the remote servers screen |
 | `MyProcessRestarting` | Not expressible | An instance that starts and stops is what scaling to zero does, so restarts mean nothing here. An out-of-memory kill shows in `MyHTTPErrorsHigh` and in Cloud Run's logs |
-| `MyDBPoolSaturated` | Not expressible | No log line carries the pool's use. It needs `otlp`. Its effect shows in `MyHTTPErrorsHigh` and `MyAPILatencyHigh`, and on Neon's own screens |
-| `MyDBPoolWaiting` | Not expressible | The same |
+| `MyDBPoolSaturated` | Covered differently | The pool's use on the request and job lines: over half of them in 5 minutes written while over 90% of the pool was in use, for 15 minutes. Over all the instances, not one at a time |
+| `MyDBPoolWaiting` | Covered differently | The waits each line carries since its process's previous line, summed: over all the instances, not one at a time |
 | `MyFileDescriptorsNearLimit` | Not expressible | No line carries it, and Cloud Run sets the limit |
-| `MyAdapterErrors` | Not expressible | No line carries it. It needs `otlp` |
+| `MyAdapterErrors` | Covered differently | The operations and errors each request and job line carries, summed over all the adapters; the line names the adapter that failed |
 | `MyTLSCertificateExpiring` | Not expressible | Cloud Run terminates TLS with its own certificates, so the server runs with `tls = off` and has no certificate to measure |
 | `MyTLSOrdersFailing` | Not expressible | The same: the server orders no certificate |
 

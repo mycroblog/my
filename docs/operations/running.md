@@ -47,6 +47,12 @@ so on Cloud Run with `metrics_exporter = none` you can build Cloud Logging log-b
 | `job` (`INFO` on success and for `postponed`, `WARN` for `retry`, `ERROR` for `dead`) | `my.job.type` and `my.outcome` have the same values as the labels of `my.job.duration`. Also `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt`, and `error` on failure |
 | `error report` (`ERROR`; `CRITICAL` for a failure that stops the process) | One line per reported error ([Error reports](#error-reports)) |
 
+With `metrics_exporter = none`, the `http request` and `job` lines also carry the [system metrics](#system-metrics) of the adapters and the database pool.
+When the request or job ran queue, key-value, stream or blob operations: `my.adapter.operations.total`, `my.adapter.errors.total`, and
+`my.adapter.errors`, the errors by `my.adapter` (such as `{"kv.valkey": 2}`). `db.client.connection.usage`, the used connections over the pool's
+maximum, when it has one. When not zero, `my.db.client.connection.waits`, `db.client.connection.wait_time` (seconds) and `db.client.connection.timeouts`: the increase
+since the process's previous line, so their sum over the lines is the process's total.
+
 ### Error reports
 
 The [Error reporting](error-reporting.md) guide covers where to read these lines on each platform, the Errors screen, notifications, and sending reports to an error tracker.
@@ -387,7 +393,7 @@ The setting `metrics_exporter` (default `none`) exports service metrics. Its rel
 
 | `metrics_exporter` | Path | Suited to |
 | --- | --- | --- |
-| `none` | Nothing is exported. Instrumentation costs almost nothing. The instance-wide values still go to one `metrics snapshot` log line every 15 minutes | Cloud Run (use the platform's metrics and log-based metrics instead) |
+| `none` | Nothing is exported. Instrumentation costs almost nothing. The instance-wide values still go to one `metrics snapshot` log line every 15 minutes, and the adapters' and the pool's to the request and job lines | Cloud Run (use the platform's metrics and log-based metrics instead) |
 | `prometheus` | `GET /metrics` on `metrics_listen` (default `127.0.0.1:9464`). It is a listener separate from the public `listen`, with no authentication, and runs for every `role` | Self-hosted (scraped by a Prometheus-compatible server or KEDA) |
 | `otlp` | Sent to an OpenTelemetry Collector over OTLP/HTTP. The destination comes from the standard OTel environment variables such as `OTEL_EXPORTER_OTLP_ENDPOINT` | Setups where you can run a collector |
 | `emf` | CloudWatch Embedded Metric Format JSON lines. Request and job metrics ride on the closing log lines above; the others are written to standard output, one line per label set, when a request or job finishes | AWS ECS |

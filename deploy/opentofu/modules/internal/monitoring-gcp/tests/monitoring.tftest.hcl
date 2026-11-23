@@ -179,6 +179,23 @@ run "the_filters_compare_the_snapshot_with_the_limits" {
   }
 
   assert {
+    condition = alltrue([
+      for key in ["adapter_operations", "adapter_errors", "pool_wait_time", "pool_timeouts"] :
+      strcontains(google_logging_metric.value[key].filter, "jsonPayload.msg=(\"http request\" OR \"job\")")
+      && google_logging_metric.value[key].metric_descriptor[0].value_type == "DISTRIBUTION"
+    ])
+    error_message = "the adapter and pool values are summed from the lines that end a request or a job, which carry them"
+  }
+
+  assert {
+    condition = alltrue([
+      for name in ["MyAdapterErrors", "MyDBPoolSaturated", "MyDBPoolWaiting"] :
+      contains(keys(google_monitoring_alert_policy.promql), name)
+    ])
+    error_message = "the adapter and pool alerts of the runbook exist"
+  }
+
+  assert {
     condition     = strcontains(google_logging_metric.counter["billing_failing"].filter, "jsonPayload.\"my.billing.import.failing\".aws=true OR jsonPayload.\"my.billing.import.failing\".gcp=true")
     error_message = "every billing source is watched"
   }
