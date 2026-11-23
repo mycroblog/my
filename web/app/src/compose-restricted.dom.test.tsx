@@ -8,7 +8,7 @@
 import { expect, test } from "bun:test";
 import { screen, waitFor, within } from "@testing-library/react";
 import { renderApp } from "./test/app";
-import { composerHolding, newPost, paste } from "./test/composer";
+import { composerHolding, newPost, paste, replace } from "./test/composer";
 
 /** The server's sentence of a post refused for a restriction (server:errors.status.posting_restricted). */
 const posting =
@@ -41,5 +41,12 @@ test("Account status in a refused composer leads to Account status, leaves the c
   });
 
   await newPost(app);
-  expect(await composerHolding("New post", text)).toBeDefined();
+  const kept = await composerHolding("New post", text);
+
+  // What was written is kept on the page, for the process's next test too: emptied and closed, it is kept no more.
+  await replace(app, kept.text, "");
+  await app.user.click(within(kept.dialog).getByRole("button", { name: "Close" }));
+  await waitFor(() => {
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
 });
