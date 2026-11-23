@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-20
 - Deciders: @rosylilly
-- Issue: #645, #646, #814, #919
+- Issue: #645, #646, #814, #919, #3423
 
 ## Decision（決定）
 
@@ -121,6 +121,7 @@ web・worker を分けたり、レプリカ・サーバーレスのインスタ�
 ### 5. ログとの関係（NFR-OPS-1）
 
 - HTTP のリクエストとジョブは、終わりに 1 行の構造化ログを出す（アクセスログを含む）。そのログは §3 の Histogram と Counter のラベルと値（`http.route`、`http.response.status_code`、`duration_seconds`、`my.job.type`、`my.outcome`、`wait_seconds`）を同じ名前で持つ
+- `none` では、その行にユニットのアダプタの操作とエラーの数（`my.adapter.operations.total`・`my.adapter.errors.total`、アダプタごとの `my.adapter.errors`）、書く時点のプールの使用率（`db.client.connection.usage`）、プロセスの前の行からの接続の待ちの増分（`my.db.client.connection.waits`・`db.client.connection.wait_time`・`db.client.connection.timeouts`）も載せる。増分はプロセスのどれか 1 行にだけ載るので、行を足せば正確になる。タイマーで書かないので、CPU がリクエストの間だけ割り当てられても欠けない
 - Cloud Run ではこのログからログベースの指標（分布の指標を含む）を作る。`emf` はこの 1 行に `_aws` の指示を足したものにする。どちらもプロセスの中で集計しないので、リクエストベース課金の CPU の制限の影響を受けない
 
 ### 6. ラベルの規則（濃度と個人情報）
@@ -170,7 +171,7 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
   プロセスの識別（インスタンス ID・役割・版）はラベルでなく、§6 の資源の属性で行う
 - 計測するのはアダプタと `internal/platform` だけで、`internal/domain` と `internal/app` はシステムの指標を知らない。アダプタは §1 の port で計測する
 - Go のランタイムの指標は `go.opentelemetry.io/contrib/instrumentation/runtime`（Apache-2.0、意味規約の `go.*` を出す、[pkg.go.dev](https://pkg.go.dev/go.opentelemetry.io/contrib/instrumentation/runtime)）で出す
-- 有効化・エクスポートの経路・送る間隔は §2 の設定に従い、システムの指標だけを別に有効にする設定は作らない。無効のときは no-op の実装で、観測のコールバックも登録しない
+- 有効化・エクスポートの経路・送る間隔は §2 の設定に従い、システムの指標だけを別に有効にする設定は作らない。無効のときは no-op の実装で、観測のコールバックも登録しない。ただし `none` では、アダプタの操作の数とプールの値を §5 のユニットの行にだけ載せる
 
 ### 11. スケールの契機（役割ごと）
 
@@ -297,6 +298,7 @@ NFR-OPS-1（JSON ログ、リクエスト ID / ジョブ ID の相関）、NFR-O
 サーバーが出していたのは slog の JSON ログと `request_id` だけで、決定者は、サービスの指標とシステムの指標の 2 つの方針がないとオートスケーリングの契機を作れないと指示した（#645、#646）。
 そこで計測の仕組みとサービスの指標、システムの指標をそれぞれ決め、後から M4 の要件の監査で NFR-OPS-2 のトレースが未実現と分かって、同じ仕組みの上にトレースを足した（#814）。
 スナップショットのジョブは当初 `metrics_exporter` が `none` 以外のときだけ登録していた。Cloud Run の `monitoring-gcp` は `none` のままログの行から指標を作るので、行が出ずにアラートが値を受け取れなかった（#2669）。決定者は、`none` でもジョブとログの行を残し、Gauge の登録だけを外すことにした（§4）。費用は DB への問い合わせが 15 分に 1 回増えることで、Cloud Run では既存の tick がジョブを起こすので Cloud Scheduler のジョブは増えない。
+Cloud Run の `none` では、アダプタのエラーと DB のプールの飽和・待ちを載せる行がなく、`MyAdapterErrors`・`MyDBPoolSaturated`・`MyDBPoolWaiting` を出せなかった（#3423）。決定者は、コレクターを足さず、各ユニットの行に載せることにした（§5）。
 決済の webhook の受け口ができると、webhook が届かないことや署名の設定の誤りに気付けるよう、`my.surface` に `payments` を加えた（#919）。
 
 確かめた事実（メトリクスは 2026-10-20、トレースは 2026-10-21 確認）:
