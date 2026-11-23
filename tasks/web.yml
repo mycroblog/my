@@ -355,16 +355,23 @@ tasks:
   # ETags of those files, which the server reads instead of the files when it starts.
   # The build fails when React Compiler skips a function (ADR-0025 §9). The Dockerfile's stage web and the root
   # compose.yaml (scripts/dev-compose.sh) run it too.
+  # It is made whole in .tmp/web-embed and then renamed into place, so that the Go commands that `check` runs beside it
+  # (go:vet, go:test), which embed the directory, read the last build or this one and never one half written; between
+  # the two renames the directory is missing for an instant only.
   build:
     desc: Build web/app with Vite into internal/interface/web/dist, which the Go server embeds, with the brand assets of web/brand
     deps: [generated]
+    vars:
+      NEXT: .tmp/web-embed
+      OLD: .tmp/web-embed-old
     cmds:
-      - find {{.WEB_EMBED_DIR}} -mindepth 1 ! -name .gitkeep -delete
-      - cd web/app && bun --bun vite build --logLevel warn
-      - cp web/brand/* {{.WEB_EMBED_DIR}}/
-      - bun web/app/scripts/payment-scripts.ts {{.WEB_EMBED_DIR}}
-      - bun web/app/scripts/compress.ts {{.WEB_EMBED_DIR}}
-      - bun web/app/scripts/etags.ts {{.WEB_EMBED_DIR}}
+      - rm -rf {{.NEXT}} {{.OLD}} && mkdir -p {{.NEXT}} && cp {{.WEB_EMBED_DIR}}/.gitkeep {{.NEXT}}/
+      - cd web/app && bun --bun vite build --logLevel warn --outDir ../../{{.NEXT}}
+      - cp web/brand/* {{.NEXT}}/
+      - bun web/app/scripts/payment-scripts.ts {{.NEXT}}
+      - bun web/app/scripts/compress.ts {{.NEXT}}
+      - bun web/app/scripts/etags.ts {{.NEXT}}
+      - mv {{.WEB_EMBED_DIR}} {{.OLD}} && mv {{.NEXT}} {{.WEB_EMBED_DIR}} && rm -rf {{.OLD}}
 
   licenses:
     desc: Fail on npm dependency licenses of the workspace incompatible with AGPL-3.0
