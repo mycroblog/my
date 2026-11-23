@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// emoji.css as ADR-0091 §9, §10 and §13 decide it: one @font-face of "my Noto Color Emoji" per split, COLRv1 first
-// and OpenType-SVG second, each chosen by tech(), swapped in when it arrives, over the emoji code points alone, so that
+// emoji.css as ADR-0091 §9, §10 and §13 decide it: one @font-face of "my Noto Color Emoji" per split, OpenType-SVG
+// first and COLRv1 second, each chosen by tech(), swapped in when it arrives, over the emoji code points alone, so that
 // the keycap bases and the symbols that running text uses (# * 0-9 © ® ™ ‼ ⁉ ↔ ↕) stay with the text fonts, and the
 // emoji that hold one fall back to the OS emoji font; and the WOFF2 of every face and the font's license beside them.
 
@@ -103,11 +103,11 @@ describe.each(splits)("the face of %s", (split) => {
     expect(face?.display).toBe("swap");
   });
 
-  test("offers the COLRv1 WOFF2, then the OpenType-SVG one, each by tech()", () => {
+  test("offers the OpenType-SVG WOFF2, then the COLRv1 one, each by tech()", () => {
     const src = sources(face?.src ?? "");
     expect(src.map((s) => [s.url.replace(/^.*\//, ""), s.format, s.tech])).toEqual([
-      [`noto-emoji-colrv1-${split}.woff2`, "woff2", "color-COLRv1"],
       [`noto-emoji-svg-${split}.woff2`, "woff2", "color-SVG"],
+      [`noto-emoji-colrv1-${split}.woff2`, "woff2", "color-COLRv1"],
     ]);
     for (const { url } of src) expect(existsSync(new URL(url, new URL("./emoji.css", import.meta.url)))).toBe(true);
   });

@@ -116,14 +116,14 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 ### 10. `@font-face` とフォントの並び
 
 - **ファミリー**: 分割ごとに、`font-family: "my Noto Color Emoji"` の `@font-face` を 1 つ置く。OS に入っている同じ名前の CBDT の Noto（Linux・Android）と区別するため、ファミリー名を変える。
-- **`src`**: `src: url(<colrv1>.woff2) format("woff2") tech(color-COLRv1), url(<svg>.woff2) format("woff2") tech(color-SVG)` とする。
-  ブラウザーは、描ける最初の項目を選ぶ（Firefox は COLRv1 に対応するので最初の項目を選ぶ）。
+- **`src`**: `src: url(<svg>.woff2) format("woff2") tech(color-SVG), url(<colrv1>.woff2) format("woff2") tech(color-COLRv1)` とする。
+  ブラウザーは対応する最初の項目を選ぶ（Chromium は COLRv1、WebKit と Firefox は SVG）。WebKit は COLRv1 を受け入れるが iOS で描かない（#3397）。
   対応する版は次のとおりである（2026-10-24 に MDN の [browser-compat-data](https://github.com/mdn/browser-compat-data/blob/8371d582c202efe1f21622ab8cfac6ab00a7b209/css/at-rules/font-face.json) と caniuse の [colr-v1](https://github.com/Fyrd/caniuse/blob/664a78d75bcf581e1c6279144ad66b797a1635ab/features-json/colr-v1.json) で確認）。
 
   | 機能 | Chrome | Firefox | Safari | 備考 |
   | --- | --- | --- | --- | --- |
   | `src` の `tech()` | 108 | 107 | 17 | |
-  | COLRv1 | 98 | 107 | TP まで未対応 | iOS の Safari も 27.2 まで未対応。Android の Chrome・WebView は対応 |
+  | COLRv1 | 98 | 107 | TP まで未対応 | `tech()` は受け入れるが iOS で描かない（#3397）。Android の Chrome・WebView は対応 |
 
 - **`unicode-range`**: 次の符号位置は、本文の文字として使われるので外す。`#`・`*`・`0`〜`9`（キーキャップの基）と、`©`・`®`・`™`・`‼`・`⁉`・`↔` など `emoji-test.txt` で既定がテキストの表示の記号のうち、本文の記号として使われるものである。
   外した字の絵文字の表示（`#️⃣`、`©️`）と、外した字を含む並び（`🙂‍↔️`）は、OS の絵文字のフォントで描く。外す字の一覧は、生成器の定数 `TEXT_CODE_POINTS` として 1 か所に置く。
@@ -228,7 +228,7 @@ ADR-0092 §4 の編集器は、文字を `--font-sans` で自分で描き、強�
 - 仮想化してもピッカーを開くのが遅い（ミドルレンジの Android で 100 ms を超える）場合は、全集合をタブごとに分けて描く（タブを APG の tabs にする）形を見直す。
 - TanStack Virtual の版の更新で、`rangeExtractor` や `scrollToIndex` の振る舞いが変わり、フォーカスを保てなくなった場合は、React Aria の `Virtualizer` と自作の `Layout` を見直す。
 - React Aria Components の `GridLayout` が節を配置するようになった場合は、キー操作を React Aria に戻せるかを見直す。
-- Safari が COLRv1 に対応したら、SVG の版をやめて COLRv1 だけにする（2026-10-24 時点で caniuse は Safari TP まで未対応）。
+- iOS の Safari が COLRv1 を描くようになったら、SVG の版をやめて COLRv1 だけにする（#3397）。
 - `google/fonts` が SVG の表を持つファイルを配らなくなったら、noto-emoji の SVG の素材から nanoemoji（Apache-2.0）で作るかを見直す。
 - 初めてピッカーを開いたときの転送量（SVG で全分割は約 3.7 MB）が、モバイルの回線で受け入れられないと分かったら、分割を細かくするか、ピッカーの描き方（§11）を見直す。
 
@@ -289,5 +289,5 @@ ADR-0092 §4 の編集器は、文字を `--font-sans` で自分で描き、強�
 
 ## Open Questions / 要検証
 
-- `@font-face` の `src` の `tech()` を知らない Safari 16 以前で、`src` 全体が無効になって OS の絵文字に落ちるか、COLRv1 の項目を読んで何も描かないか（要検証。古い Safari の実機か BrowserStack が要る）。
+- `@font-face` の `src` の `tech()` を知らない Safari 16 以前で、`src` 全体が無効になって OS の絵文字に落ちるか、SVG の項目を読んで描くか（要検証。古い Safari の実機か BrowserStack が要る）。
 - `aria-activedescendant` と roving tabindex の、iOS の VoiceOver と Android の TalkBack での読み上げの差（要検証。ADR-0110 の手動の層で、§17 の roving tabindex の読み上げを確かめる）。
