@@ -29,10 +29,14 @@ case "$*" in
   "run services describe"*) echo "${SERVICE_IMAGE:-image:new}" ;;
   "run services list"*) echo "${WORKER_SERVICES:-}" ;;
   "run jobs describe"*) echo "${JOB_IMAGE:-image:new}" ;;
-  # The executions still running: exec-0 for the first $RUNNING_POLLS reads, then none.
+  # The executions, as JSON: exec-0 still running for the first $RUNNING_POLLS reads, then ended, beside exec-9 that ended.
   "run jobs executions list"*"completionTime"*)
     polls="$(cat "$CALLS.polls" 2> /dev/null || echo 0)"
-    if [ "$polls" -lt "${RUNNING_POLLS:-0}" ]; then echo exec-0; fi
+    if [ "$polls" -lt "${RUNNING_POLLS:-0}" ]; then
+      echo '[{"metadata":{"name":"exec-0"}},{"metadata":{"name":"exec-9"},"status":{"completionTime":"2026-01-01T00:00:00Z"}}]'
+    else
+      echo '[{"metadata":{"name":"exec-0"},"status":{"completionTime":"2026-01-01T00:01:00Z"}},{"metadata":{"name":"exec-9"},"status":{"completionTime":"2026-01-01T00:00:00Z"}}]'
+    fi
     echo "$((polls + 1))" > "$CALLS.polls"
     ;;
   "run jobs executions list"*) echo "${EXECUTION-exec-1}" ;;
@@ -141,7 +145,8 @@ migrate() {
 migrate --version 0.2.0 --allow-destructive-for '' || fail "migrate failed: $(cat "$tmp/out")"
 grep -qxF -- 'run jobs execute my-migrate --project=p --region=r --args=^@@@^upgrade --wait --quiet' "$CALLS" || fail "migrate did not run my upgrade: $(cat "$CALLS")"
 if grep -q 'run jobs update\|run services' "$CALLS"; then fail "migrate changed the job's image or read a service: $(cat "$CALLS")"; fi
-grep -q 'run jobs executions list --job=my-migrate --project=p --region=r --filter=NOT status.completionTime:\*' "$CALLS" || fail "migrate did not look for a running execution: $(cat "$CALLS")"
+grep -qxF 'run jobs executions list --job=my-migrate --project=p --region=r --format=json(metadata.name,status.completionTime)' "$CALLS" || fail "migrate did not look for a running execution: $(cat "$CALLS")"
+if grep -q -- '--filter' "$CALLS"; then fail "migrate filtered the executions in gcloud, which refuses a filter on a timestamp: $(cat "$CALLS")"; fi
 
 # migrate: it waits for an execution that an interrupted apply left running, and only then starts its own.
 RUNNING_POLLS=2 migrate --version 0.2.0 || fail "migrate failed after waiting: $(cat "$tmp/out")"
@@ -150,6 +155,7 @@ first_execute="$(grep -n 'run jobs execute ' "$CALLS" | head -n 1 | cut -d: -f1)
 last_wait="$(grep -n 'completionTime' "$CALLS" | tail -n 1 | cut -d: -f1)"
 [ "$last_wait" -lt "$first_execute" ] || fail "migrate started an execution while another ran: $(cat "$CALLS")"
 grep -q 'waiting for exec-0 of my-migrate' "$tmp/out" || fail "migrate did not say what it waits for: $(cat "$tmp/out")"
+if grep -q 'exec-9' "$tmp/out"; then fail "migrate waited for an execution that had ended: $(cat "$tmp/out")"; fi
 if FAIL_ON='completionTime' migrate --version 0.2.0; then fail "migrate went on although it could not see the running executions"; fi
 if grep -q 'run jobs execute ' "$CALLS"; then fail "migrate started an execution without knowing what runs"; fi
 
