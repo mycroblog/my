@@ -12,10 +12,6 @@ func knowledgeConfig() *Config {
 	c := &Config{}
 	c.Knowledge.Dir = ".claude/knowledge"
 	c.Knowledge.Roles = []string{"copy", "walker"}
-	c.Knowledge.Limits.Index = 64
-	c.Knowledge.Limits.Decisions = 512
-	c.Knowledge.Limits.Exemplars = 256
-	c.Knowledge.Limits.Area = 1024
 	return c
 }
 
@@ -43,7 +39,7 @@ func TestKnowledgeInShape(t *testing.T) {
 
 func TestKnowledgeOutOfShape(t *testing.T) {
 	got := lint(t, knowledgeConfig(), map[string]string{
-		".claude/knowledge/copy/index.md": "No title, and longer than the limit of the index, which is sixty-four bytes.\n",
+		".claude/knowledge/copy/index.md": "No title.\n",
 		".claude/knowledge/copy/decisions.md": "# copy: decisions\n\n" + goodDecision +
 			"- A decision without its counts — why — from — 2026-11-12\n" +
 			"- A bad date — why — from — 2026-13-01 — held 0 / missed 0\n" +
@@ -55,7 +51,7 @@ func TestKnowledgeOutOfShape(t *testing.T) {
 		".claude/knowledge/copy/notes.md":     "# notes\n",
 		".claude/knowledge/copy/old/a.md":     "# a\n",
 		".claude/knowledge/walker/index.md":   "# walker: index\n",
-		// Flat and area files at once; an area file over its limit, with a line of another kind; no area files.
+		// Flat and area files at once; an area file with a line of another kind; no area files.
 		".claude/knowledge/walker/decisions.md":      "# walker: decisions\n",
 		".claude/knowledge/walker/decisions/a.md":    "# walker: decisions, a\n\n" + strings.Repeat(goodDecision, 16) + goodExemplar,
 		".claude/knowledge/walker/decisions/b.txt":   "# b\n",

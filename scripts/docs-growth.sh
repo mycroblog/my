@@ -21,14 +21,13 @@
 #
 # 256 bytes is a sentence of Japanese or a corrected link, so a fix passes and a new paragraph does not.
 #
-# What is loaded only when needed, and the requirements, grow without approval within a budget, which the label does
-# not lift:
+# The requirements grow without approval within a budget, which the label does not lift:
 #
 #   budget           files                                     at most
-#   .claude          each .claude/**/*.md                      4096 bytes per file
 #   requirements     docs/requirements/**                      98304 bytes in all
 #
-# The documents for users, operators, developers and plugin authors are in neither: their growth informs the reader.
+# What is loaded only when needed (.claude/**) and the documents for users, operators, developers and plugin authors
+# are in neither: they grow without approval and without a budget.
 #
 # Exit status: 0 when no group grew beyond its allowance (or with --allow-growth) and no budget is exceeded, 1
 # otherwise, 2 on a usage error.
@@ -69,7 +68,7 @@ trap 'rm -rf "$work"' EXIT
 git -C "$root" -c core.quotePath=false ls-tree -r -l "$base" |
   awk -F '\t' '{ n = split($1, f, " "); if (f[n] != "-") printf "%s\t%s\n", f[n], $2 }' > "$work/before"
 git -C "$root" -c core.quotePath=false ls-files -co --exclude-standard |
-  grep -E '(^|/)(AGENTS\.md|CLAUDE\.md|context-map\.yaml)$|^(docs/(adr|architecture|requirements)|tools/agentkit/docs)/|^\.claude/.*\.md$' |
+  grep -E '(^|/)(AGENTS\.md|CLAUDE\.md|context-map\.yaml)$|^(docs/(adr|architecture|requirements)|tools/agentkit/docs)/' |
   while IFS= read -r f; do
     if [ -f "$root/$f" ]; then printf '%s\t%s\n' "$(wc -c < "$root/$f" | tr -d ' ')" "$f"; fi
   done > "$work/after"
@@ -130,8 +129,8 @@ awk -F '\t' '
 ' "$work/after" || over=1
 if [ "$over" = 1 ]; then
   cat >&2 << 'EOF'
-docs:growth: over a budget. Say it in fewer words, split a skill into what it always needs and a file it reads when
-needed, or delete what the change makes obsolete. A budget changes only with the owner, in this script.
+docs:growth: over a budget. Say it in fewer words, or delete what the change makes obsolete. A budget changes only
+with the owner, in this script.
 EOF
 fi
 

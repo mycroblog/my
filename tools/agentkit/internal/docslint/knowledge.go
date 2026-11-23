@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// RuleKnowledge is the knowledge of a role out of its shape or over its limit (ADR-0169 §3, §4, ADR-0170 §5).
+// RuleKnowledge is the knowledge of a role out of its shape (ADR-0169 §3, ADR-0170 §5).
 const RuleKnowledge = "knowledge"
 
 // The files of a role's knowledge: the index it always reads, its decisions, and its exemplars. The decisions and the
@@ -23,35 +23,27 @@ const (
 	knowledgeExemplars = "exemplars"
 )
 
-// Knowledge is the knowledge of the UI and developer roles: <Dir>/<role>/ for each of Roles, each file at most its limit in bytes,
-// and the logs of the decider's picks, <Picks>/<role>.jsonl, which the roles do not read.
+// Knowledge is the knowledge of the UI and developer roles: <Dir>/<role>/ for each of Roles, and the logs of the
+// decider's picks, <Picks>/<role>.jsonl, which the roles do not read.
 type Knowledge struct {
-	Dir    string   `yaml:"dir"`
-	Roles  []string `yaml:"roles"`
-	Picks  string   `yaml:"picks"`
-	Limits struct {
-		Index     int `yaml:"index"`
-		Decisions int `yaml:"decisions"`
-		Exemplars int `yaml:"exemplars"`
-		Area      int `yaml:"area"`
-	} `yaml:"limits"`
+	Dir   string   `yaml:"dir"`
+	Roles []string `yaml:"roles"`
+	Picks string   `yaml:"picks"`
 }
 
-// knowledgeFile is one file of a role's knowledge to check: its limit and, for a list file, its kind.
+// knowledgeFile is one file of a role's knowledge to check and, for a list file, its kind.
 type knowledgeFile struct {
 	path, kind string
-	limit      int
 }
 
 // knowledge checks each role's directory: index.md, and the decisions and the exemplars each as one file or as area
-// files, and nothing else. Each file is within its limit, the index a page under a title, and every list file a title
-// and a lead followed by one item per line. The area files have no limit on their total.
+// files, and nothing else. Each file is under a title; no file has a size limit (ADR-0169 §4).
 func (l *linter) knowledge(files []string) ([]Finding, error) {
 	k := l.c.Knowledge
 	var out []Finding
 	for _, role := range k.Roles {
 		dir := path.Join(k.Dir, role)
-		flat := map[string]int{knowledgeDecisions: k.Limits.Decisions, knowledgeExemplars: k.Limits.Exemplars}
+		flat := map[string]bool{knowledgeDecisions: true, knowledgeExemplars: true}
 		var todo []knowledgeFile
 		areas := map[string]bool{}
 		for _, f := range files {
@@ -65,13 +57,13 @@ func (l *linter) knowledge(files []string) ([]Finding, error) {
 			case rel == knowledgeIndex, rel == knowledgeDecisions+".md", rel == knowledgeExemplars+".md":
 			case sub && list && !strings.Contains(area, "/") && strings.HasSuffix(area, ".md"):
 				areas[kind] = true
-				todo = append(todo, knowledgeFile{f, kind, k.Limits.Area})
+				todo = append(todo, knowledgeFile{f, kind})
 			default:
 				out = append(out, Finding{f, 0, RuleKnowledge, "a role keeps index.md, and decisions.md or decisions/<area>.md, exemplars.md or exemplars/<area>.md, only (ADR-0169 §3): fold it into one of them, or delete it"})
 			}
 		}
 		if p := path.Join(dir, knowledgeIndex); l.exists[p] {
-			todo = append(todo, knowledgeFile{p, "", k.Limits.Index})
+			todo = append(todo, knowledgeFile{p, ""})
 		} else {
 			out = append(out, Finding{p, 0, RuleKnowledge, fmt.Sprintf("missing: the %s role keeps %s, under a title (ADR-0169 §3)", role, knowledgeIndex)})
 		}
@@ -81,7 +73,7 @@ func (l *linter) knowledge(files []string) ([]Finding, error) {
 			case l.exists[p] && areas[kind]:
 				out = append(out, Finding{p, 0, RuleKnowledge, fmt.Sprintf("the %s role keeps %s.md or area files in %s/, not both (ADR-0169 §3): move its lines into the area files", role, kind, kind)})
 			case l.exists[p]:
-				todo = append(todo, knowledgeFile{p, kind, flat[kind]})
+				todo = append(todo, knowledgeFile{p, kind})
 			case !areas[kind]:
 				out = append(out, Finding{p, 0, RuleKnowledge, fmt.Sprintf("missing: the %s role keeps %s.md, or area files %s/<area>.md, under a title (ADR-0169 §3)", role, kind, kind)})
 			}

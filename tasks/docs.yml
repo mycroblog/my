@@ -25,7 +25,7 @@ tasks:
       - bin/agentkit docs lint
 
   growth:
-    desc: "Fail when the ADRs, the architecture, agentkit's ADRs, the context maps, or AGENTS.md / CLAUDE.md grew since the merge base with BASE (default origin/main), or a .claude document or the requirements are over their budget (ADR-0000 §6); ALLOW_GROWTH=true, the allow:docs-growth label in CI, lets the growth pass but not a budget"
+    desc: "Fail when the ADRs, the architecture, agentkit's ADRs, the context maps, or AGENTS.md / CLAUDE.md grew since the merge base with BASE (default origin/main), or the requirements are over their budget (ADR-0000 §6); ALLOW_GROWTH=true, the allow:docs-growth label in CI, lets the growth pass but not a budget"
     vars:
       BASE: '{{.BASE | default "origin/main"}}'
     cmds:
