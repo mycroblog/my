@@ -20,7 +20,7 @@
 #   web     the Bun workspace: its packages under web/ and the workspace-wide checks (web:check); of its tests,
 #           scripts/changed-web-packages.sh picks the packages a change reaches
 #   docker  the Dockerfile and the deployments                   (docker:check, the Docker smoke test)
-#   shell   the shell scripts                                    (shell:check)
+#   shell   the shell scripts, every tracked *.sh                (shell:check)
 #   schema  the desired-state schema files                       (db:check-all)
 #   agentkit tools/agentkit, a Go module of its own, and the server's go.sum, which bounds its dependencies (agentkit:check)
 #   mykit   pkg/mykit and pkg/mybot, the client libraries, Go modules of their own, and their integration tests (mykit:check)
@@ -109,7 +109,7 @@ mapfile -t STORIES_DIRS < <(workspace_dirs "@my/storybook")
 is_e2e() {
   local dir
   case "$1" in
-    context-map.yaml | */context-map.yaml) return 1 ;;
+    context-map.yaml | */context-map.yaml | AGENTS.md | */AGENTS.md) return 1 ;;
     internal/* | cmd/* | api/* | schema/* | queries/* | go.mod | go.sum | bun.lock) return 0 ;;
   esac
   for dir in "${E2E_DIRS[@]}"; do
@@ -123,7 +123,7 @@ is_e2e() {
 is_stories() {
   local dir
   case "$1" in
-    context-map.yaml | */context-map.yaml) return 1 ;;
+    context-map.yaml | */context-map.yaml | AGENTS.md | */AGENTS.md) return 1 ;;
     bun.lock) return 0 ;;
   esac
   for dir in "${STORIES_DIRS[@]}"; do
@@ -183,9 +183,14 @@ classify() {
   if is_stories "$path"; then
     select_contexts stories
   fi
+  # Every shell script, wherever it is: shell:lint reads every tracked *.sh.
   case "$path" in
-    # A map file, which `agentkit map check` alone reads.
-    context-map.yaml | */context-map.yaml)
+    *.sh) select_contexts shell ;;
+  esac
+  case "$path" in
+    # A map file, which `agentkit map check` alone reads, and an agents' instruction file, which agents and agentkit read
+    # and no build or test of its directory: the documents' checks alone.
+    context-map.yaml | */context-map.yaml | AGENTS.md | */AGENTS.md)
       return
       ;;
     # Shared configuration, which every check runs through: the task runner and its tasks, the tool versions (go-task,

@@ -4,14 +4,34 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/mycroblog/my/tools/agentkit/internal/ctxmap"
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
-// checkContexts are the contexts of scripts/changed-contexts.sh.
-var checkContexts = []string{"docs", "go", "i18n", "mail", "api", "ui", "web", "docker", "shell", "schema", "agentkit", "mykit", "tofu", "site"}
+// contextsScript is the script whose contexts a map's `checks:` may name: it selects them, so a name it does not have
+// would select nothing.
+const contextsScript = "scripts/changed-contexts.sh"
+
+// contextsLine is the script's list of every context, `ALL=(docs go ...)`.
+var contextsLine = regexp.MustCompile(`(?m)^ALL=\(([^)]*)\)$`)
+
+// checkContexts reads the contexts of scripts/changed-contexts.sh from its list of them, so that the two never differ.
+func checkContexts(root string) ([]string, error) {
+	b, err := os.ReadFile(filepath.Join(root, contextsScript))
+	if err != nil {
+		return nil, err
+	}
+	m := contextsLine.FindSubmatch(b)
+	if m == nil {
+		return nil, fmt.Errorf("%s: no line ALL=(...) lists its contexts", contextsScript)
+	}
+	return strings.Fields(string(m[1])), nil
+}
 
 func runMap(r *repo.Repo, args []string) error {
 	if len(args) == 0 {
@@ -31,7 +51,11 @@ func runMap(r *repo.Repo, args []string) error {
 		for i, f := range files {
 			paths[i] = f.Path
 		}
-		problems := m.Check(r.Root, paths, checkContexts)
+		contexts, err := checkContexts(r.Root)
+		if err != nil {
+			return err
+		}
+		problems := m.Check(r.Root, paths, contexts)
 		for _, p := range problems {
 			fmt.Printf("error: %s: %s\n", p.Path, p.Msg)
 		}

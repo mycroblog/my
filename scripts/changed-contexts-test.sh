@@ -34,6 +34,11 @@ all="docs go i18n api web docker shell schema agentkit mykit tofu site e2e stori
 # the workflows that run no check of a pull request or a merge group select nothing but docs, which every path selects
 # (the context maps cover it, and the documents name and link to what the code has).
 expect "the map files" "docs" context-map.yaml internal/app/content/context-map.yaml tasks/context-map.yaml tools/agentkit/context-map.yaml
+# An agents' instruction file runs the documents' checks alone, not the heavy checks of its directory (#2866).
+expect "the agents' instruction files" "docs" AGENTS.md internal/adapter/db/postgres/AGENTS.md web/app/AGENTS.md pkg/mykit/AGENTS.md
+# Every shell script selects shell, outside scripts/ and deploy/ too (#3189).
+expect "a script of the federation tests" "docs docker shell" test/federation-live/postgres-init.sh
+expect "a script of the OpenTofu tests" "docs shell tofu" deploy/opentofu/tests/upgrade-aws/migrate-stub.sh
 expect "the mtimes of the Go test cache" "docs go" scripts/stable-mtime.py
 expect "the root Taskfile" "$all" Taskfile.yml
 expect "the workflow of the checks" "$all" .github/workflows/ci.yml
