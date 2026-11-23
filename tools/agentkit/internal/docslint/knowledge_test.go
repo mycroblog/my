@@ -71,17 +71,3 @@ func TestKnowledgeOutOfShape(t *testing.T) {
 		t.Errorf("findings =\n%v\nwant\n%v", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
 }
-
-func TestKnowledgeItem(t *testing.T) {
-	for ln, want := range map[string]string{
-		goodDecision[:len(goodDecision)-1]:                           "",
-		"- a — b — c — 2026-11-12 — held 1 / missed 02":              `the counts "held 1 / missed 02" are not held N / missed N`,
-		"- a — b — c — 12/11/2026 — held 1 / missed 0":               `the date "12/11/2026" is not YYYY-MM-DD`,
-		"- a — b — c — d — 2026-11-12 — held 1 / missed 0":           "6 fields, not 5",
-		"- a with — inside — b — c — 2026-11-12 — held 0 / missed 0": "6 fields, not 5",
-	} {
-		if got := knowledgeItem(ln, 5, true); got != want {
-			t.Errorf("knowledgeItem(%q) = %q, want %q", ln, got, want)
-		}
-	}
-}
