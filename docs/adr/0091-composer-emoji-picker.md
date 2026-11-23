@@ -117,8 +117,7 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 
 - **ファミリー**: 分割ごとに、`font-family: "my Noto Color Emoji"` の `@font-face` を 1 つ置く。OS に入っている同じ名前の CBDT の Noto（Linux・Android）と区別するため、ファミリー名を変える。
 - **`src`**: `src: url(<svg>.woff2) format("woff2") tech(color-SVG), url(<colrv1>.woff2) format("woff2") tech(color-COLRv1)` とする。
-  ブラウザーは、対応すると答える最初の項目を選ぶ。Chromium は OpenType-SVG を描けないので COLRv1 を、WebKit と Firefox は SVG を選ぶ。
-  WebKit は `tech(color-COLRv1)` を受け入れるが、iOS でそのグリフを描かない（#3397）ので、COLRv1 を先に置かない。
+  ブラウザーは対応する最初の項目を選ぶ（Chromium は COLRv1、WebKit と Firefox は SVG）。WebKit は COLRv1 を受け入れるが iOS で描かない（#3397）。
   対応する版は次のとおりである（2026-10-24 に MDN の [browser-compat-data](https://github.com/mdn/browser-compat-data/blob/8371d582c202efe1f21622ab8cfac6ab00a7b209/css/at-rules/font-face.json) と caniuse の [colr-v1](https://github.com/Fyrd/caniuse/blob/664a78d75bcf581e1c6279144ad66b797a1635ab/features-json/colr-v1.json) で確認）。
 
   | 機能 | Chrome | Firefox | Safari | 備考 |
@@ -142,7 +141,7 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 - フォントを読めない環境で豆腐になる絵文字があるのは、§10 の「使えないとき」に書いた例外として受け入れる。
 - ピッカーを初めて開いたときに読む分割は、ブラウザーで違う。Firefox は描いた行（§15）の絵文字のグループの分割を読む。Chromium は `U+FE0F` を `unicode-range` に持つ分割（§9。country-flags と component を除く 9 個）をまとめて読むので、11 分割のうち 9 分割、COLRv1 で約 1.35 MB を読む。カスタム絵文字の節が無ければ、初めの行に `U+FE0F` を含む `❤️` と `☺️` が必ず入るためである。
   すべての分割は COLRv1 で約 2 MB、SVG で約 3.7 MB である。
-- この値は、`emoji.css` と本物のフォントを読む静的なページに、初めて開いたときの行の近似（よく使うの既定の 12 個と顔と感情、計 10 行 × 8 列）を置いて計測した（2026-11-04。Firefox は同じ内容で 4 分割）。本物のピッカーの画面では計測しておらず、WebKit は未計測である。Firefox は SVG を読むので、量は SVG の分割の大きさになる。
+- この値は、`emoji.css` と本物のフォントを読む静的なページに、初めて開いたときの行の近似（よく使うの既定の 12 個と顔と感情、計 10 行 × 8 列）を置いて計測した（2026-11-04。Firefox は同じ内容で 4 分割）。本物のピッカーの画面では計測しておらず、WebKit は未計測である。
 
 ### 12. ADR-0092 の強調表示との関係
 
@@ -229,7 +228,7 @@ ADR-0092 §4 の編集器は、文字を `--font-sans` で自分で描き、強�
 - 仮想化してもピッカーを開くのが遅い（ミドルレンジの Android で 100 ms を超える）場合は、全集合をタブごとに分けて描く（タブを APG の tabs にする）形を見直す。
 - TanStack Virtual の版の更新で、`rangeExtractor` や `scrollToIndex` の振る舞いが変わり、フォーカスを保てなくなった場合は、React Aria の `Virtualizer` と自作の `Layout` を見直す。
 - React Aria Components の `GridLayout` が節を配置するようになった場合は、キー操作を React Aria に戻せるかを見直す。
-- iOS の Safari が COLRv1 のグリフを描くようになったら、SVG の版をやめて COLRv1 だけにする（2026-11-23 時点で、`tech()` は受け入れるが描かない。#3397）。
+- iOS の Safari が COLRv1 を描くようになったら、SVG の版をやめて COLRv1 だけにする（#3397）。
 - `google/fonts` が SVG の表を持つファイルを配らなくなったら、noto-emoji の SVG の素材から nanoemoji（Apache-2.0）で作るかを見直す。
 - 初めてピッカーを開いたときの転送量（SVG で全分割は約 3.7 MB）が、モバイルの回線で受け入れられないと分かったら、分割を細かくするか、ピッカーの描き方（§11）を見直す。
 
