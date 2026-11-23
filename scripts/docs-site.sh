@@ -16,8 +16,8 @@
 # A pull request gets /next/ alone on the Workers Preview pr-<number> of the same Worker: docs-site-preview.yml builds
 # it from the pull request's checkout without secrets (build-preview), and docs-site-preview-deploy.yml publishes it
 # from main's checkout (deploy-pr). That build comes from code anyone can write (forks included), so it is only ever
-# data: `stage-preview` checks that it is plain static files and copies it next to main's Worker config, code and redirects,
-# and wrangler uploads it as assets. Nothing in it is executed or sourced, and nothing of it reaches a shell, a config,
+# data: `stage-preview` checks that it is plain static files and copies it next to main's Worker config and code, and
+# wrangler uploads it as assets. Nothing in it is executed or sourced, and nothing of it reaches a shell, a config,
 # or a command line.
 #
 #   scripts/docs-site.sh resolve <versions.json> [<releases>]   the resolved list of versions (JSON) on stdout
@@ -359,8 +359,14 @@ build_preview() {
   check_preview "$out"
 }
 
+# The paths the Worker redirects to /next/ on a Preview (previewRedirect of web/docs/worker/index.ts), which the Preview's
+# config adds to assets.run_worker_first: `wrangler preview` refuses a _redirects file among the assets
+# (cloudflare/workers-sdk#15791). They have no asset on a Preview, so only these requests reach the Worker.
+preview_worker_first='"/", "/latest", "/latest/*", '
+
 # stage_preview BUILD DEST checks that BUILD is a preview build of plain files (build-preview) and copies it to
-# DEST/site, with the Worker config, the Worker's code and the redirects of this checkout.
+# DEST/site, with the Worker config and the Worker's code of this checkout; the config also sends the root and /latest/
+# to the Worker, which opens /next/ there.
 stage_preview() {
   local build="$1" dest="$2" bad total
   total="$(check_plain "$build")"
@@ -373,7 +379,9 @@ stage_preview() {
   cp -R "$build/." "$dest/site/"
   stage_worker "$dest"
   # The Preview has no released version: its root and /latest/ open /next/.
-  printf '%s\n' '/ /next/ 302' '/latest /next/ 302' '/latest/* /next/:splat 302' >"$dest/site/_redirects"
+  sed -i "s#\"run_worker_first\": \[#&$preview_worker_first#" "$dest/wrangler.jsonc"
+  grep -qF "\"run_worker_first\": [$preview_worker_first" "$dest/wrangler.jsonc" ||
+    die "$config has no assets.run_worker_first list to send the root and /latest/ to the Worker"
   echo "docs-site: staged the preview ($total bytes) in $dest/site" >&2
 }
 
