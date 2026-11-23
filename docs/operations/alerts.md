@@ -73,6 +73,8 @@ With `metrics_exporter = none`, build the alerts from what Cloud Run and Cloud L
   values, such as `my.queue.oldest_ready_age` (by job type), `my.queue.dead`, `my.db.size`, and `my.media.stored_bytes` (by origin). A filter cannot
   compare across a group's fields, so the line also has `my.queue.oldest_ready_age.max` and `my.media.stored_bytes.total`. Make log-based metrics
   from its fields; a gap in these lines means the tick or the queue stopped. The queue depth metric of Cloud Tasks counts the signals waiting to be delivered.
+- **Adapters and the database pool**: the `http request` and `job` lines also carry the fields of `MyAdapterErrors`, `MyDBPoolSaturated`, and
+  `MyDBPoolWaiting`: the adapter operations of the request or job, and the process's pool use and waits ([the lines](running.md#start-the-server)).
 - **Database**: the disk utilization and connection metrics of Cloud SQL, or the usage alerts of your database provider.
 - **Cost**: a Cloud Billing budget with alert thresholds ([Cost and budget](#cost-and-budget)).
 

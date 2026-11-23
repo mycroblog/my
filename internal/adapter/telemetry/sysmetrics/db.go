@@ -59,8 +59,14 @@ type PoolStats struct {
 }
 
 // RegisterPool reports the connection pool named pool (such as main) from stats, which the
-// gauges and the observable counters call when the exporter collects, so that queries are not measured one by one (ADR-0055 §10).
+// gauges and the observable counters call when the exporter collects, so that queries are not
+// measured one by one (ADR-0055 §10). On a UnitLineMeter, the line that ends each unit of work
+// reads it instead.
 func RegisterPool(m kernel.Meter, pool string, stats func() PoolStats) {
+	if lm, ok := m.(*UnitLineMeter); ok {
+		lm.addPool(stats)
+		return
+	}
 	if kernel.IsNop(m) {
 		return
 	}
