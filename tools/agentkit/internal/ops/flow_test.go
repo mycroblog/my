@@ -567,7 +567,8 @@ func readPath(t *testing.T) string {
 }
 
 // ghLand answers the calls of Land for pull request 20 on feat/12-x, which closes #12, a sub-issue of #30 in a
-// milestone. $STATE/pr holds the pull request's JSON.
+// milestone. $STATE/pr holds the pull request's JSON; $STATE/runs the merge group runs, $STATE/run<id> the jobs of
+// a run, and $STATE/commit<sha> the parents of a merge group commit.
 const ghLand = `
 case "$1 $2" in
   "pr view")
@@ -577,8 +578,15 @@ case "$1 $2" in
          if [ -f "$STATE/pr$n" ]; then cat "$STATE/pr$n"; else cat "$STATE/pr"; fi ;;
     esac ;;
   "pr merge") ;;
-  "run list") echo '[{"databaseId":7,"headBranch":"gh-readonly-queue/main/pr-21-abc","conclusion":"failure"},{"databaseId":8,"headBranch":"gh-readonly-queue/main/pr-20-abc","conclusion":"failure"}]' ;;
-  "run view") echo '{"jobs":[{"databaseId":81,"name":"server-test","conclusion":"failure"},{"databaseId":82,"name":"gate","conclusion":"failure"}]}' ;;
+  "run list")
+    if [ -f "$STATE/runs" ]; then cat "$STATE/runs"; else
+      echo '[{"databaseId":7,"headBranch":"gh-readonly-queue/main/pr-21-abc","headSha":"g7","conclusion":"failure"},{"databaseId":8,"headBranch":"gh-readonly-queue/main/pr-20-abc","headSha":"g8","conclusion":"failure"}]'
+    fi ;;
+  "run view")
+    if [ -f "$STATE/run$3" ]; then cat "$STATE/run$3"; else
+      echo '{"jobs":[{"databaseId":81,"name":"server-test","conclusion":"failure"},{"databaseId":82,"name":"gate","conclusion":"failure"}]}'
+    fi ;;
+  "api repos/mycroblog/my/commits/"*) cat "$STATE/commit${2#repos/mycroblog/my/commits/}" 2>/dev/null || echo '[]' ;;
   "api graphql")
     case "$*" in
       *mergeQueueEntry*)
@@ -748,6 +756,43 @@ func TestLandClosesFinishedMilestone(t *testing.T) {
 	}
 }
 
+// dropped makes Land see pull request 20 at head go into the merge queue and out of it.
+func dropped(t *testing.T, state, head string) {
+	t.Helper()
+	write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, "", false))
+	write(t, filepath.Join(state, "pr2"), prJSON("OPEN", "MERGEABLE", head, "", true))
+}
+
+// TestLandDropReportsTheGroupOfTheHead checks that a drop reports the merge group that held the pull request's
+// head, a cancelled run with a container failure, and not the failed group of an older head on the same branch.
+func TestLandDropReportsTheGroupOfTheHead(t *testing.T) {
+	main, _, state, _, head := landSetup(t)
+	dropped(t, state, head)
+	write(t, filepath.Join(state, "runs"), `[`+
+		`{"databaseId":9,"headBranch":"gh-readonly-queue/main/pr-20-abc","headSha":"g9","conclusion":"cancelled"},`+
+		`{"databaseId":8,"headBranch":"gh-readonly-queue/main/pr-20-abc","headSha":"g8","conclusion":"failure"}]`)
+	write(t, filepath.Join(state, "commitg9"), `["abc","`+head+`"]`)
+	write(t, filepath.Join(state, "commitg8"), `["abc","`+olderHead+`"]`)
+	write(t, filepath.Join(state, "run9"), `{"jobs":[{"databaseId":91,"name":"contracts","conclusion":"failure"},{"databaseId":92,"name":"e2e","conclusion":"cancelled"},{"databaseId":93,"name":"gate","conclusion":"failure"}]}`)
+	write(t, filepath.Join(state, "run8"), `{"jobs":[{"databaseId":85,"name":"license","conclusion":"failure"}]}`)
+	write(t, filepath.Join(state, "job91"), fixture(t, "job-container-reaper.txt"))
+	write(t, filepath.Join(state, "job85"), "--- FAIL: TestLicense (0.00s)\n")
+	code, out := land(t, main)
+	if code != LandDropped {
+		t.Errorf("exit %d, want %d:\n%s", code, LandDropped, out)
+	}
+	for _, want := range []string{"== contracts (merge group of " + head[:9], "a container failed", "fix: nothing in the change to repair"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output lacks %q:\n%s", want, out)
+		}
+	}
+	for _, not := range []string{"license", "TestLicense", "e2e", "git merge origin/main"} {
+		if strings.Contains(out, not) {
+			t.Errorf("output has %q, of another group or no failure:\n%s", not, out)
+		}
+	}
+}
+
 func TestLandFailures(t *testing.T) {
 	failed := `{"__typename":"CheckRun","name":"docs-lint","workflowName":"CI","status":"COMPLETED","conclusion":"FAILURE","detailsUrl":"https://github.com/o/r/actions/runs/1/job/81"}`
 	cases := []struct {
@@ -770,9 +815,23 @@ func TestLandFailures(t *testing.T) {
 			"E: Unable to locate package unzip", "fix: gh run rerun 1 --failed; then run pr land again",
 		}},
 		{"dropped by the queue", func(state, head string) {
-			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, "", false))
-			write(t, filepath.Join(state, "pr2"), prJSON("OPEN", "MERGEABLE", head, "", true))
-		}, LandDropped, []string{"PR #20 left the merge queue without merging", "== server-test (merge group", "--- FAIL: TestThing", "fix: in the branch's worktree: git fetch origin && git merge origin/main"}},
+			dropped(t, state, head)
+			write(t, filepath.Join(state, "commitg8"), `["base","`+head+`"]`)
+		}, LandDropped, []string{"PR #20 left the merge queue without merging", "== server-test (merge group", "--- FAIL: TestThing",
+			"fix: repair it in the branch's worktree, commit, push; then run pr land again, which queues it again"}},
+		{"dropped by a container", func(state, head string) {
+			dropped(t, state, head)
+			write(t, filepath.Join(state, "commitg8"), `["base","`+head+`"]`)
+			write(t, filepath.Join(state, "job81"), fixture(t, "job-container-reaper.txt"))
+		}, LandDropped, []string{
+			`the merge group failed in the runner, not in the change: a container failed: pubsub_test.go:73: start container`,
+			"--- FAIL: TestBusContractEmulator", "fix: nothing in the change to repair; run pr land again to queue it again",
+		}},
+		{"dropped behind a conflict", func(state, head string) {
+			dropped(t, state, head)
+			write(t, filepath.Join(state, "commitg8"), `["base","`+olderHead+`"]`)
+		}, LandDropped, []string{"no merge group of the head ",
+			"fix: in the branch's worktree: git fetch origin && git merge origin/main"}},
 		{"closed", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("CLOSED", "UNKNOWN", head, "", false))
 		}, 1, []string{"PR #20 is closed without merging"}},

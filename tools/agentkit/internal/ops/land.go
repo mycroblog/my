@@ -144,11 +144,7 @@ func Land(w io.Writer, r *repo.Repo, n int, o LandOptions) int {
 					// A push between the two reads took it out of the queue: the next poll follows the new head.
 					break
 				}
-				say("PR #%d left the merge queue without merging: its merge group failed, or it conflicts with a pull request ahead of it", n)
-				for _, l := range mergeGroupFailure(n, o.LogDir) {
-					say("%s", l)
-				}
-				say("fix: %s", trunkFix())
+				say("%s", strings.Join(dropReport(n, p.HeadRefOid, o.LogDir), "\n"))
 				return LandDropped
 			}
 			for _, e := range transitions(old, had, cur) {
@@ -187,19 +183,58 @@ func pushedHead(main, branch string) string {
 	return strings.TrimSpace(local)
 }
 
-// mergeGroupFailure returns the failing lines of the newest failed run of the merge group of pull request n
-// (the branch gh-readonly-queue/<base>/pr-<n>-<sha>), or nothing when there is none.
-func mergeGroupFailure(n int, logDir string) []string {
+// The causes of a merge group's failure, which choose the fix of a drop.
+const (
+	dropAhead  = iota // no merge group of the head failed: it conflicts with a pull request ahead of it
+	dropChange        // a check failed because of the change
+	dropRunner        // every failed job failed in the runner or a container, not because of the change
+)
+
+// dropReport returns the lines that say why the merge queue dropped pull request n at head and the fix that
+// fits the cause.
+func dropReport(n int, head, logDir string) []string {
+	lines := []string{fmt.Sprintf("PR #%d left the merge queue without merging: its merge group failed, or it conflicts with a pull request ahead of it", n)}
+	failure, cause := mergeGroupFailure(n, head, logDir)
+	lines = append(lines, failure...)
+	switch cause {
+	case dropChange:
+		return append(lines, "fix: repair it in the branch's worktree, commit, push; then run pr land again, which queues it again")
+	case dropRunner:
+		return append(lines, "fix: nothing in the change to repair; run pr land again to queue it again")
+	}
+	return append(lines, "fix: "+trunkFix())
+}
+
+// mergeGroupFailure returns the failing lines of the failed jobs of the merge group that held head, the head of
+// pull request n, and the cause they show. A merge group runs on the branch gh-readonly-queue/<base>/pr-<n>-<base
+// sha>, which an earlier group of the same pull request shares; the group of head is the one whose commit merges
+// head. The queue drops a pull request at the first failed required job, so the group's run is often cancelled
+// rather than failed. With no failed job of that group it returns nothing and dropAhead.
+func mergeGroupFailure(n int, head, logDir string) ([]string, int) {
 	var runs []struct {
 		ID         int64  `json:"databaseId"`
 		HeadBranch string `json:"headBranch"`
+		HeadSha    string `json:"headSha"`
 		Conclusion string `json:"conclusion"`
 	}
-	if err := gh.JSON(&runs, "run", "list", "-R", gh.Repo(), "--event", "merge_group", "--limit", "40", "--json", "databaseId,headBranch,conclusion"); err != nil {
-		return nil
+	if err := gh.JSON(&runs, "run", "list", "-R", gh.Repo(), "--event", "merge_group", "--limit", "40", "--json", "databaseId,headBranch,headSha,conclusion"); err != nil {
+		return nil, dropAhead
 	}
+	merges := map[string]bool{} // whether the commit of a merge group merges head
+	var lines []string
+	shown, read := 0, 0
+	runner := true
+	var reasons []string
 	for _, run := range runs {
-		if run.Conclusion != "failure" || !strings.Contains(run.HeadBranch, fmt.Sprintf("/pr-%d-", n)) {
+		if run.Conclusion == "success" || !strings.Contains(run.HeadBranch, fmt.Sprintf("/pr-%d-", n)) {
+			continue
+		}
+		in, seen := merges[run.HeadSha]
+		if !seen {
+			in = mergesHead(run.HeadSha, head)
+			merges[run.HeadSha] = in
+		}
+		if !in {
 			continue
 		}
 		var view struct {
@@ -210,28 +245,87 @@ func mergeGroupFailure(n int, logDir string) []string {
 			} `json:"jobs"`
 		}
 		if err := gh.JSON(&view, "run", "view", strconv.FormatInt(run.ID, 10), "-R", gh.Repo(), "--json", "jobs"); err != nil {
-			return nil
+			continue
 		}
-		var lines []string
-		shown := 0
 		for _, j := range view.Jobs {
-			if j.Conclusion != "failure" || j.Name == gateName || shown == 3 {
+			// `gate` only collects the other jobs' results; its log says nothing new.
+			if j.Conclusion != "failure" || j.Name == gateName {
 				continue
 			}
-			shown++
+			show := shown < shownFailures
+			if !show && (!runner || read == maxFailureLogs) {
+				runner = false
+				continue
+			}
+			read++
+			if show {
+				shown++
+			}
 			out, err := gh.Run("api", "repos/"+gh.Repo()+"/actions/jobs/"+strconv.FormatInt(j.ID, 10)+"/logs")
 			if err != nil {
-				lines = append(lines, fmt.Sprintf("== %s: could not read the log: %v", j.Name, err))
+				runner = false
+				if show {
+					lines = append(lines, fmt.Sprintf("== %s: could not read the log: %v", j.Name, err))
+				}
 				continue
 			}
 			file := filepath.Join(logDir, fmt.Sprintf("pr-%d-%d.log", n, j.ID))
 			_ = os.WriteFile(file, out, 0o600)
-			lines = append(lines, fmt.Sprintf("== %s (merge group; full log: %s)", j.Name, file))
-			lines = append(lines, JobFailures(string(out), 40)...)
+			if show {
+				lines = append(lines, fmt.Sprintf("== %s (merge group of %s; full log: %s)", j.Name, shortSHA(head), file))
+				lines = append(lines, JobFailures(string(out), 40)...)
+			}
+			why := runnerFailure(string(out))
+			runner = runner && why != ""
+			reasons = append(reasons, why)
 		}
-		return lines
 	}
-	return nil
+	switch {
+	case read == 0:
+		return []string{fmt.Sprintf("no merge group of the head %s failed", shortSHA(head))}, dropAhead
+	case runner:
+		return append([]string{"the merge group failed in the runner, not in the change: " + strings.Join(unique(reasons), "; ")}, lines...), dropRunner
+	}
+	return lines, dropChange
+}
+
+// mergesHead reports whether the merge group commit sha merges head: head is one of its parents.
+func mergesHead(sha, head string) bool {
+	var parents []string
+	if err := gh.JSON(&parents, "api", "repos/"+gh.Repo()+"/commits/"+sha, "--jq", "[.parents[].sha]"); err != nil {
+		return false
+	}
+	for _, p := range parents {
+		if p == head {
+			return true
+		}
+	}
+	return false
+}
+
+// runnerFailure says why a failed job's log failed in the runner or a container rather than in the change, or
+// "" when it shows no such cause.
+func runnerFailure(log string) string {
+	if hosts := Unreachable(log); len(hosts) > 0 {
+		return "the runner could not reach " + most(hosts)
+	}
+	if line := ContainerFailure(log); line != "" {
+		return "a container failed: " + line
+	}
+	return ""
+}
+
+// unique returns items without the repeats, in their order.
+func unique(items []string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, i := range items {
+		if !seen[i] {
+			seen[i] = true
+			out = append(out, i)
+		}
+	}
+	return out
 }
 
 // reCloses matches the closing keywords of a pull request description.

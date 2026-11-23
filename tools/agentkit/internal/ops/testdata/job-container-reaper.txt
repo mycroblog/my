@@ -1,0 +1,41 @@
+2026-11-11T16:21:25.6658180Z ##[group]Run scripts/task.sh go:test-stream
+2026-11-11T16:21:25.6658531Z [36;1mscripts/task.sh go:test-stream[0m
+2026-11-11T16:21:25.6677920Z shell: /usr/bin/bash -e {0}
+2026-11-11T16:21:25.6678236Z env:
+2026-11-11T16:21:25.6678444Z   GOTOOLCHAIN: local
+2026-11-11T16:21:25.6678662Z   CONTRACTS:  stream blob voice search acme 
+2026-11-11T16:21:25.6678901Z   CGO_ENABLED: 0
+2026-11-11T16:21:25.6679075Z   GOWORK: off
+2026-11-11T16:21:25.6679431Z ##[endgroup]
+2026-11-11T16:21:25.9110402Z [32mtask: [go:test-stream] go test -count=1 ./internal/adapter/stream/...
+2026-11-11T16:21:39.1992909Z ok  	github.com/mycroblog/my/internal/adapter/stream/postgres	9.270s
+2026-11-11T16:22:10.6329161Z 2026/11/11 16:21:43 github.com/testcontainers/testcontainers-go - Connected to docker: 
+2026-11-11T16:22:10.6329788Z   Server Version: 28.0.4
+2026-11-11T16:22:10.6330121Z   API Version: 1.48
+2026-11-11T16:22:10.6333203Z   Operating System: Ubuntu 24.04.5 LTS
+2026-11-11T16:22:10.6333709Z   Total Memory: 15983 MB
+2026-11-11T16:22:10.6334077Z   Testcontainers for Go Version: v0.45.0
+2026-11-11T16:22:10.6334675Z   Resolved Docker Host: unix:///var/run/docker.sock
+2026-11-11T16:22:10.6335155Z   Resolved Docker Socket Path: /var/run/docker.sock
+2026-11-11T16:22:10.6336839Z 2026/11/11 16:21:43 No image auth found for gcr.io. Setting empty credentials for the image: gcr.io/google.com/cloudsdktool/google-cloud-cli:587.0.0-emulators. This is expected for public images. Details: credentials not found in native keychain
+2026-11-11T16:22:10.6338058Z 2026/11/11 16:22:02 🐳 Creating container for image gcr.io/google.com/cloudsdktool/google-cloud-cli:587.0.0-emulators
+2026-11-11T16:22:10.6338592Z 2026/11/11 16:22:02 ⏳ Waiting for Reaper "34a8d25b" to be ready
+2026-11-11T16:22:10.6338908Z --- FAIL: TestBusContractEmulator (19.33s)
+2026-11-11T16:22:10.6340123Z     pubsub_test.go:73: start container gcr.io/google.com/cloudsdktool/google-cloud-cli:587.0.0-emulators: run pubsub: generic container: create container: reaper: from container "34a8d25b": wait for reaper 34a8d25b: unexpected container status "removing"
+2026-11-11T16:22:10.6341201Z         get logs: Error response from daemon: can not get logs from container which is dead or marked for removal
+2026-11-11T16:22:10.6341635Z --- FAIL: TestSweeperContractEmulator (0.00s)
+2026-11-11T16:22:10.6342643Z     pubsub_test.go:87: start container gcr.io/google.com/cloudsdktool/google-cloud-cli:587.0.0-emulators: run pubsub: generic container: create container: reaper: from container "34a8d25b": wait for reaper 34a8d25b: unexpected container status "removing"
+2026-11-11T16:22:10.6343686Z         get logs: Error response from daemon: can not get logs from container which is dead or marked for removal
+2026-11-11T16:22:10.6344053Z FAIL
+2026-11-11T16:22:10.6344328Z 2026/11/11 16:22:10 🐳 Stopping container: 90a6d11dd2d7
+2026-11-11T16:22:10.6344980Z 2026/11/11 16:22:10 ✅ Container stopped: 90a6d11dd2d7
+2026-11-11T16:22:10.6345511Z 2026/11/11 16:22:10 🐳 Terminating container: 90a6d11dd2d7
+2026-11-11T16:22:10.6345919Z 2026/11/11 16:22:10 🚫 Container terminated: 90a6d11dd2d7
+2026-11-11T16:22:10.6346270Z FAIL	github.com/mycroblog/my/internal/adapter/stream/pubsub	40.707s
+2026-11-11T16:22:10.6346646Z ok  	github.com/mycroblog/my/internal/adapter/stream/sns	22.348s
+2026-11-11T16:22:10.6347011Z ok  	github.com/mycroblog/my/internal/adapter/stream/valkey	21.070s
+2026-11-11T16:22:10.6347276Z FAIL
+2026-11-11T16:22:10.6590880Z [0m[31mtask: Failed to run task "go:test-stream": exit status 1
+2026-11-11T16:22:10.6612381Z ##[error]exit status 1
+2026-11-11T16:22:10.6627280Z [0m
+2026-11-11T16:22:10.6630183Z ##[error]Process completed with exit code 1.
