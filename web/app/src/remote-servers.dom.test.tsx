@@ -126,7 +126,7 @@ test("with no filter, the list holds every known server in domain order, each wi
     "gotosocial",
   ]);
   // Failed days only where deliveries failed.
-  expect(failures.map((cell) => /(\d+) days?$/.exec(cell ?? "")?.[1] ?? cell)).toEqual([
+  expect((failures ?? []).map((cell) => /(\d+) days?$/.exec(cell ?? "")?.[1] ?? cell)).toEqual([
     "",
     "9",
     "2",

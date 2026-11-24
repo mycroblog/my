@@ -354,9 +354,14 @@ function ServerHead({ server }: { server: RemoteServer }) {
       : [{ term: t("staff_domains.server.fact.last_failure"), value: day(server.last_failure_day) }]),
   ];
   // Every term a server's facts may have: the values start in one line on every server's screen, whichever it has.
-  const terms = ["software", "first_seen", "state", "since", "failures", "last_failure"].map((term) =>
-    t(`staff_domains.server.fact.${term}`),
-  );
+  const terms = [
+    t("staff_domains.server.fact.software"),
+    t("staff_domains.server.fact.first_seen"),
+    t("staff_domains.server.fact.state"),
+    t("staff_domains.server.fact.since"),
+    t("staff_domains.server.fact.failures"),
+    t("staff_domains.server.fact.last_failure"),
+  ];
   return (
     <Stack gap="entry-room">
       {/* What a press said, right under its buttons: no room of a group of its own while it says nothing. */}
