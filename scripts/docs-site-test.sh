@@ -80,8 +80,10 @@ expect_stage() {
       fail "stage $name: did not copy the build and the config"
     [[ -n "$want" || (-f "$tmp/work-$name/worker/index.ts" && -z "$(find "$tmp/work-$name/worker" -name '*.test.ts')") ]] ||
       fail "stage $name: did not copy the Worker's code alone"
-    [[ -n "$want" ]] || grep -qx '/ /next/ 302' "$tmp/work-$name/site/_redirects" ||
-      fail "stage $name: no redirect of / to /next/"
+    # `wrangler preview` refuses a _redirects file, so the Worker opens /next/ from the root and /latest/.
+    [[ -n "$want" || ! -e "$tmp/work-$name/site/_redirects" ]] || fail "stage $name: the Preview has a _redirects file"
+    [[ -n "$want" ]] || grep -qF '"run_worker_first": ["/", "/latest", "/latest/*", "/*/releases/", "/*/*/releases/"]' \
+      "$tmp/work-$name/wrangler.jsonc" || fail "stage $name: the Preview's config does not send / and /latest/ to the Worker"
   else
     [[ -n "$want" && "$out" == *"$want"* ]] || fail "stage $name: '$out', want '${want:-success}'"
   fi

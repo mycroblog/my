@@ -161,8 +161,38 @@ run "the_filters_compare_the_snapshot_with_the_limits" {
   }
 
   assert {
-    condition     = strcontains(google_logging_metric.counter["queue_stalled"].filter, "jsonPayload.\"my.queue.oldest_ready_age\">1800")
+    condition     = strcontains(google_logging_metric.counter["queue_stalled"].filter, "jsonPayload.\"my.queue.oldest_ready_age.max\">1800")
     error_message = "the threshold of MyQueueStalled is 30 minutes"
+  }
+
+  assert {
+    condition     = strcontains(google_logging_metric.counter["media_large"].filter, "jsonPayload.\"my.media.stored_bytes.total\">53687091200")
+    error_message = "MyMediaStorageLarge compares the local media and the remote cache together"
+  }
+
+  assert {
+    condition = (
+      strcontains(google_logging_metric.counter["inbox_activities"].filter, "jsonPayload.\"my.outcome\":*")
+      && strcontains(google_monitoring_alert_policy.promql["MyInboxSignatureFailures"].conditions[0].condition_prometheus_query_language[0].query, "my_inbox_rejection=\"signature\"")
+    )
+    error_message = "the inbox alerts count the activities of the inbox by outcome, as my.inbox.activities does"
+  }
+
+  assert {
+    condition = alltrue([
+      for key in ["adapter_operations", "adapter_errors", "pool_wait_time", "pool_timeouts"] :
+      strcontains(google_logging_metric.value[key].filter, "jsonPayload.msg=(\"http request\" OR \"job\")")
+      && google_logging_metric.value[key].metric_descriptor[0].value_type == "DISTRIBUTION"
+    ])
+    error_message = "the adapter and pool values are summed from the lines that end a request or a job, which carry them"
+  }
+
+  assert {
+    condition = alltrue([
+      for name in ["MyAdapterErrors", "MyDBPoolSaturated", "MyDBPoolWaiting"] :
+      contains(keys(google_monitoring_alert_policy.promql), name)
+    ])
+    error_message = "the adapter and pool alerts of the runbook exist"
   }
 
   assert {

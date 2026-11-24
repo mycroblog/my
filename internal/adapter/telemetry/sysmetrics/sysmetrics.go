@@ -13,8 +13,10 @@
 // waits) are observable counters, which only grow until the process restarts.
 //
 // The domain and application layers never see these metrics: the platform wraps the adapters
-// with the decorators when it assembles them, and every decorator returns the adapter itself
-// when the Meter records nothing.
+// with the decorators when it assembles them. With metrics_exporter = none, whose Meter is a
+// UnitLineMeter, the decorators and RegisterPool put the adapter operations and the pools' use
+// on the line that ends each unit of work instead (ADR-0055 §5); every decorator returns the
+// adapter itself when the Meter records nothing and is no UnitLineMeter (kernel.NopMeter).
 package sysmetrics
 
 import (
@@ -58,14 +60,24 @@ var (
 	}
 )
 
-// operations records the duration and outcome of the operations of one adapter.
+// measures reports whether the decorators measure the operations of the adapters on m: m
+// records them, or it is a UnitLineMeter, which counts them on the line of each unit of work.
+func measures(m kernel.Meter) bool {
+	_, lines := m.(*UnitLineMeter)
+	return lines || !kernel.IsNop(m)
+}
+
+// operations records the duration and outcome of the operations of one adapter, or, on a
+// UnitLineMeter, counts them in the unit of work of their context.
 type operations struct {
 	h       kernel.Histogram
 	adapter string
+	perUnit bool
 }
 
 func newOperations(m kernel.Meter, adapter string) operations {
-	return operations{h: m.Histogram(AdapterOperationDuration), adapter: adapter}
+	_, perUnit := m.(*UnitLineMeter)
+	return operations{h: m.Histogram(AdapterOperationDuration), adapter: adapter, perUnit: perUnit}
 }
 
 // done records the operation op that started at start and failed with err, unless ok says
@@ -74,6 +86,10 @@ func (o operations) done(ctx context.Context, op string, start time.Time, err er
 	outcome := OutcomeSuccess
 	if err != nil && (ok == nil || !ok(err)) {
 		outcome = OutcomeError
+	}
+	if o.perUnit {
+		countInUnit(ctx, o.adapter, outcome == OutcomeError)
+		return
 	}
 	o.h.Record(context.WithoutCancel(ctx), time.Since(start).Seconds(),
 		kernel.NewLabels(LabelAdapter, o.adapter, LabelOperation, op, LabelOutcome, outcome))

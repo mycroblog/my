@@ -21,6 +21,9 @@ locals {
     : "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=(${join(" OR ", [for name in local.services : "\"${name}\""])})"
   )
   snapshot = "${local.service} AND jsonPayload.msg=\"metrics snapshot\""
+  # The lines that end a request or a job. They carry the adapter operations of their unit, and the pool's use and its
+  # waits since the process's previous line.
+  units = "${local.service} AND jsonPayload.msg=(\"http request\" OR \"job\")"
 
   # A log-based counter counts the lines of its filter. Every alert on these fires on lines that exist, so an idle
   # service with no lines fires nothing. A value compared in the filter stands in for a gauge, which a counter cannot carry.
@@ -31,10 +34,12 @@ locals {
         filter      = "${local.service} AND jsonPayload.msg=\"job\""
         labels      = { my_job_type = "EXTRACT(jsonPayload.\"my.job.type\")", my_outcome = "EXTRACT(jsonPayload.\"my.outcome\")" }
       }
-      inbox_requests = {
-        description = "POSTs to the inboxes by status."
-        filter      = "${local.service} AND jsonPayload.msg=\"http request\" AND jsonPayload.\"http.request.method\"=\"POST\" AND jsonPayload.\"http.route\"=~\"/inbox$\""
-        labels      = { status = "EXTRACT(jsonPayload.\"http.response.status_code\")" }
+      # Only the request lines of my.inbox.activities carry the inbox's outcome: a POST refused before the inbox read it
+      # has none.
+      inbox_activities = {
+        description = "Activities POSTed to the inboxes by outcome and reason of refusal."
+        filter      = "${local.service} AND jsonPayload.msg=\"http request\" AND jsonPayload.\"my.outcome\":*"
+        labels      = { my_outcome = "EXTRACT(jsonPayload.\"my.outcome\")", my_inbox_rejection = "EXTRACT(jsonPayload.\"my.inbox.rejection\")" }
       }
       error_reports = {
         description = "Error reports of the server."
@@ -52,13 +57,23 @@ locals {
         labels      = {}
       }
       queue_backlog = {
-        description = "Snapshots in which the oldest ready job has waited over 5 minutes."
-        filter      = "${local.snapshot} AND jsonPayload.\"my.queue.oldest_ready_age\">300"
+        description = "Snapshots in which the oldest ready job of any type has waited over 5 minutes."
+        filter      = "${local.snapshot} AND jsonPayload.\"my.queue.oldest_ready_age.max\">300"
+        labels      = {}
+      }
+      pool_lines = {
+        description = "Request and job lines that carry the use of the database pool."
+        filter      = "${local.units} AND jsonPayload.\"db.client.connection.usage\">=0"
+        labels      = {}
+      }
+      pool_saturated = {
+        description = "Request and job lines written while over 90% of the database pool was in use."
+        filter      = "${local.units} AND jsonPayload.\"db.client.connection.usage\">0.9"
         labels      = {}
       }
       queue_stalled = {
-        description = "Snapshots in which the oldest ready job has waited over 30 minutes."
-        filter      = "${local.snapshot} AND jsonPayload.\"my.queue.oldest_ready_age\">1800"
+        description = "Snapshots in which the oldest ready job of any type has waited over 30 minutes."
+        filter      = "${local.snapshot} AND jsonPayload.\"my.queue.oldest_ready_age.max\">1800"
         labels      = {}
       }
     },
@@ -71,8 +86,8 @@ locals {
     },
     var.media_size_limit_bytes == null ? {} : {
       media_large = {
-        description = "Snapshots in which the local media are over the limit."
-        filter      = "${local.snapshot} AND jsonPayload.\"my.media.stored_bytes\".local>${var.media_size_limit_bytes}"
+        description = "Snapshots in which the local media and the remote media cache together are over the limit."
+        filter      = "${local.snapshot} AND jsonPayload.\"my.media.stored_bytes.total\">${var.media_size_limit_bytes}"
         labels      = {}
       }
     },
@@ -92,6 +107,31 @@ locals {
     },
   )
 
+  # A log-based distribution sums a value of the lines, where a counter only counts them: a line has the operations of
+  # its whole unit, and each increase of the pool's waits goes on one line of its process, so the sums are exact.
+  log_values = {
+    adapter_operations = {
+      description = "Operations of the queue, key-value, stream, and blob adapters, by the request or job that ran them."
+      field       = "my.adapter.operations.total"
+      unit        = "1"
+    }
+    adapter_errors = {
+      description = "Adapter operations that failed, by the request or job that ran them."
+      field       = "my.adapter.errors.total"
+      unit        = "1"
+    }
+    pool_wait_time = {
+      description = "Time spent waiting for a connection of the database pool, since the previous line of the process."
+      field       = "db.client.connection.wait_time"
+      unit        = "s"
+    }
+    pool_timeouts = {
+      description = "Acquisitions of a connection of the database pool that gave up, since the previous line of the process."
+      field       = "db.client.connection.timeouts"
+      unit        = "1"
+    }
+  }
+
   # How PromQL names these metrics and Cloud Run's: the first / becomes :, and every other special character _.
   resource = "monitored_resource=\"cloud_run_revision\""
   log      = "logging_googleapis_com:user_${var.name}"
@@ -104,8 +144,9 @@ locals {
   jobs    = "${local.log}_job_runs{${local.resource}"
   deliver = "${local.jobs},my_job_type=\"federation.deliver\""
   email   = "${local.jobs},my_job_type=~\".*[._]email.*\""
-  inbox   = "${local.log}_inbox_requests{${local.resource}"
+  inbox   = "${local.log}_inbox_activities{${local.resource}"
   errors  = "${local.log}_error_reports{${local.resource}}"
+  pool    = "${local.log}_pool_lines{${local.resource}}"
 
   # The names, thresholds, and durations of deploy/monitoring/prometheus/alerts.yml; the README says where each differs.
   # An empty result fires nothing, so no traffic means no alert. Only MyTargetDown and MyMetricsSnapshotStale, below,
@@ -140,17 +181,32 @@ locals {
       MyInboxRejectionsHigh = {
         severity = "WARNING"
         for      = "1800s"
-        query    = "sum(rate(${local.inbox},status=~\"4..|503\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.25 and sum(rate(${local.inbox}}[15m])) > 0.01"
+        query    = "sum(rate(${local.inbox},my_outcome=\"rejected\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.25 and sum(rate(${local.inbox}}[15m])) > 0.01"
       }
       MyInboxSignatureFailures = {
         severity = "WARNING"
         for      = "1800s"
-        query    = "sum(rate(${local.inbox},status=\"401\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.1 and sum(rate(${local.inbox}}[15m])) > 0.01"
+        query    = "sum(rate(${local.inbox},my_outcome=\"rejected\",my_inbox_rejection=\"signature\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.1 and sum(rate(${local.inbox}}[15m])) > 0.01"
       }
       MyInboxErrors = {
         severity = "WARNING"
         for      = "900s"
-        query    = "sum(rate(${local.inbox},status=\"500\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.05"
+        query    = "sum(rate(${local.inbox},my_outcome=\"error\"}[15m])) / sum(rate(${local.inbox}}[15m])) > 0.05"
+      }
+      MyAdapterErrors = {
+        severity = "WARNING"
+        for      = "900s"
+        query    = "sum(rate(${local.log}_adapter_errors_sum{${local.resource}}[5m])) / sum(rate(${local.log}_adapter_operations_sum{${local.resource}}[5m])) > 0.05"
+      }
+      MyDBPoolSaturated = {
+        severity = "WARNING"
+        for      = "900s"
+        query    = "sum(rate(${local.log}_pool_saturated{${local.resource}}[5m])) / sum(rate(${local.pool}[5m])) > 0.5"
+      }
+      MyDBPoolWaiting = {
+        severity = "WARNING"
+        for      = "600s"
+        query    = "sum(rate(${local.log}_pool_wait_time_sum{${local.resource}}[5m])) > 0.5 or sum(increase(${local.log}_pool_timeouts_sum{${local.resource}}[10m])) > 0"
       }
       MyErrorReportsIncreasing = {
         severity = "WARNING"
@@ -279,6 +335,30 @@ resource "google_logging_metric" "counter" {
 
 # The server's own duration, so the wake-up of the platform and the streams, which stay open, are left out. 0.3 is a
 # bound, so that the 95th percentile falls on the right side of the threshold.
+resource "google_logging_metric" "value" {
+  for_each = local.log_values
+
+  project         = var.project_id
+  name            = "${var.name}_${each.key}"
+  description     = each.value.description
+  filter          = "${local.units} AND jsonPayload.\"${each.value.field}\">0"
+  value_extractor = "EXTRACT(jsonPayload.\"${each.value.field}\")"
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "DISTRIBUTION"
+    unit        = each.value.unit
+  }
+
+  bucket_options {
+    exponential_buckets {
+      num_finite_buckets = 16
+      growth_factor      = 2
+      scale              = 1
+    }
+  }
+}
+
 resource "google_logging_metric" "api_request_duration" {
   project         = var.project_id
   name            = "${var.name}_api_request_duration"
@@ -428,5 +508,5 @@ resource "google_monitoring_alert_policy" "promql" {
     content   = "Runbook: ${local.runbook}#${lower(each.key)}"
   }
 
-  depends_on = [google_logging_metric.counter, google_logging_metric.api_request_duration]
+  depends_on = [google_logging_metric.counter, google_logging_metric.value, google_logging_metric.api_request_duration]
 }

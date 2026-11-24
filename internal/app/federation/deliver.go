@@ -393,7 +393,7 @@ func (d *Deliverer) finish(ctx context.Context, del federation.Delivery, act fed
 	if a.HTTPStatus != 0 {
 		attrs = append(attrs, slog.Int(LogStatusCode, a.HTTPStatus))
 	}
-	queue.AddRunAttrs(ctx, attrs...)
+	kernel.AddUnitAttrs(ctx, attrs...)
 	d.attempts.Add(ctx, 1, kernel.NewLabels(LabelOutcome, deliveryOutcome(a)))
 	a.ID = d.d.IDs.NewID()
 	a.DeliveryID = del.ID

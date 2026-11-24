@@ -183,7 +183,17 @@ func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sched
 	sched.Add(queue.Schedule{Name: JobSnapshot, Every: SnapshotInterval, Job: queue.NewJob{Type: JobSnapshot}})
 }
 
-// snapshotAttrs are the values of snap as log attributes named after the gauges.
+// Keys of the snapshot line that aggregate a group of it.
+const (
+	logOldestReadyAgeMax = "my.queue.oldest_ready_age.max"
+	logMediaStoredTotal  = "my.media.stored_bytes.total"
+)
+
+// snapshotAttrs are the values of snap as log attributes named after the gauges: a gauge with
+// a label is a group keyed by the label's values. A log filter compares one field with a
+// constant and cannot compare or add across the fields of a group, so the line also carries
+// what the alerts read of a group: my.queue.oldest_ready_age.max, the largest age over the job
+// types, and my.media.stored_bytes.total, the local media and the remote cache together.
 func snapshotAttrs(snap Snapshot) []any {
 	var attrs []any
 	if q := snap.Queue; q != nil {
@@ -191,9 +201,14 @@ func snapshotAttrs(snap Snapshot) []any {
 		for _, t := range slices.Sorted(maps.Keys(q.Ready)) {
 			ready = append(ready, slog.Int64(t, q.Ready[t]))
 		}
+		ages := make([]any, 0, len(q.OldestReadyAges))
+		for _, t := range slices.Sorted(maps.Keys(q.OldestReadyAges)) {
+			ages = append(ages, slog.Float64(t, q.OldestReadyAges[t]))
+		}
 		attrs = append(attrs,
 			slog.Group(QueueReady.Name, ready...),
-			slog.Float64(QueueOldestReadyAge.Name, q.OldestReadyAge),
+			slog.Group(QueueOldestReadyAge.Name, ages...),
+			slog.Float64(logOldestReadyAgeMax, q.OldestReadyAge),
 			slog.Int64(QueueDead.Name, q.Dead),
 		)
 	}
@@ -203,6 +218,7 @@ func snapshotAttrs(snap Snapshot) []any {
 			slog.Int64(InstanceStatuses.Name, t.Statuses),
 			slog.Group(MediaStoredBytes.Name,
 				slog.Int64(MediaOriginLocal, t.MediaLocalBytes), slog.Int64(MediaOriginRemoteCache, t.MediaRemoteCacheBytes)),
+			slog.Int64(logMediaStoredTotal, t.MediaLocalBytes+t.MediaRemoteCacheBytes),
 			slog.Group(FederationInstances.Name,
 				slog.Int64(InstanceStateAvailable, t.InstancesFailing), slog.Int64(InstanceStateUnavailable, t.InstancesUnavailable)),
 		)
