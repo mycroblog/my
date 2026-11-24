@@ -195,7 +195,7 @@ func measure(ctx context.Context, c config, kind string, logf func(string, ...an
 	if err != nil {
 		return run, fmt.Errorf("seed: %w", err)
 	}
-	if err := drainJobs(ctx, db, c.drain); err != nil {
+	if err := drainJobs(ctx, db, c.drain, logf); err != nil {
 		return run, err
 	}
 	run.Data, run.SeedSeconds = w.info, time.Since(t0).Seconds()
@@ -237,7 +237,7 @@ func measure(ctx context.Context, c config, kind string, logf func(string, ...an
 		if n := lv.failures(); n > 0 {
 			refused = errors.Join(refused, fmt.Errorf("%d clients: %d answers were not 2xx: %v", clients, n, lv.Statuses))
 		}
-		if err := drainJobs(ctx, db, c.drain); err != nil {
+		if err := drainJobs(ctx, db, c.drain, logf); err != nil {
 			return run, err
 		}
 	}
@@ -274,7 +274,7 @@ func traced(ctx context.Context, c config, s *server, db *database, l *load, fro
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := drainJobs(ctx, db, c.drain); err != nil {
+	if err := drainJobs(ctx, db, c.drain, logf); err != nil {
 		return nil, nil, err
 	}
 	// Stopping the server sends the spans it has not sent yet.

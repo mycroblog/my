@@ -200,12 +200,10 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 		return fmt.Errorf("%w: phase %q of %s %s", federation.ErrInvalidOutbound, p.Phase, act.Type, act.ID)
 	}
 
-	var document []byte
-	if idx == 0 && p.After == "" {
-		if document, err = f.document(ctx, act, subj); err != nil {
-			return err
-		}
-	}
+	// The first run of the fan-out stores the document, which every delivery sends. A fan-out
+	// that ends in its first run with no delivery, as on a server that no other server follows,
+	// builds and stores none: only a delivery sends it (#3489).
+	first := idx == 0 && p.After == ""
 	// A phase that the mode does not let add recipients stays in the list, so that the batches
 	// of one activity agree on its phases whatever the mode was when each ran; it finds no one.
 	// A phase whose last batch finds no one to deliver to goes on to the next phase in this run,
@@ -247,12 +245,22 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 		nextJob = &j
 	}
 
+	var document []byte
+	if first && (len(targets) > 0 || nextJob != nil) {
+		if document, err = f.document(ctx, act, subj); err != nil {
+			return err
+		}
+	}
+
 	now := f.d.Clock.Now()
 	deliveries := make([]federation.Delivery, len(targets))
 	for i, t := range targets {
 		deliveries[i] = federation.Delivery{
 			ID: f.d.IDs.NewID(), OutboundActivityID: act.ID, InboxURL: t.inbox, Domain: t.domain, CreatedAt: now,
 		}
+	}
+	if document == nil && len(deliveries) == 0 && nextJob == nil && !federation.RecordsFanOutEnd(act) {
+		return nil // nothing to write: no transaction (#3489)
 	}
 	return f.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if document != nil {
@@ -295,7 +303,7 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 // While the service closure delivers its Deletes, it alone decides (federation.ClosureSends);
 // otherwise the federation mode does.
 func (f *FanOut) sends(ctx context.Context, act federation.OutboundActivity, subj subject) (sends, adds bool, why string, err error) {
-	closing, err := closureRetracts(ctx, f.d.Closure)
+	closing, mode, err := f.gate(ctx)
 	if err != nil {
 		return false, false, "", err
 	}
@@ -303,11 +311,25 @@ func (f *FanOut) sends(ctx context.Context, act federation.OutboundActivity, sub
 		ok := federation.ClosureSends(act)
 		return ok, ok, "while the service is closed", nil
 	}
-	mode, err := currentMode(ctx, f.d.Modes)
-	if err != nil {
-		return false, false, "", err
-	}
 	return federation.Sends(mode, act, subj.retracting()), federation.AddsRecipients(mode, act, subj.retracting()), "in mode " + string(mode), nil
+}
+
+// gate reads whether the closure delivers its retractions alone and the federation mode, with
+// one read when Modes can (deliveryGate), as the Deliverer does.
+func (f *FanOut) gate(ctx context.Context) (bool, federation.Mode, error) {
+	if g, ok := f.d.Modes.(deliveryGate); ok && f.d.Closure != nil {
+		closing, mode, err := g.DeliveryGate(ctx)
+		if err != nil {
+			return false, "", fmt.Errorf("read the federation mode and the service closure: %w", err)
+		}
+		return closing, mode, nil
+	}
+	closing, err := closureRetracts(ctx, f.d.Closure)
+	if err != nil || closing {
+		return closing, "", err
+	}
+	mode, err := currentMode(ctx, f.d.Modes)
+	return false, mode, err
 }
 
 // ended records that the fan-out of the activity id ended without its last batch: it was

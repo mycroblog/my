@@ -739,6 +739,14 @@ func statusDeletes(t *testing.T, e *StatusEnv) {
 		t.Errorf("second delete = %v, want ErrAlreadyDeleted", err)
 	}
 
+	// FindLiveStatus finds the kept status as FindStatus does, and not the deleted one.
+	if got, err := e.H.Statuses.FindLiveStatus(ctx, kept.ID); err != nil || got != kept {
+		t.Errorf("FindLiveStatus(kept) = %+v, %v; want %+v", got, err, kept)
+	}
+	if _, err := e.H.Statuses.FindLiveStatus(ctx, s.ID); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindLiveStatus(deleted) = %v, want ErrNotFound", err)
+	}
+
 	// The status stays (the purge job removes it) but leaves every projection.
 	if _, err := e.H.Statuses.FindStatus(ctx, s.ID); err != nil {
 		t.Errorf("FindStatus after the deletion = %v", err)
