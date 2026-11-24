@@ -154,8 +154,9 @@ func (s *Service) ReceiveMediaEvents(ctx context.Context, req MediaWebhook) (Med
 	return MediaWebhookResult{Outcome: MediaWebhookAccepted}, nil
 }
 
-// ApplyMediaEvent runs JobApplyMediaEvent. An event of another method than the voice chat's now is
-// dropped.
+// ApplyMediaEvent runs JobApplyMediaEvent. An event of another method than the voice chat's now,
+// or of a room this instance does not have (a room of another instance that shares the media
+// server), is dropped: it changes nothing and removes no one.
 func (s *Service) ApplyMediaEvent(ctx context.Context, j queue.Job) queue.Result {
 	var p mediaPayload
 	if err := json.Unmarshal(j.Payload, &p); err != nil {
@@ -165,7 +166,13 @@ func (s *Service) ApplyMediaEvent(ctx context.Context, j queue.Job) queue.Result
 		return queue.Done()
 	}
 	room := RoomRef{ID: p.Room}
-	var err error
+	own, err := s.hasRoom(ctx, p.Room)
+	if err != nil {
+		return queue.Retry(0, err)
+	}
+	if !own {
+		return queue.Done()
+	}
 	switch p.Kind {
 	case MediaSessionJoined:
 		err = s.mediaJoined(ctx, room, p.Session)
@@ -263,6 +270,22 @@ func (s *Service) reopen(ctx context.Context, room RoomRef) error {
 		return nil
 	}
 	return s.d.Transport.Open(ctx, room)
+}
+
+// hasRoom reports whether a room of the media server is a room of this instance, in any state. A
+// name that is no ID this server generates is a room of another.
+func (s *Service) hasRoom(ctx context.Context, roomID string) (bool, error) {
+	if !kernel.ValidID(roomID) {
+		return false, nil
+	}
+	_, err := s.d.Repository.FindRoom(ctx, nil, roomID)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+	return true, nil
 }
 
 // liveParticipant returns the participant of a room whose current, live session is session.
