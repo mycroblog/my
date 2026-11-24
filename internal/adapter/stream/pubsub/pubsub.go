@@ -7,7 +7,9 @@
 // shares its messages among its subscribers, so every listening process gets a subscription of
 // its own, <prefix>-<process id>-<n>, which Listen creates and Close deletes. n counts the
 // listeners of the process, so that the late Close of a broken listener never deletes the
-// subscription of the next one:
+// subscription of the next one. A creation that fails may still have created the subscription
+// (its deadline ended first), so the next Listen creates it again under the same name and takes
+// it when it exists:
 //
 //   - its expiration policy deletes it after SubscriptionTTL (1 day, the least Pub/Sub allows)
 //     without subscriber activity, and its messages are kept MessageRetention (10 minutes, the
@@ -142,8 +144,12 @@ type Bus struct {
 	publisher *pubsubv2.Publisher
 	log       *slog.Logger
 
-	// listens counts the calls of Listen, for the names of their subscriptions.
+	// listens counts the subscriptions that Listen names.
 	listens atomic.Uint64
+	// failed is the name of the last subscription whose creation failed, which the next Listen
+	// uses again; empty when there is none.
+	failedMu sync.Mutex
+	failed   string
 }
 
 var (
@@ -201,9 +207,17 @@ func (b *Bus) Send(ctx context.Context, payload []byte) error {
 }
 
 // Listen creates the subscription of this process and receives from it. A payload published
-// after the subscription exists waits in it, so Listen returns once it is created.
+// after the subscription exists waits in it, so Listen returns once it is created. After a
+// creation that failed, Listen creates the same subscription, and one that exists already is
+// the one the failed creation made.
 func (b *Bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.Listener, error) {
-	name := b.subscriptionStart(b.o.ProcessID) + strconv.FormatUint(b.listens.Add(1), 10)
+	b.failedMu.Lock()
+	name, again := b.failed, b.failed != ""
+	b.failed = ""
+	b.failedMu.Unlock()
+	if !again {
+		name = b.subscriptionStart(b.o.ProcessID) + strconv.FormatUint(b.listens.Add(1), 10)
+	}
 	_, err := b.client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
 		Name:                     name,
 		Topic:                    b.o.Topic,
@@ -215,7 +229,13 @@ func (b *Bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.
 			labelCreated: strconv.FormatInt(b.o.Now().Unix(), 10),
 		},
 	})
+	if again && status.Code(err) == codes.AlreadyExists {
+		err = nil
+	}
 	if err != nil {
+		b.failedMu.Lock()
+		b.failed = name
+		b.failedMu.Unlock()
 		return nil, fmt.Errorf("pubsub create subscription %s: %w", name, err)
 	}
 	sub := b.client.Subscriber(name)
