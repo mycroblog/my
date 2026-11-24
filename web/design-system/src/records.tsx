@@ -300,8 +300,10 @@ function RecordLine({
 }
 
 const PLACE = {
-  // What a record holds across the row, under its cells: narrow, after its facts; wide, every column.
-  detail: "order-3 basis-full pt-entry-line @min-[30rem]:col-span-full",
+  // What a record holds across the row, under its cells: narrow, after its facts; wide, every column. It asks the
+  // columns for no width of its own, so that a long line (an error, a URL) wraps inside the row rather than widening
+  // the columns it spans past the table's edge and squeezing the heads' column to nothing.
+  detail: "order-3 basis-full pt-entry-line [contain:inline-size] @min-[30rem]:col-span-full",
   // A row's checkbox, or select all: on the first line's height, over the link that covers the row.
   pick: "relative z-1 flex h-[1lh] flex-none items-center self-start",
   // The head of a record: narrow, the first line's room; wide, its column.

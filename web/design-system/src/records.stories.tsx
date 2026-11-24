@@ -10,6 +10,7 @@ import { color, rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { Button, TextButton } from "./button";
+import { CodeText } from "./code-text";
 import { FeedNotice } from "./feed";
 import { Box, Stack } from "./layout";
 import { BackButton, ScreenTitle } from "./list";
@@ -698,6 +699,73 @@ export const Jobs: Story = {
     }
     return <Screen />;
   },
+};
+
+const longError =
+  "content: robots.txt cannot be read now: https://share.deutschlandradio.de/dlf-audiothek-audio-teilen.html?audio_id=dira_B0241C8AD2EB11F1768EB883034C2FA0: content: no link card: robots.txt cannot be read, which disallows the URL: https://share.deutschlandradio.de/dlf-audiothek-audio-teilen.html?audio_id=dira_B0241C8AD2EB11F1768EB883034C2FA0 (gave up after 10 attempts)";
+
+/**
+ * Jobs that failed on a long error, its first line under each row of the list, muted, and the runs of one of them,
+ * each run's error under it: the error wraps inside its row, whatever its length, and the table keeps to its column,
+ * every column's name on one line and the job's type in full.
+ */
+export const LongErrors: Story = {
+  render: () => (
+    <Column>
+      <Stack gap="entry-room">
+        <RecordTable
+          label="Jobs"
+          head={{ label: "Type" }}
+          columns={[
+            { key: "attempts", label: "Attempts", kind: "figures" },
+            { key: "when", label: "Failed at", kind: "fit", bare: true },
+            { key: "state", label: "State", kind: "fit", beside: true },
+          ]}
+          rows={["l1", "l2"].map((id, i) => ({
+            id,
+            head: i === 0 ? "content.fetch_link_card" : "federation.deliver",
+            code: true,
+            href: `#/admin/jobs/${id}`,
+            detail: (
+              <Box as="p" text="caption" tone="muted">
+                <CodeText>{i === 0 ? longError : 'Get "https://discover.example/nodeinfo/2.1": timeout'}</CodeText>
+              </Box>
+            ),
+            cells: {
+              attempts: "10",
+              when: "Nov 23, 8:29 AM",
+              state: <StateMark state="failed">Failed</StateMark>,
+            },
+          }))}
+        />
+        <RecordTable
+          label="Failed attempts"
+          head={{ label: "Try" }}
+          columns={[
+            { key: "outcome", label: "Outcome", kind: "fit" },
+            { key: "finished", label: "Finished at", kind: "fit" },
+            { key: "worker", label: "Worker", kind: "fit" },
+          ]}
+          rows={[10, 9].map((n) => ({
+            id: `a${String(n)}`,
+            head: `#${String(n)}`,
+            cells: {
+              outcome: (
+                <StateMark state={n === 10 ? "failed" : "retrying"}>{n === 10 ? "No retry" : "Retry"}</StateMark>
+              ),
+              finished: "Nov 23, 8:29 AM",
+              worker: <CodeText>worker-7f9c</CodeText>,
+            },
+            detail: (
+              <Box as="p" text="caption">
+                <CodeText>{longError}</CodeText>
+              </Box>
+            ),
+          }))}
+        />
+      </Stack>
+    </Column>
+  ),
 };
 
 /**
