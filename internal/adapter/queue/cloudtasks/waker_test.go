@@ -31,6 +31,10 @@ const (
 	serviceAccount = "my-tasks@my-project.iam.gserviceaccount.com"
 )
 
+// maxRPCDeadline is how far ahead Cloud Tasks accepts the deadline of a request: a later one is
+// refused with "The deadline cannot be more than 30s in the future".
+const maxRPCDeadline = 30 * time.Second
+
 // fakeTasks stands in for the CreateTask method of the Cloud Tasks API.
 type fakeTasks struct {
 	cloudtaskspb.UnimplementedCloudTasksServer
@@ -40,7 +44,10 @@ type fakeTasks struct {
 	refuse map[string]bool // job IDs whose task is refused
 }
 
-func (f *fakeTasks) CreateTask(_ context.Context, req *cloudtaskspb.CreateTaskRequest) (*cloudtaskspb.Task, error) {
+func (f *fakeTasks) CreateTask(ctx context.Context, req *cloudtaskspb.CreateTaskRequest) (*cloudtaskspb.Task, error) {
+	if dl, ok := ctx.Deadline(); ok && time.Until(dl) > maxRPCDeadline {
+		return nil, status.Errorf(codes.InvalidArgument, "The request deadline is %s. The deadline cannot be more than 30s in the future.", dl)
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.refuse[string(req.GetTask().GetHttpRequest().GetBody())] {
@@ -149,6 +156,23 @@ func TestWakeDefaultsAndDelayLimit(t *testing.T) {
 	}
 	if aud := task.GetHttpRequest().GetOidcToken().GetAudience(); aud != "" {
 		t.Errorf("audience = %q, want none (Cloud Tasks then uses the URL)", aud)
+	}
+}
+
+// A job's handler runs until its lease ends, minutes away, and the jobs it enqueues are signalled
+// with its context: the signal must still reach Cloud Tasks, which refuses a deadline over 30s.
+func TestWakeWithALongDeadline(t *testing.T) {
+	t.Parallel()
+	w, f := newWaker(t, cloudtasks.Options{Queue: queuePath, URL: jobsURL, ServiceAccount: serviceAccount, Clock: testkit.NewClock(now)})
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Minute)
+	defer cancel()
+	for _, wakes := range [][]queue.Wake{{{JobID: "one", At: now}}, {{JobID: "two", At: now}, {JobID: "three", At: now}}} {
+		if err := w.Wake(ctx, wakes); err != nil {
+			t.Errorf("Wake(%d signals) under a deadline 5 minutes away: %v", len(wakes), err)
+		}
+	}
+	if got := len(f.requests()); got != 3 {
+		t.Errorf("tasks = %d, want 3", got)
 	}
 }
 

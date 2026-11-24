@@ -30,6 +30,11 @@ const (
 	MaxDispatchDeadline = 30 * time.Minute
 )
 
+// CreateTimeout bounds one CreateTask call. Cloud Tasks refuses a request whose deadline is more
+// than 30 seconds ahead, and a signal is often sent with the context of a job's handler, which
+// lasts until the job's lease ends; this leaves a margin for the clocks.
+const CreateTimeout = 20 * time.Second
+
 // DefaultParallel is how many tasks one Wake creates at a time.
 const DefaultParallel = 8
 
@@ -157,6 +162,8 @@ func (w *Waker) create(ctx context.Context, wk queue.Wake) error {
 	if w.opts.DispatchDeadline > 0 {
 		task.DispatchDeadline = durationpb.New(w.opts.DispatchDeadline)
 	}
+	ctx, cancel := context.WithTimeout(ctx, CreateTimeout)
+	defer cancel()
 	if _, err := w.client.CreateTask(ctx, &cloudtaskspb.CreateTaskRequest{Parent: w.opts.Queue, Task: task}); err != nil {
 		return fmt.Errorf("cloudtasks: signal of job %s: %w", wk.JobID, err)
 	}
