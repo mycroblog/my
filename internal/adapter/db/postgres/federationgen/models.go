@@ -77,3 +77,8 @@ type RemoteFollowTombstone struct {
 	ObjectUri   string
 	ReceivedAt  time.Time
 }
+
+type RemoteInstance struct {
+	Domain      string
+	FirstSeenAt time.Time
+}

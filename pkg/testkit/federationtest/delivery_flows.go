@@ -861,7 +861,7 @@ func fedListsServersForOperators(t *testing.T, e *fedEnv) {
 	if err != nil {
 		t.Fatalf("UpsertInstanceHealth: %v", err)
 	}
-	domains := func(hs []federation.InstanceHealth) []string {
+	domains := func(hs []federation.KnownInstance) []string {
 		out := make([]string, len(hs))
 		for i, h := range hs {
 			out[i] = h.Domain
@@ -879,12 +879,12 @@ func fedListsServersForOperators(t *testing.T, e *fedEnv) {
 		{federation.InstanceUnavailable, "", 10, []string{"a.example", "c.example"}},
 		{federation.InstanceAvailable, "", 10, []string{"b.example"}},
 	} {
-		hs, err := d.health.List(ctx, tc.state, tc.after, tc.limit)
+		hs, err := d.health.List(ctx, appfederation.InstanceFilter{State: tc.state, Troubled: true}, tc.after, tc.limit)
 		if err != nil || !slices.Equal(domains(hs), tc.want) {
 			t.Errorf("List(%q, %q, %d) = %v, %v; want %v", tc.state, tc.after, tc.limit, domains(hs), err, tc.want)
 		}
 	}
-	if _, err := d.health.List(ctx, "gone", "", 10); !errors.Is(err, appfederation.ErrInvalidInstanceState) {
+	if _, err := d.health.List(ctx, appfederation.InstanceFilter{State: "gone"}, "", 10); !errors.Is(err, appfederation.ErrInvalidInstanceState) {
 		t.Errorf("List(gone) = %v, want ErrInvalidInstanceState", err)
 	}
 	// A server that answered again has no failure days and is not counted.

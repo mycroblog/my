@@ -429,7 +429,8 @@ func fedRepoHealth(t *testing.T, r *fedRepo) {
 	if got, err := r.h.Federation.ListUnavailableInstances(ctx, "c.example", 10); err != nil || !slices.Equal(got, []federation.InstanceHealth{downToo}) {
 		t.Errorf("ListUnavailableInstances(after c.example) = %+v, %v; want d.example", got, err)
 	}
-	all := []federation.InstanceHealth{healthy, failing, down, downToo}
+	// None of them was seen in a stored document or reported its software.
+	all := []federation.KnownInstance{{InstanceHealth: healthy}, {InstanceHealth: failing}, {InstanceHealth: down}, {InstanceHealth: downToo}}
 	if got, err := r.h.Federation.ListInstanceHealth(ctx, "", "", 3); err != nil || !slices.Equal(got, all[:3]) {
 		t.Errorf("ListInstanceHealth(every state) = %+v, %v; want %+v", got, err, all[:3])
 	}

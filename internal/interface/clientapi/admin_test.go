@@ -42,23 +42,25 @@ type fakeHealth struct {
 	markedBy []string
 }
 
-func (f *fakeHealth) Find(_ context.Context, domain string) (federation.InstanceHealth, error) {
+func (f *fakeHealth) Find(_ context.Context, domain string) (federation.KnownInstance, error) {
 	for _, h := range f.servers {
 		if h.Domain == domain {
-			return h, nil
+			return federation.KnownInstance{InstanceHealth: h}, nil
 		}
 	}
-	return federation.InstanceHealth{Domain: domain, State: federation.InstanceAvailable}, nil
+	return federation.KnownInstance{InstanceHealth: federation.InstanceHealth{Domain: domain, State: federation.InstanceAvailable}}, nil
 }
 
-func (f *fakeHealth) List(_ context.Context, state federation.InstanceState, after string, limit int) ([]federation.InstanceHealth, error) {
+// List lists the servers of f, each with a health row, so that troubled changes nothing.
+func (f *fakeHealth) List(_ context.Context, filter appfederation.InstanceFilter, after string, limit int) ([]federation.KnownInstance, error) {
+	state := filter.State
 	if state != "" && state != federation.InstanceAvailable && state != federation.InstanceUnavailable {
 		return nil, appfederation.ErrInvalidInstanceState
 	}
-	var out []federation.InstanceHealth
+	var out []federation.KnownInstance
 	for _, h := range f.servers {
 		if (state == "" || h.State == state) && h.Domain > after && len(out) < limit {
-			out = append(out, h)
+			out = append(out, federation.KnownInstance{InstanceHealth: h})
 		}
 	}
 	return out, nil
@@ -74,7 +76,7 @@ func (f *fakeHealth) Events(_ context.Context, domain, before string, limit int)
 	return out, nil
 }
 
-func (f *fakeHealth) MarkAvailable(ctx context.Context, domain, byUserID string) (federation.InstanceHealth, error) {
+func (f *fakeHealth) MarkAvailable(ctx context.Context, domain, byUserID string) (federation.KnownInstance, error) {
 	f.markedBy = append(f.markedBy, byUserID)
 	for i, h := range f.servers {
 		if h.Domain != domain {

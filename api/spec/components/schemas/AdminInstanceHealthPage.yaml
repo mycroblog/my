@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: A page of server health, in domain order.
+description: A page of known remote servers, in domain order.
 allOf:
   - $ref: ./PageInfo.yaml
   - type: object

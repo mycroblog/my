@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The software a remote server last reported in its NodeInfo; omitted for a server whose
+  NodeInfo was never read.
+type: object
+required: [name, version]
+properties:
+  name:
+    type: string
+  version:
+    description: The version as reported; empty when the server reports none.
+    type: string

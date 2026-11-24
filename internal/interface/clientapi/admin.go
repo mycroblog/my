@@ -51,13 +51,13 @@ func (s *Server) permissions(ctx context.Context, userID string) ([]Permission, 
 	return out, nil
 }
 
-// InstanceHealth reads the health of remote servers and clears it (ADR-0006 §3).
+// InstanceHealth lists the known remote servers with their health and clears it (ADR-0006 §3).
 // *appfederation.Health implements it.
 type InstanceHealth interface {
-	Find(ctx context.Context, domain string) (federation.InstanceHealth, error)
-	List(ctx context.Context, state federation.InstanceState, after string, limit int) ([]federation.InstanceHealth, error)
+	Find(ctx context.Context, domain string) (federation.KnownInstance, error)
+	List(ctx context.Context, f appfederation.InstanceFilter, after string, limit int) ([]federation.KnownInstance, error)
 	Events(ctx context.Context, domain, before string, limit int) ([]federation.AvailabilityEvent, error)
-	MarkAvailable(ctx context.Context, domain, byUserID string) (federation.InstanceHealth, error)
+	MarkAvailable(ctx context.Context, domain, byUserID string) (federation.KnownInstance, error)
 }
 
 // requirePermission returns the 403 problem of a viewer whose roles do not grant p, or nil when
@@ -126,7 +126,7 @@ func (s *Server) instanceDomain(ctx context.Context, raw string) (string, *probl
 	return domain, nil
 }
 
-func newAdminInstanceHealth(h federation.InstanceHealth) AdminInstanceHealth {
+func newAdminInstanceHealth(h federation.KnownInstance) AdminInstanceHealth {
 	out := AdminInstanceHealth{Domain: h.Domain, State: AdminInstanceState(h.State), FailureDays: h.FailureDays}
 	if !h.Since.IsZero() {
 		since := h.Since.UTC()
@@ -135,12 +135,19 @@ func newAdminInstanceHealth(h federation.InstanceHealth) AdminInstanceHealth {
 	if day, err := time.Parse("20060102", h.LastFailureDay); err == nil {
 		out.LastFailureDay = &openapi_types.Date{Time: day}
 	}
+	if !h.FirstSeenAt.IsZero() {
+		seen := h.FirstSeenAt.UTC()
+		out.FirstSeenAt = &seen
+	}
+	if h.Software.ID != "" {
+		out.Software = &AdminInstanceSoftware{Name: h.Software.SoftwareName, Version: h.Software.SoftwareVersion}
+	}
 	return out
 }
 
-// ListInstanceHealth serves GET /api/v1/admin/instances: the servers with failures or marked
-// unavailable, in domain order. The cursor is the domain of the last server of the previous
-// page.
+// ListInstanceHealth serves GET /api/v1/admin/instances: every known server, or with troubled
+// those with failures or marked unavailable, in domain order. The cursor is the domain of the
+// last server of the previous page.
 func (s *Server) ListInstanceHealth(ctx context.Context, req ListInstanceHealthRequestObject) (ListInstanceHealthResponseObject, error) {
 	if p, err := s.requirePermission(ctx, identity.PermManageDomains); err != nil {
 		return nil, err
@@ -151,11 +158,14 @@ func (s *Server) ListInstanceHealth(ctx context.Context, req ListInstanceHealthR
 	if q.problem != nil {
 		return ListInstanceHealthdefaultApplicationProblemPlusJSONResponse(*q.problem), nil
 	}
-	var state federation.InstanceState
+	var f appfederation.InstanceFilter
 	if req.Params.State != nil {
-		state = federation.InstanceState(*req.Params.State)
+		f.State = federation.InstanceState(*req.Params.State)
 	}
-	hs, err := s.o.InstanceHealth.List(ctx, state, q.before, q.limit+1)
+	if req.Params.Troubled != nil {
+		f.Troubled = *req.Params.Troubled
+	}
+	hs, err := s.o.InstanceHealth.List(ctx, f, q.before, q.limit+1)
 	if errors.Is(err, appfederation.ErrInvalidInstanceState) {
 		return ListInstanceHealthdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "state")), nil
 	}

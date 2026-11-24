@@ -1474,6 +1474,8 @@ components:
       $ref: ./components/schemas/AdminInstanceHealth.yaml
     AdminInstanceHealthPage:
       $ref: ./components/schemas/AdminInstanceHealthPage.yaml
+    AdminInstanceSoftware:
+      $ref: ./components/schemas/AdminInstanceSoftware.yaml
     AdminInstanceState:
       $ref: ./components/schemas/AdminInstanceState.yaml
     AdminInstanceText:
