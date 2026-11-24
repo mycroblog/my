@@ -6,8 +6,9 @@
 // are shared by every process on the database, so rate limits hold across instances.
 //
 // Entries live in the kv_entries table (schema/10-infrastructure). Get and GetMany are one
-// statement outside any transaction, so that on SQLite they never wait for the write lock; every
-// other operation is one short transaction of the database's UnitOfWork; IncrBy is a single upsert of the decimal value
+// statement outside any transaction, so that on SQLite they never wait for the write lock. On
+// PostgreSQL every write is one statement too, and runs outside any transaction; on SQLite every
+// other operation is one short transaction of the database's UnitOfWork. IncrBy is a single upsert of the decimal value
 // (preceded on SQLite by removing the expired entry, which BEGIN IMMEDIATE makes atomic with it),
 // and CompareAndSwap one conditional statement on PostgreSQL and a read and a write in one BEGIN
 // IMMEDIATE transaction on SQLite. An expired entry reads as absent until the hourly
@@ -39,6 +40,19 @@ type store interface {
 	// swap is kernel.KeyValueStore.CompareAndSwap in tx.
 	swap(ctx context.Context, tx uow.Tx, namespace, key string, old, value []byte, expiresAt *time.Time, now time.Time) (bool, error)
 	deleteExpired(ctx context.Context, tx uow.Tx, now time.Time, limit int) (int64, error)
+	// oneStatement reports whether set, del, incr and swap are each one statement, atomic
+	// without a transaction, so that they run on the pool with a nil tx.
+	oneStatement() bool
+}
+
+// write runs fn, one write of the store, in a short transaction, or with a nil tx when the
+// dialect's writes are one statement each: BEGIN and COMMIT would add two round trips to the one
+// of the statement, on every request that takes from a rate limit (#3183).
+func (s *Store) write(ctx context.Context, fn func(tx uow.Tx) error) error {
+	if s.st.oneStatement() {
+		return fn(nil)
+	}
+	return s.db.Tx(ctx, fn)
 }
 
 // Store is the database key-value store.
@@ -106,7 +120,7 @@ func (s *Store) Set(ctx context.Context, namespace, key string, value []byte, tt
 		value = []byte{} // the column is NOT NULL
 	}
 	expiresAt := s.expiry(ttl)
-	err := s.db.Tx(ctx, func(tx uow.Tx) error { return s.st.set(ctx, tx, namespace, key, value, expiresAt) })
+	err := s.write(ctx, func(tx uow.Tx) error { return s.st.set(ctx, tx, namespace, key, value, expiresAt) })
 	if err != nil {
 		return fmt.Errorf("kv/db: set %s/%s: %w", namespace, key, err)
 	}
@@ -115,7 +129,7 @@ func (s *Store) Set(ctx context.Context, namespace, key string, value []byte, tt
 
 // Delete implements kernel.KeyValueStore.
 func (s *Store) Delete(ctx context.Context, namespace, key string) error {
-	err := s.db.Tx(ctx, func(tx uow.Tx) error { return s.st.del(ctx, tx, namespace, key) })
+	err := s.write(ctx, func(tx uow.Tx) error { return s.st.del(ctx, tx, namespace, key) })
 	if err != nil {
 		return fmt.Errorf("kv/db: delete %s/%s: %w", namespace, key, err)
 	}
@@ -128,7 +142,7 @@ func (s *Store) IncrBy(ctx context.Context, namespace, key string, n int64, ttl 
 	expiresAt := s.expiry(ttl)
 	initial := []byte(strconv.FormatInt(n, 10))
 	var value []byte
-	err := s.db.Tx(ctx, func(tx uow.Tx) error {
+	err := s.write(ctx, func(tx uow.Tx) error {
 		var err error
 		value, err = s.st.incr(ctx, tx, namespace, key, initial, expiresAt, now)
 		return err
@@ -148,7 +162,7 @@ func (s *Store) CompareAndSwap(ctx context.Context, namespace, key string, old, 
 	now := s.clock.Now()
 	expiresAt := s.expiry(ttl)
 	var ok bool
-	err := s.db.Tx(ctx, func(tx uow.Tx) error {
+	err := s.write(ctx, func(tx uow.Tx) error {
 		var err error
 		ok, err = s.st.swap(ctx, tx, namespace, key, old, value, expiresAt, now)
 		return err

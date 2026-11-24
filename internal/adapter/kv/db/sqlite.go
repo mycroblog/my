@@ -28,6 +28,10 @@ type sqliteStore struct{ db *sqlite.DB }
 
 var _ store = sqliteStore{}
 
+// oneStatement implements store: incr and swap are a removal or a read and a write, which one
+// BEGIN IMMEDIATE transaction makes atomic.
+func (sqliteStore) oneStatement() bool { return false }
+
 // queries returns the queries that run in tx, or on the connection pool, outside any
 // transaction, when tx is nil.
 func (s sqliteStore) queries(tx uow.Tx) (*sqlitekv.Queries, error) {
