@@ -209,6 +209,37 @@ func (q *Queries) GetRegistrationState(ctx context.Context, userID string) (User
 	return i, err
 }
 
+const getUserAccessFacts = `-- name: GetUserAccessFacts :one
+SELECT s.state AS registration_state, e.id AS email_address_id, e.address AS email_address,
+  EXISTS (SELECT 1 FROM user_email_verifications v WHERE v.email_address_id = e.id) AS email_verified
+FROM users u
+LEFT JOIN user_registration_states s ON s.user_id = u.id
+LEFT JOIN user_primary_emails p ON p.user_id = u.id
+LEFT JOIN user_email_addresses e ON e.id = p.email_address_id
+WHERE u.id = $1
+`
+
+type GetUserAccessFactsRow struct {
+	RegistrationState *string
+	EmailAddressID    *string
+	EmailAddress      *string
+	EmailVerified     bool
+}
+
+// GetUserAccessFacts reads what GetRegistrationState and GetPrimaryEmail read of a user, in one
+// statement: each part is NULL when the user has none.
+func (q *Queries) GetUserAccessFacts(ctx context.Context, id string) (GetUserAccessFactsRow, error) {
+	row := q.db.QueryRow(ctx, getUserAccessFacts, id)
+	var i GetUserAccessFactsRow
+	err := row.Scan(
+		&i.RegistrationState,
+		&i.EmailAddressID,
+		&i.EmailAddress,
+		&i.EmailVerified,
+	)
+	return i, err
+}
+
 const getUserTokenByHash = `-- name: GetUserTokenByHash :one
 SELECT id, user_id, purpose, email_address_id, unsubscribe_category, token_hash, expires_at, issued_at FROM user_tokens WHERE token_hash = $1
 `

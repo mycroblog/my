@@ -417,9 +417,16 @@ func accountRepoActorParts(t *testing.T, r *identityRepo) {
 
 func accountRepoLifecycle(t *testing.T, r *identityRepo) {
 	ctx := t.Context()
-	id := r.localAccount(t, r.user(t), "alice")
+	alice := r.user(t)
+	id := r.localAccount(t, alice, "alice")
 	if _, err := r.h.Accounts.FindLifecycleState(ctx, id); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindLifecycleState of an active account = %v, want ErrNotFound", err)
+	}
+	if got, err := r.h.Accounts.FindLifecycleStateOfUser(ctx, alice); err != nil || !reflect.DeepEqual(got, account.InitialLifecycleState(id)) {
+		t.Errorf("FindLifecycleStateOfUser of an active account = %+v, %v; want the initial state", got, err)
+	}
+	if _, err := r.h.Accounts.FindLifecycleStateOfUser(ctx, r.user(t)); !errors.Is(err, appaccount.ErrNotFound) {
+		t.Errorf("FindLifecycleStateOfUser without a local account = %v, want ErrNotFound", err)
 	}
 	if _, err := r.h.Accounts.FindLatestReactivation(ctx, id); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindLatestReactivation before any = %v, want ErrNotFound", err)
@@ -453,6 +460,11 @@ func accountRepoLifecycle(t *testing.T, r *identityRepo) {
 	})
 	if got, err := r.h.Accounts.FindLifecycleState(ctx, id); err != nil || got.State != account.StateDeletionScheduled {
 		t.Errorf("FindLifecycleState = %+v, %v", got, err)
+	}
+	if want, err := r.h.Accounts.FindLifecycleState(ctx, id); err != nil {
+		t.Errorf("FindLifecycleState = %v", err)
+	} else if got, err := r.h.Accounts.FindLifecycleStateOfUser(ctx, alice); err != nil || !reflect.DeepEqual(got, want) {
+		t.Errorf("FindLifecycleStateOfUser = %+v, %v; want %+v, as FindLifecycleState", got, err, want)
 	}
 	remote := r.remoteAccount(t, "remote.example", "")
 	if _, err := r.h.Accounts.NewestRemoteDeletion(ctx, nil, remote); !errors.Is(err, appaccount.ErrNotFound) {

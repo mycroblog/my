@@ -108,6 +108,22 @@ func (r *Repository) FindRegistrationState(ctx context.Context, userID string) (
 	return identity.UserRegistrationState{UserID: row.UserID, State: identity.RegistrationState(row.State), Since: sqlite.FromMillis(row.Since)}, nil
 }
 
+// FindAccessFacts implements identity.Repository.
+func (r *Repository) FindAccessFacts(ctx context.Context, userID string) (appidentity.AccessFacts, error) {
+	row, err := r.db.reader().GetUserAccessFacts(ctx, userID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return appidentity.AccessFacts{}, nil
+	}
+	if err != nil {
+		return appidentity.AccessFacts{}, sqlite.Wrap(err, "access facts of "+userID)
+	}
+	out := appidentity.AccessFacts{
+		Registration: identity.RegistrationState(row.RegistrationState.String), HasEmail: row.EmailAddressID.Valid,
+		Email: row.EmailAddress.String, EmailVerified: row.EmailVerified,
+	}
+	return out, nil
+}
+
 // FindRegistrationStates implements identity.Repository.
 func (r *Repository) FindRegistrationStates(ctx context.Context, userIDs []string) (map[string]identity.UserRegistrationState, error) {
 	out := map[string]identity.UserRegistrationState{}

@@ -632,6 +632,18 @@ func profileSource(rev account.ProfileRevision, note string, byPosition map[int]
 	return rev
 }
 
+// FindLifecycleStateOfUser implements account.Repository.
+func (r *Repository) FindLifecycleStateOfUser(ctx context.Context, userID string) (account.LifecycleState, error) {
+	row, err := r.db.reader().GetLifecycleStateOfUser(ctx, userID)
+	if err != nil {
+		return account.LifecycleState{}, sqlite.NotFound(err, appaccount.ErrNotFound, "local account of user "+userID)
+	}
+	if !row.State.Valid || !row.Since.Valid {
+		return account.InitialLifecycleState(row.AccountID), nil
+	}
+	return lifecycleState(accountgen.AccountLifecycleState{AccountID: row.AccountID, State: row.State.String, Since: row.Since.Int64, DeletionDueAt: row.DeletionDueAt}), nil
+}
+
 // FindLifecycleState implements account.Repository.
 func (r *Repository) FindLifecycleState(ctx context.Context, accountID string) (account.LifecycleState, error) {
 	row, err := r.db.reader().GetLifecycleState(ctx, accountID)

@@ -242,6 +242,24 @@ func oauthRepoDisablement(t *testing.T, r *identityRepo) {
 			t.Errorf("FindAccessTokensByAccessHashes[%s] = %+v; want %+v %+v, as FindAccessTokenByAccessHash (%v)", tok.ID, got, one, state, err)
 		}
 	}
+	// The token with its client's public ID and registration, as FindAccessTokenByAccessHash and FindOAuthClientByID.
+	for _, tok := range []identity.AccessToken{expired, live, otherToken} {
+		one, state, err := r.h.Identity.FindAccessTokenByAccessHash(ctx, tok.AccessTokenHash)
+		if err != nil {
+			t.Fatalf("FindAccessTokenByAccessHash = %v", err)
+		}
+		client, err := r.h.Identity.FindOAuthClientByID(ctx, tok.ClientID)
+		if err != nil {
+			t.Fatalf("FindOAuthClientByID = %v", err)
+		}
+		got, err := r.h.Identity.FindBearerTokenByAccessHash(ctx, tok.AccessTokenHash)
+		if err != nil || !reflect.DeepEqual(got.Token, one) || got.State != state || got.ClientPublicID != client.ClientID || got.ClientRegistration != client.Registration {
+			t.Errorf("FindBearerTokenByAccessHash(%s) = %+v, %v; want %+v %+v of client %q (%s)", tok.ID, got, err, one, state, client.ClientID, client.Registration)
+		}
+	}
+	if _, err := r.h.Identity.FindBearerTokenByAccessHash(ctx, []byte("unknown")); !errors.Is(err, appidentity.ErrNotFound) {
+		t.Errorf("FindBearerTokenByAccessHash(unknown) = %v, want ErrNotFound", err)
+	}
 	// Lifting enables the client again; a second lift finds nothing.
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		for i, want := range []bool{true, false} {

@@ -18,6 +18,17 @@ FROM user_primary_emails p
 JOIN user_email_addresses e ON e.id = p.email_address_id
 WHERE p.user_id = $1;
 
+-- GetUserAccessFacts reads what GetRegistrationState and GetPrimaryEmail read of a user, in one
+-- statement: each part is NULL when the user has none.
+-- name: GetUserAccessFacts :one
+SELECT s.state AS registration_state, e.id AS email_address_id, e.address AS email_address,
+  EXISTS (SELECT 1 FROM user_email_verifications v WHERE v.email_address_id = e.id) AS email_verified
+FROM users u
+LEFT JOIN user_registration_states s ON s.user_id = u.id
+LEFT JOIN user_primary_emails p ON p.user_id = u.id
+LEFT JOIN user_email_addresses e ON e.id = p.email_address_id
+WHERE u.id = $1;
+
 -- name: InsertRegistrationApplication :exec
 INSERT INTO registration_applications (id, user_id, reason, invite_id, submitted_at) VALUES ($1, $2, $3, $4, $5);
 

@@ -1030,15 +1030,7 @@ func actorOf(ctx context.Context, repo actorReads, a account.Account) (Actor, er
 // sign-in (an account without lifecycle events is active). It fails with ErrNotFound when the
 // user has no local account.
 func (s *Service) UserLifecycle(ctx context.Context, userID string) (account.LifecycleState, error) {
-	la, err := s.d.Repository.FindLocalAccountByUser(ctx, userID)
-	if err != nil {
-		return account.LifecycleState{}, err
-	}
-	st, err := s.d.Repository.FindLifecycleState(ctx, la.AccountID)
-	if errors.Is(err, ErrNotFound) {
-		return account.InitialLifecycleState(la.AccountID), nil
-	}
-	return st, err
+	return s.d.Repository.FindLifecycleStateOfUser(ctx, userID)
 }
 
 // UserLifecycles returns UserLifecycle of each of userIDs that has a local account, by user, with

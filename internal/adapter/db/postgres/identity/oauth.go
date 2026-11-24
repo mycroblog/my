@@ -236,6 +236,26 @@ func (r *Repository) FindAccessTokenByAccessHash(ctx context.Context, hash []byt
 	return accessTokenFromRow(row), state, nil
 }
 
+// FindBearerTokenByAccessHash implements identity.Repository.
+func (r *Repository) FindBearerTokenByAccessHash(ctx context.Context, hash []byte) (appidentity.BearerToken, error) {
+	row, err := r.db.reader().GetBearerTokenByAccessHash(ctx, hash)
+	if err != nil {
+		return appidentity.BearerToken{}, postgres.NotFound(err, appidentity.ErrNotFound, "access token")
+	}
+	tok := identitygen.GetAccessTokenByAccessHashRow{
+		ID: row.ID, FamilyID: row.FamilyID, OauthClientID: row.OauthClientID, UserID: row.UserID, AccessTokenHash: row.AccessTokenHash,
+		RefreshTokenHash: row.RefreshTokenHash, Scope: row.Scope, RotatedFromTokenID: row.RotatedFromTokenID, IssuedAt: row.IssuedAt,
+		ExpiresAt: row.ExpiresAt, RefreshExpiresAt: row.RefreshExpiresAt,
+	}
+	return appidentity.BearerToken{
+		Token: accessTokenFromRow(tok),
+		State: identity.TokenState{
+			Revoked: row.Revoked, Client: identity.OAuthClientState{Disabled: row.ClientDisabled, Deleted: row.ClientDeleted},
+		},
+		ClientPublicID: row.ClientPublicID, ClientRegistration: identity.OAuthClientRegistration(row.ClientRegistration),
+	}, nil
+}
+
 // FindAccessTokensByAccessHashes implements identity.Repository.
 func (r *Repository) FindAccessTokensByAccessHashes(ctx context.Context, hashes [][]byte) (map[string]appidentity.TokenWithState, error) {
 	out := map[string]appidentity.TokenWithState{}

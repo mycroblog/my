@@ -149,6 +149,10 @@ type Repository interface {
 	FindCurrentProfile(ctx context.Context, accountID string) (account.ProfileRevision, error)
 	// FindLifecycleState returns the projected state; ErrNotFound means the account is active.
 	FindLifecycleState(ctx context.Context, accountID string) (account.LifecycleState, error)
+	// FindLifecycleStateOfUser returns the lifecycle state of the local account a user logs in
+	// as, with one query: account.InitialLifecycleState of the account when it has none. It
+	// fails with ErrNotFound when the user has no local account.
+	FindLifecycleStateOfUser(ctx context.Context, userID string) (account.LifecycleState, error)
 	// ListDueDeletions returns up to limit lifecycle states in deletion_scheduled whose
 	// deletion is due at or before now, earliest due first.
 	ListDueDeletions(ctx context.Context, now time.Time, limit int) ([]account.LifecycleState, error)

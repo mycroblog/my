@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/mycroblog/my/internal/adapter/db/postgres"
 	"github.com/mycroblog/my/internal/adapter/db/postgres/identitygen"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
@@ -106,6 +108,22 @@ func (r *Repository) FindRegistrationState(ctx context.Context, userID string) (
 		return identity.UserRegistrationState{}, postgres.NotFound(err, appidentity.ErrNotFound, "registration state of "+userID)
 	}
 	return identity.UserRegistrationState{UserID: row.UserID, State: identity.RegistrationState(row.State), Since: postgres.UTC(row.Since)}, nil
+}
+
+// FindAccessFacts implements identity.Repository.
+func (r *Repository) FindAccessFacts(ctx context.Context, userID string) (appidentity.AccessFacts, error) {
+	row, err := r.db.reader().GetUserAccessFacts(ctx, userID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return appidentity.AccessFacts{}, nil
+	}
+	if err != nil {
+		return appidentity.AccessFacts{}, postgres.Wrap(err, "access facts of "+userID)
+	}
+	out := appidentity.AccessFacts{
+		Registration: identity.RegistrationState(postgres.FromNullString(row.RegistrationState)), HasEmail: row.EmailAddressID != nil,
+		Email: postgres.FromNullString(row.EmailAddress), EmailVerified: row.EmailVerified,
+	}
+	return out, nil
 }
 
 // FindRegistrationStates implements identity.Repository.

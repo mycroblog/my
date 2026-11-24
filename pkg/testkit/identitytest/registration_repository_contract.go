@@ -38,6 +38,7 @@ func RegistrationRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"RecordsApplicationsAndDecisions", registrationRepoApplications},
 		{"ListsAndCountsRegistrations", registrationRepoLists},
 		{"KeepsOnePrimaryEmailPerAddress", registrationRepoEmails},
+		{"ReadsAccessFactsAsTheirParts", registrationRepoAccessFacts},
 		{"KeepsInvites", registrationRepoInvites},
 		{"CountsUsableMemberInvites", registrationRepoMemberInvites},
 		{"HoldsInviteUsesUnderConcurrency", registrationRepoConcurrentRedemptions},
@@ -225,6 +226,33 @@ func registrationRepoEmails(t *testing.T, r *identityRepo) {
 	}
 	if got, err := r.h.Identity.PrimaryEmailsVerified(ctx, []string{alice, bob}); err != nil || !maps.Equal(got, map[string]bool{alice: true}) {
 		t.Errorf("PrimaryEmailsVerified = %v, %v; want alice verified, bob without one", got, err)
+	}
+}
+
+func registrationRepoAccessFacts(t *testing.T, r *identityRepo) {
+	ctx := t.Context()
+	alice, bob := r.user(t), r.user(t)
+	r.apply(t, alice, identity.RegistrationPending)
+	e := r.email(t, alice, "Alice@Example.com")
+	want := appidentity.AccessFacts{Registration: identity.RegistrationPending, HasEmail: true, Email: e.Address}
+	if got, err := r.h.Identity.FindAccessFacts(ctx, alice); err != nil || got != want {
+		t.Errorf("FindAccessFacts = %+v, %v; want %+v", got, err, want)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Identity.InsertEmailVerification(ctx, tx, identity.EmailVerification{EmailAddressID: e.ID, VerifiedAt: r.clock.Now()})
+	})
+	want.EmailVerified = true
+	if got, err := r.h.Identity.FindAccessFacts(ctx, alice); err != nil || got != want {
+		t.Errorf("FindAccessFacts after the verification = %+v, %v; want %+v", got, err, want)
+	}
+	for _, id := range []string{bob, r.ids.NewID()} { // without a state or an address, and unknown
+		if got, err := r.h.Identity.FindAccessFacts(ctx, id); err != nil || got != (appidentity.AccessFacts{}) {
+			t.Errorf("FindAccessFacts(%s) = %+v, %v; want none of them", id, got, err)
+		}
+	}
+	r.email(t, bob, "bob@example.com")
+	if got, err := r.h.Identity.FindAccessFacts(ctx, bob); err != nil || got != (appidentity.AccessFacts{HasEmail: true, Email: "bob@example.com"}) {
+		t.Errorf("FindAccessFacts(without a state) = %+v, %v; want the unverified address alone", got, err)
 	}
 }
 

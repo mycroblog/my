@@ -80,6 +80,9 @@ type RegistrationRepository interface {
 	InsertEmailVerification(ctx context.Context, tx uow.Tx, v identity.EmailVerification) error
 	// FindPrimaryEmail returns a user's primary email address and whether it is verified.
 	FindPrimaryEmail(ctx context.Context, userID string) (identity.EmailAddress, bool, error)
+	// FindAccessFacts returns what FindRegistrationState and FindPrimaryEmail return of a user,
+	// with one query; a part the user has none of is left zero.
+	FindAccessFacts(ctx context.Context, userID string) (AccessFacts, error)
 	// PrimaryEmailsVerified returns, of the users among userIDs that have a primary address,
 	// whether it is verified, by user, with one query.
 	PrimaryEmailsVerified(ctx context.Context, userIDs []string) (map[string]bool, error)
@@ -699,25 +702,32 @@ func (a Access) Allowed() bool {
 // AwaitingVerification reports whether the user must still confirm their email address.
 func (a Access) AwaitingVerification() bool { return a.EmailVerificationRequired && !a.EmailVerified }
 
+// AccessFacts is a user's registration state and primary email address, as UserAccess reads
+// them with FindAccessFacts.
+type AccessFacts struct {
+	// Registration is the user's registration state; "" when the user has none.
+	Registration identity.RegistrationState
+	// HasEmail is true when the user has a primary email address.
+	HasEmail bool
+	// Email is the primary address; "" when the user has none.
+	Email string
+	// EmailVerified is true when the primary address is verified.
+	EmailVerified bool
+}
+
 // UserAccess returns what a user may do. A user without a registration state (created with
 // the CLI) is approved.
 func (s *Service) UserAccess(ctx context.Context, userID string) (Access, error) {
-	out := Access{Registration: identity.RegistrationApproved, EmailVerificationRequired: s.d.RequireEmailVerification}
-	st, err := s.d.Repository.FindRegistrationState(ctx, userID)
-	switch {
-	case err == nil:
-		out.Registration = st.State
-	case !errors.Is(err, ErrNotFound):
+	out := Access{Registration: identity.RegistrationApproved, EmailVerificationRequired: s.d.RequireEmailVerification, EmailVerified: true}
+	facts, err := s.d.Repository.FindAccessFacts(ctx, userID)
+	if err != nil {
 		return Access{}, err
 	}
-	email, verified, err := s.d.Repository.FindPrimaryEmail(ctx, userID)
-	switch {
-	case err == nil:
-		out.Email, out.EmailVerified = email.Address, verified
-	case errors.Is(err, ErrNotFound):
-		out.EmailVerified = true
-	default:
-		return Access{}, err
+	if facts.Registration != "" {
+		out.Registration = facts.Registration
+	}
+	if facts.HasEmail {
+		out.Email, out.EmailVerified = facts.Email, facts.EmailVerified
 	}
 	if s.d.Accounts == nil {
 		return out, nil

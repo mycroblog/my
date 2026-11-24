@@ -188,6 +188,66 @@ func (q *Queries) GetAuthorizationCodeRedemption(ctx context.Context, codeHash [
 	return i, err
 }
 
+const getBearerTokenByAccessHash = `-- name: GetBearerTokenByAccessHash :one
+SELECT t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
+  t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at,
+  EXISTS (SELECT 1 FROM oauth_token_revocations r WHERE r.token_id = t.id) AS revoked,
+  EXISTS (
+    SELECT 1 FROM oauth_client_disablements d
+    WHERE d.oauth_client_id = t.oauth_client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+  ) AS client_disabled,
+  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = t.oauth_client_id) AS client_deleted,
+  c.client_id AS client_public_id, c.registration AS client_registration
+FROM oauth_access_tokens t
+JOIN oauth_clients c ON c.id = t.oauth_client_id
+WHERE t.access_token_hash = $1
+`
+
+type GetBearerTokenByAccessHashRow struct {
+	ID                 string
+	FamilyID           string
+	OauthClientID      string
+	UserID             string
+	AccessTokenHash    []byte
+	RefreshTokenHash   []byte
+	Scope              string
+	RotatedFromTokenID *string
+	IssuedAt           time.Time
+	ExpiresAt          time.Time
+	RefreshExpiresAt   *time.Time
+	Revoked            bool
+	ClientDisabled     bool
+	ClientDeleted      bool
+	ClientPublicID     string
+	ClientRegistration string
+}
+
+// GetBearerTokenByAccessHash is GetAccessTokenByAccessHash with the public client_id and the
+// registration of the token's client, for the authentication of a client API request.
+func (q *Queries) GetBearerTokenByAccessHash(ctx context.Context, accessTokenHash []byte) (GetBearerTokenByAccessHashRow, error) {
+	row := q.db.QueryRow(ctx, getBearerTokenByAccessHash, accessTokenHash)
+	var i GetBearerTokenByAccessHashRow
+	err := row.Scan(
+		&i.ID,
+		&i.FamilyID,
+		&i.OauthClientID,
+		&i.UserID,
+		&i.AccessTokenHash,
+		&i.RefreshTokenHash,
+		&i.Scope,
+		&i.RotatedFromTokenID,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.RefreshExpiresAt,
+		&i.Revoked,
+		&i.ClientDisabled,
+		&i.ClientDeleted,
+		&i.ClientPublicID,
+		&i.ClientRegistration,
+	)
+	return i, err
+}
+
 const getOAuthClientByClientID = `-- name: GetOAuthClientByClientID :one
 SELECT id, client_id, client_secret_hash, name, website, scope, registration, owner_user_id, created_at
 FROM oauth_clients
