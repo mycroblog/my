@@ -765,7 +765,11 @@
   },
   "staff_domains.servers.state.any": {
     "defaultMessage": "すべての状態",
-    "description": "On the moderators' list of remote servers (/moderation/instances), the choice of every state. Read by moderators."
+    "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of every known server. Read by moderators."
+  },
+  "staff_domains.servers.state.troubled": {
+    "defaultMessage": "問題あり",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of the servers deliveries failed to reach on some days or that are marked unavailable; also read as \"State: With problems\". Read by moderators."
   },
   "staff_domains.servers.open": {
     "defaultMessage": "サーバーを開く",
@@ -795,6 +799,10 @@
     "defaultMessage": "サーバー",
     "description": "On the moderators' list of remote servers (/moderation/instances), the column of the servers' domains. Read by moderators."
   },
+  "staff_domains.servers.column.software": {
+    "defaultMessage": "ソフトウェア",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the column of the software each server reports (such as Mastodon 4.3.2). Read by moderators."
+  },
   "staff_domains.servers.column.failures": {
     "defaultMessage": "失敗した日数",
     "description": "On the moderators' list of remote servers (/moderation/instances), the column of how many days deliveries failed. Read by moderators."
@@ -804,12 +812,12 @@
     "description": "On the moderators' list of remote servers (/moderation/instances), the column of each server's state. Read by moderators."
   },
   "staff_domains.servers.empty": {
-    "defaultMessage": "どのサーバーにも配送が届いています。",
-    "description": "On the moderators' list of remote servers (/moderation/instances), when no server has failures. Read by moderators."
+    "defaultMessage": "まだほかのサーバーを知りません。",
+    "description": "On the moderators' list of remote servers (/moderation/instances), when this server knows no remote server at all. Read by moderators."
   },
   "staff_domains.servers.empty.filtered": {
-    "defaultMessage": "この状態のサーバーはありません。",
-    "description": "On the moderators' list of remote servers (/moderation/instances), when the filter leaves nothing. Read by moderators."
+    "defaultMessage": "条件に合うサーバーはありません。",
+    "description": "On the moderators' list of remote servers (/moderation/instances), when the filter (with problems, unavailable) leaves nothing. Read by moderators."
   },
   "staff_domains.server.state": {
     "defaultMessage": "{state, select, available {配送中} unavailable {配送停止中} other {不明}}",
@@ -828,8 +836,20 @@
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when it could not be read; Try again follows. Read by moderators."
   },
   "staff_domains.server.facts": {
-    "defaultMessage": "このサーバーへの配送",
-    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the name of the server's facts, for assistive technology. Read by moderators."
+    "defaultMessage": "このサーバーについて",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the name of the server's facts (its software, when it was first seen, its deliveries), for assistive technology. Read by moderators."
+  },
+  "staff_domains.server.fact.software": {
+    "defaultMessage": "ソフトウェア",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the software and version the server last reported. Read by moderators."
+  },
+  "staff_domains.server.software.none": {
+    "defaultMessage": "不明",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the value of Software when the server has reported none. Read by moderators."
+  },
+  "staff_domains.server.fact.first_seen": {
+    "defaultMessage": "初めて確認した日時",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when this server first received something from that server. Read by moderators."
   },
   "staff_domains.server.fact.state": {
     "defaultMessage": "状態",

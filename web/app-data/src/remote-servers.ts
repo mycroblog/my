@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The remote servers as a holder of `manage_domains` reads them (ADR-0006 §3, ADR-0058 §1): those deliveries failed to
-// reach or that are marked unavailable, in domain order, a page at a time; one server's health, the times it was marked
+// The remote servers as a holder of `manage_domains` reads them (ADR-0006 §3, ADR-0058 §1): every one this server
+// knows, or those deliveries failed to reach or that are marked unavailable, each with its health, the software it
+// reports and when it was first seen, in domain order, a page at a time; one server's, the times it was marked
 // unavailable or available again, and the deliveries to it with their attempts, newest first, of one activity or of
 // one local account (which the audit log records); the masked fields of one delivery, shown on demand and recorded;
 // marking a server available again; and queueing the refetch of a server's posts, or of one remote post. Every write
@@ -13,8 +14,10 @@ import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
 import { oneOf, pageOf, staffChanged, type StaffOne, type StaffPage } from "./staff-reads";
 
-/** Whether deliveries go to a remote server. */
+/** Whether deliveries go to a remote server, the software it reports, and when it was first seen. */
 export type RemoteServer = components["schemas"]["AdminInstanceHealth"];
+/** The name and the version (empty when it reports none) of the software a server's NodeInfo last reported. */
+export type RemoteServerSoftware = components["schemas"]["AdminInstanceSoftware"];
 /** `available`, or `unavailable`: sent only `Follow`, `Accept` and `Reject`. */
 export type RemoteServerState = components["schemas"]["AdminInstanceState"];
 /** A time a server was marked unavailable or available again, and why. */
@@ -30,8 +33,12 @@ export type DeliveryReveal = components["schemas"]["AdminDeliveryReveal"];
 
 export const remoteServerStates = ["available", "unavailable"] as const satisfies readonly RemoteServerState[];
 
-/** What the list of servers shows: those of one state, every one listed where left out, and the page after `cursor`. */
+/**
+ * What the list of servers shows: with `troubled`, only those deliveries failed to reach or that are marked
+ * unavailable; those of one state; every known one where both are left out; and the page after `cursor`.
+ */
 export type RemoteServerQuery = {
+  readonly troubled?: boolean | undefined;
   readonly state?: RemoteServerState | undefined;
   readonly cursor?: string | undefined;
 };
@@ -41,6 +48,7 @@ export function remoteServersQuery({ queries }: AppData, q: RemoteServerQuery) {
   return queries.queryOptions("get", "/admin/instances", {
     params: {
       query: {
+        ...(q.troubled === true ? { troubled: true } : {}),
         ...(q.state === undefined ? {} : { state: q.state }),
         ...(q.cursor === undefined ? {} : { cursor: q.cursor }),
       },
