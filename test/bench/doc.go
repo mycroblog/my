@@ -33,7 +33,7 @@
 // post in four replies to an earlier one, one in five carries a hashtag, one in ten mentions
 // someone, and each person favourites half as many posts as they write. The data and the load
 // are the same for the same flags: their choices come from a fixed seed. The run waits until the
-// job queue has no due job before it measures.
+// job queue has no due job before it measures, and fails after -drain.
 //
 // # The load
 //

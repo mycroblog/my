@@ -54,6 +54,7 @@ func run(args []string) int {
 type config struct {
 	my, postgres, out, cores string
 	dbs                      []string
+	drain                    time.Duration
 	opts                     Options
 }
 
@@ -73,6 +74,7 @@ func parseFlags(args []string) (config, error) {
 	fs.IntVar(&c.opts.ProfileSeconds, "profile", 5, "the seconds of the CPU, block and mutex profiles at each number of clients; 0 takes none")
 	fs.IntVar(&c.opts.TraceRequests, "trace", 500, "the requests whose statements are counted from the traces; 0 counts none")
 	fs.StringVar(&c.cores, "cores", "", "the cores the server runs on, as taskset -c takes them (0-3); empty for all")
+	fs.DurationVar(&c.drain, "drain", 30*time.Minute, "how long the run waits for the jobs the seed and each level queued before it fails")
 	fs.StringVar(&c.out, "out", "", "the directory of the result; empty for .tmp/bench/<time>-<commit>")
 	if err := fs.Parse(args); err != nil {
 		return c, err
@@ -193,7 +195,7 @@ func measure(ctx context.Context, c config, kind string, logf func(string, ...an
 	if err != nil {
 		return run, fmt.Errorf("seed: %w", err)
 	}
-	if err := drainJobs(ctx, db, 10*time.Minute); err != nil {
+	if err := drainJobs(ctx, db, c.drain); err != nil {
 		return run, err
 	}
 	run.Data, run.SeedSeconds = w.info, time.Since(t0).Seconds()
@@ -235,7 +237,7 @@ func measure(ctx context.Context, c config, kind string, logf func(string, ...an
 		if n := lv.failures(); n > 0 {
 			refused = errors.Join(refused, fmt.Errorf("%d clients: %d answers were not 2xx: %v", clients, n, lv.Statuses))
 		}
-		if err := drainJobs(ctx, db, 10*time.Minute); err != nil {
+		if err := drainJobs(ctx, db, c.drain); err != nil {
 			return run, err
 		}
 	}
@@ -272,7 +274,7 @@ func traced(ctx context.Context, c config, s *server, db *database, l *load, fro
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := drainJobs(ctx, db, 10*time.Minute); err != nil {
+	if err := drainJobs(ctx, db, c.drain); err != nil {
 		return nil, nil, err
 	}
 	// Stopping the server sends the spans it has not sent yet.
