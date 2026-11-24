@@ -39,7 +39,8 @@ COPY locales/ locales/
 COPY tools/i18n/ tools/i18n/
 COPY pkg/mykit/ts/ pkg/mykit/ts/
 COPY web/ web/
-RUN mkdir -p internal/interface/web/dist && scripts/task.sh web:build
+COPY internal/interface/web/dist/.gitkeep internal/interface/web/dist/
+RUN scripts/task.sh web:build
 
 # Cross-compiles on the build host's platform; Go needs no emulation for the target architecture.
 FROM go AS build
