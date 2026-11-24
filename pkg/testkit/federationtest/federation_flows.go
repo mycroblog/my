@@ -31,8 +31,7 @@ import (
 
 // FederationHarness is what FederationRepositoryContract and FederationFlows need from a
 // database adapter: an empty database with the product schema, its UnitOfWork, and the
-// federation repository on it. FederationRepositoryContract also records the servers it lists
-// with Instances; FederationFlows does not need it.
+// federation repository on it, and Instances, with which both record the servers they list.
 type FederationHarness struct {
 	UnitOfWork uow.UnitOfWork
 	Federation appfederation.Repository
@@ -61,7 +60,8 @@ type FederationFactory func(t *testing.T, opts uow.Options) FederationHarness
 // post (FR-118) sends the same Delete as its author's deletion. It also covers one delivery (ADR-0006 §3): the classification of
 // responses, the circuit breaker, the failure days that make a server unavailable and the
 // successes, signed requests, and probes that bring it back, and the dead job after the retry
-// schedule. It covers the admin views too: the servers with a health row by state and page, the
+// schedule. It covers the admin views too: the servers with a health row by state and page,
+// every known server with its sighting and software, by state and page, the
 // pages of availability events, an operator's clearing of a server, and the deliveries to a
 // server with their attempts, masked where the activity is not public. The other modules are
 // in-memory stand-ins; the fan-out reads its recipients in batches of two, so that every source
@@ -101,6 +101,7 @@ func FederationFlows(t *testing.T, newHarness FederationFactory) {
 		{"BuriesExhaustedDeliveries", fedBuriesExhaustedDeliveries},
 		{"ProbesUnavailableServers", fedProbesUnavailableServers},
 		{"ListsAndClearsServersForOperators", fedListsServersForOperators},
+		{"ListsEveryKnownServerForOperators", fedListsKnownServersForOperators},
 		{"ShowsTheDeliveriesToAServerToOperators", fedShowsDeliveriesToOperators},
 		{"DeliversTheClosureDeletes", fedDeliversTheClosureDeletes},
 		{"CountsPendingMoves", fedCountsPendingMoves},

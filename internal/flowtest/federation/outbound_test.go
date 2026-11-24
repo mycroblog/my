@@ -15,6 +15,7 @@ func TestFederationFlows(t *testing.T) {
 	t.Parallel()
 	federationtest.FederationFlows(t, func(t *testing.T, opts uow.Options) federationtest.FederationHarness {
 		db := flowtest.SQLite(t, opts)
-		return federationtest.FederationHarness{UnitOfWork: db, Federation: sqlitefederation.NewRepository(db)}
+		feds := sqlitefederation.NewRepository(db)
+		return federationtest.FederationHarness{UnitOfWork: db, Federation: feds, Instances: feds}
 	})
 }
