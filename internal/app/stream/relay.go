@@ -18,9 +18,17 @@ import (
 const (
 	DefaultSendBuffer   = 1024
 	DefaultSendTimeout  = 5 * time.Second
-	DefaultReadyTimeout = 10 * time.Second
+	DefaultReadyTimeout = 30 * time.Second
+	DefaultStartTimeout = 60 * time.Second
 	DefaultIdleTimeout  = 60 * time.Second
 )
+
+// ListenAttemptTimeout bounds each attempt of a start of the listener: the liveness marker and
+// Bus.Listen. An attempt that fails or times out is tried again, after a backoff that starts
+// at a second and doubles up to 8 seconds, while the start has time (StartTimeout). A first
+// call on a new instance may take more than 10 seconds (the connection to the broker and its
+// credentials come first), and the next attempt reuses them.
+const ListenAttemptTimeout = 20 * time.Second
 
 // The liveness marker of a listening process (ADR-0050 §2): while a Relay listens, it writes
 // the key of its process ID in LivenessNamespace every LivenessInterval, with LivenessTTL, so
@@ -46,6 +54,10 @@ const (
 	// watchRetry is the wait before a Relay with watchers tries to listen again after a start
 	// that failed.
 	watchRetry = 5 * time.Second
+	// The backoff between two attempts of a start: listenBackoff, doubled after each attempt up
+	// to listenBackoffMax.
+	listenBackoff    = time.Second
+	listenBackoffMax = 8 * time.Second
 )
 
 // RelayOptions configure a Relay. Zero fields take the defaults above.
@@ -60,8 +72,11 @@ type RelayOptions struct {
 	SendBuffer int
 	// SendTimeout bounds each Bus.Send; a signal whose send fails or times out is dropped.
 	SendTimeout time.Duration
-	// ReadyTimeout bounds the start of the listener, which Subscribe waits for.
+	// ReadyTimeout bounds how long Subscribe waits for the start of the listener; a start
+	// outlives a subscription that gives up on it.
 	ReadyTimeout time.Duration
+	// StartTimeout bounds a start of the listener, with its attempts (ListenAttemptTimeout).
+	StartTimeout time.Duration
 	// IdleTimeout is how long the listener stays open after the last subscription closes.
 	IdleTimeout time.Duration
 	// Liveness, when not nil, holds the liveness marker of this process while it listens: the
@@ -95,8 +110,9 @@ type RelayStats struct {
 //   - The Relay listens only while it has subscriptions: the first one starts the listener, and
 //     the listener closes IdleTimeout after the last one closes. A process without streams
 //     only sends.
-//   - Subscribe waits up to ReadyTimeout for the listener and reports ErrUnavailable when it is
-//     not ready.
+//   - A start of the listener tries Bus.Listen again, with a backoff, until it succeeds or
+//     StartTimeout ends. Subscribe waits up to ReadyTimeout for the listener and reports
+//     ErrUnavailable when it is not ready, or when the start failed.
 //   - When the listener breaks, every subscription of this process ends, since it may have
 //     missed signals; its clients reconnect and read again, and the next Subscribe listens
 //     anew.
@@ -185,6 +201,9 @@ func NewRelay(bus Bus, o RelayOptions) *Relay {
 	}
 	if o.ReadyTimeout <= 0 {
 		o.ReadyTimeout = DefaultReadyTimeout
+	}
+	if o.StartTimeout <= 0 {
+		o.StartTimeout = DefaultStartTimeout
 	}
 	if o.IdleTimeout <= 0 {
 		o.IdleTimeout = DefaultIdleTimeout
@@ -461,23 +480,8 @@ func (r *Relay) startLocked() *listening {
 }
 
 func (r *Relay) listen(cur *listening) {
-	ctx, cancel := context.WithTimeout(r.base, r.o.ReadyTimeout)
-	var (
-		l       Listener
-		err     error
-		wroteAt time.Time
-	)
-	if r.o.Liveness != nil {
-		// The marker precedes the resources that Listen creates, so that a sweep never takes
-		// them for the leftovers of an ended process.
-		wroteAt = time.Now()
-		if err = r.writeMarker(ctx); err != nil {
-			err = fmt.Errorf("write the liveness marker: %w", err)
-		}
-	}
-	if err == nil {
-		l, err = r.bus.Listen(ctx, r.receive)
-	}
+	ctx, cancel := context.WithTimeout(r.base, r.o.StartTimeout)
+	l, wroteAt, err := r.startListener(ctx)
 	cancel()
 
 	r.mu.Lock()
@@ -592,6 +596,45 @@ func (r *Relay) heartbeat(cur *listening, wroteAt time.Time) {
 			}
 		}
 	}
+}
+
+// startListener tries a start of the listener, each attempt within ListenAttemptTimeout,
+// until one succeeds or ctx ends; it returns the listener and when the liveness marker was last
+// written.
+func (r *Relay) startListener(ctx context.Context) (Listener, time.Time, error) {
+	backoff := listenBackoff
+	for attempt := 1; ; attempt++ {
+		l, wroteAt, err := r.listenOnce(ctx)
+		if err == nil || ctx.Err() != nil {
+			return l, wroteAt, err
+		}
+		r.log.Warn("stream relay could not listen; trying again", slog.Int("attempt", attempt), slog.Duration("backoff", backoff), slog.Any("error", err))
+		wait := time.NewTimer(backoff)
+		select {
+		case <-ctx.Done():
+			wait.Stop()
+			return nil, time.Time{}, err
+		case <-wait.C:
+		}
+		backoff = min(2*backoff, listenBackoffMax)
+	}
+}
+
+// listenOnce writes the liveness marker and listens, within ListenAttemptTimeout.
+func (r *Relay) listenOnce(parent context.Context) (Listener, time.Time, error) {
+	ctx, cancel := context.WithTimeout(parent, ListenAttemptTimeout)
+	defer cancel()
+	var wroteAt time.Time
+	if r.o.Liveness != nil {
+		// The marker precedes the resources that Listen creates, so that a sweep never takes
+		// them for the leftovers of an ended process.
+		wroteAt = time.Now()
+		if err := r.writeMarker(ctx); err != nil {
+			return nil, time.Time{}, fmt.Errorf("write the liveness marker: %w", err)
+		}
+	}
+	l, err := r.bus.Listen(ctx, r.receive)
+	return l, wroteAt, err
 }
 
 // release ends a subscription's hold on the listener.
