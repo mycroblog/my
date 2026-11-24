@@ -49,12 +49,12 @@
 - **S / M**: WebP（lossy、品質 80、透過は alpha 付き）。純 Go のエンコーダ [`github.com/deepteams/webp`](https://pkg.go.dev/github.com/deepteams/webp)（MIT、cgo なし）を使う。
   画質・速度・メモリ・ファズ（壊れた出力を作らないこと）、アニメーション WebP の読み書き、主要ブラウザでの表示を [#654 の spike](https://github.com/mycroblog/my/issues/654) で確かめて採用した。採用する版は、その時点でリリースから 3 日を過ぎたもの。
   WebP は主要ブラウザすべてで表示できる（Safari 14 以降。要検証）。
-- AVIF は出力しない。純 Go のエンコーダがなく、WASM は 1 枚あたりの CPU が重い（要検証）。入力としての AVIF / HEIC も `media/native` は受け付けない（Mastodon も安全のため止めている。[media_attachment.rb](https://github.com/mastodon/mastodon/blob/main/app/models/media_attachment.rb)）。ADR-0019 §8 の許可リストは上限で、アダプタはその一部だけを受け付けてよい。
+- AVIF は出力しない。純 Go のエンコーダがなく、WASM は 1 枚あたりの CPU が重い（要検証）。入力としての AVIF / HEIC も `media/native` は受け付けない（Mastodon も安全のため止めている。[media_attachment.rb](https://github.com/mastodon/mastodon/blob/main/app/models/media_attachment.rb)）。画像のプラグインが申告すれば受け付ける（ADR-0146 §13）。ADR-0019 §8 の許可リストは上限で、アダプタはその一部だけを受け付けてよい。
 - blurhash は S から作る。
 
 ### 6. アニメーション画像
 
-- 入力: GIF とアニメーション WebP。APNG は既定の画像（最初のフレーム）だけを読む静止画として扱う（標準の `image/png` の挙動）。
+- 入力: GIF とアニメーション WebP。APNG は既定の画像（最初のフレーム）だけを読む静止画として扱う（標準の `image/png` の挙動）。画像のプラグインが APNG を申告していれば、プラグインがアニメーションとして処理する（ADR-0146 §13）。
 - フレーム数と全フレームの画素数の上限は `media.Limits`。
 - アニメーションの入力は、**静止版（最初のフレーム）の S / M / L** と **動く版の S / M / L** の 6 つを作る。
   - 静止版は §5 の静止画と同じ形式。
