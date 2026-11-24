@@ -769,7 +769,7 @@
   },
   "staff_domains.servers.state.troubled": {
     "defaultMessage": "Delivery problems",
-    "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of the servers deliveries failed to reach on some days or that are marked unavailable; also read as \"State: With problems\". Read by moderators."
+    "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of the servers deliveries failed to reach on some days or that are marked unavailable; also read as \"State: Delivery problems\". Read by moderators."
   },
   "staff_domains.servers.open": {
     "defaultMessage": "Open a server",
