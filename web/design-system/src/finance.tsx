@@ -79,18 +79,23 @@ const WIDE = {
 const countOf = (columns: number): Count => Math.min(4, Math.max(1, columns)) as Count;
 
 /**
- * The table's frame, which knows its own width: its rows one under another, on its tracks, within its container, the
- * surface of its total too, what the rows hold set in by a row's inset.
+ * The table's frame, which knows its own width: its rows one under another, on its tracks, what they hold set in by a
+ * row's inset. It reaches past its container by that inset, the surface of its total too, so that what the rows hold
+ * lines up with what stands above and below the table; `contained`, it keeps within it.
  */
 function FinanceFrame({
   columns,
+  contained,
   className,
   ...rest
-}: HTMLAttributes<HTMLDivElement> & { columns: number; className: string }) {
+}: HTMLAttributes<HTMLDivElement> & { columns: number; contained: boolean; className: string }) {
   const tracks = TRACKS[countOf(columns)];
   return (
     <div className="@container">
-      <div {...rest} className={`${className} grid gap-x-entry-avatar ${tracks}`} />
+      <div
+        {...rest}
+        className={`${className} ${contained ? "" : "-mx-screen-row-inline"} grid gap-x-entry-avatar ${tracks}`}
+      />
     </div>
   );
 }
@@ -192,6 +197,12 @@ export type FinanceTableProps = {
   children: ReactNode;
   /** The row that sums the others (a `FinanceRow`), last, on the raised surface. */
   total?: ReactNode;
+  /**
+   * Its rows, and the surface of its total, keep within its own width, for a place with no room past its edges (the
+   * column beside the main one); by default they reach past it by a row's inset, so that their words line up with what
+   * stands above and below.
+   */
+  contained?: boolean | undefined;
 };
 
 /**
@@ -199,7 +210,16 @@ export type FinanceTableProps = {
  * a kind of figure. For assistive technology it is a table whose every cell is read with its row's head and its
  * column's name ("November 2026, Costs, ¥12,300, US$45.67, Estimate"); its first row the columns' names.
  */
-export function FinanceTable({ label, head, columns, estimated, about, children, total }: FinanceTableProps) {
+export function FinanceTable({
+  label,
+  head,
+  columns,
+  estimated,
+  about,
+  children,
+  total,
+  contained = false,
+}: FinanceTableProps) {
   const s = table();
   const aboutId = useId();
   return (
@@ -209,6 +229,7 @@ export function FinanceTable({ label, head, columns, estimated, about, children,
         aria-label={label}
         {...(about === undefined ? {} : { "aria-describedby": aboutId })}
         columns={columns.length}
+        contained={contained}
         className={s.root()}
       >
         <TableContext value={{ columns, estimated: estimated ?? "" }}>

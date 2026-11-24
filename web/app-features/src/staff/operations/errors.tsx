@@ -334,7 +334,7 @@ function Sample({ sample, message }: { sample: NonNullable<ErrorGroupDetail["sam
 /** How many hours of occurrences show at first, and how many more each Show more adds. */
 const hoursShown = 12;
 
-/** The hours that had occurrences, the newest first, a table of figures: when, how many, on which version. */
+/** The hours that had occurrences, the newest first, a table of figures: when, on which version, how many. */
 function Hours({ group }: { group: ErrorGroupDetail }): ReactNode {
   const { t } = useStaffStrings();
   const count = useCount();
@@ -353,8 +353,8 @@ function Hours({ group }: { group: ErrorGroupDetail }): ReactNode {
             label={title}
             head={t("staff_operations.error_groups.hours.hour")}
             columns={[
-              { label: t("staff_operations.error_groups.counts.count"), figures: true },
               { label: t("staff_operations.error_groups.sample.version") },
+              { label: t("staff_operations.error_groups.counts.count"), figures: true },
             ]}
           >
             {hours.slice(0, shown).map((h, i) => (
@@ -362,7 +362,7 @@ function Hours({ group }: { group: ErrorGroupDetail }): ReactNode {
                 key={h.hour}
                 itemRef={added.item(i)}
                 head={moment(h.hour)}
-                cells={[{ figures: [count(h.count)] }, h.last_version]}
+                cells={[h.last_version, { figures: [count(h.count)] }]}
               />
             ))}
           </FinanceTable>
