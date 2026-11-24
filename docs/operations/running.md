@@ -465,7 +465,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.queue.dead` | Gauge | None |
 | `my.instance.users`, `my.instance.statuses` | Gauge | None (the local user and post counts, as in NodeInfo) |
 | `my.media.stored_bytes` | Gauge, bytes | `my.media.origin` (`local` / `remote_cache`) |
-| `my.db.size` | Gauge, bytes | None (the size of the database: `pg_database_size` for PostgreSQL; the database file without its write-ahead log for SQLite) |
+| `my.db.size` | Gauge, bytes | None (the size of the database: the relations of the current schema for PostgreSQL; the database file without its write-ahead log for SQLite) |
 | `my.billing.import.failing` | Gauge | `my.billing.source` (1 when the newest import of the source failed, 0 otherwise) |
 | `my.federation.instances` | Gauge | `my.federation.instance.state` (`available`: servers that deliveries still go to but that failed on at least one day since they last answered; `unavailable`: servers whose deliveries are paused) |
 | `my.metrics.snapshot.age` | Gauge, seconds | `my.metrics.snapshot.part` (`queue` / `totals`) |

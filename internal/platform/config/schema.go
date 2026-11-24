@@ -627,7 +627,7 @@ var schema = []field{
 	{
 		key:    "stream_postgres_url",
 		defDoc: "value of `database_url`",
-		doc:    "Connection string of the `LISTEN` connections of `stream = postgres`, in the format of `database_url`. Set it when `database_url` goes through a pooler in transaction mode (PgBouncer's transaction pooling, Neon's pooled connection string, Supabase's port 6543), where `LISTEN` does not work: it must reach the same database directly or through a pooler in session mode.",
+		doc:    "Connection string of the `LISTEN` connections of `stream = postgres`, in the format of `database_url`. Set it when `database_url` goes through a pooler in transaction mode (PgBouncer's transaction pooling, Neon's pooled connection string, Supabase's port 6543), where `LISTEN` does not work: it must reach the same database directly or through a pooler in session mode. The channel is named after the schema of `database_url`, whatever the `search_path` of this URL.",
 		secret: true,
 		set:    func(c *Config, v string) { c.StreamPostgresURL = v },
 	},

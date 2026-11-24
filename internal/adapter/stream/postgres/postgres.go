@@ -15,11 +15,17 @@
 // Options.ListenURL then names a direct connection (the stream_postgres_url setting). NOTIFY
 // reaches only the listeners of the same database.
 //
+// Instances may share one database, each in its own schema, so the channel is named after the
+// schema of Pool (ChannelFor its current_schema()), read on the first Send or Listen that
+// succeeds. The search_path of ListenURL plays no part.
+//
 // The listening connection goes away with the process, so the adapter needs no stream.Sweeper.
 package postgres
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sync"
@@ -32,8 +38,25 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 )
 
-// DefaultChannel is the notification channel when Options.Channel is empty.
+// DefaultChannel is the notification channel of an instance in the schema public.
 const DefaultChannel = "my_stream"
+
+// maxChannel is the longest channel PostgreSQL takes, in bytes (NAMEDATALEN - 1).
+const maxChannel = 63
+
+// ChannelFor returns the notification channel of an instance in schema: DefaultChannel for
+// public; otherwise DefaultChannel + "_" + schema, or, when that is longer than 63 bytes,
+// DefaultChannel + "_" + the first 32 hexadecimal digits of the SHA-256 of schema.
+func ChannelFor(schema string) string {
+	if schema == "public" {
+		return DefaultChannel
+	}
+	if c := DefaultChannel + "_" + schema; len(c) <= maxChannel {
+		return c
+	}
+	sum := sha256.Sum256([]byte(schema))
+	return DefaultChannel + "_" + hex.EncodeToString(sum[:16])
+}
 
 // ListenerApplicationName is the application_name of the listening connections.
 const ListenerApplicationName = "my stream listener"
@@ -48,8 +71,8 @@ type Options struct {
 	// (the stream_postgres_url setting). Empty means the connection settings of Pool. It must not
 	// go through a pooler in transaction mode.
 	ListenURL string
-	// Channel is the notification channel; empty means DefaultChannel. Every process of an
-	// instance uses the same one.
+	// Channel is the notification channel; empty means ChannelFor the current_schema() of Pool.
+	// Every process of an instance uses the same one.
 	Channel string
 	// Reporter receives the panics of the Bus's goroutines (kernel.Go); nil only panics again.
 	Reporter kernel.ErrorReporter
@@ -57,10 +80,13 @@ type Options struct {
 
 // Bus is a stream.Bus on PostgreSQL LISTEN / NOTIFY. It is safe for concurrent use.
 type Bus struct {
+	pool     *pgxpool.Pool
 	exec     func(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 	listen   *pgx.ConnConfig
-	channel  string
 	reporter kernel.ErrorReporter
+
+	mu      sync.Mutex
+	channel string // empty until resolved
 }
 
 var _ stream.Bus = (*Bus)(nil)
@@ -87,20 +113,43 @@ func New(o Options) (*Bus, error) {
 		cfg.RuntimeParams = map[string]string{}
 	}
 	cfg.RuntimeParams["application_name"] = ListenerApplicationName
-	channel := o.Channel
-	if channel == "" {
-		channel = DefaultChannel
-	}
 	exec := o.Exec
 	if exec == nil {
 		exec = o.Pool.Exec
 	}
-	return &Bus{exec: exec, listen: cfg, channel: channel, reporter: o.Reporter}, nil
+	return &Bus{pool: o.Pool, exec: exec, listen: cfg, channel: o.Channel, reporter: o.Reporter}, nil
+}
+
+// resolveChannel returns the channel, reading the schema of the pool until a read succeeds. The
+// read holds no lock, so that each caller waits only as long as its own ctx allows.
+func (b *Bus) resolveChannel(ctx context.Context) (string, error) {
+	b.mu.Lock()
+	channel := b.channel
+	b.mu.Unlock()
+	if channel != "" {
+		return channel, nil
+	}
+	var schema *string
+	if err := b.pool.QueryRow(ctx, "SELECT current_schema()").Scan(&schema); err != nil {
+		return "", fmt.Errorf("stream/postgres: read the schema: %w", err)
+	}
+	if schema == nil {
+		return "", errors.New("stream/postgres: no schema of the search_path of database_url exists")
+	}
+	channel = ChannelFor(*schema)
+	b.mu.Lock()
+	b.channel = channel
+	b.mu.Unlock()
+	return channel, nil
 }
 
 // Send implements stream.Bus.
 func (b *Bus) Send(ctx context.Context, payload []byte) error {
-	if _, err := b.exec(ctx, "SELECT pg_notify($1, $2)", b.channel, string(payload)); err != nil {
+	channel, err := b.resolveChannel(ctx)
+	if err != nil {
+		return err
+	}
+	if _, err := b.exec(ctx, "SELECT pg_notify($1, $2)", channel, string(payload)); err != nil {
 		return fmt.Errorf("stream/postgres: notify: %w", err)
 	}
 	return nil
@@ -108,11 +157,15 @@ func (b *Bus) Send(ctx context.Context, payload []byte) error {
 
 // Listen implements stream.Bus.
 func (b *Bus) Listen(ctx context.Context, receive func(payload []byte)) (stream.Listener, error) {
+	channel, err := b.resolveChannel(ctx)
+	if err != nil {
+		return nil, err
+	}
 	conn, err := pgx.ConnectConfig(ctx, b.listen.Copy())
 	if err != nil {
 		return nil, fmt.Errorf("stream/postgres: connect the listener: %w", err)
 	}
-	if _, err := conn.Exec(ctx, "LISTEN "+pgx.Identifier{b.channel}.Sanitize()); err != nil {
+	if _, err := conn.Exec(ctx, "LISTEN "+pgx.Identifier{channel}.Sanitize()); err != nil {
 		_ = conn.Close(context.WithoutCancel(ctx))
 		return nil, fmt.Errorf("stream/postgres: listen: %w", err)
 	}
