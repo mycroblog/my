@@ -35,7 +35,7 @@ func newS3Blobs(ctx context.Context, cfg *config.Config) (blob.Store, error) {
 		return nil, fmt.Errorf("blob = s3: load the AWS configuration: %w", err)
 	}
 	return blobs3.New(awsCfg, blobs3.Options{
-		Bucket: cfg.BlobS3Bucket, Endpoint: cfg.BlobS3Endpoint, PathStyle: cfg.BlobS3PathStyle,
+		Bucket: cfg.BlobS3Bucket, Prefix: cfg.BlobS3Prefix, Endpoint: cfg.BlobS3Endpoint, PathStyle: cfg.BlobS3PathStyle,
 		BaseURL: cfg.MediaBaseURL(),
 	})
 }

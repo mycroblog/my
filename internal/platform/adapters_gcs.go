@@ -19,7 +19,7 @@ import (
 // not go through the SSRF-guarded kernel.HTTPClient, whose guard is for the destinations that
 // others choose.
 func newGCSBlobs(ctx context.Context, cfg *config.Config) (blob.Store, io.Closer, error) {
-	store, err := blobgcs.New(ctx, blobgcs.Options{Bucket: cfg.BlobGCSBucket, BaseURL: cfg.MediaBaseURL()})
+	store, err := blobgcs.New(ctx, blobgcs.Options{Bucket: cfg.BlobGCSBucket, Prefix: cfg.BlobGCSPrefix, BaseURL: cfg.MediaBaseURL()})
 	if err != nil {
 		return nil, nil, fmt.Errorf("blob = gcs: %w", err)
 	}

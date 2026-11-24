@@ -14,8 +14,10 @@ import (
 	"encoding/pem"
 	"errors"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -168,6 +170,77 @@ func TestSeekAfterOverwriteFails(t *testing.T) {
 	}
 	if b, err := io.ReadAll(rs); err == nil {
 		t.Errorf("read %q of a replaced blob after a seek", b)
+	}
+}
+
+// newPrefixedStores returns a Store under each prefix, all on one in-memory fake of Cloud Storage.
+func newPrefixedStores(t *testing.T, prefixes ...string) ([]*blobgcs.Store, *fakeGCS) {
+	t.Helper()
+	fake, srv := newFakeGCS(t, "bucket", newKey(t))
+	u, _ := url.Parse(srv.URL)
+	t.Setenv("GCE_METADATA_HOST", u.Host)
+	t.Setenv("STORAGE_EMULATOR_HOST", "")
+	hc := &http.Client{Transport: redirect{srv: u}, Timeout: 30 * time.Second}
+	var stores []*blobgcs.Store
+	for _, prefix := range prefixes {
+		s, err := blobgcs.New(t.Context(), blobgcs.Options{
+			Bucket: "bucket", BaseURL: "https://example.com", Prefix: prefix, ClientOptions: []option.ClientOption{option.WithHTTPClient(hc)},
+		})
+		if err != nil {
+			t.Fatalf("New: %v", err)
+		}
+		t.Cleanup(func() { _ = s.Close() })
+		stores = append(stores, s)
+	}
+	return stores, fake
+}
+
+func TestBlobStoreContractUnderAPrefix(t *testing.T) {
+	blobtest.BlobStoreContract(t, func(t *testing.T) blob.Store {
+		stores, _ := newPrefixedStores(t, "tenant-a/")
+		return stores[0]
+	})
+}
+
+func TestSharedBucketContract(t *testing.T) {
+	blobtest.SharedBucketContract(t, func(t *testing.T) (blob.Store, blob.Store) {
+		stores, _ := newPrefixedStores(t, "tenant-a/", "hosting/tenant-b/")
+		return stores[0], stores[1]
+	})
+}
+
+// Every object of a prefixed store is named under the prefix, and its signed URL names that object.
+func TestPrefixNamesEveryObject(t *testing.T) {
+	stores, fake := newPrefixedStores(t, "tenant-a/")
+	s := stores[0]
+	for _, key := range []string{"uploads/x", "media/x/full.jpg"} {
+		if _, err := s.Put(t.Context(), key, strings.NewReader("x"), blob.PutOptions{}); err != nil {
+			t.Fatalf("Put: %v", err)
+		}
+	}
+	fake.mu.Lock()
+	names := slices.Sorted(maps.Keys(fake.objects))
+	fake.mu.Unlock()
+	if want := []string{"tenant-a/media/x/full.jpg", "tenant-a/uploads/x"}; !slices.Equal(names, want) {
+		t.Errorf("objects = %q, want %q", names, want)
+	}
+	u, err := s.SignedURL(t.Context(), "uploads/x", time.Minute)
+	if err != nil {
+		t.Fatalf("SignedURL: %v", err)
+	}
+	if p, err := url.Parse(u); err != nil || p.Path != "/bucket/tenant-a/uploads/x" {
+		t.Errorf("SignedURL = %q, want the object under the prefix", u)
+	}
+	if got, want := s.PublicURL("media/x/full.jpg"), "https://example.com/media/x/full.jpg"; got != want {
+		t.Errorf("PublicURL = %q, want %q without the prefix", got, want)
+	}
+}
+
+func TestNewRefusesAnInvalidPrefix(t *testing.T) {
+	for _, prefix := range []string{"tenant-a", "/tenant-a/", "a//", "../a/", "tenant a/"} {
+		if _, err := blobgcs.New(t.Context(), blobgcs.Options{Bucket: "b", Prefix: prefix}); err == nil {
+			t.Errorf("New with the prefix %q succeeded", prefix)
+		}
 	}
 }
 

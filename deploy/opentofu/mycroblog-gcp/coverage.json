@@ -11,7 +11,16 @@
       "queue_cloudtasks_service_account",
       "queue_cloudtasks_url"
     ],
-    "media": ["blob", "blob_gcs_bucket", "blob_s3_*"],
+    "media": [
+      "blob",
+      "blob_gcs_bucket",
+      "blob_s3_access_key_id",
+      "blob_s3_bucket",
+      "blob_s3_endpoint",
+      "blob_s3_path_style",
+      "blob_s3_region",
+      "blob_s3_secret_access_key"
+    ],
     "kv": ["kv", "valkey_*"],
     "stream": ["stream", "stream_pubsub_*"],
     "mail": ["mail", "mail_from", "mail_smtp_*"],
@@ -29,6 +38,8 @@
     "billing_gcp_max_bytes_billed",
     "billing_gcp_projects",
     "billing_gcp_query_project",
+    "blob_gcs_prefix",
+    "blob_s3_prefix",
     "captcha*",
     "custom_emoji_max_bytes",
     "database_acquire_timeout",
