@@ -153,7 +153,7 @@ func newEnv(t *testing.T, rec *memRecorder) *env {
 	}
 	e.mux = http.NewServeMux()
 	New(Options{
-		Topic: topic, Recorder: rec, HTTPClient: e.http, KV: e.kv, Clock: clock,
+		Topic: topic, From: "john@example.com", Recorder: rec, HTTPClient: e.http, KV: e.kv, Clock: clock,
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}).Register(e.mux)
 	return e
@@ -281,7 +281,7 @@ func TestRecordsTheExampleNotifications(t *testing.T) {
 			time.Date(2016, 1, 27, 14, 59, 38, 237e6, time.UTC)},
 		{"complaint", exampleComplaint, "000001378603177f-18c07c78-fa81-4a58-9dd1-fedc3cb8f49a-000000", "", identity.EmailComplaint,
 			time.Date(2016, 1, 27, 14, 59, 38, 237e6, time.UTC)},
-		{"OnAccountSuppressionList", exampleSuppressed, "0100017f8ab5f2f6-1ec5f4e5-0c2f-4f66-9b07-0c8e4d6f0c3c-000000", "5.1.1", identity.EmailHardBounce,
+		{"OnAccountSuppressionList", strings.Replace(exampleSuppressed, "sender@example.com", "john@example.com", 1), "0100017f8ab5f2f6-1ec5f4e5-0c2f-4f66-9b07-0c8e4d6f0c3c-000000", "5.1.1", identity.EmailHardBounce,
 			time.Date(2017, 8, 5, 0, 41, 2, 669e6, time.UTC)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

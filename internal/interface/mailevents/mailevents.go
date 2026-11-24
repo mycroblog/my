@@ -5,8 +5,10 @@
 // The endpoint exists only when the topic of the notifications (mail_ses_sns_topic_arn) is set. The
 // body is read up to MaxBodyBytes before anything else, and the SNS signature is verified before
 // the message is used. A subscription confirmation is confirmed by a GET of its SubscribeURL; a
-// notification of a permanent bounce or a complaint is recorded by the identity module as a
-// delivery failure of the recipient's address, which suppresses it.
+// notification of a permanent bounce or a complaint of mail this instance sent, whose mail.source
+// is the address of mail_from, is recorded by the identity module as a delivery failure of the
+// recipient's address, which suppresses it. The notifications of mail another sender sent, which
+// reach the endpoint when instances share a configuration set or a topic, are ignored.
 package mailevents
 
 import (
@@ -16,6 +18,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/mail"
 	"strconv"
 	"strings"
 	"time"
@@ -48,6 +51,9 @@ type Options struct {
 	// Topic is the SNS topic of the notifications (mail_ses_sns_topic_arn); messages of any other
 	// topic are refused.
 	Topic TopicARN
+	// From is the sender address of the instance's emails (mail_from): only the notifications of
+	// mail whose source is this address are recorded. Empty records none.
+	From string
 	// Recorder records the bounces and complaints.
 	Recorder Recorder
 	// HTTPClient fetches the signing certificates and confirms the subscriptions; it is the
@@ -67,6 +73,8 @@ type Options struct {
 type Handler struct {
 	o        Options
 	verifier verifier
+	// from is o.From in the form comparableAddress gives; empty when o.From is not an address.
+	from string
 }
 
 // New returns a Handler on o.
@@ -79,7 +87,10 @@ func New(o Options) *Handler {
 			http.Error(w, http.StatusText(status), status)
 		}
 	}
-	return &Handler{o: o, verifier: verifier{topic: o.Topic, client: o.HTTPClient, kv: o.KV, logger: o.Logger}}
+	return &Handler{
+		o: o, verifier: verifier{topic: o.Topic, client: o.HTTPClient, kv: o.KV, logger: o.Logger},
+		from: comparableAddress(o.From),
+	}
 }
 
 // Router registers handlers for http.ServeMux patterns.
@@ -176,6 +187,10 @@ type sesNotification struct {
 		Timestamp             string         `json:"timestamp"`
 		FeedbackID            string         `json:"feedbackId"`
 	} `json:"complaint"`
+	Mail struct {
+		// Source is the sender of the mail, a bare address or one with a display name.
+		Source string `json:"source"`
+	} `json:"mail"`
 }
 
 // sesRecipient is one recipient of a bounce or a complaint.
@@ -185,14 +200,18 @@ type sesRecipient struct {
 	Status string `json:"status"`
 }
 
-// record records the permanent bounces and the complaints of the SES notification in m; other
-// notifications, transient and undetermined bounces, and complaints of the type not-spam change
-// nothing.
+// record records the permanent bounces and the complaints of the SES notification in m; the
+// notifications of mail another sender sent, other notifications, transient and undetermined
+// bounces, and complaints of the type not-spam change nothing.
 func (h *Handler) record(ctx context.Context, m *snsMessage) error {
 	var n sesNotification
 	if err := json.Unmarshal([]byte(m.Message), &n); err != nil {
 		// A signed message of the topic that is not an SES notification: nothing to record.
 		h.o.Logger.WarnContext(ctx, "SNS message of the SES topic is not an SES notification", slog.String("message_id", m.MessageID))
+		return nil
+	}
+	if !h.sentByThisInstance(n.Mail.Source) {
+		h.o.Logger.DebugContext(ctx, "SES notification of mail another sender sent ignored", slog.String("message_id", m.MessageID))
 		return nil
 	}
 	kind := n.NotificationType
@@ -234,6 +253,30 @@ func (h *Handler) record(ctx context.Context, m *snsMessage) error {
 		}
 	}
 	return nil
+}
+
+// sentByThisInstance reports whether source, the mail.source of a notification, is the address
+// of From, whatever its display name and the case of its domain.
+func (h *Handler) sentByThisInstance(source string) bool {
+	return h.from != "" && comparableAddress(source) == h.from
+}
+
+// comparableAddress returns the address of s, with or without a display name, as its local part
+// and its domain in lower-case Punycode; empty when s is not an address.
+func comparableAddress(s string) string {
+	a, err := mail.ParseAddress(strings.TrimSpace(s))
+	if err != nil {
+		return ""
+	}
+	at := strings.LastIndexByte(a.Address, '@')
+	if at <= 0 {
+		return ""
+	}
+	domain, err := idna.ToASCII(strings.ToLower(a.Address[at+1:]))
+	if err != nil {
+		return ""
+	}
+	return a.Address[:at+1] + strings.ToLower(domain)
 }
 
 // occurredAt returns the first of the times that parses, or now.
