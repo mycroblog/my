@@ -8,15 +8,15 @@
 //
 // Every connection uses WAL journaling and a busy timeout, and every transaction starts with
 // BEGIN IMMEDIATE, so that writers queue on the database lock instead of failing when a read
-// transaction upgrades to a write. UnitOfWork.Read is the exception: it begins deferred and
-// cannot write, so it takes no lock and, in WAL, waits for no writer. The pool is bounded and keeps
-// every connection it opens (pool_max_conns).
+// transaction upgrades to a write. UnitOfWork.Read is the exception: it begins deferred on a
+// connection of a small pool of its own that is query-only from the start (ReadPoolMax), so it
+// cannot write, takes no lock and, in WAL, waits for no writer. The pools are bounded and keep
+// every connection they open (pool_max_conns).
 package sqlite
 
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"errors"
 	"fmt"
 	"net/url"
@@ -42,8 +42,10 @@ const DefaultBusyTimeoutMillis = 5000
 
 // DB is a SQLite database. It implements uow.UnitOfWork.
 type DB struct {
-	db   *sql.DB
-	opts uow.Options
+	db *sql.DB
+	// reads is the pool of the read transactions (Read), whose connections are query-only.
+	reads *sql.DB
+	opts  uow.Options
 	// tx is the transaction that the reads of a copy made by in run in, nil for the pool.
 	tx *sql.Tx
 	// tracer records the spans of the transactions and the queries (SetTracer).
@@ -71,7 +73,27 @@ func Open(ctx context.Context, dsn string, opts uow.Options) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	connector, err := newCachingConnector(name)
+	db, err := openPool(ctx, name, false, pool.max, pool.idle)
+	if err != nil {
+		return nil, err
+	}
+	readMax := ReadPoolMax(pool.max)
+	reads, err := openPool(ctx, name, true, readMax, min(readMax, pool.idle))
+	if err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+	return &DB{db: db, reads: reads, opts: opts, tracer: kernel.NopTracer{}}, nil
+}
+
+// ReadPoolMax is how many connections the read transactions may have open beside the pool of
+// pool_max_conns: a quarter of it, and at least two. The read transactions are few and short
+// (the job queue's polls, a few listings).
+func ReadPoolMax(poolMax int) int { return max(2, poolMax/4) }
+
+// openPool opens a pool of name of at most maxOpen connections, keeping maxIdle when idle.
+func openPool(ctx context.Context, name string, readOnly bool, maxOpen, maxIdle int) (*sql.DB, error) {
+	connector, err := newCachingConnector(name, readOnly)
 	if err != nil {
 		return nil, fmt.Errorf("sqlite: open: %w", err)
 	}
@@ -80,14 +102,14 @@ func Open(ctx context.Context, dsn string, opts uow.Options) (*DB, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("sqlite: open: %w", err)
 	}
-	db.SetMaxOpenConns(pool.max)
-	db.SetMaxIdleConns(pool.idle)
+	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxIdle)
 	// Nothing closes a kept connection by time: the defaults of database/sql for both are "never", and
 	// they are set so that no later change of a default can. A quiet instance answers its next request
 	// on a connection it kept, which has parsed the schema, instead of opening one.
 	db.SetConnMaxIdleTime(0)
 	db.SetConnMaxLifetime(0)
-	return &DB{db: db, opts: opts, tracer: kernel.NopTracer{}}, nil
+	return db, nil
 }
 
 // SetTracer records a span of every transaction attempt and every query of the repositories
@@ -194,7 +216,7 @@ func takePool(q url.Values) (poolSize, error) {
 func (d *DB) PoolMax() int { return d.db.Stats().MaxOpenConnections }
 
 // Close closes the database.
-func (d *DB) Close() error { return d.db.Close() }
+func (d *DB) Close() error { return errors.Join(d.db.Close(), d.reads.Close()) }
 
 // Ready reports whether the database is reachable and its schema is applied, for the
 // readiness check. The schema counts as applied when every table of tables exists (the caller
@@ -241,27 +263,15 @@ func (d *DB) Tx(ctx context.Context, fn func(tx uow.Tx) error) error {
 }
 
 // Read implements uow.UnitOfWork. The transaction begins deferred (the driver ignores _txlock for
-// a read-only transaction), and the connection is read-only for its life with PRAGMA query_only,
-// because the driver begins a read-only transaction but does not stop it from writing.
+// a read-only transaction) on a connection of the read pool, which PRAGMA query_only keeps from
+// writing for its life, because the driver begins a read-only transaction but does not stop it
+// from writing. The pragma is set when the connection opens and never again, so the connection
+// keeps its prepared statements (#3487).
 func (d *DB) Read(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
 	sctx, span := dbtrace.StartTx(ctx, d.tracer, dbtrace.SystemSQLite)
 	defer func() { dbtrace.End(span, err) }()
 	checkSecondConnection(d.db)
-	conn, err := d.db.Conn(sctx)
-	if err != nil {
-		return fmt.Errorf("sqlite: begin: %w", err)
-	}
-	defer func() { _ = conn.Close() }()
-	if _, err := conn.ExecContext(sctx, "PRAGMA query_only = 1"); err != nil {
-		return fmt.Errorf("sqlite: begin: %w", err)
-	}
-	defer func() {
-		// A connection that stays read-only must not return to the pool: discard it.
-		if _, err := conn.ExecContext(context.WithoutCancel(ctx), "PRAGMA query_only = 0"); err != nil {
-			_ = conn.Raw(func(any) error { return driver.ErrBadConn })
-		}
-	}()
-	sqlTx, err := conn.BeginTx(sctx, &sql.TxOptions{ReadOnly: true})
+	sqlTx, err := d.reads.BeginTx(sctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return fmt.Errorf("sqlite: begin: %w", err)
 	}

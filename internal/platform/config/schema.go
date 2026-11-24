@@ -335,7 +335,7 @@ var schema = []field{
 	},
 	{
 		key:      "database_url",
-		doc:      "Connection string passed to the `database` adapter, in that adapter's format. For `database = sqlite`, a path or a `file:` URI; `pool_max_conns` sets how many connections may be open (by default the greater of 4 and the CPU count, as for PostgreSQL) and `pool_max_idle_conns` how many idle ones are kept (by default all of them; none is closed by time).",
+		doc:      "Connection string passed to the `database` adapter, in that adapter's format. For `database = sqlite`, a path or a `file:` URI; `pool_max_conns` sets how many connections may be open (by default the greater of 4 and the CPU count, as for PostgreSQL) and `pool_max_idle_conns` how many idle ones are kept (by default all of them; none is closed by time); the read-only transactions have a quarter as many more of their own, at least two.",
 		required: true,
 		secret:   true,
 		set:      func(c *Config, v string) { c.DatabaseURL = v },

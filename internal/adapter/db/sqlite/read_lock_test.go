@@ -128,3 +128,37 @@ func TestReadLeavesTheConnectionAbleToWrite(t *testing.T) {
 		t.Errorf("committed keys = %q (%v), want %q", got, err, want)
 	}
 }
+
+// TestReadLeavesThePoolsPreparedStatements runs Read on the query-only connections of its own
+// pool, so that no connection of the pool of the other statements ever sets PRAGMA query_only,
+// which would expire every statement that connection prepared (#3487).
+func TestReadLeavesThePoolsPreparedStatements(t *testing.T) {
+	t.Parallel()
+	db, _ := newTestDB(t, "", uow.Options{})
+	ctx := t.Context()
+	var only int
+	err := db.Read(ctx, func(tx uow.Tx) error {
+		q, err := db.QueryTx(tx)
+		if err != nil {
+			return err
+		}
+		return q.QueryRowContext(ctx, "PRAGMA query_only").Scan(&only)
+	})
+	if err != nil || only != 1 {
+		t.Fatalf("PRAGMA query_only in Read = %d, %v; want 1", only, err)
+	}
+	if n := db.reads.Stats().OpenConnections; n != 1 {
+		t.Errorf("the read pool has %d connections open after a Read, want 1", n)
+	}
+	if got, want := db.reads.Stats().MaxOpenConnections, ReadPoolMax(db.PoolMax()); got != want {
+		t.Errorf("the read pool may open %d connections, want %d", got, want)
+	}
+	conn, err := db.db.Conn(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close() }()
+	if err := conn.QueryRowContext(ctx, "PRAGMA query_only").Scan(&only); err != nil || only != 0 {
+		t.Errorf("PRAGMA query_only on the other pool = %d, %v; want 0", only, err)
+	}
+}

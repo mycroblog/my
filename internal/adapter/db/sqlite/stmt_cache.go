@@ -23,15 +23,20 @@ const stmtCacheSize = 512
 // SQL again on its prepared statement, which the driver resets and binds anew. database/sql uses
 // a connection from one goroutine at a time, so a connection's cache needs no lock.
 
-// cachingConnector opens the driver's connections with a cache of prepared statements each.
-type cachingConnector struct{ base driver.Connector }
+// cachingConnector opens the driver's connections with a cache of prepared statements each, and
+// query-only from the start when readOnly: setting PRAGMA query_only later would expire every
+// statement the connection prepared, as any flag pragma does.
+type cachingConnector struct {
+	base     driver.Connector
+	readOnly bool
+}
 
-func newCachingConnector(dsn string) (driver.Connector, error) {
+func newCachingConnector(dsn string, readOnly bool) (driver.Connector, error) {
 	base, err := msqlite.NewConnector(dsn)
 	if err != nil {
 		return nil, err
 	}
-	return cachingConnector{base: base}, nil
+	return cachingConnector{base: base, readOnly: readOnly}, nil
 }
 
 // Connect implements driver.Connector.
@@ -39,6 +44,17 @@ func (c cachingConnector) Connect(ctx context.Context) (driver.Conn, error) {
 	conn, err := c.base.Connect(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if c.readOnly {
+		ex, ok := conn.(driver.ExecerContext)
+		if !ok {
+			_ = conn.Close()
+			return nil, fmt.Errorf("sqlite: the driver's connection %T cannot run a statement", conn)
+		}
+		if _, err := ex.ExecContext(ctx, "PRAGMA query_only = 1", nil); err != nil {
+			_ = conn.Close()
+			return nil, fmt.Errorf("sqlite: make a connection query-only: %w", err)
+		}
 	}
 	return newCachingConn(conn)
 }

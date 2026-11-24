@@ -38,7 +38,7 @@ func (d *DB) In(tx uow.Tx) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DB{db: d.db, opts: d.opts, tx: sqlTx, tracer: d.tracer}, nil
+	return &DB{db: d.db, reads: d.reads, opts: d.opts, tx: sqlTx, tracer: d.tracer}, nil
 }
 
 // SQLDB returns the connection pool, for the statements that no generated query covers (such as
