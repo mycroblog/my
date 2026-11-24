@@ -55,6 +55,12 @@ tasks:
     cmds:
       - scripts/go-shard.sh --check
 
+  # The benchmarker of test/bench (#3183), run by hand: no check, CI job or gate runs it.
+  bench:
+    desc: Measure the server under concurrent clients on SQLite or PostgreSQL and capture where the time goes (test/bench; CLI_ARGS go to `bench run`, such as -db sqlite,postgres -data large -cores 0-3)
+    cmds:
+      - go run ./test/bench run {{.CLI_ARGS}}
+
   lint:
     desc: Run golangci-lint (includes the depguard architecture boundaries) on the server module, or on its shard SHARD (scripts/go-shard.sh)
     vars:
