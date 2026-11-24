@@ -559,12 +559,13 @@ go tool pprof -sample_index=inuse_space http://127.0.0.1:6060/debug/pprof/heap  
 go tool pprof -sample_index=alloc_space http://127.0.0.1:6060/debug/pprof/heap   # what has allocated since the start
 go tool pprof 'http://127.0.0.1:6060/debug/pprof/profile?seconds=30'             # where the CPU goes, for 30 seconds
 curl 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1'                       # every goroutine, by where it waits
+go tool pprof 'http://127.0.0.1:6060/debug/pprof/mutex?seconds=30'               # where goroutines wait on locks, for 30 seconds
 curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '               # the runtime's memory statistics
 ```
 
 The listener has no authentication, a profile shows the internals of the process, and taking one costs CPU: keep it on loopback and reach it through a tunnel (`ssh -L 6060:127.0.0.1:6060 <host>`, `kubectl port-forward`), and unset it when you are done.
 The heap profile covers the Go heap only. The resident memory of the process also holds the pages of the binary that were read, the stacks, and the runtime's own structures; the memory statistics give those.
-The mutex and block profiles are empty: the server does not sample them.
+The block and mutex profiles sample only while a request with `seconds` takes them, and are empty without it.
 
 ## Stop the server
 
