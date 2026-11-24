@@ -142,7 +142,7 @@ Veja [Como o tráfego chega ao serviço](#how-traffic-reaches-the-service) para 
 <!-- source: 7-create-the-first-administrator 19137d6d01f0 -->
 ### 7. Crie o primeiro administrador
 
-Os jobs do Cloud Run não têm terminal nem entrada padrão, então `my admin create` imprime um link que define a senha em vez de ler uma. Ative o [console](#the-console) e execute:
+Os jobs do Cloud Run não têm terminal nem entrada padrão, então `my admin create` imprime um link que define a senha em vez de ler uma. Ative o [console](deploy-opentofu.md#the-console) e execute:
 
 ```sh
 tofu apply -var console_enabled=true
@@ -368,7 +368,7 @@ Uma URL de proxy guarda o `sig` dela na query string, que faz parte do que fica 
 
 Mudar `kek.kind` é uma linha em `main.tf`, mas em uma instância com dados não é de graça. O banco de dados guarda segredos envolvidos com a chave atual, então uma instância que a perde não consegue mais lê-los, e as chaves de todas as contas estão entre eles.
 
-Siga [Mudar entre a KEK local e um KMS](key-management.md#move-between-the-local-kek-and-a-kms). Do segredo para o Cloud KMS, mantenha a KEK atual como `kek_previous` enquanto os segredos se movem: adicione `secrets = ["kek_previous"]` e preencha o segredo `my-kek-previous` com a KEK atual. Execute `my kek rewrap` pelo [console](#the-console) e depois remova-a quando `my kek status` não contar mais chaves `local:`. Guarde a KEK pelo tempo em que você guardar backups do banco de dados anteriores ao rewrap.
+Siga [Mudar entre a KEK local e um KMS](key-management.md#move-between-the-local-kek-and-a-kms). Do segredo para o Cloud KMS, mantenha a KEK atual como `kek_previous` enquanto os segredos se movem: adicione `secrets = ["kek_previous"]` e preencha o segredo `my-kek-previous` com a KEK atual. Execute `my kek rewrap` pelo [console](deploy-opentofu.md#the-console) e depois remova-a quando `my kek status` não contar mais chaves `local:`. Guarde a KEK pelo tempo em que você guardar backups do banco de dados anteriores ao rewrap.
 
 Em uma instância nova sem dados, nada precisa se mover.
 

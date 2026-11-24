@@ -83,7 +83,7 @@ O binário e a imagem de contêiner publicados trazem todos os adaptadores da ta
    e as respostas a escritas reenviadas de cada processo separados. A fila de jobs continua no
    PostgreSQL, ou passa para o Google Cloud Tasks ([Cloud Tasks](running.md#cloud-tasks)).
 
-A [implantação no Cloud Run](deploy-cloud-run.md) é um exemplo de configuração entre a segunda e a terceira etapa:
+A [implantação no Cloud Run](deploy-google-cloud.md) é um exemplo de configuração entre a segunda e a terceira etapa:
 `role = all` no Cloud Run, PostgreSQL no Neon, mídia no Cloud Storage, Cloud Tasks para os jobs e Pub/Sub para o
 fluxo, sem nenhuma instância em execução enquanto ninguém usa o servidor.
 
@@ -92,7 +92,7 @@ fluxo, sem nenhuma instância em execução enquanto ninguém usa o servidor.
 
 Leia os guias do operador nesta ordem:
 
-1. **Começar:** [rode o servidor](running.md) ou [implante no Cloud Run](deploy-cloud-run.md), e depois passe pelo [checklist de produção](production-checklist.md) antes de abri-lo para os usuários.
+1. **Começar:** [rode o servidor](running.md) ou [implante no Cloud Run](deploy-google-cloud.md), e depois passe pelo [checklist de produção](production-checklist.md) antes de abri-lo para os usuários.
 2. **Configurar a instância:** suas [configurações](instance-settings.md), o [cadastro](registration.md), os [provedores de login externos](login-providers.md), o [e-mail](email.md), o [CAPTCHA](captcha.md), [o CDN](cdn.md), as [pré-visualizações de links](link-previews.md) e [mecanismos de busca e rastreadores de IA](crawlers.md).
 3. **Ativar recursos:** a [moderação](moderation.md), os [relays](relays.md), os [webhooks](webhooks.md), os [plugins](plugins.md) e os [ganchos de decisão](decision-hooks.md), o [chat de voz](voice.md), a [busca de texto completo](search.md), os [apoiadores](supporters.md) e seus pagamentos, e a [importação de custos de nuvem](billing-import.md).
 4. **Operar no dia a dia:** o [monitoramento](monitoring.md), os [alertas](alerts.md), os [relatórios de erro](error-reporting.md), a [manutenção](maintenance.md), o [backup](backup.md), [o banco de dados](database.md), [a chave de cifragem de chaves](key-management.md) e [administradores e funções](admin-cli.md).

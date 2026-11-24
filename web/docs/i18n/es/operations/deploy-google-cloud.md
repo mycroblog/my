@@ -142,7 +142,7 @@ Consulta [Cómo llega el tráfico al servicio](#how-traffic-reaches-the-service)
 <!-- source: 7-create-the-first-administrator 19137d6d01f0 -->
 ### 7. Crear al primer administrador
 
-Los jobs de Cloud Run no tienen terminal ni entrada estándar, así que `my admin create` imprime un enlace que establece la contraseña en lugar de leer una. Activa la [consola](#the-console) y ejecuta:
+Los jobs de Cloud Run no tienen terminal ni entrada estándar, así que `my admin create` imprime un enlace que establece la contraseña en lugar de leer una. Activa la [consola](deploy-opentofu.md#the-console) y ejecuta:
 
 ```sh
 tofu apply -var console_enabled=true
@@ -368,7 +368,7 @@ La URL de un proxy lleva su `sig` en la cadena de consulta, que forma parte de l
 
 Cambiar `kek.kind` es una línea en `main.tf`, pero en una instancia con datos no sale gratis. La base de datos contiene secretos envueltos con la clave actual, así que una instancia que la pierde ya no puede leerlos, y las claves de todas las cuentas están entre ellos.
 
-Sigue [Moverse entre la KEK local y un KMS](key-management.md#move-between-the-local-kek-and-a-kms). Del secreto a Cloud KMS, conserva la KEK actual como `kek_previous` mientras los secretos se trasladan: añade `secrets = ["kek_previous"]` y rellena el secreto `my-kek-previous` con la KEK actual. Ejecuta `my kek rewrap` mediante [la consola](#the-console) y quítalo cuando `my kek status` ya no cuente claves `local:`. Conserva la KEK mientras conserves copias de seguridad de la base de datos anteriores al rewrap.
+Sigue [Moverse entre la KEK local y un KMS](key-management.md#move-between-the-local-kek-and-a-kms). Del secreto a Cloud KMS, conserva la KEK actual como `kek_previous` mientras los secretos se trasladan: añade `secrets = ["kek_previous"]` y rellena el secreto `my-kek-previous` con la KEK actual. Ejecuta `my kek rewrap` mediante [la consola](deploy-opentofu.md#the-console) y quítalo cuando `my kek status` ya no cuente claves `local:`. Conserva la KEK mientras conserves copias de seguridad de la base de datos anteriores al rewrap.
 
 En una instancia nueva sin datos, no hace falta mover nada.
 

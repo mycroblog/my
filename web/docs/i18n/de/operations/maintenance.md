@@ -121,7 +121,7 @@ gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAIN
 ```
 
 Setze es mit dem OpenTofu-Modul stattdessen im Block, als `settings = { maintenance = "true" }`, und wende es an, denn das nächste Apply stellt
-wieder her, was der Block sagt: [Auf Cloud Run bereitstellen](deploy-cloud-run.md#the-maintenance-mode) beschreibt es rund um ein Upgrade.
+wieder her, was der Block sagt: [Auf Cloud Run bereitstellen](deploy-opentofu.md#the-maintenance-mode) beschreibt es rund um ein Upgrade.
 
 Wenn Cloud Run direkt ohne Load Balancer erreichbar ist, steht nichts davor, daher ist der Wartungsmodus das einzige Werkzeug.
 
@@ -146,7 +146,7 @@ defaultCustomErrorResponsePolicy:
 Registriere eine Revision der Task-Definition des Dienstes mit `MY_MAINTENANCE=true` in der Umgebung des Containers, aktualisiere den Dienst darauf
 und tue danach dasselbe ohne die Variable. Setze es mit dem OpenTofu-Modul stattdessen im Block, als `settings = { maintenance = "true" }`,
 und wende es an, denn das nächste Apply stellt wieder her, was der Block sagt: Wende rund um ein Upgrade zuerst den Modus an, dann das neue Release, dann den Block ohne ihn,
-wie es [Auf Cloud Run bereitstellen](deploy-cloud-run.md#the-maintenance-mode) tut.
+wie es [Auf Cloud Run bereitstellen](deploy-opentofu.md#the-maintenance-mode) tut.
 
 **Wenn `my serve` nicht laufen kann**, hinter CloudFront: Lade das exportierte `index.html` in einen S3-Bucket hoch, der eine zweite Origin ist
 (die Fehlerseite kann nicht von der ausfallenden Origin kommen), und füge benutzerdefinierte Fehlerantworten für `502` und `504` hinzu (und `503` nur, solange `my serve` nicht laufen kann)

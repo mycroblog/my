@@ -81,7 +81,7 @@ Each run wakes an instance. The default `/health/live` never touches the databas
 | `600s` | Awake 1/2 of the time, about 91 CU-hours | Never stops, 182.5 CU-hours |
 | `300s`, `60s` | Never stops, 182.5 CU-hours | Never stops, 182.5 CU-hours |
 
-The table holds for `/health/ready` only; with the default `/health/live` the database is not woken by the check. Google's documents do not say which of the two columns holds, so look at the requests on the first day. Neon's Free plan has 100 CU-hours, and [the tick's trade-off in the guide](../../../../../docs/operations/deploy-cloud-run.md#costs) has the same arithmetic:
+The table holds for `/health/ready` only; with the default `/health/live` the database is not woken by the check. Google's documents do not say which of the two columns holds, so look at the requests on the first day. Neon's Free plan has 100 CU-hours, and [the tick's trade-off in the guide](../../../../../docs/operations/deploy-google-cloud.md#costs) has the same arithmetic:
 
 - With the default `tick_schedule` of `* * * * *`, the compute never stops anyway, and the check adds nothing to the bill, whichever path. Choose the period for how soon you want to know.
 - With `*/10 * * * *`, the tick alone is about 91 CU-hours. A check of `/health/ready` on top of it comes to as much as 2/3 of the time, about 121 CU-hours, which is over the Free plan. The default `/health/live` wakes the instance and not the database, so it stays inside the plan, at the price of not seeing a database outage from outside; set `uptime_path = "/health/ready"` to see one. `MyNotReady` and the HTTP alerts still see one when anything calls the server.

@@ -580,7 +580,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 <!-- source: cloud-tasks 287213e090b5 -->
 ### Cloud Tasks
 
-[在 Cloud Run 上部署](deploy-cloud-run.md)會以 OpenTofu 模組設定以下所有項目。
+[在 Cloud Run 上部署](deploy-google-cloud.md)會以 OpenTofu 模組設定以下所有項目。
 
 使用 `queue = cloudtasks` 時，任務留在資料庫中（`database = postgres`），Google Cloud Tasks 只負責為每個任務喚醒伺服器：
 

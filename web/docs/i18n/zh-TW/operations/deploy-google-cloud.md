@@ -142,7 +142,7 @@ tofu apply
 <!-- source: 7-create-the-first-administrator 19137d6d01f0 -->
 ### 7. 建立第一位管理員
 
-Cloud Run 任務沒有終端機也沒有標準輸入，因此 `my admin create` 不會讀取密碼，而是輸出一個設定密碼的連結。開啟[主控台](#the-console)，然後執行：
+Cloud Run 任務沒有終端機也沒有標準輸入，因此 `my admin create` 不會讀取密碼，而是輸出一個設定密碼的連結。開啟[主控台](deploy-opentofu.md#the-console)，然後執行：
 
 ```sh
 tofu apply -var console_enabled=true
@@ -368,7 +368,7 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
 
 變更 `kek.kind` 只是 `main.tf` 中的一行，但在有資料的實例上並非毫無代價。資料庫保存了以目前金鑰包裝的機密，因此失去它的實例將無法再讀取這些機密，而所有帳號的金鑰都在其中。
 
-請依照[在本機 KEK 與 KMS 之間搬移](key-management.md#move-between-the-local-kek-and-a-kms)。從機密改為 Cloud KMS 時，在機密搬移期間，請把目前的 KEK 保留為 `kek_previous`：加入 `secrets = ["kek_previous"]`，並以目前的 KEK 填入機密 `my-kek-previous`。透過[主控台](#the-console)執行 `my kek rewrap`，等 `my kek status` 不再計算到 `local:` 金鑰時再移除它。只要你還保留 rewrap 之前的資料庫備份，就請保留該 KEK。
+請依照[在本機 KEK 與 KMS 之間搬移](key-management.md#move-between-the-local-kek-and-a-kms)。從機密改為 Cloud KMS 時，在機密搬移期間，請把目前的 KEK 保留為 `kek_previous`：加入 `secrets = ["kek_previous"]`，並以目前的 KEK 填入機密 `my-kek-previous`。透過[主控台](deploy-opentofu.md#the-console)執行 `my kek rewrap`，等 `my kek status` 不再計算到 `local:` 金鑰時再移除它。只要你還保留 rewrap 之前的資料庫備份，就請保留該 KEK。
 
 在沒有資料的新實例上，不需要搬移任何東西。
 

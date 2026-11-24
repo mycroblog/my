@@ -35,7 +35,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 
 两者都带有 `Cross-Origin-Resource-Policy: cross-origin` 返回，因此其他源的页面也能读取。
 
-在 Cloud Run 上，`ingress-cloudflare-media` 会用 OpenTofu 完成这些配置：见[在 Cloud Run 上部署](deploy-cloud-run.md#cloudflare)。
+在 Cloud Run 上，`ingress-cloudflare-media` 会用 OpenTofu 完成这些配置：见[在 Cloud Run 上部署](deploy-google-cloud.md#cloudflare)。
 
 <!-- source: who-can-open-media-urls 27306b0bc9be -->
 ## 谁能打开媒体 URL

@@ -83,7 +83,7 @@ Le binaire publié et l’image de conteneur contiennent tous les adaptateurs du
    débit et les réponses aux écritures renvoyées de chaque processus. La file de jobs reste dans
    PostgreSQL, ou passe à Google Cloud Tasks ([Cloud Tasks](running.md#cloud-tasks)).
 
-Le [déploiement sur Cloud Run](deploy-cloud-run.md) est un exemple de configuration entre la deuxième et la troisième étape :
+Le [déploiement sur Cloud Run](deploy-google-cloud.md) est un exemple de configuration entre la deuxième et la troisième étape :
 `role = all` sur Cloud Run, PostgreSQL sur Neon, les médias dans Cloud Storage, Cloud Tasks pour les jobs et Pub/Sub pour le
 flux, sans aucune instance en cours d’exécution tant que personne n’utilise le serveur.
 
@@ -92,7 +92,7 @@ flux, sans aucune instance en cours d’exécution tant que personne n’utilise
 
 Lisez les guides de l’opérateur dans cet ordre :
 
-1. **Démarrer :** [lancer le serveur](running.md) ou [le déployer sur Cloud Run](deploy-cloud-run.md), puis parcourez la
+1. **Démarrer :** [lancer le serveur](running.md) ou [le déployer sur Cloud Run](deploy-google-cloud.md), puis parcourez la
    [liste de contrôle de production](production-checklist.md) avant de l’ouvrir aux utilisateurs.
 2. **Configurer l’instance :** ses [paramètres](instance-settings.md), l’[inscription](registration.md),
    les [fournisseurs de connexion externes](login-providers.md), l’[e-mail](email.md), le [CAPTCHA](captcha.md), le [CDN](cdn.md),

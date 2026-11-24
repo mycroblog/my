@@ -142,7 +142,7 @@ Was du sonst noch wählen kannst, steht unter [Wie der Traffic den Dienst erreic
 <!-- source: 7-create-the-first-administrator 19137d6d01f0 -->
 ### 7. Den ersten Administrator anlegen
 
-Cloud-Run-Jobs haben kein Terminal und keine Standardeingabe, daher gibt `my admin create` einen Link aus, über den das Passwort gesetzt wird, statt eines zu lesen. Schalte die [Konsole](#the-console) ein und führe aus:
+Cloud-Run-Jobs haben kein Terminal und keine Standardeingabe, daher gibt `my admin create` einen Link aus, über den das Passwort gesetzt wird, statt eines zu lesen. Schalte die [Konsole](deploy-opentofu.md#the-console) ein und führe aus:
 
 ```sh
 tofu apply -var console_enabled=true
@@ -368,7 +368,7 @@ Eine Proxy-URL trägt ihr `sig` in der Query-Zeichenfolge, die zu dem gehört, w
 
 `kek.kind` zu ändern ist eine Zeile in `main.tf`, aber bei einer Instanz mit Daten ist es nicht umsonst. Die Datenbank enthält Secrets, die mit dem aktuellen Schlüssel verpackt sind, sodass eine Instanz, die ihn verliert, sie nicht mehr lesen kann, und die Schlüssel jedes Kontos gehören dazu.
 
-Folge [Zwischen dem lokalen KEK und einem KMS wechseln](key-management.md#move-between-the-local-kek-and-a-kms). Vom Secret zu Cloud KMS behalte den aktuellen KEK als `kek_previous`, während die Secrets umziehen: Füge `secrets = ["kek_previous"]` hinzu und befülle das Secret `my-kek-previous` mit dem aktuellen KEK. Führe `my kek rewrap` über [die Konsole](#the-console) aus und entferne ihn dann, wenn `my kek status` keine `local:`-Schlüssel mehr zählt. Behalte den KEK, solange du Datenbank-Backups von vor dem Rewrap behältst.
+Folge [Zwischen dem lokalen KEK und einem KMS wechseln](key-management.md#move-between-the-local-kek-and-a-kms). Vom Secret zu Cloud KMS behalte den aktuellen KEK als `kek_previous`, während die Secrets umziehen: Füge `secrets = ["kek_previous"]` hinzu und befülle das Secret `my-kek-previous` mit dem aktuellen KEK. Führe `my kek rewrap` über [die Konsole](deploy-opentofu.md#the-console) aus und entferne ihn dann, wenn `my kek status` keine `local:`-Schlüssel mehr zählt. Behalte den KEK, solange du Datenbank-Backups von vor dem Rewrap behältst.
 
 Auf einer neuen Instanz ohne Daten muss nichts umziehen.
 

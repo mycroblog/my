@@ -3,7 +3,7 @@
 PostgreSQL on Amazon RDS, on a network you give it. It creates the instance, its subnet group and security groups, and the secret that holds the
 connection URL, and follows [the backend contract](../README.md#the-backend-contract).
 
-**This module has never been applied, and no deployment can run on AWS yet**: read [AWS: unverified](../README.md#aws-unverified).
+**This module has never been applied**: read [AWS: unverified](../README.md#aws-unverified).
 The tests mock the provider, and a plan with no credentials shows what the plan holds. Unverified:
 
 - that an instance with these settings is created, in particular that version `18` is available on `db.t4g.micro` in your region;

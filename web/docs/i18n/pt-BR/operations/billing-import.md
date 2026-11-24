@@ -24,7 +24,7 @@ No Google Cloud, a seção `billing` de [`mycroblog-gcp`](../../deploy/opentofu/
 | Ativar a exportação (“Standard usage cost”) | Manualmente, no console do Google Cloud, com uma função na conta de faturamento |
 | O tópico e a assinatura pull de um orçamento, e a função de assinante | A seção `billing` com `method = "budget"` |
 | Criar o orçamento e conectá-lo ao tópico | Manualmente, no console do Google Cloud, com uma função na conta de faturamento |
-| Ativar a API do BigQuery ou do Pub/Sub | Manualmente, como em [Implantação no Cloud Run](deploy-cloud-run.md#1-enable-the-apis) |
+| Ativar a API do BigQuery ou do Pub/Sub | Manualmente, como em [Implantação no Cloud Run](deploy-google-cloud.md#1-enable-the-apis) |
 | Os custos da AWS no Cloud Run | Não por `mycroblog-gcp`. Crie manualmente a função de [Chamada a partir do Cloud Run com identidade web](#calling-from-cloud-run-with-web-identity), e defina `billing_sources = aws` e `billing_aws_role_arn` em `settings`, sem a seção `billing` |
 | Cloudflare | Não por estes módulos. No Cloud Run, sem a seção `billing`, defina `billing_sources` e `billing_cloudflare_account_id` em `settings`, e `billing_cloudflare_api_token` em `secrets`, como para um plugin |
 | Um plugin | Não por estes módulos. No Cloud Run, sem a seção `billing`, defina `billing_sources = plugin` e as configurações do [plugin](#a-plugin-billing_sources--plugin) em `settings`. Ao lado da seção `billing`, o módulo recusa `billing_sources` em `settings` |

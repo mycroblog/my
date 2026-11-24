@@ -16,9 +16,9 @@ Third-party facts below carry the date they were confirmed and their source. Ser
 
 Point the external monitor at **`/api/v1/instance/health`**, not at `/readyz` (`/health/ready`): it queries the database on every request,
 so a monitor with a short interval keeps a scale-to-zero database awake. The probes are for your platform.
-The `monitoring` section of [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) checks `/health/live` on Google Cloud, and that of [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) checks `/readyz`, each from the platform's own monitor at a long interval: its `uptime_period` is what that costs, since each check wakes an instance.
+The `monitoring` section of the OpenTofu modules checks the server from the platform's own monitor at a long interval: `/health/live` on [Google Cloud](deploy-google-cloud.md#monitoring-and-alerts), and `/readyz` on [AWS](deploy-aws.md#monitoring-and-alerts).
 
-Where the server's own metrics, traces, and error reports go is the `observability` section of the same modules, which `monitoring` reads. By default it sends each to the platform: on Google Cloud the metrics to Cloud Monitoring, the request traces to Cloud Trace, and the error reports to Error Reporting, all three from what Cloud Run sends them, with their APIs enabled; on AWS the metrics to CloudWatch in Embedded Metric Format, the error reports to CloudWatch Logs, and the traces to X-Ray, through a collector that runs beside the server in every task ([traces on AWS ECS](running.md#aws-ecs)). `monitoring` needs the metrics there: it refuses `observability.metrics = "settings"`, which leaves `metrics_exporter` to the `settings` input.
+Where the server's own metrics, traces, and error reports go is the `observability` section of the same modules, which `monitoring` reads: the tables of what [Google Cloud](deploy-google-cloud.md#what-it-creates) and [AWS](deploy-aws.md#what-it-creates) create give the defaults. `monitoring` needs the metrics there: it refuses `observability.metrics = "settings"`, which leaves `metrics_exporter` to the `settings` input.
 
 Responses of `/api/v1/instance/health` (no authentication, `Cache-Control: no-store`):
 

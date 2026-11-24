@@ -250,7 +250,7 @@ Binde bei SQLite auf einem Volume dasselbe Volume im Job ein und halte zuerst di
 ### Cloud Run
 
 Mit dem OpenTofu-Modul ist ein Upgrade ein Apply des neuen Releases, das `my upgrade` im Migrationsjob ausführt, bevor die Dienste das neue Image
-übernehmen, und dort anhält, wenn es fehlschlägt: siehe [Auf Cloud Run betreiben](deploy-cloud-run.md#upgrading). Von Hand:
+übernehmen, und dort anhält, wenn es fehlschlägt: siehe [Auf Cloud Run betreiben](deploy-opentofu.md#upgrading). Von Hand:
 
 Cloud-Run-Jobs führen je einen Container aus, lege also pro Schritt einen Job an und führe sie der Reihe nach mit `--wait` aus, was fehlschlägt, wenn der Job fehlschlägt.
 Gib den Jobs dieselben Umgebungsvariablen und Secrets wie dem Dienst.

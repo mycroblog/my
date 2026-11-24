@@ -142,7 +142,7 @@ tofu apply
 <!-- source: 7-create-the-first-administrator 19137d6d01f0 -->
 ### 7. 最初の管理者を作る
 
-Cloud Run のジョブには端末も標準入力もないので、`my admin create` はパスワードを読み取る代わりに、パスワードを設定するリンクを表示します。[コンソール](#the-console)をオンにして、次を実行します。
+Cloud Run のジョブには端末も標準入力もないので、`my admin create` はパスワードを読み取る代わりに、パスワードを設定するリンクを表示します。[コンソール](deploy-opentofu.md#the-console)をオンにして、次を実行します。
 
 ```sh
 tofu apply -var console_enabled=true
@@ -368,7 +368,7 @@ curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
 
 `kek.kind` を変えるのは `main.tf` の 1 行ですが、データのあるインスタンスでは無料ではありません。データベースには現在の鍵で包まれたシークレットが入っていて、鍵を失ったインスタンスはそれを読めなくなり、すべてのアカウントの鍵もその中にあります。
 
-[ローカルの KEK と KMS の間で移す](key-management.md#move-between-the-local-kek-and-a-kms)に従ってください。シークレットから Cloud KMS へ移すときは、シークレットを移すあいだ、現在の KEK を `kek_previous` として残します。`secrets = ["kek_previous"]` を追加し、シークレット `my-kek-previous` に現在の KEK を入れます。[コンソール](#the-console)で `my kek rewrap` を実行し、`my kek status` が `local:` の鍵を数えなくなったら取り除きます。再ラップより前のデータベースのバックアップを持っているあいだは、KEK も保管しておいてください。
+[ローカルの KEK と KMS の間で移す](key-management.md#move-between-the-local-kek-and-a-kms)に従ってください。シークレットから Cloud KMS へ移すときは、シークレットを移すあいだ、現在の KEK を `kek_previous` として残します。`secrets = ["kek_previous"]` を追加し、シークレット `my-kek-previous` に現在の KEK を入れます。[コンソール](deploy-opentofu.md#the-console)で `my kek rewrap` を実行し、`my kek status` が `local:` の鍵を数えなくなったら取り除きます。再ラップより前のデータベースのバックアップを持っているあいだは、KEK も保管しておいてください。
 
 データのない新しいインスタンスでは、移すものはありません。
 

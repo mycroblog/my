@@ -206,8 +206,8 @@ including the media of new posts. Taking both in the maintenance mode avoids eit
 
 ### On the OpenTofu targets
 
-The modules keep no backup of their own beyond what the provider offers: the managed PostgreSQL of Cloud SQL and RDS has automated backups
-with a retention you set, while a database with only the provider's history (Neon) can go back only as far as that history reaches.
+The modules keep no backup of their own beyond what the provider offers: the managed PostgreSQL of
+[Cloud SQL](deploy-google-cloud.md#cloud-sql) and [RDS](deploy-aws.md#2-choose-the-database) has automated backups with a retention you set, while a database with only the provider's history (Neon) can go back only as far as that history reaches.
 Schedule these yourself, with credentials that the instance does not hold:
 
 1. **The database, every day.** Run `pg_dump` against the instance's PostgreSQL from a machine or a scheduled job outside the provider that hosts the

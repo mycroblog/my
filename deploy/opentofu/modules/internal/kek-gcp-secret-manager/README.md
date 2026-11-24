@@ -30,7 +30,7 @@ The first apply generates 32 random bytes with an ephemeral resource and sends t
 value reaches neither the plan nor the state, and no later apply writes another. It needs OpenTofu 1.11 or later.
 
 **Copy the KEK right after the first apply**, and keep the copy apart from the database, as
-[the guide](../../../../../docs/operations/deploy-cloud-run.md#4-create-the-secrets-and-add-their-values) shows. Secret
+[the guide](../../../../../docs/operations/deploy-opentofu.md#2-create-the-secrets-and-add-their-values) shows. Secret
 Manager is the only other place it exists, and a backup is useless without it.
 
 **This resource does not rotate the KEK.** `secret_data_wo_version` is fixed in the module, on purpose: changing it writes a
@@ -39,4 +39,4 @@ among it. The secret and its version have `prevent_destroy` for the same reason,
 remove that yourself. To rotate, follow [Rotate the KEK](../../../../../docs/operations/key-management.md#rotate-the-kek).
 
 Replacing this module on an instance that already has data is a move, not a swap: see
-[the guide](../../../../../docs/operations/deploy-cloud-run.md#changing-the-kek-backend).
+[the guide](../../../../../docs/operations/deploy-opentofu.md#the-kek).

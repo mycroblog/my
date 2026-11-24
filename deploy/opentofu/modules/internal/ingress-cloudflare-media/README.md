@@ -43,7 +43,7 @@ Pass only `platform` and `env` to `backends`, as `{ platform = module.media.plat
 - **The origin's `Cache-Control` decides how long**: `respect_origin` for the edge and the browser. Local media carries
   `public, max-age=31536000, immutable`, and `/media/proxy/` follows `remote_media_cache_ttl_seconds`, which a TTL here would
   break. So there is no long edge TTL.
-- **A deleted file can stay cached for up to a year.** Purge it by hand: [the guide](../../../../../docs/operations/deploy-cloud-run.md#cloudflare)
+- **A deleted file can stay cached for up to a year.** Purge it by hand: [the guide](../../../../../docs/operations/deploy-google-cloud.md#cloudflare)
   has the call.
 
 ## Limits

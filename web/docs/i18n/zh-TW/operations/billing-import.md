@@ -24,7 +24,7 @@ Cloudflare 沒有這樣的憑證鏈，所以它的匯入會從 [`billing_cloudfl
 | 啟用匯出（「Standard usage cost」） | 在 Google Cloud 主控台手動進行，需要帳單帳戶上的角色 |
 | 預算的主題與 pull 訂閱，以及訂閱者角色 | 使用 `method = "budget"` 的 `billing` 區段 |
 | 建立預算並將它連接到主題 | 在 Google Cloud 主控台手動進行，需要帳單帳戶上的角色 |
-| 啟用 BigQuery 或 Pub/Sub API | 手動進行，如[在 Cloud Run 上部署](deploy-cloud-run.md#1-enable-the-apis)所述 |
+| 啟用 BigQuery 或 Pub/Sub API | 手動進行，如[在 Cloud Run 上部署](deploy-google-cloud.md#1-enable-the-apis)所述 |
 | Cloud Run 上的 AWS 費用 | 不由 `mycroblog-gcp` 處理。請手動建立[從 Cloud Run 以 web identity 呼叫](#calling-from-cloud-run-with-web-identity)的角色，並在 `settings` 中設定 `billing_sources = aws` 和 `billing_aws_role_arn`，不使用 `billing` 區段 |
 | Cloudflare | 不由這些模組處理。在 Cloud Run 上，不使用 `billing` 區段，請如同外掛一樣，在 `settings` 中設定 `billing_sources`、`billing_cloudflare_account_id`，並在 `secrets` 中設定 `billing_cloudflare_api_token` |
 | 外掛 | 不由這些模組處理。在 Cloud Run 上，不使用 `billing` 區段，請在 `settings` 中設定 `billing_sources = plugin` 與[外掛](#a-plugin-billing_sources--plugin)的設定。與 `billing` 區段並存時，模組會拒絕 `settings` 中的 `billing_sources` |
