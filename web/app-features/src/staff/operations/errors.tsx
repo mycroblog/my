@@ -238,6 +238,9 @@ export function useErrorGroupTitle(id: string): string | undefined {
   return useErrorGroup(id).value?.type;
 }
 
+/** The terms of `facts`. */
+const terms = (facts: readonly Fact[]): string[] => facts.map((f) => f.term);
+
 /** The facts of a group: its state since when, where and what, when and on which version it was first and last seen. */
 function groupFacts(t: T, moment: (iso: string) => string, g: ErrorGroupDetail): Fact[] {
   return [
@@ -287,39 +290,52 @@ function Counts({ group }: { group: ErrorGroup }): ReactNode {
 }
 
 /**
- * The latest occurrence: its facts, the IDs the logs and the traces are searched by each with the button that copies
- * it, its message where it differs from the group's, and its stack to copy.
+ * The facts of the latest occurrence: when, on which version, in which role and of which type; its message where it
+ * differs from the group's; the IDs the logs and the traces are searched by, each with the button that copies it.
  */
-function Sample({ sample, message }: { sample: NonNullable<ErrorGroupDetail["sample"]>; message: string }): ReactNode {
-  const { t } = useStaffStrings();
-  const moment = useMoment();
+function sampleFacts(
+  t: T,
+  moment: (iso: string) => string,
+  sample: NonNullable<ErrorGroupDetail["sample"]>,
+  message: string,
+): Fact[] {
   const id = (term: string, value: string | undefined, copy: string): Fact[] =>
     value === undefined ? [] : [{ term, value, code: true, action: <CopyAction label={copy} value={value} /> }];
+  return [
+    { term: t("staff_operations.error_groups.sample.at"), value: moment(sample.occurred_at) },
+    { term: t("staff_operations.error_groups.sample.version"), value: sample.version, code: true },
+    { term: t("staff_operations.error_groups.sample.role"), value: sample.role, code: true },
+    { term: t("staff_operations.error_groups.sample.type"), value: sample.type, code: true },
+    ...(sample.message === message
+      ? []
+      : [{ term: t("staff_operations.error_groups.message"), value: sample.message, code: true }]),
+    ...id(
+      t("staff_operations.error_groups.sample.request_id"),
+      sample.request_id,
+      t("staff_operations.copy.request_id"),
+    ),
+    ...id(t("staff_operations.error_groups.sample.trace_id"), sample.trace_id, t("staff_operations.copy.trace_id")),
+  ];
+}
+
+/**
+ * The latest occurrence: its facts (`items`), their terms as wide as the group's (`beside`) so that their values start
+ * in one line with the group's, and its stack to copy.
+ */
+function Sample({
+  sample,
+  items,
+  beside,
+}: {
+  sample: NonNullable<ErrorGroupDetail["sample"]>;
+  items: readonly Fact[];
+  beside: readonly string[];
+}): ReactNode {
+  const { t } = useStaffStrings();
   return (
     <Titled title={t("staff_operations.error_groups.sample")}>
       <Stack gap="entry-room">
-        <FactList
-          label={t("staff_operations.error_groups.sample")}
-          items={[
-            { term: t("staff_operations.error_groups.sample.at"), value: moment(sample.occurred_at) },
-            { term: t("staff_operations.error_groups.sample.version"), value: sample.version, code: true },
-            { term: t("staff_operations.error_groups.sample.role"), value: sample.role, code: true },
-            { term: t("staff_operations.error_groups.sample.type"), value: sample.type, code: true },
-            ...(sample.message === message
-              ? []
-              : [{ term: t("staff_operations.error_groups.message"), value: sample.message, code: true }]),
-            ...id(
-              t("staff_operations.error_groups.sample.request_id"),
-              sample.request_id,
-              t("staff_operations.copy.request_id"),
-            ),
-            ...id(
-              t("staff_operations.error_groups.sample.trace_id"),
-              sample.trace_id,
-              t("staff_operations.copy.trace_id"),
-            ),
-          ]}
-        />
+        <FactList label={t("staff_operations.error_groups.sample")} items={items} beside={beside} />
         <CopyValue
           label={t("staff_operations.error_groups.sample.stack")}
           value={sample.stack}
@@ -411,6 +427,9 @@ function GroupView({ group, onBack }: { group: ErrorGroupDetail; onBack: () => v
   const writes = useErrorGroupWrites();
   const [busy, setBusy] = useState<Act | undefined>(undefined);
   const { say, status } = useSaid();
+  // The group's facts and its latest occurrence's, their terms' columns as wide as each other's.
+  const facts = groupFacts(t, moment, group);
+  const sampled = group.sample === undefined ? [] : sampleFacts(t, moment, group.sample, group.message);
   const act = (which: Act) => {
     if (busy !== undefined) return;
     setBusy(which);
@@ -447,11 +466,11 @@ function GroupView({ group, onBack }: { group: ErrorGroupDetail; onBack: () => v
         ))}
         {status}
       </Row>
-      <FactList label={t("staff_operations.error_groups.facts")} items={groupFacts(t, moment, group)} />
+      <FactList label={t("staff_operations.error_groups.facts")} items={facts} beside={terms(sampled)} />
       <Titled title={t("staff_operations.error_groups.counts")}>
         <Counts group={group} />
       </Titled>
-      {group.sample !== undefined && <Sample sample={group.sample} message={group.message} />}
+      {group.sample !== undefined && <Sample sample={group.sample} items={sampled} beside={terms(facts)} />}
       <Hours group={group} />
       <Titled title={t("staff_operations.error_groups.events")}>
         {group.events.length === 0 ? (

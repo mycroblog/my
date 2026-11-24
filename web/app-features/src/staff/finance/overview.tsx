@@ -73,7 +73,6 @@ export function FinanceAdminScreen(): ReactNode {
           sources={spent.rules.sources}
           incomeRules={got.rules}
           rules={false}
-          coded
         />
       )}
       {pages}

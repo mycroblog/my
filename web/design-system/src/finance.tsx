@@ -21,6 +21,7 @@ import { ShareBar } from "./choice";
 import { CodeText } from "./code-text";
 import { Icon } from "./icons";
 import { Row, Spoken, Stack } from "./layout";
+import { FrameRowSurface } from "./shell";
 
 /** A column of a table: its name, and whether it holds figures, which stand at its end. */
 export type FinanceColumn = { label: string; figures?: boolean | undefined };
@@ -148,19 +149,26 @@ const table = tv({
     figure: "tabular-nums whitespace-nowrap",
     glyph: "text-muted-text",
     note: "text-caption text-muted-text [word-break:auto-phrase]",
-    // The row that sums the others: on the raised surface, and on the page's where it stands on a raised one.
-    total: [
-      "rounded-control bg-surface-raised px-screen-row-inline font-strong",
-      "[[data-surface-raised]_&]:bg-surface",
-    ],
+    // The row that sums the others: on the raised surface, and on the page's where it stands on a raised one, its
+    // words at the rows' inset; where the table reaches past its container, its edges are the frame's to say
+    // (FrameRowSurface).
+    total: "bg-surface-raised font-strong [[data-surface-raised]_&]:bg-surface",
     line: "px-screen-row-inline",
+  },
+  variants: {
+    contained: { true: { total: "rounded-control px-screen-row-inline" } },
   },
 });
 
-/** What the table gives its rows: its columns, and the word that marks an estimate. */
-const TableContext = createContext<{ readonly columns: readonly FinanceColumn[]; readonly estimated: string }>({
+/** What the table gives its rows: its columns, the word that marks an estimate, and whether it keeps within its width. */
+const TableContext = createContext<{
+  readonly columns: readonly FinanceColumn[];
+  readonly estimated: string;
+  readonly contained: boolean;
+}>({
   columns: [],
   estimated: "",
+  contained: false,
 });
 
 /** The glyph that marks a figure from an estimate. */
@@ -232,7 +240,7 @@ export function FinanceTable({
         contained={contained}
         className={s.root()}
       >
-        <TableContext value={{ columns, estimated: estimated ?? "" }}>
+        <TableContext value={{ columns, estimated: estimated ?? "", contained }}>
           <FinanceLine role="row" head className={s.line()}>
             <FinancePlace at="corner" role="columnheader" className={s.column()}>
               {head}
@@ -295,11 +303,12 @@ export type FinanceRowProps = {
  * a figure from an estimate with the estimate's glyph before it on its line, and their bar right under them.
  */
 export function FinanceRow({ head, caption, cells, continued = false, code = false, itemRef }: FinanceRowProps) {
-  const s = table();
-  const { columns, estimated } = use(TableContext);
+  const { columns, estimated, contained } = use(TableContext);
+  const s = table({ contained });
   const total = use(TotalContext);
-  return (
-    <FinanceLine role="row" continued={continued} className={total ? s.total() : s.line()}>
+  const line = <FinanceLine role="row" continued={continued} className={total ? s.total() : s.line()} />;
+  const held = (
+    <>
       <FinancePlace at="head" role="rowheader" className={s.head()}>
         {continued ? (
           <Spoken>{head}</Spoken>
@@ -339,6 +348,14 @@ export function FinanceRow({ head, caption, cells, continued = false, code = fal
           </FinancePlace>
         );
       })}
+    </>
+  );
+  // A total where the table reaches past its container: its edges are the frame's (FrameRowSurface).
+  return total && !contained ? (
+    <FrameRowSurface as={line}>{held}</FrameRowSurface>
+  ) : (
+    <FinanceLine role="row" continued={continued} className={total ? s.total() : s.line()}>
+      {held}
     </FinanceLine>
   );
 }

@@ -46,14 +46,29 @@ function FactFrame({ className, ...rest }: HTMLAttributes<HTMLElement> & { class
   );
 }
 
-/** A fact: its term and its value, on the frame's columns; narrow, the term over the value, a hair apart. */
-function FactLine({ children }: { children: ReactNode }) {
+/**
+ * A fact: its term and its value, on the frame's columns; narrow, the term over the value, a hair apart. `beside`,
+ * terms the terms' column is as wide as too: drawn in the term's place, a line each at the term's size, taking no
+ * height, unseen and unread.
+ */
+function FactLine({ beside, children }: { beside?: readonly string[] | undefined; children: ReactNode }) {
+  const widened = beside !== undefined && beside.length > 0;
   return (
-    <div className="col-span-full grid grid-cols-subgrid items-baseline gap-y-[0.125rem] @min-[30rem]:gap-y-0">
+    <div
+      {...(widened ? { "data-beside": beside.join("\n") } : {})}
+      className={`col-span-full grid grid-cols-subgrid items-baseline gap-y-[0.125rem] @min-[30rem]:gap-y-0 ${widened ? WIDENED : ""}`}
+    >
       {children}
     </div>
   );
 }
+
+/** The terms beside a line, in its term's cell, under the term. */
+const WIDENED = [
+  "[&>dt]:col-start-1 [&>dt]:row-start-1",
+  "after:invisible after:col-start-1 after:row-start-1 after:h-0 after:overflow-hidden",
+  "after:text-caption after:whitespace-pre after:content-[attr(data-beside)]",
+].join(" ");
 
 const facts = tv({
   slots: {
@@ -132,12 +147,12 @@ function KeptValue({ fact, termId }: { fact: Fact; termId: string }) {
   );
 }
 
-/** One fact, its term naming the Show that stands for a kept value. */
-function FactItem({ fact }: { fact: Fact }) {
+/** One fact, its term naming the Show that stands for a kept value; `beside`, terms its terms' column is as wide as. */
+function FactItem({ fact, beside }: { fact: Fact; beside?: readonly string[] | undefined }) {
   const s = facts();
   const termId = useId();
   return (
-    <FactLine>
+    <FactLine beside={beside}>
       <dt id={termId} className={s.term()}>
         {fact.term}
       </dt>
@@ -166,14 +181,23 @@ function FactItem({ fact }: { fact: Fact }) {
 
 /**
  * The facts of a record, named `label` for assistive technology (Registration, Endpoint): each term with its value,
- * side by side where the list has the room, the term over the value where it has not.
+ * side by side where the list has the room, the term over the value where it has not. `beside`, the terms of another
+ * list on the same screen: the terms' column is as wide as theirs too, so that the two lists' values start in one line.
  */
-export function FactList({ label, items }: { label: string; items: readonly Fact[] }) {
+export function FactList({
+  label,
+  items,
+  beside,
+}: {
+  label: string;
+  items: readonly Fact[];
+  beside?: readonly string[] | undefined;
+}) {
   const s = facts();
   return (
     <FactFrame aria-label={label} className={s.root()}>
-      {items.map((fact) => (
-        <FactItem key={fact.term} fact={fact} />
+      {items.map((fact, i) => (
+        <FactItem key={fact.term} fact={fact} beside={i === 0 ? beside : undefined} />
       ))}
     </FactFrame>
   );
