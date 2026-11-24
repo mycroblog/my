@@ -382,6 +382,11 @@ export type TextFieldProps = {
   autoFocus?: boolean | undefined;
   /** It holds an amount (a price): at its end, in figures of one width, as a number field does. */
   figures?: boolean | undefined;
+  /**
+   * A control after the field on its line, as wide as its value, which the field's label says enough of (an amount's
+   * currency, a `Select` named for assistive technology alone); for a line, not a multiline field.
+   */
+  after?: ReactNode;
   /** Its value as the reader types it (a search as they type); else the form reads it as it posts. */
   onChange?: ((value: string) => void) | undefined;
   /**
@@ -397,6 +402,17 @@ export type TextFieldProps = {
   /** What an empty field stands for (a default the server keeps), muted inside it; never its name or a rule of it. */
   placeholder?: string | undefined;
 };
+
+/** A field's line, and the control after it on its line where it has one, which keeps its own width. */
+function Joined({ after, children }: { after: ReactNode; children: ReactNode }) {
+  if (after === undefined) return children;
+  return (
+    <Row align="center" gap="entry-caption">
+      <Box grow>{children}</Box>
+      <Row rigid>{after}</Row>
+    </Row>
+  );
+}
 
 /**
  * A labelled field on a raised surface: its label and hint above it, its error right under it, both read with it
@@ -428,6 +444,7 @@ export function TextField({
   figures = false,
   row = false,
   placeholder,
+  after,
 }: TextFieldProps) {
   const s = form({ height: !multiline ? "line" : rows === undefined ? "area" : "rows", figures });
   const holder = use(FieldContext);
@@ -479,21 +496,23 @@ export function TextField({
       {multiline ? (
         <Box full as={<textarea {...common} className={s.input()} rows={rows ?? 4} dir="auto" />} />
       ) : (
-        <Box
-          full
-          as={
-            <input
-              {...common}
-              className={s.input()}
-              type={type}
-              autoComplete={autoComplete}
-              inputMode={inputMode}
-              autoCapitalize={autoCapitalize}
-              minLength={minLength}
-              spellCheck={false}
-            />
-          }
-        />
+        <Joined after={after}>
+          <Box
+            full
+            as={
+              <input
+                {...common}
+                className={s.input()}
+                type={type}
+                autoComplete={autoComplete}
+                inputMode={inputMode}
+                autoCapitalize={autoCapitalize}
+                minLength={minLength}
+                spellCheck={false}
+              />
+            }
+          />
+        </Joined>
       )}
       {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
     </Stack>

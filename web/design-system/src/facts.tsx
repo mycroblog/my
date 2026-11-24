@@ -7,12 +7,13 @@
 // has more room than a phone's column, the terms down the start, as wide as the longest of them up to a limit, each
 // value beside its term; on a phone, each term over its value, so that a long value (an ID, a key) has the whole line.
 // Terms are muted, at the caption's size; values are the text's. A value in the code's face is one that is copied or
-// compared character by character (an IP address, an endpoint), and breaks after a slash, never inside a word that
-// fits (code-text.tsx), isolated left to right, as code reads in a right-to-left page too. A fact may have an action
-// after its value (the button that copies it). A value that is private (an email address, an IP address) is shown only on demand
-// (ADR-0058 §9): in its place, Show, which asks the server for it, spins while it is asked, and gives the focus to the
-// value once it comes, so that a keyboard and a screen reader land on what they asked for. Every value so shown takes
-// one look, the open eye before it and the code's face, apart from the public ones.
+// compared character by character (an IP address, an endpoint), and breaks after a slash, never inside a word that fits
+// (code-text.tsx), isolated left to right, as code reads in a right-to-left page too. A fact may have an action on its
+// own line under its value (the button that copies it), where a long value never wraps around it. A value that is
+// private (an email address, an IP address) is shown only on demand (ADR-0058 §9): in its place, Show, which asks the
+// server for it, spins while it is asked, and gives the focus to the value once it comes, so that a keyboard and a
+// screen reader land on what they asked for. Every value so shown takes one look, the open eye before it and the code's
+// face, apart from the public ones.
 //
 // The figures that sum up a server's state (open reports, pending registrations, the depth of a queue) are tiles,
 // each its number, large, over its label, as many to a row as fit. A figure that leads where it is dealt with stands
@@ -95,7 +96,7 @@ export type Fact = {
    * stands in its place until `value` is given.
    */
   reveal?: { onReveal: () => void; busy?: boolean | undefined } | undefined;
-  /** What the reader may do with the value, after it (a button that copies it). */
+  /** What the reader may do with the value, on its own line under it (a button that copies it). */
   action?: ReactNode;
 };
 
@@ -167,12 +168,9 @@ function FactItem({ fact, beside }: { fact: Fact; beside?: readonly string[] | u
           <KeptValue fact={fact} termId={termId} />
         )}
         {fact.action !== undefined && fact.action !== null && (
-          <>
-            {" "}
-            <Row as="span" inline rigid>
-              {fact.action}
-            </Row>
-          </>
+          <Row as="span" rigid>
+            {fact.action}
+          </Row>
         )}
       </dd>
     </FactLine>
