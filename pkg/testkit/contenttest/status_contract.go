@@ -1296,6 +1296,41 @@ func sameCurrentRevisions(t *testing.T, e *StatusEnv, ids ...string) {
 	}
 }
 
+// sameCurrentPosts checks that ListCurrentPosts, which reads every live status with its current
+// revision inside a transaction, lists exactly ids in ID order, each as FindStatus and
+// FindCurrentRevision find it.
+func sameCurrentPosts(t *testing.T, e *StatusEnv, ids ...string) {
+	t.Helper()
+	ctx := t.Context()
+	var posts []appcontent.Post
+	err := e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		posts, err = e.H.Statuses.ListCurrentPosts(ctx, tx)
+		return err
+	})
+	if err != nil {
+		t.Fatalf("ListCurrentPosts = %v", err)
+	}
+	want := slices.Sorted(slices.Values(ids))
+	got := make([]string, len(posts))
+	for i, p := range posts {
+		got[i] = p.Status.ID
+	}
+	if !slices.Equal(got, want) {
+		t.Fatalf("ListCurrentPosts lists %v, want %v", got, want)
+	}
+	for _, p := range posts {
+		status, err := e.H.Statuses.FindStatus(ctx, p.Status.ID)
+		if err != nil || !reflect.DeepEqual(p.Status, status) {
+			t.Errorf("ListCurrentPosts[%s].Status = %+v;\nwant %+v (%v)", p.Status.ID, p.Status, status, err)
+		}
+		rev, err := e.H.Statuses.FindCurrentRevision(ctx, p.Status.ID)
+		if err != nil || !reflect.DeepEqual(p.Revision, rev) {
+			t.Errorf("ListCurrentPosts[%s].Revision = %+v;\nwant %+v (%v)", p.Status.ID, p.Revision, rev, err)
+		}
+	}
+}
+
 // statusReadsCurrentRevisions reads the current revisions of statuses of every kind together: a
 // remote one with a poll and the source of its remote document, a plain one, and an edited one.
 func statusReadsCurrentRevisions(t *testing.T, e *StatusEnv) {
@@ -1329,6 +1364,7 @@ func statusReadsCurrentRevisions(t *testing.T, e *StatusEnv) {
 		t.Errorf("FindCurrentRevisions[the remote status] = %+v, %v; want its poll and remote source", got[polled.ID], err)
 	}
 	sameCurrentRevisions(t, e, polled.ID, plain.ID, edited.ID)
+	sameCurrentPosts(t, e, polled.ID, plain.ID, edited.ID)
 
 	// The poll's tallies and a voter's votes, as the reads of one poll find them.
 	voter := e.IDs.NewID()

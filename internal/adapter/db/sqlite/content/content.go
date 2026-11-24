@@ -647,18 +647,36 @@ func (r *StatusRepository) ListCurrentPosts(ctx context.Context, tx uow.Tx) ([]a
 		return nil, sqlite.Wrap(err, "list live status heads")
 	}
 	out := make([]appcontent.Post, len(rows))
-	for i, row := range rows {
-		out[i].Status = statusFrom(contentgen.Status{
-			ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
-			Visibility: row.Visibility, InReplyToUri: row.InReplyToUri,
-			PublishedAt: row.PublishedAt,
-		})
-		if out[i].Revision, err = findRevision(ctx, q, row.RevisionID); err != nil {
+	for start := 0; start < len(rows); start += currentPostsChunk {
+		chunk := rows[start:min(start+currentPostsChunk, len(rows))]
+		ids := make([]string, len(chunk))
+		for i, row := range chunk {
+			ids[i] = row.ID
+		}
+		revs, err := currentRevisions(ctx, q, ids)
+		if err != nil {
 			return nil, err
+		}
+		for i, row := range chunk {
+			rev, ok := revs[row.ID]
+			if !ok {
+				return nil, fmt.Errorf("%w: current revision of status %s", appcontent.ErrNotFound, row.ID)
+			}
+			out[start+i] = appcontent.Post{
+				Status: statusFrom(contentgen.Status{
+					ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
+					Visibility: row.Visibility, InReplyToUri: row.InReplyToUri,
+					PublishedAt: row.PublishedAt,
+				}),
+				Revision: rev,
+			}
 		}
 	}
 	return out, nil
 }
+
+// currentPostsChunk is how many posts ListCurrentPosts reads the revisions of together.
+const currentPostsChunk = 1000
 
 // findRevision returns a revision with its children.
 func findRevision(ctx context.Context, q *contentgen.Queries, id string) (content.Revision, error) {

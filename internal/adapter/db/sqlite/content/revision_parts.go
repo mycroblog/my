@@ -6,17 +6,23 @@ import (
 	"context"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	"github.com/mycroblog/my/internal/adapter/db/sqlite/contentgen"
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
 // FindCurrentRevisions implements content.Repository: the rows of every revision and its parts
 // with one query per part, built as findRevision builds one (revisionRows).
 func (r *StatusRepository) FindCurrentRevisions(ctx context.Context, statusIDs []string) (map[string]content.Revision, error) {
+	return currentRevisions(ctx, r.db.reader(), statusIDs)
+}
+
+// currentRevisions returns the current revisions of statusIDs read with q, by status ID, with one
+// query per part whatever the number of statuses. A status without a head is left out.
+func currentRevisions(ctx context.Context, q *contentgen.Queries, statusIDs []string) (map[string]content.Revision, error) {
 	out := make(map[string]content.Revision, len(statusIDs))
 	if len(statusIDs) == 0 {
 		return out, nil
 	}
-	q := r.db.reader()
 	ids, err := sqlite.JSONList(statusIDs)
 	if err != nil {
 		return nil, err
