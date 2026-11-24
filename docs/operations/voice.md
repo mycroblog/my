@@ -148,7 +148,7 @@ If you must guarantee who speaks, for example for moderated public events, use `
 
 - **Two streams per user**: during a call a participant holds the room's own event stream (Server-Sent Events) in addition to the stream the app always opens. Size connection limits for two long-lived requests per user in a call.
 - **Several processes**: use a shared stream adapter (`stream` set to `postgres`, `valkey`, `sns` or `pubsub`), as for the rest of the app. With `stream = hub` and a `role` other than `all`, the server warns at start that voice chat will not work across processes.
-- **Cloud Run**: a stream is a request, and CPU is allocated while it is open. When the request timeout cuts it, the client reconnects. Set the timeout as long as you can.
+- **Cloud Run**: a stream is a request, and CPU is allocated while it is open. When the request timeout cuts it, the client reconnects. Set the timeout as long as you can: `service.request_timeout_seconds` of [Deploying on Google Cloud](deploy-google-cloud.md#limits).
 - **Media servers need a VM**: LiveKit and Sora take audio over UDP in a long-running process. Cloud Run accepts only HTTP requests, so it cannot host them. Run them (and coturn) on a VM, or use LiveKit Cloud, Sora Cloud or Cloudflare TURN.
 
 ## LiveKit

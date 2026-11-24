@@ -256,6 +256,13 @@ of `notification_channels`. The section has no default: name who is notified, or
 out. It has never been applied, so try it once by making a check fail. Each run of the check wakes an instance:
 `uptime_period`, 15 minutes by default, is how often.
 
+### Traces
+
+Cloud Trace shows the trace that Cloud Run records of each request, and the server's log lines carry its `trace_id`, since the
+module trusts the ingress (`MY_TRUSTED_PROXIES`). The lines do not fill the trace field that Cloud Logging links
+(`logging.googleapis.com/trace`), and whether Cloud Run always replaces the `traceparent` of a public request is unverified.
+The server's own spans would need an OpenTelemetry Collector beside it, which the module does not run.
+
 ## Limits
 
 - **Uploads**: Cloud Run refuses an HTTP/1 request above 32 MiB, and the server speaks HTTP/1.1, so the module sets
