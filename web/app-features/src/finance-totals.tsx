@@ -244,19 +244,6 @@ function estimatedIn(period: CostPeriodTotal | undefined, sources: CostTotalsRul
   return (currency) => currencies.has(currency);
 }
 
-/** An amount with its currency's code (JPY 1,970), where amounts of several currencies stand one under another. */
-export function moneyCoded(locale: string, money: Money): string {
-  const digits = digitsOf(money.currency);
-  const format = new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: money.currency,
-    currencyDisplay: "code",
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-  return typeset(format, money);
-}
-
 /**
  * The figures of a cell: an amount a currency, each marked where it comes from an estimate, or None.
  */

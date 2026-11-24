@@ -34,7 +34,6 @@ import {
   answeredPeriods,
   FinanceChoices,
   FinancePages,
-  moneyCoded,
   moneyText,
   periodName,
   periodOfAnswer,
@@ -48,7 +47,7 @@ import { FinanceBack, useDay } from "./parts";
 
 /** The figures of a cell: an amount a currency, or None. */
 const figuresOf = (t: T, locale: string, amounts: readonly Money[] | undefined): FinanceFigure[] =>
-  amounts === undefined || amounts.length === 0 ? [t("finance.none")] : amounts.map((m) => moneyCoded(locale, m));
+  amounts === undefined || amounts.length === 0 ? [t("finance.none")] : amounts.map((m) => moneyText(locale, m));
 
 /** The totals of the window: a period a row, its gross, fees, net and balance. */
 function IncomeTable({ view, periods }: { view: FinanceView; periods: readonly AdminIncomePeriodTotal[] }) {
