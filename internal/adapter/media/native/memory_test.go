@@ -100,7 +100,9 @@ func allocated(run func()) uint64 {
 // (native.MaxScaleBuffer, #3440): processing a photo of 12 megapixels, the size phones take,
 // allocated about 611 MB when the scaler held 32 bytes for every destination column times source
 // row, and about 256 MB with the buffer bounded. Total allocation, unlike a sampled heap peak,
-// does not depend on the collector's timing. It takes a few seconds, so -short skips it.
+// does not depend on the collector's timing. The race detector allocates for itself, about as
+// much as the unbounded scaler did, so under -race only the output is checked. It takes a few
+// seconds, so -short skips it.
 func TestProcessOfAPhotoBoundsItsAllocation(t *testing.T) {
 	if testing.Short() {
 		t.Skip("processes a 12-megapixel photo")
@@ -110,7 +112,7 @@ func TestProcessOfAPhotoBoundsItsAllocation(t *testing.T) {
 	var out media.Output
 	got := allocated(func() { out = processAttachment(t, data) })
 	t.Logf("Process(4032×3024 JPEG) allocated %d MiB", got>>20)
-	if got > bound {
+	if got > bound && !raceEnabled {
 		t.Errorf("Process(4032×3024 JPEG) allocated %d MiB, want at most %d MiB", got>>20, bound>>20)
 	}
 	if out.Width != 4032 || out.Height != 3024 || len(out.Still.Large.Data) == 0 {
