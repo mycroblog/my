@@ -376,8 +376,8 @@ run "media_s3_on_an_existing_bucket" {
   }
 
   assert {
-    condition     = jsonencode(module.media_s3.permissions[4].conditions) == jsonencode([{ test = "StringLike", variable = "s3:prefix", values = ["tenant-a/*"] }])
-    error_message = "the role must list only under the prefix"
+    condition     = length(module.media_s3.permissions[4].conditions) == 0
+    error_message = "the role must list the whole bucket, so that a missing object is a 404"
   }
 }
 

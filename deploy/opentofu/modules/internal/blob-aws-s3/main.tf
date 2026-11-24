@@ -178,7 +178,7 @@ output "secret_env" {
 }
 
 output "permissions" {
-  description = "Reading and writing the objects of the bucket, only those under the prefix when there is one. Listing it, under the prefix too, makes a missing object a 404 rather than a 403."
+  description = "Reading and writing the objects of the bucket, only those under the prefix when there is one. Listing the whole bucket makes a missing object a 404 rather than a 403: S3 checks it without s3:prefix, so a listing kept to the prefix would not. It shows other instances the names of objects, never their content."
   value = [
     { permission = "s3:GetObject", resource = "${local.bucket_arn}/${var.prefix}*" },
     { permission = "s3:PutObject", resource = "${local.bucket_arn}/${var.prefix}*" },
@@ -187,7 +187,7 @@ output "permissions" {
     {
       permission = "s3:ListBucket"
       resource   = local.bucket_arn
-      conditions = var.prefix == "" ? [] : [{ test = "StringLike", variable = "s3:prefix", values = ["${var.prefix}*"] }]
+      conditions = []
     },
   ]
 }

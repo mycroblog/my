@@ -66,9 +66,9 @@ run "a_prefix_in_a_bucket_of_its_own" {
     condition = (
       alltrue([for p in slice(output.permissions, 0, 4) : p.resource == "arn:aws:s3:::my-media/tenant-a/*"]) &&
       output.permissions[4].resource == "arn:aws:s3:::my-media" &&
-      jsonencode(output.permissions[4].conditions) == jsonencode([{ test = "StringLike", variable = "s3:prefix", values = ["tenant-a/*"] }])
+      length(output.permissions[4].conditions) == 0
     )
-    error_message = "the role must reach only the objects under the prefix, and list only under it"
+    error_message = "the role must reach only the objects under the prefix, and list the whole bucket so that a missing object is a 404"
   }
 }
 
@@ -102,7 +102,8 @@ run "an_existing_bucket_with_a_prefix" {
   assert {
     condition = (
       alltrue([for p in slice(output.permissions, 0, 4) : p.resource == "arn:aws:s3:::shared-media/hosting/tenant-a/*"]) &&
-      jsonencode(output.permissions[4].conditions[0].values) == jsonencode(["hosting/tenant-a/*"])
+      output.permissions[4].resource == "arn:aws:s3:::shared-media" &&
+      length(output.permissions[4].conditions) == 0
     )
     error_message = "the role must reach only the objects under the prefix of the shared bucket"
   }

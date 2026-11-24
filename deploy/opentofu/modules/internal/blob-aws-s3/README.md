@@ -28,7 +28,7 @@ module "blob" {
 | --- | --- |
 | `env` | `MY_BLOB`, `MY_BLOB_S3_BUCKET`, `MY_BLOB_S3_REGION` (an existing bucket's own), and `MY_BLOB_S3_PREFIX` with a prefix |
 | `secret_env` | Empty: no access key, the role is used |
-| `permissions` | Reading, writing, and deleting objects, stopping a multipart upload, and listing the bucket, each under the prefix |
+| `permissions` | Reading, writing, and deleting objects and stopping a multipart upload, under the prefix; listing the whole bucket, so that a missing object is a 404 |
 
 Versioning protects against a mistake, not against losing the account: keep a copy of the bucket in another account too
 ([Backup and restore](../../../../../docs/operations/backup.md#media-in-a-bucket)).
