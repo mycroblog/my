@@ -219,12 +219,14 @@ variable "database" {
 # No queue section: the tasks stay up, so they poll the database for the jobs and run the periodic ones themselves.
 
 variable "media" {
-  description = "The media store. s3 (recommended) creates a bucket; r2 creates an R2 bucket in cloudflare.account_id; s3-compatible uses any S3-compatible store at endpoint. r2 and s3-compatible read their access key from secrets you fill."
+  description = "The media store. s3 (recommended) creates a bucket, or with existing_bucket uses bucket_name, which exists, and manages none of its settings; r2 creates an R2 bucket in cloudflare.account_id; s3-compatible uses any S3-compatible store at endpoint. r2 and s3-compatible read their access key from secrets you fill. prefix starts the name of every object of the instance, so that instances share a bucket: empty, or segments that end with /, such as tenant-a/. With s3, the tasks' role then reaches only the objects under it."
   type = object({
     kind        = optional(string, "s3")
     bucket_name = string
+    prefix      = optional(string, "")
 
     # s3
+    existing_bucket         = optional(bool, false)
     versioning              = optional(bool, false)
     noncurrent_version_days = optional(number, 35)
     # r2
@@ -249,6 +251,21 @@ variable "media" {
   validation {
     condition     = var.media.kind != "r2" || try(var.cloudflare.account_id, null) != null
     error_message = "media.kind = r2 needs cloudflare.account_id."
+  }
+
+  validation {
+    condition     = var.media.kind == "s3" || !var.media.existing_bucket
+    error_message = "media.existing_bucket needs media.kind = s3: s3-compatible always uses a bucket of yours."
+  }
+
+  validation {
+    condition     = !(var.media.existing_bucket && var.media.versioning)
+    error_message = "media.versioning needs a bucket this module creates: the versioning of an existing bucket is yours."
+  }
+
+  validation {
+    condition     = var.media.prefix == "" || (length(var.media.prefix) <= 256 && can(regex("^([A-Za-z0-9_-][A-Za-z0-9._-]*/)+$", var.media.prefix)))
+    error_message = "media.prefix must be empty or segments of letters, digits, ., _, and - that end with /, such as tenant-a/, none starting with a dot, at most 256 bytes."
   }
 }
 
@@ -295,13 +312,14 @@ variable "stream" {
 }
 
 variable "mail" {
-  description = "Email from the bare address from. ses (recommended) sends through Amazon SES in this region from the domain of from, whose records the output dns_records lists; a new account sends only to verified addresses until AWS grants production access. configuration_set, with ses alone, creates one and applies it to every message. smtp sends through an SMTP service: smtp.host, port, and username, whose password goes in a secret you fill."
+  description = "Email from the bare address from. ses (recommended) sends through Amazon SES in this region from the domain of from, whose records the output dns_records lists; a new account sends only to verified addresses until AWS grants production access. configuration_set, with ses alone, creates one and applies it to every message, or with existing_configuration_set applies one that exists, perhaps beside other instances. smtp sends through an SMTP service: smtp.host, port, and username, whose password goes in a secret you fill."
   type = object({
     kind = optional(string, "ses")
     from = string
 
     # ses
-    configuration_set = optional(string)
+    configuration_set          = optional(string)
+    existing_configuration_set = optional(bool, false)
     # smtp
     smtp = optional(object({
       host     = string
@@ -324,6 +342,11 @@ variable "mail" {
   validation {
     condition     = var.mail.kind == "ses" || var.mail.configuration_set == null
     error_message = "mail.configuration_set needs mail.kind = ses."
+  }
+
+  validation {
+    condition     = !var.mail.existing_configuration_set || var.mail.configuration_set != null
+    error_message = "mail.existing_configuration_set needs mail.configuration_set, the name of the set."
   }
 }
 

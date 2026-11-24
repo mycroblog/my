@@ -24,6 +24,7 @@ module "blob" {
 | `access_key_id_secret_id`, `secret_access_key_secret_id` | required | Secrets that hold the key: an ID in Secret Manager, an ARN in AWS Secrets Manager |
 | `region` | `null` | Region of the bucket. Unset, the server signs for `us-east-1`, which most S3-compatible servers expect |
 | `path_style` | `false` | `true` for a server with no host name per bucket, such as MinIO |
+| `prefix` | empty | Start of every object name (`tenant-a/`), so that instances share the bucket |
 
 | Output | Value |
 | --- | --- |

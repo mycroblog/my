@@ -228,6 +228,45 @@ func TestLineWritesDimensionsAsStrings(t *testing.T) {
 	}
 }
 
+// TestNamespaceIsADimension checks that the property service.namespace, the instance's host, is
+// on every line and becomes a dimension when metrics_emf_dimensions names it, both on the lines of
+// their own and on the log line of a unit of work.
+func TestNamespaceIsADimension(t *testing.T) {
+	var w buffer
+	m := emf.New(emf.Options{
+		Writer: &w, Namespace: "my", Dimensions: []string{"service.namespace"},
+		Properties: map[string]string{"service.name": "my", "my.role": "web", "service.namespace": "example.test"},
+		Clock:      testkit.NewClock(start),
+	})
+	route := kernel.Instrument{Name: "http.server.request.duration", Unit: "s", LabelKeys: []string{"http.route"}}
+	c := m.Counter(kernel.Instrument{Name: "my.statuses.created", Unit: "{status}", LabelKeys: []string{"my.visibility"}})
+
+	ctx, end := m.Begin(t.Context())
+	m.Histogram(route).Record(ctx, 0.5, kernel.NewLabels("http.route", "/api/v1/statuses"))
+	c.Add(ctx, 1, kernel.NewLabels("my.visibility", "public"))
+	got := attrMap(m.Line(ctx, []slog.Attr{slog.String("http.route", "/api/v1/statuses")}, route))
+	end()
+	if got["service.namespace"] != "example.test" {
+		t.Errorf("service.namespace on the log line = %v", got["service.namespace"])
+	}
+	if aws, _ := json.Marshal(got["_aws"].(map[string]any)["CloudWatchMetrics"]); string(aws) !=
+		`[{"Dimensions":[["service.namespace"]],"Metrics":[{"Name":"http.server.request.duration","Unit":"Seconds"}],"Namespace":"my"}]` {
+		t.Errorf("directives of the log line = %s", aws)
+	}
+
+	lines := w.lines(t)
+	if len(lines) != 1 {
+		t.Fatalf("the end wrote %d lines, want 1 (the counter): %v", len(lines), lines)
+	}
+	l := lines[0]
+	if l["service.namespace"] != "example.test" || l["my.statuses.created"] != float64(1) {
+		t.Errorf("counter line = %v", l)
+	}
+	if dims, _ := json.Marshal(l["_aws"].(map[string]any)["CloudWatchMetrics"].([]any)[0].(map[string]any)["Dimensions"]); string(dims) != `[["service.namespace"]]` {
+		t.Errorf("Dimensions = %s", dims)
+	}
+}
+
 // attrMap returns the values of attrs by key, with the _aws directive as decoded JSON.
 func attrMap(attrs []slog.Attr) map[string]any {
 	out := map[string]any{}

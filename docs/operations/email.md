@@ -247,7 +247,7 @@ Punycode domain also matches in its Unicode form); if none matches, it does noth
 | --- | --- |
 | A bounce whose `bounceType` is `Permanent` (any subtype such as `General`, `NoEmail`, `Suppressed`, or `OnAccountSuppressionList`) | `hard_bounce` |
 | A complaint (except those whose `complaintFeedbackType` is `not-spam`) | `complaint` |
-| A bounce that is `Transient` or `Undetermined`, and other notifications such as delivery or send | Not recorded (answers `200`) |
+| A bounce that is `Transient` or `Undetermined`, other notifications such as delivery or send, and any notification whose `mail.source` is not the address of `mail_from` (mail another instance sharing the topic or configuration set sent) | Not recorded (answers `200`) |
 
 The SES `feedbackId` is the unique key of a record, so however many times SNS sends the same notification, there is one record.
 

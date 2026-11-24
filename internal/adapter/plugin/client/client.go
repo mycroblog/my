@@ -5,7 +5,7 @@
 //
 // An adapter takes a Conn and hands its RPC to the generated client of its kind:
 //
-//	conn, err := client.New(client.Options{Kind: k, Destination: d, Meter: meter})
+//	conn, err := client.New(client.Options{Kind: k, Destination: d, Instance: host, Meter: meter})
 //	mailer := mailerv1connect.NewMailerServiceClient(conn.RPC)
 //
 // The address is the operator's and neither remote servers nor users can influence it, so this does not go through the
@@ -44,10 +44,17 @@ const (
 	LabelCode = "my.plugin.code"
 )
 
+// InstanceHeader is the request header that names the calling instance on every call of every kind (ADR-0146 §6).
+// It names the instance and authenticates nothing.
+const InstanceHeader = "My-Instance"
+
 // Options say which plugin a Conn reaches.
 type Options struct {
 	Kind        kind.Kind
 	Destination kind.Destination
+	// Instance is the host setting of the calling instance, which every request carries in InstanceHeader. The server
+	// always sets it; "" sends no header.
+	Instance string
 	// Meter counts the failed calls; nil counts nothing.
 	Meter kernel.Meter
 	// KeepDetail leaves the message of a failure in the error. The server discards it, since a plugin's free text must
@@ -89,12 +96,12 @@ func New(o Options) (*Conn, error) {
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s: %w", o.Kind.Name, err)
 	}
-	var rt http.RoundTripper = transport
+	h := headers{next: transport, instance: o.Instance}
 	if o.Destination.Token != "" {
-		rt = bearer{next: transport, value: "Bearer " + o.Destination.Token}
+		h.authorization = "Bearer " + o.Destination.Token
 	}
 	httpClient := &http.Client{
-		Transport: rt,
+		Transport: h,
 		// An RPC client must not follow a redirect, and the destination is the operator's alone.
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 		// No Timeout: it would cover a whole stream. Deadlines come from the context.
@@ -186,17 +193,27 @@ func newTransport(d kind.Destination, addr kind.Address, needHTTP2 bool) (*http.
 	return t, files, nil
 }
 
-// bearer adds the token to every request. kind.Check allows a token only on TLS or a Unix socket.
-type bearer struct {
-	next  http.RoundTripper
-	value string
+// headers adds the calling instance and the token to every request, on every protocol and stream. kind.Check allows a
+// token only on TLS or a Unix socket.
+type headers struct {
+	next          http.RoundTripper
+	instance      string
+	authorization string
 }
 
 // RoundTrip implements http.RoundTripper.
-func (b bearer) RoundTrip(r *http.Request) (*http.Response, error) {
+func (h headers) RoundTrip(r *http.Request) (*http.Response, error) {
+	if h.instance == "" && h.authorization == "" {
+		return h.next.RoundTrip(r)
+	}
 	r = r.Clone(r.Context())
-	r.Header.Set("Authorization", b.value)
-	return b.next.RoundTrip(r)
+	if h.instance != "" {
+		r.Header.Set(InstanceHeader, h.instance)
+	}
+	if h.authorization != "" {
+		r.Header.Set("Authorization", h.authorization)
+	}
+	return h.next.RoundTrip(r)
 }
 
 // calls applies a kind's rules to each call.

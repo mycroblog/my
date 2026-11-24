@@ -450,8 +450,8 @@ also check that the database itself is not at its connection limit.
 
 ### MyDatabaseStorageLarge
 
-The database takes more than you planned for. `my_db_size_bytes` is the size of the PostgreSQL database (`pg_database_size`, what the providers' storage
-limits count) or of the SQLite file (its write-ahead log left out). This is growth, not a failure. Set the threshold in the rule a margin below the storage
+The database takes more than you planned for. `my_db_size_bytes` is the size of the tables and indexes of the instance's PostgreSQL schema (the providers'
+storage limits count the whole database) or of the SQLite file (its write-ahead log left out). This is growth, not a failure. Set the threshold in the rule a margin below the storage
 limit of your database plan, or of the volume that holds the SQLite file, which must also keep room for the write-ahead log and for backups.
 
 Fix:

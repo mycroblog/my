@@ -11,6 +11,7 @@ import (
 	"net/netip"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1345,6 +1346,44 @@ func TestDatabaseAcquireTimeout(t *testing.T) {
 				t.Errorf("DatabaseAcquireTimeout = %s, want %s", cfg.DatabaseAcquireTimeout, tc.want)
 			}
 		})
+	}
+}
+
+// TestPaymentsAccountShared checks that payments_account_shared is off by default, takes a boolean
+// from the environment and the file, refuses any other value, and is in the reference.
+func TestPaymentsAccountShared(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		env   map[string]string
+		files map[string]string
+		want  bool
+	}{
+		{"off by default", minimal(), nil, false},
+		{"on", with(minimal(), "MY_PAYMENTS_ACCOUNT_SHARED", "true"), nil, true},
+		{"off", with(minimal(), "MY_PAYMENTS_ACCOUNT_SHARED", "false"), nil, false},
+		{"on in the file", with(minimal(), "MY_CONFIG", "my.toml"), map[string]string{"my.toml": "payments_account_shared = true\n"}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg, _, err := Load(source(tc.env, tc.files))
+			if err != nil {
+				t.Fatalf("Load: %v", err)
+			}
+			if cfg.PaymentsAccountShared != tc.want {
+				t.Errorf("PaymentsAccountShared = %v, want %v", cfg.PaymentsAccountShared, tc.want)
+			}
+		})
+	}
+	for _, bad := range []string{"shared", "2"} {
+		t.Run("refuses "+strconv.Quote(bad), func(t *testing.T) {
+			cfg, _, err := Load(source(with(minimal(), "MY_PAYMENTS_ACCOUNT_SHARED", bad), nil))
+			var ve *ValidationError
+			if cfg != nil || !errors.As(err, &ve) || len(ve.Issues) != 1 || ve.Issues[0].Key != "payments_account_shared" {
+				t.Errorf("Load(%q) = %+v, %v, want one issue of payments_account_shared", bad, cfg, err)
+			}
+		})
+	}
+	if !strings.Contains(Reference(), "payments_account_shared") {
+		t.Error("the reference does not document payments_account_shared")
 	}
 }
 

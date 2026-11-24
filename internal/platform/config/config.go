@@ -289,6 +289,9 @@ type Config struct {
 	PaymentsPayjpWebhookToken    string
 	PaymentsReconcileInterval    time.Duration
 	PaymentsReconcileMaxRequests int
+	// PaymentsAccountShared reports that other instances share the provider's account, whose
+	// income import then keeps only this instance's movements.
+	PaymentsAccountShared bool
 	// Plugins holds the destination of each delegated kind that has any setting, by the kind's name (ADR-0146 §5); read
 	// it through PluginDestination.
 	Plugins map[string]kind.Destination
@@ -544,6 +547,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("payments_payjp_webhook_token", redact(c.PaymentsPayjpWebhookToken != "")),
 		slog.Duration("payments_reconcile_interval", c.PaymentsReconcileInterval),
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
+		slog.Bool("payments_account_shared", c.PaymentsAccountShared),
 		slog.String("search", c.Search),
 		slog.String("search_elasticsearch_url", c.SearchElasticsearchURL),
 		slog.String("search_elasticsearch_api_key", redact(c.SearchElasticsearchAPIKey != "")),

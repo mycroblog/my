@@ -11,8 +11,9 @@
 // any response whose X-Sentry-Rate-Limits covers the error category, SendError drops the events
 // until the limit ends and returns an error whose Dropped method reports true.
 //
-// The event carries only what the ErrorEvent holds: no server_name, user, or request, and none
-// of the host's names or addresses. The destination is the service that the operator
+// The event carries only what the ErrorEvent holds, and the instance's host as the tag
+// service.namespace: no server_name, user, or request, and none of the machine's names or
+// addresses. The destination is the service that the operator
 // configured, so the HTTP client is not the SSRF-guarded kernel.HTTPClient.
 package sentry
 
@@ -59,6 +60,9 @@ type Options struct {
 	HTTPClient *http.Client
 	// Version is the server version, sent in the sentry_client of the authentication header.
 	Version string
+	// Namespace is the instance's host, the tag service.namespace of every event; "" leaves the
+	// tag out.
+	Namespace string
 	// Now returns the current time; nil uses time.Now.
 	Now func() time.Time
 	// EventID returns a new event ID of 32 hexadecimal digits; nil uses a random UUID.
@@ -67,11 +71,12 @@ type Options struct {
 
 // Client sends ErrorEvents as Sentry envelopes. It is safe for concurrent use.
 type Client struct {
-	endpoint string
-	auth     string
-	http     *http.Client
-	now      func() time.Time
-	eventID  func() string
+	endpoint  string
+	auth      string
+	http      *http.Client
+	now       func() time.Time
+	eventID   func() string
+	namespace string
 
 	mu      sync.Mutex
 	limited time.Time // no event is sent before this time
@@ -83,7 +88,7 @@ func New(o Options) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &Client{endpoint: d.EnvelopeURL(), now: o.Now, eventID: o.EventID}
+	c := &Client{endpoint: d.EnvelopeURL(), now: o.Now, eventID: o.EventID, namespace: o.Namespace}
 	if o.HTTPClient != nil {
 		h := *o.HTTPClient
 		c.http = &h
@@ -277,7 +282,7 @@ func randomEventID() string {
 // envelope returns the envelope of ev: its header, the header of the event item, and the event.
 func (c *Client) envelope(ev kernel.ErrorEvent, now time.Time) ([]byte, error) {
 	id := c.eventID()
-	payload, err := json.Marshal(newEvent(id, ev))
+	payload, err := json.Marshal(newEvent(id, ev, c.namespace))
 	if err != nil {
 		return nil, fmt.Errorf("sentry: event: %w", err)
 	}
@@ -349,7 +354,7 @@ type traceContext struct {
 	SpanID  string `json:"span_id,omitempty"`
 }
 
-func newEvent(id string, ev kernel.ErrorEvent) event {
+func newEvent(id string, ev kernel.ErrorEvent, namespace string) event {
 	e := event{
 		EventID:     id,
 		Timestamp:   ev.Time.UTC().Format(time.RFC3339Nano),
@@ -378,6 +383,9 @@ func newEvent(id string, ev kernel.ErrorEvent) event {
 	}
 	if ev.Where != "" {
 		e.Tags["my.error.where"] = tagValue(ev.Where)
+	}
+	if namespace != "" {
+		e.Tags["service.namespace"] = tagValue(namespace)
 	}
 	return e
 }

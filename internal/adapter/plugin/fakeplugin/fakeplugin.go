@@ -16,6 +16,7 @@ import (
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
 
+	"github.com/mycroblog/my/internal/adapter/plugin/client"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/billing/v1/billingv1connect"
 	hookv1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/hook/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/hook/v1/hookv1connect"
@@ -66,12 +67,19 @@ type Options struct {
 
 // Recorder tells what reached a fake.
 type Recorder struct {
-	calls atomic.Int64
-	proto atomic.Value
+	calls    atomic.Int64
+	proto    atomic.Value
+	instance atomic.Value
 }
 
 // Calls returns how many calls reached the fake.
 func (r *Recorder) Calls() int64 { return r.calls.Load() }
+
+// Instance returns the My-Instance header of the last call, "" when it had none.
+func (r *Recorder) Instance() string {
+	i, _ := r.instance.Load().(string)
+	return i
+}
 
 // Proto returns the HTTP version of the last call, such as HTTP/2.0.
 func (r *Recorder) Proto() string {
@@ -83,6 +91,7 @@ func (r *Recorder) wrap(token string, h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		r.calls.Add(1)
 		r.proto.Store(req.Proto)
+		r.instance.Store(req.Header.Get(client.InstanceHeader))
 		if token != "" && req.Header.Get("Authorization") != "Bearer "+token {
 			http.Error(w, "unauthenticated", http.StatusUnauthorized)
 			return

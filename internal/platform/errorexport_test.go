@@ -164,7 +164,7 @@ func TestSentryExporter(t *testing.T) {
 	if len(bodies) != 1 {
 		t.Fatalf("intake got %d envelopes, want 1", len(bodies))
 	}
-	for _, want := range []string{"/api/5/envelope/\n", `"environment":"staging"`, `"release":"9.9.9"`, `"my.error.where":"job.type"`, `"value":"boom"`} {
+	for _, want := range []string{"/api/5/envelope/\n", `"environment":"staging"`, `"release":"9.9.9"`, `"my.error.where":"job.type"`, `"value":"boom"`, `"service.namespace":"example.test"`} {
 		if !strings.Contains(bodies[0], want) {
 			t.Errorf("envelope lacks %s:\n%s", want, bodies[0])
 		}

@@ -19,14 +19,16 @@ module "blob" {
 | Input | Meaning |
 | --- | --- |
 | `bucket_name` | Name of the bucket, unique across AWS |
+| `existing_bucket` | Use `bucket_name`, which exists, and manage none of its settings. Default `false` |
+| `prefix` | Start of every object name (`tenant-a/`), so that instances share the bucket; the role then reaches only the objects under it. Default empty |
 | `versioning` | Keep deleted and overwritten objects as noncurrent versions, and delete them after `noncurrent_version_days`. Default `false` |
 | `noncurrent_version_days` | Days a noncurrent version is kept, 35 by default: at least the age of your oldest database backup |
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_BLOB`, `MY_BLOB_S3_BUCKET`, `MY_BLOB_S3_REGION` |
+| `env` | `MY_BLOB`, `MY_BLOB_S3_BUCKET`, `MY_BLOB_S3_REGION` (an existing bucket's own), and `MY_BLOB_S3_PREFIX` with a prefix |
 | `secret_env` | Empty: no access key, the role is used |
-| `permissions` | Reading, writing, and deleting objects, stopping a multipart upload, and listing the bucket |
+| `permissions` | Reading, writing, and deleting objects and stopping a multipart upload, under the prefix; listing the whole bucket, so that a missing object is a 404 |
 
 Versioning protects against a mistake, not against losing the account: keep a copy of the bucket in another account too
 ([Backup and restore](../../../../../docs/operations/backup.md#media-in-a-bucket)).

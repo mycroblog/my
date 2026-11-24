@@ -377,6 +377,46 @@ run "r2_without_cloudflare" {
   expect_failures = [var.media]
 }
 
+run "an_existing_bucket_off_s3" {
+  command = plan
+
+  variables {
+    media = { kind = "s3-compatible", bucket_name = "my-media", endpoint = "https://s3.example.org", existing_bucket = true }
+  }
+
+  expect_failures = [var.media]
+}
+
+run "versioning_of_an_existing_bucket" {
+  command = plan
+
+  variables {
+    media = { bucket_name = "shared-media", existing_bucket = true, versioning = true }
+  }
+
+  expect_failures = [var.media]
+}
+
+run "a_media_prefix_without_a_slash" {
+  command = plan
+
+  variables {
+    media = { bucket_name = "shared-media", prefix = "tenant-a" }
+  }
+
+  expect_failures = [var.media]
+}
+
+run "an_existing_configuration_set_without_its_name" {
+  command = plan
+
+  variables {
+    mail = { from = "noreply@social.example.org", existing_configuration_set = true }
+  }
+
+  expect_failures = [var.mail]
+}
+
 run "an_unknown_kind_of_kv" {
   command = plan
 

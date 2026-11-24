@@ -256,6 +256,15 @@ resource "google_storage_bucket_iam_member" "backend" {
   bucket = each.value.resource
   role   = each.value.permission
   member = google_service_account.server.member
+
+  # Objects under a prefix, which needs uniform bucket-level access on the bucket.
+  dynamic "condition" {
+    for_each = each.value.condition == null ? [] : [each.value.condition]
+    content {
+      title      = condition.value.title
+      expression = condition.value.expression
+    }
+  }
 }
 
 resource "google_pubsub_topic_iam_member" "backend" {

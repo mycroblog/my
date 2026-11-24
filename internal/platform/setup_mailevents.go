@@ -22,7 +22,7 @@ func (a *App) setUpMailEvents(cfg *config.Config) error {
 		return fmt.Errorf("mail_ses_sns_topic_arn: %w", err)
 	}
 	mailevents.New(mailevents.Options{
-		Topic: topic, Recorder: a.Identity, HTTPClient: a.HTTPClient, KV: a.KV, Clock: a.Clock,
+		Topic: topic, From: cfg.MailFrom, Recorder: a.Identity, HTTPClient: a.HTTPClient, KV: a.KV, Clock: a.Clock,
 		Problem: a.writeStatusProblem, Logger: a.Logger,
 	}).Register(surfaceRouter{a, surfaceOAuth})
 	return nil

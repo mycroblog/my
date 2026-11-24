@@ -1203,6 +1203,38 @@ run "the_conditions_of_an_aws_statement_fail" {
   expect_failures = [var.backends]
 }
 
+run "a_condition_goes_on_the_bucket_binding" {
+  command = plan
+
+  variables {
+    backends = [{
+      platform = "gcp"
+      permissions = [
+        { permission = "roles/storage.objectUser", scope = "bucket", resource = "shared", condition = { title = "objects-under-prefix", expression = "resource.name.startsWith(\"projects/_/buckets/shared/objects/a/\")" } },
+        { permission = "roles/storage.objectUser", scope = "bucket", resource = "own" },
+      ]
+    }]
+  }
+
+  assert {
+    condition = (
+      google_storage_bucket_iam_member.backend["shared/roles/storage.objectUser"].condition[0].expression == "resource.name.startsWith(\"projects/_/buckets/shared/objects/a/\")" &&
+      length(google_storage_bucket_iam_member.backend["own/roles/storage.objectUser"].condition) == 0
+    )
+    error_message = "a condition must reach the binding of its bucket, and a permission without one must have none"
+  }
+}
+
+run "a_condition_off_a_bucket_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "gcp", permissions = [{ permission = "roles/x", scope = "project", condition = { title = "t", expression = "true" } }] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
 run "a_backend_on_the_same_network_passes" {
   command = plan
 

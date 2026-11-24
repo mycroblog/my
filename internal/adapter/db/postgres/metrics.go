@@ -25,12 +25,18 @@ func (d *DB) RegisterMetrics(m kernel.Meter) {
 	})
 }
 
-// DatabaseSize implements metrics.DatabaseSizer: the bytes of the files of the current database
-// (pg_database_size), which is what the providers' storage limits count.
+// DatabaseSize implements metrics.DatabaseSizer: the bytes of the relations of the current schema
+// (pg_total_relation_size of its tables, materialized views and sequences, with their indexes and
+// TOAST), so that instances that share one database, each in its own schema, count their own.
 func (d *DB) DatabaseSize(ctx context.Context) (int64, error) {
 	var n int64
-	if err := d.conns.QueryRow(ctx, "SELECT pg_database_size(current_database())").Scan(&n); err != nil {
+	if err := d.conns.QueryRow(ctx, schemaSizeSQL).Scan(&n); err != nil {
 		return 0, fmt.Errorf("postgres: database size: %w", err)
 	}
 	return n, nil
 }
+
+// schemaSizeSQL sums the relations of current_schema(); 0 when no schema of the search_path exists.
+const schemaSizeSQL = `SELECT COALESCE(sum(pg_total_relation_size(c.oid)), 0)::bigint
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = current_schema() AND c.relkind IN ('r', 'm', 'S')`

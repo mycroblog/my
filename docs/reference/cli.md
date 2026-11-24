@@ -2695,6 +2695,8 @@ Flags:
   -kind           probe, translator, search, billing, mailer, media_image, media_video, media_audio, key_manager, inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor, local.profile
   -protocol       json, proto, or grpc (default: the kind's; the media kinds take proto or grpc)
   -token-file     a file that holds the bearer token (https:// and unix:// only)
+  -instance       the host of the calling instance, sent in the My-Instance header
+                  (default: my.test)
   -tls-ca-file    verify the plugin against this CA (default: the system's roots)
   -tls-cert-file  the client certificate of mTLS
   -tls-key-file   the key of the client certificate
@@ -2723,6 +2725,7 @@ my plugin test -kind <kind> [flags] <address>
 | --- | --- | --- |
 | `-billed` | `false` | -kind billing: also run the case that may cost money at the plugin's providers |
 | `-clear-index` | `false` | -kind search: also run the cases that remove every document of a visibility or of the whole index, against an index for testing |
+| `-instance <string>` | `my.test` | the host of the calling instance, sent in the My-Instance header |
 | `-kind <string>` |  | the kind of the plugin: probe, translator, search, billing, mailer, media_image, media_video, media_audio, key_manager, inbound.status, inbound.follow, signup.check, media.check, local.status, inbound.actor, local.profile |
 | `-mail-from <string>` |  | -kind mailer: the sender of that mail, as mail_from (default: the -mail-to address) |
 | `-mail-to <string>` |  | -kind mailer: run the cases that send real mail, to this address |

@@ -38,7 +38,7 @@ func (a *App) setUpSupporters(ctx context.Context, cfg *config.Config, repo supp
 		CommerceDisclosure: func(ctx context.Context) (bool, error) {
 			return a.Instance.HasDocument(ctx, domaininstance.TextCommerceDisclosure)
 		},
-		Income: financeIncome{a},
+		Income: financeIncome{a}, SharedAccount: cfg.PaymentsAccountShared,
 		// The announcement of the service closure stops new subscriptions (ADR-0088 §2).
 		Closure: a.Instance,
 		Outbox:  outbox, Clock: a.Clock, IDs: a.IDs, Logger: a.Logger,

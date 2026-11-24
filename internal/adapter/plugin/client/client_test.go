@@ -13,8 +13,11 @@ import (
 
 	"connectrpc.com/connect/v2"
 
+	"github.com/mycroblog/my/internal/adapter/media/native"
 	"github.com/mycroblog/my/internal/adapter/plugin/client"
 	"github.com/mycroblog/my/internal/adapter/plugin/fakeplugin"
+	mediav1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/media/v1"
+	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/media/v1/mediav1connect"
 	probev1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1/probev1connect"
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
@@ -123,6 +126,79 @@ func TestAStreamingKindSpeaksHTTP2(t *testing.T) {
 		if rec.Proto() != "HTTP/2.0" {
 			t.Errorf("%s: proto = %q", d.Address, rec.Proto())
 		}
+	}
+}
+
+// Every call names the calling instance in My-Instance, on every protocol, so that a plugin shared by instances keeps
+// their data apart (ADR-0146 §6).
+func TestEveryCallNamesTheInstance(t *testing.T) {
+	const host = "social.example"
+	k := probeKind(t)
+	for _, protocol := range []string{kind.ProtocolJSON, kind.ProtocolProto, kind.ProtocolGRPC} {
+		t.Run(protocol, func(t *testing.T) {
+			h, rec := fakeplugin.Connect(fakeplugin.Options{})
+			wantEcho(t, newConn(t, client.Options{Kind: k, Destination: kind.Destination{Address: fakeplugin.ServeTCP(t, h), Protocol: protocol}, Instance: host}))
+			if got := rec.Instance(); got != host {
+				t.Errorf("%s = %q, want %q", client.InstanceHeader, got, host)
+			}
+		})
+	}
+	t.Run("a plugin of net/http and JSON alone", func(t *testing.T) {
+		h, rec := fakeplugin.JSON(fakeplugin.Options{})
+		wantEcho(t, newConn(t, client.Options{Kind: k, Destination: kind.Destination{Address: fakeplugin.ServeUnix(t, h)}, Instance: host}))
+		if got := rec.Instance(); got != host {
+			t.Errorf("%s = %q, want %q", client.InstanceHeader, got, host)
+		}
+	})
+}
+
+// A call that streams both ways carries My-Instance as a unary one does.
+func TestAStreamingCallNamesTheInstance(t *testing.T) {
+	const host = "social.example"
+	k, _ := kind.ByName(kind.MediaVideo)
+	for _, protocol := range []string{kind.ProtocolProto, kind.ProtocolGRPC} {
+		t.Run(protocol, func(t *testing.T) {
+			h, rec := fakeplugin.Connect(fakeplugin.Options{Media: native.New(native.Options{})})
+			conn := newConn(t, client.Options{Kind: k, Destination: kind.Destination{Address: fakeplugin.ServeTCP(t, h), Protocol: protocol}, Instance: host})
+			remux(t, conn)
+			if rec.Calls() == 0 {
+				t.Fatal("the stream did not reach the fake")
+			}
+			if got := rec.Instance(); got != host {
+				t.Errorf("%s = %q, want %q", client.InstanceHeader, got, host)
+			}
+		})
+	}
+}
+
+// remux opens a Remux stream, sends its head and an empty file, and reads until the plugin ends it. Whether the plugin
+// accepts the file does not matter: the call has reached it.
+func remux(t *testing.T, conn *client.Conn) {
+	t.Helper()
+	stream, err := mediav1connect.NewMediaServiceClient(conn.RPC).Remux(t.Context())
+	if err != nil {
+		t.Fatalf("Remux: %v", err)
+	}
+	defer func() { _ = stream.Close() }()
+	head := &mediav1.RemuxRequest{Message: &mediav1.RemuxRequest_Head{Head: &mediav1.RemuxHead{Limits: &mediav1.AVLimits{}}}}
+	if err := stream.Send(head); err != nil {
+		t.Fatalf("Send: %v", err)
+	}
+	if err := stream.CloseSend(); err != nil {
+		t.Fatalf("CloseSend: %v", err)
+	}
+	for {
+		if _, err := stream.Receive(); err != nil {
+			return
+		}
+	}
+}
+
+func TestNoInstanceSendsNoHeader(t *testing.T) {
+	h, rec := fakeplugin.Connect(fakeplugin.Options{})
+	wantEcho(t, newConn(t, client.Options{Kind: probeKind(t), Destination: kind.Destination{Address: fakeplugin.ServeTCP(t, h)}}))
+	if got := rec.Instance(); got != "" {
+		t.Errorf("%s = %q without an instance", client.InstanceHeader, got)
 	}
 }
 

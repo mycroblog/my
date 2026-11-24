@@ -28,6 +28,18 @@ variable "configuration_set" {
   default     = null
 }
 
+variable "existing_configuration_set" {
+  description = "Applies configuration_set, which already exists, perhaps beside other instances, in place of creating it. Its event destinations stay yours."
+  type        = bool
+  default     = false
+  nullable    = false
+
+  validation {
+    condition     = !var.existing_configuration_set || var.configuration_set != null
+    error_message = "existing_configuration_set needs configuration_set, the name of the set."
+  }
+}
+
 locals {
   domain = split("@", var.from)[1]
 }
@@ -36,7 +48,16 @@ resource "aws_sesv2_configuration_set" "this" {
   configuration_set_name = var.configuration_set
 
   lifecycle {
-    enabled = var.configuration_set != null
+    enabled = var.configuration_set != null && !var.existing_configuration_set
+  }
+}
+
+# A set of yours, read so that a missing one fails the plan.
+data "aws_sesv2_configuration_set" "existing" {
+  configuration_set_name = var.configuration_set
+
+  lifecycle {
+    enabled = var.existing_configuration_set
   }
 }
 
@@ -70,7 +91,10 @@ output "permissions" {
   description = "Sending from the identity and, with one, through the configuration set."
   value = concat(
     [{ permission = "ses:SendEmail", resource = aws_sesv2_email_identity.domain.arn }],
-    var.configuration_set == null ? [] : [{ permission = "ses:SendEmail", resource = aws_sesv2_configuration_set.this.arn }],
+    var.configuration_set == null ? [] : [{
+      permission = "ses:SendEmail"
+      resource   = var.existing_configuration_set ? data.aws_sesv2_configuration_set.existing.arn : aws_sesv2_configuration_set.this.arn
+    }],
   )
 }
 
