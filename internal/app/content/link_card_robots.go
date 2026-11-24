@@ -33,7 +33,9 @@ const (
 )
 
 // ErrLinkCardRetryLater reports a fetch that waits for a robots.txt that cannot be read now: the
-// job tries again after LinkCardRobotsUnreachableTTL, and nothing is remembered as failed.
+// job tries again after LinkCardRobotsUnreachableTTL, and nothing is remembered as failed. The
+// error that wraps it ends with why the file could not be read: the status, or the error of the
+// fetch or of the read.
 var ErrLinkCardRetryLater = errors.New("content: robots.txt cannot be read now")
 
 // errRobotsDisallowed reports a URL that robots.txt disallows. errRobotsAssumed reports a URL
@@ -73,6 +75,8 @@ func (l *LinkCards) checkRobots(ctx context.Context, hold *linkCardHostHold, u s
 		return err
 	case rules.Forbidden:
 		return fmt.Errorf("%w: %s", errRobotsForbidden, u)
+	case rules.Assumed && rules.Why != "":
+		return fmt.Errorf("%w: %s (%s)", errRobotsAssumed, u, rules.Why)
 	case rules.Assumed:
 		return fmt.Errorf("%w: %s", errRobotsAssumed, u)
 	case !rules.toRules().Allowed(target):
@@ -86,6 +90,8 @@ func (l *LinkCards) checkRobots(ctx context.Context, hold *linkCardHostHold, u s
 type cachedRobots struct {
 	// Assumed is a file that could not be read, taken for a complete disallow.
 	Assumed bool `json:"assumed,omitempty"`
+	// Why is the reason a file was Assumed: "status 503", or the error of the fetch or the read.
+	Why string `json:"why,omitempty"`
 	// Forbidden is a file at or behind a destination that the HTTPClient refuses. It is a complete
 	// disallow too, but waiting does not change it.
 	Forbidden bool     `json:"forbidden,omitempty"`
@@ -153,7 +159,10 @@ func (l *LinkCards) fetchRobots(ctx context.Context, hold *linkCardHostHold, ori
 			return cachedRobots{}, 0, ctx.Err()
 		}
 		l.d.Logger.DebugContext(ctx, "link card robots.txt cannot be read", slog.String("origin", origin), slog.String("why", why), slog.Any("error", err))
-		return cachedRobots{Assumed: true}, LinkCardRobotsUnreachableTTL, nil
+		if err != nil {
+			why += ": " + err.Error()
+		}
+		return cachedRobots{Assumed: true, Why: why}, LinkCardRobotsUnreachableTTL, nil
 	}
 	file := content.RobotsFileURL(origin)
 	if err := hold.enter(ctx, content.LinkHost(file)); err != nil {
