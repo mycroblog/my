@@ -2124,7 +2124,7 @@ Name of the environment that every error report carries, such as `staging`, to t
 
 ### `pprof_listen`
 
-TCP address, as `host:port`, of a listener that serves the Go runtime's profiles (heap, allocations, goroutines, CPU, execution trace) under `/debug/pprof/`, for `go tool pprof`, apart from `listen`. Empty opens no such listener. It has no authentication, and a profile shows the internals of the process and costs CPU while it is taken: keep it on loopback, and reach it through a tunnel. The `production` profile warns when it is not on a loopback address.
+TCP address, as `host:port`, of a listener that serves the Go runtime's profiles (heap, allocations, goroutines, CPU, execution trace, and the blocking and mutex contention that `?seconds=N` samples for N seconds) under `/debug/pprof/`, for `go tool pprof`, apart from `listen`. Empty opens no such listener. It has no authentication, and a profile shows the internals of the process and costs CPU while it is taken: keep it on loopback, and reach it through a tunnel. The `production` profile warns when it is not on a loopback address.
 
 - Environment variable: `MY_PPROF_LISTEN`
 - Default: none

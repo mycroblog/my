@@ -60,7 +60,8 @@ var _ uow.UnitOfWork = (*DB)(nil)
 // journal_mode(wal), synchronous(normal), foreign_keys(1), and busy_timeout unless dsn sets
 // them. In-memory databases are rejected: each connection would see its own database.
 //
-// Open does not apply the schema; Atlas does (ADR-0023).
+// Each connection keeps the statements it prepared (stmt_cache.go). Open does not apply the
+// schema; Atlas does (ADR-0023).
 func Open(ctx context.Context, dsn string, opts uow.Options) (*DB, error) {
 	name, err := normalizeDSN(dsn)
 	if err != nil {
@@ -70,10 +71,11 @@ func Open(ctx context.Context, dsn string, opts uow.Options) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db, err := sql.Open("sqlite", name)
+	connector, err := newCachingConnector(name)
 	if err != nil {
 		return nil, fmt.Errorf("sqlite: open: %w", err)
 	}
+	db := sql.OpenDB(connector)
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("sqlite: open: %w", err)

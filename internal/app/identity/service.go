@@ -182,6 +182,10 @@ type Service struct {
 
 	// webClientReady is set once EnsureWebClient has succeeded.
 	webClientReady atomic.Bool
+
+	// recordedUses are the token families whose use this process recorded, until the throttle
+	// lets the next be recorded (recordTokenUse).
+	recordedUses tokenUses
 }
 
 // NewService returns a Service on d.

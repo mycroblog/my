@@ -27,6 +27,9 @@ type postgresStore struct{ db *postgres.DB }
 
 var _ store = postgresStore{}
 
+// oneStatement implements store: each write is one statement (swap's are conditional ones).
+func (postgresStore) oneStatement() bool { return true }
+
 // queries returns the queries that run in tx, or on the connection pool, outside any
 // transaction, when tx is nil.
 func (s postgresStore) queries(tx uow.Tx) (*postgreskv.Queries, error) {

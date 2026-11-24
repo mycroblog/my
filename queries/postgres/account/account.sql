@@ -138,6 +138,14 @@ SELECT account_id, user_id, username, username_normalized FROM local_accounts WH
 -- name: GetLocalAccountByUserID :one
 SELECT account_id, user_id, username, username_normalized FROM local_accounts WHERE user_id = $1;
 
+-- GetLifecycleStateOfUser is GetLocalAccountByUserID with GetLifecycleState of its account: the
+-- state's columns are NULL when the account has no lifecycle state.
+-- name: GetLifecycleStateOfUser :one
+SELECT la.account_id, s.state, s.since, s.deletion_due_at
+FROM local_accounts la
+LEFT JOIN account_lifecycle_states s ON s.account_id = la.account_id
+WHERE la.user_id = $1;
+
 -- name: GetAccountHandleByName :one
 SELECT account_id, username, username_normalized, domain FROM account_handles
 WHERE username_normalized = $1 AND domain = $2;

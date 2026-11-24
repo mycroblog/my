@@ -211,6 +211,9 @@ type OAuthRepository interface {
 	// access or refresh token hashes to hash, with whether it has a revocation and the state of
 	// its client. Expiry is the caller's to check.
 	FindAccessTokenByAccessHash(ctx context.Context, hash []byte) (identity.AccessToken, identity.TokenState, error)
+	// FindBearerTokenByAccessHash is FindAccessTokenByAccessHash with the public client_id and
+	// the registration of the token's client, with one query.
+	FindBearerTokenByAccessHash(ctx context.Context, hash []byte) (BearerToken, error)
 	// FindAccessTokensByAccessHashes returns the tokens of the access hashes of hashes that
 	// exist, by hash (as a string of its bytes), as FindAccessTokenByAccessHash returns each, with
 	// one query.
@@ -854,21 +857,38 @@ func (s *Service) TokenFamilyActive(ctx context.Context, familyID string) (bool,
 // authentication. It fails with ErrInvalidAccessToken when the token is unknown, revoked, or
 // expired, or its client is disabled or deleted.
 func (s *Service) AuthenticateAccessToken(ctx context.Context, accessToken string) (identity.AccessToken, error) {
+	bt, err := s.authenticateBearerToken(ctx, accessToken)
+	return bt.Token, err
+}
+
+// authenticateBearerToken is AuthenticateAccessToken with the facts of the token's client.
+func (s *Service) authenticateBearerToken(ctx context.Context, accessToken string) (BearerToken, error) {
 	if accessToken == "" {
-		return identity.AccessToken{}, ErrInvalidAccessToken
+		return BearerToken{}, ErrInvalidAccessToken
 	}
-	tok, state, err := s.d.Repository.FindAccessTokenByAccessHash(ctx, HashToken(accessToken))
+	bt, err := s.d.Repository.FindBearerTokenByAccessHash(ctx, HashToken(accessToken))
 	if errors.Is(err, ErrNotFound) {
-		return identity.AccessToken{}, ErrInvalidAccessToken
+		return BearerToken{}, ErrInvalidAccessToken
 	}
 	if err != nil {
-		return identity.AccessToken{}, err
+		return BearerToken{}, err
 	}
-	if !state.Usable() || tok.AccessExpired(s.d.Clock.Now()) {
-		return identity.AccessToken{}, ErrInvalidAccessToken
+	if !bt.State.Usable() || bt.Token.AccessExpired(s.d.Clock.Now()) {
+		return BearerToken{}, ErrInvalidAccessToken
 	}
-	s.recordTokenUse(ctx, tok.FamilyID)
-	return tok, nil
+	s.recordTokenUse(ctx, bt.Token.FamilyID)
+	return bt, nil
+}
+
+// BearerToken is an access token with its state and the facts of its client that a client API
+// request needs, as FindBearerTokenByAccessHash returns them.
+type BearerToken struct {
+	Token identity.AccessToken
+	State identity.TokenState
+	// ClientPublicID is the client's public client_id.
+	ClientPublicID string
+	// ClientRegistration is the route by which the client was registered.
+	ClientRegistration identity.OAuthClientRegistration
 }
 
 // TokenWithState is an access token with its state, as FindAccessTokenByAccessHash returns them.

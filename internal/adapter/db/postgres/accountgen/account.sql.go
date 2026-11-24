@@ -193,6 +193,34 @@ func (q *Queries) GetLifecycleStateForUpdate(ctx context.Context, accountID stri
 	return i, err
 }
 
+const getLifecycleStateOfUser = `-- name: GetLifecycleStateOfUser :one
+SELECT la.account_id, s.state, s.since, s.deletion_due_at
+FROM local_accounts la
+LEFT JOIN account_lifecycle_states s ON s.account_id = la.account_id
+WHERE la.user_id = $1
+`
+
+type GetLifecycleStateOfUserRow struct {
+	AccountID     string
+	State         *string
+	Since         *time.Time
+	DeletionDueAt *time.Time
+}
+
+// GetLifecycleStateOfUser is GetLocalAccountByUserID with GetLifecycleState of its account: the
+// state's columns are NULL when the account has no lifecycle state.
+func (q *Queries) GetLifecycleStateOfUser(ctx context.Context, userID string) (GetLifecycleStateOfUserRow, error) {
+	row := q.db.QueryRow(ctx, getLifecycleStateOfUser, userID)
+	var i GetLifecycleStateOfUserRow
+	err := row.Scan(
+		&i.AccountID,
+		&i.State,
+		&i.Since,
+		&i.DeletionDueAt,
+	)
+	return i, err
+}
+
 const getLocalAccount = `-- name: GetLocalAccount :one
 SELECT account_id, user_id, username, username_normalized FROM local_accounts WHERE account_id = $1
 `

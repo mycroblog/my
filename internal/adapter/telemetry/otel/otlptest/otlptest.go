@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package otlptest is an OTLP/HTTP trace and log receiver for tests: it decodes the spans that the
+// Package otlptest is an OTLP/HTTP trace and log receiver for tests and the benchmarker (test/bench): it decodes the spans that the
 // otel Tracer exports and the log records of the otlp error exporter, so that tests outside the
 // OpenTelemetry adapters check what leaves the process without importing OpenTelemetry
 // (ADR-0055 §13, ADR-0103 §4 (3)).
@@ -34,6 +34,8 @@ type Span struct {
 	Attrs map[string]string
 	// Resource are the attributes of the resource of the span.
 	Resource map[string]string
+	// StartUnixNano and EndUnixNano are when the span started and ended.
+	StartUnixNano, EndUnixNano uint64
 	// Gzip reports whether the request that carried the span was gzip-compressed.
 	Gzip bool
 }
@@ -61,6 +63,7 @@ func (c *Collector) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					Name: s.GetName(), TraceID: hex.EncodeToString(s.GetTraceId()), SpanID: hex.EncodeToString(s.GetSpanId()),
 					ParentSpanID: hex.EncodeToString(s.GetParentSpanId()), Kind: kind(s.GetKind()),
 					Attrs: attrs(s.GetAttributes()), Resource: res, Gzip: gz,
+					StartUnixNano: s.GetStartTimeUnixNano(), EndUnixNano: s.GetEndTimeUnixNano(),
 				}
 				for _, l := range s.GetLinks() {
 					out.Links = append(out.Links, hex.EncodeToString(l.GetSpanId()))

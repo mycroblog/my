@@ -44,10 +44,11 @@ type Bearer struct {
 // app; the user's state is checked on every request, so that a token issued before a
 // moderator's decision stops working at once.
 func (s *Service) AuthenticateBearer(ctx context.Context, accessToken string) (Bearer, error) {
-	tok, err := s.AuthenticateAccessToken(ctx, accessToken)
+	bt, err := s.authenticateBearerToken(ctx, accessToken)
 	if err != nil {
 		return Bearer{}, err
 	}
+	tok := bt.Token
 	access, err := s.UserAccess(ctx, tok.UserID)
 	if err != nil {
 		return Bearer{}, err
@@ -55,13 +56,10 @@ func (s *Service) AuthenticateBearer(ctx context.Context, accessToken string) (B
 	if !access.Allowed() || access.AccountID == "" || !access.AccountActive {
 		return Bearer{}, ErrAccountUnavailable
 	}
-	client, err := s.d.Repository.FindOAuthClientByID(ctx, tok.ClientID)
-	if err != nil {
-		return Bearer{}, err
-	}
 	return Bearer{
-		TokenID: tok.ID, FamilyID: tok.FamilyID, ClientID: tok.ClientID, ClientPublicID: client.ClientID, UserID: tok.UserID,
-		AccountID: access.AccountID, Scope: tok.Scope, FirstParty: client.FirstParty(), ExpiresAt: tok.ExpiresAt,
+		TokenID: tok.ID, FamilyID: tok.FamilyID, ClientID: tok.ClientID, ClientPublicID: bt.ClientPublicID, UserID: tok.UserID,
+		AccountID: access.AccountID, Scope: tok.Scope, FirstParty: identity.OAuthClient{Registration: bt.ClientRegistration}.FirstParty(),
+		ExpiresAt: tok.ExpiresAt,
 	}, nil
 }
 
