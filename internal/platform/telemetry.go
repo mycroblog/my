@@ -49,7 +49,7 @@ func (a *App) setUpMeter(ctx context.Context, cfg *config.Config, opts AppOption
 		a.Meter = emf.New(emf.Options{
 			Writer: w, Namespace: cfg.MetricsEMFNamespace, Dimensions: cfg.MetricsEMFDimensions, Clock: a.Clock,
 			Properties: map[string]string{
-				"service.name": "my", "service.version": opts.Version, "my.role": string(cfg.Role), "service.instance.id": cfg.Host,
+				"service.name": "my", "service.version": opts.Version, "my.role": string(cfg.Role), "service.namespace": cfg.Host,
 			},
 		})
 	default:

@@ -140,7 +140,7 @@ With the OpenTofu modules, leave the errors of the `observability` section to th
   secrets       = ["errors_sentry_dsn"]
 ```
 
-The server speaks the Sentry protocol itself, so no Sentry SDK is involved and no `SENTRY_*` environment variable is read. It sets the fingerprint, so the service groups by it, and the tags `service` (`my`), `service.instance.id` (the `host`), `my.role`, `my.error.where`, and `error.fingerprint`. The release is the server's version and the environment is `errors_environment`.
+The server speaks the Sentry protocol itself, so no Sentry SDK is involved and no `SENTRY_*` environment variable is read. It sets the fingerprint, so the service groups by it, and the tags `service` (`my`), `service.namespace` (the `host`), `my.role`, `my.error.where`, and `error.fingerprint`. The release is the server's version and the environment is `errors_environment`.
 
 - **Sentry** (hosted or self-hosted): copy the DSN from the project's client keys.
 - **GlitchTip**: copy the DSN of the project. It is open source and runs on a small server. Check which alert rules your version offers for new and recurring issues.

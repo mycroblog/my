@@ -14,7 +14,7 @@ import (
 // setUpOTelMeter sets the Meter of metrics_exporter = prometheus or otlp.
 func (a *App) setUpOTelMeter(ctx context.Context, cfg *config.Config, opts AppOptions) error {
 	m, err := otel.New(ctx, otel.Options{
-		Exporter: cfg.MetricsExporter, ServiceVersion: opts.Version, Role: string(cfg.Role), InstanceID: cfg.Host,
+		Exporter: cfg.MetricsExporter, ServiceVersion: opts.Version, Role: string(cfg.Role), Namespace: cfg.Host,
 	})
 	if err != nil {
 		return err
@@ -26,7 +26,7 @@ func (a *App) setUpOTelMeter(ctx context.Context, cfg *config.Config, opts AppOp
 // setUpOTelTracer sets the Tracer of traces_exporter = otlp (ADR-0055 §17).
 func (a *App) setUpOTelTracer(ctx context.Context, cfg *config.Config, opts AppOptions) error {
 	t, err := otel.NewTracer(ctx, otel.TracerOptions{
-		ServiceVersion: opts.Version, Role: string(cfg.Role), InstanceID: cfg.Host, SampleRatio: cfg.TracesSampleRatio, Flush: cfg.TracesFlush,
+		ServiceVersion: opts.Version, Role: string(cfg.Role), Namespace: cfg.Host, SampleRatio: cfg.TracesSampleRatio, Flush: cfg.TracesFlush,
 	})
 	if err != nil {
 		return err

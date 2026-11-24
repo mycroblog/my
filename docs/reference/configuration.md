@@ -2034,7 +2034,7 @@ CloudWatch namespace of the metrics of `metrics_exporter = emf`.
 
 ### `metrics_emf_dimensions`
 
-Labels that become CloudWatch dimensions with `metrics_exporter = emf`, comma-separated, such as `my.surface, my.role`, or `service.instance.id` (the instance's `host`), which every line carries; the other labels stay fields of the log line. CloudWatch bills every combination of dimension values as a metric, so the deployment template chooses them. Empty makes every metric one series per namespace.
+Labels that become CloudWatch dimensions with `metrics_exporter = emf`, comma-separated, such as `my.surface, my.role`, or `service.namespace` (the instance's `host`), which every line carries; the other labels stay fields of the log line. CloudWatch bills every combination of dimension values as a metric, so the deployment template chooses them. Empty makes every metric one series per namespace.
 
 - Environment variable: `MY_METRICS_EMF_DIMENSIONS`
 - Default: none
