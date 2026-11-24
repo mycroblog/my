@@ -320,10 +320,15 @@ func (l *LinkCards) project(ctx context.Context, tx uow.Tx, st content.Status, r
 	return l.d.Outbox.EnqueueTx(ctx, tx, job)
 }
 
+// LinkCardFetchAttempts is the number of runs of a JobFetchLinkCard job. A job whose robots.txt
+// still cannot be read at its last run ends there without a card, instead of becoming a dead job:
+// the site does not let its page be fetched now, and nothing here is broken.
+const LinkCardFetchAttempts = queue.DefaultMaxAttempts
+
 // RegisterJobs registers the fetch and the cleanup of the link cards on reg, and the daily
 // schedule of the cleanup on sched.
 func (l *LinkCards) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
-	reg.Register(JobFetchLinkCard, func(ctx context.Context, j queue.Job) queue.Result {
+	reg.RegisterWithPolicy(JobFetchLinkCard, func(ctx context.Context, j queue.Job) queue.Result {
 		var p fetchLinkCardPayload
 		if err := json.Unmarshal(j.Payload, &p); err != nil || p.StatusID == "" {
 			return queue.Fail(fmt.Errorf("link card payload: %q", j.Payload))
@@ -333,6 +338,10 @@ func (l *LinkCards) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sch
 		switch {
 		case errors.As(err, &postponed):
 			return queue.Postpone(postponed.After)
+		case errors.Is(err, ErrLinkCardRetryLater) && j.Attempt >= LinkCardFetchAttempts:
+			l.d.Logger.InfoContext(ctx, "no link card: robots.txt cannot be read", slog.String("status_id", p.StatusID),
+				slog.Int("attempts", j.Attempt), slog.Any("error", err))
+			return queue.Done()
 		case errors.Is(err, ErrLinkCardRetryLater):
 			return queue.RetryRemote(LinkCardRobotsUnreachableTTL, err)
 		case err != nil:
@@ -341,7 +350,7 @@ func (l *LinkCards) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sch
 			return queue.Retry(LinkCardLockTTL, nil)
 		}
 		return queue.Done()
-	})
+	}, queue.RetryPolicy{MaxAttempts: LinkCardFetchAttempts})
 	reg.Register(JobCleanupLinkCards, func(ctx context.Context, _ queue.Job) queue.Result {
 		if _, err := l.Cleanup(ctx); err != nil {
 			return queue.Retry(0, err)
