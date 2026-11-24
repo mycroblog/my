@@ -582,6 +582,15 @@ func (r *StatusRepository) FindStatus(ctx context.Context, id string) (content.S
 	return statusFrom(row), nil
 }
 
+// FindLiveStatus implements content.Repository.
+func (r *StatusRepository) FindLiveStatus(ctx context.Context, id string) (content.Status, error) {
+	row, err := r.db.reader().GetLiveStatus(ctx, id)
+	if err != nil {
+		return content.Status{}, sqlite.NotFound(err, appcontent.ErrNotFound, "live status "+id)
+	}
+	return statusFrom(row), nil
+}
+
 // FindStatuses implements content.Repository.
 func (r *StatusRepository) FindStatuses(ctx context.Context, ids []string) (map[string]content.Status, error) {
 	out := make(map[string]content.Status, len(ids))

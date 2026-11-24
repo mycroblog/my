@@ -113,6 +113,14 @@ func (e *remoteInteractionEnv) quoteState(t *testing.T, id string) content.Quote
 	return s
 }
 
+// deliveredTo gives the local account accountID a follower on another server, so that the Creates
+// of its statuses are delivered: a Create that reaches no server stores no document, and noteOf
+// reads the Note that a Create delivered.
+func (e *remoteInteractionEnv) deliveredTo(t *testing.T, accountID string) {
+	t.Helper()
+	e.follow(t, e.actor(t, "https://readers.example/users/reader-of-"+accountID), accountID)
+}
+
 // noteOf returns the Note of the local status st as its Create delivered it.
 func (e *remoteInteractionEnv) noteOf(t *testing.T, st content.Status) map[string]any {
 	t.Helper()
@@ -136,6 +144,8 @@ func remoteQuotesLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 	skipWithoutQuoteHandlers(t, e)
 	ctx := t.Context()
 	author, quoter := e.user(t, "author"), e.user(t, "quoter")
+	e.deliveredTo(t, quoter)
+	e.deliveredTo(t, author)
 	public := e.localPost(t, author, content.VisibilityPublic)
 
 	// A quote of a local post is approved at once with this server's QuoteAuthorization, and its
@@ -314,6 +324,7 @@ func remoteSendsQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	skipWithoutQuoteHandlers(t, e)
 	const alice = "https://remote.example/users/alice"
 	fan := e.user(t, "fan")
+	e.deliveredTo(t, fan)
 	aliceID := e.actor(t, alice)
 	e.follow(t, fan, aliceID)
 	published := remoteNow.Add(-time.Hour)
