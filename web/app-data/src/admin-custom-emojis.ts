@@ -40,12 +40,21 @@ export const emojiLimits = { category: 64, aliases: 10, reason: 500, warnBytes: 
 /** A shortcode the server takes: 2 to 30 letters (A to Z, a to z), digits and underscores. */
 export const validShortcode = (shortcode: string): boolean => /^[A-Za-z0-9_]{2,30}$/.test(shortcode);
 
+/** `alias` without the colons around it, in time linear in its length (a regexp for `:+$` is quadratic). */
+function withoutColons(alias: string): string {
+  let start = 0;
+  let end = alias.length;
+  while (start < end && alias[start] === ":") start++;
+  while (end > start && alias[end - 1] === ":") end--;
+  return alias.slice(start, end);
+}
+
 /** The aliases written in one field, split at spaces and commas, colons around each taken off, each once. */
 export const aliasesOf = (text: string): string[] => [
   ...new Set(
     text
       .split(/[\s,、]+/)
-      .map((a) => a.replace(/^:+|:+$/g, ""))
+      .map(withoutColons)
       .filter((a) => a !== ""),
   ),
 ];
