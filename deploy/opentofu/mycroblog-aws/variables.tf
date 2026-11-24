@@ -107,7 +107,7 @@ variable "network" {
 
   validation {
     condition     = contains(["public-ip", "nat"], var.network.egress)
-    error_message = "network.egress must be public-ip or nat. Both bill by the hour: read the costs in the README of deploy/opentofu."
+    error_message = "network.egress must be public-ip or nat. Both bill by the hour: read the costs in docs/operations/deploy-aws.md."
   }
 
   validation {

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Copy to terraform.tfvars. Nothing on AWS has been applied: read "AWS" in deploy/opentofu/README.md. The module names the
+# Copy to terraform.tfvars. Nothing on AWS has been applied: read docs/operations/deploy-aws.md. The module names the
 # secrets; tofu output secrets_to_fill lists what to add after the first apply.
 
 host            = "social.example.org"

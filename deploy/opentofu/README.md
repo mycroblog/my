@@ -4,8 +4,8 @@ The reference of the OpenTofu root modules: their inputs and outputs, the script
 `my` on Google Cloud in one module block: a Cloud Run service and a backend for each role, which you pick by the `kind` of a
 section and which defaults to the recommended setup. `mycroblog-aws` does the same on AWS, with ECS on Fargate, and **has
 never been applied** ([AWS](#aws)). To deploy, follow [Deploying with OpenTofu](../../docs/operations/deploy-opentofu.md),
-which every deployment shares, and [Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md) on Google Cloud. The
-sections up to [AWS](#aws) describe `mycroblog-gcp`.
+which every deployment shares, and [Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md) or
+[Deploying on AWS](../../docs/operations/deploy-aws.md). The sections up to [AWS](#aws) describe `mycroblog-gcp`.
 
 ```text
 deploy/opentofu/
@@ -112,30 +112,11 @@ your block.
 
 `mycroblog-aws` deploys `my` on AWS in one block: an ECS service on Fargate behind an Application Load Balancer, the jobs in
 the database, and a backend for each role, picked by the `kind` of a section as in `mycroblog-gcp`. **Nothing of it has ever
-been applied on AWS**: the checks plan it on mocked providers and with no credentials, which shows that the configuration is
-consistent, not that AWS accepts it or that the server starts. Treat a first deployment as a test.
+been applied on AWS.** To deploy, follow [Deploying on AWS](../../docs/operations/deploy-aws.md).
 
-```hcl
-provider "aws" {
-  region = "ap-northeast-1"
-}
-
-module "mycroblog" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-aws?ref=v0.1.0&depth=1"
-
-  host       = "social.example.org"
-  network    = { egress = "public-ip", availability_zones = ["ap-northeast-1a", "ap-northeast-1c"] }
-  ingress    = { certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/00000000-0000-0000-0000-000000000000" }
-  media      = { bucket_name = "social-example-org-media" }
-  mail       = { from = "noreply@social.example.org" }
-  monitoring = { notification_emails = ["ops@social.example.org"] }
-}
-```
-
-Keep `ref` at the release you deploy: the image defaults to the same release, as in `mycroblog-gcp`, and the sections `image`
-and `upgrade` work as there. `examples/aws-ecs-neon` is this block with its variables, to copy with its lock file. The module takes the region of the `aws`
-provider and declares `random`, `archive`, and `cloudflare` itself. It uses no provider alias, so the certificate that
-CloudFront needs in `us-east-1` comes in as an ARN, created by hand in AWS Certificate Manager like the load balancer's.
+The module takes the region of the `aws` provider and declares `random`, `archive`, and `cloudflare` itself. It uses no provider
+alias, so the certificate that CloudFront needs in `us-east-1` comes in as an ARN, created by hand in AWS Certificate Manager
+like the load balancer's.
 
 ### Sections of mycroblog-aws
 
@@ -150,7 +131,7 @@ names who the alarms notify. Every other field has a default. The first kind of 
 | `media` | `s3`, `r2`, `s3-compatible` | `bucket_name` is required. `s3` creates a bucket, with `versioning` and `noncurrent_version_days`. `r2` creates an R2 bucket in `cloudflare.account_id`. `s3-compatible` uses another store at `endpoint`, with `s3_region` and `path_style`. `r2` and `s3-compatible` read their access key from secrets you fill |
 | `kv` | `db`, `elasticache`, `external` | The store of caches and rate limits. `elasticache` creates ElastiCache Serverless for Valkey, which bills while idle. `external` reads a Valkey URL from a secret you fill, and with `tls_ca = true` the CA of its certificate from another |
 | `stream` | `sns`, `postgres`, `valkey` | The broker of real-time updates. `postgres` uses the database's direct connection, and `valkey` the Valkey of `kv` |
-| `mail` | `ses`, `smtp` | `from` is required. `ses` sends through Amazon SES in the region, from the domain of `from`, with an optional `configuration_set`: read [Email through Amazon SES](#email-through-amazon-ses). `smtp` takes `smtp.host`, `smtp.port` (587), and `smtp.username`, whose password goes in a secret you fill |
+| `mail` | `ses`, `smtp` | `from` is required. `ses` sends through Amazon SES in the region, from the domain of `from`, with an optional `configuration_set`: read [Email through Amazon SES](../../docs/operations/deploy-aws.md#email-through-amazon-ses). `smtp` takes `smtp.host`, `smtp.port` (587), and `smtp.username`, whose password goes in a secret you fill |
 | `kek` | `secrets-manager`, `kms` | The key that encrypts the secrets in the database: a generated secret, or a key in AWS KMS that never leaves it |
 | `cloudflare` | | `zone_id` and `account_id`, for the Cloudflare kinds |
 | `service` | | The ECS service: `desired_count` (1), `cpu` (256), `memory_mib` (1024), and `health_check_grace_seconds`. Nothing scales to zero: a task bills for as long as it runs |
@@ -158,12 +139,13 @@ names who the alarms notify. Every other field has a default. The first kind of 
 | `workers` | | Services that run some job types apart from the default service, by a key that names each: `job_types`, `instances`, `cpu`, `memory_mib`, and `concurrency` |
 | `translation` | | Null by default. `{}` turns on Amazon Translate, the translation provider `aws`: the module allows the tasks' role `translate:TranslateText` and `comprehend:DetectDominantLanguage`, and sets the provider's `region`, the deployment's by default. The instance setting `translation_providers` then enables it |
 | `search` | | Null by default. `domain_name` names a domain of Amazon OpenSearch Service that you created in the region: the module reads it, allows the tasks' role the HTTP methods the server sends to it, and sets `search = opensearch` with signed requests, and the alias `index`. A domain in the VPC takes `security_group_ids` for the tasks to join. The module never creates the domain. Elasticsearch, Meilisearch, and OpenSearch with a user go through `settings` and `secrets` |
-| `observability` | | Where the metrics, the traces, and the error reports go: `metrics = cloudwatch`, in Embedded Metric Format in the namespace `name`, `errors = cloudwatch`, the error report line in CloudWatch Logs, and `traces = x-ray`, through the AWS Distro for OpenTelemetry collector, which runs beside the server in every task and writes to X-Ray with the tasks' role (`xray:PutTraceSegments`). `traces = none` records no spans and runs no collector. `settings` leaves a signal to `settings` and `secrets`, such as `errors = "settings"` for Sentry. Read [Traces to X-Ray](#traces-to-x-ray) |
+| `observability` | | Where the metrics, the traces, and the error reports go: `metrics = cloudwatch`, in Embedded Metric Format in the namespace `name`, `errors = cloudwatch`, the error report line in CloudWatch Logs, and `traces = x-ray`, through the AWS Distro for OpenTelemetry collector, which runs beside the server in every task and writes to X-Ray with the tasks' role (`xray:PutTraceSegments`). `traces = none` records no spans and runs no collector. `settings` leaves a signal to `settings` and `secrets`, such as `errors = "settings"` for Sentry. Read [Traces to X-Ray](../../docs/operations/deploy-aws.md#traces-to-x-ray) |
 | `monitoring` | | Required: a CloudWatch Synthetics canary, metrics in CloudWatch, and alarms, which notify at least one of `notification_emails` and `notification_topic_arns`. Null creates none. Also `page_notification_topic_arns`, `uptime_period_minutes` (15), `disabled_alerts`, and size limits. It reads the metrics of `observability.metrics = cloudwatch`. Each run of the canary is billed |
 | `billing` | | Null by default. `{}` imports the usage cost from Cost Explorer into the server's dashboard, with the tasks' own role |
 
-There is no `queue` section: the tasks stay up, so they take the jobs from the database. `name`, `console_enabled`,
-`log_retention_days`, `settings`, and `secrets` work as in `mycroblog-gcp`, with the secrets in Secrets Manager.
+There is no `queue` section: the tasks stay up, so they take the jobs from the database. `image`, `upgrade`, `name`,
+`console_enabled`, `settings`, and `secrets` work as in `mycroblog-gcp`, with the secrets in Secrets Manager.
+`architecture` is `x86_64` or `arm64`, and `log_retention_days` (30) is how long CloudWatch Logs keeps the tasks' logs.
 
 **What does not fit together fails before the plan**, with a message that names the inputs:
 
@@ -179,20 +161,6 @@ There is no `queue` section: the tasks stay up, so they take the jobs from the d
 - `observability.traces = x-ray` with a size of `service` or `jobs` that leaves the server less than 128 CPU units or 512 MiB
   beside the collector.
 
-### Traces to X-Ray
-
-`observability.traces = "x-ray"` is the default, because the collector fits the recommended setup at no extra charge for its
-size: it takes 32 CPU units and 128 MiB out of each task, which AWS bills by the size of the task alone, so the default service
-task of 256 CPU units and 1,024 MiB costs the same and gives the server 224 CPU units and 896 MiB, with `GOMEMLIMIT` at 806 MiB
-in place of 921 MiB. The default `traces_sample_ratio` records about 30,000 traces a month for 100,000 requests a day, under
-the 100,000 traces a month that X-Ray records for free. What it does cost is the collector's image, pulled at each start of a
-task, and the server's memory: set `traces = "none"` for a task too small to spare 128 MiB, which the module refuses, or when
-you do not read the traces. A worker of its own size must leave the server the same, and the plan fails otherwise.
-
-The collector listens on the task's loopback alone, has no metrics pipeline (the metrics go in EMF), and is not essential: if
-it stops, the server goes on without traces. Its image is pinned by version and digest. Nothing of it has been applied on AWS
-either, so that X-Ray takes the spans is unverified.
-
 ### Outputs of mycroblog-aws
 
 | Output | What it holds |
@@ -204,54 +172,6 @@ either, so that X-Ray takes the spans is unverified.
 | `domain_name` | What `host` points at: the distribution with `cloudfront`, the load balancer otherwise |
 | `console` | What `console.sh` reads, or null while `console_enabled` is off |
 | `version` | The `version` applied, and the `image` of the service's task definition |
-
-### The first deployment on AWS
-
-`/readyz` fails until the schema exists, so the schema comes first. Create the secrets, fill the ones that `secrets_to_fill`
-lists, then apply everything:
-
-```sh
-tofu apply -target=module.mycroblog.module.secrets -target=module.mycroblog.module.kek_secrets_manager
-tofu output secrets_to_fill   # run each command with its value
-tofu apply
-tofu output dns_records       # add each at your DNS provider
-```
-
-The second apply creates the migration's task definition with what it depends on, runs `my upgrade` as one task of it through
-[`migrate.sh`](migrate.sh), and creates the services only once it succeeded. If the migration fails, often for a secret without
-a value, fix the cause and apply again. `console.sh` runs a command through the console's task definition, whose output stays
-in CloudWatch Logs.
-
-### Upgrading on AWS
-
-An apply of another image is an upgrade, in the order of [Upgrading](../../docs/operations/deploy-opentofu.md#upgrading):
-
-1. Every task definition gets a new revision with the image. A revision changes nothing that runs until a service takes it.
-2. `migrate.sh` waits for any task of `<name>-migrate` that an interrupted apply left running, then runs `my upgrade` as one
-   task of the new revision and waits for it, with `-allow-destructive` only when `upgrade.allow_destructive_for` names the
-   version being applied. It exits non-zero when the task does, and the apply stops there, with every service on its revision.
-3. Each worker's service takes its new revision, then the default service. The apply waits for each to settle: new tasks must
-   start, and on the default service pass the load balancer's check, before the old ones leave, and the deployment circuit
-   breaker takes a revision whose tasks do not start back to the one before.
-
-The next apply of the same image runs a failed migration again; an apply of the same image runs nothing. The script runs
-where you apply, so that machine, or the CI job that applies, needs the `aws` CLI, `jq`, and credentials that may run the task
-and read its logs: `ecs:RunTask`, `ecs:DescribeTasks`, `ecs:ListTasks`, `iam:PassRole` on the task's two roles, and
-`logs:FilterLogEvents`, beside what the apply itself needs. Back up the database first, as on Google Cloud.
-
-### What it costs on AWS
-
-Nothing scales to zero on ECS: the task, the load balancer, and its public addresses bill all month. With one task of 0.25 vCPU
-and 1 GB, expect about $42 a month at idle in Tokyo with `egress = "public-ip"`, and about $75 with `egress = "nat"`, before
-the database, storage, traffic, and the canary. These figures come from AWS's price list and have not been checked against a
-bill.
-
-### Email through Amazon SES
-
-`mail.kind = ses`, the default, sends with the SES API in the region of the deployment, from the domain of `mail.from`. The
-module creates the domain's identity and allows the tasks `ses:SendEmail` on it, so there is no password. Before SES sends to
-your users, add the records that `tofu output dns_records` lists and leave the sandbox:
-[Sending email through Amazon SES](../../docs/operations/email-ses.md) has the steps.
 
 ## Checks
 

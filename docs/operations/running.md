@@ -563,7 +563,7 @@ To send application spans to Cloud Trace, run an **OpenTelemetry Collector as a 
 
 ### AWS ECS
 
-To send to X-Ray, run the **AWS Distro for OpenTelemetry (ADOT) Collector** as a sidecar container in every task. The server has no SigV4 signing; the Collector signs with the task role and sends to X-Ray. The `mycroblog-aws` module of [the OpenTofu deployment](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) does all of this by default (`observability.traces = "x-ray"`); the rest of this section is for a task definition of your own.
+To send to X-Ray, run the **AWS Distro for OpenTelemetry (ADOT) Collector** as a sidecar container in every task. The server has no SigV4 signing; the Collector signs with the task role and sends to X-Ray. The `mycroblog-aws` module of [the OpenTofu deployment](deploy-aws.md#traces-to-x-ray) does all of this by default (`observability.traces = "x-ray"`); the rest of this section is for a task definition of your own.
 
 - Server: `MY_TRACES_EXPORTER=otlp`, `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces`, and the default `MY_TRACES_FLUSH=batch`, since the process stays up.
 - Collector: an image pinned by version, such as `public.ecr.aws/aws-observability/aws-otel-collector:v0.50.0`, with its configuration in the variable `AOT_CONFIG_CONTENT`: an `otlp` receiver over HTTP on `127.0.0.1:4318` and the `awsxray` exporter. X-Ray's OTLP endpoint (`https://xray.<region>.amazonaws.com/v1/traces`, through an `otlphttp` exporter with the `sigv4auth` extension) works too, but needs CloudWatch Transaction Search turned on for the account.

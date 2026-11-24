@@ -1,7 +1,7 @@
 # Sending email through Amazon SES
 
 How to get Amazon SES ready to send the server's email: verify the domain of the sender with DNS records, leave the sandbox
-that a new account starts in, and keep the account in good standing. The OpenTofu module [`mycroblog-aws`](../../deploy/opentofu/README.md#aws) sends through SES by
+that a new account starts in, and keep the account in good standing. The OpenTofu module [`mycroblog-aws`](deploy-aws.md#email-through-amazon-ses) sends through SES by
 default and creates the identity and the permission; the records and the request for production access are steps of your own.
 The settings themselves are in [Sending email](email.md#amazon-ses-api).
 
