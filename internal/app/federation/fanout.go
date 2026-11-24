@@ -208,16 +208,27 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 	}
 	// A phase that the mode does not let add recipients stays in the list, so that the batches
 	// of one activity agree on its phases whatever the mode was when each ran; it finds no one.
+	// A phase whose last batch finds no one to deliver to goes on to the next phase in this run,
+	// on the activity and subject read already, instead of queuing a job that reads them again:
+	// on a server that no other server follows, every phase finds no one (#3489). A run still
+	// handles at most one batch that delivers.
 	var targets []target
 	var next string
-	if !phases[idx].adds() || adds {
-		if targets, next, err = f.batch(ctx, act, subj, phases[idx], p.After); err != nil {
+	for {
+		targets, next = nil, ""
+		if !phases[idx].adds() || adds {
+			if targets, next, err = f.batch(ctx, act, subj, phases[idx], p.After); err != nil {
+				return err
+			}
+		}
+		targets, err = f.deliverable(ctx, act.Type, targets)
+		if err != nil {
 			return err
 		}
-	}
-	targets, err = f.deliverable(ctx, act.Type, targets)
-	if err != nil {
-		return err
+		if len(targets) > 0 || next != "" || idx+1 == len(phases) {
+			break
+		}
+		idx, p.After = idx+1, ""
 	}
 
 	var nextJob *queue.NewJob
