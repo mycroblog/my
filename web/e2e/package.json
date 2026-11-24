@@ -19,7 +19,7 @@
     "@my/devtools": "workspace:*",
     "@my/platform": "workspace:*",
     "@playwright/test": "1.65.1",
-    "@types/bun": "1.4.4",
+    "@types/bun": "1.4.5",
     "axe-core": "4.14.1"
   }
 }
