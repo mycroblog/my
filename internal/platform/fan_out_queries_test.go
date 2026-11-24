@@ -125,3 +125,28 @@ func TestFanOutQueries(t *testing.T) {
 		t.Errorf("%d queries for 100 followers, more than the %d for 20", largeQ, smallQ)
 	}
 }
+
+// TestFanOutWithNoRecipientIsOneJob checks that the fan-out of a public post that no other server
+// receives is one job: each phase that finds no one goes on to the next in the same run, instead
+// of queuing a job that reads the activity and its subject again (#3489).
+func TestFanOutWithNoRecipientIsOneJob(t *testing.T) {
+	t.Parallel()
+	c := newStatusesClientWith(t, nil, platform.AppOptions{}, "alice")
+	ctx := t.Context()
+	h, _, _ := c.app.Handlers.Lookup(appfederation.JobFanOut)
+	c.post("alice", map[string]any{"text": "hello", "visibility": "public"})
+	jobs := mustJobs(t, c, appfederation.JobFanOut)
+	if len(jobs) != 1 {
+		t.Fatalf("%d fan-out jobs after the post, want 1", len(jobs))
+	}
+	if res := h(ctx, queue.Job{ID: jobs[0].ID, Type: jobs[0].Type, Payload: jobs[0].Payload}); res.Err() != nil {
+		t.Fatalf("fan-out: %v", res.Err())
+	}
+	// The job stays in the queue, which no runner works: any other is one the run queued.
+	if after := mustJobs(t, c, appfederation.JobFanOut); len(after) != 1 {
+		t.Errorf("%d fan-out jobs after the run, want none queued beside it", len(after)-1)
+	}
+	if d := mustJobs(t, c, appfederation.JobDeliver); len(d) != 0 {
+		t.Errorf("%d deliveries, want none", len(d))
+	}
+}
