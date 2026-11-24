@@ -27,6 +27,11 @@ var nodeInfoSchemas = []string{
 // errNoNodeInfo reports a server whose NodeInfo cannot be read.
 var errNoNodeInfo = errors.New("federation: no usable NodeInfo")
 
+// errNodeInfoUnreachable reports a server that did not answer for its NodeInfo now (the network,
+// a 429, or a 5xx): the job tries again, and its burial is the remote server's doing, not a fault
+// to report (queue.RetryRemote).
+var errNodeInfoUnreachable = errors.New("federation: the server did not answer for its NodeInfo")
+
 type observePayload struct {
 	Domain string `json:"domain"`
 }
@@ -43,6 +48,8 @@ func (r *RemoteActors) handleObserve(ctx context.Context, j queue.Job) queue.Res
 	case errors.Is(err, errNoNodeInfo):
 		r.d.Logger.InfoContext(ctx, "NodeInfo not observed", slog.String("domain", p.Domain), slog.Any("reason", err))
 		return queue.Done()
+	case errors.Is(err, errNodeInfoUnreachable):
+		return queue.RetryRemote(0, err)
 	}
 	return queue.Retry(0, err)
 }
@@ -110,7 +117,7 @@ func (r *RemoteActors) ObserveInstance(ctx context.Context, domain string) error
 }
 
 // getJSON reads a public JSON document. Refusals and answers that are not JSON fail with an
-// error wrapping errNoNodeInfo; network errors and server errors are returned as they are, so
+// error wrapping errNoNodeInfo; network errors and server errors wrap errNodeInfoUnreachable, so
 // that the job tries again.
 func (r *RemoteActors) getJSON(ctx context.Context, u string, v any) error {
 	if err := r.identifies(ctx); err != nil {
@@ -125,18 +132,18 @@ func (r *RemoteActors) getJSON(ctx context.Context, u string, v any) error {
 		errors.Is(err, kernel.ErrTooManyRedirects), errors.Is(err, kernel.ErrResponseTooLarge):
 		return fmt.Errorf("%w: %s: %w", errNoNodeInfo, u, err)
 	case err != nil:
-		return err
+		return fmt.Errorf("%w: %w", errNodeInfoUnreachable, err)
 	}
 	body, err := resp.ReadAll()
 	switch {
 	case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500:
-		return fmt.Errorf("federation: %s answered %d", u, resp.StatusCode)
+		return fmt.Errorf("%w: %s answered %d", errNodeInfoUnreachable, u, resp.StatusCode)
 	case resp.StatusCode < 200 || resp.StatusCode >= 300:
 		return fmt.Errorf("%w: %s answered %d", errNoNodeInfo, u, resp.StatusCode)
 	case errors.Is(err, kernel.ErrResponseTooLarge):
 		return fmt.Errorf("%w: %s: %w", errNoNodeInfo, u, err)
 	case err != nil:
-		return err
+		return fmt.Errorf("%w: %w", errNodeInfoUnreachable, err)
 	}
 	if err := json.Unmarshal(body, v); err != nil {
 		return fmt.Errorf("%w: %s: %w", errNoNodeInfo, u, err)
