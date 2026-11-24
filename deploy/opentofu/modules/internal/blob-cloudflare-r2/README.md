@@ -24,6 +24,7 @@ module "blob" {
 | `access_key_id_secret_id`, `secret_access_key_secret_id` | required | Secrets that hold the S3 credentials: an ID in Secret Manager, an ARN in AWS Secrets Manager |
 | `location` | `null` | Location hint: best effort, and honoured only when the name is first created |
 | `jurisdiction` | `default` | `default`, `eu`, `fedramp`, or `us`. It decides the endpoint |
+| `prefix` | empty | Start of every object name (`tenant-a/`), so that instances share the bucket |
 
 | Output | Value |
 | --- | --- |

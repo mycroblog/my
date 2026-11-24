@@ -335,6 +335,66 @@ run "media_s3_compatible" {
   }
 }
 
+run "media_s3_with_a_prefix" {
+  command = plan
+
+  variables {
+    media = { bucket_name = "social-example-org-media", prefix = "tenant-a/" }
+  }
+
+  assert {
+    condition     = module.app.env["MY_BLOB_S3_PREFIX"] == "tenant-a/" && module.media_s3.permissions[0].resource == "arn:aws:s3:::social-example-org-media/tenant-a/*"
+    error_message = "the prefix must reach the app, and the role reach only the objects under it"
+  }
+}
+
+run "media_s3_on_an_existing_bucket" {
+  command = plan
+
+  override_data {
+    target = module.media_s3.data.aws_s3_bucket.existing
+    values = {
+      arn           = "arn:aws:s3:::shared-media"
+      bucket_region = "eu-west-1"
+    }
+  }
+
+  variables {
+    media = { bucket_name = "shared-media", existing_bucket = true, prefix = "tenant-a/" }
+  }
+
+  assert {
+    condition     = module.media_s3.env["MY_BLOB_S3_BUCKET"] == "shared-media" && module.app.env["MY_BLOB_S3_REGION"] == "eu-west-1" && module.app.env["MY_BLOB_S3_PREFIX"] == "tenant-a/"
+    error_message = "the app must take the existing bucket, its region, and the prefix"
+  }
+
+  assert {
+    condition = toset([for p in module.app.task_permissions : p.resource if startswith(p.resource, "arn:aws:s3:::")]) == toset([
+      "arn:aws:s3:::shared-media/tenant-a/*", "arn:aws:s3:::shared-media",
+    ])
+    error_message = "the role must reach only the objects under the prefix: ${jsonencode(module.app.task_permissions)}"
+  }
+
+  assert {
+    condition     = jsonencode(module.media_s3.permissions[4].conditions) == jsonencode([{ test = "StringLike", variable = "s3:prefix", values = ["tenant-a/*"] }])
+    error_message = "the role must list only under the prefix"
+  }
+}
+
+run "media_r2_with_a_prefix" {
+  command = plan
+
+  variables {
+    media      = { kind = "r2", bucket_name = "my-media", prefix = "tenant-a/" }
+    cloudflare = { account_id = "0123456789abcdef0123456789abcdef" }
+  }
+
+  assert {
+    condition     = module.app.env["MY_BLOB_S3_PREFIX"] == "tenant-a/"
+    error_message = "the prefix must reach the app"
+  }
+}
+
 # ---------------------------------------------------------------------------------------------------------------------------------
 # kv and stream
 
@@ -401,6 +461,26 @@ run "mail_ses_with_a_configuration_set" {
   assert {
     condition     = module.app.env["MY_MAIL"] == "ses" && module.app.env["MY_MAIL_SES_CONFIGURATION_SET"] == "my-events" && module.mail_smtp == null
     error_message = "the configuration set must reach the app"
+  }
+}
+
+run "mail_ses_with_an_existing_configuration_set" {
+  command = plan
+
+  override_data {
+    target = module.mail_ses.data.aws_sesv2_configuration_set.existing
+    values = {
+      arn = "arn:aws:ses:ap-northeast-1:111122223333:configuration-set/shared-mail"
+    }
+  }
+
+  variables {
+    mail = { from = "noreply@social.example.org", configuration_set = "shared-mail", existing_configuration_set = true }
+  }
+
+  assert {
+    condition     = module.app.env["MY_MAIL_SES_CONFIGURATION_SET"] == "shared-mail" && module.mail_ses.permissions[1].resource == "arn:aws:ses:ap-northeast-1:111122223333:configuration-set/shared-mail"
+    error_message = "the existing set must reach the app, and the permission reach the set"
   }
 }
 

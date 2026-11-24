@@ -20,6 +20,7 @@ module "mail" {
 | --- | --- | --- |
 | `from` | required | Sender address |
 | `configuration_set` | null | A configuration set to create and apply to every message |
+| `existing_configuration_set` | `false` | Apply `configuration_set`, which exists, rather than create it |
 
 | Output | Value |
 | --- | --- |

@@ -47,6 +47,18 @@ variable "path_style" {
   nullable    = false
 }
 
+variable "prefix" {
+  description = "Prefix of the name of every object of the instance, so that several instances share the bucket: empty, or segments of letters, digits, ., _, and - that each end with /, such as tenant-a/. Which objects the key reaches is the key's business."
+  type        = string
+  default     = ""
+  nullable    = false
+
+  validation {
+    condition     = var.prefix == "" || (length(var.prefix) <= 256 && can(regex("^([A-Za-z0-9_-][A-Za-z0-9._-]*/)+$", var.prefix)))
+    error_message = "prefix must be empty or segments of letters, digits, ., _, and - that end with /, such as tenant-a/, none starting with a dot, at most 256 bytes."
+  }
+}
+
 variable "access_key_id_secret_id" {
   description = "Secret that holds the access key ID, as the platform's store refers to it: on Google Cloud its ID, on AWS its ARN."
   type        = string
@@ -74,6 +86,7 @@ output "env" {
     },
     var.path_style ? { MY_BLOB_S3_PATH_STYLE = "true" } : {},
     var.region == null ? {} : { MY_BLOB_S3_REGION = var.region },
+    var.prefix == "" ? {} : { MY_BLOB_S3_PREFIX = var.prefix },
   )
 }
 

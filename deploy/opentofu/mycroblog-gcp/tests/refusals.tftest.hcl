@@ -256,6 +256,36 @@ run "r2_without_cloudflare" {
   expect_failures = [var.media]
 }
 
+run "an_existing_bucket_off_gcs" {
+  command = plan
+
+  variables {
+    media = { kind = "s3", bucket_name = "my-media", endpoint = "https://s3.example.org", existing_bucket = true }
+  }
+
+  expect_failures = [var.media]
+}
+
+run "a_location_for_an_existing_bucket" {
+  command = plan
+
+  variables {
+    media = { bucket_name = "shared-media", existing_bucket = true, location = "us-central1" }
+  }
+
+  expect_failures = [var.media]
+}
+
+run "a_media_prefix_with_a_dot_segment" {
+  command = plan
+
+  variables {
+    media = { bucket_name = "shared-media", prefix = "./tenant-a/" }
+  }
+
+  expect_failures = [var.media]
+}
+
 run "memorystore_without_a_vpc" {
   command = plan
 

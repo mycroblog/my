@@ -21,6 +21,7 @@
       "blob_s3_bucket",
       "blob_s3_endpoint",
       "blob_s3_path_style",
+      "blob_s3_prefix",
       "blob_s3_region",
       "blob_s3_secret_access_key"
     ],
@@ -82,7 +83,6 @@
     "billing_aws_metric",
     "billing_aws_tag",
     "billing_cloudflare_*",
-    "blob_s3_prefix",
     "captcha*",
     "custom_emoji_max_bytes",
     "database_acquire_timeout",

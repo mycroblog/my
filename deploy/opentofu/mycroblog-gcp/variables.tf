@@ -203,12 +203,14 @@ variable "queue" {
 }
 
 variable "media" {
-  description = "The media store. gcs (recommended) creates a bucket; r2 creates an R2 bucket in cloudflare.account_id; s3 uses any S3-compatible store at endpoint. r2 and s3 read their access key from secrets you fill."
+  description = "The media store. gcs (recommended) creates a bucket, or with existing_bucket uses bucket_name, which exists, and manages none of its settings; r2 creates an R2 bucket in cloudflare.account_id; s3 uses any S3-compatible store at endpoint. r2 and s3 read their access key from secrets you fill. prefix starts the name of every object of the instance, so that instances share a bucket: empty, or segments that end with /, such as tenant-a/. With gcs, the service account then reaches only the objects under it, through an IAM condition, which needs uniform bucket-level access."
   type = object({
     kind        = optional(string, "gcs")
     bucket_name = string
+    prefix      = optional(string, "")
 
     # gcs. A null location takes the region.
+    existing_bucket         = optional(bool, false)
     location                = optional(string)
     versioning              = optional(bool, false)
     noncurrent_version_days = optional(number, 35)
@@ -234,6 +236,21 @@ variable "media" {
   validation {
     condition     = var.media.kind != "r2" || try(var.cloudflare.account_id, null) != null
     error_message = "media.kind = r2 needs cloudflare.account_id."
+  }
+
+  validation {
+    condition     = var.media.kind == "gcs" || !var.media.existing_bucket
+    error_message = "media.existing_bucket needs media.kind = gcs: s3 always uses a bucket of yours."
+  }
+
+  validation {
+    condition     = !(var.media.existing_bucket && (var.media.versioning || var.media.location != null))
+    error_message = "media.versioning and media.location need a bucket this module creates: those of an existing bucket are yours."
+  }
+
+  validation {
+    condition     = var.media.prefix == "" || (length(var.media.prefix) <= 256 && can(regex("^([A-Za-z0-9_-][A-Za-z0-9._-]*/)+$", var.media.prefix)))
+    error_message = "media.prefix must be empty or segments of letters, digits, ., _, and - that end with /, such as tenant-a/, none starting with a dot, at most 256 bytes."
   }
 }
 
