@@ -199,6 +199,17 @@ type InstanceHealth struct {
 	LastFailureDay string
 }
 
+// KnownInstance is a remote server this instance knows (a remote_instances or instance_health
+// row), with its health, when it was first seen, and the software its NodeInfo last reported.
+type KnownInstance struct {
+	InstanceHealth
+	// FirstSeenAt is when a document of the server was first stored; zero for a server known
+	// only from deliveries.
+	FirstSeenAt time.Time
+	// Software is the latest NodeInfo observation of the server; its ID is "" without one.
+	Software NodeInfoObservation
+}
+
 // DomainStatus is what decides whether an activity is delivered to a remote server.
 type DomainStatus struct {
 	// Suspended is true when a domain block with the federation restriction (suspend) covers

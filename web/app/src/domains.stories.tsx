@@ -4,7 +4,9 @@
 // FR-716–FR-718), on the fake server (app.samples.tsx), whose domains are spam.example suspended, noisy.example limited
 // for a month, mediahog.example's media rejected by a subscription, old.example's suspend lifted and far.example's
 // limit expired; whose allowlist holds two domains; whose block-list subscriptions are one in the draft mode with three
-// drafts and one automatic that keeps failing; whose remote servers are dead.example, unavailable, and flaky.example;
+// drafts and one automatic that keeps failing; whose known remote servers run Mastodon, Misskey, snac, Pixelfed and
+// GoToSocial or report no software, one with a long domain, deliveries failing to dead.example and gone.example,
+// unavailable, and to flaky.example;
 // and whose audit log holds one entry of every kind of operation. The scenario's moderator (marco) reads every story
 // but those of another reader. What follows a press (a suspend's confirmation with the follows it ends, an import's
 // preview, a draft accepted, a delivery's hidden fields shown) is the route tests' and the E2E's.
@@ -92,16 +94,23 @@ export const DomainListFailing: Story = {
 /** An address that names no subscription. */
 export const DomainListMissing: Story = { parameters: at("/moderation/domain-actions/subscriptions/none") };
 
-/** The servers deliveries failed to reach, with Open a server. */
+/**
+ * Every known server, in domain order, each with its software and its state, and its failed days where deliveries
+ * failed; one with a long domain, two that report no software; with Open a server.
+ */
 export const RemoteServers: Story = { parameters: at("/moderation/instances") };
+/** The servers with problems: those deliveries failed to reach, or marked unavailable. */
+export const RemoteServersTroubled: Story = { parameters: at("/moderation/instances?state=troubled") };
 /** The remote servers' second page, one a page. */
 export const RemoteServersSecondPage: Story = {
   parameters: at("/moderation/instances", { server: { staffPage: 1 }, next: true }),
 };
 /** The servers marked unavailable. */
 export const RemoteServersUnavailable: Story = { parameters: at("/moderation/instances?state=unavailable") };
-/** Deliveries reach every server. */
+/** The server knows no remote server yet. */
 export const RemoteServersEmpty: Story = { parameters: at("/moderation/instances", none) };
+/** No server has problems. */
+export const RemoteServersTroubledEmpty: Story = { parameters: at("/moderation/instances?state=troubled", none) };
 export const RemoteServersLoading: Story = { parameters: at("/moderation/instances", { state: "loading" }) };
 /**
  * An unavailable server: its nine failed days, Mark available, Refetch posts, when deliveries stopped and resumed, and
@@ -115,8 +124,10 @@ export const RemoteServer: Story = { parameters: at("/moderation/instances/dead.
 export const RemoteServerMore: Story = {
   parameters: at("/moderation/instances/dead.example", { server: { staffPage: 1 }, more: true }),
 };
-/** A server deliveries reach, which has never stopped. */
+/** A server deliveries reach, which has never stopped: its software and version, and when it was first seen. */
 export const RemoteServerAvailable: Story = { parameters: at("/moderation/instances/photos.example") };
+/** A server known only from deliveries, which reports no software. */
+export const RemoteServerUnreported: Story = { parameters: at("/moderation/instances/quiet.example") };
 
 /** The audit log, newest first: one entry of every kind of operation, by the reader, another moderator, the command line, the server and another server. */
 export const AuditLog: Story = { parameters: at("/moderation/audit-log") };

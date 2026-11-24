@@ -31,7 +31,8 @@ export const domainEntries: readonly StaffEntry[] = [
     load: (data, search) => loadDomainActions(data, actionQueryOf(search)),
   },
   {
-    // The servers deliveries failed to reach (ADR-0006 §3), and any server's page.
+    // Every remote server this one knows, with its software and the health of deliveries to it (ADR-0006 §3), and
+    // any server's page.
     path: "instances",
     area: "moderation",
     group: "federation",

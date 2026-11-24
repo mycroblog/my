@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: The health of the remote server.
+description: The remote server and its health.
 headers:
   Cache-Control:
     $ref: ../headers/CacheControl.yaml

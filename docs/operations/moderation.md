@@ -457,7 +457,7 @@ When a user asks whether a post, a follow, or an accept reached another server, 
 It shows each delivery of an activity to an inbox of the server, newest first, with every attempt and what the server answered, the deliveries that succeeded included.
 It needs the `manage_domains` permission.
 In the web client, the **Deliveries** section of the remote server screen (`/moderation/instances/{domain}`) shows the same list, with its filters by **Activity ID** and **Local account**, and **Show** for each hidden field under **Details** of a masked delivery; the screen says which of them are recorded in the audit log before they run.
-The Remote servers list shows only the servers that deliveries failed to reach. To open any other server, enter its domain, a handle on it, or a URL on it in **Open a server** above the list,
+The Remote servers list shows every server this server knows. To open one it does not list, enter its domain, a handle on it, or a URL on it in **Open a server** above the list,
 or use **Open the account's server** on a remote account's Review page or on a report about a remote account, or the domain in an audit log entry about a domain.
 
 ```sh

@@ -4,8 +4,9 @@ get:
   x-permission: manage_domains
   summary: Get the health of a remote server
   description: |
-    The health of the server; one without failures is `available`, without `since`. Needs
-    the `manage_domains` permission.
+    The health of the server, when it was first seen, and the software its NodeInfo last
+    reported; one without failures is `available`, without `state_changed_at`. Needs the
+    `manage_domains` permission.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]

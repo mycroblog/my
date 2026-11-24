@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The remote servers (ADR-0006 §3, ADR-0058 §1): their list at /moderation/instances, the servers deliveries failed to
-// reach or that are marked unavailable, in domain order, of one state or both, with Open a server, which opens any
-// server the reader names by its domain, a handle on it or an address on it; and a server's page (…/{domain}): whether
-// deliveries go to it, Mark available, Refetch posts, the ways to its domain actions and the audit log, the times it
+// The remote servers (ADR-0006 §3, ADR-0058 §1): their list at /moderation/instances, every server this one knows, or
+// those with problems (deliveries failed to reach them, or they are marked unavailable), or the unavailable ones, in
+// domain order, each with its software and its state, with Open a server, which opens any server the reader names by
+// its domain, a handle on it or an address on it; and a server's page (…/{domain}): its software, when it was first
+// seen, whether deliveries go to it, Mark available, Refetch posts, the ways to its domain actions and the audit log, the times it
 // was marked unavailable or available, and the deliveries to it, newest first, each with its attempts, of one activity
 // or one local account (which the audit log records, as the field says), a masked one's sender, activity and inbox
 // shown on demand, also recorded.
@@ -23,7 +24,8 @@ import {
   type DeliveryAttempt,
   type DeliveryReveal,
   type RemoteServer,
-  type RemoteServerState,
+  type RemoteServerQuery,
+  type RemoteServerSoftware,
 } from "@my/app-data";
 import {
   Pager,
@@ -89,22 +91,39 @@ export function serverDomainOf(named: string): string | undefined {
   return host.toLowerCase().replace(/\.$/, "");
 }
 
-/** What the list shows at an address's query: the servers of every state, unless it names one. */
-export function serverQueryOf(search: StaffSearch) {
-  return { state: remoteServerStates.find((s) => s === search["state"]), cursor: cursorOf(search) };
+/** What the list's filter shows besides every server: those with problems, or the unavailable ones. */
+const serverFilters = ["troubled", "unavailable"] as const;
+type ServerFilter = (typeof serverFilters)[number];
+
+/** The filter an address's query names (`state`); none, every known server. */
+const serverFilterOf = (search: StaffSearch): ServerFilter | undefined =>
+  serverFilters.find((f) => f === search["state"]);
+
+/** What the list shows at an address's query: every known server, unless it names a filter. */
+export function serverQueryOf(search: StaffSearch): RemoteServerQuery {
+  const filter = serverFilterOf(search);
+  return {
+    ...(filter === "troubled" ? { troubled: true } : {}),
+    state: remoteServerStates.find((s) => s === filter),
+    cursor: cursorOf(search),
+  };
 }
 
-/** The state of a server, marked: deliveries go to it, or only follows and their answers do. */
-function ServerStateMark({ state }: { state: RemoteServerState }) {
+/** The software a server reports, its name and its version, as it reports them. */
+const softwareWords = (s: RemoteServerSoftware): string => (s.version === "" ? s.name : `${s.name} ${s.version}`);
+
+/**
+ * The state of a server, marked as the staff's other records are, what asks for a look weighing most: stopped (only
+ * follows and their answers go to it) as a failure, at full weight; deliveries going to it though some failed, as a
+ * job waiting to run again; deliveries reaching it, muted, as what needs nothing.
+ */
+function ServerStateMark({ server }: { server: Pick<RemoteServer, "state" | "failure_days"> }) {
   const { t } = useStaffStrings();
-  return (
-    <StateMark state={state === "available" ? "active" : "disabled"}>
-      {t("staff_domains.server.state", { state })}
-    </StateMark>
-  );
+  const mark = server.state === "unavailable" ? "failed" : server.failure_days > 0 ? "retrying" : "resolved";
+  return <StateMark state={mark}>{t("staff_domains.server.state", { state: server.state })}</StateMark>;
 }
 
-type Column = "failures" | "state";
+type Column = "software" | "failures" | "state";
 
 /** The list of remote servers: Open a server, the filter of their state, the page, and the pages. */
 export function RemoteServersScreen(address: StaffAddress): ReactNode {
@@ -112,12 +131,12 @@ export function RemoteServersScreen(address: StaffAddress): ReactNode {
   const { search, onSearch, go } = address;
   const { t } = useStaffStrings();
   const q = serverQueryOf(search);
+  const filter = serverFilterOf(search);
   const page = useRemoteServers(q);
-  const states: FilterValue[] = remoteServerStates.map((s) => ({
-    id: s,
-    label: t("staff_domains.server.state", { state: s }),
-    icon: s === "available" ? "stateActive" : "stateDisabled",
-  }));
+  const filters: FilterValue[] = [
+    { id: "troubled", label: t("staff_domains.servers.state.troubled"), icon: "error" },
+    { id: "unavailable", label: t("staff_domains.server.state", { state: "unavailable" }), icon: "stateDisabled" },
+  ];
   const head = (
     <>
       <ScreenTitle>{t("staff_domains.entry.instances")}</ScreenTitle>
@@ -128,7 +147,7 @@ export function RemoteServersScreen(address: StaffAddress): ReactNode {
       />
       <FilterBar
         label={t("staff_domains.servers.filters")}
-        applied={q.state !== undefined}
+        applied={filter !== undefined}
         onClear={() => {
           onSearch({});
         }}
@@ -136,8 +155,8 @@ export function RemoteServersScreen(address: StaffAddress): ReactNode {
         <FilterFacet
           label={t("staff_domains.servers.state")}
           any={t("staff_domains.servers.state.any")}
-          values={states}
-          chosen={q.state}
+          values={filters}
+          chosen={filter}
           onChoose={(state) => {
             onSearch(filtered(search, { state }));
           }}
@@ -159,16 +178,30 @@ export function RemoteServersScreen(address: StaffAddress): ReactNode {
       </ScreenStack>
     );
   const columns: RecordColumn<Column>[] = [
+    // The state first and its glyph at the start of a narrow row's facts, so that the states of the rows scan as one
+    // column; it and "mastodon 4.3.2" say what they are without their columns' names.
+    { key: "state", label: t("staff_domains.servers.column.state"), kind: "fit", bare: true },
+    { key: "software", label: t("staff_domains.servers.column.software"), bare: true },
     { key: "failures", label: t("staff_domains.servers.column.failures"), kind: "figures" },
-    { key: "state", label: t("staff_domains.servers.column.state"), kind: "fit", beside: true },
   ];
   const rows = page.items.map((s): RecordRow<Column> => ({
     id: s.domain,
     head: s.domain,
+    wraps: true,
     href: remoteServerPath(s.domain),
+    // A server none failed leaves its cell empty: most known servers have no failure.
     cells: {
-      failures: tied(t("staff_domains.server.failure_days", { count: s.failure_days })),
-      state: <ServerStateMark state={s.state} />,
+      software:
+        s.software === undefined ? (
+          <Box as="span" tone="muted">
+            {t("staff_domains.server.software.none")}
+          </Box>
+        ) : (
+          softwareWords(s.software)
+        ),
+      failures:
+        s.failure_days === 0 ? undefined : tied(t("staff_domains.server.failure_days", { count: s.failure_days })),
+      state: <ServerStateMark server={s} />,
     },
   }));
   return (
@@ -182,7 +215,7 @@ export function RemoteServersScreen(address: StaffAddress): ReactNode {
         busy={page.stale}
         empty={
           <FeedNotice>
-            {t(q.state === undefined ? "staff_domains.servers.empty" : "staff_domains.servers.empty.filtered")}
+            {t(filter === undefined ? "staff_domains.servers.empty" : "staff_domains.servers.empty.filtered")}
           </FeedNotice>
         }
         even
@@ -265,7 +298,10 @@ export function RemoteServerScreen({ domain, onBack, ...address }: RemoteServerS
   );
 }
 
-/** Whether deliveries go to the server, Mark available, Refetch posts, and the ways to its actions and the log. */
+/**
+ * Mark available, Refetch posts; the server's software, when it was first seen, and whether deliveries go to it; and
+ * the ways to its actions and the log.
+ */
 function ServerHead({ server }: { server: RemoteServer }) {
   const { t } = useStaffStrings();
   const moment = useMoment();
@@ -291,7 +327,21 @@ function ServerHead({ server }: { server: RemoteServer }) {
     );
   };
   const items: Fact[] = [
-    { term: t("staff_domains.server.fact.state"), value: <ServerStateMark state={server.state} /> },
+    {
+      term: t("staff_domains.server.fact.software"),
+      value:
+        server.software === undefined ? (
+          <Box as="span" tone="muted">
+            {t("staff_domains.server.software.none")}
+          </Box>
+        ) : (
+          softwareWords(server.software)
+        ),
+    },
+    ...(server.first_seen_at === undefined
+      ? []
+      : [{ term: t("staff_domains.server.fact.first_seen"), value: moment(server.first_seen_at) }]),
+    { term: t("staff_domains.server.fact.state"), value: <ServerStateMark server={server} /> },
     ...(server.state_changed_at === undefined
       ? []
       : [{ term: t("staff_domains.server.fact.since"), value: moment(server.state_changed_at) }]),
@@ -303,32 +353,44 @@ function ServerHead({ server }: { server: RemoteServer }) {
       ? []
       : [{ term: t("staff_domains.server.fact.last_failure"), value: day(server.last_failure_day) }]),
   ];
+  // Every term a server's facts may have: the values start in one line on every server's screen, whichever it has.
+  const terms = [
+    t("staff_domains.server.fact.software"),
+    t("staff_domains.server.fact.first_seen"),
+    t("staff_domains.server.fact.state"),
+    t("staff_domains.server.fact.since"),
+    t("staff_domains.server.fact.failures"),
+    t("staff_domains.server.fact.last_failure"),
+  ];
   return (
     <Stack gap="entry-room">
-      <Row wrap gap="screen-tab-gap">
-        {(server.state === "unavailable" || server.failure_days > 0) && (
+      {/* What a press said, right under its buttons: no room of a group of its own while it says nothing. */}
+      <Stack gap="entry-caption">
+        <Row wrap gap="screen-tab-gap">
+          {(server.state === "unavailable" || server.failure_days > 0) && (
+            <Button
+              size="timeline"
+              busy={busy === "mark"}
+              onPress={() => {
+                run("mark", markAvailable, t("staff_domains.server.marked"));
+              }}
+            >
+              {t("staff_domains.server.mark")}
+            </Button>
+          )}
           <Button
             size="timeline"
-            busy={busy === "mark"}
+            busy={busy === "refetch"}
             onPress={() => {
-              run("mark", markAvailable, t("staff_domains.server.marked"));
+              run("refetch", refetchPosts, t("staff_domains.server.refetching"));
             }}
           >
-            {t("staff_domains.server.mark")}
+            {t("staff_domains.server.refetch")}
           </Button>
-        )}
-        <Button
-          size="timeline"
-          busy={busy === "refetch"}
-          onPress={() => {
-            run("refetch", refetchPosts, t("staff_domains.server.refetching"));
-          }}
-        >
-          {t("staff_domains.server.refetch")}
-        </Button>
-      </Row>
-      {status}
-      <FactList label={t("staff_domains.server.facts")} items={items} />
+        </Row>
+        {status}
+      </Stack>
+      <FactList label={t("staff_domains.server.facts")} items={items} beside={terms} />
       <Ways>
         <Way href={domainActionsOf(server.domain)}>{t("staff_domains.server.actions")}</Way>
         <Way href={newDomainActionPath(server.domain)}>{t("staff_domains.actions.new")}</Way>

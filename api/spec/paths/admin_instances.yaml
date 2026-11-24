@@ -2,17 +2,28 @@
 get:
   operationId: listInstanceHealth
   x-permission: manage_domains
-  summary: List the remote servers with delivery failures or marked unavailable
+  summary: List the known remote servers with their health
   description: |
-    The health of the remote servers that deliveries failed to reach on some days, or that
-    are marked unavailable, in domain order. A server that is not listed is available and
-    has no failures. Unavailable servers are sent only `Follow`, `Accept`, and `Reject`
-    until a delivery succeeds, they send a signed request, the daily probe reaches them, or
-    an operator marks them available. Needs the `manage_domains` permission.
+    The remote servers this instance knows, in domain order: those it stored a document of,
+    and those deliveries went to. Each one carries its health, when it was first seen, and
+    the software its NodeInfo last reported. `troubled` keeps the servers that deliveries
+    failed to reach on some days or that are marked unavailable; `state` keeps those in one
+    state, a server without failures being `available`. Unavailable servers are sent only
+    `Follow`, `Accept`, and `Reject` until a delivery succeeds, they send a signed request,
+    the daily probe reaches them, or an operator marks them available. Needs the
+    `manage_domains` permission.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]
   parameters:
+    - name: troubled
+      in: query
+      required: false
+      description: |
+        Keep only the servers with delivery failures or marked unavailable (`true`); `false`
+        or omitted keeps every known server.
+      schema:
+        type: boolean
     - name: state
       in: query
       required: false
@@ -23,7 +34,7 @@ get:
     - $ref: ../components/parameters/Limit.yaml
   responses:
     "200":
-      description: A page of server health.
+      description: A page of known servers.
       headers:
         Cache-Control:
           $ref: ../components/headers/CacheControl.yaml

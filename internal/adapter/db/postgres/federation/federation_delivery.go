@@ -167,25 +167,6 @@ func (r *Repository) ListUnavailableInstances(ctx context.Context, after string,
 	return out, nil
 }
 
-// ListInstanceHealth implements federation.Repository.
-func (r *Repository) ListInstanceHealth(ctx context.Context, state federation.InstanceState, after string, limit int) ([]federation.InstanceHealth, error) {
-	n, err := postgres.ToInt32(limit, "batch limit")
-	if err != nil {
-		return nil, err
-	}
-	rows, err := r.db.reader().ListInstanceHealth(ctx, federationgen.ListInstanceHealthParams{
-		State: string(state), AfterDomain: after, BatchLimit: n,
-	})
-	if err != nil {
-		return nil, postgres.Wrap(err, "list instance health")
-	}
-	out := make([]federation.InstanceHealth, len(rows))
-	for i, row := range rows {
-		out[i] = instanceHealth(row)
-	}
-	return out, nil
-}
-
 // CountInstanceHealth implements federation.Repository.
 func (r *Repository) CountInstanceHealth(ctx context.Context) (map[federation.InstanceState]int64, error) {
 	rows, err := r.db.reader().CountInstanceHealth(ctx)

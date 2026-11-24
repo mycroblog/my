@@ -5,10 +5,11 @@
 // noisy.example limited until a month from now, mediahog.example's media rejected by a subscription, old.example's
 // suspend lifted and far.example's limit expired), what a suspend would end (the follows with the domain's people in the
 // seed), Mastodon's CSV previewed, imported and exported, the allowlist, two block-list subscriptions (one in the draft
-// mode with three drafts and its fetches, one automatic whose last three fetches failed), the servers deliveries failed
-// to reach (dead.example, unavailable, and flaky.example), each server's availability and deliveries (one of them
-// masked), and the audit log, one entry of every kind of operation, newest first, with what the reader does here
-// recorded on top. Every write answers as the server does, and is kept.
+// mode with three drafts and its fetches, one automatic whose last three fetches failed), the known remote servers with
+// their software (Mastodon, Misskey, snac, Pixelfed, GoToSocial, and two that report none) and their health (deliveries
+// failed to reach dead.example, unavailable, flaky.example and gone.example, unavailable), each server's availability
+// and deliveries (one of them masked), and the audit log, one entry of every kind of operation, newest first, with what
+// the reader does here recorded on top. Every write answers as the server does, and is kept.
 
 import { day, idAt, minute, notFound, page, problem } from "./common";
 import type { Answer, Handlers, Schema } from "./spec";
@@ -536,15 +537,27 @@ export function domainHandlers(c: DomainContext): { handlers: Handlers; domains:
 
   // ---- Remote servers --------------------------------------------------------------------------------------------
 
+  // In domain order, as the server lists them; first seen days to months ago, but quiet.example, known only from
+  // deliveries.
+  const seen = (days: number) => iso(ago(days * 24 * 60));
   const servers: Server[] = empty
     ? []
     : [
+        {
+          domain: "a-rather-long-subdomain.of-a-community-run-server.social.example",
+          state: "available",
+          failure_days: 0,
+          first_seen_at: seen(3),
+          software: { name: "snac", version: "2.63" },
+        },
         {
           domain: "dead.example",
           state: "unavailable",
           state_changed_at: iso(ago(2 * 24 * 60)),
           failure_days: 9,
           last_failure_day: iso(ago(60)).slice(0, 10),
+          first_seen_at: seen(140),
+          software: { name: "mastodon", version: "4.2.10" },
         },
         {
           domain: "flaky.example",
@@ -552,6 +565,45 @@ export function domainHandlers(c: DomainContext): { handlers: Handlers; domains:
           state_changed_at: iso(ago(4 * 24 * 60)),
           failure_days: 2,
           last_failure_day: iso(ago(24 * 60)).slice(0, 10),
+          first_seen_at: seen(60),
+          software: { name: "misskey", version: "2024.11.0" },
+        },
+        {
+          domain: "gone.example",
+          state: "unavailable",
+          state_changed_at: iso(ago(30 * 24 * 60)),
+          failure_days: 21,
+          last_failure_day: iso(ago(3 * 60)).slice(0, 10),
+          first_seen_at: seen(200),
+        },
+        {
+          domain: "mastodon.example",
+          state: "available",
+          failure_days: 0,
+          first_seen_at: seen(210),
+          software: { name: "mastodon", version: "4.3.2" },
+        },
+        {
+          domain: "misskey.example",
+          state: "available",
+          failure_days: 0,
+          first_seen_at: seen(95),
+          software: { name: "misskey", version: "2025.1.0" },
+        },
+        {
+          domain: "photos.example",
+          state: "available",
+          failure_days: 0,
+          first_seen_at: seen(45),
+          software: { name: "pixelfed", version: "0.12.4" },
+        },
+        { domain: "quiet.example", state: "available", failure_days: 0 },
+        {
+          domain: "social.example",
+          state: "available",
+          failure_days: 0,
+          first_seen_at: seen(12),
+          software: { name: "gotosocial", version: "" },
         },
       ];
   const serverOf = (domain: string): Server =>
@@ -850,10 +902,14 @@ export function domainHandlers(c: DomainContext): { handlers: Handlers; domains:
     "GET /admin/instances": ({ query }) => {
       if (!may("manage_domains")) return forbidden("manage_domains");
       const state = query.get("state");
+      const troubled = query.get("troubled") === "true";
       return {
         status: 200,
         body: page(
-          servers.filter((s) => state === null || s.state === state),
+          servers.filter(
+            (s) =>
+              (state === null || s.state === state) && (!troubled || s.state === "unavailable" || s.failure_days > 0),
+          ),
           query,
           (s) => s.domain,
         ).body,

@@ -204,26 +204,40 @@ func (h *Health) Counts(ctx context.Context) (map[federation.InstanceState]int64
 // ErrInvalidInstanceState reports a state that is neither available nor unavailable.
 var ErrInvalidInstanceState = errors.New("federation: invalid instance state")
 
-// Find returns the health of the server domain. A server without a row is available and has no
-// failures; its Since is zero.
-func (h *Health) Find(ctx context.Context, domain string) (federation.InstanceHealth, error) {
-	cur, err := h.d.Repository.FindInstanceHealth(ctx, domain)
-	if errors.Is(err, ErrNotFound) {
-		return federation.InstanceHealth{Domain: domain, State: federation.InstanceAvailable}, nil
-	}
-	return cur, err
+// Find returns the server domain with its health, when it was first seen and the software its
+// NodeInfo last reported. A server without a health row is available and has no failures; its
+// Since is zero.
+func (h *Health) Find(ctx context.Context, domain string) (federation.KnownInstance, error) {
+	return h.d.Repository.FindKnownInstance(ctx, domain)
 }
 
-// List returns at most limit servers that have failures or are unavailable, in domain order
-// after the domain after ("" for the first): those in state, or every one when state is "". It
-// fails with an error wrapping ErrInvalidInstanceState for another state.
-func (h *Health) List(ctx context.Context, state federation.InstanceState, after string, limit int) ([]federation.InstanceHealth, error) {
-	switch state {
+// InstanceFilter selects the servers of Health.List.
+type InstanceFilter struct {
+	// State keeps the servers in it, a server without a health row being available; "" keeps
+	// every state.
+	State federation.InstanceState
+	// Troubled keeps only the servers with a health row: those deliveries failed to reach on
+	// some days, or that are unavailable.
+	Troubled bool
+}
+
+// List returns at most limit known servers that f selects (every server this instance stored
+// a document of or delivered to, by default), in domain order after the domain after ("" for
+// the first), each with its health, when it was first seen and its latest software. It fails
+// with an error wrapping ErrInvalidInstanceState for a state that is neither available nor
+// unavailable.
+func (h *Health) List(ctx context.Context, f InstanceFilter, after string, limit int) ([]federation.KnownInstance, error) {
+	switch f.State {
 	case "", federation.InstanceAvailable, federation.InstanceUnavailable:
 	default:
-		return nil, fmt.Errorf("%w: %q", ErrInvalidInstanceState, state)
+		return nil, fmt.Errorf("%w: %q", ErrInvalidInstanceState, f.State)
 	}
-	return h.d.Repository.ListInstanceHealth(ctx, state, after, limit)
+	// Every unavailable server has a health row, so its list is the troubled one, read from
+	// instance_health alone.
+	if f.Troubled || f.State == federation.InstanceUnavailable {
+		return h.d.Repository.ListInstanceHealth(ctx, f.State, after, limit)
+	}
+	return h.d.Repository.ListKnownInstances(ctx, f.State, after, limit)
 }
 
 // Events returns at most limit availability events of the server domain, newest first, before
@@ -236,15 +250,15 @@ func (h *Health) Events(ctx context.Context, domain, before string, limit int) (
 // days go back to zero and, when it was unavailable, it is marked available with
 // federation.ReasonOperator, and the operation is audited in the same transaction. A server without
 // failures has nothing to clear: it writes nothing, not even the audit entry. byUserID is the
-// operator, "" for the CLI. It returns the health afterwards.
-func (h *Health) MarkAvailable(ctx context.Context, domain, byUserID string) (federation.InstanceHealth, error) {
+// operator, "" for the CLI. It returns the server afterwards, as Find does.
+func (h *Health) MarkAvailable(ctx context.Context, domain, byUserID string) (federation.KnownInstance, error) {
 	now := kernel.Normalize(h.d.Clock.Now())
 	cur, err := h.d.Repository.FindInstanceHealth(ctx, domain)
 	switch {
 	case errors.Is(err, ErrNotFound):
 		return h.Find(ctx, domain)
 	case err != nil:
-		return federation.InstanceHealth{}, err
+		return federation.KnownInstance{}, err
 	}
 	if _, changed, _ := cur.Reached(now); !changed {
 		return h.Find(ctx, domain)
@@ -261,7 +275,7 @@ func (h *Health) MarkAvailable(ctx context.Context, domain, byUserID string) (fe
 		return tx.Emit(ctx, appmoderation.AuditRecorded{Entry: audit})
 	})
 	if err != nil {
-		return federation.InstanceHealth{}, err
+		return federation.KnownInstance{}, err
 	}
 	return h.Find(ctx, domain)
 }

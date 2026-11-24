@@ -298,11 +298,44 @@ SELECT domain, state, since, failure_days, last_failure_day FROM instance_health
 WHERE state = 'unavailable' AND domain > @after_domain ORDER BY domain LIMIT @batch_limit;
 
 -- ListInstanceHealth returns the servers with a health row (those with failures or unavailable),
--- in domain order after @after_domain, of the state @state ('' for every state).
+-- in domain order after @after_domain, of the state @state ('' for every state), with when they
+-- were first seen and their latest NodeInfo observation.
 -- name: ListInstanceHealth :many
-SELECT domain, state, since, failure_days, last_failure_day FROM instance_health
-WHERE (sqlc.arg(state)::text = '' OR state = sqlc.arg(state)::text) AND domain > sqlc.arg(after_domain)
-ORDER BY domain LIMIT sqlc.arg(batch_limit);
+SELECT h.domain, h.state, h.since, h.failure_days, h.last_failure_day, ri.first_seen_at,
+  o.id AS observation_id, o.software_name, o.software_version, o.observed_at
+FROM instance_health h
+LEFT JOIN remote_instances ri ON ri.domain = h.domain
+LEFT JOIN instance_nodeinfo_observations o ON o.id = (
+  SELECT lo.id FROM instance_nodeinfo_observations lo WHERE lo.domain = h.domain ORDER BY lo.id DESC LIMIT 1
+)
+WHERE (sqlc.arg(state)::text = '' OR h.state = sqlc.arg(state)::text) AND h.domain > sqlc.arg(after_domain)
+ORDER BY h.domain LIMIT sqlc.arg(batch_limit);
+
+-- ListKnownInstances returns the servers this instance knows (seen in a stored document, or with
+-- a health row), in domain order after @after_domain, of the state @state ('' for every state; a
+-- server without a health row is available), with their health, when they were first seen and
+-- their latest NodeInfo observation. The page of domains is chosen before the joins.
+-- name: ListKnownInstances :many
+SELECT k.domain, h.state, h.since, h.failure_days, h.last_failure_day, ri.first_seen_at,
+  o.id AS observation_id, o.software_name, o.software_version, o.observed_at
+FROM (
+  SELECT r.domain FROM remote_instances r
+  WHERE r.domain > sqlc.arg(after_domain)::text AND (sqlc.arg(state)::text = ''
+    OR COALESCE((SELECT rh.state FROM instance_health rh WHERE rh.domain = r.domain), 'available') = sqlc.arg(state)::text)
+  UNION
+  SELECT ih.domain FROM instance_health ih
+  WHERE ih.domain > sqlc.arg(after_domain)::text AND (sqlc.arg(state)::text = '' OR ih.state = sqlc.arg(state)::text)
+  ORDER BY 1 LIMIT sqlc.arg(batch_limit)::integer
+) k
+LEFT JOIN instance_health h ON h.domain = k.domain
+LEFT JOIN remote_instances ri ON ri.domain = k.domain
+LEFT JOIN instance_nodeinfo_observations o ON o.id = (
+  SELECT lo.id FROM instance_nodeinfo_observations lo WHERE lo.domain = k.domain ORDER BY lo.id DESC LIMIT 1
+)
+ORDER BY k.domain;
+
+-- name: GetRemoteInstance :one
+SELECT domain, first_seen_at FROM remote_instances WHERE domain = @domain;
 
 -- CountInstanceHealth counts by state the servers that failed on a day since they last answered
 -- or that are unavailable, for the metrics snapshot.

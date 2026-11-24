@@ -94,7 +94,14 @@ type Repository interface {
 	ListUnavailableInstances(ctx context.Context, after string, limit int) ([]federation.InstanceHealth, error)
 	// ListInstanceHealth returns at most limit servers with a health row in domain order, starting
 	// after the domain after ("" for the first): those in state, or every one when state is "".
-	ListInstanceHealth(ctx context.Context, state federation.InstanceState, after string, limit int) ([]federation.InstanceHealth, error)
+	ListInstanceHealth(ctx context.Context, state federation.InstanceState, after string, limit int) ([]federation.KnownInstance, error)
+	// ListKnownInstances returns at most limit servers that have a remote_instances or a health
+	// row, in domain order, starting after the domain after ("" for the first): those in state, a
+	// server without a health row being available, or every one when state is "".
+	ListKnownInstances(ctx context.Context, state federation.InstanceState, after string, limit int) ([]federation.KnownInstance, error)
+	// FindKnownInstance returns the server domain as ListKnownInstances lists it; a server without
+	// any row is available, with no failures, no first sighting and no software.
+	FindKnownInstance(ctx context.Context, domain string) (federation.KnownInstance, error)
 	// CountInstanceHealth counts by state the servers that failed on a day since they last
 	// answered or that are unavailable; a state with none is absent.
 	CountInstanceHealth(ctx context.Context) (map[federation.InstanceState]int64, error)

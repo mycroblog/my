@@ -32,33 +32,58 @@ func (f fakePermissions) Permissions(_ context.Context, userID string) ([]identi
 	return f[userID], nil
 }
 
-// fakeHealth keeps the health of servers (in domain order) and their events (oldest first) with
-// the semantics of appfederation.Health.
+// fakeHealth keeps the health of servers (in domain order), the servers seen in a document and
+// the software they reported, and the events of servers (oldest first) with the semantics of
+// appfederation.Health.
 type fakeHealth struct {
 	servers []federation.InstanceHealth
-	events  []federation.AvailabilityEvent
-	now     time.Time
+	// seen are the first sightings of servers, with or without a health row.
+	seen map[string]time.Time
+	// software is the newest NodeInfo observation of servers.
+	software map[string]federation.NodeInfoObservation
+	events   []federation.AvailabilityEvent
+	now      time.Time
 	// markedBy are the users who cleared a server.
 	markedBy []string
+	// filters and afters are the filters and cursors List was called with.
+	filters []appfederation.InstanceFilter
+	afters  []string
 }
 
-func (f *fakeHealth) Find(_ context.Context, domain string) (federation.InstanceHealth, error) {
+func (f *fakeHealth) Find(_ context.Context, domain string) (federation.KnownInstance, error) {
+	k := federation.KnownInstance{InstanceHealth: federation.InstanceHealth{Domain: domain, State: federation.InstanceAvailable}}
 	for _, h := range f.servers {
 		if h.Domain == domain {
-			return h, nil
+			k.InstanceHealth = h
 		}
 	}
-	return federation.InstanceHealth{Domain: domain, State: federation.InstanceAvailable}, nil
+	k.FirstSeenAt, k.Software = f.seen[domain], f.software[domain]
+	return k, nil
 }
 
-func (f *fakeHealth) List(_ context.Context, state federation.InstanceState, after string, limit int) ([]federation.InstanceHealth, error) {
+// List lists the servers with a health row or a sighting, in domain order; troubled keeps those
+// with a health row.
+func (f *fakeHealth) List(ctx context.Context, filter appfederation.InstanceFilter, after string, limit int) ([]federation.KnownInstance, error) {
+	f.filters, f.afters = append(f.filters, filter), append(f.afters, after)
+	state := filter.State
 	if state != "" && state != federation.InstanceAvailable && state != federation.InstanceUnavailable {
 		return nil, appfederation.ErrInvalidInstanceState
 	}
-	var out []federation.InstanceHealth
+	var domains []string
 	for _, h := range f.servers {
-		if (state == "" || h.State == state) && h.Domain > after && len(out) < limit {
-			out = append(out, h)
+		domains = append(domains, h.Domain)
+	}
+	if !filter.Troubled {
+		for d := range f.seen {
+			domains = append(domains, d)
+		}
+	}
+	slices.Sort(domains)
+	var out []federation.KnownInstance
+	for _, d := range slices.Compact(domains) {
+		k, _ := f.Find(ctx, d)
+		if (state == "" || k.State == state) && d > after && len(out) < limit {
+			out = append(out, k)
 		}
 	}
 	return out, nil
@@ -74,7 +99,7 @@ func (f *fakeHealth) Events(_ context.Context, domain, before string, limit int)
 	return out, nil
 }
 
-func (f *fakeHealth) MarkAvailable(ctx context.Context, domain, byUserID string) (federation.InstanceHealth, error) {
+func (f *fakeHealth) MarkAvailable(ctx context.Context, domain, byUserID string) (federation.KnownInstance, error) {
 	f.markedBy = append(f.markedBy, byUserID)
 	for i, h := range f.servers {
 		if h.Domain != domain {
@@ -429,6 +454,128 @@ func TestGetInstanceHealth(t *testing.T) {
 	got := decodeJSON[clientapi.AdminInstanceHealth](t, res)
 	if got.State != clientapi.AdminInstanceStateAvailable || got.StateChangedAt != nil || got.LastFailureDay != nil || got.FailureDays != 0 {
 		t.Errorf("a server without a row = %+v, want available without since", got)
+	}
+}
+
+// newKnownServersEnv is newAdminEnv where b.example, which has a health row, and d.example,
+// which has none, were seen in a document, and both reported their software, d.example without
+// a version.
+func newKnownServersEnv(t *testing.T) (*authEnv, *fakeHealth) {
+	t.Helper()
+	e, health, _ := newAdminEnv(t)
+	health.seen = map[string]time.Time{"b.example": adminNow.Add(-72 * time.Hour), "d.example": adminNow.Add(-24 * time.Hour)}
+	health.software = map[string]federation.NodeInfoObservation{
+		"b.example": {ID: "01890a5d-ac96-774b-bcce-b302099a9001", Domain: "b.example", SoftwareName: "mastodon", SoftwareVersion: "4.3.1", ObservedAt: adminNow.Add(-time.Hour)},
+		"d.example": {ID: "01890a5d-ac96-774b-bcce-b302099a9002", Domain: "d.example", SoftwareName: "misskey", ObservedAt: adminNow.Add(-time.Hour)},
+	}
+	return e, health
+}
+
+func domainsOfPage(page clientapi.AdminInstanceHealthPage) []string {
+	var ds []string
+	for _, it := range page.Items {
+		ds = append(ds, it.Domain)
+	}
+	return ds
+}
+
+// The list passes troubled and state to Health.List as one filter, and its cursor as the last
+// domain of the page; a bad state or troubled is a 400.
+func TestListKnownInstancesFilters(t *testing.T) {
+	e, health := newKnownServersEnv(t)
+	for _, c := range []struct {
+		query   string
+		filter  appfederation.InstanceFilter
+		domains []string
+	}{
+		{"", appfederation.InstanceFilter{}, []string{"a.example", "b.example", "c.example", "d.example"}},
+		{"troubled=false", appfederation.InstanceFilter{}, []string{"a.example", "b.example", "c.example", "d.example"}},
+		{"troubled=true", appfederation.InstanceFilter{Troubled: true}, []string{"a.example", "b.example", "c.example"}},
+		{"state=available", appfederation.InstanceFilter{State: federation.InstanceAvailable}, []string{"b.example", "d.example"}},
+		{"troubled=true&state=available", appfederation.InstanceFilter{State: federation.InstanceAvailable, Troubled: true}, []string{"b.example"}},
+		{"state=unavailable", appfederation.InstanceFilter{State: federation.InstanceUnavailable}, []string{"a.example", "c.example"}},
+		{"state=unavailable&troubled=true", appfederation.InstanceFilter{State: federation.InstanceUnavailable, Troubled: true}, []string{"a.example", "c.example"}},
+	} {
+		health.filters = nil
+		res := e.admin(t, http.MethodGet, "/admin/instances?"+c.query, "admin-read", nil)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("?%s = %d, want 200", c.query, res.StatusCode)
+			continue
+		}
+		page := decodeJSON[clientapi.AdminInstanceHealthPage](t, res)
+		if got := domainsOfPage(page); !slices.Equal(got, c.domains) {
+			t.Errorf("?%s = %v, want %v", c.query, got, c.domains)
+		}
+		if !slices.Equal(health.filters, []appfederation.InstanceFilter{c.filter}) {
+			t.Errorf("?%s asked Health.List for %+v, want %+v", c.query, health.filters, c.filter)
+		}
+	}
+
+	res := e.admin(t, http.MethodGet, "/admin/instances?limit=3", "admin-read", nil)
+	first := decodeJSON[clientapi.AdminInstanceHealthPage](t, res)
+	if got := domainsOfPage(first); !slices.Equal(got, []string{"a.example", "b.example", "c.example"}) || first.NextCursor == nil {
+		t.Fatalf("first page = %v, cursor %v", got, first.NextCursor)
+	}
+	health.afters = nil
+	res = e.admin(t, http.MethodGet, "/admin/instances?limit=3&troubled=false&cursor="+*first.NextCursor, "admin-read", nil)
+	rest := decodeJSON[clientapi.AdminInstanceHealthPage](t, res)
+	if got := domainsOfPage(rest); !slices.Equal(got, []string{"d.example"}) || rest.NextCursor != nil {
+		t.Errorf("second page = %v, cursor %v; want d.example and no cursor", got, rest.NextCursor)
+	}
+	if !slices.Equal(health.afters, []string{"c.example"}) {
+		t.Errorf("the cursor of the second page reached Health.List as %q, want the last domain c.example", health.afters)
+	}
+
+	for _, query := range []string{"state=gone", "troubled=maybe", "troubled=true&state=gone"} {
+		res := e.admin(t, http.MethodGet, "/admin/instances?"+query, "admin-read", nil)
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("?%s = %d, want 400", query, res.StatusCode)
+		}
+	}
+}
+
+// Each server carries its first sighting and its software when it has them, on the list, on its
+// own, and once marked available.
+func TestKnownInstanceFields(t *testing.T) {
+	e, _ := newKnownServersEnv(t)
+	res := e.admin(t, http.MethodGet, "/admin/instances", "admin-read", nil)
+	items := map[string]clientapi.AdminInstanceHealth{}
+	for _, it := range decodeJSON[clientapi.AdminInstanceHealthPage](t, res).Items {
+		items[it.Domain] = it
+	}
+	b := items["b.example"]
+	if b.FirstSeenAt == nil || !b.FirstSeenAt.Equal(adminNow.Add(-72*time.Hour)) || b.Software == nil ||
+		*b.Software != (clientapi.AdminInstanceSoftware{Name: "mastodon", Version: "4.3.1"}) || b.FailureDays != 2 {
+		t.Errorf("b.example = %+v (software %+v)", b, b.Software)
+	}
+	d := items["d.example"]
+	if d.State != clientapi.AdminInstanceStateAvailable || d.FailureDays != 0 || d.StateChangedAt != nil || d.LastFailureDay != nil ||
+		d.FirstSeenAt == nil || !d.FirstSeenAt.Equal(adminNow.Add(-24*time.Hour)) ||
+		d.Software == nil || *d.Software != (clientapi.AdminInstanceSoftware{Name: "misskey", Version: ""}) {
+		t.Errorf("d.example, seen without a health row = %+v (software %+v)", d, d.Software)
+	}
+	if a := items["a.example"]; a.FirstSeenAt != nil || a.Software != nil {
+		t.Errorf("a.example, known only from its health = %+v, want neither a sighting nor software", a)
+	}
+
+	// The software of d.example reports no version: the version is there, empty.
+	res = e.admin(t, http.MethodGet, "/admin/instances/d.example", "admin-read", nil)
+	var raw map[string]json.RawMessage
+	if err := json.NewDecoder(res.Body).Decode(&raw); err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != http.StatusOK || string(raw["software"]) != `{"name":"misskey","version":""}` || raw["first_seen_at"] == nil {
+		t.Errorf("GET d.example = %d %s", res.StatusCode, raw)
+	}
+	res = e.admin(t, http.MethodGet, "/admin/instances/unknown.example", "admin-read", nil)
+	if got := decodeJSON[clientapi.AdminInstanceHealth](t, res); res.StatusCode != http.StatusOK || got.State != clientapi.AdminInstanceStateAvailable ||
+		got.FirstSeenAt != nil || got.Software != nil {
+		t.Errorf("GET unknown.example = %d %+v, want available without a sighting or software", res.StatusCode, got)
+	}
+	res = e.admin(t, http.MethodPost, "/admin/instances/b.example/mark_available", "admin", nil)
+	if got := decodeJSON[clientapi.AdminInstanceHealth](t, res); res.StatusCode != http.StatusOK || got.State != clientapi.AdminInstanceStateAvailable ||
+		got.FirstSeenAt == nil || got.Software == nil || got.Software.Name != "mastodon" {
+		t.Errorf("mark_available b.example = %d %+v, want its sighting and software", res.StatusCode, got)
 	}
 }
 
