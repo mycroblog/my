@@ -82,7 +82,7 @@ Die veröffentlichte Binärdatei und das Container-Image enthalten jeden Adapter
    und die Antworten auf erneut gesendete Schreibvorgänge jedes Prozesses getrennt hält. Die Job-Queue bleibt in
    PostgreSQL oder zieht zu Google Cloud Tasks um ([Cloud Tasks](running.md#cloud-tasks)).
 
-Die [Bereitstellung auf Cloud Run](deploy-cloud-run.md) ist ein Beispiel für ein Setup zwischen dem zweiten und dem dritten Schritt:
+Die [Bereitstellung auf Cloud Run](deploy-google-cloud.md) ist ein Beispiel für ein Setup zwischen dem zweiten und dem dritten Schritt:
 `role = all` auf Cloud Run, PostgreSQL auf Neon, Medien in Cloud Storage, Cloud Tasks für die Jobs und Pub/Sub für den
 Stream, ohne laufende Instanz, solange niemand den Server nutzt.
 
@@ -91,7 +91,7 @@ Stream, ohne laufende Instanz, solange niemand den Server nutzt.
 
 Lies die Betreiber-Leitfäden in dieser Reihenfolge:
 
-1. **Loslegen:** [den Server betreiben](running.md) oder [auf Cloud Run deployen](deploy-cloud-run.md), dann die
+1. **Loslegen:** [den Server betreiben](running.md) oder [auf Cloud Run deployen](deploy-google-cloud.md), dann die
    [Checkliste für den Produktivbetrieb](production-checklist.md) durchgehen, bevor du ihn für Nutzer öffnest.
 2. **Den Server konfigurieren:** ihre [Einstellungen](instance-settings.md), die [Registrierung](registration.md),
    [externe Login-Anbieter](login-providers.md), [E-Mail](email.md), [CAPTCHA](captcha.md), [das CDN](cdn.md),

@@ -717,7 +717,7 @@ Choisissez une valeur d’après le fonctionnement de votre serveur :
 <!-- source: cloud-tasks 287213e090b5 -->
 ### Cloud Tasks
 
-[Déployer sur Cloud Run](deploy-cloud-run.md) met en place tout ce qui suit avec des modules OpenTofu.
+[Déployer sur Cloud Run](deploy-google-cloud.md) met en place tout ce qui suit avec des modules OpenTofu.
 
 Avec `queue = cloudtasks`, les tâches restent dans la base de données (`database = postgres`), et Google Cloud Tasks ne fait que réveiller le serveur pour chacune d’elles :
 

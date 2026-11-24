@@ -24,7 +24,7 @@ Auf Google Cloud setzt der Abschnitt `billing` von [`mycroblog-gcp`](../../deplo
 | Den Export aktivieren („Standard usage cost“) | Von Hand, in der Google-Cloud-Konsole, mit einer Rolle auf dem Rechnungskonto |
 | Das Topic und die Pull-Subscription eines Budgets sowie die Subscriber-Rolle | Der Abschnitt `billing` mit `method = "budget"` |
 | Das Budget erstellen und mit dem Topic verbinden | Von Hand, in der Google-Cloud-Konsole, mit einer Rolle auf dem Rechnungskonto |
-| Die BigQuery- oder Pub/Sub-API aktivieren | Von Hand, wie unter [Auf Cloud Run bereitstellen](deploy-cloud-run.md#1-enable-the-apis) |
+| Die BigQuery- oder Pub/Sub-API aktivieren | Von Hand, wie unter [Auf Cloud Run bereitstellen](deploy-google-cloud.md#1-enable-the-apis) |
 | Die Kosten von AWS auf Cloud Run | Nicht durch `mycroblog-gcp`. Erstelle die Rolle von [Calling from Cloud Run with web identity](#calling-from-cloud-run-with-web-identity) von Hand und setze `billing_sources = aws` und `billing_aws_role_arn` in `settings`, ohne den Abschnitt `billing` |
 | Cloudflare | Nicht durch diese Module. Setze auf Cloud Run ohne den Abschnitt `billing` `billing_sources` und `billing_cloudflare_account_id` in `settings` und `billing_cloudflare_api_token` in `secrets`, wie bei einem Plugin |
 | Ein Plugin | Nicht durch diese Module. Setze auf Cloud Run ohne den Abschnitt `billing` `billing_sources = plugin` und die Einstellungen [des Plugins](#a-plugin-billing_sources--plugin) in `settings`. Neben dem Abschnitt `billing` lehnt das Modul `billing_sources` in `settings` ab |

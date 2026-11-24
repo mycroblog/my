@@ -60,14 +60,14 @@
 2. **把数据移出去。** 数据库使用 PostgreSQL，媒体使用 S3 兼容存储桶或 Google Cloud Storage，并在媒体前面放置 CDN。服务器仍是一个进程，但不再依赖单块磁盘，下一阶段的多个进程也可以共享这些数据。如果可以，请在首次启动前做出决定：之后再把数据从 SQLite 和文件系统迁出是一项单独的工作（[需要备份的内容](backup.md#what-to-back-up)列出了需要迁移的内容）。
 3. **横向扩展。** 用 `role = web` 的进程处理请求，用 `role = worker` 的进程处理任务，按各自需要运行任意数量，并按任务类型拆分 worker（[拆分 worker](running.md#splitting-workers-by-job-type)）。有多个进程时，实时流需要一个能到达每个进程的代理（`postgres`、`valkey`、`sns` 或 `pubsub`），键值存储也应当共享（`db` 或 `valkey`），因为 `memory` 会让每个进程的速率限制和对重复发送的写入请求的应答彼此独立。任务队列继续留在 PostgreSQL 中，或迁移到 Google Cloud Tasks（[Cloud Tasks](running.md#cloud-tasks)）。
 
-[Cloud Run 部署](deploy-cloud-run.md)是介于第二和第三阶段之间的一个配置示例：在 Cloud Run 上运行 `role = all`，PostgreSQL 使用 Neon，媒体存放在 Cloud Storage，任务使用 Cloud Tasks，流使用 Pub/Sub，没有人使用服务器时不运行任何实例。
+[Cloud Run 部署](deploy-google-cloud.md)是介于第二和第三阶段之间的一个配置示例：在 Cloud Run 上运行 `role = all`，PostgreSQL 使用 Neon，媒体存放在 Cloud Storage，任务使用 Cloud Tasks，流使用 Pub/Sub，没有人使用服务器时不运行任何实例。
 
 <!-- source: where-to-go-next 2f1d25c01f8a -->
 ## 接下来读什么
 
 按以下顺序阅读运营指南：
 
-1. **开始：** [运行服务器](running.md)或[在 Cloud Run 上部署](deploy-cloud-run.md)，然后在向用户开放之前完成[上线检查清单](production-checklist.md)。
+1. **开始：** [运行服务器](running.md)或[在 Cloud Run 上部署](deploy-google-cloud.md)，然后在向用户开放之前完成[上线检查清单](production-checklist.md)。
 2. **配置实例：** 它的[设置](instance-settings.md)、[注册](registration.md)、[外部登录提供方](login-providers.md)、[邮件](email.md)、[CAPTCHA](captcha.md)、[CDN](cdn.md)、[链接预览](link-previews.md)，以及[搜索引擎和 AI 爬虫](crawlers.md)。
 3. **启用功能：** [审核](moderation.md)、[中继](relays.md)、[Webhook](webhooks.md)、[插件](plugins.md)和[决策钩子](decision-hooks.md)、[语音聊天](voice.md)、[全文搜索](search.md)、[支持者](supporters.md)及其付款，以及[导入云费用](billing-import.md)。
 4. **日常运行：** [监控](monitoring.md)、[告警](alerts.md)、[错误报告](error-reporting.md)、[维护](maintenance.md)、[备份](backup.md)、[数据库](database.md)、[密钥加密密钥](key-management.md)，以及[管理员和角色](admin-cli.md)。

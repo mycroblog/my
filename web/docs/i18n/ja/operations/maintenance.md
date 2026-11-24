@@ -120,7 +120,7 @@ gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAIN
 ```
 
 OpenTofu のモジュールを使う場合は、代わりにブロックで `settings = { maintenance = "true" }` として設定し、apply します。次の apply は
-ブロックの内容に戻すためです。アップグレードの前後での扱いは、[Cloud Run へのデプロイ](deploy-cloud-run.md#the-maintenance-mode)にあります。
+ブロックの内容に戻すためです。アップグレードの前後での扱いは、[Cloud Run へのデプロイ](deploy-opentofu.md#the-maintenance-mode)にあります。
 
 ロードバランサーなしで Cloud Run を直接公開しているときは、その前に何もないので、使える手段はメンテナンスモードだけです。
 
@@ -145,7 +145,7 @@ defaultCustomErrorResponsePolicy:
 コンテナの環境に `MY_MAINTENANCE=true` を入れたサービスのタスク定義のリビジョンを登録し、サービスをそれに更新します。
 作業のあとは、変数なしで同じことをします。OpenTofu のモジュールを使う場合は、代わりにブロックで `settings = { maintenance = "true" }` として設定し、
 apply します。次の apply はブロックの内容に戻すためです。アップグレードの前後では、モードを apply し、次に新しいリリースを apply し、
-最後にそれを外したブロックを apply します。[Cloud Run へのデプロイ](deploy-cloud-run.md#the-maintenance-mode)と同じです。
+最後にそれを外したブロックを apply します。[Cloud Run へのデプロイ](deploy-opentofu.md#the-maintenance-mode)と同じです。
 
 CloudFront の後ろで **`my serve` が動かせないとき**: 書き出した `index.html` を、2 つ目のオリジンにした S3 のバケットにアップロードし
 （エラーページを、失敗しているオリジンから出すことはできません）、`502` と `504`（`503` は `my serve` が動かせない間だけ）に対するカスタムエラーレスポンスを、

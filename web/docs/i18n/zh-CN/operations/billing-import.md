@@ -22,7 +22,7 @@
 | 启用导出（“Standard usage cost”） | 在 Google Cloud 控制台中手动完成，需要结算账号上的角色 |
 | 预算的主题和拉取订阅，以及订阅者角色 | `billing` 部分，设置 `method = "budget"` |
 | 创建预算并将其连接到主题 | 在 Google Cloud 控制台中手动完成，需要结算账号上的角色 |
-| 启用 BigQuery 或 Pub/Sub API | 手动完成，方法同[在 Cloud Run 上部署](deploy-cloud-run.md#1-enable-the-apis) |
+| 启用 BigQuery 或 Pub/Sub API | 手动完成，方法同[在 Cloud Run 上部署](deploy-google-cloud.md#1-enable-the-apis) |
 | Cloud Run 上 AWS 的费用 | `mycroblog-gcp` 不负责。请手动创建[通过 Web 身份从 Cloud Run 调用](#calling-from-cloud-run-with-web-identity)中的角色，并在 `settings` 中设置 `billing_sources = aws` 和 `billing_aws_role_arn`，不使用 `billing` 部分 |
 | Cloudflare | 这些模块不负责。在 Cloud Run 上，不使用 `billing` 部分，像插件一样在 `settings` 中设置 `billing_sources` 和 `billing_cloudflare_account_id`，在 `secrets` 中设置 `billing_cloudflare_api_token` |
 | 插件 | 这些模块不负责。在 Cloud Run 上，不使用 `billing` 部分，在 `settings` 中设置 `billing_sources = plugin` 以及[插件](#a-plugin-billing_sources--plugin)的各项设置。与 `billing` 部分同时使用时，该模块会拒绝 `settings` 中的 `billing_sources` |

@@ -209,7 +209,7 @@ kubectl rollout status deployment/my
 <!-- source: cloud-run 9e7486b6a4af -->
 ### Cloud Run
 
-使用 OpenTofu 模組時，升級就是套用新版本：它會在服務換用新映像檔之前，於遷移任務中執行 `my upgrade`，失敗時就停在那裡：請參閱[在 Cloud Run 上部署](deploy-cloud-run.md#upgrading)。手動進行時：
+使用 OpenTofu 模組時，升級就是套用新版本：它會在服務換用新映像檔之前，於遷移任務中執行 `my upgrade`，失敗時就停在那裡：請參閱[在 Cloud Run 上部署](deploy-opentofu.md#upgrading)。手動進行時：
 
 Cloud Run 任務各自只執行一個容器，因此請為每個步驟建立一個任務，並以 `--wait` 依序執行，任務失敗時它也會失敗。請給這些任務與服務相同的環境變數與密鑰。
 

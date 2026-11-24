@@ -142,7 +142,7 @@ Voir [Comment le trafic atteint le service](#how-traffic-reaches-the-service) po
 <!-- source: 7-create-the-first-administrator 19137d6d01f0 -->
 ### 7. Créer le premier administrateur
 
-Les jobs Cloud Run n’ont ni terminal ni entrée standard ; `my admin create` affiche donc un lien qui définit le mot de passe au lieu d’en lire un. Activez la [console](#the-console) et exécutez :
+Les jobs Cloud Run n’ont ni terminal ni entrée standard ; `my admin create` affiche donc un lien qui définit le mot de passe au lieu d’en lire un. Activez la [console](deploy-opentofu.md#the-console) et exécutez :
 
 ```sh
 tofu apply -var console_enabled=true
@@ -368,7 +368,7 @@ Une URL de proxy contient sa `sig` dans la chaîne de requête, qui fait partie 
 
 Changer `kek.kind` tient en une ligne de `main.tf`, mais sur une instance qui contient des données, ce n’est pas gratuit. La base de données contient des secrets enveloppés avec la clé actuelle ; une instance qui la perd ne peut donc plus les lire, et les clés de chaque compte en font partie.
 
-Suivez [Passer de la KEK locale à un KMS](key-management.md#move-between-the-local-kek-and-a-kms). Du secret à Cloud KMS, conservez la KEK actuelle comme `kek_previous` pendant que les secrets se déplacent : ajoutez `secrets = ["kek_previous"]`, et remplissez le secret `my-kek-previous` avec la KEK actuelle. Exécutez `my kek rewrap` par [la console](#the-console), puis retirez-la lorsque `my kek status` ne compte plus de clés `local:`. Conservez la KEK aussi longtemps que vous conservez des sauvegardes de la base de données antérieures à la ré-enveloppe.
+Suivez [Passer de la KEK locale à un KMS](key-management.md#move-between-the-local-kek-and-a-kms). Du secret à Cloud KMS, conservez la KEK actuelle comme `kek_previous` pendant que les secrets se déplacent : ajoutez `secrets = ["kek_previous"]`, et remplissez le secret `my-kek-previous` avec la KEK actuelle. Exécutez `my kek rewrap` par [la console](deploy-opentofu.md#the-console), puis retirez-la lorsque `my kek status` ne compte plus de clés `local:`. Conservez la KEK aussi longtemps que vous conservez des sauvegardes de la base de données antérieures à la ré-enveloppe.
 
 Sur une nouvelle instance sans données, rien n’a besoin d’être déplacé.
 

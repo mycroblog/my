@@ -24,7 +24,7 @@ Google Cloud では、[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections
 | エクスポート（「Standard usage cost」）を有効にする | 手作業で、Google Cloud のコンソールから、請求先アカウントのロールを持って |
 | 予算のトピックと pull サブスクリプション、およびサブスクライバーのロール | `method = "budget"` を指定した `billing` セクション |
 | 予算を作成してトピックにつなぐ | 手作業で、Google Cloud のコンソールから、請求先アカウントのロールを持って |
-| BigQuery または Pub/Sub の API を有効にする | 手作業で、[Cloud Run へのデプロイ](deploy-cloud-run.md#1-enable-the-apis) のとおりに |
+| BigQuery または Pub/Sub の API を有効にする | 手作業で、[Cloud Run へのデプロイ](deploy-google-cloud.md#1-enable-the-apis) のとおりに |
 | Cloud Run での AWS の費用 | `mycroblog-gcp` では行いません。[Cloud Run から Web ID で呼び出す](#calling-from-cloud-run-with-web-identity)のロールを手作業で作り、`billing` セクションを使わずに `settings` で `billing_sources = aws` と `billing_aws_role_arn` を設定します |
 | Cloudflare | これらのモジュールでは行いません。Cloud Run では、`billing` セクションを使わずに、プラグインの場合と同じように、`settings` で `billing_sources` と `billing_cloudflare_account_id` を、`secrets` で `billing_cloudflare_api_token` を設定します |
 | プラグイン | これらのモジュールでは行いません。Cloud Run では、`billing` セクションを使わずに、`settings` で `billing_sources = plugin` と[プラグイン](#a-plugin-billing_sources--plugin)の設定を指定します。`billing` セクションと並べると、モジュールは `settings` の `billing_sources` を拒否します |

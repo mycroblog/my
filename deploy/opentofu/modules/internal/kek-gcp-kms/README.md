@@ -30,4 +30,4 @@ Enable `cloudkms.googleapis.com` first. The key has `prevent_destroy`, because d
 Cloud KMS keeps key rings and keys in any case: a key can only have its versions destroyed.
 
 Replacing a KEK module on an instance that already has data is a move, not a swap: see
-[the guide](../../../../../docs/operations/deploy-cloud-run.md#changing-the-kek-backend).
+[the guide](../../../../../docs/operations/deploy-opentofu.md#the-kek).

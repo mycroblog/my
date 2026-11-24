@@ -3,7 +3,7 @@
 # One deployment on AWS: ECS on Fargate behind an Application Load Balancer, the jobs in the database, S3, SNS, and email through
 # Amazon SES, with a database created by hand on Neon, on a VPC of its own. Each section of mycroblog-aws picks another backend
 # by its kind: deploy/opentofu/README.md lists them.
-# NOTHING ON AWS HAS BEEN APPLIED: read "AWS" in deploy/opentofu/README.md for what stays unverified and what it costs.
+# NOTHING ON AWS HAS BEEN APPLIED: docs/operations/deploy-aws.md is the guide, with what it costs.
 
 terraform {
   required_version = ">= 1.11"
@@ -29,7 +29,7 @@ module "mycroblog" {
   ingress = { certificate_arn = var.certificate_arn, route53_zone_id = var.route53_zone_id }
   media   = { bucket_name = var.bucket_name }
   # SES sends only to verified addresses until AWS grants production access: read "Email through Amazon SES" in
-  # deploy/opentofu/README.md.
+  # docs/operations/deploy-aws.md.
   mail = { from = var.mail_from }
   # Who the alarms notify. null creates no canary and no alarms.
   monitoring = { notification_emails = var.alert_emails }

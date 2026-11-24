@@ -38,9 +38,11 @@ documents() {
   find "$tofu_dir/examples" "$tofu_dir/modules" "$tofu_dir"/mycroblog-* -type f \( -name '*.tf' -o -name '*.md' \) \
     -not -path '*/.terraform/*' -not -path "$tofu_dir/modules/*/*.tf" -not -path "$tofu_dir/mycroblog-*/*.tf"
   find "$tofu_dir" -maxdepth 1 -name '*.md'
-  if [ -f "$root/docs/operations/deploy-cloud-run.md" ]; then
-    echo "$root/docs/operations/deploy-cloud-run.md"
-  fi
+  for document in deploy-opentofu.md deploy-google-cloud.md deploy-aws.md; do
+    if [ -f "$root/docs/operations/$document" ]; then
+      echo "$root/docs/operations/$document"
+    fi
+  done
 }
 
 # sources prints the lines of FILE that set a source, comments included: a swap shown in a comment is what an operator copies.

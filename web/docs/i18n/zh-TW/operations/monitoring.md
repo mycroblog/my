@@ -17,7 +17,7 @@
 請將外部監控指向 **`/api/v1/instance/health`**，而不是 `/readyz`（`/health/ready`）：它每次請求都會查詢資料庫，所以間隔很短的監控會讓縮減至零的資料庫一直醒著。探測是給你的平台用的。
 [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) 的 `monitoring` 區段會在 Google Cloud 上檢查 `/health/live`，[`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) 的則檢查 `/readyz`，兩者都以很長的間隔，從平台自己的監控進行檢查：它的 `uptime_period` 就是這件事的成本，因為每次檢查都會喚醒一個執行個體。
 
-伺服器自己的指標、追蹤和錯誤回報要送到哪裡，由同樣這些模組的 `observability` 區段決定，`monitoring` 會讀取它。預設會把每一項都送到平台：在 Google Cloud 上，指標送到 Cloud Monitoring，請求追蹤送到 Cloud Trace，錯誤回報送到 Error Reporting，這三項都來自 Cloud Run 送出的內容，並已啟用它們的 API；在 AWS 上，指標以 Embedded Metric Format 送到 CloudWatch，錯誤回報送到 CloudWatch Logs，追蹤則透過每個 task 中與伺服器並行執行的收集器送到 X-Ray（[AWS ECS 上的追蹤](running.md#aws-ecs)）。`monitoring` 需要指標送到那裡：它會拒絕 `observability.metrics = "settings"`，因為那會把 `metrics_exporter` 留給 `settings` 輸入。
+伺服器自己的指標、追蹤和錯誤回報要送到哪裡，由同樣這些模組的 `observability` 區段決定，`monitoring` 會讀取它。預設會把每一項都送到平台：在 Google Cloud 上，指標送到 Cloud Monitoring，請求追蹤送到 Cloud Trace，錯誤回報送到 Error Reporting，這三項都來自 Cloud Run 送出的內容，並已啟用它們的 API；在 AWS 上，指標以 Embedded Metric Format 送到 CloudWatch，錯誤回報送到 CloudWatch Logs，追蹤則透過每個 task 中與伺服器並行執行的收集器送到 X-Ray（[AWS ECS 上的追蹤](deploy-aws.md#traces-to-x-ray)）。`monitoring` 需要指標送到那裡：它會拒絕 `observability.metrics = "settings"`，因為那會把 `metrics_exporter` 留給 `settings` 輸入。
 
 `/api/v1/instance/health` 的回應（不需驗證，`Cache-Control: no-store`）：
 

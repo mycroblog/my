@@ -61,14 +61,14 @@
 3. **向外擴充。** 為處理請求執行 `role = web` 的程序，為處理工作執行 `role = worker` 的程序，各需要多少就執行多少，並依工作類型拆分 worker（[依工作類型拆分 worker](running.md#splitting-workers-by-job-type)）。
    有多個程序時，即時串流需要一個能到達每個程序的代理（`postgres`、`valkey`、`sns` 或 `pubsub`），鍵值儲存也應該共用（`db` 或 `valkey`），因為 `memory` 會讓各程序的速率限制和對重新送出的寫入的回應各自獨立。工作佇列仍留在 PostgreSQL，或改用 Google Cloud Tasks（[Cloud Tasks](running.md#cloud-tasks)）。
 
-[Cloud Run 部署](deploy-cloud-run.md)是介於第二步和第三步之間的配置範例：Cloud Run 上的 `role = all`、Neon 上的 PostgreSQL、Cloud Storage 中的媒體、用 Cloud Tasks 處理工作，以及用 Pub/Sub 作為串流，沒有人使用伺服器時不會有執行個體在運作。
+[Cloud Run 部署](deploy-google-cloud.md)是介於第二步和第三步之間的配置範例：Cloud Run 上的 `role = all`、Neon 上的 PostgreSQL、Cloud Storage 中的媒體、用 Cloud Tasks 處理工作，以及用 Pub/Sub 作為串流，沒有人使用伺服器時不會有執行個體在運作。
 
 <!-- source: where-to-go-next 2f1d25c01f8a -->
 ## 接下來該讀什麼
 
 請依照以下順序閱讀營運者指南：
 
-1. **開始使用**：[執行伺服器](running.md)或[部署到 Cloud Run](deploy-cloud-run.md)，然後在開放給使用者之前，逐項確認[正式環境檢查清單](production-checklist.md)。
+1. **開始使用**：[執行伺服器](running.md)或[部署到 Cloud Run](deploy-google-cloud.md)，然後在開放給使用者之前，逐項確認[正式環境檢查清單](production-checklist.md)。
 2. **設定實例**：它的[設定](instance-settings.md)、[註冊](registration.md)、[外部登入提供者](login-providers.md)、[電子郵件](email.md)、[CAPTCHA](captcha.md)、[CDN](cdn.md)、[連結預覽](link-previews.md)，以及[搜尋引擎與 AI 爬蟲](crawlers.md)。
 3. **開啟功能**：[審核](moderation.md)、[中繼站](relays.md)、[webhook](webhooks.md)、[外掛](plugins.md)與[決策掛鉤](decision-hooks.md)、[語音聊天](voice.md)、[全文搜尋](search.md)、[支持者](supporters.md)及其付款，以及[匯入雲端費用](billing-import.md)。
 4. **日常營運**：[監控](monitoring.md)、[警示](alerts.md)、[錯誤回報](error-reporting.md)、[維護](maintenance.md)、[備份](backup.md)、[資料庫](database.md)、[金鑰加密金鑰](key-management.md)，以及[管理員與角色](admin-cli.md)。

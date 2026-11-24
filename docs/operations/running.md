@@ -39,7 +39,7 @@ If the request's `X-Request-Id` is at most 128 characters of letters, digits and
 Logs inside a trace (requests and jobs) also carry `trace_id` and `span_id` (see [Traces](#traces)).
 
 Each HTTP request and each job execution writes one line when it finishes. The line has the same names and values as the labels of the [metrics](#metrics) below,
-so on Cloud Run with `metrics_exporter = none` you can build Cloud Logging log-based metrics (counters and distributions) from these lines.
+so with `metrics_exporter = none` a platform can build log-based metrics (counters and distributions) from these lines.
 
 | Line (`msg`) | Fields |
 | --- | --- |
@@ -335,9 +335,8 @@ the tag but stays pullable by its digest.
 Where to run it:
 
 - **Docker Compose**: `deploy/docker/compose.yaml` runs the image of `MY_VERSION` in `.env` ([Docker Compose files](#docker-compose-files)). To build it from a checkout instead, add the override `compose.build.yaml` (`docker compose -f compose.yaml -f compose.build.yaml up -d --build`), and set `MY_VERSION` to a name of your own, since it names your local image and is what `my version` prints.
+- **Google Cloud and AWS**: the OpenTofu modules run the image from `ghcr.io` as it is, the release that their `ref` names ([Deploying with OpenTofu](deploy-opentofu.md#the-root-modules)).
 - **Kubernetes**: pull it from `ghcr.io` as it is.
-- **Cloud Run**: use the `ghcr.io` image directly. A deployment resolves the tag to a digest.
-- **AWS (ECS, EKS)**: copy the image to Amazon ECR, or use an ECR pull through cache, which needs ghcr.io credentials.
 
 ### Verify an image
 
@@ -422,10 +421,10 @@ The setting `metrics_exporter` (default `none`) exports service metrics. Its rel
 
 | `metrics_exporter` | Path | Suited to |
 | --- | --- | --- |
-| `none` | Nothing is exported. Instrumentation costs almost nothing. The instance-wide values still go to one `metrics snapshot` log line every 15 minutes, and the adapters' and the pool's to the request and job lines | Cloud Run (use the platform's metrics and log-based metrics instead) |
+| `none` | Nothing is exported. Instrumentation costs almost nothing. The instance-wide values still go to one `metrics snapshot` log line every 15 minutes, and the adapters' and the pool's to the request and job lines | Google Cloud, where the platform's metrics and log-based metrics take its place ([Deploying on Google Cloud](deploy-google-cloud.md#monitoring-and-alerts)) |
 | `prometheus` | `GET /metrics` on `metrics_listen` (default `127.0.0.1:9464`). It is a listener separate from the public `listen`, with no authentication, and runs for every `role` | Self-hosted (scraped by a Prometheus-compatible server or KEDA) |
 | `otlp` | Sent to an OpenTelemetry Collector over OTLP/HTTP. The destination comes from the standard OTel environment variables such as `OTEL_EXPORTER_OTLP_ENDPOINT` | Setups where you can run a collector |
-| `emf` | CloudWatch Embedded Metric Format JSON lines. Request and job metrics ride on the closing log lines above; the others are written to standard output, one line per label set, when a request or job finishes | AWS ECS |
+| `emf` | CloudWatch Embedded Metric Format JSON lines. Request and job metrics ride on the closing log lines above; the others are written to standard output, one line per label set, when a request or job finishes | AWS ([Deploying on AWS](deploy-aws.md#monitoring-and-alerts)) |
 
 The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a unit suffix (`_seconds`, and `_total` for a counter) is added.
 
@@ -518,7 +517,7 @@ Do not use them to trigger scaling; use them for alerts and for estimating the i
 
 `GOMEMLIMIT` is a Go runtime environment variable that the operator sets; the application does not choose it.
 Without it, Go runs with its default (no limit), and the heap does not collect eagerly as it approaches the container's memory limit.
-On setups with a container memory limit (Cloud Run, ECS, Kubernetes), set it to about 90% of that limit (for example `GOMEMLIMIT=460MiB` for a 512 MiB container).
+With a container memory limit, set it to about 90% of that limit (for example `GOMEMLIMIT=460MiB` for a 512 MiB container). The OpenTofu modules set it so for each service, from its size.
 Do not set `GOMAXPROCS`: Go's default follows the container's CPU limit.
 
 ## Traces
@@ -545,31 +544,8 @@ A failed span has `error.type` (a finite name such as `timeout`, or a status cod
 | --- | --- | --- |
 | Default, small self-hosted | `traces_exporter = none` | No spans are exported. Follow `request_id` and `job_id` in the logs. If a trusted proxy supplies a `traceparent`, its `trace_id` and `span_id` are added to the logs |
 | Self-hosted (Jaeger, Tempo, an OpenTelemetry Collector and so on) | `traces_exporter = otlp`, `traces_flush = batch` | Sent over OTLP/HTTP to the receiver at `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` (or `OTEL_EXPORTER_OTLP_ENDPOINT`, default `http://localhost:4318`). Authentication headers go in `OTEL_EXPORTER_OTLP_HEADERS`. To reliably keep errors and slow traces, use the Collector's tail sampling |
-| Google Cloud (Cloud Run) | `none`, or `otlp` with `unit` to enable traces | See below |
-| AWS (ECS) | `none`, or `otlp` with `batch` to enable traces | See below |
-
-### Cloud Run
-
-Even with `none`, the request trace that Cloud Run creates automatically and the `trace_id` in the logs share the same ID (when you trust the connection from in front of Cloud Run with `trusted_proxies`).
-Whether Cloud Run always overwrites the `traceparent` of public requests is not yet verified.
-The logs are not shaped as the trace field that Cloud Logging recognizes (`logging.googleapis.com/trace`).
-
-To send application spans to Cloud Trace, run an **OpenTelemetry Collector as a sidecar** in the same service. The server holds no Google credentials; the sidecar sends to the Cloud Trace OTLP endpoint with Application Default Credentials.
-
-- Server (the ingress container): `MY_TRACES_EXPORTER=otlp`, `MY_TRACES_FLUSH=unit`, `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`
-- Sidecar: an OpenTelemetry Collector that receives with an `otlp` receiver over HTTP on `localhost:4318` and sends with the `googlecloud` exporter, or the `otlphttp` exporter (`https://telemetry.googleapis.com`, with the `googleclientauth` extension). Grant the service account permission to write to Cloud Trace.
-- At the end of each recorded request or job, `unit` flushes the spans so far to the sidecar before returning. So that the sidecar can send them while no CPU is allocated, use instance-based billing for a setup with traces enabled.
-- The cost is the sidecar's resources and the span volume (Cloud Trace pricing). Choose the ratio with `traces_sample_ratio`.
-
-### AWS ECS
-
-To send to X-Ray, run the **AWS Distro for OpenTelemetry (ADOT) Collector** as a sidecar container in every task. The server has no SigV4 signing; the Collector signs with the task role and sends to X-Ray. The `mycroblog-aws` module of [the OpenTofu deployment](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) does all of this by default (`observability.traces = "x-ray"`); the rest of this section is for a task definition of your own.
-
-- Server: `MY_TRACES_EXPORTER=otlp`, `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces`, and the default `MY_TRACES_FLUSH=batch`, since the process stays up.
-- Collector: an image pinned by version, such as `public.ecr.aws/aws-observability/aws-otel-collector:v0.50.0`, with its configuration in the variable `AOT_CONFIG_CONTENT`: an `otlp` receiver over HTTP on `127.0.0.1:4318` and the `awsxray` exporter. X-Ray's OTLP endpoint (`https://xray.<region>.amazonaws.com/v1/traces`, through an `otlphttp` exporter with the `sigv4auth` extension) works too, but needs CloudWatch Transaction Search turned on for the account.
-- Grant the task role `xray:PutTraceSegments`, which the `awsxray` exporter writes with. The server samples the traces itself, so the Collector needs no sampling rules from X-Ray.
-- Give the Collector a share of the task: `mycroblog-aws` gives it 32 CPU units and 128 MiB, and the server the rest, with `GOMEMLIMIT` at 90% of that rest. Make the server's container depend on the Collector's start, so that the Collector stops after the server and receives its last spans.
-- The cost is the sidecar's share of the task's resources, and the number of traces X-Ray records (the first 100,000 per month are free). The default `traces_sample_ratio` of 0.01 records about 30,000 traces a month for 100,000 requests a day.
+| Google Cloud | `traces_exporter = none` | Cloud Trace shows the trace that Cloud Run records of each request: [Deploying on Google Cloud](deploy-google-cloud.md#traces) |
+| AWS | `traces_exporter = otlp`, to a collector in every task | X-Ray: [Traces to X-Ray](deploy-aws.md#traces-to-x-ray) |
 
 ## Profiles
 
@@ -729,12 +705,12 @@ Choose a value from how your instance runs:
 - **Lower it** to shed load quickly: clients retry after `Retry-After` instead of holding their requests open. Keep it longer than your slowest normal transactions, or a short burst starts answering `503`.
 - **Size the pool first.** A process needs about as many connections as it runs work at once. `pool_max_conns` in `database_url` defaults to the larger of 4 and the CPU count, and all processes together must stay under the database's connection limit.
   - With [`worker_job_concurrency`](#running-several-jobs-at-once), slots wait for connections too, and the setting must stay below the pool maximum.
-  - On Cloud Run, a service takes 80 concurrent requests per instance by default. With a pool of 4, a burst of slow requests queues here, so raise `pool_max_conns`, lower the service's concurrency, or both.
+  - On Google Cloud, an instance takes many requests at once: [An external PostgreSQL](deploy-google-cloud.md#an-external-postgresql) sizes its pool.
 - **Frequent `503`s or `db.client.connection.timeouts`** mean the pool is too small or queries got slower; a longer timeout only hides that. Follow [`MyDBPoolSaturated`](alerts.md#mydbpoolsaturated).
 
 ### Cloud Tasks
 
-[Deploying on Cloud Run](deploy-cloud-run.md) sets up everything below with OpenTofu modules.
+[Deploying on Google Cloud](deploy-google-cloud.md) sets up everything below with OpenTofu modules.
 
 With `queue = cloudtasks` the jobs stay in the database (`database = postgres`), and Google Cloud Tasks only wakes the server up for each of them:
 
@@ -744,8 +720,8 @@ With `queue = cloudtasks` the jobs stay in the database (`database = postgres`),
 - The process that receives the task runs the job and answers `204` once its result is recorded, also when the job already ran or is not due.
   A job that fails is retried by the server at its next attempt time, not by Cloud Tasks. Cloud Tasks retries a task only when the
   answer is `5xx` (the database could not be reached) or `401` (a token that the server refused), so its `retryConfig` needs no tuning.
-- No process polls the table and no process runs the periodic jobs by itself. Create a Cloud Scheduler job that calls
-  `POST {queue_cloudtasks_url}/_internal/tick` every minute (`* * * * *`) with an OIDC token of the same service account (and the audience of
+- No process polls the table and no process runs the periodic jobs by itself. A Cloud Scheduler job calls
+  `POST {queue_cloudtasks_url}/_internal/tick`, every minute (`* * * * *`) by default, with an OIDC token of the same service account (and the audience of
   `queue_cloudtasks_audience`, when set). Each tick enqueues the periodic jobs whose period came, once for the whole instance (the periods are claimed in the KV,
   so `kv` must be `db` or `valkey`), and signals again the jobs that have been due for over 2 minutes without running, which recovers a lost signal.
 - `/_internal/jobs` and `/_internal/tick` are served by the processes with `role = all` or `worker`, and accept only a token signed by Google for
@@ -764,10 +740,9 @@ not measured on a running server.
 
 | Platform | What starts the periodic jobs | Expected delay of an event reminder or start |
 | --- | --- | --- |
-| Self-hosting and Docker Compose (`queue = db`) | The scheduler in each process with `role = all` or `worker` checks once a minute, from when the process started, and queues each job once per period for the whole server | Up to 1 minute, plus about a second for a worker to pick the job up |
-| AWS ECS Fargate (`queue = db`) | The same scheduler, in the worker tasks | Up to 1 minute, plus about a second |
-| Cloud Run (`queue = cloudtasks`) | Cloud Scheduler calls `/_internal/tick` on its schedule, `* * * * *` (every minute) by default; Cloud Tasks then wakes the server for each job | Up to 1 minute, plus the start of an instance when none is running (a cold start, usually a few seconds). With a longer `tick_schedule`, such as `*/10 * * * *`, up to that interval |
-| AWS Lambda | `my` has no Lambda deployment; on AWS, run it on ECS Fargate | — |
+| Self-hosting and [Docker Compose](deploy-docker-compose.md) (`queue = db`) | The scheduler in each process with `role = all` or `worker` checks once a minute, from when the process started, and queues each job once per period for the whole server | Up to 1 minute, plus about a second for a worker to pick the job up |
+| [AWS](deploy-aws.md) (`queue = db`) | The same scheduler, in every task | Up to 1 minute, plus about a second |
+| [Google Cloud](deploy-google-cloud.md) (`queue = cloudtasks`) | Cloud Scheduler calls `/_internal/tick` on `queue.tick_schedule`, every minute by default; Cloud Tasks then wakes the server for each job | Up to 1 minute, plus the start of an instance when none is running (a cold start, usually a few seconds). With a longer `tick_schedule`, up to that interval ([Where care reduces it](deploy-google-cloud.md#where-care-reduces-it)) |
 
 A reminder that would arrive after its event started is not sent, and neither is a start notification after the event ended.
 So with a tick longer than 5 minutes, the shortest reminders can be lost.
@@ -787,14 +762,8 @@ Types that match no route, including those a later release adds, use the default
 
 **Give every process the same routes, `role = web` included.** A signal is sent by the process that stores the job: a web process for most of what users do, such as the
 first job of a post, and a worker for the jobs that a job stores, retries, the next job of an ordering key, and the sweep of lost signals.
-Where each role has its own settings, as Cloud Run services do, pass the same value to all of them:
-
-```sh
-routes='federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com'
-gcloud run services update my-web --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-gcloud run services update my-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-```
+On Google Cloud, `workers` gives each worker its own queue and service, and every service the same routes and permissions:
+[Splitting jobs into workers](deploy-opentofu.md#splitting-jobs-into-workers).
 
 A process with other routes raises no error and loses no job: its signals go to another queue, and the jobs run there, outside the capacity you set.
 `my.queue.oldest_ready_age` does not show this, because those jobs do not wait. To compare the processes, each logs at startup a line with its `routes` and their `routes_hash`:

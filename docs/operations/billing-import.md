@@ -22,7 +22,7 @@ On Google Cloud, the `billing` section of [`mycroblog-gcp`](../../deploy/opentof
 | Enable the export ("Standard usage cost") | By hand, in the Google Cloud console, with a role on the billing account |
 | The topic and the pull subscription of a budget, and the subscriber role | The `billing` section with `method = "budget"` |
 | Create the budget and connect it to the topic | By hand, in the Google Cloud console, with a role on the billing account |
-| Enable the BigQuery or Pub/Sub API | By hand, as in [Deploying on Cloud Run](deploy-cloud-run.md#1-enable-the-apis) |
+| Enable the BigQuery or Pub/Sub API | By hand, as in [Deploying on Google Cloud](deploy-google-cloud.md#1-enable-the-apis) |
 | AWS's costs on Cloud Run | Not by `mycroblog-gcp`. Create the role of [Calling from Cloud Run with web identity](#calling-from-cloud-run-with-web-identity) by hand, and set `billing_sources = aws` and `billing_aws_role_arn` in `settings`, without the `billing` section |
 | Cloudflare | Not by these modules. On Cloud Run, without the `billing` section, set `billing_sources`, `billing_cloudflare_account_id` in `settings`, and `billing_cloudflare_api_token` in `secrets`, as for a plugin |
 | A plugin | Not by these modules. On Cloud Run, without the `billing` section, set `billing_sources = plugin` and the settings of [the plugin](#a-plugin-billing_sources--plugin) in `settings`. Beside the `billing` section, the module refuses `billing_sources` in `settings` |
