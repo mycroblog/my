@@ -166,7 +166,9 @@ func (s *MediaService) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.
 // UploadInput describes an upload.
 type UploadInput struct {
 	OwnerAccountID string
-	Content        io.Reader
+	// Content reads the file. The bytes of a *bytes.Buffer are used where they are, without a
+	// copy: a video or audio file is up to AVLimits.MaxBytes, which the caller holds already.
+	Content io.Reader
 	// DeclaredContentType is the media type the client sent, or "". It is never trusted: an
 	// upload whose content is of another type fails with ErrContentTypeMismatch.
 	DeclaredContentType string
@@ -202,7 +204,7 @@ func (s *MediaService) Upload(ctx context.Context, in UploadInput) (Media, error
 		return Media{}, fmt.Errorf("%w: %q", ErrInvalidPurpose, in.Purpose)
 	}
 	av := s.d.AVLimits
-	data, err := io.ReadAll(io.LimitReader(in.Content, s.MaxUploadBytes()+1))
+	data, err := readUploadContent(in.Content, s.MaxUploadBytes()+1)
 	if err != nil {
 		return Media{}, fmt.Errorf("content: read upload: %w", err)
 	}
@@ -278,6 +280,14 @@ func (s *MediaService) Upload(ctx context.Context, in UploadInput) (Media, error
 		}
 	}
 	return s.Media(ctx, file.ID)
+}
+
+// readUploadContent reads at most n bytes of r, taking those of a *bytes.Buffer without a copy.
+func readUploadContent(r io.Reader, n int64) ([]byte, error) {
+	if b, ok := r.(*bytes.Buffer); ok {
+		return b.Next(int(min(int64(b.Len()), n))), nil
+	}
+	return io.ReadAll(io.LimitReader(r, n))
 }
 
 // checkAV checks a video or audio upload of the container format against av (ADR-0005 §9): it

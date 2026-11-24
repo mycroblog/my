@@ -91,9 +91,9 @@ func targets(w, h int, boxes media.Boxes, req media.Request) [3]target {
 	return out
 }
 
-// render returns the target's part of img scaled to the target's size with scaler; an
+// render returns the target's part of img scaled to the target's size with kernel; an
 // unscaled, uncropped target is img itself.
-func render(img *image.NRGBA, t target, scaler draw.Scaler) *image.NRGBA {
+func render(img *image.NRGBA, t target, kernel *draw.Kernel) *image.NRGBA {
 	src := t.src.Add(img.Rect.Min)
 	if t.width == src.Dx() && t.height == src.Dy() {
 		if src == img.Rect {
@@ -104,23 +104,84 @@ func render(img *image.NRGBA, t target, scaler draw.Scaler) *image.NRGBA {
 		return dst
 	}
 	dst := image.NewNRGBA(image.Rect(0, 0, t.width, t.height))
-	scaler.Scale(dst, dst.Rect, img, src, draw.Src, nil)
+	scale(dst, img, src, kernel)
 	return dst
+}
+
+// MaxScaleBuffer bounds the temporary buffer of one call of a kernel's scaler, in bytes. The
+// scaler of golang.org/x/image/draw holds 32 bytes for every destination column times source
+// row, which for the large variant of a photo of 12 megapixels is over 300 MiB; scale keeps
+// each call under this bound by scaling one axis at a time, in strips of the other.
+const MaxScaleBuffer = 4 << 20
+
+// scaleBufferBytes is the size of the scaler's buffer per destination column and source row.
+const scaleBufferBytes = 32
+
+// scale scales the part sr of src to the whole of dst with kernel: along one axis into an
+// intermediate image, then along the other, choosing the order that keeps the intermediate
+// image smaller. Each pass leaves the other axis as it is, so it splits into strips across that
+// axis whose scaler's buffer stays within MaxScaleBuffer.
+func scale(dst, src *image.NRGBA, sr image.Rectangle, kernel *draw.Kernel) {
+	dw, dh, sw, sh := dst.Rect.Dx(), dst.Rect.Dy(), sr.Dx(), sr.Dy()
+	switch {
+	case dh == sh:
+		scaleAxis(dst, src, sr, kernel, true)
+	case dw == sw:
+		scaleAxis(dst, src, sr, kernel, false)
+	case int64(dw)*int64(sh) <= int64(sw)*int64(dh):
+		mid := image.NewNRGBA(image.Rect(0, 0, dw, sh))
+		scaleAxis(mid, src, sr, kernel, true)
+		scaleAxis(dst, mid, mid.Rect, kernel, false)
+	default:
+		mid := image.NewNRGBA(image.Rect(0, 0, sw, dh))
+		scaleAxis(mid, src, sr, kernel, false)
+		scaleAxis(dst, mid, mid.Rect, kernel, true)
+	}
+}
+
+// scaleAxis scales the part sr of src to the whole of dst along one axis, horizontally or
+// vertically, the other being the same size in both. It scales strips of rows (or columns)
+// one at a time: a kernel at a scale of 1 weighs only the pixel itself, so a strip scales as it
+// would within the whole image.
+func scaleAxis(dst, src *image.NRGBA, sr image.Rectangle, kernel *draw.Kernel, horizontal bool) {
+	dw, dh, sh := dst.Rect.Dx(), dst.Rect.Dy(), sr.Dy()
+	// A strip is n rows of dw columns (horizontally) or n columns of sh rows (vertically).
+	across, length := dh, dw
+	if !horizontal {
+		across, length = dw, sh
+	}
+	n := max(1, min(across, MaxScaleBuffer/(scaleBufferBytes*length)))
+	var scaler draw.Scaler
+	for at := 0; at < across; at += n {
+		m := min(n, across-at)
+		var dr, s image.Rectangle
+		if horizontal {
+			dr = image.Rect(0, at, dw, at+m)
+			s = image.Rect(sr.Min.X, sr.Min.Y+at, sr.Max.X, sr.Min.Y+at+m)
+		} else {
+			dr = image.Rect(at, 0, at+m, dh)
+			s = image.Rect(sr.Min.X+at, sr.Min.Y, sr.Min.X+at+m, sr.Max.Y)
+		}
+		if scaler == nil || m != n {
+			scaler = kernel.NewScaler(dr.Dx(), dr.Dy(), s.Dx(), s.Dy())
+		}
+		scaler.Scale(dst, dr.Add(dst.Rect.Min), src, s, draw.Src, nil)
+	}
 }
 
 // renderAll renders the three targets of img, largest first so that a smaller one with the
 // same source rectangle scales the larger result instead of the whole source, and returns them
 // smallest first.
-func renderAll(img *image.NRGBA, ts [3]target, scaler draw.Scaler) [3]*image.NRGBA {
+func renderAll(img *image.NRGBA, ts [3]target, kernel *draw.Kernel) [3]*image.NRGBA {
 	var out [3]*image.NRGBA
 	var larger *image.NRGBA
 	var largerTarget target
 	for i := len(ts) - 1; i >= 0; i-- {
 		t := ts[i]
 		if larger != nil && largerTarget.src == t.src && largerTarget.width >= t.width && largerTarget.height >= t.height {
-			out[i] = render(larger, target{larger.Rect, t.width, t.height}, scaler)
+			out[i] = render(larger, target{larger.Rect, t.width, t.height}, kernel)
 		} else {
-			out[i] = render(img, t, scaler)
+			out[i] = render(img, t, kernel)
 		}
 		larger, largerTarget = out[i], t
 	}
