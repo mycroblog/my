@@ -352,6 +352,31 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 The first command fails unless the image was built by the release workflow of this repository. For a `nightly` image, verify it with
 `--signer-workflow mycroblog/my/.github/workflows/nightly.yml` instead. It prints the commit, which is the commit of the version's tag; the image's label `org.opencontainers.image.revision` names the same one.
 
+## Get the binary
+
+To run `my` without a container, each release attaches the binary of the image, for `linux/amd64` and `linux/arm64`,
+as `my_<version>_linux_<arch>.tar.gz`. It is a single static binary with the web client inside; the archive also holds
+`LICENSE`, the license notices in `licenses/`, and a README. There is no build for other operating systems.
+
+```sh
+curl -fsSLO https://github.com/mycroblog/my/releases/download/v0.1.0/my_v0.1.0_linux_amd64.tar.gz
+tar xzf my_v0.1.0_linux_amd64.tar.gz my
+./my version
+```
+
+Configure it as the image is configured ([configuration reference](../reference/configuration.md)), and follow
+[Upgrading](database.md#upgrading) for each version: nothing applies the schema for you.
+
+### Verify a binary
+
+Each archive has provenance signed through Sigstore, as an image has, and the release lists the archives' SHA-256 in `SHA256SUMS`:
+
+```sh
+gh attestation verify my_v0.1.0_linux_amd64.tar.gz -R mycroblog/my \
+  --signer-workflow mycroblog/my/.github/workflows/release.yml
+sha256sum --ignore-missing -c SHA256SUMS
+```
+
 ## Publish the source code (AGPL-3.0)
 
 `my` is licensed under AGPL-3.0-only. Section 13 of the AGPL-3.0 requires anyone who runs the server and lets users interact with it over a network

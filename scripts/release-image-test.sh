@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests the commands of scripts/release-image.sh that need no registry: the tags of a version, the metadata, and the
-# version of a nightly image.
+# Tests the commands of scripts/release-image.sh that need no registry: the tags of a version, the metadata, the
+# version of a nightly image, and the archive of a binary.
 #
 #   scripts/release-image-test.sh
 set -euo pipefail
@@ -83,6 +83,45 @@ for args in "v0.1.0 nothex 20261109182600" "v0.1.0 $sha 2026-11-09" "0.1.0 $sha 
 done
 description="$(sed -n 's/^org\.opencontainers\.image\.description=//p' <<<"$meta")"
 [[ -n "$description" && ${#description} -le 512 ]] || fail "metadata: GHCR reads a description of up to 512 characters: $description"
+
+# pack: the files of the image's binary and its licenses, as release-image.sh archive copies them out of the image.
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+# files DIR writes a binary's files into DIR.
+files() {
+  mkdir -p "$1/licenses"
+  printf '#!/bin/sh\n' > "$1/my"
+  chmod 0755 "$1/my"
+  echo "GNU AFFERO GENERAL PUBLIC LICENSE" > "$1/LICENSE"
+  echo "# Licenses" > "$1/licenses/go-modules.md"
+  echo "# Licenses" > "$1/licenses/npm-packages.md"
+  echo "OFL" > "$1/licenses/OFL.txt"
+}
+files "$work/ok"
+name="$("$script" pack "$work/ok" v0.2.0-rc.1 linux/arm64 "$work/out" 2>&1)" || fail "pack: want it accepted, got: $name"
+[[ "$name" == my_v0.2.0-rc.1_linux_arm64.tar.gz ]] || fail "pack: want the archive's name, got '$name'"
+if [[ -f "$work/out/$name" ]]; then
+  listing="$(tar tzf "$work/out/$name" | sort | tr '\n' ' ')"
+  want="LICENSE README.md licenses/ licenses/OFL.txt licenses/go-modules.md licenses/npm-packages.md my "
+  [[ "$listing" == "$want" ]] || fail "pack: want the files '$want' at the top, got '$listing'"
+  mkdir "$work/x"
+  tar -C "$work/x" -xzf "$work/out/$name" my README.md
+  [[ -x "$work/x/my" ]] || fail "pack: my is not executable"
+  grep -q '^# my v0.2.0-rc.1 (linux/arm64)$' "$work/x/README.md" || fail "pack: the README does not name the version"
+  grep -q 'blob/v0.2.0-rc.1/docs/operations/running.md' "$work/x/README.md" || fail "pack: the README does not link the version's docs"
+  owners="$(tar tvzf "$work/out/$name" | awk '{print $2}' | sort -u)"
+  [[ "$owners" == 0/0 ]] || fail "pack: want every file owned by 0/0, got '$owners'"
+fi
+for missing in LICENSE licenses/go-modules.md licenses/npm-packages.md my; do
+  rm -rf "$work/bad"
+  files "$work/bad"
+  rm "$work/bad/$missing"
+  if "$script" pack "$work/bad" v0.2.0 linux/amd64 "$work/out" >/dev/null 2>&1; then fail "pack without $missing: want an error"; fi
+done
+for args in "v0.2.0 darwin/arm64" "0.2.0 linux/amd64"; do
+  # shellcheck disable=SC2086 # The arguments are split on purpose.
+  if "$script" pack "$work/ok" $args "$work/out" >/dev/null 2>&1; then fail "pack $args: want an error"; fi
+done
 
 if [[ "$failed" -ne 0 ]]; then
   exit 1

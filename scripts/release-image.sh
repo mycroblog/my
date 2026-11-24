@@ -28,6 +28,12 @@
 #   scripts/release-image.sh scripts DIGEST OUT             copies the inventory of the scripts that the payment pages load
 #                                                           (PCI DSS 6.4.3), which the image's web build wrote, to OUT and
 #                                                           checks that it is one
+#   scripts/release-image.sh archive DIGEST VERSION OUT     writes to OUT the tar.gz of each platform's binary of the image
+#                                                           DIGEST, with LICENSE and the license notices the image carries,
+#                                                           and SHA256SUMS of them; checks each binary with
+#                                                           scripts/check-release-build.sh; needs go
+#   scripts/release-image.sh pack DIR VERSION PLATFORM OUT  writes to OUT the tar.gz of PLATFORM of the files in DIR (my,
+#                                                           LICENSE, licenses/), with a README, and prints its name
 #   scripts/release-image.sh scan [--fail] REF              reports the vulnerabilities of both platforms of REF with
 #                                                           Grype, which gets no credentials; --fail: fixable HIGH or above fail
 #
@@ -209,6 +215,63 @@ scripts() {
   echo "$ref: the payment pages load $(jq '.scripts | length' "$out") scripts, listed in $out."
 }
 
+# Where the image keeps the license of the server and the notices of what its binary carries (Dockerfile, stage app).
+doc_path=/usr/share/doc/my
+
+# pack DIR VERSION PLATFORM OUT writes the archive of a binary (ADR-0010 §7): flat, so that `tar xzf ARCHIVE my` takes
+# the binary alone, and with the same owner on every machine.
+pack() {
+  (($# == 4)) || usage
+  local dir="$1" version="$2" platform="$3" out="$4" name file
+  check_version "$version"
+  [[ " ${platforms[*]} " == *" $platform "* ]] || die "the platform must be one of ${platforms[*]}: $platform"
+  [[ -x "$dir/my" ]] || die "$dir has no executable my"
+  for file in LICENSE licenses/go-modules.md licenses/npm-packages.md; do
+    [[ -s "$dir/$file" ]] || die "$dir has no $file"
+  done
+  name="my_${version}_${platform//\//_}.tar.gz"
+  cat > "$dir/README.md" <<README
+# my $version ($platform)
+
+\`my\` is the ActivityPub server of mycroblog, a microblog for the fediverse: https://github.com/mycroblog/my
+
+This archive holds the single static binary \`my\` for $platform. It needs no other file: the web client is in the
+binary. \`./my version\` prints its version, and \`./my serve\` starts the server once it is configured.
+
+- Running the server: https://github.com/mycroblog/my/blob/$version/docs/operations/running.md
+- Verifying this archive: https://github.com/mycroblog/my/blob/$version/docs/operations/running.md#verify-a-binary
+
+\`my\` is licensed under AGPL-3.0-only (\`LICENSE\`). \`licenses/\` holds the license notices of the third-party code
+and data in the binary: pass them along with the binary when you distribute it.
+README
+  mkdir -p "$out"
+  tar -C "$dir" --sort=name --owner=0 --group=0 --numeric-owner -cf - my README.md LICENSE licenses |
+    gzip -n -9 > "$out/$name"
+  echo "$name"
+}
+
+archive() {
+  (($# == 3)) || usage
+  local want="$1" version="$2" out="$3" ref="$image@$1" work platform id name
+  check_digest "$want"
+  check_version "$version"
+  work="$(mktemp -d)"
+  for platform in "${platforms[@]}"; do
+    mkdir -p "$work/$platform"
+    docker pull -q --platform "$platform" "$ref" >/dev/null
+    id="$(docker create --platform "$platform" "$ref")"
+    docker cp -q "$id:/usr/local/bin/my" "$work/$platform/my"
+    docker cp -q "$id:$doc_path/." "$work/$platform/"
+    docker rm "$id" >/dev/null
+    "$root/scripts/check-release-build.sh" "$work/$platform/my"
+    name="$(pack "$work/$platform" "$version" "$platform" "$out")"
+    echo "$ref ($platform): $name"
+  done
+  rm -rf "$work"
+  (cd "$out" && sha256sum -- "my_${version}"_linux_*.tar.gz > SHA256SUMS)
+  cat "$out/SHA256SUMS"
+}
+
 scan() {
   local fail=() status=0 dir platform result
   if [[ "${1:-}" == --fail ]]; then
@@ -253,6 +316,8 @@ case "$cmd" in
   tag) tag "$@" ;;
   check) check "$@" ;;
   scripts) scripts "$@" ;;
+  archive) archive "$@" ;;
+  pack) pack "$@" ;;
   scan) scan "$@" ;;
   *) usage ;;
 esac

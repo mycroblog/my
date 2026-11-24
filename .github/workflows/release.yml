@@ -23,7 +23,8 @@ name: Release
 # digest, with no tag, so that nothing reaches an operator before the notes. image-check runs its binary on each
 # platform, image-attest signs the provenance of the digest and attaches the digest to the draft as image-digest.txt,
 # payment-scripts attaches the inventory of the scripts that the payment pages load (PCI DSS 6.4.3) from the checked
-# image as payment-scripts.json, and image-scan reports its vulnerabilities for the decider to read. release-image.yml tags the digest when the decider
+# image as payment-scripts.json, binary-archives attaches the binary of each platform, taken out of the checked image, as
+# tar.gz archives with their licenses, their SHA256SUMS and an attestation (ADR-0010 §7), and image-scan reports its vulnerabilities for the decider to read. release-image.yml tags the digest when the decider
 # publishes the release; nothing here tags an image.
 #
 # No release ever publishes a test build (ADR-0015 §6): image-check runs scripts/check-release-build.sh
@@ -558,6 +559,53 @@ jobs:
         run: |
           scripts/release-image.sh scripts "$DIGEST" "$RUNNER_TEMP/payment-scripts.json" | tee -a "$GITHUB_STEP_SUMMARY"
           gh release upload "$VERSION" "$RUNNER_TEMP/payment-scripts.json" --clobber
+
+  binary-archives:
+    # Attaches to the draft the binary of each platform as a tar.gz with LICENSE, the license notices and a README
+    # (ADR-0010 §7), and SHA256SUMS of the archives. The binaries are those of the checked image, not a second build;
+    # the provenance of each archive is signed as the image's is, and stays in the repository's attestations.
+    needs: [validate, image-build, image-check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+      packages: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # For `go version -m` in scripts/check-release-build.sh.
+      - name: Set up Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: .tool-versions
+          cache: false
+      - name: Log in to ghcr.io
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Pack the binaries
+        env:
+          DIGEST: ${{ needs.image-build.outputs.digest }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          scripts/release-image.sh archive "$DIGEST" "$VERSION" "$RUNNER_TEMP/archives" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Attest the provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ runner.temp }}/archives/*.tar.gz
+          create-storage-record: false
+      - name: Attach the archives to the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ inputs.version }}
+        run: gh release upload "$VERSION" "$RUNNER_TEMP"/archives/*.tar.gz "$RUNNER_TEMP/archives/SHA256SUMS" --clobber
 
   release-notes-image:
     # Writes the image in the draft's notes, in the form operators pin, after a section that says the slow suite was
