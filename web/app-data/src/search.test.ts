@@ -31,10 +31,28 @@ describe("remoteOf", () => {
       expect(remoteOf(words)).toBe(remote);
     });
 
-  for (const words of ["sam", "@sam", "kiri@localhost", "kiri@far.example and more", "far.example", "", "#baking"])
+  for (const words of [
+    "sam",
+    "@sam",
+    "kiri@localhost",
+    "kiri@far.example and more",
+    "far.example",
+    "",
+    "#baking",
+    "kiri@.example",
+    "kiri@example.",
+    "kiri@far@example",
+  ])
     test(`"${words}" names no remote account`, () => {
       expect(remoteOf(words)).toBeUndefined();
     });
+
+  test("long words of dots take time linear in their length", () => {
+    const start = performance.now();
+    expect(remoteOf(`@a@${".".repeat(50_000)}@`)).toBeUndefined();
+    expect(remoteOf(`a@${".".repeat(50_000)}`)).toBe(`a@${".".repeat(50_000)}`);
+    expect(performance.now() - start).toBeLessThan(100);
+  });
 });
 
 /**

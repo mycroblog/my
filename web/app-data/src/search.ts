@@ -32,8 +32,11 @@ const staleTime = 60_000;
 export function remoteOf(q: string): string | undefined {
   const words = q.trim();
   if (/^https?:\/\/\S+$/iu.test(words)) return words;
-  const handle = /^@?([^\s@]+@[^\s@]+\.[^\s@]+)$/u.exec(words);
-  return handle?.[1];
+  // The host is checked for its dot apart: a dot matched by the pattern itself would backtrack in quadratic time.
+  const handle = /^@?([^\s@]+)@([^\s@]+)$/u.exec(words);
+  if (handle === null) return undefined;
+  const [, user = "", host = ""] = handle;
+  return host.slice(1, -1).includes(".") ? `${user}@${host}` : undefined;
 }
 
 /** The accounts the words find, with the reader's relationships with them in the cache. */
