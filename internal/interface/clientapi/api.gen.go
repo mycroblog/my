@@ -7495,15 +7495,23 @@ type AdminIncomeTotals struct {
 	Tips  bool              `json:"tips"`
 }
 
-// AdminInstanceHealth Whether deliveries go to a remote server.
+// AdminInstanceHealth A remote server, whether deliveries go to it, and what it runs.
 type AdminInstanceHealth struct {
 	Domain string `json:"domain"`
 
 	// FailureDays The number of distinct UTC days of the latest run of failed deliveries.
 	FailureDays int `json:"failure_days"`
 
+	// FirstSeenAt When this instance first stored a document of the server; omitted for a server known
+	// only from deliveries.
+	FirstSeenAt *time.Time `json:"first_seen_at,omitempty"`
+
 	// LastFailureDay The latest of those days; omitted without failures.
 	LastFailureDay *openapi_types.Date `json:"last_failure_day,omitempty"`
+
+	// Software The software a remote server last reported in its NodeInfo; omitted for a server whose
+	// NodeInfo was never read.
+	Software *AdminInstanceSoftware `json:"software,omitempty"`
 
 	// State `available` servers get every delivery; `unavailable` ones only `Follow`, `Accept`, and
 	// `Reject`.
@@ -7513,12 +7521,21 @@ type AdminInstanceHealth struct {
 	StateChangedAt *time.Time `json:"state_changed_at,omitempty"`
 }
 
-// AdminInstanceHealthPage A page of server health, in domain order.
+// AdminInstanceHealthPage A page of known remote servers, in domain order.
 type AdminInstanceHealthPage struct {
 	Items []AdminInstanceHealth `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminInstanceSoftware The software a remote server last reported in its NodeInfo; omitted for a server whose
+// NodeInfo was never read.
+type AdminInstanceSoftware struct {
+	Name string `json:"name"`
+
+	// Version The version as reported; empty when the server reports none.
+	Version string `json:"version"`
 }
 
 // AdminInstanceState `available` servers get every delivery; `unavailable` ones only `Follow`, `Accept`, and
@@ -20153,6 +20170,10 @@ type SetInstanceTextParams struct {
 
 // ListInstanceHealthParams defines parameters for ListInstanceHealth.
 type ListInstanceHealthParams struct {
+	// Troubled Keep only the servers with delivery failures or marked unavailable (`true`); `false`
+	// or omitted keeps every known server.
+	Troubled *bool `form:"troubled,omitempty" json:"troubled,omitempty"`
+
 	// State Keep only the servers in this state; omitted keeps both.
 	State *AdminInstanceState `form:"state,omitempty" json:"state,omitempty"`
 
@@ -24231,7 +24252,7 @@ type ServerInterface interface {
 	// SetInstanceText Set an instance text
 	// (PUT /admin/instance_texts/{key})
 	SetInstanceText(w http.ResponseWriter, r *http.Request, key InstanceTextKey, params SetInstanceTextParams)
-	// ListInstanceHealth List the remote servers with delivery failures or marked unavailable
+	// ListInstanceHealth List the known remote servers with their health
 	// (GET /admin/instances)
 	ListInstanceHealth(w http.ResponseWriter, r *http.Request, params ListInstanceHealthParams)
 	// GetInstanceHealth Get the health of a remote server
@@ -31348,6 +31369,19 @@ func (siw *ServerInterfaceWrapper) ListInstanceHealth(w http.ResponseWriter, r *
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListInstanceHealthParams
+
+	// ------------- Optional query parameter "troubled" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "troubled", r.URL.Query(), &params.Troubled, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "troubled"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "troubled", Err: err})
+		}
+		return
+	}
 
 	// ------------- Optional query parameter "state" -------------
 
@@ -75876,7 +75910,7 @@ type StrictServerInterface interface {
 	// SetInstanceText Set an instance text
 	// (PUT /admin/instance_texts/{key})
 	SetInstanceText(ctx context.Context, request SetInstanceTextRequestObject) (SetInstanceTextResponseObject, error)
-	// ListInstanceHealth List the remote servers with delivery failures or marked unavailable
+	// ListInstanceHealth List the known remote servers with their health
 	// (GET /admin/instances)
 	ListInstanceHealth(ctx context.Context, request ListInstanceHealthRequestObject) (ListInstanceHealthResponseObject, error)
 	// GetInstanceHealth Get the health of a remote server

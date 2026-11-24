@@ -30,7 +30,8 @@ func TestFederationRepositoryContract(t *testing.T) {
 	t.Parallel()
 	federationtest.FederationRepositoryContract(t, func(t *testing.T, opts uow.Options) federationtest.FederationHarness {
 		db, _ := newTestDB(t, "", opts)
-		return federationtest.FederationHarness{UnitOfWork: db, Federation: NewRepository(db)}
+		feds := NewRepository(db)
+		return federationtest.FederationHarness{UnitOfWork: db, Federation: feds, Instances: feds}
 	})
 }
 

@@ -134,8 +134,9 @@ export function Section({ title, children }: { title: string; children: ReactNod
  * reader does to it and quieter: quiet buttons that lead on (`Way`), a finger's target each, in a row that wraps.
  */
 export function Ways({ children }: { children: ReactNode }) {
+  // The first one's words, not its target, line up with the screen's edge, where the text above starts.
   return (
-    <Row wrap gap="screen-tab-gap">
+    <Row wrap gap="screen-tab-gap" bleedStart="control-timeline-inline">
       {children}
     </Row>
   );

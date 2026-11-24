@@ -144,8 +144,8 @@ These tools come back in most of the runbook entries below.
 - **The `my job` command** on a host that has the server's configuration (`queue = db` and `cloudtasks`):
   `my job list` lists the failed jobs, newest first; `my job retry <id>...` puts them back in the queue; `my job delete <id>...` drops them.
   Jobs are safe to run again.
-- **The remote servers screen** (Moderation → Remote servers, `/moderation/instances`, needs `manage_domains`): the servers that deliveries failed to reach,
-  and those whose deliveries are paused, with why and when. "Resume deliveries" marks a server available again. "Open a server" opens the page of any server by its domain, listed or not.
+- **The remote servers screen** (Moderation → Remote servers, `/moderation/instances`, needs `manage_domains`): every server this server knows, with its software and state;
+  filter to those that deliveries failed to reach or the paused ones. "Resume deliveries" marks a server available again. "Open a server" opens the page of any server by its domain, listed or not.
 - **The logs**: JSON lines on standard error. Each HTTP request ends with a line whose `msg` is `http request`, each job run with a line whose `msg` is `job`
   (`INFO` for success, `WARN` for a retry, `ERROR` for a job that failed for good, with the `error`, `job_id`, and `my.job.type`).
   Lines inside a request carry its `request_id`, which the client sees as `X-Request-Id`.
@@ -266,7 +266,7 @@ are normal: servers shut down. Many at once mean that many servers failed for da
 
 The metric has no per-server label (labels never carry a remote domain). Check:
 
-- The remote servers screen: the "Paused" tab lists the paused servers, with when and why. Whether they share something (one hosting provider, one software)
+- The remote servers screen: the "Unavailable" filter lists the paused servers; each server's page says since when. Whether they share something (one hosting provider, one software)
   or are spread out.
 - `MyDeliveryFailuresHigh` and `MyDeliveryAllFailing` over the last week: a network problem on this side that lasted for days pauses many servers.
 

@@ -1100,6 +1100,7 @@ export {
   type DeliveryReveal,
   type RemoteServer,
   type RemoteServerQuery,
+  type RemoteServerSoftware,
   type RemoteServerState,
   type RemoteServerWrites,
 } from "./remote-servers";

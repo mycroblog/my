@@ -7493,15 +7493,23 @@ type AdminIncomeTotals struct {
 	Tips  bool              `json:"tips"`
 }
 
-// AdminInstanceHealth Whether deliveries go to a remote server.
+// AdminInstanceHealth A remote server, whether deliveries go to it, and what it runs.
 type AdminInstanceHealth struct {
 	Domain string `json:"domain"`
 
 	// FailureDays The number of distinct UTC days of the latest run of failed deliveries.
 	FailureDays int `json:"failure_days"`
 
+	// FirstSeenAt When this instance first stored a document of the server; omitted for a server known
+	// only from deliveries.
+	FirstSeenAt *time.Time `json:"first_seen_at,omitempty"`
+
 	// LastFailureDay The latest of those days; omitted without failures.
 	LastFailureDay *openapi_types.Date `json:"last_failure_day,omitempty"`
+
+	// Software The software a remote server last reported in its NodeInfo; omitted for a server whose
+	// NodeInfo was never read.
+	Software *AdminInstanceSoftware `json:"software,omitempty"`
 
 	// State `available` servers get every delivery; `unavailable` ones only `Follow`, `Accept`, and
 	// `Reject`.
@@ -7511,12 +7519,21 @@ type AdminInstanceHealth struct {
 	StateChangedAt *time.Time `json:"state_changed_at,omitempty"`
 }
 
-// AdminInstanceHealthPage A page of server health, in domain order.
+// AdminInstanceHealthPage A page of known remote servers, in domain order.
 type AdminInstanceHealthPage struct {
 	Items []AdminInstanceHealth `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminInstanceSoftware The software a remote server last reported in its NodeInfo; omitted for a server whose
+// NodeInfo was never read.
+type AdminInstanceSoftware struct {
+	Name string `json:"name"`
+
+	// Version The version as reported; empty when the server reports none.
+	Version string `json:"version"`
 }
 
 // AdminInstanceState `available` servers get every delivery; `unavailable` ones only `Follow`, `Accept`, and
@@ -19107,6 +19124,10 @@ type GetIncomeTotalsParams struct {
 
 // ListInstanceHealthParams defines parameters for ListInstanceHealth.
 type ListInstanceHealthParams struct {
+	// Troubled Keep only the servers with delivery failures or marked unavailable (`true`); `false`
+	// or omitted keeps every known server.
+	Troubled *bool `form:"troubled,omitempty" json:"troubled,omitempty"`
+
 	// State Keep only the servers in this state; omitted keeps both.
 	State *AdminInstanceState `form:"state,omitempty" json:"state,omitempty"`
 
@@ -24708,21 +24729,25 @@ type ClientInterface interface {
 	// Corresponds with PUT /admin/instance_texts/{key} (the `SetInstanceText` operationId).
 	SetInstanceText(ctx context.Context, key InstanceTextKey, body SetInstanceTextJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListInstanceHealth List the remote servers with delivery failures or marked unavailable
+	// ListInstanceHealth List the known remote servers with their health
 	//
-	// The health of the remote servers that deliveries failed to reach on some days, or that
-	// are marked unavailable, in domain order. A server that is not listed is available and
-	// has no failures. Unavailable servers are sent only `Follow`, `Accept`, and `Reject`
-	// until a delivery succeeds, they send a signed request, the daily probe reaches them, or
-	// an operator marks them available. Needs the `manage_domains` permission.
+	// The remote servers this instance knows, in domain order: those it stored a document of,
+	// and those deliveries went to. Each one carries its health, when it was first seen, and
+	// the software its NodeInfo last reported. `troubled` keeps the servers that deliveries
+	// failed to reach on some days or that are marked unavailable; `state` keeps those in one
+	// state, a server without failures being `available`. Unavailable servers are sent only
+	// `Follow`, `Accept`, and `Reject` until a delivery succeeds, they send a signed request,
+	// the daily probe reaches them, or an operator marks them available. Needs the
+	// `manage_domains` permission.
 	//
 	// Corresponds with GET /admin/instances (the `ListInstanceHealth` operationId).
 	ListInstanceHealth(ctx context.Context, params *ListInstanceHealthParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetInstanceHealth Get the health of a remote server
 	//
-	// The health of the server; one without failures is `available`, without `since`. Needs
-	// the `manage_domains` permission.
+	// The health of the server, when it was first seen, and the software its NodeInfo last
+	// reported; one without failures is `available`, without `state_changed_at`. Needs the
+	// `manage_domains` permission.
 	//
 	// Corresponds with GET /admin/instances/{domain} (the `GetInstanceHealth` operationId).
 	GetInstanceHealth(ctx context.Context, domain InstanceDomain, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -34107,13 +34132,16 @@ func (c *Client) SetInstanceText(ctx context.Context, key InstanceTextKey, body 
 	return c.Client.Do(req)
 }
 
-// ListInstanceHealth List the remote servers with delivery failures or marked unavailable
+// ListInstanceHealth List the known remote servers with their health
 //
-// The health of the remote servers that deliveries failed to reach on some days, or that
-// are marked unavailable, in domain order. A server that is not listed is available and
-// has no failures. Unavailable servers are sent only `Follow`, `Accept`, and `Reject`
-// until a delivery succeeds, they send a signed request, the daily probe reaches them, or
-// an operator marks them available. Needs the `manage_domains` permission.
+// The remote servers this instance knows, in domain order: those it stored a document of,
+// and those deliveries went to. Each one carries its health, when it was first seen, and
+// the software its NodeInfo last reported. `troubled` keeps the servers that deliveries
+// failed to reach on some days or that are marked unavailable; `state` keeps those in one
+// state, a server without failures being `available`. Unavailable servers are sent only
+// `Follow`, `Accept`, and `Reject` until a delivery succeeds, they send a signed request,
+// the daily probe reaches them, or an operator marks them available. Needs the
+// `manage_domains` permission.
 //
 // Corresponds with GET /admin/instances (the `ListInstanceHealth` operationId).
 func (c *Client) ListInstanceHealth(ctx context.Context, params *ListInstanceHealthParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -34130,8 +34158,9 @@ func (c *Client) ListInstanceHealth(ctx context.Context, params *ListInstanceHea
 
 // GetInstanceHealth Get the health of a remote server
 //
-// The health of the server; one without failures is `available`, without `since`. Needs
-// the `manage_domains` permission.
+// The health of the server, when it was first seen, and the software its NodeInfo last
+// reported; one without failures is `available`, without `state_changed_at`. Needs the
+// `manage_domains` permission.
 //
 // Corresponds with GET /admin/instances/{domain} (the `GetInstanceHealth` operationId).
 func (c *Client) GetInstanceHealth(ctx context.Context, domain InstanceDomain, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -50085,6 +50114,18 @@ func NewListInstanceHealthRequest(server string, params *ListInstanceHealthParam
 		// styled parameters, preserving literal commas as delimiters
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
+
+		if params.Troubled != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "troubled", *params.Troubled, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
 
 		if params.State != nil {
 
@@ -67266,13 +67307,16 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /admin/instance_texts/{key} (the `SetInstanceText` operationId).
 	SetInstanceTextWithResponse(ctx context.Context, key InstanceTextKey, body SetInstanceTextJSONRequestBody, reqEditors ...RequestEditorFn) (*SetInstanceTextResponse, error)
 
-	// ListInstanceHealthWithResponse List the remote servers with delivery failures or marked unavailable
+	// ListInstanceHealthWithResponse List the known remote servers with their health
 	//
-	// The health of the remote servers that deliveries failed to reach on some days, or that
-	// are marked unavailable, in domain order. A server that is not listed is available and
-	// has no failures. Unavailable servers are sent only `Follow`, `Accept`, and `Reject`
-	// until a delivery succeeds, they send a signed request, the daily probe reaches them, or
-	// an operator marks them available. Needs the `manage_domains` permission.
+	// The remote servers this instance knows, in domain order: those it stored a document of,
+	// and those deliveries went to. Each one carries its health, when it was first seen, and
+	// the software its NodeInfo last reported. `troubled` keeps the servers that deliveries
+	// failed to reach on some days or that are marked unavailable; `state` keeps those in one
+	// state, a server without failures being `available`. Unavailable servers are sent only
+	// `Follow`, `Accept`, and `Reject` until a delivery succeeds, they send a signed request,
+	// the daily probe reaches them, or an operator marks them available. Needs the
+	// `manage_domains` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -67281,8 +67325,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetInstanceHealthWithResponse Get the health of a remote server
 	//
-	// The health of the server; one without failures is `available`, without `since`. Needs
-	// the `manage_domains` permission.
+	// The health of the server, when it was first seen, and the software its NodeInfo last
+	// reported; one without failures is `available`, without `state_changed_at`. Needs the
+	// `manage_domains` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -107363,13 +107408,16 @@ func (c *ClientWithResponses) SetInstanceTextWithResponse(ctx context.Context, k
 	return ParseSetInstanceTextResponse(rsp)
 }
 
-// ListInstanceHealthWithResponse List the remote servers with delivery failures or marked unavailable
+// ListInstanceHealthWithResponse List the known remote servers with their health
 //
-// The health of the remote servers that deliveries failed to reach on some days, or that
-// are marked unavailable, in domain order. A server that is not listed is available and
-// has no failures. Unavailable servers are sent only `Follow`, `Accept`, and `Reject`
-// until a delivery succeeds, they send a signed request, the daily probe reaches them, or
-// an operator marks them available. Needs the `manage_domains` permission.
+// The remote servers this instance knows, in domain order: those it stored a document of,
+// and those deliveries went to. Each one carries its health, when it was first seen, and
+// the software its NodeInfo last reported. `troubled` keeps the servers that deliveries
+// failed to reach on some days or that are marked unavailable; `state` keeps those in one
+// state, a server without failures being `available`. Unavailable servers are sent only
+// `Follow`, `Accept`, and `Reject` until a delivery succeeds, they send a signed request,
+// the daily probe reaches them, or an operator marks them available. Needs the
+// `manage_domains` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -107384,8 +107432,9 @@ func (c *ClientWithResponses) ListInstanceHealthWithResponse(ctx context.Context
 
 // GetInstanceHealthWithResponse Get the health of a remote server
 //
-// The health of the server; one without failures is `available`, without `since`. Needs
-// the `manage_domains` permission.
+// The health of the server, when it was first seen, and the software its NodeInfo last
+// reported; one without failures is `available`, without `state_changed_at`. Needs the
+// `manage_domains` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //

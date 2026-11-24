@@ -613,6 +613,17 @@ func (q *Queries) GetReceivedActivityDocument(ctx context.Context, activityUri s
 	return document, err
 }
 
+const getRemoteInstance = `-- name: GetRemoteInstance :one
+SELECT domain, first_seen_at FROM remote_instances WHERE domain = $1
+`
+
+func (q *Queries) GetRemoteInstance(ctx context.Context, domain string) (RemoteInstance, error) {
+	row := q.db.QueryRow(ctx, getRemoteInstance, domain)
+	var i RemoteInstance
+	err := row.Scan(&i.Domain, &i.FirstSeenAt)
+	return i, err
+}
+
 const hasRemoteObjectTombstone = `-- name: HasRemoteObjectTombstone :one
 SELECT EXISTS (SELECT 1 FROM remote_object_tombstones WHERE uri = $1 AND actor_uri = $2)
 `
@@ -1482,9 +1493,15 @@ func (q *Queries) ListInstanceAvailabilityEvents(ctx context.Context, arg ListIn
 }
 
 const listInstanceHealth = `-- name: ListInstanceHealth :many
-SELECT domain, state, since, failure_days, last_failure_day FROM instance_health
-WHERE ($1::text = '' OR state = $1::text) AND domain > $2
-ORDER BY domain LIMIT $3
+SELECT h.domain, h.state, h.since, h.failure_days, h.last_failure_day, ri.first_seen_at,
+  o.id AS observation_id, o.software_name, o.software_version, o.observed_at
+FROM instance_health h
+LEFT JOIN remote_instances ri ON ri.domain = h.domain
+LEFT JOIN instance_nodeinfo_observations o ON o.id = (
+  SELECT lo.id FROM instance_nodeinfo_observations lo WHERE lo.domain = h.domain ORDER BY lo.id DESC LIMIT 1
+)
+WHERE ($1::text = '' OR h.state = $1::text) AND h.domain > $2
+ORDER BY h.domain LIMIT $3
 `
 
 type ListInstanceHealthParams struct {
@@ -1493,23 +1510,42 @@ type ListInstanceHealthParams struct {
 	BatchLimit  int32
 }
 
+type ListInstanceHealthRow struct {
+	Domain          string
+	State           string
+	Since           time.Time
+	FailureDays     int32
+	LastFailureDay  string
+	FirstSeenAt     *time.Time
+	ObservationID   *string
+	SoftwareName    *string
+	SoftwareVersion *string
+	ObservedAt      *time.Time
+}
+
 // ListInstanceHealth returns the servers with a health row (those with failures or unavailable),
-// in domain order after @after_domain, of the state @state (” for every state).
-func (q *Queries) ListInstanceHealth(ctx context.Context, arg ListInstanceHealthParams) ([]InstanceHealth, error) {
+// in domain order after @after_domain, of the state @state (” for every state), with when they
+// were first seen and their latest NodeInfo observation.
+func (q *Queries) ListInstanceHealth(ctx context.Context, arg ListInstanceHealthParams) ([]ListInstanceHealthRow, error) {
 	rows, err := q.db.Query(ctx, listInstanceHealth, arg.State, arg.AfterDomain, arg.BatchLimit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []InstanceHealth{}
+	items := []ListInstanceHealthRow{}
 	for rows.Next() {
-		var i InstanceHealth
+		var i ListInstanceHealthRow
 		if err := rows.Scan(
 			&i.Domain,
 			&i.State,
 			&i.Since,
 			&i.FailureDays,
 			&i.LastFailureDay,
+			&i.FirstSeenAt,
+			&i.ObservationID,
+			&i.SoftwareName,
+			&i.SoftwareVersion,
+			&i.ObservedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -1541,6 +1577,80 @@ func (q *Queries) ListInstanceHealthOf(ctx context.Context, domains []string) ([
 	for rows.Next() {
 		var i ListInstanceHealthOfRow
 		if err := rows.Scan(&i.Domain, &i.State); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listKnownInstances = `-- name: ListKnownInstances :many
+SELECT k.domain, h.state, h.since, h.failure_days, h.last_failure_day, ri.first_seen_at,
+  o.id AS observation_id, o.software_name, o.software_version, o.observed_at
+FROM (
+  SELECT r.domain FROM remote_instances r
+  WHERE r.domain > $2::text AND ($3::text = ''
+    OR COALESCE((SELECT rh.state FROM instance_health rh WHERE rh.domain = r.domain), 'available') = $3::text)
+  UNION
+  SELECT ih.domain FROM instance_health ih
+  WHERE ih.domain > $2::text AND ($3::text = '' OR ih.state = $3::text)
+  ORDER BY 1 LIMIT $1::integer
+) k
+LEFT JOIN instance_health h ON h.domain = k.domain
+LEFT JOIN remote_instances ri ON ri.domain = k.domain
+LEFT JOIN instance_nodeinfo_observations o ON o.id = (
+  SELECT lo.id FROM instance_nodeinfo_observations lo WHERE lo.domain = k.domain ORDER BY lo.id DESC LIMIT 1
+)
+ORDER BY k.domain
+`
+
+type ListKnownInstancesParams struct {
+	BatchLimit  int32
+	AfterDomain string
+	State       string
+}
+
+type ListKnownInstancesRow struct {
+	Domain          string
+	State           *string
+	Since           *time.Time
+	FailureDays     *int32
+	LastFailureDay  *string
+	FirstSeenAt     *time.Time
+	ObservationID   *string
+	SoftwareName    *string
+	SoftwareVersion *string
+	ObservedAt      *time.Time
+}
+
+// ListKnownInstances returns the servers this instance knows (seen in a stored document, or with
+// a health row), in domain order after @after_domain, of the state @state (” for every state; a
+// server without a health row is available), with their health, when they were first seen and
+// their latest NodeInfo observation. The page of domains is chosen before the joins.
+func (q *Queries) ListKnownInstances(ctx context.Context, arg ListKnownInstancesParams) ([]ListKnownInstancesRow, error) {
+	rows, err := q.db.Query(ctx, listKnownInstances, arg.BatchLimit, arg.AfterDomain, arg.State)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListKnownInstancesRow{}
+	for rows.Next() {
+		var i ListKnownInstancesRow
+		if err := rows.Scan(
+			&i.Domain,
+			&i.State,
+			&i.Since,
+			&i.FailureDays,
+			&i.LastFailureDay,
+			&i.FirstSeenAt,
+			&i.ObservationID,
+			&i.SoftwareName,
+			&i.SoftwareVersion,
+			&i.ObservedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

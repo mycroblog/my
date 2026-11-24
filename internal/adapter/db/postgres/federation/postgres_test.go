@@ -28,7 +28,8 @@ func TestRelayContract(t *testing.T) {
 func TestFederationRepositoryContract(t *testing.T) {
 	federationtest.FederationRepositoryContract(t, func(t *testing.T, opts uow.Options) federationtest.FederationHarness {
 		db := newTestDB(t, opts)
-		return federationtest.FederationHarness{UnitOfWork: db, Federation: NewRepository(db)}
+		feds := NewRepository(db)
+		return federationtest.FederationHarness{UnitOfWork: db, Federation: feds, Instances: feds}
 	})
 }
 

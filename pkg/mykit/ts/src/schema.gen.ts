@@ -6069,12 +6069,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List the remote servers with delivery failures or marked unavailable
-         * @description The health of the remote servers that deliveries failed to reach on some days, or that
-         *     are marked unavailable, in domain order. A server that is not listed is available and
-         *     has no failures. Unavailable servers are sent only `Follow`, `Accept`, and `Reject`
-         *     until a delivery succeeds, they send a signed request, the daily probe reaches them, or
-         *     an operator marks them available. Needs the `manage_domains` permission.
+         * List the known remote servers with their health
+         * @description The remote servers this instance knows, in domain order: those it stored a document of,
+         *     and those deliveries went to. Each one carries its health, when it was first seen, and
+         *     the software its NodeInfo last reported. `troubled` keeps the servers that deliveries
+         *     failed to reach on some days or that are marked unavailable; `state` keeps those in one
+         *     state, a server without failures being `available`. Unavailable servers are sent only
+         *     `Follow`, `Accept`, and `Reject` until a delivery succeeds, they send a signed request,
+         *     the daily probe reaches them, or an operator marks them available. Needs the
+         *     `manage_domains` permission.
          */
         get: operations["listInstanceHealth"];
         put?: never;
@@ -6094,8 +6097,9 @@ export interface paths {
         };
         /**
          * Get the health of a remote server
-         * @description The health of the server; one without failures is `available`, without `since`. Needs
-         *     the `manage_domains` permission.
+         * @description The health of the server, when it was first seen, and the software its NodeInfo last
+         *     reported; one without failures is `available`, without `state_changed_at`. Needs the
+         *     `manage_domains` permission.
          */
         get: operations["getInstanceHealth"];
         put?: never;
@@ -11834,7 +11838,7 @@ export interface components {
             tips: boolean;
             rules: components["schemas"]["IncomeTotalsRules"];
         };
-        /** @description Whether deliveries go to a remote server. */
+        /** @description A remote server, whether deliveries go to it, and what it runs. */
         AdminInstanceHealth: {
             domain: string;
             state: components["schemas"]["AdminInstanceState"];
@@ -11850,10 +11854,26 @@ export interface components {
              * @description The latest of those days; omitted without failures.
              */
             last_failure_day?: string;
+            /**
+             * Format: date-time
+             * @description When this instance first stored a document of the server; omitted for a server known
+             *     only from deliveries.
+             */
+            first_seen_at?: string;
+            software?: components["schemas"]["AdminInstanceSoftware"];
         };
-        /** @description A page of server health, in domain order. */
+        /** @description A page of known remote servers, in domain order. */
         AdminInstanceHealthPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminInstanceHealth"][];
+        };
+        /**
+         * @description The software a remote server last reported in its NodeInfo; omitted for a server whose
+         *     NodeInfo was never read.
+         */
+        AdminInstanceSoftware: {
+            name: string;
+            /** @description The version as reported; empty when the server reports none. */
+            version: string;
         };
         /**
          * @description `available` servers get every delivery; `unavailable` ones only `Follow`, `Accept`, and
@@ -20321,7 +20341,7 @@ export interface components {
                 "application/json": components["schemas"]["AdminDomainAction"];
             };
         };
-        /** @description The health of the remote server. */
+        /** @description The remote server and its health. */
         AdminInstanceHealth: {
             headers: {
                 "Cache-Control": components["headers"]["CacheControl"];
@@ -29594,6 +29614,11 @@ export interface operations {
     listInstanceHealth: {
         parameters: {
             query?: {
+                /**
+                 * @description Keep only the servers with delivery failures or marked unavailable (`true`); `false`
+                 *     or omitted keeps every known server.
+                 */
+                troubled?: boolean;
                 /** @description Keep only the servers in this state; omitted keeps both. */
                 state?: components["schemas"]["AdminInstanceState"];
                 /** @description The `next_cursor` of the previous page; omitted for the first page. */
@@ -29607,7 +29632,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A page of server health. */
+            /** @description A page of known servers. */
             200: {
                 headers: {
                     "Cache-Control": components["headers"]["CacheControl"];
