@@ -438,9 +438,11 @@ func validRequestID(id string) bool {
 // and its duration in seconds (ADR-0055 §5), so that a log-based metric counts the requests as
 // the metric does: http.route and my.surface are those that problemFallback found, and are absent
 // when the request reached no route (the probes of the platform, the requests refused before routing),
-// which the metric does not measure either. With the HTTP metrics, it also records the request's
-// http.server.request.duration in a unit of work of the Meter (ADR-0055 §3), which the line
-// carries with metrics_exporter = emf (§5). The request is a span of the Tracer
+// which the metric does not measure either. The handler adds its own attributes to the line
+// with kernel.AddUnitAttrs (the inbox its outcome). The request is a unit of work of the Meter:
+// with the HTTP metrics, it records the request's http.server.request.duration (ADR-0055 §3),
+// which the line carries with metrics_exporter = emf (§5), and with none the line carries the
+// unit's adapter operations and the database pool's use (sysmetrics.UnitLineMeter). The request is a span of the Tracer
 // (HTTPServerSpan, ADR-0055 §13), which the line names by trace_id and span_id. A server error
 // of a request whose client has left counts as statusClientClosedRequest in all of them, since
 // no one received it and an operator cannot act on it; a panic stays a server error.
@@ -457,16 +459,16 @@ func (a *App) accessLog(next http.Handler) http.Handler {
 		}
 		ctx := r.Context()
 		recorded := false
+		ctx, end := a.Meter.Begin(ctx)
+		defer end()
 		if a.http != nil {
-			var end func()
-			ctx, end = a.Meter.Begin(ctx)
-			defer end()
 			defer func() { // a handler that panics with http.ErrAbortHandler writes no log line
 				if !recorded && rr.route != "" {
 					a.http.record(ctx, r, rr, rw.status, time.Since(start))
 				}
 			}()
 		}
+		ctx, _ = kernel.WithUnitAttrs(ctx)
 		r = r.WithContext(context.WithValue(ctx, requestRouteKey{}, rr))
 		next.ServeHTTP(rw, r)
 		if rw.status >= http.StatusInternalServerError && !rr.panicked && clientLeft(r.Context()) {

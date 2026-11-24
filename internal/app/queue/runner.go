@@ -287,7 +287,7 @@ func (r *PullRunner) runClaimed(ctx context.Context, j Job, now, leaseEnd time.T
 		kernel.NewAttrs(kernel.StringAttr(LabelJobType, jobType), kernel.IntAttr(AttrJobAttempt, int64(j.Attempt))))
 	mctx, end := r.metrics.meter.Begin(ctx)
 	defer end()
-	mctx, runAttrs := WithRunAttrs(mctx)
+	mctx, _ = kernel.WithUnitAttrs(mctx)
 	wait := max(now.Sub(j.RunAt), 0)
 	r.metrics.waited(mctx, jobType, wait)
 	started := time.Now() // the monotonic clock: Clock.Now has millisecond precision
@@ -310,7 +310,7 @@ func (r *PullRunner) runClaimed(ctx context.Context, j Job, now, leaseEnd time.T
 	ran := func(outcome string) {
 		d := time.Since(started)
 		r.metrics.ran(mctx, jobType, outcome, d)
-		r.logRun(mctx, j, jobType, outcome, res.Err(), d, wait, runAttrs.Attrs())
+		r.logRun(mctx, j, jobType, outcome, res.Err(), d, wait)
 		span.Set(kernel.StringAttr(LabelOutcome, outcome))
 	}
 	// The span ends once the result is recorded, so that it covers the result's transaction.
@@ -386,9 +386,9 @@ const (
 // the same names and values, its duration and the my.job.wait in seconds, so that a log-based
 // metric counts the runs as the metrics do, and the job's ID and attempt for NFR-OPS-1. With
 // metrics_exporter = emf, the line also carries those two metrics. A success or a postponement is
-// info, a retry a warning, and a dead job an error. extra are the attributes the handler added
-// (AddRunAttrs).
-func (r *PullRunner) logRun(ctx context.Context, j Job, jobType, outcome string, err error, d, wait time.Duration, extra []slog.Attr) {
+// info, a retry a warning, and a dead job an error. The line ends with the attributes the
+// handler added (kernel.AddUnitAttrs).
+func (r *PullRunner) logRun(ctx context.Context, j Job, jobType, outcome string, err error, d, wait time.Duration) {
 	level := slog.LevelInfo
 	switch outcome {
 	case OutcomeRetry:
@@ -404,7 +404,6 @@ func (r *PullRunner) logRun(ctx context.Context, j Job, jobType, outcome string,
 		slog.String(logJobID, j.ID),
 		slog.Int(logAttempt, j.Attempt),
 	}
-	attrs = append(attrs, extra...)
 	if err != nil {
 		attrs = append(attrs, slog.String("error", err.Error()))
 	}

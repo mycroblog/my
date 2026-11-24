@@ -157,3 +157,58 @@ void test("the notes keep their markup and lose scripts, handlers and other URLs
     `<a href="https://example.com/">x</a>y<img>`,
   );
 });
+
+/** A fake of the assets of a Preview: /next/ alone, and the 404 page of its version for any other path. */
+function previewAssets(): Env["ASSETS"] & { requests: Request[] } {
+  const requests: Request[] = [];
+  return {
+    requests,
+    fetch(request) {
+      requests.push(request);
+      const found = new URL(request.url).pathname.startsWith("/next/");
+      return Promise.resolve(new Response(found ? page : "not found", { status: found ? 200 : 404 }));
+    },
+  };
+}
+
+void test("on a Preview, the root and /latest/ open /next/", async () => {
+  const runtime: Runtime = { cache: memoryCache(), fetch: github([]), now: () => 0 };
+  const env = { ASSETS: previewAssets() };
+  const redirects: [from: string, to: string][] = [
+    ["https://pr-1-my-docs.example.workers.dev/", "https://pr-1-my-docs.example.workers.dev/next/"],
+    ["https://pr-1-my-docs.example.workers.dev/latest", "https://pr-1-my-docs.example.workers.dev/next/"],
+    [
+      "https://pr-1-my-docs.example.workers.dev/latest/operations/running/?q=1",
+      "https://pr-1-my-docs.example.workers.dev/next/operations/running/?q=1",
+    ],
+  ];
+  for (const [from, to] of redirects) {
+    const response = await handle(new Request(from), env, context(), runtime);
+    assert.equal(response.status, 302, from);
+    assert.equal(response.headers.get("location"), to, from);
+  }
+});
+
+void test("a path of /latest/ that has its asset is answered as any other", async () => {
+  const fetch = github([Response.json([release])]);
+  const runtime: Runtime = { cache: memoryCache(), fetch, now: () => 0 };
+  const env = { ASSETS: assets() };
+  const root = await handle(new Request("https://mycroblog.dev/"), env, context(), runtime);
+  assert.equal(root.status, 200);
+  assert.equal(await root.text(), page);
+  const notes = await handle(new Request("https://mycroblog.dev/latest/releases/"), env, context(), runtime);
+  assert.equal(notes.status, 200);
+  assert.ok((await notes.text()).includes("release-v0-1-0"), "the release notes of /latest/ are filled in");
+});
+
+void test("a request that only reads is redirected; any other method goes to the asset", async () => {
+  const runtime: Runtime = { cache: memoryCache(), fetch: github([]), now: () => 0 };
+  const env = { ASSETS: previewAssets() };
+  const response = await handle(
+    new Request("https://pr-1-my-docs.example.workers.dev/latest", { method: "POST" }),
+    env,
+    context(),
+    runtime,
+  );
+  assert.equal(response.status, 404);
+});

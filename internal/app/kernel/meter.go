@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
+	"sync"
 )
 
 // Meter creates the instruments of the service and system metrics (ADR-0055 §1, ADR-0055).
@@ -63,16 +64,58 @@ type LineMeter interface {
 }
 
 // LogUnit writes the log line that ends a unit of work of m (an HTTP request or a job,
-// ADR-0055 §5) with logger: when m is a LineMeter and logger writes the line at level, the line
-// also carries the measurements of instruments that it describes (LineMeter.Line).
+// ADR-0055 §5) with logger: attrs, then the attributes that the work added to the line
+// (AddUnitAttrs). When m is a LineMeter and logger writes the line at level, the line also
+// carries the measurements of instruments that it describes (LineMeter.Line).
 func LogUnit(ctx context.Context, logger *slog.Logger, level slog.Level, msg string, m Meter, attrs []slog.Attr, instruments ...Instrument) {
 	if !logger.Enabled(ctx, level) {
 		return // the measurements stay in the unit, which writes them at its end
+	}
+	if u, _ := ctx.Value(unitAttrsKey{}).(*UnitAttrs); u != nil {
+		attrs = append(attrs, u.Attrs()...)
 	}
 	if lm, ok := m.(LineMeter); ok {
 		attrs = lm.Line(ctx, attrs, instruments...)
 	}
 	logger.LogAttrs(ctx, level, msg, attrs...)
+}
+
+// UnitAttrs collects the attributes that the work of a unit (the handler of an HTTP request or
+// of a job) adds to the log line that ends the unit (ADR-0055 §5).
+type UnitAttrs struct {
+	mu    sync.Mutex
+	attrs []slog.Attr
+}
+
+type unitAttrsKey struct{}
+
+// WithUnitAttrs returns a context in which AddUnitAttrs collects into the returned UnitAttrs,
+// which LogUnit writes on the line of the unit. The access log and the job runner call it
+// before they call the handler; a unit inside another (a job that a push request runs)
+// collects its own.
+func WithUnitAttrs(ctx context.Context) (context.Context, *UnitAttrs) {
+	u := &UnitAttrs{}
+	return context.WithValue(ctx, unitAttrsKey{}, u), u
+}
+
+// AddUnitAttrs adds attrs to the log line of the unit of work that ctx belongs to, an HTTP
+// request or a job run. It does nothing outside a unit. Work adds only what the operator may
+// see in the log: never a URL or an address that the admin screens mask.
+func AddUnitAttrs(ctx context.Context, attrs ...slog.Attr) {
+	u, _ := ctx.Value(unitAttrsKey{}).(*UnitAttrs)
+	if u == nil {
+		return
+	}
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.attrs = append(u.attrs, attrs...)
+}
+
+// Attrs returns the attributes collected so far.
+func (u *UnitAttrs) Attrs() []slog.Attr {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return append([]slog.Attr(nil), u.attrs...)
 }
 
 // Instrument declares a metric (ADR-0055 §3).
@@ -196,8 +239,8 @@ func (l Labels) All() func(yield func(key, value string) bool) {
 	}
 }
 
-// NopMeter is a Meter that records nothing, the meter of metrics_exporter = none. Its
-// instruments cost a method call.
+// NopMeter is a Meter that records nothing, which the Meter of metrics_exporter = none embeds.
+// Its instruments cost a method call.
 type NopMeter struct{}
 
 var _ Meter = NopMeter{}
@@ -235,11 +278,16 @@ func MeterOrNop(m Meter) Meter {
 	return m
 }
 
-// IsNop reports whether m records nothing, so that a caller can skip the work of measuring.
+// recordsNothing marks NopMeter, and a Meter that embeds it, for IsNop.
+func (NopMeter) recordsNothing() {}
+
+// IsNop reports whether the instruments of m record nothing, so that a caller can skip the work
+// of measuring: m is nil, NopMeter, or a Meter that embeds NopMeter and only adds to the lines
+// of the units of work (LineMeter), as the Meter of metrics_exporter = none does.
 func IsNop(m Meter) bool {
 	if m == nil {
 		return true
 	}
-	_, ok := m.(NopMeter)
+	_, ok := m.(interface{ recordsNothing() })
 	return ok
 }

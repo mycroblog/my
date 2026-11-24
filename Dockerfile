@@ -10,7 +10,7 @@
 # hand; Dependabot raises the digests.
 
 # The bun binary of the web client's build and the development image.
-FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aae8be147e57bdebbaea2e5264e3e0b5af1db187d9a4 AS bun
+FROM --platform=$BUILDPLATFORM oven/bun:1.4.5-slim@sha256:b780593f3e10918cbdaec3d5a08d52224b9198069a65eb47812085c2ec007643 AS bun
 
 # The Go toolchain, of the build stages and the development image.
 FROM --platform=$BUILDPLATFORM golang:1.27.4-trixie@sha256:f18c3d73a184fb0582828510722e723b63a93f7188d11dd223d9be6f6880e65d AS go
@@ -39,7 +39,8 @@ COPY locales/ locales/
 COPY tools/i18n/ tools/i18n/
 COPY pkg/mykit/ts/ pkg/mykit/ts/
 COPY web/ web/
-RUN mkdir -p internal/interface/web/dist && scripts/task.sh web:build
+COPY internal/interface/web/dist/.gitkeep internal/interface/web/dist/
+RUN scripts/task.sh web:build
 
 # Cross-compiles on the build host's platform; Go needs no emulation for the target architecture.
 FROM go AS build

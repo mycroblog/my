@@ -151,12 +151,12 @@ func TestRunnerLogsJobRuns(t *testing.T) {
 	}
 }
 
-// A handler adds attributes to the line of its run with AddRunAttrs.
+// A handler adds attributes to the line of its run with kernel.AddUnitAttrs.
 func TestRunnerLogsTheAttributesOfTheHandler(t *testing.T) {
 	src := &jobsSource{emptySource: emptySource{claims: make(chan struct{}, 1)}, jobs: []queue.Job{{ID: testID(1), Type: "ok"}}}
 	reg := &queue.JobHandlerRegistry{}
 	reg.Register("ok", func(ctx context.Context, _ queue.Job) queue.Result {
-		queue.AddRunAttrs(ctx, slog.String("my.delivery.domain", "remote.example"))
+		kernel.AddUnitAttrs(ctx, slog.String("my.delivery.domain", "remote.example"))
 		return queue.Done()
 	})
 	var buf bytes.Buffer

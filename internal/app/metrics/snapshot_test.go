@@ -444,6 +444,44 @@ func TestTheJobLogsTheSnapshot(t *testing.T) {
 	}
 }
 
+// TestTheJobLogsTheAgesByTypeAndTheMediaTotal checks what the snapshot line carries for the
+// log-based alerts that cannot add or split fields: the age of the oldest ready job of each type
+// and the largest of them, and the bytes of all media files.
+func TestTheJobLogsTheAgesByTypeAndTheMediaTotal(t *testing.T) {
+	c := &clock{now: start}
+	db := &database{}
+	var logs bytes.Buffer
+	p := newProcess(newStore(c), c, db, &logs)
+	reg, sched := &queue.JobHandlerRegistry{}, queue.NewScheduler(nopQueue{}, c, slog.New(slog.DiscardHandler))
+	p.svc.RegisterJobs(reg, sched, p.meter)
+	h, _, _ := reg.Lookup(metrics.JobSnapshot)
+	if res := h(t.Context(), queue.Job{Type: metrics.JobSnapshot}); !res.IsDone() {
+		t.Fatalf("job = %+v, want Done", res)
+	}
+	var line map[string]any
+	if err := json.Unmarshal(logs.Bytes(), &line); err != nil {
+		t.Fatalf("log %q: %v", logs.String(), err)
+	}
+	if line["msg"] != "metrics snapshot" {
+		t.Fatalf("log line = %v, want the metrics snapshot", line)
+	}
+	ages, _ := line["my.queue.oldest_ready_age"].(map[string]any)
+	wantAges := map[string]any{"federation.deliver": 90.0, "media.process": 10.0, queue.JobTypeOther: 20.0}
+	if !maps.Equal(ages, wantAges) {
+		t.Errorf("my.queue.oldest_ready_age = %v, want %v", line["my.queue.oldest_ready_age"], wantAges)
+	}
+	if got := line["my.queue.oldest_ready_age.max"]; got != 90.0 {
+		t.Errorf("my.queue.oldest_ready_age.max = %v, want 90", got)
+	}
+	if got := line["my.media.stored_bytes.total"]; got != 3400.0 {
+		t.Errorf("my.media.stored_bytes.total = %v, want 3400 (3000 local + 400 remote cache)", got)
+	}
+	stored, _ := line["my.media.stored_bytes"].(map[string]any)
+	if stored[metrics.MediaOriginLocal] != 3000.0 || stored[metrics.MediaOriginRemoteCache] != 400.0 {
+		t.Errorf("my.media.stored_bytes = %v, want local 3000 and remote_cache 400", line["my.media.stored_bytes"])
+	}
+}
+
 func TestTheJobWritesTheGaugesOfEMF(t *testing.T) {
 	c := &clock{now: start}
 	kv := newStore(c)

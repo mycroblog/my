@@ -6,12 +6,13 @@
 # Preview pr-<number>. ui-preview.yml builds the catalog without secrets (`build`), from main or from the pull request's
 # checkout (forks included); ui-preview-deploy.yml publishes it from main's checkout (`deploy`, `deploy-pr`). A pull
 # request's build comes from code anyone can write, so it is only ever data: `stage` checks that it is plain static
-# files and copies it next to main's Worker config and the _headers file that keeps every page out of search engines,
-# and wrangler uploads it as assets. Nothing in it is executed or sourced, and nothing of it reaches a shell, a config,
+# files and copies it next to main's Worker config, keeps every page out of search engines, and wrangler uploads it as
+# assets. Nothing in it is executed or sourced, and nothing of it reaches a shell, a config,
 # or a command line; the comment takes from its index.json only the ids and the titles of plain characters.
 #
 #   scripts/ui-preview.sh build <out dir>                     build the catalog of this checkout into <out dir>
 #   scripts/ui-preview.sh stage <build dir> <work dir>        check a build, copy it to <work dir>/site
+#   scripts/ui-preview.sh stage-pr <build dir> <work dir>     the same for a Preview pr-<number>
 #   scripts/ui-preview.sh stories <site dir> <url> <changed files>
 #                                                             the Markdown list of the stories the changed files change
 #   scripts/ui-preview.sh deploy <build dir>                  publish the build as the Worker (main's catalog)
@@ -52,7 +53,7 @@ die() {
 }
 
 usage() {
-  sed -n '13,22p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '13,23p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 2
 }
 
@@ -69,11 +70,15 @@ build() {
   echo "ui-preview: built the catalog in $out ($(find "$out" -type f | wc -l) files)" >&2
 }
 
-# stage_catalog BUILD DEST checks that BUILD is a build of plain files with the pages of a Storybook (build) and copies
-# it to DEST/site, with the Worker config of this checkout and the _headers file that keeps every page out of search
-# engines.
+# noindex_meta is the robots tag that stage_catalog puts in the head of every page of a Preview.
+noindex_meta='<meta name="robots" content="noindex, nofollow">'
+
+# stage_catalog BUILD DEST [PREVIEW] checks that BUILD is a build of plain files with the pages of a Storybook (build)
+# and copies it to DEST/site, with the Worker config of this checkout, and keeps every page out of search engines:
+# main's catalog by a _headers file, and a Preview (PREVIEW=1) by a robots tag in the head of every page, since
+# `wrangler preview` refuses a _headers file among the assets (cloudflare/workers-sdk#15791).
 stage_catalog() {
-  local build="$1" dest="$2" total file
+  local build="$1" dest="$2" preview="${3:-}" total file
   total="$(check_plain "$build")"
   for file in index.html iframe.html index.json; do
     [[ -f "$build/$file" ]] || die "the build has no $file: is it the output of scripts/ui-preview.sh build?"
@@ -82,7 +87,14 @@ stage_catalog() {
   mkdir -p "$dest/site"
   cp -R "$build/." "$dest/site/"
   cp "$config" "$dest/wrangler.jsonc"
-  printf '%s\n' '/*' '  X-Robots-Tag: noindex, nofollow' >"$dest/site/_headers"
+  if [[ -z "$preview" ]]; then
+    printf '%s\n' '/*' '  X-Robots-Tag: noindex, nofollow' >"$dest/site/_headers"
+  else
+    while IFS= read -r -d '' file; do
+      sed -i -E "0,/<head( [^>]*)?>/s//&$noindex_meta/" "$file"
+      grep -qF "$noindex_meta" "$file" || die "${file#"$dest/site/"} has no <head> to put the robots tag in"
+    done < <(find "$dest/site" -type f -name '*.html' -print0)
+  fi
   echo "ui-preview: staged the catalog ($total bytes) in $dest/site" >&2
 }
 
@@ -149,7 +161,7 @@ deploy() {
 deploy_pr() {
   local build="$1" pr="$2" changed="${3:-}" stage="$work/pr" url main sha body
   check_pr "$pr"
-  stage_catalog "$build" "$stage"
+  stage_catalog "$build" "$stage" 1
   url="$(deploy_preview "$stage" "$pr")"
   # main's catalog is the Worker itself, on the same subdomain.
   main="https://${url#https://pr-"$pr"-}"
@@ -182,6 +194,7 @@ cmd="${1:-}"
 case "$cmd" in
   build) [[ $# -eq 1 ]] || usage; build "$@" ;;
   stage) [[ $# -eq 2 ]] || usage; stage_catalog "$@" ;;
+  stage-pr) [[ $# -eq 2 ]] || usage; stage_catalog "$@" 1 ;;
   stories) [[ $# -eq 3 ]] || usage; stories "$@" ;;
   deploy) [[ $# -eq 1 ]] || usage; deploy "$@" ;;
   deploy-pr) [[ $# -ge 2 && $# -le 3 ]] || usage; deploy_pr "$@" ;;
