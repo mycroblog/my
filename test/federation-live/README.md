@@ -37,7 +37,7 @@ between this server and Mastodon and Akkoma's LitePub relay, for the live test o
   | `dave@mastodon.test`, `erin@gts.test`, `heidi@misskey.test` | Never follow alice: the mentioned non-followers of `TestVisibilityAudiences` |
   | `eve@mastodon.test` | `TestSignatureProfile`: the proxy refuses her draft-cavage POSTs in both directions |
   | `mod@mastodon.test`, `mkadmin@misskey.test` | The administrators whose tokens read the moderators' reports in `TestReportForwarding` |
-  | `ivan@my.test`, `judy@mastodon.test` | `TestRelay`: nobody follows them, so their posts reach the other server only through the relay |
+  | `ivan@my.test`, `judy@mastodon.test` | `TestRelay`: nobody follows them, so their posts reach the other server only through the relay; `TestFetchesAnUndeliveredPost`: judy fetches an unlisted post of ivan that was delivered to no one |
   | `ivan@my.test`, `kate@akkoma.test` | `TestRelayLitePub`: nobody follows them, so their posts reach the other server only through Akkoma's relay |
   | `carol@gts21.test` | `TestInteractionApproval`: the GoToSocial 0.21 user, whom alice follows; the stack runs the release before the pinned `gts.test` for the approvals of replies and boosts only |
   | `bonnie@bonfire.test` | `TestInteractionApprovalBonfire`: she and alice follow each other; she stops following alice before the quotes |
