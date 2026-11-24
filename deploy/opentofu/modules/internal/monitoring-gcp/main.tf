@@ -286,10 +286,7 @@ locals {
   not_expressible = [
     "MyRemoteServersPaused",
     "MyProcessRestarting",
-    "MyDBPoolSaturated",
-    "MyDBPoolWaiting",
     "MyFileDescriptorsNearLimit",
-    "MyAdapterErrors",
     "MyTLSCertificateExpiring",
     "MyTLSOrdersFailing",
   ]
