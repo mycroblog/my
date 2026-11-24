@@ -48,6 +48,9 @@ type Options struct {
 	ServiceVersion string
 	// Role is the my.role of the resource: web, worker, or all.
 	Role string
+	// InstanceID is the service.instance.id of the resource, the instance's host; "" leaves it
+	// to OTEL_RESOURCE_ATTRIBUTES.
+	InstanceID string
 	// Exporter replaces the OTLP/HTTP exporter. Tests only.
 	Exporter sdklog.Exporter
 }
@@ -61,7 +64,7 @@ type Client struct {
 // New returns the Client that exports through OTLP/HTTP, or opts.Exporter. Shut it down to stop
 // the exporter.
 func New(ctx context.Context, opts Options) (*Client, error) {
-	res, err := otel.NewResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role)
+	res, err := otel.NewResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role, opts.InstanceID)
 	if err != nil {
 		return nil, fmt.Errorf("logs resource: %w", err)
 	}

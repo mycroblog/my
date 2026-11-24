@@ -14,9 +14,9 @@
 //
 // The Tracer (ADR-0055) exports the spans over OTLP/HTTP; see Tracer.
 //
-// The resource carries service.name, service.version, and my.role, and the attributes of
-// OTEL_RESOURCE_ATTRIBUTES, through which a platform can add the instance's identifier
-// (ADR-0055 §6).
+// The resource carries service.name, service.version, my.role, and service.instance.id (the
+// instance's host), and the attributes of OTEL_RESOURCE_ATTRIBUTES, which can replace
+// service.instance.id or add others (ADR-0055 §6).
 package otel
 
 import (
@@ -53,6 +53,9 @@ type Options struct {
 	ServiceVersion string
 	// Role is the my.role of the resource: web, worker, or all.
 	Role string
+	// InstanceID is the service.instance.id of the resource, the instance's host; "" leaves it
+	// to OTEL_RESOURCE_ATTRIBUTES.
+	InstanceID string
 }
 
 // Meter is a kernel.Meter on an OpenTelemetry MeterProvider.
@@ -72,7 +75,7 @@ var _ kernel.Meter = (*Meter)(nil)
 // New returns the Meter that exports through opts.Exporter. Shut it down to flush and stop
 // the exporter.
 func New(ctx context.Context, opts Options) (*Meter, error) {
-	res, err := NewResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role)
+	res, err := NewResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role, opts.InstanceID)
 	if err != nil {
 		return nil, fmt.Errorf("metrics resource: %w", err)
 	}
@@ -119,13 +122,22 @@ func New(ctx context.Context, opts Options) (*Meter, error) {
 
 // NewResource returns the resource of the metrics, the traces, and the exported error reports
 // (ADR-0055 §6, ADR-0055 §13, ADR-0103 §4 (3)):
-// service.name (default "my"), service.version, my.role, and the attributes of
-// OTEL_RESOURCE_ATTRIBUTES.
-func NewResource(ctx context.Context, name, version, role string) (*resource.Resource, error) {
+// service.name (default "my"), service.version, my.role, service.instance.id, and the attributes
+// of OTEL_RESOURCE_ATTRIBUTES. The instance is the instance's host, one value per instance; a
+// service.instance.id in OTEL_RESOURCE_ATTRIBUTES replaces it, and an empty instance leaves it
+// out.
+func NewResource(ctx context.Context, name, version, role, instance string) (*resource.Resource, error) {
 	if name == "" {
 		name = "my"
 	}
+	var defaults []attribute.KeyValue
+	if instance != "" {
+		defaults = append(defaults, attribute.String(attrInstanceID, instance))
+	}
 	return resource.New(ctx,
+		// Later options replace the attributes of earlier ones: the instance comes before the
+		// environment, which may replace it, and the service after, which the environment may not.
+		resource.WithAttributes(defaults...),
 		resource.WithFromEnv(),
 		resource.WithTelemetrySDK(),
 		resource.WithAttributes(
@@ -135,6 +147,9 @@ func NewResource(ctx context.Context, name, version, role string) (*resource.Res
 		),
 	)
 }
+
+// attrInstanceID is the resource attribute of the instance (OpenTelemetry semantic conventions).
+const attrInstanceID = "service.instance.id"
 
 // Handler serves the metrics in the Prometheus text format; nil for the OTLP exporter.
 func (m *Meter) Handler() http.Handler { return m.handler }

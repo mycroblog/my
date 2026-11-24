@@ -17,7 +17,9 @@ func init() { errorExporters[sentry.Name] = newSentryErrorExporter }
 // service that the operator configured, so the HTTP client is not the SSRF-guarded
 // kernel.HTTPClient; one envelope has the queue's 10 seconds.
 func newSentryErrorExporter(_ context.Context, a *App, cfg *config.Config, opts AppOptions) (ErrorSink, error) {
-	c, err := sentry.New(sentry.Options{DSN: cfg.ErrorsSentryDSN, HTTPClient: &http.Client{Timeout: exportSendTimeout}, Version: opts.Version})
+	c, err := sentry.New(sentry.Options{
+		DSN: cfg.ErrorsSentryDSN, HTTPClient: &http.Client{Timeout: exportSendTimeout}, Version: opts.Version, Instance: cfg.Host,
+	})
 	if err != nil {
 		return nil, err
 	}

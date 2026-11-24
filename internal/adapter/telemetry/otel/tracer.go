@@ -36,6 +36,9 @@ type TracerOptions struct {
 	ServiceVersion string
 	// Role is the my.role of the resource: web, worker, or all.
 	Role string
+	// InstanceID is the service.instance.id of the resource, the instance's host; "" leaves it
+	// to OTEL_RESOURCE_ATTRIBUTES.
+	InstanceID string
 	// SampleRatio is the share of the root spans without a sampled parent or link that are
 	// recorded, from 0 to 1 (traces_sample_ratio).
 	SampleRatio float64
@@ -62,7 +65,7 @@ var _ kernel.Tracer = (*Tracer)(nil)
 // NewTracer returns the Tracer that exports through OTLP/HTTP, or opts.Exporter. Shut it down
 // to flush and stop the exporter.
 func NewTracer(ctx context.Context, opts TracerOptions) (*Tracer, error) {
-	res, err := NewResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role)
+	res, err := NewResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role, opts.InstanceID)
 	if err != nil {
 		return nil, fmt.Errorf("traces resource: %w", err)
 	}

@@ -17,7 +17,7 @@ func init() { errorExporters[otlp.Name] = newOTLPErrorExporter }
 // shared send queue in front of the OpenTelemetry log client, whose SimpleProcessor exports one
 // record per report. The client stops once the queue has drained.
 func newOTLPErrorExporter(ctx context.Context, a *App, cfg *config.Config, opts AppOptions) (ErrorSink, error) {
-	c, err := otlp.New(ctx, otlp.Options{ServiceVersion: opts.Version, Role: string(cfg.Role)})
+	c, err := otlp.New(ctx, otlp.Options{ServiceVersion: opts.Version, Role: string(cfg.Role), InstanceID: cfg.Host})
 	if err != nil {
 		return nil, err
 	}

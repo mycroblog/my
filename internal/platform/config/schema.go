@@ -1550,7 +1550,7 @@ var schema = []field{
 	},
 	{
 		key:   "metrics_emf_dimensions",
-		doc:   "Labels that become CloudWatch dimensions with `metrics_exporter = emf`, comma-separated, such as `my.surface, my.role`; the other labels stay fields of the log line. CloudWatch bills every combination of dimension values as a metric, so the deployment template chooses them. Empty makes every metric one series per namespace.",
+		doc:   "Labels that become CloudWatch dimensions with `metrics_exporter = emf`, comma-separated, such as `my.surface, my.role`, or `service.instance.id` (the instance's `host`), which every line carries; the other labels stay fields of the log line. CloudWatch bills every combination of dimension values as a metric, so the deployment template chooses them. Empty makes every metric one series per namespace.",
 		check: checkLabelKeys,
 		set: func(c *Config, v string) {
 			for k := range strings.SplitSeq(v, ",") {
