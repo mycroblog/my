@@ -129,8 +129,7 @@ web・worker を分けたり、レプリカ・サーバーレスのインスタ�
 - ラベルの値は、コードで決まった有限の集合（ルートのパターン、ジョブの型、Activity の型、公開範囲、結果）だけにする
 - 次のものはラベルにしない: 連合先のドメイン・ホスト、アカウント・投稿・ジョブの ID、URL・パス（パターンでない生の値）、クライアント IP、User-Agent、OAuth のアプリケーション
 - 連合先ごとの状態（配送の失敗の続き、到達できないホスト）はメトリクスでなく DB と管理画面（NFR-OPS-3、[federation.md](../architecture/federation.md)）で見る
-- 資源の属性（OTel の resource）は `service.name`（既定 `my`）、`service.version`、`my.role`（`web` / `worker` / `all`）、`service.namespace` と、基盤が与えるインスタンスの識別子だけにする
-- `service.namespace` はインスタンスの `host` にする。インスタンスが共有するバックエンドで、それぞれのメトリクス・トレース・エラーを見分けるため（決定者が決めた）
+- 資源の属性（OTel の resource）は `service.name`（既定 `my`）、`service.version`、`my.role`（`web` / `worker` / `all`）、`service.namespace`（`host`。共有のバックエンドで見分けるため）と、基盤が与えるインスタンスの識別子だけにする
 
 ### 7. オートスケーリングの契機
 
@@ -210,7 +209,7 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
   宣言にない属性のキーはアダプタが捨て、`testkit` の Tracer がテストを落とす
 - アダプタは `internal/adapter/telemetry/` に置く:
   - `none`（既定）: span を記録しない。ただし基盤から受けた `traceparent` があれば、その trace ID を `LogIDs` で返す（§18）
-  - `otel`: OTel Go SDK の `sdk/trace` と OTLP/HTTP のエクスポーター（`otlptracehttp`）。resource は §6 と同じ（`service.name`・`service.version`・`my.role`・`service.namespace`）
+  - `otel`: OTel Go SDK の `sdk/trace` と OTLP/HTTP のエクスポーター（`otlptracehttp`）。resource は §6 と同じ
 - span を作る場所は境界とアダプタに限る。ドメイン（`internal/domain`）は計測しない。§1 で計測のある場所と同じ:
   - HTTP のサーバー: `internal/platform` のミドルウェア（`accessLog` と同じ場所）。名前は `<method> <http.route>`
   - ジョブの実行: `internal/app/queue` の runner（`Meter.Begin` と同じ場所）。名前は `my.job.type`
