@@ -155,7 +155,8 @@ FAIL echo_empty: the outcome is OUTCOME_UNSPECIFIED, not OUTCOME_OK
 ```
 
 The exit code is 1 when a case fails. The flags mean what the settings mean: `--protocol`, `--token-file`, `--tls-ca-file`,
-`--tls-cert-file`, `--tls-key-file`, and `--timeout`. It applies the same rules as the server, so `--kind mailer` refuses an
+`--tls-cert-file`, `--tls-key-file`, and `--timeout`; `--instance` is the `host` sent in the `My-Instance` header
+(default `my.test`). It applies the same rules as the server, so `--kind mailer` refuses an
 `http://` address. The plugin under test can be a real one, so a case that does more than the call itself runs only when
 a flag asks for it. A kind whose contract the version does not have yet reports `reachable` and a `SKIP`.
 

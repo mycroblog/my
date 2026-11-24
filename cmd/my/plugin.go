@@ -36,6 +36,7 @@ func pluginTest(args []string, stdout, stderr io.Writer) int {
 	var d kind.Destination
 	fs.StringVar(&d.Protocol, "protocol", "", "json, proto, or grpc (default: the kind's)")
 	tokenFile := fs.String("token-file", "", "a file that holds the bearer token")
+	instance := fs.String("instance", "my.test", "the host of the calling instance, sent in the My-Instance header")
 	fs.StringVar(&d.TLSCAFile, "tls-ca-file", "", "verify the plugin against this CA (default: the system's roots)")
 	fs.StringVar(&d.TLSCertFile, "tls-cert-file", "", "the client certificate of mTLS")
 	fs.StringVar(&d.TLSKeyFile, "tls-key-file", "", "the key of the client certificate")
@@ -80,7 +81,7 @@ func pluginTest(args []string, stdout, stderr io.Writer) int {
 	for _, p := range k.Warnings(d) {
 		_, _ = fmt.Fprintf(stderr, "warning: %s %s\n", p.Suffix, p.Message)
 	}
-	conn, err := client.New(client.Options{Kind: k, Destination: d, KeepDetail: true})
+	conn, err := client.New(client.Options{Kind: k, Destination: d, Instance: *instance, KeepDetail: true})
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "my plugin test: %v\n", err)
 		return 1
@@ -123,6 +124,8 @@ Flags:
   -kind           %s
   -protocol       json, proto, or grpc (default: the kind's; the media kinds take proto or grpc)
   -token-file     a file that holds the bearer token (https:// and unix:// only)
+  -instance       the host of the calling instance, sent in the My-Instance header
+                  (default: my.test)
   -tls-ca-file    verify the plugin against this CA (default: the system's roots)
   -tls-cert-file  the client certificate of mTLS
   -tls-key-file   the key of the client certificate
