@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/account"
@@ -42,9 +43,15 @@ type AuthorizedApp struct {
 // recordTokenUse records that the token family used its access token, at most once per
 // LastUsedInterval. The throttle is an atomic counter in the KeyValueStore, so that concurrent
 // requests and instances write once, and the write is its own short transaction. A failure
-// never fails the request that is authenticating.
+// never fails the request that is authenticating. Once this process recorded a use, it takes
+// nothing from the counter until the counter's interval ends: every authenticated request would
+// otherwise write to the store (#3183).
 func (s *Service) recordTokenUse(ctx context.Context, familyID string) {
 	if s.d.KV == nil {
+		return
+	}
+	now := s.d.Clock.Now()
+	if s.recordedUses.recent(familyID, now) {
 		return
 	}
 	n, err := s.d.KV.IncrBy(ctx, LastUsedNamespace, familyID, 1, LastUsedInterval)
@@ -55,14 +62,58 @@ func (s *Service) recordTokenUse(ctx context.Context, familyID string) {
 	if n != 1 {
 		return
 	}
-	now := s.d.Clock.Now()
+	// The counter started now and ends after LastUsedInterval: until then no use is recorded.
+	s.recordedUses.remember(familyID, now.Add(LastUsedInterval))
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		return s.d.Repository.UpsertTokenFamilyLastUsed(ctx, tx, familyID, now)
 	})
 	if err != nil {
 		slog.WarnContext(ctx, "identity: recording the last use of a token family failed", "family_id", familyID, "error", err)
+		s.recordedUses.forget(familyID)
 		_ = s.d.KV.Delete(ctx, LastUsedNamespace, familyID) // let the next request retry
 	}
+}
+
+// tokenUsesPruneAt is the number of token families above which remember drops the ones whose
+// interval ended.
+const tokenUsesPruneAt = 4096
+
+// tokenUses holds, by token family, until when the use that this process recorded keeps the
+// next from being recorded. It is safe for concurrent use; its zero value is empty.
+type tokenUses struct {
+	mu    sync.Mutex
+	until map[string]time.Time
+}
+
+// recent reports whether familyID's use was recorded by this process less than LastUsedInterval
+// before now.
+func (u *tokenUses) recent(familyID string, now time.Time) bool {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	t, ok := u.until[familyID]
+	return ok && now.Before(t)
+}
+
+func (u *tokenUses) remember(familyID string, until time.Time) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if u.until == nil {
+		u.until = map[string]time.Time{}
+	}
+	if len(u.until) >= tokenUsesPruneAt {
+		for id, t := range u.until {
+			if !t.After(until.Add(-LastUsedInterval)) {
+				delete(u.until, id)
+			}
+		}
+	}
+	u.until[familyID] = until
+}
+
+func (u *tokenUses) forget(familyID string) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	delete(u.until, familyID)
 }
 
 // AuthorizedApps returns the apps the user authorized, one per client, most recently used

@@ -75,6 +75,10 @@ func TestAuthorizedApps(t *testing.T) {
 	if got := list(first.AccessToken)[0].LastUsedAt; got == nil || !got.Equal(used) {
 		t.Errorf("last_used_at = %v after more requests, want %v (one write an hour)", got, used)
 	}
+	// Nor do they take from the throttle's counter: the process remembers the use it recorded.
+	if n, err := app.KV.Get(ctx, identity.LastUsedNamespace, first.Token.FamilyID); err != nil || string(n) != "1" {
+		t.Errorf("the throttle's counter = %q, %v after 7 requests, want 1 (the first alone)", n, err)
+	}
 
 	// Revoking ends every grant of the client.
 	if res := call(http.MethodDelete, "/api/v1/authorized_apps/"+first.Client.ID, first.AccessToken); res.StatusCode != http.StatusNoContent {
