@@ -82,6 +82,7 @@ func TestPrometheusMetrics(t *testing.T) {
 		`my_federation_instances{my_federation_instance_state="unavailable"} 0`,
 		`my_metrics_snapshot_age_seconds{my_metrics_snapshot_part="queue"`,
 		`target_info{`,
+		`service_namespace="example.test"`, // the instance's host, on the resource
 		// The system metrics of ADR-0055 §10
 		"\ngo_goroutine_count ",
 		`go_schedule_duration_seconds_bucket{`,

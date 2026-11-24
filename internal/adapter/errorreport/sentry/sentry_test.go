@@ -17,6 +17,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/mycroblog/my/internal/adapter/errorreport/sentry"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -302,6 +303,71 @@ func TestLevelAndOptionalFields(t *testing.T) {
 		if strings.Contains(body, s) {
 			t.Errorf("the envelope has %s:\n%s", s, body)
 		}
+	}
+}
+
+// tags returns the tags of the event of the only envelope that r received.
+func tags(t *testing.T, r *receiver) map[string]string {
+	t.Helper()
+	reqs := r.got()
+	if len(reqs) != 1 {
+		t.Fatalf("got %d requests, want 1", len(reqs))
+	}
+	lines := bytes.Split(bytes.TrimSuffix(reqs[0].body, []byte("\n")), []byte("\n"))
+	if len(lines) != 3 {
+		t.Fatalf("envelope has %d lines, want 3", len(lines))
+	}
+	var ev struct {
+		Tags map[string]string `json:"tags"`
+	}
+	if err := json.Unmarshal(lines[2], &ev); err != nil {
+		t.Fatal(err)
+	}
+	return ev.Tags
+}
+
+// TestNamespaceTag checks that the instance's host is the tag service.namespace of every event,
+// at most the 200 characters of a Sentry tag value, and that no tag stands for an empty one.
+func TestNamespaceTag(t *testing.T) {
+	long := strings.Repeat("a", 63) + "." + strings.Repeat("b", 63) + "." + strings.Repeat("c", 63) + "." + strings.Repeat("d", 50) + ".test"
+	tests := []struct {
+		name, namespace string
+	}{
+		{name: "host", namespace: "example.test"},
+		{name: "long host", namespace: long},
+		{name: "none", namespace: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := newReceiver(t)
+			c := newClock()
+			client, err := sentry.New(sentry.Options{
+				DSN: r.dsn(""), Version: "1.2.3", Namespace: tt.namespace, Now: c.Now,
+				EventID: func() string { return "9ec79c33ec9942ab8353589fcb2e04dc" },
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := client.SendError(t.Context(), event()); err != nil {
+				t.Fatal(err)
+			}
+			got, ok := tags(t, r)["service.namespace"]
+			switch {
+			case tt.namespace == "":
+				if ok {
+					t.Errorf("tag service.namespace = %q, want none", got)
+				}
+			case len(tt.namespace) <= 200:
+				if got != tt.namespace {
+					t.Errorf("tag service.namespace = %q, want %q", got, tt.namespace)
+				}
+			default:
+				n := utf8.RuneCountInString(got)
+				if n == 0 || n > 200 || !strings.HasPrefix(tt.namespace, strings.TrimSuffix(got, "…")) {
+					t.Errorf("tag service.namespace = %q (%d characters), want a prefix of the host of at most 200", got, n)
+				}
+			}
+		})
 	}
 }
 

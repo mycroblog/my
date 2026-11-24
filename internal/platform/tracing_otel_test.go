@@ -50,6 +50,10 @@ func TestTracesFromHTTPToJobs(t *testing.T) {
 		case s.Name == "test.traced":
 			jobs = append(jobs, s)
 		}
+		// The instance's host tells apart the instances that share a backend.
+		if s.Resource["service.namespace"] != "example.test" {
+			t.Errorf("span %s resource service.namespace = %q, want example.test", s.Name, s.Resource["service.namespace"])
+		}
 		for k, v := range s.Attrs {
 			if !allowedSpanAttributes[k] {
 				t.Errorf("span %s has the attribute %s = %q outside the allowlist", s.Name, k, v)
