@@ -14,9 +14,9 @@
 //
 // The Tracer (ADR-0055) exports the spans over OTLP/HTTP; see Tracer.
 //
-// The resource carries service.name, service.version, and my.role, and the attributes of
-// OTEL_RESOURCE_ATTRIBUTES, through which a platform can add the instance's identifier
-// (ADR-0055 §6).
+// The resource carries service.name, service.version, my.role, and service.namespace (the
+// instance's host), and the attributes of OTEL_RESOURCE_ATTRIBUTES, which can replace
+// service.namespace or add others, such as the process's service.instance.id (ADR-0055 §6).
 package otel
 
 import (
@@ -53,6 +53,9 @@ type Options struct {
 	ServiceVersion string
 	// Role is the my.role of the resource: web, worker, or all.
 	Role string
+	// Namespace is the service.namespace of the resource, the instance's host; "" leaves it to
+	// OTEL_RESOURCE_ATTRIBUTES.
+	Namespace string
 }
 
 // Meter is a kernel.Meter on an OpenTelemetry MeterProvider.
@@ -72,7 +75,7 @@ var _ kernel.Meter = (*Meter)(nil)
 // New returns the Meter that exports through opts.Exporter. Shut it down to flush and stop
 // the exporter.
 func New(ctx context.Context, opts Options) (*Meter, error) {
-	res, err := NewResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role)
+	res, err := NewResource(ctx, opts.ServiceName, opts.ServiceVersion, opts.Role, opts.Namespace)
 	if err != nil {
 		return nil, fmt.Errorf("metrics resource: %w", err)
 	}
@@ -119,13 +122,22 @@ func New(ctx context.Context, opts Options) (*Meter, error) {
 
 // NewResource returns the resource of the metrics, the traces, and the exported error reports
 // (ADR-0055 §6, ADR-0055 §13, ADR-0103 §4 (3)):
-// service.name (default "my"), service.version, my.role, and the attributes of
-// OTEL_RESOURCE_ATTRIBUTES.
-func NewResource(ctx context.Context, name, version, role string) (*resource.Resource, error) {
+// service.name (default "my"), service.version, my.role, service.namespace, and the attributes
+// of OTEL_RESOURCE_ATTRIBUTES. The namespace is the instance's host, one value per instance,
+// which tells apart the instances that share a backend; a service.namespace in
+// OTEL_RESOURCE_ATTRIBUTES replaces it, and an empty namespace leaves it out.
+func NewResource(ctx context.Context, name, version, role, namespace string) (*resource.Resource, error) {
 	if name == "" {
 		name = "my"
 	}
+	var defaults []attribute.KeyValue
+	if namespace != "" {
+		defaults = append(defaults, attribute.String(attrNamespace, namespace))
+	}
 	return resource.New(ctx,
+		// Later options replace the attributes of earlier ones: the namespace comes before the
+		// environment, which may replace it, and the service after, which the environment may not.
+		resource.WithAttributes(defaults...),
 		resource.WithFromEnv(),
 		resource.WithTelemetrySDK(),
 		resource.WithAttributes(
@@ -135,6 +147,10 @@ func NewResource(ctx context.Context, name, version, role string) (*resource.Res
 		),
 	)
 }
+
+// attrNamespace is the resource attribute of the instance's host (OpenTelemetry semantic
+// conventions).
+const attrNamespace = "service.namespace"
 
 // Handler serves the metrics in the Prometheus text format; nil for the OTLP exporter.
 func (m *Meter) Handler() http.Handler { return m.handler }

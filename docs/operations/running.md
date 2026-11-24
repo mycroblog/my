@@ -89,7 +89,7 @@ A field name is a single key that contains `.`; it is not nested. Quote it in Cl
 Fields used as labels take values from a finite set only; `url.path`, `request_id` and `job_id` are never labels.
 
 With `metrics_exporter = emf`, these two lines are the EMF lines themselves. The `http request` line carries the value of `http.server.request.duration`, and the `job` line carries the values of `my.job.duration` and `my.job.wait` (keys named after the metrics),
-plus the `_aws` directive, `service.name`, `service.version` and `my.role`. These three metrics are not written on any other line. Fields you choose in `metrics_emf_dimensions` are written as strings, as EMF requires (for example the dimension `http.response.status_code` is `"200"`).
+plus the `_aws` directive, `service.name`, `service.version`, `my.role` and `service.namespace` (the `host`). These three metrics are not written on any other line. Fields you choose in `metrics_emf_dimensions` are written as strings, as EMF requires (for example the dimension `http.response.status_code` is `"200"`).
 Logs go to standard error and the other EMF lines go to standard output. The `awslogs` log driver of ECS sends both to CloudWatch Logs, so metrics are extracted from both.
 
 ## Docker Compose files
@@ -464,7 +464,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.queue.dead` | Gauge | None |
 | `my.instance.users`, `my.instance.statuses` | Gauge | None (the local user and post counts, as in NodeInfo) |
 | `my.media.stored_bytes` | Gauge, bytes | `my.media.origin` (`local` / `remote_cache`) |
-| `my.db.size` | Gauge, bytes | None (the size of the database: `pg_database_size` for PostgreSQL; the database file without its write-ahead log for SQLite) |
+| `my.db.size` | Gauge, bytes | None (the size of the database: the relations of the current schema for PostgreSQL; the database file without its write-ahead log for SQLite) |
 | `my.billing.import.failing` | Gauge | `my.billing.source` (1 when the newest import of the source failed, 0 otherwise) |
 | `my.federation.instances` | Gauge | `my.federation.instance.state` (`available`: servers that deliveries still go to but that failed on at least one day since they last answered; `unavailable`: servers whose deliveries are paused) |
 | `my.metrics.snapshot.age` | Gauge, seconds | `my.metrics.snapshot.part` (`queue` / `totals`) |

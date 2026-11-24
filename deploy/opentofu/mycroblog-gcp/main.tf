@@ -324,6 +324,8 @@ module "media_gcs" {
 
   project_id              = local.project_id
   bucket_name             = var.media.bucket_name
+  existing_bucket         = var.media.existing_bucket
+  prefix                  = var.media.prefix
   location                = coalesce(var.media.location, local.region)
   versioning              = var.media.versioning
   noncurrent_version_days = var.media.noncurrent_version_days
@@ -339,6 +341,7 @@ module "media_r2" {
   account_id                  = coalesce(local.cloudflare.account_id, local.unused.id)
   bucket_name                 = var.media.kind == "r2" ? var.media.bucket_name : local.unused.id
   jurisdiction                = var.media.jurisdiction
+  prefix                      = var.media.prefix
   access_key_id_secret_id     = local.secret.media_access_key_id
   secret_access_key_secret_id = local.secret.media_secret_access_key
 
@@ -354,6 +357,7 @@ module "media_s3" {
   bucket                      = var.media.kind == "s3" ? var.media.bucket_name : local.unused.id
   region                      = var.media.kind == "s3" ? var.media.s3_region : null
   path_style                  = var.media.path_style
+  prefix                      = var.media.prefix
   access_key_id_secret_id     = local.secret.media_access_key_id
   secret_access_key_secret_id = local.secret.media_secret_access_key
 

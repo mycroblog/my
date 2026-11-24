@@ -62,3 +62,16 @@ run "an_unknown_location_fails" {
 
   expect_failures = [var.location]
 }
+
+run "a_prefix" {
+  command = plan
+
+  variables {
+    prefix = "tenant-a/"
+  }
+
+  assert {
+    condition     = output.env["MY_BLOB_S3_PREFIX"] == "tenant-a/"
+    error_message = "the prefix must reach the server"
+  }
+}

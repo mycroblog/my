@@ -28,10 +28,16 @@ const (
 // newClient returns a Client that exports to h, through the standard environment variable.
 func newClient(t *testing.T, h http.Handler) *otlp.Client {
 	t.Helper()
+	return newClientWith(t, h, otlp.Options{ServiceVersion: "1.2.3", Role: "worker"})
+}
+
+// newClientWith returns a Client of opts that exports to h.
+func newClientWith(t *testing.T, h http.Handler, opts otlp.Options) *otlp.Client {
+	t.Helper()
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	t.Setenv("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", srv.URL+"/v1/logs")
-	c, err := otlp.New(t.Context(), otlp.Options{ServiceVersion: "1.2.3", Role: "worker"})
+	c, err := otlp.New(t.Context(), opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,6 +113,27 @@ func TestSendErrorRecord(t *testing.T) {
 		if bytes.Contains(b, []byte("alice@example.com")) || bytes.Contains(b, []byte(rawMessage)) {
 			t.Errorf("the export carries the raw message:\n%q", b)
 		}
+	}
+}
+
+// TestSendErrorNamespace checks that the instance's host is the service.namespace of the
+// resource of the exported errors, and that the code sets no service.instance.id.
+func TestSendErrorNamespace(t *testing.T) {
+	t.Setenv("OTEL_RESOURCE_ATTRIBUTES", "")
+	c := &otlptest.LogCollector{}
+	client := newClientWith(t, c, otlp.Options{ServiceVersion: "1.2.3", Role: "worker", Namespace: "example.test"})
+	if err := client.SendError(t.Context(), event()); err != nil {
+		t.Fatal(err)
+	}
+	logs := c.Logs()
+	if len(logs) != 1 {
+		t.Fatalf("received %d records, want 1", len(logs))
+	}
+	if got := logs[0].Resource["service.namespace"]; got != "example.test" {
+		t.Errorf("resource service.namespace = %q, want example.test (%v)", got, logs[0].Resource)
+	}
+	if v, ok := logs[0].Resource["service.instance.id"]; ok {
+		t.Errorf("resource service.instance.id = %q, want none from the code", v)
 	}
 }
 

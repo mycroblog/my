@@ -53,4 +53,7 @@ func TestOTLPErrorExporter(t *testing.T) {
 	if l.Resource["service.version"] != "9.9.9" {
 		t.Errorf("resource service.version = %q", l.Resource["service.version"])
 	}
+	if l.Resource["service.namespace"] != "example.test" {
+		t.Errorf("resource service.namespace = %q, want the host", l.Resource["service.namespace"])
+	}
 }

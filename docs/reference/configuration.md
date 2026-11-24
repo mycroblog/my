@@ -173,6 +173,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_payjp_webhook_token`](#payments_payjp_webhook_token) | `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` | none | when `payments = payjp` | yes |
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
+| [`payments_account_shared`](#payments_account_shared) | `MY_PAYMENTS_ACCOUNT_SHARED` | `false` | no | no |
 | [`translator_libretranslate_url`](#translator_libretranslate_url) | `MY_TRANSLATOR_LIBRETRANSLATE_URL` | none | no | no |
 | [`translator_libretranslate_api_key`](#translator_libretranslate_api_key) | `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY` | none | no | yes |
 | [`translator_deepl_api_key`](#translator_deepl_api_key) | `MY_TRANSLATOR_DEEPL_API_KEY` | none | no | yes |
@@ -998,7 +999,7 @@ Broker that carries the signals of the real-time updates (`GET /api/v1/streaming
 
 ### `stream_postgres_url`
 
-Connection string of the `LISTEN` connections of `stream = postgres`, in the format of `database_url`. Set it when `database_url` goes through a pooler in transaction mode (PgBouncer's transaction pooling, Neon's pooled connection string, Supabase's port 6543), where `LISTEN` does not work: it must reach the same database directly or through a pooler in session mode.
+Connection string of the `LISTEN` connections of `stream = postgres`, in the format of `database_url`. Set it when `database_url` goes through a pooler in transaction mode (PgBouncer's transaction pooling, Neon's pooled connection string, Supabase's port 6543), where `LISTEN` does not work: it must reach the same database directly or through a pooler in session mode. The channel is named after the schema of `database_url`, whatever the `search_path` of this URL.
 
 - Environment variable: `MY_STREAM_POSTGRES_URL` or `MY_STREAM_POSTGRES_URL_FILE`
 - Default: value of `database_url`
@@ -1498,6 +1499,19 @@ How many requests one reconciliation sends to `payments`, a page of a list count
 - Environment variable: `MY_PAYMENTS_RECONCILE_MAX_REQUESTS`
 - Default: `1000`
 - Required: no
+
+### `payments_account_shared`
+
+Whether other instances use the account of `payments` too. The webhooks and the reconciliation act only on this instance's subscriptions and tips either way; this setting decides what the import of the income keeps.
+
+- Environment variable: `MY_PAYMENTS_ACCOUNT_SHARED`
+- Default: `false`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `false` | The account is this instance's: every money movement of the account is its income, those of no subscription or tip of its own (fees of the account, other subscriptions) of unknown source. |
+| `true` | The account is shared: the income keeps only the payments of this instance's subscriptions and tips with their refunds and chargebacks, and leaves out the other instances' movements and the fees of the account. |
 
 ### `translator_libretranslate_url`
 
@@ -2038,7 +2052,7 @@ CloudWatch namespace of the metrics of `metrics_exporter = emf`.
 
 ### `metrics_emf_dimensions`
 
-Labels that become CloudWatch dimensions with `metrics_exporter = emf`, comma-separated, such as `my.surface, my.role`; the other labels stay fields of the log line. CloudWatch bills every combination of dimension values as a metric, so the deployment template chooses them. Empty makes every metric one series per namespace.
+Labels that become CloudWatch dimensions with `metrics_exporter = emf`, comma-separated, such as `my.surface, my.role`, or `service.namespace` (the instance's `host`), which every line carries; the other labels stay fields of the log line. CloudWatch bills every combination of dimension values as a metric, so the deployment template chooses them. Empty makes every metric one series per namespace.
 
 - Environment variable: `MY_METRICS_EMF_DIMENSIONS`
 - Default: none

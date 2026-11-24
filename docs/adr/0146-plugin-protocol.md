@@ -77,6 +77,8 @@
 
 `https://` のサーバー証明書は常に検証する（`_tls_ca_file` か OS の信頼する CA）。検証を切る設定は作らない。TLS の最小の版は Go の既定に従う。
 
+**呼び出しはヘッダー `My-Instance` で呼ぶインスタンスの `host` を名乗る**（全 kind・全 RPC）。インスタンスごとにデータを分けるためで、認証ではない。
+
 平文の TCP（`http://`）を拒むのは **`key_manager`・`mailer`・`translator`・`search`・投稿の本文を送るフック・`signup.check`** で、これらは起動時に設定のエラーにする。ほかの kind は平文の TCP を使える。
 
 | kind | 運ぶもの | 平文の TCP |

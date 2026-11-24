@@ -257,6 +257,27 @@ run "media_s3_compatible" {
   }
 }
 
+run "media_s3_on_an_existing_bucket_with_a_prefix" {
+  command = plan
+
+  override_data {
+    target = module.media_s3.data.aws_s3_bucket.existing
+    values = {
+      arn           = "arn:aws:s3:::shared-media"
+      bucket_region = "eu-west-1"
+    }
+  }
+
+  variables {
+    media = { bucket_name = "shared-media", existing_bucket = true, prefix = "tenant-a/" }
+  }
+
+  assert {
+    condition     = length(setsubtract(["MY_BLOB", "MY_BLOB_S3_BUCKET", "MY_BLOB_S3_REGION", "MY_BLOB_S3_PREFIX"], keys(module.app.env))) == 0
+    error_message = "a shared bucket must reach the service with its prefix: ${jsonencode(module.app.env)}"
+  }
+}
+
 run "kv_external" {
   command = plan
 

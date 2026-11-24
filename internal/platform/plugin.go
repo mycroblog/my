@@ -26,5 +26,5 @@ func NewPluginConn(cfg *config.Config, name string, meter kernel.Meter) (*client
 	if !d.Enabled() {
 		return nil, fmt.Errorf("plugin: %s is required", k.Key(kind.SuffixAddress))
 	}
-	return client.New(client.Options{Kind: k, Destination: d, Meter: meter})
+	return client.New(client.Options{Kind: k, Destination: d, Instance: cfg.Host, Meter: meter})
 }

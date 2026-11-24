@@ -196,6 +196,55 @@ func TestEMFMetricsSnapshot(t *testing.T) {
 	}
 }
 
+// TestEMFMetricsNamespace checks that every EMF line carries the instance's host as the property
+// service.namespace, which metrics_emf_dimensions can name as a dimension.
+func TestEMFMetricsNamespace(t *testing.T) {
+	t.Parallel()
+	cfg := loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_METRICS_EXPORTER": "emf", "MY_METRICS_EMF_DIMENSIONS": "service.namespace",
+	})
+	var lines syncBuffer
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{MetricsWriter: &lines})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	h, _, ok := app.Handlers.Lookup(metrics.JobSnapshot)
+	if !ok {
+		t.Fatalf("no handler of %s", metrics.JobSnapshot)
+	}
+	if res := h(t.Context(), queue.Job{Type: metrics.JobSnapshot}); !res.IsDone() {
+		t.Fatalf("%s = %+v", metrics.JobSnapshot, res)
+	}
+	n := 0
+	for line := range strings.Lines(lines.String()) {
+		n++
+		var m map[string]any
+		if err := json.Unmarshal([]byte(line), &m); err != nil {
+			t.Fatalf("line %q: %v", line, err)
+		}
+		if m["service.namespace"] != "example.test" {
+			t.Errorf("service.namespace = %v, want example.test: %v", m["service.namespace"], m)
+		}
+		aws, _ := m["_aws"].(map[string]any)
+		cw, _ := aws["CloudWatchMetrics"].([]any)
+		for _, d := range cw {
+			sets, _ := d.(map[string]any)["Dimensions"].([]any)
+			if len(sets) == 0 {
+				t.Errorf("no dimension set: %v", m)
+			}
+			for _, set := range sets {
+				if !slices.Contains(set.([]any), any("service.namespace")) {
+					t.Errorf("dimension set %v lacks service.namespace: %v", set, m)
+				}
+			}
+		}
+	}
+	if n == 0 {
+		t.Fatal("no EMF line of the snapshot")
+	}
+}
+
 // TestMetricsSnapshotWithoutExporter runs the snapshot job under metrics_exporter = none, the
 // default and what Cloud Run's log-based metrics read (ADR-0055 §4): the job is scheduled and
 // writes the instance-wide gauges as its log line.

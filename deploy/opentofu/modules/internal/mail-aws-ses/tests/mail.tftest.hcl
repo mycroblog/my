@@ -25,3 +25,37 @@ run "with_a_configuration_set" {
     error_message = "the permission must also reach the configuration set"
   }
 }
+
+run "with_an_existing_configuration_set" {
+  override_data {
+    target = data.aws_sesv2_configuration_set.existing
+    values = {
+      arn = "arn:aws:ses:ap-northeast-1:111122223333:configuration-set/shared-mail"
+    }
+  }
+
+  variables {
+    configuration_set          = "shared-mail"
+    existing_configuration_set = true
+  }
+
+  assert {
+    condition     = aws_sesv2_configuration_set.this == null && output.env["MY_MAIL_SES_CONFIGURATION_SET"] == "shared-mail"
+    error_message = "the module must create no set, and apply the one named"
+  }
+
+  assert {
+    condition     = output.permissions[1].resource == "arn:aws:ses:ap-northeast-1:111122223333:configuration-set/shared-mail"
+    error_message = "the permission must reach the existing set"
+  }
+}
+
+run "an_existing_configuration_set_without_a_name_fails" {
+  command = plan
+
+  variables {
+    existing_configuration_set = true
+  }
+
+  expect_failures = [var.existing_configuration_set]
+}

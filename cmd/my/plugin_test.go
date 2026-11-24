@@ -36,6 +36,30 @@ func TestPluginTestPassesAPlugin(t *testing.T) {
 	}
 }
 
+// The calls of my plugin test name an instance, my.test unless --instance names another, so that a plugin that
+// checks My-Instance can be tested.
+func TestPluginTestNamesTheInstance(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"by default", nil, "my.test"},
+		{"with --instance", []string{"--instance", "x.example"}, "x.example"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h, rec := fakeplugin.JSON(fakeplugin.Options{})
+			args := append(append([]string{"--kind", "probe"}, tc.args...), fakeplugin.ServeUnix(t, h))
+			if code, stdout, stderr := runPluginTest(args...); code != 0 {
+				t.Fatalf("code = %d\n%s%s", code, stdout, stderr)
+			}
+			if got := rec.Instance(); got != tc.want {
+				t.Errorf("My-Instance = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestPluginTestReportsEachFailure(t *testing.T) {
 	h, _ := fakeplugin.JSON(fakeplugin.Options{Broken: true})
 	code, stdout, stderr := runPluginTest("--kind", "probe", fakeplugin.ServeTCP(t, h))

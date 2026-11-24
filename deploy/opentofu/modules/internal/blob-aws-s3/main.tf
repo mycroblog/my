@@ -19,11 +19,35 @@ variable "bucket_name" {
   nullable    = false
 }
 
+variable "existing_bucket" {
+  description = "Uses the bucket bucket_name, which already exists, perhaps beside other instances, in place of creating one. The module then manages none of its settings: its public access, versioning, and lifecycle stay yours."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
+variable "prefix" {
+  description = "Prefix of the name of every object of the instance, so that several instances share the bucket: empty, or segments of letters, digits, ., _, and - that each end with /, such as tenant-a/. With one, the role may touch only the objects under it."
+  type        = string
+  default     = ""
+  nullable    = false
+
+  validation {
+    condition     = var.prefix == "" || (length(var.prefix) <= 256 && can(regex("^([A-Za-z0-9_-][A-Za-z0-9._-]*/)+$", var.prefix)))
+    error_message = "prefix must be empty or segments of letters, digits, ., _, and - that end with /, such as tenant-a/, none starting with a dot, at most 256 bytes."
+  }
+}
+
 variable "versioning" {
   description = "Keeps a deleted or overwritten object as a noncurrent version, so the bucket can go back to the time of a database backup. Off by default: every version costs storage until the rule of noncurrent_version_days removes it."
   type        = bool
   default     = false
   nullable    = false
+
+  validation {
+    condition     = !(var.versioning && var.existing_bucket)
+    error_message = "versioning needs a bucket this module creates: the versioning of an existing bucket is yours."
+  }
 }
 
 variable "noncurrent_version_days" {
@@ -40,6 +64,23 @@ variable "noncurrent_version_days" {
 
 resource "aws_s3_bucket" "media" {
   bucket = var.bucket_name
+
+  lifecycle {
+    enabled = !var.existing_bucket
+  }
+}
+
+# A bucket of yours, read so that a missing one fails the plan and the server signs for the bucket's own region.
+data "aws_s3_bucket" "existing" {
+  bucket = var.bucket_name
+
+  lifecycle {
+    enabled = var.existing_bucket
+  }
+}
+
+locals {
+  bucket_arn = var.existing_bucket ? data.aws_s3_bucket.existing.arn : aws_s3_bucket.media.arn
 }
 
 # The server reads the bucket and serves the media under /media/, so nothing reaches the bucket directly.
@@ -49,6 +90,10 @@ resource "aws_s3_bucket_public_access_block" "media" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+
+  lifecycle {
+    enabled = !var.existing_bucket
+  }
 }
 
 resource "aws_s3_bucket_ownership_controls" "media" {
@@ -56,6 +101,10 @@ resource "aws_s3_bucket_ownership_controls" "media" {
 
   rule {
     object_ownership = "BucketOwnerEnforced"
+  }
+
+  lifecycle {
+    enabled = !var.existing_bucket
   }
 }
 
@@ -74,6 +123,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
 
   # Versioning goes first: a rule of noncurrent versions needs it in place.
   depends_on = [aws_s3_bucket_versioning.media]
+
+  lifecycle {
+    enabled = !var.existing_bucket
+  }
 
   rule {
     id     = "abort-incomplete-uploads"
@@ -109,11 +162,14 @@ output "platform" {
 
 output "env" {
   description = "The settings of the blob store. No access key: the server takes its execution role from the AWS SDK's default chain."
-  value = {
-    MY_BLOB           = "s3"
-    MY_BLOB_S3_BUCKET = aws_s3_bucket.media.bucket
-    MY_BLOB_S3_REGION = data.aws_region.current.region
-  }
+  value = merge(
+    {
+      MY_BLOB           = "s3"
+      MY_BLOB_S3_BUCKET = var.existing_bucket ? data.aws_s3_bucket.existing.bucket : aws_s3_bucket.media.bucket
+      MY_BLOB_S3_REGION = var.existing_bucket ? data.aws_s3_bucket.existing.bucket_region : data.aws_region.current.region
+    },
+    var.prefix == "" ? {} : { MY_BLOB_S3_PREFIX = var.prefix },
+  )
 }
 
 output "secret_env" {
@@ -122,12 +178,16 @@ output "secret_env" {
 }
 
 output "permissions" {
-  description = "Reading and writing the objects of the bucket. Listing it makes a missing object a 404 rather than a 403."
+  description = "Reading and writing the objects of the bucket, only those under the prefix when there is one. Listing the whole bucket makes a missing object a 404 rather than a 403: S3 checks it without s3:prefix, so a listing kept to the prefix would not. It shows other instances the names of objects, never their content."
   value = [
-    { permission = "s3:GetObject", resource = "${aws_s3_bucket.media.arn}/*" },
-    { permission = "s3:PutObject", resource = "${aws_s3_bucket.media.arn}/*" },
-    { permission = "s3:DeleteObject", resource = "${aws_s3_bucket.media.arn}/*" },
-    { permission = "s3:AbortMultipartUpload", resource = "${aws_s3_bucket.media.arn}/*" },
-    { permission = "s3:ListBucket", resource = aws_s3_bucket.media.arn },
+    { permission = "s3:GetObject", resource = "${local.bucket_arn}/${var.prefix}*" },
+    { permission = "s3:PutObject", resource = "${local.bucket_arn}/${var.prefix}*" },
+    { permission = "s3:DeleteObject", resource = "${local.bucket_arn}/${var.prefix}*" },
+    { permission = "s3:AbortMultipartUpload", resource = "${local.bucket_arn}/${var.prefix}*" },
+    {
+      permission = "s3:ListBucket"
+      resource   = local.bucket_arn
+      conditions = []
+    },
   ]
 }

@@ -175,6 +175,39 @@ run "media_s3" {
   }
 }
 
+run "media_gcs_on_an_existing_bucket_with_a_prefix" {
+  command = plan
+
+  override_data {
+    target = module.media_gcs.data.google_storage_bucket.existing
+    values = {
+      uniform_bucket_level_access = true
+    }
+  }
+
+  variables {
+    media = { bucket_name = "shared-media", existing_bucket = true, prefix = "tenant-a/" }
+  }
+
+  assert {
+    condition     = length(setsubtract(["MY_BLOB", "MY_BLOB_GCS_BUCKET", "MY_BLOB_GCS_PREFIX"], keys(module.app.env))) == 0
+    error_message = "a shared bucket must reach the service with its prefix: ${jsonencode(module.app.env)}"
+  }
+}
+
+run "media_s3_with_a_prefix" {
+  command = plan
+
+  variables {
+    media = { kind = "s3", bucket_name = "my-media", endpoint = "https://s3.example.org", prefix = "tenant-a/" }
+  }
+
+  assert {
+    condition     = length(setsubtract(["MY_BLOB", "MY_BLOB_S3_BUCKET", "MY_BLOB_S3_PREFIX"], keys(module.app.env))) == 0
+    error_message = "an S3-compatible store must reach the service with its prefix: ${jsonencode(module.app.env)}"
+  }
+}
+
 run "kv_external" {
   command = plan
 

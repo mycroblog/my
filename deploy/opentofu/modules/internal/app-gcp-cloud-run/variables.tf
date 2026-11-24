@@ -144,6 +144,11 @@ variable "backends" {
       permission = string
       scope      = optional(string)
       resource   = optional(string)
+      # An IAM condition of the binding, on a bucket alone: what a prefix of the objects needs.
+      condition = optional(object({
+        title      = string
+        expression = string
+      }))
       # Accepted so that it cannot vanish, and refused below: Google Cloud's roles take no such conditions here.
       conditions = optional(list(object({
         test     = string
@@ -211,6 +216,11 @@ variable "backends" {
   validation {
     condition     = alltrue(flatten([for b in var.backends : [for r in b.permissions : length(r.conditions) == 0]]))
     error_message = "A permission on Google Cloud has no conditions: a binding here is a role on a resource."
+  }
+
+  validation {
+    condition     = alltrue(flatten([for b in var.backends : [for r in b.permissions : r.condition == null || r.scope == "bucket"]]))
+    error_message = "A permission on Google Cloud takes a condition on a bucket alone."
   }
 
   validation {

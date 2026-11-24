@@ -640,7 +640,7 @@ var schema = []field{
 	{
 		key:    "stream_postgres_url",
 		defDoc: "value of `database_url`",
-		doc:    "Connection string of the `LISTEN` connections of `stream = postgres`, in the format of `database_url`. Set it when `database_url` goes through a pooler in transaction mode (PgBouncer's transaction pooling, Neon's pooled connection string, Supabase's port 6543), where `LISTEN` does not work: it must reach the same database directly or through a pooler in session mode.",
+		doc:    "Connection string of the `LISTEN` connections of `stream = postgres`, in the format of `database_url`. Set it when `database_url` goes through a pooler in transaction mode (PgBouncer's transaction pooling, Neon's pooled connection string, Supabase's port 6543), where `LISTEN` does not work: it must reach the same database directly or through a pooler in session mode. The channel is named after the schema of `database_url`, whatever the `search_path` of this URL.",
 		secret: true,
 		set:    func(c *Config, v string) { c.StreamPostgresURL = v },
 	},
@@ -1095,6 +1095,16 @@ var schema = []field{
 		def:   strconv.Itoa(supporters.DefaultReconcileMaxRequests),
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.PaymentsReconcileMaxRequests, _ = strconv.Atoi(v) },
+	},
+	{
+		key: "payments_account_shared",
+		doc: "Whether other instances use the account of `payments` too. The webhooks and the reconciliation act only on this instance's subscriptions and tips either way; this setting decides what the import of the income keeps.",
+		def: "false",
+		choices: []choice{
+			{value: "false", doc: "The account is this instance's: every money movement of the account is its income, those of no subscription or tip of its own (fees of the account, other subscriptions) of unknown source."},
+			{value: "true", doc: "The account is shared: the income keeps only the payments of this instance's subscriptions and tips with their refunds and chargebacks, and leaves out the other instances' movements and the fees of the account."},
+		},
+		set: func(c *Config, v string) { c.PaymentsAccountShared = v == "true" },
 	},
 	{
 		key:   "translator_libretranslate_url",
@@ -1553,7 +1563,7 @@ var schema = []field{
 	},
 	{
 		key:   "metrics_emf_dimensions",
-		doc:   "Labels that become CloudWatch dimensions with `metrics_exporter = emf`, comma-separated, such as `my.surface, my.role`; the other labels stay fields of the log line. CloudWatch bills every combination of dimension values as a metric, so the deployment template chooses them. Empty makes every metric one series per namespace.",
+		doc:   "Labels that become CloudWatch dimensions with `metrics_exporter = emf`, comma-separated, such as `my.surface, my.role`, or `service.namespace` (the instance's `host`), which every line carries; the other labels stay fields of the log line. CloudWatch bills every combination of dimension values as a metric, so the deployment template chooses them. Empty makes every metric one series per namespace.",
 		check: checkLabelKeys,
 		set: func(c *Config, v string) {
 			for k := range strings.SplitSeq(v, ",") {

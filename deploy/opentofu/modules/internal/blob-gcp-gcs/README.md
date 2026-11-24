@@ -18,15 +18,17 @@ module "blob" {
 | --- | --- |
 | `project_id` | Project of the bucket |
 | `bucket_name` | Name, unique across Google Cloud |
+| `existing_bucket` | Use `bucket_name`, which exists, and manage none of its settings; `location` is then unused. Default `false` |
+| `prefix` | Start of every object name (`tenant-a/`), so that instances share the bucket; the service account then reaches only the objects under it, by an IAM condition that needs uniform bucket-level access. Default empty |
 | `location` | Location. The Always Free storage covers `us-east1`, `us-west1`, and `us-central1` only |
 | `versioning` | Keep deleted and overwritten objects as noncurrent versions, and delete them after `noncurrent_version_days`. Default `false` |
 | `noncurrent_version_days` | Days a noncurrent version is kept, 35 by default: at least the age of your oldest database backup |
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_BLOB`, `MY_BLOB_GCS_BUCKET` |
+| `env` | `MY_BLOB`, `MY_BLOB_GCS_BUCKET`, and `MY_BLOB_GCS_PREFIX` with a prefix |
 | `secret_env` | Empty |
-| `permissions` | `roles/storage.objectUser` on the bucket |
+| `permissions` | `roles/storage.objectUser` on the bucket, with a condition on the prefix |
 
 The server reads the bucket and serves the media under `/media/`. It signs no URLs at present, so the service account does
 not get `roles/iam.serviceAccountTokenCreator` on itself; a backend of your own that needs signed URLs would add it.

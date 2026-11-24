@@ -39,7 +39,7 @@ import { useId, useState, type ReactNode } from "react";
 import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
-import { errorOf, Field, ReadNotice, Section, useStaffStrings, useSaid, type T } from "../parts";
+import { errorOf, ReadNotice, Section, useStaffStrings, useSaid, type T } from "../parts";
 import { FinanceBack, currencyOptions } from "./parts";
 
 /** The settings of this screen. */
@@ -260,6 +260,7 @@ function PublicationForm({ saved }: { saved: Values }) {
   };
   const target = shown.funding_meter_target_amount.trim();
   const targetCurrency = shown.funding_meter_target_currency;
+  const currencyError = errorAt("funding_meter_target_currency");
   // The target as money, once it is one; while it is empty, what an empty target means.
   const targetHint =
     target !== "" && targetCurrency !== "" && amountFits(target, targetCurrency)
@@ -324,7 +325,7 @@ function PublicationForm({ saved }: { saved: Values }) {
             set("funding_meter_visibility", v);
           }}
         />
-        <Row wrap align="start" gap="screen-tab-gap">
+        <Stack gap="form-page-field-gap">
           <TextField
             id={idOf("funding_meter_target_amount")}
             name="target"
@@ -337,23 +338,23 @@ function PublicationForm({ saved }: { saved: Values }) {
             onChange={(v) => {
               set("funding_meter_target_amount", v);
             }}
+            after={
+              <Select
+                id={idOf("funding_meter_target_currency")}
+                label={t("staff_finance.publication.target.currency")}
+                describedBy={errorOf(idOf("funding_meter_target_currency"), currencyError)}
+                options={[{ value: "", label: t("staff_finance.publication.target.costs_currency") }, ...currencies]}
+                value={shown.funding_meter_target_currency}
+                onChange={(v) => {
+                  set("funding_meter_target_currency", v);
+                }}
+              />
+            }
           />
-          <Field
-            id={idOf("funding_meter_target_currency")}
-            label={t("staff_finance.publication.target.currency")}
-            error={errorAt("funding_meter_target_currency")}
-          >
-            <Select
-              id={idOf("funding_meter_target_currency")}
-              describedBy={errorOf(idOf("funding_meter_target_currency"), errorAt("funding_meter_target_currency"))}
-              options={[{ value: "", label: t("staff_finance.publication.target.costs_currency") }, ...currencies]}
-              value={shown.funding_meter_target_currency}
-              onChange={(v) => {
-                set("funding_meter_target_currency", v);
-              }}
-            />
-          </Field>
-        </Row>
+          {currencyError !== undefined && (
+            <FieldError id={`${idOf("funding_meter_target_currency")}-error`}>{currencyError}</FieldError>
+          )}
+        </Stack>
         <Check
           id={idOf("funding_meter_rail")}
           label={t("staff_finance.publication.rail")}

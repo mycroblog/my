@@ -294,6 +294,8 @@ module "media_s3" {
   source = "../modules/internal/blob-aws-s3"
 
   bucket_name             = var.media.bucket_name
+  existing_bucket         = var.media.existing_bucket
+  prefix                  = var.media.prefix
   versioning              = var.media.versioning
   noncurrent_version_days = var.media.noncurrent_version_days
 
@@ -308,6 +310,7 @@ module "media_r2" {
   account_id                  = coalesce(try(var.cloudflare.account_id, null), local.unused.id)
   bucket_name                 = var.media.kind == "r2" ? var.media.bucket_name : local.unused.id
   jurisdiction                = var.media.jurisdiction
+  prefix                      = var.media.prefix
   access_key_id_secret_id     = local.secret.media_access_key_id
   secret_access_key_secret_id = local.secret.media_secret_access_key
 
@@ -323,6 +326,7 @@ module "media_s3_compatible" {
   bucket                      = var.media.kind == "s3-compatible" ? var.media.bucket_name : local.unused.id
   region                      = var.media.kind == "s3-compatible" ? var.media.s3_region : null
   path_style                  = var.media.path_style
+  prefix                      = var.media.prefix
   access_key_id_secret_id     = local.secret.media_access_key_id
   secret_access_key_secret_id = local.secret.media_secret_access_key
 
@@ -387,8 +391,9 @@ module "stream_valkey" {
 module "mail_ses" {
   source = "../modules/internal/mail-aws-ses"
 
-  from              = var.mail.from
-  configuration_set = var.mail.configuration_set
+  from                       = var.mail.from
+  configuration_set          = var.mail.configuration_set
+  existing_configuration_set = var.mail.existing_configuration_set
 
   lifecycle {
     enabled = var.mail.kind == "ses"

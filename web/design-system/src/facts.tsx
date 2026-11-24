@@ -7,12 +7,13 @@
 // has more room than a phone's column, the terms down the start, as wide as the longest of them up to a limit, each
 // value beside its term; on a phone, each term over its value, so that a long value (an ID, a key) has the whole line.
 // Terms are muted, at the caption's size; values are the text's. A value in the code's face is one that is copied or
-// compared character by character (an IP address, an endpoint), and breaks after a slash, never inside a word that
-// fits (code-text.tsx), isolated left to right, as code reads in a right-to-left page too. A fact may have an action
-// after its value (the button that copies it). A value that is private (an email address, an IP address) is shown only on demand
-// (ADR-0058 §9): in its place, Show, which asks the server for it, spins while it is asked, and gives the focus to the
-// value once it comes, so that a keyboard and a screen reader land on what they asked for. Every value so shown takes
-// one look, the open eye before it and the code's face, apart from the public ones.
+// compared character by character (an IP address, an endpoint), and breaks after a slash, never inside a word that fits
+// (code-text.tsx), isolated left to right, as code reads in a right-to-left page too. A fact may have an action on its
+// own line under its value (the button that copies it), where a long value never wraps around it. A value that is
+// private (an email address, an IP address) is shown only on demand (ADR-0058 §9): in its place, Show, which asks the
+// server for it, spins while it is asked, and gives the focus to the value once it comes, so that a keyboard and a
+// screen reader land on what they asked for. Every value so shown takes one look, the open eye before it and the code's
+// face, apart from the public ones.
 //
 // The figures that sum up a server's state (open reports, pending registrations, the depth of a queue) are tiles,
 // each its number, large, over its label, as many to a row as fit. A figure that leads where it is dealt with stands
@@ -46,14 +47,29 @@ function FactFrame({ className, ...rest }: HTMLAttributes<HTMLElement> & { class
   );
 }
 
-/** A fact: its term and its value, on the frame's columns; narrow, the term over the value, a hair apart. */
-function FactLine({ children }: { children: ReactNode }) {
+/**
+ * A fact: its term and its value, on the frame's columns; narrow, the term over the value, a hair apart. `beside`,
+ * terms the terms' column is as wide as too: drawn in the term's place, a line each at the term's size, taking no
+ * height, unseen and unread.
+ */
+function FactLine({ beside, children }: { beside?: readonly string[] | undefined; children: ReactNode }) {
+  const widened = beside !== undefined && beside.length > 0;
   return (
-    <div className="col-span-full grid grid-cols-subgrid items-baseline gap-y-[0.125rem] @min-[30rem]:gap-y-0">
+    <div
+      {...(widened ? { "data-beside": beside.join("\n") } : {})}
+      className={`col-span-full grid grid-cols-subgrid items-baseline gap-y-[0.125rem] @min-[30rem]:gap-y-0 ${widened ? WIDENED : ""}`}
+    >
       {children}
     </div>
   );
 }
+
+/** The terms beside a line, in its term's cell, under the term. */
+const WIDENED = [
+  "[&>dt]:col-start-1 [&>dt]:row-start-1",
+  "after:invisible after:col-start-1 after:row-start-1 after:h-0 after:overflow-hidden",
+  "after:text-caption after:whitespace-pre after:content-[attr(data-beside)]",
+].join(" ");
 
 const facts = tv({
   slots: {
@@ -80,7 +96,7 @@ export type Fact = {
    * stands in its place until `value` is given.
    */
   reveal?: { onReveal: () => void; busy?: boolean | undefined } | undefined;
-  /** What the reader may do with the value, after it (a button that copies it). */
+  /** What the reader may do with the value, on its own line under it (a button that copies it). */
   action?: ReactNode;
 };
 
@@ -132,12 +148,12 @@ function KeptValue({ fact, termId }: { fact: Fact; termId: string }) {
   );
 }
 
-/** One fact, its term naming the Show that stands for a kept value. */
-function FactItem({ fact }: { fact: Fact }) {
+/** One fact, its term naming the Show that stands for a kept value; `beside`, terms its terms' column is as wide as. */
+function FactItem({ fact, beside }: { fact: Fact; beside?: readonly string[] | undefined }) {
   const s = facts();
   const termId = useId();
   return (
-    <FactLine>
+    <FactLine beside={beside}>
       <dt id={termId} className={s.term()}>
         {fact.term}
       </dt>
@@ -152,12 +168,9 @@ function FactItem({ fact }: { fact: Fact }) {
           <KeptValue fact={fact} termId={termId} />
         )}
         {fact.action !== undefined && fact.action !== null && (
-          <>
-            {" "}
-            <Row as="span" inline rigid>
-              {fact.action}
-            </Row>
-          </>
+          <Row as="span" rigid>
+            {fact.action}
+          </Row>
         )}
       </dd>
     </FactLine>
@@ -166,14 +179,23 @@ function FactItem({ fact }: { fact: Fact }) {
 
 /**
  * The facts of a record, named `label` for assistive technology (Registration, Endpoint): each term with its value,
- * side by side where the list has the room, the term over the value where it has not.
+ * side by side where the list has the room, the term over the value where it has not. `beside`, the terms of another
+ * list on the same screen: the terms' column is as wide as theirs too, so that the two lists' values start in one line.
  */
-export function FactList({ label, items }: { label: string; items: readonly Fact[] }) {
+export function FactList({
+  label,
+  items,
+  beside,
+}: {
+  label: string;
+  items: readonly Fact[];
+  beside?: readonly string[] | undefined;
+}) {
   const s = facts();
   return (
     <FactFrame aria-label={label} className={s.root()}>
-      {items.map((fact) => (
-        <FactItem key={fact.term} fact={fact} />
+      {items.map((fact, i) => (
+        <FactItem key={fact.term} fact={fact} beside={i === 0 ? beside : undefined} />
       ))}
     </FactFrame>
   );

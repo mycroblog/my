@@ -146,7 +146,18 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
           ]}
         />
         {r.state === "pending" && (
-          <Row wrap gap="screen-tab-gap">
+          // At the end of the row, approve last, where the bulk actions put it too.
+          <Row wrap gap="screen-tab-gap" justify="end">
+            <Button
+              size="timeline"
+              touch
+              busy={busy && asking?.decision === "reject" && asking.ids.length === 1 && asking.ids[0] === r.id}
+              onPress={() => {
+                setAsking({ decision: "reject", ids: [r.id] });
+              }}
+            >
+              {t("staff_accounts.registrations.reject")}
+            </Button>
             <Button
               kind="primary"
               size="timeline"
@@ -157,16 +168,6 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
               }}
             >
               {t("staff_accounts.registrations.approve")}
-            </Button>
-            <Button
-              size="timeline"
-              touch
-              busy={busy && asking?.decision === "reject" && asking.ids.length === 1 && asking.ids[0] === r.id}
-              onPress={() => {
-                setAsking({ decision: "reject", ids: [r.id] });
-              }}
-            >
-              {t("staff_accounts.registrations.reject")}
             </Button>
           </Row>
         )}
@@ -192,15 +193,8 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
                 onChange: setSelected,
                 // A decided row is not picked again.
                 selectable: (id) => pending.some((r) => r.id === id),
+                // Approve last, on the right, as on each row.
                 actions: [
-                  {
-                    id: "approve",
-                    label: t("staff_accounts.registrations.approve"),
-                    onPress: () => {
-                      if (picked.length > 0) setAsking({ decision: "approve", ids: picked.map((r) => r.id) });
-                    },
-                    busy: busy && decision === "approve" && (asking?.ids.length ?? 0) > 1,
-                  },
                   {
                     id: "reject",
                     label: t("staff_accounts.registrations.reject"),
@@ -208,6 +202,14 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
                       if (picked.length > 0) setAsking({ decision: "reject", ids: picked.map((r) => r.id) });
                     },
                     busy: busy && decision === "reject" && (asking?.ids.length ?? 0) > 1,
+                  },
+                  {
+                    id: "approve",
+                    label: t("staff_accounts.registrations.approve"),
+                    onPress: () => {
+                      if (picked.length > 0) setAsking({ decision: "approve", ids: picked.map((r) => r.id) });
+                    },
+                    busy: busy && decision === "approve" && (asking?.ids.length ?? 0) > 1,
                   },
                 ],
               }

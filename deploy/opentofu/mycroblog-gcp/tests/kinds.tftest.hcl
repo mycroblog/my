@@ -240,6 +240,31 @@ run "media_r2" {
   }
 }
 
+run "media_gcs_on_an_existing_bucket_with_a_prefix" {
+  command = plan
+
+  override_data {
+    target = module.media_gcs.data.google_storage_bucket.existing
+    values = {
+      uniform_bucket_level_access = true
+    }
+  }
+
+  variables {
+    media = { bucket_name = "shared-media", existing_bucket = true, prefix = "tenant-a/" }
+  }
+
+  assert {
+    condition     = module.app.env["MY_BLOB_GCS_BUCKET"] == "shared-media" && module.app.env["MY_BLOB_GCS_PREFIX"] == "tenant-a/" && module.media_gcs.permissions[0].condition != null
+    error_message = "the app must take the existing bucket and the prefix"
+  }
+
+  assert {
+    condition     = module.media_gcs.permissions[0].condition.expression == "resource.name.startsWith(\"projects/_/buckets/shared-media/objects/tenant-a/\")"
+    error_message = "the service account must reach only the objects under the prefix"
+  }
+}
+
 run "media_s3" {
   command = plan
 

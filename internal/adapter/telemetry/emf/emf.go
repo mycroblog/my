@@ -48,7 +48,7 @@ type Options struct {
 	// metric that CloudWatch bills.
 	Dimensions []string
 	// Properties are written on every line: the resource (service.name, service.version,
-	// my.role, ADR-0055 §6).
+	// my.role, service.namespace, ADR-0055 §6).
 	Properties map[string]string
 	Clock      kernel.Clock
 }

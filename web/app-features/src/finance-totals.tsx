@@ -244,34 +244,18 @@ function estimatedIn(period: CostPeriodTotal | undefined, sources: CostTotalsRul
   return (currency) => currencies.has(currency);
 }
 
-/** An amount with its currency's code (JPY 1,970), where amounts of several currencies stand one under another. */
-export function moneyCoded(locale: string, money: Money): string {
-  const digits = digitsOf(money.currency);
-  const format = new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: money.currency,
-    currencyDisplay: "code",
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-  return typeset(format, money);
-}
-
 /**
- * The figures of a cell: an amount a currency, each marked where it comes from an estimate, or None; each named by its
- * currency's code where `coded`.
+ * The figures of a cell: an amount a currency, each marked where it comes from an estimate, or None.
  */
 function figuresOf(
   t: T,
   locale: string,
   amounts: readonly Money[] | undefined,
   estimated: Estimated = notEstimated,
-  coded = false,
 ): FinanceFigure[] {
-  const shown = coded ? moneyCoded : moneyText;
   return amounts === undefined || amounts.length === 0
     ? [t("finance.none")]
-    : amounts.map((m) => ({ shown: shown(locale, m), estimated: estimated(m.currency) }));
+    : amounts.map((m) => ({ shown: moneyText(locale, m), estimated: estimated(m.currency) }));
 }
 
 /**
@@ -418,7 +402,6 @@ export function TotalsTable({
   sources,
   incomeRules,
   rules = true,
-  coded = false,
 }: {
   view: FinanceView;
   costs: readonly CostPeriodTotal[] | undefined;
@@ -430,8 +413,6 @@ export function TotalsTable({
   incomeRules: IncomeTotalsRules | undefined;
   /** The rules that cut the periods as the table's note; the administrators' screen, which knows them, leaves them out. */
   rules?: boolean;
-  /** Each figure named by its currency's code, where the table holds several currencies a column. */
-  coded?: boolean;
 }) {
   const { t, locale } = useFinanceStrings();
   const columns: FinanceColumn[] = [
@@ -466,9 +447,9 @@ export function TotalsTable({
         const cells: FinanceCell[] = [
           ...(costs === undefined
             ? []
-            : [{ figures: figuresOf(t, locale, cost?.totals, marked, coded), ...share(cost?.totals ?? []) }]),
-          ...(income === undefined ? [] : [{ figures: figuresOf(t, locale, net, notEstimated, coded), ...share(net) }]),
-          ...(balance ? [{ figures: figuresOf(t, locale, got?.balance, marked, coded) }] : []),
+            : [{ figures: figuresOf(t, locale, cost?.totals, marked), ...share(cost?.totals ?? []) }]),
+          ...(income === undefined ? [] : [{ figures: figuresOf(t, locale, net, notEstimated), ...share(net) }]),
+          ...(balance ? [{ figures: figuresOf(t, locale, got?.balance, marked) }] : []),
         ];
         return (
           <FinanceRow

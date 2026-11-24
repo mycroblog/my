@@ -54,6 +54,18 @@ variable "jurisdiction" {
   }
 }
 
+variable "prefix" {
+  description = "Prefix of the name of every object of the instance, so that several instances share the bucket: empty, or segments of letters, digits, ., _, and - that each end with /, such as tenant-a/. Which objects the key reaches is the key's business."
+  type        = string
+  default     = ""
+  nullable    = false
+
+  validation {
+    condition     = var.prefix == "" || (length(var.prefix) <= 256 && can(regex("^([A-Za-z0-9_-][A-Za-z0-9._-]*/)+$", var.prefix)))
+    error_message = "prefix must be empty or segments of letters, digits, ., _, and - that end with /, such as tenant-a/, none starting with a dot, at most 256 bytes."
+  }
+}
+
 variable "access_key_id_secret_id" {
   description = "Secret that holds the Access Key ID of the R2 token, as the platform's store refers to it: on Google Cloud its ID, on AWS its ARN."
   type        = string
@@ -82,12 +94,15 @@ output "platform" {
 
 output "env" {
   description = "The settings of the blob store."
-  value = {
-    MY_BLOB             = "s3"
-    MY_BLOB_S3_BUCKET   = cloudflare_r2_bucket.media.name
-    MY_BLOB_S3_ENDPOINT = var.jurisdiction == "default" ? "https://${var.account_id}.r2.cloudflarestorage.com" : "https://${var.account_id}.${var.jurisdiction}.r2.cloudflarestorage.com"
-    MY_BLOB_S3_REGION   = "auto"
-  }
+  value = merge(
+    {
+      MY_BLOB             = "s3"
+      MY_BLOB_S3_BUCKET   = cloudflare_r2_bucket.media.name
+      MY_BLOB_S3_ENDPOINT = var.jurisdiction == "default" ? "https://${var.account_id}.r2.cloudflarestorage.com" : "https://${var.account_id}.${var.jurisdiction}.r2.cloudflarestorage.com"
+      MY_BLOB_S3_REGION   = "auto"
+    },
+    var.prefix == "" ? {} : { MY_BLOB_S3_PREFIX = var.prefix },
+  )
 }
 
 output "secret_env" {

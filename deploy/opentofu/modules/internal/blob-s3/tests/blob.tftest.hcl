@@ -51,3 +51,26 @@ run "an_endpoint_with_a_path_fails" {
 
   expect_failures = [var.endpoint]
 }
+
+run "a_prefix" {
+  command = plan
+
+  variables {
+    prefix = "tenant-a/"
+  }
+
+  assert {
+    condition     = output.env["MY_BLOB_S3_PREFIX"] == "tenant-a/"
+    error_message = "the prefix must reach the server"
+  }
+}
+
+run "a_prefix_without_a_slash_fails" {
+  command = plan
+
+  variables {
+    prefix = "tenant-a"
+  }
+
+  expect_failures = [var.prefix]
+}

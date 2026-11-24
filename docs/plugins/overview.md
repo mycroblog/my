@@ -40,6 +40,10 @@ is its name. A field at its zero value may be missing in both directions, and th
 know. The result of a call is the `outcome` of its response: a missing or unknown `outcome` is a failure, never a
 success.
 
+Every request carries the calling instance's `host` setting in the `My-Instance` header, such as
+`My-Instance: social.example`. It names the instance and proves nothing: a plugin that serves several instances keeps
+their data apart by it, after checking it against the caller's credential.
+
 ## Testing a plugin
 
 `my plugin test --kind <kind> <address>` calls a plugin as the server does and reports each case as passed, failed, or

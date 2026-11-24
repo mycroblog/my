@@ -120,7 +120,7 @@ changing one module block:
 | `env` | `map(string)` | Settings by variable name (`MY_DATABASE`) |
 | `secret_env` | `map(string)` | Secret settings: variable name to a reference to a secret in the platform's store. The reference is the store's own: a secret ID in Secret Manager, a full ARN in AWS Secrets Manager. How the value reaches the server is the app module's business |
 | `secret_files` (optional) | `map(string)` | Secret settings to mount as files: a variable name ending in `_FILE` to the secret's reference. The app sets the variable to the path, on the service and every job. A platform with no mounted secrets treats it as `secret_env` of the name without `_FILE` |
-| `permissions` | `list(object({ permission, resource, ... }))`, with `scope` on Google Cloud and `conditions` on AWS | What the app's identity is permitted |
+| `permissions` | `list(object({ permission, resource, ... }))`, with `scope` and `condition` on Google Cloud and `conditions` on AWS | What the app's identity is permitted |
 | `direct_secret_env` (optional) | `map(string)` | What the one-off work takes over a setting of `secret_env`, which the service keeps: `MY_DATABASE_URL` as a direct connection when `secret_env` names a pooled one. Each name must be in `secret_env` |
 | `cloud_sql_instances` (optional) | `list(string)` | Cloud SQL instances, as `<project>:<region>:<instance>`, that Cloud Run mounts at `/cloudsql` on the service and every job |
 | `security_group_ids` (optional) | `list(string)` | Security groups the app joins to reach a backend in a VPC, on AWS, such as those of `db-aws-rds` and `kv-aws-elasticache` |
@@ -135,7 +135,7 @@ A permission means what the platform's IAM means: what the identity is permitted
 
 | Platform | `permission` | `scope` | `resource` | `conditions` |
 | --- | --- | --- | --- | --- |
-| Google Cloud | A role, such as `roles/storage.objectUser` | `project`, `bucket`, `topic`, `queue`, `service_account`, `crypto_key`, `dataset`, or `subscription`, each a different kind of binding | The resource's name. For `project`, null is the app's project, and otherwise another project's ID. For `dataset`, `projects/<project>/datasets/<dataset>`, and the permission is what an access entry holds | Not available |
+| Google Cloud | A role, such as `roles/storage.objectUser` | `project`, `bucket`, `topic`, `queue`, `service_account`, `crypto_key`, `dataset`, or `subscription`, each a different kind of binding | The resource's name. For `project`, null is the app's project, and otherwise another project's ID. For `dataset`, `projects/<project>/datasets/<dataset>`, and the permission is what an access entry holds | None. On `bucket` alone, an optional `condition`, `{ title, expression }`: the IAM condition of the binding |
 | AWS | One IAM action, such as `s3:GetObject` | None: every grant is a statement of one policy | An ARN or an ARN pattern, or `*` | Optional: `{ test, variable, values }` of the statement |
 
 The service and its jobs share one identity, so a grant reaches them all. The app grants each permission on that resource alone, so a

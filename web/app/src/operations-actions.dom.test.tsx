@@ -403,7 +403,7 @@ test("By hour shows the twelve latest hours, and Show more the rest", async () =
   );
 
   // The count of each hour, the latest first: the hour of index i counted i + 1.
-  const counts = () => cellsOf("By hour").map((cells) => cells[0]);
+  const counts = () => cellsOf("By hour").map((cells) => cells[1]);
   expect(counts()).toEqual(Array.from({ length: 12 }, (_, i) => String(20 - i)));
 
   await app.user.click(button("Show more"));
