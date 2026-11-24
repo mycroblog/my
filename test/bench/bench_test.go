@@ -109,8 +109,8 @@ func TestQuerySQL(t *testing.T) {
 	if sql := got["IncrEntry"]; !strings.Contains(sql, "kv_entries") {
 		t.Errorf("IncrEntry = %q, want the key-value store's SQL", sql)
 	}
-	if sql := got["ListStatusRevisionEmojisOf"]; !strings.Contains(sql, "json_each") {
-		t.Errorf("ListStatusRevisionEmojisOf on sqlite = %q, want its SQLite SQL", sql)
+	if sql := got["ListCurrentStatusRevisions"]; !strings.Contains(sql, "json_each") {
+		t.Errorf("ListCurrentStatusRevisions on sqlite = %q, want its SQLite SQL", sql)
 	}
 }
 
