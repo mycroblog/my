@@ -768,7 +768,7 @@
     "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of every known server. Read by moderators."
   },
   "staff_domains.servers.state.troubled": {
-    "defaultMessage": "問題あり",
+    "defaultMessage": "配送に問題あり",
     "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of the servers deliveries failed to reach on some days or that are marked unavailable; also read as \"State: With problems\". Read by moderators."
   },
   "staff_domains.servers.open": {
@@ -812,11 +812,11 @@
     "description": "On the moderators' list of remote servers (/moderation/instances), the column of each server's state. Read by moderators."
   },
   "staff_domains.servers.empty": {
-    "defaultMessage": "まだほかのサーバーを知りません。",
+    "defaultMessage": "まだ連合先はありません。",
     "description": "On the moderators' list of remote servers (/moderation/instances), when this server knows no remote server at all. Read by moderators."
   },
   "staff_domains.servers.empty.filtered": {
-    "defaultMessage": "条件に合うサーバーはありません。",
+    "defaultMessage": "一致するサーバーはありません。絞り込みを外すと、すべて表示します。",
     "description": "On the moderators' list of remote servers (/moderation/instances), when the filter (with problems, unavailable) leaves nothing. Read by moderators."
   },
   "staff_domains.server.state": {
@@ -844,12 +844,12 @@
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the software and version the server last reported. Read by moderators."
   },
   "staff_domains.server.software.none": {
-    "defaultMessage": "不明",
+    "defaultMessage": "報告されていません",
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the value of Software when the server has reported none. Read by moderators."
   },
   "staff_domains.server.fact.first_seen": {
     "defaultMessage": "初めて確認した日時",
-    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when this server first received something from that server. Read by moderators."
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when this server first stored a document of that server; absent for a server known only from deliveries. Read by moderators."
   },
   "staff_domains.server.fact.state": {
     "defaultMessage": "状態",

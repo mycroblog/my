@@ -768,7 +768,7 @@
     "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of every known server. Read by moderators."
   },
   "staff_domains.servers.state.troubled": {
-    "defaultMessage": "With problems",
+    "defaultMessage": "Delivery problems",
     "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of the servers deliveries failed to reach on some days or that are marked unavailable; also read as \"State: With problems\". Read by moderators."
   },
   "staff_domains.servers.open": {
@@ -812,11 +812,11 @@
     "description": "On the moderators' list of remote servers (/moderation/instances), the column of each server's state. Read by moderators."
   },
   "staff_domains.servers.empty": {
-    "defaultMessage": "No other server is known yet.",
+    "defaultMessage": "No remote server is known yet.",
     "description": "On the moderators' list of remote servers (/moderation/instances), when this server knows no remote server at all. Read by moderators."
   },
   "staff_domains.servers.empty.filtered": {
-    "defaultMessage": "No server matches this filter.",
+    "defaultMessage": "No server matches. Clear the filter to see every server.",
     "description": "On the moderators' list of remote servers (/moderation/instances), when the filter (with problems, unavailable) leaves nothing. Read by moderators."
   },
   "staff_domains.server.state": {
@@ -849,7 +849,7 @@
   },
   "staff_domains.server.fact.first_seen": {
     "defaultMessage": "First seen",
-    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when this server first received something from that server. Read by moderators."
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when this server first stored a document of that server; absent for a server known only from deliveries. Read by moderators."
   },
   "staff_domains.server.fact.state": {
     "defaultMessage": "State",
