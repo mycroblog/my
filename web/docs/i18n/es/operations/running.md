@@ -726,7 +726,7 @@ Elige un valor según cómo funcione tu instancia:
 <!-- source: cloud-tasks 287213e090b5 -->
 ### Cloud Tasks
 
-[Despliegue en Cloud Run](deploy-cloud-run.md) configura todo lo que sigue con módulos de OpenTofu.
+[Despliegue en Cloud Run](deploy-google-cloud.md) configura todo lo que sigue con módulos de OpenTofu.
 
 Con `queue = cloudtasks` los trabajos permanecen en la base de datos (`database = postgres`), y Google Cloud Tasks solo despierta al servidor para cada uno de ellos:
 

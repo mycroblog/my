@@ -18,7 +18,7 @@
 因此间隔很短的监控会让缩容到零的数据库一直保持唤醒。这些探测是留给你的平台用的。
 `monitoring` 部分在 Google Cloud（[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections)）上检查 `/health/live`，在 AWS（[`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws)）上检查 `/readyz`，都由平台自带的监控以较长的间隔执行：它的 `uptime_period` 就是这要花费的成本，因为每次检查都会唤醒一个实例。
 
-服务器自己的指标、追踪和错误报告送往哪里，由这些模块中同一份配置的 `observability` 部分决定，`monitoring` 会读取它。默认情况下，它把每一项都送往平台：在 Google Cloud 上，指标送往 Cloud Monitoring，请求追踪送往 Cloud Trace，错误报告送往 Error Reporting，这三者都来自 Cloud Run 发送给它们的内容，并会启用它们的 API；在 AWS 上，指标以 Embedded Metric Format 送往 CloudWatch，错误报告送往 CloudWatch Logs，追踪则通过每个任务中与服务器并排运行的采集器送往 X-Ray（[AWS ECS 上的追踪](running.md#aws-ecs)）。`monitoring` 需要那里有指标：它拒绝 `observability.metrics = "settings"`，因为这会把 `metrics_exporter` 交给 `settings` 输入。
+服务器自己的指标、追踪和错误报告送往哪里，由这些模块中同一份配置的 `observability` 部分决定，`monitoring` 会读取它。默认情况下，它把每一项都送往平台：在 Google Cloud 上，指标送往 Cloud Monitoring，请求追踪送往 Cloud Trace，错误报告送往 Error Reporting，这三者都来自 Cloud Run 发送给它们的内容，并会启用它们的 API；在 AWS 上，指标以 Embedded Metric Format 送往 CloudWatch，错误报告送往 CloudWatch Logs，追踪则通过每个任务中与服务器并排运行的采集器送往 X-Ray（[AWS ECS 上的追踪](deploy-aws.md#traces-to-x-ray)）。`monitoring` 需要那里有指标：它拒绝 `observability.metrics = "settings"`，因为这会把 `metrics_exporter` 交给 `settings` 输入。
 
 `/api/v1/instance/health` 的响应（无需认证，`Cache-Control: no-store`）：
 

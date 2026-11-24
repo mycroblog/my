@@ -252,7 +252,7 @@ Avec SQLite sur un volume, montez le même volume dans le Job et arrêtez d’ab
 ### Cloud Run
 
 Avec le module OpenTofu, une mise à niveau consiste à appliquer la nouvelle version, ce qui exécute `my upgrade` dans le job de migration avant que les services prennent
-la nouvelle image, et s’arrête là en cas d’échec : voir [Déployer sur Cloud Run](deploy-cloud-run.md#upgrading). À la main :
+la nouvelle image, et s’arrête là en cas d’échec : voir [Déployer sur Cloud Run](deploy-opentofu.md#upgrading). À la main :
 
 Les jobs Cloud Run exécutent un conteneur chacun ; créez donc un job par étape et exécutez-les dans l’ordre avec `--wait`, qui échoue lorsque le job échoue.
 Donnez aux jobs les mêmes variables d’environnement et secrets qu’au service.

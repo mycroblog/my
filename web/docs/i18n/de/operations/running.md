@@ -725,7 +725,7 @@ Wähle einen Wert danach, wie dein Server läuft:
 <!-- source: cloud-tasks 287213e090b5 -->
 ### Cloud Tasks
 
-[Auf Cloud Run bereitstellen](deploy-cloud-run.md) richtet alles Folgende mit OpenTofu-Modulen ein.
+[Auf Cloud Run bereitstellen](deploy-google-cloud.md) richtet alles Folgende mit OpenTofu-Modulen ein.
 
 Mit `queue = cloudtasks` bleiben die Jobs in der Datenbank (`database = postgres`), und Google Cloud Tasks weckt den Server nur für jeden von ihnen auf:
 

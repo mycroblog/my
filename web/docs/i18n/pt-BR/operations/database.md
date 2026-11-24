@@ -252,7 +252,7 @@ Com SQLite em um volume, monte o mesmo volume no Job e pare antes os pods do Dep
 ### Cloud Run
 
 Com o módulo OpenTofu, uma atualização é um apply da nova versão, que executa `my upgrade` no job de migração antes de os serviços adotarem
-a nova imagem, e para ali quando ele falha: veja [Implantação no Cloud Run](deploy-cloud-run.md#upgrading). Manualmente:
+a nova imagem, e para ali quando ele falha: veja [Implantação no Cloud Run](deploy-opentofu.md#upgrading). Manualmente:
 
 Os jobs do Cloud Run executam um contêiner cada, então crie um job por passo e execute-os em ordem com `--wait`, que falha quando o job falha.
 Dê aos jobs as mesmas variáveis de ambiente e os mesmos segredos do serviço.

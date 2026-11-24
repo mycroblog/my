@@ -84,7 +84,7 @@ El binario publicado y la imagen de contenedor contienen todos los adaptadores d
    de tasa y las respuestas a escrituras reenviadas de cada proceso. La cola de jobs permanece en
    PostgreSQL, o pasa a Google Cloud Tasks ([Cloud Tasks](running.md#cloud-tasks)).
 
-El [despliegue en Cloud Run](deploy-cloud-run.md) es un ejemplo de una configuración entre el segundo y el tercer paso:
+El [despliegue en Cloud Run](deploy-google-cloud.md) es un ejemplo de una configuración entre el segundo y el tercer paso:
 `role = all` en Cloud Run, PostgreSQL en Neon, multimedia en Cloud Storage, Cloud Tasks para los jobs y Pub/Sub para el
 stream, sin ninguna instancia en ejecución mientras nadie usa el servidor.
 
@@ -93,7 +93,7 @@ stream, sin ninguna instancia en ejecución mientras nadie usa el servidor.
 
 Lee las guías para operadores en este orden:
 
-1. **Primeros pasos:** [ejecuta el servidor](running.md) o [despliégalo en Cloud Run](deploy-cloud-run.md), y repasa después la [lista de comprobación para producción](production-checklist.md) antes de abrirlo a los usuarios.
+1. **Primeros pasos:** [ejecuta el servidor](running.md) o [despliégalo en Cloud Run](deploy-google-cloud.md), y repasa después la [lista de comprobación para producción](production-checklist.md) antes de abrirlo a los usuarios.
 2. **Configura la instancia:** sus [configuraciones](instance-settings.md), el [registro](registration.md), los [proveedores de inicio de sesión externos](login-providers.md), el [correo electrónico](email.md), [CAPTCHA](captcha.md), [la CDN](cdn.md), las [vistas previas de enlaces](link-previews.md) y los [motores de búsqueda y rastreadores de IA](crawlers.md).
 3. **Activa funciones:** la [moderación](moderation.md), los [relés](relays.md), los [webhooks](webhooks.md), los [complementos](plugins.md) y los [ganchos de decisión](decision-hooks.md), el [chat de voz](voice.md), la [búsqueda de texto completo](search.md), los [mecenas](supporters.md) y sus pagos, y la [importación de costos de la nube](billing-import.md).
 4. **Mantenlo en el día a día:** la [monitorización](monitoring.md), las [alertas](alerts.md), los [informes de errores](error-reporting.md), el [mantenimiento](maintenance.md), la [copia de seguridad](backup.md), [la base de datos](database.md), [la clave de cifrado de claves](key-management.md) y los [administradores y roles](admin-cli.md).

@@ -644,7 +644,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 <!-- source: cloud-tasks 287213e090b5 -->
 ### Cloud Tasks
 
-[Cloud Run へのデプロイ](deploy-cloud-run.md)では、以下のすべてを OpenTofu のモジュールで準備します。
+[Cloud Run へのデプロイ](deploy-google-cloud.md)では、以下のすべてを OpenTofu のモジュールで準備します。
 
 `queue = cloudtasks` では、ジョブはデータベース (`database = postgres`) に残り、Google Cloud Tasks はジョブごとにサーバーを起こすだけです。
 

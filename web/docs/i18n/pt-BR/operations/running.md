@@ -726,7 +726,7 @@ Escolha um valor conforme o funcionamento da sua instância:
 <!-- source: cloud-tasks 287213e090b5 -->
 ### Cloud Tasks
 
-[Implantando no Cloud Run](deploy-cloud-run.md) configura tudo o que está abaixo com módulos do OpenTofu.
+[Implantando no Cloud Run](deploy-google-cloud.md) configura tudo o que está abaixo com módulos do OpenTofu.
 
 Com `queue = cloudtasks`, os jobs permanecem no banco de dados (`database = postgres`), e o Google Cloud Tasks apenas acorda o servidor para cada um deles:
 

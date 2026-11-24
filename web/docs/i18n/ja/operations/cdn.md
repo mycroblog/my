@@ -40,7 +40,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 
 どちらも `Cross-Origin-Resource-Policy: cross-origin` 付きで返されるので、ほかのオリジンのページからも読み込めます。
 
-Cloud Run では、`ingress-cloudflare-media` が OpenTofu でこれを設定します。[Cloud Run へのデプロイ](deploy-cloud-run.md#cloudflare)を参照してください。
+Cloud Run では、`ingress-cloudflare-media` が OpenTofu でこれを設定します。[Cloud Run へのデプロイ](deploy-google-cloud.md#cloudflare)を参照してください。
 
 <!-- source: who-can-open-media-urls 27306b0bc9be -->
 ## メディアの URL を開ける人
