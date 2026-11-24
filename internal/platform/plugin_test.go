@@ -18,7 +18,7 @@ import (
 func TestNewPluginConn(t *testing.T) {
 	h, rec := fakeplugin.Connect(fakeplugin.Options{})
 	addr := fakeplugin.ServeUnix(t, h)
-	cfg := &config.Config{Plugins: map[string]kind.Destination{kind.Mailer: {Address: addr}}}
+	cfg := &config.Config{Host: "social.example", Plugins: map[string]kind.Destination{kind.Mailer: {Address: addr}}}
 
 	if _, err := NewPluginConn(cfg, "nope", kernel.NopMeter{}); err == nil {
 		t.Error("an unknown kind: no error")
@@ -36,5 +36,9 @@ func TestNewPluginConn(t *testing.T) {
 	}
 	if _, err := probev1connect.NewProbeServiceClient(conn.RPC).Echo(t.Context(), &probev1.EchoRequest{}); err != nil {
 		t.Errorf("Echo: %v", err)
+	}
+	// The call names the instance by its host (ADR-0146 §6).
+	if got := rec.Instance(); got != "social.example" {
+		t.Errorf("My-Instance = %q, want the host social.example", got)
 	}
 }
