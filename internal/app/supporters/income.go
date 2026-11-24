@@ -58,6 +58,9 @@ func incomeOf(provider string, m MoneyMovement, subscriptionID, tipID string) ap
 // recordIncome hands the final movements of provider to the income records, with our ID of
 // each one's subscription or tip (tips, by payment): "" for a fee of no subscription and for a
 // subscription that is not ours, whose movement still counts as income of the provider's account.
+// With Deps.SharedAccount, the account is shared with other instances and a movement that is of
+// none of our subscriptions and tips is theirs or the account's, and is left out; a refund, a
+// chargeback, or a reversal of one of our payments names its subscription or payment, and stays.
 func (s *Service) recordIncome(ctx context.Context, provider string, ms []MoneyMovement, tips map[PaymentRef]string) error {
 	ids := map[SubscriptionRef]string{}
 	out := make([]appfinance.IncomeMovement, 0, len(ms))
@@ -71,7 +74,9 @@ func (s *Service) recordIncome(ctx context.Context, provider string, ms []MoneyM
 			id, err = s.d.Repository.FindSubscriptionIDByRef(ctx, nil, provider, m.Subscription)
 			switch {
 			case errors.Is(err, ErrNotFound):
-				s.d.Logger.WarnContext(ctx, "a money movement of a subscription that is not ours", slog.String("movement", m.ID))
+				if !s.d.SharedAccount {
+					s.d.Logger.WarnContext(ctx, "a money movement of a subscription that is not ours", slog.String("movement", m.ID))
+				}
 				id = ""
 			case err != nil:
 				return err
@@ -81,6 +86,9 @@ func (s *Service) recordIncome(ctx context.Context, provider string, ms []MoneyM
 		tip := ""
 		if m.Subscription == "" {
 			tip = tips[m.Payment]
+		}
+		if s.d.SharedAccount && id == "" && tip == "" {
+			continue
 		}
 		out = append(out, incomeOf(provider, m, id, tip))
 	}

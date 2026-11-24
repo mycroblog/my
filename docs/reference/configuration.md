@@ -171,6 +171,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_payjp_webhook_token`](#payments_payjp_webhook_token) | `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` | none | when `payments = payjp` | yes |
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
+| [`payments_account_shared`](#payments_account_shared) | `MY_PAYMENTS_ACCOUNT_SHARED` | `false` | no | no |
 | [`translator_libretranslate_url`](#translator_libretranslate_url) | `MY_TRANSLATOR_LIBRETRANSLATE_URL` | none | no | no |
 | [`translator_libretranslate_api_key`](#translator_libretranslate_api_key) | `MY_TRANSLATOR_LIBRETRANSLATE_API_KEY` | none | no | yes |
 | [`translator_deepl_api_key`](#translator_deepl_api_key) | `MY_TRANSLATOR_DEEPL_API_KEY` | none | no | yes |
@@ -1480,6 +1481,19 @@ How many requests one reconciliation sends to `payments`, a page of a list count
 - Environment variable: `MY_PAYMENTS_RECONCILE_MAX_REQUESTS`
 - Default: `1000`
 - Required: no
+
+### `payments_account_shared`
+
+Whether other instances use the account of `payments` too. The webhooks and the reconciliation act only on this instance's subscriptions and tips either way; this setting decides what the import of the income keeps.
+
+- Environment variable: `MY_PAYMENTS_ACCOUNT_SHARED`
+- Default: `false`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `false` | The account is this instance's: every money movement of the account is its income, those of no subscription or tip of its own (fees of the account, other subscriptions) of unknown source. |
+| `true` | The account is shared: the income keeps only the payments of this instance's subscriptions and tips with their refunds and chargebacks, and leaves out the other instances' movements and the fees of the account. |
 
 ### `translator_libretranslate_url`
 

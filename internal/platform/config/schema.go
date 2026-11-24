@@ -1084,6 +1084,16 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.PaymentsReconcileMaxRequests, _ = strconv.Atoi(v) },
 	},
 	{
+		key: "payments_account_shared",
+		doc: "Whether other instances use the account of `payments` too. The webhooks and the reconciliation act only on this instance's subscriptions and tips either way; this setting decides what the import of the income keeps.",
+		def: "false",
+		choices: []choice{
+			{value: "false", doc: "The account is this instance's: every money movement of the account is its income, those of no subscription or tip of its own (fees of the account, other subscriptions) of unknown source."},
+			{value: "true", doc: "The account is shared: the income keeps only the payments of this instance's subscriptions and tips with their refunds and chargebacks, and leaves out the other instances' movements and the fees of the account."},
+		},
+		set: func(c *Config, v string) { c.PaymentsAccountShared = v == "true" },
+	},
+	{
 		key:   "translator_libretranslate_url",
 		doc:   "The base URL of the LibreTranslate server of the translation provider `libretranslate`, such as `https://libretranslate.com` or a server you run on a private address, such as `http://libretranslate:5000`; `http:` is accepted on any host. Setting it registers the provider, which the instance setting `translation_providers` then enables.",
 		check: func(v string) error { return libretranslate.CheckURL(strings.TrimSpace(v)) },

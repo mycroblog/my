@@ -351,6 +351,10 @@
     "env": "MY_PAYMENTS",
     "secret": false
   },
+  "payments_account_shared": {
+    "env": "MY_PAYMENTS_ACCOUNT_SHARED",
+    "secret": false
+  },
   "payments_payjp_public_key": {
     "env": "MY_PAYMENTS_PAYJP_PUBLIC_KEY",
     "secret": false
