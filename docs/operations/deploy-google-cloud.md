@@ -157,7 +157,9 @@ Each has its recommendation as its default, and [a change of `kind`](deploy-open
   it needs `service.min_instances` of 1 or more and `service.cpu_always_allocated = true`.
 - **Media**: `gcs` creates a private bucket, `media.bucket_name`, in the region. `r2` creates an R2 bucket in
   `cloudflare.account_id`, and `s3` uses any S3-compatible store at its `endpoint`; both read an access key from the secrets
-  that `secrets_to_fill` lists.
+  that `secrets_to_fill` lists. To share a bucket with other instances, `existing_bucket = true` uses yours and `prefix`
+  (`tenant-a/`) starts every object name; with `gcs` the service account then reaches only the objects under it, which needs
+  uniform bucket-level access.
 - **Caches and rate limits**: `db` keeps them in the database. `memorystore` creates Memorystore for Valkey, which needs a
   network and has no password: anything on the network can reach it. `external` reads the URL of a Valkey you run from a secret.
 - **Real-time updates**: `pubsub` reaches every instance. `postgres` uses `LISTEN` and `NOTIFY` over the database's direct

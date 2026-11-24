@@ -185,7 +185,7 @@ another. The database is [above](#2-choose-the-database).
 
 | Section | Recommended | Other kinds, and when |
 | --- | --- | --- |
-| `media` | `s3`, a bucket in the region, with `versioning` off | `r2` in `cloudflare.account_id`, or `s3-compatible` at `endpoint`, each with an access key in secrets you fill |
+| `media` | `s3`, a bucket in the region, with `versioning` off | `r2` in `cloudflare.account_id`, or `s3-compatible` at `endpoint`, each with an access key in secrets you fill. To share a bucket, `existing_bucket = true` uses yours and `prefix` (`tenant-a/`) starts every object name; with `s3` the tasks' role then reaches only the objects under it |
 | `kv` | `db`, which costs nothing more | `elasticache`, which bills while idle and lives in the private subnets, or `external`, a Valkey URL in a secret you fill |
 | `stream` | `sns`, which reaches every task | `postgres`, over the database's direct connection, or `valkey`, the Valkey of `kv` |
 | `mail` | `ses`, with no password | `smtp`, with `smtp.host`, `smtp.port` (587), and `smtp.username`, whose password goes in a secret you fill |
@@ -198,7 +198,9 @@ another. The database is [above](#2-choose-the-database).
 
 `mail.kind = "ses"`, the default, sends with the SES API in the region of the deployment, from the domain of `mail.from`. The
 module creates the domain's identity with Easy DKIM and allows the tasks `ses:SendEmail` on it, so there is no password, and
-`mail.configuration_set` creates a configuration set and applies it to every message. Before SES sends to your users, add the
+`mail.configuration_set` creates a configuration set and applies it to every message, or with
+`existing_configuration_set = true` names one that instances share; each instance then acts only on the notifications of the
+mail it sent. Before SES sends to your users, add the
 records that `tofu output dns_records` lists and leave the sandbox:
 [Sending email through Amazon SES](email-ses.md) has the steps, and how the server hears of bounces and complaints.
 
