@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"hash/crc32"
 	"image"
@@ -182,7 +183,7 @@ func mediaRemuxVideo(ctx context.Context, env Env) error {
 	if err != nil {
 		return err
 	}
-	out, err := p.Remux(ctx, testMP4(64, 48, 10), media.AVLimits{})
+	out, err := p.Remux(ctx, testMP4(), media.AVLimits{})
 	if err != nil {
 		return describeCallError(env, err)
 	}
@@ -343,26 +344,60 @@ func mp4Box(typ string, parts ...[]byte) []byte {
 // be32 returns n as 4 big-endian bytes.
 func be32(n int) []byte { return binary.BigEndian.AppendUint32(nil, uint32(n)) } //nolint:gosec // small numbers
 
-// testMP4 returns a 1-second w × h MP4 with its moov after its mdat, as cameras write it: a video track (avc1) of frames
-// samples "FRAME<i>" and a sound track (mp4a) of 4 samples "AUDIO<i>", one per chunk, and user data with videoLocation
-// (©xyz) and an item list whose title holds locationMarker. The samples are not coded media, which a remux never
-// decodes.
-func testMP4(w, h, frames int) []byte {
-	ftyp := mp4Box("ftyp", []byte("isom\x00\x00\x02\x00isomiso2mp41"))
+// The coded media of testMP4, made once by FFmpeg 4.3 (libx264 and its native AAC encoder) and read out of its MP4:
+//
+//	ffmpeg -f lavfi -i color=c=gray:size=64x48:rate=10:duration=1 \
+//	  -f lavfi -i "anullsrc=sample_rate=8000:channel_layout=mono,atrim=duration=0.5" -pix_fmt yuv420p \
+//	  -c:v libx264 -profile:v baseline -preset veryslow -crf 40 -g 10 -bf 0 -bsf:v filter_units=remove_types=6 \
+//	  -c:a aac -b:a 16k -map_metadata -1 -fflags +bitexact -flags:v +bitexact -flags:a +bitexact src.mp4
+//
+// mp4AVCConfig and mp4AudioConfig are the bodies of its avcC and esds boxes, mp4Frames the 10 frames of 64 × 48 at
+// 10 fps (the first one an IDR frame) and mp4AudioFrame the 5 frames of silence, mono at 8 kHz, which are all the same.
+const (
+	mp4AVCConfig   = "0142c00affe100176742c00aa61111ec0440000003004000000503c489846001000668c8420392c8"
+	mp4AudioConfig = "0000000003808080250002000480808017401500000000003e80000000fe0580808005158856e500068080800102"
+	mp4AudioFrame  = "01182007"
+)
+
+var mp4Frames = []string{
+	"0000001065888207f93146fbefaebaebaebaebc0",
+	"00000006419a1c0ff1b0", "00000006419a2a03fc6c", "00000006419a3b03fc6c", "00000006419a4900ff1b",
+	"00000006419a5940ff1b", "00000006419a6980ff1b", "00000006419a79c0ff1b", "00000007419a88803bc6c0",
+	"00000007419a989037c6c0",
+}
+
+// testMP4 returns a 1-second 64 × 48 MP4 with its moov after its mdat, as cameras write it: a video track of 10 H.264
+// frames (avc1 with its avcC), a sound track of 5 AAC frames (mp4a with its esds), one sample per chunk, and user data
+// with videoLocation (©xyz) and an item list whose title holds locationMarker. A demuxer that reads the samples, as
+// FFmpeg does, reads it as a real camera's file.
+func testMP4() []byte {
+	ftyp := mp4Box("ftyp", []byte("isom\x00\x00\x02\x00isomiso2avc1mp41"))
+	const w, h, sampleRate = 64, 48, 8000
 	type track struct {
-		handler, codec string
-		samples        [][]byte
-		offsets        []int
+		handler            string
+		entry              []byte // the sample entry, with its codec's configuration
+		timescale, delta   int    // the track's ticks per second and per sample
+		samples            [][]byte
+		offsets            []int
+		syncOnlyFirstFrame bool
 	}
-	tracks := []*track{{handler: "vide", codec: "avc1"}, {handler: "soun", codec: "mp4a"}}
-	for i := range frames {
-		tracks[0].samples = append(tracks[0].samples, fmt.Appendf(nil, "FRAME%d", i))
+	zero := make([]byte, 4)
+	video := &track{handler: "vide", timescale: 1000, delta: 100, syncOnlyFirstFrame: true,
+		entry: mp4Box("avc1", make([]byte, 6), []byte{0, 1}, make([]byte, 16), be32(w<<16|h),
+			be32(0x480000), be32(0x480000), zero, []byte{0, 1}, make([]byte, 32), []byte{0, 0x18, 0xFF, 0xFF},
+			mp4Box("avcC", unhex(mp4AVCConfig)))}
+	for _, f := range mp4Frames {
+		video.samples = append(video.samples, unhex(f))
 	}
-	for i := range 4 {
-		tracks[1].samples = append(tracks[1].samples, fmt.Appendf(nil, "AUDIO%d", i))
+	audio := &track{handler: "soun", timescale: sampleRate, delta: 1024,
+		entry: mp4Box("mp4a", make([]byte, 6), []byte{0, 1}, make([]byte, 8), []byte{0, 1, 0, 16}, zero,
+			be32(sampleRate<<16), mp4Box("esds", unhex(mp4AudioConfig)))}
+	for range 5 {
+		audio.samples = append(audio.samples, unhex(mp4AudioFrame))
 	}
+	tracks := []*track{video, audio}
 	var mdat []byte
-	for i := range frames {
+	for i := range len(video.samples) {
 		for _, t := range tracks {
 			if i < len(t.samples) {
 				t.offsets = append(t.offsets, len(ftyp)+8+len(mdat))
@@ -370,20 +405,19 @@ func testMP4(w, h, frames int) []byte {
 			}
 		}
 	}
-	const timescale, duration = 1000, 1000
-	zero := make([]byte, 4)
-	moov := [][]byte{mp4Box("mvhd", zero, zero, zero, be32(timescale), be32(duration), make([]byte, 80))}
+	const timescale = 1000
+	matrix := slices.Concat(be32(0x10000), make([]byte, 12), be32(0x10000), make([]byte, 12), be32(0x40000000))
+	moov := [][]byte{mp4Box("mvhd", zero, zero, zero, be32(timescale), be32(timescale), be32(0x10000), []byte{1, 0},
+		make([]byte, 10), matrix, make([]byte, 24), be32(len(tracks)+1))}
 	for ti, t := range tracks {
-		matrix := slices.Concat(be32(0x10000), make([]byte, 12), be32(0x10000), make([]byte, 12), be32(0x40000000))
-		size, entry := be32(0), slices.Concat(make([]byte, 6), []byte{0, 1}, make([]byte, 20))
-		if t.handler == "vide" {
-			size = slices.Concat(be32(w<<16), be32(h<<16))
-			entry = slices.Concat(make([]byte, 6), []byte{0, 1}, make([]byte, 16), be32(w<<16|h), make([]byte, 50))
-		} else {
-			size = slices.Concat(size, be32(0))
+		duration := len(t.samples) * t.delta
+		size, volume := slices.Concat(zero, zero), []byte{1, 0, 0, 0}
+		if t == video {
+			size, volume = slices.Concat(be32(w<<16), be32(h<<16)), zero
 		}
-		tkhd := mp4Box("tkhd", []byte{0, 0, 0, 3}, zero, zero, be32(ti+1), zero, be32(duration), make([]byte, 16), matrix, size)
-		mdhd := mp4Box("mdhd", zero, zero, zero, be32(timescale), be32(duration), zero)
+		tkhd := mp4Box("tkhd", []byte{0, 0, 0, 3}, zero, zero, be32(ti+1), zero, be32(duration*timescale/t.timescale),
+			make([]byte, 12), volume, matrix, size)
+		mdhd := mp4Box("mdhd", zero, zero, zero, be32(t.timescale), be32(duration), []byte{0x55, 0xC4, 0, 0})
 		hdlr := mp4Box("hdlr", zero, zero, []byte(t.handler), make([]byte, 12), []byte("handler\x00"))
 		stsz := slices.Concat(zero, zero, be32(len(t.samples)))
 		for _, s := range t.samples {
@@ -393,17 +427,35 @@ func testMP4(w, h, frames int) []byte {
 		for _, off := range t.offsets {
 			stco = append(stco, be32(off)...)
 		}
-		stbl := mp4Box("stbl",
-			mp4Box("stsd", zero, be32(1), mp4Box(t.codec, entry)),
-			mp4Box("stts", zero, be32(1), be32(len(t.samples)), be32(1)),
+		boxes := [][]byte{
+			mp4Box("stsd", zero, be32(1), t.entry),
+			mp4Box("stts", zero, be32(1), be32(len(t.samples)), be32(t.delta)),
 			mp4Box("stsc", zero, be32(1), be32(1), be32(1), be32(1)),
-			mp4Box("stsz", stsz), mp4Box("stco", stco))
+			mp4Box("stsz", stsz), mp4Box("stco", stco),
+		}
+		if t.syncOnlyFirstFrame {
+			boxes = append(boxes, mp4Box("stss", zero, be32(1), be32(1)))
+		}
+		header := mp4Box("smhd", zero, zero)
+		if t == video {
+			header = mp4Box("vmhd", []byte{0, 0, 0, 1}, make([]byte, 8))
+		}
 		dinf := mp4Box("dinf", mp4Box("dref", zero, be32(1), mp4Box("url ", []byte{0, 0, 0, 1})))
-		moov = append(moov, mp4Box("trak", tkhd, mp4Box("mdia", mdhd, hdlr, mp4Box("minf", dinf, stbl))))
+		minf := mp4Box("minf", header, dinf, mp4Box("stbl", boxes...))
+		moov = append(moov, mp4Box("trak", tkhd, mp4Box("mdia", mdhd, hdlr, minf)))
 	}
 	meta := mp4Box("meta", zero, mp4Box("hdlr", zero, zero, []byte("mdir"), make([]byte, 12), []byte{0}),
 		mp4Box("ilst", mp4Box("\xA9nam", mp4Box("data", be32(1), zero, []byte(locationMarker)))))
 	xyz := slices.Concat([]byte{0, byte(len(videoLocation)), 0x15, 0xC7}, []byte(videoLocation)) // its length and the language "eng"
 	moov = append(moov, mp4Box("udta", mp4Box("\xA9xyz", xyz), meta))
 	return slices.Concat(ftyp, mp4Box("mdat", mdat), mp4Box("moov", moov...))
+}
+
+// unhex returns the bytes of the hexadecimal s, a constant of this file.
+func unhex(s string) []byte {
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
