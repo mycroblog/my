@@ -407,22 +407,6 @@ export function FrameMain({ children }: { children: ReactNode }) {
 }
 
 /**
- * The surface of a row that reaches a row's inset past the main column (the total of a table), as `as`, its words where
- * the column's stand: on a phone at the viewport's width, its corners square, as a `FramePanel` there; from `tablet` a
- * row's inset past the column, its corners rounded.
- */
-export function FrameRowSurface({ as, children }: { as: ReactElement<{ className?: unknown }>; children: ReactNode }) {
-  return (
-    <Box
-      as={as}
-      className="-mx-[calc(var(--shell-edge)-var(--screen-row-inline))] px-shell-edge tablet:mx-0 tablet:rounded-control tablet:px-screen-row-inline"
-    >
-      {children}
-    </Box>
-  );
-}
-
-/**
  * A raised surface of the main column, as `as` (a section of a settings screen, a group of the settings' menu), its
  * parts one under another a `gap` apart: on a phone at the viewport's width, so that what it holds keeps the column's
  * width and its edges; from `tablet` inside the column, its corners rounded. Give `as` the mark of a raised surface
