@@ -18,7 +18,7 @@ import (
 func resourceAttrs(r *resource.Resource) map[string]string {
 	out := map[string]string{}
 	for _, kv := range r.Attributes() {
-		out[string(kv.Key)] = kv.Value.Emit()
+		out[string(kv.Key)] = kv.Value.String()
 	}
 	return out
 }
@@ -51,7 +51,7 @@ func TestResourceWithoutNamespace(t *testing.T) {
 		t.Fatal(err)
 	}
 	if v, ok := r.Set().Value(attribute.Key("service.namespace")); ok {
-		t.Errorf("resource service.namespace = %q, want none", v.Emit())
+		t.Errorf("resource service.namespace = %q, want none", v.String())
 	}
 }
 
