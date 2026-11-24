@@ -93,12 +93,14 @@ An instance setting that has never been set reads as its default, which is defin
 | [`media_audio`](#media_audio) | `MY_MEDIA_AUDIO` | `native` | no | no |
 | [`blob_fs_dir`](#blob_fs_dir) | `MY_BLOB_FS_DIR` | `blobs` | no | no |
 | [`blob_s3_bucket`](#blob_s3_bucket) | `MY_BLOB_S3_BUCKET` | none | when `blob = s3` | no |
+| [`blob_s3_prefix`](#blob_s3_prefix) | `MY_BLOB_S3_PREFIX` | none | no | no |
 | [`blob_s3_endpoint`](#blob_s3_endpoint) | `MY_BLOB_S3_ENDPOINT` | none | no | no |
 | [`blob_s3_region`](#blob_s3_region) | `MY_BLOB_S3_REGION` | none | no | no |
 | [`blob_s3_path_style`](#blob_s3_path_style) | `MY_BLOB_S3_PATH_STYLE` | `false` | no | no |
 | [`blob_s3_access_key_id`](#blob_s3_access_key_id) | `MY_BLOB_S3_ACCESS_KEY_ID` | none | no | no |
 | [`blob_s3_secret_access_key`](#blob_s3_secret_access_key) | `MY_BLOB_S3_SECRET_ACCESS_KEY` | none | when `blob_s3_access_key_id` is set | yes |
 | [`blob_gcs_bucket`](#blob_gcs_bucket) | `MY_BLOB_GCS_BUCKET` | none | when `blob = gcs` | no |
+| [`blob_gcs_prefix`](#blob_gcs_prefix) | `MY_BLOB_GCS_PREFIX` | none | no | no |
 | [`media_origin`](#media_origin) | `MY_MEDIA_ORIGIN` | the server's own origin (`https://{host}`) | no | no |
 | [`media_max_image_bytes`](#media_max_image_bytes) | `MY_MEDIA_MAX_IMAGE_BYTES` | `16777216` | no | no |
 | [`media_max_image_side`](#media_max_image_side) | `MY_MEDIA_MAX_IMAGE_SIDE` | `8192` | no | no |
@@ -784,6 +786,14 @@ Bucket of the `s3` blob store. It holds the uploads as received (private) and th
 - Default: none
 - Required: when `blob = s3`
 
+### `blob_s3_prefix`
+
+Prefix of the name of every object that `blob = s3` writes and reads in its bucket, so that several instances or other applications share the bucket: empty, or segments such as `tenant-a/` that end with `/`. Give each instance its own; the URLs of the media do not change with it. Changing it later leaves the objects under the old names: copy them under the new prefix first.
+
+- Environment variable: `MY_BLOB_S3_PREFIX`
+- Default: none
+- Required: no
+
 ### `blob_s3_endpoint`
 
 Origin of the S3-compatible API of `blob = s3`, such as `https://<account>.r2.cloudflarestorage.com` (Cloudflare R2), `https://storage.googleapis.com` (Google Cloud Storage with an HMAC key), or `http://minio:9000`. Empty uses Amazon S3's endpoint of `blob_s3_region`. Use `https` unless the server is on a private network that you trust: the requests carry the blobs.
@@ -836,6 +846,14 @@ Bucket of the `gcs` blob store. It holds the uploads as received (private) and t
 - Environment variable: `MY_BLOB_GCS_BUCKET`
 - Default: none
 - Required: when `blob = gcs`
+
+### `blob_gcs_prefix`
+
+Prefix of the name of every object that `blob = gcs` writes and reads in its bucket, so that several instances or other applications share the bucket: empty, or segments such as `tenant-a/` that end with `/`. Give each instance its own; the URLs of the media do not change with it. Changing it later leaves the objects under the old names: copy them under the new prefix first.
+
+- Environment variable: `MY_BLOB_GCS_PREFIX`
+- Default: none
+- Required: no
 
 ### `media_origin`
 

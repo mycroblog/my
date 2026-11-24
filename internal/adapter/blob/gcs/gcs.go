@@ -38,6 +38,10 @@ type Options struct {
 	// blob.PublicPrefix at /media/ from the bucket, so BaseURL is the origin of the media
 	// ("https://example.com"), and the bucket itself stays private.
 	BaseURL string
+	// Prefix is put before every key in the name of its object, so that several instances share
+	// the bucket; empty names the object by its key. It is empty or passes blob.ValidatePrefix.
+	// PublicURL does not change with it.
+	Prefix string
 	// ChunkSize is the size of the chunks of a resumable upload, rounded up to a multiple of
 	// 256 KiB; zero means DefaultChunkSize. Each Put holds one chunk in memory.
 	ChunkSize int
@@ -47,13 +51,14 @@ type Options struct {
 	ClientOptions []option.ClientOption
 }
 
-// Store implements blob.Store on a bucket. A blob is one object, named by its key, whose
+// Store implements blob.Store on a bucket. A blob is one object, named by the prefix and its key, whose
 // contentType holds the blob's media type. Cloud Storage creates an object only when its upload
 // completes, so a reader sees the previous object or the new one, never a part, and a failed Put
 // leaves the previous object.
 type Store struct {
 	client    *storage.Client
 	bucket    *storage.BucketHandle
+	prefix    string
 	baseURL   string
 	chunkSize int
 }
@@ -69,6 +74,9 @@ func New(ctx context.Context, o Options) (*Store, error) {
 	if o.Bucket == "" {
 		return nil, errors.New("blob/gcs: Options.Bucket is required")
 	}
+	if err := blob.ValidatePrefix(o.Prefix); err != nil {
+		return nil, fmt.Errorf("blob/gcs: Options.Prefix: %w", err)
+	}
 	if o.ChunkSize <= 0 {
 		o.ChunkSize = DefaultChunkSize
 	}
@@ -82,10 +90,14 @@ func New(ctx context.Context, o Options) (*Store, error) {
 	return &Store{
 		client:    client,
 		bucket:    client.Bucket(o.Bucket),
+		prefix:    o.Prefix,
 		baseURL:   strings.TrimSuffix(o.BaseURL, "/"),
 		chunkSize: o.ChunkSize,
 	}, nil
 }
+
+// object returns the handle of the object of key, named by the prefix and the key.
+func (s *Store) object(key string) *storage.ObjectHandle { return s.bucket.Object(s.prefix + key) }
 
 // Close releases the client.
 func (s *Store) Close() error { return s.client.Close() }
@@ -113,7 +125,7 @@ func (s *Store) Put(ctx context.Context, key string, r io.Reader, opts blob.PutO
 	// an object with part of the blob.
 	wctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	w := s.bucket.Object(key).NewWriter(wctx)
+	w := s.object(key).NewWriter(wctx)
 	w.ContentType = contentType
 	w.ChunkSize = s.chunkSize
 	if _, err := io.Copy(w, ctxReader{ctx: ctx, r: r}); err != nil {
@@ -148,7 +160,7 @@ func (s *Store) Get(ctx context.Context, key string) (io.ReadCloser, blob.Info, 
 	if err := blob.ValidateKey(key); err != nil {
 		return nil, blob.Info{}, err
 	}
-	obj := s.bucket.Object(key)
+	obj := s.object(key)
 	r, err := obj.NewReader(ctx)
 	if err != nil {
 		return nil, blob.Info{}, wrap("get", key, err)
@@ -166,7 +178,7 @@ func (s *Store) Head(ctx context.Context, key string) (blob.Info, error) {
 	if err := blob.ValidateKey(key); err != nil {
 		return blob.Info{}, err
 	}
-	attrs, err := s.bucket.Object(key).Attrs(ctx)
+	attrs, err := s.object(key).Attrs(ctx)
 	if err != nil {
 		return blob.Info{}, wrap("head", key, err)
 	}
@@ -181,7 +193,7 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if err := s.bucket.Object(key).Delete(ctx); err != nil && !notFound(err) {
+	if err := s.object(key).Delete(ctx); err != nil && !notFound(err) {
 		return fmt.Errorf("blob/gcs: delete %s: %w", key, err)
 	}
 	return nil
@@ -200,7 +212,7 @@ func (s *Store) SignedURL(ctx context.Context, key string, ttl time.Duration) (s
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
-	u, err := s.bucket.SignedURL(key, &storage.SignedURLOptions{
+	u, err := s.bucket.SignedURL(s.prefix+key, &storage.SignedURLOptions{
 		Scheme: storage.SigningSchemeV4, Method: http.MethodGet, Expires: time.Now().Add(ttl),
 	})
 	if err != nil {

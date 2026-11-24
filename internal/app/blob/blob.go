@@ -78,6 +78,22 @@ type Signer interface {
 // under /media/ and object storage may make them public. Every other key is private.
 const PublicPrefix = "media/"
 
+// MaxPrefixLength is the longest object name prefix that ValidatePrefix accepts.
+const MaxPrefixLength = 256
+
+// ValidatePrefix accepts the prefix that an adapter puts before every key in the names of its
+// objects, so that several instances share one bucket: empty, or segments of a key that end with
+// "/" ("tenant-a/", "hosting/tenant-a/").
+func ValidatePrefix(prefix string) error {
+	if prefix == "" {
+		return nil
+	}
+	if len(prefix) > MaxPrefixLength || !strings.HasSuffix(prefix, "/") {
+		return fmt.Errorf("%w: a prefix must end with \"/\" and be at most %d bytes", ErrInvalidKey, MaxPrefixLength)
+	}
+	return ValidateKey(strings.TrimSuffix(prefix, "/"))
+}
+
 // ValidateKey reports whether key is a valid blob key: 1 to MaxKeyLength bytes of segments
 // separated by "/", where each segment is one or more of [A-Za-z0-9._-], does not start with
 // ".", and so is never "." or "..". Keys therefore have no leading, trailing, or doubled "/",

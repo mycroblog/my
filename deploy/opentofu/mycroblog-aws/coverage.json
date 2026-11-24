@@ -17,7 +17,12 @@
     ],
     "media": [
       "blob",
-      "blob_s3_*"
+      "blob_s3_access_key_id",
+      "blob_s3_bucket",
+      "blob_s3_endpoint",
+      "blob_s3_path_style",
+      "blob_s3_region",
+      "blob_s3_secret_access_key"
     ],
     "kv": [
       "kv",
@@ -77,6 +82,7 @@
     "billing_aws_metric",
     "billing_aws_tag",
     "billing_cloudflare_*",
+    "blob_s3_prefix",
     "captcha*",
     "custom_emoji_max_bytes",
     "database_acquire_timeout",
@@ -131,6 +137,7 @@
     "blob_fs_dir": "no disk on Fargate",
     "tls*": "the platform terminates TLS",
     "blob_gcs_bucket": "Cloud Storage, on Google Cloud",
+    "blob_gcs_prefix": "Cloud Storage, on Google Cloud",
     "http_allow_private_networks": "the SSRF guard stays on",
     "listen": "the container port is fixed",
     "mail_ses_region": "the identity is in the region of the deployment, which AWS_REGION of the tasks names",

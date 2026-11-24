@@ -52,12 +52,16 @@ type Options struct {
 	// blob.PublicPrefix at /media/ from the bucket, so BaseURL is the origin of the media
 	// ("https://example.com"), and the bucket itself stays private.
 	BaseURL string
+	// Prefix is put before every key in the name of its object, so that several instances share
+	// the bucket; empty names the object by its key. It is empty or passes blob.ValidatePrefix.
+	// PublicURL does not change with it.
+	Prefix string
 	// PartSize is the size of the parts of a multipart upload; zero means DefaultPartSize.
 	// S3 refuses parts under 5 MiB but the last.
 	PartSize int64
 }
 
-// Store implements blob.Store on a bucket. A blob is one object, named by its key, whose
+// Store implements blob.Store on a bucket. A blob is one object, named by the prefix and its key, whose
 // Content-Type header holds the blob's media type. Put writes a blob with one PutObject or with
 // a multipart upload completed only after every part was written, so a reader sees the
 // previous object or the new one, never a part, and a failed Put leaves the previous object.
@@ -65,6 +69,7 @@ type Store struct {
 	client   *s3.Client
 	presign  *s3.PresignClient
 	bucket   string
+	prefix   string
 	baseURL  string
 	partSize int64
 }
@@ -80,6 +85,9 @@ var (
 func New(cfg aws.Config, o Options) (*Store, error) {
 	if o.Bucket == "" {
 		return nil, errors.New("blob/s3: Options.Bucket is required")
+	}
+	if err := blob.ValidatePrefix(o.Prefix); err != nil {
+		return nil, fmt.Errorf("blob/s3: Options.Prefix: %w", err)
 	}
 	if cfg.Region == "" {
 		if o.Endpoint == "" {
@@ -105,6 +113,7 @@ func New(cfg aws.Config, o Options) (*Store, error) {
 		client:   client,
 		presign:  s3.NewPresignClient(client),
 		bucket:   o.Bucket,
+		prefix:   o.Prefix,
 		baseURL:  strings.TrimSuffix(o.BaseURL, "/"),
 		partSize: o.PartSize,
 	}, nil
@@ -142,7 +151,7 @@ func (s *Store) Put(ctx context.Context, key string, r io.Reader, opts blob.PutO
 	size := int64(len(first))
 	if len(next) == 0 {
 		_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
-			Bucket: &s.bucket, Key: &key, Body: bytes.NewReader(first),
+			Bucket: &s.bucket, Key: s.name(key), Body: bytes.NewReader(first),
 			ContentLength: aws.Int64(size), ContentType: &contentType,
 		})
 	} else {
@@ -166,7 +175,7 @@ func readPart(r io.Reader, size int64) ([]byte, error) {
 // returns the size of the blob.
 func (s *Store) putMultipart(ctx context.Context, key, contentType string, r io.Reader, first, next []byte) (size int64, err error) {
 	created, err := s.client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
-		Bucket: &s.bucket, Key: &key, ContentType: &contentType,
+		Bucket: &s.bucket, Key: s.name(key), ContentType: &contentType,
 	})
 	if err != nil {
 		return 0, err
@@ -176,7 +185,7 @@ func (s *Store) putMultipart(ctx context.Context, key, contentType string, r io.
 		if err != nil {
 			actx, cancel := context.WithTimeout(context.WithoutCancel(ctx), abortTimeout)
 			defer cancel()
-			_, _ = s.client.AbortMultipartUpload(actx, &s3.AbortMultipartUploadInput{Bucket: &s.bucket, Key: &key, UploadId: uploadID})
+			_, _ = s.client.AbortMultipartUpload(actx, &s3.AbortMultipartUploadInput{Bucket: &s.bucket, Key: s.name(key), UploadId: uploadID})
 		}
 	}()
 	var parts []types.CompletedPart
@@ -184,7 +193,7 @@ func (s *Store) putMultipart(ctx context.Context, key, contentType string, r io.
 	for len(part) > 0 {
 		n := int32(len(parts) + 1) //nolint:gosec // bounded by the size of the blob over the part size
 		out, err := s.client.UploadPart(ctx, &s3.UploadPartInput{
-			Bucket: &s.bucket, Key: &key, UploadId: uploadID, PartNumber: aws.Int32(n),
+			Bucket: &s.bucket, Key: s.name(key), UploadId: uploadID, PartNumber: aws.Int32(n),
 			Body: bytes.NewReader(part), ContentLength: aws.Int64(int64(len(part))),
 		})
 		if err != nil {
@@ -201,7 +210,7 @@ func (s *Store) putMultipart(ctx context.Context, key, contentType string, r io.
 		}
 	}
 	_, err = s.client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
-		Bucket: &s.bucket, Key: &key, UploadId: uploadID,
+		Bucket: &s.bucket, Key: s.name(key), UploadId: uploadID,
 		MultipartUpload: &types.CompletedMultipartUpload{Parts: parts},
 	})
 	return size, err
@@ -227,7 +236,7 @@ func (s *Store) Get(ctx context.Context, key string) (io.ReadCloser, blob.Info, 
 	if err := blob.ValidateKey(key); err != nil {
 		return nil, blob.Info{}, err
 	}
-	out, err := s.client.GetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: &key})
+	out, err := s.client.GetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: s.name(key)})
 	if err != nil {
 		return nil, blob.Info{}, s.wrap("get", key, err)
 	}
@@ -243,7 +252,7 @@ func (s *Store) Head(ctx context.Context, key string) (blob.Info, error) {
 	if err := blob.ValidateKey(key); err != nil {
 		return blob.Info{}, err
 	}
-	out, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{Bucket: &s.bucket, Key: &key})
+	out, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{Bucket: &s.bucket, Key: s.name(key)})
 	if err != nil {
 		return blob.Info{}, s.wrap("head", key, err)
 	}
@@ -261,13 +270,16 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: &s.bucket, Key: &key})
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: &s.bucket, Key: s.name(key)})
 	// S3 answers 204 for a missing key; some compatible servers answer 404.
 	if err != nil && !notFound(err) {
 		return fmt.Errorf("blob/s3: delete %s: %w", key, err)
 	}
 	return nil
 }
+
+// name returns the name of the object of key: the prefix and the key.
+func (s *Store) name(key string) *string { return aws.String(s.prefix + key) }
 
 // PublicURL implements blob.Store.
 func (s *Store) PublicURL(key string) string { return s.baseURL + "/" + key }
@@ -277,7 +289,7 @@ func (s *Store) SignedURL(ctx context.Context, key string, ttl time.Duration) (s
 	if err := blob.ValidateKey(key); err != nil {
 		return "", err
 	}
-	req, err := s.presign.PresignGetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: &key}, s3.WithPresignExpires(ttl))
+	req, err := s.presign.PresignGetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: s.name(key)}, s3.WithPresignExpires(ttl))
 	if err != nil {
 		return "", fmt.Errorf("blob/s3: sign %s: %w", key, err)
 	}
@@ -322,7 +334,7 @@ func (o *object) Read(p []byte) (int, error) {
 	}
 	if o.body == nil {
 		in := &s3.GetObjectInput{
-			Bucket: &o.s.bucket, Key: &o.key, Range: aws.String(fmt.Sprintf("bytes=%d-", o.pos)),
+			Bucket: &o.s.bucket, Key: o.s.name(o.key), Range: aws.String(fmt.Sprintf("bytes=%d-", o.pos)),
 		}
 		if o.etag != "" {
 			in.IfMatch = &o.etag

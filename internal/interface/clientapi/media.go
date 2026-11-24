@@ -366,7 +366,8 @@ func (s *Server) readUpload(ctx context.Context, body *multipart.Reader, account
 	if file == nil {
 		return in, badPart("file"), false
 	}
-	in.Content = bytes.NewReader(file)
+	// A buffer hands the file to the use case without a second copy.
+	in.Content = bytes.NewBuffer(file)
 	if poster != nil {
 		in.Poster = bytes.NewReader(poster)
 	}

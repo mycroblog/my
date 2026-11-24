@@ -473,7 +473,7 @@ function Attempts({ id }: { id: string }): ReactNode {
       worker: <CodeText>{a.worker}</CodeText>,
     },
     detail: (
-      <Box as="p" text="caption">
+      <Box as="p" text="caption" tone="muted">
         <CodeText>{a.error}</CodeText>
       </Box>
     ),

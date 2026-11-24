@@ -514,6 +514,15 @@ func TestLoadInvalid(t *testing.T) {
 			},
 		},
 		{
+			name: "blob prefixes that are no prefix of object names",
+			env: with(minimal(), "MY_BLOB", "s3", "MY_BLOB_S3_BUCKET", "media", "MY_BLOB_S3_PREFIX", "tenant-a",
+				"MY_BLOB_GCS_PREFIX", "../tenant-a/"),
+			want: []string{
+				"blob_s3_prefix (MY_BLOB_S3_PREFIX): must be empty or segments",
+				"blob_gcs_prefix (MY_BLOB_GCS_PREFIX): must be empty or segments",
+			},
+		},
+		{
 			name: "blob s3 access key without its secret",
 			env:  with(minimal(), "MY_BLOB", "s3", "MY_BLOB_S3_BUCKET", "media", "MY_BLOB_S3_ACCESS_KEY_ID", "AKIAEXAMPLE"),
 			want: []string{"blob_s3_secret_access_key (MY_BLOB_S3_SECRET_ACCESS_KEY): required when blob_s3_access_key_id is set"},

@@ -196,6 +196,85 @@ func TestSeekAfterOverwriteFails(t *testing.T) {
 	}
 }
 
+// newPrefixedStore returns a Store under prefix on the fake bucket of srv, with parts of partSize bytes.
+func newPrefixedStore(t *testing.T, endpoint, prefix string, partSize int64) *blobs3.Store {
+	t.Helper()
+	s, err := blobs3.New(awsConfig("", "key", "secret"), blobs3.Options{
+		Bucket: "bucket", Endpoint: endpoint, PathStyle: true, BaseURL: "https://example.com", Prefix: prefix, PartSize: partSize,
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	return s
+}
+
+func TestBlobStoreContractUnderAPrefix(t *testing.T) {
+	blobtest.BlobStoreContract(t, func(t *testing.T) blob.Store {
+		_, srv := newFakeS3(t, "bucket")
+		return newPrefixedStore(t, srv.URL, "tenant-a/", 0)
+	})
+}
+
+func TestSharedBucketContract(t *testing.T) {
+	blobtest.SharedBucketContract(t, func(t *testing.T) (blob.Store, blob.Store) {
+		_, srv := newFakeS3(t, "bucket")
+		return newPrefixedStore(t, srv.URL, "tenant-a/", 0), newPrefixedStore(t, srv.URL, "hosting/tenant-b/", 0)
+	})
+}
+
+// The contract of a shared bucket on a real S3-compatible server (s3test), with TEST_S3=container.
+func TestSharedBucketContractOnS3Server(t *testing.T) {
+	srv := s3test.New(t)
+	blobtest.SharedBucketContract(t, func(t *testing.T) (blob.Store, blob.Store) {
+		bucket := srv.NewBucket(t)
+		stores := make([]blob.Store, 2)
+		for i, prefix := range []string{"tenant-a/", "hosting/tenant-b/"} {
+			s, err := blobs3.New(awsConfig(s3test.Region, s3test.AccessKeyID, s3test.SecretAccessKey), blobs3.Options{
+				Bucket: bucket, Endpoint: srv.Endpoint, PathStyle: true, BaseURL: "https://example.com", Prefix: prefix,
+			})
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+			stores[i] = s
+		}
+		return stores[0], stores[1]
+	})
+}
+
+// Every object of a prefixed store, a multipart upload's too, is named under the prefix, and its
+// signed URL names that object.
+func TestPrefixNamesEveryObject(t *testing.T) {
+	fake, srv := newFakeS3(t, "bucket")
+	s := newPrefixedStore(t, srv.URL, "tenant-a/", 1000)
+	checkMultipart(t, s, bytes.Repeat([]byte("abcdefghij"), 345))
+	if _, err := s.Put(t.Context(), "uploads/x", strings.NewReader("x"), blob.PutOptions{}); err != nil {
+		t.Fatalf("Put: %v", err)
+	}
+	for _, r := range fake.requestsMatching() {
+		if _, key, _ := strings.Cut(r, " "); !strings.HasPrefix(key, "tenant-a/") {
+			t.Errorf("request %q names an object outside the prefix", r)
+		}
+	}
+	u, err := s.SignedURL(t.Context(), "uploads/x", time.Minute)
+	if err != nil {
+		t.Fatalf("SignedURL: %v", err)
+	}
+	if p, err := url.Parse(u); err != nil || p.Path != "/bucket/tenant-a/uploads/x" {
+		t.Errorf("SignedURL = %q, want the object under the prefix", u)
+	}
+	if got, want := s.PublicURL("media/x/full.jpg"), "https://example.com/media/x/full.jpg"; got != want {
+		t.Errorf("PublicURL = %q, want %q without the prefix", got, want)
+	}
+}
+
+func TestNewRefusesAnInvalidPrefix(t *testing.T) {
+	for _, prefix := range []string{"tenant-a", "/tenant-a/", "a//", "../a/", "tenant a/"} {
+		if _, err := blobs3.New(awsConfig("eu-west-1", "k", "s"), blobs3.Options{Bucket: "b", Prefix: prefix}); err == nil {
+			t.Errorf("New with the prefix %q succeeded", prefix)
+		}
+	}
+}
+
 func TestPublicURLJoinsTheBaseURL(t *testing.T) {
 	s, _ := newFakeStore(t, 0)
 	if got, want := s.PublicURL("media/x/full.jpg"), "https://example.com/media/x/full.jpg"; got != want {
