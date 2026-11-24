@@ -1,10 +1,11 @@
 # OpenTofu modules
 
-`mycroblog-gcp` deploys `my` on Google Cloud in one module block: a Cloud Run service and a backend for each role, which you
-pick by the `kind` of a section and which defaults to the recommended setup. `mycroblog-aws` does the same on AWS, with ECS on
-Fargate, and **has never been applied** ([AWS](#aws)). Both are written for [OpenTofu](https://opentofu.org) and need version
-1.11 or later. Terraform is not supported. To deploy on Google Cloud, follow
-[Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md). The sections up to [AWS](#aws) describe `mycroblog-gcp`.
+The reference of the OpenTofu root modules: their inputs and outputs, the scripts, and the checks. `mycroblog-gcp` deploys
+`my` on Google Cloud in one module block: a Cloud Run service and a backend for each role, which you pick by the `kind` of a
+section and which defaults to the recommended setup. `mycroblog-aws` does the same on AWS, with ECS on Fargate, and **has
+never been applied** ([AWS](#aws)). To deploy, follow [Deploying with OpenTofu](../../docs/operations/deploy-opentofu.md),
+which every deployment shares, and [Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md) on Google Cloud. The
+sections up to [AWS](#aws) describe `mycroblog-gcp`.
 
 ```text
 deploy/opentofu/
@@ -17,40 +18,12 @@ deploy/opentofu/
   modules/internal/              the modules the public modules compose, with no promise of compatibility
 ```
 
-## Using the module
+## Providers
 
-The module is a Git source pinned to a release. A pin is required: an unpinned module could change the KEK's resources under
-you. Configure the `google` provider in your configuration; the module takes its project and region unless you give
-`project_id` and `region`.
-
-```hcl
-provider "google" {
-  project = "my-project"
-  region  = "asia-northeast1"
-}
-
-module "mycroblog" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-gcp?ref=v0.1.0&depth=1"
-
-  host  = "social.example.org"
-  media = { bucket_name = "my-project-my-media" }
-  mail = {
-    from = "noreply@social.example.org"
-    smtp = { host = "smtp.example.org", username = "my-smtp-user" }
-  }
-}
-```
-
-Keep `ref` at the release you deploy. The server image defaults to the same release, so `ref` alone names what runs, and
-raising it is an upgrade: see [Upgrading](#upgrading). A prerelease, such as `v0.1.0-rc.4`, names its image itself, as
-`image = { version = "0.1.0-rc.4" }`, since the module of a prerelease does not default to its own image. The module exists
-only from the first release that contains it. After `tofu init`, `.terraform/modules/mycroblog/deploy/opentofu` holds
-`migrate.sh` and `console.sh` at that release, under the name of your block. `examples/gcp-cloud-run-neon` works when
-copied to an empty directory with its lock file, which is where [the guide](../../docs/operations/deploy-cloud-run.md#3-copy-the-example-and-set-the-variables)
-starts.
-
-The module declares the `random` and `cloudflare` providers itself, which need no configuration. Without a Cloudflare kind no
-resource uses `cloudflare`, so a plan needs no `CLOUDFLARE_API_TOKEN`; with one, the provider reads the token from it.
+Configure the `google` provider in your configuration; the module takes its project and region unless you give `project_id`
+and `region`. The module declares the `random` and `cloudflare` providers itself, which need no configuration. Without a
+Cloudflare kind no resource uses `cloudflare`, so a plan needs no `CLOUDFLARE_API_TOKEN`; with one, the provider reads the
+token from it.
 
 ## Sections
 
@@ -81,7 +54,9 @@ default.
 
 `name` (`my` by default) starts every name the module creates, so two deployments can share a project: the service is `<name>`,
 the secrets `<name>-kek`, `<name>-database-url`, and so on, the queue `<name>-jobs`. `console_enabled` creates the console
-job for as long as you need it, and `deletion_protection` refuses to destroy the service.
+job for as long as you need it, and `deletion_protection` refuses to destroy the service. `settings` and `secrets` take any
+other setting by its key, as [Other settings and secrets](../../docs/operations/deploy-opentofu.md#other-settings-and-secrets)
+says; [`coverage.json`](#every-configuration-key) decides which keys they take.
 
 **What does not fit together fails before the plan**, with a message that names the inputs:
 
@@ -99,43 +74,6 @@ job for as long as you need it, and `deletion_protection` refuses to destroy the
 The modules behind the sections also refuse what they cannot do, such as a split of workers that keeps apart the job types
 that must stay together.
 
-## Other settings and secrets
-
-`settings` takes any other setting of the [configuration reference](../../docs/reference/configuration.md) by its key, such as
-`translator_deepl_url`, and the module passes it to the service, the workers, and the jobs. `secrets` takes the keys of secret
-settings: for each, the module creates an empty secret `<name>-<key>`, with hyphens for underscores, passes it to the server,
-and lists it in `secrets_to_fill`. A key that a section sets or the module fixes fails the plan, and so does a key the
-module does not take, such as `listen`: the error gives the reason. A section that is null, such as `translation`, and a
-signal of `observability` set to `settings` set nothing, so `settings` may name their keys.
-
-```hcl
-  settings = { translator_deepl_url = "https://api.deepl.com" }
-  secrets  = ["translator_deepl_api_key"]
-```
-
-Error reports to Sentry, beside the log line that Error Reporting reads, leave the errors of `observability` to `settings`:
-
-```hcl
-  observability = { errors = "settings" }
-  settings      = { errors_exporter = "sentry" }
-  secrets       = ["errors_sentry_dsn"]
-```
-
-## Secrets
-
-No secret value you give reaches the OpenTofu plan or state. The module generates what it can: the KEK and the VAPID key
-through write-only attributes, which never reach the state, and the Cloud SQL password the same way. The one exception is the
-origin secret of `ingress.kind = cloudflare`: Cloudflare's rule holds the value, so it lands in the state, which must stay
-private.
-
-The secrets only you have, such as the URL of an external database, the SMTP password, an access key, or the keys of
-`secrets`, the module creates empty. The output `secrets_to_fill` lists each, with what goes in it and the `gcloud` command
-that adds it. An instance whose secret has no version does not start, so add them before the service.
-
-**OpenTofu generates the KEK once and never again.** The secret and its version have `prevent_destroy`, and the version number
-that would write a new value is fixed in the module: a new random KEK would make everything the old one encrypted unreadable.
-The output `kek` says where it is and how to copy it.
-
 ## Outputs
 
 | Output | What it holds |
@@ -149,51 +87,26 @@ The output `kek` says where it is and how to copy it.
 
 ## Workers
 
-A busy type of job should not hold up the rest. `workers` takes a map by a key that names each worker, with its `job_types`
-and its size; the module gives the same value to the service, the queue, and the monitoring, so no queue name, URL, or route
-is written by hand:
-
-```hcl
-  workers = {
-    delivery = { job_types = ["federation.fanout", "federation.deliver"], max_instances = 20, concurrency = 16 }
-  }
-```
-
-Each worker is a Cloud Run service `<name>-<key>`, which takes no traffic from outside, with a Cloud Tasks queue
-`<name>-jobs-<key>`. A worker also takes `min_instances`, `cpu`, `memory_mib`, `max_concurrent_dispatches`, and
-`max_dispatches_per_second`. Whatever no worker names runs on the default service. [Splitting jobs into workers](../../docs/operations/deploy-cloud-run.md#splitting-jobs-into-workers)
-has what to split.
-
-## Upgrading
-
-An apply of another image is an upgrade, and runs it in the order the database needs, stopping at the first step that fails:
-
-1. The migration and console jobs take the image.
-2. [`migrate.sh`](migrate.sh), at the same release as the module, runs `my upgrade` as an execution of the migration job
-   and waits for it: `my config check`, `my db upgrade -check`, `my schema apply`, and `my db upgrade`. It first waits for any
-   execution that an interrupted apply left running, and passes `-allow-destructive` only when `upgrade.allow_destructive_for`
-   names the version being applied.
-3. Each worker takes the image, then the service.
-
-A migration that fails, or an apply that stops during it, leaves the services on their revisions, and the next apply of the
-same image runs the migration again: there is nothing to reset. An apply of the same image runs nothing. The script runs where
-you apply, through `gcloud`, so that machine, or the CI job that applies, needs `gcloud`, `jq`, and credentials that may
-execute the job and read its logs. The first apply runs the migration too, before the services exist. The guide has
-[the whole procedure](../../docs/operations/deploy-cloud-run.md#upgrading), with a backup and the maintenance mode.
+Each key of `workers` is a Cloud Run service `<name>-<key>`, which takes no traffic from outside, with a Cloud Tasks queue
+`<name>-jobs-<key>`. A worker takes `job_types`, and `min_instances`, `max_instances`, `cpu`, `memory_mib`, `concurrency`,
+`max_concurrent_dispatches`, and `max_dispatches_per_second`, each the service's or the queue's where it is not named.
+Whatever no worker names runs on the default service.
+[Splitting jobs into workers](../../docs/operations/deploy-opentofu.md#splitting-jobs-into-workers) has what to split.
 
 ## The scripts
 
-[`migrate.sh`](migrate.sh) is what an apply runs for an upgrade, as [Upgrading](#upgrading) says; nothing else calls it.
+[`migrate.sh`](migrate.sh) is what an apply of another image runs, before the workers and the service take it, and nothing
+else calls it: `my upgrade` as one run of the migration job, waiting first for any run that an interrupted apply left going,
+with `-allow-destructive` only when `upgrade.allow_destructive_for` names the version being applied. It exits non-zero when
+the migration fails, which stops the apply there.
+[Upgrading](../../docs/operations/deploy-opentofu.md#upgrading) has the procedure.
 
 [`console.sh`](console.sh) runs one `my` command through the console job. It reads the output `console` on standard input and
 takes the command as its arguments, waits for it, prints its output, and exits with its exit code:
+[The console](../../docs/operations/deploy-opentofu.md#the-console).
 
-```sh
-tofu output -json console | .terraform/modules/mycroblog/deploy/opentofu/console.sh admin create -username alice -email alice@example.com -password-link
-```
-
-The command has no standard input and no terminal. What it prints stays in Cloud Logging, so a command that needs a secret
-must not take it from there or print it casually.
+After `tofu init`, `.terraform/modules/mycroblog/deploy/opentofu` holds both at the release of the module, under the name of
+your block.
 
 ## AWS
 
@@ -311,7 +224,7 @@ in CloudWatch Logs.
 
 ### Upgrading on AWS
 
-An apply of another image is an upgrade, in the order of [Upgrading](#upgrading):
+An apply of another image is an upgrade, in the order of [Upgrading](../../docs/operations/deploy-opentofu.md#upgrading):
 
 1. Every task definition gets a new revision with the image. A revision changes nothing that runs until a service takes it.
 2. `migrate.sh` waits for any task of `<name>-migrate` that an interrupted apply left running, then runs `my upgrade` as one
