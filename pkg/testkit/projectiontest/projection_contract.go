@@ -6,11 +6,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/projection"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
 )
@@ -38,6 +42,10 @@ func ProjectionStoreContract(t *testing.T, newHarness func(t *testing.T) Project
 	t.Run("verify reports drift and rebuild corrects it in chunks", func(t *testing.T) {
 		t.Parallel()
 		projectionServiceDrift(t, newHarness(t))
+	})
+	t.Run("the verify job runs one projection per job and moves past one that fails", func(t *testing.T) {
+		t.Parallel()
+		projectionVerifyChain(t, newHarness(t))
 	})
 }
 
@@ -226,5 +234,122 @@ func projectionServiceDrift(t *testing.T, h ProjectionStoreHarness) {
 	}
 	if r, err := svc.Verify(ctx, p); err != nil || r.Drifted() {
 		t.Errorf("Verify after Rebuild = %+v, %v; want no drift", r, err)
+	}
+}
+
+// recordingQueue records the jobs enqueued to it, and refuses them under a context that ended.
+type recordingQueue struct {
+	mu   sync.Mutex
+	jobs []queue.NewJob
+}
+
+func (q *recordingQueue) Enqueue(ctx context.Context, jobs ...queue.NewJob) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.jobs = append(q.jobs, jobs...)
+	return nil
+}
+
+// take returns the jobs enqueued since the last take.
+func (q *recordingQueue) take() []queue.NewJob {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	jobs := q.jobs
+	q.jobs = nil
+	return jobs
+}
+
+func projectionVerifyChain(t *testing.T, h ProjectionStoreHarness) {
+	var (
+		mu  sync.Mutex
+		ran []string
+	)
+	ok := func(name string) func(context.Context, uow.UnitOfWork) error {
+		return func(ctx context.Context, _ uow.UnitOfWork) error {
+			mu.Lock()
+			defer mu.Unlock()
+			ran = append(ran, name)
+			return ctx.Err()
+		}
+	}
+	broken := errors.New("broken")
+	ps := []projection.Projection{
+		{Name: "first", Module: "testkit", Tables: []string{"poll_tallies"}, Rebuild: ok("first")},
+		{Name: "failing", Module: "testkit", Tables: []string{"account_search_terms"}, Rebuild: func(context.Context, uow.UnitOfWork) error {
+			mu.Lock()
+			defer mu.Unlock()
+			ran = append(ran, "failing")
+			return broken
+		}},
+		{Name: "last", Module: "testkit", Tables: []string{"scheduled_drafts"}, Rebuild: ok("last")},
+	}
+	jobs := &recordingQueue{}
+	svc := projection.NewService(projection.Options{UnitOfWork: h.UnitOfWork, Store: h.Store, Projections: ps, Jobs: jobs, Logger: slog.New(slog.DiscardHandler)})
+	reg := &queue.JobHandlerRegistry{}
+	sched := queue.NewScheduler(jobs, testkit.NewClock(time.Date(2026, 11, 24, 0, 0, 0, 0, time.UTC)), slog.New(slog.DiscardHandler))
+	svc.RegisterJobs(reg, sched)
+	handler, policy, found := reg.Lookup(projection.JobVerify)
+	if !found {
+		t.Fatalf("no handler of %s", projection.JobVerify)
+	}
+	if schedules := sched.Schedules(); len(schedules) != 1 || schedules[0].Job.Type != projection.JobVerify || len(schedules[0].Job.Payload) != 0 {
+		t.Fatalf("schedules = %+v, want one of %s without a payload", schedules, projection.JobVerify)
+	}
+	run := func(ctx context.Context, j queue.Job) (queue.Result, []string, []queue.NewJob) {
+		t.Helper()
+		mu.Lock()
+		ran = nil
+		mu.Unlock()
+		r := handler(ctx, j)
+		mu.Lock()
+		defer mu.Unlock()
+		return r, slices.Clone(ran), jobs.take()
+	}
+	next := func(t *testing.T, enqueued []queue.NewJob, name string) queue.NewJob {
+		t.Helper()
+		if len(enqueued) != 1 || enqueued[0].Type != projection.JobVerify || enqueued[0].IdempotencyKey != projection.JobVerify+":run:"+name {
+			t.Fatalf("enqueued %+v, want the one job of %q in the run", enqueued, name)
+		}
+		return enqueued[0]
+	}
+
+	// The scheduled job verifies the first projection only and queues the next.
+	r, rebuilt, enqueued := run(t.Context(), queue.Job{ID: "run", Type: projection.JobVerify, Attempt: 1})
+	if !r.IsDone() || !slices.Equal(rebuilt, []string{"first"}) {
+		t.Fatalf("scheduled job = done %v, rebuilt %q; want done, first only", r.IsDone(), rebuilt)
+	}
+	failing := next(t, enqueued, "failing")
+
+	// A failing projection is retried on its own and queues nothing while it has attempts left.
+	r, rebuilt, enqueued = run(t.Context(), queue.Job{ID: "j2", Type: projection.JobVerify, Payload: failing.Payload, Attempt: 1})
+	if !r.IsRetry() || !errors.Is(r.Err(), broken) || !slices.Equal(rebuilt, []string{"failing"}) || len(enqueued) != 0 {
+		t.Fatalf("failing job, first run = retry %v (%v), rebuilt %q, enqueued %+v; want a retry of it alone", r.IsRetry(), r.Err(), rebuilt, enqueued)
+	}
+	if policy.MaxAttempts < 2 {
+		t.Fatalf("the policy of %s allows %d runs, want a retry", projection.JobVerify, policy.MaxAttempts)
+	}
+
+	// Its last run fails, even under a context that ended as a lease does, and the run moves on.
+	ended, cancel := context.WithCancel(t.Context())
+	cancel()
+	r, _, enqueued = run(ended, queue.Job{ID: "j2", Type: projection.JobVerify, Payload: failing.Payload, Attempt: policy.MaxAttempts})
+	if !r.IsFail() {
+		t.Fatalf("failing job, last run = %+v, want it to fail", r)
+	}
+	last := next(t, enqueued, "last")
+
+	// The last projection queues nothing.
+	r, rebuilt, enqueued = run(t.Context(), queue.Job{ID: "j3", Type: projection.JobVerify, Payload: last.Payload, Attempt: 1})
+	if !r.IsDone() || !slices.Equal(rebuilt, []string{"last"}) || len(enqueued) != 0 {
+		t.Fatalf("last job = done %v, rebuilt %q, enqueued %+v; want done, last only, nothing queued", r.IsDone(), rebuilt, enqueued)
+	}
+
+	// A projection this version lacks ends the run.
+	r, rebuilt, enqueued = run(t.Context(), queue.Job{ID: "j4", Type: projection.JobVerify, Payload: []byte(`{"run":"run","projection":"gone"}`), Attempt: 1})
+	if !r.IsDone() || len(rebuilt) != 0 || len(enqueued) != 0 {
+		t.Fatalf("job of an unknown projection = done %v, rebuilt %q, enqueued %+v; want done and nothing else", r.IsDone(), rebuilt, enqueued)
 	}
 }

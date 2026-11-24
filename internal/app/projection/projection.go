@@ -11,7 +11,7 @@
 //     per transaction (ADR-0003), so that readers never see an emptied projection and rows
 //     that are right are not rewritten.
 //
-// The scheduled job JobVerify verifies every projection and corrects the ones that drifted.
+// The scheduled job JobVerify verifies every projection, one per job, and corrects the ones that drifted.
 package projection
 
 import (
@@ -22,6 +22,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
@@ -116,6 +117,9 @@ type Options struct {
 	ChunkSize int
 	// Logger records the drift that JobVerify corrects; nil means slog.Default().
 	Logger *slog.Logger
+	// Jobs queues the next projection of a JobVerify run, outside any transaction; nil ends a
+	// run after its first projection.
+	Jobs queue.JobQueue
 }
 
 // Service rebuilds and verifies the projections.
@@ -125,6 +129,7 @@ type Service struct {
 	projections []Projection
 	chunk       int
 	logger      *slog.Logger
+	jobs        queue.JobQueue
 }
 
 // NewService returns a service of the projections in opts. It panics on a projection without
@@ -157,6 +162,7 @@ func NewService(opts Options) *Service {
 	}
 	return &Service{
 		u: opts.UnitOfWork, store: opts.Store, projections: slices.Clone(opts.Projections), chunk: chunk, logger: logger,
+		jobs: opts.Jobs,
 	}
 }
 

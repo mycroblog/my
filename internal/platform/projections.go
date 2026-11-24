@@ -65,7 +65,7 @@ func (r *repositories) projectionRepositories() projectionRepositories {
 // the order of `my projection list` and of the job.
 func (a *App) setUpProjections(store projection.Store, r projectionRepositories) {
 	a.Projections = projection.NewService(projection.Options{
-		UnitOfWork: a.UnitOfWork, Store: store, Logger: a.Logger,
+		UnitOfWork: a.UnitOfWork, Store: store, Logger: a.Logger, Jobs: a.Jobs,
 		Projections: []projection.Projection{
 			{
 				Name: "instance", Module: "instance",

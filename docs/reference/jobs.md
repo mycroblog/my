@@ -200,7 +200,7 @@ These types keep the index of a [search backend](configuration.md#search) in ste
 | `queue.purge_dead_jobs` | Deletes dead jobs after `dead_job_retention` and attempt records after `job_attempt_retention`. | Schedule | Default | Next run |
 | `kv.purge_expired` | Deletes the expired entries of the key-value store. | Schedule | Default | Next run |
 | `metrics.snapshot` | Computes the gauges of the instance, stores them, and exports them once. | Schedule | Default | Next run |
-| `projection.verify` | Rebuilds every projection, writing only what drifted, and logs those that did. One that fails does not stop the others. | Schedule | Default | Next run |
+| `projection.verify` | Rebuilds one projection, writing only what drifted, logs it when it did, then queues the job of the next one. The scheduled job starts with the first. | Schedule; the job of the projection before | 3 runs; then the next projection is queued and this one is dead | Next run |
 | `diagnostics.purge_error_counts` | Deletes the hourly error counts past their retention. | Schedule | Default | Next run |
 | `diagnostics.purge_ux_counts` | Deletes the hourly counts of the [UX measurements](../operations/error-reporting.md#ux-measurements) older than 30 days. | Schedule | Default | Next run |
 | `hook.purge_decisions` | Deletes the decisions of the [decision hooks](../operations/decision-hooks.md#the-decisions) past `hook_decisions_retention_days`, with their appeals, except those it keeps. | Schedule | Default | Next run |
