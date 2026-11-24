@@ -175,23 +175,6 @@ func (q *Queries) GetLatestPollTallyObservation(ctx context.Context, pollID stri
 	return i, err
 }
 
-const getPollByRevision = `-- name: GetPollByRevision :one
-SELECT id, revision_id, multiple, hide_totals, closes_at FROM polls WHERE revision_id = ?1
-`
-
-func (q *Queries) GetPollByRevision(ctx context.Context, revisionID string) (Poll, error) {
-	row := q.db.QueryRowContext(ctx, getPollByRevision, revisionID)
-	var i Poll
-	err := row.Scan(
-		&i.ID,
-		&i.RevisionID,
-		&i.Multiple,
-		&i.HideTotals,
-		&i.ClosesAt,
-	)
-	return i, err
-}
-
 const getPollStatus = `-- name: GetPollStatus :one
 SELECT r.status_id FROM polls p JOIN status_revisions r ON r.id = p.revision_id WHERE p.id = ?1
 `
@@ -277,23 +260,6 @@ func (q *Queries) GetRemoteMediaCache(ctx context.Context, url string) (RemoteMe
 		&i.FetchedAt,
 		&i.ExpiresAt,
 		&i.LastAccessedAt,
-	)
-	return i, err
-}
-
-const getRemoteStatusRevision = `-- name: GetRemoteStatusRevision :one
-SELECT revision_id, activity_uri, html_policy_version, omitted_attachment_count FROM remote_status_revisions
-WHERE revision_id = ?1
-`
-
-func (q *Queries) GetRemoteStatusRevision(ctx context.Context, revisionID string) (RemoteStatusRevision, error) {
-	row := q.db.QueryRowContext(ctx, getRemoteStatusRevision, revisionID)
-	var i RemoteStatusRevision
-	err := row.Scan(
-		&i.RevisionID,
-		&i.ActivityUri,
-		&i.HtmlPolicyVersion,
-		&i.OmittedAttachmentCount,
 	)
 	return i, err
 }
@@ -729,33 +695,6 @@ func (q *Queries) ListLeastRecentlyAccessedRemoteMediaCache(ctx context.Context,
 			&i.ExpiresAt,
 			&i.LastAccessedAt,
 		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listPollOptions = `-- name: ListPollOptions :many
-SELECT poll_id, position, title FROM poll_options WHERE poll_id = ?1 ORDER BY position
-`
-
-func (q *Queries) ListPollOptions(ctx context.Context, pollID string) ([]PollOption, error) {
-	rows, err := q.db.QueryContext(ctx, listPollOptions, pollID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []PollOption{}
-	for rows.Next() {
-		var i PollOption
-		if err := rows.Scan(&i.PollID, &i.Position, &i.Title); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

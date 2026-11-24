@@ -4,8 +4,7 @@ package account
 
 import (
 	"context"
-	"database/sql"
-	"errors"
+	"encoding/json"
 	"fmt"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
@@ -555,44 +554,27 @@ func (r *Repository) CurrentProfile(ctx context.Context, tx uow.Tx, accountID st
 }
 
 func currentProfile(ctx context.Context, q *accountgen.Queries, accountID string) (account.ProfileRevision, error) {
-	head, err := q.GetProfileHead(ctx, accountID)
+	row, err := q.GetCurrentProfile(ctx, accountID)
 	if err != nil {
-		return account.ProfileRevision{}, sqlite.NotFound(err, appaccount.ErrNotFound, "profile head of "+accountID)
+		return account.ProfileRevision{}, sqlite.NotFound(err, appaccount.ErrNotFound, "profile of "+accountID)
 	}
-	row, err := q.GetProfileRevision(ctx, head.RevisionID)
-	if err != nil {
-		return account.ProfileRevision{}, sqlite.NotFound(err, appaccount.ErrNotFound, "profile revision "+head.RevisionID)
-	}
-	fields, err := q.ListProfileFields(ctx, row.ID)
-	if err != nil {
-		return account.ProfileRevision{}, sqlite.Wrap(err, "list profile fields")
-	}
-	emojis, err := q.ListProfileRevisionEmojis(ctx, row.ID)
-	if err != nil {
-		return account.ProfileRevision{}, sqlite.Wrap(err, "list profile revision emoji")
-	}
-	rev := profileParts(profileRow(row), fields, emojis)
-	note, err := q.GetProfileRevisionSource(ctx, row.ID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return rev, nil
-	}
-	if err != nil {
-		return account.ProfileRevision{}, sqlite.Wrap(err, "get profile revision source")
-	}
-	sources, err := q.ListProfileFieldSources(ctx, row.ID)
-	if err != nil {
-		return account.ProfileRevision{}, sqlite.Wrap(err, "list profile field sources")
-	}
-	byPosition := make(map[int]string, len(sources))
-	for _, s := range sources {
-		byPosition[int(s.Position)] = s.ValueSource
-	}
-	return profileSource(rev, note, byPosition), nil
+	return profileFrom(row)
 }
 
-// profileRow returns the revision of row, without its fields, custom emoji, and source.
-func profileRow(row accountgen.AccountProfileRevision) account.ProfileRevision {
-	return account.ProfileRevision{
+// fieldJSON is a field of the fields of a profile revision (GetCurrentProfile, ListActorsByIDs),
+// with the source of its value, nil without one.
+type fieldJSON struct {
+	Position    int     `json:"position"`
+	Name        string  `json:"name"`
+	ValueHTML   string  `json:"value_html"`
+	ValueSource *string `json:"value_source"`
+}
+
+// profileFrom returns the revision of row with its fields and custom emoji and, when it has a note
+// source (a local account's revision), its source: the note and the source of each field ("" for
+// a field without one).
+func profileFrom(row accountgen.GetCurrentProfileRow) (account.ProfileRevision, error) {
+	rev := account.ProfileRevision{
 		ID:                row.ID,
 		AccountID:         row.AccountID,
 		Seq:               int(row.Seq),
@@ -609,27 +591,29 @@ func profileRow(row accountgen.AccountProfileRevision) account.ProfileRevision {
 		Feed:              account.FeedSetting(row.Feed),
 		FollowsVisibility: account.FollowsVisibility(row.FollowsVisibility),
 	}
-}
-
-// profileParts returns rev with the fields and the custom emoji of its revision.
-func profileParts(rev account.ProfileRevision, fields []accountgen.AccountProfileField, emojis []string) account.ProfileRevision {
+	var fields []fieldJSON
+	if err := json.Unmarshal([]byte(row.Fields), &fields); err != nil {
+		return account.ProfileRevision{}, fmt.Errorf("decode the fields of profile revision %s: %w", row.ID, err)
+	}
+	var emojis []string
+	if err := json.Unmarshal([]byte(row.EmojiIds), &emojis); err != nil {
+		return account.ProfileRevision{}, fmt.Errorf("decode the custom emoji of profile revision %s: %w", row.ID, err)
+	}
 	for _, f := range fields {
-		rev.Fields = append(rev.Fields, account.ProfileField{Position: int(f.Position), Name: f.Name, ValueHTML: f.ValueHtml})
+		rev.Fields = append(rev.Fields, account.ProfileField{Position: f.Position, Name: f.Name, ValueHTML: f.ValueHTML})
 	}
 	if len(emojis) > 0 {
 		rev.EmojiIDs = emojis
 	}
-	return rev
-}
-
-// profileSource returns rev, a local account's revision, with its source: the note and the source
-// of each field by its position ("" for a field without one).
-func profileSource(rev account.ProfileRevision, note string, byPosition map[int]string) account.ProfileRevision {
-	rev.Source = &account.ProfileSource{Note: note, FieldValues: make([]string, len(rev.Fields))}
-	for i, f := range rev.Fields {
-		rev.Source.FieldValues[i] = byPosition[f.Position]
+	if row.NoteSource.Valid {
+		rev.Source = &account.ProfileSource{Note: row.NoteSource.String, FieldValues: make([]string, len(fields))}
+		for i, f := range fields {
+			if f.ValueSource != nil {
+				rev.Source.FieldValues[i] = *f.ValueSource
+			}
+		}
 	}
-	return rev
+	return rev, nil
 }
 
 // FindLifecycleStateOfUser implements account.Repository.

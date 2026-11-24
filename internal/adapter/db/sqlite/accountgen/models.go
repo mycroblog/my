@@ -74,47 +74,6 @@ type AccountMoveState struct {
 	Since           int64
 }
 
-type AccountProfileField struct {
-	RevisionID string
-	Position   int64
-	Name       string
-	ValueHtml  string
-}
-
-type AccountProfileFieldSource struct {
-	RevisionID  string
-	Position    int64
-	ValueSource string
-}
-
-type AccountProfileRevision struct {
-	ID                string
-	AccountID         string
-	Seq               int64
-	DisplayName       string
-	NoteHtml          string
-	Locked            int64
-	Bot               int64
-	Discoverable      int64
-	Indexable         int64
-	AiOptOut          int64
-	AvatarMediaID     sql.NullString
-	HeaderMediaID     sql.NullString
-	RevisedAt         int64
-	Feed              string
-	FollowsVisibility string
-}
-
-type AccountProfileRevisionEmoji struct {
-	RevisionID string
-	EmojiID    string
-}
-
-type AccountProfileRevisionSource struct {
-	RevisionID string
-	NoteSource string
-}
-
 type AccountSearchTerm struct {
 	AccountID string
 	Kind      string

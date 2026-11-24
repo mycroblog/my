@@ -148,17 +148,28 @@ WHERE username_normalized = ? AND domain = ?;
 -- name: GetAccountHandle :one
 SELECT account_id, username, username_normalized, domain FROM account_handles WHERE account_id = ?;
 
--- name: GetProfileRevision :one
-SELECT id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at, feed, follows_visibility
-FROM account_profile_revisions WHERE id = ?;
-
--- name: ListProfileFields :many
-SELECT revision_id, position, name, value_html FROM account_profile_fields
-WHERE revision_id = ? ORDER BY position;
-
--- name: ListProfileRevisionEmojis :many
-SELECT emoji_id FROM account_profile_revision_emojis WHERE revision_id = ? ORDER BY emoji_id;
+-- GetCurrentProfile reads the revision that an account's profile head points at with its parts in
+-- one query, as ListActorsByIDs reads the profile of each account: its note source is NULL
+-- without one, and its fields (with the source of each value) and custom emoji are JSON arrays.
+-- name: GetCurrentProfile :one
+SELECT r.id, r.account_id, r.seq, r.display_name, r.note_html, r.locked, r.bot, r.discoverable, r.indexable, r.ai_opt_out,
+  r.avatar_media_id, r.header_media_id, r.revised_at, r.feed, r.follows_visibility, rs.note_source,
+  CAST((
+    SELECT json_group_array(json_object('position', o.position, 'name', o.name, 'value_html', o.value_html, 'value_source', o.value_source))
+    FROM (
+      SELECT f.position, f.name, f.value_html, fs.value_source FROM account_profile_fields f
+      LEFT JOIN account_profile_field_sources fs ON fs.revision_id = f.revision_id AND fs.position = f.position
+      WHERE f.revision_id = r.id ORDER BY f.position
+    ) o
+  ) AS TEXT) AS fields,
+  CAST((
+    SELECT json_group_array(o.emoji_id)
+    FROM (SELECT e.emoji_id FROM account_profile_revision_emojis e WHERE e.revision_id = r.id ORDER BY e.emoji_id) o
+  ) AS TEXT) AS emoji_ids
+FROM account_profile_heads ph
+JOIN account_profile_revisions r ON r.id = ph.revision_id
+LEFT JOIN account_profile_revision_sources rs ON rs.revision_id = r.id
+WHERE ph.account_id = ?;
 
 -- name: ListAccountKeys :many
 SELECT id, account_id, key_id, algorithm, public_key_pem, fingerprint, created_at FROM account_keys
@@ -195,9 +206,3 @@ INSERT INTO account_profile_revision_sources (revision_id, note_source) VALUES (
 
 -- name: InsertProfileFieldSource :exec
 INSERT INTO account_profile_field_sources (revision_id, position, value_source) VALUES (?, ?, ?);
-
--- name: GetProfileRevisionSource :one
-SELECT note_source FROM account_profile_revision_sources WHERE revision_id = ?;
-
--- name: ListProfileFieldSources :many
-SELECT position, value_source FROM account_profile_field_sources WHERE revision_id = ? ORDER BY position;

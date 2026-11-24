@@ -9,29 +9,155 @@ package contentgen
 
 import (
 	"context"
+	"time"
 )
 
+const getStatusRevision = `-- name: GetStatusRevision :one
+
+
+SELECT r.id, r.status_id, r.seq, r.spoiler_text, r.sensitive, r.language, r.revised_at,
+  (SELECT coalesce(json_agg(json_build_object('language', b.language, 'content_html', b.content_html) ORDER BY b.language), '[]'::json)
+    FROM status_revision_bodies b WHERE b.revision_id = r.id)::json AS bodies,
+  (SELECT coalesce(json_agg(json_build_object('source_text', s.source_text, 'source_format', s.source_format)), '[]'::json)
+    FROM status_revision_sources s WHERE s.revision_id = r.id)::json AS sources,
+  (SELECT coalesce(json_agg(json_build_object('position', a.position, 'media_id', a.media_id, 'description', a.description) ORDER BY a.position), '[]'::json)
+    FROM status_revision_attachments a WHERE a.revision_id = r.id)::json AS attachments,
+  (SELECT coalesce(json_agg(m.account_id ORDER BY m.account_id), '[]'::json)
+    FROM status_revision_mentions m WHERE m.revision_id = r.id)::json AS mentions,
+  (SELECT coalesce(json_agg(t.tag_id ORDER BY t.tag_id), '[]'::json)
+    FROM status_revision_tags t WHERE t.revision_id = r.id)::json AS tags,
+  (SELECT coalesce(json_agg(e.emoji_id ORDER BY e.emoji_id), '[]'::json)
+    FROM status_revision_emojis e WHERE e.revision_id = r.id)::json AS emojis,
+  (SELECT coalesce(json_agg(json_build_object('id', p.id, 'multiple', p.multiple, 'hide_totals', p.hide_totals, 'closes_at', p.closes_at,
+      'options', (SELECT coalesce(json_agg(json_build_object('position', o.position, 'title', o.title) ORDER BY o.position), '[]'::json)
+        FROM poll_options o WHERE o.poll_id = p.id))), '[]'::json)
+    FROM polls p WHERE p.revision_id = r.id)::json AS polls,
+  (SELECT coalesce(json_agg(json_build_object('activity_uri', rm.activity_uri, 'html_policy_version', rm.html_policy_version,
+      'omitted_attachment_count', rm.omitted_attachment_count)), '[]'::json)
+    FROM remote_status_revisions rm WHERE rm.revision_id = r.id)::json AS remotes,
+  (SELECT coalesce(json_agg(json_build_object('title', ar.title, 'summary', ar.summary, 'summary_origin', ar.summary_origin)), '[]'::json)
+    FROM status_revision_articles ar WHERE ar.revision_id = r.id)::json AS articles,
+  (SELECT coalesce(json_agg(json_build_object('media_id', c.media_id, 'description', c.description)), '[]'::json)
+    FROM status_revision_article_covers c WHERE c.revision_id = r.id)::json AS article_covers,
+  (SELECT coalesce(json_agg(json_build_object('position', i.position, 'media_id', i.media_id, 'description', i.description) ORDER BY i.position), '[]'::json)
+    FROM status_revision_article_images i WHERE i.revision_id = r.id)::json AS article_images
+FROM status_revisions r WHERE r.id = $1::uuid
+`
+
+type GetStatusRevisionRow struct {
+	ID            string
+	StatusID      string
+	Seq           int32
+	SpoilerText   string
+	Sensitive     bool
+	Language      string
+	RevisedAt     time.Time
+	Bodies        []byte
+	Sources       []byte
+	Attachments   []byte
+	Mentions      []byte
+	Tags          []byte
+	Emojis        []byte
+	Polls         []byte
+	Remotes       []byte
+	Articles      []byte
+	ArticleCovers []byte
+	ArticleImages []byte
+}
+
+// SPDX-License-Identifier: AGPL-3.0-only
+// A revision with every part of it in one query (FindRevision), and the current revisions of many
+// statuses with theirs in one query (FindCurrentRevisions, for the pages that present many
+// statuses). Each part is a JSON array of its rows from a correlated subquery, in the order of the
+// part; a part of at most one row is an array of zero or one. A poll carries its options. The two
+// queries read the same parts; keep them alike.
+func (q *Queries) GetStatusRevision(ctx context.Context, id string) (GetStatusRevisionRow, error) {
+	row := q.db.QueryRow(ctx, getStatusRevision, id)
+	var i GetStatusRevisionRow
+	err := row.Scan(
+		&i.ID,
+		&i.StatusID,
+		&i.Seq,
+		&i.SpoilerText,
+		&i.Sensitive,
+		&i.Language,
+		&i.RevisedAt,
+		&i.Bodies,
+		&i.Sources,
+		&i.Attachments,
+		&i.Mentions,
+		&i.Tags,
+		&i.Emojis,
+		&i.Polls,
+		&i.Remotes,
+		&i.Articles,
+		&i.ArticleCovers,
+		&i.ArticleImages,
+	)
+	return i, err
+}
+
 const listCurrentStatusRevisions = `-- name: ListCurrentStatusRevisions :many
-
-
-SELECT r.id, r.status_id, r.seq, r.spoiler_text, r.sensitive, r.language, r.revised_at
+SELECT r.id, r.status_id, r.seq, r.spoiler_text, r.sensitive, r.language, r.revised_at,
+  (SELECT coalesce(json_agg(json_build_object('language', b.language, 'content_html', b.content_html) ORDER BY b.language), '[]'::json)
+    FROM status_revision_bodies b WHERE b.revision_id = r.id)::json AS bodies,
+  (SELECT coalesce(json_agg(json_build_object('source_text', s.source_text, 'source_format', s.source_format)), '[]'::json)
+    FROM status_revision_sources s WHERE s.revision_id = r.id)::json AS sources,
+  (SELECT coalesce(json_agg(json_build_object('position', a.position, 'media_id', a.media_id, 'description', a.description) ORDER BY a.position), '[]'::json)
+    FROM status_revision_attachments a WHERE a.revision_id = r.id)::json AS attachments,
+  (SELECT coalesce(json_agg(m.account_id ORDER BY m.account_id), '[]'::json)
+    FROM status_revision_mentions m WHERE m.revision_id = r.id)::json AS mentions,
+  (SELECT coalesce(json_agg(t.tag_id ORDER BY t.tag_id), '[]'::json)
+    FROM status_revision_tags t WHERE t.revision_id = r.id)::json AS tags,
+  (SELECT coalesce(json_agg(e.emoji_id ORDER BY e.emoji_id), '[]'::json)
+    FROM status_revision_emojis e WHERE e.revision_id = r.id)::json AS emojis,
+  (SELECT coalesce(json_agg(json_build_object('id', p.id, 'multiple', p.multiple, 'hide_totals', p.hide_totals, 'closes_at', p.closes_at,
+      'options', (SELECT coalesce(json_agg(json_build_object('position', o.position, 'title', o.title) ORDER BY o.position), '[]'::json)
+        FROM poll_options o WHERE o.poll_id = p.id))), '[]'::json)
+    FROM polls p WHERE p.revision_id = r.id)::json AS polls,
+  (SELECT coalesce(json_agg(json_build_object('activity_uri', rm.activity_uri, 'html_policy_version', rm.html_policy_version,
+      'omitted_attachment_count', rm.omitted_attachment_count)), '[]'::json)
+    FROM remote_status_revisions rm WHERE rm.revision_id = r.id)::json AS remotes,
+  (SELECT coalesce(json_agg(json_build_object('title', ar.title, 'summary', ar.summary, 'summary_origin', ar.summary_origin)), '[]'::json)
+    FROM status_revision_articles ar WHERE ar.revision_id = r.id)::json AS articles,
+  (SELECT coalesce(json_agg(json_build_object('media_id', c.media_id, 'description', c.description)), '[]'::json)
+    FROM status_revision_article_covers c WHERE c.revision_id = r.id)::json AS article_covers,
+  (SELECT coalesce(json_agg(json_build_object('position', i.position, 'media_id', i.media_id, 'description', i.description) ORDER BY i.position), '[]'::json)
+    FROM status_revision_article_images i WHERE i.revision_id = r.id)::json AS article_images
 FROM status_heads h JOIN status_revisions r ON r.id = h.revision_id
 WHERE h.status_id = ANY($1::uuid[]) ORDER BY r.status_id
 `
 
-// SPDX-License-Identifier: AGPL-3.0-only
-// The current revisions of many statuses and their parts, one query per part, for the pages that
-// present many statuses (FindCurrentRevisions). Each reads what the query of one revision of
-// content.sql and remote_status.sql reads, in the same order within a revision.
-func (q *Queries) ListCurrentStatusRevisions(ctx context.Context, ids []string) ([]StatusRevision, error) {
+type ListCurrentStatusRevisionsRow struct {
+	ID            string
+	StatusID      string
+	Seq           int32
+	SpoilerText   string
+	Sensitive     bool
+	Language      string
+	RevisedAt     time.Time
+	Bodies        []byte
+	Sources       []byte
+	Attachments   []byte
+	Mentions      []byte
+	Tags          []byte
+	Emojis        []byte
+	Polls         []byte
+	Remotes       []byte
+	Articles      []byte
+	ArticleCovers []byte
+	ArticleImages []byte
+}
+
+func (q *Queries) ListCurrentStatusRevisions(ctx context.Context, ids []string) ([]ListCurrentStatusRevisionsRow, error) {
 	rows, err := q.db.Query(ctx, listCurrentStatusRevisions, ids)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []StatusRevision{}
+	items := []ListCurrentStatusRevisionsRow{}
 	for rows.Next() {
-		var i StatusRevision
+		var i ListCurrentStatusRevisionsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.StatusID,
@@ -40,241 +166,18 @@ func (q *Queries) ListCurrentStatusRevisions(ctx context.Context, ids []string) 
 			&i.Sensitive,
 			&i.Language,
 			&i.RevisedAt,
+			&i.Bodies,
+			&i.Sources,
+			&i.Attachments,
+			&i.Mentions,
+			&i.Tags,
+			&i.Emojis,
+			&i.Polls,
+			&i.Remotes,
+			&i.Articles,
+			&i.ArticleCovers,
+			&i.ArticleImages,
 		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listPollOptionsOf = `-- name: ListPollOptionsOf :many
-SELECT poll_id, position, title FROM poll_options WHERE poll_id = ANY($1::uuid[]) ORDER BY poll_id, position
-`
-
-func (q *Queries) ListPollOptionsOf(ctx context.Context, ids []string) ([]PollOption, error) {
-	rows, err := q.db.Query(ctx, listPollOptionsOf, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []PollOption{}
-	for rows.Next() {
-		var i PollOption
-		if err := rows.Scan(&i.PollID, &i.Position, &i.Title); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listPollsOfRevisions = `-- name: ListPollsOfRevisions :many
-SELECT id, revision_id, multiple, hide_totals, closes_at FROM polls WHERE revision_id = ANY($1::uuid[]) ORDER BY revision_id
-`
-
-func (q *Queries) ListPollsOfRevisions(ctx context.Context, ids []string) ([]Poll, error) {
-	rows, err := q.db.Query(ctx, listPollsOfRevisions, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Poll{}
-	for rows.Next() {
-		var i Poll
-		if err := rows.Scan(
-			&i.ID,
-			&i.RevisionID,
-			&i.Multiple,
-			&i.HideTotals,
-			&i.ClosesAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listRemoteStatusRevisionsOf = `-- name: ListRemoteStatusRevisionsOf :many
-SELECT revision_id, activity_uri, html_policy_version, omitted_attachment_count FROM remote_status_revisions
-WHERE revision_id = ANY($1::uuid[]) ORDER BY revision_id
-`
-
-func (q *Queries) ListRemoteStatusRevisionsOf(ctx context.Context, ids []string) ([]RemoteStatusRevision, error) {
-	rows, err := q.db.Query(ctx, listRemoteStatusRevisionsOf, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []RemoteStatusRevision{}
-	for rows.Next() {
-		var i RemoteStatusRevision
-		if err := rows.Scan(
-			&i.RevisionID,
-			&i.ActivityUri,
-			&i.HtmlPolicyVersion,
-			&i.OmittedAttachmentCount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listStatusRevisionAttachmentsOf = `-- name: ListStatusRevisionAttachmentsOf :many
-SELECT revision_id, position, media_id, description FROM status_revision_attachments
-WHERE revision_id = ANY($1::uuid[]) ORDER BY revision_id, position
-`
-
-func (q *Queries) ListStatusRevisionAttachmentsOf(ctx context.Context, ids []string) ([]StatusRevisionAttachment, error) {
-	rows, err := q.db.Query(ctx, listStatusRevisionAttachmentsOf, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []StatusRevisionAttachment{}
-	for rows.Next() {
-		var i StatusRevisionAttachment
-		if err := rows.Scan(
-			&i.RevisionID,
-			&i.Position,
-			&i.MediaID,
-			&i.Description,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listStatusRevisionBodiesOf = `-- name: ListStatusRevisionBodiesOf :many
-SELECT revision_id, language, content_html FROM status_revision_bodies WHERE revision_id = ANY($1::uuid[]) ORDER BY revision_id, language
-`
-
-func (q *Queries) ListStatusRevisionBodiesOf(ctx context.Context, ids []string) ([]StatusRevisionBody, error) {
-	rows, err := q.db.Query(ctx, listStatusRevisionBodiesOf, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []StatusRevisionBody{}
-	for rows.Next() {
-		var i StatusRevisionBody
-		if err := rows.Scan(&i.RevisionID, &i.Language, &i.ContentHtml); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listStatusRevisionEmojisOf = `-- name: ListStatusRevisionEmojisOf :many
-SELECT revision_id, emoji_id FROM status_revision_emojis WHERE revision_id = ANY($1::uuid[]) ORDER BY revision_id, emoji_id
-`
-
-func (q *Queries) ListStatusRevisionEmojisOf(ctx context.Context, ids []string) ([]StatusRevisionEmoji, error) {
-	rows, err := q.db.Query(ctx, listStatusRevisionEmojisOf, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []StatusRevisionEmoji{}
-	for rows.Next() {
-		var i StatusRevisionEmoji
-		if err := rows.Scan(&i.RevisionID, &i.EmojiID); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listStatusRevisionMentionsOf = `-- name: ListStatusRevisionMentionsOf :many
-SELECT revision_id, account_id FROM status_revision_mentions WHERE revision_id = ANY($1::uuid[]) ORDER BY revision_id, account_id
-`
-
-func (q *Queries) ListStatusRevisionMentionsOf(ctx context.Context, ids []string) ([]StatusRevisionMention, error) {
-	rows, err := q.db.Query(ctx, listStatusRevisionMentionsOf, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []StatusRevisionMention{}
-	for rows.Next() {
-		var i StatusRevisionMention
-		if err := rows.Scan(&i.RevisionID, &i.AccountID); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listStatusRevisionSourcesOf = `-- name: ListStatusRevisionSourcesOf :many
-SELECT revision_id, source_text, source_format FROM status_revision_sources WHERE revision_id = ANY($1::uuid[]) ORDER BY revision_id
-`
-
-func (q *Queries) ListStatusRevisionSourcesOf(ctx context.Context, ids []string) ([]StatusRevisionSource, error) {
-	rows, err := q.db.Query(ctx, listStatusRevisionSourcesOf, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []StatusRevisionSource{}
-	for rows.Next() {
-		var i StatusRevisionSource
-		if err := rows.Scan(&i.RevisionID, &i.SourceText, &i.SourceFormat); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listStatusRevisionTagsOf = `-- name: ListStatusRevisionTagsOf :many
-SELECT revision_id, tag_id FROM status_revision_tags WHERE revision_id = ANY($1::uuid[]) ORDER BY revision_id, tag_id
-`
-
-func (q *Queries) ListStatusRevisionTagsOf(ctx context.Context, ids []string) ([]StatusRevisionTag, error) {
-	rows, err := q.db.Query(ctx, listStatusRevisionTagsOf, ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []StatusRevisionTag{}
-	for rows.Next() {
-		var i StatusRevisionTag
-		if err := rows.Scan(&i.RevisionID, &i.TagID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

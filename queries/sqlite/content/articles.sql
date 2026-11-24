@@ -15,16 +15,6 @@ INSERT INTO status_revision_article_covers (revision_id, media_id, description) 
 -- name: InsertStatusRevisionArticleImage :exec
 INSERT INTO status_revision_article_images (revision_id, position, media_id, description) VALUES (?, ?, ?, ?);
 
--- name: GetStatusRevisionArticle :one
-SELECT revision_id, title, summary, summary_origin FROM status_revision_articles WHERE revision_id = ?;
-
--- name: GetStatusRevisionArticleCover :one
-SELECT revision_id, media_id, description FROM status_revision_article_covers WHERE revision_id = ?;
-
--- name: ListStatusRevisionArticleImages :many
-SELECT revision_id, position, media_id, description FROM status_revision_article_images
-WHERE revision_id = ? ORDER BY position;
-
 -- name: ListLiveArticleIDsOfAuthor :many
 -- The articles of an author that are not deleted, newest first, below an ID ('' for the
 -- first page): the articles of a profile (ADR-0160 section 11).
@@ -34,21 +24,6 @@ WHERE a.author_account_id = sqlc.arg(author_account_id)
   AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = a.status_id)
 ORDER BY a.status_id DESC
 LIMIT sqlc.arg(lim);
-
--- The article children of many revisions, read as the queries above read one (FindCurrentRevisions).
--- The lists are JSON arrays.
-
--- name: ListStatusRevisionArticlesOf :many
-SELECT revision_id, title, summary, summary_origin FROM status_revision_articles
-WHERE revision_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY revision_id;
-
--- name: ListStatusRevisionArticleCoversOf :many
-SELECT revision_id, media_id, description FROM status_revision_article_covers
-WHERE revision_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY revision_id;
-
--- name: ListStatusRevisionArticleImagesOf :many
-SELECT revision_id, position, media_id, description FROM status_revision_article_images
-WHERE revision_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY revision_id, position;
 
 -- The Purge* statements of the article rows of deleted statuses (@ids), with those of retention.sql.
 
