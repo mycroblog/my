@@ -22,6 +22,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/translator/libretranslate"
 	"github.com/mycroblog/my/internal/adapter/webpush"
+	"github.com/mycroblog/my/internal/app/blob"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/interface/mailevents"
 )
@@ -461,6 +462,12 @@ var schema = []field{
 		set:          func(c *Config, v string) { c.BlobS3Bucket = v },
 	},
 	{
+		key:   "blob_s3_prefix",
+		doc:   "Prefix of the name of every object that `blob = s3` writes and reads in its bucket, so that several instances or other applications share the bucket: empty, or segments such as `tenant-a/` that end with `/`. Give each instance its own; the URLs of the media do not change with it. Changing it later leaves the objects under the old names: copy them under the new prefix first.",
+		check: checkBlobPrefix,
+		set:   func(c *Config, v string) { c.BlobS3Prefix = v },
+	},
+	{
 		key:   "blob_s3_endpoint",
 		doc:   "Origin of the S3-compatible API of `blob = s3`, such as `https://<account>.r2.cloudflarestorage.com` (Cloudflare R2), `https://storage.googleapis.com` (Google Cloud Storage with an HMAC key), or `http://minio:9000`. Empty uses Amazon S3's endpoint of `blob_s3_region`. Use `https` unless the server is on a private network that you trust: the requests carry the blobs.",
 		check: checkOrigin,
@@ -501,6 +508,12 @@ var schema = []field{
 		requiredWhen: "when `blob = gcs`",
 		check:        checkS3Bucket,
 		set:          func(c *Config, v string) { c.BlobGCSBucket = v },
+	},
+	{
+		key:   "blob_gcs_prefix",
+		doc:   "Prefix of the name of every object that `blob = gcs` writes and reads in its bucket, so that several instances or other applications share the bucket: empty, or segments such as `tenant-a/` that end with `/`. Give each instance its own; the URLs of the media do not change with it. Changing it later leaves the objects under the old names: copy them under the new prefix first.",
+		check: checkBlobPrefix,
+		set:   func(c *Config, v string) { c.BlobGCSPrefix = v },
 	},
 	{
 		key:    "media_origin",
@@ -2156,6 +2169,14 @@ func checkAWSRegion(v string) error {
 // s3Bucket matches a bucket name of Amazon S3, R2, and Cloud Storage: 3 to 222 lower-case
 // letters, digits, dots, hyphens, and underscores, starting and ending with a letter or digit.
 var s3Bucket = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{1,220}[a-z0-9]$`)
+
+// checkBlobPrefix accepts the prefix of the object names of a blob store.
+func checkBlobPrefix(v string) error {
+	if err := blob.ValidatePrefix(v); err != nil {
+		return errors.New("must be empty or segments of letters, digits, `.`, `_`, and `-` that end with `/` (`tenant-a/`), at most 256 bytes")
+	}
+	return nil
+}
 
 // checkS3Bucket accepts the name of a bucket.
 func checkS3Bucket(v string) error {

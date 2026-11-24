@@ -420,3 +420,59 @@ func blobBuildsPublicURLs(t *testing.T, s blob.Store) {
 		t.Errorf("PublicURL(%q) = %q, want an http(s) URL ending in /%s", key, u, key)
 	}
 }
+
+// SharedBucketFactory returns two new stores on one empty bucket, with different object name
+// prefixes. The factory registers the cleanup of everything it creates with t.Cleanup.
+type SharedBucketFactory func(t *testing.T) (a, b blob.Store)
+
+// SharedBucketContract verifies that two stores of an adapter that share a bucket under
+// different prefixes keep their blobs apart: the same key holds a blob of each, and each
+// store reads, overwrites, and deletes only its own.
+func SharedBucketContract(t *testing.T, newStores SharedBucketFactory) {
+	t.Helper()
+	ctx := t.Context()
+	a, b := newStores(t)
+	const key = "media/01/full.jpg"
+	for _, w := range []struct {
+		s    blob.Store
+		data string
+	}{{a, "a"}, {b, "b"}} {
+		if _, err := w.s.Put(ctx, key, strings.NewReader(w.data), blob.PutOptions{ContentType: "image/jpeg"}); err != nil {
+			t.Fatalf("Put %q: %v", w.data, err)
+		}
+	}
+	read := func(s blob.Store) string {
+		t.Helper()
+		rc, _, err := s.Get(ctx, key)
+		if err != nil {
+			t.Fatalf("Get: %v", err)
+		}
+		defer func() { _ = rc.Close() }()
+		got, err := io.ReadAll(rc)
+		if err != nil {
+			t.Fatalf("read: %v", err)
+		}
+		return string(got)
+	}
+	if ga, gb := read(a), read(b); ga != "a" || gb != "b" {
+		t.Fatalf("the stores read %q and %q, want their own a and b", ga, gb)
+	}
+	if _, err := a.Put(ctx, "uploads/only-a", strings.NewReader("x"), blob.PutOptions{}); err != nil {
+		t.Fatalf("Put only-a: %v", err)
+	}
+	if _, err := b.Head(ctx, "uploads/only-a"); !errors.Is(err, blob.ErrNotFound) {
+		t.Errorf("Head of the other store's blob = %v, want ErrNotFound", err)
+	}
+	if err := a.Delete(ctx, key); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	if _, err := a.Head(ctx, key); !errors.Is(err, blob.ErrNotFound) {
+		t.Errorf("Head after Delete = %v, want ErrNotFound", err)
+	}
+	if got := read(b); got != "b" {
+		t.Errorf("after the other store deleted its blob, the store reads %q, want b", got)
+	}
+	if ua, ub := a.PublicURL(key), b.PublicURL(key); ua != ub {
+		t.Errorf("PublicURL differs with the prefix: %q and %q", ua, ub)
+	}
+}

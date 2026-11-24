@@ -83,6 +83,10 @@
     "env": "MY_BLOB_GCS_BUCKET",
     "secret": false
   },
+  "blob_gcs_prefix": {
+    "env": "MY_BLOB_GCS_PREFIX",
+    "secret": false
+  },
   "blob_s3_access_key_id": {
     "env": "MY_BLOB_S3_ACCESS_KEY_ID",
     "secret": false
@@ -97,6 +101,10 @@
   },
   "blob_s3_path_style": {
     "env": "MY_BLOB_S3_PATH_STYLE",
+    "secret": false
+  },
+  "blob_s3_prefix": {
+    "env": "MY_BLOB_S3_PREFIX",
     "secret": false
   },
   "blob_s3_region": {
