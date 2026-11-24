@@ -6,8 +6,10 @@
 -- name: DeleteAccountSearchTerms :exec
 DELETE FROM account_search_terms WHERE account_id = $1;
 
--- name: InsertAccountSearchTerm :exec
-INSERT INTO account_search_terms (account_id, kind, term, is_local) VALUES ($1, $2, $3, $4)
+-- InsertAccountSearchTerms inserts the terms of one account, the i-th of each array making a row.
+-- name: InsertAccountSearchTerms :exec
+INSERT INTO account_search_terms (account_id, kind, term, is_local)
+SELECT sqlc.arg(account_id)::uuid, unnest(sqlc.arg(kinds)::text[]), unnest(sqlc.arg(terms)::text[]), unnest(sqlc.arg(is_locals)::boolean[])
 ON CONFLICT (account_id, kind, term) DO NOTHING;
 
 -- name: DeleteAllAccountSearchTerms :exec

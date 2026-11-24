@@ -6,8 +6,12 @@
 -- name: DeleteAccountSearchTerms :exec
 DELETE FROM account_search_terms WHERE account_id = ?;
 
--- name: InsertAccountSearchTerm :exec
-INSERT INTO account_search_terms (account_id, kind, term, is_local) VALUES (?, ?, ?, ?)
+-- InsertAccountSearchTerms inserts the terms of one account, a JSON array of {kind, term, local}.
+-- WHERE true keeps the parser from reading ON CONFLICT as a join constraint.
+-- name: InsertAccountSearchTerms :exec
+INSERT INTO account_search_terms (account_id, kind, term, is_local)
+SELECT CAST(sqlc.arg(account_id) AS TEXT), value ->> '$.kind', value ->> '$.term', CAST(value ->> '$.local' AS INTEGER)
+FROM json_each(CAST(sqlc.arg(terms) AS TEXT)) WHERE true
 ON CONFLICT (account_id, kind, term) DO NOTHING;
 
 -- name: DeleteAllAccountSearchTerms :exec
