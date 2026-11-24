@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Checks small builds as `web:build-check` checks the app's, and proves that the check passes a sound build and names
-// what an unsound one breaks: a font without its license notice, and Lexical in a chunk an entry loads with the page.
+// what an unsound one breaks: a font without its license notice, an npm package without its license's identifier or
+// text, and Lexical in a chunk an entry loads with the page.
 
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -9,6 +10,10 @@ import { join } from "node:path";
 import { buildProblems } from "./build-check";
 
 const ofl = "Copyright 2022 The Noto Project Authors\n\nSIL OPEN FONT LICENSE Version 1.1 - 26 February 2007\n";
+
+/** Vite's notices of the npm packages (build.license), with the sections given. */
+const npmNotices = (sections: string) =>
+  `# Licenses\n\nThe app bundles dependencies which contain the following licenses:\n\n${sections}`;
 
 let dir = "";
 const write = (path: string, content: string) => {
@@ -28,6 +33,8 @@ beforeEach(() => {
     write(`assets/${font}`, "");
   }
   for (const license of ["OFL.txt", "OFL-NotoSansCJK.txt", "OFL-NotoSans.txt"]) write(`licenses/${license}`, ofl);
+  write("licenses/npm-packages.md", npmNotices("## react - 19.2.0 (MIT)\n\nMIT License\n"));
+  write("licenses/npm-packages-sw.md", npmNotices("## workbox-core - 7.3.0 (MIT)\n\nCopyright 2018 Google LLC\n"));
   write("assets/index.js", 'import "./shared.js"; import("./editor.js");');
   write("assets/shared.js", "export const answer = 42;");
   write("assets/editor.js", 'root.setAttribute("data-lexical-editor", "true");');
@@ -42,6 +49,21 @@ beforeEach(() => {
 });
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
+});
+
+test("an npm package without its license's identifier or text, or a missing notices file, is a problem", () => {
+  write(
+    "licenses/npm-packages.md",
+    npmNotices(
+      "## react - 19.2.0 (MIT)\n\nMIT License\n\n## left-pad - 1.3.0\n\nWTFPL\n\n## @scope/no-text - 2.0.0 (ISC)\n",
+    ),
+  );
+  rmSync(join(dir, "licenses/npm-packages-sw.md"));
+  expect(buildProblems(dir)).toEqual([
+    "left-pad@1.3.0 in licenses/npm-packages.md has no license identifier: give it a known license or replace it",
+    "@scope/no-text@2.0.0 in licenses/npm-packages.md has no license text: give it its license file or replace it",
+    "licenses/npm-packages-sw.md is missing: vite.config.ts must write the notices of the npm packages there",
+  ]);
 });
 
 test("a build with the license of each font and Lexical in a chunk of its own is sound", () => {

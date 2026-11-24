@@ -15,6 +15,9 @@ internal/interface/web/dist/*
 !schema/
 !scripts/install-atlas.sh
 !scripts/check-release-build.sh
+# The license notices of the image: the server's license and the script that writes the Go modules' notices.
+!LICENSE
+!scripts/go-notices.sh
 # The web client's build (the stage web): go-task, the Bun workspace, and its members. Of web/docs, which the build
 # does not read, only the manifest that the lockfile names.
 !scripts/task.sh

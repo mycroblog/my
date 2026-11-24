@@ -90,7 +90,7 @@ Docker の構成は次のとおり。
 - `linux/amd64` と `linux/arm64`。スローな検査がすでに両方をビルドしている。
 - **`GO_TAGS` は空の 1 種類だけ**（すべてのアダプタ）。同じイメージがどのホスティングでも動くことを優先する。アダプタを外したイメージは提供しない（§2）。
 - `e2e_fakes` は 3 か所で止める: `Dockerfile` のタグの検査、`Dockerfile` のバイナリの検査、公開の前に各プラットフォームのイメージからバイナリを取り出して走らせる `scripts/check-release-build.sh`。
-- バイナリは **`v0.1.0` では Release に添付しない。** 今の配布の手順はコンテナを前提にしていて、添付すると手順や文書も増える。あとから足しても互換を壊さない。足すときはイメージから取り出す。
+- **バイナリは両プラットフォームの tar.gz で Release に添付する。** 中身は `my`・`LICENSE`・§10 の表示・README で、イメージから取り出す。生のバイナリ（表示を同梱できない）と他の OS（検査していない）は出さない。
 - ホスティング: Compose と Kubernetes はそのまま、Cloud Run は公開の `ghcr.io` を直接使える。AWS は ECR へコピーする（pull through cache も使える）。
 
 ### 8. サプライチェーン
@@ -138,6 +138,7 @@ Docker の構成は次のとおり。
 - **`source_url` の既定を版のソースに向ける。** 設定がなく、埋め込まれた版がリリースのタグの形（`vX.Y.Z`、`vX.Y.Z-pre`）なら、`GET /instance` の `source_url` は `https://github.com/mycroblog/my/tree/<version>` を返す。それ以外（`git describe` の途中の形、`dev`）はリポジトリの根を返す。
   - 設定で変えられること、改変版の運営者は自分のソースを指すことは変わらない。NodeInfo の `software.repository` はリポジトリなので根のままとする。
   - タグが消えると指す先も消えるので、Immutable releases を有効にする（Release のあるタグを消せなくなる）。
+- **イメージは `/usr/share/doc/my/` に `LICENSE` と第三者のライセンス表示（`licenses/`）を持つ。** MIT などが求める。ビルドが依存から作り、特定できない依存があれば失敗する。
 
 ### 11. 覆す条件
 
