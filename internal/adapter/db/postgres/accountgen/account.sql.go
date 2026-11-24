@@ -141,6 +141,74 @@ func (q *Queries) GetAccountHandleByName(ctx context.Context, arg GetAccountHand
 	return i, err
 }
 
+const getCurrentProfile = `-- name: GetCurrentProfile :one
+SELECT r.id, r.account_id, r.seq, r.display_name, r.note_html, r.locked, r.bot, r.discoverable, r.indexable, r.ai_opt_out,
+  r.avatar_media_id, r.header_media_id, r.revised_at, r.feed, r.follows_visibility, rs.note_source,
+  COALESCE((
+    SELECT json_agg(json_build_object('position', f.position, 'name', f.name, 'value_html', f.value_html, 'value_source', fs.value_source) ORDER BY f.position)
+    FROM account_profile_fields f
+    LEFT JOIN account_profile_field_sources fs ON fs.revision_id = f.revision_id AND fs.position = f.position
+    WHERE f.revision_id = r.id
+  ), '[]'::json)::text AS fields,
+  COALESCE((
+    SELECT json_agg(e.emoji_id ORDER BY e.emoji_id) FROM account_profile_revision_emojis e WHERE e.revision_id = r.id
+  ), '[]'::json)::text AS emoji_ids
+FROM account_profile_heads ph
+JOIN account_profile_revisions r ON r.id = ph.revision_id
+LEFT JOIN account_profile_revision_sources rs ON rs.revision_id = r.id
+WHERE ph.account_id = $1
+`
+
+type GetCurrentProfileRow struct {
+	ID                string
+	AccountID         string
+	Seq               int32
+	DisplayName       string
+	NoteHtml          string
+	Locked            bool
+	Bot               bool
+	Discoverable      bool
+	Indexable         bool
+	AiOptOut          bool
+	AvatarMediaID     *string
+	HeaderMediaID     *string
+	RevisedAt         time.Time
+	Feed              string
+	FollowsVisibility string
+	NoteSource        *string
+	Fields            string
+	EmojiIds          string
+}
+
+// GetCurrentProfile reads the revision that an account's profile head points at with its parts in
+// one query, as ListActorsByIDs reads the profile of each account: its note source is NULL
+// without one, and its fields (with the source of each value) and custom emoji are JSON arrays.
+func (q *Queries) GetCurrentProfile(ctx context.Context, accountID string) (GetCurrentProfileRow, error) {
+	row := q.db.QueryRow(ctx, getCurrentProfile, accountID)
+	var i GetCurrentProfileRow
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.Seq,
+		&i.DisplayName,
+		&i.NoteHtml,
+		&i.Locked,
+		&i.Bot,
+		&i.Discoverable,
+		&i.Indexable,
+		&i.AiOptOut,
+		&i.AvatarMediaID,
+		&i.HeaderMediaID,
+		&i.RevisedAt,
+		&i.Feed,
+		&i.FollowsVisibility,
+		&i.NoteSource,
+		&i.Fields,
+		&i.EmojiIds,
+	)
+	return i, err
+}
+
 const getInstanceActor = `-- name: GetInstanceActor :one
 SELECT id, uri, domain, actor_type, created_at FROM accounts
 WHERE domain = '' AND actor_type = 'application'
@@ -281,46 +349,6 @@ func (q *Queries) GetProfileHead(ctx context.Context, accountID string) (GetProf
 	var i GetProfileHeadRow
 	err := row.Scan(&i.AccountID, &i.RevisionID, &i.Seq)
 	return i, err
-}
-
-const getProfileRevision = `-- name: GetProfileRevision :one
-SELECT id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at, feed, follows_visibility
-FROM account_profile_revisions WHERE id = $1
-`
-
-func (q *Queries) GetProfileRevision(ctx context.Context, id string) (AccountProfileRevision, error) {
-	row := q.db.QueryRow(ctx, getProfileRevision, id)
-	var i AccountProfileRevision
-	err := row.Scan(
-		&i.ID,
-		&i.AccountID,
-		&i.Seq,
-		&i.DisplayName,
-		&i.NoteHtml,
-		&i.Locked,
-		&i.Bot,
-		&i.Discoverable,
-		&i.Indexable,
-		&i.AiOptOut,
-		&i.AvatarMediaID,
-		&i.HeaderMediaID,
-		&i.RevisedAt,
-		&i.Feed,
-		&i.FollowsVisibility,
-	)
-	return i, err
-}
-
-const getProfileRevisionSource = `-- name: GetProfileRevisionSource :one
-SELECT note_source FROM account_profile_revision_sources WHERE revision_id = $1
-`
-
-func (q *Queries) GetProfileRevisionSource(ctx context.Context, revisionID string) (string, error) {
-	row := q.db.QueryRow(ctx, getProfileRevisionSource, revisionID)
-	var note_source string
-	err := row.Scan(&note_source)
-	return note_source, err
 }
 
 const insertAccount = `-- name: InsertAccount :exec
@@ -905,65 +933,6 @@ func (q *Queries) ListLocalAccounts(ctx context.Context) ([]LocalAccount, error)
 	return items, nil
 }
 
-const listProfileFieldSources = `-- name: ListProfileFieldSources :many
-SELECT position, value_source FROM account_profile_field_sources WHERE revision_id = $1 ORDER BY position
-`
-
-type ListProfileFieldSourcesRow struct {
-	Position    int32
-	ValueSource string
-}
-
-func (q *Queries) ListProfileFieldSources(ctx context.Context, revisionID string) ([]ListProfileFieldSourcesRow, error) {
-	rows, err := q.db.Query(ctx, listProfileFieldSources, revisionID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListProfileFieldSourcesRow{}
-	for rows.Next() {
-		var i ListProfileFieldSourcesRow
-		if err := rows.Scan(&i.Position, &i.ValueSource); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listProfileFields = `-- name: ListProfileFields :many
-SELECT revision_id, position, name, value_html FROM account_profile_fields
-WHERE revision_id = $1 ORDER BY position
-`
-
-func (q *Queries) ListProfileFields(ctx context.Context, revisionID string) ([]AccountProfileField, error) {
-	rows, err := q.db.Query(ctx, listProfileFields, revisionID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []AccountProfileField{}
-	for rows.Next() {
-		var i AccountProfileField
-		if err := rows.Scan(
-			&i.RevisionID,
-			&i.Position,
-			&i.Name,
-			&i.ValueHtml,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listProfileHeads = `-- name: ListProfileHeads :many
 SELECT h.account_id, h.revision_id, r.seq
 FROM account_profile_heads h JOIN account_profile_revisions r ON r.id = h.revision_id
@@ -989,30 +958,6 @@ func (q *Queries) ListProfileHeads(ctx context.Context) ([]ListProfileHeadsRow, 
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listProfileRevisionEmojis = `-- name: ListProfileRevisionEmojis :many
-SELECT emoji_id FROM account_profile_revision_emojis WHERE revision_id = $1 ORDER BY emoji_id
-`
-
-func (q *Queries) ListProfileRevisionEmojis(ctx context.Context, revisionID string) ([]string, error) {
-	rows, err := q.db.Query(ctx, listProfileRevisionEmojis, revisionID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []string{}
-	for rows.Next() {
-		var emoji_id string
-		if err := rows.Scan(&emoji_id); err != nil {
-			return nil, err
-		}
-		items = append(items, emoji_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

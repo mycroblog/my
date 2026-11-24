@@ -112,8 +112,8 @@ type Repository interface {
 	ExistingAccountIDs(ctx context.Context, ids []string) ([]string, error)
 	// FindActorParts reads the parts of the actors of ids that FindAccount, FindLocalAccount,
 	// FindHandleOf, FindCurrentProfile, ListKeys, and FindLifecycleState read of one, with one
-	// query per part whatever the number of ids. An ID without an account, or without a part,
-	// has no entry in that part's map.
+	// query whatever the number of ids. An ID without an account, or without a part, has no entry
+	// in that part's map.
 	FindActorParts(ctx context.Context, ids []string) (ActorParts, error)
 	// FindAccounts returns the accounts of ids that exist, by ID, as FindAccount returns one, with
 	// one query.
@@ -199,6 +199,8 @@ type Repository interface {
 // ADR-0060). Each one reads as the method of the same name without Tx does.
 type TxReads interface {
 	FindAccountTx(ctx context.Context, tx uow.Tx, id string) (account.Account, error)
+	// FindActorPartsTx is FindActorParts inside tx.
+	FindActorPartsTx(ctx context.Context, tx uow.Tx, ids []string) (ActorParts, error)
 	FindInstanceActorTx(ctx context.Context, tx uow.Tx) (account.Account, error)
 	FindRemoteHeadTx(ctx context.Context, tx uow.Tx, accountID string) (account.RemoteHead, error)
 	FindLocalAccountTx(ctx context.Context, tx uow.Tx, accountID string) (account.LocalAccount, error)

@@ -482,15 +482,15 @@ func (a Actor) AssertionKey() (account.Key, bool) {
 
 // FindByID returns the actor with an account ID. It fails with ErrNotFound when there is none.
 func (s *Service) FindByID(ctx context.Context, id string) (Actor, error) {
-	a, err := s.d.Repository.FindAccount(ctx, id)
+	parts, err := s.d.Repository.FindActorParts(ctx, []string{id})
 	if err != nil {
 		return Actor{}, err
 	}
-	return s.actor(ctx, a)
+	return actorIn(parts, id)
 }
 
 // FindByIDs returns the accounts of ids that exist, by ID, as FindByID returns one: with one
-// query per part of an actor whatever the number of ids (Repository.FindActorParts).
+// query whatever the number of ids (Repository.FindActorParts).
 func (s *Service) FindByIDs(ctx context.Context, ids []string) (map[string]Actor, error) {
 	out := make(map[string]Actor, len(ids))
 	if len(ids) == 0 {
@@ -500,9 +500,8 @@ func (s *Service) FindByIDs(ctx context.Context, ids []string) (map[string]Actor
 	if err != nil {
 		return nil, err
 	}
-	reads := partReads(parts)
 	for id, a := range parts.Accounts {
-		actor, err := actorOf(ctx, reads, a)
+		actor, err := actorOf(parts, a)
 		if err != nil {
 			return nil, err
 		}
@@ -644,7 +643,7 @@ func (s *Service) FindByURI(ctx context.Context, uri string) (Actor, error) {
 }
 
 // FindByURIs returns the actors of uris that exist, by URI, as FindByURI returns one, with one
-// query per part of an actor whatever the number of uris.
+// query for the accounts and one for their actors whatever the number of uris.
 func (s *Service) FindByURIs(ctx context.Context, uris []string) (map[string]Actor, error) {
 	accounts, err := s.d.Repository.FindAccountsByURIs(ctx, uris)
 	if err != nil {
@@ -695,8 +694,7 @@ func (s *Service) ProfileIndexable(ctx context.Context, id string) (bool, error)
 	return actor.Profile != nil && actor.Profile.Indexable, nil
 }
 
-// ProfilesIndexable reports ProfileIndexable of each of ids, by account, with one query per part
-// of an actor.
+// ProfilesIndexable reports ProfileIndexable of each of ids, by account, with one query.
 func (s *Service) ProfilesIndexable(ctx context.Context, ids []string) (map[string]bool, error) {
 	actors, err := s.FindByIDs(ctx, ids)
 	if err != nil {
@@ -809,7 +807,7 @@ type HandleQuery struct {
 }
 
 // FindByHandles returns the actors of the handles of queries that exist, by query, as
-// FindByHandle returns each, with one query for the handles and one per part of an actor.
+// FindByHandle returns each, with one query for the handles and one for their actors.
 func (s *Service) FindByHandles(ctx context.Context, queries []HandleQuery) (map[HandleQuery]Actor, error) {
 	names := make([]HandleName, len(queries))
 	for i, q := range queries {
@@ -853,92 +851,40 @@ func (s *Service) InstanceActorTx(ctx context.Context, tx uow.Tx) (Actor, error)
 	if err != nil {
 		return Actor{}, err
 	}
-	return actorOf(ctx, txReads{repo: s.d.Repository, tx: tx}, a)
+	parts, err := s.d.Repository.FindActorPartsTx(ctx, tx, []string{a.ID})
+	if err != nil {
+		return Actor{}, err
+	}
+	return actorIn(parts, a.ID)
 }
 
+// actor returns the actor of a, with its parts read by one query (Repository.FindActorParts).
 func (s *Service) actor(ctx context.Context, a account.Account) (Actor, error) {
-	return actorOf(ctx, s.d.Repository, a)
-}
-
-// actorReads are the reads of an actor's parts: those of the repository outside transactions,
-// or those of txReads in a transaction.
-type actorReads interface {
-	FindLocalAccount(ctx context.Context, accountID string) (account.LocalAccount, error)
-	FindHandleOf(ctx context.Context, accountID string) (account.Handle, error)
-	FindCurrentProfile(ctx context.Context, accountID string) (account.ProfileRevision, error)
-	ListKeys(ctx context.Context, accountID string) ([]account.Key, error)
-	FindLifecycleState(ctx context.Context, accountID string) (account.LifecycleState, error)
-}
-
-// partReads reads an actor's parts from those that FindActorParts read; a part that is not there
-// fails with ErrNotFound, as a read of one account does.
-type partReads ActorParts
-
-func (p partReads) FindLocalAccount(_ context.Context, accountID string) (account.LocalAccount, error) {
-	return partOf(p.Locals, accountID, "local account")
-}
-
-func (p partReads) FindHandleOf(_ context.Context, accountID string) (account.Handle, error) {
-	return partOf(p.Handles, accountID, "handle")
-}
-
-func (p partReads) FindCurrentProfile(_ context.Context, accountID string) (account.ProfileRevision, error) {
-	return partOf(p.Profiles, accountID, "profile")
-}
-
-func (p partReads) ListKeys(_ context.Context, accountID string) ([]account.Key, error) {
-	if keys := p.Keys[accountID]; keys != nil {
-		return keys, nil
+	parts, err := s.d.Repository.FindActorParts(ctx, []string{a.ID})
+	if err != nil {
+		return Actor{}, err
 	}
-	return []account.Key{}, nil // as the repository's ListKeys of an account without keys
+	return actorIn(parts, a.ID)
 }
 
-func (p partReads) FindLifecycleState(_ context.Context, accountID string) (account.LifecycleState, error) {
-	return partOf(p.Lifecycle, accountID, "lifecycle state")
-}
-
-func partOf[T any](m map[string]T, accountID, what string) (T, error) {
-	v, ok := m[accountID]
+// actorIn returns the actor of the account id among parts; it fails with ErrNotFound when parts
+// have no such account.
+func actorIn(parts ActorParts, id string) (Actor, error) {
+	a, ok := parts.Accounts[id]
 	if !ok {
-		return v, fmt.Errorf("%s of %s: %w", what, accountID, ErrNotFound)
+		return Actor{}, fmt.Errorf("account %s: %w", id, ErrNotFound)
 	}
-	return v, nil
-}
-
-// txReads reads an actor's parts in a transaction.
-type txReads struct {
-	repo Repository
-	tx   uow.Tx
-}
-
-func (r txReads) FindLocalAccount(ctx context.Context, accountID string) (account.LocalAccount, error) {
-	return r.repo.FindLocalAccountTx(ctx, r.tx, accountID)
-}
-
-func (r txReads) FindHandleOf(ctx context.Context, accountID string) (account.Handle, error) {
-	return r.repo.FindHandleOfTx(ctx, r.tx, accountID)
-}
-
-func (r txReads) FindCurrentProfile(ctx context.Context, accountID string) (account.ProfileRevision, error) {
-	return r.repo.FindCurrentProfileTx(ctx, r.tx, accountID)
-}
-
-func (r txReads) ListKeys(ctx context.Context, accountID string) ([]account.Key, error) {
-	return r.repo.ListKeysTx(ctx, r.tx, accountID)
-}
-
-func (r txReads) FindLifecycleState(ctx context.Context, accountID string) (account.LifecycleState, error) {
-	return r.repo.FindLifecycleStateTx(ctx, r.tx, accountID)
+	return actorOf(parts, a)
 }
 
 // FindByIDTx returns an account with its parts as FindByID does, read in tx with what tx has
 // written (the data of the webhook messages, ADR-0060).
 func (s *Service) FindByIDTx(ctx context.Context, tx uow.Tx, id string) (Actor, error) {
-	a, err := s.d.Repository.FindAccountTx(ctx, tx, id)
+	parts, err := s.d.Repository.FindActorPartsTx(ctx, tx, []string{id})
 	if err != nil {
 		return Actor{}, err
 	}
-	return actorOf(ctx, txReads{repo: s.d.Repository, tx: tx}, a)
+	return actorIn(parts, id)
 }
 
 // LifecycleStatesTx returns, inside tx, the lifecycle states of those of ids that have one, by
@@ -990,38 +936,29 @@ func (s *Service) RemoteProfileURLsTx(ctx context.Context, tx uow.Tx, accountIDs
 	return s.d.Repository.ListRemoteProfileURLsTx(ctx, tx, accountIDs)
 }
 
-func actorOf(ctx context.Context, repo actorReads, a account.Account) (Actor, error) {
+// actorOf returns the actor of a with its parts among parts. A part that parts do not have is
+// absent, but for the local account of a local actor other than the instance actor, which fails
+// with ErrNotFound.
+func actorOf(parts ActorParts, a account.Account) (Actor, error) {
 	out := Actor{Account: a, Lifecycle: account.InitialLifecycleState(a.ID)}
 	if a.IsLocal() && a.ActorType != account.ActorApplication {
-		la, err := repo.FindLocalAccount(ctx, a.ID)
-		if err != nil {
-			return Actor{}, err
+		la, ok := parts.Locals[a.ID]
+		if !ok {
+			return Actor{}, fmt.Errorf("local account of %s: %w", a.ID, ErrNotFound)
 		}
 		out.Local = &la
 	}
-	h, err := repo.FindHandleOf(ctx, a.ID)
-	switch {
-	case err == nil:
+	if h, ok := parts.Handles[a.ID]; ok {
 		out.Handle = &h
-	case !errors.Is(err, ErrNotFound):
-		return Actor{}, err
 	}
-	p, err := repo.FindCurrentProfile(ctx, a.ID)
-	switch {
-	case err == nil:
+	if p, ok := parts.Profiles[a.ID]; ok {
 		out.Profile = &p
-	case !errors.Is(err, ErrNotFound):
-		return Actor{}, err
 	}
-	if out.Keys, err = repo.ListKeys(ctx, a.ID); err != nil {
-		return Actor{}, err
+	if out.Keys = parts.Keys[a.ID]; out.Keys == nil {
+		out.Keys = []account.Key{} // as the repository's ListKeys of an account without keys
 	}
-	st, err := repo.FindLifecycleState(ctx, a.ID)
-	switch {
-	case err == nil:
+	if st, ok := parts.Lifecycle[a.ID]; ok {
 		out.Lifecycle = st
-	case !errors.Is(err, ErrNotFound):
-		return Actor{}, err
 	}
 	return out, nil
 }

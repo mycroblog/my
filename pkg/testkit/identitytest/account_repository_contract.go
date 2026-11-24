@@ -307,7 +307,8 @@ func accountRepoKeys(t *testing.T, r *identityRepo) {
 }
 
 // accountRepoActorParts reads the parts of several accounts at once, the duplicates and the
-// unknown IDs among them, and finds each part as the reads of one account find it.
+// unknown IDs among them, and finds each part as the reads of one account find it, and the parts
+// of each account read alone, and in a transaction, as among the others.
 func accountRepoActorParts(t *testing.T, r *identityRepo) {
 	ctx := t.Context()
 	aliceUser := r.user(t)
@@ -316,10 +317,14 @@ func accountRepoActorParts(t *testing.T, r *identityRepo) {
 	carol := r.remoteAccount(t, "remote.example", "") // no handle, profile, key, or state
 	r.profile(t, alice, 1, "First")
 	r.clock.Advance(time.Second)
+	emojiA, emojiB := r.ids.NewID(), r.ids.NewID()
 	rev := account.ProfileRevision{
 		ID: r.ids.NewID(), AccountID: alice, Seq: 2, DisplayName: "Alice", NoteHTML: "<p>hi</p>", RevisedAt: r.clock.Now(),
-		Fields: []account.ProfileField{{Position: 0, Name: "site", ValueHTML: "<a>site</a>"}, {Position: 1, Name: "pronouns", ValueHTML: "they"}},
-		Source: &account.ProfileSource{Note: "hi", FieldValues: []string{"https://alice.example", "they"}},
+		Fields: []account.ProfileField{
+			{Position: 0, Name: "site", ValueHTML: "<a>site</a>"}, {Position: 1, Name: "pronouns", ValueHTML: "they"}, {Position: 2, Name: "old", ValueHTML: "unsourced"},
+		},
+		EmojiIDs: []string{emojiB, emojiA}, // read back in ID order
+		Source:   &account.ProfileSource{Note: "hi", FieldValues: []string{"https://alice.example", "they"}},
 	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if err := r.h.Accounts.InsertProfileRevision(ctx, tx, rev); err != nil {
@@ -375,9 +380,29 @@ func accountRepoActorParts(t *testing.T, r *identityRepo) {
 			t.Errorf("FindActorParts: keys of %s = %+v, want %+v (%v)", id, parts.Keys[id], keys, err)
 		}
 	}
-	if p := parts.Profiles[alice]; p.ID != rev.ID || p.Source == nil || p.Source.Note != "hi" || !slices.Equal(p.Source.FieldValues, rev.Source.FieldValues) {
-		t.Errorf("FindActorParts: profile of alice = %+v, want the current revision with its source", p)
+	if p := parts.Profiles[alice]; p.ID != rev.ID || !reflect.DeepEqual(p.Fields, rev.Fields) || !slices.Equal(p.EmojiIDs, []string{emojiA, emojiB}) ||
+		p.Source == nil || p.Source.Note != "hi" || !slices.Equal(p.Source.FieldValues, []string{"https://alice.example", "they", ""}) {
+		t.Errorf("FindActorParts: profile of alice = %+v, want the current revision with its fields, its emoji in order, and its source", p)
 	}
+	if p := parts.Profiles[bob]; p.Source != nil || len(p.Fields) != 2 || p.EmojiIDs != nil {
+		t.Errorf("FindActorParts: profile of bob = %+v, want two fields, no emoji, and no source", p)
+	}
+	if _, ok := parts.Locals[bob]; ok {
+		t.Errorf("FindActorParts: bob, a remote actor, has a local account %+v", parts.Locals[bob])
+	}
+	for _, id := range []string{alice, bob, carol, unknown} {
+		alone, err := r.h.Accounts.FindActorParts(ctx, []string{id})
+		if want := actorPartsOf(parts, id); err != nil || !reflect.DeepEqual(alone, want) {
+			t.Errorf("FindActorParts(%s) alone = %+v, %v; want %+v, as among the others", id, alone, err, want)
+		}
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		inTx, err := r.h.Accounts.FindActorPartsTx(ctx, tx, []string{alice, bob, carol, unknown})
+		if err == nil && !reflect.DeepEqual(inTx, parts) {
+			t.Errorf("FindActorPartsTx = %+v; want %+v, as FindActorParts", inTx, parts)
+		}
+		return err
+	})
 	if len(parts.Keys[alice]) != 2 {
 		t.Errorf("FindActorParts: keys of alice = %+v, want two", parts.Keys[alice])
 	}
@@ -413,6 +438,33 @@ func accountRepoActorParts(t *testing.T, r *identityRepo) {
 	if empty, err := r.h.Accounts.FindActorParts(ctx, nil); err != nil || len(empty.Accounts) != 0 {
 		t.Errorf("FindActorParts(nil) = %+v, %v; want nothing", empty, err)
 	}
+}
+
+// actorPartsOf returns the parts of the account id among parts.
+func actorPartsOf(parts appaccount.ActorParts, id string) appaccount.ActorParts {
+	out := appaccount.ActorParts{
+		Accounts: map[string]account.Account{}, Locals: map[string]account.LocalAccount{}, Handles: map[string]account.Handle{},
+		Profiles: map[string]account.ProfileRevision{}, Keys: map[string][]account.Key{}, Lifecycle: map[string]account.LifecycleState{},
+	}
+	if v, ok := parts.Accounts[id]; ok {
+		out.Accounts[id] = v
+	}
+	if v, ok := parts.Locals[id]; ok {
+		out.Locals[id] = v
+	}
+	if v, ok := parts.Handles[id]; ok {
+		out.Handles[id] = v
+	}
+	if v, ok := parts.Profiles[id]; ok {
+		out.Profiles[id] = v
+	}
+	if v, ok := parts.Keys[id]; ok {
+		out.Keys[id] = v
+	}
+	if v, ok := parts.Lifecycle[id]; ok {
+		out.Lifecycle[id] = v
+	}
+	return out
 }
 
 func accountRepoLifecycle(t *testing.T, r *identityRepo) {
