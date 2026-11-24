@@ -26,7 +26,6 @@ import {
   type RemoteServer,
   type RemoteServerQuery,
   type RemoteServerSoftware,
-  type RemoteServerState,
 } from "@my/app-data";
 import {
   Pager,
@@ -113,14 +112,15 @@ export function serverQueryOf(search: StaffSearch): RemoteServerQuery {
 /** The software a server reports, its name and its version, as it reports them. */
 const softwareWords = (s: RemoteServerSoftware): string => (s.version === "" ? s.name : `${s.name} ${s.version}`);
 
-/** The state of a server, marked: deliveries go to it, or only follows and their answers do. */
-function ServerStateMark({ state }: { state: RemoteServerState }) {
+/**
+ * The state of a server, marked as the staff's other records are, what asks for a look weighing most: stopped (only
+ * follows and their answers go to it) as a failure, at full weight; deliveries going to it though some failed, as a
+ * job waiting to run again; deliveries reaching it, muted, as what needs nothing.
+ */
+function ServerStateMark({ server }: { server: Pick<RemoteServer, "state" | "failure_days"> }) {
   const { t } = useStaffStrings();
-  return (
-    <StateMark state={state === "available" ? "active" : "disabled"}>
-      {t("staff_domains.server.state", { state })}
-    </StateMark>
-  );
+  const mark = server.state === "unavailable" ? "failed" : server.failure_days > 0 ? "retrying" : "resolved";
+  return <StateMark state={mark}>{t("staff_domains.server.state", { state: server.state })}</StateMark>;
 }
 
 type Column = "software" | "failures" | "state";
@@ -178,21 +178,30 @@ export function RemoteServersScreen(address: StaffAddress): ReactNode {
       </ScreenStack>
     );
   const columns: RecordColumn<Column>[] = [
-    // "mastodon 4.3.2" says what it is: on a narrow table, without its column's name.
+    // The state first and its glyph at the start of a narrow row's facts, so that the states of the rows scan as one
+    // column; it and "mastodon 4.3.2" say what they are without their columns' names.
+    { key: "state", label: t("staff_domains.servers.column.state"), kind: "fit", bare: true },
     { key: "software", label: t("staff_domains.servers.column.software"), bare: true },
     { key: "failures", label: t("staff_domains.servers.column.failures"), kind: "figures" },
-    { key: "state", label: t("staff_domains.servers.column.state"), kind: "fit", beside: true },
   ];
   const rows = page.items.map((s): RecordRow<Column> => ({
     id: s.domain,
     head: s.domain,
+    wraps: true,
     href: remoteServerPath(s.domain),
-    // A server that reports no software, or none failed, leaves its cell empty: most known servers have no failure.
+    // A server none failed leaves its cell empty: most known servers have no failure.
     cells: {
-      software: s.software === undefined ? undefined : softwareWords(s.software),
+      software:
+        s.software === undefined ? (
+          <Box as="span" tone="muted">
+            {t("staff_domains.server.software.none")}
+          </Box>
+        ) : (
+          softwareWords(s.software)
+        ),
       failures:
         s.failure_days === 0 ? undefined : tied(t("staff_domains.server.failure_days", { count: s.failure_days })),
-      state: <ServerStateMark state={s.state} />,
+      state: <ServerStateMark server={s} />,
     },
   }));
   return (
@@ -320,12 +329,19 @@ function ServerHead({ server }: { server: RemoteServer }) {
   const items: Fact[] = [
     {
       term: t("staff_domains.server.fact.software"),
-      value: server.software === undefined ? t("staff_domains.server.software.none") : softwareWords(server.software),
+      value:
+        server.software === undefined ? (
+          <Box as="span" tone="muted">
+            {t("staff_domains.server.software.none")}
+          </Box>
+        ) : (
+          softwareWords(server.software)
+        ),
     },
     ...(server.first_seen_at === undefined
       ? []
       : [{ term: t("staff_domains.server.fact.first_seen"), value: moment(server.first_seen_at) }]),
-    { term: t("staff_domains.server.fact.state"), value: <ServerStateMark state={server.state} /> },
+    { term: t("staff_domains.server.fact.state"), value: <ServerStateMark server={server} /> },
     ...(server.state_changed_at === undefined
       ? []
       : [{ term: t("staff_domains.server.fact.since"), value: moment(server.state_changed_at) }]),
@@ -337,32 +353,39 @@ function ServerHead({ server }: { server: RemoteServer }) {
       ? []
       : [{ term: t("staff_domains.server.fact.last_failure"), value: day(server.last_failure_day) }]),
   ];
+  // Every term a server's facts may have: the values start in one line on every server's screen, whichever it has.
+  const terms = ["software", "first_seen", "state", "since", "failures", "last_failure"].map((term) =>
+    t(`staff_domains.server.fact.${term}`),
+  );
   return (
     <Stack gap="entry-room">
-      <Row wrap gap="screen-tab-gap">
-        {(server.state === "unavailable" || server.failure_days > 0) && (
+      {/* What a press said, right under its buttons: no room of a group of its own while it says nothing. */}
+      <Stack gap="entry-caption">
+        <Row wrap gap="screen-tab-gap">
+          {(server.state === "unavailable" || server.failure_days > 0) && (
+            <Button
+              size="timeline"
+              busy={busy === "mark"}
+              onPress={() => {
+                run("mark", markAvailable, t("staff_domains.server.marked"));
+              }}
+            >
+              {t("staff_domains.server.mark")}
+            </Button>
+          )}
           <Button
             size="timeline"
-            busy={busy === "mark"}
+            busy={busy === "refetch"}
             onPress={() => {
-              run("mark", markAvailable, t("staff_domains.server.marked"));
+              run("refetch", refetchPosts, t("staff_domains.server.refetching"));
             }}
           >
-            {t("staff_domains.server.mark")}
+            {t("staff_domains.server.refetch")}
           </Button>
-        )}
-        <Button
-          size="timeline"
-          busy={busy === "refetch"}
-          onPress={() => {
-            run("refetch", refetchPosts, t("staff_domains.server.refetching"));
-          }}
-        >
-          {t("staff_domains.server.refetch")}
-        </Button>
-      </Row>
-      {status}
-      <FactList label={t("staff_domains.server.facts")} items={items} />
+        </Row>
+        {status}
+      </Stack>
+      <FactList label={t("staff_domains.server.facts")} items={items} beside={terms} />
       <Ways>
         <Way href={domainActionsOf(server.domain)}>{t("staff_domains.server.actions")}</Way>
         <Way href={newDomainActionPath(server.domain)}>{t("staff_domains.actions.new")}</Way>

@@ -23,6 +23,7 @@
 
 import {
   createContext,
+  Fragment,
   use,
   useEffect,
   useId,
@@ -177,6 +178,11 @@ export type RecordRow<K extends string = string> = {
   cells: Partial<Record<K, ReactNode>>;
   /** Its head and its caption are code (a job's type, an error's message and route): in the code's face. */
   code?: boolean | undefined;
+  /**
+   * Its head is a domain, which names it only whole: it wraps after its dots where its column has no more room, never
+   * cut short.
+   */
+  wraps?: boolean | undefined;
   /**
    * What the record holds past its cells, across the whole of the row under them (a person's reason, their private
    * facts, the actions on that one record): at any width a line of its own, the row's last.
@@ -377,18 +383,37 @@ function NarrowName({ children }: { children: ReactNode }) {
 
 /**
  * A record's head, isolated in its own direction (a handle reads the same in a right-to-left page), on one line, cut
- * short with an ellipsis only where its column has no more room: a handle never breaks inside. `cover`, its box past
- * it covers the whole row, so that a press anywhere opens the record.
+ * short with an ellipsis only where its column has no more room: a handle never breaks inside. `wraps`, a domain, it
+ * wraps after its dots instead, and inside a label only where one is longer than the line. `cover`, its box past it
+ * covers the whole row, so that a press anywhere opens the record.
  */
-function HeadWords({ cover = false, code = false, children }: { cover?: boolean; code?: boolean; children: string }) {
+function HeadWords({
+  cover = false,
+  code = false,
+  wraps = false,
+  children,
+}: {
+  cover?: boolean;
+  code?: boolean;
+  wraps?: boolean;
+  children: string;
+}) {
   // Its own direction cuts it at its end in its reading order (a handle keeps its "@" and its start in a right-to-left
   // page), standing at the start of its column all the same; code reads left to right.
   return (
     <span
       dir={code ? "ltr" : "auto"}
-      className={`block truncate [text-align:match-parent] ${code ? "font-mono" : ""} ${cover ? "after:absolute after:inset-0 after:content-['']" : ""}`}
+      className={`block ${wraps ? "[overflow-wrap:anywhere]" : "truncate"} [text-align:match-parent] ${code ? "font-mono" : ""} ${cover ? "after:absolute after:inset-0 after:content-['']" : ""}`}
     >
-      {children}
+      {wraps
+        ? children.split(/(?<=\.)/).map((label, i) => (
+            // A label at a time, a break allowed after each dot; a domain's labels keep their order.
+            <Fragment key={i}>
+              {i > 0 && <wbr />}
+              {label}
+            </Fragment>
+          ))
+        : children}
     </span>
   );
 }
@@ -835,7 +860,7 @@ function Record<K extends string>({
   const open = row.id === current;
   const code = row.code === true;
   const words = (
-    <HeadWords cover code={code}>
+    <HeadWords cover code={code} wraps={row.wraps === true}>
       {row.head}
     </HeadWords>
   );
@@ -880,7 +905,9 @@ function Record<K extends string>({
             </AriaButton>
           ) : (
             <span ref={focusRef} className={s.plain()}>
-              <HeadWords code={code}>{row.head}</HeadWords>
+              <HeadWords code={code} wraps={row.wraps === true}>
+                {row.head}
+              </HeadWords>
             </span>
           )}
           {row.caption !== undefined && (

@@ -107,7 +107,7 @@ export const RemoteServersSecondPage: Story = {
 };
 /** The servers marked unavailable. */
 export const RemoteServersUnavailable: Story = { parameters: at("/moderation/instances?state=unavailable") };
-/** No other server is known yet. */
+/** The server knows no remote server yet. */
 export const RemoteServersEmpty: Story = { parameters: at("/moderation/instances", none) };
 /** No server has problems. */
 export const RemoteServersTroubledEmpty: Story = { parameters: at("/moderation/instances?state=troubled", none) };
