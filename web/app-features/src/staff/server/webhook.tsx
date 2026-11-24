@@ -323,7 +323,6 @@ function Deliveries({ webhook }: { webhook: AdminWebhook }) {
           { key: "act", label: t("staff_webhooks.column.redeliver"), kind: "fit", bare: true },
         ]}
         rows={rows}
-        contained
         itemRef={added.item}
         empty={<FeedNotice>{t("staff_webhooks.deliveries.empty")}</FeedNotice>}
       />
