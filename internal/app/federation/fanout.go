@@ -259,6 +259,9 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 			ID: f.d.IDs.NewID(), OutboundActivityID: act.ID, InboxURL: t.inbox, Domain: t.domain, CreatedAt: now,
 		}
 	}
+	if document == nil && len(deliveries) == 0 && nextJob == nil && !federation.RecordsFanOutEnd(act) {
+		return nil // nothing to write: no transaction (#3489)
+	}
 	return f.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if document != nil {
 			if _, err := f.d.Repository.InsertOutboundDocument(ctx, tx, act.ID, document, now); err != nil {

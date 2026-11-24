@@ -75,14 +75,8 @@ func (s *Service) FindStatus(ctx context.Context, id string) (Status, error) {
 // An empty revisionID reads the current revision: the Update of a status whose quote or quote
 // policy changed without a new revision (ADR-0069 §3).
 func (s *Service) LiveRevision(ctx context.Context, statusID, revisionID string) (Status, Revision, error) {
-	st, err := s.d.Repository.FindStatus(ctx, statusID)
+	st, err := s.d.Repository.FindLiveStatus(ctx, statusID)
 	if err != nil {
-		return Status{}, Revision{}, err
-	}
-	switch _, err := s.d.Repository.FindDeletion(ctx, statusID); {
-	case err == nil:
-		return Status{}, Revision{}, fmt.Errorf("status %s: %w", statusID, ErrNotFound)
-	case !errors.Is(err, ErrNotFound):
 		return Status{}, Revision{}, err
 	}
 	var rev Revision
@@ -123,15 +117,13 @@ func (s *Service) AuthorRestrictions(ctx context.Context, accountID string) (Aut
 		return AuthorRestrictions{}, err
 	}
 	out := r.Author
-	author, err := s.d.Accounts.FindByID(ctx, accountID)
-	switch {
-	case errors.Is(err, appaccount.ErrNotFound):
-		out.ProfileView = true
-	case err != nil:
+	// FindByIDs reads an actor with one query, FindByID with two (#3489).
+	authors, err := s.d.Accounts.FindByIDs(ctx, []string{accountID})
+	if err != nil {
 		return AuthorRestrictions{}, err
-	default:
-		out.ProfileView = out.ProfileView || !author.Lifecycle.Active()
 	}
+	author, found := authors[accountID]
+	out.ProfileView = out.ProfileView || !found || !author.Lifecycle.Active()
 	return out, nil
 }
 

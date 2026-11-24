@@ -244,7 +244,8 @@ func randomHex(n int) string {
 
 // drainJobs waits until the job queue of db has no job due, so that a measurement does not share
 // the server with the work that the seed queued.
-func drainJobs(ctx context.Context, db *database, timeout time.Duration) error {
+// It logs, when jobs are due as it starts, how many, and how long they took to run.
+func drainJobs(ctx context.Context, db *database, timeout time.Duration, logf func(string, ...any)) error {
 	conn, err := db.open()
 	if err != nil {
 		return err
@@ -254,7 +255,9 @@ func drainJobs(ctx context.Context, db *database, timeout time.Duration) error {
 	if db.kind == "postgres" {
 		q = "SELECT COUNT(*) FROM jobs WHERE run_at <= $1"
 	}
-	deadline := time.Now().Add(timeout)
+	start := time.Now()
+	deadline := start.Add(timeout)
+	waited := false
 	for {
 		var due int
 		now := any(time.Now())
@@ -265,7 +268,14 @@ func drainJobs(ctx context.Context, db *database, timeout time.Duration) error {
 			return fmt.Errorf("count the due jobs: %w", err)
 		}
 		if due == 0 {
+			if waited {
+				logf("%s: the queued jobs ran in %.0f s", db.kind, time.Since(start).Seconds())
+			}
 			return nil
+		}
+		if !waited {
+			waited = true
+			logf("%s: %d jobs due; waiting for them", db.kind, due)
 		}
 		if time.Now().After(deadline) {
 			return fmt.Errorf("%d jobs still due after %s", due, timeout)

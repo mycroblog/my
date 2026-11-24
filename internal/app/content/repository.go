@@ -204,6 +204,9 @@ type Repository interface {
 	// Lookups.
 
 	FindStatus(ctx context.Context, id string) (content.Status, error)
+	// FindLiveStatus returns a status that has no deletion, with one query. It fails with
+	// ErrNotFound for a missing or deleted one.
+	FindLiveStatus(ctx context.Context, id string) (content.Status, error)
 	// FindStatuses returns the statuses of ids that exist, by ID, as FindStatus returns one, with
 	// one query whatever the number of ids.
 	FindStatuses(ctx context.Context, ids []string) (map[string]content.Status, error)

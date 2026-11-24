@@ -255,6 +255,11 @@ LIMIT sqlc.arg(page_limit);
 SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE id = ?;
 
+-- GetLiveStatus returns the status of an ID that has no deletion, as GetStatus reads it.
+-- name: GetLiveStatus :one
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
+FROM statuses s WHERE s.id = ? AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id);
+
 -- ListStatusesByIDs reads what GetStatus reads, of many statuses at once; the ids are a JSON array.
 -- name: ListStatusesByIDs :many
 SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at

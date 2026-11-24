@@ -259,6 +259,28 @@ func (q *Queries) GetAccountPostCounter(ctx context.Context, accountID string) (
 	return i, err
 }
 
+const getLiveStatus = `-- name: GetLiveStatus :one
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
+FROM statuses s WHERE s.id = ? AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
+`
+
+// GetLiveStatus returns the status of an ID that has no deletion, as GetStatus reads it.
+func (q *Queries) GetLiveStatus(ctx context.Context, id string) (Status, error) {
+	row := q.db.QueryRowContext(ctx, getLiveStatus, id)
+	var i Status
+	err := row.Scan(
+		&i.ID,
+		&i.Uri,
+		&i.Url,
+		&i.AuthorAccountID,
+		&i.IsLocal,
+		&i.Visibility,
+		&i.InReplyToUri,
+		&i.PublishedAt,
+	)
+	return i, err
+}
+
 const getLiveStatusByURI = `-- name: GetLiveStatusByURI :one
 SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
