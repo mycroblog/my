@@ -274,6 +274,7 @@ func remoteRequestsLocalRepliesAndBoosts(t *testing.T, e *remoteInteractionEnv) 
 	ctx := t.Context()
 	const alice = "https://remote.example/users/alice"
 	fan, other := e.user(t, "fan"), e.user(t, "other")
+	e.deliveredTo(t, fan)
 	aliceID := e.actor(t, alice)
 	e.follow(t, fan, aliceID)
 	e.follow(t, other, fan)
