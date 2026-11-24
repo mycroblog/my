@@ -757,7 +757,7 @@ export const LongErrors: Story = {
               worker: <CodeText>worker-7f9c</CodeText>,
             },
             detail: (
-              <Box as="p" text="caption">
+              <Box as="p" text="caption" tone="muted">
                 <CodeText>{longError}</CodeText>
               </Box>
             ),

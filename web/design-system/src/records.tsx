@@ -120,12 +120,17 @@ const stateMark = tv({
   },
 });
 
-/** A record's state: its glyph, of a shape of its own, and its word, the app's ("Open", "Expired"). */
+/**
+ * A record's state: its glyph, of a shape of its own, and its word, the app's ("Open", "Expired"). It stands on its
+ * word's baseline, so that the word lines up with the text beside it (a row's other cells), the glyph on its middle.
+ */
 export function StateMark({ state, children }: { state: RecordState; children: string }) {
   return (
     <Row as="span" inline align="center" gap="entry-caption" className={stateMark({ tone: stateTone[state] })}>
       <Icon name={stateGlyph[state]} place="caption" />
-      <span>{children}</span>
+      <Box as="span" self="baseline">
+        {children}
+      </Box>
     </Row>
   );
 }
@@ -233,7 +238,8 @@ export type RecordTableProps<K extends string> = {
 };
 
 // A column of words keeps its longest word and shares the room left; the heads' column takes what its heads need, up
-// to all the room the others leave, and cuts a head short only past that.
+// to all the room the others leave, and cuts a head short only past that. With no column of words, the heads' column
+// (`minmax(0,auto)`, which the grid stretches) takes the room left, so that the table fills its column.
 const TRACK = { words: "minmax(min-content,1fr)", figures: "max-content", fit: "max-content" } as const;
 
 /**
@@ -631,7 +637,7 @@ export function RecordTable<K extends string>({
   const share = "minmax(0,1fr)";
   const tracks = [
     picks ? "max-content" : "",
-    even ? share : "minmax(0,max-content)",
+    even ? share : "minmax(0,auto)",
     ...columns.map((c) => (even && (c.kind ?? "words") === "words" ? share : TRACK[c.kind ?? "words"])),
   ]
     .filter((track) => track !== "")
