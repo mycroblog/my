@@ -38,7 +38,8 @@ type MediaFactory func(t *testing.T, opts uow.Options) MediaHarness
 // MediaFlows verifies the media use cases of the content module on a database adapter, the flows
 // of ADR-0153 §1, which internal/flowtest/content runs once on SQLite; MediaRepositoryContract
 // checks the media repository's methods on every adapter. The flows cover uploads stored with the detected type and their processing job
-// enqueued, rejected uploads leaving nothing behind, idempotent processing that records one
+// enqueued, rejected uploads leaving nothing behind, uploads read from a *bytes.Buffer taken as from
+// any reader, idempotent processing that records one
 // result with its variants for the upload's purpose under keys of the result and deletes the
 // file as received, processing again for another purpose, failures recorded as results,
 // focal points and descriptions as current values that only the uploader reads and changes
@@ -57,6 +58,7 @@ func MediaFlows(t *testing.T, newHarness MediaFactory) {
 	}{
 		{"StoresUploads", mediaStoresUploads},
 		{"RejectsUploadsWithoutWriting", mediaRejectsUploads},
+		{"TakesUploadsFromABuffer", mediaTakesUploadsFromABuffer},
 		{"ProcessesIdempotently", mediaProcessesIdempotently},
 		{"ProcessesAgainForAnotherPurpose", mediaReprocessesForAnotherPurpose},
 		{"RecordsFailedProcessing", mediaRecordsFailures},
@@ -237,6 +239,57 @@ func mediaRejectsUploads(t *testing.T, e *mediaEnv) {
 	ids, err := e.h.Media.ListUnattachedUploads(t.Context(), "", e.clock.Now().Add(time.Hour), 10)
 	if err != nil || len(ids) != 0 {
 		t.Errorf("rejected uploads left media files: %v, %v", ids, err)
+	}
+}
+
+// mediaTakesUploadsFromABuffer checks that an upload whose content is a *bytes.Buffer, which
+// Upload uses without a copy (#3440), is stored and refused as the same bytes from a
+// bytes.Reader: the same type, size, and stored bytes, the same errors, and over
+// MaxUploadBytes, ErrTooLarge without a blob or a job left behind.
+func mediaTakesUploadsFromABuffer(t *testing.T, e *mediaEnv) {
+	ctx := t.Context()
+	for name, data := range map[string][]byte{"image": testkit.FixturePNG(4, 3, false), "video": fakeMP4, "audio": fakeMP3} {
+		e.clock.Advance(time.Millisecond)
+		fromReader, err := e.service.Upload(ctx, appcontent.UploadInput{OwnerAccountID: mediaOwner, Content: bytes.NewReader(data)})
+		if err != nil {
+			t.Fatalf("%s from a bytes.Reader: %v", name, err)
+		}
+		e.clock.Advance(time.Millisecond)
+		fromBuffer, err := e.service.Upload(ctx, appcontent.UploadInput{OwnerAccountID: mediaOwner, Content: bytes.NewBuffer(bytes.Clone(data))})
+		if err != nil {
+			t.Fatalf("%s from a bytes.Buffer: %v", name, err)
+		}
+		if fromBuffer.Upload == nil || fromReader.Upload == nil ||
+			fromBuffer.Upload.ContentType != fromReader.Upload.ContentType || fromBuffer.Upload.FileSize != int64(len(data)) {
+			t.Errorf("%s from a bytes.Buffer = %+v, from a bytes.Reader %+v", name, fromBuffer.Upload, fromReader.Upload)
+			continue
+		}
+		if !bytes.Equal(e.blobs.Bytes(fromBuffer.Upload.BlobKey), data) {
+			t.Errorf("%s from a bytes.Buffer: the stored file is not the content", name)
+		}
+	}
+	keys, jobs := e.blobs.Keys(), len(e.jobs.jobs)
+
+	png := testkit.FixturePNG(4, 3, false)
+	over := append(slices.Clone(fakeMP4), make([]byte, e.service.MaxUploadBytes()+1-int64(len(fakeMP4)))...)
+	for name, tc := range map[string]struct {
+		data     []byte
+		declared string
+		want     error
+	}{
+		"svg":                     {[]byte(`<svg xmlns="http://www.w3.org/2000/svg"/>`), "image/svg+xml", media.ErrUnsupportedFormat},
+		"png as jpeg":             {png, "image/jpeg", appcontent.ErrContentTypeMismatch},
+		"image over its limit":    {append(slices.Clone(png), make([]byte, 1<<20)...), "", media.ErrTooLarge},
+		"longer than the maximum": {over, "", media.ErrTooLarge},
+		"corrupt image":           {append(slices.Clone(png), "corrupt"...), "", media.ErrCorrupt},
+	} {
+		_, err := e.service.Upload(ctx, appcontent.UploadInput{OwnerAccountID: mediaOwner, Content: bytes.NewBuffer(tc.data), DeclaredContentType: tc.declared})
+		if !errors.Is(err, tc.want) {
+			t.Errorf("%s from a bytes.Buffer: Upload = %v, want %v", name, err, tc.want)
+		}
+	}
+	if got := e.blobs.Keys(); !slices.Equal(got, keys) || len(e.jobs.jobs) != jobs {
+		t.Errorf("refused uploads from a bytes.Buffer left blobs %v (before %v) and %d jobs", got, keys, len(e.jobs.jobs)-jobs)
 	}
 }
 
