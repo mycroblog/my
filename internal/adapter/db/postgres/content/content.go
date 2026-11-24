@@ -578,7 +578,7 @@ func (r *StatusRepository) FindLiveStatus(ctx context.Context, id string) (conte
 	if err != nil {
 		return content.Status{}, postgres.NotFound(err, appcontent.ErrNotFound, "live status "+id)
 	}
-	return statusFrom(contentgen.Status(row)), nil
+	return statusFrom(row), nil
 }
 
 // FindStatuses implements content.Repository.
