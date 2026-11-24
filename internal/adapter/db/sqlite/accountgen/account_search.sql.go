@@ -34,25 +34,22 @@ func (q *Queries) DeleteAllAccountSearchTerms(ctx context.Context) error {
 	return err
 }
 
-const insertAccountSearchTerm = `-- name: InsertAccountSearchTerm :exec
-INSERT INTO account_search_terms (account_id, kind, term, is_local) VALUES (?, ?, ?, ?)
+const insertAccountSearchTerms = `-- name: InsertAccountSearchTerms :exec
+INSERT INTO account_search_terms (account_id, kind, term, is_local)
+SELECT CAST(?1 AS TEXT), value ->> '$.kind', value ->> '$.term', CAST(value ->> '$.local' AS INTEGER)
+FROM json_each(CAST(?2 AS TEXT)) WHERE true
 ON CONFLICT (account_id, kind, term) DO NOTHING
 `
 
-type InsertAccountSearchTermParams struct {
+type InsertAccountSearchTermsParams struct {
 	AccountID string
-	Kind      string
-	Term      string
-	IsLocal   int64
+	Terms     string
 }
 
-func (q *Queries) InsertAccountSearchTerm(ctx context.Context, arg InsertAccountSearchTermParams) error {
-	_, err := q.db.ExecContext(ctx, insertAccountSearchTerm,
-		arg.AccountID,
-		arg.Kind,
-		arg.Term,
-		arg.IsLocal,
-	)
+// InsertAccountSearchTerms inserts the terms of one account, a JSON array of {kind, term, local}.
+// WHERE true keeps the parser from reading ON CONFLICT as a join constraint.
+func (q *Queries) InsertAccountSearchTerms(ctx context.Context, arg InsertAccountSearchTermsParams) error {
+	_, err := q.db.ExecContext(ctx, insertAccountSearchTerms, arg.AccountID, arg.Terms)
 	return err
 }
 

@@ -25,14 +25,16 @@ func (r *Repository) ReplaceSearchTerms(ctx context.Context, tx uow.Tx, accountI
 	if err := q.DeleteAccountSearchTerms(ctx, accountID); err != nil {
 		return postgres.Wrap(err, "delete account search terms")
 	}
-	for _, t := range terms {
-		if err := q.InsertAccountSearchTerm(ctx, accountgen.InsertAccountSearchTermParams{
-			AccountID: accountID, Kind: string(t.Kind), Term: t.Term, IsLocal: t.IsLocal,
-		}); err != nil {
-			return postgres.Wrap(err, "insert account search term")
-		}
+	if len(terms) == 0 {
+		return nil
 	}
-	return nil
+	arg := accountgen.InsertAccountSearchTermsParams{AccountID: accountID}
+	for _, t := range terms {
+		arg.Kinds = append(arg.Kinds, string(t.Kind))
+		arg.Terms = append(arg.Terms, t.Term)
+		arg.IsLocals = append(arg.IsLocals, t.IsLocal)
+	}
+	return postgres.Wrap(q.InsertAccountSearchTerms(ctx, arg), "insert account search terms")
 }
 
 // DeleteAllSearchTerms implements account.SearchTermRepository.

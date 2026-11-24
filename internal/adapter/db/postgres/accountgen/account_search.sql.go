@@ -34,24 +34,26 @@ func (q *Queries) DeleteAllAccountSearchTerms(ctx context.Context) error {
 	return err
 }
 
-const insertAccountSearchTerm = `-- name: InsertAccountSearchTerm :exec
-INSERT INTO account_search_terms (account_id, kind, term, is_local) VALUES ($1, $2, $3, $4)
+const insertAccountSearchTerms = `-- name: InsertAccountSearchTerms :exec
+INSERT INTO account_search_terms (account_id, kind, term, is_local)
+SELECT $1::uuid, unnest($2::text[]), unnest($3::text[]), unnest($4::boolean[])
 ON CONFLICT (account_id, kind, term) DO NOTHING
 `
 
-type InsertAccountSearchTermParams struct {
+type InsertAccountSearchTermsParams struct {
 	AccountID string
-	Kind      string
-	Term      string
-	IsLocal   bool
+	Kinds     []string
+	Terms     []string
+	IsLocals  []bool
 }
 
-func (q *Queries) InsertAccountSearchTerm(ctx context.Context, arg InsertAccountSearchTermParams) error {
-	_, err := q.db.Exec(ctx, insertAccountSearchTerm,
+// InsertAccountSearchTerms inserts the terms of one account, the i-th of each array making a row.
+func (q *Queries) InsertAccountSearchTerms(ctx context.Context, arg InsertAccountSearchTermsParams) error {
+	_, err := q.db.Exec(ctx, insertAccountSearchTerms,
 		arg.AccountID,
-		arg.Kind,
-		arg.Term,
-		arg.IsLocal,
+		arg.Kinds,
+		arg.Terms,
+		arg.IsLocals,
 	)
 	return err
 }

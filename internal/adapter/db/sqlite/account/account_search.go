@@ -4,6 +4,7 @@ package account
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/accountgen"
@@ -25,14 +26,24 @@ func (r *Repository) ReplaceSearchTerms(ctx context.Context, tx uow.Tx, accountI
 	if err := q.DeleteAccountSearchTerms(ctx, accountID); err != nil {
 		return sqlite.Wrap(err, "delete account search terms")
 	}
-	for _, t := range terms {
-		if err := q.InsertAccountSearchTerm(ctx, accountgen.InsertAccountSearchTermParams{
-			AccountID: accountID, Kind: string(t.Kind), Term: t.Term, IsLocal: sqlite.BoolToInt(t.IsLocal),
-		}); err != nil {
-			return sqlite.Wrap(err, "insert account search term")
-		}
+	if len(terms) == 0 {
+		return nil
 	}
-	return nil
+	type row struct {
+		Kind  string `json:"kind"`
+		Term  string `json:"term"`
+		Local int64  `json:"local"`
+	}
+	rows := make([]row, len(terms))
+	for i, t := range terms {
+		rows[i] = row{Kind: string(t.Kind), Term: t.Term, Local: sqlite.BoolToInt(t.IsLocal)}
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.InsertAccountSearchTerms(ctx, accountgen.InsertAccountSearchTermsParams{AccountID: accountID, Terms: string(list)}),
+		"insert account search terms")
 }
 
 // DeleteAllSearchTerms implements account.SearchTermRepository.
