@@ -374,6 +374,10 @@ The value appears in these places:
 - `metadata.sourceCode` in NodeInfo (`/nodeinfo/2.1`). An `https:` URL is also published as `software.repository`
   (the NodeInfo 2.1 schema allows only an `http(s)` URL in `software.repository`, so a `mailto:` value appears only in `metadata.sourceCode`)
 
+The image carries the license of `my` at `/usr/share/doc/my/LICENSE`, and the license notices of the third-party code and data in the binary in `/usr/share/doc/my/licenses/`:
+`go-modules.md` for the Go modules, `npm-packages.md` and `npm-packages-sw.md` for the npm packages of the web client, and the licenses of its bundled data and fonts.
+If you distribute the image or the binary, pass these files along with it.
+
 ### When you fork or modify `my`
 
 If you run a modified `my` (you apply patches, build a fork, or swap dependencies), the default URL no longer points to the source of what is running.

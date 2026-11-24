@@ -2,6 +2,8 @@
 // Fails when a production build of the app breaks what its files alone show (ADR-0171 §2):
 //   - each font it ships has its license notice in licenses/ (ADR-0091 §13, ADR-0009 §5), which the Go server serves
 //     at /licenses/;
+//   - each npm package it bundles has its license's identifier and text in the notices Vite writes to licenses/, which
+//     the image carries too (ADR-0010 §10);
 //   - no chunk that an entry loads with the page holds Lexical, the composer's editor (ADR-0092 §4): it is a chunk of
 //     its own, which the composer fetches when it opens (@my/app-features, compose/chunk.tsx).
 // Usage: bun web/app/scripts/build-check.ts <build directory>
@@ -51,6 +53,38 @@ function fontLicenseProblems(dir: string): string[] {
   return problems;
 }
 
+/** The notices of the npm packages that Vite writes (build.license of vite.config.ts), of the page and the worker. */
+const npmNotices = ["npm-packages.md", "npm-packages-sw.md"];
+
+/** A package's heading in Vite's notices: `## <name> - <version>`, and ` (<identifier>)` when its license has one. */
+const npmHeading = /^## (.+) - (\S+?)( \(.+\))?$/;
+
+/** The npm packages in the notices of the build in `dir` whose license has no identifier or no text. */
+function npmLicenseProblems(dir: string): string[] {
+  const problems: string[] = [];
+  for (const notice of npmNotices) {
+    const path = join(dir, "licenses", notice);
+    if (!existsSync(path)) {
+      problems.push(`licenses/${notice} is missing: vite.config.ts must write the notices of the npm packages there`);
+      continue;
+    }
+    const sections = readFileSync(path, "utf8")
+      .split(/^(?=## )/m)
+      .slice(1);
+    for (const section of sections) {
+      const [heading = "", ...body] = section.split("\n");
+      const match = npmHeading.exec(heading);
+      const name = match === null ? heading.slice(3) : `${match[1]}@${match[2]}`;
+      if (match?.[3] === undefined) {
+        problems.push(`${name} in licenses/${notice} has no license identifier: give it a known license or replace it`);
+      } else if (body.join("").trim() === "") {
+        problems.push(`${name} in licenses/${notice} has no license text: give it its license file or replace it`);
+      }
+    }
+  }
+  return problems;
+}
+
 /** The chunks that an entry of the build in `dir` loads with the page and that hold Lexical. */
 function eagerLexicalProblems(dir: string): string[] {
   const manifest = JSON.parse(readFileSync(join(dir, ".vite/manifest.json"), "utf8")) as Record<string, Chunk>;
@@ -87,7 +121,7 @@ function eagerLexicalProblems(dir: string): string[] {
 
 /** What the build in `dir` breaks, one line each; none when it is sound. */
 export function buildProblems(dir: string): string[] {
-  return [...fontLicenseProblems(dir), ...eagerLexicalProblems(dir)];
+  return [...fontLicenseProblems(dir), ...npmLicenseProblems(dir), ...eagerLexicalProblems(dir)];
 }
 
 if (import.meta.main) {
@@ -99,5 +133,7 @@ if (import.meta.main) {
     for (const problem of problems) console.error(`  ${problem}`);
     process.exit(1);
   }
-  console.log(`the build in ${dir} carries the license of each font and keeps Lexical out of the entries`);
+  console.log(
+    `the build in ${dir} carries the license of each font and npm package and keeps Lexical out of the entries`,
+  );
 }

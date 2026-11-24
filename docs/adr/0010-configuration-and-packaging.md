@@ -90,7 +90,9 @@ Docker の構成は次のとおり。
 - `linux/amd64` と `linux/arm64`。スローな検査がすでに両方をビルドしている。
 - **`GO_TAGS` は空の 1 種類だけ**（すべてのアダプタ）。同じイメージがどのホスティングでも動くことを優先する。アダプタを外したイメージは提供しない（§2）。
 - `e2e_fakes` は 3 か所で止める: `Dockerfile` のタグの検査、`Dockerfile` のバイナリの検査、公開の前に各プラットフォームのイメージからバイナリを取り出して走らせる `scripts/check-release-build.sh`。
-- バイナリは **`v0.1.0` では Release に添付しない。** 今の配布の手順はコンテナを前提にしていて、添付すると手順や文書も増える。あとから足しても互換を壊さない。足すときはイメージから取り出す。
+- **バイナリは `linux/amd64` と `linux/arm64` の tar.gz だけを Release に添付する。** コンテナなしで動かす運営者のためである。中身は `my`・`LICENSE`・§10 のライセンス表示・README。ビルドし直さず、検査と証明を済ませたイメージから取り出す。
+  - 生のバイナリは出さない。依存のライセンス表示を同じ添付に入れる必要があり、中身を足しても添付の名前が変わらない。
+  - ほかの OS は出さない。スローな検査が確かめていない。
 - ホスティング: Compose と Kubernetes はそのまま、Cloud Run は公開の `ghcr.io` を直接使える。AWS は ECR へコピーする（pull through cache も使える）。
 
 ### 8. サプライチェーン
@@ -138,6 +140,8 @@ Docker の構成は次のとおり。
 - **`source_url` の既定を版のソースに向ける。** 設定がなく、埋め込まれた版がリリースのタグの形（`vX.Y.Z`、`vX.Y.Z-pre`）なら、`GET /instance` の `source_url` は `https://github.com/mycroblog/my/tree/<version>` を返す。それ以外（`git describe` の途中の形、`dev`）はリポジトリの根を返す。
   - 設定で変えられること、改変版の運営者は自分のソースを指すことは変わらない。NodeInfo の `software.repository` はリポジトリなので根のままとする。
   - タグが消えると指す先も消えるので、Immutable releases を有効にする（Release のあるタグを消せなくなる）。
+- **イメージはライセンスを持つ。** `/usr/share/doc/my/` に `LICENSE` と、バイナリが含む第三者のコードとデータのライセンス表示（`licenses/`）を置く。依存の MIT・BSD などはバイナリでの配布にも表示を求める。
+  - 表示はビルドが依存から作る（Go は `scripts/go-notices.sh`、npm は Vite の `build.license`）。ライセンスを特定できない依存があれば失敗する。
 
 ### 11. 覆す条件
 

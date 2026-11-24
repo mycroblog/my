@@ -67,6 +67,14 @@ RUN --mount=type=bind,target=. \
     GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -tags "${GO_TAGS}" -ldflags "-s -w -X main.version=${VERSION}" -o /out/my ./cmd/my \
     && scripts/check-release-build.sh /out/my \
     && mkdir -p /out/data
+# The license notices of what the binary carries (ADR-0010 §10): those of the Go code it links, for its platform and
+# tags, and those of the npm packages and data the web build bundles, which the build embeds compressed only.
+RUN --mount=type=bind,target=. \
+    --mount=type=bind,from=web,source=/src/internal/interface/web/dist,target=internal/interface/web/dist \
+    --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH GOFLAGS="-tags=${GO_TAGS}" scripts/go-notices.sh /out/licenses/go-modules.md \
+    && for f in internal/interface/web/dist/licenses/*.gz; do zcat "$f" > "/out/licenses/$(basename "$f" .gz)"; done
 
 # The development image of the root compose.yaml (CONTRIBUTING.md): the Go toolchain with Bun, which runs `my` from the
 # checkout that compose.yaml mounts at /src. It starts as root and scripts/dev-compose.sh runs the work as the owner of
@@ -85,6 +93,9 @@ COPY --from=build --chown=nonroot:nonroot /out/data /data
 # The inventory of the scripts that the payment pages load (PCI DSS 6.4.3), from the web build that the binary embeds;
 # release.yml attaches it to the release (scripts/release-image.sh scripts).
 COPY --from=web /src/internal/interface/web/dist/.vite/payment-scripts.json /usr/share/my/payment-scripts.json
+# The license of the server and the notices of the third-party code and data the binary carries (ADR-0010 §10).
+COPY LICENSE /usr/share/doc/my/LICENSE
+COPY --from=build /out/licenses /usr/share/doc/my/licenses
 WORKDIR /data
 ENV MY_LISTEN=:8080
 EXPOSE 8080
