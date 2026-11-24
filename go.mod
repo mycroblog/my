@@ -3,7 +3,7 @@ module github.com/mycroblog/my
 go 1.27.4
 
 require (
-	ariga.io/atlas v1.4.0
+	ariga.io/atlas v1.3.0
 	cloud.google.com/go/cloudtasks v1.21.1
 	cloud.google.com/go/compute/metadata v0.10.0
 	cloud.google.com/go/kms v1.37.0
