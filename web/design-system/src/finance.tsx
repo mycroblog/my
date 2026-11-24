@@ -21,6 +21,7 @@ import { ShareBar } from "./choice";
 import { CodeText } from "./code-text";
 import { Icon } from "./icons";
 import { Row, Spoken, Stack } from "./layout";
+import { FrameRowSurface } from "./shell";
 
 /** A column of a table: its name, and whether it holds figures, which stand at its end. */
 export type FinanceColumn = { label: string; figures?: boolean | undefined };
@@ -79,18 +80,23 @@ const WIDE = {
 const countOf = (columns: number): Count => Math.min(4, Math.max(1, columns)) as Count;
 
 /**
- * The table's frame, which knows its own width: its rows one under another, on its tracks, within its container, the
- * surface of its total too, what the rows hold set in by a row's inset.
+ * The table's frame, which knows its own width: its rows one under another, on its tracks, what they hold set in by a
+ * row's inset. It reaches past its container by that inset, the surface of its total too, so that what the rows hold
+ * lines up with what stands above and below the table; `contained`, it keeps within it.
  */
 function FinanceFrame({
   columns,
+  contained,
   className,
   ...rest
-}: HTMLAttributes<HTMLDivElement> & { columns: number; className: string }) {
+}: HTMLAttributes<HTMLDivElement> & { columns: number; contained: boolean; className: string }) {
   const tracks = TRACKS[countOf(columns)];
   return (
     <div className="@container">
-      <div {...rest} className={`${className} grid gap-x-entry-avatar ${tracks}`} />
+      <div
+        {...rest}
+        className={`${className} ${contained ? "" : "-mx-screen-row-inline"} grid gap-x-entry-avatar ${tracks}`}
+      />
     </div>
   );
 }
@@ -143,19 +149,26 @@ const table = tv({
     figure: "tabular-nums whitespace-nowrap",
     glyph: "text-muted-text",
     note: "text-caption text-muted-text [word-break:auto-phrase]",
-    // The row that sums the others: on the raised surface, and on the page's where it stands on a raised one.
-    total: [
-      "rounded-control bg-surface-raised px-screen-row-inline font-strong",
-      "[[data-surface-raised]_&]:bg-surface",
-    ],
+    // The row that sums the others: on the raised surface, and on the page's where it stands on a raised one, its
+    // words at the rows' inset; where the table reaches past its container, its edges are the frame's to say
+    // (FrameRowSurface).
+    total: "bg-surface-raised font-strong [[data-surface-raised]_&]:bg-surface",
     line: "px-screen-row-inline",
+  },
+  variants: {
+    contained: { true: { total: "rounded-control px-screen-row-inline" } },
   },
 });
 
-/** What the table gives its rows: its columns, and the word that marks an estimate. */
-const TableContext = createContext<{ readonly columns: readonly FinanceColumn[]; readonly estimated: string }>({
+/** What the table gives its rows: its columns, the word that marks an estimate, and whether it keeps within its width. */
+const TableContext = createContext<{
+  readonly columns: readonly FinanceColumn[];
+  readonly estimated: string;
+  readonly contained: boolean;
+}>({
   columns: [],
   estimated: "",
+  contained: false,
 });
 
 /** The glyph that marks a figure from an estimate. */
@@ -192,6 +205,12 @@ export type FinanceTableProps = {
   children: ReactNode;
   /** The row that sums the others (a `FinanceRow`), last, on the raised surface. */
   total?: ReactNode;
+  /**
+   * Its rows, and the surface of its total, keep within its own width, for a place with no room past its edges (the
+   * column beside the main one); by default they reach past it by a row's inset, so that their words line up with what
+   * stands above and below.
+   */
+  contained?: boolean | undefined;
 };
 
 /**
@@ -199,7 +218,16 @@ export type FinanceTableProps = {
  * a kind of figure. For assistive technology it is a table whose every cell is read with its row's head and its
  * column's name ("November 2026, Costs, ¥12,300, US$45.67, Estimate"); its first row the columns' names.
  */
-export function FinanceTable({ label, head, columns, estimated, about, children, total }: FinanceTableProps) {
+export function FinanceTable({
+  label,
+  head,
+  columns,
+  estimated,
+  about,
+  children,
+  total,
+  contained = false,
+}: FinanceTableProps) {
   const s = table();
   const aboutId = useId();
   return (
@@ -209,9 +237,10 @@ export function FinanceTable({ label, head, columns, estimated, about, children,
         aria-label={label}
         {...(about === undefined ? {} : { "aria-describedby": aboutId })}
         columns={columns.length}
+        contained={contained}
         className={s.root()}
       >
-        <TableContext value={{ columns, estimated: estimated ?? "" }}>
+        <TableContext value={{ columns, estimated: estimated ?? "", contained }}>
           <FinanceLine role="row" head className={s.line()}>
             <FinancePlace at="corner" role="columnheader" className={s.column()}>
               {head}
@@ -274,11 +303,12 @@ export type FinanceRowProps = {
  * a figure from an estimate with the estimate's glyph before it on its line, and their bar right under them.
  */
 export function FinanceRow({ head, caption, cells, continued = false, code = false, itemRef }: FinanceRowProps) {
-  const s = table();
-  const { columns, estimated } = use(TableContext);
+  const { columns, estimated, contained } = use(TableContext);
+  const s = table({ contained });
   const total = use(TotalContext);
-  return (
-    <FinanceLine role="row" continued={continued} className={total ? s.total() : s.line()}>
+  const line = <FinanceLine role="row" continued={continued} className={total ? s.total() : s.line()} />;
+  const held = (
+    <>
       <FinancePlace at="head" role="rowheader" className={s.head()}>
         {continued ? (
           <Spoken>{head}</Spoken>
@@ -318,6 +348,14 @@ export function FinanceRow({ head, caption, cells, continued = false, code = fal
           </FinancePlace>
         );
       })}
+    </>
+  );
+  // A total where the table reaches past its container: its edges are the frame's (FrameRowSurface).
+  return total && !contained ? (
+    <FrameRowSurface as={line}>{held}</FrameRowSurface>
+  ) : (
+    <FinanceLine role="row" continued={continued} className={total ? s.total() : s.line()}>
+      {held}
     </FinanceLine>
   );
 }
