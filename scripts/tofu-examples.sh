@@ -38,7 +38,7 @@ documents() {
   find "$tofu_dir/examples" "$tofu_dir/modules" "$tofu_dir"/mycroblog-* -type f \( -name '*.tf' -o -name '*.md' \) \
     -not -path '*/.terraform/*' -not -path "$tofu_dir/modules/*/*.tf" -not -path "$tofu_dir/mycroblog-*/*.tf"
   find "$tofu_dir" -maxdepth 1 -name '*.md'
-  for document in deploy-opentofu.md deploy-cloud-run.md deploy-aws.md; do
+  for document in deploy-opentofu.md deploy-google-cloud.md deploy-aws.md; do
     if [ -f "$root/docs/operations/$document" ]; then
       echo "$root/docs/operations/$document"
     fi

@@ -43,6 +43,6 @@ module "app" {
 }
 ```
 
-**A database that may stay awake.** The process polls about once a second while no job is due, so a serverless database that suspends when idle, such as Neon, does not suspend. Budget for it to run all month: on Neon's Free plan its compute hours may run out, and [the figures of the Cloud Run guide](../../../../../docs/operations/deploy-cloud-run.md#costs), which assume that it can rest, do not apply. Check [Neon's pricing](https://neon.com/pricing); the numbers for this case have not been worked out here.
+**A database that may stay awake.** The process polls about once a second while no job is due, so a serverless database that suspends when idle, such as Neon, does not suspend. Budget for it to run all month: on Neon's Free plan its compute hours may run out, and [the figures of the Google Cloud guide](../../../../../docs/operations/deploy-google-cloud.md#costs), which assume that it can rest, do not apply. Check [Neon's pricing](https://neon.com/pricing); the numbers for this case have not been worked out here.
 
 Several processes can share it, each taking jobs from the table, and the periodic jobs run once for the whole instance. For what it takes to split job types among them, read [Running](../../../../../docs/operations/running.md).

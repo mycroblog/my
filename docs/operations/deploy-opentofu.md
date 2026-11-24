@@ -1,6 +1,6 @@
 # Deploying with OpenTofu
 
-What every deployment with the OpenTofu root modules shares: [Deploying on Cloud Run](deploy-cloud-run.md) and
+What every deployment with the OpenTofu root modules shares: [Deploying on Google Cloud](deploy-google-cloud.md) and
 [Deploying on AWS](deploy-aws.md) add what their platform needs. Both modules need
 [OpenTofu](https://opentofu.org) 1.11 or later. Terraform is not supported.
 

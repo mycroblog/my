@@ -734,7 +734,7 @@ Choose a value from how your instance runs:
 
 ### Cloud Tasks
 
-[Deploying on Cloud Run](deploy-cloud-run.md) sets up everything below with OpenTofu modules.
+[Deploying on Google Cloud](deploy-google-cloud.md) sets up everything below with OpenTofu modules.
 
 With `queue = cloudtasks` the jobs stay in the database (`database = postgres`), and Google Cloud Tasks only wakes the server up for each of them:
 

@@ -38,7 +38,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 
 Both are returned with `Cross-Origin-Resource-Policy: cross-origin`, so pages from other origins can read them.
 
-On Cloud Run, `ingress-cloudflare-media` sets this up with OpenTofu: see [Deploying on Cloud Run](deploy-cloud-run.md#cloudflare).
+On Cloud Run, `ingress-cloudflare-media` sets this up with OpenTofu: see [Deploying on Google Cloud](deploy-google-cloud.md#cloudflare).
 
 ## Who can open media URLs
 

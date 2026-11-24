@@ -88,7 +88,7 @@ the newest, `/v0.1/` and the like) and `/next/` for the development version.
 - **Run a server**: [the overview of a mycroblog server](https://mycroblog.dev/latest/operations/overview/),
   [running the server](https://mycroblog.dev/latest/operations/running/),
   [deploying with Docker Compose](https://mycroblog.dev/latest/operations/deploy-docker-compose/),
-  [deploying on Cloud Run](https://mycroblog.dev/latest/operations/deploy-cloud-run/), and the
+  [deploying on Google Cloud](https://mycroblog.dev/latest/operations/deploy-google-cloud/), and the
   [production checklist](https://mycroblog.dev/latest/operations/production-checklist/)
 - **Use mycroblog**: [signing up and signing in](https://mycroblog.dev/latest/guide/signing-in/),
   [posting](https://mycroblog.dev/latest/guide/posting/), [following people](https://mycroblog.dev/latest/guide/following/),

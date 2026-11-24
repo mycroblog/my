@@ -79,15 +79,15 @@ The released binary and container image hold every adapter of the table.
    limits and the answers to writes sent again of each process apart. The job queue stays in
    PostgreSQL, or moves to Google Cloud Tasks ([Cloud Tasks](running.md#cloud-tasks)).
 
-The [Cloud Run deployment](deploy-cloud-run.md) is an example of a setup between the second and the third step:
-`role = all` on Cloud Run, PostgreSQL on Neon, media in Cloud Storage, Cloud Tasks for the jobs, and Pub/Sub for the
+The [recommended Google Cloud deployment](deploy-google-cloud.md) is an example of a setup between the second and the third step:
+`role = all` on Cloud Run, PostgreSQL outside Google Cloud such as Neon, media in Cloud Storage, Cloud Tasks for the jobs, and Pub/Sub for the
 stream, with no instance running while nobody uses the server.
 
 ## Where to go next
 
 Read the operator guides in this order:
 
-1. **Get started:** [run the server](running.md) or [deploy it on Cloud Run](deploy-cloud-run.md), then go through the
+1. **Get started:** [run the server](running.md) or [deploy it on Google Cloud](deploy-google-cloud.md), then go through the
    [production checklist](production-checklist.md) before you open it to users.
 2. **Configure the instance:** its [settings](instance-settings.md), [registration](registration.md),
    [external login providers](login-providers.md), [email](email.md), [CAPTCHA](captcha.md), [the CDN](cdn.md),

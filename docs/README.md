@@ -26,7 +26,7 @@ Read the groups in order: start with the overview, then configure the instance b
 - [Running the server: starting, stopping, and health checks](operations/running.md)
 - [Deploying with Docker Compose](operations/deploy-docker-compose.md)
 - [Deploying with OpenTofu (what every deployment with the root modules shares)](operations/deploy-opentofu.md)
-- [Deploying on Cloud Run](operations/deploy-cloud-run.md)
+- [Deploying on Google Cloud](operations/deploy-google-cloud.md)
 - [Deploying on AWS](operations/deploy-aws.md)
 - [Production checklist (what to verify before going live, and what `my config check` checks)](operations/production-checklist.md)
 

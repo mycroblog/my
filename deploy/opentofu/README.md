@@ -4,7 +4,7 @@ The reference of the OpenTofu root modules: their inputs and outputs, the script
 `my` on Google Cloud in one module block: a Cloud Run service and a backend for each role, which you pick by the `kind` of a
 section and which defaults to the recommended setup. `mycroblog-aws` does the same on AWS, with ECS on Fargate, and **has
 never been applied** ([AWS](#aws)). To deploy, follow [Deploying with OpenTofu](../../docs/operations/deploy-opentofu.md),
-which every deployment shares, and [Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md) or
+which every deployment shares, and [Deploying on Google Cloud](../../docs/operations/deploy-google-cloud.md) or
 [Deploying on AWS](../../docs/operations/deploy-aws.md). The sections up to [AWS](#aws) describe `mycroblog-gcp`.
 
 ```text

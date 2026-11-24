@@ -17,10 +17,38 @@ import { apiReferencePlugin, apiReferenceSidebar } from "./src/api-reference";
 import { llmsTxtPlugin } from "./src/llms-txt";
 import { analyticsHead } from "./src/analytics";
 
+// The locales of the site: English at the root of the URL space, and the translations of web/docs/i18n/ under
+// /<locale>/ (ADR-0150 §9, src/translations.ts).
+const locales = {
+  root: { label: "English", lang: "en" },
+  ja: { label: "日本語", lang: "ja" },
+  "zh-cn": { label: "简体中文", lang: "zh-CN" },
+  "zh-tw": { label: "繁體中文", lang: "zh-TW" },
+  es: { label: "Español", lang: "es" },
+  "pt-br": { label: "Português (Brasil)", lang: "pt-BR" },
+  de: { label: "Deutsch", lang: "de" },
+  fr: { label: "Français", lang: "fr" },
+};
+
+// The old slug of each renamed page, to its new one, so that a link to the old page still arrives, in every locale.
+const moved: Record<string, string> = {
+  "operations/deploy-cloud-run": "operations/deploy-google-cloud",
+};
+const redirects = Object.fromEntries(
+  Object.keys(locales).flatMap((locale) => {
+    const prefix = locale === "root" ? "" : `${locale}/`;
+    // The source is a route, without the base; a static build writes the page there, so the target carries the base.
+    return Object.entries(moved).map(([from, to]) => [`/${prefix}${from}`, `${base}${prefix}${to}/`]);
+  }),
+);
+
 export default defineConfig({
   site: "https://mycroblog.dev",
   // The path prefix of the version being built (DOCS_SITE_BASE: /latest/, /next/, ...; ADR-0150 §6), "/" by default.
   base,
+  // The page at each old path is src/pages/3xx.astro.
+  redirects,
+  experimental: { redirectPage: true },
   // The toolbar of `astro dev` is a development aid the site does not need.
   devToolbar: { enabled: false },
   // Heading attributes (`## 公開範囲 {#visibility}`) give each heading of a translated page the anchor of its English
@@ -55,19 +83,9 @@ export default defineConfig({
         Footer: "./src/components/Footer.astro",
       },
       customCss: ["./src/styles/custom.css"],
-      // English at the root of the URL space, and the translations of web/docs/i18n/ under /<locale>/ (ADR-0150 §9,
-      // src/translations.ts): a page a locale has not translated is the English page with Starlight's notice.
+      // A page a locale has not translated is the English page with Starlight's notice.
       defaultLocale: "root",
-      locales: {
-        root: { label: "English", lang: "en" },
-        ja: { label: "日本語", lang: "ja" },
-        "zh-cn": { label: "简体中文", lang: "zh-CN" },
-        "zh-tw": { label: "繁體中文", lang: "zh-TW" },
-        es: { label: "Español", lang: "es" },
-        "pt-br": { label: "Português (Brasil)", lang: "pt-BR" },
-        de: { label: "Deutsch", lang: "de" },
-        fr: { label: "Français", lang: "fr" },
-      },
+      locales,
       // Starlight's own lastUpdated reads the git history of the copied files, which says nothing about the documents.
       lastUpdated: false,
       // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides. A page

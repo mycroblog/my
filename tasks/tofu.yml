@@ -43,7 +43,7 @@ tasks:
   env-check:
     desc: Fail when deploy/opentofu or its guide names a MY_ variable that the configuration does not have
     cmds:
-      - scripts/tofu-env-check.sh deploy/opentofu docs/operations/deploy-opentofu.md docs/operations/deploy-cloud-run.md docs/operations/deploy-aws.md docs/operations/billing-import.md
+      - scripts/tofu-env-check.sh deploy/opentofu docs/operations/deploy-opentofu.md docs/operations/deploy-google-cloud.md docs/operations/deploy-aws.md docs/operations/billing-import.md
 
   backend-fields:
     desc: Fail when the backends type of an app module and the backend contract disagree, since OpenTofu drops an unknown field without a word, when a module's platform contradicts its name, when a network's fields differ from its table, or when the lists of modules/workers drift from the server's job types and the guide's table
