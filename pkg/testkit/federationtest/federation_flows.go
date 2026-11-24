@@ -31,10 +31,12 @@ import (
 
 // FederationHarness is what FederationRepositoryContract and FederationFlows need from a
 // database adapter: an empty database with the product schema, its UnitOfWork, and the
-// federation repository on it.
+// federation repository on it. FederationRepositoryContract also records the servers it lists
+// with Instances; FederationFlows does not need it.
 type FederationHarness struct {
 	UnitOfWork uow.UnitOfWork
 	Federation appfederation.Repository
+	Instances  appfederation.InstanceRepository
 }
 
 // FederationFactory returns a harness on a new, empty database whose UnitOfWork uses opts.

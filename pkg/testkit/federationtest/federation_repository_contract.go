@@ -24,7 +24,10 @@ import (
 // added to it once, and its deliveries are found and paged in ID order; the attempts of a
 // delivery are listed oldest first; the deliveries to a server are paged newest first, by
 // sender and by activity, with the attempts of a page by delivery; the health of a server is replaced, read in a transaction,
-// and listed and counted by state, and a server without one is available; the availability
+// and listed and counted by state, and a server without one is available; every known server,
+// seen in a document or with a health row, is listed once in domain order with its first
+// sighting and newest software, and kept by its state, a server without health being
+// available, and one never known is found available; the availability
 // events of a server are paged newest first; a received activity is answered once; the closure's
 // Deletes are recorded once per account, and their fan-outs and deliveries counted by state; and
 // the Moves still being sent are counted. The outbound use cases on top of it are
@@ -43,6 +46,9 @@ func FederationRepositoryContract(t *testing.T, newHarness FederationFactory) {
 		{"ListsTheAttemptsOfADelivery", fedRepoAttempts},
 		{"ListsTheDeliveriesToAServerNewestFirst", fedRepoDeliveriesTo},
 		{"ReplacesReadsAndListsTheHealthOfServers", fedRepoHealth},
+		{"ListsEveryKnownServer", fedRepoKnownInstances},
+		{"PagesKnownServersByDomain", fedRepoKnownInstancePages},
+		{"FindsAKnownServer", fedRepoFindKnownInstance},
 		{"PagesAvailabilityEventsNewestFirst", fedRepoAvailabilityEvents},
 		{"AnswersAReceivedActivityOnce", fedRepoAnswers},
 		{"CountsTheClosureDeletes", fedRepoClosure},
