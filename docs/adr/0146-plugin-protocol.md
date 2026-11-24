@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-05
 - Deciders: @rosylilly
-- Issue: #2214（エピック #2228）、#2406
+- Issue: #2214（エピック #2228）、#2406、#3493
 
 ## Decision（決定）
 
@@ -195,6 +195,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 | `Mailer.Send` | unary `Send`。`MailMessage` をそのままと `envelope_from`（`mail_from`）→ `outcome`（`SENT`・`INVALID`・`RECIPIENT_REJECTED`・`REJECTED`）・`enhanced_status` |
 | `Processor.Process`・`Remux` | 双方向ストリーム。§13 |
 | `Processor.Inspect`・`InspectAV`・`Preview` | **委譲しない。** §13 |
+| （画像のプラグインが受け付ける入力の形式） | unary `Describe` → 形式の列挙の並び。§13 |
 | `KeyManager.CurrentKeyID()` | unary `Describe` を起動時に呼んで保持する。`WrapKey` の応答の `key_id` で更新する |
 | `KeyManager.WrapKey`・`UnwrapKey` | unary。`bytes` の `dek`・`aad` など。§14 |
 
@@ -236,7 +237,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 
 検証（2026-11-05）: Unix ソケットの h2c で 100 MiB を 1 MiB のチャンクで往復し、mTLS の h2 で bearer 付きの 32 MiB を往復した。`context` の期限で `deadline_exceeded` になる。grpc-go へも双方向で届く。
 
-**委譲するのは `Process` と `Remux` だけ** とし、`Inspect`・`InspectAV`・`Preview` は組み込みの `media/native` のままにする。
+**委譲するのは `Process` と `Remux` だけ** とし、`Inspect`・`InspectAV`・`Preview` は組み込みの `media/native` のままにする。組み込みが拒む画像を受け付ける範囲は、下の入力の形式で決める。
 
 - `Inspect`・`InspectAV` はアップロードの要求の中で動き（`content/media.go`）、`Preview` はメディアプロキシの読み取りの経路で動く（`remote_media.go`）。どれも遅延を許す経路ではない
 - 重い変換という #2220 の目的は `Process` と `Remux` で足りる。`Preview` はプラグインとの出力の違いが問題にならない小さな変種である
@@ -249,7 +250,13 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 - `plugin` を選んでいない種類は組み込みの `media/native` が処理する。1 つのプラグインに全部を任せるときは、3 つの宛先に同じアドレスを書く
 - proto のサービスは 1 つ（`MediaService`）のままにする。画像のプラグインは `Process` だけ、動画と音声のプラグインは `Remux` だけを実装すればよい
 
-**出力の検査（ADR-0019 §8）:** `media.Sniff`・`SniffAV` で形式を判定し、ポートが定める形式（`Still` の large は JPEG か PNG、small と medium は WebP など）と `part` の宣言の両方に合うこと、組み込みの `Inspect`・`InspectAV` が同じ `Limits` で通すこと、箱の寸法に収まることを確かめる。`ContentType` と `Extension` はプラグインの値を使わず判定した形式から決める。合わない出力は `ErrCorrupt`、大きすぎる出力は `ErrTooLarge` で、`media.Rejected` により組み込みの拒否と同じくメディアの失敗になる。運搬の失敗は組み込みの一時的な失敗と同じく再試行する。
+**出力の検査（ADR-0019 §8）:** `media.Sniff`・`SniffAV` で形式を判定し、ポートが定める形式（`Still` の large は JPEG か PNG、small と medium は WebP など）と `part` の宣言の両方に合うこと、組み込みの `Inspect`・`InspectAV` が同じ `Limits` で通すこと、箱の寸法に収まることを確かめる。動く出力を受け付けるかは、入力ではなく出力から読んだフレーム数が 2 以上かで決める。`ContentType` と `Extension` はプラグインの値を使わず判定した形式から決める。合わない出力は `ErrCorrupt`、大きすぎる出力は `ErrTooLarge` で、`media.Rejected` により組み込みの拒否と同じくメディアの失敗になる。運搬の失敗は組み込みの一時的な失敗と同じく再試行する。
+
+**入力の形式:** `media_image = plugin` のとき、組み込みの形式に加えて、プラグインが申告した形式の画像を受け付ける。
+
+- `my` の判定は AVIF・HEIC（`ftyp` のブランド、寸法は `ispe`）と APNG（フレーム数は `acTL`）も知り、画素を復号せずに同じ `Limits` で確かめる。復号はプラグインだけがするので、復号器の脆弱性は `my` に及ばない
+- 受け付けるのは、`Describe` の申告と `my` が判定できる形式の共通部分で、設定は要らない。`Describe` は起動時と一定の間隔で呼び、申告を得るまでと `unimplemented` のときは組み込みの形式だけにする。アップロードの要求はプラグインを呼ばない
+- 出力の形式は変えないので、連合先とクライアントは新しい形式を見ない。動画（fragmented MP4 など）は範囲の外
 
 ### 14. `KeyManager` の委譲とフェイルクローズ
 
@@ -325,12 +332,13 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 
 プロプライエタリのプラグインを認めること、公式のプラグインを別のリポジトリの MIT で出すこと、DB とトランザクションのポートを委譲しないこと、マイルストーン External Plugins を `v0.1.0` の前に全部作ることは決定者の判断である。全部を前に作るのは、後からの追加が互換の破れ目になるからで、エピックの順序は作る順として読む。#2214 の推奨（Connect、接続だけのモデル、設定だけの宛先、3 つの認証と、`key_manager`・`mailer`・本文を送るフックでの平文の TCP の拒否、MIT の `v1`、黒箱の CLI）を起点に、Go のインターフェイスと依存を読んで具体化した。
 
-形が決まった転機は 3 つある。
+形が決まった転機は次のとおり。
 
 - **`my` がクライアントであること。** 「1 つの proto で 3 つのプロトコル」はサーバーの性質なので、JSON だけのプラグインへ届くには `my` が JSON を送る必要があり、§3 の設定と既定になった
 - **メディアの本体。** #2220 は blob のキーか署名付き URL で渡す案だった。ポートと経路を読むと §13 の採らなかった理由があり、ストリームにした
 - **メディアの kind の分割。** #2220 は画像・動画・音声を 1 つの kind `media` で委譲した。動画だけを別のマシンへ送れないことから、決定者が 3 つの kind に分けると決めた（#2406）
 - **kind `search`。** #2228 の範囲は全文検索の前に決まり、検索のポートを含まなかった。Elasticsearch・OpenSearch・Meilisearch の adapter（#2252〜#2254）の後、日本語に強いエンジンを adapter なしで使えるように、決定者が `v0.1.0` の前に `search` を足すと決めた（#2430）
+- **組み込みが拒む画像。** 入力の検査が組み込みのままなので、AVIF・HEIC・APNG がプラグインに届かなかった。決定者が、`my` が広く判定し、受け付ける形式はプラグインが `Describe` で申告する形に決めた（#3493）
 - **MIT の proto と生成物。** 検査のスクリプトと生成の動作を確かめると、見出しのコピーで検査が落ちることが分かり、§8 の 4 か所になった
 
 確認した一次情報（2026-11-05）: `connectrpc.com/connect/v2` v2.0.2 の `LICENSE`（Apache-2.0）・`go.mod`（ビルドの依存は `google.golang.org/protobuf` だけ、`go-cmp` はテスト用）・ソースに `import "C"` なし、[Connect Protocol Reference](https://connectrpc.com/docs/protocol/)、[Deployment & h2c](https://connectrpc.com/docs/go/deployment/)、[Migrating to v2](https://connectrpc.com/docs/go/migrating-to-v2/)。`CGO_ENABLED=0` でスクラッチのプログラムをビルドして動かし、Connect の分のバイナリの増加は約 0.8 MiB（protobuf と `net/http` を含む比較対象との差。`cmd/my` への追加では未計測）。`Apache-2.0` は `GO_ALLOWED_LICENSES` にある。
@@ -342,6 +350,8 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
 - **`connect` の v1:** 保守が続き（Migrating to v2 に明記）、実績も長いが、これから書くコードが移行を背負う。v2 の最初の版は 2026-10-07 と新しいことはリスクとして受ける
 - **サブプロセスの管理（`hashicorp/go-plugin` の形）:** 配布が簡単で寿命を `my` が握れるが、別のマシンで動かせず、Cloud Run や ECS Fargate の 1 つのコンテナにプロセスを同居させることになり（要検証）、バイナリの更新の責任が `my` に来る
 - **Go の `plugin` パッケージや Wasm:** 通信の費用がなく同じプロセスで動くが、`plugin` は cgo とビルドの完全な一致を要し（要検証）、AGPL との結合の問題が最も重い。Wasm は Vault や別のマシンでの変換という目的に合わない
+- **形式の判定をプラグインに任せる（`Inspect` の委譲）:** `my` が形式を知らずに済むが、アップロードの要求がプラグインの稼働と遅延に同期して依存する
+- **受け付ける形式を運営者の設定で決める:** 通信なしで決まるが、プラグインが処理できない形式を開けられ、プラグインの更新のたびに設定を合わせる手間が残る
 - **管理画面で宛先を設定:** 運営者には楽だが、管理者のアカウントの盗難が投稿と鍵の行き先の変更になる
 - **メディアの本体を blob のキーや署名付き URL で渡す（#2220 の案）:** メッセージが小さく、プラグインが HTTP だけで動く。ただし次の理由で足りない
   - `blob.Signer` は読むだけの URL で書く URL がなく、出力の戻り道に新しいポートのメソッドが要る
