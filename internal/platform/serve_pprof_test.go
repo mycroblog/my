@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -60,6 +61,7 @@ func TestPprofListener(t *testing.T) {
 				if status, body := pprofGet(t, pln.Addr(), platform.PathPprof+"profile?seconds=1"); status != http.StatusOK || !gzipped(body) {
 					t.Errorf("GET %sprofile = %d and %d bytes, want a CPU profile", platform.PathPprof, status, len(body))
 				}
+				pprofSamples(t, pln.Addr())
 			}
 
 			// The public listener answers these paths as any other it does not know.
@@ -103,5 +105,41 @@ func TestPprofListenerOff(t *testing.T) {
 	}
 	if strings.Contains(s.logs.String(), "serving profiles") {
 		t.Error("the log says the profiles are served")
+	}
+}
+
+// pprofSamples checks that the block and mutex profiles sample only while a request with seconds
+// takes them: the runtime's mutex sampling is on during the request and off after, and each
+// answers a gzipped profile.
+func pprofSamples(t *testing.T, addr net.Addr) {
+	t.Helper()
+	if rate := runtime.SetMutexProfileFraction(-1); rate != 0 {
+		t.Fatalf("mutex sampling is %d before any request, want off", rate)
+	}
+	type answer struct {
+		status int
+		body   []byte
+	}
+	done := make(chan answer, 1)
+	go func() {
+		status, body := pprofGet(t, addr, platform.PathPprof+"mutex?seconds=1")
+		done <- answer{status, body}
+	}()
+	sampling := false
+	for deadline := time.Now().Add(5 * time.Second); !sampling && time.Now().Before(deadline); {
+		sampling = runtime.SetMutexProfileFraction(-1) > 0
+		runtime.Gosched()
+	}
+	if !sampling {
+		t.Error("mutex sampling stayed off during GET mutex?seconds=1")
+	}
+	if a := <-done; a.status != http.StatusOK || !gzipped(a.body) {
+		t.Errorf("GET mutex?seconds=1 = %d and %d bytes, want a gzipped profile", a.status, len(a.body))
+	}
+	if rate := runtime.SetMutexProfileFraction(-1); rate != 0 {
+		t.Errorf("mutex sampling is %d after the request, want off", rate)
+	}
+	if status, body := pprofGet(t, addr, platform.PathPprof+"block?seconds=1"); status != http.StatusOK || !gzipped(body) {
+		t.Errorf("GET block?seconds=1 = %d and %d bytes, want a gzipped profile", status, len(body))
 	}
 }
