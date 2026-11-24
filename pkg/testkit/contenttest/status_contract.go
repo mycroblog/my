@@ -1332,7 +1332,8 @@ func sameCurrentPosts(t *testing.T, e *StatusEnv, ids ...string) {
 }
 
 // statusReadsCurrentRevisions reads the current revisions of statuses of every kind together: a
-// remote one with a poll and the source of its remote document, a plain one, and an edited one.
+// remote one with a poll and the source of its remote document, a plain one, an edited one, and a
+// remote one with a poll without options and every other part empty or NULL.
 func statusReadsCurrentRevisions(t *testing.T, e *StatusEnv) {
 	author := e.IDs.NewID()
 	polled := e.NewStatus(author, content.VisibilityPublic)
@@ -1359,12 +1360,29 @@ func statusReadsCurrentRevisions(t *testing.T, e *StatusEnv) {
 	if err := e.InsertRevision(t, next); err != nil {
 		t.Fatalf("revise = %v", err)
 	}
+	// A remote status whose poll has no options and no closing time, with every part of a revision
+	// empty, and a remote source without the URI of its activity (NULLs).
+	bare := e.NewStatus(author, content.VisibilityPublic)
+	bare.IsLocal = false
+	bare.URI = "https://remote.example/notes/" + bare.ID
+	bareRev := e.FirstRevision(bare)
+	bareRev.Bodies = nil
+	bareRev.Poll = &content.Poll{ID: e.IDs.NewID(), HideTotals: true}
+	bareRev.Remote = &content.RemoteRevisionSource{HTMLPolicyVersion: 1}
+	if err := e.Create(t, bare, nil, bareRev); err != nil {
+		t.Fatalf("create the bare remote status = %v", err)
+	}
 	if got, err := e.H.Statuses.FindCurrentRevisions(t.Context(), []string{polled.ID}); err != nil ||
 		got[polled.ID].Poll == nil || len(got[polled.ID].Poll.Options) != 2 || got[polled.ID].Remote == nil {
 		t.Errorf("FindCurrentRevisions[the remote status] = %+v, %v; want its poll and remote source", got[polled.ID], err)
 	}
-	sameCurrentRevisions(t, e, polled.ID, plain.ID, edited.ID)
-	sameCurrentPosts(t, e, polled.ID, plain.ID, edited.ID)
+	for _, want := range []content.Revision{rev, bareRev} {
+		if got, err := e.H.Statuses.FindRevision(t.Context(), want.ID); err != nil || !reflect.DeepEqual(got, want) {
+			t.Errorf("FindRevision = %+v, %v;\nwant %+v", got, err, want)
+		}
+	}
+	sameCurrentRevisions(t, e, polled.ID, plain.ID, edited.ID, bare.ID)
+	sameCurrentPosts(t, e, polled.ID, plain.ID, edited.ID, bare.ID)
 
 	// The poll's tallies and a voter's votes, as the reads of one poll find them.
 	voter := e.IDs.NewID()

@@ -271,31 +271,9 @@ SELECT status_id, author_account_id, oauth_client_id, idempotency_key FROM local
 SELECT status_id, author_account_id, oauth_client_id, idempotency_key FROM local_statuses
 WHERE author_account_id = ? AND idempotency_key = ?;
 
--- name: GetStatusRevision :one
-SELECT id, status_id, seq, spoiler_text, sensitive, language, revised_at FROM status_revisions WHERE id = ?;
-
 -- name: ListStatusRevisions :many
 SELECT id, status_id, seq, spoiler_text, sensitive, language, revised_at FROM status_revisions
 WHERE status_id = ? ORDER BY seq;
-
--- name: ListStatusRevisionBodies :many
-SELECT revision_id, language, content_html FROM status_revision_bodies WHERE revision_id = ? ORDER BY language;
-
--- name: GetStatusRevisionSource :one
-SELECT revision_id, source_text, source_format FROM status_revision_sources WHERE revision_id = ?;
-
--- name: ListStatusRevisionAttachments :many
-SELECT revision_id, position, media_id, description FROM status_revision_attachments
-WHERE revision_id = ? ORDER BY position;
-
--- name: ListStatusRevisionMentions :many
-SELECT account_id FROM status_revision_mentions WHERE revision_id = ? ORDER BY account_id;
-
--- name: ListStatusRevisionTags :many
-SELECT tag_id FROM status_revision_tags WHERE revision_id = ? ORDER BY tag_id;
-
--- name: ListStatusRevisionEmojis :many
-SELECT emoji_id FROM status_revision_emojis WHERE revision_id = ? ORDER BY emoji_id;
 
 -- name: GetStatusDeletion :one
 SELECT status_id, uri, author_account_id, origin, moderation_action_id, deleted_at FROM status_deletions

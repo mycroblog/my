@@ -255,20 +255,6 @@ type MediaVariant struct {
 	Height      int64
 }
 
-type Poll struct {
-	ID         string
-	RevisionID string
-	Multiple   int64
-	HideTotals int64
-	ClosesAt   sql.NullInt64
-}
-
-type PollOption struct {
-	PollID   string
-	Position int64
-	Title    string
-}
-
 type PollTally struct {
 	PollID      string
 	Position    int64
@@ -331,13 +317,6 @@ type RemoteMedium struct {
 	FocusX              sql.NullFloat64
 	FocusY              sql.NullFloat64
 	Description         sql.NullString
-}
-
-type RemoteStatusRevision struct {
-	RevisionID             string
-	ActivityUri            sql.NullString
-	HtmlPolicyVersion      int64
-	OmittedAttachmentCount int64
 }
 
 type ScheduledDraft struct {
@@ -469,60 +448,6 @@ type StatusRevision struct {
 	Sensitive   int64
 	Language    string
 	RevisedAt   int64
-}
-
-type StatusRevisionArticle struct {
-	RevisionID    string
-	Title         string
-	Summary       string
-	SummaryOrigin string
-}
-
-type StatusRevisionArticleCover struct {
-	RevisionID  string
-	MediaID     string
-	Description string
-}
-
-type StatusRevisionArticleImage struct {
-	RevisionID  string
-	Position    int64
-	MediaID     string
-	Description string
-}
-
-type StatusRevisionAttachment struct {
-	RevisionID  string
-	Position    int64
-	MediaID     string
-	Description sql.NullString
-}
-
-type StatusRevisionBody struct {
-	RevisionID  string
-	Language    string
-	ContentHtml string
-}
-
-type StatusRevisionEmoji struct {
-	RevisionID string
-	EmojiID    string
-}
-
-type StatusRevisionMention struct {
-	RevisionID string
-	AccountID  string
-}
-
-type StatusRevisionSource struct {
-	RevisionID   string
-	SourceText   string
-	SourceFormat string
-}
-
-type StatusRevisionTag struct {
-	RevisionID string
-	TagID      string
 }
 
 type Tag struct {

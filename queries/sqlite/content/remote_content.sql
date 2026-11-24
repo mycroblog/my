@@ -6,10 +6,6 @@
 INSERT INTO remote_status_revisions (revision_id, activity_uri, html_policy_version, omitted_attachment_count)
 VALUES (@revision_id, @activity_uri, @html_policy_version, @omitted_attachment_count);
 
--- name: GetRemoteStatusRevision :one
-SELECT revision_id, activity_uri, html_policy_version, omitted_attachment_count FROM remote_status_revisions
-WHERE revision_id = @revision_id;
-
 -- name: InsertRemoteMedia :execrows
 INSERT INTO remote_media (
   media_id, owner_account_id, remote_url, declared_content_type, declared_media_type, purpose, width, height,
@@ -127,12 +123,6 @@ INSERT INTO polls (id, revision_id, multiple, hide_totals, closes_at) VALUES (@i
 
 -- name: InsertPollOption :exec
 INSERT INTO poll_options (poll_id, position, title) VALUES (@poll_id, @position, @title);
-
--- name: GetPollByRevision :one
-SELECT id, revision_id, multiple, hide_totals, closes_at FROM polls WHERE revision_id = @revision_id;
-
--- name: ListPollOptions :many
-SELECT poll_id, position, title FROM poll_options WHERE poll_id = @poll_id ORDER BY position;
 
 -- InsertPollVote inserts a vote unless the account voted for the choice, or the vote's URI is
 -- recorded, already.
