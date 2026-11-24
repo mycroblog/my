@@ -402,7 +402,8 @@ and you choose each one on its own:
 
 The server still does the rest itself. It detects the format of each upload, tells videos from audio files, checks each
 upload against the limits when it arrives, and makes the previews of remote media. A kind whose setting stays `native` is
-processed in the server.
+processed in the server. A `media_image` plugin may also take AVIF, HEIC, and APNG uploads, which the server never
+decodes: it accepts those its plugin declares, after it reads their dimensions and frames from their headers.
 
 ```sh
 # Only videos go to a plugin, on a machine of its own; images and audio stay in the server.
@@ -432,8 +433,10 @@ take more than one kind: give it the same address for each. Each kind runs two c
 
 ### The contract
 
-The service is `my.plugin.media.v1.MediaService`, with the RPCs `Process` for an image and `Remux` for a video or audio file.
-Both stream both ways, so the plugin needs a Connect or gRPC library and HTTP/2: `proto` or `grpc`, over TLS with ALPN
+The service is `my.plugin.media.v1.MediaService`, with the RPCs `Process` for an image and `Remux` for a video or audio file,
+and `Describe`, which declares the formats beyond JPEG, PNG, GIF, and WebP that `Process` takes. The server calls
+`Describe` at start and every 5 minutes; a plugin without it gets those four only, and an APNG as a still PNG. The two
+others stream both ways, so the plugin needs a Connect or gRPC library and HTTP/2: `proto` or `grpc`, over TLS with ALPN
 `h2`, or over cleartext HTTP/2 (h2c) on a Unix socket or plain TCP.
 
 A call is half-duplex:
@@ -445,8 +448,8 @@ A call is half-duplex:
 3. For each output, the plugin sends a `part`, which names the output and declares its format, dimensions, and length,
    followed by `chunk` messages of 1 MiB at most.
 
-`Process` returns the small, medium, and large still outputs, and the three moving ones of an image of more than one
-frame. The small and medium outputs are WebP; the large still one is a JPEG or a PNG (always a PNG for a custom emoji),
+`Process` returns the small, medium, and large still outputs, and may return the three moving ones of an image of more
+than one frame; each moving output must have two frames at least. The small and medium outputs are WebP; the large still one is a JPEG or a PNG (always a PNG for a custom emoji),
 and the large moving one a GIF. `Remux` returns the file in its own container without metadata, and the cover picture it
 embeds, if any. The server reads at most twice the image limit from `Process`, and from `Remux` the video limit for the
 file and the image limit for its cover.

@@ -3,8 +3,13 @@
 // Package plugin is the media.Processor that delegates Process and Remux to an operator's plugins, so that heavy
 // conversion runs on another machine (ADR-0146 §11, §13). Each kind of file has its own plugin: Process of an image goes to
 // the media_image plugin, and Remux to the media_video or the media_audio plugin as the built-in processor reads the file.
-// A kind without a plugin stays on the built-in processor. Inspect, InspectAV, and Preview always stay on the built-in
-// processor: they run in the request of an upload and on the read path of the media proxy, which take no plugin's delay.
+// A kind without a plugin stays on the built-in processor. Inspect, InspectAV, and Preview never call a plugin: they run in
+// the request of an upload and on the read path of the media proxy, which take no plugin's delay.
+//
+// The plugin of images may accept AVIF, HEIC, and APNG, which the server never decodes. It declares them through Describe,
+// which Run calls at start and every DescribeInterval; Inspect accepts a file in one of those formats when the last
+// declaration names it and media.InspectExtended passes it, and never calls the plugin. Without a declaration, after
+// unimplemented, or after a failed call, Inspect accepts the built-in formats only, and reads an APNG as a still PNG.
 //
 // The bodies travel in a stream of chunks both ways, half-duplex: the server sends the head and the file, closes its side,
 // and reads the plugin's head and its outputs. The output is untrusted (ADR-0019 §8): the server detects the format of
@@ -24,6 +29,10 @@ import (
 	"io"
 	"slices"
 	"strings"
+	"sync/atomic"
+	"time"
+
+	"connectrpc.com/connect/v2"
 
 	"github.com/mycroblog/my/internal/adapter/plugin/client"
 	mediav1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/media/v1"
@@ -34,10 +43,13 @@ import (
 // ChunkSize is the most bytes of a body in one message (ADR-0146 §13).
 const ChunkSize = 1 << 20
 
+// DescribeInterval is how often Run asks the plugin of images again which formats it accepts.
+const DescribeInterval = 5 * time.Minute
+
 // Options configure a Processor.
 type Options struct {
-	// Builtin is the server's own processor. It answers Inspect, InspectAV, and Preview, checks every input before the
-	// call, and checks every output after it. Required.
+	// Builtin is the server's own processor. It answers InspectAV, Preview, and Inspect of the built-in formats, checks
+	// every input in them before the call, and checks every output after it. Required.
 	Builtin media.Processor
 	// CoverMaxBytes bounds the cover picture of Remux, which the server later processes as an image: the image limit of
 	// the settings. Zero or less is media.DefaultMaxBytes.
@@ -45,6 +57,8 @@ type Options struct {
 	// Image, Video, and Audio reach the plugins of images, of videos, and of audio-only files. A nil one leaves that
 	// kind to Builtin. At least one is required.
 	Image, Video, Audio *client.Conn
+	// DescribeInterval is how often Run calls Describe. Zero or less is DescribeInterval.
+	DescribeInterval time.Duration
 }
 
 // Processor is the media.Processor of the plugins. It is safe for concurrent use.
@@ -53,6 +67,9 @@ type Processor struct {
 	image, video, audio mediav1connect.MediaServiceClient
 	builtin             media.Processor
 	coverMax            int64
+	interval            time.Duration
+	// declared is the last declaration of the plugin of images, nil before the first one and after a failed call.
+	declared atomic.Pointer[[]media.Format]
 }
 
 var _ media.Processor = (*Processor)(nil)
@@ -68,10 +85,64 @@ func New(o Options) (*Processor, error) {
 	if o.CoverMaxBytes <= 0 {
 		o.CoverMaxBytes = media.DefaultMaxBytes
 	}
+	if o.DescribeInterval <= 0 {
+		o.DescribeInterval = DescribeInterval
+	}
 	return &Processor{
 		image: serviceOf(o.Image), video: serviceOf(o.Video), audio: serviceOf(o.Audio),
-		builtin: o.Builtin, coverMax: o.CoverMaxBytes,
+		builtin: o.Builtin, coverMax: o.CoverMaxBytes, interval: o.DescribeInterval,
 	}, nil
+}
+
+// Run calls Describe at once and then every Options.DescribeInterval until ctx ends. Without a plugin of images it returns
+// at once. The server runs it in the background while it serves.
+func (p *Processor) Run(ctx context.Context) {
+	if p.image == nil {
+		return
+	}
+	t := time.NewTicker(p.interval)
+	defer t.Stop()
+	for {
+		_ = p.Describe(ctx) // a failure leaves the built-in formats, and the client counts it
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+	}
+}
+
+// Describe asks the plugin of images which formats it accepts beyond the built-in ones and keeps the answer for Inspect:
+// the AVIF, HEIC, and APNG that it names. An answer of unimplemented declares none. A failed call forgets the last
+// declaration, so that the built-in formats alone are accepted until a call succeeds, and returns the failure, which a
+// retry may overcome. Without a plugin of images it does nothing.
+func (p *Processor) Describe(ctx context.Context) error {
+	if p.image == nil {
+		return nil
+	}
+	res, err := p.image.Describe(ctx, &mediav1.DescribeRequest{})
+	if connect.CodeOf(err) == connect.CodeUnimplemented {
+		p.declared.Store(&[]media.Format{})
+		return nil
+	}
+	if err != nil {
+		p.declared.Store(nil)
+		return failed(err)
+	}
+	accepted := []media.Format{}
+	for _, f := range res.GetInputFormats() {
+		if mf := format(f); mf.Extended() && !slices.Contains(accepted, mf) {
+			accepted = append(accepted, mf)
+		}
+	}
+	p.declared.Store(&accepted)
+	return nil
+}
+
+// accepts reports whether the last declaration of the plugin of images names f.
+func (p *Processor) accepts(f media.Format) bool {
+	d := p.declared.Load()
+	return d != nil && slices.Contains(*d, f)
 }
 
 // serviceOf returns the client of the media service on conn, or nil without conn.
@@ -82,8 +153,16 @@ func serviceOf(conn *client.Conn) mediav1connect.MediaServiceClient {
 	return mediav1connect.NewMediaServiceClient(conn.RPC)
 }
 
-// Inspect implements media.Processor with the built-in processor.
+// Inspect implements media.Processor: a file in a format that the plugin of images declared and only it decodes is checked
+// from its headers by media.InspectExtended, and every other file by the built-in processor, which refuses AVIF and HEIC
+// and reads an APNG as a still PNG. It never calls the plugin.
 func (p *Processor) Inspect(ctx context.Context, data []byte, limits media.Limits) (media.Probe, error) {
+	if f := media.Sniff(data); f.Extended() && p.image != nil && p.accepts(f) {
+		if err := ctx.Err(); err != nil {
+			return media.Probe{}, err
+		}
+		return media.InspectExtended(data, limits)
+	}
 	return p.builtin.Inspect(ctx, data, limits)
 }
 
@@ -104,8 +183,9 @@ var purposes = map[media.Purpose]mediav1.Purpose{
 	media.PurposeEmoji:      mediav1.Purpose_PURPOSE_EMOJI,
 }
 
-// Process implements media.Processor: the built-in processor inspects data, the plugin of images makes the variants, and
-// the server checks them. Without a plugin of images, the built-in processor does all of it.
+// Process implements media.Processor: Inspect checks data, the plugin of images makes the variants, and the server checks
+// them. A file in a format that only the plugin decodes, met before any declaration, first waits for Describe, since a job
+// may wait for the plugin. Without a plugin of images, the built-in processor does all of it.
 func (p *Processor) Process(ctx context.Context, data []byte, limits media.Limits, sizes media.Sizes, req media.Request) (media.Output, error) {
 	if p.image == nil {
 		return p.builtin.Process(ctx, data, limits, sizes, req)
@@ -114,7 +194,12 @@ func (p *Processor) Process(ctx context.Context, data []byte, limits media.Limit
 	if !req.Purpose.Valid() {
 		req.Purpose = media.PurposeAttachment
 	}
-	probe, err := p.builtin.Inspect(ctx, data, limits)
+	if media.Sniff(data).Extended() && p.declared.Load() == nil {
+		if err := p.Describe(ctx); err != nil {
+			return media.Output{}, err
+		}
+	}
+	probe, err := p.Inspect(ctx, data, limits)
 	if err != nil {
 		return media.Output{}, err
 	}
@@ -207,7 +292,7 @@ func (p *Processor) output(ctx context.Context, probe media.Probe, result *media
 		{mediav1.Output_OUTPUT_STILL_MEDIUM, &out.Still.Medium, webp, boxes.Medium},
 		{mediav1.Output_OUTPUT_STILL_LARGE, &out.Still.Large, large, boxes.Large},
 	} {
-		if *v.into, err = p.variant(ctx, parts, v.output, v.formats, v.box, limits); err != nil {
+		if *v.into, err = p.variant(ctx, parts, v.output, v.formats, v.box, limits, false); err != nil {
 			return media.Output{}, err
 		}
 	}
@@ -217,9 +302,6 @@ func (p *Processor) output(ctx context.Context, probe media.Probe, result *media
 	if !small && !medium && !big {
 		// A plugin may leave an animation still: its still variants show the first frame.
 		return out, nil
-	}
-	if probe.Frames < 2 {
-		return media.Output{}, fmt.Errorf("media plugin: %w: moving outputs of an image of one frame", media.ErrCorrupt)
 	}
 	out.Animated = new(media.Variants)
 	for _, v := range []struct {
@@ -232,7 +314,7 @@ func (p *Processor) output(ctx context.Context, probe media.Probe, result *media
 		{mediav1.Output_OUTPUT_ANIMATED_MEDIUM, &out.Animated.Medium, webp, boxes.Medium},
 		{mediav1.Output_OUTPUT_ANIMATED_LARGE, &out.Animated.Large, []media.Format{media.FormatGIF}, boxes.Large},
 	} {
-		if *v.into, err = p.variant(ctx, parts, v.output, v.formats, v.box, limits); err != nil {
+		if *v.into, err = p.variant(ctx, parts, v.output, v.formats, v.box, limits, true); err != nil {
 			return media.Output{}, err
 		}
 	}
@@ -240,8 +322,10 @@ func (p *Processor) output(ctx context.Context, probe media.Probe, result *media
 }
 
 // variant checks one image output: its detected format is the one its part declares and one the port allows, the
-// built-in processor accepts it under the limits, its dimensions are those its part declares, and it fits its box.
-func (p *Processor) variant(ctx context.Context, parts map[mediav1.Output]received, o mediav1.Output, formats []media.Format, b media.Box, limits media.Limits) (media.Variant, error) {
+// built-in processor accepts it under the limits, its dimensions are those its part declares, and it fits its box. A
+// moving output must have two frames at least, as the built-in processor counts them in it: the frames of the input do
+// not decide, since only the plugin decodes some inputs.
+func (p *Processor) variant(ctx context.Context, parts map[mediav1.Output]received, o mediav1.Output, formats []media.Format, b media.Box, limits media.Limits, moving bool) (media.Variant, error) {
 	r, ok := parts[o]
 	if !ok {
 		return media.Variant{}, fmt.Errorf("media plugin: %w: no %s", media.ErrCorrupt, name(o))
@@ -259,6 +343,9 @@ func (p *Processor) variant(ctx context.Context, parts map[mediav1.Output]receiv
 	}
 	if !fits(probe.Width, probe.Height, b) {
 		return media.Variant{}, fmt.Errorf("media plugin: %w: the %s, %d×%d, is outside its box", media.ErrCorrupt, name(o), probe.Width, probe.Height)
+	}
+	if moving && probe.Frames < 2 {
+		return media.Variant{}, fmt.Errorf("media plugin: %w: the %s has one frame", media.ErrCorrupt, name(o))
 	}
 	return media.Variant{Data: r.data, ContentType: f.ContentType(), Extension: extension(f), Width: probe.Width, Height: probe.Height}, nil
 }
@@ -539,6 +626,9 @@ var formats = map[mediav1.Format]media.Format{
 	mediav1.Format_FORMAT_WEBM: media.FormatWebM,
 	mediav1.Format_FORMAT_MP3:  media.FormatMP3,
 	mediav1.Format_FORMAT_OGG:  media.FormatOgg,
+	mediav1.Format_FORMAT_AVIF: media.FormatAVIF,
+	mediav1.Format_FORMAT_HEIC: media.FormatHEIC,
+	mediav1.Format_FORMAT_APNG: media.FormatAPNG,
 }
 
 // format returns the format of an enum value; "" for none the server knows.

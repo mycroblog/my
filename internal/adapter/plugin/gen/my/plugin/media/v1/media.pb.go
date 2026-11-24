@@ -232,20 +232,28 @@ const (
 	Format_FORMAT_WEBM Format = 6
 	Format_FORMAT_MP3  Format = 7
 	Format_FORMAT_OGG  Format = 8
+	// Images that only a plugin decodes, which DescribeResponse declares: AVIF and HEIC are HEIF files (ISO BMFF) whose
+	// ftyp brands say so, and an APNG is an animated PNG. No output is in one of them.
+	Format_FORMAT_AVIF Format = 9
+	Format_FORMAT_HEIC Format = 10
+	Format_FORMAT_APNG Format = 11
 )
 
 // Enum value maps for Format.
 var (
 	Format_name = map[int32]string{
-		0: "FORMAT_UNSPECIFIED",
-		1: "FORMAT_JPEG",
-		2: "FORMAT_PNG",
-		3: "FORMAT_GIF",
-		4: "FORMAT_WEBP",
-		5: "FORMAT_MP4",
-		6: "FORMAT_WEBM",
-		7: "FORMAT_MP3",
-		8: "FORMAT_OGG",
+		0:  "FORMAT_UNSPECIFIED",
+		1:  "FORMAT_JPEG",
+		2:  "FORMAT_PNG",
+		3:  "FORMAT_GIF",
+		4:  "FORMAT_WEBP",
+		5:  "FORMAT_MP4",
+		6:  "FORMAT_WEBM",
+		7:  "FORMAT_MP3",
+		8:  "FORMAT_OGG",
+		9:  "FORMAT_AVIF",
+		10: "FORMAT_HEIC",
+		11: "FORMAT_APNG",
 	}
 	Format_value = map[string]int32{
 		"FORMAT_UNSPECIFIED": 0,
@@ -257,6 +265,9 @@ var (
 		"FORMAT_WEBM":        6,
 		"FORMAT_MP3":         7,
 		"FORMAT_OGG":         8,
+		"FORMAT_AVIF":        9,
+		"FORMAT_HEIC":        10,
+		"FORMAT_APNG":        11,
 	}
 )
 
@@ -366,6 +377,89 @@ func (Outcome) EnumDescriptor() ([]byte, []int) {
 	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{4}
 }
 
+type DescribeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DescribeRequest) Reset() {
+	*x = DescribeRequest{}
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DescribeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DescribeRequest) ProtoMessage() {}
+
+func (x *DescribeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DescribeRequest.ProtoReflect.Descriptor instead.
+func (*DescribeRequest) Descriptor() ([]byte, []int) {
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{0}
+}
+
+type DescribeResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The formats of images that Process decodes, beyond those it always accepts. An APNG is a PNG whose animation control
+	// chunk (acTL) comes before its image data; declaring FORMAT_APNG asks for its frames, which Process may then turn into
+	// the animated outputs.
+	InputFormats  []Format `protobuf:"varint,1,rep,packed,name=input_formats,json=inputFormats,proto3,enum=my.plugin.media.v1.Format" json:"input_formats,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DescribeResponse) Reset() {
+	*x = DescribeResponse{}
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DescribeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DescribeResponse) ProtoMessage() {}
+
+func (x *DescribeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DescribeResponse.ProtoReflect.Descriptor instead.
+func (*DescribeResponse) Descriptor() ([]byte, []int) {
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *DescribeResponse) GetInputFormats() []Format {
+	if x != nil {
+		return x.InputFormats
+	}
+	return nil
+}
+
 type ProcessRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Message:
@@ -379,7 +473,7 @@ type ProcessRequest struct {
 
 func (x *ProcessRequest) Reset() {
 	*x = ProcessRequest{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[0]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -391,7 +485,7 @@ func (x *ProcessRequest) String() string {
 func (*ProcessRequest) ProtoMessage() {}
 
 func (x *ProcessRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[0]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -404,7 +498,7 @@ func (x *ProcessRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessRequest.ProtoReflect.Descriptor instead.
 func (*ProcessRequest) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{0}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ProcessRequest) GetMessage() isProcessRequest_Message {
@@ -472,7 +566,7 @@ type ProcessHead struct {
 
 func (x *ProcessHead) Reset() {
 	*x = ProcessHead{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[1]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -484,7 +578,7 @@ func (x *ProcessHead) String() string {
 func (*ProcessHead) ProtoMessage() {}
 
 func (x *ProcessHead) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[1]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -497,7 +591,7 @@ func (x *ProcessHead) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessHead.ProtoReflect.Descriptor instead.
 func (*ProcessHead) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{1}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ProcessHead) GetLimits() *Limits {
@@ -574,7 +668,7 @@ type Limits struct {
 
 func (x *Limits) Reset() {
 	*x = Limits{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[2]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -586,7 +680,7 @@ func (x *Limits) String() string {
 func (*Limits) ProtoMessage() {}
 
 func (x *Limits) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[2]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -599,7 +693,7 @@ func (x *Limits) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Limits.ProtoReflect.Descriptor instead.
 func (*Limits) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{2}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Limits) GetMaxBytes() int64 {
@@ -645,7 +739,7 @@ type Box struct {
 
 func (x *Box) Reset() {
 	*x = Box{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[3]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -657,7 +751,7 @@ func (x *Box) String() string {
 func (*Box) ProtoMessage() {}
 
 func (x *Box) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[3]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -670,7 +764,7 @@ func (x *Box) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Box.ProtoReflect.Descriptor instead.
 func (*Box) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{3}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Box) GetMaxPixels() int64 {
@@ -715,7 +809,7 @@ type ProcessResponse struct {
 
 func (x *ProcessResponse) Reset() {
 	*x = ProcessResponse{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[4]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -727,7 +821,7 @@ func (x *ProcessResponse) String() string {
 func (*ProcessResponse) ProtoMessage() {}
 
 func (x *ProcessResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[4]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -740,7 +834,7 @@ func (x *ProcessResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessResponse.ProtoReflect.Descriptor instead.
 func (*ProcessResponse) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{4}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ProcessResponse) GetMessage() isProcessResponse_Message {
@@ -818,7 +912,7 @@ type ProcessResult struct {
 
 func (x *ProcessResult) Reset() {
 	*x = ProcessResult{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[5]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -830,7 +924,7 @@ func (x *ProcessResult) String() string {
 func (*ProcessResult) ProtoMessage() {}
 
 func (x *ProcessResult) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[5]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -843,7 +937,7 @@ func (x *ProcessResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessResult.ProtoReflect.Descriptor instead.
 func (*ProcessResult) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{5}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ProcessResult) GetOutcome() Outcome {
@@ -887,7 +981,7 @@ type RemuxRequest struct {
 
 func (x *RemuxRequest) Reset() {
 	*x = RemuxRequest{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[6]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -899,7 +993,7 @@ func (x *RemuxRequest) String() string {
 func (*RemuxRequest) ProtoMessage() {}
 
 func (x *RemuxRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[6]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -912,7 +1006,7 @@ func (x *RemuxRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemuxRequest.ProtoReflect.Descriptor instead.
 func (*RemuxRequest) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{6}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RemuxRequest) GetMessage() isRemuxRequest_Message {
@@ -973,7 +1067,7 @@ type RemuxHead struct {
 
 func (x *RemuxHead) Reset() {
 	*x = RemuxHead{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[7]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -985,7 +1079,7 @@ func (x *RemuxHead) String() string {
 func (*RemuxHead) ProtoMessage() {}
 
 func (x *RemuxHead) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[7]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -998,7 +1092,7 @@ func (x *RemuxHead) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemuxHead.ProtoReflect.Descriptor instead.
 func (*RemuxHead) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{7}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RemuxHead) GetLimits() *AVLimits {
@@ -1040,7 +1134,7 @@ type AVLimits struct {
 
 func (x *AVLimits) Reset() {
 	*x = AVLimits{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[8]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1052,7 +1146,7 @@ func (x *AVLimits) String() string {
 func (*AVLimits) ProtoMessage() {}
 
 func (x *AVLimits) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[8]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1065,7 +1159,7 @@ func (x *AVLimits) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AVLimits.ProtoReflect.Descriptor instead.
 func (*AVLimits) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{8}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *AVLimits) GetMaxBytes() int64 {
@@ -1117,7 +1211,7 @@ type RemuxResponse struct {
 
 func (x *RemuxResponse) Reset() {
 	*x = RemuxResponse{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[9]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1129,7 +1223,7 @@ func (x *RemuxResponse) String() string {
 func (*RemuxResponse) ProtoMessage() {}
 
 func (x *RemuxResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[9]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1142,7 +1236,7 @@ func (x *RemuxResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemuxResponse.ProtoReflect.Descriptor instead.
 func (*RemuxResponse) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{9}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *RemuxResponse) GetMessage() isRemuxResponse_Message {
@@ -1215,7 +1309,7 @@ type RemuxResult struct {
 
 func (x *RemuxResult) Reset() {
 	*x = RemuxResult{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[10]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1227,7 +1321,7 @@ func (x *RemuxResult) String() string {
 func (*RemuxResult) ProtoMessage() {}
 
 func (x *RemuxResult) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[10]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1240,7 +1334,7 @@ func (x *RemuxResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemuxResult.ProtoReflect.Descriptor instead.
 func (*RemuxResult) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{10}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RemuxResult) GetOutcome() Outcome {
@@ -1267,7 +1361,7 @@ type Part struct {
 
 func (x *Part) Reset() {
 	*x = Part{}
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[11]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1279,7 +1373,7 @@ func (x *Part) String() string {
 func (*Part) ProtoMessage() {}
 
 func (x *Part) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_media_v1_media_proto_msgTypes[11]
+	mi := &file_my_plugin_media_v1_media_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1292,7 +1386,7 @@ func (x *Part) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Part.ProtoReflect.Descriptor instead.
 func (*Part) Descriptor() ([]byte, []int) {
-	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{11}
+	return file_my_plugin_media_v1_media_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Part) GetOutput() Output {
@@ -1334,7 +1428,10 @@ var File_my_plugin_media_v1_media_proto protoreflect.FileDescriptor
 
 const file_my_plugin_media_v1_media_proto_rawDesc = "" +
 	"\n" +
-	"\x1emy/plugin/media/v1/media.proto\x12\x12my.plugin.media.v1\"j\n" +
+	"\x1emy/plugin/media/v1/media.proto\x12\x12my.plugin.media.v1\"\x11\n" +
+	"\x0fDescribeRequest\"S\n" +
+	"\x10DescribeResponse\x12?\n" +
+	"\rinput_formats\x18\x01 \x03(\x0e2\x1a.my.plugin.media.v1.FormatR\finputFormats\"j\n" +
 	"\x0eProcessRequest\x125\n" +
 	"\x04head\x18\x01 \x01(\v2\x1f.my.plugin.media.v1.ProcessHeadH\x00R\x04head\x12\x16\n" +
 	"\x05chunk\x18\x02 \x01(\fH\x00R\x05chunkB\t\n" +
@@ -1418,7 +1515,7 @@ const file_my_plugin_media_v1_media_proto_rawDesc = "" +
 	"\x16OUTPUT_ANIMATED_MEDIUM\x10\x05\x12\x19\n" +
 	"\x15OUTPUT_ANIMATED_LARGE\x10\x06\x12\x12\n" +
 	"\x0eOUTPUT_AV_BODY\x10\a\x12\x13\n" +
-	"\x0fOUTPUT_AV_COVER\x10\b*\xa3\x01\n" +
+	"\x0fOUTPUT_AV_COVER\x10\b*\xd6\x01\n" +
 	"\x06Format\x12\x16\n" +
 	"\x12FORMAT_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vFORMAT_JPEG\x10\x01\x12\x0e\n" +
@@ -1433,7 +1530,11 @@ const file_my_plugin_media_v1_media_proto_rawDesc = "" +
 	"\n" +
 	"FORMAT_MP3\x10\a\x12\x0e\n" +
 	"\n" +
-	"FORMAT_OGG\x10\b*\xe2\x01\n" +
+	"FORMAT_OGG\x10\b\x12\x0f\n" +
+	"\vFORMAT_AVIF\x10\t\x12\x0f\n" +
+	"\vFORMAT_HEIC\x10\n" +
+	"\x12\x0f\n" +
+	"\vFORMAT_APNG\x10\v*\xe2\x01\n" +
 	"\aOutcome\x12\x17\n" +
 	"\x13OUTCOME_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -1444,10 +1545,11 @@ const file_my_plugin_media_v1_media_proto_rawDesc = "" +
 	"\x11OUTCOME_TOO_LARGE\x10\x05\x12\x16\n" +
 	"\x12OUTCOME_DIMENSIONS\x10\x06\x12\x13\n" +
 	"\x0fOUTCOME_CORRUPT\x10\a\x12\x14\n" +
-	"\x10OUTCOME_TOO_LONG\x10\b2\xb8\x01\n" +
+	"\x10OUTCOME_TOO_LONG\x10\b2\x8f\x02\n" +
 	"\fMediaService\x12V\n" +
 	"\aProcess\x12\".my.plugin.media.v1.ProcessRequest\x1a#.my.plugin.media.v1.ProcessResponse(\x010\x01\x12P\n" +
-	"\x05Remux\x12 .my.plugin.media.v1.RemuxRequest\x1a!.my.plugin.media.v1.RemuxResponse(\x010\x01B\xdf\x01\n" +
+	"\x05Remux\x12 .my.plugin.media.v1.RemuxRequest\x1a!.my.plugin.media.v1.RemuxResponse(\x010\x01\x12U\n" +
+	"\bDescribe\x12#.my.plugin.media.v1.DescribeRequest\x1a$.my.plugin.media.v1.DescribeResponseB\xdf\x01\n" +
 	"\x16com.my.plugin.media.v1B\n" +
 	"MediaProtoP\x01ZNgithub.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/media/v1;mediav1\xa2\x02\x03MPM\xaa\x02\x12My.Plugin.Media.V1\xca\x02\x12My\\Plugin\\Media\\V1\xe2\x02\x1eMy\\Plugin\\Media\\V1\\GPBMetadata\xea\x02\x15My::Plugin::Media::V1b\x06proto3"
 
@@ -1464,53 +1566,58 @@ func file_my_plugin_media_v1_media_proto_rawDescGZIP() []byte {
 }
 
 var file_my_plugin_media_v1_media_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_my_plugin_media_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_my_plugin_media_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_my_plugin_media_v1_media_proto_goTypes = []any{
-	(Purpose)(0),            // 0: my.plugin.media.v1.Purpose
-	(AVKind)(0),             // 1: my.plugin.media.v1.AVKind
-	(Output)(0),             // 2: my.plugin.media.v1.Output
-	(Format)(0),             // 3: my.plugin.media.v1.Format
-	(Outcome)(0),            // 4: my.plugin.media.v1.Outcome
-	(*ProcessRequest)(nil),  // 5: my.plugin.media.v1.ProcessRequest
-	(*ProcessHead)(nil),     // 6: my.plugin.media.v1.ProcessHead
-	(*Limits)(nil),          // 7: my.plugin.media.v1.Limits
-	(*Box)(nil),             // 8: my.plugin.media.v1.Box
-	(*ProcessResponse)(nil), // 9: my.plugin.media.v1.ProcessResponse
-	(*ProcessResult)(nil),   // 10: my.plugin.media.v1.ProcessResult
-	(*RemuxRequest)(nil),    // 11: my.plugin.media.v1.RemuxRequest
-	(*RemuxHead)(nil),       // 12: my.plugin.media.v1.RemuxHead
-	(*AVLimits)(nil),        // 13: my.plugin.media.v1.AVLimits
-	(*RemuxResponse)(nil),   // 14: my.plugin.media.v1.RemuxResponse
-	(*RemuxResult)(nil),     // 15: my.plugin.media.v1.RemuxResult
-	(*Part)(nil),            // 16: my.plugin.media.v1.Part
+	(Purpose)(0),             // 0: my.plugin.media.v1.Purpose
+	(AVKind)(0),              // 1: my.plugin.media.v1.AVKind
+	(Output)(0),              // 2: my.plugin.media.v1.Output
+	(Format)(0),              // 3: my.plugin.media.v1.Format
+	(Outcome)(0),             // 4: my.plugin.media.v1.Outcome
+	(*DescribeRequest)(nil),  // 5: my.plugin.media.v1.DescribeRequest
+	(*DescribeResponse)(nil), // 6: my.plugin.media.v1.DescribeResponse
+	(*ProcessRequest)(nil),   // 7: my.plugin.media.v1.ProcessRequest
+	(*ProcessHead)(nil),      // 8: my.plugin.media.v1.ProcessHead
+	(*Limits)(nil),           // 9: my.plugin.media.v1.Limits
+	(*Box)(nil),              // 10: my.plugin.media.v1.Box
+	(*ProcessResponse)(nil),  // 11: my.plugin.media.v1.ProcessResponse
+	(*ProcessResult)(nil),    // 12: my.plugin.media.v1.ProcessResult
+	(*RemuxRequest)(nil),     // 13: my.plugin.media.v1.RemuxRequest
+	(*RemuxHead)(nil),        // 14: my.plugin.media.v1.RemuxHead
+	(*AVLimits)(nil),         // 15: my.plugin.media.v1.AVLimits
+	(*RemuxResponse)(nil),    // 16: my.plugin.media.v1.RemuxResponse
+	(*RemuxResult)(nil),      // 17: my.plugin.media.v1.RemuxResult
+	(*Part)(nil),             // 18: my.plugin.media.v1.Part
 }
 var file_my_plugin_media_v1_media_proto_depIdxs = []int32{
-	6,  // 0: my.plugin.media.v1.ProcessRequest.head:type_name -> my.plugin.media.v1.ProcessHead
-	7,  // 1: my.plugin.media.v1.ProcessHead.limits:type_name -> my.plugin.media.v1.Limits
-	0,  // 2: my.plugin.media.v1.ProcessHead.purpose:type_name -> my.plugin.media.v1.Purpose
-	8,  // 3: my.plugin.media.v1.ProcessHead.small:type_name -> my.plugin.media.v1.Box
-	8,  // 4: my.plugin.media.v1.ProcessHead.medium:type_name -> my.plugin.media.v1.Box
-	8,  // 5: my.plugin.media.v1.ProcessHead.large:type_name -> my.plugin.media.v1.Box
-	10, // 6: my.plugin.media.v1.ProcessResponse.head:type_name -> my.plugin.media.v1.ProcessResult
-	16, // 7: my.plugin.media.v1.ProcessResponse.part:type_name -> my.plugin.media.v1.Part
-	4,  // 8: my.plugin.media.v1.ProcessResult.outcome:type_name -> my.plugin.media.v1.Outcome
-	12, // 9: my.plugin.media.v1.RemuxRequest.head:type_name -> my.plugin.media.v1.RemuxHead
-	13, // 10: my.plugin.media.v1.RemuxHead.limits:type_name -> my.plugin.media.v1.AVLimits
-	1,  // 11: my.plugin.media.v1.RemuxHead.kind:type_name -> my.plugin.media.v1.AVKind
-	15, // 12: my.plugin.media.v1.RemuxResponse.head:type_name -> my.plugin.media.v1.RemuxResult
-	16, // 13: my.plugin.media.v1.RemuxResponse.part:type_name -> my.plugin.media.v1.Part
-	4,  // 14: my.plugin.media.v1.RemuxResult.outcome:type_name -> my.plugin.media.v1.Outcome
-	2,  // 15: my.plugin.media.v1.Part.output:type_name -> my.plugin.media.v1.Output
-	3,  // 16: my.plugin.media.v1.Part.format:type_name -> my.plugin.media.v1.Format
-	5,  // 17: my.plugin.media.v1.MediaService.Process:input_type -> my.plugin.media.v1.ProcessRequest
-	11, // 18: my.plugin.media.v1.MediaService.Remux:input_type -> my.plugin.media.v1.RemuxRequest
-	9,  // 19: my.plugin.media.v1.MediaService.Process:output_type -> my.plugin.media.v1.ProcessResponse
-	14, // 20: my.plugin.media.v1.MediaService.Remux:output_type -> my.plugin.media.v1.RemuxResponse
-	19, // [19:21] is the sub-list for method output_type
-	17, // [17:19] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	3,  // 0: my.plugin.media.v1.DescribeResponse.input_formats:type_name -> my.plugin.media.v1.Format
+	8,  // 1: my.plugin.media.v1.ProcessRequest.head:type_name -> my.plugin.media.v1.ProcessHead
+	9,  // 2: my.plugin.media.v1.ProcessHead.limits:type_name -> my.plugin.media.v1.Limits
+	0,  // 3: my.plugin.media.v1.ProcessHead.purpose:type_name -> my.plugin.media.v1.Purpose
+	10, // 4: my.plugin.media.v1.ProcessHead.small:type_name -> my.plugin.media.v1.Box
+	10, // 5: my.plugin.media.v1.ProcessHead.medium:type_name -> my.plugin.media.v1.Box
+	10, // 6: my.plugin.media.v1.ProcessHead.large:type_name -> my.plugin.media.v1.Box
+	12, // 7: my.plugin.media.v1.ProcessResponse.head:type_name -> my.plugin.media.v1.ProcessResult
+	18, // 8: my.plugin.media.v1.ProcessResponse.part:type_name -> my.plugin.media.v1.Part
+	4,  // 9: my.plugin.media.v1.ProcessResult.outcome:type_name -> my.plugin.media.v1.Outcome
+	14, // 10: my.plugin.media.v1.RemuxRequest.head:type_name -> my.plugin.media.v1.RemuxHead
+	15, // 11: my.plugin.media.v1.RemuxHead.limits:type_name -> my.plugin.media.v1.AVLimits
+	1,  // 12: my.plugin.media.v1.RemuxHead.kind:type_name -> my.plugin.media.v1.AVKind
+	17, // 13: my.plugin.media.v1.RemuxResponse.head:type_name -> my.plugin.media.v1.RemuxResult
+	18, // 14: my.plugin.media.v1.RemuxResponse.part:type_name -> my.plugin.media.v1.Part
+	4,  // 15: my.plugin.media.v1.RemuxResult.outcome:type_name -> my.plugin.media.v1.Outcome
+	2,  // 16: my.plugin.media.v1.Part.output:type_name -> my.plugin.media.v1.Output
+	3,  // 17: my.plugin.media.v1.Part.format:type_name -> my.plugin.media.v1.Format
+	7,  // 18: my.plugin.media.v1.MediaService.Process:input_type -> my.plugin.media.v1.ProcessRequest
+	13, // 19: my.plugin.media.v1.MediaService.Remux:input_type -> my.plugin.media.v1.RemuxRequest
+	5,  // 20: my.plugin.media.v1.MediaService.Describe:input_type -> my.plugin.media.v1.DescribeRequest
+	11, // 21: my.plugin.media.v1.MediaService.Process:output_type -> my.plugin.media.v1.ProcessResponse
+	16, // 22: my.plugin.media.v1.MediaService.Remux:output_type -> my.plugin.media.v1.RemuxResponse
+	6,  // 23: my.plugin.media.v1.MediaService.Describe:output_type -> my.plugin.media.v1.DescribeResponse
+	21, // [21:24] is the sub-list for method output_type
+	18, // [18:21] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_my_plugin_media_v1_media_proto_init() }
@@ -1518,20 +1625,20 @@ func file_my_plugin_media_v1_media_proto_init() {
 	if File_my_plugin_media_v1_media_proto != nil {
 		return
 	}
-	file_my_plugin_media_v1_media_proto_msgTypes[0].OneofWrappers = []any{
+	file_my_plugin_media_v1_media_proto_msgTypes[2].OneofWrappers = []any{
 		(*ProcessRequest_Head)(nil),
 		(*ProcessRequest_Chunk)(nil),
 	}
-	file_my_plugin_media_v1_media_proto_msgTypes[4].OneofWrappers = []any{
+	file_my_plugin_media_v1_media_proto_msgTypes[6].OneofWrappers = []any{
 		(*ProcessResponse_Head)(nil),
 		(*ProcessResponse_Part)(nil),
 		(*ProcessResponse_Chunk)(nil),
 	}
-	file_my_plugin_media_v1_media_proto_msgTypes[6].OneofWrappers = []any{
+	file_my_plugin_media_v1_media_proto_msgTypes[8].OneofWrappers = []any{
 		(*RemuxRequest_Head)(nil),
 		(*RemuxRequest_Chunk)(nil),
 	}
-	file_my_plugin_media_v1_media_proto_msgTypes[9].OneofWrappers = []any{
+	file_my_plugin_media_v1_media_proto_msgTypes[11].OneofWrappers = []any{
 		(*RemuxResponse_Head)(nil),
 		(*RemuxResponse_Part)(nil),
 		(*RemuxResponse_Chunk)(nil),
@@ -1542,7 +1649,7 @@ func file_my_plugin_media_v1_media_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_my_plugin_media_v1_media_proto_rawDesc), len(file_my_plugin_media_v1_media_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   12,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

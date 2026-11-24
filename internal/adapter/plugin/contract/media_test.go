@@ -45,7 +45,7 @@ var mediaCaseNames = []string{"process_photo", "process_emoji", "process_animati
 
 func TestMediaCases(t *testing.T) {
 	results := runMedia(t, fakeplugin.Options{Media: native.New(native.Options{})})
-	for _, name := range append([]string{"reachable"}, mediaCaseNames...) {
+	for _, name := range append([]string{"reachable", "describe"}, mediaCaseNames...) {
 		if r := results[name]; r.Outcome != contract.Pass {
 			t.Errorf("%s: %+v", name, r)
 		}

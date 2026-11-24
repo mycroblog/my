@@ -5,8 +5,10 @@
 // thumbnails, and blurhash. The adapters live in internal/adapter/media/* and pass
 // mediatest.MediaProcessorContract.
 //
-// The accepted formats are JPEG, PNG (an APNG is read as its default image), GIF, and WebP,
-// the last two animated or not. Every file gets small, medium, and large still variants within
+// The built-in formats are JPEG, PNG (an APNG is read as its default image), GIF, and WebP, the
+// last two animated or not. AVIF, HEIC, and APNG are detected too, and checked from their
+// headers alone (InspectExtended): a plugin of images that declares them decodes them
+// (ADR-0146 §13), and the built-in processor refuses AVIF and HEIC. Every file gets small, medium, and large still variants within
 // the boxes of its purpose (ADR-0005 §4, §5): the large one is JPEG when opaque and PNG
 // otherwise, which every federated server shows (always PNG for a custom emoji, which servers
 // do not take as JPEG, ADR-0051 §2), and the small and medium ones are WebP. An
@@ -45,6 +47,25 @@ const (
 	FormatWebP Format = "webp"
 )
 
+// Formats of images that only a plugin decodes (ADR-0146 §13). The server reads their dimensions
+// and frames from their headers and never decodes them.
+const (
+	// FormatAVIF is an AVIF image or image sequence: a HEIF file whose ftyp brands are avif or avis.
+	FormatAVIF Format = "avif"
+	// FormatHEIC is a HEIC image or image sequence: a HEIF file whose ftyp brands are heic, heix,
+	// heim, heis, hevc, or hevx.
+	FormatHEIC Format = "heic"
+	// FormatAPNG is an animated PNG: a PNG whose acTL chunk comes before its first IDAT chunk. The
+	// built-in processor reads it as the still PNG of its default image.
+	FormatAPNG Format = "apng"
+)
+
+// Extended reports whether f is one of the formats that only a plugin decodes: AVIF, HEIC, or
+// APNG.
+func (f Format) Extended() bool {
+	return f == FormatAVIF || f == FormatHEIC || f == FormatAPNG
+}
+
 // ContentType returns the media type of f, or "" for an unknown format.
 func (f Format) ContentType() string {
 	switch f {
@@ -56,22 +77,34 @@ func (f Format) ContentType() string {
 		return "image/gif"
 	case FormatWebP:
 		return "image/webp"
+	case FormatAVIF:
+		return "image/avif"
+	case FormatHEIC:
+		return "image/heic"
+	case FormatAPNG:
+		return "image/apng"
 	}
 	return ""
 }
 
-// Sniff detects the format of data from its leading bytes alone, or returns "" when data is in
-// none of the accepted formats. File names and declared types are never consulted.
+// Sniff detects the format of data from its leading bytes, or returns "" when data is in none of
+// the formats of images. It reads the brands of a HEIF file's ftyp box, and the chunks of a PNG
+// up to its first IDAT chunk to tell an APNG. File names and declared types are never consulted.
 func Sniff(data []byte) Format {
 	switch {
 	case bytes.HasPrefix(data, []byte("\xFF\xD8\xFF")):
 		return FormatJPEG
-	case bytes.HasPrefix(data, []byte("\x89PNG\r\n\x1A\n")):
+	case bytes.HasPrefix(data, pngSignature):
+		if pngAnimated(data) {
+			return FormatAPNG
+		}
 		return FormatPNG
 	case bytes.HasPrefix(data, []byte("GIF87a")), bytes.HasPrefix(data, []byte("GIF89a")):
 		return FormatGIF
 	case len(data) >= 12 && bytes.HasPrefix(data, []byte("RIFF")) && string(data[8:12]) == "WEBP":
 		return FormatWebP
+	case len(data) >= 12 && string(data[4:8]) == "ftyp":
+		return heifFormat(data)
 	}
 	return ""
 }

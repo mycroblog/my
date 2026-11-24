@@ -35,10 +35,11 @@ const (
 )
 
 // SniffAV detects the video or audio container of data from its leading bytes alone, or
-// returns "" when data is in none of the accepted containers.
+// returns "" when data is in none of the accepted containers. A HEIF image, whose ftyp box Sniff
+// reads as AVIF or HEIC, is not an MP4.
 func SniffAV(data []byte) Format {
 	switch {
-	case len(data) >= 12 && string(data[4:8]) == "ftyp":
+	case len(data) >= 12 && string(data[4:8]) == "ftyp" && heifFormat(data) == "":
 		return FormatMP4
 	case bytes.HasPrefix(data, []byte("\x1A\x45\xDF\xA3")):
 		return FormatWebM

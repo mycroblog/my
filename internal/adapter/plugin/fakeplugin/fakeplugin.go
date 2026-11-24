@@ -55,6 +55,9 @@ type Options struct {
 	Media media.Processor
 	// MediaUnderstate declares each output of the media kind at half its size, as a plugin that lies about it.
 	MediaUnderstate bool
+	// MediaInputFormats are what Describe of the media kind declares, as they are; nil answers unimplemented, as a plugin
+	// without Describe does.
+	MediaInputFormats []media.Format
 	// KeyManager is the key store behind the fake's key manager kind, whose answers it hands on as they are, so that a test
 	// can make the fake break the contract. Its key IDs are the plugin's own, without the server's prefix, and an error that
 	// is no result of the port fails the call. Without it the fake does not serve the kind.

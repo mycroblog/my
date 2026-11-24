@@ -24,6 +24,11 @@ func inspect(data []byte, limits media.Limits) (media.Probe, error) {
 		return media.Probe{}, fmt.Errorf("%w: %d bytes, at most %d", media.ErrTooLarge, len(data), limits.MaxBytes)
 	}
 	format := media.Sniff(data)
+	if format == media.FormatAPNG {
+		// The PNG decoder reads the default image of an APNG, which is all of it that this
+		// processor makes variants of (ADR-0146 §13).
+		format = media.FormatPNG
+	}
 	var decodeConfig func(r *bytes.Reader) (image.Config, error)
 	switch format {
 	case media.FormatJPEG:

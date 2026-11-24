@@ -20,7 +20,7 @@ func TestPluginTestMedia(t *testing.T) {
 		kind string
 		want []string
 	}{
-		{"media_image", []string{"PASS process_photo: ", "PASS process_emoji\n", "PASS process_animation\n", "4 passed, 0 failed, 0 skipped\n"}},
+		{"media_image", []string{"PASS describe: ", "PASS process_photo: ", "PASS process_emoji\n", "PASS process_animation\n", "5 passed, 0 failed, 0 skipped\n"}},
 		{"media_audio", []string{"PASS remux_audio\n", "2 passed, 0 failed, 0 skipped\n"}},
 		{"media_video", []string{"PASS remux_video: ", "2 passed, 0 failed, 0 skipped\n"}},
 	} {

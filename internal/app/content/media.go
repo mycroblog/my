@@ -335,6 +335,15 @@ func checkDeclaredType(declared string, detected media.Format) error {
 		return nil
 	case "image/jpg", "image/pjpeg":
 		mt = "image/jpeg"
+	case "image/png":
+		// An APNG keeps the extension and often the type of a PNG.
+		if detected == media.FormatAPNG {
+			mt = detected.ContentType()
+		}
+	case "image/heif":
+		if detected == media.FormatHEIC {
+			mt = detected.ContentType()
+		}
 	}
 	if mt != detected.ContentType() {
 		return fmt.Errorf("%w: declared %s, content is %s", ErrContentTypeMismatch, mt, detected.ContentType())
