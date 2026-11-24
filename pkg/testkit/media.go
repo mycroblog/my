@@ -32,7 +32,11 @@ func (FakeMediaProcessor) Inspect(ctx context.Context, data []byte, limits media
 		return media.Probe{}, media.ErrTooLarge
 	}
 	f := media.Sniff(data)
-	if f == "" {
+	// As the built-in processor: an APNG is a still PNG, and AVIF and HEIC are refused.
+	if f == media.FormatAPNG {
+		f = media.FormatPNG
+	}
+	if f == "" || f.Extended() {
 		return media.Probe{}, media.ErrUnsupportedFormat
 	}
 	if bytes.Contains(data, []byte("corrupt")) {

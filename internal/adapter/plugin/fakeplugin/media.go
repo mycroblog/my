@@ -182,6 +182,25 @@ func (s *mediaServer) Remux(ctx context.Context, stream mediav1connect.MediaServ
 	return sendOutput(cover, out.Cover, sendPart, sendChunk)
 }
 
+// Describe implements mediav1connect.MediaServiceHandler with Options.MediaInputFormats, in their order. A format without
+// a value of the protocol goes as FORMAT_UNSPECIFIED, which the server ignores.
+func (s *mediaServer) Describe(ctx context.Context, _ *mediav1.DescribeRequest) (*mediav1.DescribeResponse, error) {
+	if s.o.MediaInputFormats == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, "this fake declares no input formats")
+	}
+	if done, err := s.misbehave(ctx, func() error { return nil }); done {
+		if err != nil {
+			return nil, err
+		}
+		return &mediav1.DescribeResponse{}, nil
+	}
+	res := &mediav1.DescribeResponse{}
+	for _, f := range s.o.MediaInputFormats {
+		res.InputFormats = append(res.InputFormats, mediaFormats[f])
+	}
+	return res, nil
+}
+
 // misbehave holds or breaks a call as Options say, and reports whether it did.
 func (s *mediaServer) misbehave(ctx context.Context, sendEmpty func() error) (bool, error) {
 	switch {
@@ -257,6 +276,9 @@ var mediaFormats = map[media.Format]mediav1.Format{
 	media.FormatWebM: mediav1.Format_FORMAT_WEBM,
 	media.FormatMP3:  mediav1.Format_FORMAT_MP3,
 	media.FormatOgg:  mediav1.Format_FORMAT_OGG,
+	media.FormatAVIF: mediav1.Format_FORMAT_AVIF,
+	media.FormatHEIC: mediav1.Format_FORMAT_HEIC,
+	media.FormatAPNG: mediav1.Format_FORMAT_APNG,
 }
 
 // mediaFormatOfType returns the format a variant's content type reports, which may not be what its data is.

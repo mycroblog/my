@@ -56,7 +56,33 @@ RemuxResponse.head; with OUTCOME_OK, it then sends the part OUTPUT_AV_BODY and i
 OUTPUT_AV_COVER and its chunks when the file embeds a cover picture (ID3 APIC, MP4 covr). The server reads the body
 up to limits.max_bytes, and the cover up to its own limit of an image.
 
+#### `Describe`
+
+```proto
+rpc Describe(DescribeRequest) returns (DescribeResponse);
+```
+
+Request: [`DescribeRequest`](#describerequest). Response: [`DescribeResponse`](#describeresponse).
+
+Describe says which formats of images Process accepts beyond JPEG, PNG, GIF, and WebP, which it always accepts. The
+server reads FORMAT_AVIF, FORMAT_HEIC, and FORMAT_APNG and ignores the other values. It calls Describe at start, every
+5 minutes, and before it processes such a file without a declaration, never in the request of an upload. It accepts
+an upload in a declared format once it has read the file's dimensions and frames from its headers and checked them
+against the limits; it never decodes such a file itself. Until a declaration arrives, while the plugin does not
+answer, and when it answers unimplemented, as a plugin that implements only Process or Remux does, the server accepts
+JPEG, PNG, GIF, and WebP only, and reads an APNG as a still PNG. It lasts plugin_media_image_timeout at most.
+
 ## Messages
+
+### `DescribeRequest`
+
+No fields.
+
+### `DescribeResponse`
+
+- `input_formats` (repeated [`Format`](#format), field 1): The formats of images that Process decodes, beyond those it always accepts. An APNG is a PNG whose animation control
+  chunk (acTL) comes before its image data; declaring FORMAT_APNG asks for its frames, which Process may then turn into
+  the animated outputs.
 
 ### `ProcessRequest`
 
@@ -199,6 +225,10 @@ The outputs. Each one comes once at most.
 - `FORMAT_WEBM` = 6
 - `FORMAT_MP3` = 7
 - `FORMAT_OGG` = 8
+- `FORMAT_AVIF` = 9: Images that only a plugin decodes, which DescribeResponse declares: AVIF and HEIC are HEIF files (ISO BMFF) whose
+  ftyp brands say so, and an APNG is an animated PNG. No output is in one of them.
+- `FORMAT_HEIC` = 10
+- `FORMAT_APNG` = 11
 
 ### `Outcome`
 

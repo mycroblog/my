@@ -44,6 +44,8 @@ const (
 	MediaServiceProcessProcedure = "/my.plugin.media.v1.MediaService/Process"
 	// MediaServiceRemuxProcedure is the procedure name of the MediaService's Remux RPC.
 	MediaServiceRemuxProcedure = "/my.plugin.media.v1.MediaService/Remux"
+	// MediaServiceDescribeProcedure is the procedure name of the MediaService's Describe RPC.
+	MediaServiceDescribeProcedure = "/my.plugin.media.v1.MediaService/Describe"
 )
 
 var (
@@ -59,6 +61,13 @@ var (
 			StreamType: connect.StreamTypeBidi,
 			Schema:     v1.File_my_plugin_media_v1_media_proto.Services().ByName("MediaService").Methods().ByName("Remux"),
 			Procedure:  MediaServiceRemuxProcedure,
+		}
+	})
+	mediaServiceDescribeSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_my_plugin_media_v1_media_proto.Services().ByName("MediaService").Methods().ByName("Describe"),
+			Procedure:  MediaServiceDescribeProcedure,
 		}
 	})
 )
@@ -82,6 +91,14 @@ type MediaServiceClient interface {
 	// OUTPUT_AV_COVER and its chunks when the file embeds a cover picture (ID3 APIC, MP4 covr). The server reads the body
 	// up to limits.max_bytes, and the cover up to its own limit of an image.
 	Remux(context.Context) (MediaServiceRemuxClientStream, error)
+	// Describe says which formats of images Process accepts beyond JPEG, PNG, GIF, and WebP, which it always accepts. The
+	// server reads FORMAT_AVIF, FORMAT_HEIC, and FORMAT_APNG and ignores the other values. It calls Describe at start, every
+	// 5 minutes, and before it processes such a file without a declaration, never in the request of an upload. It accepts
+	// an upload in a declared format once it has read the file's dimensions and frames from its headers and checked them
+	// against the limits; it never decodes such a file itself. Until a declaration arrives, while the plugin does not
+	// answer, and when it answers unimplemented, as a plugin that implements only Process or Remux does, the server accepts
+	// JPEG, PNG, GIF, and WebP only, and reads an APNG as a still PNG. It lasts plugin_media_image_timeout at most.
+	Describe(context.Context, *v1.DescribeRequest) (*v1.DescribeResponse, error)
 }
 
 // NewMediaServiceClient constructs a client for the my.plugin.media.v1.MediaService service.
@@ -181,6 +198,14 @@ type MediaServiceHandler interface {
 	// OUTPUT_AV_COVER and its chunks when the file embeds a cover picture (ID3 APIC, MP4 covr). The server reads the body
 	// up to limits.max_bytes, and the cover up to its own limit of an image.
 	Remux(context.Context, MediaServiceRemuxServerStream) error
+	// Describe says which formats of images Process accepts beyond JPEG, PNG, GIF, and WebP, which it always accepts. The
+	// server reads FORMAT_AVIF, FORMAT_HEIC, and FORMAT_APNG and ignores the other values. It calls Describe at start, every
+	// 5 minutes, and before it processes such a file without a declaration, never in the request of an upload. It accepts
+	// an upload in a declared format once it has read the file's dimensions and frames from its headers and checked them
+	// against the limits; it never decodes such a file itself. Until a declaration arrives, while the plugin does not
+	// answer, and when it answers unimplemented, as a plugin that implements only Process or Remux does, the server accepts
+	// JPEG, PNG, GIF, and WebP only, and reads an APNG as a still PNG. It lasts plugin_media_image_timeout at most.
+	Describe(context.Context, *v1.DescribeRequest) (*v1.DescribeResponse, error)
 }
 
 // RegisterMediaServiceHandler registers svc as the my.plugin.media.v1.MediaService implementation
@@ -190,6 +215,7 @@ func RegisterMediaServiceHandler(server *connect.Server, svc MediaServiceHandler
 	server.Register(
 		connect.Method{Spec: mediaServiceProcessSpec(), Handler: adapter.process},
 		connect.Method{Spec: mediaServiceRemuxSpec(), Handler: adapter.remux},
+		connect.Method{Spec: mediaServiceDescribeSpec(), Handler: adapter.describe},
 	)
 }
 
@@ -252,6 +278,10 @@ func (UnimplementedMediaServiceHandler) Remux(context.Context, MediaServiceRemux
 	return connect.NewError(connect.CodeUnimplemented, "my.plugin.media.v1.MediaService.Remux is not implemented")
 }
 
+func (UnimplementedMediaServiceHandler) Describe(context.Context, *v1.DescribeRequest) (*v1.DescribeResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "my.plugin.media.v1.MediaService.Describe is not implemented")
+}
+
 type mediaServiceClient struct {
 	client *connect.Client
 }
@@ -272,6 +302,14 @@ func (c *mediaServiceClient) Remux(ctx context.Context) (MediaServiceRemuxClient
 	return MediaServiceRemuxClientStream{stream: stream}, nil
 }
 
+func (c *mediaServiceClient) Describe(ctx context.Context, req *v1.DescribeRequest) (*v1.DescribeResponse, error) {
+	var res v1.DescribeResponse
+	if err := c.client.CallUnary(ctx, mediaServiceDescribeSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 type mediaServiceHandler struct{ svc MediaServiceHandler }
 
 func (h mediaServiceHandler) process(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
@@ -280,4 +318,16 @@ func (h mediaServiceHandler) process(ctx context.Context, _ connect.Spec, stream
 
 func (h mediaServiceHandler) remux(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
 	return h.svc.Remux(ctx, MediaServiceRemuxServerStream{stream: stream})
+}
+
+func (h mediaServiceHandler) describe(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DescribeRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.Describe(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

@@ -32,6 +32,12 @@ const videoLocation = "+35.6812+139.7671/"
 // come back (ADR-0146 §16).
 var mediaImageCases = []Case{
 	{
+		Name: "describe",
+		Run:  mediaDescribe,
+		// Unimplemented passes: such a plugin gets the built-in formats only.
+		Note: "the server accepts AVIF, HEIC, and APNG uploads only as Describe declares them, and sends them to Process",
+	},
+	{
 		Name: "process_photo",
 		Run:  mediaProcessPhoto,
 		// The server checks each output's format, dimensions, and box; it cannot know every way to keep metadata.
@@ -137,6 +143,19 @@ func mediaProcessAnimation(ctx context.Context, env Env) error {
 	}
 	if out.Animated == nil {
 		return fmt.Errorf("an animation of three frames has no moving outputs")
+	}
+	return nil
+}
+
+// mediaDescribe asks the plugin which formats of images it accepts beyond the built-in ones. A plugin that answers
+// unimplemented passes, as one that declares none.
+func mediaDescribe(ctx context.Context, env Env) error {
+	p, err := mediaImageProcessor(env)
+	if err != nil {
+		return err
+	}
+	if err := p.Describe(ctx); err != nil {
+		return describeCallError(env, err)
 	}
 	return nil
 }

@@ -39,7 +39,7 @@ type MediaFactory func(t *testing.T, opts uow.Options) MediaHarness
 // of ADR-0153 §1, which internal/flowtest/content runs once on SQLite; MediaRepositoryContract
 // checks the media repository's methods on every adapter. The flows cover uploads stored with the detected type and their processing job
 // enqueued, rejected uploads leaving nothing behind, uploads read from a *bytes.Buffer taken as from
-// any reader, idempotent processing that records one
+// any reader, the declared types of the formats only a plugin decodes, idempotent processing that records one
 // result with its variants for the upload's purpose under keys of the result and deletes the
 // file as received, processing again for another purpose, failures recorded as results,
 // focal points and descriptions as current values that only the uploader reads and changes
@@ -59,6 +59,7 @@ func MediaFlows(t *testing.T, newHarness MediaFactory) {
 		{"StoresUploads", mediaStoresUploads},
 		{"RejectsUploadsWithoutWriting", mediaRejectsUploads},
 		{"TakesUploadsFromABuffer", mediaTakesUploadsFromABuffer},
+		{"TakesTheDeclaredTypesOfPluginFormats", mediaTakesDeclaredTypesOfPluginFormats},
 		{"ProcessesIdempotently", mediaProcessesIdempotently},
 		{"ProcessesAgainForAnotherPurpose", mediaReprocessesForAnotherPurpose},
 		{"RecordsFailedProcessing", mediaRecordsFailures},
@@ -290,6 +291,64 @@ func mediaTakesUploadsFromABuffer(t *testing.T, e *mediaEnv) {
 	}
 	if got := e.blobs.Keys(); !slices.Equal(got, keys) || len(e.jobs.jobs) != jobs {
 		t.Errorf("refused uploads from a bytes.Buffer left blobs %v (before %v) and %d jobs", got, keys, len(e.jobs.jobs)-jobs)
+	}
+}
+
+// pluginFormats is the media processor of a plugin of images that declares AVIF, HEIC, and APNG: it inspects them from
+// their headers, and every other file as FakeMediaProcessor does.
+type pluginFormats struct{ testkit.FakeMediaProcessor }
+
+func (p pluginFormats) Inspect(ctx context.Context, data []byte, limits media.Limits) (media.Probe, error) {
+	if media.Sniff(data).Extended() {
+		return media.InspectExtended(data, limits)
+	}
+	return p.FakeMediaProcessor.Inspect(ctx, data, limits)
+}
+
+// mediaTakesDeclaredTypesOfPluginFormats checks that an upload of a format only a plugin decodes is stored with its
+// detected type, under its own declared type or the one clients send for it: image/png for an APNG, which keeps the
+// extension of a PNG, and image/heif for a HEIC image; another declared type is ErrContentTypeMismatch.
+func mediaTakesDeclaredTypesOfPluginFormats(t *testing.T, e *mediaEnv) {
+	service := appcontent.NewMediaService(appcontent.MediaDeps{
+		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Media, Blobs: e.blobs, Processor: pluginFormats{},
+		Jobs: e.jobs, Clock: e.clock, IDs: e.ids, Limits: media.Limits{MaxBytes: 1 << 20},
+	})
+	avif := testkit.HEIFFile(testkit.HEIFOptions{Brands: []string{"avif", "mif1"}, Width: 64, Height: 48})
+	heic := testkit.HEIFFile(testkit.HEIFOptions{Brands: []string{"heic", "mif1"}, Width: 64, Height: 48})
+	apng := testkit.APNGFile(testkit.APNGOptions{Width: 64, Height: 48, Frames: 3})
+	for _, tc := range []struct {
+		name     string
+		data     []byte
+		declared string
+		want     error
+		stored   string
+	}{
+		{"apng as png", apng, "image/png", nil, "image/apng"},
+		{"apng as apng", apng, "image/apng", nil, "image/apng"},
+		{"apng undeclared", apng, "", nil, "image/apng"},
+		{"heic as heif", heic, "image/heif", nil, "image/heic"},
+		{"heic as heic", heic, "image/heic", nil, "image/heic"},
+		{"avif as avif", avif, "image/avif", nil, "image/avif"},
+		{"apng as gif", apng, "image/gif", appcontent.ErrContentTypeMismatch, ""},
+		{"heic as jpeg", heic, "image/jpeg", appcontent.ErrContentTypeMismatch, ""},
+		{"avif as png", avif, "image/png", appcontent.ErrContentTypeMismatch, ""},
+		{"png as apng", testkit.FixturePNG(4, 3, false), "image/apng", appcontent.ErrContentTypeMismatch, ""},
+	} {
+		e.clock.Advance(time.Millisecond)
+		m, err := service.Upload(t.Context(), appcontent.UploadInput{OwnerAccountID: mediaOwner, Content: bytes.NewReader(tc.data), DeclaredContentType: tc.declared})
+		if tc.want != nil {
+			if !errors.Is(err, tc.want) {
+				t.Errorf("%s: Upload = %v, want %v", tc.name, err, tc.want)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("%s: Upload = %v", tc.name, err)
+			continue
+		}
+		if m.Upload == nil || m.Upload.ContentType != tc.stored {
+			t.Errorf("%s: Upload = %+v, want the type %s", tc.name, m.Upload, tc.stored)
+		}
 	}
 }
 

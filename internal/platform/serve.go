@@ -197,6 +197,11 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		})
 	}
 
+	// The plugin of images declares the formats that only it decodes, which uploads take without calling it (ADR-0146 §13).
+	if d, ok := a.MediaProcessor.(mediaDescriber); ok {
+		kernel.Go(ctx, "media.plugin.describe", a.ErrorReporter, d.Run)
+	}
+
 	var jobs sync.WaitGroup
 	stopJobs := make(chan struct{})
 	// With a push receiver, the requests of the platform's queue run the jobs and those of its
@@ -283,6 +288,12 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		a.Logger.InfoContext(ctx, "stopped")
 	}
 	return err
+}
+
+// mediaDescriber is the media processor of the plugins, whose Run asks the plugin of images for its formats until ctx
+// ends.
+type mediaDescriber interface {
+	Run(ctx context.Context)
 }
 
 // How a process runs the jobs, as its log line "started" says: jobsRunPull runs the job runner,
