@@ -25,6 +25,7 @@ import { Layers, Spoken } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { curve } from "./modal";
 import { scrollerOf, viewTopOf } from "./scroll";
+import { remOf } from "./swipe-close";
 
 const Pulls = createContext(false);
 
@@ -239,13 +240,6 @@ export function PullPlace({ children }: { children: ReactNode }) {
       {children}
     </div>
   );
-}
-
-/** The root's font size in px, by which a touch's way is told in rem. */
-function remOf(el: Element): number {
-  const view = el.ownerDocument.defaultView;
-  const size = view ? Number.parseFloat(view.getComputedStyle(el.ownerDocument.documentElement).fontSize) : NaN;
-  return Number.isFinite(size) && size > 0 ? size : 16;
 }
 
 /**

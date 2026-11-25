@@ -268,6 +268,17 @@ export const transition = {
 } as const;
 
 /**
+ * Closing a modal by a swipe down (the composer on a phone, the media viewer), in rem, rem/s and ms: how far the finger
+ * goes before a drag is told from a press, a scroll or a sideways swipe; how far down a release closes; how fast a
+ * flick down closes short of that, measured over the drag's last `window` ms; the share of its strength the backing
+ * gives up by the way, all of it at `distance` and none of it more, so that it keeps the rest until the modal leaves;
+ * and how soon after the touch a drag in what is written must start, in ms, before a held finger would select there
+ * (`hold`). The surface follows the finger at once, springs back in a pop's time with the easing of what enters, and
+ * leaves in a modal's time with the easing of what leaves (`transition`).
+ */
+export const swipeClose = { slop: 0.5, distance: 6, velocity: 25, window: 100, dim: 0.3, hold: 300 } as const;
+
+/**
  * The spinner, relative to the label's size, in em: its diameter and stroke, and the share its track shows. A browser
  * draws a border a whole pixel wide, down from what it is given: the stroke is 2 px at a label's size, never 1.
  */

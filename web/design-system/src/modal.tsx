@@ -17,6 +17,11 @@
 // mounts in. A press outside its panel dismisses it, as Escape does unless the caller handles Escape itself; focus
 // stays in it and goes back where it was; the page behind is inert.
 //
+// A modal that closes by a swipe down (swipe-close.tsx) says where the swipe stands (`swipe`): its backdrop keeps the
+// share of its strength the swipe leaves it, and its panel, where the panel is what the finger moves, follows it;
+// let go to close, the panel leaves on down out of the viewport from where it was let go instead of its own way back
+// up, in the same time and easing, or stays while what it holds leaves that way (the media viewer's picture).
+//
 // Where a modal stands is its frame's alone (`ModalFrame`, with `ModalPanel`): a modal says its place, and writes its
 // surface and what it holds. Under `tablet` a modal at `screen` is a screen of its own, so the frame is one of the
 // frames of a page, which read the viewport.
@@ -27,6 +32,7 @@ import { useRef, type ReactNode } from "react";
 import { DismissButton, Overlay } from "react-aria/Overlay";
 import { useModalOverlay } from "react-aria/useModalOverlay";
 import { OverlayTriggerStateContext } from "react-aria-components";
+import { swipeBackingStyle, swipeSurfaceStyle, type SwipeState, type SwipeStyle } from "./swipe-close";
 
 /** The control points of a `cubic-bezier()` easing token, as Motion takes them. */
 export function curve(easing: string): [number, number, number, number] {
@@ -45,6 +51,14 @@ export const modalMotion = {
     shown: { opacity: 1, y: 0, transition: enter },
   },
 } as const satisfies Record<string, Variants>;
+
+/**
+ * Where a surface let go past a swipe's distance goes as its modal leaves: on down by the viewport's height from where
+ * it was let go (where the swipe's `translate` holds it), in a modal's time with the easing of what leaves.
+ */
+export function swipeExit(): { y: number; transition: typeof leave } {
+  return { y: window.innerHeight, transition: leave };
+}
 
 /** The state the overlay starts in, goes to and leaves by: none to move through with reduced motion. */
 export function modalStates(reduced: boolean) {
@@ -119,41 +133,62 @@ function ModalFrame({
   backdrop,
   idle,
   states,
+  backdropStyle,
   children,
 }: {
   place: ModalPlace;
   backdrop: keyof typeof modalBackdrop;
   idle: boolean;
   states: ReturnType<typeof modalStates>;
+  backdropStyle: SwipeStyle | undefined;
   children: ReactNode;
 }) {
   return (
     <m.div className={idle ? `${OVERLAY[place]} pointer-events-none` : OVERLAY[place]} {...states}>
-      <m.div className={modalBackdrop[backdrop]} variants={modalMotion.backdrop} />
+      <m.div className={modalBackdrop[backdrop]} variants={modalMotion.backdrop} style={backdropStyle ?? {}} />
       {children}
     </m.div>
   );
 }
 
-/** The panel of a modal, where `place` puts it in its frame, on the surface its modal gives it (`className`). */
+/**
+ * The panel of a modal, where `place` puts it in its frame, on the surface its modal gives it (`className`); moved by
+ * a swipe by `style`, and, let go to close (`leaving`), leaving on down (`panel`) or staying while what it holds
+ * leaves (`inside`).
+ */
 function ModalPanel({
   place,
   className,
+  style,
+  leaving,
   children,
 }: {
   place: ModalPlace;
   className: string | undefined;
+  style: SwipeStyle | undefined;
+  leaving: ModalSwipe["moves"] | undefined;
   children: ReactNode;
 }) {
+  const variants =
+    leaving === undefined
+      ? modalMotion.panel
+      : { shown: modalMotion.panel.shown, hidden: leaving === "panel" ? swipeExit() : {} };
   return (
     <m.div
       className={className === undefined ? PANEL[place] : `${className} ${PANEL[place]}`}
-      variants={modalMotion.panel}
+      variants={variants}
+      style={style ?? {}}
     >
       {children}
     </m.div>
   );
 }
+
+/**
+ * A swipe down that closes a modal (swipe-close.tsx): where it stands, and what follows the finger, the panel itself
+ * (the composer) or a part of what it holds, which its caller moves (the media viewer).
+ */
+type ModalSwipe = { readonly at: SwipeState; readonly moves: "panel" | "inside" };
 
 export type ModalLayerProps = {
   /** A press outside the panel, and Escape unless `ownEscape`. */
@@ -171,6 +206,8 @@ export type ModalLayerProps = {
   panelClassName?: string | undefined;
   /** It takes no pointer yet (a sheet whose opening press has not ended). */
   idle?: boolean | undefined;
+  /** A swipe down that closes it, as it stands. */
+  swipe?: ModalSwipe | undefined;
   children: ReactNode;
 };
 
@@ -182,6 +219,7 @@ export function ModalLayer({
   place,
   panelClassName,
   idle = false,
+  swipe,
   children,
 }: ModalLayerProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -202,10 +240,21 @@ export function ModalLayer({
   return (
     <Overlay isExiting={!present}>
       <LazyMotion features={domMin} strict>
-        <ModalFrame place={place} backdrop={dim} idle={idle || !present} states={modalStates(reduced)}>
+        <ModalFrame
+          place={place}
+          backdrop={dim}
+          idle={idle || !present}
+          states={modalStates(reduced)}
+          backdropStyle={swipe && swipeBackingStyle(swipe.at, reduced)}
+        >
           <div {...modalProps} ref={ref} className="contents">
             <DismissButton onDismiss={onDismiss} />
-            <ModalPanel place={place} className={panelClassName}>
+            <ModalPanel
+              place={place}
+              className={panelClassName}
+              style={swipe?.moves === "panel" ? swipeSurfaceStyle(swipe.at, reduced) : undefined}
+              leaving={swipe?.at.phase === "leave" ? swipe.moves : undefined}
+            >
               <OverlayTriggerStateContext value={state}>{children}</OverlayTriggerStateContext>
             </ModalPanel>
           </div>

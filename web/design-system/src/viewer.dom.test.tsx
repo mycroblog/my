@@ -246,12 +246,12 @@ test("a press on the backing around the picture closes the viewer, and the focus
   });
 });
 
-test("a drag from the backing, or a press on the picture, keeps the viewer open", async () => {
+test("a drag up from the backing, or a press on the picture, keeps the viewer open", async () => {
   const user = userEvent.setup();
   const { dialog, calls } = await opened(user);
   const stage = stageOf(dialog);
 
-  await press(user, dialog, stage, { x: 10, y: 10 }, { x: 10, y: 60 });
+  await press(user, dialog, stage, { x: 10, y: 60 }, { x: 10, y: 10 });
   await press(user, dialog, within(stage).getByRole("presentation"), { x: 10, y: 10 });
 
   expect(calls.closes).toEqual([]);
