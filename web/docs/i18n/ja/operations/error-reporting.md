@@ -137,7 +137,7 @@ Web クライアントは、応答の速さの標本を、エラーと同じよ�
 
 カウンター `my.errors.exported` を監視してください。`my.outcome` は `success`、`dropped`（制限を超えた、キューがいっぱいだった、またはサービスが速度を落とすよう求めた）、`failed`（サービスに到達できなかった、またはサービスが報告を拒否した）のいずれかです（[サーバーの運用](running.md#metrics)）。
 
-<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
+<!-- source: sentry-glitchtip-and-datadog 81bdd8389ace -->
 ### Sentry、GlitchTip、Datadog
 
 ```sh
@@ -153,7 +153,7 @@ OpenTofu のモジュールでは、`observability` セクションのエラー�
   secrets       = ["errors_sentry_dsn"]
 ```
 
-サーバーは Sentry のプロトコルを自分で話すので、Sentry SDK は使われず、`SENTRY_*` の環境変数も読みません。サーバーはフィンガープリントを設定するので、サービスはそれでまとめます。また、タグ `service`（`my`）、`my.role`、`my.error.where`、`error.fingerprint` を設定します。リリースはサーバーのバージョンで、環境は `errors_environment` です。
+サーバーは Sentry のプロトコルを自分で話すので、Sentry SDK は使われず、`SENTRY_*` の環境変数も読みません。サーバーはフィンガープリントを設定するので、サービスはそれでまとめます。また、タグ `service`（`my`）、`service.namespace`（`host`）、`my.role`、`my.error.where`、`error.fingerprint` を設定します。リリースはサーバーのバージョンで、環境は `errors_environment` です。
 
 - **Sentry**（ホスト型またはセルフホスト）: プロジェクトのクライアントキーから DSN をコピーします。
 - **GlitchTip**: プロジェクトの DSN をコピーします。オープンソースで、小さなサーバーで動きます。新しい issue と再発した issue に対して、お使いのバージョンがどのアラートルールを提供しているか確認してください。

@@ -246,10 +246,10 @@ kubectl rollout status deployment/my
 Job が失敗した場合は、`kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check`（または `-c schema`、`-c upgrade`）で理由がわかり、Deployment は前のイメージのままです。
 SQLite をボリュームに置いている場合は、同じボリュームを Job にマウントし、先に Deployment の Pod を止めてください。SQLite の書き込み手は 1 つだけです。
 
-<!-- source: cloud-run 9e7486b6a4af -->
+<!-- source: cloud-run 4cd76d9b85b5 -->
 ### Cloud Run
 
-OpenTofu のモジュールを使う場合、アップグレードは新しいリリースの apply です。サービスが新しいイメージに切り替わる前に、マイグレーションのジョブで `my upgrade` を実行し、失敗したらそこで止まります。[Cloud Run へのデプロイ](deploy-opentofu.md#upgrading)を参照してください。手で行う場合は次のとおりです。
+OpenTofu のモジュールを使う場合、アップグレードは新しいリリースの apply です。サービスが新しいイメージに切り替わる前に、マイグレーションのジョブで `my upgrade` を実行し、失敗したらそこで止まります。[OpenTofu でのデプロイ](deploy-opentofu.md#upgrading)を参照してください。手で行う場合は次のとおりです。
 
 Cloud Run のジョブは 1 つにつき 1 つのコンテナーを実行するので、手順ごとにジョブを作り、`--wait` を付けて順に実行します。これを付けると、ジョブが失敗したときにコマンドも失敗します。
 ジョブにはサービスと同じ環境変数とシークレットを与えてください。

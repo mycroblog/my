@@ -22,7 +22,7 @@
 
 以下の設定やサービスを変えたとき、またリリースノートに個人データへの言及があるアップグレードのたびに、ポリシーを見直してください。
 
-<!-- source: the-periods-and-their-settings 8313baaa97d8 -->
+<!-- source: the-periods-and-their-settings eb30a5027cca -->
 ## 期間とその設定
 
 `my instance list` は、すべてのインスタンスの設定と、それが既定値かどうかを表示します。期間の変更は、その期間を扱う 1 時間ごとのジョブの次の実行から有効になります。範囲外の値は受け付けられません。
@@ -35,7 +35,7 @@
 | アカウントへの処分と異議申し立て | 365 日 | `moderation_actions_retention_days` | 180-3650 | 処分の終了 |
 | 監査ログ | 730 日 | `audit_log_retention_days` | 365-3650 | 記録 |
 | 通話のルームに参加した人 | 90 日 | `voice_participants_retention_days` | 30-3650 | ルームの終了 |
-| イベントに回答した人、日程に投票した人、招待された人 | 90 日 | `event_records_retention_days` | 30-3650 | イベントの終了と取り消しのうち早いほう |
+| イベントに回答した人、日程に投票した人、招待された人と、その掲示板の投稿 | 90 日 | `event_records_retention_days` | 30-3650 | イベントの終了と取り消しのうち早いほう |
 | 外部の審査を使う場合の、その判定 | 90 日 | `hook_decisions_retention_days` | 30-3650 | 判定 |
 | このサーバーの何からも参照されていないリモートの投稿 | 90 日 | `remote_status_retention_days` | 1-3650 | 投稿の公開 |
 | すべてのリモートの投稿 | 無制限（`0`） | `remote_status_max_retention_days` | 0-3650 | 投稿の公開 |
@@ -124,7 +124,7 @@
 - **Web プッシュ。** 利用者がこれを有効にすると、その人のブラウザーがプッシュサービスを選び、そのアドレスをサーバーに渡します。メッセージの本文はそのブラウザー向けに暗号化されるため、プッシュサービスは読めないはずです。ただし、購読のアドレス、各メッセージのサイズと時刻、あなたのサーバーの連絡先（VAPID の subject）は見え、ブラウザーがオフラインの間はメッセージを最長 48 時間保持します。
 - **連合。** テンプレートのセクション 5 を見てください。`federation_mode` で連合を止めたり方向を制限したりでき、リレーを追加するかどうかはあなたが決めます（[リレー](relays.md)）。
 
-<!-- source: the-template 5a65f2c53778 -->
+<!-- source: the-template 7d380628fcdc -->
 ## テンプレート
 
 ```markdown
@@ -177,6 +177,7 @@ This policy covers people with an account here, people who read pages here witho
 | {{IF voice}} Who took part in a room: participation, speakers, raised hands, invitations, removals | Moderating rooms | {{90 days}} from the end of the room, or as long as a report about the room. We record neither audio nor text chat |
 | Events: title, description, date, places, organizers, and cancellation | Showing events to the people who may see them | Kept. The title, description, and places you wrote are removed when your account is erased |
 | Invitations to events, your answers to them and to their candidate dates, and their approval | Showing who comes and who can come on which date, and showing the address and link to the approved | {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept |
+| Your posts on the board of an event | Telling its organizers and the people going what the event needs | Until you delete them, or {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept. They are never sent to other servers |
 | {{IF payments}} Supporter plans: the provider's IDs for you and your subscription, amounts, periods, and states. Not your card details | Running your subscription, and accounting | {{PERIOD AND REASON, e.g. as long as tax law requires}}. The link to the provider's customer goes when your account is erased |
 | {{IF payments}} Your choice to appear in the list of supporters | Showing the list | Until the subscription ends or your account is erased |
 | {{IF tips}} Tips: the amount, when you paid, the provider's ID of the payment, refunds and chargebacks. Not your card details | Taking the tip, and accounting | Until your account is erased; the amounts stay in the accounts without you. The provider keeps the payment and the email address of its page: {{ITS PERIOD}} |

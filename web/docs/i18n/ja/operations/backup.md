@@ -192,10 +192,10 @@ aws s3api put-bucket-lifecycle-configuration --bucket my-media --lifecycle-confi
 認証情報はコピーに含めません。バケットにはシークレットはありませんが、設定は `blob_s3_access_key_id` と `blob_s3_secret_access_key` でキーを指定しており、
 これらは設定と一緒に扱うものです。`gcs` の blob ストアはキーを持たず、マシンまたは Cloud Run のサービスアカウントを使います。
 
-<!-- source: on-the-opentofu-targets 9862430f808c -->
+<!-- source: on-the-opentofu-targets a0188744140f -->
 ### OpenTofu のターゲットの場合
 
-モジュールは、プロバイダーが提供するもの以上のバックアップを自分では持ちません。Cloud SQL と RDS のマネージド PostgreSQL には、保持期間を設定できる自動バックアップがあります。一方、プロバイダーの履歴しかないデータベース（Neon）は、その履歴が届く範囲までしか戻せません。
+モジュールは、プロバイダーが提供するもの以上のバックアップを自分では持ちません。[Cloud SQL](deploy-google-cloud.md#cloud-sql) と [RDS](deploy-aws.md#2-choose-the-database) のマネージド PostgreSQL には、保持期間を設定できる自動バックアップがあります。一方、プロバイダーの履歴しかないデータベース（Neon）は、その履歴が届く範囲までしか戻せません。
 次のものは、インスタンスが持たない認証情報を使って、自分でスケジュールしてください。
 
 1. **データベース（毎日）。** データベースをホストしているプロバイダーの外にあるマシンまたは定期ジョブから、インスタンスの PostgreSQL に対して `pg_dump` を実行し（[PostgreSQL](#postgresql) を参照）、ダンプを暗号化して、別のアカウントまたは別のプロバイダーのバケットに書き込みます。

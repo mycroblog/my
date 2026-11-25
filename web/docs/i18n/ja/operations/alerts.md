@@ -61,7 +61,7 @@ promtool test rules alerts.test.yml
 リモートのサーバー。各プロセスの CPU とメモリ。Grafana でインポートし（**Dashboards** → **New** → **Import**）、Prometheus のデータソースを選んでください。
 **Job** 変数でスクレイプのジョブを選びます（既定は `my`）。
 
-<!-- source: google-cloud-cloud-run addd07c417a9 -->
+<!-- source: google-cloud-cloud-run 0db55ed9d56b -->
 ### Google Cloud（Cloud Run）
 
 `metrics_exporter = none` の場合は、Cloud Run と Cloud Logging にすでにあるものからアラートを作ります。
@@ -71,9 +71,12 @@ promtool test rules alerts.test.yml
 - **ジョブとリクエスト**: サーバーは HTTP リクエストごと（`msg` = `http request`）とジョブの実行ごと（`msg` = `job`）に 1 行のログを、
   メトリクスと同じラベル付きで書き出します。これらからログベースの指標を作ります。たとえば失敗したジョブには `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"` のカウンター、
   レイテンシには `jsonPayload."my.surface"="client_api"` で絞り込んだ `jsonPayload.duration_seconds` の分布を使います。
-- **キューの滞留とストレージ**: 15 分ごとにジョブ `metrics.snapshot` が、インスタンス全体の値（`my.queue.oldest_ready_age`、`my.queue.dead`、`my.db.size`、`my.media.stored_bytes` など）を持つ行
-  （`msg` = `metrics snapshot`）を 1 行書き出します。そのフィールドからログベースの指標を作ります。
-  この行が途切れたら、ティックかキューが止まったということです。Cloud Tasks のキューの深さのメトリクスは、配送を待っているシグナルを数えます。
+  受信箱への POST の行には、`my.inbox.activities` のラベルである `activity.type`、`my.outcome`、`my.inbox.rejection` も付きます。
+- **キューの滞留とストレージ**: 15 分ごとにジョブ `metrics.snapshot` が、インスタンス全体の値（`my.queue.oldest_ready_age`（ジョブの種類ごと）、`my.queue.dead`、`my.db.size`、`my.media.stored_bytes`（由来ごと）など）を持つ行
+  （`msg` = `metrics snapshot`）を 1 行書き出します。フィルターではグループのフィールドをまたいで比較できないため、この行には `my.queue.oldest_ready_age.max` と `my.media.stored_bytes.total` もあります。
+  そのフィールドからログベースの指標を作ります。この行が途切れたら、ティックかキューが止まったということです。Cloud Tasks のキューの深さのメトリクスは、配送を待っているシグナルを数えます。
+- **アダプターとデータベースのプール**: `http request` と `job` の行には、`MyAdapterErrors`、`MyDBPoolSaturated`、`MyDBPoolWaiting` のフィールドも付きます。
+  リクエストやジョブのアダプターの操作と、プロセスのプールの使用と待ちです（[その行](running.md#start-the-server)）。
 - **データベース**: Cloud SQL のディスク使用率と接続のメトリクス、またはデータベースの事業者の使用量アラート。
 - **費用**: アラートのしきい値を設定した Cloud Billing の予算（[費用と予算](#cost-and-budget)）。
 
@@ -135,7 +138,7 @@ EMF では書き出されないため、代わりに ECS サービスの CPU と
 | 費用 | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 が 6 時間続く | ticket | 権限の不足、課金のエクスポートが設定されていない、リクエストの上限に達した、事業者が利用できない |
 | 費用 | 予算の超過 | – | – | – | トラフィック、ストレージ、または設定の誤りで計画より費用がかかっている（[下記](#cost-and-budget)） |
 
-<!-- source: where-to-look 988be973ea5b -->
+<!-- source: where-to-look 3211df763cac -->
 ## 確認する場所
 
 以下のツールは、このあとのランブックのほとんどの項目に出てきます。
@@ -146,8 +149,8 @@ EMF では書き出されないため、代わりに ECS サービスの CPU と
 - **`my job` コマンド**（サーバーの設定がある、`queue = db` と `cloudtasks` のホストで）:
   `my job list` は失敗したジョブを新しい順に一覧にし、`my job retry <id>...` はそれらをキューに戻し、`my job delete <id>...` はそれらを削除します。
   ジョブはもう一度実行しても安全です。
-- **リモートのサーバーの画面**（「モデレーション」→「連合先のサーバー」、`/moderation/instances`、`manage_domains` が必要）: 配送が届かなかったサーバーと、
-  配送が停止しているサーバーを、その理由と日時とともに表示します。「配送を再開する」で、そのサーバーを再び利用できる状態にします。「サーバーを開く」は、一覧にあるかどうかにかかわらず、ドメインを指定して任意のサーバーのページを開きます。
+- **リモートのサーバーの画面**（「モデレーション」→「連合先のサーバー」、`/moderation/instances`、`manage_domains` が必要）: このサーバーが知っているすべてのサーバーを、そのソフトウェアと状態とともに表示します。
+  配送が届かなかったサーバーや、停止しているサーバーに絞り込めます。「配送を再開する」で、そのサーバーを再び利用できる状態にします。「サーバーを開く」は、一覧にあるかどうかにかかわらず、ドメインを指定して任意のサーバーのページを開きます。
 - **ログ**: 標準エラーに出力される JSON の行。HTTP リクエストはそれぞれ `msg` が `http request` の行で終わり、ジョブの実行はそれぞれ `msg` が `job` の行で終わります
   （成功は `INFO`、再試行は `WARN`、最終的に失敗したジョブは `ERROR` で、`error`、`job_id`、`my.job.type` が付きます）。
   リクエストの中の行にはその `request_id` が付き、クライアントからは `X-Request-Id` として見えます。
@@ -267,7 +270,7 @@ EMF では書き出されないため、代わりに ECS サービスの CPU と
 - 障害の間にリモートのサーバーが停止された場合は、次に成功した配送、署名付きのリクエスト、または毎日の確認で再開されます。リモートのサーバーの画面で
   「配送を再開する」を押すこともできます。
 
-<!-- source: myremoteserverspaused 17c3ec51fb53 -->
+<!-- source: myremoteserverspaused 0f1e420b43eb -->
 ### MyRemoteServersPaused
 
 この 1 日で、5 つ以上のサーバーへの配送が停止されました。サーバーへの配送が停止されるのは、異なる 7 日間に配送が失敗したときなので、週に数件の停止は
@@ -276,7 +279,7 @@ EMF では書き出されないため、代わりに ECS サービスの CPU と
 
 このメトリクスにはサーバーごとのラベルがありません（ラベルがリモートのドメインを持つことはありません）。確認すること:
 
-- リモートのサーバーの画面: 「配送停止中」のタブに停止されたサーバーが、その日時と理由とともに一覧になります。それらに共通点（同じホスティング事業者、同じソフトウェア）があるか、
+- リモートのサーバーの画面: 「配送停止中」のフィルターに停止されたサーバーが一覧になり、各サーバーのページにいつからかが書かれています。それらに共通点（同じホスティング事業者、同じソフトウェア）があるか、
   ばらばらか。
 - 過去 1 週間の `MyDeliveryFailuresHigh` と `MyDeliveryAllFailing`: このサーバー側のネットワークの問題が何日も続くと、多くのサーバーが停止されます。
 
@@ -471,11 +474,11 @@ Go ランタイムが `GOMEMLIMIT` の 90% を超えて使っています。上�
 処理が空いたデータベース接続を待っているか、[`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) のあとで待つのをやめています（タイムアウトは PostgreSQL だけ）。リクエストは `503` を返し、ジョブはあとでもう一度実行されます。[MyDBPoolSaturated](#mydbpoolsaturated) に従ってください。
 データベース自体が接続数の上限に達していないことも確認してください。
 
-<!-- source: mydatabasestoragelarge edf767115918 -->
+<!-- source: mydatabasestoragelarge 2dd93b626b08 -->
 ### MyDatabaseStorageLarge
 
-データベースが計画より大きくなっています。`my_db_size_bytes` は、PostgreSQL のデータベースのサイズ（`pg_database_size`。事業者のストレージの
-上限が数えるもの）、または SQLite のファイルのサイズ（ログ先行書き込みのファイルを除く）です。これは障害ではなく増加です。ルールのしきい値は、データベースのプランのストレージの
+データベースが計画より大きくなっています。`my_db_size_bytes` は、インスタンスの PostgreSQL スキーマのテーブルとインデックスのサイズ（事業者の
+ストレージの上限はデータベース全体を数えます）、または SQLite のファイルのサイズ（ログ先行書き込みのファイルを除く）です。これは障害ではなく増加です。ルールのしきい値は、データベースのプランのストレージの
 上限、または SQLite のファイルを置くボリュームの上限から余裕を引いた値にしてください。そのボリュームには、ログ先行書き込みのファイルとバックアップのための空きも必要です。
 
 対処:
