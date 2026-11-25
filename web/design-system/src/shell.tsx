@@ -101,9 +101,13 @@ const frame = tv({
       "pointer-events-auto me-shell-edge mb-shell-edge self-end rounded-control shadow-overlay",
       "[view-transition-name:float] tablet:hidden",
     ],
-    // Positioned, so that its shadow paints over the floating action's layer (a view transition's), not under it.
-    bars: "pointer-events-auto relative bg-surface pb-[env(safe-area-inset-bottom)] shadow-bar tablet:hidden",
-    tabs: "[view-transition-name:tab-bar]",
+    // Named as a whole, its surface and the room of the safe area with it, so that a change of screen moves the screen
+    // under the bars and never over their surface. Positioned, so that its shadow paints over the floating action's
+    // layer (a view transition's), not under it.
+    bars: [
+      "pointer-events-auto relative bg-surface pb-[env(safe-area-inset-bottom)] shadow-bar tablet:hidden",
+      "[view-transition-name:tab-bar]",
+    ],
     mark: [
       "flex h-shell-item flex-none items-center justify-center rounded-control outline-hidden",
       "data-pressed:translate-y-press data-focus-visible:shadow-focus desktop:justify-start desktop:px-shell-item-inline",
@@ -393,7 +397,7 @@ export function FrameDock({
       )}
       <div ref={barsRef} className={s.bars()}>
         {call !== undefined && <PlaceContext value="dock">{call}</PlaceContext>}
-        <nav className={s.tabs()} aria-label={label}>
+        <nav aria-label={label}>
           <PlaceContext value="tabs">{tabs}</PlaceContext>
         </nav>
       </div>
