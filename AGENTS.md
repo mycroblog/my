@@ -48,6 +48,9 @@ One path takes a change from an issue to `main`; each step is a command that ref
 - Code, comments, commit messages, and pull request titles are in English; commits follow Conventional Commits and
   name their issue (`feat(db): add sqlite adapter (#42)`).
 - Links from issues and comments to repository files use `blob/main/...` or a commit permalink, never a branch.
+- For a change that does not complete its issue, keep the issue's number out of the branch name and the commit
+  subjects, and write `Refs #n` in the pull request: `pr open` writes `Closes #n` for both, and the issue closes with
+  the merge even after the description is edited.
 - Never commit secrets or credentials. Never run a destructive command against a remote resource.
 
 ## Changing these instructions
