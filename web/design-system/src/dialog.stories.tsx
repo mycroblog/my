@@ -185,6 +185,7 @@ function Appeal({
           name="comment"
           label={w.appeal.label}
           multiline
+          rows={3}
           readOnly={busy}
           defaultValue={written || over ? w.appeal.written : undefined}
           hint={over ? undefined : w.appeal.hint}

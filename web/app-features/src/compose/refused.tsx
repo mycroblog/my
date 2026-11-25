@@ -184,6 +184,7 @@ export function RefusedAppeal({ refusal, appeal, text, kind = "post" }: RefusedA
               name="comment"
               label={t("compose.refused.appeal.comment")}
               multiline
+              rows={3}
               defaultValue={comment}
               readOnly={busy}
               hint={
