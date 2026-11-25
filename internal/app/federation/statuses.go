@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -483,10 +484,11 @@ func (h *StatusHandlers) inScope(ctx context.Context, author appaccount.Actor, o
 	if followed, err := h.followed(ctx, author); err != nil || followed {
 		return followed, err
 	}
-	if obj.InReplyTo == "" {
+	replyTo := h.inReplyTo(obj)
+	if replyTo == "" {
 		return false, nil
 	}
-	parent, err := h.d.Statuses.FindStatusByURI(ctx, string(obj.InReplyTo))
+	parent, err := h.d.Statuses.FindStatusByURI(ctx, string(replyTo))
 	switch {
 	case errors.Is(err, appcontent.ErrNotFound):
 		return false, nil
@@ -623,6 +625,16 @@ func (h *StatusHandlers) resolveMentions(ctx context.Context, m *postMentions) e
 
 func (h *StatusHandlers) isLocal(iri federation.IRI) bool { return iri.Origin() == h.origin }
 
+// inReplyTo returns the post that obj replies to. Bonfire names a local status by this server's
+// Create of it, the status's IRI with /activity (createURI, ADR-0018), when it learned the status
+// from that Create: such an IRI is taken as the status's.
+func (h *StatusHandlers) inReplyTo(obj *federation.Object) federation.IRI {
+	if status, ok := strings.CutSuffix(string(obj.InReplyTo), "/activity"); ok && h.isLocal(obj.InReplyTo) {
+		return federation.IRI(status)
+	}
+	return obj.InReplyTo
+}
+
 // input maps a normalized post that activity a carried to what the content module stores.
 // A post without addressing takes the addressing of the activity only when
 // the post's author signed the activity: the addressing of an activity that someone else signed
@@ -648,7 +660,7 @@ func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Au
 		AuthorAccountID:     author.Account.ID,
 		AuthorDomain:        author.Account.Domain,
 		Visibility:          appcontent.Visibility(audience.Visibility(cols.followers)),
-		InReplyToURI:        string(obj.InReplyTo),
+		InReplyToURI:        string(h.inReplyTo(obj)),
 		Conversation:        string(obj.Conversation),
 		PublishedAt:         obj.Published,
 		RevisedAt:           obj.Updated,
