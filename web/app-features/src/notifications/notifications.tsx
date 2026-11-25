@@ -277,7 +277,12 @@ function Line({
               {n.status.filtered.length > 0 ? (
                 <FilterSentence filtered={n.status.filtered} />
               ) : (
-                <PostContent html={excerptHtml(n.status)} emojis={n.status.emojis} lang={undefined} />
+                <PostContent
+                  html={excerptHtml(n.status)}
+                  emojis={n.status.emojis}
+                  mentions={n.status.mentions}
+                  lang={undefined}
+                />
               )}
             </Excerpt>
           )

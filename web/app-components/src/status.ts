@@ -96,7 +96,7 @@ export type PostPoll = {
 };
 
 /** An account a status mentions (the API's StatusMention). */
-export type PostMention = { id: string; username: string; acct: string };
+export type PostMention = { id: string; username: string; acct: string; url: string };
 
 /** A keyword filter of the reader's that a status matched (the API's FilterResult), as far as its fold names it. */
 export type PostFiltered = { filter: { id: string; title: string } };

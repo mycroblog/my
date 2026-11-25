@@ -31,7 +31,12 @@ export function ReplyContext({ status, note }: { status: PostStatus; note: strin
   const shown = status.boost ?? status;
   return (
     <ComposerReply byline={<AuthorLine status={shown} time={false} />} note={note}>
-      <PostContent html={excerptHtml(shown)} emojis={shown.emojis} lang={known(shown.language)} />
+      <PostContent
+        html={excerptHtml(shown)}
+        emojis={shown.emojis}
+        mentions={shown.mentions}
+        lang={known(shown.language)}
+      />
     </ComposerReply>
   );
 }
@@ -55,7 +60,12 @@ export function QuoteContext({
     <ComposerQuote removeLabel={removeLabel} onRemove={onRemove}>
       <Embed lang={known(shown.language)} clear>
         <AuthorLine status={shown} time />
-        <PostContent html={excerptHtml(shown)} emojis={shown.emojis} lang={known(shown.language)} />
+        <PostContent
+          html={excerptHtml(shown)}
+          emojis={shown.emojis}
+          mentions={shown.mentions}
+          lang={known(shown.language)}
+        />
         <MediaGrid items={media} size="preview" sensitive={shown.sensitive ?? false} />
       </Embed>
     </ComposerQuote>

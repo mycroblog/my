@@ -378,7 +378,12 @@ function Quote({ status }: { status: PostStatus }) {
         handle={handleOf(status.account)}
         end={<Stamp date={status.created_at} />}
       />
-      <PostContent html={excerptHtml(status)} emojis={status.emojis} lang={known(status.language)} />
+      <PostContent
+        html={excerptHtml(status)}
+        emojis={status.emojis}
+        mentions={status.mentions}
+        lang={known(status.language)}
+      />
       <MediaGrid
         items={mediaItems(status.media_attachments, undefined)}
         size="preview"
@@ -995,7 +1000,12 @@ export function Post({
   const content = (
     <>
       <Stack gap="entry-line">
-        <PostContent html={translation?.content ?? shown.content} emojis={shown.emojis} lang={textLang} />
+        <PostContent
+          html={translation?.content ?? shown.content}
+          emojis={shown.emojis}
+          mentions={shown.mentions}
+          lang={textLang}
+        />
         {!cw && translateLine}
       </Stack>
       <Poll status={shown} translation={translation} own={own} voting={voting} t={t} lang={lang} act={act} />

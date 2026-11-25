@@ -239,7 +239,7 @@ describe("a reply under the article", () => {
       content: "<p>@sam Same smell here on day three.</p>",
       article: undefined,
       in_reply_to_account_id: "1",
-      mentions: [{ id: "1", username: "sam", acct: "sam" }],
+      mentions: [{ id: "1", username: "sam", acct: "sam", url: "https://my.example/@sam" }],
     });
 
   test("says whom it replies to, as any reply does", () => {

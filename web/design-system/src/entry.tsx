@@ -10,6 +10,7 @@
 
 import { motion } from "@my/design-tokens";
 import { useId, useRef, useState, type ReactNode } from "react";
+import { useLink } from "react-aria";
 import { Button as AriaButton, Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { markedSurface } from "./button";
@@ -272,6 +273,9 @@ const byline = tv({
       "rounded-control text-current no-underline outline-hidden",
       "data-hovered:underline data-focus-visible:shadow-focus",
     ],
+    // The avatar that opens its account: a target for the pointer, whose link the name already is for the keyboard
+    // and for assistive technology.
+    avatarLink: "rounded-full",
     // The handle's line, in the page's direction, so that the handle sits at the line's start in either; the handle
     // in it reads left-to-right and, as wide as it is up to the line, truncates at its own end.
     handleLine: "text-caption leading-entry text-muted-text",
@@ -293,7 +297,7 @@ export type BylineProps = {
   end?: ReactNode;
   /** All on one line, beside an inline avatar. */
   compact?: boolean | undefined;
-  /** Where the name leads: the account's profile. */
+  /** Where the name and the avatar lead: the account's profile. */
   href?: string | undefined;
   /**
    * The reader wrote it (in a conversation of direct messages): what says so ("You"), muted in the handle's place,
@@ -303,6 +307,20 @@ export type BylineProps = {
   /** The name is the heading of the screen it heads (an `h2`), as it shows. */
   heading?: boolean | undefined;
 };
+
+/**
+ * The avatar as a link to `href` for the pointer alone: out of the tab order and unheard, since the name beside it is
+ * the same link. React Aria's link (useLink) opens it through the app's router, as the name opens.
+ */
+function AvatarLink({ href, className, children }: { href: string; className: string; children: ReactNode }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const { linkProps } = useLink({ href }, ref);
+  return (
+    <a {...linkProps} ref={ref} href={href} className={className} tabIndex={-1} aria-hidden="true">
+      {children}
+    </a>
+  );
+}
 
 /** Who wrote an entry: the avatar, the name and what ends its line, and the handle. */
 export function Byline({
@@ -360,7 +378,13 @@ export function Byline({
   );
   return (
     <Row shrink align="center" gap={compact ? "entry-caption" : "entry-avatar"}>
-      {avatar}
+      {href === undefined ? (
+        avatar
+      ) : (
+        <AvatarLink href={href} className={s.avatarLink()}>
+          {avatar}
+        </AvatarLink>
+      )}
       {compact ? (
         <Row grow align="baseline" gap="entry-caption">
           {nameEl}
