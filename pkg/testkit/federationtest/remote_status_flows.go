@@ -573,11 +573,17 @@ func remoteScope(t *testing.T, e *remoteStatusEnv) {
 	e.expect(t, doc, appfederation.InboxHandled)
 	nested, doc := note(5, map[string]any{"inReplyTo": reply})
 	e.expect(t, doc, appfederation.InboxHandled)
+	// A reply that names the local post by this server's Create of it (Bonfire) replies to the post.
+	toCreate, doc := note(8, map[string]any{"inReplyTo": mine.Status.URI + "/activity"})
+	e.expect(t, doc, appfederation.InboxHandled)
+	if p := e.post(t, toCreate); p.Status.InReplyToURI != mine.Status.URI {
+		t.Errorf("the reply to the Create replies to %q, want %q", p.Status.InReplyToURI, mine.Status.URI)
+	}
 	// A reply to a remote post outside any local thread is not.
 	offThread, doc := note(6, map[string]any{"inReplyTo": "https://remote.example/users/alice/notes/999"})
 	e.expect(t, doc, appfederation.InboxDropped)
 
-	for uri, want := range map[string]bool{unrelated: false, mention: true, addressed: true, reply: true, nested: true, offThread: false} {
+	for uri, want := range map[string]bool{unrelated: false, mention: true, addressed: true, reply: true, nested: true, toCreate: true, offThread: false} {
 		if got := e.stored(t, uri); got != want {
 			t.Errorf("stored(%s) = %v, want %v", uri, got, want)
 		}
