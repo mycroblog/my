@@ -140,7 +140,7 @@ Bearer トークンも使えません。そのネットワークを閉じてお�
 （`key_manager`、`translator`、`search`、`signup.check`、`media.check`、`local.status`、`inbound.actor`、`local.profile`）では 30 秒未満、
 それ以外ではジョブが実行できる時間である 5 分未満にする必要があります。
 
-<!-- source: test-a-plugin 5d8195bb27f5 -->
+<!-- source: test-a-plugin f954dc9b5d3e -->
 ## プラグインをテストする
 
 `my plugin test` は、動いているプラグインに対してある種類の契約を実行し、ケースごとに結果を報告します。設定は読まないので、
@@ -159,7 +159,8 @@ FAIL echo_empty: the outcome is OUTCOME_UNSPECIFIED, not OUTCOME_OK
 ```
 
 ケースが失敗すると終了コードは 1 になります。フラグの意味は設定と同じです: `--protocol`、`--token-file`、`--tls-ca-file`、
-`--tls-cert-file`、`--tls-key-file`、`--timeout`。サーバーと同じ規則を適用するので、`--kind mailer` は `http://` のアドレスを拒否します。
+`--tls-cert-file`、`--tls-key-file`、`--timeout`。`--instance` は `My-Instance` ヘッダーで送る `host` です（既定は `my.test`）。
+サーバーと同じ規則を適用するので、`--kind mailer` は `http://` のアドレスを拒否します。
 テストするプラグインは本物でもかまわないので、呼び出しそのもの以上のことをするケースは、フラグで求めたときだけ実行されます。
 そのバージョンにまだ契約がない種類は、`reachable` と `SKIP` を報告します。
 
@@ -389,7 +390,7 @@ Content-Type: application/json
 `outcome` がない、または不明な場合、呼び出しが失敗した場合、これらの規則に反するページは `OUTCOME_FAILED` として扱われ、
 そのようなページのものは何も表示されません。呼び出しは最大で `plugin_search_timeout`（既定は 10 秒）続き、その設定にかかわらず最大 10 秒です。
 
-<!-- source: converting-media 36df3dbdb21b -->
+<!-- source: converting-media 14a4c14a3699 -->
 ## メディアの変換
 
 メディアのプラグインは、アップロードの処理の重い部分を行い、それを別のマシンで動かせるようにします。種類は 3 つあり、
@@ -400,7 +401,7 @@ Content-Type: application/json
 - `media_audio` は、音声だけのファイルを再多重化します。
 
 残りは引き続きサーバー自身が行います。各アップロードの形式を判定し、動画と音声ファイルを見分け、届いた時点で各アップロードを
-上限と照らし合わせ、リモートのメディアのプレビューを作ります。設定が `native` のままの種類は、サーバー内で処理されます。
+上限と照らし合わせ、リモートのメディアのプレビューを作ります。設定が `native` のままの種類は、サーバー内で処理されます。`media_image` のプラグインは、サーバー自身がデコードしない AVIF、HEIC、APNG のアップロードも受け持てます。サーバーは、プラグインが申告した形式について、ヘッダーから寸法とフレームを読んだうえで受け付けます。
 
 ```sh
 # Only videos go to a plugin, on a machine of its own; images and audio stay in the server.
@@ -424,11 +425,13 @@ MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 - **失敗は遅延です。** プラグインが停止しているか失敗すると、組み込みの処理と同じく、ジョブが後で再試行します。リモートの絵文字のコピーや
   絵文字のリクエストの承認など、カスタム絵文字の画像がすぐに必要な操作は、プラグインが失敗している間は失敗します。
 
-<!-- source: the-contract-2 812c987c276c -->
+<!-- source: the-contract-2 480cea98aa91 -->
 ### 契約
 
-サービスは `my.plugin.media.v1.MediaService` で、RPC は画像のための `Process` と、動画や音声ファイルのための `Remux` です。
-どちらも双方向にストリームするので、プラグインには Connect か gRPC のライブラリと HTTP/2 が必要です。`proto` か `grpc` を、ALPN
+サービスは `my.plugin.media.v1.MediaService` で、RPC は画像のための `Process`、動画や音声ファイルのための `Remux`、
+そして `Process` が受け付ける JPEG、PNG、GIF、WebP 以外の形式を申告する `Describe` です。サーバーは `Describe` を起動時と 5 分ごとに
+呼び出します。これを持たないプラグインには、その 4 つだけが許され、APNG は静止画の PNG として扱われます。ほかの 2 つは双方向に
+ストリームするので、プラグインには Connect か gRPC のライブラリと HTTP/2 が必要です。`proto` か `grpc` を、ALPN
 `h2` の TLS 上、または Unix ソケットや平文の TCP 上の平文の HTTP/2（h2c）で使います。
 
 呼び出しは半二重です。
@@ -440,7 +443,7 @@ MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 3. プラグインは出力ごとに、出力の名前と、その形式、寸法、長さの申告を含む `part` を送り、
    続いて最大 1 MiB の `chunk` メッセージを送ります。
 
-`Process` は、小、中、大の静止画の出力と、複数のフレームを持つ画像ならその 3 つの動く出力を返します。小と中の出力は WebP で、大の静止画は
+`Process` は、小、中、大の静止画の出力と、複数のフレームを持つ画像ならその 3 つの動く出力を返します。動く出力は、それぞれ 2 フレーム以上でなければなりません。小と中の出力は WebP で、大の静止画は
 JPEG か PNG（カスタム絵文字では常に PNG）、大の動く出力は GIF です。`Remux` は、メタデータを除いたファイルを元のコンテナーのまま返し、
 埋め込まれたカバー画像があればそれも返します。サーバーが読むのは、`Process` からは画像の上限の 2 倍まで、`Remux` からはファイルについては
 動画の上限まで、カバーについては画像の上限までです。

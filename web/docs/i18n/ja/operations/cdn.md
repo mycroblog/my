@@ -24,7 +24,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 - URL は読み出すたびに組み立てられ、データベースには保存されません。そのため `media_origin` を変えると、既存のメディアの URL も変わります。
   リモートのサーバーが保存した古い URL は、古いオリジンの `/media/` が配信を続ける限り使えます。
 
-<!-- source: point-the-cdn-at-the-server ffb279f38f08 -->
+<!-- source: point-the-cdn-at-the-server c9ebf6b731e5 -->
 ## CDN の向き先をサーバーにする
 
 - オリジン（バックエンド）は、サーバーの公開ホスト名（`https://{host}`）にします。CDN がサーバーから取得する必要があるのは、`/media/` の下のパスだけです。
@@ -40,7 +40,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 
 どちらも `Cross-Origin-Resource-Policy: cross-origin` 付きで返されるので、ほかのオリジンのページからも読み込めます。
 
-Cloud Run では、`ingress-cloudflare-media` が OpenTofu でこれを設定します。[Cloud Run へのデプロイ](deploy-google-cloud.md#cloudflare)を参照してください。
+Cloud Run では、`ingress-cloudflare-media` が OpenTofu でこれを設定します。[Google Cloud へのデプロイ](deploy-google-cloud.md#cloudflare)を参照してください。
 
 <!-- source: who-can-open-media-urls 27306b0bc9be -->
 ## メディアの URL を開ける人

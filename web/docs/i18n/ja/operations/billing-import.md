@@ -11,7 +11,7 @@
 AWS と Google Cloud では、このサーバーの設定に認証情報を保持しません。各事業者の SDK の既定の認証情報チェーンが読み取るものを実行環境に与えてください（AWS では実行ロール、環境変数、または共有の認証情報ファイル。Google Cloud では Application Default Credentials）。
 Cloudflare にはそのようなチェーンがないので、Cloudflare の取り込みは [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare) から API トークンを読み取ります。
 
-<!-- source: with-the-opentofu-modules a8e849af2fcd -->
+<!-- source: with-the-opentofu-modules 9f123e4796b9 -->
 ## OpenTofu のモジュールを使う
 
 Google Cloud では、[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) の `billing` セクションが `billing_sources = gcp` を設定し、このガイドの手順のうち事業者の API で行える部分を、`billing_account_id`、`method`（`bigquery` または `budget`）、`dataset_location` で行います。取り込むのは Google Cloud の費用だけです。AWS では、AWS の例のモジュール [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) が、AWS の費用について同じことを行います。どちらも、実際のアカウントにはまだ適用されていません。
@@ -24,7 +24,7 @@ Google Cloud では、[`mycroblog-gcp`](../../deploy/opentofu/README.md#sections
 | エクスポート（「Standard usage cost」）を有効にする | 手作業で、Google Cloud のコンソールから、請求先アカウントのロールを持って |
 | 予算のトピックと pull サブスクリプション、およびサブスクライバーのロール | `method = "budget"` を指定した `billing` セクション |
 | 予算を作成してトピックにつなぐ | 手作業で、Google Cloud のコンソールから、請求先アカウントのロールを持って |
-| BigQuery または Pub/Sub の API を有効にする | 手作業で、[Cloud Run へのデプロイ](deploy-google-cloud.md#1-enable-the-apis) のとおりに |
+| BigQuery または Pub/Sub の API を有効にする | 手作業で、[Google Cloud へのデプロイ](deploy-google-cloud.md#1-enable-the-apis)のとおりに |
 | Cloud Run での AWS の費用 | `mycroblog-gcp` では行いません。[Cloud Run から Web ID で呼び出す](#calling-from-cloud-run-with-web-identity)のロールを手作業で作り、`billing` セクションを使わずに `settings` で `billing_sources = aws` と `billing_aws_role_arn` を設定します |
 | Cloudflare | これらのモジュールでは行いません。Cloud Run では、`billing` セクションを使わずに、プラグインの場合と同じように、`settings` で `billing_sources` と `billing_cloudflare_account_id` を、`secrets` で `billing_cloudflare_api_token` を設定します |
 | プラグイン | これらのモジュールでは行いません。Cloud Run では、`billing` セクションを使わずに、`settings` で `billing_sources = plugin` と[プラグイン](#a-plugin-billing_sources--plugin)の設定を指定します。`billing` セクションと並べると、モジュールは `settings` の `billing_sources` を拒否します |
