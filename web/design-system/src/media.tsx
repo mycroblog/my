@@ -46,6 +46,9 @@ export type MediaItem = {
   href?: string | undefined;
   /** A video's or a sound's length in seconds. */
   duration?: number | undefined;
+  /** The size of the file itself in px (an image's original), when it is known: the viewer's box before it loads. */
+  width?: number | undefined;
+  height?: number | undefined;
   /** The picture's blurhash, drawn while it is covered. */
   blurhash?: string | undefined;
 };

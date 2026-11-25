@@ -285,7 +285,17 @@ function mediaItems(media: readonly PostMedia[], translation: PostTranslation | 
     if (src === undefined && m.type === "image") return [];
     const alt = translation?.media_attachments.find((a) => a.id === m.id)?.description ?? m.description ?? "";
     return [
-      { id: m.id, src: src ?? "", alt, kind: m.type, href: m.url, duration: m.meta?.duration, blurhash: m.blurhash },
+      {
+        id: m.id,
+        src: src ?? "",
+        alt,
+        kind: m.type,
+        href: m.url,
+        duration: m.meta?.duration,
+        width: m.meta?.width,
+        height: m.meta?.height,
+        blurhash: m.blurhash,
+      },
     ];
   });
 }
