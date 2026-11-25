@@ -77,15 +77,14 @@
 
 ### 8. フォントの出所と版
 
-Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分割して配り、ブラウザーが `tech()` で選ぶ。対象のブラウザー（Chrome・Firefox・Safari、Tauri の WebView の iOS の WKWebView と Android の WebView）で同じ形にする。
+Noto Color Emoji を COLRv1 と sbix の 2 つの形式で自前で分割して配り、ブラウザーが `tech()` で選ぶ。対象のブラウザー（Chrome・Firefox・Safari、Tauri の WebView の iOS の WKWebView と Android の WebView）で同じ形にする。
 `font-src 'self'`（ADR-0019 §9、ADR-0059）を変えず、第三者のオリジンに閲覧を知らせない。絵文字を含まない画面ではフォントを読まず、読むのは画面にある絵文字の分だけにする。
 
 - **COLRv1**: `googlefonts/noto-emoji` のリリース `v2026-09-24-unicode18_0`（2D v2.057、Unicode 18.0）の `2D/fonts/Noto-COLRv1.ttf`（5.0 MB）を使う。
-- **OpenType-SVG**: noto-emoji は SVG のフォントをビルドしない。`google/fonts` の `ofl/notocoloremoji/NotoColorEmoji-Regular.ttf`（v2.055、25 MB）を使う。このファイルは `COLR`・`CPAL`・`SVG` の表を併せ持つので、`COLR` と `CPAL` を外す。
+- **sbix**: 同じリリースの `2D/fonts/NotoColorEmoji.ttf`（CBDT、10.7 MB）の PNG を sbix の表に移す。WebKit は CBDT を描かない。
 - **確認したこと（2026-10-24）**: どちらのファイルも、Emoji 18.0 の `emoji-test.txt` の fully-qualified の 3,963 列をすべて 1 つのグリフに組む。HarfBuzz（`uharfbuzz`）で整形して確かめた。
-  Google Fonts は、Chrome と Firefox の User-Agent に COLRv1 の表の WOFF2 を、Safari の User-Agent に SVG の表の WOFF2 を返す。どちらも 11 個に分けている。
-  確認に使ったリリースは [v2026-09-24-unicode18_0](https://github.com/googlefonts/noto-emoji/releases/tag/v2026-09-24-unicode18_0) と [google/fonts の METADATA.pb](https://github.com/google/fonts/blob/e7db6ca603fd4862010383ff17ffd6cc4ffac1c0/ofl/notocoloremoji/METADATA.pb) である。
-- 2 つのファイルはコミット（noto-emoji は `e20cbc2bbec1926686be9f9bee7d1d2cfa1fea0e`）と SHA-256 で固定し、§1 の `EMOJI_VERSION`・`CLDR_VERSION` と同じタスクで取得する。
+  確認に使ったリリースは [v2026-09-24-unicode18_0](https://github.com/googlefonts/noto-emoji/releases/tag/v2026-09-24-unicode18_0) である。
+- 2 つのファイルは noto-emoji のコミット `e20cbc2bbec1926686be9f9bee7d1d2cfa1fea0e` と SHA-256 で固定し、§1 の `EMOJI_VERSION`・`CLDR_VERSION` と同じタスクで取得する。
   生成器は、`EMOJI_VERSION` の `emoji-test.txt` のすべての fully-qualified の列が両方のフォントで 1 つのグリフになることを確かめ、そうでなければ失敗する。
   `EMOJI_VERSION` を上げるのは、それを描ける Noto のリリースが出てからにする。
 
@@ -95,16 +94,16 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
   各列はそのグループの分割に入れ、分割の `unicode-range` は、その分割の列に現れるすべての符号位置にする。ZWJ（`U+200D`）・`U+FE0F`・肌の色の修飾子は、複数の分割に重なって入る。
   重なり方は Google Fonts と同じである。Google Fonts の分割も `U+200D` を複数の `unicode-range` に入れている。分割をまたぐ ZWJ の列が別々のグリフに割れないように、列を丸ごと 1 つの分割に入れる。
 - `fontTools.subset`（`pyftsubset` と同じもの）で、分割ごとに GSUB の閉包を保ったまま部分集合を作り、WOFF2 にする。
-  COLRv1 の版は `SVG` の表を、SVG の版は `COLR` と `CPAL` の表を落とす。
-- **大きさ（2026-10-24 に試しに生成して計測）**:
+  sbix の版は、CBDT の PNG（128 px）を縮めずに sbix の表へ移し、空の `glyf` を足す。Noto の PNG は最適化済みで、96 px に縮めて圧縮し直すと元より大きくなる（#3506）。
+- **大きさ（COLRv1 は 2026-10-24、sbix は 2026-11-25 に生成して計測）**:
 
   | 形式 | 合計 | 最大の分割 | 顔と感情の分割 | Google Fonts の配信（11 分割の合計） |
   | --- | --- | --- | --- | --- |
   | COLRv1 | 1.96 MB | 国旗 693 KB | 75 KB | 2.08 MB |
-  | SVG | 3.72 MB | 国旗 1,152 KB | 153 KB | 3.95 MB |
+  | sbix | 9.64 MB | 人と体 6,384 KB | 474 KB | なし |
 
   COLRv1 は、分けないときの WOFF2 が 1.90 MB で、分割で増えるのは 3% である。
-- **道具**: fontTools（MIT）、brotli（MIT）、SVG の部分集合に要る lxml（BSD-3-Clause）を、生成のときだけ使う。どれも AGPL-3.0 と両立する。
+- **道具**: fontTools（MIT）と brotli（MIT）を、生成のときだけ使う。どれも AGPL-3.0 と両立する。
   リポジトリの道具に Python は無い（`.tool-versions`）。そこで、`scripts/emoji-fonts` を `uv` のロックファイルで版を固定した使い捨ての環境で動かす。
   生成した WOFF2 と `@font-face` の CSS はコミットする。`scripts/task.sh check` とビルドに Python は要らない。サーバーには何も足さない。
 - 置き場所は `@my/design-system`（`web/design-system/src/fonts/emoji/` と `web/design-system/src/emoji.css`、`@my/design-system/emoji.css` として公開）にする。タイポグラフィは `@my/design-system` が持ち、Storybook も同じフォントで描ける。
@@ -116,14 +115,15 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 ### 10. `@font-face` とフォントの並び
 
 - **ファミリー**: 分割ごとに、`font-family: "my Noto Color Emoji"` の `@font-face` を 1 つ置く。OS に入っている同じ名前の CBDT の Noto（Linux・Android）と区別するため、ファミリー名を変える。
-- **`src`**: `src: url(<svg>.woff2) format("woff2") tech(color-SVG), url(<colrv1>.woff2) format("woff2") tech(color-COLRv1)` とする。
-  ブラウザーは対応する最初の項目を選ぶ（Chromium は COLRv1、WebKit と Firefox は SVG）。WebKit は COLRv1 を受け入れるが iOS で描かない（#3397）。
+- **`src`**: `src: url(<colrv1>.woff2) format("woff2") tech(color-COLRv1), url(<sbix>.woff2) format("woff2") tech(color-sbix)` とする。
+  ブラウザーは対応する最初の項目を選ぶ（Chromium と Firefox は COLRv1、WebKit は sbix）。
+  OpenType-SVG は配らない。iOS 18.7 の WebKit は `tech(color-SVG)` を受け入れるが、Web フォントの SVG の字形を描かない（丸と四角だけの字形も空白。[WebKit bug 280102](https://bugs.webkit.org/show_bug.cgi?id=280102)、#3506）。
   対応する版は次のとおりである（2026-10-24 に MDN の [browser-compat-data](https://github.com/mdn/browser-compat-data/blob/8371d582c202efe1f21622ab8cfac6ab00a7b209/css/at-rules/font-face.json) と caniuse の [colr-v1](https://github.com/Fyrd/caniuse/blob/664a78d75bcf581e1c6279144ad66b797a1635ab/features-json/colr-v1.json) で確認）。
 
   | 機能 | Chrome | Firefox | Safari | 備考 |
   | --- | --- | --- | --- | --- |
   | `src` の `tech()` | 108 | 107 | 17 | |
-  | COLRv1 | 98 | 107 | TP まで未対応 | `tech()` は受け入れるが iOS で描かない（#3397）。Android の Chrome・WebView は対応 |
+  | COLRv1 | 98 | 107 | TP まで未対応 | iOS 18.7 は `tech(color-COLRv1)` を受け入れない（#3506）。Android の Chrome・WebView は対応 |
 
 - **`unicode-range`**: 次の符号位置は、本文の文字として使われるので外す。`#`・`*`・`0`〜`9`（キーキャップの基）と、`©`・`®`・`™`・`‼`・`⁉`・`↔` など `emoji-test.txt` で既定がテキストの表示の記号のうち、本文の記号として使われるものである。
   外した字の絵文字の表示（`#️⃣`、`©️`）と、外した字を含む並び（`🙂‍↔️`）は、OS の絵文字のフォントで描く。外す字の一覧は、生成器の定数 `TEXT_CODE_POINTS` として 1 か所に置く。
@@ -140,7 +140,7 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 - ピッカー・補完・リアクション・投稿の本文は、同じ `--font-sans` で Noto の形になる。
 - フォントを読めない環境で豆腐になる絵文字があるのは、§10 の「使えないとき」に書いた例外として受け入れる。
 - ピッカーを初めて開いたときに読む分割は、ブラウザーで違う。Firefox は描いた行（§15）の絵文字のグループの分割を読む。Chromium は `U+FE0F` を `unicode-range` に持つ分割（§9。country-flags と component を除く 9 個）をまとめて読むので、11 分割のうち 9 分割、COLRv1 で約 1.35 MB を読む。カスタム絵文字の節が無ければ、初めの行に `U+FE0F` を含む `❤️` と `☺️` が必ず入るためである。
-  すべての分割は COLRv1 で約 2 MB、SVG で約 3.7 MB である。
+  すべての分割は COLRv1 で約 2 MB、sbix で約 9.6 MB である。
 - この値は、`emoji.css` と本物のフォントを読む静的なページに、初めて開いたときの行の近似（よく使うの既定の 12 個と顔と感情、計 10 行 × 8 列）を置いて計測した（2026-11-04。Firefox は同じ内容で 4 分割）。本物のピッカーの画面では計測しておらず、WebKit は未計測である。
 
 ### 12. ADR-0092 の強調表示との関係
@@ -228,15 +228,15 @@ ADR-0092 §4 の編集器は、文字を `--font-sans` で自分で描き、強�
 - 仮想化してもピッカーを開くのが遅い（ミドルレンジの Android で 100 ms を超える）場合は、全集合をタブごとに分けて描く（タブを APG の tabs にする）形を見直す。
 - TanStack Virtual の版の更新で、`rangeExtractor` や `scrollToIndex` の振る舞いが変わり、フォーカスを保てなくなった場合は、React Aria の `Virtualizer` と自作の `Layout` を見直す。
 - React Aria Components の `GridLayout` が節を配置するようになった場合は、キー操作を React Aria に戻せるかを見直す。
-- iOS の Safari が COLRv1 を描くようになったら、SVG の版をやめて COLRv1 だけにする（#3397）。
-- `google/fonts` が SVG の表を持つファイルを配らなくなったら、noto-emoji の SVG の素材から nanoemoji（Apache-2.0）で作るかを見直す。
-- 初めてピッカーを開いたときの転送量（SVG で全分割は約 3.7 MB）が、モバイルの回線で受け入れられないと分かったら、分割を細かくするか、ピッカーの描き方（§11）を見直す。
+- WebKit が COLRv1 を描くようになったら、sbix の版をやめて COLRv1 だけにする（#3506）。
+- noto-emoji が CBDT のフォントをビルドしなくなったら、sbix の作り方を見直す。
+- 初めてピッカーを開いたときの転送量（sbix で全分割は約 9.6 MB）が、モバイルの回線で受け入れられないと分かったら、分割を細かくするか、ピッカーの描き方（§11）を見直す。
 
 ## 経緯
 
 投稿フォームの絵文字の入力を、Mastodon の Web のピッカーのように、入力欄から開けて、カテゴリのタブ・よく使う絵文字・検索・肌の色の選択を持つものにする要望から始まった（#1040）。関係する要件は FR-101（投稿の作成）と FR-116（絵文字リアクション）。ADR-0092 の補完が同じデータを使うので、データの形を先に決めた。Mastodon v4.7.3 は `emoji-mart` と `emojibase-data` 16.0.3 を、Misskey 2026.10.0 は自前のピッカーと `@misskey-dev/emoji-data` を使う（2026-10-23 に各 `package.json` で確認）。
 
-表示は、当初は OS のフォントで描き、OS が描けない版の絵文字を canvas で判定して隠すとした。その後、端末で形がそろわないこと、古い OS で新しい絵文字が豆腐になること、ADR-0110 のスクリーンショットが OS に左右されることから、すべての場所を Noto Color Emoji で描くと決めた（#1145）。Safari が COLRv1 を描けないので、COLRv1 と OpenType-SVG の両方を配る。
+表示は、当初は OS のフォントで描き、OS が描けない版の絵文字を canvas で判定して隠すとした。その後、端末で形がそろわないこと、古い OS で新しい絵文字が豆腐になること、ADR-0110 のスクリーンショットが OS に左右されることから、すべての場所を Noto Color Emoji で描くと決めた（#1145）。Safari が COLRv1 を描けないので、WebKit には別の形式を配る。当初の OpenType-SVG は iOS で描かれず（#3397、#3506）、sbix に替えた。
 
 `emoji.css` は当初 `theme.css` から読むとしたが、`theme.css` はサーバーが描画する画面の `server-pages.css` も読み込む。#1176 はその画面のフォントと読み込む量を変えないことを求めたので、実装（PR #1182）に合わせて使う側が読み込む形にした。
 
@@ -275,19 +275,19 @@ ADR-0092 §4 の編集器は、文字を `--font-sans` で自分で描き、強�
   - 「よく使う」と肌の色は端末ごとで、別の端末やブラウザーでは引き継がれない。
   - 本文の右上のボタンのぶん、本文の入力欄の幅が狭くなる。
   - 初めて開くときに 2 つのチャンクを取るので、遅い回線ではピッカーが開くまで待たせる（読み込み中の表示が要る）。
-  - 絵文字を含む画面で、その分割を読む転送量が増える。顔と感情の分割は COLRv1 で 75 KB、SVG で 153 KB である。
+  - 絵文字を含む画面で、その分割を読む転送量が増える。顔と感情の分割は COLRv1 で 75 KB、sbix で 474 KB である。
   - `font-display: swap` の入れ替えで、絵文字の形が一度変わる。
   - OS の絵文字に慣れた利用者には、見慣れない形になる。利用者の設定で OS の絵文字に戻す選択肢は持たない。
-  - フォントの出所が 2 つ（noto-emoji と google/fonts）あり、版（2.057 と 2.055）が違い得る。細部の形が形式によって違うことがある。
-  - リポジトリに約 5.7 MB のバイナリが入り、Unicode の版を上げるたびに増える。生成に Python の道具（fontTools・brotli・lxml・uharfbuzz）が要る。
+  - WebKit の sbix は 128 px のビットマップなので、大きく描くとぼやける。
+  - リポジトリに約 12 MB のバイナリが入り、Unicode の版を上げるたびに増える。生成に Python の道具（fontTools・brotli・uharfbuzz）が要る。
   - 通知（Web Push）・`document.title`・OS のネイティブの UI（`select` の一覧など）は OS のフォントで描かれ、Noto にならない。
   - Web クライアントの新しい入口（新しいエントリのスタイルシートや、別の Storybook）で Noto Color Emoji を使うには、そのスタイルシートが `@my/design-system/emoji.css` を読み込む必要がある。読み忘れても壊れはしないが、絵文字が OS のフォントになる。
   - グリッドのキー操作・フォーカスの移動・ARIA の属性を自前で持つ。`GridList` が持っていた細かな扱い（typeahead など）は持たない。テスト（Testing Library のキー操作と Storybook の実ブラウザ）で固める。
   - React Compiler から外すフックが `Feed` のほかにもう 1 つある。
   - ブラウザーのページ内検索（Ctrl+F）は、描いていない絵文字を見つけない。名前で探すのはピッカーの検索欄が受け持つ。
-  - WKWebView で OpenType-SVG を、Android の WebView で COLRv1 を描く速さは実機で測っていない（#1150 は Playwright の計測で閉じ、Tauri のアプリは v0 の外）。ピッカーの分割の読み込みは、仮想化の後の本物の画面では計測しておらず（#1213 は必要になるまで閉じた）、§11 の値は静的なページでの計測で、WebKit は未計測である。Chromium は、仮想化しても初回に 11 分割のうち 9 分割を読む。
+  - WKWebView で sbix を、Android の WebView で COLRv1 を描く速さは実機で測っていない（#1150 は Playwright の計測で閉じ、Tauri のアプリは v0 の外）。ピッカーの分割の読み込みは、仮想化の後の本物の画面では計測しておらず（#1213 は必要になるまで閉じた）、§11 の値は静的なページでの計測で、WebKit は未計測である。Chromium は、仮想化しても初回に 11 分割のうち 9 分割を読む。
 
 ## Open Questions / 要検証
 
-- `@font-face` の `src` の `tech()` を知らない Safari 16 以前で、`src` 全体が無効になって OS の絵文字に落ちるか、SVG の項目を読んで描くか（要検証。古い Safari の実機か BrowserStack が要る）。
+- `@font-face` の `src` の `tech()` を知らない Safari 16 以前で、`src` 全体が無効になって OS の絵文字に落ちるか、sbix の項目を読んで描くか（要検証。古い Safari の実機か BrowserStack が要る）。
 - `aria-activedescendant` と roving tabindex の、iOS の VoiceOver と Android の TalkBack での読み上げの差（要検証。ADR-0110 の手動の層で、§17 の roving tabindex の読み上げを確かめる）。
