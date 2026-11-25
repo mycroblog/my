@@ -4,7 +4,8 @@
 // and the form's alert says the refusal's title alone; a refusal of no input says the server's words in the alert.
 // And a post the server's automated review refused (#3204, ADR-0147 §9): the alert says so in the client's own
 // sentence with Appeal, which asks first and then sends the post's text to the moderators, once; where the appeal
-// stands takes the alert's place, and the post is held back while the refusal stands.
+// stands takes the alert's place, and the post is held back while the refusal stands. The confirmation offers an
+// optional comment for the moderators (#3217), sent trimmed, left out when blank, and refused over 2,000 characters.
 
 import { describe, expect, test } from "bun:test";
 import { defaultComposeSettings, type MediaAttachment } from "@my/app-data";
@@ -294,6 +295,172 @@ describe("a post the server's automated review refused", () => {
     ]);
     expect(appeals(form)).toHaveLength(0);
     expect(postable(form)).toBe(false);
+  });
+
+  // What the author wants the moderators to know (#3217): an optional comment in the confirmation.
+
+  const commentLabel = "What the moderators should know (optional)";
+  const tooLong = "Shorten what you wrote to 2,000 characters or fewer.";
+
+  /** Presses Appeal, and returns the confirmation once it is open, and its field of the comment. */
+  async function opening(form: Form) {
+    await form.user.click(form.getByRole("button", { name: "Appeal" }));
+    const dialog = await asking();
+    return {
+      dialog,
+      comment: within(dialog).getByRole<HTMLTextAreaElement>("textbox", { name: commentLabel }),
+      send: () => form.user.click(within(dialog).getByRole("button", { name: "Send appeal" })),
+    };
+  }
+
+  /** Writes `text` into the comment's field, as pasted. */
+  async function comment(form: Form, field: HTMLElement, text: string): Promise<void> {
+    await form.user.click(field);
+    await form.user.paste(text);
+  }
+
+  /** The bodies of the appeals sent. */
+  const bodies = (sent: { seen: readonly { body: unknown }[] }) => sent.seen.map((request) => request.body);
+
+  test("the confirmation offers a comment of several lines that may stay empty, said to be optional and how long it may be", async () => {
+    const form = await refusedPost();
+
+    const { dialog, comment: field } = await opening(form);
+
+    expect(field.tagName).toBe("TEXTAREA");
+    expect(field.getAttribute("name")).toBe("comment");
+    expect(field.value).toBe("");
+    expect(described(field)).toContain("Up to 2,000 characters.");
+    expect(field.getAttribute("aria-invalid")).not.toBe("true");
+    // The focus does not start in it.
+    expect(document.activeElement === field).toBe(false);
+    expect(within(dialog).getByRole("button", { name: "Send appeal" }).hasAttribute("disabled")).toBe(false);
+  });
+
+  test("a comment written is sent trimmed, beside the post's text, once", async () => {
+    const form = await refusedPost({ text: "Just a recipe for sourdough." });
+    const sent = form.on.fake.script(route);
+    const { comment: field, send } = await opening(form);
+
+    await comment(form, field, "  It is a recipe, not an ad.\nNo link in it.  \n");
+    await send();
+
+    await waitFor(() => {
+      expect(alertSays(form)).toEqual([pending]);
+    });
+    expect(bodies(sent)).toEqual([
+      { status_text: "Just a recipe for sourdough.", comment: "It is a recipe, not an ad.\nNo link in it." },
+    ]);
+  });
+
+  test("a comment of blanks alone is not sent: the appeal holds the post's text and no comment", async () => {
+    const form = await refusedPost({ text: "Just a recipe for sourdough." });
+    const sent = form.on.fake.script(route);
+    const { comment: field, send } = await opening(form);
+
+    await comment(form, field, "  \n\t ");
+    await send();
+
+    await waitFor(() => {
+      expect(alertSays(form)).toEqual([pending]);
+    });
+    expect(bodies(sent)).toEqual([{ status_text: "Just a recipe for sourdough." }]);
+    expect(Object.keys(sent.seen[0]?.body ?? {})).toEqual(["status_text"]);
+  });
+
+  test("a comment of 2,000 characters, counted as code points and trimmed, is sent whole", async () => {
+    const form = await refusedPost({ text: "Just a recipe for sourdough." });
+    const sent = form.on.fake.script(route);
+    const { comment: field, send } = await opening(form);
+    // 2,000 code points, each two UTF-16 units.
+    const most = "🍞".repeat(2000);
+
+    await comment(form, field, ` ${most} `);
+    await send();
+
+    await waitFor(() => {
+      expect(alertSays(form)).toEqual([pending]);
+    });
+    expect(bodies(sent)).toEqual([{ status_text: "Just a recipe for sourdough.", comment: most }]);
+  });
+
+  test("a comment over 2,000 characters is refused in the confirmation: the field is invalid, says so, takes the focus, and nothing is sent", async () => {
+    const form = await refusedPost();
+    const sent = form.on.fake.script(route);
+    const { dialog, comment: field, send } = await opening(form);
+
+    await comment(form, field, "a".repeat(2001));
+    await send();
+
+    await waitFor(() => {
+      expect(field.getAttribute("aria-invalid")).toBe("true");
+    });
+    expect(described(field)).toContain(tooLong);
+    expect(document.activeElement).toBe(field);
+    expect(screen.getByRole("alertdialog", { name: "Appeal this refusal?" })).toBe(dialog);
+    expect(sent.seen).toHaveLength(0);
+    expect(asked(form).filter((request) => request.startsWith("POST "))).toEqual([]);
+
+    // The next letter typed clears what was said.
+    await form.user.type(field, "{Backspace}");
+    await waitFor(() => {
+      expect(field.getAttribute("aria-invalid")).not.toBe("true");
+    });
+    expect(within(dialog).queryAllByText(tooLong)).toHaveLength(0);
+  });
+
+  test("a comment the server refuses shows the server's words under the field: the confirmation stays, the field takes the focus, and typing clears them", async () => {
+    const form = await refusedPost();
+    const serverSays = "This text contains a character that is not allowed.";
+    const refusing = form.on.fake.script(route, {
+      times: 1,
+      fail: {
+        type: "about:blank",
+        title: "This could not be done.",
+        status: 422,
+        field: "comment",
+        detail: serverSays,
+      },
+    });
+    const { dialog, comment: field, send } = await opening(form);
+
+    await comment(form, field, "Not spam.");
+    await send();
+
+    await waitFor(() => {
+      expect(described(field)).toContain(serverSays);
+    });
+    expect(refusing.seen).toHaveLength(1);
+    expect(field.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByRole("alertdialog", { name: "Appeal this refusal?" })).toBe(dialog);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(field);
+    });
+    expect(field.value).toBe("Not spam.");
+
+    await form.user.type(field, "!");
+
+    await waitFor(() => {
+      expect(field.getAttribute("aria-invalid")).not.toBe("true");
+    });
+    expect(within(dialog).queryAllByText(serverSays)).toHaveLength(0);
+    expect(described(field)).toEqual(["Up to 2,000 characters."]);
+  });
+
+  test("a comment written stays when the confirmation is cancelled and opened again", async () => {
+    const form = await refusedPost();
+    const sent = form.on.fake.script(route);
+    const first = await opening(form);
+    await comment(form, first.comment, "It is a recipe, not an ad.");
+
+    await form.user.click(within(first.dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      if (screen.queryAllByRole("alertdialog").length > 0) throw new Error("test: the confirmation is still open");
+    });
+    const again = await opening(form);
+
+    expect(again.comment.value).toBe("It is a recipe, not an ad.");
+    expect(sent.seen).toHaveLength(0);
   });
 
   // Where an appeal made before stands, as the server holds it when the composer opens on the refusal.
