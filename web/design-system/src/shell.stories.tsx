@@ -6,9 +6,11 @@
 // finance; a server with its local and federated timelines off; a single-user server; a visitor not signed in; the
 // closure announced; the reader offline and the server down; a call, connecting, connecting again, muted by its host,
 // and its sound held back until a press; the toasts of a newer version; the column beside the main one with none of its sections but the notifications, which have none yet; the reader in their direct
-// messages, whose place counts the unread conversations; and the menu's sheet open. Its words are samples in English.
+// messages, whose place counts the unread conversations; the menu's sheet open; and the stream of the session
+// connecting, connecting again and stopped (open in every other story of a reader). Its words are samples in English.
 
 import { breakpoint, color } from "@my/design-tokens";
+import { Options } from "@my/devtools/options";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { Avatar } from "./avatar";
@@ -33,6 +35,7 @@ import {
   FrameMark,
   FrameSection,
   FrameSide,
+  FrameStream,
   Meter,
   NavItem,
   NavList,
@@ -42,6 +45,7 @@ import {
   SectionList,
   SectionNote,
   Toast,
+  type StreamState,
 } from "./shell";
 import type { IconName } from "./icons";
 import { dateFormat } from "./zone";
@@ -81,6 +85,16 @@ type ShellState = {
   articles?: boolean;
   /** The Menu open, where it shows. */
   menu?: boolean;
+  /** The state of the reader's stream (open unless given); a visitor has none. */
+  stream?: StreamState;
+};
+
+// Placeholders of the copy role's words for each state of the stream.
+const streamLabel: Record<StreamState, string> = {
+  connecting: "Connecting…",
+  open: "Connected",
+  reconnecting: "Reconnecting…",
+  stopped: "Disconnected",
 };
 
 // Under `tablet` the tab bar shows, and its Menu; from it, the rail or the sidebar and theirs.
@@ -458,7 +472,7 @@ function Banners({ closure, connection }: ShellState) {
 }
 
 function Shell(state: ShellState) {
-  const { who = "reader", at = "/", call, callState, toast, logo, around = "all" } = state;
+  const { who = "reader", at = "/", call, callState, toast, logo, around = "all", stream = "open" } = state;
   const [muted, setMuted] = useState(state.muted ?? callState === "mutedByHost");
   const [held, setHeld] = useState(callState === "soundHeld");
   // The frame holds two Menus, one hidden at any width: the one that shows is the open one.
@@ -618,6 +632,15 @@ function Shell(state: ShellState) {
         <Feed />
       </FrameMain>
       <Around {...state} />
+      {reader && (
+        <Options
+          id="stream-place"
+          variants={{
+            corner: <FrameStream state={stream} label={streamLabel[stream]} at="corner" />,
+            edge: <FrameStream state={stream} label={streamLabel[stream]} at="edge" />,
+          }}
+        />
+      )}
       <FrameDock
         label="Main"
         tabs={
@@ -707,6 +730,11 @@ export const DirectMessages: Story = { args: { at: "/direct" } };
 // The menu open where it shows: the tab bar's sheet on a phone, the popover beside the rail's or the sidebar's
 // entry from `tablet`, the one menu either way.
 export const MenuOpen: Story = { args: { who: "staff", menu: true } };
+// The stream of the session before its first open, after a failure until the next, and refused for good; a closure's
+// banner under the dot on a phone.
+export const StreamConnecting: Story = { args: { stream: "connecting" } };
+export const StreamReconnecting: Story = { args: { stream: "reconnecting", closure: true } };
+export const StreamStopped: Story = { args: { stream: "stopped" } };
 
 const server = {
   name: "my.example",

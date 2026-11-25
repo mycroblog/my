@@ -287,6 +287,7 @@ export {
   FramePanel,
   FrameSection,
   FrameSide,
+  FrameStream,
   focusFrameHeading,
   Meter,
   NavItem,
@@ -296,6 +297,7 @@ export {
   SectionList,
   SectionNote,
   Toast,
+  type StreamState,
 } from "./shell";
 export {
   HeadcountMark,

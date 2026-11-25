@@ -21,6 +21,7 @@ import {
   radius,
   screen,
   shell,
+  streamColor,
   text,
   toggle,
   voice,
@@ -51,6 +52,7 @@ const theme = {
   colors: {
     ...Object.fromEntries(names(color).map((name) => [name, ref(`--color-${name}`)])),
     ...Object.fromEntries(names(badgeColor).map((name) => [name, ref(`--color-${name}`)])),
+    ...Object.fromEntries(names(streamColor).map((name) => [name, ref(`--color-${name}`)])),
     "accent-hover": "color-mix(in srgb, var(--press-shade) var(--press-hover), var(--color-accent))",
     "accent-pressed": "color-mix(in srgb, var(--press-shade) var(--press-pressed), var(--color-accent))",
     "spinner-track": "color-mix(in srgb, currentColor var(--spinner-track-share), transparent)",

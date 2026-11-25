@@ -20,6 +20,8 @@ const rules: readonly Rule[] = [
   { pattern: /^--color-avatar-/ },
   // Fixed: a role's badge has the same colors on every server (BadgeColor of the client API).
   { pattern: /^--color-(on-)?badge-/ },
+  // Fixed: the stream's dot means the same on every server.
+  { pattern: /^--color-stream-/ },
   { pattern: /^--color-/, kind: "color" },
   // A theme adds its fonts to the stacks; the stacks, the Latin family and the CJK region are fixed, so that a theme
   // never drops the emoji and text web fonts.

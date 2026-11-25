@@ -22,6 +22,7 @@ import {
   FrameMark,
   FrameSection,
   FrameSide,
+  FrameStream,
   Meter,
   NavItem,
   NavList,
@@ -630,4 +631,16 @@ test("the dock holds the tab bar under its name, the call's bar, the primary act
   expect(screen.getByRole("group", { name: "Coffee" })).not.toBeNull();
   expect(screen.getByRole("button", { name: "New post" })).not.toBeNull();
   expect(screen.getByRole("status").textContent).toContain("A newer version of the app is ready.");
+});
+
+test("the stream's dot is named by its state, and its tooltip says the same without saying it twice", () => {
+  render(
+    <Frame>
+      <FrameStream state="reconnecting" label="Reconnecting…" />
+    </Frame>,
+  );
+
+  const dot = screen.getByRole("img", { name: "Reconnecting…" });
+  expect(dot.getAttribute("data-frame-stream")).toBe("reconnecting");
+  expect(within(dot).getByText("Reconnecting…").getAttribute("aria-hidden")).toBe("true");
 });

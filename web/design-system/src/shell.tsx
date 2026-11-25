@@ -963,6 +963,114 @@ export function Toast({
   );
 }
 
+/** The state of the stream of the session: before its first open, open, after a failure until the next open, stopped. */
+export type StreamState = "connecting" | "open" | "reconnecting" | "stopped";
+
+// The stream's dot: a mark cut out of what scrolls under it by a ring of the page's surface.
+const stream = tv({
+  slots: {
+    dot: [
+      "size-shell-stream rounded-full shadow-[0_0_0_var(--shell-stream-ring)_var(--color-surface)]",
+      "forced-color-adjust-none",
+    ],
+    // Knocked out, as the call's bar's tooltip, while the pointer hovers the dot's target.
+    tip: [
+      "invisible rounded-control bg-text px-shell-inset py-shell-toast-inset font-sans text-caption text-surface",
+      "group-hover:visible",
+    ],
+  },
+  variants: {
+    state: {
+      open: { dot: "bg-stream-open" },
+      connecting: { dot: "bg-stream-connecting" },
+      reconnecting: { dot: "bg-stream-connecting" },
+      stopped: { dot: "bg-stream-stopped" },
+    },
+  },
+});
+
+// Where the stream's dot stands: fixed over the screen, centred in the band the frame keeps above it (`--shell-gap`,
+// the main column's top padding), its end on the end of the content, in a target of the least size that the pointer
+// hovers to read its tooltip, which hangs under it, its end on the dot's. `corner` puts it at the viewport's end at
+// every width; `edge` at the end of the frame's last column, which on a phone is the viewport's.
+const streamPlace = tv({
+  slots: {
+    root: [
+      "group fixed top-[calc(env(safe-area-inset-top)+(var(--shell-gap)-var(--target-minimum))/2)] z-3",
+      "flex size-[var(--target-minimum)] items-center justify-center",
+      "end-[calc(var(--stream-end)-(var(--target-minimum)-var(--shell-stream))/2)] [--stream-end:var(--shell-edge)]",
+    ],
+    tip: "pointer-events-none absolute end-0 top-full mt-shell-item-gap w-max max-w-[var(--menu-min-width)]",
+  },
+  variants: {
+    at: {
+      corner: {},
+      edge: {
+        root: [
+          "tablet:[--stream-end:max(var(--shell-edge),calc((100%-var(--shell-rail)-var(--shell-gap)-var(--shell-column))/2))]",
+          "desktop:[--stream-end:max(var(--shell-edge),calc((100%-var(--shell-sidebar)-var(--shell-gap-wide)-var(--shell-column))/2))]",
+          "wide:[--stream-end:max(var(--shell-edge),calc((100%-var(--shell-sidebar)-2*var(--shell-gap-wide)-var(--shell-column)-var(--shell-aside))/2))]",
+        ],
+      },
+    },
+  },
+});
+
+/** The place of the stream's dot, as `as`, with its tooltip `tip` under it (streamPlace). */
+function StreamPlace({
+  at,
+  as,
+  tip,
+  children,
+}: {
+  at: "corner" | "edge";
+  as: ReactElement<{ className?: unknown }>;
+  tip: ReactElement<{ className?: unknown }>;
+  children: ReactNode;
+}) {
+  const s = streamPlace({ at });
+  return (
+    <Box as={as} className={s.root()}>
+      {children}
+      <Box as={tip} className={s.tip()} />
+    </Box>
+  );
+}
+
+/**
+ * The state of the stream of the session, at the top end of the screen at every width, over what scrolls under it: a
+ * dot with no visible label, green while open, amber while it connects or connects again, red once the server refused
+ * it for good, so that the reader tells "no new posts" from "cut off" at a glance. `label` says the state: it names
+ * the dot for assistive technology and is the tooltip a pointer hovering it shows. Place it in the Frame of a signed-in
+ * reader alone, whose session has a stream.
+ */
+export function FrameStream({
+  state,
+  label,
+  at = "corner",
+}: {
+  state: StreamState;
+  /** What the state is, in words ("Connected", "Reconnecting…", "Disconnected"). */
+  label: string;
+  /** Under review: at the viewport's end, or at the end of the frame's last column. */
+  at?: "corner" | "edge";
+}) {
+  const s = stream({ state });
+  return (
+    <StreamPlace
+      at={at}
+      as={<span role="img" aria-label={label} data-frame-stream={state} />}
+      tip={
+        <span className={s.tip()} aria-hidden="true">
+          {label}
+        </span>
+      }
+    >
+      <span className={s.dot()} />
+    </StreamPlace>
+  );
+}
+
 /**
  * The mark's place at the top of the rail, as `as`: in the rail's middle, and from `desktop` at the sidebar's start,
  * on the column of the places' glyphs.
