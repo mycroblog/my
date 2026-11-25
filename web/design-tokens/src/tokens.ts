@@ -137,20 +137,20 @@ export const badgeColor = {
 export type BadgeColorName = keyof typeof badgeColor;
 
 /**
- * The colors of the dot that shows the state of the stream (FrameStream), the same on every server (a theme does not
+ * The colors of the mark that shows the state of the stream (FrameStream), the same on every server (a theme does not
  * change them): open, connecting (or connecting again), and stopped for good. Each is a mark at 3:1 on the page's
- * surface (`streamContrastPairs`), in the order of their lightness, amber the lightest and red the darkest, so that
- * they differ in grey too; its name and tooltip say the state.
+ * surface (`streamContrastPairs`), red the darkest; its shape tells the states apart without the hue, and its name and
+ * tooltip say the state.
  */
 export const streamColor = {
-  "stream-open": { light: "#15803d", dark: "#22c55e" },
+  "stream-open": { light: "#16a34a", dark: "#22c55e" },
   "stream-connecting": { light: "#d97706", dark: "#fbbf24" },
   "stream-stopped": { light: "#b91c1c", dark: "#ef4444" },
 } as const satisfies Record<string, SchemeColor>;
 
 export type StreamColorName = keyof typeof streamColor;
 
-/** The stream's dot on the page's surface, a mark: 3:1 (WCAG 1.4.11). */
+/** The stream's mark on the page's surface: 3:1 (WCAG 1.4.11). */
 export const streamContrastPairs: readonly { fg: StreamColorName; minimum: number }[] = [
   { fg: "stream-open", minimum: 3 },
   { fg: "stream-connecting", minimum: 3 },
@@ -636,7 +636,7 @@ export const breakpoint = { tablet: 40, desktop: 68.75, wide: 77.5 } as const;
  * main column where no tab bar covers it; the rail's padding; the space between the sections of the column beside the
  * main one; the height of the mark at the top of the rail; the height of the call's bar above the tab bar; the least
  * size of a count's badge and its inline padding; the height of a meter's bar; the room the menu's sheet leaves
- * above it; the padding of a toast around its controls; and the size of the stream's dot and of the ring of the
+ * above it; the padding of a toast around its controls; and the size of the stream's mark and of the ring of the
  * page's surface around it.
  */
 export const shell = {

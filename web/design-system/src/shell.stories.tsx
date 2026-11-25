@@ -10,7 +10,6 @@
 // connecting, connecting again and stopped (open in every other story of a reader). Its words are samples in English.
 
 import { breakpoint, color } from "@my/design-tokens";
-import { Options } from "@my/devtools/options";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { Avatar } from "./avatar";
@@ -632,15 +631,7 @@ function Shell(state: ShellState) {
         <Feed />
       </FrameMain>
       <Around {...state} />
-      {reader && (
-        <Options
-          id="stream-place"
-          variants={{
-            corner: <FrameStream state={stream} label={streamLabel[stream]} at="corner" />,
-            edge: <FrameStream state={stream} label={streamLabel[stream]} at="edge" />,
-          }}
-        />
-      )}
+      {reader && <FrameStream state={stream} label={streamLabel[stream]} />}
       <FrameDock
         label="Main"
         tabs={
