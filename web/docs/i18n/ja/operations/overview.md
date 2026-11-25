@@ -47,7 +47,7 @@
 
 `my config check` は、サーバーを起動する前に、設定の問題をまとめてすべて報告します（[本番運用のチェックリスト](production-checklist.md)）。
 
-<!-- source: from-a-small-server-to-a-large-one 2f46b66f047c -->
+<!-- source: from-a-small-server-to-a-large-one ed28f8cf5385 -->
 ## 小さなサーバーから大きなサーバーへ
 
 ![小さなサーバーから大きなサーバーへの 3 つの段階。SQLite とファイルシステムの上の 1 つのプロセス、次に PostgreSQL と CDN の後ろのオブジェクトストレージ、次にストリームのブローカーを使う web と worker の別々のプロセス。下の一覧が各段階を説明しています。](images/growth.svg)
@@ -56,14 +56,21 @@
 2. **データを外に出す。** データベースに PostgreSQL、メディアに S3 互換のバケットか Google Cloud Storage を使い、メディアの前に CDN を置きます。サーバーはまだ 1 つのプロセスですが、1 つのディスクには依存しなくなり、次の段階のプロセス同士でデータを共有できます。できれば最初の起動の前に決めてください。あとから SQLite とファイルシステムからデータを移すのは、それだけで 1 つの作業になります（移すべきものは[バックアップする対象](backup.md#what-to-back-up)に一覧があります）。
 3. **スケールアウトする。** リクエスト用に `role = web`、ジョブ用に `role = worker` のプロセスを、それぞれ必要な数だけ動かし、ワーカーをジョブの種類ごとに分けます（[ワーカーの分割](running.md#splitting-workers-by-job-type)）。プロセスが複数あるときは、リアルタイムストリームにすべてのプロセスに届くブローカー（`postgres`、`valkey`、`sns`、`pubsub`）が必要です。また、`memory` ではレート制限と再送された書き込みへの応答がプロセスごとに別々になるので、キーバリューストアは共有するもの（`db` か `valkey`）にしてください。ジョブキューは PostgreSQL のままにするか、Google Cloud Tasks に移します（[Cloud Tasks](running.md#cloud-tasks)）。
 
-[Cloud Run へのデプロイ](deploy-google-cloud.md)は、2 番目と 3 番目の段階の間にある構成の例です。Cloud Run の上の `role = all`、Neon の PostgreSQL、Cloud Storage のメディア、ジョブには Cloud Tasks、ストリームには Pub/Sub を使い、誰もサーバーを使っていない間はインスタンスが 1 つも動きません。
+<!-- source: ways-to-deploy eeb6d182d4dc -->
+## デプロイの方法
 
-<!-- source: where-to-go-next 2f1d25c01f8a -->
+- **[Docker Compose](deploy-docker-compose.md)**（1 台のマシン）: 最初の段階、または PostgreSQL とバケットを使う 2 番目の段階です。
+- **[Google Cloud](deploy-google-cloud.md)**: Cloud Run の上の `role = all`、Neon などの PostgreSQL、Cloud Storage のメディア、ジョブには Cloud Tasks、ストリームには Pub/Sub を使い、誰もサーバーを使っていない間はインスタンスが 1 つも動きません。
+- **[AWS](deploy-aws.md)**: ECS Fargate の上の `role = all`、Neon などの PostgreSQL、S3 のメディア、データベース内のジョブ、ストリームには SNS を使います。
+
+どちらのクラウドでも、1 つの OpenTofu モジュールがデプロイ全体を作ります。両者に共通する手順は[OpenTofu でのデプロイ](deploy-opentofu.md)にあります。
+
+<!-- source: where-to-go-next 48f37c91b820 -->
 ## 次に読むもの
 
 運用者向けのガイドは次の順に読んでください。
 
-1. **始める:** [サーバーを動かす](running.md)か[Cloud Run にデプロイし](deploy-google-cloud.md)、利用者に公開する前に[本番運用のチェックリスト](production-checklist.md)を確認します。
+1. **始める:** [サーバーを動かし](running.md)、[デプロイして](#ways-to-deploy)から、利用者に公開する前に[本番運用のチェックリスト](production-checklist.md)を確認します。
 2. **インスタンスを設定する:** [設定](instance-settings.md)、[登録](registration.md)、[外部のログインプロバイダー](login-providers.md)、[メール](email.md)、[CAPTCHA](captcha.md)、[CDN](cdn.md)、[リンクプレビュー](link-previews.md)、[検索エンジンと AI クローラー](crawlers.md)。
 3. **機能を有効にする:** [モデレーション](moderation.md)、[リレー](relays.md)、[Webhook](webhooks.md)、[プラグイン](plugins.md)と[判定フック](decision-hooks.md)、[通話](voice.md)、[全文検索](search.md)、[サポーター](supporters.md)とその支払い、[クラウド費用の取り込み](billing-import.md)。
 4. **日々運用する:** [監視](monitoring.md)、[アラート](alerts.md)、[エラーレポート](error-reporting.md)、[メンテナンス](maintenance.md)、[バックアップ](backup.md)、[データベース](database.md)、[鍵暗号化鍵](key-management.md)、[管理者とロール](admin-cli.md)。
