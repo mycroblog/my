@@ -3,7 +3,7 @@
 
 サーバーの起動と停止、イメージの入手、そして稼働中の監視 (メトリクス、トレース、ジョブキュー、ヘルスチェック) の方法を説明します。
 
-<!-- source: start-the-server 5faa7632b863 -->
+<!-- source: start-the-server 93f89c7d7b66 -->
 ## サーバーを起動する
 
 ```sh
@@ -41,7 +41,7 @@ Docker Compose の構成 (`deploy/docker/compose.yaml`。[Docker Compose での�
 トレースの中のログ (リクエストとジョブ) には `trace_id` と `span_id` も付きます ([トレース](#traces)を参照)。
 
 HTTP リクエストとジョブの実行は、それぞれ終わったときに 1 行を書きます。この行は下の[メトリクス](#metrics)のラベルと同じ名前と値を持つので、
-`metrics_exporter = none` の Cloud Run では、これらの行から Cloud Logging のログベースの指標 (カウンターと分布) を作れます。
+`metrics_exporter = none` でも、プラットフォームはこれらの行からログベースの指標 (カウンターと分布) を作れます。
 
 | 行 (`msg`) | フィールド |
 | --- | --- |
@@ -49,7 +49,12 @@ HTTP リクエストとジョブの実行は、それぞれ終わったときに
 | `job` (`INFO`: 成功と `postponed`、`WARN`: `retry`、`ERROR`: `dead`) | `my.job.type` と `my.outcome` は `my.job.duration` のラベルと同じ値です。ほかに `duration_seconds` (`my.job.duration`)、`wait_seconds` (`my.job.wait`)、`job_id`、`attempt`、失敗時の `error` があります |
 | `error report` (`ERROR`。プロセスを止める失敗は `CRITICAL`) | 報告するエラー 1 件につき 1 行 ([エラーの報告](#error-reports)) |
 
-<!-- source: error-reports a81ecfe83871 -->
+`metrics_exporter = none` のときは、`http request` と `job` の行に、アダプターとデータベースプールの[システムのメトリクス](#system-metrics)も載ります。
+リクエストやジョブがキュー、キーバリュー、ストリーム、blob の操作を実行したときは、`my.adapter.operations.total`、`my.adapter.errors.total`、そして `my.adapter` ごとのエラーである `my.adapter.errors` (`{"kv.valkey": 2}` など) です。
+プールに上限があるときは、上限に対する使用中の接続である `db.client.connection.usage` です。0 でないときは、`my.db.client.connection.waits`、`db.client.connection.wait_time` (秒)、`db.client.connection.timeouts` で、
+そのプロセスの前の行からの増分なので、行をまたいで合計すればプロセス全体の値になります。
+
+<!-- source: error-reports b70c69ddef24 -->
 ### エラーの報告
 
 各プラットフォームでこれらの行をどこで読むか、「エラー」画面、通知、エラートラッカーへの送信は、[エラーの報告](error-reporting.md)のガイドで説明しています。
@@ -86,7 +91,7 @@ HTTP リクエストとジョブの実行は、それぞれ終わったときに
 ラベルとして使うフィールドは、有限の集合の値だけをとります。`url.path`、`request_id`、`job_id` がラベルになることはありません。
 
 `metrics_exporter = emf` のときは、この 2 つの行がそのまま EMF の行になります。`http request` の行は `http.server.request.duration` の値を、`job` の行は `my.job.duration` と `my.job.wait` の値を持ち (キーはメトリクスの名前です)、
-さらに `_aws` ディレクティブ、`service.name`、`service.version`、`my.role` を持ちます。この 3 つのメトリクスはほかの行には書かれません。`metrics_emf_dimensions` で選んだフィールドは、EMF の求めるとおり文字列として書かれます (たとえばディメンション `http.response.status_code` は `"200"`)。
+さらに `_aws` ディレクティブ、`service.name`、`service.version`、`my.role`、`service.namespace` (`host`) を持ちます。この 3 つのメトリクスはほかの行には書かれません。`metrics_emf_dimensions` で選んだフィールドは、EMF の求めるとおり文字列として書かれます (たとえばディメンション `http.response.status_code` は `"200"`)。
 ログは標準エラーに、ほかの EMF の行は標準出力に出ます。ECS のログドライバー `awslogs` は両方を CloudWatch Logs に送るので、メトリクスは両方から取り出されます。
 
 <!-- source: docker-compose-files 9f0633524036 -->
@@ -234,7 +239,7 @@ CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 
 **Caddy との比較。** `my` から HTTPS を配信すると、HTTP/3、レスポンスの圧縮 (サーバーは Web クライアントのファイルを圧縮して送りますが、それ以外は圧縮しません)、独自のアクセスログ (サーバーの `http request` のログ行は残ります)、DNS で検証する証明書 (ワイルドカード証明書を含む) を使えなくなります。これらのどれかが必要なら、`compose.caddy.yaml` かほかのプロキシを使い続けてください。
 
-<!-- source: get-the-image 89a97ed4f1d2 -->
+<!-- source: get-the-image 123f0112b538 -->
 ## イメージを入手する
 
 サーバーのイメージは `ghcr.io/mycroblog/my` です。公開されていて、`linux/amd64` と `linux/arm64` に対応し、すべてのアダプターを含みます。
@@ -258,9 +263,8 @@ ghcr.io/mycroblog/my:0.1.0@sha256:...
 動かす場所:
 
 - **Docker Compose**: `deploy/docker/compose.yaml` は `.env` の `MY_VERSION` のイメージを動かします ([Docker Compose のファイル](#docker-compose-files))。代わりにチェックアウトからビルドするには、オーバーライド `compose.build.yaml` を加え (`docker compose -f compose.yaml -f compose.build.yaml up -d --build`)、`MY_VERSION` を自分で決めた名前にします。この名前はローカルのイメージの名前になり、`my version` が表示するものでもあります。
+- **Google Cloud と AWS**: OpenTofu のモジュールは、`ghcr.io` のイメージを、`ref` が指すリリースのままで動かします ([OpenTofu でのデプロイ](deploy-opentofu.md#the-root-modules))。
 - **Kubernetes**: `ghcr.io` からそのまま pull します。
-- **Cloud Run**: `ghcr.io` のイメージを直接使います。デプロイのときにタグがダイジェストに解決されます。
-- **AWS (ECS、EKS)**: イメージを Amazon ECR にコピーするか、ECR のプルスルーキャッシュを使います。プルスルーキャッシュには ghcr.io の認証情報が必要です。
 
 <!-- source: verify-an-image 76b9a1293edb -->
 ### イメージを検証する
@@ -275,7 +279,32 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 
 最初のコマンドは、イメージがこのリポジトリのリリースのワークフローでビルドされたものでなければ失敗します。`nightly` のイメージは、代わりに `--signer-workflow mycroblog/my/.github/workflows/nightly.yml` で検証してください。表示されるコミットはそのバージョンのタグのコミットで、イメージのラベル `org.opencontainers.image.revision` も同じコミットを指しています。
 
-<!-- source: publish-the-source-code-agpl-30 2f3b73ce9dfc -->
+<!-- source: get-the-binary 2608f7bdd54d -->
+## バイナリを入手する
+
+コンテナなしで `my` を動かすために、各リリースにはイメージのバイナリが、`linux/amd64` と `linux/arm64` 向けに `my_<version>_linux_<arch>.tar.gz` として添付されています。
+Web クライアントを内蔵した、静的リンクの単一のバイナリです。アーカイブには `LICENSE`、`licenses/` のライセンス表記、README も入っています。ほかのオペレーティングシステム向けのビルドはありません。
+
+```sh
+curl -fsSLO https://github.com/mycroblog/my/releases/download/v0.1.0/my_v0.1.0_linux_amd64.tar.gz
+tar xzf my_v0.1.0_linux_amd64.tar.gz my
+./my version
+```
+
+設定はイメージと同じです ([設定リファレンス](../reference/configuration.md))。バージョンごとに[アップグレード](database.md#upgrading)に従ってください。スキーマは何も適用してくれません。
+
+<!-- source: verify-a-binary 03daabe0c940 -->
+### バイナリを検証する
+
+アーカイブにはそれぞれ、イメージと同じように、Sigstore で署名された来歴があり、リリースは `SHA256SUMS` にアーカイブの SHA-256 を一覧にしています。
+
+```sh
+gh attestation verify my_v0.1.0_linux_amd64.tar.gz -R mycroblog/my \
+  --signer-workflow mycroblog/my/.github/workflows/release.yml
+sha256sum --ignore-missing -c SHA256SUMS
+```
+
+<!-- source: publish-the-source-code-agpl-30 2e87c44ffb2f -->
 ## ソースコードを公開する (AGPL-3.0)
 
 `my` のライセンスは AGPL-3.0-only です。AGPL-3.0 の第 13 条は、サーバーを動かしてネットワーク越しに利用者に使わせる人に、
@@ -298,6 +327,10 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - NodeInfo (`/nodeinfo/2.1`) の `metadata.sourceCode`。`https:` の URL は `software.repository` としても公開されます
   (NodeInfo 2.1 のスキーマでは `software.repository` に `http(s)` の URL しか使えないので、`mailto:` の値は `metadata.sourceCode` にだけ表示されます)
 
+イメージには、`my` のライセンスが `/usr/share/doc/my/LICENSE` に、バイナリに含まれるサードパーティのコードとデータのライセンス表記が `/usr/share/doc/my/licenses/` に入っています。
+`go-modules.md` は Go のモジュール、`npm-packages.md` と `npm-packages-sw.md` は Web クライアントの npm パッケージ、そのほかに、同梱のデータとフォントのライセンスです。
+イメージやバイナリを配布するときは、これらのファイルも一緒に渡してください。
+
 <!-- source: when-you-fork-or-modify-my be83256fe6a3 -->
 ### `my` をフォークしたり変更したりするとき
 
@@ -313,17 +346,17 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 請求がスパムフィルタで落ちないようにしてください。
 - 公開してよいアドレスを使ってください。情報のページ、ランディングページ、NodeInfo で誰でも見られます。
 
-<!-- source: metrics 000df571a6a0 -->
+<!-- source: metrics 584238f8a4d3 -->
 ## メトリクス
 
 設定 `metrics_exporter` (既定値 `none`) で、サービスのメトリクスを出力します。関連する設定は[設定リファレンス](../reference/configuration.md)にあります。
 
 | `metrics_exporter` | 出力先 | 向いている環境 |
 | --- | --- | --- |
-| `none` | 何も出力しません。計測のコストはほとんどかかりません。インスタンス全体の値は、15 分ごとに `metrics snapshot` のログ 1 行として出力されます | Cloud Run (代わりにプラットフォームのメトリクスとログベースの指標を使います) |
+| `none` | 何も出力しません。計測のコストはほとんどかかりません。インスタンス全体の値は 15 分ごとに `metrics snapshot` のログ 1 行として、アダプターとプールの値はリクエストとジョブの行に出力されます | Google Cloud (代わりにプラットフォームのメトリクスとログベースの指標を使います。[Google Cloud へのデプロイ](deploy-google-cloud.md#monitoring-and-alerts)) |
 | `prometheus` | `metrics_listen` (既定値 `127.0.0.1:9464`) の `GET /metrics`。公開の `listen` とは別のリスナーで、認証はなく、どの `role` でも動きます | セルフホスト (Prometheus 互換のサーバーや KEDA が収集します) |
 | `otlp` | OTLP/HTTP で OpenTelemetry Collector に送ります。送り先は `OTEL_EXPORTER_OTLP_ENDPOINT` などの OTel の標準の環境変数で決まります | Collector を動かせる構成 |
-| `emf` | CloudWatch Embedded Metric Format の JSON の行。リクエストとジョブのメトリクスは上の終了時のログ行に載り、ほかのものはリクエストやジョブが終わったときに、ラベルの組ごとに 1 行ずつ標準出力に書かれます | AWS ECS |
+| `emf` | CloudWatch Embedded Metric Format の JSON の行。リクエストとジョブのメトリクスは上の終了時のログ行に載り、ほかのものはリクエストやジョブが終わったときに、ラベルの組ごとに 1 行ずつ標準出力に書かれます | AWS ([AWS へのデプロイ](deploy-aws.md#monitoring-and-alerts)) |
 
 メトリクスの一覧は次のとおりです。Prometheus では、名前の `.` が `_` になり、単位の接尾辞 (`_seconds`、カウンターなら `_total`) が付きます。
 
@@ -363,7 +396,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.queue.dead` | ゲージ | なし |
 | `my.instance.users`、`my.instance.statuses` | ゲージ | なし (NodeInfo と同じ、ローカルのユーザー数と投稿数) |
 | `my.media.stored_bytes` | ゲージ、バイト | `my.media.origin` (`local` / `remote_cache`) |
-| `my.db.size` | ゲージ、バイト | なし (データベースの大きさ。PostgreSQL は `pg_database_size`、SQLite は先行書き込みログを除いたデータベースのファイル) |
+| `my.db.size` | ゲージ、バイト | なし (データベースの大きさ。PostgreSQL は現在のスキーマのリレーション、SQLite は先行書き込みログを除いたデータベースのファイル) |
 | `my.billing.import.failing` | ゲージ | `my.billing.source` (その取り込み元の最新の取り込みが失敗していれば 1、そうでなければ 0) |
 | `my.federation.instances` | ゲージ | `my.federation.instance.state` (`available`: まだ配送しているが、最後に応答してから少なくとも 1 日は失敗したサーバー。`unavailable`: 配送を止めているサーバー) |
 | `my.metrics.snapshot.age` | ゲージ、秒 | `my.metrics.snapshot.part` (`queue` / `totals`) |
@@ -413,15 +446,15 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - `db.client.connection.pending_requests` は出力しません。pgx と `database/sql` の統計は待っている数を報告しないので、待ちの回数と時間で代わりにします。
 - `go.memory.used` の合計と `go.memory.limit` の比、そして `db.client.connection.wait_time` の増加 (プールの上限に達している) にアラートを設定してください。
 
-<!-- source: memory-limit-gomemlimit 8ea44722eefd -->
+<!-- source: memory-limit-gomemlimit 66320a6c7b76 -->
 ### メモリの上限 (`GOMEMLIMIT`)
 
 `GOMEMLIMIT` は運営者が設定する Go のランタイムの環境変数で、アプリケーションが決めるものではありません。
 設定しなければ Go は既定値 (上限なし) で動き、コンテナのメモリの上限に近づいてもヒープを積極的には回収しません。
-コンテナにメモリの上限がある構成 (Cloud Run、ECS、Kubernetes) では、その上限の 90% ほどに設定してください (たとえば 512 MiB のコンテナなら `GOMEMLIMIT=460MiB`)。
+コンテナにメモリの上限があるときは、その上限の 90% ほどに設定してください (たとえば 512 MiB のコンテナなら `GOMEMLIMIT=460MiB`)。OpenTofu のモジュールは、サービスごとにそのサイズから設定します。
 `GOMAXPROCS` は設定しないでください。Go の既定値がコンテナの CPU の上限に従います。
 
-<!-- source: traces 8dfd96f79f54 -->
+<!-- source: traces 15eb90e8584a -->
 ## トレース
 
 設定 `traces_exporter` (既定値 `none`) で、分散トレースを出力します。関連する設定は[設定リファレンス](../reference/configuration.md)にあります。
@@ -446,35 +479,10 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | --- | --- | --- |
 | 既定、小規模なセルフホスト | `traces_exporter = none` | スパンは出力しません。ログの `request_id` と `job_id` をたどってください。信頼するプロキシが `traceparent` を渡すなら、その `trace_id` と `span_id` がログに加わります |
 | セルフホスト (Jaeger、Tempo、OpenTelemetry Collector など) | `traces_exporter = otlp`、`traces_flush = batch` | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` (または `OTEL_EXPORTER_OTLP_ENDPOINT`、既定値 `http://localhost:4318`) の受信側に OTLP/HTTP で送ります。認証のヘッダーは `OTEL_EXPORTER_OTLP_HEADERS` に書きます。エラーや遅いトレースを確実に残すには、Collector のテールサンプリングを使ってください |
-| Google Cloud (Cloud Run) | `none`、またはトレースを有効にするなら `otlp` と `unit` | 下記を参照 |
-| AWS (ECS) | `none`、またはトレースを有効にするなら `otlp` と `batch` | 下記を参照 |
+| Google Cloud | `traces_exporter = none` | Cloud Trace が、Cloud Run がリクエストごとに記録するトレースを表示します: [Google Cloud へのデプロイ](deploy-google-cloud.md#traces) |
+| AWS | `traces_exporter = otlp`。すべてのタスクにある Collector へ | X-Ray: [X-Ray へのトレース](deploy-aws.md#traces-to-x-ray) |
 
-<!-- source: cloud-run 7f1a21bbfbef -->
-### Cloud Run
-
-`none` でも、Cloud Run が自動で作るリクエストのトレースとログの `trace_id` は同じ ID になります (Cloud Run の前段からの接続を `trusted_proxies` で信頼している場合)。
-Cloud Run が公開のリクエストの `traceparent` を常に上書きするかどうかは、まだ確かめていません。
-ログは、Cloud Logging が認識するトレースのフィールド (`logging.googleapis.com/trace`) の形にはなっていません。
-
-アプリケーションのスパンを Cloud Trace に送るには、同じサービスで **OpenTelemetry Collector をサイドカーとして**動かします。サーバーは Google の認証情報を持たず、サイドカーがアプリケーションのデフォルト認証情報 (Application Default Credentials) で Cloud Trace の OTLP エンドポイントに送ります。
-
-- サーバー (受信を受け持つコンテナ): `MY_TRACES_EXPORTER=otlp`、`MY_TRACES_FLUSH=unit`、`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`
-- サイドカー: `localhost:4318` の HTTP で `otlp` レシーバーで受け取り、`googlecloud` エクスポーター、または `otlphttp` エクスポーター (`https://telemetry.googleapis.com`、`googleclientauth` 拡張を使う) で送る OpenTelemetry Collector。サービスアカウントに Cloud Trace への書き込みの権限を与えてください。
-- `unit` は、記録したリクエストやジョブが終わるたびに、それまでのスパンをサイドカーに送ってから戻ります。CPU が割り当てられていない間もサイドカーが送れるように、トレースを有効にした構成ではインスタンスベースの課金を使ってください。
-- 費用は、サイドカーのリソースとスパンの量 (Cloud Trace の料金) です。割合は `traces_sample_ratio` で選びます。
-
-<!-- source: aws-ecs cc7dd1ec1e83 -->
-### AWS ECS
-
-X-Ray に送るには、すべてのタスクで **AWS Distro for OpenTelemetry (ADOT) Collector** をサイドカーのコンテナとして動かします。サーバーは SigV4 の署名を持たず、Collector がタスクロールで署名して X-Ray に送ります。[OpenTofu のデプロイ](../../deploy/opentofu/README.md#sections-of-mycroblog-aws)の `mycroblog-aws` モジュールは、既定でこのすべてを行います (`observability.traces = "x-ray"`)。この節の残りは、自分で書くタスク定義のためのものです。
-
-- サーバー: `MY_TRACES_EXPORTER=otlp`、`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces`、そしてプロセスが動き続けるので既定の `MY_TRACES_FLUSH=batch`。
-- Collector: `public.ecr.aws/aws-observability/aws-otel-collector:v0.50.0` のようにバージョンを固定したイメージで、設定は変数 `AOT_CONFIG_CONTENT` に書きます。`127.0.0.1:4318` の HTTP の `otlp` レシーバーと `awsxray` エクスポーターです。X-Ray の OTLP エンドポイント (`https://xray.<region>.amazonaws.com/v1/traces`、`sigv4auth` 拡張を使う `otlphttp` エクスポーター経由) も使えますが、アカウントで CloudWatch Transaction Search を有効にする必要があります。
-- タスクロールに `xray:PutTraceSegments` を与えてください。`awsxray` エクスポーターはこれで書き込みます。サーバーが自分でトレースをサンプリングするので、Collector に X-Ray のサンプリングルールは要りません。
-- Collector にタスクの一部を割り当ててください。`mycroblog-aws` は Collector に 32 CPU ユニットと 128 MiB を与え、残りをサーバーに与えて、`GOMEMLIMIT` をその残りの 90% にします。サーバーのコンテナは Collector の起動に依存させてください。そうすると Collector はサーバーのあとに止まり、最後のスパンを受け取れます。
-- 費用は、タスクのリソースのうちサイドカーが使う分と、X-Ray が記録するトレースの数です (月に最初の 100,000 件は無料)。既定の `traces_sample_ratio` 0.01 では、1 日 100,000 リクエストで月に約 30,000 件のトレースを記録します。
-
-<!-- source: profiles e3f49c0becf3 -->
+<!-- source: profiles d19dd2bf22e2 -->
 ## プロファイル
 
 [システムのメトリクス](#system-metrics)は、プロセスがどれだけのメモリと CPU を使っているかを示します。Go のランタイムのプロファイルは、何がそれを使っているかを示します。
@@ -487,12 +495,13 @@ go tool pprof -sample_index=inuse_space http://127.0.0.1:6060/debug/pprof/heap  
 go tool pprof -sample_index=alloc_space http://127.0.0.1:6060/debug/pprof/heap   # what has allocated since the start
 go tool pprof 'http://127.0.0.1:6060/debug/pprof/profile?seconds=30'             # where the CPU goes, for 30 seconds
 curl 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1'                       # every goroutine, by where it waits
+go tool pprof 'http://127.0.0.1:6060/debug/pprof/mutex?seconds=30'               # where goroutines wait on locks, for 30 seconds
 curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '               # the runtime's memory statistics
 ```
 
 リスナーには認証がなく、プロファイルはプロセスの内部を見せ、取得には CPU を使います。ループバックに置いてトンネル (`ssh -L 6060:127.0.0.1:6060 <host>`、`kubectl port-forward`) 経由で接続し、使い終わったら設定を外してください。
 ヒーププロファイルが扱うのは Go のヒープだけです。プロセスの常駐メモリには、読み込まれたバイナリのページ、スタック、ランタイム自身の構造も含まれます。それらはメモリの統計で分かります。
-ミューテックスとブロックのプロファイルは空です。サーバーはそれらをサンプリングしません。
+ブロックとミューテックスのプロファイルは、`seconds` を付けたリクエストが取得しているあいだだけサンプリングし、付けなければ空です。
 
 <!-- source: stop-the-server 37d4c0cc3d97 -->
 ## サーバーを停止する
@@ -619,7 +628,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 期限が来たジョブがない間は、1 つのスロットがポーリングしてほかは待つので、何もしていないプロセスがデータベースにかけるコストは、1 件ずつ実行するプロセスと同じです。
 
-<!-- source: waiting-for-a-database-connection f481d577ea58 -->
+<!-- source: waiting-for-a-database-connection 795c0fd7f769 -->
 ### データベースの接続を待つ
 
 `database = postgres` では、どの文もトランザクションも、まずプロセスのプールの空いた接続を待ちます。
@@ -638,13 +647,13 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 - **下げる**と、負荷をすばやく逃がせます。クライアントはリクエストを開いたままにせず、`Retry-After` のあとに再試行します。いちばん遅い通常のトランザクションより長くしておかないと、短い集中で `503` を返し始めます。
 - **先にプールの大きさを決めてください。** プロセスには、同時に実行する処理の数とほぼ同じ数の接続が必要です。`database_url` の `pool_max_conns` の既定値は 4 と CPU 数の大きいほうで、すべてのプロセスを合わせて、データベースの接続の上限を下回らなければなりません。
   - [`worker_job_concurrency`](#running-several-jobs-at-once) を使うと、スロットも接続を待ちます。この設定はプールの最大値より小さくしておく必要があります。
-  - Cloud Run では、サービスは既定でインスタンスあたり 80 件のリクエストを同時に受けます。プールが 4 だと、遅いリクエストが集中したときここで列ができるので、`pool_max_conns` を上げるか、サービスの同時実行数を下げるか、その両方をしてください。
+  - Google Cloud では、1 つのインスタンスが多くのリクエストを同時に受けます。[外部の PostgreSQL](deploy-google-cloud.md#an-external-postgresql)がプールの大きさを決めます。
 - **`503` や `db.client.connection.timeouts` が頻繁に出る**なら、プールが小さすぎるか、クエリが遅くなっています。タイムアウトを長くしても、それを隠すだけです。[`MyDBPoolSaturated`](alerts.md#mydbpoolsaturated) に従ってください。
 
-<!-- source: cloud-tasks 287213e090b5 -->
+<!-- source: cloud-tasks f14d9721ba24 -->
 ### Cloud Tasks
 
-[Cloud Run へのデプロイ](deploy-google-cloud.md)では、以下のすべてを OpenTofu のモジュールで準備します。
+[Google Cloud へのデプロイ](deploy-google-cloud.md)では、以下のすべてを OpenTofu のモジュールで準備します。
 
 `queue = cloudtasks` では、ジョブはデータベース (`database = postgres`) に残り、Google Cloud Tasks はジョブごとにサーバーを起こすだけです。
 
@@ -654,8 +663,8 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 - タスクを受け取ったプロセスはジョブを実行し、結果を記録したら `204` で応えます。ジョブがすでに実行済みか、期限が来ていないときも同じです。
   失敗したジョブは、Cloud Tasks ではなくサーバーが、次の試行の時刻に再試行します。Cloud Tasks がタスクを再試行するのは、応答が
   `5xx` (データベースに届かなかった) か `401` (サーバーが拒否したトークン) のときだけなので、その `retryConfig` は調整する必要がありません。
-- テーブルをポーリングするプロセスも、定期的なジョブを自分で実行するプロセスもありません。同じサービスアカウントの OIDC トークン (設定されていれば、
-  `queue_cloudtasks_audience` のオーディエンス付き) で、`POST {queue_cloudtasks_url}/_internal/tick` を毎分 (`* * * * *`) 呼ぶ Cloud Scheduler のジョブを作ってください。tick のたびに、周期が来た定期的なジョブを、インスタンス全体で 1 回だけキューに入れます (周期は KV で確保するので、
+- テーブルをポーリングするプロセスも、定期的なジョブを自分で実行するプロセスもありません。Cloud Scheduler のジョブが、同じサービスアカウントの OIDC トークン (設定されていれば、
+  `queue_cloudtasks_audience` のオーディエンス付き) で、既定では毎分 (`* * * * *`)、`POST {queue_cloudtasks_url}/_internal/tick` を呼びます。tick のたびに、周期が来た定期的なジョブを、インスタンス全体で 1 回だけキューに入れます (周期は KV で確保するので、
   `kv` は `db` か `valkey` でなければなりません)。また、期限から 2 分を超えても実行されていないジョブをもう一度通知し、失われた通知を回復します。
 - `/_internal/jobs` と `/_internal/tick` は `role = all` か `worker` のプロセスが提供し、`queue_cloudtasks_service_account` のために Google が署名し、
   確認済みのメールアドレスを持ち、唯一のオーディエンスが `queue_cloudtasks_audience` (既定では呼ばれた URL) であるトークンだけを受け付けます。それ以外のリクエストは `401` です。
@@ -664,22 +673,21 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 - サーバー自身のサービスアカウントには、キューに対する `roles/cloudtasks.enqueuer` と、`queue_cloudtasks_service_account` に対する `roles/iam.serviceAccountUser` が必要です。
   認証にはアプリケーションのデフォルト認証情報 (Application Default Credentials) を使います。
 
-<!-- source: how-late-periodic-jobs-run 3f0a97bda72d -->
+<!-- source: how-late-periodic-jobs-run 775fb52d1df8 -->
 ### 定期的なジョブが遅れる時間
 
 定期的なジョブは、トリガーの周期 1 回分までと、プラットフォームが起動するのにかかる時間だけ、予定の時刻より遅れて実行されます。イベントのリマインダーと開始の通知がどれだけ遅れて届くか、そしてイベントの通話のルームがいつ開くかは、これで決まります。`gathering.queue_due` がそれらを開始するからです。リマインダーは、表にある間隔の分まで遅れます。値はスケジューラーのコードと各プラットフォームのトリガーから導いたもので、動いているサーバーで測ったものではありません。
 
 | プラットフォーム | 定期的なジョブを起動するもの | イベントのリマインダーや開始の想定される遅れ |
 | --- | --- | --- |
-| セルフホストと Docker Compose (`queue = db`) | `role = all` か `worker` の各プロセスにあるスケジューラーが、プロセスの起動時から 1 分ごとに確認し、サーバー全体で周期ごとに 1 回ずつジョブをキューに入れます | 最大 1 分と、ワーカーがジョブを取るまでの約 1 秒 |
-| AWS ECS Fargate (`queue = db`) | 同じスケジューラーが、ワーカーのタスクで動きます | 最大 1 分と、約 1 秒 |
-| Cloud Run (`queue = cloudtasks`) | Cloud Scheduler がそのスケジュール (既定では `* * * * *`、毎分) で `/_internal/tick` を呼び、そのあと Cloud Tasks がジョブごとにサーバーを起こします | 最大 1 分と、動いているインスタンスがないときはインスタンスの起動 (コールドスタート。たいてい数秒)。`*/10 * * * *` のように `tick_schedule` を長くすると、その間隔まで |
-| AWS Lambda | `my` には Lambda 向けのデプロイはありません。AWS では ECS Fargate で動かしてください | — |
+| セルフホストと [Docker Compose](deploy-docker-compose.md) (`queue = db`) | `role = all` か `worker` の各プロセスにあるスケジューラーが、プロセスの起動時から 1 分ごとに確認し、サーバー全体で周期ごとに 1 回ずつジョブをキューに入れます | 最大 1 分と、ワーカーがジョブを取るまでの約 1 秒 |
+| [AWS](deploy-aws.md) (`queue = db`) | 同じスケジューラーが、すべてのタスクで動きます | 最大 1 分と、約 1 秒 |
+| [Google Cloud](deploy-google-cloud.md) (`queue = cloudtasks`) | Cloud Scheduler が `queue.tick_schedule` (既定では毎分) で `/_internal/tick` を呼び、そのあと Cloud Tasks がジョブごとにサーバーを起こします | 最大 1 分と、動いているインスタンスがないときはインスタンスの起動 (コールドスタート。たいてい数秒)。`tick_schedule` を長くすると、その間隔まで ([工夫で減らせる部分](deploy-google-cloud.md#where-care-reduces-it)) |
 
 イベントが始まった後に届くことになるリマインダーは送られず、イベントが終わった後の開始の通知も送られません。
 そのため、tick が 5 分より長いと、いちばん短いリマインダーが失われることがあります。
 
-<!-- source: routing-job-types-to-their-own-queues 292b3f6071a8 -->
+<!-- source: routing-job-types-to-their-own-queues f4098db6215c -->
 ### ジョブの種類を専用のキューに振り分ける
 
 `queue = cloudtasks` では、ワーカーは実行するジョブを選べません。誰が通知を受け取るかはプラットフォームが決めるので、`worker_job_types` は `queue = db` でしか使えないからです。
@@ -695,14 +703,8 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 **`role = web` も含め、すべてのプロセスに同じ振り分けを設定してください。** 通知を送るのはジョブを保存するプロセスです。投稿の最初のジョブなど、利用者の操作の大半では web のプロセスが、
 ジョブが保存するジョブ、再試行、順序キーの次のジョブ、失われた通知の掃き出しではワーカーが送ります。
-Cloud Run のサービスのように役割ごとに設定が分かれている場合は、そのすべてに同じ値を渡してください。
-
-```sh
-routes='federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com'
-gcloud run services update my-web --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-gcloud run services update my-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-```
+Google Cloud では、`workers` がワーカーごとに専用のキューとサービスを与え、どのサービスにも同じ振り分けと権限を与えます。
+[ジョブをワーカーに分ける](deploy-opentofu.md#splitting-jobs-into-workers)を参照してください。
 
 振り分けが異なるプロセスがあっても、エラーにはならず、ジョブも失われません。その通知は別のキューに行き、ジョブはそこで、設定した処理能力の外で実行されます。
 そのジョブは待たないので、`my.queue.oldest_ready_age` にはこれが表れません。プロセスを比べるために、各プロセスは起動時に、その `routes` と `routes_hash` を含む行をログに出します。
