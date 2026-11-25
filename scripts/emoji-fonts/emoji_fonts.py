@@ -5,14 +5,15 @@
 checks their digests, and runs this through uv (uv.lock) after scripts/emoji-table:
 
     uv run --frozen --project scripts/emoji-fonts python -I scripts/emoji-fonts/emoji_fonts.py \
-      --emoji-test emoji-test.txt --version 18.0.0 --colrv1 Noto-COLRv1.ttf --svg NotoColorEmoji-Regular.ttf \
+      --emoji-test emoji-test.txt --version 18.0.0 --colrv1 Noto-COLRv1.ttf --cbdt NotoColorEmoji.ttf \
       --out web/design-system/src/fonts/emoji --css web/design-system/src/emoji.css
 
-It writes, for each split, a COLRv1 and an OpenType-SVG WOFF2 into --out, and the @font-face rules of the family
+It writes, for each split, a COLRv1 and an sbix WOFF2 into --out, and the @font-face rules of the family
 "my Noto Color Emoji" into --css. The splits follow the groups of emoji-test.txt, with Flags split into the country
 flags (pairs of regional indicators) and the other flags; every sequence goes whole into the split of its group, and a
 split's unicode-range is every code point of its sequences but those of TEXT_CODE_POINTS.
 
+The sbix split is the CBDT font's split with its PNG bitmaps moved, unchanged, into an sbix table.
 It fails unless both fonts draw every fully-qualified and component sequence of emoji-test.txt as one glyph, in the
 whole font and in the split of the sequence, shaped by HarfBuzz, and unless the split's unicode-range claims every code
 point of each sequence but those that fall back to the OS emoji font by design (TEXT_FALLBACK_SEQUENCES). The outputs depend only on the inputs: running it
@@ -31,7 +32,10 @@ from pathlib import Path
 
 import uharfbuzz as hb
 from fontTools import subset
-from fontTools.ttLib import TTFont
+from fontTools.ttLib import TTFont, newTable
+from fontTools.ttLib.tables._g_l_y_f import Glyph
+from fontTools.ttLib.tables.sbixGlyph import Glyph as SbixGlyph
+from fontTools.ttLib.tables.sbixStrike import Strike
 
 FAMILY = "my Noto Color Emoji"
 
@@ -164,8 +168,63 @@ def glyphs_of(face_blob: bytes, sequences: list[tuple[int, ...]]) -> list[str]:
     return bad
 
 
+def cbdt_to_sbix(font: TTFont) -> None:
+    """Replaces the CBDT and CBLC tables of font with an sbix table of the same PNG bitmaps, which WebKit draws (it
+    draws no CBDT), and gives it the empty glyf outlines that a TrueType font with sbix needs. The PNGs stay as they
+    are: Noto's are already optimized, and scaling one down and compressing it again makes it larger."""
+    strike = font["CBDT"].strikeData[0]
+    glyphs = {}
+    for name in sorted(strike):
+        metrics = strike[name].metrics
+        glyphs[name] = SbixGlyph(
+            glyphName=name,
+            graphicType="png ",
+            imageData=strike[name].imageData,
+            originOffsetX=metrics.BearingX,
+            originOffsetY=metrics.BearingY - metrics.height,
+        )
+    if not glyphs:
+        raise SystemExit("emoji-fonts: a CBDT split holds no bitmap")
+    sbix = newTable("sbix")
+    sbix.version = 1
+    sbix.flags = 1
+    sbix_strike = Strike(ppem=font["CBLC"].strikes[0].bitmapSizeTable.ppemY, resolution=72)
+    sbix_strike.glyphs = glyphs
+    sbix.strikes = {sbix_strike.ppem: sbix_strike}
+    font["sbix"] = sbix
+    del font["CBDT"]
+    del font["CBLC"]
+    order = font.getGlyphOrder()
+    glyf = newTable("glyf")
+    glyf.glyphOrder = order
+    glyf.glyphs = {name: Glyph() for name in order}
+    font["glyf"] = glyf
+    font["loca"] = newTable("loca")
+    font["head"].indexToLocFormat = 0
+    font["head"].glyphDataFormat = 0
+    maxp = font["maxp"]
+    maxp.tableVersion = 0x00010000
+    for attr in (
+        "maxPoints",
+        "maxContours",
+        "maxCompositePoints",
+        "maxCompositeContours",
+        "maxTwilightPoints",
+        "maxStorage",
+        "maxFunctionDefs",
+        "maxInstructionDefs",
+        "maxStackElements",
+        "maxSizeOfInstructions",
+        "maxComponentElements",
+        "maxComponentDepth",
+    ):
+        setattr(maxp, attr, 0)
+    maxp.maxZones = 1
+
+
 def subset_font(path: Path, split: Split, drop_tables: list[str]) -> tuple[bytes, bytes]:
-    """Returns the split of the font at path as an uncompressed font (for shaping) and as WOFF2."""
+    """Returns the split of the font at path as an uncompressed font (for shaping) and as WOFF2, with a CBDT font's
+    bitmaps moved into sbix."""
     options = subset.Options()
     options.layout_features = ["*"]
     options.drop_tables += drop_tables
@@ -174,6 +233,8 @@ def subset_font(path: Path, split: Split, drop_tables: list[str]) -> tuple[bytes
     subsetter = subset.Subsetter(options)
     subsetter.populate(unicodes=sorted(split.code_points()))
     subsetter.subset(font)
+    if "CBDT" in font:
+        cbdt_to_sbix(font)
     plain = io.BytesIO()
     font.flavor = None
     font.save(plain, reorderTables=True)
@@ -207,7 +268,7 @@ def main() -> int:
     parser.add_argument("--emoji-test", type=Path, required=True, help="the emoji-test.txt of --version")
     parser.add_argument("--version", required=True, help="the Unicode emoji version, recorded in the CSS")
     parser.add_argument("--colrv1", type=Path, required=True, help="Noto-COLRv1.ttf of googlefonts/noto-emoji")
-    parser.add_argument("--svg", type=Path, required=True, help="NotoColorEmoji-Regular.ttf of google/fonts")
+    parser.add_argument("--cbdt", type=Path, required=True, help="NotoColorEmoji.ttf of googlefonts/noto-emoji")
     parser.add_argument("--out", type=Path, required=True, help="the directory of the WOFF2 files")
     parser.add_argument("--css", type=Path, required=True, help="the stylesheet of the @font-face rules to write")
     args = parser.parse_args()
@@ -217,7 +278,7 @@ def main() -> int:
     formats = [
         # (the file name's part, the font, the tables it drops, the tech() of the src)
         ("colrv1", args.colrv1, ["SVG "], "color-COLRv1"),
-        ("svg", args.svg, ["COLR", "CPAL"], "color-SVG"),
+        ("sbix", args.cbdt, [], "color-sbix"),
     ]
 
     to_os, failures = unclaimed(splits)
@@ -264,11 +325,10 @@ def main() -> int:
         rel = "./" + rel
     rules = []
     for split in splits:
-        # OpenType-SVG first: WebKit accepts tech(color-COLRv1) but does not draw those glyphs, and Chromium, which
-        # cannot draw OpenType-SVG, skips to COLRv1 (ADR-0091 §10).
+        # COLRv1 first, for Chromium and Firefox; WebKit, which supports no tech(color-COLRv1), takes sbix (ADR-0091 §10).
         srcs = ",\n    ".join(
             f'url("{rel}/noto-emoji-{kind}-{split.name}.woff2") format("woff2") tech({tech})'
-            for kind, _, _, tech in reversed(formats)
+            for kind, _, _, tech in formats
         )
         rules.append(
             "/* " + split.name + " */\n"
@@ -288,10 +348,10 @@ def main() -> int:
         "/* SPDX-License-Identifier: AGPL-3.0-only */\n"
         "/* Generated by scripts/emoji-fonts (`scripts/task.sh emoji:generate`); do not edit.\n"
         f" * Noto Color Emoji for Unicode emoji {args.version} (ADR-0091): COLRv1 {version_of(args.colrv1)}"
-        f" and OpenType-SVG {version_of(args.svg)},\n"
+        f" and sbix {version_of(args.cbdt)},\n"
         " * one split per group of emoji-test.txt, under the SIL Open Font License 1.1 (fonts/emoji/OFL.txt).\n"
         " * The browser loads a split only when the page draws one of the code points of its unicode-range, and picks\n"
-        " * the first src whose tech() it supports: OpenType-SVG in WebKit and Firefox, COLRv1 in Chromium. */\n"
+        " * the first src whose tech() it supports: COLRv1 in Chromium and Firefox, sbix in WebKit. */\n"
     )
     args.css.write_text(header + "\n" + "\n".join(rules), encoding="utf-8")
 

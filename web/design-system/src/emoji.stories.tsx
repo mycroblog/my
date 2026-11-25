@@ -33,7 +33,7 @@ const caption: CSSProperties = {
 function EmojiSheet() {
   return (
     <div style={{ display: "grid", gap: "0.5rem" }}>
-      <div style={caption}>Noto Color Emoji (SIL OFL 1.1): COLRv1, or OpenType-SVG in WebKit</div>
+      <div style={caption}>Noto Color Emoji (SIL OFL 1.1): COLRv1, or sbix in WebKit</div>
       {samples.map(([split, emoji]) => (
         <div key={split} data-split={split} style={{ display: "grid", gap: "0.125rem" }}>
           <code style={caption}>{split}</code>
