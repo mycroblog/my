@@ -34,7 +34,12 @@ const frame = tv({
       "h-[calc(100dvh-var(--keyboard-inset,env(keyboard-inset-height,0px)))] px-shell-edge pt-entry-line",
     ],
     body: "flex min-h-0 flex-1 flex-col gap-entry overflow-y-auto",
-    end: "relative grid gap-entry-line bg-surface py-entry",
+    // The row with Post keeps clear of the bottom safe area (the home indicator) while the keyboard is closed, and
+    // sits right above an open keyboard, which covers that area: the safe area less what the keyboard covers.
+    end: [
+      "relative grid gap-entry-line bg-surface pt-entry",
+      "pb-[calc(var(--entry-gap)+max(0px,env(safe-area-inset-bottom)-var(--keyboard-inset,env(keyboard-inset-height,0px))))]",
+    ],
     // On the narrowest phones (under 360 px) the glyphs sit closer, and the language names itself by its tag
     // (ToolText), so that the tools, the count and Post keep one line.
     tools: "max-[22.5rem]:[--icon-button-padding-inline:0.25rem]",
@@ -49,7 +54,7 @@ const frame = tv({
           "tablet:pt-[calc(var(--dialog-padding)*0.6)] tablet:shadow-overlay",
         ],
         body: "tablet:overflow-visible",
-        end: "tablet:py-0",
+        end: "tablet:pt-0 tablet:pb-0",
       },
     },
     // A specimen in a page is as tall as what it holds, with a form's room unless it fits what it holds (`fit`).
