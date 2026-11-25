@@ -8,14 +8,16 @@
 // (`dir="auto"`), so that a post keeps its punctuation at the right end whatever the page's direction, and a list
 // puts its indent on the side its markers stand, where a list in the page's direction would leave them hanging out.
 // A hashtag of this server (its page on the serving domain that ServerDomain gives, or on the page's own host, which
-// serves the app and holds before the instance is read) opens the app's hashtag screen in place; every other link
-// opens in a new tab. An article's text (ADR-0160 §4) is drawn the same way with the article's allowlist, as the blocks
+// serves the app and holds before the instance is read) opens the app's hashtag screen in place, and so does a mention
+// of an account the post mentions (its profile's URL among the post's mentions) open that account's profile; every
+// other link opens in a new tab. An article's text (ADR-0160 §4) is drawn the same way with the article's allowlist, as the blocks
 // of ArticleText: its headings, rules and images, and its tables each in an ArticleTable.
 
 import { ArticleTable, ContentBody, ContentLink, CustomEmoji, UrlPart, type ContentLinkKind } from "@my/design-system";
 import { createContext, createElement, Fragment, use, type ReactNode } from "react";
 import { articleBlockTags, blockTags, parseContent, type ContentElement, type ContentNode } from "./html";
-import { hashtagPath } from "./paths";
+import { accountPath, hashtagPath } from "./paths";
+import type { PostMention } from "./status";
 
 /**
  * The serving domain of this server (the instance's `domain`), which the app places around its screens: a hashtag
@@ -24,10 +26,14 @@ import { hashtagPath } from "./paths";
 export const ServerDomain = createContext<string | undefined>(undefined);
 
 /**
- * What drawing a text needs besides its nodes: its custom emoji by shortcode, and the hosts whose hashtag pages are
- * the app's (the server's domain, and the page's own host).
+ * What drawing a text needs besides its nodes: its custom emoji by shortcode, the hosts whose hashtag pages are the
+ * app's (the server's domain, and the page's own host), and the profiles of the accounts it mentions by their URL.
  */
-type Drawing = { readonly emojis: ReadonlyMap<string, ContentEmoji>; readonly hosts: readonly (string | undefined)[] };
+type Drawing = {
+  readonly emojis: ReadonlyMap<string, ContentEmoji>;
+  readonly hosts: readonly (string | undefined)[];
+  readonly mentions: ReadonlyMap<string, string>;
+};
 
 /** The host of the page the app runs on; undefined outside a browser. */
 const pageHost = (): string | undefined => (typeof location === "undefined" ? undefined : location.host);
@@ -42,6 +48,8 @@ export type PostContentProps = {
   emojis?: readonly ContentEmoji[] | undefined;
   /** The language of the text, when it is known (a BCP 47 tag). */
   lang?: string | undefined;
+  /** The accounts the text mentions (the status's `mentions`): a mention of one opens its profile in place. */
+  mentions?: readonly PostMention[] | undefined;
   /**
    * The text is an article's (ADR-0160 §4): read with the article's allowlist (headings, rules, images, tables), and
    * drawn as the blocks that ArticleText of @my/design-system holds, with no body of a post around them (`lang` is
@@ -116,7 +124,9 @@ function draw(node: ContentNode, key: number, drawing: Drawing, code: boolean): 
       const inApp =
         kind === "hashtag"
           ? drawing.hosts.map((host) => hashtagPath(href ?? "", host)).find((path) => path !== undefined)
-          : undefined;
+          : kind === "mention"
+            ? drawing.mentions.get(href ?? "")
+            : undefined;
       return (
         <ContentLink
           key={key}
@@ -233,10 +243,11 @@ export function excerptHtml(status: { content: string; article?: { title: string
  * The body of a post, from the HTML the server rendered and sanitized, with its custom emoji; or, for an article, the
  * blocks of its text.
  */
-export function PostContent({ html, emojis = [], lang, article = false }: PostContentProps) {
+export function PostContent({ html, emojis = [], lang, mentions = [], article = false }: PostContentProps) {
   const drawing: Drawing = {
     emojis: new Map(emojis.map((emoji) => [emoji.shortcode, emoji])),
     hosts: [use(ServerDomain), pageHost()],
+    mentions: new Map(mentions.map((mention) => [mention.url, accountPath({ ...mention, domain: "" })])),
   };
   const blocks = blocksOf(parseContent(html, article ? "article" : "post"), article ? articleBlockTags : blockTags).map(
     (node, i) => draw(node, i, drawing, false),

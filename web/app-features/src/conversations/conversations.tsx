@@ -141,7 +141,7 @@ function Row({ c, t, lang, onHide }: { c: Conversation; t: T; lang: string; onHi
   const author = authorOf(c, ownOf(status), t);
   const text = (
     <ConversationText lang={language}>
-      <PostContent html={status.content} emojis={status.emojis} lang={language} />
+      <PostContent html={status.content} emojis={status.emojis} mentions={status.mentions} lang={language} />
     </ConversationText>
   );
   return (

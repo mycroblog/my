@@ -124,7 +124,7 @@ function Request({ r, t }: { r: InteractionRequest; t: T }) {
         {t(`notifications.kind.${notice}`, { name: nameOf(r.account) })}
       </NoticeLine>
       <Excerpt>
-        <PostContent html={excerptHtml(shown)} emojis={shown.emojis} lang={undefined} />
+        <PostContent html={excerptHtml(shown)} emojis={shown.emojis} mentions={shown.mentions} lang={undefined} />
       </Excerpt>
       <ButtonPair>
         <Answers r={r} t={t} />

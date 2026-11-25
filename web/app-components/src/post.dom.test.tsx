@@ -187,7 +187,7 @@ describe("the context line", () => {
   const reply = (acct = "mika@mstdn.example.jp") =>
     status({
       in_reply_to_account_id: "3",
-      mentions: [{ id: "3", username: "mika", acct }],
+      mentions: [{ id: "3", username: "mika", acct, url: "https://my.example/@mika" }],
     });
 
   test("a reply says whom it replies to, an account of another server with its server, the handle left to right", () => {
