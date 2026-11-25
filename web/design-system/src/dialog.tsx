@@ -15,12 +15,16 @@
 // reader has no way to prove it here, it says so and has Cancel alone. A confirmation before what is grave as well as
 // final (banning an account, closing the server, deleting a role) has the reader type a stated text first (ADR-0110,
 // NFR-MOD-7): under what follows, a field labelled with the text, on a line of its own in the code's face; the
-// confirmation stays disabled until the field holds it. A handle in a title breaks before its server, never inside. The head of every modal ends with close, after its title; a confirmation's close cancels,
-// as its Cancel does.
+// confirmation stays disabled until the field holds it. A confirmation that sends what the reader may add (what the
+// moderators should know with an appeal) holds that field under what follows, a few lines tall, labelled with what it
+// is for and that it may stay empty; the confirmation is open whatever it holds, and what is wrong with it stands under
+// it. A handle in a title breaks before its server, never inside. The head of every modal ends with close, after its
+// title; a confirmation's close cancels, as its Cancel does.
 //
 // For assistive technology and the keyboard: a modal keeps the focus inside it and gives it back as it leaves, and
 // the page behind is out of reach. The confirmation with a text to type is a form: the focus starts in its field, and
-// Enter there confirms once the field holds the text. The confirmation that asks to authenticate again is a form: the
+// Enter there confirms once the field holds the text. The confirmation with a field the reader may fill in is no form:
+// Enter in it starts a line, and the focus starts where it does without one. The confirmation that asks to authenticate again is a form: the
 // focus starts in the field of the proof, Enter in it confirms, what the server refused is an alert that also
 // describes the field, and the focus goes back to the field for another try; while the proof is in flight nothing
 // confirms it again.
@@ -160,13 +164,19 @@ export type ConfirmDialogProps = {
    * disabled until the field holds it, its edges, full-width forms and case aside.
    */
   phrase?: string | undefined;
+  /**
+   * A field the reader may fill in, sent with the confirmation (a multiline `TextField`: what the moderators should
+   * know with an appeal), under what follows: the caller holds what it holds, says what is wrong with it as the
+   * field's `error`, and reads it as the confirmation is pressed, which it never disables.
+   */
+  field?: ReactNode;
   /** Over the page, or in the flow of a page (a story's specimen). */
   layer?: boolean | undefined;
 };
 
 /**
  * Asks before an action that cannot be undone: the question and close, what follows, the field of the text to type
- * where there is one, then Cancel and the confirmation.
+ * or the field the reader may fill in where there is one, then Cancel and the confirmation.
  */
 export function ConfirmDialog({
   title,
@@ -179,6 +189,7 @@ export function ConfirmDialog({
   busy = false,
   pending = false,
   phrase,
+  field,
   layer = true,
 }: ConfirmDialogProps) {
   const s = confirm();
@@ -218,6 +229,7 @@ export function ConfirmDialog({
           onChange={setEntered}
         />
       )}
+      {field}
       <Row wrap align="center" justify="end" gap="dialog-row">
         <Button kind="quiet" size="form" onPress={onCancel} isDisabled={busy}>
           {cancel}
