@@ -294,7 +294,7 @@ What every deployment pays, about $0 while idle:
 | Part | Idle | What adds to it |
 | --- | --- | --- |
 | Cloud Run | $0: no instance runs, and CPU is billed only during requests | Each open stream keeps an instance billed; see below |
-| Cloud Tasks | $0 | 1 million operations free, then $0.40 per million. A job takes about 2 |
+| Cloud Tasks | $0 | 1 million operations free, then $0.40 per million. A job takes about 2 operations (queueing it and delivering it) |
 | Cloud Scheduler | $0: the tick is one job, and 3 are free per billing account | $0.10 per job above that |
 | Pub/Sub | $0: 10 GiB free | Only while streams are open |
 | Secret Manager | Cents | A few free versions, then a few cents per version |
