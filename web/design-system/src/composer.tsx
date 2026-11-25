@@ -8,14 +8,26 @@
 // a select that opens the one menu (menu.tsx); and the notice of a discarded post
 // with its Undo. Its head may hold more before close, and a line over the row may say how the post is
 // sent (when it is scheduled for); with neither tools nor an action (the drafts), it has no row. The frame tells how it is left: its close button and Escape (`onClose`, meant), and a
-// press on the backdrop (`onDismiss`, by accident), and neither while what was written is sent (`busy`). Every word is
-// the caller's.
+// press on the backdrop (`onDismiss`, by accident), and neither while what was written is sent (`busy`). On a phone,
+// where it is a screen of its own over the page, a swipe down closes it as close does (swipe-close.tsx): from its head
+// or its row, and from what is written only while that is at its top, nothing selected, and the drag starts at once.
+// Every word is the caller's.
 //
 // On a phone the frame is as tall as the viewport less the keyboard: `--keyboard-inset` where the app measures it
 // (Safari's visualViewport), else `env(keyboard-inset-height)` where the browser overlays the keyboard; Chrome on Android
 // resizes the viewport itself (`interactive-widget=resizes-content`).
 
-import { Suspense, useId, useRef, type KeyboardEvent, type ReactNode } from "react";
+import { breakpoint } from "@my/design-tokens";
+import {
+  Suspense,
+  useId,
+  useRef,
+  useState,
+  type Dispatch,
+  type KeyboardEvent,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import { Button as AriaButton, Dialog, Heading, Link as AriaLink } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
@@ -26,6 +38,7 @@ import { Box, Pin, Row, Stack } from "./layout";
 import { useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { ModalLayer } from "./modal";
+import { swipeAtRest, useSwipeClose, type SwipeState } from "./swipe-close";
 
 const frame = tv({
   slots: {
@@ -67,9 +80,12 @@ const frame = tv({
  * The frame of the composer, one of the frames of a page: the head (the title, then what ends it), what is written
  * and at its end what stands over the row and the row of the tools, the count and the action. On a phone it is a screen
  * as tall as the viewport less the keyboard; from `tablet` a dialog of the main column's width, as tall as what it
- * holds. A specimen in a page (`layer` off) is as tall as what it holds at every width.
+ * holds. A specimen in a page (`layer` off) is as tall as what it holds at every width. Where it is a screen of its
+ * own (under `tablet`, over the page), a swipe down on it closes (`swipe`: whether one may now, where it stands, and the
+ * close it makes), what is written taking it by its rules.
  */
 function ComposerPanel({
+  swipe,
   phone,
   layer,
   room,
@@ -83,6 +99,7 @@ function ComposerPanel({
   action,
   children,
 }: {
+  swipe: { on: () => boolean; setAt: Dispatch<SetStateAction<SwipeState>>; onClose: () => void };
   phone: "screen" | "dialog";
   layer: boolean;
   room: boolean;
@@ -97,8 +114,19 @@ function ComposerPanel({
   children: ReactNode;
 }) {
   const s = frame({ dialog: true, layer, room });
+  const ref = useSwipeClose({
+    starts: (target) => (target.closest("[data-composer-body]") === null ? "any" : "text"),
+    on: () =>
+      layer &&
+      phone === "screen" &&
+      swipe.on() &&
+      window.matchMedia(`(width < ${String(breakpoint.tablet)}rem)`).matches,
+    onClose: swipe.onClose,
+    setAt: swipe.setAt,
+  });
   return (
     <div
+      ref={ref}
       className={phone === "dialog" ? `${s.panel()} h-auto rounded-overlay p-dialog shadow-overlay` : s.panel()}
       dir={dir}
       onKeyDown={onKeyDown}
@@ -109,7 +137,9 @@ function ComposerPanel({
           {headEnd}
         </Row>
       </Row>
-      <div className={s.body()}>{children}</div>
+      <div className={s.body()} data-composer-body="">
+        {children}
+      </div>
       {(tools !== undefined || action !== undefined) && (
         <div className={s.end()}>
           {over}
@@ -190,8 +220,17 @@ export function ComposerFrame({
   };
   const { direction } = useReader(undefined);
   const titleId = useId();
+  // Where a swipe down on it stands, which moves it over the page (`ModalLayer`).
+  const [at, setAt] = useState(swipeAtRest);
   const panel = (
     <ComposerPanel
+      swipe={{
+        on: () => !busy,
+        setAt,
+        onClose: () => {
+          leave(onClose);
+        },
+      }}
       phone={phone}
       layer={layer}
       room={!layer && !fit}
@@ -256,6 +295,7 @@ export function ComposerFrame({
       ownEscape
       backdrop={phone === "dialog" ? "always" : "tablet"}
       place="screen"
+      swipe={{ at, moves: "panel" }}
     >
       <Box as={<Dialog className="outline-hidden" />} full className="box-border">
         {panel}

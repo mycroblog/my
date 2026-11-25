@@ -2,11 +2,14 @@
 
 // The media viewer over a page: a story per state: a wide picture with its description, 2 of 3; a tall one; a long
 // description; one as long as an attachment's may be, which scrolls in its own area; a picture without one; a video; a
-// GIF; one picture alone, with nothing to move to; and a description in ja.
+// GIF; one picture alone, with nothing to move to; and a description in ja. Each closes as a post's does, by a swipe down
+// too, and opens again by the button under it.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+import { Button } from "./button";
 import type { MediaItem } from "./media";
+import { ModalPresence } from "./modal";
 import { MediaViewer } from "./viewer";
 import { night, tall, wide } from "./viewer.samples";
 
@@ -26,10 +29,43 @@ const gif: MediaItem = { id: "g", src: wide, alt: "Gulls circling over the pier"
 /** A description as long as an attachment's may be: the long one, repeated up to 1,500 characters. */
 const veryLong = `${long}\n\n${long}\n\n${long}`.slice(0, 1500);
 
-/** The viewer open at `at` among `media`, as a post holds it open. */
+/**
+ * The viewer open at `at` among `media`, as a post holds it open: close, Escape, the backing or a swipe down closes it,
+ * and a button under it opens it again.
+ */
 function Open({ media, at = 0, locale }: { media: MediaItem[]; at?: number; locale?: string }) {
   const [index, setIndex] = useState(at);
-  return <MediaViewer items={media} index={index} onIndexChange={setIndex} onClose={() => undefined} locale={locale} />;
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      {!open && (
+        <div className="p-shell-edge">
+          <Button
+            kind="primary"
+            size="timeline"
+            onPress={() => {
+              setOpen(true);
+            }}
+          >
+            Open the viewer
+          </Button>
+        </div>
+      )}
+      <ModalPresence>
+        {open && (
+          <MediaViewer
+            items={media}
+            index={index}
+            onIndexChange={setIndex}
+            onClose={() => {
+              setOpen(false);
+            }}
+            locale={locale}
+          />
+        )}
+      </ModalPresence>
+    </>
+  );
 }
 
 const meta = {
