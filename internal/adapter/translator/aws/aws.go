@@ -13,6 +13,7 @@ import (
 	awssdk "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/translate"
 	"github.com/aws/smithy-go"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 
 	"github.com/mycroblog/my/internal/app/translation"
 )
@@ -173,6 +174,16 @@ var errorCodePattern = regexp.MustCompile(`^[A-Za-z]{1,64}$`)
 func classify(ctx context.Context, err error) error {
 	if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("%w: translator aws: the call ended", translation.ErrTemporary)
+	}
+	// The kind of a failure without an API error, never its message: the request is sent before
+	// the answer is read, and a message of either may hold text of the call.
+	var send *smithyhttp.RequestSendError
+	if errors.As(err, &send) {
+		return fmt.Errorf("%w: translator aws: the call was not sent or not answered", translation.ErrTemporary)
+	}
+	var deserialization *smithy.DeserializationError
+	if errors.As(err, &deserialization) {
+		return fmt.Errorf("%w: translator aws: the answer could not be read", translation.ErrTemporary)
 	}
 	var api smithy.APIError
 	if !errors.As(err, &api) {
