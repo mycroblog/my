@@ -19,6 +19,7 @@
 
 import { viewer as tokens } from "@my/design-tokens";
 import {
+  useEffect,
   useRef,
   useState,
   type HTMLAttributes,
@@ -122,6 +123,84 @@ function startOf(description: string): string {
 
 type Point = { x: number; y: number };
 
+/** The longest side of the box a picture of unknown size takes from its preview's shape: past any screen, so it fits. */
+const unknownSide = 4096;
+
+/** A transparent picture of `width` × `height` px, which takes the box the original will take before it comes. */
+const sizer = (width: number, height: number) =>
+  `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${String(width)}" height="${String(height)}"/>`)}`;
+
+/**
+ * A picture, whole in the room from the start: its original once it has come; until then, and when it fails, its
+ * preview (which the post showed, so cached) in the box the original takes, by the original's size, else by the
+ * preview's shape at a size past any screen. Its box never waits on the original to know its size.
+ */
+function Picture({
+  item,
+  className,
+  style,
+  onDoubleClick,
+}: {
+  item: MediaItem;
+  /** The box's classes, which the layout part that holds it gives. */
+  className?: string | undefined;
+  style: { transform: string };
+  onDoubleClick: () => void;
+}) {
+  const original = item.href ?? item.src;
+  const [come, setCome] = useState(false);
+  const [shape, setShape] = useState<{ width: number; height: number } | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    const image = new Image();
+    image.src = original;
+    image
+      .decode()
+      .then(() => {
+        if (live) setCome(true);
+      })
+      // A failed original leaves the preview in its place.
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [original]);
+  const common = { alt: "", draggable: false, className, style, onDoubleClick };
+  if (come || original === item.src) return <img src={original} {...common} />;
+  const size =
+    item.width !== undefined && item.height !== undefined && item.width > 0 && item.height > 0
+      ? { width: item.width, height: item.height }
+      : shape;
+  if (size === undefined)
+    // The preview's own shape, read once it loads, sizes the box the original takes.
+    return (
+      <img
+        src={item.src}
+        {...common}
+        onLoad={(e) => {
+          const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+          if (w > 0 && h > 0) {
+            const k = unknownSide / Math.max(w, h);
+            setShape({ width: Math.round(w * k), height: Math.round(h * k) });
+          }
+        }}
+      />
+    );
+  return (
+    <img
+      src={sizer(size.width, size.height)}
+      {...common}
+      style={{
+        ...style,
+        backgroundImage: `url(${JSON.stringify(item.src)})`,
+        backgroundSize: "contain",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+      }}
+    />
+  );
+}
+
 /** What is shown, at its zoom and pan; a double click or tap zooms it in or out. */
 function Stage({
   item,
@@ -142,18 +221,23 @@ function Stage({
       <video src={item.href} poster={item.src} controls autoPlay playsInline />
     ) : kind === "gifv" ? (
       <video src={item.href} poster={item.src} muted loop autoPlay playsInline />
-    ) : (
-      <img
-        src={item.href ?? item.src}
-        alt=""
-        draggable={false}
-        style={{ transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)` }}
-        onDoubleClick={onToggleZoom}
-      />
-    );
+    ) : undefined;
   return (
     <Row full="both" shrink="block" align="center" justify="center" className={s.stage()} data-viewer-stage="">
-      <Box as={element} display="block" max="contain" className={s.picture()} />
+      <Box
+        as={
+          element ?? (
+            <Picture
+              item={item}
+              style={{ transform: `scale(${String(zoom)}) translate(${String(pan.x)}px, ${String(pan.y)}px)` }}
+              onDoubleClick={onToggleZoom}
+            />
+          )
+        }
+        display="block"
+        max="contain"
+        className={s.picture()}
+      />
     </Row>
   );
 }
