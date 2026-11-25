@@ -148,14 +148,21 @@ func upperOutsideKept(in string) string {
 	}
 }
 
-// newStandIn returns a Translator on a new stand-in, through the SDK with static credentials.
+// newStandIn returns a Translator on a new stand-in, through the SDK with static credentials. The
+// stand-in is on the in-memory network of httptest, which has no ports to run out of and no
+// connections to the loopback interface that the other tests share.
 func newStandIn(t *testing.T) (*Translator, *standIn) {
 	t.Helper()
 	s := &standIn{}
-	srv := httptest.NewServer(s)
-	t.Cleanup(srv.Close)
+	return newTranslatorOn(t, s), s
+}
+
+// newTranslatorOn returns a Translator on the handler h, through the SDK with static credentials.
+func newTranslatorOn(t *testing.T, h http.Handler) *Translator {
+	t.Helper()
+	srv := httptest.NewTestServer(t, h)
 	tr, err := NewFromConfig(awssdk.Config{
-		Region: "us-east-1", BaseEndpoint: awssdk.String(srv.URL), HTTPClient: srv.Client(), RetryMaxAttempts: 1,
+		Region: "us-east-1", BaseEndpoint: awssdk.String("http://translate.example"), HTTPClient: srv.Client(), RetryMaxAttempts: 1,
 		Credentials: awssdk.CredentialsProviderFunc(func(context.Context) (awssdk.Credentials, error) {
 			return awssdk.Credentials{AccessKeyID: "test", SecretAccessKey: "test", Source: "test"}, nil
 		}),
@@ -163,7 +170,7 @@ func newStandIn(t *testing.T) (*Translator, *standIn) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return tr, s
+	return tr
 }
 
 func TestContract(t *testing.T) {
@@ -308,6 +315,35 @@ func TestMapsTheErrors(t *testing.T) {
 		}
 		if err != nil && (strings.Contains(err.Error(), "private post") || !strings.Contains(err.Error(), code)) {
 			t.Errorf("%s: err = %q, want the code and no text", code, err)
+		}
+	}
+}
+
+func TestNamesTheKindOfAFailedCall(t *testing.T) {
+	t.Parallel()
+	for name, tc := range map[string]struct {
+		h    http.HandlerFunc
+		want string
+	}{
+		"connection closed": {func(w http.ResponseWriter, _ *http.Request) {
+			conn, _, err := http.NewResponseController(w).Hijack()
+			if err == nil {
+				_ = conn.Close()
+			}
+		}, "the call was not sent or not answered"},
+		"unreadable answer": {func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Smithy-Protocol", "rpc-v2-cbor")
+			w.Header().Set("Content-Type", "application/cbor")
+			_, _ = w.Write([]byte{0xbf, 0x6e}) // a map cut inside its first key
+		}, "the answer could not be read"},
+	} {
+		tr := newTranslatorOn(t, tc.h)
+		_, err := tr.Translate(t.Context(), translation.Request{Fragments: []string{"the words of a private post"}, SourceLanguage: "en", TargetLanguage: "ja"})
+		if !errors.Is(err, translation.ErrTemporary) || !strings.Contains(err.Error(), tc.want) {
+			t.Errorf("%s: err = %v, want ErrTemporary saying %q", name, err, tc.want)
+		}
+		if err != nil && strings.Contains(err.Error(), "private post") {
+			t.Errorf("%s: err = %q holds the text", name, err)
 		}
 	}
 }
