@@ -684,7 +684,7 @@ export {
   type StatusShadow,
 } from "./shadow";
 export type { Status, StatusPage } from "./statuses";
-export { startStream } from "./stream";
+export { startStream, streamStateOf, useStreamState, watchStreamState, type StreamState } from "./stream";
 export { statusContextQuery, statusQuery, useThread, type StatusContext, type Thread } from "./thread";
 export {
   serverTranslates,
