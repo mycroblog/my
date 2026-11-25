@@ -136,6 +136,27 @@ export const badgeColor = {
 
 export type BadgeColorName = keyof typeof badgeColor;
 
+/**
+ * The colors of the mark that shows the state of the stream (FrameStream), the same on every server (a theme does not
+ * change them): open, connecting (or connecting again), and stopped for good. Each is a mark at 3:1 on the page's
+ * surface (`streamContrastPairs`), red the darkest; its shape tells the states apart without the hue, and its name and
+ * tooltip say the state.
+ */
+export const streamColor = {
+  "stream-open": { light: "#16a34a", dark: "#22c55e" },
+  "stream-connecting": { light: "#d97706", dark: "#fbbf24" },
+  "stream-stopped": { light: "#b91c1c", dark: "#ef4444" },
+} as const satisfies Record<string, SchemeColor>;
+
+export type StreamColorName = keyof typeof streamColor;
+
+/** The stream's mark on the page's surface: 3:1 (WCAG 1.4.11). */
+export const streamContrastPairs: readonly { fg: StreamColorName; minimum: number }[] = [
+  { fg: "stream-open", minimum: 3 },
+  { fg: "stream-connecting", minimum: 3 },
+  { fg: "stream-stopped", minimum: 3 },
+];
+
 /** A foreground color drawn on a background color, and the contrast ratio it needs in both schemes. */
 export type ContrastPair = { fg: ColorName; bg: ColorName; minimum: number };
 
@@ -626,7 +647,8 @@ export const breakpoint = { tablet: 40, desktop: 68.75, wide: 77.5 } as const;
  * main column where no tab bar covers it; the rail's padding; the space between the sections of the column beside the
  * main one; the height of the mark at the top of the rail; the height of the call's bar above the tab bar; the least
  * size of a count's badge and its inline padding; the height of a meter's bar; the room the menu's sheet leaves
- * above it; and the padding of a toast around its controls.
+ * above it; the padding of a toast around its controls; and the size of the stream's mark and of the ring of the
+ * page's surface around it.
  */
 export const shell = {
   rail: 3.5,
@@ -651,6 +673,8 @@ export const shell = {
   meter: 0.375,
   sheetRoom: 4,
   toastInset: 0.25,
+  stream: 0.625,
+  streamRing: 0.125,
 } as const;
 
 /**
@@ -751,7 +775,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--font-latin", `"${latinFamily.family}"`],
   ["--font-cjk", `"${cjkRegions[0].family}"`],
   ...Object.entries(text).flatMap(([name, step]) => textProperties(name, step)),
-  ...Object.entries({ ...color, ...badgeColor }).map(([name, c]): [string, string] => [
+  ...Object.entries({ ...color, ...badgeColor, ...streamColor }).map(([name, c]): [string, string] => [
     `--color-${name}`,
     `light-dark(${c.light}, ${c.dark})`,
   ]),

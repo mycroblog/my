@@ -35,6 +35,8 @@ import {
   shadow,
   shell,
   spinner,
+  streamColor,
+  streamContrastPairs,
   text,
   voice,
 } from "./tokens";
@@ -54,6 +56,16 @@ describe("badgeContrastPairs", () => {
     for (const scheme of ["light", "dark"] as const) {
       test(`${fg} on ${bg} reaches ${minimum}:1 in ${scheme}`, () => {
         expect(contrast(badgeColor[fg][scheme], badgeColor[bg][scheme])).toBeGreaterThanOrEqual(minimum);
+      });
+    }
+  }
+});
+
+describe("streamContrastPairs", () => {
+  for (const { fg, minimum } of streamContrastPairs) {
+    for (const scheme of ["light", "dark"] as const) {
+      test(`${fg} on surface reaches ${minimum}:1 in ${scheme}`, () => {
+        expect(contrast(streamColor[fg][scheme], color.surface[scheme])).toBeGreaterThanOrEqual(minimum);
       });
     }
   }
