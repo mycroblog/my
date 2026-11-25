@@ -2,7 +2,7 @@
 // A browser of several tabs and a fake stream for the tests of the stream. The tabs' group grants the lead as Web
 // Locks grant an exclusive lock, one tab at a time in the order asked, and delivers a message as a BroadcastChannel
 // does, to the other tabs that listen. The fake stream stands in for mykit's runStream: the test opens it and sends its
-// events by hand, and it ends when its signal aborts.
+// events by hand, breaks it or has the server refuse it, and it ends when its signal aborts.
 import type { StreamEvent, StreamOptions } from "@mycroblog/mykit";
 import type { TabGroup } from "@my/platform";
 
@@ -70,6 +70,13 @@ export type FakeStream = {
   /** Opens it, as the first connection (false) or a later one (true). */
   open: (reconnected: boolean) => void;
   send: (event: StreamEvent) => void;
+  /**
+   * Breaks it, as runStream does after a failure it recovers from or a stream the server ended: it reports a failure
+   * when one is given, and waits with the options' `sleep` before the next connection, which the test opens.
+   */
+  drop: (error?: unknown) => void;
+  /** Ends it as runStream does when the server refuses the stream for good: it rejects with `error`. */
+  refuse: (error?: Error) => void;
   /** Whether its signal aborted, which ends it. */
   readonly ended: () => boolean;
 };
@@ -77,20 +84,26 @@ export type FakeStream = {
 /** A fake runStream and the streams it ran, in order. */
 export function fakeStreams(): { run: (options: StreamOptions) => Promise<void>; streams: FakeStream[] } {
   const streams: FakeStream[] = [];
-  const run = (options: StreamOptions) => {
-    streams.push({
-      options,
-      open: (reconnected) => options.onOpen?.(reconnected),
-      send: (event) => {
-        options.onEvent(event);
-      },
-      ended: () => options.signal.aborted,
-    });
-    return new Promise<void>((resolve) => {
+  const run = (options: StreamOptions) =>
+    new Promise<void>((resolve, reject) => {
+      streams.push({
+        options,
+        open: (reconnected) => options.onOpen?.(reconnected),
+        send: (event) => {
+          options.onEvent(event);
+        },
+        drop: (error) => {
+          if (error !== undefined) options.onError?.(error);
+          void options.sleep?.(0, options.signal).catch(() => undefined);
+        },
+        refuse: (error = new Error("test: the server refused the stream")) => {
+          reject(error);
+        },
+        ended: () => options.signal.aborted,
+      });
       options.signal.addEventListener("abort", () => {
         resolve();
       });
     });
-  };
   return { run, streams };
 }

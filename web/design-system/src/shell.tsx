@@ -963,6 +963,117 @@ export function Toast({
   );
 }
 
+/** The state of the stream of the session: before its first open, open, after a failure until the next open, stopped. */
+export type StreamState = "connecting" | "open" | "reconnecting" | "stopped";
+
+// The stream's mark: a shape of its own per state on a disc of the page's surface, with a ring of it, that cuts it out
+// of what scrolls under it. Its hue follows the state, and so does its shape, so that a reader who does not tell red
+// from green tells the states apart, the open mark is no unread marker (a solid disc of the text's color), and the
+// stopped mark is no coral control: open a disc inside a ring of its color, connecting a hollow ring, stopped a cross.
+const stream = tv({
+  slots: {
+    mark: [
+      "size-shell-stream rounded-full bg-surface shadow-[0_0_0_var(--shell-stream-ring)_var(--color-surface)]",
+      "forced-color-adjust-none",
+    ],
+    // Knocked out, as the call's bar's tooltip, while the pointer hovers the mark's target.
+    tip: [
+      "invisible rounded-control bg-text px-shell-inset py-shell-toast-inset font-sans text-caption text-surface",
+      "group-hover:visible",
+    ],
+  },
+  variants: {
+    state: {
+      open: { mark: "text-stream-open" },
+      connecting: { mark: "text-stream-connecting" },
+      reconnecting: { mark: "text-stream-connecting" },
+      stopped: { mark: "text-stream-stopped" },
+    },
+  },
+});
+
+/** The shape of each state, in a box of 10 by 10, in the current color. */
+const streamShape: Record<StreamState, ReactNode> = {
+  open: (
+    <>
+      <circle cx="5" cy="5" r="4.5" fill="none" stroke="currentColor" strokeWidth="1" />
+      <circle cx="5" cy="5" r="2.5" fill="currentColor" />
+    </>
+  ),
+  connecting: <circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" strokeWidth="2" />,
+  reconnecting: <circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" strokeWidth="2" />,
+  stopped: <path d="M1.5 1.5 8.5 8.5M8.5 1.5 1.5 8.5" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" />,
+};
+
+// Where the stream's mark stands: fixed over the screen, centred in the band the frame keeps above it (`--shell-gap`,
+// the main column's top padding), its end on the end of the frame's last column (the viewport's on a phone, the
+// main column's from `tablet`, the column beside it from `wide`), in a target of the least size that the pointer
+// hovers to read its tooltip, which hangs under it, its end on the mark's.
+const streamPlace = tv({
+  slots: {
+    root: [
+      "group fixed top-[calc(env(safe-area-inset-top)+(var(--shell-gap)-var(--target-minimum))/2)] z-3",
+      "flex size-[var(--target-minimum)] items-center justify-center",
+      "end-[calc(var(--stream-end)-(var(--target-minimum)-var(--shell-stream))/2)] [--stream-end:var(--shell-edge)]",
+      "tablet:[--stream-end:max(var(--shell-edge),calc((100%-var(--shell-rail)-var(--shell-gap)-var(--shell-column))/2))]",
+      "desktop:[--stream-end:max(var(--shell-edge),calc((100%-var(--shell-sidebar)-var(--shell-gap-wide)-var(--shell-column))/2))]",
+      "wide:[--stream-end:max(var(--shell-edge),calc((100%-var(--shell-sidebar)-2*var(--shell-gap-wide)-var(--shell-column)-var(--shell-aside))/2))]",
+    ],
+    tip: "pointer-events-none absolute end-0 top-full mt-shell-item-gap w-max max-w-[var(--menu-min-width)]",
+  },
+});
+
+/** The place of the stream's mark, as `as`, with its tooltip `tip` under it (streamPlace). */
+function StreamPlace({
+  as,
+  tip,
+  children,
+}: {
+  as: ReactElement<{ className?: unknown }>;
+  tip: ReactElement<{ className?: unknown }>;
+  children: ReactNode;
+}) {
+  const s = streamPlace();
+  return (
+    <Box as={as} className={s.root()}>
+      {children}
+      <Box as={tip} className={s.tip()} />
+    </Box>
+  );
+}
+
+/**
+ * The state of the stream of the session, at the top end of the frame at every width, over what scrolls under it: a
+ * small mark with no visible label, a green disc in a ring while open, a hollow amber ring while it connects or
+ * connects again, a red cross once the server refused it for good, so that the reader tells "no new posts" from "cut
+ * off" at a glance. `label` says the state: it names the mark for assistive technology and is the tooltip a pointer
+ * hovering it shows. Place it in the Frame of a signed-in reader alone, whose session has a stream.
+ */
+export function FrameStream({
+  state,
+  label,
+}: {
+  state: StreamState;
+  /** What the state is, in words ("Connected", "Reconnecting…", "Disconnected"). */
+  label: string;
+}) {
+  const s = stream({ state });
+  return (
+    <StreamPlace
+      as={<span role="img" aria-label={label} data-frame-stream={state} />}
+      tip={
+        <span className={s.tip()} aria-hidden="true">
+          {label}
+        </span>
+      }
+    >
+      <svg className={s.mark()} viewBox="0 0 10 10" aria-hidden="true">
+        {streamShape[state]}
+      </svg>
+    </StreamPlace>
+  );
+}
+
 /**
  * The mark's place at the top of the rail, as `as`: in the rail's middle, and from `desktop` at the sidebar's start,
  * on the column of the places' glyphs.

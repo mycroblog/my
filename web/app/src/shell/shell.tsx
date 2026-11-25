@@ -26,7 +26,9 @@ import {
   useRights,
   useUnreadConversations,
   useUnreadNotifications,
+  useStreamState,
   type Instance,
+  type StreamState,
 } from "@my/app-data";
 import {
   CallEnds,
@@ -54,6 +56,7 @@ import {
   FrameMain,
   FrameMark,
   FrameSide,
+  FrameStream,
   MenuGroup,
   MenuItem,
   MenuSheet,
@@ -146,6 +149,20 @@ function DirectPlace({ place, current }: { place: Place; current: boolean }) {
  * Menu of the tab bar, which counts the reader's unread conversations of direct messages, a place inside it, and is
  * marked while something waits for them as a moderator; what it counts and what waits are said after its name.
  */
+/** What the stream's mark says of its state: its name for a screen reader and its tooltip. */
+function streamLabel(t: ReturnType<typeof useStrings>, state: StreamState): string {
+  switch (state) {
+    case "connecting":
+      return t("app.stream_connecting");
+    case "open":
+      return t("app.stream_open");
+    case "reconnecting":
+      return t("app.stream_reconnecting");
+    case "stopped":
+      return t("app.stream_stopped");
+  }
+}
+
 function TabMenu({ signedIn, footer, children }: { signedIn: boolean; footer: ReactNode; children: ReactNode }) {
   const t = useStrings();
   const { locale } = useLocale();
@@ -301,6 +318,8 @@ export function Shell({
 }) {
   const t = useStrings();
   const instance = useInstance();
+  // The state of the session's stream, at the top end of the frame: whether new posts arrive live.
+  const stream = useStreamState();
   const rights = useRights(signedIn);
   const call = useCall();
   const { target, open, close } = useCompose();
@@ -389,6 +408,7 @@ export function Shell({
             </NavList>
             {callBar}
           </FrameSide>
+          {signedIn && stream !== undefined && <FrameStream state={stream} label={streamLabel(t, stream)} />}
           <FrameMain>
             <ServerBanners instance={instance} />
             {/* A reader without an account copies, shares and opens posts too; the rest leads them to sign in. */}
