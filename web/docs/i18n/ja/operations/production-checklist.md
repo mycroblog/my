@@ -183,7 +183,7 @@ my config check -instance  # also the instance settings in the database
     `my admin role` で一覧し、管理画面で見直してください。
 - **詳細**: [管理者とロール](admin-cli.md)、[モデレーション](moderation.md)（権限とログインの回復）。
 
-<!-- source: operations aac00b13fc38 -->
+<!-- source: operations cdf72295a7bb -->
 ## 運用
 
 - **バックアップと復旧**: データベース、blob ストア（`blob_fs_dir` またはバケット）、KEK が、定期的に、
@@ -193,7 +193,7 @@ my config check -instance  # also the instance settings in the database
   [鍵の管理](key-management.md)（KEK のバックアップ）と[データベース](database.md)を参照してください。
 - **監視とアラート**: 外部の監視が `/health/live` を確認し、対応できる人にアラートを送ること、そしてジョブキューの dead のジョブを
   見張っていること。[監視](monitoring.md)と[サーバーの運用](running.md)（ヘルスチェック、メトリクス、ジョブキュー）を参照してください。
-- **イメージ**: インスタンスが、再起動で変わるイメージではなく、ダイジェストで固定したリリース済みのイメージ（`ghcr.io/mycroblog/my:0.1.0@sha256:...`、リリースノートにあります）を実行し、
+- **イメージ**: インスタンスが、再起動で変わるイメージではなく、ダイジェストで固定したリリース済みのイメージ（`ghcr.io/mycroblog/my:0.1.0@sha256:...`。リリースノートにあり、OpenTofu では [`image.digest`](deploy-opentofu.md#pinning-the-image-by-digest) です）を実行し、
   [その来歴を確認していること](running.md#verify-an-image)。`latest` タグはありません。
   アップグレードでは、そのバージョンを意図して変え、[アップグレード](database.md#upgrading)に従って、マイナーバージョンを 1 つずつ上げます。
 - **ソースコード（AGPL-3.0）**: サーバーは、使うすべての人にソースコードを提供しなければなりません。変更していないリリースでは
