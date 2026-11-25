@@ -15,6 +15,8 @@
 // word, so that a long text is never lost, and leaves an edit as it was. A reader the server keeps from writing new
 // articles (`article_authoring`) gets the one sentence why in place of the form; an edit of an earlier one still opens.
 // One a restriction of the account refused leads to Account status from its alert, keeping what was written as Close.
+// One the server's automated review refused offers its appeal in the alert's place, as the composer does (refused.tsx),
+// sending the Markdown body, the text the review judged; while the appeal holds the article back, Publish waits.
 
 import { accountStatusPath, PostContent, scheduleTime, ScheduleTime, ScheduleZone } from "@my/app-components";
 import {
@@ -24,6 +26,7 @@ import {
   useComposeWrites,
   useArticleSource,
   useDrafts,
+  useHookAppeal,
   useStatus,
   type ComposeSettings,
   type ComposeWrites,
@@ -80,6 +83,7 @@ import {
 import { AudienceTool, visibilityIcon, type AudiencePanel } from "./audience";
 import { ChunkBoundary, retryingLazy } from "./chunk";
 import { DraftsView } from "./drafts";
+import { postHeld, RefusedAppeal } from "./refused";
 import { Language, Schedule } from "./tools";
 import { useArticleEditor, type ArticleEditor } from "./use-article";
 import type { Phase } from "./use-composer";
@@ -187,6 +191,9 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
   // is written, which holds it.
   const refused = phase.kind === "failed" ? phase : undefined;
   const placed = refused?.field !== undefined;
+  // The appeal of an article the server's review refused, as the server has it: while it holds the article back,
+  // Publish waits.
+  const appeal = useHookAppeal(refused?.appeal?.decision ?? "", refused?.appeal !== undefined);
   useEffect(() => {
     if (placed) setMode("write");
   }, [placed]);
@@ -443,7 +450,11 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
         ) : undefined
       }
       alert={
-        alert === undefined ? undefined : (
+        alert === undefined ? undefined : refused?.appeal !== undefined ? (
+          // An article the server's review refused: its alert offers the appeal of its body, then says where the
+          // appeal stands.
+          <RefusedAppeal kind="article" refusal={refused.appeal} appeal={appeal} text={draft.text} />
+        ) : (
           <FormAlert
             regular={gone}
             action={
@@ -540,7 +551,7 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
         </>
       }
       action={
-        <Button kind="primary" size="timeline" busy={busy} onPress={e.submit}>
+        <Button kind="primary" size="timeline" busy={busy} isDisabled={postHeld(appeal)} onPress={e.submit}>
           {t(
             editing
               ? "compose.save"

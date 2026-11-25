@@ -26,8 +26,11 @@ export type HookAppeal = components["schemas"]["OwnHookAppeal"];
 /** What the viewer writes to appeal the refusal of a post: the post they tried, and why it should be let through. */
 export type HookAppealRequest = components["schemas"]["AppealHookDecisionRequest"];
 
-/** The most characters of what the viewer writes to appeal an action. */
-export const appealLimits = { text: 2000 } as const;
+/**
+ * The most characters (code points, as the server counts them) of what the viewer writes to appeal an action
+ * (`text`), and of what they add for the moderators to the appeal of a refused post (`comment`).
+ */
+export const appealLimits = { text: 2000, comment: 2000 } as const;
 
 /**
  * Why the server refused an appeal: it was made already (`appealed`), the time to appeal has passed (`closed`), what
