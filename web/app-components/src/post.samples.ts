@@ -715,7 +715,17 @@ export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostSt
       meta: m.duration === undefined ? undefined : { duration: m.duration },
       blurhash: blurhashes.get(m.src),
     })),
-    mentions: replyTo === undefined ? [] : [{ id: replyTo.id, username: replyTo.username, acct: replyTo.acct, url: `https://my.example/@${replyTo.acct}` }],
+    mentions:
+      replyTo === undefined
+        ? []
+        : [
+            {
+              id: replyTo.id,
+              username: replyTo.username,
+              acct: replyTo.acct,
+              url: `https://my.example/@${replyTo.acct}`,
+            },
+          ],
     emojis,
     replies_count: full.counts?.replies ?? 0,
     boosts_count: full.counts?.boosts ?? 0,

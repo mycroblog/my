@@ -114,7 +114,13 @@ describe("a mention in a post's text", () => {
   });
 
   test("in the post a quote being written embeds opens the profiles that post mentions", () => {
-    navigating(<QuoteContext status={status({ content: html, mentions: [alice] })} />);
+    navigating(
+      <QuoteContext
+        status={status({ content: html, mentions: [alice] })}
+        removeLabel="Remove"
+        onRemove={() => undefined}
+      />,
+    );
 
     expect(leads(mentionOf("alice"))).toEqual(["/@alice@mastodon.example", ""]);
     expect(leads(mentionOf("sam"))).toEqual(["https://my.example/@sam", "_blank"]);
@@ -141,6 +147,6 @@ describe("a post's author avatar", () => {
     ).toHaveLength(1);
 
     if (avatar !== null && avatar !== undefined) await user.click(avatar);
-    expect(went).toEqual([name.getAttribute("href")]);
+    expect(went).toEqual([name.getAttribute("href") ?? ""]);
   });
 });
