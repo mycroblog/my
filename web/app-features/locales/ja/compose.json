@@ -829,7 +829,7 @@
   },
   "compose.refused.appeal.text": {
     "defaultMessage": "投稿の本文がこのサーバーのモデレーターに送られ、モデレーターが審査します。異議申し立ては判定 1 件につき 1 回だけです。取り消せません。",
-    "description": "The text of the confirmation compose.refused.appeal.title: what appealing sends and to whom, that a refusal is appealed once, and that it cannot be undone."
+    "description": "The text of the confirmation compose.refused.appeal.title for a post, in the composer: what appealing sends and to whom, that a refusal is appealed once, and that it cannot be undone. The optional field compose.refused.appeal.comment follows it, whose label says that what is written there goes to the moderators too."
   },
   "compose.refused.appeal.confirm": {
     "defaultMessage": "申し立てる",
@@ -848,7 +848,7 @@
     "description": "The hint under the label compose.refused.appeal.comment. max is the most characters the server takes (2000)."
   },
   "compose.refused.appeal.comment.over": {
-    "defaultMessage": "{max, number} 文字以内にしてください。",
+    "defaultMessage": "書いた内容を {max, number} 文字以内にしてください。",
     "description": "The error under the field compose.refused.appeal.comment when what the reader wrote is longer than the server takes, as they press Send appeal: nothing is sent. max is the most characters (2000)."
   },
   "compose.refused.appeal.state": {

@@ -829,7 +829,7 @@
   },
   "compose.refused.appeal.text": {
     "defaultMessage": "The text of your post is sent to this server's moderators, who review it. You can appeal a refusal once. This cannot be undone.",
-    "description": "The text of the confirmation compose.refused.appeal.title: what appealing sends and to whom, that a refusal is appealed once, and that it cannot be undone."
+    "description": "The text of the confirmation compose.refused.appeal.title for a post, in the composer: what appealing sends and to whom, that a refusal is appealed once, and that it cannot be undone. The optional field compose.refused.appeal.comment follows it, whose label says that what is written there goes to the moderators too."
   },
   "compose.refused.appeal.confirm": {
     "defaultMessage": "Send appeal",
@@ -848,7 +848,7 @@
     "description": "The hint under the label compose.refused.appeal.comment. max is the most characters the server takes (2000)."
   },
   "compose.refused.appeal.comment.over": {
-    "defaultMessage": "Shorten this to {max, number} characters or fewer.",
+    "defaultMessage": "Shorten what you wrote to {max, number} characters or fewer.",
     "description": "The error under the field compose.refused.appeal.comment when what the reader wrote is longer than the server takes, as they press Send appeal: nothing is sent. max is the most characters (2000)."
   },
   "compose.refused.appeal.state": {

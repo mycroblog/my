@@ -62,10 +62,10 @@ const words = {
       text: "The text of your post is sent to this server's moderators, who review it. You can appeal a refusal once. This cannot be undone.",
       confirm: "Send appeal",
       label: "What the moderators should know (optional)",
-      hint: "Up to 2,000 characters. It is sent with the text of your post.",
+      hint: "Up to 2,000 characters.",
       written:
         "This is a recipe I wrote myself. The link goes to my own blog, where the same recipe has the photos of each step.",
-      over: "Shorten this to 2,000 characters or fewer.",
+      over: "Shorten what you wrote to 2,000 characters or fewer.",
     },
   },
   ja: {
@@ -91,9 +91,9 @@ const words = {
       text: "投稿の本文がこのサーバーのモデレーターに送られ、モデレーターが審査します。異議申し立ては判定 1 件につき 1 回だけです。取り消せません。",
       confirm: "申し立てる",
       label: "モデレーターに伝えたいこと (任意)",
-      hint: "2,000 文字まで書けます。投稿の本文と一緒に送られます。",
+      hint: "2,000 文字まで書けます。",
       written: "自分で書いたレシピです。リンク先は自分のブログで、同じレシピに手順ごとの写真を載せています。",
-      over: "2,000 文字以内にしてください。",
+      over: "書いた内容を 2,000 文字以内にしてください。",
     },
   },
 } as const;
