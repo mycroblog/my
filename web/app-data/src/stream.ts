@@ -18,6 +18,7 @@ import {
   receiveNotificationsRead,
 } from "./notifications";
 import { useAppData } from "./provider";
+import { onStreamRetry } from "./stream-retry";
 
 /**
  * The state of the session's stream: `connecting` until it first opens, `open` while it is open, `reconnecting`
@@ -30,13 +31,15 @@ const streamStates: ReadonlySet<string> = new Set<StreamState>(["connecting", "o
 
 /**
  * What the leading tab passes to the others: an event of the stream, a break after which they read again, or the
- * state of its stream; and what a tab that joins asks of the leading one: that state.
+ * state of its stream; what a tab that joins asks of the leading one: that state; and what a tab that retries a
+ * refused stream asks of the others: to wait for the lead again.
  */
 type StreamMessage =
   | { readonly kind: "event"; readonly event: StreamEvent }
   | { readonly kind: "gap" }
   | { readonly kind: "state"; readonly state: StreamState }
-  | { readonly kind: "ask" };
+  | { readonly kind: "ask" }
+  | { readonly kind: "retry" };
 
 type StateStore = { state: StreamState | undefined; readonly listeners: Set<() => void> };
 
@@ -122,7 +125,7 @@ const wait: Sleep = (ms, signal) =>
 
 /**
  * Starts the stream of the session, which runs until the function it returns is called. Data without a connection
- * (the browser has no session) has no stream.
+ * (the browser has no session) has no stream. Once the server refused it, retryStream starts it again.
  */
 export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
   const { connection } = data;
@@ -130,7 +133,9 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
   const tabs = deps.tabs === undefined ? joinTabGroup(`my:stream:${connection.server}`) : deps.tabs;
   const run = deps.run ?? runStream;
   const stop = new AbortController();
-  const read = (share: (message: SharedMessage) => void, tookOver: boolean) => {
+  // missed: whether the tabs may have missed events before this stream (another tab led one, or it was refused), and
+  // so read again once it opens.
+  const read = (share: (message: SharedMessage) => void, missed: boolean) => {
     const state = (next: StreamState) => {
       if (!stop.signal.aborted) share({ kind: "state", state: next });
     };
@@ -145,58 +150,96 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
       },
       onOpen: (reconnected) => {
         state("open");
-        if (reconnected || tookOver) share({ kind: "gap" });
+        if (reconnected || missed) share({ kind: "gap" });
       },
       onEvent: (event) => {
         share({ kind: "event", event });
       },
     }).catch(() => {
       // The server refused the stream for good (the session ended, or a scope is missing): the screens read the
-      // server as they open, and the next tab to lead tries again.
+      // server as they open, the next tab to lead tries again, and a pull of a timeline retries it (retryStream).
       state("stopped");
     });
   };
   const receive = (message: SharedMessage) => {
     route(data, message);
   };
+  // Whether this tab reads a stream of its own (alone, or where the browser refused the lock), until it is refused.
+  let reading = false;
+  const readAlone = (missed: boolean) => {
+    if (reading || stop.signal.aborted) return;
+    reading = true;
+    void read(receive, missed).finally(() => {
+      reading = false;
+    });
+  };
   if (tabs === null) {
-    void read(receive, false);
+    readAlone(false);
+    const unretry = onStreamRetry(data, () => {
+      if (streamStateOf(data) === "stopped") readAlone(true);
+    });
     return () => {
       stop.abort();
+      unretry();
       setStreamState(data, undefined);
     };
   }
   setStreamState(data, "connecting");
   // Whether this tab leads the group, and so answers the tabs that ask for the state of its stream.
   let leading = false;
+  // Whether this tab waits for the lead or holds it: a tab whose stream was refused gave the lead up and waits no more.
+  let queued = false;
+  // Whether the browser refused this tab the lock, so that it reads alone.
+  let alone = false;
+  const join = (missed: boolean) => {
+    if (alone) {
+      readAlone(missed);
+      return;
+    }
+    if (queued || stop.signal.aborted) return;
+    queued = true;
+    tabs
+      .lead(stop.signal, async (tookOver) => {
+        leading = true;
+        try {
+          await read((message) => {
+            tabs.post(message);
+            receive(message);
+          }, tookOver || missed);
+        } finally {
+          leading = false;
+        }
+      })
+      .catch(() => {
+        // The browser refused the lock (a document without storage access): this tab reads a stream of its own.
+        alone = true;
+        readAlone(missed);
+      })
+      .finally(() => {
+        queued = false;
+      });
+  };
   const unlisten = tabs.listen((message) => {
     if (!isStreamMessage(message)) return;
-    if (message.kind !== "ask") receive(message);
-    else if (leading) {
+    if (message.kind === "ask") {
       const state = streamStateOf(data);
-      if (state !== undefined) tabs.post({ kind: "state", state } satisfies StreamMessage);
-    }
+      if (leading && state !== undefined) tabs.post({ kind: "state", state } satisfies StreamMessage);
+    } else if (message.kind === "retry") join(true);
+    else receive(message);
   });
-  tabs
-    .lead(stop.signal, async (tookOver) => {
-      leading = true;
-      try {
-        await read((message) => {
-          tabs.post(message);
-          receive(message);
-        }, tookOver);
-      } finally {
-        leading = false;
-      }
-    })
-    .catch(() => {
-      // The browser refused the lock (a document without storage access): this tab reads a stream of its own.
-      if (!stop.signal.aborted) void read(receive, false);
-    });
+  join(false);
+  // A retry brings every tab that gave the lead up back into the queue: the first to take it reads, and the others
+  // follow it and take over when it goes, as before the refusal.
+  const unretry = onStreamRetry(data, () => {
+    if (streamStateOf(data) !== "stopped") return;
+    tabs.post({ kind: "retry" } satisfies StreamMessage);
+    join(true);
+  });
   // A tab that joins while another leads learns the state of its stream.
   tabs.post({ kind: "ask" } satisfies StreamMessage);
   return () => {
     stop.abort();
+    unretry();
     unlisten();
     tabs.close();
     setStreamState(data, undefined);
@@ -204,7 +247,7 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
 }
 
 /** What a tab puts into its own data, from its stream or from the leading tab's. */
-type SharedMessage = Exclude<StreamMessage, { kind: "ask" }>;
+type SharedMessage = Exclude<StreamMessage, { kind: "ask" | "retry" }>;
 
 /**
  * Puts what the stream says into the cache: new statuses of the home timeline or of a list, a deleted status, a
@@ -255,7 +298,7 @@ function route(data: AppData, message: SharedMessage): void {
 /** Whether a message from another tab, which may run another version of the client (ADR-0028 §14), is one it reads. */
 function isStreamMessage(message: unknown): message is StreamMessage {
   if (typeof message !== "object" || message === null || !("kind" in message)) return false;
-  if (message.kind === "gap" || message.kind === "ask") return true;
+  if (message.kind === "gap" || message.kind === "ask" || message.kind === "retry") return true;
   if (message.kind === "state") {
     return "state" in message && typeof message.state === "string" && streamStates.has(message.state);
   }

@@ -13,6 +13,7 @@ import type { AppData } from "./app-data";
 import { readFirstPageAgain } from "./paged";
 import { useAppData } from "./provider";
 import { receiveGone, shadowed } from "./shadow";
+import { retryStream } from "./stream-retry";
 import type { Status } from "./statuses";
 import { homeTimelineQuery, listTimelineQuery } from "./timeline";
 
@@ -107,9 +108,13 @@ export function prependHomeStatuses(data: AppData, statuses: readonly Status[]):
 const reloadFirstPage = (data: AppData, timeline: StreamedTimeline): Promise<void> =>
   readFirstPageAgain(data.queryClient, queryKeyOf(data, timeline));
 
-/** Puts in nothing that is held and reads the timeline's first page again, which brings what was held with the rest. */
+/**
+ * Puts in nothing that is held and reads the timeline's first page again, which brings what was held with the rest;
+ * and starts the stream again where the server refused it.
+ */
 function refresh(data: AppData, store: Store): Promise<void> {
   hold(store, none);
+  retryStream(data);
   return reloadFirstPage(data, store.timeline);
 }
 

@@ -685,6 +685,7 @@ export {
 } from "./shadow";
 export type { Status, StatusPage } from "./statuses";
 export { startStream, streamStateOf, useStreamState, watchStreamState, type StreamState } from "./stream";
+export { retryStream } from "./stream-retry";
 export { statusContextQuery, statusQuery, useThread, type StatusContext, type Thread } from "./thread";
 export {
   serverTranslates,
