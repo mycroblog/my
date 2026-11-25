@@ -108,7 +108,7 @@ Web クライアントは、API がメンテナンスの problem を返すと全
 （`502` と `504`、および正常なバックエンドがないときのロードバランサー自身の `503`）だけにするか、`my serve` が動かせない間だけルールをオンにしてください。
 すべての `503` に対するルールにすると、クライアント API や Web クライアントが読む problem のような、メンテナンスモード自身の応答まで置き換えてしまいます。
 
-<!-- source: cloud-run 8bed844981b6 -->
+<!-- source: cloud-run b150825c7bf0 -->
 ### Cloud Run
 
 変数を付けて新しいリビジョンをデプロイし、あとで外します。
@@ -120,7 +120,7 @@ gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAIN
 ```
 
 OpenTofu のモジュールを使う場合は、代わりにブロックで `settings = { maintenance = "true" }` として設定し、apply します。次の apply は
-ブロックの内容に戻すためです。アップグレードの前後での扱いは、[Cloud Run へのデプロイ](deploy-opentofu.md#the-maintenance-mode)にあります。
+ブロックの内容に戻すためです。アップグレードの前後での扱いは、[OpenTofu でのデプロイ](deploy-opentofu.md#the-maintenance-mode)にあります。
 
 ロードバランサーなしで Cloud Run を直接公開しているときは、その前に何もないので、使える手段はメンテナンスモードだけです。
 
@@ -139,13 +139,13 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-<!-- source: aws-ecs afc0ba5adee4 -->
+<!-- source: aws-ecs 0b5f487093f4 -->
 ### AWS ECS
 
 コンテナの環境に `MY_MAINTENANCE=true` を入れたサービスのタスク定義のリビジョンを登録し、サービスをそれに更新します。
 作業のあとは、変数なしで同じことをします。OpenTofu のモジュールを使う場合は、代わりにブロックで `settings = { maintenance = "true" }` として設定し、
 apply します。次の apply はブロックの内容に戻すためです。アップグレードの前後では、モードを apply し、次に新しいリリースを apply し、
-最後にそれを外したブロックを apply します。[Cloud Run へのデプロイ](deploy-opentofu.md#the-maintenance-mode)と同じです。
+最後にそれを外したブロックを apply します。[OpenTofu でのデプロイ](deploy-opentofu.md#the-maintenance-mode)と同じです。
 
 CloudFront の後ろで **`my serve` が動かせないとき**: 書き出した `index.html` を、2 つ目のオリジンにした S3 のバケットにアップロードし
 （エラーページを、失敗しているオリジンから出すことはできません）、`502` と `504`（`503` は `my serve` が動かせない間だけ）に対するカスタムエラーレスポンスを、
