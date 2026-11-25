@@ -472,7 +472,7 @@
     "description": "The mark of the stream at the top right of the screen, with no visible label: its name for screen readers and the tooltip a pointer hovering it shows. While the app first connects to receive new posts live, after the page opens (an amber ring)."
   },
   "app.stream_open": {
-    "defaultMessage": "接続されています。新しい投稿はすぐに届きます。",
+    "defaultMessage": "接続されています",
     "description": "The mark of the stream at the top right of the screen, with no visible label: its name for screen readers and the tooltip a pointer hovering it shows. While the app is connected and new posts arrive live (a green disc): it tells the reader that no new post means there is none yet, not a cut connection."
   },
   "app.stream_reconnecting": {
