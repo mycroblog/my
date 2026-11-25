@@ -1,7 +1,7 @@
-<!-- source: sending-email-through-amazon-ses cb9101de6cc9 -->
+<!-- source: sending-email-through-amazon-ses 6deee2054246 -->
 # Amazon SES でメールを送る
 
-サーバーのメールを送るために Amazon SES を準備する方法です。送信者のドメインを DNS レコードで検証し、新しいアカウントが始まるサンドボックスから出て、アカウントを良好な状態に保ちます。OpenTofu モジュールの [`mycroblog-aws`](../../deploy/opentofu/README.md#aws) は、既定で SES を使って送信し、ID と権限を作ります。レコードと本番環境へのアクセスのリクエストは、自分で行う手順です。
+サーバーのメールを送るために Amazon SES を準備する方法です。送信者のドメインを DNS レコードで検証し、新しいアカウントが始まるサンドボックスから出て、アカウントを良好な状態に保ちます。OpenTofu モジュールの [`mycroblog-aws`](deploy-aws.md#email-through-amazon-ses) は、既定で SES を使って送信し、ID と権限を作ります。レコードと本番環境へのアクセスのリクエストは、自分で行う手順です。
 設定そのものは[メールの送信](email.md#amazon-ses-api)にあります。
 
 **AWS へのデプロイは、まだ一度も適用されていません。** そのため、これらの手順は AWS のドキュメントに基づくもので、このプロジェクトのサーバーで最後まで実行して確かめてはいません。

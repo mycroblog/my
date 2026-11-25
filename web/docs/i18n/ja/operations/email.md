@@ -163,7 +163,7 @@ my plugin test --kind mailer --mail-to you@example.com --mail-from noreply@socia
 1 つ目はプラグインが応答することだけを確かめ、何も送りません。2 つ目は `--mail-to` に実際のメッセージを送り、さらに受信者のないリクエストをプラグインに送ります。プラグインはこれを拒否しなければなりません。プラグインに渡ったあとのメッセージはサーバーからは見えないため、届いたメッセージを見てください。そのヘッダーには `Message-ID`、`Date`、`Auto-Submitted: auto-generated` が入っていなければなりません。
 [プラグインをテストする](plugins.md#test-a-plugin) を参照してください。
 
-<!-- source: receive-ses-notifications-sns e21b650ab5fe -->
+<!-- source: receive-ses-notifications-sns aa8911000390 -->
 ### SES の通知を受け取る (SNS)
 
 SES のバウンスと苦情は SNS のトピックに送られ、そのトピックの HTTPS のサブスクリプションがサーバーの `POST /mail/events/ses` に届けます。
@@ -214,7 +214,7 @@ aws sns subscribe --region ap-northeast-1 \
 | --- | --- |
 | `bounceType` が `Permanent` のバウンス（`General`、`NoEmail`、`Suppressed`、`OnAccountSuppressionList` など、サブタイプは問いません） | `hard_bounce` |
 | 苦情（`complaintFeedbackType` が `not-spam` のものを除く） | `complaint` |
-| `Transient` または `Undetermined` のバウンスと、配信や送信などそのほかの通知 | 記録しません（`200` を返します） |
+| `Transient` または `Undetermined` のバウンス、配信や送信などそのほかの通知、および `mail.source` が `mail_from` のアドレスでない通知（トピックや設定セットを共有する別のインスタンスが送ったメール） | 記録しません（`200` を返します） |
 
 SES の `feedbackId` が記録の一意のキーなので、SNS が同じ通知を何度送っても、記録は 1 つです。
 

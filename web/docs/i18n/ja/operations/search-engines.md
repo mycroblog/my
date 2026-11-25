@@ -8,7 +8,7 @@
 
 `search = elasticsearch` は、バージョン 8 以降の Elasticsearch クラスターにインデックスを保持します。自分で管理するクラスターでも、Elastic Cloud Hosted でもかまいません。Elasticsearch 9.5 と 8.19 で動作を確認しています。インデックスのフィールドはサーバーが管理し、サーバーがそこに書き込み、絞り込み、並べ替え、ページ送りをします。インデックスの設定（解析、シャード、レプリカ）は自分で管理できます。自分の設定がなければ、組み込みの設定はプラグインを必要とせず、[後述](#how-the-built-in-analysis-finds-japanese)のとおりに日本語を見つけます。
 
-<!-- source: setting-it-up 3e02c35ff319 -->
+<!-- source: setting-it-up bf8c46897990 -->
 ### 設定する
 
 1. Elasticsearch を動かします。ほとんどのサーバーでは 1 ノードで足ります。同じホストですぐに始めるには、次のようにします。
@@ -299,7 +299,7 @@ docker run -d --name meilisearch --restart unless-stopped \
 
 `MEILI_ENV=production` にすると、マスターキーがなければ起動を拒否し、組み込みの検索プレビューを無効にします。Meilisearch は平文の HTTP で通信します。`my` がローカルやプライベートのリンク以外を通って到達するときは、TLS の背後に置くか、プライベートネットワークに置いてください。
 
-<!-- source: settings 74547d71e962 -->
+<!-- source: settings 1ae3d39c472d -->
 ### 設定
 
 ```toml
@@ -349,7 +349,7 @@ Meilisearch 自体をアップグレードするには、そのアップグレ�
 
 検索のクエリは、設定ファイルの内容にかかわらず固定です。投稿がすべての語を持つように `matchingStrategy: all`、新しい順にするために `sort: status_id:desc`、次のページのための投稿 ID に対する `filter`、ページの件数に 1 を足した `limit`、投稿 ID の `attributesToRetrieve`、そして語のないクエリを見分けるための `showMatchesPosition` です。Meilisearch が演算子として解釈するフレーズの二重引用符と語の前のマイナス記号は取り除かれるので、クエリは常にただの語の並びです。
 
-<!-- source: tuning-meilisearch df827448e06c -->
+<!-- source: tuning-meilisearch bc54de1bbf95 -->
 ### Meilisearch を調整する
 
 `search_meilisearch_index_settings_file` で指定する [Meilisearch のインデックスの設定](https://www.meilisearch.com/docs/reference/api/settings)の JSON ファイルで、エンジンを調整します。`search = meilisearch` のとき、サーバーは起動時にこれを確認します。ファイルが存在して JSON オブジェクトであること、サーバー自身が設定する 4 つの設定を含まないこと、`rankingRules` があるならそれが `sort` で始まること（結果を新しい順に保つため）が必要です。値は、サーバーが送ったときに Meilisearch が確認します。サーバーがファイルの内容をログに記録することはありません。

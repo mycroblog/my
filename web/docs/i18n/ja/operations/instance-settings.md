@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## キー
 
-<!-- source: settings-one-key-one-value d7de299cd54d -->
+<!-- source: settings-one-key-one-value 50097b9aa7e6 -->
 ### 設定（1 つのキーに 1 つの値）
 
 | キー | 型 | 既定値 | 説明 |
@@ -115,7 +115,7 @@
 | `translation_server_monthly_characters` | 整数 0-1000000000000 | `500000` | サーバー全体が、UTC の 1 か月に翻訳のプロバイダーへ送れる文字数。`0` では何も送りません。無制限の値はないので、大きな数を設定してください |
 | `translation_retention_days` | 整数 1-3650（日） | `30` | 翻訳を、作ってから保持する日数。読んでも延びず、投稿とともに削除されます |
 | `translation_reports_to_server` | 真偽値 | `false` | モデレーターが、通報の文章（通報された投稿と通報者のコメント）をサーバー側のプロバイダーに送ってよいかどうか。誰が頼んでも、各プロバイダーが受け取るのは `translation_provider_visibilities` が許した公開範囲だけです。通報されたダイレクトの投稿は `direct` を許されたプロバイダーにだけ送られ、コメントは `private` として扱われます。コメントの翻訳も、削除された投稿の翻訳も保持されず、文字数は `translation_server_monthly_characters` にだけ数えられます。`false` のときは、通報の内容がプロバイダーに届くことはありません |
-| `event_records_retention_days` | 整数 30-3650（日） | `90` | イベントが終了または中止されてから、誰が回答したか、誰が承認されたか、誰が招待されたか、候補日に誰が投票したかを保持する日数。日付が決まらなかったイベントは、最後の候補日で終了します。イベント自体（設定、場所、日付と候補日、中止）は保持されます。通報されたイベントの記録は通報と同じ期間保持され、保全はほかの記録と同じように適用されます（[記録の保持](moderation.md#record-retention-and-holds)） |
+| `event_records_retention_days` | 整数 30-3650（日） | `90` | イベントが終了または中止されてから、誰が回答したか、誰が承認されたか、誰が招待されたか、候補日に誰が投票したか、掲示板の投稿を保持する日数。日付が決まらなかったイベントは、最後の候補日で終了します。イベント自体（設定、場所、日付と候補日、中止）は保持されます。通報されたイベントの記録は通報と同じ期間保持され、保全はほかの記録と同じように適用されます（[記録の保持](moderation.md#record-retention-and-holds)） |
 | `voice_participants_retention_days` | 整数 30-3650（日） | `90` | 通話のルームが終わってから、誰が参加したかの記録（参加、話し手と聞き手、挙手、招待、退出させた記録）を保持する日数。ルーム自体（名前、説明、ホスト、どう終わったか）は保持されます。通報されたルームの記録は通報と同じ期間保持され、保全はほかの記録と同じように適用されます |
 | `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode`, `hook_inbound_actor_mode`, `hook_local_profile_mode` | `off`, `observe`, `enforce` | `observe` | プラグインがある間に、各[判定フック](decision-hooks.md#modes)がどこまで働くか。`off` から `enforce` へは `observe` を経てしか移れません。 |
 | `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure`, `hook_inbound_actor_on_failure` | `pass`, `retry` | `pass` | 強制しているときにプラグインが失敗したら、フックがどうするか（[詳細](decision-hooks.md#when-the-plugin-fails)）。 |
@@ -197,7 +197,7 @@
 - 古い投稿の自動削除は、利用者がオフにしないかぎり記事を残します（新しいアカウントでは `auto_delete_default_keep_articles`、上限のもとでは `auto_delete_max_allow_articles`）。
 - `GET /api/v1/instance` は、制限を `limits.articles` に、執筆の設定を `article_authoring` に返します。これらは `my instance set` で設定します。たとえば `my instance set article_authoring permission` のようにします。
 
-<!-- source: events 07dccecf6936 -->
+<!-- source: events b51d3b629557 -->
 ### イベント
 
 ローカルの利用者は、日付、タイムゾーン、最大 3 つの場所を決めてイベントを計画できます。場所は、このサーバーの通話のルーム、会う場所、リンクです。主催者は日付の代わりに、最大 20 の候補日を示せます。イベントを見られる利用者がそれぞれに「はい」「たぶん」「いいえ」で答え、主催者か共同主催者がそのうち 1 つを確定すると、日付が決まります。それまでは、誰も参加するかどうかを回答しません。イベントはこのサーバーの利用者のためのもので、連合されることはなく、リモートの利用者とログインしていない訪問者には一切表示されません。
@@ -209,7 +209,7 @@
 - イベントの住所とリンクが表示されるのは、主催者か共同主催者が承認した参加者だけです。ただし、主催者がイベントを見られる全員に表示することもできます。リンクは `http` か `https` でなければならず、サーバーがリンクを開くことはありません。
 - イベントを見られる利用者は、自分のカレンダーに追加するために、iCalendar（`.ics`）ファイルとして保存できます。ファイルに書かれるのはその利用者が見られる場所だけなので、承認された参加者のために伏せてある住所がファイルに現れることはありません。カレンダーの購読用のアドレスはありません。
 - 1 人の利用者が作れるイベントは 1 時間に最大 10 件で、1 つのイベントが送れる招待は 1 時間に最大 100 件です。
-- 利用者はイベントを通報でき、モデレーターはイベントを中止できます。主催者を凍結または削除すると、まだ始まっていないその主催者のイベントが中止されます（[モデレーション](moderation.md#events)）。誰が回答し、誰が招待されたかは、イベントのあと `event_records_retention_days` の間保持され、候補日への投票も同じです。
+- 利用者はイベントを通報でき、モデレーターはイベントを中止できます。主催者を凍結または削除すると、まだ始まっていないその主催者のイベントが中止されます（[モデレーション](moderation.md#events)）。誰が回答し、誰が招待されたかは、イベントのあと `event_records_retention_days` の間保持され、候補日への投票と掲示板の投稿も同じです。
 
 <!-- source: texts-one-key-one-value cc74b8e2bdda -->
 ### テキスト（1 つのキーに 1 つの値）
