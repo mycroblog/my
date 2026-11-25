@@ -467,6 +467,22 @@
     "defaultMessage": "ホストがあなたをミュートしました",
     "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, after a host or co-host turned the reader's microphone off, until they turn it on again."
   },
+  "app.stream_connecting": {
+    "defaultMessage": "接続しています…",
+    "description": "The mark of the stream at the top right of the screen, with no visible label: its name for screen readers and the tooltip a pointer hovering it shows. While the app first connects to receive new posts live, after the page opens (an amber ring)."
+  },
+  "app.stream_open": {
+    "defaultMessage": "接続されています。新しい投稿はすぐに届きます。",
+    "description": "The mark of the stream at the top right of the screen, with no visible label: its name for screen readers and the tooltip a pointer hovering it shows. While the app is connected and new posts arrive live (a green disc): it tells the reader that no new post means there is none yet, not a cut connection."
+  },
+  "app.stream_reconnecting": {
+    "defaultMessage": "接続が切れました。再接続しています…",
+    "description": "The mark of the stream at the top right of the screen, with no visible label: its name for screen readers and the tooltip a pointer hovering it shows. After the connection dropped, while the app connects again by itself (an amber ring); new posts do not arrive live until it reconnects."
+  },
+  "app.stream_stopped": {
+    "defaultMessage": "サーバーが接続を切りました。ページを読み込み直すか、もう一度ログインするまで、新しい投稿は届きません。",
+    "description": "The mark of the stream at the top right of the screen, with no visible label: its name for screen readers and the tooltip a pointer hovering it shows. After the server refused the connection for good (the session ended, or the app lacks a permission; a red cross): the app does not try again by itself."
+  },
   "app.voice_open": {
     "defaultMessage": "ルームを開く",
     "description": "The heading and the document's title of the form that opens a voice chat room."
