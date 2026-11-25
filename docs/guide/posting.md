@@ -13,7 +13,8 @@ characters are left. Besides text you can:
 - Reply to a post ("Reply") or quote one ("Quote").
 
 A post that could not be sent stays under "Posts being sent", where you can "Send again", "Edit", or "Discard" it.
-A server can refuse a post after an automated review. When the refusal can be appealed, the post offers "Appeal".
+A server can refuse a post after an automated review. When the refusal can be appealed, the post offers "Appeal",
+which sends its text to the moderators, with what you write for them in "What the moderators should know".
 
 ## Drafts and scheduled posts
 
@@ -136,7 +137,7 @@ brackets. Only images you upload show in an article; an image from another addre
 - "Preview" shows the article as readers will see it, rendered by the server exactly as it will be published, with the size of the body and the number of its images against this server's limits.
 - "Mark as sensitive" shows readers the title and summary first and folds the cover and the body. An article cannot be "Direct".
 - While you write, the article is saved as a draft every time you pause ("Draft saved"), so it opens on any device from "Drafts and scheduled posts", where "Edit" brings it back to the editor. If the draft was changed on another device meanwhile, nothing is overwritten: your text stays in the editor, and "Save as a new draft" keeps it as another draft.
-- "Publish" publishes the article now and opens its page; "Schedule" publishes it at the time you choose, as for a post.
+- "Publish" publishes the article now and opens its page; "Schedule" publishes it at the time you choose, as for a post. An article the automated review refused offers "Appeal" as a post does, and sends its body, not its title or summary.
 - To change an article you published, choose "Edit" in its "More actions" menu. The editor opens with what you wrote; "Save changes" replaces it, and the earlier version stays in its "Edit history". Who can see an article does not change.
 
 A server may let only some people write new articles; then "Write an article" is not shown to the others, who can still

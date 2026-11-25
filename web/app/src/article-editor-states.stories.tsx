@@ -5,7 +5,8 @@
 // leads to, which the editor is opened in (its specimen), the editor alone on a fake server of its own: the preview
 // behind Write | Preview (under `desktop`, where one of them shows), the schedule's form, the audience menu (the
 // composer's: who can see it, never direct, and who can reply, boost and quote it, with approval) and its submenus,
-// and what the server refused of a publication or of an edit.
+// what the server refused of a publication or of an edit, and a publication the server's automated review refused,
+// with Appeal in the alert's place.
 
 import { AppDataProvider, createAppData, defaultComposeSettings } from "@my/app-data";
 import { ArticleEditor, emptyArticle, type ArticleOpening, type ArticleSpecimen } from "@my/app-features";
@@ -137,4 +138,23 @@ export const SummaryRefused: Story = opened(
   },
   published,
   "sam",
+);
+
+/**
+ * A publication the server's automated review refused: the alert says so in the app's own sentence, with Appeal,
+ * which asks first and sends the article's body, with what the writer adds for the moderators.
+ */
+export const ReviewRefused: Story = opened(
+  {
+    phase: {
+      kind: "failed",
+      reason:
+        "This server's automated review did not accept this post. If you think this is a mistake, you can appeal.",
+      appeal: {
+        decision: "01JREVIEWDECISION000000000",
+        deadline: new Date(Date.now() + 180 * 86_400_000).toISOString(),
+      },
+    },
+  },
+  draft,
 );

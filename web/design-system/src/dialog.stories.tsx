@@ -3,14 +3,18 @@
 // The confirmation with a text to type (#3258, ADR-0110, NFR-MOD-7), before what is grave as well as final: banning an
 // account, the text its handle; closing the server, its domain; deleting a role, its name. Each in the flow of the page
 // as the modal would place it, and once over the page: empty, its confirmation disabled; a text that is not the one
-// stated, still disabled; the text typed, enabled; and the ban in flight. The words are samples in the toolbar's
-// language (ja, else en), as the moderation and administration screens would write them.
+// stated, still disabled; the text typed, enabled; and the ban in flight. Then the confirmation with a field the reader
+// may fill in (#3217), the appeal of a post the server's automated review refused, with what the moderators should
+// know: empty, its confirmation open all the same; written in; refused under the field; in flight; and over the page.
+// The words are samples in the toolbar's language (ja, else en), as the moderation and administration screens and the
+// composer would write them.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
 import { ConfirmDialog } from "./dialog";
+import { TextField } from "./form-page";
 import { Stack } from "./layout";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -53,6 +57,16 @@ const words = {
       confirm: "Delete role",
       phrase: "Trusted reviewer",
     },
+    appeal: {
+      title: "Appeal this refusal?",
+      text: "The text of your post is sent to this server's moderators, who review it. You can appeal a refusal once. This cannot be undone.",
+      confirm: "Send appeal",
+      label: "What the moderators should know (optional)",
+      hint: "Up to 2,000 characters.",
+      written:
+        "This is a recipe I wrote myself. The link goes to my own blog, where the same recipe has the photos of each step.",
+      over: "Shorten what you wrote to 2,000 characters or fewer.",
+    },
   },
   ja: {
     cancel: "キャンセル",
@@ -71,6 +85,15 @@ const words = {
       text: "このロールを持つ 4 人は権限を失い、このロールを与える招待も使えなくなります。取り消せません。",
       confirm: "ロールを削除",
       phrase: "信頼できる審査者",
+    },
+    appeal: {
+      title: "この判定に異議を申し立てますか？",
+      text: "投稿の本文がこのサーバーのモデレーターに送られ、モデレーターが審査します。異議申し立ては判定 1 件につき 1 回だけです。取り消せません。",
+      confirm: "申し立てる",
+      label: "モデレーターに伝えたいこと (任意)",
+      hint: "2,000 文字まで書けます。",
+      written: "自分で書いたレシピです。リンク先は自分のブログで、同じレシピに手順ごとの写真を載せています。",
+      over: "書いた内容を 2,000 文字以内にしてください。",
     },
   },
 } as const;
@@ -128,6 +151,50 @@ function Others() {
         {w.role.text}
       </ConfirmDialog>
     </Stack>
+  );
+}
+
+/**
+ * The appeal's confirmation with what the moderators should know, in the flow of the page or over it: `written` in the
+ * field as it opens, `over` refused under it.
+ */
+function Appeal({
+  written = false,
+  over = false,
+  busy = false,
+  layer = false,
+}: {
+  written?: boolean;
+  over?: boolean;
+  busy?: boolean;
+  layer?: boolean;
+}) {
+  const w = useWords();
+  return (
+    <ConfirmDialog
+      layer={layer}
+      title={w.appeal.title}
+      cancel={w.cancel}
+      confirm={w.appeal.confirm}
+      busy={busy}
+      onCancel={none}
+      onConfirm={none}
+      field={
+        <TextField
+          id="appeal-comment"
+          name="comment"
+          label={w.appeal.label}
+          multiline
+          rows={3}
+          readOnly={busy}
+          defaultValue={written || over ? w.appeal.written : undefined}
+          hint={over ? undefined : w.appeal.hint}
+          error={over ? w.appeal.over : undefined}
+        />
+      }
+    >
+      {w.appeal.text}
+    </ConfirmDialog>
   );
 }
 
@@ -201,4 +268,48 @@ export const TypedConfirmOthers: Story = {
 /** The ban's confirmation over the page, the focus in its field. */
 export const TypedConfirmOverThePage: Story = {
   render: () => <Ban layer />,
+};
+
+/**
+ * The appeal of a refused post, nothing written for the moderators: the field says that it may stay empty and how
+ * long it may be, and the confirmation is open all the same.
+ */
+export const FieldConfirm: Story = {
+  render: () => (
+    <Column>
+      <Appeal />
+    </Column>
+  ),
+};
+
+/** What the moderators should know, written in the field, a few lines tall. */
+export const FieldConfirmWritten: Story = {
+  render: () => (
+    <Column>
+      <Appeal written />
+    </Column>
+  ),
+};
+
+/** What was written is longer than the server takes: the rule stands under the field, which is marked invalid. */
+export const FieldConfirmRefused: Story = {
+  render: () => (
+    <Column>
+      <Appeal over />
+    </Column>
+  ),
+};
+
+/** The appeal in flight: the confirmation spins, Cancel and close are disabled, and the field cannot be changed. */
+export const FieldConfirmBusy: Story = {
+  render: () => (
+    <Column>
+      <Appeal written busy />
+    </Column>
+  ),
+};
+
+/** The appeal's confirmation over the page. */
+export const FieldConfirmOverThePage: Story = {
+  render: () => <Appeal layer />,
 };

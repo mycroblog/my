@@ -489,6 +489,81 @@ test("a confirmation with a text to type in flight confirms no more", async () =
   expect(answers).toEqual([]);
 });
 
+// ---- A field in a confirmation ------------------------------------------------------------------------------------
+
+/** A confirmation that holds a field of several lines its caller owns, which may stay empty. */
+const withField = (props: Partial<ConfirmDialogProps> = {}) =>
+  confirmation({
+    confirm: "Send appeal",
+    field: <TextField id="dialog-comment" name="comment" label="What the moderators should know" multiline />,
+    ...props,
+  });
+
+test("a confirmation's field stands after what follows its question, before Cancel and the confirmation, and the focus starts where it does without one", async () => {
+  const user = userEvent.setup();
+  withField();
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+  const field = within(dialog).getByRole("textbox", { name: "What the moderators should know" });
+
+  expect(document.activeElement === field).toBe(false);
+  expect(dialog.contains(document.activeElement)).toBe(true);
+  // Still described by what follows its question.
+  expect(screen.getByRole("alertdialog", { description: (said) => said.includes("It cannot be undone.") })).toBe(
+    dialog,
+  );
+  const said = within(dialog).getByText("It cannot be undone.");
+  expect(said.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  await user.tab();
+  expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Close" }));
+  await user.tab();
+  expect(document.activeElement).toBe(field);
+  await user.tab();
+  expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Cancel" }));
+  await user.tab();
+  expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Send appeal" }));
+});
+
+test("a confirmation's field stands under the text to type when it has one", async () => {
+  withField({ phrase: "Moderator" });
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+
+  expect(within(dialog).getAllByRole("textbox")).toEqual([
+    within(dialog).getByRole("textbox", { name: "To confirm, enter Moderator" }),
+    within(dialog).getByRole("textbox", { name: "What the moderators should know" }),
+  ]);
+});
+
+test("Enter in a confirmation's field makes a new line and answers nothing; the confirmation, never disabled by the field, confirms empty or written", async () => {
+  const user = userEvent.setup();
+  const answers = withField();
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+  const field = within(dialog).getByRole<HTMLTextAreaElement>("textbox", { name: "What the moderators should know" });
+  const confirm = within(dialog).getByRole("button", { name: "Send appeal" });
+  expect(confirm.hasAttribute("disabled")).toBe(false);
+
+  await user.click(confirm);
+  expect(answers).toEqual(["confirm"]);
+
+  await user.type(field, "First line{Enter}Second line");
+  expect(field.value).toBe("First line\nSecond line");
+  expect(answers).toEqual(["confirm"]);
+  expect(confirm.hasAttribute("disabled")).toBe(false);
+
+  await user.click(confirm);
+  expect(answers).toEqual(["confirm", "confirm"]);
+});
+
+test("a confirmation with a field cancels by its Cancel, whatever the field holds", async () => {
+  const user = userEvent.setup();
+  const answers = withField();
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+
+  await user.type(within(dialog).getByRole("textbox"), "Not spam.");
+  await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+  expect(answers).toEqual(["cancel"]);
+});
+
 test("a confirmation with a text to type takes the text in any case, as handles and domains are", async () => {
   const user = userEvent.setup();
   const answers = confirmation({ phrase: "Spam_Bot@Social.example", confirm: "Ban account" });

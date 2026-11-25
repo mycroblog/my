@@ -4,11 +4,13 @@
 // its hint, then by its error), what Publish decides (what the body's count does not change refuses at once, never
 // busy; with the preview of the body as it is, it decides on its count at once; pressed before that preview has come,
 // it asks for this body's and decides on that; when the preview fails, the publication goes ahead), what the editor
-// says of a preview or a summary the server refuses and to a reader who may not write, and the audience it offers.
+// says of a preview or a summary the server refuses and to a reader who may not write, the appeal of an article the
+// automated review refused, and the audience it offers.
 
 import { expect, onTestFinished, test } from "bun:test";
 import { articleFieldLimits, defaultArticleLimits } from "@my/app-data";
-import type { FakeApi, FakeOptions } from "@my/e2e/fake";
+import { fakeOrigin, type FakeApi, type FakeOptions } from "@my/e2e/fake";
+import { createClient, type components } from "@mycroblog/mykit";
 import { screen, waitFor, within } from "@testing-library/react";
 import { fakeData, pasteInto, renderFeature } from "../test/feature";
 import { ArticleEditor, type ArticleLeaving, type ArticleOpening } from "./article";
@@ -322,6 +324,92 @@ test("when the preview of the body fails, Publish goes ahead, and the server's r
   });
   expect(editor.requests).toContain("POST /articles");
   expect(isBusy(editor.publish)).toBe(false);
+  expect(editor.left).toEqual([]);
+});
+
+// An article the server's automated review refused, with a decision to appeal (#3217, ADR-0147 §9).
+
+const decision = "01JREVIEWDECISION000000000";
+const reviewRefused = "This article was not published: this server's automated review did not accept it.";
+
+/** Makes each publication refused by the review, naming `decision` to appeal; called before the editor publishes. */
+function refuseByReview(fake: FakeApi): void {
+  const problem: components["schemas"]["StatusRejectedProblem"] = {
+    type: "/api/v1/problems/status-rejected",
+    title: "This post was not published.",
+    status: 422,
+    detail: "This server's automated review did not accept this post. If you think this is a mistake, you can appeal.",
+    hook_decision_id: decision,
+    appeal_deadline: "2031-03-09T12:00:00.000Z",
+  };
+  fake.script("POST /articles", { fail: problem });
+}
+
+/** Whether the reader can press `button`. */
+const pressable = (button: HTMLElement) =>
+  !(button.hasAttribute("disabled") || button.getAttribute("aria-disabled") === "true");
+
+/** Writes an article with a title, a Markdown body and a summary, presses Publish, and waits for the refusal. */
+async function publishedRefused(editor: Writing): Promise<void> {
+  await editor.user.type(editor.title, "A starter in a jar");
+  await write(editor, "Flour and **water**.");
+  await editor.user.click(editor.summary);
+  await editor.user.paste("How to keep a starter.");
+  await editor.user.click(editor.publish);
+  await waitFor(() => {
+    expect(alerts().map((said) => said.replace(/\s*Appeal$/, "").trim())).toEqual([reviewRefused]);
+  });
+}
+
+test("an article the review refused says so with Appeal; the appeal sends its Markdown body, not its title or summary, and Publish is held back", async () => {
+  const editor = await writing({}, refuseByReview);
+  const sent = editor.fake.script("POST /hook_decisions/{id}/appeal");
+  await publishedRefused(editor);
+  const appeal = screen.getByRole("button", { name: "Appeal" });
+  expect(pressable(editor.publish)).toBe(true);
+
+  await editor.user.click(appeal);
+  const dialog = await screen.findByRole("alertdialog", { name: "Appeal this refusal?" });
+  await editor.user.click(within(dialog).getByRole("button", { name: "Send appeal" }));
+
+  await waitFor(() => {
+    expect(sent.seen).toHaveLength(1);
+  });
+  expect(sent.seen.map((request) => [request.url.pathname.split("/").at(-2), request.body])).toEqual([
+    [decision, { status_text: "Flour and **water**." }],
+  ]);
+  await waitFor(() => {
+    expect(pressable(editor.publish)).toBe(false);
+  });
+  expect(screen.queryAllByRole("button", { name: "Appeal" })).toHaveLength(0);
+  expect(editor.left).toEqual([]);
+});
+
+test("an article whose appeal was reviewed and the refusal kept holds Publish back, with no Appeal", async () => {
+  const editor = await writing({}, (fake) => {
+    refuseByReview(fake);
+    fake.script("GET /hook_decisions/{id}/appeal", {
+      change: (made) => ({ ...made, state: "upheld" as const, decided_at: "2026-03-09T12:00:00.000Z" }),
+    });
+  });
+  const elsewhere = createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: (r) => editor.fake.serve(r) });
+  const { error } = await elsewhere.POST("/hook_decisions/{id}/appeal", {
+    params: { path: { id: decision } },
+    body: { status_text: "Flour and **water**." },
+  });
+  if (error !== undefined) throw new Error("test: the fake refused the appeal");
+
+  await editor.user.type(editor.title, "A starter in a jar");
+  await write(editor, "Flour and **water**.");
+  await editor.user.click(editor.publish);
+
+  await waitFor(() => {
+    expect(pressable(editor.publish)).toBe(false);
+  });
+  expect(alerts()).toEqual([
+    "This article was not published. A moderator reviewed your appeal and kept the refusal. Change the article and try again.",
+  ]);
+  expect(screen.queryAllByRole("button", { name: "Appeal" })).toHaveLength(0);
   expect(editor.left).toEqual([]);
 });
 

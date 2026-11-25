@@ -817,7 +817,7 @@
   },
   "compose.refused.appeal": {
     "defaultMessage": "Appeal",
-    "description": "The action after the error of a post that this server's automated review refused, in the composer (the server's sentence ends with: If you think this is a mistake, you can appeal). It opens the confirmation compose.refused.appeal.title."
+    "description": "The action after the error of a post or an article that this server's automated review refused, in the composer and in the article editor (the server's sentence ends with: If you think this is a mistake, you can appeal). It opens the confirmation compose.refused.appeal.title."
   },
   "compose.refused.reviewed": {
     "defaultMessage": "This post was not published: this server's automated review did not accept it.",
@@ -825,11 +825,11 @@
   },
   "compose.refused.appeal.title": {
     "defaultMessage": "Appeal this refusal?",
-    "description": "The question of the confirmation before the reader appeals the refusal of their post by this server's automated review, in the composer."
+    "description": "The question of the confirmation before the reader appeals the refusal of their post or article by this server's automated review, in the composer and in the article editor."
   },
   "compose.refused.appeal.text": {
     "defaultMessage": "The text of your post is sent to this server's moderators, who review it. You can appeal a refusal once. This cannot be undone.",
-    "description": "The text of the confirmation compose.refused.appeal.title: what appealing sends and to whom, that a refusal is appealed once, and that it cannot be undone."
+    "description": "The text of the confirmation compose.refused.appeal.title for a post, in the composer: what appealing sends and to whom, that a refusal is appealed once, and that it cannot be undone. The optional field compose.refused.appeal.comment follows it, whose label says that what is written there goes to the moderators too."
   },
   "compose.refused.appeal.confirm": {
     "defaultMessage": "Send appeal",
@@ -839,6 +839,18 @@
     "defaultMessage": "Cancel",
     "description": "The button of the confirmation compose.refused.appeal.title that closes it without appealing."
   },
+  "compose.refused.appeal.comment": {
+    "defaultMessage": "What the moderators should know (optional)",
+    "description": "The label of the field in the confirmation compose.refused.appeal.title where the reader may write what the moderators should know about the refused post or article (why it should be let through). It may stay empty; what is written is sent with the appeal."
+  },
+  "compose.refused.appeal.comment.hint": {
+    "defaultMessage": "Up to {max, number} characters.",
+    "description": "The hint under the label compose.refused.appeal.comment. max is the most characters the server takes (2000)."
+  },
+  "compose.refused.appeal.comment.over": {
+    "defaultMessage": "Shorten what you wrote to {max, number} characters or fewer.",
+    "description": "The error under the field compose.refused.appeal.comment when what the reader wrote is longer than the server takes, as they press Send appeal: nothing is sent. max is the most characters (2000)."
+  },
   "compose.refused.appeal.state": {
     "defaultMessage": "{state, select, pending {This post was not published. Your appeal was sent, and you will be notified of the result. If the moderators lift the refusal, post it again. To keep it until then, save it as a draft.} upheld {This post was not published. A moderator reviewed your appeal and kept the refusal. Change the post and try again.} overturned {A moderator reviewed your appeal and lifted the refusal. Post again.} other {This post was not published. You appealed the refusal.}}",
     "description": "In place of the error of a post that this server's automated review refused, in the composer, once the reader appealed the refusal: where the appeal stands. state is pending (sent, waiting for the moderators: Post is disabled until the post is changed; the server keeps no refused post, so the reader posts it again once the refusal is lifted, and keeps it meanwhile with Save as draft, compose.drafts.save), upheld (the refusal stays; Post is disabled until the post is changed), or overturned (the moderators cancelled the refusal: Post, right after this sentence, posts it again)."
@@ -846,5 +858,21 @@
   "compose.refused.appeal.failed": {
     "defaultMessage": "{reason, select, appealed {You have already appealed this refusal, and a refusal can be appealed once. Wait for the notification of the result.} closed {The time to appeal this refusal has passed. Change the post and try again.} not_appealable {This refusal can no longer be appealed. Change the post and try again.} text {This post has no text to send to the moderators, so it cannot be appealed. Change the post and try again.} other {The appeal could not be sent. Check your connection and try again.}}",
     "description": "In place of the error of a post that this server's automated review refused, in the composer, when the appeal the reader sent was not taken. reason is appealed (appealed already), closed (the last moment to appeal has passed), not_appealable (the refusal cannot be appealed, or is not kept any more), text (the post has no text, which an appeal must carry), or other (the server could not be reached)."
+  },
+  "compose.article.refused.reviewed": {
+    "defaultMessage": "This article was not published: this server's automated review did not accept it.",
+    "description": "The error of an article that this server's automated review refused, in the article editor, where the app offers the appeal: the action Appeal follows it on the same line (compose.refused.appeal), so the sentence does not say that the reader can appeal. The article's counterpart of compose.refused.reviewed."
+  },
+  "compose.article.refused.appeal.text": {
+    "defaultMessage": "The body of your article is sent to this server's moderators, who review it. You can appeal a refusal once. This cannot be undone.",
+    "description": "The text of the confirmation compose.refused.appeal.title for an article, in the article editor: what appealing sends (the article's body, not its title or summary) and to whom, that a refusal is appealed once, and that it cannot be undone. The article's counterpart of compose.refused.appeal.text."
+  },
+  "compose.article.refused.appeal.state": {
+    "defaultMessage": "{state, select, pending {This article was not published. Your appeal was sent, and you will be notified of the result. If the moderators lift the refusal, publish it again. To keep it until then, save it as a draft.} upheld {This article was not published. A moderator reviewed your appeal and kept the refusal. Change the article and try again.} overturned {A moderator reviewed your appeal and lifted the refusal. Publish again.} other {This article was not published. You appealed the refusal.}}",
+    "description": "In place of the error of an article that this server's automated review refused, in the article editor, once the reader appealed the refusal: where the appeal stands. state is pending (sent, waiting for the moderators: Publish is disabled until the article is changed; the server keeps no refused article, so the reader publishes it again once the refusal is lifted, and keeps it meanwhile with Save as draft, compose.drafts.save), upheld (the refusal stays; Publish is disabled until the article is changed), or overturned (the moderators cancelled the refusal: Publish, right after this sentence, publishes it again). The article's counterpart of compose.refused.appeal.state."
+  },
+  "compose.article.refused.appeal.failed": {
+    "defaultMessage": "{reason, select, appealed {You have already appealed this refusal, and a refusal can be appealed once. Wait for the notification of the result.} closed {The time to appeal this refusal has passed. Change the article and try again.} not_appealable {This refusal can no longer be appealed. Change the article and try again.} text {This article has no body to send to the moderators, so it cannot be appealed. Change the article and try again.} other {The appeal could not be sent. Check your connection and try again.}}",
+    "description": "In place of the error of an article that this server's automated review refused, in the article editor, when the appeal the reader sent was not taken. reason is appealed (appealed already), closed (the last moment to appeal has passed), not_appealable (the refusal cannot be appealed, or is not kept any more), text (the article has no body, which an appeal must carry), or other (the server could not be reached). The article's counterpart of compose.refused.appeal.failed."
   }
 }
