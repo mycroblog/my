@@ -493,6 +493,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.voice.sfu.ticket_refusals` | Counter | `my.voice.sfu.reason` (`invalid` for an expired, used or unknown ticket, `other_node` for a ticket of another node) |
 | `my.voice.sfu.client.rtt` | Histogram, seconds | None (the round-trip time to the participants, from their RTCP reports) |
 | `my.voice.sfu.client.packet_loss` | Histogram, percent | None (the loss on the way to the participants, from their RTCP reports) |
+| `my.voice.sfu.offer.wait` | Histogram, seconds | None (the time from a participant's join to the media node's first offer) |
 | `my.errors.exported` | Counter | `my.outcome` (`success` / `dropped` / `failed`: one per error report for the service of `errors_exporter`. `dropped` means the report was not sent because 1,000 reports were already waiting or the service asked the server to slow down, and the server waits as long as the service asks before sending again; `failed` means the service could not be reached or refused the report. A report is sent once and never retried, and the reports still waiting 2 seconds into a shutdown are lost) |
 | `my.queue.ready` | Gauge | `my.job.type` (the number of runnable jobs in the database queue) |
 | `my.queue.oldest_ready_age` | Gauge, seconds | `my.job.type` (how long the oldest runnable job of each type in the database queue has waited; a type with no runnable job has no value) |

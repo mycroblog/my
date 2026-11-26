@@ -203,10 +203,10 @@ goroutine stacks on top of the rest of the process.
 | What | CPU | Memory |
 | --- | --- | --- |
 | An idle node | none measurable | about 0.1 MiB |
-| Each open room | none measurable | about 24 KiB |
-| Each participant | about 0.0002 cores while silent | about 200 KiB |
-| Each forwarded stream (a speaker heard by one participant) | 20 to 27 µs per packet, about 0.001 cores | about 24 KiB |
-| A room of 100 with 3 speakers making sound | about 0.3 cores | about 25 MiB |
+| Each open room | none measurable | under about 25 KiB |
+| Each participant | about 0.0002 cores while silent | about 180 KiB |
+| Each forwarded stream (a speaker heard by one participant) | 18 to 27 µs per packet, about 0.001 cores | under about 25 KiB |
+| A room of 100 with 3 speakers making sound | about 0.3 cores | about 23 MiB |
 
 A faster or slower machine scales these figures; a node's own metrics ([Metrics to watch](#metrics-to-watch)) show
 what it carries.
@@ -265,6 +265,7 @@ Every node exports its own `my.voice.sfu.*` metrics ([Metrics](running.md#metric
 | `my.voice.sfu.packets` by `my.outcome` | `forwarded` is the node's work. `silent` and `not_allowed` (a participant who may not speak or is muted) are dropped by design. `queue_full` means a participant's connection could not keep up: a slow client when it is a few, a node short of CPU or bandwidth when it rises for every client at once. |
 | `my.voice.sfu.bytes` | The audio forwarded: the node's outbound bandwidth. |
 | `my.voice.sfu.client.rtt`, `my.voice.sfu.client.packet_loss` | The quality on the way to the participants. High for most clients points at the node's network or location; for a few, at their own networks. |
+| `my.voice.sfu.offer.wait` | How long a joining participant waits for the node's first offer: milliseconds on a node with CPU to spare; seconds mean joins wait on a busy node. |
 | `my.voice.sfu.migrations`, `my.voice.sfu.ice_restarts`, `my.voice.sfu.renegotiations` | Rooms moved by a drain, clients that changed networks, and changes of speakers. |
 | `my.voice.sfu.ticket_refusals` by `my.voice.sfu.reason` | An `other_node` that keeps rising means clients reach another node than the one of their grant: check that each node's `voice_sfu_public_url` leads to that node. |
 
