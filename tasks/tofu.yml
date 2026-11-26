@@ -56,8 +56,14 @@ tasks:
     cmds:
       - scripts/tofu-coverage.sh
 
+  # validate and test both need it, and run in one job of the slow suite: it runs again only when a configuration, a
+  # test, or the version of tofu changed, or the plugin cache is gone.
   init:
     internal: true
+    run: once
+    sources: ["deploy/opentofu/**/*.tf", "deploy/opentofu/**/*.tftest.hcl", .tool-versions]
+    status:
+      - test -d "$TF_PLUGIN_CACHE_DIR"
     cmds:
       - mkdir -p "$TF_PLUGIN_CACHE_DIR"
       - for: { var: TOFU_DIRS, as: DIR }
