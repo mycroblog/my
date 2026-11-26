@@ -5,12 +5,10 @@
 // When a test ends it attaches what the probe heard, by the HTML entry of each document, as `ux-runs`, which the
 // reporter (reporter.ts) adds up. A scenario is a test; its title names it in the report.
 
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Manifest } from "../src/ux/bundle";
 import { entryOfScripts, runsOf, type EntryOf, type Sample } from "../src/ux/measures";
 import { probeBinding } from "../src/ux/probe";
-import { buildDir, cpuThrottling } from "./lab";
+import { buildManifest, cpuThrottling } from "./lab";
 import { test as base } from "../specs/test";
 
 export { expect, person } from "../specs/test";
@@ -37,7 +35,7 @@ function probe(): Promise<string> {
 let entries: EntryOf | undefined;
 
 function entryOf(): EntryOf {
-  entries ??= entryOfScripts(JSON.parse(readFileSync(join(buildDir, ".vite/manifest.json"), "utf8")) as Manifest);
+  entries ??= entryOfScripts(buildManifest());
   return entries;
 }
 
