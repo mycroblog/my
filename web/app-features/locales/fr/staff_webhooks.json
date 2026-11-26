@@ -1,0 +1,386 @@
+{
+  "staff_webhooks.entry": {
+    "defaultMessage": "Webhooks",
+    "description": "The name of the screen of the webhooks that send the server's events to other services, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_webhooks.loading": {
+    "defaultMessage": "Chargement des webhooks…",
+    "description": "At /admin/webhooks while the webhooks are read. Read by administrators."
+  },
+  "staff_webhooks.failed": {
+    "defaultMessage": "Impossible de charger les webhooks.",
+    "description": "At /admin/webhooks when the webhooks could not be read, before Try again. Read by administrators."
+  },
+  "staff_webhooks.one.loading": {
+    "defaultMessage": "Chargement du webhook…",
+    "description": "At /admin/webhooks/{id} while the webhook is read. Read by administrators."
+  },
+  "staff_webhooks.one.failed": {
+    "defaultMessage": "Impossible de charger le webhook.",
+    "description": "At /admin/webhooks/{id} when the webhook could not be read, before Try again. Read by administrators."
+  },
+  "staff_webhooks.missing": {
+    "defaultMessage": "Il n’y a aucun webhook à cette adresse. Il a peut-être été supprimé.",
+    "description": "At /admin/webhooks/{id} for an ID that names no webhook, before the link to all webhooks. Read by administrators."
+  },
+  "staff_webhooks.all": {
+    "defaultMessage": "Tous les webhooks",
+    "description": "The link to /admin/webhooks under the sentence that an address names no webhook. Read by administrators."
+  },
+  "staff_webhooks.list.count": {
+    "defaultMessage": "{count, plural, one {# webhook} other {# webhooks}}",
+    "description": "The heading of the list of webhooks at /admin/webhooks: how many there are. Read by administrators."
+  },
+  "staff_webhooks.add": {
+    "defaultMessage": "Configurer un webhook",
+    "description": "The button that opens the form of a new webhook, at the end of the webhooks' heading or under the sentence that there is none. Read by administrators."
+  },
+  "staff_webhooks.empty": {
+    "defaultMessage": "Aucun webhook pour l’instant. Configurez-en un pour envoyer les événements du serveur à un autre service.",
+    "description": "In the list of webhooks while there is none, over Set up a webhook. Read by administrators."
+  },
+  "staff_webhooks.row.events": {
+    "defaultMessage": "{count, plural, one {# événement} other {# événements}}",
+    "description": "A fact of a webhook in the list: how many kinds of events it receives. Read by administrators."
+  },
+  "staff_webhooks.state.on": {
+    "defaultMessage": "Activé",
+    "description": "At the end of a webhook's row: it receives its events. Read by administrators."
+  },
+  "staff_webhooks.state.off": {
+    "defaultMessage": "Désactivé",
+    "description": "At the end of a webhook's row: it receives nothing. Read by administrators."
+  },
+  "staff_webhooks.state.failing": {
+    "defaultMessage": "En échec",
+    "description": "The state of a webhook in the list of webhooks while its deliveries keep failing; it is still on. Read by administrators."
+  },
+  "staff_webhooks.state.server_off": {
+    "defaultMessage": "Désactivé par le serveur",
+    "description": "The state of a webhook in the list of webhooks that the server turned off, after its deliveries kept failing or its address answered that it is gone. Read by administrators."
+  },
+  "staff_webhooks.standing.failing": {
+    "defaultMessage": "{count, plural, one {# envoi a échoué} other {# envois ont échoué de suite}} depuis {since}",
+    "description": "Where a webhook that is on stands, in its row: how many attempts failed in a row and since when (a date and time). Read by administrators."
+  },
+  "staff_webhooks.standing.failing_off": {
+    "defaultMessage": "Désactivé par le serveur : ses envois n’ont cessé d’échouer",
+    "description": "Where a webhook stands, in its row, after the server turned it off for deliveries that failed for 72 hours and 20 attempts. Read by administrators."
+  },
+  "staff_webhooks.standing.gone": {
+    "defaultMessage": "Désactivé par le serveur : son adresse a répondu qu’elle n’existe plus",
+    "description": "Where a webhook stands, in its row, after the server turned it off because its address answered 410 Gone. Read by administrators."
+  },
+  "staff_webhooks.new": {
+    "defaultMessage": "Nouveau webhook",
+    "description": "The title of the form of a new webhook, at /admin/webhooks/new. Read by administrators."
+  },
+  "staff_webhooks.create": {
+    "defaultMessage": "Configurer",
+    "description": "The button of the submit bar of a new webhook's form. Read by administrators."
+  },
+  "staff_webhooks.save": {
+    "defaultMessage": "Enregistrer",
+    "description": "The button of the submit bar of a webhook's form. Read by administrators."
+  },
+  "staff_webhooks.endpoint": {
+    "defaultMessage": "Où il publie",
+    "description": "The heading of the section of a webhook's address and description. Read by administrators."
+  },
+  "staff_webhooks.url": {
+    "defaultMessage": "Adresse",
+    "description": "The field of the URL a webhook posts its messages to, and the name of that fact on a webhook's page. Read by administrators."
+  },
+  "staff_webhooks.url.rule": {
+    "defaultMessage": "Une adresse qui commence par https:// ou http://, sans nom d’utilisateur ni partie après #, de 2048 octets au plus.",
+    "description": "Under the address of a webhook: the rule its value follows, also when it was refused. Read by administrators."
+  },
+  "staff_webhooks.description": {
+    "defaultMessage": "À quoi il sert",
+    "description": "The field of a webhook's description, optional. Read by administrators."
+  },
+  "staff_webhooks.description.rule": {
+    "defaultMessage": "Écrivez jusqu’à {max} caractères sur une ligne.",
+    "description": "Under the description of a webhook when it is too long or has a control character. Read by administrators."
+  },
+  "staff_webhooks.group": {
+    "defaultMessage": "{group, select, reports {Signalements} accounts {Comptes et inscriptions} domains {Autres serveurs} posts {Publications} emoji {Émojis personnalisés} errors {Erreurs} other {{group}}}",
+    "description": "The heading of a group of events a webhook may receive, a checkbox each. Read by administrators."
+  },
+  "staff_webhooks.event": {
+    "defaultMessage": "{event, select, report_created {Un signalement est déposé} report_resolved {Un signalement est résolu} report_reopened {Un signalement est rouvert} registration_pending {Une inscription attend une approbation} account_created {Un compte est créé} account_updated {Un compte local modifie son profil} moderation_action_created {Un compte est modéré} moderation_action_lifted {La modération d’un compte est levée} appeal_created {Une contestation est déposée} domain_moderation_action_created {Un serveur est modéré} domain_moderation_action_lifted {La modération d’un serveur est levée} status_created {Un compte local publie en public} custom_emoji_created {Un émoji personnalisé est ajouté} custom_emoji_updated {Un émoji personnalisé change} custom_emoji_deleted {Un émoji personnalisé est supprimé} error_group_created {Une nouvelle erreur se produit} error_group_regressed {Une erreur résolue se reproduit} webhook_test {Message de test} other {{event}}}",
+    "description": "An event a webhook may receive, as a checkbox of its form and as a delivery's name in its history; webhook_test is the test message. Read by administrators."
+  },
+  "staff_webhooks.events.none": {
+    "defaultMessage": "Choisissez au moins un événement.",
+    "description": "Under the first event of a webhook's form when none is chosen. Read by administrators."
+  },
+  "staff_webhooks.events.missing": {
+    "defaultMessage": "Vos rôles n’autorisent plus les événements qui demandent {names}. Annulez vos modifications à leur sujet et enregistrez de nouveau.",
+    "description": "Under the first event of a webhook's form when the server refused events whose permissions (a list) the reader no longer holds. Read by administrators."
+  },
+  "staff_webhooks.save.refused": {
+    "defaultMessage": "Rien n’a été enregistré. Corrigez ce qui est signalé et enregistrez de nouveau.",
+    "description": "Beside Save when the server or the form refused a field of a webhook, which is marked under it. Read by administrators."
+  },
+  "staff_webhooks.save.failed": {
+    "defaultMessage": "Rien n’a été enregistré. Vérifiez votre connexion et réessayez.",
+    "description": "Beside Save of a webhook's form when the save failed with no field named. Read by administrators."
+  },
+  "staff_webhooks.save.forbidden": {
+    "defaultMessage": "Vos rôles ne vous le permettent plus. Rechargez la page pour voir ce que vous pouvez faire.",
+    "description": "Beside Save of a webhook's form when the server refused the reader (403). Read by administrators."
+  },
+  "staff_webhooks.secret": {
+    "defaultMessage": "Secret",
+    "description": "The heading of the section of a webhook's secret shown once, and the name of the value to copy. Read by administrators."
+  },
+  "staff_webhooks.secret.once": {
+    "defaultMessage": "Il n’est affiché que maintenant. Copiez-le dans le service qui reçoit les messages : il s’en sert pour vérifier leurs signatures.",
+    "description": "Right over a webhook's secret shown once. Read by administrators."
+  },
+  "staff_webhooks.secret.copy": {
+    "defaultMessage": "Copier le secret",
+    "description": "The button that copies a webhook's secret shown once. Read by administrators."
+  },
+  "staff_webhooks.secret.created": {
+    "defaultMessage": "Le webhook est configuré",
+    "description": "The title of the view that takes the form's place once a new webhook was set up, over its secret. Read by administrators."
+  },
+  "staff_webhooks.secret.rotated": {
+    "defaultMessage": "Le webhook a un nouveau secret",
+    "description": "The title of the view that takes the place of the new-secret section once a new secret was made. Read by administrators."
+  },
+  "staff_webhooks.secret.done": {
+    "defaultMessage": "Terminé",
+    "description": "The button after a secret shown once, which leaves it: to the new webhook's page, or back to the webhook's page as it was. Read by administrators."
+  },
+  "staff_webhooks.summary.on": {
+    "defaultMessage": "Activé",
+    "description": "The title of a webhook's summary while it receives its events and its last delivery worked. Read by administrators."
+  },
+  "staff_webhooks.summary.on.about": {
+    "defaultMessage": "{count, plural, one {Il reçoit # type d’événement.} other {Il reçoit # types d’événements.}}",
+    "description": "Under On, the summary of a webhook that is on and works: how many kinds of events it receives. Read by administrators."
+  },
+  "staff_webhooks.summary.failing": {
+    "defaultMessage": "Ses envois échouent",
+    "description": "The title of a webhook's summary while it is on and its last attempts failed. Read by administrators."
+  },
+  "staff_webhooks.summary.failing.about": {
+    "defaultMessage": "{count, plural, one {# tentative a échoué} other {# tentatives de suite ont échoué}} depuis {since}. Le serveur désactive le webhook après 20 échecs de suite sur 72 heures ou plus.",
+    "description": "Under the title that a webhook's deliveries are failing: how many attempts, since when (a date and time), and when the server turns it off. Read by administrators."
+  },
+  "staff_webhooks.summary.off": {
+    "defaultMessage": "Désactivé",
+    "description": "The title of a webhook's summary after an administrator turned it off. Read by administrators."
+  },
+  "staff_webhooks.summary.off.about": {
+    "defaultMessage": "Il ne reçoit rien tant qu’il n’est pas réactivé. Ce qui se passe entre-temps n’est pas envoyé plus tard.",
+    "description": "Under the title that a webhook is off. Read by administrators."
+  },
+  "staff_webhooks.summary.failing_off": {
+    "defaultMessage": "Désactivé par le serveur",
+    "description": "The title of a webhook's summary after the server turned it off for deliveries that kept failing. Read by administrators."
+  },
+  "staff_webhooks.summary.failing_off.about": {
+    "defaultMessage": "Ses envois ont échoué pendant 72 heures et 20 tentatives de suite. Réactivez-le quand son adresse fonctionne de nouveau.",
+    "description": "Under the title that the server turned a webhook off for failing deliveries. Read by administrators."
+  },
+  "staff_webhooks.summary.gone": {
+    "defaultMessage": "Désactivé par le serveur",
+    "description": "The title of a webhook's summary after the server turned it off because its address answered 410 Gone. Read by administrators."
+  },
+  "staff_webhooks.summary.gone.about": {
+    "defaultMessage": "Son adresse a répondu qu’elle n’existe plus (410). Changez l’adresse, ou réactivez-le si elle fonctionne de nouveau.",
+    "description": "Under the title that the server turned a webhook off because its address said it is gone. Read by administrators."
+  },
+  "staff_webhooks.test": {
+    "defaultMessage": "Envoyer un test",
+    "description": "The button that sends a test message to a webhook that is on. Read by administrators."
+  },
+  "staff_webhooks.test.sent": {
+    "defaultMessage": "Un message de test est en route. Il apparaît dans les envois.",
+    "description": "Beside Send a test once the server took the test message. Read by administrators."
+  },
+  "staff_webhooks.test.failed": {
+    "defaultMessage": "Le test n’a pas été envoyé. Vérifiez votre connexion et réessayez.",
+    "description": "Beside Send a test when the server did not take it. Read by administrators."
+  },
+  "staff_webhooks.turn_off": {
+    "defaultMessage": "Désactiver",
+    "description": "The button that turns a webhook off. Read by administrators."
+  },
+  "staff_webhooks.turn_on": {
+    "defaultMessage": "Activer",
+    "description": "The button that turns a webhook on. Read by administrators."
+  },
+  "staff_webhooks.turned_off": {
+    "defaultMessage": "Le webhook est désactivé.",
+    "description": "Beside the summary's buttons once a webhook was turned off. Read by administrators."
+  },
+  "staff_webhooks.turned_on": {
+    "defaultMessage": "Le webhook est activé.",
+    "description": "Beside the summary's buttons once a webhook was turned on. Read by administrators."
+  },
+  "staff_webhooks.switch.failed": {
+    "defaultMessage": "Rien n’a changé. Vérifiez votre connexion et réessayez.",
+    "description": "Beside the summary's buttons when turning a webhook on or off failed. Read by administrators."
+  },
+  "staff_webhooks.facts": {
+    "defaultMessage": "Webhook",
+    "description": "The heading of the section of what a webhook is: its address and dates. Read by administrators."
+  },
+  "staff_webhooks.facts.created": {
+    "defaultMessage": "Configuré",
+    "description": "The name of the fact of when a webhook was set up, over the date and time. Read by administrators."
+  },
+  "staff_webhooks.facts.revised": {
+    "defaultMessage": "Dernière modification",
+    "description": "The name of the fact of when a webhook's address, description or events last changed, over the date and time. Read by administrators."
+  },
+  "staff_webhooks.deliveries": {
+    "defaultMessage": "Envois",
+    "description": "The heading of the section of a webhook's deliveries of the last 14 days. Read by administrators."
+  },
+  "staff_webhooks.deliveries.loading": {
+    "defaultMessage": "Chargement des envois…",
+    "description": "In the section of a webhook's deliveries while they are read. Read by administrators."
+  },
+  "staff_webhooks.deliveries.failed": {
+    "defaultMessage": "Impossible de charger les envois.",
+    "description": "In the section of a webhook's deliveries when they could not be read, before Try again. Read by administrators."
+  },
+  "staff_webhooks.deliveries.empty": {
+    "defaultMessage": "Rien n’a été envoyé ces 14 derniers jours.",
+    "description": "In the section of a webhook's deliveries while there is none. Read by administrators."
+  },
+  "staff_webhooks.delivery.attempts": {
+    "defaultMessage": "{count, plural, =0 {Pas encore envoyé} one {# tentative} other {# tentatives}}",
+    "description": "A fact of a delivery: how many times it was sent. Read by administrators."
+  },
+  "staff_webhooks.delivery.attempt": {
+    "defaultMessage": "{outcome, select, succeeded {Réponse {code}} http_error {Réponse {code}} timeout {Aucune réponse en 15 secondes} connection_error {Connexion impossible} forbidden_destination {Ce serveur n’est pas autorisé à se connecter à cette adresse} other {{outcome}}} à {at}",
+    "description": "A fact of a delivery: what its last attempt got (an HTTP status code, or why it got none) and when (a date and time). Read by administrators."
+  },
+  "staff_webhooks.delivery.status": {
+    "defaultMessage": "{status, select, pending {En attente} succeeded {Remis} failing {En échec} other {{status}}}",
+    "description": "At the end of a delivery's row: where it stands. Read by administrators."
+  },
+  "staff_webhooks.delivery.redeliver": {
+    "defaultMessage": "Renvoyer",
+    "description": "The button of a delivery that sends its message again. Read by administrators."
+  },
+  "staff_webhooks.delivery.again": {
+    "defaultMessage": "Il sera renvoyé bientôt.",
+    "description": "The last line of a delivery's row once the server took Send again. Read by administrators."
+  },
+  "staff_webhooks.delivery.again_failed": {
+    "defaultMessage": "Il n’a pas été renvoyé. Vérifiez votre connexion et réessayez.",
+    "description": "The last line of a delivery's row when Send again failed. Read by administrators."
+  },
+  "staff_webhooks.delivery.body": {
+    "defaultMessage": "Ce qui a été envoyé",
+    "description": "Over the body of the request a delivery sent (a JSON document), folded under its row until shown; also the name of the block that holds it. Read by administrators."
+  },
+  "staff_webhooks.delivery.body_copy": {
+    "defaultMessage": "Copier ce qui a été envoyé",
+    "description": "The button under the body of the request a delivery sent, which copies it. Read by administrators."
+  },
+  "staff_webhooks.delivery.body_withheld": {
+    "defaultMessage": "Ce qui a été envoyé n’est montré qu’à une personne ayant la permission qu’exige son événement.",
+    "description": "Under a delivery's row, in place of the body of its request, for a reader who lacks the permission its event needs (a report's: Handle reports). Read by administrators."
+  },
+  "staff_webhooks.rotate": {
+    "defaultMessage": "Nouveau secret",
+    "description": "The heading of the section of a webhook's page that makes a new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.about": {
+    "defaultMessage": "Pendant 24 heures après la création d’un nouveau secret, l’ancien signe aussi les messages.",
+    "description": "Under the heading of the section that makes a webhook's new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.press": {
+    "defaultMessage": "Créer un nouveau secret",
+    "description": "The button that makes a webhook's new secret, and the confirmation of its question. Read by administrators."
+  },
+  "staff_webhooks.rotate.title": {
+    "defaultMessage": "Créer un nouveau secret ?",
+    "description": "The question before making a webhook's new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.text": {
+    "defaultMessage": "Le nouveau secret n’est affiché qu’une fois. Après 24 heures, lui seul signe les messages : mettez à jour le service récepteur avant.",
+    "description": "Under the question before making a webhook's new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.cancel": {
+    "defaultMessage": "Garder le secret",
+    "description": "The button that closes the question before making a new secret, keeping the current one. Read by administrators."
+  },
+  "staff_webhooks.rotate.failed": {
+    "defaultMessage": "Aucun nouveau secret n’a été créé. Vérifiez votre connexion et réessayez.",
+    "description": "In the section that makes a webhook's new secret when it failed. Read by administrators."
+  },
+  "staff_webhooks.delete": {
+    "defaultMessage": "Supprimer le webhook",
+    "description": "The heading of the last section of a webhook's page, apart, which deletes it. Read by administrators."
+  },
+  "staff_webhooks.delete.about": {
+    "defaultMessage": "Il ne reçoit plus rien, et ses envois ne sont plus listés.",
+    "description": "Under the heading of the section that deletes a webhook. Read by administrators."
+  },
+  "staff_webhooks.delete.press": {
+    "defaultMessage": "Supprimer",
+    "description": "The button that deletes a webhook, and the confirmation of its question. Read by administrators."
+  },
+  "staff_webhooks.delete.title": {
+    "defaultMessage": "Supprimer le webhook vers {host} ?",
+    "description": "The question before deleting a webhook, named by its address's host. Read by administrators."
+  },
+  "staff_webhooks.delete.text": {
+    "defaultMessage": "Le webhook et ses envois sont supprimés définitivement. Saisissez son hôte pour le supprimer.",
+    "description": "Under the question before deleting a webhook, over the field of its host to type. Read by administrators."
+  },
+  "staff_webhooks.delete.cancel": {
+    "defaultMessage": "Garder le webhook",
+    "description": "The button that closes the question before deleting a webhook, keeping it. Read by administrators."
+  },
+  "staff_webhooks.delete.failed": {
+    "defaultMessage": "Le webhook n’a pas été supprimé. Vérifiez votre connexion et réessayez.",
+    "description": "In the section that deletes a webhook when the deletion failed. Read by administrators."
+  },
+  "staff_webhooks.irreversible": {
+    "defaultMessage": "Cette action est irréversible.",
+    "description": "The mark beside the button that deletes a webhook. Read by administrators."
+  },
+  "staff_webhooks.locked.events": {
+    "defaultMessage": "Événements",
+    "description": "On the page of a webhook the reader cannot change, the name over the list of the events it receives. Read by administrators."
+  },
+  "staff_webhooks.locked": {
+    "defaultMessage": "Il reçoit des événements que vos rôles ne vous permettent pas de modifier : seule une personne autorisée à tous les gérer peut le modifier. Vous pouvez toujours le tester, le désactiver et le réactiver, lui donner un nouveau secret ou le supprimer.",
+    "description": "On the page of a webhook that receives an event whose permission the reader lacks, in the place of its form: why it cannot be changed, and what the reader may still do. Read by administrators."
+  },
+  "staff_webhooks.column.host": {
+    "defaultMessage": "Adresse",
+    "description": "The heading of the column of the webhooks' hosts in the list of webhooks. Read by administrators."
+  },
+  "staff_webhooks.column.events": {
+    "defaultMessage": "Événements",
+    "description": "The heading of the column of how many events each webhook receives, in the list of webhooks. Read by administrators."
+  },
+  "staff_webhooks.column.state": {
+    "defaultMessage": "État",
+    "description": "The heading of the column of where a webhook or a delivery stands, in the list of webhooks and of deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.event": {
+    "defaultMessage": "Événement",
+    "description": "The heading of the column of the deliveries' events, in a webhook's deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.attempt": {
+    "defaultMessage": "Tentatives",
+    "description": "The heading of the column of a delivery's attempts and the last one's outcome, in a webhook's deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.redeliver": {
+    "defaultMessage": "Renvoyer",
+    "description": "The heading of the column of the Send again buttons, in a webhook's deliveries. Read by administrators."
+  }
+}

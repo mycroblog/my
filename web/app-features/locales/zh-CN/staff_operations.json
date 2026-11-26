@@ -1,0 +1,634 @@
+{
+  "staff_operations.group.operations": {
+    "defaultMessage": "运维",
+    "description": "The heading of the group of administration screens about running the server at /admin: the job queue, the errors reported and the UX measurements. Read by administrators."
+  },
+  "staff_operations.entry.jobs": {
+    "defaultMessage": "任务",
+    "description": "The name of the screen of the job queue, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.entry.error_groups": {
+    "defaultMessage": "错误",
+    "description": "The name of the screen of the error groups, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.entry.error_groups.count": {
+    "defaultMessage": "{count, plural, other {# 个未解决的错误}}",
+    "description": "For assistive technology, what the badge at the end of Errors in the list at /admin counts: the error groups that are new, came back after being resolved, or were unmuted. Read by administrators."
+  },
+  "staff_operations.entry.ux_measurements": {
+    "defaultMessage": "体验测量",
+    "description": "The name of the screen of how fast the web client responds, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.entry.link_card_domains": {
+    "defaultMessage": "链接卡片域名",
+    "description": "The name of the screen of the rules of the link card crawler per domain, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.forbidden": {
+    "defaultMessage": "你的账号已无权访问此页面。",
+    "description": "In the place of an operations screen whose permission the reader's account lost meanwhile. Read by administrators."
+  },
+  "staff_operations.cancel": {
+    "defaultMessage": "取消",
+    "description": "The button that closes a question of an operations screen without doing anything. Read by administrators."
+  },
+  "staff_operations.copy.reason": {
+    "defaultMessage": "复制错误",
+    "description": "The button under why a job's run failed, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.payload": {
+    "defaultMessage": "复制载荷",
+    "description": "The button under a job's payload, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.request_id": {
+    "defaultMessage": "复制请求 ID",
+    "description": "The button under the request ID of an error's latest occurrence, which copies it to search the logs. Read by administrators."
+  },
+  "staff_operations.copy.trace_id": {
+    "defaultMessage": "复制追踪 ID",
+    "description": "The button under the trace ID of an error's latest occurrence, which copies it to search the traces. Read by administrators."
+  },
+  "staff_operations.copy.stack": {
+    "defaultMessage": "复制堆栈",
+    "description": "The button under the stack of an error's latest occurrence, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.fingerprint": {
+    "defaultMessage": "复制指纹",
+    "description": "The button after an error group's fingerprint, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.id": {
+    "defaultMessage": "复制 ID",
+    "description": "The button after a job's ID, which copies it to search the logs. Read by administrators."
+  },
+  "staff_operations.copy.idempotency_key": {
+    "defaultMessage": "复制幂等键",
+    "description": "The button after a job's idempotency key, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.ordering_key": {
+    "defaultMessage": "复制排序键",
+    "description": "The button after a job's ordering key, which copies it. Read by administrators."
+  },
+  "staff_operations.queue.loading": {
+    "defaultMessage": "正在加载任务队列…",
+    "description": "In the place of the job queue's state while it loads. Read by administrators."
+  },
+  "staff_operations.queue.failed": {
+    "defaultMessage": "无法加载任务队列。",
+    "description": "In the place of the job queue's state when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.queue.states": {
+    "defaultMessage": "按状态统计的任务",
+    "description": "For assistive technology, the figures of how many jobs are in each state at /admin/jobs. Read by administrators."
+  },
+  "staff_operations.queue.facts": {
+    "defaultMessage": "队列",
+    "description": "For assistive technology, the facts of the job queue at /admin/jobs. Read by administrators."
+  },
+  "staff_operations.queue.adapter": {
+    "defaultMessage": "队列",
+    "description": "The term of the job queue the server runs (db, inline, cloudtasks), shown as it is set. Read by administrators."
+  },
+  "staff_operations.queue.oldest": {
+    "defaultMessage": "最早到期的任务",
+    "description": "The term of the time since which the job that has waited longest for a worker has been due. Read by administrators."
+  },
+  "staff_operations.queue.types": {
+    "defaultMessage": "按类型统计的任务",
+    "description": "The heading of the table of the jobs of each type and state at /admin/jobs, and its name for assistive technology. Read by administrators."
+  },
+  "staff_operations.queue.column.waiting": {
+    "defaultMessage": "等待自",
+    "description": "The column of the table of jobs by type: since when the type has kept a due job waiting. Read by administrators."
+  },
+  "staff_operations.queue.empty": {
+    "defaultMessage": "没有排队、运行中或失败的任务。",
+    "description": "In the place of the table of jobs by type when the queue has none. Read by administrators."
+  },
+  "staff_operations.queue.unlisted": {
+    "defaultMessage": "此队列不列出等待或运行中的任务，只列出失败的任务。",
+    "description": "In the place of the figures at /admin/jobs, and of an empty list of pending jobs, for a queue that cannot list its pending jobs; Failed jobs follows. Read by administrators."
+  },
+  "staff_operations.queue.to_dead": {
+    "defaultMessage": "失败的任务",
+    "description": "The link after the line saying the queue does not list its pending jobs, to the list of failed jobs. Read by administrators."
+  },
+  "staff_operations.queue.failed_count": {
+    "defaultMessage": "{count, plural, other {# 个任务彻底失败。}}",
+    "description": "First on the job queue's screen while some jobs failed for good, before the link to them. Read by administrators."
+  },
+  "staff_operations.jobs.title": {
+    "defaultMessage": "任务列表",
+    "description": "The title of the list of jobs at /admin/jobs/list, the link to it, and the way back to it from a job. Read by administrators."
+  },
+  "staff_operations.jobs.state": {
+    "defaultMessage": "{state, select, queued {排队中} running {运行中} retrying {等待重试} dead {已失败} other {{state}}}",
+    "description": "The state of a job: not run yet, held by a worker, waiting to run again after a failure, or failed for good. Also a filter's option and a figure's label. Read by administrators."
+  },
+  "staff_operations.jobs.state.pending": {
+    "defaultMessage": "未完成",
+    "description": "The state filter's option of every job that is queued, running or waiting to retry, the list's default. Read by administrators."
+  },
+  "staff_operations.jobs.type.any": {
+    "defaultMessage": "所有类型",
+    "description": "The type filter's option of jobs of every type. Read by administrators."
+  },
+  "staff_operations.jobs.filters": {
+    "defaultMessage": "筛选任务",
+    "description": "For assistive technology, the filters over the list of jobs. Read by administrators."
+  },
+  "staff_operations.jobs.column.type": {
+    "defaultMessage": "类型",
+    "description": "The name of a job's type (federation.deliver) as the head of a table's rows, and the type filter's name. Read by administrators."
+  },
+  "staff_operations.jobs.column.state": {
+    "defaultMessage": "状态",
+    "description": "The column of a job's state, the state filter's name and the term of a job's state. Read by administrators."
+  },
+  "staff_operations.jobs.column.attempts": {
+    "defaultMessage": "尝试次数",
+    "description": "The column and the term of how many times a job has run. Read by administrators."
+  },
+  "staff_operations.jobs.column.due": {
+    "defaultMessage": "到期时间",
+    "description": "The column and the term of when a pending job is due to run. Read by administrators."
+  },
+  "staff_operations.jobs.column.failed_at": {
+    "defaultMessage": "失败时间",
+    "description": "The column and the term of when a failed job failed. Read by administrators."
+  },
+  "staff_operations.jobs.table": {
+    "defaultMessage": "任务",
+    "description": "For assistive technology, the table of jobs at /admin/jobs/list. Read by administrators."
+  },
+  "staff_operations.jobs.loading": {
+    "defaultMessage": "正在加载任务…",
+    "description": "In the place of the list of jobs while it loads. Read by administrators."
+  },
+  "staff_operations.jobs.failed": {
+    "defaultMessage": "无法加载任务。",
+    "description": "In the place of the list of jobs when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.jobs.empty": {
+    "defaultMessage": "没有排队或运行中的任务。",
+    "description": "In the place of the list of jobs when no job is pending, with no filter. Read by administrators."
+  },
+  "staff_operations.jobs.empty.filtered": {
+    "defaultMessage": "没有符合这些筛选条件的任务。",
+    "description": "In the place of the list of jobs when no job matches the filters; Clear filters is over it. Read by administrators."
+  },
+  "staff_operations.job.loading": {
+    "defaultMessage": "正在加载任务…",
+    "description": "In the place of a job's screen while it loads. Read by administrators."
+  },
+  "staff_operations.job.failed": {
+    "defaultMessage": "无法加载此任务。",
+    "description": "In the place of a job's screen when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.job.missing": {
+    "defaultMessage": "队列中没有此任务：它已完成或已被删除。",
+    "description": "In the place of a job's screen when the server has no such job, before the link to the list. Read by administrators."
+  },
+  "staff_operations.job.facts": {
+    "defaultMessage": "任务",
+    "description": "For assistive technology, the facts of a job. Read by administrators."
+  },
+  "staff_operations.job.created": {
+    "defaultMessage": "创建时间",
+    "description": "The term of when a job was created. Read by administrators."
+  },
+  "staff_operations.job.worker": {
+    "defaultMessage": "Worker",
+    "description": "The term of the worker that runs a running job. Read by administrators."
+  },
+  "staff_operations.job.locked_until": {
+    "defaultMessage": "占用至",
+    "description": "The term of when the lease of a running job ends, after which another worker may run it. Read by administrators."
+  },
+  "staff_operations.job.id": {
+    "defaultMessage": "ID",
+    "description": "The term of a job's ID, as the logs name it. Read by administrators."
+  },
+  "staff_operations.job.idempotency_key": {
+    "defaultMessage": "幂等键",
+    "description": "The term of a job's idempotency key. Read by administrators."
+  },
+  "staff_operations.job.ordering_key": {
+    "defaultMessage": "排序键",
+    "description": "The term of a job's ordering key. Read by administrators."
+  },
+  "staff_operations.job.last_error": {
+    "defaultMessage": "最近的错误",
+    "description": "The heading of why a job's last run failed, and its name for assistive technology. Read by administrators."
+  },
+  "staff_operations.job.payload": {
+    "defaultMessage": "载荷",
+    "description": "The heading of a job's payload, and its name for assistive technology. Read by administrators."
+  },
+  "staff_operations.job.of_type": {
+    "defaultMessage": "{type} 的任务",
+    "description": "The link at the end of a job's screen to the list of jobs of its type; type is a job type such as federation.deliver. Read by administrators."
+  },
+  "staff_operations.job.retry": {
+    "defaultMessage": "重新运行",
+    "description": "The button of a failed job that runs it again, and the confirming button of its question. Read by administrators."
+  },
+  "staff_operations.job.retry.title": {
+    "defaultMessage": "重新运行此任务？",
+    "description": "The title of the question before a failed job runs again. Read by administrators."
+  },
+  "staff_operations.job.retry.text": {
+    "defaultMessage": "{type} 任务将从第一次尝试开始重新运行。它可能会重复失败前做过的事，例如发送消息。",
+    "description": "The text of the question before a failed job runs again; type is a job type such as notification.email. Read by administrators."
+  },
+  "staff_operations.job.retried": {
+    "defaultMessage": "已将任务加入队列，等待重新运行。",
+    "description": "What Run again did, said in the job's screen. Read by administrators."
+  },
+  "staff_operations.job.retry_failed": {
+    "defaultMessage": "未能重新运行任务。请重新加载页面后重试。",
+    "description": "What a Run again that failed says, in the job's screen. Read by administrators."
+  },
+  "staff_operations.attempts": {
+    "defaultMessage": "失败的尝试",
+    "description": "The heading of a job's runs that did not succeed, and their log's name for assistive technology. Read by administrators."
+  },
+  "staff_operations.attempts.loading": {
+    "defaultMessage": "正在加载尝试记录…",
+    "description": "In the place of a job's failed attempts while they load. Read by administrators."
+  },
+  "staff_operations.attempts.failed": {
+    "defaultMessage": "无法加载尝试记录。",
+    "description": "In the place of a job's failed attempts when they could not be loaded. Read by administrators."
+  },
+  "staff_operations.attempts.empty": {
+    "defaultMessage": "此任务没有失败的尝试。",
+    "description": "In the place of a job's failed attempts when it has none. Read by administrators."
+  },
+  "staff_operations.attempts.column.attempt": {
+    "defaultMessage": "尝试",
+    "description": "The head of the rows of the table of a job's failed attempts. Read by administrators."
+  },
+  "staff_operations.attempts.column.outcome": {
+    "defaultMessage": "结果",
+    "description": "The column of whether a failed attempt's job ran again or failed for good. Read by administrators."
+  },
+  "staff_operations.attempts.column.finished": {
+    "defaultMessage": "结束时间",
+    "description": "The column of when a failed attempt finished. Read by administrators."
+  },
+  "staff_operations.attempt.head": {
+    "defaultMessage": "第 {n} 次尝试",
+    "description": "The head of a row of a job's failed attempts: which run it was. Read by administrators."
+  },
+  "staff_operations.attempt.outcome": {
+    "defaultMessage": "{outcome, select, dead {未重试} other {已重试}}",
+    "description": "What came of a failed attempt: the job failed for good and was not retried, or was retried. Read by administrators."
+  },
+  "staff_operations.error_groups.state": {
+    "defaultMessage": "{state, select, open {未解决} resolved {已解决} muted {已静音} other {{state}}}",
+    "description": "The state of an error group: open, resolved by an administrator, or muted (it notifies nobody). Also a filter's option. Read by administrators."
+  },
+  "staff_operations.error_groups.state.any": {
+    "defaultMessage": "所有状态",
+    "description": "The state filter's option of error groups of every state. Read by administrators."
+  },
+  "staff_operations.error_groups.source": {
+    "defaultMessage": "{source, select, server {服务器} web {Web 客户端} other {{source}}}",
+    "description": "What reported the errors of a group. Also a filter's option. Read by administrators."
+  },
+  "staff_operations.error_groups.source.any": {
+    "defaultMessage": "所有来源",
+    "description": "The source filter's option of error groups of the server and of the web client. Read by administrators."
+  },
+  "staff_operations.error_groups.filters": {
+    "defaultMessage": "筛选错误",
+    "description": "For assistive technology, the filters over the list of error groups. Read by administrators."
+  },
+  "staff_operations.error_groups.column.type": {
+    "defaultMessage": "错误",
+    "description": "The name of an error's type (a Go type, a JavaScript error's name) as the head of the table's rows. Read by administrators."
+  },
+  "staff_operations.error_groups.column.state": {
+    "defaultMessage": "状态",
+    "description": "The column of an error group's state, the state filter's name and the term of its state. Read by administrators."
+  },
+  "staff_operations.error_groups.column.source": {
+    "defaultMessage": "来源",
+    "description": "The source filter's name and the term of what reported an error group. Read by administrators."
+  },
+  "staff_operations.error_groups.column.day": {
+    "defaultMessage": "最近 24 小时",
+    "description": "The column and the row of an error group's occurrences in the last 24 hours. Read by administrators."
+  },
+  "staff_operations.error_groups.column.week": {
+    "defaultMessage": "最近 7 天",
+    "description": "The column and the row of an error group's occurrences in the last 7 days. Read by administrators."
+  },
+  "staff_operations.error_groups.column.seen": {
+    "defaultMessage": "最后出现",
+    "description": "The column and the term of when an error group last happened. Read by administrators."
+  },
+  "staff_operations.error_groups.table": {
+    "defaultMessage": "错误组",
+    "description": "For assistive technology, the table of error groups at /admin/errors. Read by administrators."
+  },
+  "staff_operations.error_groups.loading": {
+    "defaultMessage": "正在加载错误…",
+    "description": "In the place of the list of error groups while it loads. Read by administrators."
+  },
+  "staff_operations.error_groups.failed": {
+    "defaultMessage": "无法加载错误。",
+    "description": "In the place of the list of error groups when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.error_groups.empty": {
+    "defaultMessage": "没有未解决的错误。",
+    "description": "In the place of the list of error groups when none is open, with no filter. Read by administrators."
+  },
+  "staff_operations.error_groups.empty.filtered": {
+    "defaultMessage": "没有符合这些筛选条件的错误。",
+    "description": "In the place of the list of error groups when none matches the filters; Clear filters is over it. Read by administrators."
+  },
+  "staff_operations.error_groups.one.loading": {
+    "defaultMessage": "正在加载错误…",
+    "description": "In the place of an error group's screen while it loads. Read by administrators."
+  },
+  "staff_operations.error_groups.one.failed": {
+    "defaultMessage": "无法加载此错误。",
+    "description": "In the place of an error group's screen when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.error_groups.missing": {
+    "defaultMessage": "此地址没有对应的错误组。",
+    "description": "In the place of an error group's screen when the server has none of its ID, before the link to the list. Read by administrators."
+  },
+  "staff_operations.error_groups.facts": {
+    "defaultMessage": "错误",
+    "description": "For assistive technology, the facts of an error group. Read by administrators."
+  },
+  "staff_operations.error_groups.since": {
+    "defaultMessage": "处于此状态自",
+    "description": "The term of when an error group entered its state. Read by administrators."
+  },
+  "staff_operations.error_groups.resolved_version": {
+    "defaultMessage": "解决于版本",
+    "description": "The term of the server's version a resolved error group was resolved with. Read by administrators."
+  },
+  "staff_operations.error_groups.kind": {
+    "defaultMessage": "类型",
+    "description": "The term of whether an error group's errors are panics or errors. Read by administrators."
+  },
+  "staff_operations.error_groups.kind.value": {
+    "defaultMessage": "{kind, select, panic {Panic} other {错误}}",
+    "description": "The kind of an error group's errors: a panic (or an uncaught error of the web client), or an error. Read by administrators."
+  },
+  "staff_operations.error_groups.where": {
+    "defaultMessage": "位置",
+    "description": "The term of where an error group's errors happened: a route, a job type, a goroutine's name. Read by administrators."
+  },
+  "staff_operations.error_groups.message": {
+    "defaultMessage": "消息",
+    "description": "The term of an error's message, scrubbed of personal data. Read by administrators."
+  },
+  "staff_operations.error_groups.first": {
+    "defaultMessage": "首次出现",
+    "description": "The term of when an error group first happened. Read by administrators."
+  },
+  "staff_operations.error_groups.fingerprint": {
+    "defaultMessage": "指纹",
+    "description": "The term of an error group's fingerprint, the same in the logs and the exporters. Read by administrators."
+  },
+  "staff_operations.error_groups.counts": {
+    "defaultMessage": "出现次数",
+    "description": "The heading of an error group's occurrences of the last 24 hours and 7 days, and their table's name for assistive technology. Read by administrators."
+  },
+  "staff_operations.error_groups.counts.period": {
+    "defaultMessage": "期间",
+    "description": "The head of the rows of the table of an error group's occurrences: a period. Read by administrators."
+  },
+  "staff_operations.error_groups.counts.count": {
+    "defaultMessage": "次数",
+    "description": "The column of how many times an error happened in a period or an hour. Read by administrators."
+  },
+  "staff_operations.error_groups.sample": {
+    "defaultMessage": "最近一次出现",
+    "description": "The heading of an error group's latest occurrence, and its facts' name for assistive technology. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.at": {
+    "defaultMessage": "发生时间",
+    "description": "The term of when an error's latest occurrence happened. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.version": {
+    "defaultMessage": "版本",
+    "description": "The term and the column of the server's version an occurrence happened on. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.role": {
+    "defaultMessage": "进程",
+    "description": "The term of the role of the server's process that reported an occurrence (all, web, worker). Read by administrators."
+  },
+  "staff_operations.error_groups.sample.type": {
+    "defaultMessage": "类型",
+    "description": "The term of the chain of an occurrence's error types, outermost first. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.request_id": {
+    "defaultMessage": "请求 ID",
+    "description": "The name of an occurrence's request ID, which the logs are searched by. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.trace_id": {
+    "defaultMessage": "追踪 ID",
+    "description": "The name of an occurrence's trace ID, which the traces are searched by. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.stack": {
+    "defaultMessage": "堆栈",
+    "description": "The name of an occurrence's stack, scrubbed. Read by administrators."
+  },
+  "staff_operations.error_groups.hours": {
+    "defaultMessage": "按小时",
+    "description": "The heading of the hours an error group happened in, the newest first, and their table's name. Read by administrators."
+  },
+  "staff_operations.error_groups.hours.hour": {
+    "defaultMessage": "小时",
+    "description": "The head of the rows of the table of an error group's hours: the hour's start. Read by administrators."
+  },
+  "staff_operations.error_groups.hours.empty": {
+    "defaultMessage": "最近 90 天没有发生。",
+    "description": "In the place of an error group's hours when it had none in the 90 days the server keeps. Read by administrators."
+  },
+  "staff_operations.error_groups.events": {
+    "defaultMessage": "历史",
+    "description": "The heading of the changes of an error group's state, the newest first, and their log's name. Read by administrators."
+  },
+  "staff_operations.error_groups.events.empty": {
+    "defaultMessage": "状态没有变化过。",
+    "description": "In the place of an error group's history when it has always been open. Read by administrators."
+  },
+  "staff_operations.error_groups.event": {
+    "defaultMessage": "{kind, select, resolved {{actor, select, cli {通过命令行标记为已解决} other {管理员标记为已解决}}} regressed {在另一个版本上再次发生} muted {{actor, select, cli {通过命令行静音} other {管理员静音}}} other {{actor, select, cli {通过命令行取消静音} other {管理员取消静音}}}}",
+    "description": "An entry of an error group's history: who changed its state, or that it happened again on another version after it was resolved. Read by administrators."
+  },
+  "staff_operations.error_groups.event.version": {
+    "defaultMessage": "版本 {version}",
+    "description": "The muted line under an entry of an error group's history: the version it names. Read by administrators."
+  },
+  "staff_operations.error_groups.act": {
+    "defaultMessage": "{act, select, resolve {标记为已解决} mute {静音} other {取消静音}}",
+    "description": "The buttons of an error group: mark it resolved, mute it, or unmute it. Read by administrators."
+  },
+  "staff_operations.error_groups.done": {
+    "defaultMessage": "{act, select, resolve {错误已标记为已解决。} mute {错误已静音。} other {错误已重新打开。}}",
+    "description": "What a button of an error group did, said in its screen. Read by administrators."
+  },
+  "staff_operations.error_groups.act_failed": {
+    "defaultMessage": "未能保存更改。请重新加载页面后重试。",
+    "description": "What a button of an error group that failed says, in its screen. Read by administrators."
+  },
+  "staff_operations.error_groups.first_version": {
+    "defaultMessage": "首次出现于版本",
+    "description": "The term of the server's version an error group first happened on. Read by administrators."
+  },
+  "staff_operations.error_groups.last_version": {
+    "defaultMessage": "最后出现于版本",
+    "description": "The term of the server's version an error group last happened on. Read by administrators."
+  },
+  "staff_operations.ux.window": {
+    "defaultMessage": "期间",
+    "description": "The heading of the choice of the period the UX measurements sum, and the choice's name. Read by administrators."
+  },
+  "staff_operations.ux.window.choice": {
+    "defaultMessage": "{hours, select, 24 {24 小时} 168 {7 天} other {30 天}}",
+    "description": "An option of the period the UX measurements sum, up to now. Read by administrators."
+  },
+  "staff_operations.ux.since": {
+    "defaultMessage": "自 {date} 起",
+    "description": "The line under Period: the start of the period's first hour. Read by administrators."
+  },
+  "staff_operations.ux.loading": {
+    "defaultMessage": "正在加载测量数据…",
+    "description": "In the place of the UX measurements while they load. Read by administrators."
+  },
+  "staff_operations.ux.failed": {
+    "defaultMessage": "无法加载测量数据。",
+    "description": "In the place of the UX measurements when they could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.ux.off": {
+    "defaultMessage": "测量已关闭：Web 客户端不发送样本。",
+    "description": "Under the window's choice while the setting that measures the web client is off. Read by administrators."
+  },
+  "staff_operations.ux.empty": {
+    "defaultMessage": "此期间没有样本。",
+    "description": "Under the period's choice when measuring is on and the period has no sample. Read by administrators."
+  },
+  "staff_operations.ux.name": {
+    "defaultMessage": "{metric, select, transition {种类} press {操作} call_rtt {传输} call_jitter {传输} call_packet_loss {传输} other {路由}}",
+    "description": "The head of the rows of a metric's table: a route of the app, a kind of navigation, an action's ID, or a call's transport. Read by administrators."
+  },
+  "staff_operations.ux.column.p75": {
+    "defaultMessage": "第 75 百分位",
+    "description": "The column of the value at most three quarters of a name's samples have. Read by administrators."
+  },
+  "staff_operations.ux.band.upto": {
+    "defaultMessage": "不超过 {value}",
+    "description": "The column of the share of samples above the column before and at most this value (200 ms, 1%). Read by administrators."
+  },
+  "staff_operations.ux.over": {
+    "defaultMessage": "超过 {value}",
+    "description": "The column of the share of samples over the last band's value, and a 75th percentile past every bound. Read by administrators."
+  },
+  "staff_operations.ux.metric": {
+    "defaultMessage": "{metric, select, lcp {页面出现所需时间（LCP）} inp {响应点按所需时间（INP）} long_frame {长帧} transition {导航所需时间} press {响应操作所需时间} call_rtt {通话往返时间} call_jitter {通话抖动} other {通话丢包率}}",
+    "description": "The heading of a metric's table of the UX measurements, and the table's name: what is measured, with the web's name of the metric where it has one (LCP, INP). Read by administrators."
+  },
+  "staff_operations.ux.p75.band": {
+    "defaultMessage": "{band, select, poor {{value}，较差} other {{value}，有待改进}}",
+    "description": "A 75th percentile of LCP or INP past the good threshold, and how far: needs improvement, or poor. Read by administrators."
+  },
+  "staff_operations.ux.samples": {
+    "defaultMessage": "{count, plural, other {# 个样本}}",
+    "description": "The line under a route, an action or a call's transport in a table of the UX measurements: how many samples it has in the period. Read by administrators."
+  },
+  "staff_operations.link_cards.loading": {
+    "defaultMessage": "正在加载规则…",
+    "description": "In the place of the rules of the link card crawler while they load. Read by administrators."
+  },
+  "staff_operations.link_cards.failed": {
+    "defaultMessage": "无法加载规则。",
+    "description": "In the place of the rules of the link card crawler when they could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.link_cards.list": {
+    "defaultMessage": "规则",
+    "description": "The heading of the list of the rules of the link card crawler, and its name. Read by administrators."
+  },
+  "staff_operations.link_cards.add": {
+    "defaultMessage": "添加规则",
+    "description": "The button that opens the form of a new rule of the link card crawler, and the form's Save. Read by administrators."
+  },
+  "staff_operations.link_cards.empty": {
+    "defaultMessage": "没有域名设有规则：爬虫会获取所有域名的卡片。",
+    "description": "In the place of the list of rules when there is none. Read by administrators."
+  },
+  "staff_operations.link_cards.mode": {
+    "defaultMessage": "{mode, select, no_fetch {停止获取} other {仅停止获取图片}}",
+    "description": "What the crawler does not do on a rule's domain: fetch anything, or fetch images. Read by administrators."
+  },
+  "staff_operations.link_cards.mode.label": {
+    "defaultMessage": "爬虫的行为",
+    "description": "The name of the choice of a rule's mode. Read by administrators."
+  },
+  "staff_operations.link_cards.set_at": {
+    "defaultMessage": "设置于 {date}",
+    "description": "The line of a rule in the list: when it was last set. Read by administrators."
+  },
+  "staff_operations.link_cards.new": {
+    "defaultMessage": "新规则",
+    "description": "The title of the form of a new rule of the link card crawler. Read by administrators."
+  },
+  "staff_operations.link_cards.section": {
+    "defaultMessage": "规则",
+    "description": "The heading of the fields of a rule of the link card crawler. Read by administrators."
+  },
+  "staff_operations.link_cards.domain": {
+    "defaultMessage": "域名",
+    "description": "The field of a new rule's domain. Read by administrators."
+  },
+  "staff_operations.link_cards.note": {
+    "defaultMessage": "备注",
+    "description": "The field of what the administrators keep about a rule. Read by administrators."
+  },
+  "staff_operations.link_cards.missing": {
+    "defaultMessage": "此域名没有规则。",
+    "description": "In the place of a rule's page when its domain has none, before the link to the list. Read by administrators."
+  },
+  "staff_operations.link_cards.remove": {
+    "defaultMessage": "移除规则",
+    "description": "The heading of the last section of a rule's page. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.about": {
+    "defaultMessage": "该域名的卡片会恢复原样显示。",
+    "description": "The line under Remove the rule. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.press": {
+    "defaultMessage": "移除",
+    "description": "The button that removes a rule, and the confirming button of its question. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.title": {
+    "defaultMessage": "移除此域名的规则？",
+    "description": "The title of the question before a rule is removed. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.text": {
+    "defaultMessage": "{domain} 的卡片会恢复原样显示，帖子需要时爬虫会获取其页面。",
+    "description": "The text of the question before a rule is removed; domain is the rule's domain. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.failed": {
+    "defaultMessage": "未能移除规则。请重新加载页面后重试。",
+    "description": "Under Remove when the removal failed. Read by administrators."
+  },
+  "staff_operations.link_cards.rule": {
+    "defaultMessage": "{field, select, domain {请输入主机名，不含 https:// 或路径。} other {最多写 5,000 个字符。}}",
+    "description": "Under the field of a rule that the server refused: the rule its value follows. Read by administrators."
+  },
+  "staff_operations.link_cards.taken": {
+    "defaultMessage": "{domain} 已有规则。请在其页面中修改。",
+    "description": "Under the domain of a new rule of the link card crawler when the domain already has one, which saving would replace; its page is linked under it. Read by administrators."
+  },
+  "staff_operations.link_cards.taken.open": {
+    "defaultMessage": "{domain} 的规则",
+    "description": "The link under the domain of a new rule to the page of the rule the domain already has. Read by administrators."
+  }
+}

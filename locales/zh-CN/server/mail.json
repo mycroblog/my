@@ -16,7 +16,7 @@
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: an account that the moderators limit moved to another account. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_appeal.body": {
-    "defaultMessage": "{instance} 的一位用户对审核操作提出了申诉，该申诉正等待审核员处理。",
+    "defaultMessage": "{instance} 的一位用户对审核措施提出了申诉，该申诉正等待审核员处理。",
     "description": "Paragraph of the email to a moderator about a new appeal. It never names the user or the action. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_appeal.subject": {
@@ -75,6 +75,10 @@
     "defaultMessage": "{instance} 的一个 Webhook 已关闭",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.password_changed.body": {
+    "defaultMessage": "你在 {instance} 上的账号密码已更改，并且你在其他设备和应用上已退出登录。",
+    "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.password_changed.detail": {
     "defaultMessage": "如果不是你本人更改的，可能有其他人知道你的密码。请立即设置新密码。",
     "description": "Second paragraph of the email that tells a user their password was changed, before the link that asks for a password reset link."
@@ -82,6 +86,10 @@
   "mail.password_changed.subject": {
     "defaultMessage": "你在 {instance} 的密码已更改",
     "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_removed.body": {
+    "defaultMessage": "你在 {instance} 上的账号密码已被移除，并且你在其他设备和应用上已退出登录。今后你将使用通行密钥登录。",
+    "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.detail": {
     "defaultMessage": "如果不是你本人移除的，可能有其他人已登录你的账号。请立即设置新密码。",
@@ -191,6 +199,10 @@
     "defaultMessage": "{instance} 的管理员撤回了已宣布的关闭。服务器将照常运行，你无需进行任何操作。",
     "description": "Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.service_closure_withdrawn.subject": {
+    "defaultMessage": "{instance} 的关闭已撤回",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.signature.contact": {
     "defaultMessage": "联系方式：{email}",
     "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
@@ -219,6 +231,10 @@
     "defaultMessage": "{instance} 的管理员停用了你订阅的支持者方案“{plan}”。",
     "description": "First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
   },
+  "mail.supporter_plan_retired.detail": {
+    "defaultMessage": "你的订阅已取消，不会再续订。除非有付款逾期，你可以在已付费的周期结束前继续享有该计划的权益。",
+    "description": "Second paragraph of the email to a subscriber whose supporter plan the administrators retired."
+  },
   "mail.supporter_plan_retired.subject": {
     "defaultMessage": "你在 {instance} 的支持者方案已停用",
     "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
@@ -230,6 +246,14 @@
   "mail.supporter_service_closure.detail": {
     "defaultMessage": "你的订阅不会续订。除非有逾期未付的款项，你可以保留方案权益至已付费期间结束。",
     "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
+  },
+  "mail.supporter_service_closure.subject": {
+    "defaultMessage": "由于服务器关闭，你在 {instance} 上的支持者订阅已取消",
+    "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_subscription_ended.body": {
+    "defaultMessage": "你在 {instance} 上的支持者计划“{plan}”已结束，其权益也随之终止。{reason, select, lapsed {付款失败或订阅暂停后的 7 天内没有任何一次付款成功。} reversed {一笔付款已全额退款，或在争议后被发卡机构撤销。} plan_retired {管理员已停用该计划。} account_suspended {你的账号已被暂停。} staff {管理员取消了该订阅。} other {订阅已取消。}}",
+    "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
   },
   "mail.supporter_subscription_ended.subject": {
     "defaultMessage": "你在 {instance} 的支持者方案已结束",
@@ -332,7 +356,7 @@
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_sign_up": {
-    "defaultMessage": "待批准的注册",
+    "defaultMessage": "待批准的注册申请",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_appeal": {
@@ -344,7 +368,7 @@
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_custom_emoji_request": {
-    "defaultMessage": "自定义表情请求",
+    "defaultMessage": "自定义表情申请",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_account_moved": {
@@ -387,6 +411,10 @@
     "defaultMessage": "登录即可重新启用账号。在删除之前，我们不会再就此事给你发送邮件。如果这不是你本人的操作，请登录、重新启用账号并更改密码。",
     "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
   },
+  "mail.admin_hook_failing.body": {
+    "defaultMessage": "{instance} 的一项外部审核持续失败。在它恢复正常之前，被审核的内容将按其失败时的处理方式处理：默认是不经审核直接通过。",
+    "description": "First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.admin_hook_failing.detail": {
     "defaultMessage": "打开通知，在自动审查中查看失败的内容。",
     "description": "Second paragraph of the email to a moderator about an external review that keeps failing, before the link to the notifications."
@@ -396,7 +424,7 @@
     "description": "Subject of the email to a moderator who gets moderator notifications by email: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_domain_list_failing.body": {
-    "defaultMessage": "服务器 {instance} 连续三次无法获取其订阅的屏蔽列表。在再次成功获取之前，该列表不会更改任何域名操作；它已执行的操作会保留。",
+    "defaultMessage": "服务器 {instance} 连续三次无法获取其订阅的屏蔽列表。在再次成功获取之前，该列表不会更改任何域名措施；它已采取的措施会保留。",
     "description": "First paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_domain_list_failing.detail": {
@@ -416,7 +444,7 @@
     "description": "Subject of the email to a moderator who chose to get moderator notifications by email: a user appealed a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.group.admin_hook_failing": {
-    "defaultMessage": "持续失败的外部审查",
+    "defaultMessage": "持续失败的外部审核",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_hook_appeal": {

@@ -1,0 +1,334 @@
+{
+  "post.reply": {
+    "defaultMessage": "回覆",
+    "description": "The action of a post that replies to it."
+  },
+  "post.boost": {
+    "defaultMessage": "轉發",
+    "description": "The action of a post that boosts it, and the item of its boost menu that boosts it or takes the boost back."
+  },
+  "post.unboost": {
+    "defaultMessage": "取消轉發",
+    "description": "The item of a boosted post's boost menu that takes the reader's boost back."
+  },
+  "post.quote": {
+    "defaultMessage": "引用",
+    "description": "The item of a post's boost menu that writes a post quoting it."
+  },
+  "post.boost_waits": {
+    "defaultMessage": "{handle} 核准後，你的轉發才會送出",
+    "description": "The quiet line under Boost in a post's boost menu, read after it as part of its name, when the post's author approves the reader's boosts by hand: the boost is made only once that author approves it, and until then counts nowhere and no one sees it. handle is the author's, as @user@domain."
+  },
+  "post.quote_waits": {
+    "defaultMessage": "{handle} 核准後，你的引用才會顯示這則貼文",
+    "description": "The quiet line under Quote in a post's boost menu, read after it as part of its name, when the post's author approves the reader's quotes by hand: the quote is posted, but shows the quoted post only once that author approves it. handle is the author's, as @user@domain."
+  },
+  "post.favourite": {
+    "defaultMessage": "喜歡",
+    "description": "The action of a post that favourites it, or takes the favourite back."
+  },
+  "post.react": {
+    "defaultMessage": "回應",
+    "description": "The action of a post that reacts to it with an emoji."
+  },
+  "post.more": {
+    "defaultMessage": "更多",
+    "description": "The button of a post that opens the menu of its other actions."
+  },
+  "post.more_shortcut": {
+    "defaultMessage": "開啟更多操作",
+    "description": "In the keyboard shortcuts dialog, the row of the key that opens a focused post's more menu; says what the key does, unlike the button's name More."
+  },
+  "post.boosted_by": {
+    "defaultMessage": "{name} 轉發了",
+    "description": "The context line over a post that someone boosted into the timeline; name is the display name of who boosted it."
+  },
+  "post.replying_to": {
+    "defaultMessage": "回覆 {handle}",
+    "description": "The context line over a reply; handle is the account it replies to, as @user."
+  },
+  "post.reactions": {
+    "defaultMessage": "回應",
+    "description": "The accessible name of the row of a post's emoji reactions."
+  },
+  "post.reaction": {
+    "defaultMessage": "{emoji}，{count, number}",
+    "description": "The accessible name of an emoji reaction chip: the emoji (a Unicode emoji or :shortcode:) and how many reacted with it."
+  },
+  "post.reaction_mine": {
+    "defaultMessage": "{emoji}，{count, number}，包含你的",
+    "description": "The accessible name of the reader's own emoji reaction chip, a toggle that is on: the emoji, how many reacted with it, and that the reader is one of them; pressing it takes the reader's reaction back."
+  },
+  "post.translate": {
+    "defaultMessage": "翻譯",
+    "description": "The action under a post in another language that shows it translated into the reader's language."
+  },
+  "post.translating": {
+    "defaultMessage": "正在翻譯…",
+    "description": "The line under a post, heard by assistive technology, while its translation is on its way."
+  },
+  "post.translation_downloading": {
+    "defaultMessage": "正在下載此瀏覽器翻譯所需的資料… {percent}",
+    "description": "The line under a post, heard by assistive technology, while the reader's browser downloads what it needs before translating the post; percent is how much has come, such as 40%."
+  },
+  "post.translation_limit": {
+    "defaultMessage": "此伺服器的每月翻譯額度已用完。",
+    "description": "The line under a post when this server refused to translate it because the reader or the whole server used up this month's characters; Try again may follow when the reader's browser can translate it instead."
+  },
+  "post.translation_visibility": {
+    "defaultMessage": "只有部分人能看到這則貼文，所以無法送到此伺服器的翻譯服務。",
+    "description": "The line under a post when this server may not send it to its translation service because of its visibility (followers only, a direct message, or an author's posts limited to followers); Try again may follow when the reader's browser can translate it instead."
+  },
+  "post.translation_language": {
+    "defaultMessage": "此伺服器的翻譯服務不支援這些語言之間的翻譯。",
+    "description": "The line under a post when this server's translation service does not translate between the post's language and the reader's language (or, when the post's language is not known, cannot tell it), and the reader's browser cannot translate it instead; nothing follows it."
+  },
+  "post.translation_failed": {
+    "defaultMessage": "此伺服器的翻譯服務沒有回應。",
+    "description": "The line under a post when this server's translation service is down or did not answer in time; Try again follows."
+  },
+  "post.translation_browser": {
+    "defaultMessage": "此瀏覽器無法翻譯這則貼文。",
+    "description": "The line under a post when the reader's browser cannot translate it (its model could not be downloaded, or it does not translate between these languages)."
+  },
+  "post.translation_retry": {
+    "defaultMessage": "重試",
+    "description": "The action after a failed translation's reason that asks this server for the translation again, when its translation service may answer now."
+  },
+  "post.translation_in_browser": {
+    "defaultMessage": "在此瀏覽器中翻譯",
+    "description": "The action after this server refused to translate a post, which asks the reader's browser to translate it instead; the browser sends the post's text nowhere."
+  },
+  "post.translation_next_month": {
+    "defaultMessage": "下個月即可再次使用翻譯。",
+    "description": "The sentence after the monthly translation limit's reason, when nothing else can translate the post now."
+  },
+  "post.translated_from_by": {
+    "defaultMessage": "貼文已由 {provider} 從{language}翻譯",
+    "description": "The note under a translated post, heard by assistive technology when it appears; language is the name of the language it was written in, provider the name of this server's translation service, or of the reader's browser when the browser translated it. The reader learns from it who received the post's text."
+  },
+  "post.translated_by": {
+    "defaultMessage": "貼文已由 {provider} 翻譯",
+    "description": "The note under a translated post when the language it was written in is not known; provider is the name of this server's translation service, or of the reader's browser when the browser translated it."
+  },
+  "post.translated_from": {
+    "defaultMessage": "貼文已從{language}翻譯",
+    "description": "The note under a translated post when the translation service has no name; language is the name of the language it was written in."
+  },
+  "post.translated": {
+    "defaultMessage": "貼文已翻譯",
+    "description": "The note under a translated post when neither its language nor the translation service is known."
+  },
+  "post.original": {
+    "defaultMessage": "顯示原文",
+    "description": "The action under a translated post that shows it again as it was written."
+  },
+  "post.visibility.public": {
+    "defaultMessage": "公開",
+    "description": "What the visibility glyph of a public post says, beside its time."
+  },
+  "post.visibility.local": {
+    "defaultMessage": "鄰近",
+    "description": "What the visibility glyph of a post for neighbors says, beside its time: people on its server, and the author's followers on other servers. The composer's name for it (compose.visibility.local)."
+  },
+  "post.visibility.unlisted": {
+    "defaultMessage": "安靜公開",
+    "description": "What the visibility glyph of a public post kept out of the public timelines says, beside its time."
+  },
+  "post.visibility.private": {
+    "defaultMessage": "僅限追蹤者",
+    "description": "What the visibility glyph of a post for its author's followers alone says, beside its time."
+  },
+  "post.visibility.direct": {
+    "defaultMessage": "私訊",
+    "description": "What the visibility glyph of a post for the accounts it mentions alone says, beside its time."
+  },
+  "post.board": {
+    "defaultMessage": "在活動的留言板上",
+    "description": "What the board glyph of a post on an event's board says, beside its time, in place of its visibility glyph (post.visibility.*): only the event's board shows it."
+  },
+  "post.copy_link": {
+    "defaultMessage": "複製連結",
+    "description": "The item of a post's more menu that copies the link to the post."
+  },
+  "post.open_original": {
+    "defaultMessage": "開啟原始頁面",
+    "description": "The item of a remote post's more menu that opens the post's page on its own server."
+  },
+  "post.share": {
+    "defaultMessage": "分享",
+    "description": "The item of a post's more menu that shares it through the device's share sheet."
+  },
+  "post.bookmark": {
+    "defaultMessage": "書籤",
+    "description": "The item of a post's more menu that bookmarks it."
+  },
+  "post.mute_thread": {
+    "defaultMessage": "將討論串靜音",
+    "description": "The item of a post's more menu that stops the notifications of the thread the post is in (replies, mentions, boosts, favourites, reactions and quotes in it); the posts still show in timelines."
+  },
+  "post.unmute_thread": {
+    "defaultMessage": "取消討論串靜音",
+    "description": "The item of a post's more menu, on while the thread the post is in is muted, that lets its notifications come again."
+  },
+  "post.unbookmark": {
+    "defaultMessage": "移除書籤",
+    "description": "The item of a bookmarked post's more menu that takes the bookmark back."
+  },
+  "post.edit": {
+    "defaultMessage": "編輯",
+    "description": "The item of the more menu of the reader's own post that edits it."
+  },
+  "post.redraft": {
+    "defaultMessage": "刪除並重新編寫…",
+    "description": "The item of the more menu of the reader's own post that deletes it and opens its text, images and poll in the composer, after a confirmation (hence the ellipsis)."
+  },
+  "post.edited_mark": {
+    "defaultMessage": "已編輯，顯示紀錄",
+    "description": "The name, for assistive technology, of the word \"edited\" after an edited post's time (post.edited), which opens its edit history."
+  },
+  "post.edited": {
+    "defaultMessage": "已編輯",
+    "description": "The word after an edited post's time, in its header, or in its details on its own page; it opens its edit history. Lowercase in English: it follows the time after a middle dot (3h ago · edited)."
+  },
+  "post.history.title": {
+    "defaultMessage": "編輯紀錄",
+    "description": "The title of the dialog that lists every version of an edited post, newest first."
+  },
+  "post.history.close": {
+    "defaultMessage": "關閉",
+    "description": "The name of the button that closes the edit history."
+  },
+  "post.history.current": {
+    "defaultMessage": "目前版本",
+    "description": "The label of the newest version in the edit history, the one the post shows."
+  },
+  "post.history.original": {
+    "defaultMessage": "原始版本",
+    "description": "The label of the oldest version in the edit history, as it was first posted."
+  },
+  "post.history.earlier": {
+    "defaultMessage": "先前的編輯",
+    "description": "The label of a version in the edit history between the original and the current one."
+  },
+  "post.history.added_start": {
+    "defaultMessage": "新增內容開始",
+    "description": "Heard by screen reader users, not shown: said before a run of words in the edit history that a version added to the one before it (shown on a tint); post.history.added_end follows the run."
+  },
+  "post.history.added_end": {
+    "defaultMessage": "新增內容結束",
+    "description": "Heard by screen reader users, not shown: said after a run of words in the edit history that a version added (post.history.added_start)."
+  },
+  "post.history.removed_start": {
+    "defaultMessage": "移除內容開始",
+    "description": "Heard by screen reader users, not shown: said before a run of words in the edit history that a version removed from the one before it (shown muted and struck through); post.history.removed_end follows the run."
+  },
+  "post.history.removed_end": {
+    "defaultMessage": "移除內容結束",
+    "description": "Heard by screen reader users, not shown: said after a run of words in the edit history that a version removed (post.history.removed_start)."
+  },
+  "post.history.added_image": {
+    "defaultMessage": "新增的圖片",
+    "description": "Heard by screen reader users, not shown: said before the description of an image in the edit history that a version added (shown on a tint)."
+  },
+  "post.history.removed_image": {
+    "defaultMessage": "移除的圖片",
+    "description": "Heard by screen reader users, not shown: said before the description of an image in the edit history that a version removed (shown crossed out)."
+  },
+  "post.delete": {
+    "defaultMessage": "刪除…",
+    "description": "The item of the more menu of the reader's own post that deletes it after a confirmation (hence the ellipsis)."
+  },
+  "post.delete.title": {
+    "defaultMessage": "要刪除這則貼文嗎？",
+    "description": "The question of the confirmation before the reader's post is deleted."
+  },
+  "post.delete.body": {
+    "defaultMessage": "它的轉發、喜歡和回應也會一併刪除，並會請其他伺服器一起刪除。此操作無法復原。",
+    "description": "What follows deleting the reader's post, under the confirmation's question."
+  },
+  "post.delete.confirm": {
+    "defaultMessage": "刪除",
+    "description": "The confirmation that deletes the reader's post."
+  },
+  "post.delete.cancel": {
+    "defaultMessage": "取消",
+    "description": "The refusal of the confirmation of deleting (or redrafting) a post: nothing is deleted."
+  },
+  "post.redraft.title": {
+    "defaultMessage": "要刪除並重新編寫這則貼文嗎？",
+    "description": "The question of the confirmation before the reader's post is deleted and opened in the composer."
+  },
+  "post.redraft.body": {
+    "defaultMessage": "{poll, select, yes {它的轉發、喜歡、回應和投票結果會遺失，回覆也會失去與它的連結。它的文字和投票會成為新貼文的草稿。} other {它的轉發、喜歡和回應會遺失，回覆也會失去與它的連結。它的文字和圖片會成為新貼文的草稿。}}",
+    "description": "What follows deleting and redrafting the reader's post, under the confirmation's question. poll is yes when the post has a poll (a post with a poll has no images), whose votes are lost, else no."
+  },
+  "post.redraft.confirm": {
+    "defaultMessage": "刪除並重新編寫",
+    "description": "The confirmation that deletes the reader's post and opens it in the composer."
+  },
+  "post.shortcuts": {
+    "defaultMessage": "貼文取得焦點時",
+    "description": "The heading of the group of keyboard shortcuts that act on a post, in the keyboard shortcuts dialog."
+  },
+  "post.poll": {
+    "defaultMessage": "投票",
+    "description": "The accessible name of a post's poll; the same word as the poll's card in the composer (compose.poll)."
+  },
+  "post.poll_options": {
+    "defaultMessage": "選項",
+    "description": "The accessible name of the options of a poll the reader can vote in, a radio group or, where several may be chosen, a group of checkboxes; the composer names one option 'Option {n}' (compose.poll.option)."
+  },
+  "post.poll_several": {
+    "defaultMessage": "可多選",
+    "description": "In the line under a poll the reader can vote in, where a vote may choose several options; the composer's checkbox that allows it reads 'Allow several choices' (compose.poll.multiple)."
+  },
+  "post.poll_vote": {
+    "defaultMessage": "投票",
+    "description": "The button at the end of the line under a poll that sends the reader's chosen options; it waits for a choice, and a reader without an account who presses it is taken to sign in."
+  },
+  "post.poll_voters": {
+    "defaultMessage": "{count, plural, other {# 人已投票}}",
+    "description": "In the line under a poll: how many accounts voted. count is how many."
+  },
+  "post.poll_votes": {
+    "defaultMessage": "{count, plural, other {# 票}}",
+    "description": "In the line under a poll whose number of voters is unknown (from some servers): how many votes it has, one per chosen option. count is how many."
+  },
+  "post.poll_ends": {
+    "defaultMessage": "{time}結束",
+    "description": "In the line under a poll that has not ended: when it ends. time is a short relative time such as 'in 2d' / '2日後'. The same verb as the composer's duration (compose.poll.ends_in)."
+  },
+  "post.poll_ended": {
+    "defaultMessage": "已結束",
+    "description": "In the line under a poll that has ended and takes no more votes."
+  },
+  "post.poll_hidden": {
+    "defaultMessage": "結束時顯示票數",
+    "description": "In the line under a poll whose author hides how many voted for each option until it ends (the composer's 'Hide the counts until it ends', compose.poll.hide_totals), shown in place of each option's share."
+  },
+  "post.poll_mine": {
+    "defaultMessage": "你的投票",
+    "description": "Read by assistive technology in parentheses after an option of a poll's results that the reader voted for, before its share; drawn as the option's filled mark."
+  },
+  "post.reacted_row": {
+    "defaultMessage": "{emoji} {count, plural, other {# 人回應}}",
+    "description": "The accessible name of the row under a post on its own page that opens the list of who reacted with one emoji. It starts with the emoji and the count, the row's visible text, in that order. emoji is a Unicode emoji or :shortcode:; count is how many."
+  },
+  "post.reacted_with": {
+    "defaultMessage": "已用 {emoji} 回應",
+    "description": "The heading of the list of the accounts that reacted to a post with one emoji. emoji is a Unicode emoji or :shortcode:, which the heading draws as its image."
+  },
+  "post.article_sensitive": {
+    "defaultMessage": "敏感文章",
+    "description": "The line on the page of a sensitive article, above its folded cover and text, with a Show button; its title and summary stay shown."
+  },
+  "post.filtered": {
+    "defaultMessage": "{count, plural, other {符合過濾器 {names}}}",
+    "description": "The line in place of a post that matched keyword filters of the reader (words they chose to fold posts by), followed by a Show (disclosure.show) or Hide button that shows the post or folds it again. names is the list of the filters' names, each in quotation marks (post.filter_name); count is how many filters matched."
+  },
+  "post.filter_name": {
+    "defaultMessage": "「{name}」",
+    "description": "The name of one keyword filter, in the quotation marks of the language, as post.filtered lists it; name is what the reader called the filter, in any language."
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "welcome.title": {
+    "defaultMessage": "Willkommen bei {name}",
+    "description": "The title of the welcome step, the page a new account sees once after signing up, before the home timeline: it asks for a display name and an avatar, both optional. name is the server's name (Example Social). Also the title of the browser tab."
+  },
+  "welcome.lead": {
+    "defaultMessage": "Füge einen Anzeigenamen und ein Profilbild hinzu, damit andere dich erkennen.",
+    "description": "The first line under the title of the welcome step of a new account: what the step is for. The display name and the avatar are the two fields under it (settings.profile.name, settings.profile.avatar)."
+  },
+  "welcome.later": {
+    "defaultMessage": "Beides ist optional, und du kannst es später unter „Profil“ in den Einstellungen ändern.",
+    "description": "The second line under the title of the welcome step of a new account: neither the display name nor the avatar has to be given, and where they are changed later. The quoted word is the entry of the settings (settings.entry.profile)."
+  },
+  "welcome.continue": {
+    "defaultMessage": "Weiter",
+    "description": "The primary button of the welcome step of a new account: it saves the display name and the avatar the reader gave, if any, and goes on to the home timeline."
+  },
+  "welcome.skip": {
+    "defaultMessage": "Vorerst überspringen",
+    "description": "The quiet button under Continue on the welcome step of a new account: it goes on to the home timeline and saves nothing. The reader can set the display name and the avatar later in the settings."
+  },
+  "welcome.loading": {
+    "defaultMessage": "Dein Konto wird geladen …",
+    "description": "On the page of the welcome step while the reader's account is being read from the server, before the step or the home timeline shows."
+  },
+  "welcome.save.failed": {
+    "defaultMessage": "Dein Anzeigename und dein Profilbild konnten nicht gespeichert werden. Versuche es erneut oder überspringe es vorerst.",
+    "description": "Before the Continue button of the welcome step when saving failed and the server gave no reason (no connection). Skip for now is the button under Continue (welcome.skip)."
+  },
+  "welcome.save.refused": {
+    "defaultMessage": "Es wurde nichts gespeichert. Korrigiere die markierten Stellen oder überspringe es vorerst.",
+    "description": "Before the Continue button of the welcome step when the server refused the display name or the avatar: what is wrong stands under that field, and this says only that neither was saved and the two ways on. Skip for now is the button under Continue (welcome.skip)."
+  },
+  "welcome.picture.failed": {
+    "defaultMessage": "{reason, select, processing {Der Server konnte dieses Bild nicht verarbeiten. Ersetze es oder entferne es und fahre fort.} other {Dieses Bild konnte nicht hochgeladen werden. Versuche es erneut, ersetze es oder entferne es und fahre fort.}}",
+    "description": "Under the avatar on the welcome step when saving failed because of the image and the server gave no words of its own. reason is processing when the server took the file and then could not turn it into a picture it can show, anything else when the upload did not get through. Replace and Remove are the buttons beside the avatar (settings.profile.picture.replace, settings.profile.picture.remove)."
+  },
+  "welcome.picture.refused": {
+    "defaultMessage": "{said} Oder entferne das Bild und fahre fort.",
+    "description": "Under the avatar on the welcome step when the server refused the image and said why. said is the server's own sentences, in the reader's language, which say what is wrong with the file and what to choose instead (The file is too large. Choose a smaller file.); this adds the other way on. Remove is the button beside the avatar (settings.profile.picture.remove)."
+  }
+}

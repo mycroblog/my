@@ -1,0 +1,78 @@
+{
+  "records.select_all": {
+    "defaultMessage": "Seleccionar todo",
+    "description": "The checkbox at the head of a table of records (reports, accounts, jobs in the staff's screens) that checks every row shown, or unchecks them all; shown beside it on a phone, read to assistive technology at every width."
+  },
+  "records.select_row": {
+    "defaultMessage": "Seleccionar {name}",
+    "description": "The name, for assistive technology, of the checkbox at the start of a row of a table of records, which picks the row for an action on all the rows picked: name is what the row's head shows (an account's handle, a domain, a job's name)."
+  },
+  "records.selected": {
+    "defaultMessage": "{count, plural, =0 {Ninguno seleccionado} one {# seleccionado} other {# seleccionados}}",
+    "description": "Above a table of records, beside the actions that act on every row picked: how many rows are picked; also read to assistive technology as it changes."
+  },
+  "records.facet": {
+    "defaultMessage": "{facet}: {value}",
+    "description": "A filter of a list in the staff's screens while a value of it is applied, on its button: facet is what it filters by (State, Category), value the value applied (Open, Spam)."
+  },
+  "records.clear_filters": {
+    "defaultMessage": "Borrar filtros",
+    "description": "After the filters over a list in the staff's screens, while any is applied: removes every filter and empties the search, showing the whole list again."
+  },
+  "records.pages": {
+    "defaultMessage": "Páginas",
+    "description": "The name, for assistive technology, of the navigation under a long list paged by cursor (reports, accounts, a staff queue) that moves to the page before or after."
+  },
+  "records.page": {
+    "defaultMessage": "Página {page, number}",
+    "description": "Between Previous and Next under a long list paged by cursor: which page of it is shown, counted from the first (the server gives no total, so no 'of N'); also read to assistive technology as it changes."
+  },
+  "records.previous": {
+    "defaultMessage": "Anterior",
+    "description": "Under a long list, moves to the page before the one shown (newer records, in a list of the latest first)."
+  },
+  "records.next": {
+    "defaultMessage": "Siguiente",
+    "description": "Under a long list, moves to the page after the one shown (older records, in a list of the latest first)."
+  },
+  "records.later": {
+    "defaultMessage": "{granularity, select, week {Semanas posteriores} month {Meses posteriores} other {Años posteriores}}",
+    "description": "In place of Previous under a window of periods (the finance totals): shows the periods after those shown, up to today's (granularity: week, month or year)."
+  },
+  "records.earlier": {
+    "defaultMessage": "{granularity, select, week {Semanas anteriores} month {Meses anteriores} other {Años anteriores}}",
+    "description": "In place of Next under a window of periods (the finance totals): shows the periods before those shown (granularity: week, month or year)."
+  },
+  "records.page_failed": {
+    "defaultMessage": "{direction, select, previous {No se pudo cargar la página anterior.} other {No se pudo cargar la página siguiente.}}",
+    "description": "Over Previous and Next under a long list, when the page asked for could not be read: direction is previous or next, the way the reader asked for; the button that asked for it reads Try again (records.retry) meanwhile."
+  },
+  "records.periods_failed": {
+    "defaultMessage": "{direction, select, previous {{granularity, select, week {No se pudieron cargar las semanas posteriores.} month {No se pudieron cargar los meses posteriores.} other {No se pudieron cargar los años posteriores.}}} other {{granularity, select, week {No se pudieron cargar las semanas anteriores.} month {No se pudieron cargar los meses anteriores.} other {No se pudieron cargar los años anteriores.}}}}",
+    "description": "Over Later and Earlier under a window of periods (the finance totals), when the periods asked for could not be read: direction is previous (Later, toward today) or next (Earlier), granularity week, month or year; the button that asked for them reads Try again (records.retry) meanwhile."
+  },
+  "records.more": {
+    "defaultMessage": "Mostrar más",
+    "description": "Under a list that grows in place (a table of records, a list inside a detail or the settings), adds the next items under those shown."
+  },
+  "records.more_failed": {
+    "defaultMessage": "No se pudo cargar el resto de la lista.",
+    "description": "Over Show more under a list that grows in place, when its next items could not be read; the button reads Try again (records.retry) meanwhile."
+  },
+  "records.retry": {
+    "defaultMessage": "Reintentar",
+    "description": "The button under a list in place of Previous, Next or Show more after it failed (records.page_failed, records.more_failed): asks for the same items again."
+  },
+  "records.sort_by": {
+    "defaultMessage": "Ordenar por",
+    "description": "The name of the menu that a narrow table of records (the staff's screens on a phone) opens to choose the column it is sorted by and the direction; also shown on its button while the table is sorted by none."
+  },
+  "records.ascending": {
+    "defaultMessage": "Ascendente",
+    "description": "In the sort menu of a table of records: sorts it from the least to the most (A to Z, oldest first); also read after the sorted column's name on the menu's button."
+  },
+  "records.descending": {
+    "defaultMessage": "Descendente",
+    "description": "In the sort menu of a table of records: sorts it from the most to the least (Z to A, newest first); also read after the sorted column's name on the menu's button."
+  }
+}

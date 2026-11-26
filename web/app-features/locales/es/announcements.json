@@ -1,0 +1,70 @@
+{
+  "announcements.label": {
+    "defaultMessage": "Anuncios",
+    "description": "The name of the list of the server's announcements, for assistive technology."
+  },
+  "announcements.loading": {
+    "defaultMessage": "Cargando anuncios…",
+    "description": "What the list of announcements says while the first of them load."
+  },
+  "announcements.loading_more": {
+    "defaultMessage": "Cargando más anuncios…",
+    "description": "What the list of announcements says under them while more load."
+  },
+  "announcements.failed": {
+    "defaultMessage": "No se pudieron cargar los anuncios.",
+    "description": "What the list of announcements says when they could not be loaded, beside a button to try again."
+  },
+  "announcements.failed_more": {
+    "defaultMessage": "No se pudieron cargar más anuncios.",
+    "description": "What the list of announcements says under them when more could not be loaded, beside a button to try again."
+  },
+  "announcements.empty": {
+    "defaultMessage": "Aún no hay anuncios.",
+    "description": "What the list of announcements says when the server has made none."
+  },
+  "announcements.unread": {
+    "defaultMessage": "Sin leer",
+    "description": "The mark of an announcement the reader has not read, for assistive technology."
+  },
+  "announcements.mark_read": {
+    "defaultMessage": "Marcar como leído",
+    "description": "The action under an unread announcement in the list that marks it read."
+  },
+  "announcements.ended": {
+    "defaultMessage": "Finalizado",
+    "description": "Said under an announcement in the list whose showing period is over."
+  },
+  "announcements.untitled": {
+    "defaultMessage": "Anuncio",
+    "description": "The title of an announcement whose administrators gave it none."
+  },
+  "announcements.period_open": {
+    "defaultMessage": "Visible desde {from}",
+    "description": "Under an announcement on its page: since when it shows ({from}, a date written out in the reader's language), with no end set."
+  },
+  "announcements.period_until": {
+    "defaultMessage": "Visible desde {from} hasta {until}",
+    "description": "Under an announcement on its page: when it started to show and when it stops ({from}, {until}, dates written out in the reader's language)."
+  },
+  "announcements.period_ended": {
+    "defaultMessage": "Visible de {from} a {until}",
+    "description": "Under an announcement on its page whose showing period is over: when it showed ({from}, {until}, dates written out in the reader's language)."
+  },
+  "announcements.back": {
+    "defaultMessage": "Anuncios",
+    "description": "The button at the top of an announcement's page that goes back to the list of announcements."
+  },
+  "announcements.loading_one": {
+    "defaultMessage": "Cargando el anuncio…",
+    "description": "What an announcement's page says while it loads."
+  },
+  "announcements.not_found": {
+    "defaultMessage": "No se puede mostrar este anuncio. Puede que se haya retirado.",
+    "description": "What an announcement's page says when the server has no such announcement (never shown, or withdrawn), beside a link to the list."
+  },
+  "announcements.all": {
+    "defaultMessage": "Ver todos los anuncios",
+    "description": "The link after the not-found notice of an announcement's page that opens the list of announcements."
+  }
+}

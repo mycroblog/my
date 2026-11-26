@@ -24,3 +24,10 @@ test("a locale only matches its own entries, and en and ja have none", () => {
   expect(glossary.en).toBeUndefined();
   expect(glossary.ja).toBeUndefined();
 });
+
+test("a scope or a path that names a banned variant is no finding", () => {
+  expect(glossaryFindings(glossary, "de", "Eine App kann write:supporters nicht haben")).toHaveLength(0);
+  expect(glossaryFindings(glossary, "fr", "Une application ne peut pas avoir write:supporters")).toHaveLength(0);
+  expect(glossaryFindings(glossary, "de", "Die Supporter dieses Servers")).toHaveLength(1);
+  expect(glossaryFindings(glossary, "fr", "Les supporters de ce serveur")).toHaveLength(1);
+});

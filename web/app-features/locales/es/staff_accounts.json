@@ -1,0 +1,1638 @@
+{
+  "staff_accounts.group.accounts": {
+    "defaultMessage": "Cuentas",
+    "description": "The heading of the group of moderation screens about accounts at /moderation: the search of accounts, the sign-up blocks and the invites. Read by moderators."
+  },
+  "staff_accounts.entry.appeals": {
+    "defaultMessage": "Apelaciones",
+    "description": "The name of the moderators' queue of appeals of actions, in the list at /moderation and as the title of its screen. Read by moderators."
+  },
+  "staff_accounts.entry.appeals.count": {
+    "defaultMessage": "{count, plural, one {# apelación espera} other {# apelaciones esperan}}",
+    "description": "For assistive technology, the badge at the end of Appeals at /moderation: how many appeals wait for a decision. Read by moderators."
+  },
+  "staff_accounts.entry.registrations": {
+    "defaultMessage": "Registros",
+    "description": "The name of the screen of registrations that wait for approval, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.entry.registrations.count": {
+    "defaultMessage": "{count, plural, one {# registro espera} other {# registros esperan}}",
+    "description": "For assistive technology, the badge at the end of Registrations at /moderation: how many registrations wait for approval. Read by moderators."
+  },
+  "staff_accounts.entry.hook_decisions": {
+    "defaultMessage": "Revisiones automáticas",
+    "description": "The name of the screen of the decision hooks' decisions, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.entry.accounts": {
+    "defaultMessage": "Cuentas",
+    "description": "The name of the search of accounts, in the list at /moderation and as the title of its screen. Read by moderators."
+  },
+  "staff_accounts.entry.signup_blocks": {
+    "defaultMessage": "Bloqueos de registro",
+    "description": "The name of the screen of blocks on sign-ups by email domain, email address or IP range, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.entry.invites": {
+    "defaultMessage": "Invitaciones",
+    "description": "The name of the screen of every invite of the server, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.forbidden": {
+    "defaultMessage": "Los permisos de tu cuenta ya no permiten abrir esta pantalla.",
+    "description": "In a moderation screen's place when the server refused the reader its list or its item: their permissions changed. Read by moderators."
+  },
+  "staff_accounts.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "The button that closes a moderator's confirmation without doing anything. Read by moderators."
+  },
+  "staff_accounts.none": {
+    "defaultMessage": "Ninguno",
+    "description": "In an action's or an appeal's facts, in the place of a reason that was not given. Read by moderators."
+  },
+  "staff_accounts.until_lifted": {
+    "defaultMessage": "Hasta que se levante",
+    "description": "How long an action or a sign-up block lasts when it has no end: in a list, its facts, and the choice of its length. Read by moderators."
+  },
+  "staff_accounts.length.days": {
+    "defaultMessage": "{count, plural, one {# día} other {# días}}",
+    "description": "A choice of how long an action, a sign-up block or an invite lasts, in days. Read by moderators."
+  },
+  "staff_accounts.ends.never": {
+    "defaultMessage": "No termina nunca",
+    "description": "When a ban ends, in a list of actions and its facts: it never does. Read by moderators."
+  },
+  "staff_accounts.refused": {
+    "defaultMessage": "{why, select, outranks {No puedes hacer esto a una cuenta cuyo rol tiene tanto rango como el tuyo.} last_admin {Esto dejaría fuera al único administrador. Da primero el rol de administrador a otra cuenta.} decided {Alguien lo decidió mientras tanto. Recarga para ver la decisión.} not_appealable {Se eliminó la cuenta, así que su expulsión no se puede revocar. Aún puedes confirmar la expulsión.} not_overridable {Esta decisión no se puede cancelar aquí.} not_suppressed {El correo a esta cuenta ya no está detenido.} no_two_factor {Esta cuenta ya no usa la autenticación en dos pasos.} registration_closed {Los registros están cerrados, así que no se puede crear ninguna invitación. Ábrelos primero en la configuración del servidor.} closing {El servicio está cerrando, así que ya no se puede aprobar ningún registro.} event_closed {El evento ya está cancelado.} forbidden {Los permisos de tu cuenta ya no permiten esto.} missing {Alguien lo quitó mientras tanto. Recarga para ver lo que hay ahora.} other {No se pudo hacer. Recarga la aplicación e inténtalo de nuevo.}}",
+    "description": "What a moderator is told of a write the server refused, by why it refused. Read by moderators."
+  },
+  "staff_accounts.kind": {
+    "defaultMessage": "{kind, select, warn {Advertencia} mark_statuses_sensitive {Publicaciones marcadas como sensibles} delete_statuses {Publicaciones eliminadas} force_sensitive {Multimedia siempre marcado como sensible} limit {Limitación} restrict_posting {Sin publicar} restrict_interaction {Sin interactuar} disable_login {Sin iniciar sesión} suspend {Suspensión} ban {Expulsión} other {Acción}}",
+    "description": "The kind of a moderation action on an account: in its list, its page, an appeal, and the form of a new one. Read by moderators."
+  },
+  "staff_accounts.account_state": {
+    "defaultMessage": "{state, select, active {Activa} pending {Espera aprobación} rejected {Registro rechazado} limited {Limitada} disabled {No puede iniciar sesión} deactivated {Desactivada} suspended {Suspendida} banned {Expulsada} deleted {Eliminada} other {Activa}}",
+    "description": "The state of an account as the moderators see it: in the search, its filter, and the account's facts; banned for a suspension by a ban, which nothing lifts. Read by moderators."
+  },
+  "staff_accounts.action_state": {
+    "defaultMessage": "{state, select, active {Vigente} permanent {Permanente} expired {Terminada} lifted {Levantada} other {Vigente}}",
+    "description": "The state of a moderation action or a sign-up block: in effect, permanent (a ban in effect, which is never lifted), ended by itself, or lifted. Read by moderators."
+  },
+  "staff_accounts.restriction": {
+    "defaultMessage": "{restriction, select, login {iniciar sesión} post {publicar} interact {seguir y marcar como favorito} visibility_ceiling_private {publicaciones públicas} public_discovery {cronologías públicas y búsqueda} unsolicited_reach {notificaciones a quienes no la siguen} media_sensitive {multimedia mostrado tal cual} profile_view {el perfil y las publicaciones} federation {entrega hacia y desde otros servidores} other {algo}}",
+    "description": "One thing an account's actions take away from it, in a list joined as the language joins one, the value of What is taken away. Read by moderators."
+  },
+  "staff_accounts.restrictions.none": {
+    "defaultMessage": "Nada",
+    "description": "The value of What is taken away in an account's facts, when its actions take away nothing. Read by moderators."
+  },
+  "staff_accounts.registration_state": {
+    "defaultMessage": "{state, select, pending {Espera aprobación} approved {Aprobado} rejected {Rechazado} other {Espera aprobación}}",
+    "description": "Where a registration stands, in the registrations' list and an account's facts. Read by moderators."
+  },
+  "staff_accounts.appeal_state": {
+    "defaultMessage": "{state, select, pending {Espera una decisión} upheld {Confirmada} overturned {Revocada} other {Espera una decisión}}",
+    "description": "Where an appeal stands, in the appeals' list, its filter and its page. Read by moderators."
+  },
+  "staff_accounts.report_state": {
+    "defaultMessage": "{state, select, open {Abierta} resolved {Resuelta} other {Abierta}}",
+    "description": "Where a report stands, in an account's list of its reports. Read by moderators."
+  },
+  "staff_accounts.origin.local": {
+    "defaultMessage": "Este servidor",
+    "description": "Where an account is, when it is on this server: in the search of accounts, its filter, and the account's facts. Read by moderators."
+  },
+  "staff_accounts.origin.remote": {
+    "defaultMessage": "Otros servidores",
+    "description": "The filter of the search of accounts that keeps the accounts of other servers. Read by moderators."
+  },
+  "staff_accounts.email.verified": {
+    "defaultMessage": "Confirmado",
+    "description": "The value of Email confirmation in an account's facts. Read by moderators."
+  },
+  "staff_accounts.email.unverified": {
+    "defaultMessage": "Sin confirmar",
+    "description": "The value of Email confirmation in an account's facts. Read by moderators."
+  },
+  "staff_accounts.invited_by": {
+    "defaultMessage": "Invitada por {handle}",
+    "description": "The value of Invite in an account's facts: who created the invite it signed up with. Read by moderators."
+  },
+  "staff_accounts.invited_by.cli": {
+    "defaultMessage": "Una invitación creada en la línea de comandos del servidor",
+    "description": "The value of Invite in an account's facts when the invite was made on the command line. Read by moderators."
+  },
+  "staff_accounts.invited_by.gone": {
+    "defaultMessage": "Una invitación de una cuenta que ya no existe",
+    "description": "The value of Invite in an account's facts when the invite's creator deleted their account. Read by moderators."
+  },
+  "staff_accounts.search.filters": {
+    "defaultMessage": "Filtrar cuentas",
+    "description": "For assistive technology, the name of the search and filters over the accounts at /moderation/accounts. Read by moderators."
+  },
+  "staff_accounts.search.field": {
+    "defaultMessage": "{key, select, domain {Buscar por dominio} email {Buscar por dirección de correo} email_domain {Buscar por dominio de correo} ip {Buscar por dirección IP} other {Buscar por nombre de usuario}}",
+    "description": "The label and placeholder of the search field of accounts, by what the search matches. Read by moderators."
+  },
+  "staff_accounts.search.clear": {
+    "defaultMessage": "Borrar la búsqueda",
+    "description": "The button in the search field of accounts that empties it. Read by moderators."
+  },
+  "staff_accounts.search.by_facet": {
+    "defaultMessage": "Buscar por",
+    "description": "The filter of the search of accounts that chooses what its words are matched against. Read by moderators."
+  },
+  "staff_accounts.search.by": {
+    "defaultMessage": "{key, select, domain {Dominio} email {Dirección de correo} email_domain {Dominio de correo} ip {Dirección IP} other {Nombre de usuario}}",
+    "description": "A value of Search by: what the words of the search of accounts are matched against. Read by moderators."
+  },
+  "staff_accounts.search.origin": {
+    "defaultMessage": "Servidor",
+    "description": "The filter of the search of accounts by where the account is. Read by moderators."
+  },
+  "staff_accounts.search.origin.any": {
+    "defaultMessage": "Todos los servidores",
+    "description": "The value of the Server filter that keeps every account. Read by moderators."
+  },
+  "staff_accounts.search.state": {
+    "defaultMessage": "Estado",
+    "description": "The filter of the search of accounts by its state. Read by moderators."
+  },
+  "staff_accounts.search.state.any": {
+    "defaultMessage": "Cualquier estado",
+    "description": "The value of the State filter that keeps every account. Read by moderators."
+  },
+  "staff_accounts.search.table": {
+    "defaultMessage": "Cuentas",
+    "description": "For assistive technology, the name of the table of accounts found. Read by moderators."
+  },
+  "staff_accounts.search.column.account": {
+    "defaultMessage": "Cuenta",
+    "description": "The column of accounts' handles in a table of accounts. Read by moderators."
+  },
+  "staff_accounts.search.column.origin": {
+    "defaultMessage": "Servidor",
+    "description": "The column of where an account is, in the table of accounts found. Read by moderators."
+  },
+  "staff_accounts.search.column.created": {
+    "defaultMessage": "Creada",
+    "description": "The column of when an account was created, in the table of accounts found. Read by moderators."
+  },
+  "staff_accounts.search.column.state": {
+    "defaultMessage": "Estado",
+    "description": "The column of an account's state in a table of accounts. Read by moderators."
+  },
+  "staff_accounts.search.loading": {
+    "defaultMessage": "Cargando las cuentas…",
+    "description": "At /moderation/accounts while the accounts are read. Read by moderators."
+  },
+  "staff_accounts.search.failed": {
+    "defaultMessage": "No se pudieron cargar las cuentas.",
+    "description": "At /moderation/accounts when the accounts could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.search.empty": {
+    "defaultMessage": "Ninguna cuenta coincide. Cambia la búsqueda o los filtros.",
+    "description": "At /moderation/accounts when no account matches the search and the filters. Read by moderators."
+  },
+  "staff_accounts.search.empty_more": {
+    "defaultMessage": "Ninguna en esta página. Muestra la página siguiente para seguir buscando.",
+    "description": "At /moderation/accounts when a page of the search found none but the search goes on to a next page. Read by moderators."
+  },
+  "staff_accounts.search.invalid": {
+    "defaultMessage": "{key, select, domain {Esto no es un dominio. Escribe uno como example.com.} email {Esto no es una dirección de correo. Escribe una como nombre@example.com.} email_domain {Esto no es un dominio de correo. Escribe la parte después de @, como example.com.} ip {Esto no es una dirección IP. Escribe una como 192.0.2.1.} other {Esto no es un nombre de usuario. Escribe el comienzo de uno, como kai.}}",
+    "description": "Under the search field of accounts when the server refused its words for what the search finds by. Read by moderators."
+  },
+  "staff_accounts.account.missing": {
+    "defaultMessage": "No hay ninguna cuenta en esta dirección.",
+    "description": "At an account's moderation screen whose account the server does not have. Read by moderators."
+  },
+  "staff_accounts.account.all": {
+    "defaultMessage": "Todas las cuentas",
+    "description": "The link after the notice that an address names no account, to the search of accounts. Read by moderators."
+  },
+  "staff_accounts.account.back": {
+    "defaultMessage": "Cuentas",
+    "description": "The way back from an account's moderation screen to the search of accounts. Read by moderators."
+  },
+  "staff_accounts.account.loading": {
+    "defaultMessage": "Cargando la cuenta…",
+    "description": "At an account's moderation screen while it is read. Read by moderators."
+  },
+  "staff_accounts.account.failed": {
+    "defaultMessage": "No se pudo cargar la cuenta.",
+    "description": "At an account's moderation screen when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.account.facts": {
+    "defaultMessage": "La cuenta",
+    "description": "For assistive technology, the name of the list of an account's facts on its moderation screen. Read by moderators."
+  },
+  "staff_accounts.account.actions": {
+    "defaultMessage": "Acciones más recientes",
+    "description": "The heading of an account's newest actions on its Review page. Read by moderators."
+  },
+  "staff_accounts.account.actions.all": {
+    "defaultMessage": "Todas las acciones",
+    "description": "Under an account's newest actions on its Review page, when there may be more than those shown: opens its Actions page (staff_accounts.page.actions), which pages through them all. Read by moderators."
+  },
+  "staff_accounts.account.reports": {
+    "defaultMessage": "Denuncias",
+    "description": "The heading of an account's reports on its Review page, the newest first, the rest under Show more. Read by moderators."
+  },
+  "staff_accounts.account.back_report": {
+    "defaultMessage": "Denuncia",
+    "description": "The way back from an account's moderation screen opened from a report, to that report. Read by moderators."
+  },
+  "staff_accounts.page.tabs": {
+    "defaultMessage": "Páginas de la cuenta",
+    "description": "For assistive technology, the name of the tabs of an account's moderation screens. Read by moderators."
+  },
+  "staff_accounts.page.review": {
+    "defaultMessage": "Revisión",
+    "description": "The tab of an account's Review page: its facts, a new action, its actions and reports. Read by moderators."
+  },
+  "staff_accounts.page.actions": {
+    "defaultMessage": "Acciones",
+    "description": "The tab of an account's Actions page: every action on it. Read by moderators."
+  },
+  "staff_accounts.page.manage": {
+    "defaultMessage": "Gestión",
+    "description": "The tab of an account's Management page: its email and IP addresses, email delivery and sign-in recovery. Read by moderators."
+  },
+  "staff_accounts.fact.state": {
+    "defaultMessage": "Estado",
+    "description": "A term of an account's facts on its Review page. Read by moderators."
+  },
+  "staff_accounts.fact.restrictions": {
+    "defaultMessage": "Qué se le quita",
+    "description": "A term of an account's facts: what its actions take away from it now. Read by moderators."
+  },
+  "staff_accounts.fact.origin": {
+    "defaultMessage": "Servidor",
+    "description": "A term of an account's facts: where it is. Read by moderators."
+  },
+  "staff_accounts.fact.created": {
+    "defaultMessage": "Creada",
+    "description": "A term of an account's facts: when it was created. Read by moderators."
+  },
+  "staff_accounts.fact.signed_up": {
+    "defaultMessage": "Registrada",
+    "description": "A term of an account's facts: when its user signed up. Read by moderators."
+  },
+  "staff_accounts.fact.registration": {
+    "defaultMessage": "Registro",
+    "description": "A term of an account's facts: where its registration stands. Read by moderators."
+  },
+  "staff_accounts.fact.reason": {
+    "defaultMessage": "Por qué se unió",
+    "description": "A term of an account's facts: why the user wanted to join, as they wrote it. Read by moderators."
+  },
+  "staff_accounts.fact.invite": {
+    "defaultMessage": "Invitación",
+    "description": "A term of an account's facts: the invite its user signed up with, and who made it. Read by moderators."
+  },
+  "staff_accounts.fact.decision_note": {
+    "defaultMessage": "Nota sobre el registro",
+    "description": "A term of an account's facts: the moderators' note on approving or rejecting its registration. Read by moderators."
+  },
+  "staff_accounts.fact.email_verified": {
+    "defaultMessage": "Confirmación del correo",
+    "description": "A term of an account's facts: whether the user confirmed their email address. Read by moderators."
+  },
+  "staff_accounts.fact.roles": {
+    "defaultMessage": "Roles",
+    "description": "A term of an account's facts: the roles of its user. Read by moderators."
+  },
+  "staff_accounts.act.title": {
+    "defaultMessage": "Tomar una acción",
+    "description": "The heading of the form of a new action on an account's Review page. Read by moderators."
+  },
+  "staff_accounts.act.kind": {
+    "defaultMessage": "Acción",
+    "description": "The label of the choice of an action's kind in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.category": {
+    "defaultMessage": "Motivo",
+    "description": "The label of the choice of an action's kind of reason in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.length": {
+    "defaultMessage": "Duración",
+    "description": "The label of the choice of how long an action lasts in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.posts": {
+    "defaultMessage": "Publicaciones a las que afecta",
+    "description": "The label of the posts of the report that an action on posts acts on, in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.post": {
+    "defaultMessage": "Publicación {n}: {excerpt}",
+    "description": "One of the posts an action on posts may act on, its number in the report and its start. Read by moderators."
+  },
+  "staff_accounts.act.posts.none": {
+    "defaultMessage": "Elige al menos una publicación.",
+    "description": "Under the posts of a new action on posts when none is chosen. Read by moderators."
+  },
+  "staff_accounts.act.public_reason": {
+    "defaultMessage": "Motivo que se comunica a la cuenta",
+    "description": "The label of the field of the reason a new action tells its account. Read by moderators."
+  },
+  "staff_accounts.act.private_note": {
+    "defaultMessage": "Nota para los moderadores",
+    "description": "The label of the field of the moderators' note of a new action. Read by moderators."
+  },
+  "staff_accounts.act.notify": {
+    "defaultMessage": "Avisar a la cuenta",
+    "description": "The checkbox of whether a new action on a local account is told to it. Read by moderators."
+  },
+  "staff_accounts.act.block_email": {
+    "defaultMessage": "Bloquear también los registros con la dirección de correo de esta cuenta",
+    "description": "The checkbox of a ban of a local account that also blocks its email address from signing up again. Read by moderators."
+  },
+  "staff_accounts.act.submit": {
+    "defaultMessage": "Tomar esta acción",
+    "description": "The button of the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.ban": {
+    "defaultMessage": "Expulsar",
+    "description": "The button of the form of a new action when it is a ban, and the confirmation's button. Read by moderators."
+  },
+  "staff_accounts.act.ban.confirm": {
+    "defaultMessage": "¿Expulsar a {handle}?",
+    "description": "The question before a ban is taken. Read by moderators."
+  },
+  "staff_accounts.act.ban.about": {
+    "defaultMessage": "La cuenta se suspende ahora y se elimina en 30 días. Una expulsión no se puede levantar: solo una apelación puede revocarla. Escribe el identificador de la cuenta para confirmar.",
+    "description": "Under the question before a ban: what follows, and that only overturning its appeal undoes it. Read by moderators."
+  },
+  "staff_accounts.act.delete": {
+    "defaultMessage": "Eliminar publicaciones",
+    "description": "The confirmation's button before an action deletes posts. Read by moderators."
+  },
+  "staff_accounts.act.delete.confirm": {
+    "defaultMessage": "{count, plural, one {¿Eliminar # publicación?} other {¿Eliminar # publicaciones?}}",
+    "description": "The question before an action deletes the posts chosen. Read by moderators."
+  },
+  "staff_accounts.act.delete.about": {
+    "defaultMessage": "Las publicaciones se eliminan para todos, aquí y en otros servidores. No se puede deshacer.",
+    "description": "Under the question before an action deletes posts. Read by moderators."
+  },
+  "staff_accounts.act.done": {
+    "defaultMessage": "{kind} está vigente ahora.",
+    "description": "Said after a new action was taken, naming its kind. Read by moderators."
+  },
+  "staff_accounts.act.not_taken": {
+    "defaultMessage": "No se tomó la acción. Corrige lo que está marcado.",
+    "description": "Before the button of a new action when the server refused one of its fields. Read by moderators."
+  },
+  "staff_accounts.actions.filters": {
+    "defaultMessage": "Filtrar acciones",
+    "description": "For assistive technology, the name of the filters over an account's actions. Read by moderators."
+  },
+  "staff_accounts.actions.active": {
+    "defaultMessage": "Vigentes",
+    "description": "The filter of an account's actions that keeps those in effect now. Read by moderators."
+  },
+  "staff_accounts.actions.table": {
+    "defaultMessage": "Acciones",
+    "description": "For assistive technology, the name of a table of actions on an account. Read by moderators."
+  },
+  "staff_accounts.actions.column.kind": {
+    "defaultMessage": "Acción",
+    "description": "The column of an action's kind in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.category": {
+    "defaultMessage": "Motivo",
+    "description": "The column of an action's kind of reason in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.issued": {
+    "defaultMessage": "Tomada",
+    "description": "The column of when an action was taken in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.ends": {
+    "defaultMessage": "Termina",
+    "description": "The column of when an action ends in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.state": {
+    "defaultMessage": "Estado",
+    "description": "The column of an action's state in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.none": {
+    "defaultMessage": "No se ha tomado ninguna acción sobre esta cuenta.",
+    "description": "In place of the table of an account's actions when there is none. Read by moderators."
+  },
+  "staff_accounts.actions.none_active": {
+    "defaultMessage": "Ninguna acción sobre esta cuenta está vigente. Quita el filtro para ver todas las acciones.",
+    "description": "In place of the table of an account's actions in effect when there is none. Read by moderators."
+  },
+  "staff_accounts.actions.loading": {
+    "defaultMessage": "Cargando las acciones…",
+    "description": "On an account's Actions page while its actions are read. Read by moderators."
+  },
+  "staff_accounts.actions.failed": {
+    "defaultMessage": "No se pudieron cargar las acciones.",
+    "description": "On an account's Actions page when its actions could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.action.title": {
+    "defaultMessage": "{kind} de {handle}",
+    "description": "The title of an action's page: its kind and the account it is on. Read by moderators."
+  },
+  "staff_accounts.action.back": {
+    "defaultMessage": "Acciones",
+    "description": "The way back from an action's page to the account's actions. Read by moderators."
+  },
+  "staff_accounts.action.missing": {
+    "defaultMessage": "No hay ninguna acción de esta cuenta en esta dirección.",
+    "description": "At an action's page whose action the server does not have, or that is on another account. Read by moderators."
+  },
+  "staff_accounts.action.all": {
+    "defaultMessage": "Las acciones de la cuenta",
+    "description": "The link after the notice that an address names no action, to the account's actions. Read by moderators."
+  },
+  "staff_accounts.action.loading": {
+    "defaultMessage": "Cargando la acción…",
+    "description": "At an action's page while it is read. Read by moderators."
+  },
+  "staff_accounts.action.failed": {
+    "defaultMessage": "No se pudo cargar la acción.",
+    "description": "At an action's page when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.action.facts": {
+    "defaultMessage": "La acción",
+    "description": "For assistive technology, the name of the list of an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.fact.state": {
+    "defaultMessage": "Estado",
+    "description": "A term of an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.fact.category": {
+    "defaultMessage": "Motivo",
+    "description": "A term of an action's facts: its kind of reason. Read by moderators."
+  },
+  "staff_accounts.action.fact.public_reason": {
+    "defaultMessage": "Motivo comunicado",
+    "description": "A term of an action's facts: the reason the account was told. Read by moderators."
+  },
+  "staff_accounts.action.fact.private_note": {
+    "defaultMessage": "Nota para los moderadores",
+    "description": "A term of an action's facts: the moderators' note. Read by moderators."
+  },
+  "staff_accounts.action.fact.issued": {
+    "defaultMessage": "Tomada",
+    "description": "A term of an action's facts: when it was taken. Read by moderators."
+  },
+  "staff_accounts.action.fact.issuer": {
+    "defaultMessage": "Tomada por",
+    "description": "A term of an action's facts: who took it. Read by moderators."
+  },
+  "staff_accounts.action.fact.notified": {
+    "defaultMessage": "Cuenta avisada",
+    "description": "A term of an action's facts: whether the account was told. Read by moderators."
+  },
+  "staff_accounts.action.fact.ends": {
+    "defaultMessage": "Termina",
+    "description": "A term of an action's facts: when it ends. Read by moderators."
+  },
+  "staff_accounts.action.fact.lifted": {
+    "defaultMessage": "Levantada",
+    "description": "A term of an action's facts: when it was lifted. Read by moderators."
+  },
+  "staff_accounts.action.fact.lift_reason": {
+    "defaultMessage": "Por qué se levantó",
+    "description": "A term of an action's facts: the reason it was lifted. Read by moderators."
+  },
+  "staff_accounts.action.fact.report": {
+    "defaultMessage": "Denuncia",
+    "description": "A term of an action's facts: the report it follows from. Read by moderators."
+  },
+  "staff_accounts.action.fact.posts": {
+    "defaultMessage": "Publicaciones",
+    "description": "A term of an action's facts: the posts an action on posts acts on. Read by moderators."
+  },
+  "staff_accounts.action.issuer.cli": {
+    "defaultMessage": "La línea de comandos del servidor",
+    "description": "Who took an action or decided an appeal when it was done on the command line. Read by moderators."
+  },
+  "staff_accounts.action.issuer.someone": {
+    "defaultMessage": "Un moderador",
+    "description": "Who took an action or decided an appeal while their account is not read, or gone. Read by moderators."
+  },
+  "staff_accounts.action.notified.yes": {
+    "defaultMessage": "Avisada",
+    "description": "The value of Account told in an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.notified.no": {
+    "defaultMessage": "Sin avisar",
+    "description": "The value of Account told in an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.report_open": {
+    "defaultMessage": "Abrir la denuncia",
+    "description": "The value of Report in an action's facts: the link to the report it follows from. Read by moderators."
+  },
+  "staff_accounts.action.posts": {
+    "defaultMessage": "{count, plural, one {# publicación} other {# publicaciones}}",
+    "description": "The value of Posts in an action's facts: how many posts it acts on. Read by moderators."
+  },
+  "staff_accounts.action.ban_lifted_by_appeal": {
+    "defaultMessage": "Una expulsión no se puede levantar. Solo una apelación puede revocarla, hasta que se elimine la cuenta.",
+    "description": "On a ban's page, in the place of Lift. Read by moderators."
+  },
+  "staff_accounts.action.lift": {
+    "defaultMessage": "Levantar la acción",
+    "description": "The heading of the form that lifts an action, on its page. Read by moderators."
+  },
+  "staff_accounts.action.lift.submit": {
+    "defaultMessage": "Levantar",
+    "description": "The button that lifts an action. Read by moderators."
+  },
+  "staff_accounts.action.lift.reason": {
+    "defaultMessage": "Por qué se levanta (para los moderadores)",
+    "description": "The label of the field of the reason for lifting an action. Read by moderators."
+  },
+  "staff_accounts.action.lifted": {
+    "defaultMessage": "{kind} se levantó.",
+    "description": "Said after an action was lifted, naming its kind. Read by moderators."
+  },
+  "staff_accounts.action.appeal_open": {
+    "defaultMessage": "Abrir su apelación",
+    "description": "On a ban's page, after the sentence that only an appeal can overturn it: the link to the appeal of this ban. Read by moderators."
+  },
+  "staff_accounts.reports.table": {
+    "defaultMessage": "Denuncias",
+    "description": "For assistive technology, the name of the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.column.category": {
+    "defaultMessage": "Categoría",
+    "description": "The column of the reports' categories in the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.column.filed": {
+    "defaultMessage": "Presentada",
+    "description": "The column of when a report was filed, in the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.column.state": {
+    "defaultMessage": "Estado",
+    "description": "The column of a report's state, in the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.none": {
+    "defaultMessage": "Nadie ha denunciado esta cuenta.",
+    "description": "In place of the table of an account's reports when there is none. Read by moderators."
+  },
+  "staff_accounts.private.title": {
+    "defaultMessage": "Correo y direcciones IP",
+    "description": "The heading of an account's email and IP addresses on its Management page, shown on demand alone. Read by moderators."
+  },
+  "staff_accounts.private.email": {
+    "defaultMessage": "Correo electrónico",
+    "description": "A term of an account's private facts, shown on demand. Read by moderators."
+  },
+  "staff_accounts.private.registration_ip": {
+    "defaultMessage": "Se registró desde",
+    "description": "A term of an account's private facts: the IP address its user signed up from. Read by moderators."
+  },
+  "staff_accounts.private.registered_at": {
+    "defaultMessage": "Se registró el",
+    "description": "A term of an account's private facts: when its user signed up from that IP address. Read by moderators."
+  },
+  "staff_accounts.private.no_email": {
+    "defaultMessage": "Sin dirección de correo",
+    "description": "The value of Email address when the account has none. Read by moderators."
+  },
+  "staff_accounts.private.unknown": {
+    "defaultMessage": "Desconocido",
+    "description": "The value of an IP address or a browser that the server does not know any more. Read by moderators."
+  },
+  "staff_accounts.private.same_domain": {
+    "defaultMessage": "Cuentas con una dirección de correo en {domain}",
+    "description": "The link from an account's revealed email address to the search of the accounts of the same email domain. Read by moderators."
+  },
+  "staff_accounts.private.sign_ins": {
+    "defaultMessage": "Inicios de sesión",
+    "description": "The heading of the table of an account's sign-ins, the newest first, the rest under Show more. Read by moderators."
+  },
+  "staff_accounts.private.sign_ins.none": {
+    "defaultMessage": "No hay ningún inicio de sesión registrado dentro del periodo de conservación.",
+    "description": "In place of the table of an account's sign-ins when there is none. Read by moderators."
+  },
+  "staff_accounts.private.column.ip": {
+    "defaultMessage": "Dirección IP",
+    "description": "The column of IP addresses in the tables of an account's sign-ins and of accounts that share an address. Read by moderators."
+  },
+  "staff_accounts.private.column.agent": {
+    "defaultMessage": "Navegador",
+    "description": "The column of the browser (the user agent) of a sign-in. Read by moderators."
+  },
+  "staff_accounts.private.column.when": {
+    "defaultMessage": "Cuándo",
+    "description": "The column of when a sign-in happened. Read by moderators."
+  },
+  "staff_accounts.private.same_ip": {
+    "defaultMessage": "Cuentas que usaron la misma dirección IP",
+    "description": "The heading of the table of other accounts that signed up or signed in from an IP address of this one. Read by moderators."
+  },
+  "staff_accounts.private.same_ip.of": {
+    "defaultMessage": "Cuentas que usaron {ip}",
+    "description": "For assistive technology, the name of the table of the other accounts that signed up or signed in from one IP address (ip) of this one, one table per address. Read by moderators."
+  },
+  "staff_accounts.private.same_ip.none": {
+    "defaultMessage": "Ninguna otra cuenta usó estas direcciones.",
+    "description": "In place of the table of accounts that share an address, when there is none. Read by moderators."
+  },
+  "staff_accounts.suppression.title": {
+    "defaultMessage": "Entrega de correo",
+    "description": "The heading of the section of an account's email suppression on its Management page. Read by moderators."
+  },
+  "staff_accounts.suppression.kind": {
+    "defaultMessage": "Detenido porque",
+    "description": "A term of the email suppression's facts: why the server stopped sending. Read by moderators."
+  },
+  "staff_accounts.suppression.why": {
+    "defaultMessage": "{kind, select, hard_bounce {La dirección no existe o rechaza correo: no se envía ningún correo salvo la confirmación.} complaint {La persona marcó un correo como spam: no se envían correos de notificaciones ni de anuncios.} other {El correo está detenido.}}",
+    "description": "The value of Stopped because: why the server stopped sending email to the account's address, and what it stops. Read by moderators."
+  },
+  "staff_accounts.suppression.since": {
+    "defaultMessage": "Desde",
+    "description": "A term of the email suppression's facts: when the failure that started it happened. Read by moderators."
+  },
+  "staff_accounts.suppression.lift": {
+    "defaultMessage": "Volver a enviar correo",
+    "description": "The button that lifts an account's email suppression. Read by moderators."
+  },
+  "staff_accounts.suppression.done": {
+    "defaultMessage": "Se vuelve a enviar correo a esta cuenta.",
+    "description": "Said after an account's email suppression was lifted. Read by moderators."
+  },
+  "staff_accounts.recovery.title": {
+    "defaultMessage": "Recuperación de acceso",
+    "description": "The heading of the section of a password reset link and removing two-factor authentication, on an account's Management page. Read by moderators."
+  },
+  "staff_accounts.recovery.link": {
+    "defaultMessage": "Emitir un enlace de restablecimiento de contraseña…",
+    "description": "The button that asks to issue a password reset link for an account. Read by moderators."
+  },
+  "staff_accounts.recovery.link.confirm": {
+    "defaultMessage": "¿Emitir un enlace de restablecimiento de contraseña para {handle}?",
+    "description": "The question before a password reset link is issued. Read by moderators."
+  },
+  "staff_accounts.recovery.link.confirm.about": {
+    "defaultMessage": "Quien tenga el enlace puede establecer la contraseña de la cuenta. Confirma antes quién es la persona por otro medio y entrégale el enlace solo a ella.",
+    "description": "Under the question before a password reset link is issued. Read by moderators."
+  },
+  "staff_accounts.recovery.link.issue": {
+    "defaultMessage": "Emitir",
+    "description": "The confirmation's button that issues a password reset link. Read by moderators."
+  },
+  "staff_accounts.recovery.link.value": {
+    "defaultMessage": "Enlace de restablecimiento de contraseña",
+    "description": "The name of the password reset link shown once, to copy and pass on. Read by moderators."
+  },
+  "staff_accounts.recovery.link.copy": {
+    "defaultMessage": "Copiar enlace",
+    "description": "The button that copies a password reset link. Read by moderators."
+  },
+  "staff_accounts.recovery.link.done": {
+    "defaultMessage": "Se emitió el enlace. Se muestra solo ahora.",
+    "description": "Said after a password reset link was issued. Read by moderators."
+  },
+  "staff_accounts.recovery.link.once": {
+    "defaultMessage": "Funciona una vez, hasta el {until}, y deja de funcionar si la contraseña cambia de otra forma.",
+    "description": "Under a password reset link: until when it works. Read by moderators."
+  },
+  "staff_accounts.recovery.link.providers": {
+    "defaultMessage": "El inicio de sesión está limitado ahora a los proveedores de inicio de sesión, así que el enlace no establece ninguna contraseña. Solo funciona si el límite termina antes del {until}.",
+    "description": "Under a password reset link while sign-in is limited to login providers. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor": {
+    "defaultMessage": "Quitar la autenticación en dos pasos…",
+    "description": "The button that asks to remove an account's two-factor authentication. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.confirm": {
+    "defaultMessage": "¿Quitar la autenticación en dos pasos de {handle}?",
+    "description": "The question before an account's two-factor authentication is removed. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.confirm.about": {
+    "defaultMessage": "La persona iniciará entonces sesión solo con su contraseña. Confirma antes quién es por otro medio.",
+    "description": "Under the question before two-factor authentication is removed. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.remove": {
+    "defaultMessage": "Quitar",
+    "description": "The confirmation's button that removes two-factor authentication. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.done": {
+    "defaultMessage": "{handle} inicia sesión ahora sin autenticación en dos pasos.",
+    "description": "Said after an account's two-factor authentication was removed. Read by moderators."
+  },
+  "staff_accounts.refetch.title": {
+    "defaultMessage": "Publicaciones de su servidor",
+    "description": "The heading of the section that refetches a remote account's posts, on its Management page. Read by moderators."
+  },
+  "staff_accounts.refetch.submit": {
+    "defaultMessage": "Volver a obtener las publicaciones",
+    "description": "The button that queues the refetch of a remote account's newest posts from its server. Read by moderators."
+  },
+  "staff_accounts.refetch.done": {
+    "defaultMessage": "Las publicaciones se obtienen de nuevo en segundo plano, 100 por minuto.",
+    "description": "Said after the refetch of a remote account's posts was queued. Read by moderators."
+  },
+  "staff_accounts.appeals.filters": {
+    "defaultMessage": "Filtrar apelaciones",
+    "description": "For assistive technology, the name of the filters over a list of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.state": {
+    "defaultMessage": "Estado",
+    "description": "The filter of a list of appeals by where they stand. Read by moderators."
+  },
+  "staff_accounts.appeals.state.any": {
+    "defaultMessage": "Cualquier estado",
+    "description": "The value of the State filter of appeals that keeps every one. Read by moderators."
+  },
+  "staff_accounts.appeals.table": {
+    "defaultMessage": "Apelaciones",
+    "description": "For assistive technology, the name of the table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.account": {
+    "defaultMessage": "Cuenta",
+    "description": "The column of who appealed, in a table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.action": {
+    "defaultMessage": "Acción",
+    "description": "The column of the action appealed, in the table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.submitted": {
+    "defaultMessage": "Enviada",
+    "description": "The column of when an appeal was sent, in a table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.state": {
+    "defaultMessage": "Estado",
+    "description": "The column of an appeal's state, in a table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.empty.pending": {
+    "defaultMessage": "Ninguna apelación espera una decisión.",
+    "description": "In place of the table of appeals when none waits. Read by moderators."
+  },
+  "staff_accounts.appeals.empty.filtered": {
+    "defaultMessage": "Ninguna apelación coincide. Quita el filtro para ver todas las apelaciones.",
+    "description": "In place of a table of appeals when none matches the filter. Read by moderators."
+  },
+  "staff_accounts.appeals.loading": {
+    "defaultMessage": "Cargando las apelaciones…",
+    "description": "At /moderation/appeals while the appeals are read. Read by moderators."
+  },
+  "staff_accounts.appeals.failed": {
+    "defaultMessage": "No se pudieron cargar las apelaciones.",
+    "description": "At /moderation/appeals when the appeals could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.appeal.title": {
+    "defaultMessage": "Apelación de {handle}",
+    "description": "The title of an appeal's screen, naming who appealed. Read by moderators."
+  },
+  "staff_accounts.appeal.back": {
+    "defaultMessage": "Apelaciones",
+    "description": "The way back from an appeal to the list of appeals. Read by moderators."
+  },
+  "staff_accounts.appeal.missing": {
+    "defaultMessage": "No hay ninguna apelación en esta dirección.",
+    "description": "At an appeal's screen whose appeal the server does not have. Read by moderators."
+  },
+  "staff_accounts.appeal.all": {
+    "defaultMessage": "Todas las apelaciones",
+    "description": "The link after the notice that an address names no appeal. Read by moderators."
+  },
+  "staff_accounts.appeal.loading": {
+    "defaultMessage": "Cargando la apelación…",
+    "description": "At an appeal's screen while it is read. Read by moderators."
+  },
+  "staff_accounts.appeal.failed": {
+    "defaultMessage": "No se pudo cargar la apelación.",
+    "description": "At an appeal's screen when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.appeal.facts": {
+    "defaultMessage": "La apelación",
+    "description": "For assistive technology, the name of the list of an appeal's facts. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.state": {
+    "defaultMessage": "Estado",
+    "description": "A term of an appeal's facts. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.submitted": {
+    "defaultMessage": "Enviada",
+    "description": "A term of an appeal's facts: when it was sent. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.action": {
+    "defaultMessage": "Acción apelada",
+    "description": "A term of an appeal's facts: the action it appeals. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.category": {
+    "defaultMessage": "Motivo",
+    "description": "A term of an appeal's facts: the action's kind of reason. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.public_reason": {
+    "defaultMessage": "Motivo comunicado de la acción",
+    "description": "A term of an appeal's facts: the reason the action told the account. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.issued": {
+    "defaultMessage": "Acción tomada",
+    "description": "A term of an appeal's facts: when the action was taken. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.decided": {
+    "defaultMessage": "Decidida",
+    "description": "A term of an appeal's facts: when it was decided. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.decider": {
+    "defaultMessage": "Decidida por",
+    "description": "A term of an appeal's facts: who decided it. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.decision_reason": {
+    "defaultMessage": "Motivo comunicado de la decisión",
+    "description": "A term of an appeal's facts: the explanation the user was told of the decision. Read by moderators."
+  },
+  "staff_accounts.appeal.action": {
+    "defaultMessage": "{kind} de {handle}",
+    "description": "The value of Action appealed: the action's kind and its account, a link to its page. Read by moderators."
+  },
+  "staff_accounts.appeal.text": {
+    "defaultMessage": "Lo que escribió",
+    "description": "The heading of the text of an appeal, as its user wrote it. Read by moderators."
+  },
+  "staff_accounts.appeal.decide": {
+    "defaultMessage": "Decidir",
+    "description": "The heading of the decision of a pending appeal. Read by moderators."
+  },
+  "staff_accounts.appeal.reason": {
+    "defaultMessage": "Motivo que le comunicas",
+    "description": "The label of the field of the explanation a decision tells the user who appealed. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold": {
+    "defaultMessage": "Confirmar",
+    "description": "The button that upholds an appeal, keeping its action, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn": {
+    "defaultMessage": "Revocar",
+    "description": "The button that overturns an appeal, lifting its action, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold.confirm": {
+    "defaultMessage": "¿Confirmar la decisión original?",
+    "description": "The question before an appeal is decided by upholding what was appealed: an action, or an automated review's refusal of a post. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold.about": {
+    "defaultMessage": "La acción se queda como está y se le avisa. No se puede deshacer.",
+    "description": "Under the question before an appeal is upheld. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold.ban_about": {
+    "defaultMessage": "La expulsión pasa a ser definitiva y la cuenta se elimina el {date}; se le avisa. No se puede deshacer. Escribe el identificador de la cuenta para confirmar.",
+    "description": "Under the question before an appeal of a ban is upheld, over the field of the handle typed to confirm. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn.confirm": {
+    "defaultMessage": "¿Revocar la decisión original?",
+    "description": "The question before an appeal is decided by overturning what was appealed: an action, or an automated review's refusal of a post. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn.about": {
+    "defaultMessage": "La acción se levanta de inmediato y se le avisa. Las publicaciones eliminadas siguen eliminadas. No se puede deshacer.",
+    "description": "Under the question before an appeal of an action other than a ban is overturned. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn.ban_about": {
+    "defaultMessage": "La expulsión se revoca y se cancela la eliminación de la cuenta; se le avisa y puede iniciar sesión de nuevo. No se puede deshacer.",
+    "description": "Under the question before an appeal of a ban is overturned. Read by moderators."
+  },
+  "staff_accounts.appeal.upheld": {
+    "defaultMessage": "Se confirmó la acción.",
+    "description": "Said after an appeal was upheld. Read by moderators."
+  },
+  "staff_accounts.appeal.overturned": {
+    "defaultMessage": "Se revocó y levantó la acción.",
+    "description": "Said after an appeal was overturned. Read by moderators."
+  },
+  "staff_accounts.appeal.ban_final": {
+    "defaultMessage": "Confirmar la decisión original hace definitiva la expulsión: la cuenta se elimina el {date}.",
+    "description": "Over Uphold and Overturn of an appeal of a ban: what upholding does. Read by moderators."
+  },
+  "staff_accounts.registrations.table": {
+    "defaultMessage": "Registros",
+    "description": "For assistive technology, the name of the table of registrations that wait for approval. Read by moderators."
+  },
+  "staff_accounts.registrations.column.account": {
+    "defaultMessage": "Cuenta",
+    "description": "The column of the accounts' handles in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.email": {
+    "defaultMessage": "Correo electrónico",
+    "description": "The column of the email addresses in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.reason": {
+    "defaultMessage": "Por qué quiere unirse",
+    "description": "The column of why each person wants to join, in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.submitted": {
+    "defaultMessage": "Registrada",
+    "description": "The column of when each person signed up, in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.state": {
+    "defaultMessage": "Estado",
+    "description": "The column of a registration's state, in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.unconfirmed": {
+    "defaultMessage": "Correo aún sin confirmar",
+    "description": "Under a registration's handle when its person has not confirmed their email address. Read by moderators."
+  },
+  "staff_accounts.registrations.no_email": {
+    "defaultMessage": "Sin dirección de correo",
+    "description": "In the email column of a registration that has none, or once it is decided. Read by moderators."
+  },
+  "staff_accounts.registrations.no_reason": {
+    "defaultMessage": "No indicó motivo",
+    "description": "In the reason column of a registration whose person gave none. Read by moderators."
+  },
+  "staff_accounts.registrations.empty": {
+    "defaultMessage": "Ningún registro espera aprobación.",
+    "description": "In place of the table of registrations when none waits. Read by moderators."
+  },
+  "staff_accounts.registrations.loading": {
+    "defaultMessage": "Cargando los registros…",
+    "description": "At /moderation/registrations while the registrations are read. Read by moderators."
+  },
+  "staff_accounts.registrations.failed": {
+    "defaultMessage": "No se pudieron cargar los registros.",
+    "description": "At /moderation/registrations when the registrations could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.registrations.approve": {
+    "defaultMessage": "Aprobar",
+    "description": "The action on the registrations picked that approves them, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.registrations.reject": {
+    "defaultMessage": "Rechazar",
+    "description": "The action on the registrations picked that rejects them, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.registrations.approve.confirm": {
+    "defaultMessage": "{count, plural, one {¿Aprobar # registro?} other {¿Aprobar # registros?}}",
+    "description": "The question before the registrations picked are approved. Read by moderators."
+  },
+  "staff_accounts.registrations.approve.about": {
+    "defaultMessage": "Pueden usar la aplicación de inmediato.",
+    "description": "The line under the note's field before registrations are approved. Read by moderators."
+  },
+  "staff_accounts.registrations.reject.confirm": {
+    "defaultMessage": "{count, plural, one {¿Rechazar # registro?} other {¿Rechazar # registros?}}",
+    "description": "The question before the registrations picked are rejected. Read by moderators."
+  },
+  "staff_accounts.registrations.reject.about": {
+    "defaultMessage": "No pueden usar la cuenta.",
+    "description": "The line under the note's field before registrations are rejected. Read by moderators."
+  },
+  "staff_accounts.registrations.note": {
+    "defaultMessage": "Nota para los moderadores",
+    "description": "The label of the field of a note on a decision of registrations, which only the moderators read. Read by moderators."
+  },
+  "staff_accounts.registrations.approved": {
+    "defaultMessage": "{count, plural, one {# registro aprobado.} other {# registros aprobados.}}",
+    "description": "Said after registrations were approved. Read by moderators."
+  },
+  "staff_accounts.registrations.rejected": {
+    "defaultMessage": "{count, plural, one {# registro rechazado.} other {# registros rechazados.}}",
+    "description": "Said after registrations were rejected. Read by moderators."
+  },
+  "staff_accounts.registrations.facts": {
+    "defaultMessage": "El registro",
+    "description": "For assistive technology, the name of the facts of one registration in the list of registrations: its email address, kept until shown, and why the person wants to join. Read by moderators."
+  },
+  "staff_accounts.block_kind": {
+    "defaultMessage": "{kind, select, email_domain {Dominio de correo} email_hash {Dirección de correo} ip_range {Rango de IP} other {Dominio de correo}}",
+    "description": "What a sign-up block matches, in its list, its filter, its page and the form of a new one. Read by moderators."
+  },
+  "staff_accounts.block_severity": {
+    "defaultMessage": "{severity, select, reject {Rechazar el registro} require_approval {Retenerlo para aprobación} other {Rechazar el registro}}",
+    "description": "What a sign-up block does to a sign-up it matches. Read by moderators."
+  },
+  "staff_accounts.blocks.add": {
+    "defaultMessage": "Añadir un bloqueo",
+    "description": "The button to the form of a new sign-up block, and that form's title. Read by moderators."
+  },
+  "staff_accounts.blocks.import": {
+    "defaultMessage": "Añadir desde una lista",
+    "description": "The button to the form that adds sign-up blocks from a list, and that form's title. Read by moderators."
+  },
+  "staff_accounts.blocks.filters": {
+    "defaultMessage": "Filtrar bloqueos de registro",
+    "description": "For assistive technology, the name of the filters over the sign-up blocks. Read by moderators."
+  },
+  "staff_accounts.blocks.kind": {
+    "defaultMessage": "Coincide con",
+    "description": "The filter of sign-up blocks by what they match, and the label of that choice in the form of a new block. Read by moderators."
+  },
+  "staff_accounts.blocks.kind.any": {
+    "defaultMessage": "Cualquier cosa",
+    "description": "The value of the Matches filter that keeps every block. Read by moderators."
+  },
+  "staff_accounts.blocks.all": {
+    "defaultMessage": "Incluir los terminados",
+    "description": "The filter of sign-up blocks that also shows those lifted or expired. Read by moderators."
+  },
+  "staff_accounts.blocks.table": {
+    "defaultMessage": "Bloqueos de registro",
+    "description": "For assistive technology, the name of the table of sign-up blocks. Read by moderators."
+  },
+  "staff_accounts.blocks.column.value": {
+    "defaultMessage": "Valor",
+    "description": "The column of what a sign-up block matches, and of a skipped line's value. Read by moderators."
+  },
+  "staff_accounts.blocks.column.kind": {
+    "defaultMessage": "Coincide con",
+    "description": "The column of what kind of value a sign-up block matches. Read by moderators."
+  },
+  "staff_accounts.blocks.column.severity": {
+    "defaultMessage": "Hace",
+    "description": "The column of what a sign-up block does to a sign-up. Read by moderators."
+  },
+  "staff_accounts.blocks.column.ends": {
+    "defaultMessage": "Termina",
+    "description": "The column of when a sign-up block ends. Read by moderators."
+  },
+  "staff_accounts.blocks.column.state": {
+    "defaultMessage": "Estado",
+    "description": "The column of a sign-up block's state. Read by moderators."
+  },
+  "staff_accounts.blocks.column.line": {
+    "defaultMessage": "Línea",
+    "description": "The column of a skipped line's number. Read by moderators."
+  },
+  "staff_accounts.blocks.column.reason": {
+    "defaultMessage": "Motivo",
+    "description": "The column of why a line was skipped. Read by moderators."
+  },
+  "staff_accounts.blocks.hash": {
+    "defaultMessage": "Hash {hash}…",
+    "description": "The value of a block of one email address, of which only a hash is kept: its start. Read by moderators."
+  },
+  "staff_accounts.blocks.empty": {
+    "defaultMessage": "Ningún bloqueo de registro está vigente. Añade uno para rechazar registros o retenerlos para aprobación.",
+    "description": "In place of the table of sign-up blocks when none is in effect. Read by moderators."
+  },
+  "staff_accounts.blocks.empty.filtered": {
+    "defaultMessage": "Ningún bloqueo de registro coincide. Quita los filtros para ver los vigentes.",
+    "description": "In place of the table of sign-up blocks when none matches the filters. Read by moderators."
+  },
+  "staff_accounts.blocks.loading": {
+    "defaultMessage": "Cargando los bloqueos de registro…",
+    "description": "At /moderation/signup-blocks while the blocks are read. Read by moderators."
+  },
+  "staff_accounts.blocks.failed": {
+    "defaultMessage": "No se pudieron cargar los bloqueos de registro.",
+    "description": "At /moderation/signup-blocks when the blocks could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.blocks.back": {
+    "defaultMessage": "Bloqueos de registro",
+    "description": "The way back from a sign-up block's page or form to the list of blocks. Read by moderators."
+  },
+  "staff_accounts.blocks.severity": {
+    "defaultMessage": "Hace",
+    "description": "The label of the choice of what a new sign-up block does. Read by moderators."
+  },
+  "staff_accounts.blocks.length": {
+    "defaultMessage": "Duración",
+    "description": "The label of the choice of how long a new sign-up block lasts. Read by moderators."
+  },
+  "staff_accounts.blocks.comment": {
+    "defaultMessage": "Comentario para los moderadores",
+    "description": "The label of the field of a sign-up block's comment. Read by moderators."
+  },
+  "staff_accounts.blocks.value": {
+    "defaultMessage": "{kind, select, email_hash {Dirección de correo} ip_range {Rango de IP} other {Dominio de correo}}",
+    "description": "The label of the field of a new sign-up block's value, by what it matches. Read by moderators."
+  },
+  "staff_accounts.blocks.value.hint": {
+    "defaultMessage": "{kind, select, email_hash {Solo se conserva un hash de la dirección. Las subdirecciones después de un + también coinciden.} ip_range {Un rango como 192.0.2.0/24 o una sola dirección.} other {Un dominio como spam.example. Sus subdominios también coinciden.}}",
+    "description": "Under the field of a new sign-up block's value: what to write. Read by moderators."
+  },
+  "staff_accounts.blocks.value.blank": {
+    "defaultMessage": "{kind, select, email_hash {Escribe una dirección de correo.} ip_range {Escribe un rango o una dirección IP.} other {Escribe un dominio.}}",
+    "description": "Under the field of a new sign-up block's value when it is empty. Read by moderators."
+  },
+  "staff_accounts.blocks.value.invalid": {
+    "defaultMessage": "{kind, select, email_hash {Esto no es una dirección de correo. Escribe una como nombre@example.com.} ip_range {Esto no es un rango de IP. Escribe uno como 192.0.2.0/24.} other {Esto no es un dominio. Escribe uno como spam.example.}}",
+    "description": "Under the field of a new sign-up block's value when the server refused it for its kind. Read by moderators."
+  },
+  "staff_accounts.blocks.add.submit": {
+    "defaultMessage": "Añadir el bloqueo",
+    "description": "The button of the form of a new sign-up block. Read by moderators."
+  },
+  "staff_accounts.blocks.list": {
+    "defaultMessage": "Lista",
+    "description": "The label of the field of the list of values to block sign-ups by. Read by moderators."
+  },
+  "staff_accounts.blocks.list.blank": {
+    "defaultMessage": "Pega o escribe la lista.",
+    "description": "Under the field of the list of sign-up blocks when it is empty. Read by moderators."
+  },
+  "staff_accounts.blocks.list.hint": {
+    "defaultMessage": "Un valor por línea, o un CSV cuya primera columna sea el valor. Se omiten las líneas en blanco y las que empiezan por #. Hasta 10 000.",
+    "description": "Under the field of the list of values to block sign-ups by. Read by moderators."
+  },
+  "staff_accounts.blocks.import.submit": {
+    "defaultMessage": "Añadir los bloqueos",
+    "description": "The button of the form that adds sign-up blocks from a list. Read by moderators."
+  },
+  "staff_accounts.blocks.imported": {
+    "defaultMessage": "{count, plural, one {# bloqueo añadido} other {# bloqueos añadidos}}",
+    "description": "The title of the result of adding sign-up blocks from a list. Read by moderators."
+  },
+  "staff_accounts.blocks.skipped": {
+    "defaultMessage": "{count, plural, one {# línea omitida} other {# líneas omitidas}}",
+    "description": "The heading of the table of the lines a list's import skipped. Read by moderators."
+  },
+  "staff_accounts.blocks.skipped.none": {
+    "defaultMessage": "Se añadieron todas las líneas.",
+    "description": "In place of the table of skipped lines when the import skipped none. Read by moderators."
+  },
+  "staff_accounts.blocks.line": {
+    "defaultMessage": "Línea {line}",
+    "description": "A skipped line's number, in the table of skipped lines. Read by moderators."
+  },
+  "staff_accounts.blocks.skip_reason": {
+    "defaultMessage": "{reason, select, invalid {No válida para su tipo} duplicate {Repite una línea anterior} already_blocked {Ya bloqueado} other {Omitida}}",
+    "description": "Why an import of sign-up blocks skipped a line. Read by moderators."
+  },
+  "staff_accounts.blocks.to_list": {
+    "defaultMessage": "Volver a los bloqueos de registro",
+    "description": "The button after an import's result, to the list of sign-up blocks. Read by moderators."
+  },
+  "staff_accounts.block.missing": {
+    "defaultMessage": "No hay ningún bloqueo de registro en esta dirección.",
+    "description": "At a sign-up block's page whose block the server does not have. Read by moderators."
+  },
+  "staff_accounts.block.all": {
+    "defaultMessage": "Todos los bloqueos de registro",
+    "description": "The link after the notice that an address names no sign-up block. Read by moderators."
+  },
+  "staff_accounts.block.loading": {
+    "defaultMessage": "Cargando el bloqueo de registro…",
+    "description": "At a sign-up block's page while it is read. Read by moderators."
+  },
+  "staff_accounts.block.failed": {
+    "defaultMessage": "No se pudo cargar el bloqueo de registro.",
+    "description": "At a sign-up block's page when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.block.facts": {
+    "defaultMessage": "El bloqueo de registro",
+    "description": "For assistive technology, the name of the list of a sign-up block's facts. Read by moderators."
+  },
+  "staff_accounts.block.fact.state": {
+    "defaultMessage": "Estado",
+    "description": "A term of a sign-up block's facts. Read by moderators."
+  },
+  "staff_accounts.block.fact.kind": {
+    "defaultMessage": "Coincide con",
+    "description": "A term of a sign-up block's facts: what kind of value it matches. Read by moderators."
+  },
+  "staff_accounts.block.fact.value": {
+    "defaultMessage": "Valor",
+    "description": "A term of a sign-up block's facts: its value as the server keeps it. Read by moderators."
+  },
+  "staff_accounts.block.fact.severity": {
+    "defaultMessage": "Hace",
+    "description": "A term of a sign-up block's facts: what it does. Read by moderators."
+  },
+  "staff_accounts.block.fact.created": {
+    "defaultMessage": "Añadido",
+    "description": "A term of a sign-up block's facts: when it was added. Read by moderators."
+  },
+  "staff_accounts.block.fact.ends": {
+    "defaultMessage": "Termina",
+    "description": "A term of a sign-up block's facts: when it ends. Read by moderators."
+  },
+  "staff_accounts.block.fact.lifted": {
+    "defaultMessage": "Levantado",
+    "description": "A term of a sign-up block's facts: when it was lifted. Read by moderators."
+  },
+  "staff_accounts.block.fact.comment": {
+    "defaultMessage": "Comentario",
+    "description": "A term of a sign-up block's facts: the moderators' comment. Read by moderators."
+  },
+  "staff_accounts.block.fact.ban": {
+    "defaultMessage": "Creado a partir de",
+    "description": "A term of a sign-up block's facts: the ban it was made from. Read by moderators."
+  },
+  "staff_accounts.block.from_ban": {
+    "defaultMessage": "Una expulsión",
+    "description": "The value of Made from in a sign-up block's facts, a link to the ban's page. Read by moderators."
+  },
+  "staff_accounts.block.lift": {
+    "defaultMessage": "Levantar",
+    "description": "The button that lifts a sign-up block. Read by moderators."
+  },
+  "staff_accounts.block.lifted": {
+    "defaultMessage": "Se levantó el bloqueo de registro.",
+    "description": "Said after a sign-up block was lifted. Read by moderators."
+  },
+  "staff_accounts.invite_state": {
+    "defaultMessage": "{state, select, usable {Utilizable} revoked {Revocada} expired {Caducada} exhausted {Agotada} creator_ineligible {Quien la creó no puede invitar ahora} other {Utilizable}}",
+    "description": "Where an invite stands, in the list of invites. Read by moderators."
+  },
+  "staff_accounts.invites.table": {
+    "defaultMessage": "Invitaciones",
+    "description": "For assistive technology, the name of the table of invites. Read by moderators."
+  },
+  "staff_accounts.invites.column.code": {
+    "defaultMessage": "Código",
+    "description": "The column of the invites' codes. Read by moderators."
+  },
+  "staff_accounts.invites.column.uses": {
+    "defaultMessage": "Registradas",
+    "description": "The column of how many signed up with an invite, of how many it allows. Read by moderators."
+  },
+  "staff_accounts.invites.column.ends": {
+    "defaultMessage": "Termina",
+    "description": "The column of when an invite stops working. Read by moderators."
+  },
+  "staff_accounts.invites.column.state": {
+    "defaultMessage": "Estado",
+    "description": "The column of an invite's state. Read by moderators."
+  },
+  "staff_accounts.invites.by": {
+    "defaultMessage": "{kind, select, member {De un miembro, {handle}} other {Del equipo, {handle}}}",
+    "description": "Under an invite's code: who created it, and whether as a member or as the staff. Read by moderators."
+  },
+  "staff_accounts.invites.by_cli": {
+    "defaultMessage": "Creada en la línea de comandos del servidor",
+    "description": "Under an invite's code when it was made on the command line. Read by moderators."
+  },
+  "staff_accounts.invites.by_gone": {
+    "defaultMessage": "Creada por una cuenta que ya no existe",
+    "description": "Under an invite's code when its creator deleted their account. Read by moderators."
+  },
+  "staff_accounts.invites.uses": {
+    "defaultMessage": "{uses, plural, one {# persona} other {# personas}}",
+    "description": "How many signed up with an invite without a limit. Read by moderators."
+  },
+  "staff_accounts.invites.uses_of": {
+    "defaultMessage": "{uses} de {max}",
+    "description": "How many signed up with an invite of how many it allows. Read by moderators."
+  },
+  "staff_accounts.invites.never": {
+    "defaultMessage": "Nunca",
+    "description": "When an invite with no end stops working, and the choice of no end in the form of a new invite. Read by moderators."
+  },
+  "staff_accounts.invites.unlimited": {
+    "defaultMessage": "Sin límite",
+    "description": "How many may sign up with a new invite that has no limit. Read by moderators."
+  },
+  "staff_accounts.invites.create": {
+    "defaultMessage": "Crear una invitación",
+    "description": "The button to the form of a new invite, and that form's title. Read by moderators."
+  },
+  "staff_accounts.invites.create.submit": {
+    "defaultMessage": "Crear",
+    "description": "The button of the form of a new invite. Read by moderators."
+  },
+  "staff_accounts.invites.length": {
+    "defaultMessage": "Funciona durante",
+    "description": "The label of the choice of how long a new invite works. Read by moderators."
+  },
+  "staff_accounts.invites.back": {
+    "defaultMessage": "Invitaciones",
+    "description": "The way back from the form of a new invite to the list of invites. Read by moderators."
+  },
+  "staff_accounts.invites.made": {
+    "defaultMessage": "Se creó la invitación",
+    "description": "The title of what takes the form's place once an invite is created. Read by moderators."
+  },
+  "staff_accounts.invites.link": {
+    "defaultMessage": "Enlace de registro",
+    "description": "The name of a new invite's link, to copy and pass on. Read by moderators."
+  },
+  "staff_accounts.invites.copy": {
+    "defaultMessage": "Copiar enlace",
+    "description": "The button that copies a new invite's link. Read by moderators."
+  },
+  "staff_accounts.invites.code": {
+    "defaultMessage": "Código",
+    "description": "A term of a new invite's facts: its code, which people may type instead. Read by moderators."
+  },
+  "staff_accounts.invites.to_list": {
+    "defaultMessage": "Volver a las invitaciones",
+    "description": "The button after a new invite, to the list of invites. Read by moderators."
+  },
+  "staff_accounts.invites.revoke": {
+    "defaultMessage": "Revocar",
+    "description": "The action on the invites picked that revokes them, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.invites.revoke.confirm": {
+    "defaultMessage": "{count, plural, one {¿Revocar # invitación?} other {¿Revocar # invitaciones?}}",
+    "description": "The question before the invites picked are revoked. Read by moderators."
+  },
+  "staff_accounts.invites.revoke.about": {
+    "defaultMessage": "Nadie podrá registrarse con ellas. Las personas que se registraron conservan sus cuentas. No se puede deshacer.",
+    "description": "Under the question before invites are revoked. Read by moderators."
+  },
+  "staff_accounts.invites.revoked": {
+    "defaultMessage": "{count, plural, one {# invitación revocada.} other {# invitaciones revocadas.}}",
+    "description": "Said after invites were revoked. Read by moderators."
+  },
+  "staff_accounts.invites.empty": {
+    "defaultMessage": "Aún no hay invitaciones. Crea una para que las personas se registren con su enlace.",
+    "description": "In place of the table of invites when there is none. Read by moderators."
+  },
+  "staff_accounts.invites.loading": {
+    "defaultMessage": "Cargando las invitaciones…",
+    "description": "At /moderation/invites while the invites are read. Read by moderators."
+  },
+  "staff_accounts.invites.failed": {
+    "defaultMessage": "No se pudieron cargar las invitaciones.",
+    "description": "At /moderation/invites when the invites could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.invites.max_uses": {
+    "defaultMessage": "Cuántas pueden registrarse (vacío para sin límite)",
+    "description": "The label of the field of how many may sign up with a new invite. Read by moderators."
+  },
+  "staff_accounts.invites.no_end": {
+    "defaultMessage": "Sin fin",
+    "description": "In the form of a new invite, under Works for: the choice of an invite that works until it is revoked or used up. Read by moderators."
+  },
+  "staff_accounts.hook": {
+    "defaultMessage": "{hook, select, inbound_status {Publicaciones de otros servidores} inbound_follow {Seguimientos de otros servidores} signup_check {Registros} media_check {Archivos multimedia subidos} local_status {Publicaciones de aquí} inbound_actor {Perfiles de otros servidores} local_profile {Perfiles de aquí} other {Una revisión}}",
+    "description": "What a decision hook reviews, as the name of the hook in the automated reviews' records. Read by moderators."
+  },
+  "staff_accounts.hook_outcome": {
+    "defaultMessage": "{outcome, select, allow {Permitido} drop {Descartado} flag {Denunciado} mark_sensitive {Marcado como sensible} require_approval {Retenido para aprobación} reject {Rechazado} timeout {Tardó demasiado} error {Falló} invalid {Dio una respuesta desconocida} breaker_open {Omitido tras fallos} other {Decidido}}",
+    "description": "What a decision of a decision hook records: a verdict, or a kind of failure. Read by moderators."
+  },
+  "staff_accounts.hook_mode": {
+    "defaultMessage": "{mode, select, observe {Observando} enforce {Aplicando} other {Observando}}",
+    "description": "The mode a decision hook was in when it decided: recording only, or acting on its verdict. Read by moderators."
+  },
+  "staff_accounts.hook_reason": {
+    "defaultMessage": "{reason, select, spam {Spam} harassment {Acoso} sexual {Contenido sexual} violence {Violencia} illegal {Contenido ilegal} malware {Malware} other {Otra cosa}}",
+    "description": "The coded reason of a decision hook's verdict. Read by moderators."
+  },
+  "staff_accounts.decisions.summary": {
+    "defaultMessage": "Los últimos 7 días",
+    "description": "For assistive technology, the name of the counts of each hook's decisions of the last 7 days. Read by moderators."
+  },
+  "staff_accounts.decisions.no_hooks": {
+    "defaultMessage": "Ninguna revisión automática tiene un plugin.",
+    "description": "At /moderation/hook-decisions when no decision hook has a plugin. Read by moderators."
+  },
+  "staff_accounts.decisions.filters": {
+    "defaultMessage": "Filtrar decisiones",
+    "description": "For assistive technology, the name of the filters over the decisions. Read by moderators."
+  },
+  "staff_accounts.decisions.hook": {
+    "defaultMessage": "Revisión",
+    "description": "The filter of decisions by their hook. Read by moderators."
+  },
+  "staff_accounts.decisions.hook.any": {
+    "defaultMessage": "Todas las revisiones",
+    "description": "The value of the Review filter that keeps every hook. Read by moderators."
+  },
+  "staff_accounts.decisions.mode": {
+    "defaultMessage": "Modo",
+    "description": "The filter of decisions by the mode they were made in. Read by moderators."
+  },
+  "staff_accounts.decisions.mode.any": {
+    "defaultMessage": "Cualquier modo",
+    "description": "The value of the Mode filter that keeps every mode. Read by moderators."
+  },
+  "staff_accounts.decisions.outcome": {
+    "defaultMessage": "Resultado",
+    "description": "The filter of decisions by their outcome. Read by moderators."
+  },
+  "staff_accounts.decisions.outcome.any": {
+    "defaultMessage": "Cualquiera salvo permitido",
+    "description": "The value of the Outcome filter that keeps every outcome but Allowed, which the list leaves out by default. Read by moderators."
+  },
+  "staff_accounts.decisions.table": {
+    "defaultMessage": "Decisiones",
+    "description": "For assistive technology, the name of the table of decisions. Read by moderators."
+  },
+  "staff_accounts.decisions.column.hook": {
+    "defaultMessage": "Revisión",
+    "description": "The column of what a decision's hook reviews. Read by moderators."
+  },
+  "staff_accounts.decisions.column.outcome": {
+    "defaultMessage": "Resultado",
+    "description": "The column of a decision's outcome. Read by moderators."
+  },
+  "staff_accounts.decisions.column.mode": {
+    "defaultMessage": "Modo",
+    "description": "The column of a decision's mode. Read by moderators."
+  },
+  "staff_accounts.decisions.column.decided": {
+    "defaultMessage": "Cuándo",
+    "description": "The column of when a decision was made. Read by moderators."
+  },
+  "staff_accounts.decisions.column.state": {
+    "defaultMessage": "Estado",
+    "description": "The column of whether a decision stands or was cancelled. Read by moderators."
+  },
+  "staff_accounts.decisions.empty": {
+    "defaultMessage": "Ninguna revisión detuvo ni marcó nada, y ninguna falló.",
+    "description": "In place of the table of decisions when there is none. Read by moderators."
+  },
+  "staff_accounts.decisions.empty.filtered": {
+    "defaultMessage": "Ninguna decisión coincide. Quita los filtros para ver todas.",
+    "description": "In place of the table of decisions when none matches the filters. Read by moderators."
+  },
+  "staff_accounts.decisions.loading": {
+    "defaultMessage": "Cargando las decisiones…",
+    "description": "At /moderation/hook-decisions while the decisions are read. Read by moderators."
+  },
+  "staff_accounts.decisions.failed": {
+    "defaultMessage": "No se pudieron cargar las decisiones.",
+    "description": "At /moderation/hook-decisions when the decisions could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.decisions.summary.hook": {
+    "defaultMessage": "{hook}, {mode, select, observe {observando} enforce {aplicando} other {desactivada}}",
+    "description": "Under the count of a hook's decisions of the last 7 days: the hook and its mode now. Read by moderators."
+  },
+  "staff_accounts.decision.stands": {
+    "defaultMessage": "Vigente",
+    "description": "The state of a decision of a hook that no moderator cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.cancelled": {
+    "defaultMessage": "Cancelada",
+    "description": "The state of a decision of a hook that a moderator cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.title": {
+    "defaultMessage": "{hook}: {outcome}",
+    "description": "The title of a decision's page: what its hook reviews and its outcome. Read by moderators."
+  },
+  "staff_accounts.decision.back": {
+    "defaultMessage": "Revisiones automáticas",
+    "description": "The way back from a decision, or the appeals of refused posts, to the decisions. Read by moderators."
+  },
+  "staff_accounts.decision.missing": {
+    "defaultMessage": "No hay ninguna decisión en esta dirección.",
+    "description": "At a decision's page whose decision the server does not have. Read by moderators."
+  },
+  "staff_accounts.decision.all": {
+    "defaultMessage": "Todas las decisiones",
+    "description": "The link after the notice that an address names no decision. Read by moderators."
+  },
+  "staff_accounts.decision.loading": {
+    "defaultMessage": "Cargando la decisión…",
+    "description": "At a decision's page while it is read. Read by moderators."
+  },
+  "staff_accounts.decision.failed": {
+    "defaultMessage": "No se pudo cargar la decisión.",
+    "description": "At a decision's page when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.decision.facts": {
+    "defaultMessage": "La decisión",
+    "description": "For assistive technology, the name of the list of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.state": {
+    "defaultMessage": "Estado",
+    "description": "A term of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.hook": {
+    "defaultMessage": "Revisión",
+    "description": "A term of a decision's facts: what its hook reviews. Read by moderators."
+  },
+  "staff_accounts.decision.fact.outcome": {
+    "defaultMessage": "Resultado",
+    "description": "A term of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.mode": {
+    "defaultMessage": "Modo",
+    "description": "A term of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.reason": {
+    "defaultMessage": "Motivo",
+    "description": "A term of a decision's facts: the coded reason of its verdict. Read by moderators."
+  },
+  "staff_accounts.decision.fact.note": {
+    "defaultMessage": "Nota de la revisión",
+    "description": "A term of a decision's facts: the plugin's note for the moderators. Read by moderators."
+  },
+  "staff_accounts.decision.fact.account": {
+    "defaultMessage": "Cuenta",
+    "description": "A term of a decision's facts: the account its subject belongs to. Read by moderators."
+  },
+  "staff_accounts.decision.fact.subject": {
+    "defaultMessage": "Asunto",
+    "description": "A term of a decision's facts: what identifies its subject for the hook (a URI). Read by moderators."
+  },
+  "staff_accounts.decision.fact.decided": {
+    "defaultMessage": "Cuándo",
+    "description": "A term of a decision's facts: when it was made. Read by moderators."
+  },
+  "staff_accounts.decision.fact.latency": {
+    "defaultMessage": "Tardó",
+    "description": "A term of a decision's facts: how long the call took. Read by moderators."
+  },
+  "staff_accounts.decision.fact.restorable": {
+    "defaultMessage": "Se puede restaurar hasta",
+    "description": "A term of a decision's facts: until when cancelling a drop processes the activity again. Read by moderators."
+  },
+  "staff_accounts.decision.fact.cancelled": {
+    "defaultMessage": "Cancelada",
+    "description": "A term of a decision's facts: when a moderator cancelled it. Read by moderators."
+  },
+  "staff_accounts.decision.latency": {
+    "defaultMessage": "{ms} ms",
+    "description": "The value of Took in a decision's facts, in milliseconds. Read by moderators."
+  },
+  "staff_accounts.decision.cancel": {
+    "defaultMessage": "Cancelar la decisión",
+    "description": "The button that asks to cancel a decision, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.decision.keep": {
+    "defaultMessage": "Conservarla",
+    "description": "The button of the confirmation of a decision's cancellation that keeps the decision. Read by moderators."
+  },
+  "staff_accounts.decision.cancel.confirm": {
+    "defaultMessage": "¿Cancelar esta decisión?",
+    "description": "The question before a decision of a hook is cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.cancel.about": {
+    "defaultMessage": "{outcome, select, mark_sensitive {Se quita la marca de sensible. Una marca de una acción de moderación se mantiene.} flag {La decisión se cancela; su denuncia se mantiene para resolverla como de costumbre.} drop {Lo descartado se procesa de nuevo mientras el servidor aún lo tenga; después, la cancelación solo se registra.} require_approval {La decisión se cancela y se registra; el registro se queda donde está.} other {La decisión se cancela y se registra en el registro de auditoría.}} No se puede deshacer.",
+    "description": "Under the question before a decision is cancelled: what cancelling does for its outcome. Read by moderators."
+  },
+  "staff_accounts.decision.cancelled_now": {
+    "defaultMessage": "Se canceló la decisión.",
+    "description": "Said after a decision of a hook was cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.by_appeal": {
+    "defaultMessage": "Una publicación rechazada se reconsidera mediante la apelación de su autor",
+    "description": "On the page of a post refused by the review of posts here, the link to the appeals of refused posts. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.title": {
+    "defaultMessage": "Apelaciones de publicaciones rechazadas",
+    "description": "The title of the screen of the authors' appeals of posts the review of posts refused, and the button to it. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.table": {
+    "defaultMessage": "Apelaciones de publicaciones rechazadas",
+    "description": "For assistive technology, the name of the table of appeals of refused posts. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.empty.pending": {
+    "defaultMessage": "Ninguna apelación de una publicación rechazada espera una decisión.",
+    "description": "In place of the table of appeals of refused posts when none waits. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.loading": {
+    "defaultMessage": "Cargando las apelaciones…",
+    "description": "At /moderation/hook-decisions/appeals while the appeals are read. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.failed": {
+    "defaultMessage": "No se pudieron cargar las apelaciones.",
+    "description": "At /moderation/hook-decisions/appeals when they could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.title": {
+    "defaultMessage": "Publicación rechazada de {handle}",
+    "description": "The title of an appeal of a refused post, naming its author. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.back": {
+    "defaultMessage": "Apelaciones de publicaciones rechazadas",
+    "description": "The way back from an appeal of a refused post to their list. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.all": {
+    "defaultMessage": "Todas las apelaciones de publicaciones rechazadas",
+    "description": "The link after the notice that an address names no appeal of a refused post. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.fact.decision": {
+    "defaultMessage": "Decisión",
+    "description": "A term of an appeal of a refused post: the decision appealed, a link to its page. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.post": {
+    "defaultMessage": "La publicación que intentó enviar",
+    "description": "The heading of the text of a refused post, as its author wrote it. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.comment": {
+    "defaultMessage": "Lo que añade",
+    "description": "The heading of the comment the author of a refused post added to their appeal. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.uphold.about": {
+    "defaultMessage": "El rechazo se mantiene y sus publicaciones se revisan como antes. No se puede deshacer.",
+    "description": "Under the question before an appeal of a refused post is upheld. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.overturn.about": {
+    "defaultMessage": "El rechazo se cancela y sus publicaciones dejan de revisarse. La publicación no se restaura: puede publicarla de nuevo. No se puede deshacer.",
+    "description": "Under the question before an appeal of a refused post is overturned. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.upheld": {
+    "defaultMessage": "Se confirmó el rechazo.",
+    "description": "Said after an appeal of a refused post was upheld. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.overturned": {
+    "defaultMessage": "Se revocó el rechazo. Sus publicaciones dejan de revisarse.",
+    "description": "Said after an appeal of a refused post was overturned. Read by moderators."
+  },
+  "staff_accounts.report.act": {
+    "defaultMessage": "Actuar sobre esta cuenta",
+    "description": "On a report's screen, at the end of the reported account's line: the way to its moderation screen. Read by moderators."
+  },
+  "staff_accounts.place.end": {
+    "defaultMessage": "{kind, select, event {Cancelar el evento} other {Terminar la sala}}",
+    "description": "On a report's screen, the button that asks to end the voice chat room or cancel the event it points at, and the confirmation's button. Read by moderators."
+  },
+  "staff_accounts.place.confirm": {
+    "defaultMessage": "{kind, select, event {¿Cancelar este evento para todos?} other {¿Terminar esta sala para todos?}}",
+    "description": "The question before a moderator ends a voice chat room or cancels an event. Read by moderators."
+  },
+  "staff_accounts.place.reason.hint": {
+    "defaultMessage": "{kind, select, event {Todos los que ven el evento lo leen con la cancelación. No se puede deshacer.} other {Solo lo leen los moderadores; los participantes ven que la sala terminó. No se puede deshacer.}}",
+    "description": "Under the field of the reason a moderator ends a room or cancels an event: who reads it. Read by moderators."
+  },
+  "staff_accounts.place.done": {
+    "defaultMessage": "{kind, select, event {Se canceló el evento.} other {Se terminó la sala.}}",
+    "description": "Said after a moderator ended a room or cancelled an event. Read by moderators."
+  },
+  "staff_accounts.place.reason": {
+    "defaultMessage": "Motivo (opcional)",
+    "description": "The label of the field of why a moderator ends a room or cancels an event. Read by moderators."
+  },
+  "staff_accounts.action_category": {
+    "defaultMessage": "{category, select, spam {Spam} legal {Motivos legales} violation {Infracción de las reglas del servidor} other {Otro}}",
+    "description": "The kind of reason of a moderation action, in the words the account it is on reads: in the form of a new action, the lists of actions and their facts. Read by moderators."
+  }
+}

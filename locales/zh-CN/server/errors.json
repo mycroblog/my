@@ -27,6 +27,10 @@
     "defaultMessage": "此处理的申诉期限已过。",
     "description": "API error title for HTTP 422 when the user appeals a moderation action after the instance's appeal window."
   },
+  "errors.bad_gateway": {
+    "defaultMessage": "无法连接到另一台服务器，或它出现了错误。请稍后重试。",
+    "description": "Error title for HTTP 502 when the server could not get a resource from a remote server, e.g. the media proxy could not reach the remote file or the remote server answered with a 5xx."
+  },
   "errors.bad_request": {
     "defaultMessage": "由于应用出现问题，无法完成此操作。请重新加载或更新应用后重试。",
     "description": "API error message for HTTP 400 when no more specific message applies."
@@ -35,6 +39,10 @@
     "defaultMessage": "你屏蔽了此账号。请先取消屏蔽。",
     "description": "API error title for HTTP 409 when the user tries to follow an account that they block."
   },
+  "errors.conflict": {
+    "defaultMessage": "你操作期间内容已发生变化。请刷新后重试。",
+    "description": "API error title for HTTP 409 when no more specific message applies."
+  },
   "errors.email.already_verified": {
     "defaultMessage": "此电子邮件地址已验证。",
     "description": "Title of the HTTP 409 API error when a user asks for the verification email again although their email address is verified and still receives email."
@@ -42,6 +50,22 @@
   "errors.email.not_suppressed": {
     "defaultMessage": "此电子邮件地址未被停止发送。",
     "description": "Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it)."
+  },
+  "errors.export.in_progress": {
+    "defaultMessage": "你的数据导出已在准备中。请等待其完成。",
+    "description": "API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built."
+  },
+  "errors.export.not_ready": {
+    "defaultMessage": "无法下载此导出文件。如果正在准备，请等待其完成；如果已失败或已过期，请重新申请。",
+    "description": "API error title for HTTP 409 when the user downloads an archive of their data that is still being built, failed, or has expired."
+  },
+  "errors.federation_restricted": {
+    "defaultMessage": "此服务器不允许对其他服务器上的账号和帖子执行此操作。",
+    "description": "API error title for HTTP 403 when the instance's federation mode (off, inbound only, or outbound only) does not let the operation through: following or resolving a remote account, or quoting a remote post."
+  },
+  "errors.first_party_only": {
+    "defaultMessage": "只有此服务器自己的应用可以执行此操作。请在浏览器中打开此服务器后操作。",
+    "description": "API error title for HTTP 403 when an app that is not this server's own client calls an account security operation (password, two-factor authentication, passkeys, deleting the account)."
   },
   "errors.forbidden": {
     "defaultMessage": "你无权执行此操作。",
@@ -59,6 +83,14 @@
     "defaultMessage": "另一个导入正在进行。请等待其完成。",
     "description": "API error title for HTTP 409 when the user starts an import of a CSV file of follows, blocks, mutes, or bookmarks while another import is still being carried out."
   },
+  "errors.import.invalid_csv": {
+    "defaultMessage": "无法将文件作为 CSV 读取。请选择 CSV 文件后重试。",
+    "description": "Detail of an API error (HTTP 422) when the file the user imports is not a valid CSV file, e.g. it has an unterminated quoted field."
+  },
+  "errors.import.too_large_detail": {
+    "defaultMessage": "{max, plural, other {CSV 文件最多只能有 # 个字符。请拆分文件，分别导入。}}",
+    "description": "Detail of the HTTP 413 API error when the CSV file the user imports (follows, blocks, mutes, or bookmarks) is too large to send. {max} is the maximum number of characters of the file."
+  },
   "errors.insufficient_scope": {
     "defaultMessage": "此应用无权执行此操作。",
     "description": "API error title for HTTP 403 when the access token lacks a permission (OAuth scope) that the operation needs."
@@ -66,6 +98,10 @@
   "errors.insufficient_scope_detail": {
     "defaultMessage": "访问令牌需要 {scope} 权限范围。",
     "description": "Detail of the HTTP 403 insufficient-scope API error. {scope} is the missing OAuth scope, e.g. read:accounts (not translated)."
+  },
+  "errors.interaction_restricted": {
+    "defaultMessage": "由于一项审核措施，你的账号暂时无法关注、喜欢、转发或回复。要查看原因或申诉，请在设置的“账号和数据”中打开“账号状态”。",
+    "description": "Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying); says where the app shows the action and takes an appeal (the page Account status, appfeatures:settings.account.status, under the settings entry Account and data, appfeatures:settings.entry.account)."
   },
   "errors.internal": {
     "defaultMessage": "发生意外错误。请稍后重试。",
@@ -91,9 +127,17 @@
     "defaultMessage": "此值不正确。请检查输入的内容。",
     "description": "Detail of an API error (HTTP 422) when the server rejects a value of the request. The client shows it beside the field it is about, so it does not name the field."
   },
+  "errors.media_attached": {
+    "defaultMessage": "此文件已附在帖子上，无法再更改。",
+    "description": "API error title for HTTP 409 when the user tries to change the description or focal point of an uploaded media file that a post already attaches."
+  },
   "errors.media_attached_detail": {
     "defaultMessage": "编辑帖子以更改其替代文本。",
     "description": "Detail of the HTTP 409 media-attached API error."
+  },
+  "errors.media_corrupt": {
+    "defaultMessage": "无法将此文件作为图片读取。请选择其他文件。",
+    "description": "API error title for HTTP 422 when an uploaded file has the signature of an image format but does not decode."
   },
   "errors.media_description_too_long": {
     "defaultMessage": "替代文本太长。",
@@ -103,9 +147,21 @@
     "defaultMessage": "{max, plural, other {替代文本最多 # 个字符。}}",
     "description": "Detail of the HTTP 422 API error for a description that is too long. {max} is the maximum number of characters."
   },
+  "errors.media_dimensions": {
+    "defaultMessage": "图片的宽度、高度或帧数过大。请选择更小的图片。",
+    "description": "API error title for HTTP 422 when an uploaded image is too wide or tall, or has too many pixels or animation frames."
+  },
   "errors.media_invalid_focus": {
     "defaultMessage": "焦点在每个轴上必须介于 -1.0 和 1.0 之间。",
     "description": "API error title for HTTP 422 when the focal point of a media file is outside the image."
+  },
+  "errors.media_too_large": {
+    "defaultMessage": "文件过大。请选择更小的文件。",
+    "description": "API error title for HTTP 413 when an uploaded media file is larger than the server accepts."
+  },
+  "errors.media_too_long": {
+    "defaultMessage": "视频或音频过长。请缩短后重试。",
+    "description": "API error title for HTTP 422 when an uploaded video or audio file is longer than the server accepts."
   },
   "errors.media_unsupported_codec": {
     "defaultMessage": "不支持此视频或音频编解码器。无法上传 HEVC（高效）视频：请改用 H.264（兼容性最佳）录制。",
@@ -127,6 +183,10 @@
     "defaultMessage": "找不到内容。它可能已被删除，或者链接有误。请检查链接，或返回上一页。",
     "description": "API error message for HTTP 404."
   },
+  "errors.rate_limited": {
+    "defaultMessage": "你的操作过于频繁。请稍等片刻后重试。",
+    "description": "API error title for HTTP 429 when a client sent more requests than the rate limit allows."
+  },
   "errors.rate_limited_detail": {
     "defaultMessage": "{seconds, plural, other {请在 # 秒后重试。}}",
     "description": "Detail of the HTTP 429 API error. {seconds} is the wait in whole seconds."
@@ -134,6 +194,10 @@
   "errors.relay.invalid": {
     "defaultMessage": "无法这样更改中继。",
     "description": "API error title for HTTP 422 when a relay cannot be registered, joined, left, or deleted; the detail says why."
+  },
+  "errors.relay.invalid_detail": {
+    "defaultMessage": "{reason, select, url {URL 必须是不超过 2048 个字符的 https URL。} exists {已注册了具有此 URL 的中继。} domain_suspended {该中继的服务器已被域名措施暂停。要使用此中继，请先移除该域名措施。} not_actor {此 URL 不是中继的地址。请检查 URL。} state {中继当前的状态不允许此操作：删除中继之前要先退出它，并且只能加入你已退出或曾拒绝你的中继。} other {无法这样更改中继。}}",
+    "description": "API error detail for HTTP 422 when a relay operation is refused. {reason} is url, exists, domain_suspended, not_actor, or state."
   },
   "errors.refetch.not_remote": {
     "defaultMessage": "只能重新获取远程帖子、远程账号和其他服务器。",
@@ -147,13 +211,29 @@
     "defaultMessage": "只有已处理的举报可以重新打开。",
     "description": "Detail of the HTTP 409 API error when a moderator reopens a report that is still open."
   },
+  "errors.report.not_forwardable": {
+    "defaultMessage": "只有在此服务器上提交的、针对其他服务器上账号的举报才能转发。语音聊天房间的举报无法转发。",
+    "description": "Detail of the HTTP 409 API error when a moderator forwards a report that cannot be forwarded to the server of its target."
+  },
+  "errors.request_too_large": {
+    "defaultMessage": "你发送的内容过大。请缩小后重试。",
+    "description": "API error title for HTTP 413 when a request body is larger than the server accepts."
+  },
   "errors.role.invalid": {
     "defaultMessage": "无法保存角色。",
     "description": "API error title for HTTP 422 when a change to a role (creating, changing, or deleting it) breaks a rule; the detail says which. Read by administrators."
   },
+  "errors.role.invalid_detail": {
+    "defaultMessage": "{reason, select, key {键必须是 1 到 64 个小写字母、数字、下划线或连字符。} key_taken {另一个角色已使用此键。请换一个键。} position {位置必须在 0 到 999 之间。} permissions {每项权限只能选择一次。} builtin {无法更改管理员角色，也无法删除内置角色。} held {请先从拥有此角色的所有人身上移除它。} missing_permission {你只能授予或收回你自己拥有的权限。} badge_label {徽章名称必须是单行的 1 到 32 个字符。} badge_color {请选择一种徽章颜色。} other {此更改违反了规则。}}",
+    "description": "API error detail for HTTP 422 when a change to a role breaks a rule. {reason} is key, key_taken, position, permissions, builtin, held, missing_permission, badge_label, or badge_color. Read by administrators."
+  },
   "errors.role.managed_by_plan": {
     "defaultMessage": "此角色属于某个支持者方案。",
     "description": "API error title for HTTP 409 when a change to a role is refused because a supporter plan manages it (ADR-0072 §5). Read by administrators."
+  },
+  "errors.role.managed_by_plan_detail": {
+    "defaultMessage": "人们订阅时，该计划会授予此角色，订阅结束时再收回。请在计划的设置中更改其权限和位置。",
+    "description": "API error detail for HTTP 409 when a role of a supporter plan is granted, revoked, changed, or deleted by hand. Read by administrators."
   },
   "errors.role.breaks_supporter_roles": {
     "defaultMessage": "工作人员角色必须始终高于支持者方案的角色。",
@@ -175,6 +255,14 @@
     "defaultMessage": "此服务器不提供支持者计划。",
     "description": "API error title for HTTP 409 when the supporter program cannot be enabled or used: no payment provider is configured, the server sends no email, or the configured provider is not the program's (ADR-0072 §2)."
   },
+  "errors.supporters.unavailable_detail": {
+    "defaultMessage": "{reason, select, no_provider {请先在服务器配置中配置支付服务商。} no_email {请先将服务器配置为可发送电子邮件，以便订阅者验证他们的地址。} provider_mismatch {当前配置的支付服务商与启用该计划时所用的不一致。请先停用支持者计划，再重新启用。} other {目前无法使用支持者计划。}}",
+    "description": "API error detail for HTTP 409 when the supporter program is unavailable. {reason} is no_provider, no_email, or provider_mismatch."
+  },
+  "errors.supporters.live_subscriptions": {
+    "defaultMessage": "仍有人订阅着支持者计划。",
+    "description": "API error title for HTTP 409 when an administrator disables the supporter program while subscriptions go on (ADR-0072 §2)."
+  },
   "errors.supporters.live_subscriptions_detail": {
     "defaultMessage": "停用计划前，请先停止各方案并等待其订阅结束。",
     "description": "API error detail for HTTP 409 when the supporter program is disabled while subscriptions go on."
@@ -182,6 +270,10 @@
   "errors.supporters.plan_invalid": {
     "defaultMessage": "无法保存支持者方案。",
     "description": "API error title for HTTP 422 when a supporter plan breaks a rule; the detail says which (ADR-0072 §3 to §5)."
+  },
+  "errors.supporters.plan_invalid_detail": {
+    "defaultMessage": "{reason, select, name {名称必须是单行的 1 到 50 个字符。} description {描述最多 1,000 个字符。} monthly_price {价格不得低于支付服务商的最低收费金额，年付价格也是如此。} currency {支付服务商不接受此货币。请选择其他货币。} annual_discount_percent {年付折扣必须在 0% 到 90% 之间。} emoji_limit {表情上限必须在 0 到 10,000 之间。} rank {排名必须在 0 到 1,000,000 之间。} visibility {请选择公开或隐藏。} role_builtin {内置角色不能作为计划的角色。请选择非内置的角色。} role_taken {另一个计划已使用此角色。请选择其他角色。} role_held {请选择无人持有的角色。} role_permissions {计划的角色只能被授予成员权限。} role_position {计划的角色必须位于所有管理人员角色之下。} order_rank {另一个计划已使用此排名。请选择其他排名。} order_position {较高计划的角色必须位于其下一级计划的角色之上。} order_permissions {较高计划的角色必须拥有其下一级计划角色的所有权限。} order_emoji_limit {较高的计划必须让其成员至少能创建与下一级计划同样多的自定义表情。} other {此计划违反了规则。}}",
+    "description": "API error detail for HTTP 422 when a supporter plan breaks a rule. {reason} is name, description, monthly_price, currency, annual_discount_percent, emoji_limit, rank, visibility, role_builtin, role_taken, role_held, role_permissions, role_position, order_rank, order_position, order_permissions, or order_emoji_limit. Read by administrators."
   },
   "errors.supporters.plan_retired": {
     "defaultMessage": "此支持者方案已停止。",
@@ -195,6 +287,10 @@
     "defaultMessage": "你无法订阅支持者方案。",
     "description": "API error title for HTTP 422 when a user who may not subscribe starts a subscription to a supporter plan (ADR-0072 §6); the detail says why."
   },
+  "errors.supporters.ineligible_detail": {
+    "defaultMessage": "{reason, select, not_local {只有此服务器的用户才能订阅。} email_unverified {请先验证你的电子邮件地址。} restricted {由于一项审核措施，你的账号受到限制。要查看原因或申诉，请在设置的“账号和数据”中打开“账号状态”。} other {你目前无法订阅。}}",
+    "description": "API error detail for HTTP 422 when a user may not subscribe to a supporter plan. {reason} is not_local, email_unverified, or restricted."
+  },
   "errors.supporters.subscribed": {
     "defaultMessage": "你已经有订阅了。",
     "description": "API error title for HTTP 409 when a user who has a subscription to a supporter plan starts another one (ADR-0072 §6: one plan at a time)."
@@ -203,9 +299,29 @@
     "defaultMessage": "请改为更改订阅的方案。",
     "description": "API error detail for HTTP 409 when a user who has a subscription starts another one."
   },
+  "errors.supporters.plan_unavailable": {
+    "defaultMessage": "此支持者计划目前不接受订阅。请选择其他计划。",
+    "description": "API error title for HTTP 422 when a user subscribes or changes to a supporter plan that takes no subscriptions (hidden, retired, not ready, or of another currency)."
+  },
+  "errors.service_closed": {
+    "defaultMessage": "此服务器已关闭。",
+    "description": "API error title for HTTP 403 when the server is closed (ADR-0088 §2) and refuses every operation but the users' own data and exports."
+  },
+  "errors.service_closed_detail": {
+    "defaultMessage": "你仍然可以登录并导出你的数据。",
+    "description": "API error detail for HTTP 403 when the server is closed: what the users can still do."
+  },
+  "errors.service_closure.state": {
+    "defaultMessage": "在服务器关闭流程的当前阶段无法执行此操作。",
+    "description": "API error title for HTTP 409 when the state of the service closure does not allow the operation (ADR-0088 §1): a withdrawal needs an announcement in effect, the closure needs an announcement whose closing date has come, and nothing goes back after the server closes."
+  },
   "errors.supporters.subscription_state": {
     "defaultMessage": "你的订阅当前的状态不允许此操作。",
     "description": "API error title for HTTP 409 when the state of a user's subscription to a supporter plan does not allow the operation (ADR-0072 §8): a change needs an active subscription, a cancellation an active or past-due one, a resumption a canceling one."
+  },
+  "errors.supporters.same_plan": {
+    "defaultMessage": "你已经以相同的计费周期订阅了此计划。",
+    "description": "API error title for HTTP 422 when a user changes their subscription to the plan and interval it has."
   },
   "errors.supporters.tip_amount": {
     "defaultMessage": "打赏金额必须是服务器提供的金额之一。",
@@ -235,9 +351,17 @@
     "defaultMessage": "无法保存打赏的金额。",
     "description": "API error title for HTTP 422 when the amounts of the tips break a rule; the detail says which (ADR-0162 §6)."
   },
+  "errors.supporters.tip_amounts_invalid_detail": {
+    "defaultMessage": "{reason, select, count {请选择 1 到 6 个不同的金额，且使用同一种货币。} currency {请使用日元或美元，以支付服务商接受的为准。} range {每个金额必须在 100 到 100,000 日元之间，或 1 到 1,000 美元之间，且不低于支付服务商的最低收费金额。} other {这些金额违反了规则。}}",
+    "description": "API error detail for HTTP 422 when the amounts of the tips break a rule. {reason} is count, currency, or range."
+  },
   "errors.supporters.payment_failed": {
     "defaultMessage": "此次变更的付款失败，你的方案未改变。",
     "description": "API error title for HTTP 402 when the payment of a change of supporter plan failed."
+  },
+  "errors.supporters.payment_failed_detail": {
+    "defaultMessage": "没有扣款。请更换银行卡后重试。每次付款都要求验证的银行卡无法用于变更计划。",
+    "description": "API error detail for HTTP 402 when the payment of a change of supporter plan failed."
   },
   "errors.supporters.payment_processing": {
     "defaultMessage": "此次变更的付款仍在处理中，你的方案尚未改变。",
@@ -262,6 +386,10 @@
   "errors.status.already_deleted": {
     "defaultMessage": "使用此 Idempotency-Key 创建的帖子已被删除。",
     "description": "Detail of the HTTP 409 API error when a client retries posting with an Idempotency-Key whose post was deleted. Idempotency-Key is a header name (not translated)."
+  },
+  "errors.status.article_direct": {
+    "defaultMessage": "文章不能作为私信发布。请更改可见范围。",
+    "description": "Detail of the HTTP 422 API error when a new article has the visibility direct, which articles never have."
   },
   "errors.status.article_edited_as_post": {
     "defaultMessage": "文章只能作为文章来编辑。",
@@ -291,6 +419,14 @@
     "defaultMessage": "此帖子的作者不允许你转发。",
     "description": "Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them."
   },
+  "errors.status.empty_text": {
+    "defaultMessage": "帖子没有文字。请写下帖子的内容。",
+    "description": "Detail of the HTTP 422 API error when a post's text is empty or only spaces."
+  },
+  "errors.status.invalid_hashtag": {
+    "defaultMessage": "文章的某个话题标签包含话题标签不能使用的字符。请从话题标签中删除它们。",
+    "description": "Detail of the HTTP 422 API error when a hashtag given to an article has characters that a hashtag cannot have."
+  },
   "errors.status.invalid_language": {
     "defaultMessage": "此语言不是有效的语言标签。",
     "description": "Detail of the HTTP 422 API error when a post's language is not a well-formed BCP 47 tag such as en or ja."
@@ -306,6 +442,14 @@
   "errors.status.invalid_text": {
     "defaultMessage": "文本中包含无法发布的字符。",
     "description": "Detail of the HTTP 422 API error when a post's text or content warning is not valid UTF-8 or contains a NUL character."
+  },
+  "errors.status.media_not_found": {
+    "defaultMessage": "在你上传的文件中找不到某个附件。请重新上传文件。",
+    "description": "Detail of the HTTP 422 API error when a post attaches a media file that does not exist or that another account uploaded."
+  },
+  "errors.status.media_not_ready": {
+    "defaultMessage": "某个附件仍在处理中，或处理失败。请稍等片刻，或移除后重新附上。",
+    "description": "Detail of the HTTP 422 API error when a post attaches a media file whose processing has not finished or failed."
   },
   "errors.status.missing_media_description": {
     "defaultMessage": "此服务器要求每张图片都有替代文本。发布前请为每张图片添加替代文本。",
@@ -326,6 +470,10 @@
   "errors.status.not_pinnable": {
     "defaultMessage": "只能置顶你自己的非私信帖子。",
     "description": "Detail of the HTTP 422 API error when a user tries to pin another account's post or a direct post."
+  },
+  "errors.status.pin_limit": {
+    "defaultMessage": "{max, plural, other {你最多可以置顶 # 条帖子。请先取消置顶一条。}}",
+    "description": "Detail of the HTTP 422 API error when a user pins more posts than allowed. {max} is the maximum number of pinned posts."
   },
   "errors.status.poll_already_voted": {
     "defaultMessage": "你已经在此投票中投过票了。",
@@ -355,9 +503,25 @@
     "defaultMessage": "带投票的帖子无法编辑。",
     "description": "Detail of the HTTP 422 API error when a user edits a post that has a poll: the votes belong to the poll as it was posted."
   },
+  "errors.status.poll_with_media": {
+    "defaultMessage": "带投票的帖子不能附加文件。请移除投票或文件。",
+    "description": "Detail of the HTTP 422 API error when a new post has both a poll and attached media."
+  },
+  "errors.status.posting_restricted": {
+    "defaultMessage": "由于一项审核措施，你的账号暂时无法发帖。要查看原因或申诉，请在设置的“账号和数据”中打开“账号状态”。",
+    "description": "Detail of the HTTP 403 API error when a moderator restricted the account from posting; says where the app shows the action and takes an appeal (the page Account status, appfeatures:settings.account.status, under the settings entry Account and data, appfeatures:settings.entry.account)."
+  },
+  "errors.status.quote_not_found": {
+    "defaultMessage": "找不到你引用的帖子。请移除引用后重新发布。",
+    "description": "Detail of the HTTP 422 API error when a post quotes a post that does not exist, was deleted, or that the user cannot see."
+  },
   "errors.status.quote_not_allowed": {
     "defaultMessage": "你无法引用此帖子。",
     "description": "Detail of the HTTP 422 API error when a post quotes a post whose quote policy or visibility does not let the user quote it."
+  },
+  "errors.status.quote_remote_audience": {
+    "defaultMessage": "要引用其他服务器的帖子，请把这条帖子设为“公开”或“悄悄公开”。",
+    "description": "Detail of the HTTP 422 API error when a post whose visibility keeps it from other servers quotes a post from another server."
   },
   "errors.status.reply_not_found": {
     "defaultMessage": "找不到你要回复的帖子。",
@@ -391,6 +555,10 @@
     "defaultMessage": "无法将此帖子翻译成该语言。",
     "description": "API error title for HTTP 422 when no translation service of the server translates between the post's language and the language asked for."
   },
+  "errors.streaming.too_many": {
+    "defaultMessage": "实时更新在太多标签页或应用中打开。请关闭一个后重试。",
+    "description": "Detail of the HTTP 429 API error when the user already has as many real-time update streams (open tabs or devices) as the server allows."
+  },
   "errors.streaming.unavailable": {
     "defaultMessage": "实时更新现在不可用。请稍后重试。",
     "description": "Title of the HTTP 503 API error when the server is shutting down and accepts no new real-time update streams."
@@ -407,21 +575,33 @@
     "defaultMessage": "{max, plural, other {最多 # 项。}}",
     "description": "Detail of an API error (HTTP 422) when a list of the request has too many items. The client shows it beside the field it is about, so it does not name the field. {max} is the limit."
   },
+  "errors.two_factor.code_invalid": {
+    "defaultMessage": "验证码不正确或已被使用。请输入验证器应用现在显示的验证码，或一个未使用过的恢复码。",
+    "description": "Title of the HTTP 422 API error when a two-factor authentication code (six digits from an authenticator app, or a recovery code) is wrong, was used before, or is not a code."
+  },
   "errors.two_factor.enabled": {
-    "defaultMessage": "双重验证已启用。",
+    "defaultMessage": "双重身份验证已启用。",
     "description": "Title of the HTTP 409 API error when the user starts setting up two-factor authentication while it is already on."
   },
   "errors.two_factor.not_enabled": {
-    "defaultMessage": "双重验证未启用。",
+    "defaultMessage": "双重身份验证未启用。",
     "description": "Title of the HTTP 409 API error when an operation needs two-factor authentication on an account that does not have it."
   },
   "errors.two_factor.setup_expired": {
     "defaultMessage": "身份验证器应用的设置已过期。请重新开始。",
     "description": "Title of the HTTP 422 API error when the user confirms the setup of an authenticator app after it expired (15 minutes) or with an unknown setup."
   },
+  "errors.passkey.invalid": {
+    "defaultMessage": "无法添加通行密钥。它可能已经添加过；如果没有，请开启设备的屏幕锁定后重试。",
+    "description": "Title of the HTTP 422 API error when the browser's answer to a passkey registration does not verify (another site, no screen lock or biometrics, or a passkey that is registered already)."
+  },
   "errors.passkey.confirmation_expired": {
     "defaultMessage": "通行密钥确认已过期。请重试。",
     "description": "Title of the HTTP 422 API error when the user confirms an operation on their own account (such as deleting it or removing the password) with a passkey after the confirmation expired (5 minutes) or was already used."
+  },
+  "errors.passkey.last_sign_in_method": {
+    "defaultMessage": "这是你唯一的登录方式。请先添加通行密钥、设置密码，或关联其他服务的账号。",
+    "description": "Title of the HTTP 409 API error when the user removes their password, their last passkey, or their last linked account at an external login provider while nothing else signs them in, which would leave them no way to sign in."
   },
   "errors.passkey.registration_expired": {
     "defaultMessage": "通行密钥注册已过期。请重新开始。",
@@ -438,6 +618,10 @@
   "errors.invites.not_allowed": {
     "defaultMessage": "你无法创建邀请。",
     "description": "Title of the HTTP 403 API error when the user may not create invites of their own; the detail says why."
+  },
+  "errors.invites.not_allowed_detail": {
+    "defaultMessage": "{reason, select, registration_closed {此服务器目前不接受新账号，因此无法创建邀请。} not_permitted {在此服务器上，只有部分账号可以创建邀请。请联系管理员，让他们允许你创建邀请。} not_approved {你的注册尚未获批。需要先由管理员批准，你才能创建邀请。} restricted {由于一项审核措施，你的账号暂时无法创建邀请。要查看原因或申诉，请在设置的“账号和数据”中打开“账号状态”。} other {你目前无法创建邀请。}}",
+    "description": "Detail of the HTTP 403 API error when the user may not create invites of their own, shown under the title \"You cannot create invites.\" {reason} is registration_closed (the server takes no new accounts), not_permitted (the server lets only some accounts create invites), not_approved (the registration of the account is pending or rejected), or restricted (a moderation action on the account); any other value is a refusal that names no cause."
   },
   "errors.invites.too_many": {
     "defaultMessage": "你的可用邀请已达到上限。请撤销一个，或等待某个邀请过期或用完。",
@@ -459,9 +643,41 @@
     "defaultMessage": "服务器管理员已停用此应用。",
     "description": "Title of the HTTP 409 API error when the user issues tokens of their own OAuth app that an administrator disabled."
   },
+  "errors.oauth_app.redirect_uri_form": {
+    "defaultMessage": "其中一个地址不是 https 地址、不是带有自定义协议的地址（如 com.example.app:/callback），也不是任意端口的 http://127.0.0.1。请改为其中一种形式。",
+    "description": "Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes (Redirect URIs): one of the redirect URIs is of none of the three allowed forms (http is allowed only on 127.0.0.1 or [::1]). com.example.app:/callback and http://127.0.0.1 are examples to keep as they are."
+  },
+  "errors.oauth_app.redirect_uri_fragment": {
+    "defaultMessage": "其中一个地址带有 #，而重定向 URI 不能带有 #。请删除 # 及其后的所有内容。",
+    "description": "Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes (Redirect URIs): one of the redirect URIs has a fragment (the part after #)."
+  },
+  "errors.oauth_app.too_many_redirect_uris": {
+    "defaultMessage": "{max, plural, other {一个应用最多只能有 # 个重定向 URI。请删除多余的。}}",
+    "description": "Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes (Redirect URIs): the app has more redirect URIs than allowed. {max} is how many an app may have (10)."
+  },
+  "errors.oauth_app.unknown_scope": {
+    "defaultMessage": "其中一个权限范围不是此服务器认识的。请检查拼写，并用空格分隔多个权限范围，如 read write:statuses。",
+    "description": "Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes, or of the token the user issues for their own app (Scopes): one of the scopes is unknown to the server. read and write:statuses are names of scopes, to keep as they are."
+  },
+  "errors.oauth_app.first_party_scope": {
+    "defaultMessage": "admin、admin:read、admin:write 和 write:supporters 只供此服务器自己的应用使用。请删除它们。",
+    "description": "Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes, or of the token the user issues for their own app (Scopes): a scope that only the server's own clients may have. admin, admin:read, admin:write and write:supporters are names of scopes, to keep as they are."
+  },
+  "errors.oauth_app.scope_beyond_app": {
+    "defaultMessage": "其中一个权限范围不在应用的权限范围内。令牌只能拥有其应用的权限范围。请删除它，或先把它添加到应用中。",
+    "description": "Detail of the HTTP 422 API error, shown under the field Scopes on the page Issue token of the user's own OAuth app: the token asks for a scope that the app does not have."
+  },
+  "errors.oauth_app.website_not_http": {
+    "defaultMessage": "这不是 https 或 http 地址。请输入类似 https://example.com/ 的地址。",
+    "description": "Detail of the HTTP 422 API error, shown under the field it is about on the form of an OAuth app the user registers or changes (Website): the website is not an https or http address with a host. https://example.com/ is an example to keep as it is."
+  },
   "errors.unauthenticated": {
     "defaultMessage": "请登录后执行此操作。",
     "description": "API error title for HTTP 401 when the request carries no access token and the operation needs one."
+  },
+  "errors.unprocessable": {
+    "defaultMessage": "无法完成此操作。",
+    "description": "API error title for HTTP 422; the detail says what is wrong with the request."
   },
   "errors.unsupported_media_type": {
     "defaultMessage": "不支持请求正文的内容类型。",
@@ -475,9 +691,21 @@
     "defaultMessage": "无法保存 Webhook。",
     "description": "API error title for HTTP 422 when the settings of a webhook endpoint break a rule; the detail says which."
   },
+  "errors.webhook.invalid_detail": {
+    "defaultMessage": "{reason, select, url {URL 必须是不超过 2048 个字符的绝对 http 或 https URL，且不含用户信息或片段。} description {描述最多 200 个字符，且不含控制字符。} events {请至少选择一个事件，每个事件只能选择一次。} missing_permission {你需要拥有所选每个事件对应的权限。} other {这些设置违反了规则。}}",
+    "description": "API error detail for HTTP 422 when the settings of a webhook endpoint break a rule. {reason} is url, description, events, or missing_permission."
+  },
+  "errors.wrong_password": {
+    "defaultMessage": "密码错误。请输入你当前的密码。",
+    "description": "API error title for HTTP 422 when the password the user typed to confirm an operation on their own account (such as deleting it) is not their current password."
+  },
   "errors.invalid_custom_emoji": {
     "defaultMessage": "无法保存自定义表情。",
     "description": "API error title for HTTP 422 when a custom emoji, or a request for one, breaks a rule; the detail and the reason property say which."
+  },
+  "errors.invalid_custom_emoji_detail": {
+    "defaultMessage": "{reason, select, invalid_shortcode {短代码请使用 2 到 30 个字母（A 到 Z）、数字和下划线。} shortcode_taken {此服务器的一个自定义表情已使用此短代码。请换一个短代码。} invalid_alias {别名是 2 到 30 个字母（A 到 Z）、数字和下划线，每个表情最多 10 个。} invalid_category {分类最多 64 个字符。} media_not_found {在你上传的文件中找不到该图片。请重新上传图片。} media_not_ready {图片仍在处理中。请稍等片刻后重试。} unsupported_format {图片必须是 PNG、GIF 或 WebP。} too_large {图片超过了此服务器的限制。请选择更小的图片。} too_big {图片每边最多 1,024 像素。} remote_emoji {只能对此服务器的自定义表情执行此操作。} local_emoji {只能对其他服务器的自定义表情执行此操作。} fetch_failed {无法从其服务器获取该自定义表情的图片。请稍后重试。} limit_reached {你本月已申请的自定义表情数量已达每月上限。请下个月再试：计数在每月 1 日（UTC）重置。} request_pending {此自定义表情已有一个等待审核的新图片申请。请等待审核完成。} invalid_reason {理由最多 500 个字符。} other {此自定义表情违反了规则。}}",
+    "description": "Detail of the API error (HTTP 422) of a custom emoji that breaks a rule. {reason} is the reason code (not shown); each branch explains one rule."
   },
   "errors.custom_emoji_request_conflict": {
     "defaultMessage": "无法按当前状态处理此自定义表情申请。",
@@ -523,9 +751,21 @@
     "defaultMessage": "一个关键词过滤器最多有 100 个词语，你的所有过滤器合计最多 1,000 个词语。请先移除一些。",
     "description": "API error title for HTTP 422 when the words of a keyword filter, or of all the user's filters, would pass their limit."
   },
+  "errors.list_members.not_followed": {
+    "defaultMessage": "只能把你关注的账号添加到列表。请先关注该账号。",
+    "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."
+  },
+  "errors.service_closing": {
+    "defaultMessage": "此服务器已宣布关闭。",
+    "description": "API error title for HTTP 409 when the closure of the server is announced (ADR-0088 §2), which stops new registrations and supporter subscriptions."
+  },
   "errors.service_closing_detail": {
     "defaultMessage": "公告关闭期间，新注册和支持者订阅将停止。",
     "description": "API error detail for HTTP 409 when the closure of the server is announced: what stops."
+  },
+  "errors.account_moved": {
+    "defaultMessage": "你的账号已迁移到另一个账号。要执行此操作，请先取消迁移。",
+    "description": "API error title for HTTP 403 when a user whose account moved to another account tries to post, boost, react, follow, or vote; they must cancel the move first."
   },
   "errors.account_not_moved": {
     "defaultMessage": "你的账号尚未迁移。",
@@ -535,9 +775,25 @@
     "defaultMessage": "这是你正在使用的浏览器。请改为退出登录。",
     "description": "API error title for HTTP 409 when the browser the user is using is signed out through the list of signed-in browsers; signing out ends it."
   },
+  "errors.move_alias_missing": {
+    "defaultMessage": "要迁移到的账号没有把你的账号列为别名。请先在该账号上把你的账号添加为别名。",
+    "description": "API error title for HTTP 422 when a user moves their account to another account whose aliases (alsoKnownAs) do not include the user's account; the alias must be added on the target first."
+  },
+  "errors.move_target_moved": {
+    "defaultMessage": "要迁移到的账号自己已经迁移了。请迁移到它迁移后的账号。",
+    "description": "API error title for HTTP 422 when a user moves their account to an account that has itself moved to another account."
+  },
   "errors.move_target_unavailable": {
     "defaultMessage": "你无法迁移到该账号。",
     "description": "API error title for HTTP 422 when a user moves their account to an account that is their own, is not found, cannot be fetched from its server, or is suspended on this server."
+  },
+  "errors.move_too_soon": {
+    "defaultMessage": "你的账号在不到 30 天前迁移过，已取消的迁移也算在内。请在那次迁移满 30 天后再试。",
+    "description": "API error title for HTTP 422 when a user moves their account within 30 days of its last move, also a cancelled one; the problem carries the time from which it can move again."
+  },
+  "errors.move_repeated": {
+    "defaultMessage": "你的账号以前迁移到过该账号，而每个账号只能迁移一次，即使那次迁移已被取消。请选择其他账号。",
+    "description": "API error title for HTTP 422 when a user moves their account to an account it moved to before (also if that move was cancelled); an account moves to each account once."
   },
   "errors.voice.not_eligible": {
     "defaultMessage": "你不能主持语音聊天房间。",
@@ -547,9 +803,21 @@
     "defaultMessage": "只有房间的主持人可以执行此操作。",
     "description": "API error title for HTTP 403 when a participant who is not the host of a voice chat room changes its settings, ends it, or hands it over."
   },
+  "errors.voice.room_full": {
+    "defaultMessage": "房间已满。请在有人离开后再试。",
+    "description": "API error title for HTTP 409 when a user joins a voice chat room that holds as many people as the server allows."
+  },
+  "errors.voice.too_many_rooms": {
+    "defaultMessage": "目前无法再开设更多房间。请稍后重试。",
+    "description": "API error title for HTTP 409 when a user opens a voice chat room while as many rooms are open as the server allows."
+  },
   "errors.voice.hosting_elsewhere": {
     "defaultMessage": "你正在主持另一个房间。",
     "description": "API error title for HTTP 409 when the host of an open voice chat room opens or joins another room."
+  },
+  "errors.voice.hosting_elsewhere_detail": {
+    "defaultMessage": "请先离开你主持的房间，指定下一位主持人或结束房间。",
+    "description": "API error detail for HTTP 409 when the host of an open voice chat room opens or joins another room."
   },
   "errors.voice.host_must_choose": {
     "defaultMessage": "请选择下一位主持人或结束房间。",
@@ -562,6 +830,10 @@
   "errors.voice.conflict": {
     "defaultMessage": "房间在此期间发生了变化。请重试。",
     "description": "API error title for HTTP 409 when a change of a voice chat room raced another change of the same user."
+  },
+  "errors.voice.unavailable": {
+    "defaultMessage": "语音聊天目前不可用。请稍后重试。",
+    "description": "API error title for HTTP 503 when the server could not prepare the connection of a voice chat room."
   },
   "errors.voice.not_host_or_cohost": {
     "defaultMessage": "只有房间的主持人或联合主持人可以执行此操作。",
@@ -591,6 +863,18 @@
     "defaultMessage": "通过关联账号的确认已过期或已被使用。请重试。",
     "description": "Title of the HTTP 422 API error when the user confirms an operation on their own account with a linked account at an external login provider after the confirmation expired (10 minutes), was already used, or was made for another operation."
   },
+  "errors.login_provider.unavailable": {
+    "defaultMessage": "无法使用该服务登录。",
+    "description": "Title of the HTTP 422 API error when the user links an account at, or confirms with, an external login provider (a sign-in service that the administrators set up) that does not exist, is turned off, does not allow linking, or that the user has no linked account at."
+  },
+  "errors.login_provider.linked": {
+    "defaultMessage": "你已经关联了该服务的账号。",
+    "description": "Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account."
+  },
+  "errors.login_providers_only": {
+    "defaultMessage": "此服务器只能通过其他服务登录，因此你无法设置密码或添加通行密钥。",
+    "description": "Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers."
+  },
   "errors.deactivation.refused": {
     "defaultMessage": "此账号现在无法停用。",
     "description": "API error title for HTTP 409 when the user cannot deactivate their own account now; the detail says why."
@@ -610,6 +894,18 @@
   "errors.deactivation.moved": {
     "defaultMessage": "此账号已迁移到另一个账号。",
     "description": "API error detail: the account cannot be deactivated because it moved to another account."
+  },
+  "errors.deactivation.registration_pending": {
+    "defaultMessage": "此账号的注册正在等待管理员批准。",
+    "description": "API error detail: the account cannot be deactivated because its registration waits for review."
+  },
+  "errors.deactivation.paid_subscription": {
+    "defaultMessage": "请先取消你的支持者计划。",
+    "description": "API error detail: the account cannot be deactivated while a paid supporter subscription goes on."
+  },
+  "errors.deactivation.recently_reactivated": {
+    "defaultMessage": "此账号在不到 24 小时前重新启用过。请在重新启用 24 小时后再试。",
+    "description": "API error detail: the account cannot be deactivated until 24 hours after its last reactivation."
   },
   "errors.deactivation.last_administrator": {
     "defaultMessage": "这是唯一可以登录的管理员账号。请先将其他人设为管理员。",
@@ -671,6 +967,18 @@
     "defaultMessage": "{count, plural, other {此服务器有 # 个本站账号。}}",
     "description": "API error detail for HTTP 422 when an administrator turns on the instance setting single_user: how many local accounts the server has. {count} is that number."
   },
+  "errors.status.local_unavailable": {
+    "defaultMessage": "在单人服务器上，你无法向“邻居”发帖。请更改可见范围。",
+    "description": "API error detail for HTTP 422 when a user posts with the visibility local on a one-person server (the instance setting single_user), where local means no more than followers only."
+  },
+  "errors.interaction_request.answered": {
+    "defaultMessage": "你已经批准或拒绝过这条回复、转发或引用。",
+    "description": "Detail of the HTTP 409 API error when the user approves or refuses a reply, boost, or quote of their post that they answered before."
+  },
+  "errors.precondition_failed": {
+    "defaultMessage": "你打开之后内容已发生变化。请刷新后重试。",
+    "description": "API error title for HTTP 412 when the If-Match of a request names an older version of the resource."
+  },
   "errors.precondition_required": {
     "defaultMessage": "此请求需要你读取时的版本。",
     "description": "API error title for HTTP 428 when a request that replaces a resource has no If-Match header."
@@ -682,6 +990,10 @@
   "errors.draft.if_match_required": {
     "defaultMessage": "请在 If-Match 请求头中发送你所读取草稿的 ETag。",
     "description": "Detail of the HTTP 428 API error when a save of a draft has no If-Match header."
+  },
+  "errors.draft.invalid": {
+    "defaultMessage": "无法保存草稿：文字、某个附件或投票超出了草稿所能保存的范围。",
+    "description": "Detail of the HTTP 422 API error when the content of a draft is too long, attaches too many files or one twice, or has a poll with too many choices or a duration out of range."
   },
   "errors.draft.not_scheduled": {
     "defaultMessage": "该草稿未设置定时发布。",
@@ -719,6 +1031,10 @@
     "defaultMessage": "只有活动的主办者可以执行此操作。",
     "description": "API error title for HTTP 403 when a co-organizer of an event changes its visibility, names or removes a co-organizer, or cancels it."
   },
+  "errors.event.closed": {
+    "defaultMessage": "此活动已取消或已开始，因此无法再更改或回复。",
+    "description": "API error title for HTTP 409 when an event was cancelled, or an answer comes after it started."
+  },
   "errors.event.full": {
     "defaultMessage": "活动已满员。",
     "description": "API error title for HTTP 409 when a user answers going to an event whose attendees who answer going reached its capacity."
@@ -747,6 +1063,10 @@
     "defaultMessage": "该用户没有回复“参加”或“可能参加”。",
     "description": "API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event."
   },
+  "errors.event.attendee_organizes": {
+    "defaultMessage": "组织者和共同组织者始终能看到地点，因此他们的回复无需批准。",
+    "description": "API error title for HTTP 422 when an organizer approves, or takes back the approval of, the organizer or a co-organizer of the event (ADR-0161 §6: they always see the places)."
+  },
   "errors.event.unscheduled": {
     "defaultMessage": "该活动还没有日期。",
     "description": "API error title for HTTP 409 when a user answers an event, or asks for its calendar file, before its organizers confirmed a date from its date poll."
@@ -758,5 +1078,25 @@
   "errors.event.last_candidate": {
     "defaultMessage": "日期投票至少需要一个候选日期。",
     "description": "API error title for HTTP 409 when an organizer withdraws the last candidate date of an event's date poll."
+  },
+  "errors.event.board_not_reader": {
+    "defaultMessage": "只有组织者、共同组织者，以及回复了参加或可能参加的人才能阅读此活动的留言板。把你的回复设为参加或可能参加即可阅读。",
+    "description": "API error title for HTTP 403 when someone who sees an event but has not answered going or maybe (and does not organize it) reads or posts on its board."
+  },
+  "errors.event.board_not_writer": {
+    "defaultMessage": "只有此活动的组织者选定的人才能在留言板上写内容。",
+    "description": "API error title for HTTP 403 when a reader of an event's board posts on it or edits a post on it, but the event's board_writers (organizer, coorganizers, or readers) leave the reader out."
+  },
+  "errors.event.board_closed": {
+    "defaultMessage": "此活动的留言板为只读：活动已取消，或已结束 7 天。",
+    "description": "API error title for HTTP 409 when someone posts on an event's board, or edits a post on it, after the event was cancelled or from 7 days after its end (the board is writable for the 7 days after the end)."
+  },
+  "errors.idempotency_key_reused": {
+    "defaultMessage": "此密钥已用于另一个请求。请用新的密钥发送新请求。",
+    "description": "API error title for HTTP 422 when a client sends an Idempotency-Key header that it already used for a different request. Idempotency-Key is the name of an HTTP header (not translated)."
+  },
+  "errors.idempotency_key_in_use": {
+    "defaultMessage": "用此密钥发送的请求仍在处理中。请稍后重试。",
+    "description": "API error title for HTTP 409 when a client sends a request again with the same Idempotency-Key while the first one is still being carried out."
   }
 }

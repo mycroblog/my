@@ -3,6 +3,10 @@
     "defaultMessage": "Mode test : rien n’est facturé.",
     "description": "Notice at the top of the PAY.JP checkout and card pages while the server uses PAY.JP's test keys: no card is charged."
   },
+  "pay.fake_notice": {
+    "defaultMessage": "Version de test : cette page remplace un prestataire de paiement, et aucun argent n’est échangé.",
+    "description": "Notice at the top of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6)."
+  },
   "pay.back": {
     "defaultMessage": "Retour",
     "description": "Link from a payment page back to the screen of this server the user came from."
@@ -26,6 +30,26 @@
   "pay.card.note": {
     "defaultMessage": "Les informations de la carte sont saisies dans le formulaire de PAY.JP et n’atteignent jamais ce serveur.",
     "description": "Note under PAY.JP's card element on the checkout and card pages."
+  },
+  "pay.card.failed": {
+    "defaultMessage": "La carte n’a pas pu être vérifiée, et rien n’a été débité. Vérifiez l’adresse e-mail, le nom sur la carte et les informations de la carte, puis réessayez.",
+    "description": "Alert of the card form when PAY.JP could not take the card and gave no reason of its own."
+  },
+  "pay.card.unavailable": {
+    "defaultMessage": "Le formulaire de carte n’a pas pu être chargé. Rechargez la page ou réessayez dans un moment.",
+    "description": "Alert of the card form when PAY.JP's script (payjp.js) could not be loaded, so no card can be entered."
+  },
+  "pay.card.name_invalid": {
+    "defaultMessage": "Saisissez le nom en lettres latines, tel qu’il est imprimé sur la carte.",
+    "description": "Error under the card holder's name field when it is not 2 to 45 Latin letters, digits, spaces, periods or hyphens, the only names PAY.JP takes. Shown before the card is sent."
+  },
+  "pay.checkout.submit": {
+    "defaultMessage": "Payer {amount} et s’abonner",
+    "description": "Button of the PAY.JP checkout page that verifies the card (3-D Secure), pays the first period and starts the subscription. {amount} is what is charged now, formatted with its currency (¥1,200)."
+  },
+  "pay.checkout.then": {
+    "defaultMessage": "Puis {price}.",
+    "description": "Line right above the button of the PAY.JP checkout page: what the subscription costs after the first payment. {price} is a price with its interval (pay.price.month or pay.price.year)."
   },
   "pay.fake.pay": {
     "defaultMessage": "Payer",
@@ -62,5 +86,41 @@
   "pay.portal.history_empty": {
     "defaultMessage": "Aucun paiement pour le moment.",
     "description": "Text of the PAY.JP card page without payments."
+  },
+  "pay.portal.paused": {
+    "defaultMessage": "Le dernier paiement a échoué : l’abonnement est donc suspendu, et ses avantages prennent fin avec le délai de grâce. Changer de carte règle le paiement et le reprend.",
+    "description": "Alert of the PAY.JP card page while a subscription is paused after a failed payment."
+  },
+  "pay.portal.plan": {
+    "defaultMessage": "{plan} : {price}",
+    "description": "The subscription at the top of the PAY.JP card page. {plan} is the plan's name, {price} a price with its interval (pay.price.month or pay.price.year)."
+  },
+  "pay.portal.next": {
+    "defaultMessage": "Prochain paiement : {date}",
+    "description": "Line under the subscription at the top of the PAY.JP card page. {date} is the date of the next payment (YYYY-MM-DD)."
+  },
+  "pay.portal.add_card": {
+    "defaultMessage": "Ajouter une carte",
+    "description": "Heading and button of the card form on the PAY.JP card page of a customer without a card."
+  },
+  "pay.portal.refunded": {
+    "defaultMessage": "{amount} remboursés",
+    "description": "The muted end of a row of the recent payments on the PAY.JP card page, for a payment refunded in part or in full. {amount} is formatted with its currency."
+  },
+  "pay.price.month": {
+    "defaultMessage": "{amount} par mois",
+    "description": "A price paid every month on the payment pages. {amount} is formatted with its currency (¥1,200)."
+  },
+  "pay.price.year": {
+    "defaultMessage": "{amount} par an",
+    "description": "A price paid every year on the payment pages. {amount} is formatted with its currency (¥12,000)."
+  },
+  "pay.price.once": {
+    "defaultMessage": "{amount}, une fois",
+    "description": "An amount paid once (a tip) on the payment pages. {amount} is formatted with its currency (¥500)."
+  },
+  "pay.back_to_app": {
+    "defaultMessage": "Retour à l’application",
+    "description": "Action of a payment page that leads back to this server's app: under the error of an expired or unknown page, and at the end of the other pages."
   }
 }

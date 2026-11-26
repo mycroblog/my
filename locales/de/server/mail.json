@@ -75,6 +75,10 @@
     "defaultMessage": "Ein Webhook von {instance} wurde ausgeschaltet",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.password_changed.body": {
+    "defaultMessage": "Das Passwort deines Kontos auf {instance} wurde geändert, und du wurdest auf deinen anderen Geräten und in deinen Apps abgemeldet.",
+    "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.password_changed.detail": {
     "defaultMessage": "Wenn du es nicht geändert hast, kennt jemand anderes möglicherweise dein Passwort. Lege sofort ein neues fest.",
     "description": "Second paragraph of the email that tells a user their password was changed, before the link that asks for a password reset link."
@@ -82,6 +86,10 @@
   "mail.password_changed.subject": {
     "defaultMessage": "Dein Passwort für {instance} wurde geändert",
     "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.password_removed.body": {
+    "defaultMessage": "Das Passwort deines Kontos auf {instance} wurde entfernt, und du wurdest auf deinen anderen Geräten und in deinen Apps abgemeldet. Ab jetzt meldest du dich mit deinen Passkeys an.",
+    "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.detail": {
     "defaultMessage": "Wenn du es nicht entfernt hast, ist möglicherweise jemand anderes in deinem Konto angemeldet. Lege sofort ein neues Passwort fest.",
@@ -191,6 +199,10 @@
     "defaultMessage": "Die Administratoren von {instance} haben die angekündigte Schließung zurückgezogen. Der Server läuft wie bisher weiter, und du musst nichts tun.",
     "description": "Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.service_closure_withdrawn.subject": {
+    "defaultMessage": "Die Schließung von {instance} wurde zurückgenommen",
+    "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.signature.contact": {
     "defaultMessage": "Kontakt: {email}",
     "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
@@ -219,6 +231,10 @@
     "defaultMessage": "Die Administratoren von {instance} haben den Unterstützungsplan „{plan}“, den du abonnierst, eingestellt.",
     "description": "First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
   },
+  "mail.supporter_plan_retired.detail": {
+    "defaultMessage": "Dein Abonnement ist gekündigt und wird nicht verlängert. Die Vorteile des Plans behältst du bis zum Ende des bezahlten Zeitraums, sofern keine Zahlung überfällig ist.",
+    "description": "Second paragraph of the email to a subscriber whose supporter plan the administrators retired."
+  },
   "mail.supporter_plan_retired.subject": {
     "defaultMessage": "Dein Unterstützungsplan auf {instance} wurde eingestellt",
     "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
@@ -230,6 +246,14 @@
   "mail.supporter_service_closure.detail": {
     "defaultMessage": "Dein Abo verlängert sich nicht. Du behältst die Vorteile des Plans bis zum Ende des bezahlten Zeitraums, es sei denn, eine Zahlung ist überfällig.",
     "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
+  },
+  "mail.supporter_service_closure.subject": {
+    "defaultMessage": "Dein Unterstützer-Abonnement auf {instance} wurde beendet, weil der Server schließt",
+    "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.supporter_subscription_ended.body": {
+    "defaultMessage": "Dein Unterstützungsplan „{plan}“ auf {instance} ist beendet, und damit auch seine Vorteile. {reason, select, lapsed {Innerhalb von 7 Tagen nach einer fehlgeschlagenen Zahlung war keine Zahlung erfolgreich, oder das Abonnement war pausiert.} reversed {Eine Zahlung wurde vollständig erstattet oder nach einem Streitfall vom Kartenunternehmen rückgängig gemacht.} plan_retired {Die Administratoren haben den Plan eingestellt.} account_suspended {Dein Konto wurde gesperrt.} staff {Ein Administrator hat das Abonnement gekündigt.} other {Das Abonnement wurde gekündigt.}}",
+    "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
   },
   "mail.supporter_subscription_ended.subject": {
     "defaultMessage": "Dein Unterstützungsplan auf {instance} ist beendet",
@@ -344,7 +368,7 @@
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_custom_emoji_request": {
-    "defaultMessage": "Anfragen für eigene Emoji",
+    "defaultMessage": "Anfragen für eigene Emojis",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_account_moved": {
@@ -387,6 +411,10 @@
     "defaultMessage": "Melde dich an, um es zu reaktivieren. Wir schreiben dir vor der Löschung nicht noch einmal dazu. Wenn du das nicht selbst getan hast, melde dich an, reaktiviere das Konto und ändere dein Passwort.",
     "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
   },
+  "mail.admin_hook_failing.body": {
+    "defaultMessage": "Eine externe Prüfung von {instance} schlägt wiederholt fehl. Bis sie wieder funktioniert, richtet sich das Geprüfte nach ihrem Verhalten bei Ausfall: Standardmäßig geht es ungeprüft durch.",
+    "description": "First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none."
+  },
   "mail.admin_hook_failing.detail": {
     "defaultMessage": "Öffne deine Benachrichtigungen und sieh dir die automatischen Prüfungen an, um zu erfahren, was fehlgeschlagen ist.",
     "description": "Second paragraph of the email to a moderator about an external review that keeps failing, before the link to the notifications."
@@ -396,15 +424,15 @@
     "description": "Subject of the email to a moderator who gets moderator notifications by email: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_domain_list_failing.body": {
-    "defaultMessage": "Der Server {instance} konnte eine abonnierte Blockliste dreimal in Folge nicht abrufen. Bis ein Abruf wieder funktioniert, ändert die Liste keine Maßnahmen gegen Domains; die Maßnahmen, die sie ausgelöst hat, bleiben bestehen.",
+    "defaultMessage": "Der Server {instance} konnte eine abonnierte Sperrliste dreimal in Folge nicht abrufen. Bis ein Abruf wieder funktioniert, ändert die Liste keine Maßnahmen gegen Domains; die Maßnahmen, die sie ausgelöst hat, bleiben bestehen.",
     "description": "First paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_domain_list_failing.detail": {
-    "defaultMessage": "Öffne die Blocklisten-Abonnements, um zu sehen, warum die Abrufe fehlgeschlagen sind.",
+    "defaultMessage": "Öffne die Sperrlisten-Abonnements, um zu sehen, warum die Abrufe fehlgeschlagen sind.",
     "description": "Second paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing, before the link."
   },
   "mail.admin_domain_list_failing.subject": {
-    "defaultMessage": "Ein Blocklisten-Abonnement von {instance} schlägt weiterhin fehl",
+    "defaultMessage": "Ein Sperrlisten-Abonnement von {instance} schlägt weiterhin fehl",
     "description": "Subject of the email to a moderator who gets moderator notifications by email: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_hook_appeal.body": {
@@ -424,7 +452,7 @@
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_domain_list_failing": {
-    "defaultMessage": "Fehlschlagende Blocklisten-Abonnements",
+    "defaultMessage": "Fehlschlagende Sperrlisten-Abonnements",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   }
 }

@@ -1,0 +1,286 @@
+{
+  "profile.follow": {
+    "defaultMessage": "追蹤",
+    "description": "The button of a profile that follows the account."
+  },
+  "profile.follow_back": {
+    "defaultMessage": "回追",
+    "description": "The button of a profile of an account that follows the reader, which follows it back."
+  },
+  "profile.request_follow": {
+    "defaultMessage": "請求追蹤",
+    "description": "The button of a profile of an account that approves its followers, which asks to follow it."
+  },
+  "profile.following": {
+    "defaultMessage": "追蹤中",
+    "description": "The button of a profile of an account the reader follows; pressing it unfollows the account."
+  },
+  "profile.requested": {
+    "defaultMessage": "已請求",
+    "description": "The button of a profile of an account whose approval the reader's follow request awaits; pressing it withdraws the request."
+  },
+  "profile.unblock": {
+    "defaultMessage": "解除封鎖",
+    "description": "The button, and the item of a profile's menu, that stops blocking the account."
+  },
+  "profile.block": {
+    "defaultMessage": "封鎖…",
+    "description": "The item of a profile's menu, and of a post's menu under its author, that blocks the account after a confirmation."
+  },
+  "profile.mute": {
+    "defaultMessage": "靜音",
+    "description": "The item of a profile's menu that mutes the account."
+  },
+  "profile.unmute": {
+    "defaultMessage": "取消靜音",
+    "description": "The item of a profile's menu, and the action of its muted line, that stops muting the account."
+  },
+  "profile.more": {
+    "defaultMessage": "更多",
+    "description": "The button of a profile that opens the menu of what else the reader may do with the account."
+  },
+  "profile.open_original": {
+    "defaultMessage": "開啟原始頁面",
+    "description": "The item of a profile's menu, and the action of its line about a remote account, that opens the account's page on its own server."
+  },
+  "profile.follows_you": {
+    "defaultMessage": "追蹤你",
+    "description": "The badge beside the handle of an account that follows the reader."
+  },
+  "profile.bot": {
+    "defaultMessage": "機器人",
+    "description": "The badge beside the name of an automated account."
+  },
+  "profile.locked": {
+    "defaultMessage": "追蹤請求需要核准",
+    "description": "The line of a profile, and the label of the lock beside its name, of an account that approves its followers."
+  },
+  "profile.following_count": {
+    "defaultMessage": "追蹤中",
+    "description": "The label of the number of accounts the account follows."
+  },
+  "profile.followers_count": {
+    "defaultMessage": "追蹤者",
+    "description": "The label of the number of accounts that follow the account."
+  },
+  "profile.joined": {
+    "defaultMessage": "{date}加入",
+    "description": "When the account was created, on its profile. date is the month and the year."
+  },
+  "profile.featured": {
+    "defaultMessage": "精選主題標籤",
+    "description": "The heading of the hashtags the account features on its profile."
+  },
+  "profile.tag_posts": {
+    "defaultMessage": "{count, plural, other {# 則貼文}}",
+    "description": "How many of the account's posts carry a hashtag it features. count is how many."
+  },
+  "profile.tabs": {
+    "defaultMessage": "帳號的貼文",
+    "description": "What the tabs of a profile choose between, for assistive technology."
+  },
+  "profile.posts": {
+    "defaultMessage": "貼文",
+    "description": "The tab of a profile that shows the account's posts, without its replies."
+  },
+  "profile.posts_and_replies": {
+    "defaultMessage": "貼文與回覆",
+    "description": "The tab of a profile that shows the account's posts and its replies."
+  },
+  "profile.media": {
+    "defaultMessage": "媒體",
+    "description": "The tab of a profile that shows the account's posts with images or other media."
+  },
+  "profile.articles": {
+    "defaultMessage": "文章",
+    "description": "The tab of a profile that shows only the account's articles (long posts with a title, a summary and a cover)."
+  },
+  "profile.pinned": {
+    "defaultMessage": "已釘選",
+    "description": "The line over a post the account pinned to its profile."
+  },
+  "profile.remote": {
+    "defaultMessage": "來自 {domain} 的資訊可能不完整。",
+    "description": "The line of a profile of an account on another server. domain is that server's domain name."
+  },
+  "profile.blocked": {
+    "defaultMessage": "你已封鎖此帳號。",
+    "description": "The line of a profile of an account the reader blocks."
+  },
+  "profile.blocked_posts": {
+    "defaultMessage": "封鎖期間，它的貼文會被隱藏。",
+    "description": "What a profile of an account the reader blocks says in place of its posts."
+  },
+  "profile.muted": {
+    "defaultMessage": "你已將此帳號靜音。它的貼文不會出現在你的時間軸中。",
+    "description": "The line of a profile of an account the reader mutes."
+  },
+  "profile.locked_posts": {
+    "defaultMessage": "只有它的追蹤者能看到它的其他貼文。",
+    "description": "What a profile of an account that approves its followers says under its posts, to a reader who does not follow it."
+  },
+  "profile.loading": {
+    "defaultMessage": "正在載入個人檔案…",
+    "description": "What a profile says while the account loads."
+  },
+  "profile.failed": {
+    "defaultMessage": "無法載入個人檔案。",
+    "description": "What a profile says when the account could not be found or loaded, beside a button to try again."
+  },
+  "profile.title": {
+    "defaultMessage": "{name}（{handle}）",
+    "description": "The heading of a profile, for assistive technology, and the document's title. name is the account's display name, handle its @handle."
+  },
+  "profile.follows_back": {
+    "defaultMessage": "返回個人檔案",
+    "description": "The button at the top of an account's list of follows or followers that goes back to its profile."
+  },
+  "profile.follows_tabs": {
+    "defaultMessage": "追蹤中與追蹤者",
+    "description": "What the tabs of an account's lists of follows and followers choose between, for assistive technology."
+  },
+  "profile.follows_hidden_private": {
+    "defaultMessage": "{name} 沒有向你顯示這份清單。",
+    "description": "In place of an account's list of follows or followers that its owner keeps from the reader: shown to nobody, or to their followers only while the reader does not follow them (the server does not say which). name is the account's name."
+  },
+  "profile.followers_empty": {
+    "defaultMessage": "還沒有追蹤者。",
+    "description": "In place of the list of an account's followers when it has none."
+  },
+  "profile.following_empty": {
+    "defaultMessage": "還沒有追蹤任何人。",
+    "description": "In place of the list of the accounts an account follows when it follows none."
+  },
+  "profile.followers_loading": {
+    "defaultMessage": "正在載入追蹤者…",
+    "description": "While the list of an account's followers loads."
+  },
+  "profile.following_loading": {
+    "defaultMessage": "正在載入追蹤中的帳號…",
+    "description": "While the list of the accounts an account follows loads."
+  },
+  "profile.followers_failed": {
+    "defaultMessage": "無法載入追蹤者。",
+    "description": "When the list of an account's followers failed to load; Try again follows it."
+  },
+  "profile.following_failed": {
+    "defaultMessage": "無法載入追蹤中的帳號。",
+    "description": "When the list of the accounts an account follows failed to load; Try again follows it."
+  },
+  "profile.retry": {
+    "defaultMessage": "重試",
+    "description": "The action after the line that an account's list of follows or followers failed to load, which loads it again."
+  },
+  "profile.action_failed": {
+    "defaultMessage": "{action, select, follow {追蹤} unfollow {取消追蹤} mute {靜音} unmute {取消靜音} block {封鎖} unblock {解除封鎖} remove_follower {移除追蹤者} notify {通知設定} note {儲存備註} mute_server {將伺服器靜音} list_add {加入清單} list_remove {從清單移除} other {取消伺服器靜音}}未完成。",
+    "description": "The notice at the bottom of the page when the reader's action on an account, from its profile, a row of a list of accounts or a post's menu, got no answer from the server (the network), beside Try again: following it (or asking to) or unfollowing it (or taking the request back), muting or unmuting it, blocking or unblocking it, removing it from their followers, being notified of its new posts or not, saving their private note on it, muting or unmuting its server, putting it in one of their lists or taking it out. action is which of them."
+  },
+  "profile.note": {
+    "defaultMessage": "私人備註",
+    "description": "The name of the box where the reader writes their private note on an account, for assistive technology."
+  },
+  "profile.note_add": {
+    "defaultMessage": "新增只有你看得到的備註",
+    "description": "The line of a profile, with the note glyph, that opens the editor of the reader's private note on the account while there is none."
+  },
+  "profile.note_edit": {
+    "defaultMessage": "編輯備註",
+    "description": "Read before the reader's private note on a profile, which is a button: pressing it opens the note's editor in place (for assistive technology)."
+  },
+  "profile.note_save": {
+    "defaultMessage": "儲存",
+    "description": "The button that keeps the reader's private note on an account."
+  },
+  "profile.cancel": {
+    "defaultMessage": "取消",
+    "description": "The button of the editor of the reader's private note on an account, and of the confirmations of blocking an account and removing a follower, that closes them and keeps everything as it was."
+  },
+  "profile.notify": {
+    "defaultMessage": "有新貼文時通知我",
+    "description": "The control of a profile that notifies the reader of the account's new posts."
+  },
+  "profile.block_confirm_title": {
+    "defaultMessage": "要封鎖 {handle} 嗎？",
+    "description": "The question of the confirmation before blocking an account. handle is its @handle."
+  },
+  "profile.block_confirm_text": {
+    "defaultMessage": "你們之間的追蹤關係會結束，封鎖期間雙方都無法追蹤對方或查看對方的貼文。你之後可以解除封鎖，但追蹤關係不會恢復。",
+    "description": "What blocking an account does, in its confirmation: the follows both ways end, neither can follow or see the other while it lasts, and unblocking does not restore the follows."
+  },
+  "profile.block_confirm": {
+    "defaultMessage": "封鎖",
+    "description": "The button of the confirmation that blocks the account."
+  },
+  "profile.remove_follower": {
+    "defaultMessage": "移除追蹤者…",
+    "description": "The item of a profile's menu, of an account that follows the reader, that removes it from their followers after a confirmation."
+  },
+  "profile.remove_follower_title": {
+    "defaultMessage": "要將 {handle} 從你的追蹤者中移除嗎？",
+    "description": "The question of the confirmation before removing an account from the reader's followers. handle is its @handle."
+  },
+  "profile.remove_follower_text": {
+    "defaultMessage": "對方將無法再看到你僅限追蹤者的貼文，但仍可再次追蹤你。",
+    "description": "What removing a follower does, in its confirmation."
+  },
+  "profile.remove_follower_confirm": {
+    "defaultMessage": "移除",
+    "description": "The button of the confirmation that removes the account from the reader's followers."
+  },
+  "profile.mute_server": {
+    "defaultMessage": "將伺服器靜音",
+    "description": "The item of a profile's or a post's menu, under the server's name, that mutes that server for the reader: its posts leave the reader's timelines other than home, its boosts leave home, its accounts stop notifying them; the accounts of it the reader follows stay on home."
+  },
+  "profile.unmute_server": {
+    "defaultMessage": "取消伺服器靜音",
+    "description": "The item of a profile's or a post's menu, under the server's name, that stops muting that server."
+  },
+  "profile.server_muted": {
+    "defaultMessage": "你已將伺服器 {domain} 靜音。",
+    "description": "The line of the profile of an account whose server the reader mutes; Unmute follows it. domain is the server's name."
+  },
+  "profile.server_muted_now": {
+    "defaultMessage": "你已將伺服器 {domain} 靜音。",
+    "description": "In place of a post whose server the reader just muted from its menu; Undo follows it. domain is the server's name."
+  },
+  "profile.muted_now": {
+    "defaultMessage": "你已將 {handle} 靜音。",
+    "description": "In place of a post whose author the reader just muted from its menu; Undo follows it. handle is the @handle."
+  },
+  "profile.blocked_now": {
+    "defaultMessage": "你已封鎖 {handle}。",
+    "description": "In place of a post whose author the reader just blocked from its menu; Unblock follows it (not Undo: the follows the block ended do not come back). handle is the @handle."
+  },
+  "profile.undo": {
+    "defaultMessage": "復原",
+    "description": "The action after a line that says the reader just muted an account or a server from a post's menu, which undoes it."
+  },
+  "profile.moved_to": {
+    "defaultMessage": "已搬到 {handle}",
+    "description": "The line of the profile of an account that moved, naming the account it moved to; the handle is a link to it. handle is that account's @handle."
+  },
+  "profile.go_to_new": {
+    "defaultMessage": "前往新帳號",
+    "description": "The button of the profile of an account that moved, which opens the account it moved to."
+  },
+  "profile.not_found": {
+    "defaultMessage": "找不到 {handle}。該帳號可能已不存在，或連結有誤。請檢查連結，或返回上一頁。",
+    "description": "In place of a profile of an account that does not exist or is not available (deleted, deactivated: never say which), under a button back. handle is the @handle that was opened."
+  },
+  "profile.not_found_back": {
+    "defaultMessage": "返回",
+    "description": "The button over the line that an account is not here, which goes back to where the reader came from."
+  },
+  "profile.add_to_list": {
+    "defaultMessage": "加入清單",
+    "description": "The item of a profile's menu, and the title of what it opens, that puts the account in the reader's lists."
+  },
+  "profile.add_to_list_followed_only": {
+    "defaultMessage": "只能加入你追蹤的帳號",
+    "description": "Under Add to list, muted, on a profile of an account the reader does not follow."
+  },
+  "profile.events": {
+    "defaultMessage": "即將舉行的活動",
+    "description": "The name of the list of the upcoming events an account organizes, on its profile, for assistive technology."
+  }
+}

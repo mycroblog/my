@@ -1,0 +1,1022 @@
+{
+  "staff_domains.none": {
+    "defaultMessage": "无",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the value of a fact that holds nothing (no public comment, no note). Read by moderators."
+  },
+  "staff_domains.group.federation": {
+    "defaultMessage": "联合",
+    "description": "The heading, at /moderation, of the group of the screens of remote domains and servers. Read by moderators."
+  },
+  "staff_domains.entry.domain_actions": {
+    "defaultMessage": "域名措施",
+    "description": "The name of the moderators' screen of the actions on remote domains, in the list of moderation screens and as its title. Read by moderators."
+  },
+  "staff_domains.entry.instances": {
+    "defaultMessage": "远程服务器",
+    "description": "The name of the moderators' screen of the remote servers, in the list of moderation screens and as its title. Read by moderators."
+  },
+  "staff_domains.forbidden": {
+    "defaultMessage": "你的账号已无权管理域名。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), in its place when the server refuses the reader the screen. Read by moderators."
+  },
+  "staff_domains.refused": {
+    "defaultMessage": "{why, select, forbidden {你的账号已无权执行此操作。} missing {此项已不存在。请返回并重新加载列表。} other {未能完成操作。请重新加载页面后重试。}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when the server refused a write; `why` says why. Read by moderators."
+  },
+  "staff_domains.cancel": {
+    "defaultMessage": "取消",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that closes a confirmation without doing anything. Read by moderators."
+  },
+  "staff_domains.account_gone": {
+    "defaultMessage": "已不存在的账号",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), in the place of the account that sent a delivery when it no longer exists. Read by moderators."
+  },
+  "staff_domains.until_lifted": {
+    "defaultMessage": "直到解除",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the end of an action that lasts until it is lifted, as a fact and as a choice of how long. Read by moderators."
+  },
+  "staff_domains.length.days": {
+    "defaultMessage": "{count, plural, =365 {1 年} =3650 {10 年} other {# 天}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), a choice of how long a new action lasts. Read by moderators."
+  },
+  "staff_domains.kind": {
+    "defaultMessage": "{kind, select, suspend {封禁} limit {限制} reject_media {拒绝媒体} reject_reports {拒绝举报} force_sensitive {媒体始终标记为敏感内容} other {其他措施}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the kind of an action on a domain. Read by moderators."
+  },
+  "staff_domains.action_state": {
+    "defaultMessage": "{state, select, active {生效中} expired {已结束} lifted {已解除} other {未知}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the state of an action on a domain. Read by moderators."
+  },
+  "staff_domains.to_server": {
+    "defaultMessage": "打开服务器",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button on an action's page that opens the remote server's screen. Read by moderators."
+  },
+  "staff_domains.to_audit": {
+    "defaultMessage": "审计日志",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the audit log of the operations on this domain. Read by moderators."
+  },
+  "staff_domains.to_account_server": {
+    "defaultMessage": "打开该账号所在的服务器",
+    "description": "On a report's screen, the button that opens the screen of the reported remote account's server. Read by moderators."
+  },
+  "staff_domains.actions.new": {
+    "defaultMessage": "新措施",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the form of a new action, and the form's title. Read by moderators."
+  },
+  "staff_domains.actions.csv": {
+    "defaultMessage": "Mastodon 的 CSV",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the import and export of Mastodon's domain block CSV, and that screen's title. Read by moderators."
+  },
+  "staff_domains.actions.filters": {
+    "defaultMessage": "筛选域名措施",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the name of the filters over the list, for assistive technology. Read by moderators."
+  },
+  "staff_domains.actions.domain": {
+    "defaultMessage": "域名",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the search field that keeps only the actions on one domain. Read by moderators."
+  },
+  "staff_domains.actions.domain.clear": {
+    "defaultMessage": "清除域名",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that empties the domain's search field. Read by moderators."
+  },
+  "staff_domains.actions.domain.invalid": {
+    "defaultMessage": "请输入域名，例如 spam.example，不含 https:// 或路径。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the domain's search when the server takes what was written for no domain. Read by moderators."
+  },
+  "staff_domains.actions.all": {
+    "defaultMessage": "包括已解除和已过期的",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the toggle that shows the actions no longer in effect. Read by moderators."
+  },
+  "staff_domains.actions.loading": {
+    "defaultMessage": "正在加载域名措施…",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), while the list is read. Read by moderators."
+  },
+  "staff_domains.actions.failed": {
+    "defaultMessage": "无法加载域名措施。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when the list could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.actions.table": {
+    "defaultMessage": "域名措施",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the name of the table, for assistive technology. Read by moderators."
+  },
+  "staff_domains.actions.column.domain": {
+    "defaultMessage": "域名",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the column of the domains. Read by moderators."
+  },
+  "staff_domains.actions.column.kind": {
+    "defaultMessage": "措施",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the column of what each action does. Read by moderators."
+  },
+  "staff_domains.actions.column.ends": {
+    "defaultMessage": "结束时间",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the column of when each action ends. Read by moderators."
+  },
+  "staff_domains.actions.column.state": {
+    "defaultMessage": "状态",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the column of each action's state. Read by moderators."
+  },
+  "staff_domains.actions.empty": {
+    "defaultMessage": "没有对任何域名采取生效中的措施。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when no action is in effect. Read by moderators."
+  },
+  "staff_domains.actions.empty.filtered": {
+    "defaultMessage": "没有符合这些筛选条件的措施。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when the filters leave nothing; Clear filters is above. Read by moderators."
+  },
+  "staff_domains.actions.back": {
+    "defaultMessage": "域名措施",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the back button to the list of domain actions. Read by moderators."
+  },
+  "staff_domains.allows": {
+    "defaultMessage": "允许的域名",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the allowlist of federation, and its screen's title. Read by moderators."
+  },
+  "staff_domains.lists": {
+    "defaultMessage": "屏蔽列表订阅",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the subscriptions to domain block lists, and their screen's title. Read by moderators."
+  },
+  "staff_domains.action.missing": {
+    "defaultMessage": "此地址没有对应的域名措施。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), at the address of an action the server does not have. Read by moderators."
+  },
+  "staff_domains.action.all": {
+    "defaultMessage": "所有域名措施",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the link to the list after a missing action. Read by moderators."
+  },
+  "staff_domains.action.loading": {
+    "defaultMessage": "正在加载措施…",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), while an action's page is read. Read by moderators."
+  },
+  "staff_domains.action.failed": {
+    "defaultMessage": "无法加载此措施。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when an action could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.action.lift": {
+    "defaultMessage": "解除",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button on an action's page that ends it now. Read by moderators."
+  },
+  "staff_domains.action.lifted": {
+    "defaultMessage": "措施已解除。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), after Lift. Read by moderators."
+  },
+  "staff_domains.action.others": {
+    "defaultMessage": "对此域名的措施",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button on an action's page that lists every action on the domain. Read by moderators."
+  },
+  "staff_domains.action.facts": {
+    "defaultMessage": "关于此措施",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the name of an action's facts, for assistive technology. Read by moderators."
+  },
+  "staff_domains.action.fact.state": {
+    "defaultMessage": "状态",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of an action's state. Read by moderators."
+  },
+  "staff_domains.action.fact.kind": {
+    "defaultMessage": "措施",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of what an action does. Read by moderators."
+  },
+  "staff_domains.action.fact.issued": {
+    "defaultMessage": "采取时间",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of when an action was taken. Read by moderators."
+  },
+  "staff_domains.action.fact.ends": {
+    "defaultMessage": "结束时间",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of when an action ends. Read by moderators."
+  },
+  "staff_domains.action.fact.lifted": {
+    "defaultMessage": "解除时间",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of when an action was lifted. Read by moderators."
+  },
+  "staff_domains.action.fact.public_comment": {
+    "defaultMessage": "公开理由",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of an action's reason that others may read. Read by moderators."
+  },
+  "staff_domains.action.fact.private_note": {
+    "defaultMessage": "审核员备注",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of an action's note that only the moderators read. Read by moderators."
+  },
+  "staff_domains.action.fact.obfuscate": {
+    "defaultMessage": "公开显示为",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of whether a published list hides part of the domain. Read by moderators."
+  },
+  "staff_domains.action.fact.issued_by": {
+    "defaultMessage": "执行者",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of the block list subscription that took an action. Read by moderators."
+  },
+  "staff_domains.action.obfuscated": {
+    "defaultMessage": "隐藏部分域名",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the value of Published as for an action that hides part of the domain. Read by moderators."
+  },
+  "staff_domains.action.not_obfuscated": {
+    "defaultMessage": "完整域名",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the value of Published as for an action that shows the whole domain. Read by moderators."
+  },
+  "staff_domains.action.subscription": {
+    "defaultMessage": "屏蔽列表订阅",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the link to the subscription that took an action. Read by moderators."
+  },
+  "staff_domains.form.domain": {
+    "defaultMessage": "域名",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the field of a domain to act on or to allow. Read by moderators."
+  },
+  "staff_domains.form.domain.hint": {
+    "defaultMessage": "其子域名同样适用。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the field of a domain. Read by moderators."
+  },
+  "staff_domains.form.domain.blank": {
+    "defaultMessage": "请输入域名，例如 spam.example。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the field of a domain left empty. Read by moderators."
+  },
+  "staff_domains.form.domain.invalid": {
+    "defaultMessage": "请输入其他服务器的域名，例如 spam.example，不含 https:// 或路径。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the field of a domain the server refused (not a domain, or this server's own). Read by moderators."
+  },
+  "staff_domains.form.kind": {
+    "defaultMessage": "措施",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the choice of what a new action does. Read by moderators."
+  },
+  "staff_domains.form.length": {
+    "defaultMessage": "持续时间",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the choice of how long a new action lasts. Read by moderators."
+  },
+  "staff_domains.form.public_comment": {
+    "defaultMessage": "公开理由",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the field of the reason others may read. Read by moderators."
+  },
+  "staff_domains.form.private_note": {
+    "defaultMessage": "审核员备注",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the field of the note only the moderators read. Read by moderators."
+  },
+  "staff_domains.form.obfuscate": {
+    "defaultMessage": "在公开时隐藏部分域名",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the checkbox of whether a published list hides part of the domain. Read by moderators."
+  },
+  "staff_domains.form.submit": {
+    "defaultMessage": "{kind, select, suspend {封禁…} limit {限制} reject_media {拒绝媒体} reject_reports {拒绝举报} force_sensitive {将媒体标记为敏感内容} other {采取措施}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that takes the new action, named by its kind; a suspend asks first (…). Read by moderators."
+  },
+  "staff_domains.suspend.title": {
+    "defaultMessage": "封禁 {domain}？",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the question of the confirmation before a domain is suspended. Read by moderators."
+  },
+  "staff_domains.suspend.stops": {
+    "defaultMessage": "将不再接收 {domain} 及其子域名的任何内容，也不再向其发送或从其获取内容，其账号和帖子会被隐藏。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), in the confirmation of a suspend, what it stops. Read by moderators."
+  },
+  "staff_domains.suspend.counting": {
+    "defaultMessage": "正在统计将被解除的关注…",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), in the confirmation of a suspend, while the server counts the follows it ends. Read by moderators."
+  },
+  "staff_domains.suspend.confirm": {
+    "defaultMessage": "封禁",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button of the confirmation that suspends the domain, once its name is typed. Read by moderators."
+  },
+  "staff_domains.suspend.cuts": {
+    "defaultMessage": "{follows, plural, =0 {此服务器上的人与其账号之间没有会被解除的关注。} other {此服务器上 {people, plural, other {# 人}}与其账号之间的 # 个关注将被永久解除。解除封禁后不会恢复。}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), in the confirmation of a suspend, how many follows it ends, as the server counts them now. Read by moderators."
+  },
+  "staff_domains.suspend.uncounted": {
+    "defaultMessage": "此服务器上的人与其账号之间的所有关注都将被永久解除，无法统计关注数量。解除封禁后不会恢复。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), in the confirmation of a suspend, when the server could not count the follows it ends. Read by moderators."
+  },
+  "staff_domains.export": {
+    "defaultMessage": "导出",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of saving the actions as CSV. Read by moderators."
+  },
+  "staff_domains.export.save": {
+    "defaultMessage": "保存为 CSV",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the button that saves the actions in effect as Mastodon's CSV. Read by moderators."
+  },
+  "staff_domains.export.saved": {
+    "defaultMessage": "已保存 {name}。",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), after the CSV was saved; `name` is the file's name. Read by moderators."
+  },
+  "staff_domains.import": {
+    "defaultMessage": "导入",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of importing a CSV. Read by moderators."
+  },
+  "staff_domains.import.file": {
+    "defaultMessage": "CSV 文件",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the field of the file to import. Read by moderators."
+  },
+  "staff_domains.import.file.choose": {
+    "defaultMessage": "{chosen, select, yes {选择其他文件} other {选择文件}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the button that opens the file picker. Read by moderators."
+  },
+  "staff_domains.import.file.none": {
+    "defaultMessage": "未选择文件",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), in the place of the file's name while none is chosen. Read by moderators."
+  },
+  "staff_domains.import.file.too_large": {
+    "defaultMessage": "此文件过大。请选择不超过 1 MB 的 CSV 文件。",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), under the file's field when the server refused it as too large. Read by moderators."
+  },
+  "staff_domains.import.file.hint": {
+    "defaultMessage": "每行一个域名的列表，会封禁其中每个域名。",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), under the file's field. Read by moderators."
+  },
+  "staff_domains.import.file.unread": {
+    "defaultMessage": "无法将此文件作为域名屏蔽 CSV 读取。请选择不超过 5,000 行的 CSV 文件。",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), under the file's field when it could not be read. Read by moderators."
+  },
+  "staff_domains.import.previewing": {
+    "defaultMessage": "正在读取文件将执行的操作…",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), while the server previews the file. Read by moderators."
+  },
+  "staff_domains.import.importable.table": {
+    "defaultMessage": "将导入的行",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the name of the table of rows that would take actions, for assistive technology. Read by moderators."
+  },
+  "staff_domains.import.importable.none": {
+    "defaultMessage": "此文件中没有会采取措施的行。",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), when no row would take an action. Read by moderators."
+  },
+  "staff_domains.import.others.table": {
+    "defaultMessage": "不会采取措施的行",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the name of the table of rows that would import nothing, for assistive technology. Read by moderators."
+  },
+  "staff_domains.import.column.domain": {
+    "defaultMessage": "域名",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the column of each row's domain. Read by moderators."
+  },
+  "staff_domains.import.column.line": {
+    "defaultMessage": "行",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the column of each row's line in the file. Read by moderators."
+  },
+  "staff_domains.import.column.issues": {
+    "defaultMessage": "措施",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the column of the actions each row would take. Read by moderators."
+  },
+  "staff_domains.import.column.status": {
+    "defaultMessage": "原因",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the column of why each row would take nothing. Read by moderators."
+  },
+  "staff_domains.import.line": {
+    "defaultMessage": "第 {line} 行",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the line of a row in the file. Read by moderators."
+  },
+  "staff_domains.import.no_domain": {
+    "defaultMessage": "无域名",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), in the place of a row's domain when it has none. Read by moderators."
+  },
+  "staff_domains.import.status": {
+    "defaultMessage": "{status, select, already_applied {已有措施覆盖它} no_action {不要求采取措施} duplicate {前面的行已有此域名} own_domain {此服务器自己的域名} invalid {无效的行} other {不会采取措施}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), why a row takes nothing. Read by moderators."
+  },
+  "staff_domains.import.note": {
+    "defaultMessage": "每项措施的审核员备注",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the field of the private note of every action imported. Read by moderators."
+  },
+  "staff_domains.import.confirm": {
+    "defaultMessage": "导入",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the button of the confirmation that imports. Read by moderators."
+  },
+  "staff_domains.import.importable": {
+    "defaultMessage": "{count, plural, other {# 行会采取措施}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of the rows that would take actions, which the reader keeps or leaves. Read by moderators."
+  },
+  "staff_domains.import.others": {
+    "defaultMessage": "{count, plural, other {# 行不会采取措施}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of the rows that would import nothing. Read by moderators."
+  },
+  "staff_domains.import.submit": {
+    "defaultMessage": "{count, plural, other {导入 # 行}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the button that imports the rows kept. Read by moderators."
+  },
+  "staff_domains.import.confirm.title": {
+    "defaultMessage": "{count, plural, other {导入 # 行？}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the question of the confirmation before rows that suspend domains are imported. Read by moderators."
+  },
+  "staff_domains.import.confirm.about": {
+    "defaultMessage": "{count, plural, other {其中 # 行会封禁域名：将不再接收其任何内容，也不再向其发送或从其获取内容。}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), in the confirmation of an import, what its suspends end. Read by moderators."
+  },
+  "staff_domains.import.submit.ask": {
+    "defaultMessage": "{count, plural, other {导入 # 行…}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV, the button that imports the rows kept when a suspend among them asks first. Read by moderators."
+  },
+  "staff_domains.import.cuts": {
+    "defaultMessage": "{follows, plural, =0 {此服务器上的人与这些账号之间没有会被解除的关注。} other {此服务器上 {people, plural, other {# 人}}与这些账号之间的 # 个关注将被永久解除。解除封禁后不会恢复。}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV, in the confirmation of an import, how many follows its suspends end, as the server counts them now. Read by moderators."
+  },
+  "staff_domains.import.uncounted": {
+    "defaultMessage": "此服务器上的人与这些账号之间的所有关注都将被永久解除，无法统计关注数量。解除封禁后不会恢复。",
+    "description": "On the moderators' screen of Mastodon's domain block CSV, in the confirmation of an import, when the follows its suspends end could not be counted (too many domains, or a count failed). Read by moderators."
+  },
+  "staff_domains.imported.skipped.table": {
+    "defaultMessage": "已跳过的行",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the name of the table of skipped rows, for assistive technology. Read by moderators."
+  },
+  "staff_domains.imported.skipped.none": {
+    "defaultMessage": "没有跳过任何行。",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), when the import skipped nothing. Read by moderators."
+  },
+  "staff_domains.imported.to_list": {
+    "defaultMessage": "显示域名措施",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the button after an import that opens the list of actions. Read by moderators."
+  },
+  "staff_domains.imported.skipped": {
+    "defaultMessage": "{count, plural, other {已跳过 # 行}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of the rows the import skipped. Read by moderators."
+  },
+  "staff_domains.allows.add": {
+    "defaultMessage": "允许域名",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the heading of the form that allows a domain. Read by moderators."
+  },
+  "staff_domains.allows.comment": {
+    "defaultMessage": "审核员备注",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the field of the note on an allow. Read by moderators."
+  },
+  "staff_domains.allows.submit": {
+    "defaultMessage": "允许",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the button that allows the domain. Read by moderators."
+  },
+  "staff_domains.allows.added": {
+    "defaultMessage": "已允许 {domain}。",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), after a domain was allowed. Read by moderators."
+  },
+  "staff_domains.allows.list": {
+    "defaultMessage": "允许的域名",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the heading of the allowed domains and their table's name. Read by moderators."
+  },
+  "staff_domains.allows.loading": {
+    "defaultMessage": "正在加载允许的域名…",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), while the list is read. Read by moderators."
+  },
+  "staff_domains.allows.failed": {
+    "defaultMessage": "无法加载允许的域名。",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), when the list could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.allows.column.domain": {
+    "defaultMessage": "域名",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the column of the domains. Read by moderators."
+  },
+  "staff_domains.allows.column.allowed": {
+    "defaultMessage": "允许时间",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the column of when each domain was allowed. Read by moderators."
+  },
+  "staff_domains.allows.empty": {
+    "defaultMessage": "没有允许的域名。",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), when no domain is allowed. Read by moderators."
+  },
+  "staff_domains.allows.remove": {
+    "defaultMessage": "移除",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the action on the domains picked that removes them from the allowlist. Read by moderators."
+  },
+  "staff_domains.allows.remove.confirm": {
+    "defaultMessage": "移除",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the button of the confirmation that removes the domains. Read by moderators."
+  },
+  "staff_domains.allows.remove.title": {
+    "defaultMessage": "{count, plural, =1 {将 {domain} 从允许列表中移除？} other {将 # 个域名从允许列表中移除？}}",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the question of the confirmation before domains are removed. Read by moderators."
+  },
+  "staff_domains.allows.remove.about": {
+    "defaultMessage": "{count, plural, =1 {此服务器只与允许的域名联合时，将立即与它断开，与其账号之间的所有关注都会被永久解除。再次允许后不会恢复。} other {此服务器只与允许的域名联合时，将立即与它们断开，与其账号之间的所有关注都会被永久解除。再次允许后不会恢复。}}",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), in the confirmation of a removal, what it does. Read by moderators."
+  },
+  "staff_domains.allows.full": {
+    "defaultMessage": "允许列表已有 5,000 个域名。请先移除一个，再允许其他域名。",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), when the allowlist is full. Read by moderators."
+  },
+  "staff_domains.allows.removed": {
+    "defaultMessage": "{count, plural, other {已将 # 个域名从允许列表中移除。}}",
+    "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), after the domains were removed. Read by moderators."
+  },
+  "staff_domains.lists.add": {
+    "defaultMessage": "添加订阅",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that opens the form of a new subscription, and the form's title. Read by moderators."
+  },
+  "staff_domains.lists.loading": {
+    "defaultMessage": "正在加载订阅…",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), while the list is read. Read by moderators."
+  },
+  "staff_domains.lists.failed": {
+    "defaultMessage": "无法加载订阅。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when the list could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.lists.column.title": {
+    "defaultMessage": "订阅",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of the subscriptions' titles. Read by moderators."
+  },
+  "staff_domains.lists.column.mode": {
+    "defaultMessage": "模式",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of whether differences wait for a moderator. Read by moderators."
+  },
+  "staff_domains.lists.column.fetched": {
+    "defaultMessage": "上次获取",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of each subscription's last fetch. Read by moderators."
+  },
+  "staff_domains.lists.never": {
+    "defaultMessage": "尚未获取",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), for a subscription never fetched. Read by moderators."
+  },
+  "staff_domains.lists.empty": {
+    "defaultMessage": "你没有订阅任何屏蔽列表。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when there is no subscription. Read by moderators."
+  },
+  "staff_domains.lists.failing": {
+    "defaultMessage": "{count, plural, other {连续失败 # 次}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), for a subscription whose last fetches failed. Read by moderators."
+  },
+  "staff_domains.list.mode": {
+    "defaultMessage": "{mode, select, draft {草稿} automatic {自动} other {未知}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), a subscription's mode, short. Read by moderators."
+  },
+  "staff_domains.list.mode.choice": {
+    "defaultMessage": "{mode, select, draft {草稿：每处差异都等待审核员处理} automatic {自动：每次获取时自动应用差异} other {未知}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), a choice of the mode in a subscription's form. Read by moderators."
+  },
+  "staff_domains.list.format": {
+    "defaultMessage": "{format, select, mastodon_csv {Mastodon 的域名屏蔽 CSV} mastodon_json {Mastodon 服务器公开的域名屏蔽} plain_text {每行一个域名} other {未知}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), a list's format. Read by moderators."
+  },
+  "staff_domains.list.issue_as": {
+    "defaultMessage": "{kind, select, suspend {封禁} limit {限制} ignore {不处理} other {未知}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), a choice of what a row of a list takes here. Read by moderators."
+  },
+  "staff_domains.list.form.title": {
+    "defaultMessage": "标题",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the field of a subscription's title. Read by moderators."
+  },
+  "staff_domains.list.form.title.blank": {
+    "defaultMessage": "请输入订阅的标题。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), under the title left empty. Read by moderators."
+  },
+  "staff_domains.list.form.url": {
+    "defaultMessage": "列表地址",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the field of the list's URL. Read by moderators."
+  },
+  "staff_domains.list.form.url.hint": {
+    "defaultMessage": "之后无法修改。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), under the URL's field. Read by moderators."
+  },
+  "staff_domains.list.form.url.blank": {
+    "defaultMessage": "请输入列表的 https 地址。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), under the URL left empty. Read by moderators."
+  },
+  "staff_domains.list.form.format": {
+    "defaultMessage": "格式",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of the list's format. Read by moderators."
+  },
+  "staff_domains.list.form.mode": {
+    "defaultMessage": "模式",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of the mode. Read by moderators."
+  },
+  "staff_domains.list.form.suspend_as": {
+    "defaultMessage": "列表中的封禁将变为",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of what a list's suspend takes here. Read by moderators."
+  },
+  "staff_domains.list.form.silence_as": {
+    "defaultMessage": "列表中的静默将变为",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of what a list's silence (Mastodon's limit) takes here. Read by moderators."
+  },
+  "staff_domains.list.form.reject_media": {
+    "defaultMessage": "列表拒绝媒体的域名也拒绝媒体",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the checkbox of whether a row's reject_media takes that action. Read by moderators."
+  },
+  "staff_domains.list.form.reject_reports": {
+    "defaultMessage": "列表拒绝举报的域名也拒绝举报",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the checkbox of whether a row's reject_reports takes that action. Read by moderators."
+  },
+  "staff_domains.list.form.comment": {
+    "defaultMessage": "复制列表的公开理由",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the checkbox of whether the actions copy the row's public comment. Read by moderators."
+  },
+  "staff_domains.list.form.subscribe": {
+    "defaultMessage": "订阅",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that subscribes. Read by moderators."
+  },
+  "staff_domains.list.missing": {
+    "defaultMessage": "此地址没有对应的订阅。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), at the address of a subscription the server does not have. Read by moderators."
+  },
+  "staff_domains.list.all": {
+    "defaultMessage": "所有订阅",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the link to the list after a missing subscription. Read by moderators."
+  },
+  "staff_domains.list.loading": {
+    "defaultMessage": "正在加载订阅…",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), while a subscription's page is read. Read by moderators."
+  },
+  "staff_domains.list.failed": {
+    "defaultMessage": "无法加载此订阅。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when a subscription could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.list.facts": {
+    "defaultMessage": "关于此订阅",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the name of a subscription's facts, for assistive technology. Read by moderators."
+  },
+  "staff_domains.list.fact.url": {
+    "defaultMessage": "地址",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of the list's URL. Read by moderators."
+  },
+  "staff_domains.list.fact.format": {
+    "defaultMessage": "格式",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of the list's format. Read by moderators."
+  },
+  "staff_domains.list.fact.mode": {
+    "defaultMessage": "模式",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of the mode. Read by moderators."
+  },
+  "staff_domains.list.fact.last_fetch": {
+    "defaultMessage": "上次获取",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of when the list was last fetched. Read by moderators."
+  },
+  "staff_domains.list.fact.outcome": {
+    "defaultMessage": "结果",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of what came of the last fetch. Read by moderators."
+  },
+  "staff_domains.list.fact.failures": {
+    "defaultMessage": "失败次数",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of how many fetches failed in a row. Read by moderators."
+  },
+  "staff_domains.list.fact.created": {
+    "defaultMessage": "订阅时间",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the fact of when the subscription was made. Read by moderators."
+  },
+  "staff_domains.list.fetch": {
+    "defaultMessage": "立即获取",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that fetches the list now. Read by moderators."
+  },
+  "staff_domains.list.fetching": {
+    "defaultMessage": "稍后会获取列表。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after Fetch now. Read by moderators."
+  },
+  "staff_domains.list.settings": {
+    "defaultMessage": "设置",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the heading of a subscription's settings. Read by moderators."
+  },
+  "staff_domains.list.save": {
+    "defaultMessage": "保存",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that saves a subscription's settings. Read by moderators."
+  },
+  "staff_domains.list.saved": {
+    "defaultMessage": "已保存。将按这些设置重新获取列表。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after the settings were saved. Read by moderators."
+  },
+  "staff_domains.list.stop": {
+    "defaultMessage": "取消订阅",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the heading of the last section of a subscription's page. Read by moderators."
+  },
+  "staff_domains.list.stop.ask": {
+    "defaultMessage": "取消订阅…",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that opens the confirmation of stopping the subscription. Read by moderators."
+  },
+  "staff_domains.list.stop.title": {
+    "defaultMessage": "取消订阅 {title}？",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the question of the confirmation before the subscription is stopped. Read by moderators."
+  },
+  "staff_domains.list.stop.about": {
+    "defaultMessage": "将不再获取该列表。它已采取的措施会保留，就像由审核员采取的一样，除非你将其解除。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), in the confirmation of stopping a subscription. Read by moderators."
+  },
+  "staff_domains.list.stop.lift": {
+    "defaultMessage": "解除它采取的措施",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the checkbox in the confirmation of stopping a subscription. Read by moderators."
+  },
+  "staff_domains.list.stop.confirm": {
+    "defaultMessage": "取消订阅",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button of the confirmation that stops the subscription. Read by moderators."
+  },
+  "staff_domains.drafts": {
+    "defaultMessage": "草稿",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the heading of the differences that wait for a moderator, and their table's name. Read by moderators."
+  },
+  "staff_domains.drafts.loading": {
+    "defaultMessage": "正在加载草稿…",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), while the drafts are read. Read by moderators."
+  },
+  "staff_domains.drafts.failed": {
+    "defaultMessage": "无法加载草稿。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when the drafts could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.drafts.empty": {
+    "defaultMessage": "没有等待你处理的差异。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when no draft waits. Read by moderators."
+  },
+  "staff_domains.drafts.column.domain": {
+    "defaultMessage": "域名",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of the drafts' domains. Read by moderators."
+  },
+  "staff_domains.drafts.column.change": {
+    "defaultMessage": "变更",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of what a draft would do. Read by moderators."
+  },
+  "staff_domains.drafts.column.held": {
+    "defaultMessage": "等待原因",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of why a draft waits. Read by moderators."
+  },
+  "staff_domains.drafts.accept": {
+    "defaultMessage": "采纳",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the action that accepts the drafts picked, and the confirmation's button. Read by moderators."
+  },
+  "staff_domains.drafts.reject": {
+    "defaultMessage": "拒绝",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the action that rejects the drafts picked. Read by moderators."
+  },
+  "staff_domains.drafts.accepted": {
+    "defaultMessage": "{count, plural, other {已采纳 # 份草稿。}}{missing, plural, =0 {} other {其中 # 份已被处理过。}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after drafts were accepted. Read by moderators."
+  },
+  "staff_domains.drafts.rejected": {
+    "defaultMessage": "{count, plural, other {已拒绝 # 份草稿。}}{missing, plural, =0 {} other {其中 # 份已被处理过。}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after drafts were rejected. Read by moderators."
+  },
+  "staff_domains.drafts.confirm.title": {
+    "defaultMessage": "{count, plural, other {采纳 # 份草稿？}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the question of the confirmation before drafts that suspend domains are accepted. Read by moderators."
+  },
+  "staff_domains.drafts.confirm.about": {
+    "defaultMessage": "{count, plural, other {其中 # 份会封禁域名，这会永久解除与其账号之间的所有关注。解除封禁后不会恢复。}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), in the confirmation of accepting drafts, what their suspends end. Read by moderators."
+  },
+  "staff_domains.draft.change": {
+    "defaultMessage": "{change, select, issue {采取：{kind}} lift {解除：{kind}} other {{kind}}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), what a draft would do; `kind` is the action's kind. Read by moderators."
+  },
+  "staff_domains.draft.held": {
+    "defaultMessage": "{held, select, draft_mode {草稿模式} unknown_severity {此服务器不认识的严重程度} mass_lift {一次获取会解除过多措施} other {等待中}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), why a draft waits for a moderator. Read by moderators."
+  },
+  "staff_domains.fetches": {
+    "defaultMessage": "获取记录",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the heading of the fetches of a list, and their log's name. Read by moderators."
+  },
+  "staff_domains.fetches.loading": {
+    "defaultMessage": "正在加载获取记录…",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), while the fetches are read. Read by moderators."
+  },
+  "staff_domains.fetches.failed": {
+    "defaultMessage": "无法加载获取记录。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when the fetches could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.fetches.empty": {
+    "defaultMessage": "尚未获取过此列表。",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when there is no fetch yet. Read by moderators."
+  },
+  "staff_domains.servers.filters": {
+    "defaultMessage": "筛选远程服务器",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the name of the filters, for assistive technology. Read by moderators."
+  },
+  "staff_domains.servers.state": {
+    "defaultMessage": "状态",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the filter of the servers' state. Read by moderators."
+  },
+  "staff_domains.servers.state.any": {
+    "defaultMessage": "任意状态",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of every known server. Read by moderators."
+  },
+  "staff_domains.servers.state.troubled": {
+    "defaultMessage": "投递有问题",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the filter's choice of the servers deliveries failed to reach on some days or that are marked unavailable; also read as \"State: Delivery problems\". Read by moderators."
+  },
+  "staff_domains.servers.open": {
+    "defaultMessage": "打开服务器",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the field that opens any server's screen. Read by moderators."
+  },
+  "staff_domains.servers.open.hint": {
+    "defaultMessage": "其域名、其上的用户名，或其上的地址。",
+    "description": "On the moderators' list of remote servers (/moderation/instances), under Open a server. Read by moderators."
+  },
+  "staff_domains.servers.open.invalid": {
+    "defaultMessage": "请输入域名（如 example.com）、用户名（如 @name@example.com），或该服务器上的地址。",
+    "description": "On the moderators' list of remote servers (/moderation/instances), under Open a server when it names no server. Read by moderators."
+  },
+  "staff_domains.servers.open.submit": {
+    "defaultMessage": "打开",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the button of Open a server. Read by moderators."
+  },
+  "staff_domains.servers.loading": {
+    "defaultMessage": "正在加载远程服务器…",
+    "description": "On the moderators' list of remote servers (/moderation/instances), while the list is read. Read by moderators."
+  },
+  "staff_domains.servers.failed": {
+    "defaultMessage": "无法加载远程服务器。",
+    "description": "On the moderators' list of remote servers (/moderation/instances), when the list could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.servers.column.domain": {
+    "defaultMessage": "服务器",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the column of the servers' domains. Read by moderators."
+  },
+  "staff_domains.servers.column.software": {
+    "defaultMessage": "软件",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the column of the software each server reports (such as Mastodon 4.3.2). Read by moderators."
+  },
+  "staff_domains.servers.column.failures": {
+    "defaultMessage": "失败天数",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the column of how many days deliveries failed. Read by moderators."
+  },
+  "staff_domains.servers.column.state": {
+    "defaultMessage": "状态",
+    "description": "On the moderators' list of remote servers (/moderation/instances), the column of each server's state. Read by moderators."
+  },
+  "staff_domains.servers.empty": {
+    "defaultMessage": "尚未发现任何远程服务器。",
+    "description": "On the moderators' list of remote servers (/moderation/instances), when this server knows no remote server at all. Read by moderators."
+  },
+  "staff_domains.servers.empty.filtered": {
+    "defaultMessage": "没有符合条件的服务器。清除筛选即可查看所有服务器。",
+    "description": "On the moderators' list of remote servers (/moderation/instances), when the filter (with problems, unavailable) leaves nothing. Read by moderators."
+  },
+  "staff_domains.server.state": {
+    "defaultMessage": "{state, select, available {可用} unavailable {不可用} other {未知}}",
+    "description": "On the moderators' list of remote servers (/moderation/instances) and a server's screen, whether deliveries go to a server (unavailable ones get only follows and their answers). Read by moderators."
+  },
+  "staff_domains.server.failure_days": {
+    "defaultMessage": "{count, plural, =0 {无失败} other {# 天}}",
+    "description": "On the moderators' list of remote servers (/moderation/instances) and a server's screen, on how many days deliveries to it failed. Read by moderators."
+  },
+  "staff_domains.server.loading": {
+    "defaultMessage": "正在加载服务器…",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), while it is read. Read by moderators."
+  },
+  "staff_domains.server.failed": {
+    "defaultMessage": "无法加载此服务器。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when it could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.server.facts": {
+    "defaultMessage": "关于此服务器",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the name of the server's facts (its software, when it was first seen, its deliveries), for assistive technology. Read by moderators."
+  },
+  "staff_domains.server.fact.software": {
+    "defaultMessage": "软件",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the software and version the server last reported. Read by moderators."
+  },
+  "staff_domains.server.software.none": {
+    "defaultMessage": "未报告",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the value of Software when the server has reported none. Read by moderators."
+  },
+  "staff_domains.server.fact.first_seen": {
+    "defaultMessage": "首次发现",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when this server first stored a document of that server; absent for a server known only from deliveries. Read by moderators."
+  },
+  "staff_domains.server.fact.state": {
+    "defaultMessage": "状态",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of whether deliveries go to it. Read by moderators."
+  },
+  "staff_domains.server.fact.since": {
+    "defaultMessage": "自",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when it entered its state. Read by moderators."
+  },
+  "staff_domains.server.fact.failures": {
+    "defaultMessage": "失败天数",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of how many days deliveries failed in the latest run. Read by moderators."
+  },
+  "staff_domains.server.fact.last_failure": {
+    "defaultMessage": "最近失败的日期",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the latest day deliveries failed. Read by moderators."
+  },
+  "staff_domains.server.mark": {
+    "defaultMessage": "标记为可用",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that clears the failures and resumes deliveries. Read by moderators."
+  },
+  "staff_domains.server.marked": {
+    "defaultMessage": "将恢复向此服务器的投递。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), after Mark available. Read by moderators."
+  },
+  "staff_domains.server.refetch": {
+    "defaultMessage": "重新获取帖子",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that refetches the stored posts of the server's accounts. Read by moderators."
+  },
+  "staff_domains.server.refetching": {
+    "defaultMessage": "将在几分钟内重新获取其账号的帖子。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), after Refetch posts. Read by moderators."
+  },
+  "staff_domains.server.actions": {
+    "defaultMessage": "域名措施",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that lists the actions on this domain. Read by moderators."
+  },
+  "staff_domains.availability.title": {
+    "defaultMessage": "可用性",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the heading of the times it was marked unavailable or available. Read by moderators."
+  },
+  "staff_domains.availability.loading": {
+    "defaultMessage": "正在加载可用性…",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), while the availability events are read. Read by moderators."
+  },
+  "staff_domains.availability.failed": {
+    "defaultMessage": "无法加载可用性。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when the availability events could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.availability.empty": {
+    "defaultMessage": "向此服务器的投递从未中断过。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when there is no availability event. Read by moderators."
+  },
+  "staff_domains.deliveries": {
+    "defaultMessage": "投递记录",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the heading of the deliveries, and their log's name. Read by moderators."
+  },
+  "staff_domains.deliveries.activity": {
+    "defaultMessage": "Activity ID",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the filter field of one activity's deliveries. Read by moderators."
+  },
+  "staff_domains.deliveries.account": {
+    "defaultMessage": "本站账号",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the filter field of one local account's deliveries, by username. Read by moderators."
+  },
+  "staff_domains.deliveries.account.hint": {
+    "defaultMessage": "列出某个账号的投递会记录在审计日志中。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account, before it is sent. Read by moderators."
+  },
+  "staff_domains.deliveries.account.chosen": {
+    "defaultMessage": "正在显示 {handle} 的投递。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account while its deliveries are shown. Read by moderators."
+  },
+  "staff_domains.deliveries.account.unknown": {
+    "defaultMessage": "此服务器上没有使用此用户名的账号。请输入此服务器上账号的用户名，例如 kai。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account the server does not know. Read by moderators."
+  },
+  "staff_domains.deliveries.show": {
+    "defaultMessage": "显示",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that applies the deliveries' filters. Read by moderators."
+  },
+  "staff_domains.deliveries.clear": {
+    "defaultMessage": "清除筛选",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that takes the deliveries' filters off. Read by moderators."
+  },
+  "staff_domains.deliveries.not_local": {
+    "defaultMessage": "该账号不是此服务器的账号。清除筛选即可查看所有投递。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when the server refused the account filter. Read by moderators."
+  },
+  "staff_domains.deliveries.loading": {
+    "defaultMessage": "正在加载投递记录…",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), while the deliveries are read. Read by moderators."
+  },
+  "staff_domains.deliveries.failed": {
+    "defaultMessage": "无法加载投递。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when the deliveries could not be read; Try again follows. Read by moderators."
+  },
+  "staff_domains.deliveries.empty": {
+    "defaultMessage": "最近 30 天没有向此服务器投递任何内容。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when there is no delivery. Read by moderators."
+  },
+  "staff_domains.deliveries.empty.filtered": {
+    "defaultMessage": "最近 30 天没有符合这些筛选条件的投递。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when the filters leave nothing. Read by moderators."
+  },
+  "staff_domains.delivery": {
+    "defaultMessage": "{shared, select, yes {发往共享收件箱的 {type}} other {发往收件箱的 {type}}}",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the line of one delivery; `type` is the activity's type (Create, Follow). Read by moderators."
+  },
+  "staff_domains.delivery.waiting": {
+    "defaultMessage": "尚未尝试",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under a delivery with no attempt yet. Read by moderators."
+  },
+  "staff_domains.delivery.masked": {
+    "defaultMessage": "{mask, select, private {关于仅关注者可见的帖子} direct {关于私信} local {关于仅本站可见的帖子} approves_followers {关于对需要批准关注者的账号的关注} other {关于已不存在的内容}}：发送者、活动和收件箱已隐藏",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under a masked delivery, why it is masked. Read by moderators."
+  },
+  "staff_domains.delivery.reveal.audited": {
+    "defaultMessage": "显示隐藏的字段会记录在审计日志中。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), over a masked delivery's facts, before Show. Read by moderators."
+  },
+  "staff_domains.delivery.reveal.failed": {
+    "defaultMessage": "无法显示隐藏的字段。请重试。",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when showing the masked fields failed. Read by moderators."
+  },
+  "staff_domains.delivery.facts": {
+    "defaultMessage": "关于此投递",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the name of a delivery's facts, for assistive technology. Read by moderators."
+  },
+  "staff_domains.delivery.sender": {
+    "defaultMessage": "发送者",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the local account that sent the activity. Read by moderators."
+  },
+  "staff_domains.delivery.activity": {
+    "defaultMessage": "活动",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the activity's URI. Read by moderators."
+  },
+  "staff_domains.delivery.inbox": {
+    "defaultMessage": "收件箱",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of the inbox delivered to. Read by moderators."
+  },
+  "staff_domains.delivery.recorded": {
+    "defaultMessage": "记录时间",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the fact of when the activity was recorded. Read by moderators."
+  },
+  "staff_domains.delivery.attempts": {
+    "defaultMessage": "尝试次数",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the name of the log of a delivery's attempts. Read by moderators."
+  },
+  "staff_domains.imported": {
+    "defaultMessage": "{count, plural, =0 {未采取措施} other {对 {domains, plural, other {# 个域名}}采取了 # 项措施}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the title that says what the import did. Read by moderators."
+  },
+  "staff_domains.fetch.outcome": {
+    "defaultMessage": "{outcome, select, applied {已读取 {count, plural, other {# 个域名}}} not_modified {自上次获取后没有变化} other {已读取列表}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), what came of a fetch that did not fail. Read by moderators."
+  },
+  "staff_domains.fetch.failed": {
+    "defaultMessage": "{why, select, http_status {失败：服务器返回 {status}} network {失败：无法连接到服务器} forbidden_destination {失败：该地址指向此服务器不会获取的位置} too_large {失败：列表超过 2 MB} too_many_entries {失败：列表超过 5,000 行} malformed {失败：无法按其格式读取列表} other {失败}}",
+    "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), why a fetch failed. Read by moderators."
+  },
+  "staff_domains.availability": {
+    "defaultMessage": "{kind, select, marked_unavailable {{reason, select, failure_days {连续 7 天失败后停止了投递} operator {审核员停止了投递} other {已停止投递}}} other {{reason, select, delivery_succeeded {因一次投递成功而恢复了投递} inbound_request {因服务器发来签名请求而恢复了投递} probe_succeeded {因每日检查已连通而恢复了投递} operator {审核员恢复了投递} other {已恢复投递}}}}",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), one time it was marked unavailable or available, and why. Read by moderators."
+  },
+  "staff_domains.attempt": {
+    "defaultMessage": "{outcome, select, succeeded {已接受，{status}（{scheme, select, rfc9421 {RFC 9421} cavage {draft-cavage} other {无签名}}）} retryable_failure {失败，将重试{status, plural, =0 {：{error}} other {：{status}}}} permanent_failure {已拒绝，不再重发{status, plural, =0 {：{error}} other {：{status}}}} skipped {未发送：{error}} other {未知}}",
+    "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), what came of one attempt of a delivery. Read by moderators."
+  }
+}

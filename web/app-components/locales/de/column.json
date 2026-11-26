@@ -1,0 +1,38 @@
+{
+  "column.loading": {
+    "defaultMessage": "Beiträge werden geladen …",
+    "description": "In place of a timeline's posts while its first ones are being fetched."
+  },
+  "column.loading_more": {
+    "defaultMessage": "Weitere Beiträge werden geladen …",
+    "description": "Under the posts of a timeline while the older ones after them are being fetched."
+  },
+  "column.failed": {
+    "defaultMessage": "Die Beiträge konnten nicht geladen werden.",
+    "description": "In place of a timeline's posts when fetching its first ones failed; a retry action follows it."
+  },
+  "column.failed_more": {
+    "defaultMessage": "Weitere Beiträge konnten nicht geladen werden.",
+    "description": "Under the posts of a timeline when fetching the older ones after them failed; a retry action follows it."
+  },
+  "column.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "The action after a failure to load a timeline's posts, its first ones or more of them, which fetches them again."
+  },
+  "column.empty": {
+    "defaultMessage": "Noch keine Beiträge.",
+    "description": "In place of a timeline's posts when it has none."
+  },
+  "column.next": {
+    "defaultMessage": "Zum nächsten Beitrag",
+    "description": "The keyboard shortcut that moves the focus to the next post of a timeline, as the keyboard shortcuts dialog lists it."
+  },
+  "column.previous": {
+    "defaultMessage": "Zum vorherigen Beitrag",
+    "description": "The keyboard shortcut that moves the focus to the previous post of a timeline, as the keyboard shortcuts dialog lists it."
+  },
+  "column.shortcuts": {
+    "defaultMessage": "Wenn die Timeline fokussiert ist",
+    "description": "The heading of the group of keyboard shortcuts that act on a timeline (moving between its posts), in the keyboard shortcuts dialog."
+  }
+}

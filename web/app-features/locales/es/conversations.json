@@ -1,0 +1,86 @@
+{
+  "conversations.label": {
+    "defaultMessage": "Mensajes directos",
+    "description": "The name of the list of the reader's conversations of direct messages, for assistive technology."
+  },
+  "conversations.loading": {
+    "defaultMessage": "Cargando mensajes directos…",
+    "description": "In place of the reader's conversations of direct messages while the first of them load."
+  },
+  "conversations.loading_more": {
+    "defaultMessage": "Cargando más mensajes directos…",
+    "description": "What the list of direct messages says under its conversations while more load."
+  },
+  "conversations.failed": {
+    "defaultMessage": "No se pudieron cargar los mensajes directos.",
+    "description": "In place of the reader's conversations of direct messages when fetching them failed; Try again follows it."
+  },
+  "conversations.failed_more": {
+    "defaultMessage": "No se pudieron cargar más mensajes directos.",
+    "description": "What the list of direct messages says under its conversations when more could not be loaded, beside a button to try again."
+  },
+  "conversations.empty": {
+    "defaultMessage": "Aún no hay mensajes directos. Para enviar uno, menciona a alguien en una publicación nueva y elige Directo como visibilidad.",
+    "description": "In place of the list of direct messages when the reader has none. Who can see it is the composer's audience menu, and Direct its visibility for the mentioned accounts alone (compose.visibility.direct)."
+  },
+  "conversations.unread": {
+    "defaultMessage": "Sin leer",
+    "description": "The mark of an unread conversation of direct messages, for assistive technology."
+  },
+  "conversations.more": {
+    "defaultMessage": "Más",
+    "description": "The button of a conversation of direct messages that opens the menu of what the reader may do with it."
+  },
+  "conversations.hide": {
+    "defaultMessage": "Ocultar de la lista",
+    "description": "The item of the menu of the direct messages with some people, in the list and over their messages, that takes them out of the list of direct messages until a new message arrives."
+  },
+  "conversations.hide_failed": {
+    "defaultMessage": "No se pudieron ocultar los mensajes directos de la lista.",
+    "description": "The notice when hiding a conversation of direct messages failed; Try again follows it."
+  },
+  "conversations.hidden": {
+    "defaultMessage": "Ocultaste de la lista tus mensajes directos con {names}. Volverán cuando llegue un mensaje nuevo.",
+    "description": "The line at the top of the list of direct messages after the reader hid a conversation; there is no undo. names lists the other people of the conversation."
+  },
+  "conversations.you": {
+    "defaultMessage": "Tú",
+    "description": "Says that the reader wrote a post of a conversation of direct messages: in a post's handle's place, and before the latest post's excerpt in the list."
+  },
+  "conversations.excerpt": {
+    "defaultMessage": "{author}: {text}",
+    "description": "A conversation's latest post in the list of direct messages, its author first: author is who wrote it (You, or another's name in a group), in strong; text is the start of the post."
+  },
+  "conversations.names_more": {
+    "defaultMessage": "{first}, {second} y {count, plural, one {# más} other {# más}}",
+    "description": "The people of a conversation of more than three: the first two by name, and how many others."
+  },
+  "conversations.back": {
+    "defaultMessage": "Mensajes directos",
+    "description": "The button at the top of a conversation that goes back to the list of direct messages."
+  },
+  "conversations.with": {
+    "defaultMessage": "Mensajes directos con {names}",
+    "description": "The name of a conversation's posts, for assistive technology. names lists its other people."
+  },
+  "conversations.conversation_loading": {
+    "defaultMessage": "Cargando los mensajes…",
+    "description": "What a conversation's screen says while it loads."
+  },
+  "conversations.conversation_failed": {
+    "defaultMessage": "No se pudieron cargar los mensajes.",
+    "description": "In place of a conversation's screen when fetching it failed; Try again follows it."
+  },
+  "conversations.posts_failed": {
+    "defaultMessage": "No se pudieron cargar los mensajes.",
+    "description": "In place of a conversation's posts when fetching them failed; Try again follows it."
+  },
+  "conversations.gone": {
+    "defaultMessage": "No se encontraron estos mensajes directos. Comprueba el enlace o vuelve a la lista.",
+    "description": "In place of the direct messages with some people when the server has none of the reader's at this address (a wrong or foreign link); the back button to the list is above it."
+  },
+  "conversations.retry": {
+    "defaultMessage": "Reintentar",
+    "description": "The button that loads a conversation of direct messages, or the list, again after it failed."
+  }
+}

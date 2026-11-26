@@ -1,0 +1,6 @@
+{
+  "facts.reveal": {
+    "defaultMessage": "Mostrar",
+    "description": "The button in place of a private value of a record (an account's email address, the IP address it registered from), which shows it; the press is recorded in the audit log. It is read with the value's name (Show, Email)."
+  }
+}

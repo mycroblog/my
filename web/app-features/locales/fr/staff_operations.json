@@ -1,0 +1,634 @@
+{
+  "staff_operations.group.operations": {
+    "defaultMessage": "Exploitation",
+    "description": "The heading of the group of administration screens about running the server at /admin: the job queue, the errors reported and the UX measurements. Read by administrators."
+  },
+  "staff_operations.entry.jobs": {
+    "defaultMessage": "Tâches",
+    "description": "The name of the screen of the job queue, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.entry.error_groups": {
+    "defaultMessage": "Erreurs",
+    "description": "The name of the screen of the error groups, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.entry.error_groups.count": {
+    "defaultMessage": "{count, plural, one {# erreur ouverte} other {# erreurs ouvertes}}",
+    "description": "For assistive technology, what the badge at the end of Errors in the list at /admin counts: the error groups that are new, came back after being resolved, or were unmuted. Read by administrators."
+  },
+  "staff_operations.entry.ux_measurements": {
+    "defaultMessage": "Mesures UX",
+    "description": "The name of the screen of how fast the web client responds, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.entry.link_card_domains": {
+    "defaultMessage": "Domaines des cartes de lien",
+    "description": "The name of the screen of the rules of the link card crawler per domain, in the list at /admin and as its title. Read by administrators."
+  },
+  "staff_operations.forbidden": {
+    "defaultMessage": "Votre compte n’a plus la permission d’accéder à cet écran.",
+    "description": "In the place of an operations screen whose permission the reader's account lost meanwhile. Read by administrators."
+  },
+  "staff_operations.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "The button that closes a question of an operations screen without doing anything. Read by administrators."
+  },
+  "staff_operations.copy.reason": {
+    "defaultMessage": "Copier l’erreur",
+    "description": "The button under why a job's run failed, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.payload": {
+    "defaultMessage": "Copier la charge utile",
+    "description": "The button under a job's payload, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.request_id": {
+    "defaultMessage": "Copier l’ID de requête",
+    "description": "The button under the request ID of an error's latest occurrence, which copies it to search the logs. Read by administrators."
+  },
+  "staff_operations.copy.trace_id": {
+    "defaultMessage": "Copier l’ID de trace",
+    "description": "The button under the trace ID of an error's latest occurrence, which copies it to search the traces. Read by administrators."
+  },
+  "staff_operations.copy.stack": {
+    "defaultMessage": "Copier la pile d’appels",
+    "description": "The button under the stack of an error's latest occurrence, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.fingerprint": {
+    "defaultMessage": "Copier l’empreinte",
+    "description": "The button after an error group's fingerprint, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.id": {
+    "defaultMessage": "Copier l’ID",
+    "description": "The button after a job's ID, which copies it to search the logs. Read by administrators."
+  },
+  "staff_operations.copy.idempotency_key": {
+    "defaultMessage": "Copier la clé d’idempotence",
+    "description": "The button after a job's idempotency key, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.ordering_key": {
+    "defaultMessage": "Copier la clé d’ordre",
+    "description": "The button after a job's ordering key, which copies it. Read by administrators."
+  },
+  "staff_operations.queue.loading": {
+    "defaultMessage": "Chargement de la file de tâches…",
+    "description": "In the place of the job queue's state while it loads. Read by administrators."
+  },
+  "staff_operations.queue.failed": {
+    "defaultMessage": "Impossible de charger la file de tâches.",
+    "description": "In the place of the job queue's state when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.queue.states": {
+    "defaultMessage": "Tâches par état",
+    "description": "For assistive technology, the figures of how many jobs are in each state at /admin/jobs. Read by administrators."
+  },
+  "staff_operations.queue.facts": {
+    "defaultMessage": "La file",
+    "description": "For assistive technology, the facts of the job queue at /admin/jobs. Read by administrators."
+  },
+  "staff_operations.queue.adapter": {
+    "defaultMessage": "File",
+    "description": "The term of the job queue the server runs (db, inline, cloudtasks), shown as it is set. Read by administrators."
+  },
+  "staff_operations.queue.oldest": {
+    "defaultMessage": "Plus ancienne tâche échue",
+    "description": "The term of the time since which the job that has waited longest for a worker has been due. Read by administrators."
+  },
+  "staff_operations.queue.types": {
+    "defaultMessage": "Tâches par type",
+    "description": "The heading of the table of the jobs of each type and state at /admin/jobs, and its name for assistive technology. Read by administrators."
+  },
+  "staff_operations.queue.column.waiting": {
+    "defaultMessage": "En attente depuis",
+    "description": "The column of the table of jobs by type: since when the type has kept a due job waiting. Read by administrators."
+  },
+  "staff_operations.queue.empty": {
+    "defaultMessage": "Aucune tâche n’est en file, en cours ou en échec.",
+    "description": "In the place of the table of jobs by type when the queue has none. Read by administrators."
+  },
+  "staff_operations.queue.unlisted": {
+    "defaultMessage": "Cette file ne liste pas les tâches en attente ou en cours. Les tâches en échec sont listées.",
+    "description": "In the place of the figures at /admin/jobs, and of an empty list of pending jobs, for a queue that cannot list its pending jobs; Failed jobs follows. Read by administrators."
+  },
+  "staff_operations.queue.to_dead": {
+    "defaultMessage": "Tâches en échec",
+    "description": "The link after the line saying the queue does not list its pending jobs, to the list of failed jobs. Read by administrators."
+  },
+  "staff_operations.queue.failed_count": {
+    "defaultMessage": "{count, plural, one {# tâche a échoué définitivement.} other {# tâches ont échoué définitivement.}}",
+    "description": "First on the job queue's screen while some jobs failed for good, before the link to them. Read by administrators."
+  },
+  "staff_operations.jobs.title": {
+    "defaultMessage": "Liste des tâches",
+    "description": "The title of the list of jobs at /admin/jobs/list, the link to it, and the way back to it from a job. Read by administrators."
+  },
+  "staff_operations.jobs.state": {
+    "defaultMessage": "{state, select, queued {En file} running {En cours} retrying {En attente de nouvel essai} dead {En échec} other {{state}}}",
+    "description": "The state of a job: not run yet, held by a worker, waiting to run again after a failure, or failed for good. Also a filter's option and a figure's label. Read by administrators."
+  },
+  "staff_operations.jobs.state.pending": {
+    "defaultMessage": "Non terminées",
+    "description": "The state filter's option of every job that is queued, running or waiting to retry, the list's default. Read by administrators."
+  },
+  "staff_operations.jobs.type.any": {
+    "defaultMessage": "Tous les types",
+    "description": "The type filter's option of jobs of every type. Read by administrators."
+  },
+  "staff_operations.jobs.filters": {
+    "defaultMessage": "Filtrer les tâches",
+    "description": "For assistive technology, the filters over the list of jobs. Read by administrators."
+  },
+  "staff_operations.jobs.column.type": {
+    "defaultMessage": "Type",
+    "description": "The name of a job's type (federation.deliver) as the head of a table's rows, and the type filter's name. Read by administrators."
+  },
+  "staff_operations.jobs.column.state": {
+    "defaultMessage": "État",
+    "description": "The column of a job's state, the state filter's name and the term of a job's state. Read by administrators."
+  },
+  "staff_operations.jobs.column.attempts": {
+    "defaultMessage": "Tentatives",
+    "description": "The column and the term of how many times a job has run. Read by administrators."
+  },
+  "staff_operations.jobs.column.due": {
+    "defaultMessage": "Échéance",
+    "description": "The column and the term of when a pending job is due to run. Read by administrators."
+  },
+  "staff_operations.jobs.column.failed_at": {
+    "defaultMessage": "Échec le",
+    "description": "The column and the term of when a failed job failed. Read by administrators."
+  },
+  "staff_operations.jobs.table": {
+    "defaultMessage": "Tâches",
+    "description": "For assistive technology, the table of jobs at /admin/jobs/list. Read by administrators."
+  },
+  "staff_operations.jobs.loading": {
+    "defaultMessage": "Chargement des tâches…",
+    "description": "In the place of the list of jobs while it loads. Read by administrators."
+  },
+  "staff_operations.jobs.failed": {
+    "defaultMessage": "Impossible de charger les tâches.",
+    "description": "In the place of the list of jobs when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.jobs.empty": {
+    "defaultMessage": "Aucune tâche n’est en file ou en cours.",
+    "description": "In the place of the list of jobs when no job is pending, with no filter. Read by administrators."
+  },
+  "staff_operations.jobs.empty.filtered": {
+    "defaultMessage": "Aucune tâche ne correspond à ces filtres.",
+    "description": "In the place of the list of jobs when no job matches the filters; Clear filters is over it. Read by administrators."
+  },
+  "staff_operations.job.loading": {
+    "defaultMessage": "Chargement de la tâche…",
+    "description": "In the place of a job's screen while it loads. Read by administrators."
+  },
+  "staff_operations.job.failed": {
+    "defaultMessage": "Impossible de charger la tâche.",
+    "description": "In the place of a job's screen when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.job.missing": {
+    "defaultMessage": "Cette tâche n’est pas dans la file : elle est terminée ou a été supprimée.",
+    "description": "In the place of a job's screen when the server has no such job, before the link to the list. Read by administrators."
+  },
+  "staff_operations.job.facts": {
+    "defaultMessage": "La tâche",
+    "description": "For assistive technology, the facts of a job. Read by administrators."
+  },
+  "staff_operations.job.created": {
+    "defaultMessage": "Créée",
+    "description": "The term of when a job was created. Read by administrators."
+  },
+  "staff_operations.job.worker": {
+    "defaultMessage": "Worker",
+    "description": "The term of the worker that runs a running job. Read by administrators."
+  },
+  "staff_operations.job.locked_until": {
+    "defaultMessage": "Verrouillée jusqu’à",
+    "description": "The term of when the lease of a running job ends, after which another worker may run it. Read by administrators."
+  },
+  "staff_operations.job.id": {
+    "defaultMessage": "ID",
+    "description": "The term of a job's ID, as the logs name it. Read by administrators."
+  },
+  "staff_operations.job.idempotency_key": {
+    "defaultMessage": "Clé d’idempotence",
+    "description": "The term of a job's idempotency key. Read by administrators."
+  },
+  "staff_operations.job.ordering_key": {
+    "defaultMessage": "Clé d’ordre",
+    "description": "The term of a job's ordering key. Read by administrators."
+  },
+  "staff_operations.job.last_error": {
+    "defaultMessage": "Dernière erreur",
+    "description": "The heading of why a job's last run failed, and its name for assistive technology. Read by administrators."
+  },
+  "staff_operations.job.payload": {
+    "defaultMessage": "Charge utile",
+    "description": "The heading of a job's payload, and its name for assistive technology. Read by administrators."
+  },
+  "staff_operations.job.of_type": {
+    "defaultMessage": "Tâches de type {type}",
+    "description": "The link at the end of a job's screen to the list of jobs of its type; type is a job type such as federation.deliver. Read by administrators."
+  },
+  "staff_operations.job.retry": {
+    "defaultMessage": "Relancer",
+    "description": "The button of a failed job that runs it again, and the confirming button of its question. Read by administrators."
+  },
+  "staff_operations.job.retry.title": {
+    "defaultMessage": "Relancer cette tâche ?",
+    "description": "The title of the question before a failed job runs again. Read by administrators."
+  },
+  "staff_operations.job.retry.text": {
+    "defaultMessage": "La tâche {type} repart de sa première tentative. Elle peut répéter ce qu’elle avait fait avant d’échouer, comme envoyer un message.",
+    "description": "The text of the question before a failed job runs again; type is a job type such as notification.email. Read by administrators."
+  },
+  "staff_operations.job.retried": {
+    "defaultMessage": "La tâche est en file pour être relancée.",
+    "description": "What Run again did, said in the job's screen. Read by administrators."
+  },
+  "staff_operations.job.retry_failed": {
+    "defaultMessage": "Impossible de relancer la tâche. Rechargez la page et réessayez.",
+    "description": "What a Run again that failed says, in the job's screen. Read by administrators."
+  },
+  "staff_operations.attempts": {
+    "defaultMessage": "Tentatives échouées",
+    "description": "The heading of a job's runs that did not succeed, and their log's name for assistive technology. Read by administrators."
+  },
+  "staff_operations.attempts.loading": {
+    "defaultMessage": "Chargement des tentatives…",
+    "description": "In the place of a job's failed attempts while they load. Read by administrators."
+  },
+  "staff_operations.attempts.failed": {
+    "defaultMessage": "Impossible de charger les tentatives.",
+    "description": "In the place of a job's failed attempts when they could not be loaded. Read by administrators."
+  },
+  "staff_operations.attempts.empty": {
+    "defaultMessage": "Aucune tentative de cette tâche n’a échoué.",
+    "description": "In the place of a job's failed attempts when it has none. Read by administrators."
+  },
+  "staff_operations.attempts.column.attempt": {
+    "defaultMessage": "Tentative",
+    "description": "The head of the rows of the table of a job's failed attempts. Read by administrators."
+  },
+  "staff_operations.attempts.column.outcome": {
+    "defaultMessage": "Résultat",
+    "description": "The column of whether a failed attempt's job ran again or failed for good. Read by administrators."
+  },
+  "staff_operations.attempts.column.finished": {
+    "defaultMessage": "Terminée le",
+    "description": "The column of when a failed attempt finished. Read by administrators."
+  },
+  "staff_operations.attempt.head": {
+    "defaultMessage": "Tentative {n}",
+    "description": "The head of a row of a job's failed attempts: which run it was. Read by administrators."
+  },
+  "staff_operations.attempt.outcome": {
+    "defaultMessage": "{outcome, select, dead {Non retentée} other {Retentée}}",
+    "description": "What came of a failed attempt: the job failed for good and was not retried, or was retried. Read by administrators."
+  },
+  "staff_operations.error_groups.state": {
+    "defaultMessage": "{state, select, open {Ouverte} resolved {Résolue} muted {En sourdine} other {{state}}}",
+    "description": "The state of an error group: open, resolved by an administrator, or muted (it notifies nobody). Also a filter's option. Read by administrators."
+  },
+  "staff_operations.error_groups.state.any": {
+    "defaultMessage": "Tous les états",
+    "description": "The state filter's option of error groups of every state. Read by administrators."
+  },
+  "staff_operations.error_groups.source": {
+    "defaultMessage": "{source, select, server {Serveur} web {Client web} other {{source}}}",
+    "description": "What reported the errors of a group. Also a filter's option. Read by administrators."
+  },
+  "staff_operations.error_groups.source.any": {
+    "defaultMessage": "Les deux sources",
+    "description": "The source filter's option of error groups of the server and of the web client. Read by administrators."
+  },
+  "staff_operations.error_groups.filters": {
+    "defaultMessage": "Filtrer les erreurs",
+    "description": "For assistive technology, the filters over the list of error groups. Read by administrators."
+  },
+  "staff_operations.error_groups.column.type": {
+    "defaultMessage": "Erreur",
+    "description": "The name of an error's type (a Go type, a JavaScript error's name) as the head of the table's rows. Read by administrators."
+  },
+  "staff_operations.error_groups.column.state": {
+    "defaultMessage": "État",
+    "description": "The column of an error group's state, the state filter's name and the term of its state. Read by administrators."
+  },
+  "staff_operations.error_groups.column.source": {
+    "defaultMessage": "Source",
+    "description": "The source filter's name and the term of what reported an error group. Read by administrators."
+  },
+  "staff_operations.error_groups.column.day": {
+    "defaultMessage": "24 dernières heures",
+    "description": "The column and the row of an error group's occurrences in the last 24 hours. Read by administrators."
+  },
+  "staff_operations.error_groups.column.week": {
+    "defaultMessage": "7 derniers jours",
+    "description": "The column and the row of an error group's occurrences in the last 7 days. Read by administrators."
+  },
+  "staff_operations.error_groups.column.seen": {
+    "defaultMessage": "Vue en dernier",
+    "description": "The column and the term of when an error group last happened. Read by administrators."
+  },
+  "staff_operations.error_groups.table": {
+    "defaultMessage": "Groupes d’erreurs",
+    "description": "For assistive technology, the table of error groups at /admin/errors. Read by administrators."
+  },
+  "staff_operations.error_groups.loading": {
+    "defaultMessage": "Chargement des erreurs…",
+    "description": "In the place of the list of error groups while it loads. Read by administrators."
+  },
+  "staff_operations.error_groups.failed": {
+    "defaultMessage": "Impossible de charger les erreurs.",
+    "description": "In the place of the list of error groups when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.error_groups.empty": {
+    "defaultMessage": "Aucune erreur n’est ouverte.",
+    "description": "In the place of the list of error groups when none is open, with no filter. Read by administrators."
+  },
+  "staff_operations.error_groups.empty.filtered": {
+    "defaultMessage": "Aucune erreur ne correspond à ces filtres.",
+    "description": "In the place of the list of error groups when none matches the filters; Clear filters is over it. Read by administrators."
+  },
+  "staff_operations.error_groups.one.loading": {
+    "defaultMessage": "Chargement de l’erreur…",
+    "description": "In the place of an error group's screen while it loads. Read by administrators."
+  },
+  "staff_operations.error_groups.one.failed": {
+    "defaultMessage": "Impossible de charger l’erreur.",
+    "description": "In the place of an error group's screen when it could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.error_groups.missing": {
+    "defaultMessage": "Il n’y a aucun groupe d’erreurs à cette adresse.",
+    "description": "In the place of an error group's screen when the server has none of its ID, before the link to the list. Read by administrators."
+  },
+  "staff_operations.error_groups.facts": {
+    "defaultMessage": "L’erreur",
+    "description": "For assistive technology, the facts of an error group. Read by administrators."
+  },
+  "staff_operations.error_groups.since": {
+    "defaultMessage": "Dans cet état depuis",
+    "description": "The term of when an error group entered its state. Read by administrators."
+  },
+  "staff_operations.error_groups.resolved_version": {
+    "defaultMessage": "Résolue dans la version",
+    "description": "The term of the server's version a resolved error group was resolved with. Read by administrators."
+  },
+  "staff_operations.error_groups.kind": {
+    "defaultMessage": "Type",
+    "description": "The term of whether an error group's errors are panics or errors. Read by administrators."
+  },
+  "staff_operations.error_groups.kind.value": {
+    "defaultMessage": "{kind, select, panic {Panic} other {Erreur}}",
+    "description": "The kind of an error group's errors: a panic (or an uncaught error of the web client), or an error. Read by administrators."
+  },
+  "staff_operations.error_groups.where": {
+    "defaultMessage": "Où",
+    "description": "The term of where an error group's errors happened: a route, a job type, a goroutine's name. Read by administrators."
+  },
+  "staff_operations.error_groups.message": {
+    "defaultMessage": "Message",
+    "description": "The term of an error's message, scrubbed of personal data. Read by administrators."
+  },
+  "staff_operations.error_groups.first": {
+    "defaultMessage": "Vue pour la première fois",
+    "description": "The term of when an error group first happened. Read by administrators."
+  },
+  "staff_operations.error_groups.fingerprint": {
+    "defaultMessage": "Empreinte",
+    "description": "The term of an error group's fingerprint, the same in the logs and the exporters. Read by administrators."
+  },
+  "staff_operations.error_groups.counts": {
+    "defaultMessage": "Occurrences",
+    "description": "The heading of an error group's occurrences of the last 24 hours and 7 days, and their table's name for assistive technology. Read by administrators."
+  },
+  "staff_operations.error_groups.counts.period": {
+    "defaultMessage": "Période",
+    "description": "The head of the rows of the table of an error group's occurrences: a period. Read by administrators."
+  },
+  "staff_operations.error_groups.counts.count": {
+    "defaultMessage": "Nombre",
+    "description": "The column of how many times an error happened in a period or an hour. Read by administrators."
+  },
+  "staff_operations.error_groups.sample": {
+    "defaultMessage": "Dernière occurrence",
+    "description": "The heading of an error group's latest occurrence, and its facts' name for assistive technology. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.at": {
+    "defaultMessage": "Survenue",
+    "description": "The term of when an error's latest occurrence happened. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.version": {
+    "defaultMessage": "Version",
+    "description": "The term and the column of the server's version an occurrence happened on. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.role": {
+    "defaultMessage": "Processus",
+    "description": "The term of the role of the server's process that reported an occurrence (all, web, worker). Read by administrators."
+  },
+  "staff_operations.error_groups.sample.type": {
+    "defaultMessage": "Types",
+    "description": "The term of the chain of an occurrence's error types, outermost first. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.request_id": {
+    "defaultMessage": "ID de requête",
+    "description": "The name of an occurrence's request ID, which the logs are searched by. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.trace_id": {
+    "defaultMessage": "ID de trace",
+    "description": "The name of an occurrence's trace ID, which the traces are searched by. Read by administrators."
+  },
+  "staff_operations.error_groups.sample.stack": {
+    "defaultMessage": "Pile d’appels",
+    "description": "The name of an occurrence's stack, scrubbed. Read by administrators."
+  },
+  "staff_operations.error_groups.hours": {
+    "defaultMessage": "Par heure",
+    "description": "The heading of the hours an error group happened in, the newest first, and their table's name. Read by administrators."
+  },
+  "staff_operations.error_groups.hours.hour": {
+    "defaultMessage": "Heure",
+    "description": "The head of the rows of the table of an error group's hours: the hour's start. Read by administrators."
+  },
+  "staff_operations.error_groups.hours.empty": {
+    "defaultMessage": "Elle ne s’est pas produite ces 90 derniers jours.",
+    "description": "In the place of an error group's hours when it had none in the 90 days the server keeps. Read by administrators."
+  },
+  "staff_operations.error_groups.events": {
+    "defaultMessage": "Historique",
+    "description": "The heading of the changes of an error group's state, the newest first, and their log's name. Read by administrators."
+  },
+  "staff_operations.error_groups.events.empty": {
+    "defaultMessage": "Son état n’a pas changé.",
+    "description": "In the place of an error group's history when it has always been open. Read by administrators."
+  },
+  "staff_operations.error_groups.event": {
+    "defaultMessage": "{kind, select, resolved {{actor, select, cli {Résolue depuis la ligne de commande} other {Résolue par un administrateur}}} regressed {Survenue de nouveau dans une autre version} muted {{actor, select, cli {Mise en sourdine depuis la ligne de commande} other {Mise en sourdine par un administrateur}}} other {{actor, select, cli {Sortie de sourdine depuis la ligne de commande} other {Sortie de sourdine par un administrateur}}}}",
+    "description": "An entry of an error group's history: who changed its state, or that it happened again on another version after it was resolved. Read by administrators."
+  },
+  "staff_operations.error_groups.event.version": {
+    "defaultMessage": "Version {version}",
+    "description": "The muted line under an entry of an error group's history: the version it names. Read by administrators."
+  },
+  "staff_operations.error_groups.act": {
+    "defaultMessage": "{act, select, resolve {Résoudre} mute {Mettre en sourdine} other {Sortir de sourdine}}",
+    "description": "The buttons of an error group: mark it resolved, mute it, or unmute it. Read by administrators."
+  },
+  "staff_operations.error_groups.done": {
+    "defaultMessage": "{act, select, resolve {L’erreur est résolue.} mute {L’erreur est en sourdine.} other {L’erreur est de nouveau ouverte.}}",
+    "description": "What a button of an error group did, said in its screen. Read by administrators."
+  },
+  "staff_operations.error_groups.act_failed": {
+    "defaultMessage": "Impossible d’enregistrer la modification. Rechargez la page et réessayez.",
+    "description": "What a button of an error group that failed says, in its screen. Read by administrators."
+  },
+  "staff_operations.error_groups.first_version": {
+    "defaultMessage": "Vue pour la première fois dans la version",
+    "description": "The term of the server's version an error group first happened on. Read by administrators."
+  },
+  "staff_operations.error_groups.last_version": {
+    "defaultMessage": "Vue en dernier dans la version",
+    "description": "The term of the server's version an error group last happened on. Read by administrators."
+  },
+  "staff_operations.ux.window": {
+    "defaultMessage": "Période",
+    "description": "The heading of the choice of the period the UX measurements sum, and the choice's name. Read by administrators."
+  },
+  "staff_operations.ux.window.choice": {
+    "defaultMessage": "{hours, select, 24 {24 heures} 168 {7 jours} other {30 jours}}",
+    "description": "An option of the period the UX measurements sum, up to now. Read by administrators."
+  },
+  "staff_operations.ux.since": {
+    "defaultMessage": "Depuis le {date}",
+    "description": "The line under Period: the start of the period's first hour. Read by administrators."
+  },
+  "staff_operations.ux.loading": {
+    "defaultMessage": "Chargement des mesures…",
+    "description": "In the place of the UX measurements while they load. Read by administrators."
+  },
+  "staff_operations.ux.failed": {
+    "defaultMessage": "Impossible de charger les mesures.",
+    "description": "In the place of the UX measurements when they could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.ux.off": {
+    "defaultMessage": "La mesure est désactivée : le client web n’envoie aucun échantillon.",
+    "description": "Under the window's choice while the setting that measures the web client is off. Read by administrators."
+  },
+  "staff_operations.ux.empty": {
+    "defaultMessage": "Aucun échantillon sur cette période.",
+    "description": "Under the period's choice when measuring is on and the period has no sample. Read by administrators."
+  },
+  "staff_operations.ux.name": {
+    "defaultMessage": "{metric, select, transition {Nature} press {Action} call_rtt {Transport} call_jitter {Transport} call_packet_loss {Transport} other {Route}}",
+    "description": "The head of the rows of a metric's table: a route of the app, a kind of navigation, an action's ID, or a call's transport. Read by administrators."
+  },
+  "staff_operations.ux.column.p75": {
+    "defaultMessage": "75e centile",
+    "description": "The column of the value at most three quarters of a name's samples have. Read by administrators."
+  },
+  "staff_operations.ux.band.upto": {
+    "defaultMessage": "Jusqu’à {value}",
+    "description": "The column of the share of samples above the column before and at most this value (200 ms, 1%). Read by administrators."
+  },
+  "staff_operations.ux.over": {
+    "defaultMessage": "Plus de {value}",
+    "description": "The column of the share of samples over the last band's value, and a 75th percentile past every bound. Read by administrators."
+  },
+  "staff_operations.ux.metric": {
+    "defaultMessage": "{metric, select, lcp {Délai d’affichage d’un écran (LCP)} inp {Délai de réponse à un appui (INP)} long_frame {Images longues} transition {Délai de navigation} press {Délai de réponse à une action} call_rtt {Temps d’aller-retour des appels} call_jitter {Gigue des appels} other {Perte de paquets des appels}}",
+    "description": "The heading of a metric's table of the UX measurements, and the table's name: what is measured, with the web's name of the metric where it has one (LCP, INP). Read by administrators."
+  },
+  "staff_operations.ux.p75.band": {
+    "defaultMessage": "{band, select, poor {{value}, mauvais} other {{value}, à améliorer}}",
+    "description": "A 75th percentile of LCP or INP past the good threshold, and how far: needs improvement, or poor. Read by administrators."
+  },
+  "staff_operations.ux.samples": {
+    "defaultMessage": "{count, plural, one {# échantillon} other {# échantillons}}",
+    "description": "The line under a route, an action or a call's transport in a table of the UX measurements: how many samples it has in the period. Read by administrators."
+  },
+  "staff_operations.link_cards.loading": {
+    "defaultMessage": "Chargement des règles…",
+    "description": "In the place of the rules of the link card crawler while they load. Read by administrators."
+  },
+  "staff_operations.link_cards.failed": {
+    "defaultMessage": "Impossible de charger les règles.",
+    "description": "In the place of the rules of the link card crawler when they could not be loaded, before Try again. Read by administrators."
+  },
+  "staff_operations.link_cards.list": {
+    "defaultMessage": "Règles",
+    "description": "The heading of the list of the rules of the link card crawler, and its name. Read by administrators."
+  },
+  "staff_operations.link_cards.add": {
+    "defaultMessage": "Ajouter une règle",
+    "description": "The button that opens the form of a new rule of the link card crawler, and the form's Save. Read by administrators."
+  },
+  "staff_operations.link_cards.empty": {
+    "defaultMessage": "Aucun domaine n’a de règle : le robot récupère les cartes de tous les domaines.",
+    "description": "In the place of the list of rules when there is none. Read by administrators."
+  },
+  "staff_operations.link_cards.mode": {
+    "defaultMessage": "{mode, select, no_fetch {Ne plus rien récupérer} other {Ne plus récupérer que les images}}",
+    "description": "What the crawler does not do on a rule's domain: fetch anything, or fetch images. Read by administrators."
+  },
+  "staff_operations.link_cards.mode.label": {
+    "defaultMessage": "Ce que fait le robot",
+    "description": "The name of the choice of a rule's mode. Read by administrators."
+  },
+  "staff_operations.link_cards.set_at": {
+    "defaultMessage": "Définie le {date}",
+    "description": "The line of a rule in the list: when it was last set. Read by administrators."
+  },
+  "staff_operations.link_cards.new": {
+    "defaultMessage": "Nouvelle règle",
+    "description": "The title of the form of a new rule of the link card crawler. Read by administrators."
+  },
+  "staff_operations.link_cards.section": {
+    "defaultMessage": "Règle",
+    "description": "The heading of the fields of a rule of the link card crawler. Read by administrators."
+  },
+  "staff_operations.link_cards.domain": {
+    "defaultMessage": "Domaine",
+    "description": "The field of a new rule's domain. Read by administrators."
+  },
+  "staff_operations.link_cards.note": {
+    "defaultMessage": "Note",
+    "description": "The field of what the administrators keep about a rule. Read by administrators."
+  },
+  "staff_operations.link_cards.missing": {
+    "defaultMessage": "Ce domaine n’a pas de règle.",
+    "description": "In the place of a rule's page when its domain has none, before the link to the list. Read by administrators."
+  },
+  "staff_operations.link_cards.remove": {
+    "defaultMessage": "Supprimer la règle",
+    "description": "The heading of the last section of a rule's page. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.about": {
+    "defaultMessage": "Les cartes du domaine s’affichent de nouveau comme avant.",
+    "description": "The line under Remove the rule. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.press": {
+    "defaultMessage": "Supprimer",
+    "description": "The button that removes a rule, and the confirming button of its question. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.title": {
+    "defaultMessage": "Supprimer la règle de ce domaine ?",
+    "description": "The title of the question before a rule is removed. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.text": {
+    "defaultMessage": "Les cartes de {domain} s’affichent de nouveau comme avant, et le robot récupère ses pages quand une publication en a besoin.",
+    "description": "The text of the question before a rule is removed; domain is the rule's domain. Read by administrators."
+  },
+  "staff_operations.link_cards.remove.failed": {
+    "defaultMessage": "Impossible de supprimer la règle. Rechargez la page et réessayez.",
+    "description": "Under Remove when the removal failed. Read by administrators."
+  },
+  "staff_operations.link_cards.rule": {
+    "defaultMessage": "{field, select, domain {Saisissez un nom d’hôte, sans https:// ni chemin.} other {Écrivez 5 000 caractères au maximum.}}",
+    "description": "Under the field of a rule that the server refused: the rule its value follows. Read by administrators."
+  },
+  "staff_operations.link_cards.taken": {
+    "defaultMessage": "{domain} a déjà une règle. Modifiez-la sur sa page.",
+    "description": "Under the domain of a new rule of the link card crawler when the domain already has one, which saving would replace; its page is linked under it. Read by administrators."
+  },
+  "staff_operations.link_cards.taken.open": {
+    "defaultMessage": "La règle de {domain}",
+    "description": "The link under the domain of a new rule to the page of the rule the domain already has. Read by administrators."
+  }
+}

@@ -1,0 +1,410 @@
+{
+  "about.loading": {
+    "defaultMessage": "正在載入伺服器資訊…",
+    "description": "In place of the server's about page while it loads."
+  },
+  "about.failed": {
+    "defaultMessage": "無法載入伺服器資訊。",
+    "description": "In place of the about page when the server's information could not be loaded, before Try again."
+  },
+  "about.retry": {
+    "defaultMessage": "重試",
+    "description": "The button after a sentence of the about page or a document's page that says something could not be loaded."
+  },
+  "about.sign_in": {
+    "defaultMessage": "登入",
+    "description": "The link after the line that says the moderated servers are shown to signed-in people. Read by visitors."
+  },
+  "about.contact": {
+    "defaultMessage": "聯絡方式",
+    "description": "The heading of the section of the about page that names the account and the email address that reach the server's operators."
+  },
+  "about.rules": {
+    "defaultMessage": "規則",
+    "description": "The heading of the server's rules on the about page."
+  },
+  "about.rules.number": {
+    "defaultMessage": "{n}.",
+    "description": "The number before a rule in the list of the server's rules on the about page."
+  },
+  "about.documents": {
+    "defaultMessage": "條款與政策",
+    "description": "The heading of the section of the about page that leads to the terms of service and the privacy policy."
+  },
+  "about.terms": {
+    "defaultMessage": "服務條款",
+    "description": "The row of the about page that opens the terms of service."
+  },
+  "about.privacy": {
+    "defaultMessage": "隱私權政策",
+    "description": "The row of the about page that opens the privacy policy."
+  },
+  "about.commerce": {
+    "defaultMessage": "商業揭露",
+    "description": "The row of the about page that opens the commerce disclosure of the supporter plans (in Japan, the disclosure under the Act on Specified Commercial Transactions)."
+  },
+  "about.domains": {
+    "defaultMessage": "受管理的伺服器",
+    "description": "The heading of the list of the other servers this server limits or suspends, on the about page."
+  },
+  "about.domains.signed_in": {
+    "defaultMessage": "只有登入此伺服器的人才能看到它管理了哪些伺服器。",
+    "description": "In place of the list of moderated servers for a visitor, when the server shows it to signed-in people alone; Sign in follows it."
+  },
+  "about.domains.loading": {
+    "defaultMessage": "正在載入伺服器…",
+    "description": "In place of the list of moderated servers while it loads."
+  },
+  "about.domains.failed": {
+    "defaultMessage": "無法載入伺服器。",
+    "description": "In place of the list of moderated servers when it could not be loaded, before Try again."
+  },
+  "about.domains.none": {
+    "defaultMessage": "沒有受管理的伺服器。",
+    "description": "In place of the list of moderated servers when it is empty."
+  },
+  "about.domains.kind": {
+    "defaultMessage": "{kind, select, suspend {已停權} limit {已限制} other {其他處置}}",
+    "description": "What this server did to another server, after its domain in the list of moderated servers: suspended (no federation at all) or limited (its posts kept off the public timelines)."
+  },
+  "about.reviews": {
+    "defaultMessage": "外部審查",
+    "description": "The heading of the section of the about page that says what the server sends to an outside service to review before it accepts it."
+  },
+  "about.reviews.lead": {
+    "defaultMessage": "此伺服器在接受這些內容之前，會先送交外部服務審查：",
+    "description": "The sentence over the list of what the server sends to an external review, on the about page."
+  },
+  "about.reviews.hook": {
+    "defaultMessage": "{hook, select, inbound_status {來自其他伺服器的貼文} inbound_follow {來自其他伺服器的追蹤} signup_check {註冊} media_check {上傳的媒體} local_status {此伺服器上的貼文} inbound_actor {來自其他伺服器的個人檔案} local_profile {此伺服器上的個人檔案} other {其他內容}}",
+    "description": "An item of the list of what the server sends to an external review, on the about page."
+  },
+  "about.reviews.new_accounts": {
+    "defaultMessage": "{what}，限帳號建立未滿 {days, plural, other {# 天}} 者",
+    "description": "An item of the list of what the server sends to an external review, when only the content of new accounts is sent; {what} is the item's name (Posts on this server)."
+  },
+  "about.reviews.unfollowed_direct": {
+    "defaultMessage": "{what}，包括此處無人追蹤的人傳來的私訊",
+    "description": "An item of the list of what the server sends to an external review: posts from other servers, including their direct messages from people no account of this server follows; {what} is the item's name."
+  },
+  "about.auto_delete": {
+    "defaultMessage": "自動刪除",
+    "description": "The heading of the section of the about page that says how long the server keeps posts."
+  },
+  "about.auto_delete.max": {
+    "defaultMessage": "貼文會在發布 {days, plural, other {# 天}}後刪除。",
+    "description": "The most days the server keeps a post, on the about page."
+  },
+  "about.auto_delete.keep": {
+    "defaultMessage": "你可以選擇保留{kinds}。",
+    "description": "What people may keep past the most days, on the about page; {kinds} is a list of the kinds (pinned posts, posts you bookmarked), joined as the language joins a list."
+  },
+  "about.auto_delete.pinned": {
+    "defaultMessage": "釘選的貼文",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.pins": {
+    "defaultMessage": "{n, plural, other {你最近釘選的 # 則貼文}}",
+    "description": "A kind of post people may keep from the automatic deletion when only the latest pins keep posts, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.bookmarked": {
+    "defaultMessage": "你加入書籤的貼文",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.favourited": {
+    "defaultMessage": "你喜歡的貼文",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.media": {
+    "defaultMessage": "含媒體的貼文",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.polls": {
+    "defaultMessage": "含投票的貼文",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.articles": {
+    "defaultMessage": "文章",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.visibilities": {
+    "defaultMessage": "你選擇的可見範圍的貼文",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.auto_delete.thresholds": {
+    "defaultMessage": "獲得足夠轉發或喜歡的貼文",
+    "description": "A kind of post people may keep from the automatic deletion, in the list of about.auto_delete.keep."
+  },
+  "about.crawlers": {
+    "defaultMessage": "搜尋引擎與 AI",
+    "description": "The heading of the section of the about page on what the server states to search engines and AI crawlers."
+  },
+  "about.crawlers.search": {
+    "defaultMessage": "{value, select, allow {搜尋引擎可以索引允許被索引者的公開貼文和個人檔案。} other {已要求搜尋引擎不要索引此伺服器。}}",
+    "description": "What the server states to search engines, on the about page."
+  },
+  "about.crawlers.ai": {
+    "defaultMessage": "{value, select, allow {不對 AI 爬蟲提出任何要求。} deny_training {已要求 AI 爬蟲不要用它的頁面進行訓練。} other {已要求 AI 爬蟲不要用它的頁面進行訓練或加以使用。}}",
+    "description": "What the server states to AI crawlers, on the about page, after about.crawlers.search."
+  },
+  "about.crawlers.how": {
+    "defaultMessage": "此聲明位於此伺服器的 robots.txt、頁面的標籤與標頭，以及它的 TDMRep 檔案中。它只涵蓋此伺服器的頁面：其他伺服器各有自己的聲明，媒體檔案則只帶有伺服器的聲明。",
+    "description": "How the server makes its statement to search engines and AI crawlers and how far it reaches, in the section of the about page on them, after what it states."
+  },
+  "about.crawlers.legal": {
+    "defaultMessage": "這類聲明在法律上的意義因國家而異，許多營運者是自願遵守。本文不構成法律意見。",
+    "description": "The legal note at the end of the section of the about page on what the server states to search engines and AI crawlers. It names no country's law."
+  },
+  "about.crawler": {
+    "defaultMessage": "連結卡片爬蟲",
+    "description": "The title of the page for the operators of websites on this server's link card crawler, which the row of the about page opens."
+  },
+  "about.crawlers.link_cards": {
+    "defaultMessage": "此伺服器會以 my-linkcard 爬蟲的身分，擷取貼文所連結的頁面，以顯示卡片。",
+    "description": "After what the server states to search engines and AI crawlers, in the section of the about page on them: that the server fetches linked pages for cards, as its own crawler."
+  },
+  "about.crawlers.crawler": {
+    "defaultMessage": "該爬蟲做了什麼，以及網站如何拒絕它",
+    "description": "The row of the about page that opens the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.intro": {
+    "defaultMessage": "當此伺服器上的貼文連結到某個網頁時，伺服器會擷取該頁面，顯示含標題、說明和圖片的卡片。本頁寫給經營這些網站的人：這些請求是什麼，以及如何拒絕。",
+    "description": "Opening paragraph of the page about the link card crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.obeys": {
+    "defaultMessage": "在此伺服器上，爬蟲已開啟，並且遵守 robots.txt。",
+    "description": "What the crawler does on this server, in its usual settings: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.ignores": {
+    "defaultMessage": "在此伺服器上，爬蟲已開啟，且依管理員的選擇不讀取 robots.txt。網站無法在這裡用 robots.txt 拒絕它。頁面的指令仍然有效，管理員也可以停止擷取某個網域。",
+    "description": "What the crawler does on a server whose setting link_cards_ignore_robots_txt is on: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.state.off": {
+    "defaultMessage": "在此伺服器上，連結卡片已關閉，所以爬蟲目前不會擷取任何內容。本頁其餘部分說明它在開啟時的行為。",
+    "description": "What the crawler does on a server whose setting link_cards is off: at the top of the page about the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.title": {
+    "defaultMessage": "如何辨認",
+    "description": "Heading of the section with the User-Agent of the link card crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.user_agent": {
+    "defaultMessage": "它的請求帶有以下 User-Agent：",
+    "description": "Sentence before the User-Agent of the crawler, shown as code. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.token": {
+    "defaultMessage": "其中的位址就是此伺服器。在 robots.txt 和頁面指令中，這個爬蟲的名稱是 my-linkcard。",
+    "description": "Explains the User-Agent of the crawler and the name it goes by. my-linkcard is a literal name: do not translate it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.identity.others": {
+    "defaultMessage": "此伺服器的其他請求（例如聯邦宇宙的請求）使用 my/ 這個名稱，本頁不涵蓋這些請求。其中兩種可能接在卡片之後：它可能以 my/ 再次擷取卡片的圖片，以便顯示給讀者；它也會查詢頁面在 fediverse:creator 中指明的帳號。",
+    "description": "Other requests of the server that a site operator can see, under the server's general User-Agent. my/ and fediverse:creator are literal: do not translate them. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.title": {
+    "defaultMessage": "什麼會觸發擷取",
+    "description": "Heading of the section that says what makes the crawler fetch a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.post": {
+    "defaultMessage": "有貼文連結到該 URL。伺服器會用貼文內文中的第一個連結製作卡片，不論貼文的可見範圍為何；如果沒有近期的卡片，就會擷取該頁面。",
+    "description": "What makes the crawler fetch a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.trigger.remote": {
+    "defaultMessage": "這包括來自其他伺服器的貼文，而不只是在此處撰寫的貼文，所以收到請求並不代表此處有人讀過你的頁面。",
+    "description": "That posts federated from other servers cause fetches too. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.title": {
+    "defaultMessage": "它擷取什麼",
+    "description": "Heading of the section that lists what the crawler requests from a website. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.page": {
+    "defaultMessage": "頁面本身。它只讀取頁面的 head，最多跟隨 5 次重新導向，且不會執行頁面中的任何內容。",
+    "description": "What the crawler fetches: the linked page. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.image": {
+    "defaultMessage": "一張圖片，也就是頁面 head 所指定的那一張。",
+    "description": "What the crawler fetches: the page's image. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.robots": {
+    "defaultMessage": "在請求之前，先讀取頁面來源、每個重新導向位址以及圖片的 robots.txt。",
+    "description": "What the crawler fetches: robots.txt. Shown only while the server reads it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.fetches.nothing_else": {
+    "defaultMessage": "它不會跟隨連結，所以不會爬取你網站的其餘部分。",
+    "description": "That the crawler does not crawl a whole website. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.title": {
+    "defaultMessage": "它送出什麼",
+    "description": "Heading of the section that says what the crawler's requests carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.headers": {
+    "defaultMessage": "上述 User-Agent、它接受的內容類型，以及請求頁面時，在 Accept-Language 中帶上的此伺服器預設語言。",
+    "description": "What the crawler's requests carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.sends.not": {
+    "defaultMessage": "它不會送出 cookie 或 Referer，也沒有任何資訊會告訴你是哪個帳號或貼文連結了該頁面。",
+    "description": "What the crawler's requests do not carry. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.title": {
+    "defaultMessage": "頻率",
+    "description": "Heading of the section that says how often the crawler requests a URL. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.once": {
+    "defaultMessage": "每個 URL 只擷取一次，連結到它的貼文共用同一張卡片。只有在上次擷取是 14 天前或更早時，貼文才會再次擷取；伺服器不會自行回頭更新卡片。",
+    "description": "How often the crawler requests a page. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.failure": {
+    "defaultMessage": "擷取失敗的 URL 在 24 小時內不會再次請求。",
+    "description": "That the crawler remembers failures. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.host": {
+    "defaultMessage": "對同一個主機一次只發出一個請求，兩次請求之間至少相隔一秒。只有該請求的重新導向和所需的 robots.txt 會隨它一起發出。",
+    "description": "The limit of the crawler per host. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.throttled": {
+    "defaultMessage": "當主機回應 429 或 503 時，爬蟲會在 Retry-After 指定的時間內（最長一小時）不向它發出任何請求；沒有該標頭時則停止一分鐘。同一個 URL 在 24 小時內收到 5 次這類回應後，就視為失敗。",
+    "description": "That the crawler stops for a host that asks it to. 429, 503 and Retry-After are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.frequency.robots": {
+    "defaultMessage": "每個來源（協定、主機和連接埠）大約每天讀取一次 robots.txt。無法讀取時（429、5xx 或網路故障），爬蟲不會擷取該來源的任何內容，並在一小時後重試。",
+    "description": "How often the crawler reads robots.txt. Shown only while the server reads it. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.title": {
+    "defaultMessage": "如何選擇退出",
+    "description": "Heading of the section that says how a website refuses the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.title": {
+    "defaultMessage": "拒絕擷取：robots.txt",
+    "description": "Heading (h3) of the part about refusing the crawler in robots.txt. robots.txt is literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.intro": {
+    "defaultMessage": "若要拒絕所有對你網站的擷取，請在 robots.txt 中加入：",
+    "description": "Sentence before the robots.txt example that refuses the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.star": {
+    "defaultMessage": "如果沒有該名稱的群組，爬蟲會遵循 * 的群組。依 RFC 9309 的規定，會讀取 Allow、Disallow、* 和 $，所以你也可以只拒絕部分路徑。",
+    "description": "How the crawler reads robots.txt. Allow, Disallow, *, $ and RFC 9309 are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.timing": {
+    "defaultMessage": "爬蟲會在一天內遵守新規則。已有的卡片會在貼文再次擷取其 URL 時移除，若請管理員處理則會更快。",
+    "description": "When a change of robots.txt takes effect. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.robots.ignored": {
+    "defaultMessage": "此伺服器不讀取 robots.txt，所以這條規則在此沒有作用。它適用於遵守 robots.txt 的伺服器。",
+    "description": "Under the robots.txt part, on a server whose setting link_cards_ignore_robots_txt is on. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.title": {
+    "defaultMessage": "限制卡片：頁面指令",
+    "description": "Heading (h3) of the part about the page directives that change a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.intro": {
+    "defaultMessage": "頁面可以不讓說明或圖片出現在卡片中。爬蟲仍會請求該頁面，因為它要從頁面得知這些指令。無論此伺服器是否讀取 robots.txt，這些指令都有效：",
+    "description": "Sentence before the table of page directives. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.caption": {
+    "defaultMessage": "各指令對卡片的影響",
+    "description": "The name, for assistive technology, of the table of what each directive of a page changes in a card, on the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.directive": {
+    "defaultMessage": "指令",
+    "description": "Column header: a page directive. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.effect": {
+    "defaultMessage": "卡片",
+    "description": "Column header: what the directive does to the card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.nosnippet": {
+    "defaultMessage": "沒有說明。",
+    "description": "What the directives nosnippet and max-snippet:0 do to a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noimageindex": {
+    "defaultMessage": "沒有圖片，也不會請求圖片。",
+    "description": "What the directives noimageindex and max-image-preview:none do to a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noindex": {
+    "defaultMessage": "沒有變化。這些指令要求不出現在搜尋結果中，而卡片不是搜尋結果：它只因為有人貼出連結才出現，而且許多不出現在搜尋結果的頁面本來就是要被分享的。若要拒絕，請使用 robots.txt。",
+    "description": "What the directives noindex and none do to a card, with the reason in plain words. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.noindex_ignored": {
+    "defaultMessage": "沒有變化。這些指令要求不出現在搜尋結果中，而卡片不是搜尋結果：它只因為有人貼出連結才出現，而且許多不出現在搜尋結果的頁面本來就是要被分享的。若要在此伺服器上拒絕，請聯絡管理員。",
+    "description": "What the directives noindex and none do to a card, on a server that does not read robots.txt. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.rest": {
+    "defaultMessage": "無論使用哪個指令，標題、網站名稱和作者都會保留。",
+    "description": "What no page directive removes from a card. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.opt_out.directives.where": {
+    "defaultMessage": "請寫在頁面 head 中名為 robots 或 my-linkcard 的 meta 標籤，或寫在 X-Robots-Tag 標頭中：",
+    "description": "Sentence before the examples of where a directive goes. robots, my-linkcard and X-Robots-Tag are literal. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.title": {
+    "defaultMessage": "聯絡此伺服器的管理員",
+    "description": "Heading of the section with how to reach the operators of the server that runs the crawler. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.intro": {
+    "defaultMessage": "管理員可以在某個網域及其子網域上停止爬蟲，或只停止擷取圖片。這會立即生效，也包括伺服器已有的卡片，所以如果你需要停止擷取或移除卡片，請聯絡他們。",
+    "description": "That the operators of the server can stop the crawler per domain, and that a site operator can ask them. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.crawler.contact.none": {
+    "defaultMessage": "此伺服器未公開聯絡方式。",
+    "description": "In place of the contact details when the server has none. On the page for the operators of websites on this server's link card crawler."
+  },
+  "about.funding": {
+    "defaultMessage": "成本與資金",
+    "description": "The heading of the section of the about page with this month's funding meter and the way to the server's costs and income."
+  },
+  "about.funding.page": {
+    "defaultMessage": "成本與收入",
+    "description": "The row of the about page that opens the page of the server's published costs and income."
+  },
+  "about.support": {
+    "defaultMessage": "支持",
+    "description": "The heading of the section of the about page that leads to the supporter plans, the tips and the commerce disclosure."
+  },
+  "about.support.page": {
+    "defaultMessage": "{offer, select, both {支持者方案與贊助} plans {支持者方案} other {贊助伺服器}}",
+    "description": "The row of the about page that opens the supporters' page: its plans and tips, its plans, or its tips alone."
+  },
+  "about.support.list": {
+    "defaultMessage": "含支持者名單",
+    "description": "The line under the row that opens the supporters' page, where the page lists the supporters too."
+  },
+  "about.server": {
+    "defaultMessage": "伺服器",
+    "description": "The heading of the section of the about page with the server's status page, source code and version, and the name of its list of facts."
+  },
+  "about.server.status": {
+    "defaultMessage": "狀態頁面",
+    "description": "A term of the server's facts on the about page: the address of its status page, on a service apart from the server."
+  },
+  "about.server.source": {
+    "defaultMessage": "原始碼",
+    "description": "A term of the server's facts on the about page: where to get the source code of the software it runs."
+  },
+  "about.server.version": {
+    "defaultMessage": "版本",
+    "description": "A term of the server's facts on the about page: the version of the software it runs."
+  },
+  "about.document.title": {
+    "defaultMessage": "{kind, select, terms {服務條款} privacy_policy {隱私權政策} other {商業揭露}}",
+    "description": "The title of the page of a document of the server, and the document's title."
+  },
+  "about.document.revised": {
+    "defaultMessage": "最後修訂於 {date}",
+    "description": "Under the title of a document of the server: the day of its last revision, as the reader's language writes a date."
+  },
+  "about.document.loading": {
+    "defaultMessage": "正在載入文件…",
+    "description": "In place of a document of the server while it loads."
+  },
+  "about.document.failed": {
+    "defaultMessage": "無法載入文件。",
+    "description": "In place of a document of the server when it could not be loaded, before Try again."
+  },
+  "about.document.unpublished": {
+    "defaultMessage": "{kind, select, terms {此伺服器尚未公布服務條款。} privacy_policy {此伺服器尚未公布隱私權政策。} other {此伺服器尚未公布商業揭露。}}",
+    "description": "The page of a document the server has not published; a link to the about page follows."
+  },
+  "about.back": {
+    "defaultMessage": "關於此伺服器",
+    "description": "The way back to the server's about page: the button at the start of a document's page and of the page on search engines and AI, and the link after the sentence that says the server has not published a document."
+  }
+}

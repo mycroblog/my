@@ -1,0 +1,86 @@
+{
+  "conversations.label": {
+    "defaultMessage": "私信",
+    "description": "The name of the list of the reader's conversations of direct messages, for assistive technology."
+  },
+  "conversations.loading": {
+    "defaultMessage": "正在加载私信…",
+    "description": "In place of the reader's conversations of direct messages while the first of them load."
+  },
+  "conversations.loading_more": {
+    "defaultMessage": "正在加载更多私信…",
+    "description": "What the list of direct messages says under its conversations while more load."
+  },
+  "conversations.failed": {
+    "defaultMessage": "无法加载私信。",
+    "description": "In place of the reader's conversations of direct messages when fetching them failed; Try again follows it."
+  },
+  "conversations.failed_more": {
+    "defaultMessage": "无法加载更多私信。",
+    "description": "What the list of direct messages says under its conversations when more could not be loaded, beside a button to try again."
+  },
+  "conversations.empty": {
+    "defaultMessage": "还没有私信。要发送私信，请在新帖子中提及某人，并把可见范围设为私信。",
+    "description": "In place of the list of direct messages when the reader has none. Who can see it is the composer's audience menu, and Direct its visibility for the mentioned accounts alone (compose.visibility.direct)."
+  },
+  "conversations.unread": {
+    "defaultMessage": "未读",
+    "description": "The mark of an unread conversation of direct messages, for assistive technology."
+  },
+  "conversations.more": {
+    "defaultMessage": "更多",
+    "description": "The button of a conversation of direct messages that opens the menu of what the reader may do with it."
+  },
+  "conversations.hide": {
+    "defaultMessage": "从列表中隐藏",
+    "description": "The item of the menu of the direct messages with some people, in the list and over their messages, that takes them out of the list of direct messages until a new message arrives."
+  },
+  "conversations.hide_failed": {
+    "defaultMessage": "无法从列表中隐藏这些私信。",
+    "description": "The notice when hiding a conversation of direct messages failed; Try again follows it."
+  },
+  "conversations.hidden": {
+    "defaultMessage": "你已从列表中隐藏与 {names} 的私信。有新消息时它们会重新出现。",
+    "description": "The line at the top of the list of direct messages after the reader hid a conversation; there is no undo. names lists the other people of the conversation."
+  },
+  "conversations.you": {
+    "defaultMessage": "你",
+    "description": "Says that the reader wrote a post of a conversation of direct messages: in a post's handle's place, and before the latest post's excerpt in the list."
+  },
+  "conversations.excerpt": {
+    "defaultMessage": "{author}：{text}",
+    "description": "A conversation's latest post in the list of direct messages, its author first: author is who wrote it (You, or another's name in a group), in strong; text is the start of the post."
+  },
+  "conversations.names_more": {
+    "defaultMessage": "{first}、{second} 和另外 {count, plural, other {# 人}}",
+    "description": "The people of a conversation of more than three: the first two by name, and how many others."
+  },
+  "conversations.back": {
+    "defaultMessage": "私信",
+    "description": "The button at the top of a conversation that goes back to the list of direct messages."
+  },
+  "conversations.with": {
+    "defaultMessage": "与 {names} 的私信",
+    "description": "The name of a conversation's posts, for assistive technology. names lists its other people."
+  },
+  "conversations.conversation_loading": {
+    "defaultMessage": "正在加载消息…",
+    "description": "What a conversation's screen says while it loads."
+  },
+  "conversations.conversation_failed": {
+    "defaultMessage": "无法加载消息。",
+    "description": "In place of a conversation's screen when fetching it failed; Try again follows it."
+  },
+  "conversations.posts_failed": {
+    "defaultMessage": "无法加载消息。",
+    "description": "In place of a conversation's posts when fetching them failed; Try again follows it."
+  },
+  "conversations.gone": {
+    "defaultMessage": "找不到这些私信。请检查链接，或返回列表。",
+    "description": "In place of the direct messages with some people when the server has none of the reader's at this address (a wrong or foreign link); the back button to the list is above it."
+  },
+  "conversations.retry": {
+    "defaultMessage": "重试",
+    "description": "The button that loads a conversation of direct messages, or the list, again after it failed."
+  }
+}

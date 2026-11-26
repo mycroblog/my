@@ -1,0 +1,1722 @@
+{
+  "staff_settings.save": {
+    "defaultMessage": "儲存",
+    "description": "The button of the submit bar of a form of the server's settings, texts or rules. Read by administrators."
+  },
+  "staff_settings.save.refused": {
+    "defaultMessage": "尚未儲存任何內容。請修正標示的項目後再儲存。",
+    "description": "Beside Save when the server or the form refused a field, which is marked under it. Read by administrators."
+  },
+  "staff_settings.save.failed": {
+    "defaultMessage": "尚未儲存任何內容。請檢查網路連線後再試一次。",
+    "description": "Beside Save when the save failed with no field named (the network, or the server's error without words). Read by administrators."
+  },
+  "staff_settings.loading": {
+    "defaultMessage": "正在載入設定…",
+    "description": "In a settings screen of /admin while the settings are read. Read by administrators."
+  },
+  "staff_settings.failed": {
+    "defaultMessage": "無法載入設定。",
+    "description": "In a settings screen of /admin when the settings could not be read, before Try again. Read by administrators."
+  },
+  "staff_settings.missing": {
+    "defaultMessage": "此位址沒有設定頁面。",
+    "description": "At /admin/settings/<topic> or /admin/documents/<document> for an address that names none. Read by administrators."
+  },
+  "staff_settings.leave.title": {
+    "defaultMessage": "要不儲存就離開嗎？",
+    "description": "The question when the reader leaves a form of the server's settings with changes not saved. Read by administrators."
+  },
+  "staff_settings.leave.text": {
+    "defaultMessage": "你在此所做的變更將會遺失。",
+    "description": "The text of the question before leaving a form with changes not saved. Read by administrators."
+  },
+  "staff_settings.leave.confirm": {
+    "defaultMessage": "離開",
+    "description": "The button that leaves a form with changes not saved, losing them. Read by administrators."
+  },
+  "staff_settings.leave.cancel": {
+    "defaultMessage": "繼續編輯",
+    "description": "The button that stays on a form with changes not saved. Read by administrators."
+  },
+  "staff_settings.ask.cancel": {
+    "defaultMessage": "取消",
+    "description": "The button that cancels a question before saving or before an action on the administration screens. Read by administrators."
+  },
+  "staff_settings.ask.scope.title": {
+    "defaultMessage": "要只與允許的伺服器聯邦嗎？",
+    "description": "The question before saving federation_scope switched to the allowlist. Read by administrators."
+  },
+  "staff_settings.ask.scope.unknown": {
+    "defaultMessage": "與不在允許清單上的伺服器之間的所有追蹤都會結束。無法讀取數量。此操作無法復原。",
+    "description": "The text of the question before switching to the allowlist while the server's count is not known. Read by administrators."
+  },
+  "staff_settings.ask.scope.confirm": {
+    "defaultMessage": "切換",
+    "description": "The button that saves the switch to the allowlist. Read by administrators."
+  },
+  "staff_settings.ask.scope.text": {
+    "defaultMessage": "與 {servers, plural, other {# 個其他伺服器}}之間的 {follows, plural, other {# 個追蹤}}會結束，此處有 {accounts, plural, other {# 個帳號}}會失去部分追蹤。其中多數與 {top} 有關。此操作無法復原。",
+    "description": "The text of the question before switching to the allowlist, with the server's count; top is a list of domains. Read by administrators."
+  },
+  "staff_settings.ask.providers_only.title": {
+    "defaultMessage": "要將登入限制為登入提供者嗎？",
+    "description": "The question before saving login_providers_only turned on. Read by administrators."
+  },
+  "staff_settings.ask.providers_only.unknown": {
+    "defaultMessage": "沒有連結提供者的人在工作階段結束後無法再登入。無法讀取人數。",
+    "description": "The text of the question before turning login_providers_only on while the count is not known. Read by administrators."
+  },
+  "staff_settings.ask.providers_only.confirm": {
+    "defaultMessage": "限制登入",
+    "description": "The button that saves login_providers_only turned on. Read by administrators."
+  },
+  "staff_settings.ask.providers_only.text": {
+    "defaultMessage": "{providers, select, none {目前沒有啟用任何登入提供者，因此限制尚未生效。啟用後，} other {限制生效時，}}{count, plural, other {# 位沒有連結提供者的活躍使用者}}在工作階段結束後將無法再登入。{you, select, yes {你也是其中之一。} other {}}",
+    "description": "The text of the question before turning login_providers_only on, with the server's count; whether the reader is among them is said plainly. Read by administrators."
+  },
+  "staff_settings.ask.auto_delete_max.title": {
+    "defaultMessage": "要刪除所有人的舊貼文嗎？",
+    "description": "The question before saving a maximum age of the server's posts that is new or shorter. Read by administrators."
+  },
+  "staff_settings.ask.auto_delete_max.confirm": {
+    "defaultMessage": "儲存並刪除",
+    "description": "The button that saves a maximum age of the server's posts. Read by administrators."
+  },
+  "staff_settings.ask.auto_delete_max.text": {
+    "defaultMessage": "此伺服器上超過 {days, plural, other {# 天}}的貼文會被刪除，從{grace, plural, =0 {立即} other {每個人收到通知後 # 天}}開始。此操作無法復原。",
+    "description": "The text of the question before saving a maximum age of posts. Read by administrators."
+  },
+  "staff_settings.copied": {
+    "defaultMessage": "已複製",
+    "description": "Beside the button that copied a value (a callback URL) on the administration screens. Read by administrators."
+  },
+  "staff_settings.copy_failed": {
+    "defaultMessage": "瀏覽器未能複製。請選取後自行複製。",
+    "description": "Beside the copy button when the browser refused to copy. Read by administrators."
+  },
+  "staff_settings.bool": {
+    "defaultMessage": "{value, select, true {開啟} other {關閉}}",
+    "description": "An option of a setting that is on or off, in the select of its row. Read by administrators."
+  },
+  "staff_settings.unit": {
+    "defaultMessage": "{unit, select, days {天} hours {小時} minutes {分鐘} characters {字} posts {則貼文} mebibytes {MiB} invites {項邀請} people {人} images {張圖片} times {次} pins {則釘選} percent {%} other {}}",
+    "description": "What a number of a setting counts, after its field. Read by administrators."
+  },
+  "staff_settings.rule": {
+    "defaultMessage": "{kind, select, int {請輸入 {min} 到 {max} 之間的整數。} email {請輸入如 admin@example.com 的電子郵件地址，或留空。} uri {請輸入 https: 或 mailto: 位址，或留空。} account {請輸入此伺服器上帳號的使用者名稱，或留空。} accounts {請輸入此伺服器上最多 20 個帳號的使用者名稱，以空格分隔。} client_limits {請輸入以逗號分隔的 client_id=requests 組合，或留空。} locale {請從清單中選擇語言。} media {請選擇其他圖片。} other {請選擇其中一個選項。}}",
+    "description": "Under a setting the server refused or the form found empty: the rule its value follows, by the setting's kind. Read by administrators."
+  },
+  "staff_settings.single_user.hidden": {
+    "defaultMessage": "這是單人伺服器：沒有其他人能註冊。請在下方關閉此選項，讓其他人加入。",
+    "description": "In place of the settings of signing up and of member invites while the server is a one-person server. Read by administrators."
+  },
+  "staff_settings.image.choose": {
+    "defaultMessage": "{set, select, yes {更換} other {選擇圖片}}",
+    "description": "The button of an image setting (the thumbnail, the link preview image): choosing one, or replacing the one shown. Read by administrators."
+  },
+  "staff_settings.image.remove": {
+    "defaultMessage": "移除",
+    "description": "The button after an image setting's button that removes the image. Read by administrators."
+  },
+  "staff_settings.topic.general": {
+    "defaultMessage": "一般",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.branding": {
+    "defaultMessage": "圖示與標誌",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.registration": {
+    "defaultMessage": "註冊",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.content": {
+    "defaultMessage": "貼文、時間軸與活動",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.federation": {
+    "defaultMessage": "聯邦",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.hooks": {
+    "defaultMessage": "外部審查",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.discovery": {
+    "defaultMessage": "搜尋與爬蟲",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.voice": {
+    "defaultMessage": "語音聊天",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.auto_delete": {
+    "defaultMessage": "貼文刪除",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.topic.records": {
+    "defaultMessage": "申訴與紀錄保存",
+    "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
+  },
+  "staff_settings.group.server": {
+    "defaultMessage": "此伺服器",
+    "description": "The heading of a group of pages in the list of Server settings (/admin/settings). Read by administrators."
+  },
+  "staff_settings.group.content": {
+    "defaultMessage": "貼文與使用者",
+    "description": "The heading of a group of pages in the list of Server settings (/admin/settings). Read by administrators."
+  },
+  "staff_settings.group.reach": {
+    "defaultMessage": "聯邦與探索",
+    "description": "The heading of a group of pages in the list of Server settings (/admin/settings). Read by administrators."
+  },
+  "staff_settings.group.moderation": {
+    "defaultMessage": "管理",
+    "description": "The heading of a group of pages in the list of Server settings (/admin/settings). Read by administrators."
+  },
+  "staff_settings.section.about": {
+    "defaultMessage": "名稱與說明",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.language": {
+    "defaultMessage": "語言",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.contact": {
+    "defaultMessage": "聯絡方式",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.images": {
+    "defaultMessage": "圖片",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.mode": {
+    "defaultMessage": "誰能註冊",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.invites": {
+    "defaultMessage": "成員邀請",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.providers_only": {
+    "defaultMessage": "僅限登入提供者",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.apps": {
+    "defaultMessage": "應用程式",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.posts": {
+    "defaultMessage": "貼文",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.timelines": {
+    "defaultMessage": "時間軸",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.link_cards": {
+    "defaultMessage": "連結卡片",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.drafts": {
+    "defaultMessage": "草稿與排程貼文",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.articles": {
+    "defaultMessage": "文章",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.events": {
+    "defaultMessage": "活動",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.landing": {
+    "defaultMessage": "首頁與推薦",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.federation_mode": {
+    "defaultMessage": "方向",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.federation_scope": {
+    "defaultMessage": "伺服器",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.signatures": {
+    "defaultMessage": "簽署擷取",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.remote_media": {
+    "defaultMessage": "來自其他伺服器的媒體",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.remote_posts": {
+    "defaultMessage": "來自其他伺服器的貼文",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.domain_actions": {
+    "defaultMessage": "受管理的伺服器",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_records": {
+    "defaultMessage": "決定紀錄",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.search_engines": {
+    "defaultMessage": "搜尋引擎",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.ai": {
+    "defaultMessage": "AI",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.full_text_search": {
+    "defaultMessage": "全文搜尋",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.voice_starters": {
+    "defaultMessage": "誰能開設聊天室",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.voice_rooms": {
+    "defaultMessage": "聊天室",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_default": {
+    "defaultMessage": "新帳號的預設值",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_default.about": {
+    "defaultMessage": "新帳號會以這些設定開始，每個人都可以變更。現有帳號保留原有設定。",
+    "description": "The line under the heading Default for new accounts: what the section's settings do. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_default_kept": {
+    "defaultMessage": "預設值保留的內容",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_max": {
+    "defaultMessage": "所有人的上限",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_max.about": {
+    "defaultMessage": "此伺服器上任何貼文最多保留的天數。每個人在收到通知後的寬限期內，仍沿用自己的設定。",
+    "description": "The line under the heading Maximum for everyone: what the section's settings do. Read by administrators."
+  },
+  "staff_settings.section.auto_delete_max_kept": {
+    "defaultMessage": "上限內仍可保留的內容",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.appeals": {
+    "defaultMessage": "申訴",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.retention": {
+    "defaultMessage": "保存紀錄",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.retention.about": {
+    "defaultMessage": "每筆紀錄在經過指定天數後刪除，除非有保留設定。",
+    "description": "The line under the heading Keeping records: what the section's settings do. Read by administrators."
+  },
+  "staff_settings.section.translation_providers": {
+    "defaultMessage": "提供者",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.translation_providers.about": {
+    "defaultMessage": "貼文會送往已勾選的提供者，先試排在前面的。未勾選的提供者不會收到任何內容。",
+    "description": "The line under the heading Providers: what the section's settings do. Read by administrators."
+  },
+  "staff_settings.section.translation_browser": {
+    "defaultMessage": "瀏覽器翻譯",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.translation_limits": {
+    "defaultMessage": "限制",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.translation_reports": {
+    "defaultMessage": "回報",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_inbound_status": {
+    "defaultMessage": "來自其他伺服器的貼文",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_inbound_follow": {
+    "defaultMessage": "來自其他伺服器的追蹤",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_signup_check": {
+    "defaultMessage": "註冊",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_media_check": {
+    "defaultMessage": "媒體",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_local_status": {
+    "defaultMessage": "此伺服器的貼文",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_inbound_actor": {
+    "defaultMessage": "其他伺服器的帳號",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.hook_local_profile": {
+    "defaultMessage": "此伺服器的個人檔案",
+    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.section.security": {
+    "defaultMessage": "資安聯絡方式",
+    "description": "The heading of the section of the security contact on the Search and crawlers page of Server settings. Read by administrators."
+  },
+  "staff_settings.section.ux_measurement": {
+    "defaultMessage": "量測",
+    "description": "The heading of the section of the setting that measures the web client, under the UX measurements. Read by administrators."
+  },
+  "staff_settings.text.name": {
+    "defaultMessage": "名稱",
+    "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
+  },
+  "staff_settings.text.short_description": {
+    "defaultMessage": "簡短說明",
+    "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
+  },
+  "staff_settings.text.description": {
+    "defaultMessage": "說明",
+    "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
+  },
+  "staff_settings.text.thumbnail_alt": {
+    "defaultMessage": "縮圖說明",
+    "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
+  },
+  "staff_settings.text.preview_image_alt": {
+    "defaultMessage": "連結預覽圖片說明",
+    "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
+  },
+  "staff_settings.text.name.about": {
+    "defaultMessage": "取代網域顯示。帳號名稱與位址仍使用網域。",
+    "description": "The hint under the Name of the instance. Read by administrators."
+  },
+  "staff_settings.setting.default_locale": {
+    "defaultMessage": "預設語言",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.contact_account": {
+    "defaultMessage": "聯絡帳號",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.contact_email": {
+    "defaultMessage": "聯絡電子郵件",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.contact_email.about": {
+    "defaultMessage": "此伺服器所寄電子郵件的回覆也會寄到這裡。",
+    "description": "The line about the setting Contact email: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.security_contact": {
+    "defaultMessage": "資安聯絡方式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.thumbnail": {
+    "defaultMessage": "縮圖",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.thumbnail.about": {
+    "defaultMessage": "顯示在此伺服器的關於頁面與首頁，沒有連結預覽圖片時也用於連結預覽。",
+    "description": "The line about the setting Thumbnail: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.preview_image": {
+    "defaultMessage": "連結預覽圖片",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.preview_image.about": {
+    "defaultMessage": "分享此伺服器上沒有自身圖片的頁面時顯示。",
+    "description": "The line about the setting Link preview image: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.registration_mode": {
+    "defaultMessage": "誰能註冊",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.single_user": {
+    "defaultMessage": "單人伺服器",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.single_user.about": {
+    "defaultMessage": "僅適用於只有一個帳號的伺服器。沒有其他人能註冊，本地時間軸也會關閉。",
+    "description": "The line about the setting One-person server: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.invite_creators": {
+    "defaultMessage": "誰能建立邀請",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.invite_creators.about": {
+    "defaultMessage": "負責管理邀請的版主一律可以建立。在核准模式下，使用邀請的註冊不必等待審查。",
+    "description": "The line about the setting Who can create invites: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.member_invite_max_active": {
+    "defaultMessage": "每人可用的邀請數",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.member_invite_max_active.about": {
+    "defaultMessage": "設為 0 時，成員無法建立邀請。",
+    "description": "The line about the setting Usable invites per person: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.member_invite_max_uses": {
+    "defaultMessage": "每項邀請的註冊人數",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.member_invite_max_lifetime_seconds": {
+    "defaultMessage": "邀請的最長有效期間",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.member_invite_max_lifetime_seconds.about": {
+    "defaultMessage": "調低不會縮短已建立的邀請。",
+    "description": "The line about the setting Longest an invite works: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.login_providers_only": {
+    "defaultMessage": "僅能透過登入提供者登入",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.user_app_registration": {
+    "defaultMessage": "使用者可以註冊應用程式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.user_app_registration.about": {
+    "defaultMessage": "關閉後，已註冊的應用程式仍可繼續使用。",
+    "description": "The line about the setting People can register apps: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.dynamic_client_registration": {
+    "defaultMessage": "應用程式可自行註冊",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.oauth_metadata_document_clients": {
+    "defaultMessage": "依中繼資料文件接受應用程式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.oauth_client_rate_limits": {
+    "defaultMessage": "應用程式的請求上限",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.max_status_length": {
+    "defaultMessage": "貼文長度上限",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.require_media_description": {
+    "defaultMessage": "媒體需要說明",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.local_timeline_visibility": {
+    "defaultMessage": "本地時間軸",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.local_timeline_visibility.about": {
+    "defaultMessage": "除非所有人都能看到，否則首頁不會顯示範例貼文。",
+    "description": "The line about the setting Local timeline: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.federated_timeline_visibility": {
+    "defaultMessage": "聯邦時間軸",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.link_cards": {
+    "defaultMessage": "連結卡片",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.link_cards.about": {
+    "defaultMessage": "伺服器會擷取連結的頁面來製作卡片。關閉也會隱藏已製作的卡片。",
+    "description": "The line about the setting Cards for links: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.link_cards_ignore_robots_txt": {
+    "defaultMessage": "忽略 robots.txt 擷取卡片",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.link_cards_ignore_robots_txt.about": {
+    "defaultMessage": "僅在缺少太多卡片時才開啟：被連結的網站將無法再拒絕這些擷取。",
+    "description": "The line about the setting Fetch cards despite robots.txt: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.max_drafts": {
+    "defaultMessage": "每人草稿數",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.max_scheduled_posts": {
+    "defaultMessage": "每人排程貼文數",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.max_scheduled_posts_per_day": {
+    "defaultMessage": "每人每日排程貼文數",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.scheduled_post_min_lead_minutes": {
+    "defaultMessage": "最快可排程的時間",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.scheduled_post_max_lead_days": {
+    "defaultMessage": "最遠可排程的時間",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.article_authoring": {
+    "defaultMessage": "誰能撰寫文章",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.article_authoring.about": {
+    "defaultMessage": "限制後，已寫好的文章仍會保留。",
+    "description": "The line about the setting Who can write articles: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.max_article_bytes": {
+    "defaultMessage": "文章大小上限",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.max_article_images": {
+    "defaultMessage": "每篇文章的圖片數",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.event_creators": {
+    "defaultMessage": "誰能建立活動",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.event_records_retention_days": {
+    "defaultMessage": "活動回覆的保存期間",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.public_counts": {
+    "defaultMessage": "顯示伺服器的數字",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.landing_fediverse_explanation": {
+    "defaultMessage": "說明聯邦宇宙的運作方式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.landing_features": {
+    "defaultMessage": "顯示成員可使用的功能",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.featured_accounts": {
+    "defaultMessage": "推薦帳號",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.federation_mode": {
+    "defaultMessage": "方向",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.federation_scope": {
+    "defaultMessage": "伺服器",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.authorized_fetch": {
+    "defaultMessage": "要求簽署擷取",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_media_policy": {
+    "defaultMessage": "保留副本的對象",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_media_policy.about": {
+    "defaultMessage": "沒有副本的檔案會從其伺服器轉送。",
+    "description": "The line about the setting Keep copies of: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.remote_media_cache_ttl_seconds": {
+    "defaultMessage": "副本保留時間",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_media_cache_max_bytes": {
+    "defaultMessage": "副本的空間上限",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_status_retention_days": {
+    "defaultMessage": "保留此處未參照的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_status_retention_days.about": {
+    "defaultMessage": "其他伺服器的貼文在此伺服器沒有任何參照時保留的天數。",
+    "description": "The line about the setting Keep posts nothing here refers to: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.remote_status_max_retention_days": {
+    "defaultMessage": "任何貼文最多保留",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.remote_status_max_retention_days.about": {
+    "defaultMessage": "設為 0 時沒有上限。超過後，此處的回覆、轉發與書籤會將該貼文顯示為已刪除。",
+    "description": "The line about the setting Keep any post at most: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.relay_status_retention_days": {
+    "defaultMessage": "保留僅由中繼站帶來的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.relay_status_retention_days.about": {
+    "defaultMessage": "此處沒有人追蹤作者或參照這類貼文時保留的天數。",
+    "description": "The line about the setting Keep posts only a relay brought: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.domain_actions_visibility": {
+    "defaultMessage": "誰能看到受管理的伺服器",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.domain_actions_rationale_visibility": {
+    "defaultMessage": "誰能看到原因",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.domain_actions_rationale_visibility.about": {
+    "defaultMessage": "看不到清單的人也看不到原因。",
+    "description": "The line about the setting Who sees the reasons: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_status_mode": {
+    "defaultMessage": "模式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_follow_mode": {
+    "defaultMessage": "模式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_signup_check_mode": {
+    "defaultMessage": "模式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_media_check_mode": {
+    "defaultMessage": "模式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_status_mode": {
+    "defaultMessage": "模式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_actor_mode": {
+    "defaultMessage": "模式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_profile_mode": {
+    "defaultMessage": "模式",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_status_on_failure": {
+    "defaultMessage": "外掛失敗時",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_follow_on_failure": {
+    "defaultMessage": "外掛失敗時",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_signup_check_on_failure": {
+    "defaultMessage": "外掛失敗時",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_media_check_on_failure": {
+    "defaultMessage": "外掛失敗時",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_actor_on_failure": {
+    "defaultMessage": "外掛失敗時",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_inbound_status_unfollowed_direct": {
+    "defaultMessage": "同時審查陌生人的訊息",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_signup_check_reject": {
+    "defaultMessage": "拒絕被其駁回的註冊",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_signup_check_reject.about": {
+    "defaultMessage": "關閉時，駁回只會被記錄。",
+    "description": "The line about the setting Refuse a sign-up it rejects: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_status_account_age_days": {
+    "defaultMessage": "審查帳齡少於以下天數的帳號",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_status_account_age_days.about": {
+    "defaultMessage": "設為 0 時，審查所有帳號。",
+    "description": "The line about the setting Review accounts younger than: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_profile_account_age_days": {
+    "defaultMessage": "審查帳齡少於以下天數的帳號",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.hook_local_profile_account_age_days.about": {
+    "defaultMessage": "設為 0 時，審查所有帳號。",
+    "description": "The line about the setting Review accounts younger than: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.hook_decisions_retention_days": {
+    "defaultMessage": "決定的保存期間",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.search_indexing": {
+    "defaultMessage": "搜尋引擎",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.indexable_default": {
+    "defaultMessage": "將新帳號納入搜尋",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.indexable_default.about": {
+    "defaultMessage": "新帳號的起始設定，每個人都可以變更。現有帳號保留原有設定。",
+    "description": "The line about the setting New accounts can be indexed: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.ai_usage": {
+    "defaultMessage": "AI",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.search_visibilities": {
+    "defaultMessage": "搜尋涵蓋的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.search_visibilities.about": {
+    "defaultMessage": "新增的可見度在索引重建前，只會找到其新貼文。",
+    "description": "The line about the setting Posts search covers: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.voice_room_starters": {
+    "defaultMessage": "誰能開設聊天室",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.voice_public_summary": {
+    "defaultMessage": "對外顯示本地聊天室",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.voice_public_summary.about": {
+    "defaultMessage": "未在此登入的人可看到本地聊天室的名稱、說明、主持人與是否開放，但看不到參與者。",
+    "description": "The line about the setting Show local rooms outside: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.voice_participants_retention_days": {
+    "defaultMessage": "參與者的保存期間",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.voice_participants_retention_days.about": {
+    "defaultMessage": "聊天室結束後的天數。",
+    "description": "The line about the setting Keep who took part: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_enabled": {
+    "defaultMessage": "自動刪除",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_min_age_days": {
+    "defaultMessage": "刪除超過以下天數的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_pinned": {
+    "defaultMessage": "釘選的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_bookmarked": {
+    "defaultMessage": "已加書籤的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_favourited": {
+    "defaultMessage": "已加入喜歡的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_media": {
+    "defaultMessage": "含媒體的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_polls": {
+    "defaultMessage": "含投票的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_articles": {
+    "defaultMessage": "文章",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_public": {
+    "defaultMessage": "公開貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_local": {
+    "defaultMessage": "鄰近成員的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_unlisted": {
+    "defaultMessage": "悄悄公開的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_private": {
+    "defaultMessage": "僅限追蹤者的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_direct": {
+    "defaultMessage": "私訊貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_min_boosts": {
+    "defaultMessage": "保留至少被轉發這麼多次的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_default_keep_min_favourites": {
+    "defaultMessage": "保留至少被喜歡這麼多次的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_age_days": {
+    "defaultMessage": "貼文最多保留",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_age_days.about": {
+    "defaultMessage": "設為 0 時沒有上限。",
+    "description": "The line about the setting Keep posts at most: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_grace_days": {
+    "defaultMessage": "寬限期",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_grace_days.about": {
+    "defaultMessage": "帳號在收到通知後仍沿用自己設定的天數。",
+    "description": "The line about the setting Grace period: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_pinned": {
+    "defaultMessage": "釘選的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_bookmarked": {
+    "defaultMessage": "已加書籤的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_favourited": {
+    "defaultMessage": "已加入喜歡的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_media": {
+    "defaultMessage": "含媒體的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_polls": {
+    "defaultMessage": "含投票的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_articles": {
+    "defaultMessage": "文章",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_visibilities": {
+    "defaultMessage": "依可見度保留的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_allow_thresholds": {
+    "defaultMessage": "依轉發與喜歡數保留的貼文",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_kept_pins": {
+    "defaultMessage": "可保留貼文的釘選數",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.auto_delete_max_kept_pins.about": {
+    "defaultMessage": "由最新的釘選算起。設為 5 時保留所有已釘選的貼文。",
+    "description": "The line about the setting Pins that keep posts: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.appeal_window_days": {
+    "defaultMessage": "可申訴的期間",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.appeal_window_days.about": {
+    "defaultMessage": "處置後的天數。變更後，已執行處置的期限也會一併調整。",
+    "description": "The line about the setting Appeals can be made for: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.session_origins_retention_days": {
+    "defaultMessage": "登入位址",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.registration_origins_retention_days": {
+    "defaultMessage": "註冊位址",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.reports_retention_days": {
+    "defaultMessage": "檢舉",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.reports_retention_days.about": {
+    "defaultMessage": "最後一次處理後的天數。處置所引用的檢舉會與該處置保留一樣久。",
+    "description": "The line about the setting Reports: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.moderation_actions_retention_days": {
+    "defaultMessage": "處置與申訴",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.moderation_actions_retention_days.about": {
+    "defaultMessage": "處置結束後的天數。",
+    "description": "The line about the setting Actions and appeals: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.audit_log_retention_days": {
+    "defaultMessage": "稽核紀錄",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_browser": {
+    "defaultMessage": "讀者可使用瀏覽器的翻譯",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_browser.about": {
+    "defaultMessage": "不會傳送任何內容到此伺服器或提供者。同時使用提供者時，提供者未翻譯的部分由瀏覽器翻譯。",
+    "description": "The line about the setting Readers can use their browser's translation: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.translation_user_monthly_characters": {
+    "defaultMessage": "每人每月字數",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_user_monthly_characters.about": {
+    "defaultMessage": "設為 0 時不傳送任何內容。月份以 UTC 計算。",
+    "description": "The line about the setting Characters per person a month: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.translation_server_monthly_characters": {
+    "defaultMessage": "整個伺服器每月字數",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_retention_days": {
+    "defaultMessage": "翻譯的保存期間",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_reports_to_server": {
+    "defaultMessage": "版主可翻譯檢舉",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.translation_reports_to_server.about": {
+    "defaultMessage": "檢舉的註解視為僅限追蹤者的貼文：只會送往獲准接收這類內容的提供者。",
+    "description": "The line about the setting Moderators can translate reports: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.max_article_bytes.about": {
+    "defaultMessage": "文章內文的大小上限，以其產生的 HTML 計算（1,000 到 100,000）。",
+    "description": "The line about the setting Largest article: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.ux_measurement": {
+    "defaultMessage": "量測網頁用戶端",
+    "description": "The setting ux_measurement: whether the web client sends samples of how fast it responds. Read by administrators."
+  },
+  "staff_settings.setting.ux_measurement_share": {
+    "defaultMessage": "量測的工作階段比例",
+    "description": "The setting ux_measurement_share, under the switch Measure the web client while it is on: the share of browser sessions whose web client sends samples, a number of percent after it. Read by administrators."
+  },
+  "staff_settings.choice.registration_mode": {
+    "defaultMessage": "{value, select, open {任何人} approval {經版主核准後} invite {僅限持有邀請} other {沒有人}}",
+    "description": "An option of the setting registration_mode, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.registration_mode.about": {
+    "defaultMessage": "{value, select, open {任何人都可以建立帳號並立即使用。} approval {註冊需等待版主核准，持有邀請者除外。} invite {註冊需要版主或成員的邀請。} other {只有管理員可以建立帳號。}}",
+    "description": "The line under an option of the setting registration_mode: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.choice.federation_mode": {
+    "defaultMessage": "{value, select, both {雙向} inbound {僅接收} outbound {僅傳送} other {關閉}}",
+    "description": "An option of the setting federation_mode, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.federation_mode.about": {
+    "defaultMessage": "{value, select, both {貼文會傳送到其他伺服器，其他伺服器的貼文也會傳來此處。} inbound {此處的使用者可以追蹤並閱讀其他伺服器，但此伺服器的內容不會傳出，外部的追蹤也會被拒絕。} outbound {其他伺服器可以追蹤此處的使用者並取得其貼文，但不會收到對方的任何內容。} other {此伺服器不與任何其他伺服器通訊。}}",
+    "description": "The line under an option of the setting federation_mode: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.choice.federation_scope": {
+    "defaultMessage": "{value, select, open {所有伺服器} other {僅限允許的伺服器}}",
+    "description": "An option of the setting federation_scope, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.federation_scope.about": {
+    "defaultMessage": "{value, select, open {所有未被網域處置停權的伺服器。} other {僅限允許清單上的伺服器。}}",
+    "description": "The line under an option of the setting federation_scope: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.choice.search_indexing": {
+    "defaultMessage": "{value, select, allow {允許} other {拒絕}}",
+    "description": "An option of the setting search_indexing, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.search_indexing.about": {
+    "defaultMessage": "{value, select, allow {允許的帳號個人檔案與公開貼文可被索引。} other {會請搜尋引擎不要索引此伺服器。}}",
+    "description": "The line under an option of the setting search_indexing: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.choice.ai_usage": {
+    "defaultMessage": "{value, select, allow {允許} deny_training {拒絕訓練} other {拒絕訓練與使用}}",
+    "description": "An option of the setting ai_usage, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.ai_usage.about": {
+    "defaultMessage": "{value, select, allow {AI 服務可使用此伺服器的頁面並以其訓練。} deny_training {AI 服務可使用這些頁面，但不得用於訓練。} other {拒絕訓練，也拒絕 AI 搜尋、助理與代理程式使用。實際效力依各國法律而定。}}",
+    "description": "The line under an option of the setting ai_usage: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.choice.voice_room_starters": {
+    "defaultMessage": "{value, select, everyone {所有人} other {僅限有權限者}}",
+    "description": "An option of the setting voice_room_starters, a radio in the list of its options. Read by administrators."
+  },
+  "staff_settings.choice.voice_room_starters.about": {
+    "defaultMessage": "{value, select, everyone {任何已登入此伺服器且未被停權或限制的人。} other {僅限有開設語音聊天室權限的人，贊助方案可授予此權限。}}",
+    "description": "The line under an option of the setting voice_room_starters: what choosing it does, read before saving. Read by administrators."
+  },
+  "staff_settings.option.audience": {
+    "defaultMessage": "{value, select, off {沒有人} signed_in {已登入此處的人} other {所有人}}",
+    "description": "An option in the select of a setting of who sees something (a timeline, the moderated servers) on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.creators": {
+    "defaultMessage": "{value, select, everyone {所有人} other {僅限有權限者}}",
+    "description": "An option in the select of a setting of who may create invites or events on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.authoring": {
+    "defaultMessage": "{value, select, everyone {所有人} other {僅限有權限者}}",
+    "description": "An option in the select of who may write articles on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.remote_media": {
+    "defaultMessage": "{value, select, none {無} avatars {大頭貼、橫幅圖片與表情符號} other {全部}}",
+    "description": "An option in the select of which media of other servers the server keeps copies of on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.search_visibilities": {
+    "defaultMessage": "{value, select, public {公開貼文} local {鄰近成員的貼文} other {公開貼文與鄰近成員的貼文}}",
+    "description": "An option in the select of the posts full-text search covers on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.hook_mode": {
+    "defaultMessage": "{value, select, off {關閉} observe {僅記錄} other {執行處理}}",
+    "description": "An option in the select of how far a decision hook acts on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.option.hook_failure": {
+    "defaultMessage": "{value, select, pass {放行} retry {稍後重試} other {等待核准}}",
+    "description": "An option in the select of what a decision hook does when its plugin fails on a page of Server settings. Read by administrators."
+  },
+  "staff_settings.brand.loading": {
+    "defaultMessage": "正在載入圖示與標誌…",
+    "description": "At /admin/settings/branding while the brand images are read. Read by administrators."
+  },
+  "staff_settings.brand.failed": {
+    "defaultMessage": "無法載入圖示與標誌。",
+    "description": "At /admin/settings/branding when the brand images could not be read. Read by administrators."
+  },
+  "staff_settings.brand.kind": {
+    "defaultMessage": "{kind, select, icon {圖示} logo {標誌} other {深色背景用標誌}}",
+    "description": "The heading of the section of one brand image. Read by administrators."
+  },
+  "staff_settings.brand.kind.about": {
+    "defaultMessage": "{kind, select, icon {正方形標記：網站圖示、應用程式圖示與此伺服器的圖片。} logo {包含伺服器名稱的橫式標記，取代名稱顯示。} other {在深色背景上取代標誌顯示。沒有設定時，會在該處顯示標誌。}}",
+    "description": "The line under a brand image's heading: where it shows. Read by administrators."
+  },
+  "staff_settings.brand.choose": {
+    "defaultMessage": "選擇 SVG 檔案",
+    "description": "The button that picks the SVG file of a brand image. Read by administrators."
+  },
+  "staff_settings.brand.remove": {
+    "defaultMessage": "使用內建圖片",
+    "description": "The button that brings a brand image back to the built-in one when saved. Read by administrators."
+  },
+  "staff_settings.brand.checking": {
+    "defaultMessage": "正在檢查檔案…",
+    "description": "Under a brand image while the server checks the SVG picked. Read by administrators."
+  },
+  "staff_settings.brand.dropped": {
+    "defaultMessage": "已從檔案移除：{names}。",
+    "description": "Under a brand image picked: the elements and attributes the server removed from the SVG, joined by commas. Read by administrators."
+  },
+  "staff_settings.brand.color": {
+    "defaultMessage": "圖示的底色",
+    "description": "The label of the color behind the icon's opaque pictures (home screens). Read by administrators."
+  },
+  "staff_settings.brand.color.about": {
+    "defaultMessage": "用於圖示無法透明的地方，例如主畫面。格式為 #rrggbb。",
+    "description": "The hint under the color behind the icon. Read by administrators."
+  },
+  "staff_settings.brand.color.rule": {
+    "defaultMessage": "請以 # 加六位十六進位數字輸入顏色，例如 #ffffff。",
+    "description": "Under the color behind the icon when it is not #rrggbb. Read by administrators."
+  },
+  "staff_settings.brand.error": {
+    "defaultMessage": "{code, select, malformed {此檔案不是有效的 SVG。請重新匯出後再選擇。} doctype {此 SVG 宣告了 DOCTYPE 或實體。請不含這些內容重新匯出。} not_svg {此檔案不是 SVG。請選擇 SVG 檔案。} no_viewbox {此 SVG 沒有 viewBox。請含 viewBox 重新匯出。} too_large {此檔案太大。請匯出較簡單的圖形。} too_many_elements {此 SVG 的元素太多。請匯出較簡單的圖形。} too_deep {此 SVG 的元素巢狀太深。請匯出較簡單的圖形。} too_many_uses {此 SVG 重複使用部件的次數太多。請匯出較簡單的圖形。} aspect_ratio {此圖片的形狀不符：圖示必須是正方形，標誌的寬度必須是高度的 1 到 8 倍。} text {此 SVG 含有文字。請將文字轉為外框後重新匯出。} unsafe_css {此 SVG 含有無法使用的樣式。請移除後重新匯出。} not_opaque {瀏覽器繪製出的圖片不是不透明的。請試試其他瀏覽器。} dimensions {瀏覽器繪製出的圖片尺寸不對。請試試其他瀏覽器。} invalid_color {圖示的底色不是有效的顏色。請輸入如 #ffffff 的顏色。} other {無法使用此檔案。請選擇其他 SVG。}}",
+    "description": "Under a brand image the server refused: why, by the code of its problem, and what to do. Read by administrators."
+  },
+  "staff_settings.brand.section": {
+    "defaultMessage": "圖片",
+    "description": "The heading of the section of the icon, the logo and the logo for dark backgrounds at /admin/settings/branding. Read by administrators."
+  },
+  "staff_settings.documents.group": {
+    "defaultMessage": "文件",
+    "description": "The heading of the list of documents at /admin/documents. Read by administrators."
+  },
+  "staff_settings.document": {
+    "defaultMessage": "{document, select, terms {服務條款} privacy_policy {隱私權政策} other {商業揭露}}",
+    "description": "The name of a document in the list at /admin/documents and the title of its page. Read by administrators."
+  },
+  "staff_settings.document.text": {
+    "defaultMessage": "文字",
+    "description": "The heading of the section of a document's text on its page. Read by administrators."
+  },
+  "staff_settings.document.about": {
+    "defaultMessage": "Markdown，以任一語言撰寫一次，並在所有語言中原樣顯示。留空時不顯示此文件。",
+    "description": "The line under the heading of a document's text. Read by administrators."
+  },
+  "staff_settings.document.rule": {
+    "defaultMessage": "請限制在 {max} 字以內。",
+    "description": "Under a document's text when the server refused it as too long. Read by administrators."
+  },
+  "staff_settings.rules.loading": {
+    "defaultMessage": "正在載入規則…",
+    "description": "While the rules are read, on the rules' screens at /admin/rules. Read by administrators."
+  },
+  "staff_settings.rules.failed": {
+    "defaultMessage": "無法載入規則。",
+    "description": "When the rules could not be read, on the rules' screens at /admin/rules. Read by administrators."
+  },
+  "staff_settings.rules.missing": {
+    "defaultMessage": "此位址沒有規則。",
+    "description": "At /admin/rules/{id} for an ID that names no rule. Read by administrators."
+  },
+  "staff_settings.rules.in_effect": {
+    "defaultMessage": "生效中",
+    "description": "The heading of the list of the rules in effect, in their order. Read by administrators."
+  },
+  "staff_settings.rules.retired": {
+    "defaultMessage": "已停用",
+    "description": "The heading of the list of the retired rules, after the rules in effect. Read by administrators."
+  },
+  "staff_settings.rules.add": {
+    "defaultMessage": "新增規則",
+    "description": "The button that leads to the form of a new rule, and that form's submit. Read by administrators."
+  },
+  "staff_settings.rules.full": {
+    "defaultMessage": "已有 {max} 條規則生效，已達上限。請先停用一條才能新增。",
+    "description": "Under the heading of the rules in effect while they are at the limit. Read by administrators."
+  },
+  "staff_settings.rules.empty": {
+    "defaultMessage": "還沒有規則。",
+    "description": "In place of the list of rules while there is none. Read by administrators."
+  },
+  "staff_settings.rules.numbered": {
+    "defaultMessage": "{n}. {text}",
+    "description": "A rule in effect in the list: its place and its text. Read by administrators."
+  },
+  "staff_settings.rules.new": {
+    "defaultMessage": "新規則",
+    "description": "The title of the form of a new rule at /admin/rules/new. Read by administrators."
+  },
+  "staff_settings.rules.one": {
+    "defaultMessage": "規則",
+    "description": "The title of a rule's page at /admin/rules/{id}. Read by administrators."
+  },
+  "staff_settings.rules.section": {
+    "defaultMessage": "用字",
+    "description": "The heading of the section of a rule's text, hint and place. Read by administrators."
+  },
+  "staff_settings.rules.text": {
+    "defaultMessage": "規則",
+    "description": "The label of a rule's text. Read by administrators."
+  },
+  "staff_settings.rules.hint": {
+    "defaultMessage": "說明",
+    "description": "The label of a rule's hint. Read by administrators."
+  },
+  "staff_settings.rules.rule": {
+    "defaultMessage": "{field, select, text {請以一行寫出規則，最多 {max} 字。} other {說明請限制在 {max} 字以內。}}",
+    "description": "Under a rule's text or explanation that the form or the server refused. Read by administrators."
+  },
+  "staff_settings.rules.position": {
+    "defaultMessage": "順序",
+    "description": "The label of the select of a rule's place among the rules in effect. Read by administrators."
+  },
+  "staff_settings.rules.retire": {
+    "defaultMessage": "停用規則",
+    "description": "The heading of the last section of a rule's page. Read by administrators."
+  },
+  "staff_settings.rules.retire.about": {
+    "defaultMessage": "引用此規則的檢舉仍會指向它。",
+    "description": "The line under Retire the rule. Read by administrators."
+  },
+  "staff_settings.rules.retire.press": {
+    "defaultMessage": "停用",
+    "description": "The button that retires a rule, and the confirmation of its question. Read by administrators."
+  },
+  "staff_settings.rules.retire.title": {
+    "defaultMessage": "要停用這條規則嗎？",
+    "description": "The question before retiring a rule. Read by administrators."
+  },
+  "staff_settings.rules.retire.text": {
+    "defaultMessage": "「{text}」將永久從規則中移除。此操作無法復原。",
+    "description": "The text of the question before retiring a rule. Read by administrators."
+  },
+  "staff_settings.rules.retire.failed": {
+    "defaultMessage": "無法停用規則。請再試一次。",
+    "description": "Under Retire when retiring failed. Read by administrators."
+  },
+  "staff_settings.rules.retired_at": {
+    "defaultMessage": "於 {date} 停用",
+    "description": "On a retired rule's page: when it was retired. Read by administrators."
+  },
+  "staff_settings.rules.position.choice": {
+    "defaultMessage": "{n, selectordinal, other {第 #}}",
+    "description": "A place a rule may move to, in the select of its place. Read by administrators."
+  },
+  "staff_settings.relays.loading": {
+    "defaultMessage": "正在載入中繼站…",
+    "description": "While the relays are read at /admin/relays. Read by administrators."
+  },
+  "staff_settings.relays.failed": {
+    "defaultMessage": "無法載入中繼站。",
+    "description": "When the relays could not be read. Read by administrators."
+  },
+  "staff_settings.relays.missing": {
+    "defaultMessage": "此位址沒有中繼站。",
+    "description": "At /admin/relays/{id} for an ID that names no relay. Read by administrators."
+  },
+  "staff_settings.relays.list": {
+    "defaultMessage": "中繼站",
+    "description": "The heading of the list of relays. Read by administrators."
+  },
+  "staff_settings.relays.about": {
+    "defaultMessage": "中繼站會在加入它的伺服器之間傳遞公開貼文。",
+    "description": "The line under the heading of the relays. Read by administrators."
+  },
+  "staff_settings.relays.add": {
+    "defaultMessage": "加入中繼站",
+    "description": "The button that leads to the form of a new relay. Read by administrators."
+  },
+  "staff_settings.relays.empty": {
+    "defaultMessage": "還沒有中繼站。加入一個，即可與其他加入的伺服器分享公開貼文。",
+    "description": "In place of the list of relays while there is none. Read by administrators."
+  },
+  "staff_settings.relays.state": {
+    "defaultMessage": "{state, select, pending {等待中繼站回應} accepted {已加入} rejected {中繼站已拒絕} left {已離開} other {其伺服器已停權：不會傳送或接收任何內容}}",
+    "description": "Where a relay's membership stands, the line under its name; `other` is a relay whose server a domain action suspends. Read by administrators."
+  },
+  "staff_settings.relays.since": {
+    "defaultMessage": "自 {date} 起",
+    "description": "When a relay's membership came to where it stands. Read by administrators."
+  },
+  "staff_settings.relays.receive": {
+    "defaultMessage": "{receive, select, yes {接收來自中繼站的貼文} other {僅傳送}}",
+    "description": "Whether the server takes in the public posts a relay relays. Read by administrators."
+  },
+  "staff_settings.relays.last_day": {
+    "defaultMessage": "最近 24 小時：收入 {taken, number} 則，捨棄 {dropped, number} 則",
+    "description": "What a relay brought in during the last 24 hours, and what was dropped over the hourly limit. Read by administrators."
+  },
+  "staff_settings.relays.new": {
+    "defaultMessage": "新中繼站",
+    "description": "The title of the form of a new relay at /admin/relays/new. Read by administrators."
+  },
+  "staff_settings.relays.new.about": {
+    "defaultMessage": "此伺服器會立即請求加入。中繼站可能需要接受。",
+    "description": "The line under the heading of a new relay's form. Read by administrators."
+  },
+  "staff_settings.relays.section": {
+    "defaultMessage": "中繼站",
+    "description": "The heading of the section of a relay's settings or facts. Read by administrators."
+  },
+  "staff_settings.relays.url": {
+    "defaultMessage": "URL",
+    "description": "The label of a relay's URL. Read by administrators."
+  },
+  "staff_settings.relays.protocol": {
+    "defaultMessage": "類型",
+    "description": "The label of the select of how a relay is joined. Read by administrators."
+  },
+  "staff_settings.relays.protocol.about": {
+    "defaultMessage": "除非你選擇，否則會從 URL 偵測。",
+    "description": "The line about how a relay is joined. Read by administrators."
+  },
+  "staff_settings.relays.protocol.choice": {
+    "defaultMessage": "{protocol, select, auto {自動偵測} mastodon {Mastodon（inbox）} other {LitePub（actor）}}",
+    "description": "An option of how a relay is joined, and the kind of a relay on its page. Read by administrators."
+  },
+  "staff_settings.relays.receive.check": {
+    "defaultMessage": "接收來自中繼站的貼文",
+    "description": "The checkbox of a new relay: whether it receives as well as sends. Read by administrators."
+  },
+  "staff_settings.relays.join": {
+    "defaultMessage": "加入",
+    "description": "The submit of a new relay's form: it registers the relay and asks to join. Read by administrators."
+  },
+  "staff_settings.relays.refused": {
+    "defaultMessage": "{reason, select, url {請輸入中繼站的 https 位址。} exists {已註冊此中繼站。} domain_suspended {網域處置已停權此中繼站的伺服器。} not_actor {此位址沒有提供中繼站。請檢查中繼站給的位址。} other {中繼站目前的狀態不允許此操作。請重新載入頁面。}}",
+    "description": "Why the server refused a relay, by the reason of its problem. Read by administrators."
+  },
+  "staff_settings.relays.leave": {
+    "defaultMessage": "離開中繼站",
+    "description": "The heading of the section of leaving a relay. Read by administrators."
+  },
+  "staff_settings.relays.leave.about": {
+    "defaultMessage": "不會再傳送或接收任何內容。它帶來的貼文會保留到期限結束。",
+    "description": "The line under Leave the relay. Read by administrators."
+  },
+  "staff_settings.relays.leave.press": {
+    "defaultMessage": "離開",
+    "description": "The button that leaves a relay, and the confirmation of its question. Read by administrators."
+  },
+  "staff_settings.relays.leave.title": {
+    "defaultMessage": "要離開這個中繼站嗎？",
+    "description": "The question before leaving a relay. Read by administrators."
+  },
+  "staff_settings.relays.leave.text": {
+    "defaultMessage": "此伺服器將停止傳送給 {host}，並停止收入其轉送的內容。你之後可以再次加入。",
+    "description": "The text of the question before leaving a relay. Read by administrators."
+  },
+  "staff_settings.relays.rejoin": {
+    "defaultMessage": "重新加入",
+    "description": "The heading of the section of joining a relay again. Read by administrators."
+  },
+  "staff_settings.relays.rejoin.about": {
+    "defaultMessage": "此伺服器會再次請求加入。中繼站可能需要接受。",
+    "description": "The line under Join again. Read by administrators."
+  },
+  "staff_settings.relays.rejoin.press": {
+    "defaultMessage": "重新加入",
+    "description": "The button that joins a relay again. Read by administrators."
+  },
+  "staff_settings.relays.delete": {
+    "defaultMessage": "刪除中繼站",
+    "description": "The heading of the last section of a relay this server left or that rejected it. Read by administrators."
+  },
+  "staff_settings.relays.delete.about": {
+    "defaultMessage": "其註冊與歷史紀錄會被刪除。已傳送給它的貼文之後的編輯與刪除仍會傳送過去。",
+    "description": "The line under Delete the relay. Read by administrators."
+  },
+  "staff_settings.relays.delete.press": {
+    "defaultMessage": "刪除",
+    "description": "The button that deletes a relay, and the confirmation of its question. Read by administrators."
+  },
+  "staff_settings.relays.delete.title": {
+    "defaultMessage": "要刪除這個中繼站嗎？",
+    "description": "The question before deleting a relay. Read by administrators."
+  },
+  "staff_settings.relays.delete.text": {
+    "defaultMessage": "{host} 的註冊與歷史紀錄將被刪除。此操作無法復原。",
+    "description": "The text of the question before deleting a relay. Read by administrators."
+  },
+  "staff_settings.relays.url.about": {
+    "defaultMessage": "中繼站提供的 https 位址：其 inbox 或 actor。",
+    "description": "The hint under a relay's URL. Read by administrators."
+  },
+  "staff_settings.providers_admin.loading": {
+    "defaultMessage": "正在載入登入提供者…",
+    "description": "While the providers are read, on the login providers' screens at /admin/login-providers. Read by administrators."
+  },
+  "staff_settings.providers_admin.failed": {
+    "defaultMessage": "無法載入登入提供者。",
+    "description": "When the providers could not be read, on the login providers' screens at /admin/login-providers. Read by administrators."
+  },
+  "staff_settings.providers_admin.missing": {
+    "defaultMessage": "此位址沒有登入提供者。",
+    "description": "At /admin/login-providers/{id} for an ID that names none. Read by administrators."
+  },
+  "staff_settings.providers_admin.list": {
+    "defaultMessage": "登入提供者",
+    "description": "The heading of the list of login providers. Read by administrators."
+  },
+  "staff_settings.providers_admin.add": {
+    "defaultMessage": "新增登入提供者",
+    "description": "The button that leads to a new provider's form, and that form's submit. Read by administrators."
+  },
+  "staff_settings.providers_admin.empty": {
+    "defaultMessage": "還沒有登入提供者。新增一個，讓大家用其他服務登入。",
+    "description": "In place of the list of providers while there is none. Read by administrators."
+  },
+  "staff_settings.providers_admin.state": {
+    "defaultMessage": "{state, select, enabled {已啟用} other {已停用}}",
+    "description": "Whether a provider is enabled: the line under its name, and the options of its state. Read by administrators."
+  },
+  "staff_settings.providers_admin.state.label": {
+    "defaultMessage": "以其登入",
+    "description": "The label of the select of a provider's state on its page. Read by administrators."
+  },
+  "staff_settings.providers_admin.linked": {
+    "defaultMessage": "{count, plural, =0 {沒有帳號連結到它} other {有 # 個帳號連結到它}}",
+    "description": "How many accounts are linked to a provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.signup": {
+    "defaultMessage": "{allowed, select, yes {可用它註冊} other {不可用它註冊}}",
+    "description": "Whether new people can sign up with a provider, in its row. Read by administrators."
+  },
+  "staff_settings.providers_admin.kind": {
+    "defaultMessage": "{kind, select, oidc {OpenID Connect} github {GitHub} mastodon {Mastodon 伺服器} other {Discord}}",
+    "description": "The kind of a login provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.limit": {
+    "defaultMessage": "{applies, select, yes {僅由登入提供者讓人登入} other {登入將限制為登入提供者}}",
+    "description": "The title of the summary over the providers while login_providers_only is on: whether the limit applies (an enabled provider). Read by administrators."
+  },
+  "staff_settings.providers_admin.limit.about": {
+    "defaultMessage": "{applies, select, yes {} other {啟用提供者後才會開始。}}{count, plural, =0 {所有活躍使用者都已連結提供者。} other {有 # 位活躍使用者沒有連結提供者，在工作階段結束後將無法再登入。}}{you, select, yes {你也是其中之一。} other {}}",
+    "description": "The line of the summary of the limit of sign-in to providers. Read by administrators."
+  },
+  "staff_settings.providers_admin.new": {
+    "defaultMessage": "新登入提供者",
+    "description": "The title of a new provider's form. Read by administrators."
+  },
+  "staff_settings.providers_admin.section.kind": {
+    "defaultMessage": "類型",
+    "description": "The heading of the choice of a new provider's kind. Read by administrators."
+  },
+  "staff_settings.providers_admin.section.connection": {
+    "defaultMessage": "連線",
+    "description": "The heading of a provider's name, issuer and client. Read by administrators."
+  },
+  "staff_settings.providers_admin.section.connection.about": {
+    "defaultMessage": "{kind, select, mastodon {此伺服器會自行在該 Mastodon 伺服器註冊，除非你提供已在該處註冊的用戶端。} other {請在提供者處將此伺服器註冊為應用程式，並將其用戶端複製到這裡。}}",
+    "description": "The line under the heading Connection. Read by administrators."
+  },
+  "staff_settings.providers_admin.section.who": {
+    "defaultMessage": "誰能使用",
+    "description": "The heading of a provider's sign-up, linking and conditions. Read by administrators."
+  },
+  "staff_settings.providers_admin.section.state": {
+    "defaultMessage": "狀態",
+    "description": "The heading of a provider's state on its page. Read by administrators."
+  },
+  "staff_settings.providers_admin.field": {
+    "defaultMessage": "{field, select, name {名稱} issuer {{kind, select, mastodon {伺服器} other {簽發者}}} clientId {用戶端 ID} secret {用戶端密鑰} scopes {其他範圍} other {{kind, select, oidc {聲明條件} github {組織} other {Discord 伺服器}}}}",
+    "description": "The label of a field of a provider's form. Read by administrators."
+  },
+  "staff_settings.providers_admin.issuer.about": {
+    "defaultMessage": "{kind, select, mastodon {伺服器的網域，例如 mastodon.example。} other {https 位址，須與提供者的 ID 權杖所寫的完全一致。}}",
+    "description": "The hint under a provider's issuer. Read by administrators."
+  },
+  "staff_settings.providers_admin.mastodon_client.about": {
+    "defaultMessage": "留空則由此伺服器自行在該處註冊。",
+    "description": "The hint under the client ID of a Mastodon provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.secret.about": {
+    "defaultMessage": "{fresh, select, yes {儲存後不會再顯示。} other {不會顯示。在此輸入新的即可取代；留空則保留原本的。}}",
+    "description": "The hint under a provider's client secret. Read by administrators."
+  },
+  "staff_settings.providers_admin.scopes.about": {
+    "defaultMessage": "{kind, select, github {以空格分隔。有設定組織時會加上 read:org。} other {以空格分隔，提供者所需的範圍之外的部分。}}",
+    "description": "The hint under a provider's extra scopes. Read by administrators."
+  },
+  "staff_settings.providers_admin.conditions.about": {
+    "defaultMessage": "{kind, select, oidc {每行一條，格式為 claim=value value，例如 hd=example.com。留空則所有人都可進入。} github {組織名稱，以空格分隔；使用者須屬於其中之一。留空則所有人都可進入。} other {伺服器 ID，以空格分隔；使用者須屬於其中之一。留空則所有人都可進入。}}",
+    "description": "The hint under a provider's conditions. Read by administrators."
+  },
+  "staff_settings.providers_admin.allow_signup": {
+    "defaultMessage": "可用它註冊",
+    "description": "The checkbox of whether new people can sign up with a provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.allow_link": {
+    "defaultMessage": "可將帳號連結到它",
+    "description": "The checkbox of whether people can link their account to a provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.refused": {
+    "defaultMessage": "{field, select, kind {請選擇其中一種類型。} name {請輸入 1 到 100 字的名稱。} issuer {請檢查位址。Mastodon 伺服器必須是 4.3 或更新版本。} clientId {請輸入提供者給的用戶端 ID。若 Mastodon 伺服器拒絕此伺服器註冊，請在該處註冊一個並輸入。} secret {請輸入提供者給的用戶端密鑰。} scopes {請輸入以空格分隔的範圍，Mastodon 則不必輸入。} other {請檢查條件。}}",
+    "description": "Under a field of a provider that the form or the server refused. Read by administrators."
+  },
+  "staff_settings.providers_admin.callback": {
+    "defaultMessage": "回呼 URL",
+    "description": "The heading of a provider's redirect URI on its page. Read by administrators."
+  },
+  "staff_settings.providers_admin.callback.about": {
+    "defaultMessage": "請在提供者處註冊此位址，作為它將人導回的位置。",
+    "description": "The line under the callback URL. Read by administrators."
+  },
+  "staff_settings.providers_admin.callback.copy": {
+    "defaultMessage": "複製 URL",
+    "description": "The button that copies the callback URL. Read by administrators."
+  },
+  "staff_settings.providers_admin.callback.next": {
+    "defaultMessage": "新增提供者後，其頁面會顯示要在提供者處註冊的回呼 URL：{url}",
+    "description": "On the form of a new login provider, under its connection: where the callback URL will be shown, with its form (the server's address, the provider's ID in place of <ID>). Read by administrators."
+  },
+  "staff_settings.providers_admin.starts.title": {
+    "defaultMessage": "現在開始限制登入嗎？",
+    "description": "The question before adding or enabling a provider that starts the limit of sign-in to providers at once. Read by administrators."
+  },
+  "staff_settings.providers_admin.starts.text": {
+    "defaultMessage": "登入已設為僅限登入提供者，而這是第一個可用的提供者，因此限制會立即開始。{known, select, yes {{count, plural, other {# 位沒有連結它的活躍使用者}}在工作階段結束後將無法再登入。} other {沒有連結它的人在工作階段結束後將無法再登入。}}{you, select, yes {你也是其中之一。} other {}}",
+    "description": "The text of the question before a provider starts the limit at once. Read by administrators."
+  },
+  "staff_settings.providers_admin.disable.title": {
+    "defaultMessage": "要停用這個提供者嗎？",
+    "description": "The question before saving a provider disabled while accounts are linked to it. Read by administrators."
+  },
+  "staff_settings.providers_admin.disable.text": {
+    "defaultMessage": "{count, plural, other {# 個已連結的帳號}}在重新啟用前，無法再用它登入。連結會保留。",
+    "description": "The text of the question before disabling a provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete": {
+    "defaultMessage": "刪除提供者",
+    "description": "The heading of the last section of a provider's page. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete.about": {
+    "defaultMessage": "{count, plural, =0 {沒有帳號連結到它。} other {# 個已連結的帳號將無法再用它登入。}}",
+    "description": "The line under Delete the provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete.press": {
+    "defaultMessage": "刪除",
+    "description": "The button that deletes a provider, and the confirmation of its question. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete.title": {
+    "defaultMessage": "要刪除這個登入提供者嗎？",
+    "description": "The question before deleting a provider; the reader types its name. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete.text": {
+    "defaultMessage": "{name} 將被永久刪除，{count, plural, =0 {沒有已連結的帳號} other {並有 # 個已連結的帳號無法再用它登入}}。請輸入其名稱以刪除。此操作無法復原。",
+    "description": "The text of the question before deleting a provider. Read by administrators."
+  },
+  "staff_settings.providers_admin.delete.failed": {
+    "defaultMessage": "無法刪除提供者。請再試一次。",
+    "description": "Under Delete when deleting a provider failed. Read by administrators."
+  },
+  "staff_settings.providers_admin.kind.about": {
+    "defaultMessage": "{kind, select, oidc {任何支援 OpenID Connect 的服務，以其簽發者尋找。} github {github.com 帳號，可選擇僅限某些組織的成員。} mastodon {某個 Mastodon 伺服器的帳號（4.3 或更新版本）。} other {Discord 帳號，可選擇僅限某些伺服器的成員。}}",
+    "description": "The line under a kind of provider in the choice of a new provider. Read by administrators."
+  },
+  "staff_settings.providers.loading": {
+    "defaultMessage": "正在載入提供者…",
+    "description": "In the providers' section of Translation while the server's providers are read. Read by administrators."
+  },
+  "staff_settings.providers.none": {
+    "defaultMessage": "此伺服器尚未設定翻譯提供者。提供者要在伺服器的設定中設定。",
+    "description": "In the providers' section of Translation when the server has none. Read by administrators."
+  },
+  "staff_settings.providers.use": {
+    "defaultMessage": "使用 {name}",
+    "description": "The checkbox of whether posts are sent to a translation provider. Read by administrators."
+  },
+  "staff_settings.providers.audience": {
+    "defaultMessage": "{audience, select, public {公開} local {鄰近成員} unlisted {悄悄公開} private {僅限追蹤者} other {私訊}}",
+    "description": "A visibility a translation provider may receive, the same words as a post's visibility. Read by administrators."
+  },
+  "staff_settings.providers.first": {
+    "defaultMessage": "先試 {name}",
+    "description": "The button that moves a translation provider to the front of the order. Read by administrators."
+  },
+  "staff_settings.apps.loading": {
+    "defaultMessage": "正在載入應用程式…",
+    "description": "While the OAuth apps are read at /admin/oauth-apps. Read by administrators."
+  },
+  "staff_settings.apps.failed": {
+    "defaultMessage": "無法載入應用程式。",
+    "description": "When the OAuth apps could not be read. Read by administrators."
+  },
+  "staff_settings.apps.filter": {
+    "defaultMessage": "顯示",
+    "description": "The heading of the section of the filter of the OAuth apps. Read by administrators."
+  },
+  "staff_settings.apps.filter.registration": {
+    "defaultMessage": "註冊方式",
+    "description": "The label of the select of the way of registration the list keeps. Read by administrators."
+  },
+  "staff_settings.apps.list": {
+    "defaultMessage": "應用程式",
+    "description": "The heading of the list of OAuth apps. Read by administrators."
+  },
+  "staff_settings.apps.empty": {
+    "defaultMessage": "沒有應用程式。",
+    "description": "In place of the list of OAuth apps while it shows none. Read by administrators."
+  },
+  "staff_settings.apps.registration": {
+    "defaultMessage": "{registration, select, any {所有方式} first_party {此伺服器自有的} user {由使用者註冊} metadata_document {依中繼資料文件} other {自行註冊}}",
+    "description": "How an OAuth app was registered, in its row and in the filter. Read by administrators."
+  },
+  "staff_settings.apps.state": {
+    "defaultMessage": "{state, select, enabled {已啟用} other {已停用}}",
+    "description": "Where an OAuth app stands, the line under its name. Read by administrators."
+  },
+  "staff_settings.apps.owner": {
+    "defaultMessage": "由 {handle} 註冊",
+    "description": "Who registered an OAuth app. Read by administrators."
+  },
+  "staff_settings.apps.owner_gone": {
+    "defaultMessage": "由已不存在的帳號註冊",
+    "description": "An OAuth app whose registering account no longer exists. Read by administrators."
+  },
+  "staff_settings.apps.act": {
+    "defaultMessage": "{state, select, enabled {停用} other {啟用}}",
+    "description": "The button of an OAuth app's row, by where it stands now. Read by administrators."
+  },
+  "staff_settings.apps.done": {
+    "defaultMessage": "{state, select, enabled {已啟用。使用者需重新授權才能使用。} other {已停用。其權杖已撤銷。}}",
+    "description": "In an OAuth app's row after it was enabled or disabled. Read by administrators."
+  },
+  "staff_settings.apps.disable.title": {
+    "defaultMessage": "要停用這個應用程式嗎？",
+    "description": "The question before disabling an OAuth app. Read by administrators."
+  },
+  "staff_settings.apps.disable.text": {
+    "defaultMessage": "{name} 的所有權杖會立即撤銷，在重新啟用前無法登入。重新啟用後，其使用者必須重新授權。此操作無法復原。",
+    "description": "The text of the question before disabling an OAuth app. Read by administrators."
+  },
+  "staff_settings.hosts": {
+    "defaultMessage": "已拒絕的主機",
+    "description": "The heading of the door to the denied hosts and the title of their screen. Read by administrators."
+  },
+  "staff_settings.hosts.about": {
+    "defaultMessage": "應用程式中繼資料文件會被拒絕的主機。",
+    "description": "The line under the heading of the denied hosts on the apps' screen. Read by administrators."
+  },
+  "staff_settings.hosts.door": {
+    "defaultMessage": "中繼資料文件的主機",
+    "description": "The door to the screen of the denied hosts. Read by administrators."
+  },
+  "staff_settings.hosts.deny": {
+    "defaultMessage": "拒絕主機",
+    "description": "The heading of the form that denies a host. Read by administrators."
+  },
+  "staff_settings.hosts.deny.about": {
+    "defaultMessage": "中繼資料位於此主機的應用程式都無法登入。",
+    "description": "The line under Deny a host. Read by administrators."
+  },
+  "staff_settings.hosts.deny.press": {
+    "defaultMessage": "拒絕",
+    "description": "The button that denies a host, and the confirmation of its question. Read by administrators."
+  },
+  "staff_settings.hosts.deny.title": {
+    "defaultMessage": "要拒絕這個主機嗎？",
+    "description": "The question before denying a host. Read by administrators."
+  },
+  "staff_settings.hosts.deny.text": {
+    "defaultMessage": "{host} 上的應用程式將無法再登入，其權杖也會立即撤銷。解除拒絕不會恢復權杖。此操作無法復原。",
+    "description": "The text of the question before denying a host. Read by administrators."
+  },
+  "staff_settings.hosts.host": {
+    "defaultMessage": "主機",
+    "description": "The label of the host to deny. Read by administrators."
+  },
+  "staff_settings.hosts.rule": {
+    "defaultMessage": "請輸入如 apps.example 的主機名稱，不含 https:// 或連接埠。",
+    "description": "Under the host to deny when it is empty or not a host name. Read by administrators."
+  },
+  "staff_settings.hosts.denied": {
+    "defaultMessage": "已拒絕 {host}。",
+    "description": "After a host was denied. Read by administrators."
+  },
+  "staff_settings.hosts.lifted": {
+    "defaultMessage": "已解除對 {host} 的拒絕。",
+    "description": "In a denied host's row after its denial was lifted. Read by administrators."
+  },
+  "staff_settings.hosts.list": {
+    "defaultMessage": "已拒絕",
+    "description": "The heading of the list of denied hosts. Read by administrators."
+  },
+  "staff_settings.hosts.loading": {
+    "defaultMessage": "正在載入已拒絕的主機…",
+    "description": "While the denied hosts are read. Read by administrators."
+  },
+  "staff_settings.hosts.read_failed": {
+    "defaultMessage": "無法載入已拒絕的主機。",
+    "description": "When the denied hosts could not be read. Read by administrators."
+  },
+  "staff_settings.hosts.empty": {
+    "defaultMessage": "沒有被拒絕的主機。",
+    "description": "In place of the list of denied hosts while there is none. Read by administrators."
+  },
+  "staff_settings.hosts.since": {
+    "defaultMessage": "於 {date} 拒絕",
+    "description": "When a host was denied. Read by administrators."
+  },
+  "staff_settings.hosts.lift": {
+    "defaultMessage": "解除",
+    "description": "The button of a denied host's row that lifts the denial. Read by administrators."
+  },
+  "staff_settings.act_failed": {
+    "defaultMessage": "無法完成此操作。請再試一次。",
+    "description": "Where an action on the administration screens (a relay joined or left, an app enabled or disabled, a host denied or lifted) failed for no reason the server named. Read by administrators."
+  },
+  "staff_settings.translation_usage": {
+    "defaultMessage": "本月",
+    "description": "The heading of the section of how translation is used this month, on the Translation screen of the administration. Read by administrators."
+  },
+  "staff_settings.translation_usage.about": {
+    "defaultMessage": "以 UTC 計算，為 {month}。限制所計算的內容可能與提供者的計費不同。",
+    "description": "The line under This month on the Translation screen; month is YYYY-MM. Read by administrators."
+  },
+  "staff_settings.translation_usage.kept": {
+    "defaultMessage": "{count, plural, other {# 次請求}}中有 {share} 由已保留的翻譯回應",
+    "description": "The cache hit rate of translation this month; share is a percentage. Read by administrators."
+  },
+  "staff_settings.translation_usage.no_requests": {
+    "defaultMessage": "本月沒有任何翻譯請求。",
+    "description": "In place of the cache hit rate before any request this month. Read by administrators."
+  },
+  "staff_settings.translation_usage.loading": {
+    "defaultMessage": "正在載入本月用量…",
+    "description": "While the month's use of translation is read. Read by administrators."
+  },
+  "staff_settings.translation_usage.failed": {
+    "defaultMessage": "無法載入本月用量。",
+    "description": "When the month's use of translation could not be read, before Try again. Read by administrators."
+  },
+  "staff_settings.translation_usage.of_limit": {
+    "defaultMessage": "整個伺服器 {limit} 字中已用 {used} 字",
+    "description": "This month's characters sent to translation providers against the server's monthly limit; both are formatted numbers. Read by administrators."
+  },
+  "staff_settings.irreversible": {
+    "defaultMessage": "{what, select, federation_scope {會結束與所有其他伺服器的追蹤。此操作無法復原。} login_providers_only {沒有連結提供者的人在工作階段結束後將無法再登入。} auto_delete_max_age_days {會刪除所有人的舊貼文。此操作無法復原。} retire {規則將永久從規則中移除。此操作無法復原。} delete {提供者將被永久刪除。此操作無法復原。} deny {會立即撤銷該主機上應用程式的權杖。此操作無法復原。} other {此操作無法復原。}}",
+    "description": "The mark, beside a caution glyph, of an option or an action of the administration that cannot be undone, by what it marks. Read by administrators."
+  }
+}

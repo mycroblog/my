@@ -1,0 +1,62 @@
+{
+  "post_actions.failed": {
+    "defaultMessage": "{action, select, favourite {喜欢} boost {转发} bookmark {添加书签} mute {将对话静音} vote {投票} other {回应}}未完成。",
+    "description": "The notice at the bottom of the page when the reader's favourite, boost, bookmark, emoji reaction or mute of a thread on a post (set or taken back), or their vote in a post's poll, got no answer from the server (the network), beside Try again. The post shows again what it showed before. action is which of them."
+  },
+  "post_actions.retry": {
+    "defaultMessage": "重试",
+    "description": "The action of a post's failed notice (a favourite, boost, bookmark, emoji reaction or vote, deleting, loading the edit history or the post to edit): it does the same again."
+  },
+  "post_actions.deleted": {
+    "defaultMessage": "帖子已删除",
+    "description": "The notice at the bottom of the page after the reader's post was deleted (Delete…); it is gone from every list and view."
+  },
+  "post_actions.delete_failed": {
+    "defaultMessage": "删除帖子未完成。",
+    "description": "The notice at the bottom of the page when deleting the reader's post (Delete… or Delete and redraft…) got no answer from the server (the network), beside Try again. The post stays, and a redraft's composer does not open."
+  },
+  "post_actions.link_copied": {
+    "defaultMessage": "链接已复制",
+    "description": "The notice at the bottom of the page after Copy link, or after Share on a device that cannot share, copied the link to the post."
+  },
+  "post_actions.copy_failed": {
+    "defaultMessage": "无法复制链接。",
+    "description": "The notice at the bottom of the page when the browser refused to copy the link to the post (Copy link, or Share on a device that cannot share); it offers no Try again, since a refused clipboard refuses again."
+  },
+  "post_actions.bookmarked": {
+    "defaultMessage": "已添加书签",
+    "description": "The notice at the bottom of the page after Bookmark in a post's more menu bookmarked it; the post is in Bookmarks."
+  },
+  "post_actions.unbookmarked": {
+    "defaultMessage": "已移除书签",
+    "description": "The notice at the bottom of the page after Remove bookmark in a post's more menu took the reader's bookmark of the post back; the post is no longer in Bookmarks."
+  },
+  "post_actions.thread_muted": {
+    "defaultMessage": "已将对话静音",
+    "description": "The notice at the bottom of the page after Mute thread in a post's more menu muted the thread the post is in; its notifications stop, and its posts still show in timelines."
+  },
+  "post_actions.thread_unmuted": {
+    "defaultMessage": "已取消对话静音",
+    "description": "The notice at the bottom of the page after Unmute thread in a post's more menu let the notifications of the thread the post is in come again."
+  },
+  "post_actions.history_failed": {
+    "defaultMessage": "无法加载编辑历史。",
+    "description": "The notice at the bottom of the page when an edited post's edit history did not load from the server, beside Try again, which loads it again."
+  },
+  "post_actions.source_failed": {
+    "defaultMessage": "无法加载帖子以供编辑。",
+    "description": "The notice at the bottom of the page when the reader's post did not load from the server to edit it (Edit), beside Try again; the composer does not open."
+  },
+  "post_actions.approval_pending": {
+    "defaultMessage": "等待批准",
+    "description": "The line over the reader's own reply that waits for the approval of the author of the post it replies to; only the reader sees the reply."
+  },
+  "post_actions.approval_rejected": {
+    "defaultMessage": "未获批准",
+    "description": "The line over the reader's own reply that the author of the post it replies to declined; only the reader sees it."
+  },
+  "post_actions.boost_waits": {
+    "defaultMessage": "转发正在等待批准",
+    "description": "The line over a post the reader boosted whose author approves boosts by hand, until the author does."
+  }
+}

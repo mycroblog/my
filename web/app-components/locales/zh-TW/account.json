@@ -1,0 +1,26 @@
+{
+  "account.follow": {
+    "defaultMessage": "追蹤",
+    "description": "The button on a row of an account (a search's, a list's of follows, a notification's) that follows it."
+  },
+  "account.follow_back": {
+    "defaultMessage": "回追",
+    "description": "The follow of a row of an account that follows the reader."
+  },
+  "account.request_follow": {
+    "defaultMessage": "請求追蹤",
+    "description": "The follow of a row of a locked account, which approves its followers: it asks to follow."
+  },
+  "account.following": {
+    "defaultMessage": "追蹤中",
+    "description": "In place of the follow of a row of an account the reader follows."
+  },
+  "account.requested": {
+    "defaultMessage": "已請求",
+    "description": "In place of the follow of a row of an account the reader asked to follow, while it waits."
+  },
+  "account.unavailable": {
+    "defaultMessage": "無法使用的帳號",
+    "description": "The name shown in place of an account's that the reader may not see but that a screen must name (an event's organizer): the account is suspended or deactivated, the moderators hide its profile, or it blocks the reader. It leads to no profile."
+  }
+}

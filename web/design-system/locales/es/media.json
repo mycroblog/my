@@ -1,0 +1,86 @@
+{
+  "media.sensitive_image": {
+    "defaultMessage": "{count, plural, one {Imagen sensible} other {# imágenes sensibles}}",
+    "description": "The line above a post's images marked sensitive, which stay blurred until the reader shows them, followed by a Show (media.show) or Hide (media.hide) button. count is how many; one alone has no number."
+  },
+  "media.sensitive_video": {
+    "defaultMessage": "{count, plural, one {Video sensible} other {# videos sensibles}}",
+    "description": "The line above a post's videos marked sensitive, which stay blurred until the reader shows them, followed by a Show or Hide button. count is how many; one alone has no number."
+  },
+  "media.sensitive_gif": {
+    "defaultMessage": "{count, plural, one {GIF sensible} other {# GIF sensibles}}",
+    "description": "The line above a post's GIFs (short silent loops) marked sensitive, which stay blurred until the reader shows them, followed by a Show or Hide button. count is how many; one alone has no number."
+  },
+  "media.sensitive_audio": {
+    "defaultMessage": "{count, plural, one {Audio sensible} other {# audios sensibles}}",
+    "description": "The line above a post's sounds marked sensitive, which stay folded away until the reader shows them, followed by a Show or Hide button. count is how many; one alone has no number."
+  },
+  "media.sensitive_file": {
+    "defaultMessage": "{count, plural, one {Archivo sensible} other {# archivos sensibles}}",
+    "description": "The line above a post's attached files (of a kind the client cannot show) marked sensitive, which stay folded away until the reader shows them, followed by a Show or Hide button. count is how many; one alone has no number."
+  },
+  "media.sensitive_mixed": {
+    "defaultMessage": "{count, plural, one {# adjunto sensible} other {# adjuntos sensibles}}",
+    "description": "The line above a post's sensitive media of several kinds (such as images and a sound), covered until the reader shows them, followed by a Show or Hide button. count is how many, at least two."
+  },
+  "media.show": {
+    "defaultMessage": "Mostrar",
+    "description": "The button at the end of the line above covered sensitive media that shows it; the same word and look as disclosure.show, the content warning's."
+  },
+  "media.hide": {
+    "defaultMessage": "Ocultar",
+    "description": "The button at the end of the line above shown sensitive media that covers it again; the same word and look as disclosure.hide, the content warning's."
+  },
+  "media.alt": {
+    "defaultMessage": "ALT",
+    "description": "The mark in the corner of a picture that has a description (alternative text); hidden from screen readers, which read the description itself. Keep it short; ALT is understood in most languages."
+  },
+  "media.gif": {
+    "defaultMessage": "GIF",
+    "description": "The mark in the corner of a short looping animation without sound; hidden from screen readers, whose name for it says GIF (media.open)."
+  },
+  "media.play": {
+    "defaultMessage": "Reproducir video",
+    "description": "The screen reader's name of the play button on a video in a post without a description; the video plays in place."
+  },
+  "media.play_described": {
+    "defaultMessage": "Reproducir video: {description}",
+    "description": "The screen reader's name of the play button on a video in a post with a description (alternative text); the video plays in place. description is the poster's own text, in any language."
+  },
+  "media.open": {
+    "defaultMessage": "{kind, select, gifv {Abrir GIF} other {Abrir imagen}}",
+    "description": "The screen reader's name of a picture in a post without a description, a button that opens it whole in the media viewer; kind is gifv for a short silent loop, else image."
+  },
+  "media.open_described": {
+    "defaultMessage": "{kind, select, gifv {Abrir GIF} other {Abrir imagen}}: {description}",
+    "description": "The screen reader's name of a picture in a post with a description (alternative text), a button that opens it whole in the media viewer; kind is gifv for a short silent loop, else image; description is the poster's own text, in any language."
+  },
+  "media.whole": {
+    "defaultMessage": "Abrir video",
+    "description": "The button in the corner of a video in a post that opens it whole in the media viewer, over the page."
+  },
+  "media.file": {
+    "defaultMessage": "Abrir archivo adjunto",
+    "description": "The text of a link to an attached file of a kind the client cannot show, when neither its description nor its address gives a name for it; the host it is on shows under it, and it opens in a new tab."
+  },
+  "media.new_tab": {
+    "defaultMessage": "(se abre en una pestaña nueva)",
+    "description": "Said after a link that opens in a new tab (an attached file, the card of a link in a post), for assistive technology; the same words as app.new_tab."
+  },
+  "media.audio_play": {
+    "defaultMessage": "Reproducir audio",
+    "description": "The button of an attached sound in a post that plays it; its description, or the word for a sound (media.audio), is next to it."
+  },
+  "media.audio_pause": {
+    "defaultMessage": "Pausar audio",
+    "description": "The button of an attached sound in a post that pauses it while it plays."
+  },
+  "media.audio_time": {
+    "defaultMessage": "{at} de {length}",
+    "description": "What a screen reader reads for the time of an attached sound in a post, in place of the visible 0:07 / 3:12: at is how far it has played, length its whole length, both as a player shows them (0:07, 3:12)."
+  },
+  "media.audio": {
+    "defaultMessage": "Audio",
+    "description": "What an attached sound without a description is called, in the row that plays it."
+  }
+}

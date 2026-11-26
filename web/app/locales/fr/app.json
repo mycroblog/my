@@ -1,0 +1,554 @@
+{
+  "app.navigation": {
+    "defaultMessage": "Principale",
+    "description": "The name of the app's main navigation (the places: home, local, federated, notifications, search, profile, bookmarks, favourites, settings), for assistive technology."
+  },
+  "app.home": {
+    "defaultMessage": "Accueil",
+    "description": "The place of the navigation, and the heading of its screen, that shows the home timeline (the posts of the accounts the reader follows)."
+  },
+  "app.local": {
+    "defaultMessage": "Local",
+    "description": "The place of the navigation, and the heading of its screen, that shows the local timeline (the public posts of this server's people)."
+  },
+  "app.federated": {
+    "defaultMessage": "Fédéré",
+    "description": "The place of the navigation, and the heading of its screen, that shows the federated timeline (the public posts this server knows from every server)."
+  },
+  "app.notifications": {
+    "defaultMessage": "Notifications",
+    "description": "The place of the navigation that shows the reader's notifications."
+  },
+  "app.notification_retry": {
+    "defaultMessage": "Réessayer",
+    "description": "The button beside app.notification_failed that reads the notification again."
+  },
+  "app.notification_failed": {
+    "defaultMessage": "La notification n’a pas pu être chargée.",
+    "description": "What /notifications/{id} says when the notification could not be read (the network, the server), beside a button to try again (app.notification_retry)."
+  },
+  "app.notification_opening": {
+    "defaultMessage": "Ouverture de la notification…",
+    "description": "What /notifications/{id} (where a push or an email about one notification leads) says while it reads the notification, before it goes on to what the notification tells of."
+  },
+  "app.direct_messages": {
+    "defaultMessage": "Messages directs",
+    "description": "The place of the navigation, and the heading of its screen, that lists the reader's conversations of direct messages."
+  },
+  "app.conversation": {
+    "defaultMessage": "Messages",
+    "description": "The heading of the screen of the direct messages with some people, for assistive technology; the list's heading is Direct messages."
+  },
+  "app.search": {
+    "defaultMessage": "Recherche",
+    "description": "The place of the navigation that searches posts, accounts and hashtags."
+  },
+  "app.people": {
+    "defaultMessage": "Trouver des personnes",
+    "description": "The place of the navigation (in the menu) that opens the accounts the server suggests to follow."
+  },
+  "app.profile": {
+    "defaultMessage": "Profil",
+    "description": "The place of the navigation that shows the reader's own profile."
+  },
+  "app.bookmarks": {
+    "defaultMessage": "Marque-pages",
+    "description": "The place of the navigation, and the heading of its screen, that lists the posts the reader bookmarked."
+  },
+  "app.favourites": {
+    "defaultMessage": "Favoris",
+    "description": "The place of the navigation, and the heading of its screen, that lists the posts the reader favourited."
+  },
+  "app.settings": {
+    "defaultMessage": "Paramètres",
+    "description": "The place of the navigation that shows the reader's settings."
+  },
+  "app.menu": {
+    "defaultMessage": "Menu",
+    "description": "The last item of the tab bar on a phone and of the rail and the sidebar, and the title of what it opens, which holds the places the navigation does not (profile, bookmarks, favourites, lists, settings, announcements, voice rooms, events)."
+  },
+  "app.announcements": {
+    "defaultMessage": "Annonces",
+    "description": "The place in the menu's sheet, and the heading of its screen, that lists the server's announcements."
+  },
+  "app.compose": {
+    "defaultMessage": "Nouvelle publication",
+    "description": "The primary action of the app, under the logo or floating over the navigation, that starts writing a post; also its keyboard shortcut in the keyboard shortcuts dialog."
+  },
+  "app.sign_in_action": {
+    "defaultMessage": "Se connecter",
+    "description": "The primary action of the app for a reader who is not signed in, under the logo and in the menu's sheet; it opens the server's sign-in page."
+  },
+  "app.around": {
+    "defaultMessage": "Activité du serveur",
+    "description": "The name of the column beside the timeline on wide screens, which shows what is around the reader (the server's announcements, voice rooms, events, its funding, and its pages), for assistive technology."
+  },
+  "app.footer": {
+    "defaultMessage": "Ce serveur",
+    "description": "The name, for assistive technology, of the links to the server's pages (about, terms, privacy) at the end of the column beside the timeline and of the menu's sheet."
+  },
+  "app.footer_about": {
+    "defaultMessage": "À propos",
+    "description": "The link to the server's about page, among the links to the server's pages at the end of the column beside the timeline and of the menu's sheet."
+  },
+  "app.footer_terms": {
+    "defaultMessage": "Conditions",
+    "description": "The link to the server's terms of service, among the links to the server's pages."
+  },
+  "app.footer_privacy": {
+    "defaultMessage": "Confidentialité",
+    "description": "The link to the server's privacy policy, among the links to the server's pages."
+  },
+  "app.sign_in": {
+    "defaultMessage": "Se connecter",
+    "description": "The link after the line that asks a reader who is not signed in to sign in; it opens the server's sign-in page."
+  },
+  "app.sign_in_failed": {
+    "defaultMessage": "La connexion n’a pas abouti. Réessayez.",
+    "description": "In place of the home timeline when the sign-in came back to the app but could not finish (an old or second tab, the server refused it); a link to sign in again follows it."
+  },
+  "app.not_found": {
+    "defaultMessage": "Cette page n’existe pas. Vérifiez l’adresse ou retournez à l’accueil.",
+    "description": "The heading of the screen at an address the app has no screen for, such as a place of the navigation that is not built yet."
+  },
+  "app.post": {
+    "defaultMessage": "Publication",
+    "description": "The heading of the screen of a post with its thread, for assistive technology, and the document's title."
+  },
+  "app.reactors": {
+    "defaultMessage": "Réactions",
+    "description": "The heading of the screen that lists who reacted to a post with one emoji, for assistive technology, and the document's title."
+  },
+  "app.signed_out_screen": {
+    "defaultMessage": "Connectez-vous pour voir cet écran.",
+    "description": "What a screen that needs a session (the notifications, the bookmarks, the settings) says to a reader who is not signed in, beside the sign-in link; a profile, its follow lists, a post and who reacted to it show to a visitor instead."
+  },
+  "app.moderation": {
+    "defaultMessage": "Modération",
+    "description": "The place of the navigation, for readers with a moderation permission, that leads to the moderation screens (reports, accounts, domains, the audit log)."
+  },
+  "app.admin": {
+    "defaultMessage": "Administration",
+    "description": "The place of the navigation, for readers with a permission of the server's administration, that leads to the admin screens (settings, rules, roles, announcements)."
+  },
+  "app.finance": {
+    "defaultMessage": "Finances",
+    "description": "The place of the navigation, for readers allowed to read the server's finances, that shows its costs and income."
+  },
+  "app.around_all": {
+    "defaultMessage": "Tout",
+    "description": "The link at the end of a section's heading in the column beside the timeline that opens the whole list, when the section shows only some; each section names it in full for assistive technology (app.around_all_announcements and the like)."
+  },
+  "app.around_all_announcements": {
+    "defaultMessage": "Toutes les annonces",
+    "description": "The name, for assistive technology, of the link shown as All (app.around_all) at the end of the heading of the announcements section in the column beside the timeline; it opens the list of announcements. Starts with the words of app.around_all."
+  },
+  "app.around_all_rooms": {
+    "defaultMessage": "Tous les salons vocaux",
+    "description": "The name, for assistive technology, of the link shown as All (app.around_all) at the end of the heading of the voice rooms section in the column beside the timeline; it opens the list of rooms. Starts with the words of app.around_all."
+  },
+  "app.around_all_events": {
+    "defaultMessage": "Tous les événements",
+    "description": "The name, for assistive technology, of the link shown as All (app.around_all) at the end of the heading of the events section in the column beside the timeline; it opens the list of events. Starts with the words of app.around_all."
+  },
+  "app.around_all_notifications": {
+    "defaultMessage": "Toutes les notifications",
+    "description": "The name, for assistive technology, of the link shown as All (app.around_all) at the end of the heading of the notifications section in the column beside the timeline; it opens the notifications. Starts with the words of app.around_all."
+  },
+  "app.unread": {
+    "defaultMessage": "Non lues",
+    "description": "The mark at the end of an announcement the reader has not read, in the column beside the timeline, for assistive technology."
+  },
+  "app.announcements_unread": {
+    "defaultMessage": "{count, plural, one {# annonce non lue} other {# annonces non lues}}",
+    "description": "The one line above the home timeline, below the width where the column beside it lists the announcements: how many announcements the reader has not read; it links to the list of announcements."
+  },
+  "app.announcement_untitled": {
+    "defaultMessage": "Annonce",
+    "description": "The title of an announcement whose administrators gave it none, in the column beside the timeline."
+  },
+  "app.voice_rooms": {
+    "defaultMessage": "Salons vocaux",
+    "description": "The heading of the section of open voice rooms in the column beside the timeline; it links to the list of rooms."
+  },
+  "app.events": {
+    "defaultMessage": "Événements à venir",
+    "description": "The heading of the section of upcoming events in the column beside the timeline; it links to the list of events."
+  },
+  "app.funding": {
+    "defaultMessage": "Financement",
+    "description": "The heading of the section of the server's funding meter in the column beside the timeline; it links to the server's about page."
+  },
+  "app.notices": {
+    "defaultMessage": "État du serveur et de la connexion",
+    "description": "The name, for assistive technology, of the notices at the top of every screen: the server's closure, the reader offline, the server down."
+  },
+  "app.closure_notice": {
+    "defaultMessage": "Ce serveur ferme le {closes}. Exportez vos données avant le {until}.",
+    "description": "The notice on every screen while the server's closure is announced ({closes}, the closing date; {until}, the last day to take the data away; both dates written out in the reader's language). It cannot be dismissed."
+  },
+  "app.closure_export": {
+    "defaultMessage": "Exporter vos données",
+    "description": "The link in the closure notice that opens the export of the reader's data."
+  },
+  "app.closure_move": {
+    "defaultMessage": "Déplacer votre compte",
+    "description": "The link in the closure notice that opens moving the reader's account to another server."
+  },
+  "app.offline": {
+    "defaultMessage": "Vous êtes hors ligne. Ce que vous voyez peut être obsolète jusqu’à la reconnexion.",
+    "description": "The notice at the top of every screen while the reader's device has no network."
+  },
+  "app.outage": {
+    "defaultMessage": "Le serveur ne répond pas. Ce que vous voyez peut être obsolète jusqu’à son retour.",
+    "description": "The notice at the top of every screen while the reader's network works but the server does not answer (an outage)."
+  },
+  "app.status_page": {
+    "defaultMessage": "État du service",
+    "description": "The link to the server's status page, on a service apart from the server, in the offline and outage notices and the maintenance page."
+  },
+  "app.update_ready": {
+    "defaultMessage": "Une version plus récente de l’application est prête.",
+    "description": "The toast at the bottom when a newer version of the web app is ready to load; Update loads it."
+  },
+  "app.update_required": {
+    "defaultMessage": "Cette version de l’application ne fonctionne plus avec le serveur. Mettez-la à jour pour continuer.",
+    "description": "The toast at the bottom when the server needs a newer version of the web app than the open one; Update loads it, and it cannot be closed."
+  },
+  "app.update": {
+    "defaultMessage": "Mettre à jour",
+    "description": "The action of the update toast, which loads the newer version of the app."
+  },
+  "app.toast_close": {
+    "defaultMessage": "Fermer",
+    "description": "The button at the end of a toast that closes it."
+  },
+  "app.call_mute": {
+    "defaultMessage": "Couper le micro",
+    "description": "The microphone's button in the bar of the call the reader is in, while the microphone is on: pressing it turns the microphone off."
+  },
+  "app.call_unmute": {
+    "defaultMessage": "Réactiver le micro",
+    "description": "The microphone's button in the bar of the call the reader is in, while the microphone is off: pressing it turns the microphone on."
+  },
+  "app.call_leave": {
+    "defaultMessage": "Quitter",
+    "description": "The button in the bar of the call the reader is in that leaves the call."
+  },
+  "app.call_connecting": {
+    "defaultMessage": "Connexion…",
+    "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, while the call first connects."
+  },
+  "app.call_reconnecting": {
+    "defaultMessage": "Reconnexion…",
+    "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, while the call's connection is lost and comes back by itself."
+  },
+  "app.maintenance_title": {
+    "defaultMessage": "En maintenance",
+    "description": "The title of the page that replaces every screen while the server is under maintenance."
+  },
+  "app.maintenance_body": {
+    "defaultMessage": "Le serveur est en maintenance. Vos publications et vos autres données sont conservées, et cette page se recharge à la fin.",
+    "description": "Under the title of the maintenance page. The page cannot read the server's name while the database is down, so it names none."
+  },
+  "app.maintenance_until": {
+    "defaultMessage": "Fin prévue avant {time}",
+    "description": "Right under the title of the maintenance page, in bold, when the operators said when it should end ({time}, the weekday and time in the reader's time zone, with the zone's name)."
+  },
+  "app.maintenance_status": {
+    "defaultMessage": "Consulter l’état du service",
+    "description": "The link on the maintenance page to the server's status page."
+  },
+  "app.notifications_count": {
+    "defaultMessage": "{count, plural, one {# non lue} other {# non lues}}",
+    "description": "What the badge on Notifications in the navigation says, for assistive technology: how many notifications the reader has not read."
+  },
+  "app.direct_messages_count": {
+    "defaultMessage": "{count, plural, one {# non lu} other {# non lus}}",
+    "description": "What the badge on Direct messages in the navigation says, for assistive technology: how many conversations the reader has not read."
+  },
+  "app.moderation_count": {
+    "defaultMessage": "{count, plural, one {# en attente} other {# en attente}}",
+    "description": "What the badge on Moderation in the navigation says, for assistive technology: how many reports, registrations and appeals wait for a moderator."
+  },
+  "app.new_tab": {
+    "defaultMessage": "(s’ouvre dans un nouvel onglet)",
+    "description": "Said after a link that opens in a new tab, for assistive technology."
+  },
+  "app.events_place": {
+    "defaultMessage": "Événements",
+    "description": "The place in the menu that lists the upcoming events of the server's people."
+  },
+  "app.menu_marked": {
+    "defaultMessage": "{count, plural, one {# en attente de modération} other {# en attente de modération}}",
+    "description": "Said after Menu in the tab bar, for assistive technology, while a place inside the menu (Moderation) has things waiting: how many reports, registrations and appeals wait for a moderator."
+  },
+  "app.menu_direct": {
+    "defaultMessage": "{count, plural, one {# non lu dans les messages directs} other {# non lus dans les messages directs}}",
+    "description": "Said after Menu in the tab bar, for assistive technology, while Direct messages, a place inside the menu, has unread conversations: how many. The number shows on Menu too."
+  },
+  "app.timeline_off": {
+    "defaultMessage": "Ce serveur n’affiche pas cette chronologie.",
+    "description": "In place of the local or the federated timeline when the server does not offer it (its setting is off)."
+  },
+  "app.landing_sign_up": {
+    "defaultMessage": "Créer un compte",
+    "description": "The landing page's primary action for a visitor while the server takes new accounts; it opens the server's registration page."
+  },
+  "app.landing_sign_up_invite": {
+    "defaultMessage": "Créer un compte avec une invitation",
+    "description": "The landing page's primary action while the server takes new accounts by invite only; it opens the registration page, which asks for the invite."
+  },
+  "app.landing_account": {
+    "defaultMessage": "Compte",
+    "description": "On the landing page, the name for assistive technology of the part that offers creating an account or signing in."
+  },
+  "app.landing_approval": {
+    "defaultMessage": "Un modérateur examine chaque nouveau compte avant qu’il puisse être utilisé.",
+    "description": "On the landing page, under Create an account and Sign in, when the registration mode is approval."
+  },
+  "app.landing_invite": {
+    "defaultMessage": "Pour créer un compte, il faut une invitation d’une personne de ce serveur.",
+    "description": "On the landing page, under Create an account and Sign in, when the registration mode is invite."
+  },
+  "app.landing_closed": {
+    "defaultMessage": "Ce serveur n’accepte pas de nouveaux comptes.",
+    "description": "On the landing page, under Sign in, when the server takes no new accounts (registration closed, a one-person server, a closure)."
+  },
+  "app.landing_counts": {
+    "defaultMessage": "Ce serveur en chiffres",
+    "description": "On the landing page, the name for assistive technology of the server's counts (members, public posts this week)."
+  },
+  "app.landing_members": {
+    "defaultMessage": "{count, plural, one {membre} other {membres}}",
+    "description": "On the landing page, the label under the number of the server's members; the number itself stands above it."
+  },
+  "app.landing_week_posts": {
+    "defaultMessage": "{count, plural, one {publication publique ces 7 derniers jours} other {publications publiques ces 7 derniers jours}}",
+    "description": "On the landing page, the label under the number of public posts the server's members made in the last 7 days; the number stands above it."
+  },
+  "app.landing_fediverse_heading": {
+    "defaultMessage": "Un morceau du fédivers",
+    "description": "On the landing page, the heading of the software's explanation of the fediverse (independent servers that follow one another)."
+  },
+  "app.landing_fediverse": {
+    "defaultMessage": "Un compte ici a une adresse du type @you@{domain}. Avec elle, vous pouvez suivre des personnes sur Mastodon et sur les autres serveurs du fédivers, et elles peuvent vous suivre.",
+    "description": "On the landing page, under Part of the fediverse: how an account of this server follows and is followed by people on other servers. {domain} is this server's domain; @you is a sample name."
+  },
+  "app.landing_features_heading": {
+    "defaultMessage": "Ce que vous pouvez faire ici",
+    "description": "On the landing page, the heading of the list of what members of this server can do besides posting (articles, events, voice rooms…), of what the server has on."
+  },
+  "app.landing_feature_articles": {
+    "defaultMessage": "En plus des publications, écrivez des articles : de longs textes avec titres et images.",
+    "description": "On the landing page, an item of What you can do here, shown while every member may write articles."
+  },
+  "app.landing_feature_events": {
+    "defaultMessage": "Organisez des événements et voyez qui vient.",
+    "description": "On the landing page, an item of What you can do here, shown while every member may create events."
+  },
+  "app.landing_feature_voice": {
+    "defaultMessage": "Parlez en direct avec d’autres personnes dans des salons vocaux.",
+    "description": "On the landing page, an item of What you can do here, shown while the server's voice rooms are on."
+  },
+  "app.landing_feature_search": {
+    "defaultMessage": "Recherchez des publications par leurs mots, pas seulement par hashtags.",
+    "description": "On the landing page, an item of What you can do here, shown while the server has full-text search."
+  },
+  "app.landing_feature_translation": {
+    "defaultMessage": "Lisez des publications du monde entier traduites dans votre langue.",
+    "description": "On the landing page, an item of What you can do here, shown while the server has a translation provider."
+  },
+  "app.landing_feature_supporters": {
+    "defaultMessage": "Contribuez aux frais de fonctionnement de ce serveur.",
+    "description": "On the landing page, an item of What you can do here, shown while the server takes supporters or tips."
+  },
+  "app.landing_feature_articles_name": {
+    "defaultMessage": "Articles",
+    "description": "On the landing page, the name of a sample of the articles' screens, over the sentence of What you can do here on articles."
+  },
+  "app.landing_feature_translation_name": {
+    "defaultMessage": "Traduction",
+    "description": "On the landing page, the name of a sample of a translated post, over the sentence of What you can do here on translation."
+  },
+  "app.landing_sample_room": {
+    "defaultMessage": "Radio du samedi soir",
+    "description": "On the landing page, the name of a sample voice room in a miniature of the rooms' list; not a real room."
+  },
+  "app.landing_sample_event": {
+    "defaultMessage": "Promenade matinale au bord de la rivière",
+    "description": "On the landing page, the title of a sample event in a miniature of the events' list; not a real event."
+  },
+  "app.landing_sample_article_title": {
+    "defaultMessage": "Dix ans d’un petit jardin",
+    "description": "On the landing page, the title of a sample article in a miniature of a timeline; not a real article."
+  },
+  "app.landing_sample_article_summary": {
+    "defaultMessage": "Ce qui a poussé, ce qui n’a pas poussé, et ce que je replanterais.",
+    "description": "On the landing page, the summary of the sample article whose title is app.landing_sample_article_title."
+  },
+  "app.landing_sample_post": {
+    "defaultMessage": "J’ai fait du pain ce matin. La cuisine en sent encore l’odeur.",
+    "description": "On the landing page, the text of a sample post, shown translated in a miniature and found by a sample search; it must hold the word of app.landing_sample_search."
+  },
+  "app.landing_sample_search": {
+    "defaultMessage": "pain",
+    "description": "On the landing page, the words in a sample search field, which the sample post (app.landing_sample_post) holds."
+  },
+  "app.landing_sample_plan": {
+    "defaultMessage": "Soutien",
+    "description": "On the landing page, the name of a sample supporters' plan in a miniature of the plans; not a real plan."
+  },
+  "app.landing_sample_month": {
+    "defaultMessage": "/ mois",
+    "description": "On the landing page, after the price of the sample supporters' plan: the period it is paid for."
+  },
+  "app.landing_sample_translated": {
+    "defaultMessage": "Publication traduite du {language}",
+    "description": "On the landing page, under a sample post shown translated in a miniature of a timeline: the language it was written in ({language}, a language's name)."
+  },
+  "app.landing_without_account": {
+    "defaultMessage": "Sans compte",
+    "description": "On the landing page, the small heading over the buttons to what a visitor can read without an account (the public timelines, search)."
+  },
+  "app.landing_local": {
+    "defaultMessage": "Lire la chronologie locale",
+    "description": "On the landing page, a button under Without an account that opens the local timeline (the public posts of this server's people)."
+  },
+  "app.landing_federated": {
+    "defaultMessage": "Lire la chronologie fédérée",
+    "description": "On the landing page, a button under Without an account that opens the federated timeline (public posts from across the fediverse)."
+  },
+  "app.landing_search": {
+    "defaultMessage": "Rechercher",
+    "description": "On the landing page, a button under Without an account that opens search."
+  },
+  "app.landing_about": {
+    "defaultMessage": "En savoir plus sur ce serveur",
+    "description": "On the landing page, the link after the server's summary to its about page (description, rules, moderation)."
+  },
+  "app.landing_source": {
+    "defaultMessage": "Code source",
+    "description": "On the landing page's footer, the link to the source code of the running server (AGPL-3.0 section 13)."
+  },
+  "app.lists": {
+    "defaultMessage": "Listes",
+    "description": "The place of the menu, and the heading of its screen, that lists the reader's lists."
+  },
+  "app.list": {
+    "defaultMessage": "Liste",
+    "description": "The heading of a list's screen until the list's name is known."
+  },
+  "app.tag": {
+    "defaultMessage": "#{name}",
+    "description": "The heading of a hashtag's screen, and the document's title. name is the hashtag without #."
+  },
+  "app.compose.menu": {
+    "defaultMessage": "Nouveau",
+    "description": "The name of the menu of the primary action, opened by a long press or right click: the things that can be written (a post, an article). Read before its first item, which may be New post, so it does not say other."
+  },
+  "app.compose.article": {
+    "defaultMessage": "Nouvel article",
+    "description": "The item of the primary action's menu that opens the article editor."
+  },
+  "app.voice_room": {
+    "defaultMessage": "Salon vocal",
+    "description": "The heading of a voice chat room's page until its name is known, or when it is not shown to the reader."
+  },
+  "app.call_host": {
+    "defaultMessage": "Organisé par {host}",
+    "description": "In the bar of the call the reader is in, under the room's name: who hosts it ({host}, a display name)."
+  },
+  "app.call_hear": {
+    "defaultMessage": "Écouter le salon",
+    "description": "The button of the bar of the call the reader is in, while the browser holds the room's sound back until a press: pressing it plays the sound."
+  },
+  "app.call_muted_by_host": {
+    "defaultMessage": "Un hôte a coupé votre micro",
+    "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, after a host or co-host turned the reader's microphone off, until they turn it on again."
+  },
+  "app.stream_connecting": {
+    "defaultMessage": "Connexion…",
+    "description": "The mark of the stream at the top right of the screen, with no visible label: its name for screen readers and the tooltip a pointer hovering it shows. While the app first connects to receive new posts live, after the page opens (an amber ring)."
+  },
+  "app.stream_open": {
+    "defaultMessage": "Connecté",
+    "description": "The mark of the stream at the top right of the screen, with no visible label: its name for screen readers and the tooltip a pointer hovering it shows. While the app is connected and new posts arrive live (a green disc): it tells the reader that no new post means there is none yet, not a cut connection."
+  },
+  "app.stream_reconnecting": {
+    "defaultMessage": "Connexion perdue. Reconnexion…",
+    "description": "The mark of the stream at the top right of the screen, with no visible label: its name for screen readers and the tooltip a pointer hovering it shows. After the connection dropped, while the app connects again by itself (an amber ring); new posts do not arrive live until it reconnects."
+  },
+  "app.stream_stopped": {
+    "defaultMessage": "Déconnecté",
+    "description": "The mark of the stream at the top right of the screen, with no visible label: its name for screen readers and the tooltip a pointer hovering it shows. After the server refused the connection for good (the session ended, or the app lacks a permission; a red cross): the app does not try again by itself, but pulling a timeline down to refresh it does."
+  },
+  "app.voice_open": {
+    "defaultMessage": "Ouvrir un salon",
+    "description": "The heading and the document's title of the form that opens a voice chat room."
+  },
+  "app.voice_room_settings": {
+    "defaultMessage": "Paramètres du salon",
+    "description": "The heading and the document's title of the form that changes an open voice chat room's settings."
+  },
+  "app.voice_invitations": {
+    "defaultMessage": "Invitations",
+    "description": "The heading and the document's title of the screen of a voice chat room's invitations."
+  },
+  "app.event": {
+    "defaultMessage": "Événement",
+    "description": "The heading of an event's page until its title is known, or when it is not shown to the reader."
+  },
+  "app.event_new": {
+    "defaultMessage": "Créer un événement",
+    "description": "The heading and the document's title of the form that creates an event."
+  },
+  "app.event_edit": {
+    "defaultMessage": "Modifier l’événement",
+    "description": "The heading and the document's title of the form that changes an event."
+  },
+  "app.event_invitations": {
+    "defaultMessage": "Invitations",
+    "description": "The heading and the document's title of the screen of an event's invitations."
+  },
+  "app.event_coorganizers": {
+    "defaultMessage": "Co-organisateurs",
+    "description": "The heading and the document's title of the screen of an event's co-organizers."
+  },
+  "app.event_date_polled": {
+    "defaultMessage": "Date à déterminer",
+    "description": "In place of an event's time in the column beside the timeline, while its organizers poll its date."
+  },
+  "app.finance_public": {
+    "defaultMessage": "Coûts et revenus",
+    "description": "The heading of the page of the server's published costs and income, which anyone can read."
+  },
+  "app.about": {
+    "defaultMessage": "À propos de {name}",
+    "description": "The heading of the server's about page, and the document's title; {name} is the server's name."
+  },
+  "app.supporters": {
+    "defaultMessage": "Soutiens",
+    "description": "The name of the supporters' page (the plans, the tip and the supporters list): its heading, and its place in the menu."
+  },
+  "app.report": {
+    "defaultMessage": "Signalement",
+    "description": "The title of a report's screen for moderators, while the report loads or when it cannot be shown."
+  },
+  "app.report_queue": {
+    "defaultMessage": "Signalements",
+    "description": "For assistive technology, the name of the column beside a report's screen, which lists the moderators' queue of reports."
+  },
+  "app.theme_preview": {
+    "defaultMessage": "Cet onglet affiche le brouillon du thème.",
+    "description": "The notice on every screen while an administrator previews the draft of the server's theme in this tab; its link leads to the theme's screen, where the preview stops. Read by administrators."
+  },
+  "app.theme_preview_back": {
+    "defaultMessage": "Thème",
+    "description": "The link of the notice of the draft theme's preview, to the theme's screen of the administration. Read by administrators."
+  },
+  "app.closure_notice_due": {
+    "defaultMessage": "La date de fermeture de ce serveur, le {closes}, est passée, et il peut fermer à tout moment. Exportez vos données avant le {until}.",
+    "description": "The notice on every screen once the closing date of the announced closure has passed and the administrators have not closed the server yet, which they do by hand ({closes}, the closing date; {until}, the last day to take the data away, which holds after the closure too; both dates written out in the reader's language). It cannot be dismissed; parallel to app.closure_notice."
+  }
+}

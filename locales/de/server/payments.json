@@ -1,4 +1,12 @@
 {
+  "payments.checkout.title": {
+    "defaultMessage": "Den Unterstützungsplan „{plan}“ abonnieren",
+    "description": "Title of the PAY.JP checkout page. {plan} is the name of the plan."
+  },
+  "payments.error.declined": {
+    "defaultMessage": "Die Karte wurde abgelehnt, und es wurde nichts abgebucht. Versuche eine andere Karte.",
+    "description": "Error of the PAY.JP checkout and card pages when the payment with the card failed."
+  },
   "payments.error.form": {
     "defaultMessage": "Prüfe die E-Mail-Adresse, den Namen auf der Karte und die Karte.",
     "description": "Error of the PAY.JP checkout and card pages when a field is missing or invalid."
@@ -7,9 +15,17 @@
     "defaultMessage": "Diese Seite ist abgelaufen. Beginne erneut auf der Seite, von der du gekommen bist.",
     "description": "Error of the PAY.JP checkout and card pages when their link is expired or altered."
   },
+  "payments.error.three_d_secure": {
+    "defaultMessage": "Die Karte konnte nicht verifiziert werden (3-D Secure), und es wurde nichts abgebucht. Versuche es erneut oder verwende eine andere Karte.",
+    "description": "Error of the PAY.JP checkout and card pages when the 3-D Secure of the card failed."
+  },
   "payments.error.title": {
     "defaultMessage": "Zahlung",
     "description": "Title of the error page of the PAY.JP checkout and card pages."
+  },
+  "payments.error.unavailable": {
+    "defaultMessage": "PAY.JP antwortet nicht. Versuche es später erneut. Falls etwas abgebucht wurde, erscheint das Abonnement auf dem Bildschirm, von dem du gekommen bist.",
+    "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
   },
   "payments.fake.failed": {
     "defaultMessage": "Die Zahlung ist wie gewünscht fehlgeschlagen. Zahle oder brich ab.",
@@ -22,6 +38,10 @@
   "payments.portal.changed": {
     "defaultMessage": "Die Karte wurde geändert.",
     "description": "Notice of the PAY.JP card page after a card change."
+  },
+  "payments.portal.resume_failed": {
+    "defaultMessage": "Die Karte wurde geändert, aber die Zahlung, die das Abonnement fortsetzt, ist fehlgeschlagen, daher ist es weiterhin pausiert. Versuche eine andere Karte.",
+    "description": "Alert of the PAY.JP card page when the payment that resumes a paused subscription failed."
   },
   "payments.portal.resumed": {
     "defaultMessage": "Die Karte wurde geändert und das Abo läuft weiter.",

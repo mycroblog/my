@@ -1,0 +1,38 @@
+{
+  "column.loading": {
+    "defaultMessage": "正在載入貼文…",
+    "description": "In place of a timeline's posts while its first ones are being fetched."
+  },
+  "column.loading_more": {
+    "defaultMessage": "正在載入更多貼文…",
+    "description": "Under the posts of a timeline while the older ones after them are being fetched."
+  },
+  "column.failed": {
+    "defaultMessage": "無法載入貼文。",
+    "description": "In place of a timeline's posts when fetching its first ones failed; a retry action follows it."
+  },
+  "column.failed_more": {
+    "defaultMessage": "無法載入更多貼文。",
+    "description": "Under the posts of a timeline when fetching the older ones after them failed; a retry action follows it."
+  },
+  "column.retry": {
+    "defaultMessage": "重試",
+    "description": "The action after a failure to load a timeline's posts, its first ones or more of them, which fetches them again."
+  },
+  "column.empty": {
+    "defaultMessage": "還沒有貼文。",
+    "description": "In place of a timeline's posts when it has none."
+  },
+  "column.next": {
+    "defaultMessage": "前往下一則貼文",
+    "description": "The keyboard shortcut that moves the focus to the next post of a timeline, as the keyboard shortcuts dialog lists it."
+  },
+  "column.previous": {
+    "defaultMessage": "前往上一則貼文",
+    "description": "The keyboard shortcut that moves the focus to the previous post of a timeline, as the keyboard shortcuts dialog lists it."
+  },
+  "column.shortcuts": {
+    "defaultMessage": "時間軸取得焦點時",
+    "description": "The heading of the group of keyboard shortcuts that act on a timeline (moving between its posts), in the keyboard shortcuts dialog."
+  }
+}

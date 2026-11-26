@@ -1,0 +1,202 @@
+{
+  "timeline.home": {
+    "defaultMessage": "Chronologie d’accueil",
+    "description": "The name of the home timeline (the posts of the accounts the reader follows), for assistive technology."
+  },
+  "timeline.new_posts": {
+    "defaultMessage": "{count, plural, one {# nouvelle publication} other {# nouvelles publications}}",
+    "description": "The button over the top of the home timeline or a list's timeline while new posts wait or went in above the reader; pressing it shows them at the top. count is how many."
+  },
+  "timeline.new_posts_missed": {
+    "defaultMessage": "Nouvelles publications",
+    "description": "The button over the home timeline's top when posts may have been missed (after a reconnection); pressing it reads the newest posts again and shows them at the top."
+  },
+  "timeline.local": {
+    "defaultMessage": "Chronologie locale",
+    "description": "The name of the local timeline (the public posts of this server's people), for assistive technology."
+  },
+  "timeline.federated": {
+    "defaultMessage": "Chronologie fédérée",
+    "description": "The name of the federated timeline (the public posts this server knows from every server), for assistive technology."
+  },
+  "timeline.tag": {
+    "defaultMessage": "Publications avec #{name}",
+    "description": "The name of a hashtag's timeline, for assistive technology. name is the hashtag without #."
+  },
+  "timeline.tag_back": {
+    "defaultMessage": "Retour",
+    "description": "The button at the top of a hashtag's screen that goes back to where the reader came from."
+  },
+  "timeline.tag_follow": {
+    "defaultMessage": "Suivre",
+    "description": "The button at the end of a hashtag's title that follows it, so that its posts join the reader's home timeline."
+  },
+  "timeline.tag_following": {
+    "defaultMessage": "Suivi",
+    "description": "The button at the end of a hashtag's title while the reader follows it; pressing it stops following."
+  },
+  "timeline.tag_follow_failed": {
+    "defaultMessage": "{follow, select, follow {L’abonnement à #{name}} other {Le désabonnement de #{name}}} n’a pas abouti.",
+    "description": "The notice at the bottom of the page when following a hashtag, or unfollowing it, got no answer from the server (the network), beside Try again. The button stays as it was. follow is follow or unfollow; name is the hashtag without #."
+  },
+  "timeline.tag_empty": {
+    "defaultMessage": "Aucune publication avec #{name} pour le moment.",
+    "description": "In place of a hashtag's posts when it has none. name is the hashtag without #."
+  },
+  "timeline.lists": {
+    "defaultMessage": "Vos listes",
+    "description": "The name of the index of the reader's lists, for assistive technology."
+  },
+  "timeline.lists_title": {
+    "defaultMessage": "Listes",
+    "description": "The title at the top of the index of the reader's lists, beside the list glyph."
+  },
+  "timeline.lists_loading": {
+    "defaultMessage": "Chargement des listes…",
+    "description": "In place of the reader's lists while they are being fetched."
+  },
+  "timeline.lists_failed": {
+    "defaultMessage": "Les listes n’ont pas pu être chargées.",
+    "description": "In place of the reader's lists when fetching them failed; a retry action follows it."
+  },
+  "timeline.lists_empty": {
+    "defaultMessage": "Aucune liste pour le moment.",
+    "description": "In place of the reader's lists when they have made none."
+  },
+  "timeline.list_members": {
+    "defaultMessage": "{count, plural, one {# membre} other {# membres}}",
+    "description": "How many accounts are in a list, under its name in the index and beside its title on its screen."
+  },
+  "timeline.list_back": {
+    "defaultMessage": "Listes",
+    "description": "The button at the top of a list's screen that goes back to the index of the reader's lists."
+  },
+  "timeline.list": {
+    "defaultMessage": "Publications de la liste {name}",
+    "description": "The name of a list's timeline, for assistive technology. name is the list's name, as the reader wrote it."
+  },
+  "timeline.list_loading": {
+    "defaultMessage": "Chargement de la liste…",
+    "description": "In place of a list's screen while the list is being fetched."
+  },
+  "timeline.list_failed": {
+    "defaultMessage": "La liste n’a pas pu être chargée.",
+    "description": "In place of a list's screen when fetching the list failed; Try again follows it."
+  },
+  "timeline.list_gone": {
+    "defaultMessage": "Cette liste n’existe plus.",
+    "description": "In place of a list's screen when the server has no such list: the reader deleted it, on this or another device."
+  },
+  "timeline.list_empty": {
+    "defaultMessage": "Aucune publication des membres de cette liste pour le moment.",
+    "description": "In place of a list's posts when its members have none."
+  },
+  "timeline.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "The action after a failure to load the reader's lists, or a list, which fetches it again."
+  },
+  "timeline.bookmarks": {
+    "defaultMessage": "Marque-pages",
+    "description": "The name of the column of the posts the reader bookmarked, for assistive technology."
+  },
+  "timeline.bookmarks_empty": {
+    "defaultMessage": "Aucun marque-page pour le moment.",
+    "description": "In place of the reader's bookmarks when they have none."
+  },
+  "timeline.favourites": {
+    "defaultMessage": "Favoris",
+    "description": "The name of the column of the posts the reader favourited, for assistive technology."
+  },
+  "timeline.favourites_empty": {
+    "defaultMessage": "Aucun favori pour le moment.",
+    "description": "In place of the reader's favourites when they have none."
+  },
+  "timeline.list_new": {
+    "defaultMessage": "Nouvelle liste",
+    "description": "The button of the lists' screen that opens the field to make a list."
+  },
+  "timeline.list_name": {
+    "defaultMessage": "Nom de la liste",
+    "description": "The label of the field of a list's name, when it is made or renamed."
+  },
+  "timeline.list_create": {
+    "defaultMessage": "Créer",
+    "description": "The button that makes a list of the name written."
+  },
+  "timeline.list_cancel": {
+    "defaultMessage": "Annuler",
+    "description": "The button that closes the field of a list's name without keeping it."
+  },
+  "timeline.list_save": {
+    "defaultMessage": "Enregistrer",
+    "description": "The button that keeps a list's new name."
+  },
+  "timeline.list_more": {
+    "defaultMessage": "Options de la liste",
+    "description": "The name, for assistive technology, of the button at the end of a list's title that opens the menu of what may be done with the list (rename it, its members, delete it), and the menu's name; apart from every post's More."
+  },
+  "timeline.list_rename": {
+    "defaultMessage": "Renommer",
+    "description": "The item of a list's menu that changes its name in place."
+  },
+  "timeline.list_members_open": {
+    "defaultMessage": "Membres",
+    "description": "The item of a list's menu, and the title of its screen, of the accounts in the list."
+  },
+  "timeline.list_delete": {
+    "defaultMessage": "Supprimer la liste…",
+    "description": "The item of a list's menu that deletes it after a confirmation."
+  },
+  "timeline.list_limit": {
+    "defaultMessage": "Vous pouvez avoir 50 listes au maximum. Supprimez-en une d’abord.",
+    "description": "When the server refuses a new list because the reader has 50, the most there may be: under the name's field, as its error, while Create is dimmed."
+  },
+  "timeline.list_delete_title": {
+    "defaultMessage": "Supprimer la liste {name} ?",
+    "description": "The question of the confirmation before deleting a list. name is the list's name."
+  },
+  "timeline.list_delete_text": {
+    "defaultMessage": "La liste et sa chronologie disparaissent ; vous continuez de suivre ses membres. Cette action est irréversible.",
+    "description": "What deleting a list does, in its confirmation."
+  },
+  "timeline.list_delete_confirm": {
+    "defaultMessage": "Supprimer",
+    "description": "The button of the confirmation that deletes the list."
+  },
+  "timeline.list_add": {
+    "defaultMessage": "Ajouter un compte que vous suivez",
+    "description": "The label of the field on a list's members that finds an account the reader follows by its name or handle."
+  },
+  "timeline.list_add_button": {
+    "defaultMessage": "Ajouter",
+    "description": "The button of an account found on a list's members that puts it in the list."
+  },
+  "timeline.list_added": {
+    "defaultMessage": "Ajouté",
+    "description": "In place of Add, for an account found that is in the list already."
+  },
+  "timeline.list_remove": {
+    "defaultMessage": "Retirer",
+    "description": "The button of a member of a list that takes it out of the list."
+  },
+  "timeline.list_remove_member": {
+    "defaultMessage": "Retirer {name}",
+    "description": "The name, for assistive technology, of the button of a member of a list that takes it out of the list; it holds the button's visible word (timeline.list_remove). name is the member's display name."
+  },
+  "timeline.list_members_empty": {
+    "defaultMessage": "Personne dans cette liste pour le moment.",
+    "description": "In place of a list's members when it has none."
+  },
+  "timeline.list_members_limit": {
+    "defaultMessage": "Une liste peut avoir 1 000 membres au maximum. Retirez-en un d’abord.",
+    "description": "When the server refuses to add an account to a list that has 1,000 members, the most there may be: under the field that finds accounts, as its error, while Add is dimmed."
+  },
+  "timeline.list_write_failed": {
+    "defaultMessage": "L’enregistrement n’a pas abouti. Réessayez.",
+    "description": "When making, renaming or deleting a list, or putting an account in it or taking one out, got no answer from the server (the network): under the field of the name or of the accounts found, or at the bottom of the page."
+  },
+  "timeline.tag_rooms": {
+    "defaultMessage": "Salons vocaux",
+    "description": "The heading, on a hashtag's page, of the open voice chat rooms that have the hashtag, over its posts."
+  }
+}

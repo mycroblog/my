@@ -1,4 +1,12 @@
 {
+  "payments.checkout.title": {
+    "defaultMessage": "订阅支持者计划“{plan}”",
+    "description": "Title of the PAY.JP checkout page. {plan} is the name of the plan."
+  },
+  "payments.error.declined": {
+    "defaultMessage": "银行卡被拒绝，没有扣款。请换一张银行卡。",
+    "description": "Error of the PAY.JP checkout and card pages when the payment with the card failed."
+  },
   "payments.error.form": {
     "defaultMessage": "请检查电子邮件地址、持卡人姓名和银行卡信息。",
     "description": "Error of the PAY.JP checkout and card pages when a field is missing or invalid."
@@ -7,9 +15,17 @@
     "defaultMessage": "此页面已过期。请从你来时的页面重新开始。",
     "description": "Error of the PAY.JP checkout and card pages when their link is expired or altered."
   },
+  "payments.error.three_d_secure": {
+    "defaultMessage": "无法验证银行卡（3-D Secure），没有扣款。请重试或换一张银行卡。",
+    "description": "Error of the PAY.JP checkout and card pages when the 3-D Secure of the card failed."
+  },
   "payments.error.title": {
     "defaultMessage": "付款",
     "description": "Title of the error page of the PAY.JP checkout and card pages."
+  },
+  "payments.error.unavailable": {
+    "defaultMessage": "PAY.JP 没有响应。请稍后重试。如果已经扣款，订阅会显示在你来时的页面上。",
+    "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
   },
   "payments.fake.failed": {
     "defaultMessage": "已按要求让付款失败。请付款或取消。",
@@ -22,6 +38,10 @@
   "payments.portal.changed": {
     "defaultMessage": "银行卡已更换。",
     "description": "Notice of the PAY.JP card page after a card change."
+  },
+  "payments.portal.resume_failed": {
+    "defaultMessage": "银行卡已更换，但用于恢复订阅的付款失败，因此订阅仍处于暂停状态。请换一张银行卡。",
+    "description": "Alert of the PAY.JP card page when the payment that resumes a paused subscription failed."
   },
   "payments.portal.resumed": {
     "defaultMessage": "银行卡已更换，订阅已恢复。",

@@ -1,0 +1,202 @@
+{
+  "timeline.home": {
+    "defaultMessage": "Cronología de inicio",
+    "description": "The name of the home timeline (the posts of the accounts the reader follows), for assistive technology."
+  },
+  "timeline.new_posts": {
+    "defaultMessage": "{count, plural, one {# publicación nueva} other {# publicaciones nuevas}}",
+    "description": "The button over the top of the home timeline or a list's timeline while new posts wait or went in above the reader; pressing it shows them at the top. count is how many."
+  },
+  "timeline.new_posts_missed": {
+    "defaultMessage": "Publicaciones nuevas",
+    "description": "The button over the home timeline's top when posts may have been missed (after a reconnection); pressing it reads the newest posts again and shows them at the top."
+  },
+  "timeline.local": {
+    "defaultMessage": "Cronología local",
+    "description": "The name of the local timeline (the public posts of this server's people), for assistive technology."
+  },
+  "timeline.federated": {
+    "defaultMessage": "Cronología federada",
+    "description": "The name of the federated timeline (the public posts this server knows from every server), for assistive technology."
+  },
+  "timeline.tag": {
+    "defaultMessage": "Publicaciones con #{name}",
+    "description": "The name of a hashtag's timeline, for assistive technology. name is the hashtag without #."
+  },
+  "timeline.tag_back": {
+    "defaultMessage": "Volver",
+    "description": "The button at the top of a hashtag's screen that goes back to where the reader came from."
+  },
+  "timeline.tag_follow": {
+    "defaultMessage": "Seguir",
+    "description": "The button at the end of a hashtag's title that follows it, so that its posts join the reader's home timeline."
+  },
+  "timeline.tag_following": {
+    "defaultMessage": "Siguiendo",
+    "description": "The button at the end of a hashtag's title while the reader follows it; pressing it stops following."
+  },
+  "timeline.tag_follow_failed": {
+    "defaultMessage": "{follow, select, follow {No se pudo seguir #{name}} other {No se pudo dejar de seguir #{name}}}.",
+    "description": "The notice at the bottom of the page when following a hashtag, or unfollowing it, got no answer from the server (the network), beside Try again. The button stays as it was. follow is follow or unfollow; name is the hashtag without #."
+  },
+  "timeline.tag_empty": {
+    "defaultMessage": "Aún no hay publicaciones con #{name}.",
+    "description": "In place of a hashtag's posts when it has none. name is the hashtag without #."
+  },
+  "timeline.lists": {
+    "defaultMessage": "Tus listas",
+    "description": "The name of the index of the reader's lists, for assistive technology."
+  },
+  "timeline.lists_title": {
+    "defaultMessage": "Listas",
+    "description": "The title at the top of the index of the reader's lists, beside the list glyph."
+  },
+  "timeline.lists_loading": {
+    "defaultMessage": "Cargando listas…",
+    "description": "In place of the reader's lists while they are being fetched."
+  },
+  "timeline.lists_failed": {
+    "defaultMessage": "No se pudieron cargar las listas.",
+    "description": "In place of the reader's lists when fetching them failed; a retry action follows it."
+  },
+  "timeline.lists_empty": {
+    "defaultMessage": "Aún no hay listas.",
+    "description": "In place of the reader's lists when they have made none."
+  },
+  "timeline.list_members": {
+    "defaultMessage": "{count, plural, one {# miembro} other {# miembros}}",
+    "description": "How many accounts are in a list, under its name in the index and beside its title on its screen."
+  },
+  "timeline.list_back": {
+    "defaultMessage": "Listas",
+    "description": "The button at the top of a list's screen that goes back to the index of the reader's lists."
+  },
+  "timeline.list": {
+    "defaultMessage": "Publicaciones de la lista {name}",
+    "description": "The name of a list's timeline, for assistive technology. name is the list's name, as the reader wrote it."
+  },
+  "timeline.list_loading": {
+    "defaultMessage": "Cargando la lista…",
+    "description": "In place of a list's screen while the list is being fetched."
+  },
+  "timeline.list_failed": {
+    "defaultMessage": "No se pudo cargar la lista.",
+    "description": "In place of a list's screen when fetching the list failed; Try again follows it."
+  },
+  "timeline.list_gone": {
+    "defaultMessage": "Esta lista ya no existe.",
+    "description": "In place of a list's screen when the server has no such list: the reader deleted it, on this or another device."
+  },
+  "timeline.list_empty": {
+    "defaultMessage": "Aún no hay publicaciones de los miembros de esta lista.",
+    "description": "In place of a list's posts when its members have none."
+  },
+  "timeline.retry": {
+    "defaultMessage": "Reintentar",
+    "description": "The action after a failure to load the reader's lists, or a list, which fetches it again."
+  },
+  "timeline.bookmarks": {
+    "defaultMessage": "Marcadores",
+    "description": "The name of the column of the posts the reader bookmarked, for assistive technology."
+  },
+  "timeline.bookmarks_empty": {
+    "defaultMessage": "Aún no hay marcadores.",
+    "description": "In place of the reader's bookmarks when they have none."
+  },
+  "timeline.favourites": {
+    "defaultMessage": "Favoritos",
+    "description": "The name of the column of the posts the reader favourited, for assistive technology."
+  },
+  "timeline.favourites_empty": {
+    "defaultMessage": "Aún no hay favoritos.",
+    "description": "In place of the reader's favourites when they have none."
+  },
+  "timeline.list_new": {
+    "defaultMessage": "Lista nueva",
+    "description": "The button of the lists' screen that opens the field to make a list."
+  },
+  "timeline.list_name": {
+    "defaultMessage": "Nombre de la lista",
+    "description": "The label of the field of a list's name, when it is made or renamed."
+  },
+  "timeline.list_create": {
+    "defaultMessage": "Crear",
+    "description": "The button that makes a list of the name written."
+  },
+  "timeline.list_cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "The button that closes the field of a list's name without keeping it."
+  },
+  "timeline.list_save": {
+    "defaultMessage": "Guardar",
+    "description": "The button that keeps a list's new name."
+  },
+  "timeline.list_more": {
+    "defaultMessage": "Opciones de la lista",
+    "description": "The name, for assistive technology, of the button at the end of a list's title that opens the menu of what may be done with the list (rename it, its members, delete it), and the menu's name; apart from every post's More."
+  },
+  "timeline.list_rename": {
+    "defaultMessage": "Renombrar",
+    "description": "The item of a list's menu that changes its name in place."
+  },
+  "timeline.list_members_open": {
+    "defaultMessage": "Miembros",
+    "description": "The item of a list's menu, and the title of its screen, of the accounts in the list."
+  },
+  "timeline.list_delete": {
+    "defaultMessage": "Eliminar lista…",
+    "description": "The item of a list's menu that deletes it after a confirmation."
+  },
+  "timeline.list_limit": {
+    "defaultMessage": "Puedes tener como máximo 50 listas. Elimina una primero.",
+    "description": "When the server refuses a new list because the reader has 50, the most there may be: under the name's field, as its error, while Create is dimmed."
+  },
+  "timeline.list_delete_title": {
+    "defaultMessage": "¿Eliminar la lista {name}?",
+    "description": "The question of the confirmation before deleting a list. name is the list's name."
+  },
+  "timeline.list_delete_text": {
+    "defaultMessage": "La lista y su cronología desaparecen; sigues a sus miembros. No se puede deshacer.",
+    "description": "What deleting a list does, in its confirmation."
+  },
+  "timeline.list_delete_confirm": {
+    "defaultMessage": "Eliminar",
+    "description": "The button of the confirmation that deletes the list."
+  },
+  "timeline.list_add": {
+    "defaultMessage": "Añadir una cuenta que sigues",
+    "description": "The label of the field on a list's members that finds an account the reader follows by its name or handle."
+  },
+  "timeline.list_add_button": {
+    "defaultMessage": "Añadir",
+    "description": "The button of an account found on a list's members that puts it in the list."
+  },
+  "timeline.list_added": {
+    "defaultMessage": "Añadida",
+    "description": "In place of Add, for an account found that is in the list already."
+  },
+  "timeline.list_remove": {
+    "defaultMessage": "Quitar",
+    "description": "The button of a member of a list that takes it out of the list."
+  },
+  "timeline.list_remove_member": {
+    "defaultMessage": "Quitar a {name}",
+    "description": "The name, for assistive technology, of the button of a member of a list that takes it out of the list; it holds the button's visible word (timeline.list_remove). name is the member's display name."
+  },
+  "timeline.list_members_empty": {
+    "defaultMessage": "Aún no hay nadie en esta lista.",
+    "description": "In place of a list's members when it has none."
+  },
+  "timeline.list_members_limit": {
+    "defaultMessage": "Una lista puede tener como máximo 1000 miembros. Quita uno primero.",
+    "description": "When the server refuses to add an account to a list that has 1,000 members, the most there may be: under the field that finds accounts, as its error, while Add is dimmed."
+  },
+  "timeline.list_write_failed": {
+    "defaultMessage": "No se pudo guardar. Inténtalo de nuevo.",
+    "description": "When making, renaming or deleting a list, or putting an account in it or taking one out, got no answer from the server (the network): under the field of the name or of the accounts found, or at the bottom of the page."
+  },
+  "timeline.tag_rooms": {
+    "defaultMessage": "Salas de chat de voz",
+    "description": "The heading, on a hashtag's page, of the open voice chat rooms that have the hashtag, over its posts."
+  }
+}

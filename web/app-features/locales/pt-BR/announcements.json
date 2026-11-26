@@ -1,0 +1,70 @@
+{
+  "announcements.label": {
+    "defaultMessage": "Comunicados",
+    "description": "The name of the list of the server's announcements, for assistive technology."
+  },
+  "announcements.loading": {
+    "defaultMessage": "Carregando comunicados…",
+    "description": "What the list of announcements says while the first of them load."
+  },
+  "announcements.loading_more": {
+    "defaultMessage": "Carregando mais comunicados…",
+    "description": "What the list of announcements says under them while more load."
+  },
+  "announcements.failed": {
+    "defaultMessage": "Não foi possível carregar os comunicados.",
+    "description": "What the list of announcements says when they could not be loaded, beside a button to try again."
+  },
+  "announcements.failed_more": {
+    "defaultMessage": "Não foi possível carregar mais comunicados.",
+    "description": "What the list of announcements says under them when more could not be loaded, beside a button to try again."
+  },
+  "announcements.empty": {
+    "defaultMessage": "Ainda não há comunicados.",
+    "description": "What the list of announcements says when the server has made none."
+  },
+  "announcements.unread": {
+    "defaultMessage": "Não lido",
+    "description": "The mark of an announcement the reader has not read, for assistive technology."
+  },
+  "announcements.mark_read": {
+    "defaultMessage": "Marcar como lido",
+    "description": "The action under an unread announcement in the list that marks it read."
+  },
+  "announcements.ended": {
+    "defaultMessage": "Encerrado",
+    "description": "Said under an announcement in the list whose showing period is over."
+  },
+  "announcements.untitled": {
+    "defaultMessage": "Comunicado",
+    "description": "The title of an announcement whose administrators gave it none."
+  },
+  "announcements.period_open": {
+    "defaultMessage": "Exibido desde {from}",
+    "description": "Under an announcement on its page: since when it shows ({from}, a date written out in the reader's language), with no end set."
+  },
+  "announcements.period_until": {
+    "defaultMessage": "Exibido de {from} até {until}",
+    "description": "Under an announcement on its page: when it started to show and when it stops ({from}, {until}, dates written out in the reader's language)."
+  },
+  "announcements.period_ended": {
+    "defaultMessage": "Exibido de {from} a {until}",
+    "description": "Under an announcement on its page whose showing period is over: when it showed ({from}, {until}, dates written out in the reader's language)."
+  },
+  "announcements.back": {
+    "defaultMessage": "Comunicados",
+    "description": "The button at the top of an announcement's page that goes back to the list of announcements."
+  },
+  "announcements.loading_one": {
+    "defaultMessage": "Carregando o comunicado…",
+    "description": "What an announcement's page says while it loads."
+  },
+  "announcements.not_found": {
+    "defaultMessage": "Não é possível mostrar este comunicado. Ele pode ter sido retirado.",
+    "description": "What an announcement's page says when the server has no such announcement (never shown, or withdrawn), beside a link to the list."
+  },
+  "announcements.all": {
+    "defaultMessage": "Ver todos os comunicados",
+    "description": "The link after the not-found notice of an announcement's page that opens the list of announcements."
+  }
+}

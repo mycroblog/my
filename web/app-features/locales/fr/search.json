@@ -1,0 +1,54 @@
+{
+  "search.field": {
+    "defaultMessage": "Rechercher",
+    "description": "The label of the search screen's field, where the reader writes what to find."
+  },
+  "search.clear": {
+    "defaultMessage": "Effacer",
+    "description": "The button at the end of a search field that empties it."
+  },
+  "search.hint": {
+    "defaultMessage": "{posts, select, yes {Des personnes par nom ou identifiant, des hashtags et des publications par leurs mots} other {Des personnes par nom ou identifiant, et des hashtags}}",
+    "description": "The hint under the search field: what it finds. posts is yes where the server searches posts too."
+  },
+  "search.people": {
+    "defaultMessage": "Personnes",
+    "description": "The title of the accounts a search found, and the tab of them."
+  },
+  "search.hashtags": {
+    "defaultMessage": "Hashtags",
+    "description": "The title of the hashtags a search found, and the tab of them."
+  },
+  "search.posts": {
+    "defaultMessage": "Publications",
+    "description": "The title of the posts a search found, and the tab of them."
+  },
+  "search.searching": {
+    "defaultMessage": "Recherche…",
+    "description": "While the search's results load."
+  },
+  "search.failed": {
+    "defaultMessage": "La recherche n’a pas pu être effectuée.",
+    "description": "When a search failed; Try again follows it."
+  },
+  "search.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "The action that asks a failed search again."
+  },
+  "search.none": {
+    "defaultMessage": "Aucun résultat pour « {q} ». Essayez d’autres mots.",
+    "description": "When a search found nothing of any kind. q is what the reader wrote."
+  },
+  "search.tag_posts": {
+    "defaultMessage": "{count, plural, one {# publication} other {# publications}}",
+    "description": "How many posts carry a hashtag the search found, under its name."
+  },
+  "search.looking_up": {
+    "defaultMessage": "Recherche de {handle} sur son serveur…",
+    "description": "While the account of another server that the reader named by its handle or address is fetched. handle is what they wrote."
+  },
+  "search.remote_none": {
+    "defaultMessage": "Aucun compte trouvé à l’adresse {handle}. Vérifiez l’identifiant.",
+    "description": "When the account of another server that the reader named by its handle or address was not found. handle is what they wrote."
+  }
+}

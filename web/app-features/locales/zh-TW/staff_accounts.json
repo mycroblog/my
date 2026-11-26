@@ -1,0 +1,1638 @@
+{
+  "staff_accounts.group.accounts": {
+    "defaultMessage": "帳號",
+    "description": "The heading of the group of moderation screens about accounts at /moderation: the search of accounts, the sign-up blocks and the invites. Read by moderators."
+  },
+  "staff_accounts.entry.appeals": {
+    "defaultMessage": "申訴",
+    "description": "The name of the moderators' queue of appeals of actions, in the list at /moderation and as the title of its screen. Read by moderators."
+  },
+  "staff_accounts.entry.appeals.count": {
+    "defaultMessage": "{count, plural, other {# 件申訴待處理}}",
+    "description": "For assistive technology, the badge at the end of Appeals at /moderation: how many appeals wait for a decision. Read by moderators."
+  },
+  "staff_accounts.entry.registrations": {
+    "defaultMessage": "註冊申請",
+    "description": "The name of the screen of registrations that wait for approval, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.entry.registrations.count": {
+    "defaultMessage": "{count, plural, other {# 件註冊申請待處理}}",
+    "description": "For assistive technology, the badge at the end of Registrations at /moderation: how many registrations wait for approval. Read by moderators."
+  },
+  "staff_accounts.entry.hook_decisions": {
+    "defaultMessage": "自動審查",
+    "description": "The name of the screen of the decision hooks' decisions, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.entry.accounts": {
+    "defaultMessage": "帳號",
+    "description": "The name of the search of accounts, in the list at /moderation and as the title of its screen. Read by moderators."
+  },
+  "staff_accounts.entry.signup_blocks": {
+    "defaultMessage": "註冊封鎖",
+    "description": "The name of the screen of blocks on sign-ups by email domain, email address or IP range, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.entry.invites": {
+    "defaultMessage": "邀請",
+    "description": "The name of the screen of every invite of the server, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.forbidden": {
+    "defaultMessage": "你的帳號權限已無法開啟此畫面。",
+    "description": "In a moderation screen's place when the server refused the reader its list or its item: their permissions changed. Read by moderators."
+  },
+  "staff_accounts.cancel": {
+    "defaultMessage": "取消",
+    "description": "The button that closes a moderator's confirmation without doing anything. Read by moderators."
+  },
+  "staff_accounts.none": {
+    "defaultMessage": "無",
+    "description": "In an action's or an appeal's facts, in the place of a reason that was not given. Read by moderators."
+  },
+  "staff_accounts.until_lifted": {
+    "defaultMessage": "直到解除",
+    "description": "How long an action or a sign-up block lasts when it has no end: in a list, its facts, and the choice of its length. Read by moderators."
+  },
+  "staff_accounts.length.days": {
+    "defaultMessage": "{count, plural, other {# 天}}",
+    "description": "A choice of how long an action, a sign-up block or an invite lasts, in days. Read by moderators."
+  },
+  "staff_accounts.ends.never": {
+    "defaultMessage": "永不結束",
+    "description": "When a ban ends, in a list of actions and its facts: it never does. Read by moderators."
+  },
+  "staff_accounts.refused": {
+    "defaultMessage": "{why, select, outranks {你無法對職務與你同級或更高的帳號執行此操作。} last_admin {這會讓唯一的管理員無法登入。請先將管理員職務交給另一個帳號。} decided {同時有人已做出決定。請重新載入以查看決定。} not_appealable {帳號已刪除，因此無法撤銷其停權。你仍可維持停權。} not_overridable {無法在此取消這項決定。} not_suppressed {寄給此帳號的電子郵件已不再停止寄送。} no_two_factor {此帳號已不再使用雙重驗證。} registration_closed {目前不開放註冊，因此無法建立邀請。請先在伺服器設定中開放註冊。} closing {服務即將關閉，因此無法再核准註冊。} event_closed {活動已取消。} forbidden {你的帳號權限已不允許這項操作。} missing {同時有人已將其移除。請重新載入以查看目前的內容。} other {無法完成此操作。請重新載入應用程式後再試一次。}}",
+    "description": "What a moderator is told of a write the server refused, by why it refused. Read by moderators."
+  },
+  "staff_accounts.kind": {
+    "defaultMessage": "{kind, select, warn {警告} mark_statuses_sensitive {貼文標為敏感內容} delete_statuses {貼文已刪除} force_sensitive {媒體一律標為敏感內容} limit {限制} restrict_posting {禁止發文} restrict_interaction {禁止互動} disable_login {禁止登入} suspend {停權} ban {封禁} other {處置}}",
+    "description": "The kind of a moderation action on an account: in its list, its page, an appeal, and the form of a new one. Read by moderators."
+  },
+  "staff_accounts.account_state": {
+    "defaultMessage": "{state, select, active {正常} pending {等待核准} rejected {註冊遭拒} limited {受限} disabled {無法登入} deactivated {已停用} suspended {已停權} banned {已封禁} deleted {已刪除} other {正常}}",
+    "description": "The state of an account as the moderators see it: in the search, its filter, and the account's facts; banned for a suspension by a ban, which nothing lifts. Read by moderators."
+  },
+  "staff_accounts.action_state": {
+    "defaultMessage": "{state, select, active {生效中} permanent {永久} expired {已結束} lifted {已解除} other {生效中}}",
+    "description": "The state of a moderation action or a sign-up block: in effect, permanent (a ban in effect, which is never lifted), ended by itself, or lifted. Read by moderators."
+  },
+  "staff_accounts.restriction": {
+    "defaultMessage": "{restriction, select, login {登入} post {發文} interact {追蹤與喜歡} visibility_ceiling_private {公開貼文} public_discovery {公開時間軸與搜尋} unsolicited_reach {對未追蹤者的通知} media_sensitive {原樣顯示的媒體} profile_view {個人檔案與貼文} federation {與其他伺服器之間的傳遞} other {某些功能}}",
+    "description": "One thing an account's actions take away from it, in a list joined as the language joins one, the value of What is taken away. Read by moderators."
+  },
+  "staff_accounts.restrictions.none": {
+    "defaultMessage": "無",
+    "description": "The value of What is taken away in an account's facts, when its actions take away nothing. Read by moderators."
+  },
+  "staff_accounts.registration_state": {
+    "defaultMessage": "{state, select, pending {等待核准} approved {已核准} rejected {已拒絕} other {等待核准}}",
+    "description": "Where a registration stands, in the registrations' list and an account's facts. Read by moderators."
+  },
+  "staff_accounts.appeal_state": {
+    "defaultMessage": "{state, select, pending {等待裁決} upheld {已維持} overturned {已撤銷} other {等待裁決}}",
+    "description": "Where an appeal stands, in the appeals' list, its filter and its page. Read by moderators."
+  },
+  "staff_accounts.report_state": {
+    "defaultMessage": "{state, select, open {未處理} resolved {已解決} other {未處理}}",
+    "description": "Where a report stands, in an account's list of its reports. Read by moderators."
+  },
+  "staff_accounts.origin.local": {
+    "defaultMessage": "此伺服器",
+    "description": "Where an account is, when it is on this server: in the search of accounts, its filter, and the account's facts. Read by moderators."
+  },
+  "staff_accounts.origin.remote": {
+    "defaultMessage": "其他伺服器",
+    "description": "The filter of the search of accounts that keeps the accounts of other servers. Read by moderators."
+  },
+  "staff_accounts.email.verified": {
+    "defaultMessage": "已確認",
+    "description": "The value of Email confirmation in an account's facts. Read by moderators."
+  },
+  "staff_accounts.email.unverified": {
+    "defaultMessage": "未確認",
+    "description": "The value of Email confirmation in an account's facts. Read by moderators."
+  },
+  "staff_accounts.invited_by": {
+    "defaultMessage": "由 {handle} 邀請",
+    "description": "The value of Invite in an account's facts: who created the invite it signed up with. Read by moderators."
+  },
+  "staff_accounts.invited_by.cli": {
+    "defaultMessage": "在伺服器命令列建立的邀請",
+    "description": "The value of Invite in an account's facts when the invite was made on the command line. Read by moderators."
+  },
+  "staff_accounts.invited_by.gone": {
+    "defaultMessage": "來自已不存在帳號的邀請",
+    "description": "The value of Invite in an account's facts when the invite's creator deleted their account. Read by moderators."
+  },
+  "staff_accounts.search.filters": {
+    "defaultMessage": "篩選帳號",
+    "description": "For assistive technology, the name of the search and filters over the accounts at /moderation/accounts. Read by moderators."
+  },
+  "staff_accounts.search.field": {
+    "defaultMessage": "{key, select, domain {依網域搜尋} email {依電子郵件地址搜尋} email_domain {依電子郵件網域搜尋} ip {依 IP 位址搜尋} other {依使用者名稱搜尋}}",
+    "description": "The label and placeholder of the search field of accounts, by what the search matches. Read by moderators."
+  },
+  "staff_accounts.search.clear": {
+    "defaultMessage": "清除搜尋",
+    "description": "The button in the search field of accounts that empties it. Read by moderators."
+  },
+  "staff_accounts.search.by_facet": {
+    "defaultMessage": "搜尋依據",
+    "description": "The filter of the search of accounts that chooses what its words are matched against. Read by moderators."
+  },
+  "staff_accounts.search.by": {
+    "defaultMessage": "{key, select, domain {網域} email {電子郵件地址} email_domain {電子郵件網域} ip {IP 位址} other {使用者名稱}}",
+    "description": "A value of Search by: what the words of the search of accounts are matched against. Read by moderators."
+  },
+  "staff_accounts.search.origin": {
+    "defaultMessage": "伺服器",
+    "description": "The filter of the search of accounts by where the account is. Read by moderators."
+  },
+  "staff_accounts.search.origin.any": {
+    "defaultMessage": "所有伺服器",
+    "description": "The value of the Server filter that keeps every account. Read by moderators."
+  },
+  "staff_accounts.search.state": {
+    "defaultMessage": "狀態",
+    "description": "The filter of the search of accounts by its state. Read by moderators."
+  },
+  "staff_accounts.search.state.any": {
+    "defaultMessage": "任何狀態",
+    "description": "The value of the State filter that keeps every account. Read by moderators."
+  },
+  "staff_accounts.search.table": {
+    "defaultMessage": "帳號",
+    "description": "For assistive technology, the name of the table of accounts found. Read by moderators."
+  },
+  "staff_accounts.search.column.account": {
+    "defaultMessage": "帳號",
+    "description": "The column of accounts' handles in a table of accounts. Read by moderators."
+  },
+  "staff_accounts.search.column.origin": {
+    "defaultMessage": "伺服器",
+    "description": "The column of where an account is, in the table of accounts found. Read by moderators."
+  },
+  "staff_accounts.search.column.created": {
+    "defaultMessage": "建立時間",
+    "description": "The column of when an account was created, in the table of accounts found. Read by moderators."
+  },
+  "staff_accounts.search.column.state": {
+    "defaultMessage": "狀態",
+    "description": "The column of an account's state in a table of accounts. Read by moderators."
+  },
+  "staff_accounts.search.loading": {
+    "defaultMessage": "正在載入帳號…",
+    "description": "At /moderation/accounts while the accounts are read. Read by moderators."
+  },
+  "staff_accounts.search.failed": {
+    "defaultMessage": "無法載入帳號。",
+    "description": "At /moderation/accounts when the accounts could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.search.empty": {
+    "defaultMessage": "沒有符合的帳號。請變更搜尋或篩選條件。",
+    "description": "At /moderation/accounts when no account matches the search and the filters. Read by moderators."
+  },
+  "staff_accounts.search.empty_more": {
+    "defaultMessage": "此頁沒有結果。請顯示下一頁繼續搜尋。",
+    "description": "At /moderation/accounts when a page of the search found none but the search goes on to a next page. Read by moderators."
+  },
+  "staff_accounts.search.invalid": {
+    "defaultMessage": "{key, select, domain {這不是網域。請輸入如 example.com 的網域。} email {這不是電子郵件地址。請輸入如 name@example.com 的地址。} email_domain {這不是電子郵件網域。請輸入 @ 之後的部分，例如 example.com。} ip {這不是 IP 位址。請輸入如 192.0.2.1 的位址。} other {這不是使用者名稱。請輸入名稱的開頭，例如 kai。}}",
+    "description": "Under the search field of accounts when the server refused its words for what the search finds by. Read by moderators."
+  },
+  "staff_accounts.account.missing": {
+    "defaultMessage": "此位址沒有帳號。",
+    "description": "At an account's moderation screen whose account the server does not have. Read by moderators."
+  },
+  "staff_accounts.account.all": {
+    "defaultMessage": "所有帳號",
+    "description": "The link after the notice that an address names no account, to the search of accounts. Read by moderators."
+  },
+  "staff_accounts.account.back": {
+    "defaultMessage": "帳號",
+    "description": "The way back from an account's moderation screen to the search of accounts. Read by moderators."
+  },
+  "staff_accounts.account.loading": {
+    "defaultMessage": "正在載入帳號…",
+    "description": "At an account's moderation screen while it is read. Read by moderators."
+  },
+  "staff_accounts.account.failed": {
+    "defaultMessage": "無法載入帳號。",
+    "description": "At an account's moderation screen when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.account.facts": {
+    "defaultMessage": "帳號",
+    "description": "For assistive technology, the name of the list of an account's facts on its moderation screen. Read by moderators."
+  },
+  "staff_accounts.account.actions": {
+    "defaultMessage": "最新處置",
+    "description": "The heading of an account's newest actions on its Review page. Read by moderators."
+  },
+  "staff_accounts.account.actions.all": {
+    "defaultMessage": "所有處置",
+    "description": "Under an account's newest actions on its Review page, when there may be more than those shown: opens its Actions page (staff_accounts.page.actions), which pages through them all. Read by moderators."
+  },
+  "staff_accounts.account.reports": {
+    "defaultMessage": "檢舉",
+    "description": "The heading of an account's reports on its Review page, the newest first, the rest under Show more. Read by moderators."
+  },
+  "staff_accounts.account.back_report": {
+    "defaultMessage": "檢舉",
+    "description": "The way back from an account's moderation screen opened from a report, to that report. Read by moderators."
+  },
+  "staff_accounts.page.tabs": {
+    "defaultMessage": "帳號的頁面",
+    "description": "For assistive technology, the name of the tabs of an account's moderation screens. Read by moderators."
+  },
+  "staff_accounts.page.review": {
+    "defaultMessage": "審查",
+    "description": "The tab of an account's Review page: its facts, a new action, its actions and reports. Read by moderators."
+  },
+  "staff_accounts.page.actions": {
+    "defaultMessage": "處置",
+    "description": "The tab of an account's Actions page: every action on it. Read by moderators."
+  },
+  "staff_accounts.page.manage": {
+    "defaultMessage": "管理",
+    "description": "The tab of an account's Management page: its email and IP addresses, email delivery and sign-in recovery. Read by moderators."
+  },
+  "staff_accounts.fact.state": {
+    "defaultMessage": "狀態",
+    "description": "A term of an account's facts on its Review page. Read by moderators."
+  },
+  "staff_accounts.fact.restrictions": {
+    "defaultMessage": "被剝奪的權限",
+    "description": "A term of an account's facts: what its actions take away from it now. Read by moderators."
+  },
+  "staff_accounts.fact.origin": {
+    "defaultMessage": "伺服器",
+    "description": "A term of an account's facts: where it is. Read by moderators."
+  },
+  "staff_accounts.fact.created": {
+    "defaultMessage": "建立時間",
+    "description": "A term of an account's facts: when it was created. Read by moderators."
+  },
+  "staff_accounts.fact.signed_up": {
+    "defaultMessage": "註冊時間",
+    "description": "A term of an account's facts: when its user signed up. Read by moderators."
+  },
+  "staff_accounts.fact.registration": {
+    "defaultMessage": "註冊申請",
+    "description": "A term of an account's facts: where its registration stands. Read by moderators."
+  },
+  "staff_accounts.fact.reason": {
+    "defaultMessage": "加入原因",
+    "description": "A term of an account's facts: why the user wanted to join, as they wrote it. Read by moderators."
+  },
+  "staff_accounts.fact.invite": {
+    "defaultMessage": "邀請",
+    "description": "A term of an account's facts: the invite its user signed up with, and who made it. Read by moderators."
+  },
+  "staff_accounts.fact.decision_note": {
+    "defaultMessage": "註冊備註",
+    "description": "A term of an account's facts: the moderators' note on approving or rejecting its registration. Read by moderators."
+  },
+  "staff_accounts.fact.email_verified": {
+    "defaultMessage": "電子郵件確認",
+    "description": "A term of an account's facts: whether the user confirmed their email address. Read by moderators."
+  },
+  "staff_accounts.fact.roles": {
+    "defaultMessage": "角色",
+    "description": "A term of an account's facts: the roles of its user. Read by moderators."
+  },
+  "staff_accounts.act.title": {
+    "defaultMessage": "執行處置",
+    "description": "The heading of the form of a new action on an account's Review page. Read by moderators."
+  },
+  "staff_accounts.act.kind": {
+    "defaultMessage": "處置",
+    "description": "The label of the choice of an action's kind in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.category": {
+    "defaultMessage": "原因",
+    "description": "The label of the choice of an action's kind of reason in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.length": {
+    "defaultMessage": "期間",
+    "description": "The label of the choice of how long an action lasts in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.posts": {
+    "defaultMessage": "處置的貼文",
+    "description": "The label of the posts of the report that an action on posts acts on, in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.post": {
+    "defaultMessage": "貼文 {n}：{excerpt}",
+    "description": "One of the posts an action on posts may act on, its number in the report and its start. Read by moderators."
+  },
+  "staff_accounts.act.posts.none": {
+    "defaultMessage": "請至少選擇一則貼文。",
+    "description": "Under the posts of a new action on posts when none is chosen. Read by moderators."
+  },
+  "staff_accounts.act.public_reason": {
+    "defaultMessage": "告知帳號的原因",
+    "description": "The label of the field of the reason a new action tells its account. Read by moderators."
+  },
+  "staff_accounts.act.private_note": {
+    "defaultMessage": "給版主的備註",
+    "description": "The label of the field of the moderators' note of a new action. Read by moderators."
+  },
+  "staff_accounts.act.notify": {
+    "defaultMessage": "通知帳號",
+    "description": "The checkbox of whether a new action on a local account is told to it. Read by moderators."
+  },
+  "staff_accounts.act.block_email": {
+    "defaultMessage": "同時封鎖使用此帳號電子郵件地址的註冊",
+    "description": "The checkbox of a ban of a local account that also blocks its email address from signing up again. Read by moderators."
+  },
+  "staff_accounts.act.submit": {
+    "defaultMessage": "執行此處置",
+    "description": "The button of the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.ban": {
+    "defaultMessage": "封禁",
+    "description": "The button of the form of a new action when it is a ban, and the confirmation's button. Read by moderators."
+  },
+  "staff_accounts.act.ban.confirm": {
+    "defaultMessage": "要封禁 {handle} 嗎？",
+    "description": "The question before a ban is taken. Read by moderators."
+  },
+  "staff_accounts.act.ban.about": {
+    "defaultMessage": "帳號會立即停權，並在 30 天後刪除。封禁無法解除，只能透過申訴撤銷。請輸入帳號的帳號名稱以確認。",
+    "description": "Under the question before a ban: what follows, and that only overturning its appeal undoes it. Read by moderators."
+  },
+  "staff_accounts.act.delete": {
+    "defaultMessage": "刪除貼文",
+    "description": "The confirmation's button before an action deletes posts. Read by moderators."
+  },
+  "staff_accounts.act.delete.confirm": {
+    "defaultMessage": "{count, plural, other {要刪除 # 則貼文嗎？}}",
+    "description": "The question before an action deletes the posts chosen. Read by moderators."
+  },
+  "staff_accounts.act.delete.about": {
+    "defaultMessage": "這些貼文會對所有人刪除，包含此處與其他伺服器。此操作無法復原。",
+    "description": "Under the question before an action deletes posts. Read by moderators."
+  },
+  "staff_accounts.act.done": {
+    "defaultMessage": "{kind}已生效。",
+    "description": "Said after a new action was taken, naming its kind. Read by moderators."
+  },
+  "staff_accounts.act.not_taken": {
+    "defaultMessage": "未執行處置。請修正標示的項目。",
+    "description": "Before the button of a new action when the server refused one of its fields. Read by moderators."
+  },
+  "staff_accounts.actions.filters": {
+    "defaultMessage": "篩選處置",
+    "description": "For assistive technology, the name of the filters over an account's actions. Read by moderators."
+  },
+  "staff_accounts.actions.active": {
+    "defaultMessage": "生效中",
+    "description": "The filter of an account's actions that keeps those in effect now. Read by moderators."
+  },
+  "staff_accounts.actions.table": {
+    "defaultMessage": "處置",
+    "description": "For assistive technology, the name of a table of actions on an account. Read by moderators."
+  },
+  "staff_accounts.actions.column.kind": {
+    "defaultMessage": "處置",
+    "description": "The column of an action's kind in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.category": {
+    "defaultMessage": "原因",
+    "description": "The column of an action's kind of reason in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.issued": {
+    "defaultMessage": "執行時間",
+    "description": "The column of when an action was taken in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.ends": {
+    "defaultMessage": "結束時間",
+    "description": "The column of when an action ends in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.state": {
+    "defaultMessage": "狀態",
+    "description": "The column of an action's state in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.none": {
+    "defaultMessage": "尚未對此帳號執行任何處置。",
+    "description": "In place of the table of an account's actions when there is none. Read by moderators."
+  },
+  "staff_accounts.actions.none_active": {
+    "defaultMessage": "此帳號沒有生效中的處置。清除篩選條件即可查看所有處置。",
+    "description": "In place of the table of an account's actions in effect when there is none. Read by moderators."
+  },
+  "staff_accounts.actions.loading": {
+    "defaultMessage": "正在載入處置…",
+    "description": "On an account's Actions page while its actions are read. Read by moderators."
+  },
+  "staff_accounts.actions.failed": {
+    "defaultMessage": "無法載入處置。",
+    "description": "On an account's Actions page when its actions could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.action.title": {
+    "defaultMessage": "{handle} 的{kind}",
+    "description": "The title of an action's page: its kind and the account it is on. Read by moderators."
+  },
+  "staff_accounts.action.back": {
+    "defaultMessage": "處置",
+    "description": "The way back from an action's page to the account's actions. Read by moderators."
+  },
+  "staff_accounts.action.missing": {
+    "defaultMessage": "此位址沒有此帳號的處置。",
+    "description": "At an action's page whose action the server does not have, or that is on another account. Read by moderators."
+  },
+  "staff_accounts.action.all": {
+    "defaultMessage": "帳號的處置",
+    "description": "The link after the notice that an address names no action, to the account's actions. Read by moderators."
+  },
+  "staff_accounts.action.loading": {
+    "defaultMessage": "正在載入處置…",
+    "description": "At an action's page while it is read. Read by moderators."
+  },
+  "staff_accounts.action.failed": {
+    "defaultMessage": "無法載入處置。",
+    "description": "At an action's page when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.action.facts": {
+    "defaultMessage": "處置",
+    "description": "For assistive technology, the name of the list of an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.fact.state": {
+    "defaultMessage": "狀態",
+    "description": "A term of an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.fact.category": {
+    "defaultMessage": "原因",
+    "description": "A term of an action's facts: its kind of reason. Read by moderators."
+  },
+  "staff_accounts.action.fact.public_reason": {
+    "defaultMessage": "告知的原因",
+    "description": "A term of an action's facts: the reason the account was told. Read by moderators."
+  },
+  "staff_accounts.action.fact.private_note": {
+    "defaultMessage": "給版主的備註",
+    "description": "A term of an action's facts: the moderators' note. Read by moderators."
+  },
+  "staff_accounts.action.fact.issued": {
+    "defaultMessage": "執行時間",
+    "description": "A term of an action's facts: when it was taken. Read by moderators."
+  },
+  "staff_accounts.action.fact.issuer": {
+    "defaultMessage": "執行者",
+    "description": "A term of an action's facts: who took it. Read by moderators."
+  },
+  "staff_accounts.action.fact.notified": {
+    "defaultMessage": "是否已通知帳號",
+    "description": "A term of an action's facts: whether the account was told. Read by moderators."
+  },
+  "staff_accounts.action.fact.ends": {
+    "defaultMessage": "結束時間",
+    "description": "A term of an action's facts: when it ends. Read by moderators."
+  },
+  "staff_accounts.action.fact.lifted": {
+    "defaultMessage": "解除時間",
+    "description": "A term of an action's facts: when it was lifted. Read by moderators."
+  },
+  "staff_accounts.action.fact.lift_reason": {
+    "defaultMessage": "解除原因",
+    "description": "A term of an action's facts: the reason it was lifted. Read by moderators."
+  },
+  "staff_accounts.action.fact.report": {
+    "defaultMessage": "檢舉",
+    "description": "A term of an action's facts: the report it follows from. Read by moderators."
+  },
+  "staff_accounts.action.fact.posts": {
+    "defaultMessage": "貼文",
+    "description": "A term of an action's facts: the posts an action on posts acts on. Read by moderators."
+  },
+  "staff_accounts.action.issuer.cli": {
+    "defaultMessage": "伺服器的命令列",
+    "description": "Who took an action or decided an appeal when it was done on the command line. Read by moderators."
+  },
+  "staff_accounts.action.issuer.someone": {
+    "defaultMessage": "一位版主",
+    "description": "Who took an action or decided an appeal while their account is not read, or gone. Read by moderators."
+  },
+  "staff_accounts.action.notified.yes": {
+    "defaultMessage": "已通知",
+    "description": "The value of Account told in an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.notified.no": {
+    "defaultMessage": "未通知",
+    "description": "The value of Account told in an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.report_open": {
+    "defaultMessage": "開啟檢舉",
+    "description": "The value of Report in an action's facts: the link to the report it follows from. Read by moderators."
+  },
+  "staff_accounts.action.posts": {
+    "defaultMessage": "{count, plural, other {# 則貼文}}",
+    "description": "The value of Posts in an action's facts: how many posts it acts on. Read by moderators."
+  },
+  "staff_accounts.action.ban_lifted_by_appeal": {
+    "defaultMessage": "封禁無法解除。在帳號刪除前，只能透過申訴撤銷。",
+    "description": "On a ban's page, in the place of Lift. Read by moderators."
+  },
+  "staff_accounts.action.lift": {
+    "defaultMessage": "解除處置",
+    "description": "The heading of the form that lifts an action, on its page. Read by moderators."
+  },
+  "staff_accounts.action.lift.submit": {
+    "defaultMessage": "解除",
+    "description": "The button that lifts an action. Read by moderators."
+  },
+  "staff_accounts.action.lift.reason": {
+    "defaultMessage": "解除原因（給版主）",
+    "description": "The label of the field of the reason for lifting an action. Read by moderators."
+  },
+  "staff_accounts.action.lifted": {
+    "defaultMessage": "{kind}已解除。",
+    "description": "Said after an action was lifted, naming its kind. Read by moderators."
+  },
+  "staff_accounts.action.appeal_open": {
+    "defaultMessage": "開啟其申訴",
+    "description": "On a ban's page, after the sentence that only an appeal can overturn it: the link to the appeal of this ban. Read by moderators."
+  },
+  "staff_accounts.reports.table": {
+    "defaultMessage": "檢舉",
+    "description": "For assistive technology, the name of the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.column.category": {
+    "defaultMessage": "類別",
+    "description": "The column of the reports' categories in the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.column.filed": {
+    "defaultMessage": "提出時間",
+    "description": "The column of when a report was filed, in the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.column.state": {
+    "defaultMessage": "狀態",
+    "description": "The column of a report's state, in the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.none": {
+    "defaultMessage": "還沒有人檢舉此帳號。",
+    "description": "In place of the table of an account's reports when there is none. Read by moderators."
+  },
+  "staff_accounts.private.title": {
+    "defaultMessage": "電子郵件與 IP 位址",
+    "description": "The heading of an account's email and IP addresses on its Management page, shown on demand alone. Read by moderators."
+  },
+  "staff_accounts.private.email": {
+    "defaultMessage": "電子郵件地址",
+    "description": "A term of an account's private facts, shown on demand. Read by moderators."
+  },
+  "staff_accounts.private.registration_ip": {
+    "defaultMessage": "註冊來源",
+    "description": "A term of an account's private facts: the IP address its user signed up from. Read by moderators."
+  },
+  "staff_accounts.private.registered_at": {
+    "defaultMessage": "註冊時間",
+    "description": "A term of an account's private facts: when its user signed up from that IP address. Read by moderators."
+  },
+  "staff_accounts.private.no_email": {
+    "defaultMessage": "沒有電子郵件地址",
+    "description": "The value of Email address when the account has none. Read by moderators."
+  },
+  "staff_accounts.private.unknown": {
+    "defaultMessage": "未知",
+    "description": "The value of an IP address or a browser that the server does not know any more. Read by moderators."
+  },
+  "staff_accounts.private.same_domain": {
+    "defaultMessage": "電子郵件地址在 {domain} 的帳號",
+    "description": "The link from an account's revealed email address to the search of the accounts of the same email domain. Read by moderators."
+  },
+  "staff_accounts.private.sign_ins": {
+    "defaultMessage": "登入紀錄",
+    "description": "The heading of the table of an account's sign-ins, the newest first, the rest under Show more. Read by moderators."
+  },
+  "staff_accounts.private.sign_ins.none": {
+    "defaultMessage": "保存期間內沒有登入紀錄。",
+    "description": "In place of the table of an account's sign-ins when there is none. Read by moderators."
+  },
+  "staff_accounts.private.column.ip": {
+    "defaultMessage": "IP 位址",
+    "description": "The column of IP addresses in the tables of an account's sign-ins and of accounts that share an address. Read by moderators."
+  },
+  "staff_accounts.private.column.agent": {
+    "defaultMessage": "瀏覽器",
+    "description": "The column of the browser (the user agent) of a sign-in. Read by moderators."
+  },
+  "staff_accounts.private.column.when": {
+    "defaultMessage": "時間",
+    "description": "The column of when a sign-in happened. Read by moderators."
+  },
+  "staff_accounts.private.same_ip": {
+    "defaultMessage": "使用相同 IP 位址的帳號",
+    "description": "The heading of the table of other accounts that signed up or signed in from an IP address of this one. Read by moderators."
+  },
+  "staff_accounts.private.same_ip.of": {
+    "defaultMessage": "使用 {ip} 的帳號",
+    "description": "For assistive technology, the name of the table of the other accounts that signed up or signed in from one IP address (ip) of this one, one table per address. Read by moderators."
+  },
+  "staff_accounts.private.same_ip.none": {
+    "defaultMessage": "沒有其他帳號使用這些位址。",
+    "description": "In place of the table of accounts that share an address, when there is none. Read by moderators."
+  },
+  "staff_accounts.suppression.title": {
+    "defaultMessage": "電子郵件寄送",
+    "description": "The heading of the section of an account's email suppression on its Management page. Read by moderators."
+  },
+  "staff_accounts.suppression.kind": {
+    "defaultMessage": "停止原因",
+    "description": "A term of the email suppression's facts: why the server stopped sending. Read by moderators."
+  },
+  "staff_accounts.suppression.why": {
+    "defaultMessage": "{kind, select, hard_bounce {此地址不存在或拒收郵件：除確認信外不會寄出任何郵件。} complaint {對方將郵件標為垃圾郵件：不會寄出通知與公告郵件。} other {已停止寄送郵件。}}",
+    "description": "The value of Stopped because: why the server stopped sending email to the account's address, and what it stops. Read by moderators."
+  },
+  "staff_accounts.suppression.since": {
+    "defaultMessage": "起始時間",
+    "description": "A term of the email suppression's facts: when the failure that started it happened. Read by moderators."
+  },
+  "staff_accounts.suppression.lift": {
+    "defaultMessage": "恢復寄送郵件",
+    "description": "The button that lifts an account's email suppression. Read by moderators."
+  },
+  "staff_accounts.suppression.done": {
+    "defaultMessage": "已恢復寄送郵件給此帳號。",
+    "description": "Said after an account's email suppression was lifted. Read by moderators."
+  },
+  "staff_accounts.recovery.title": {
+    "defaultMessage": "登入復原",
+    "description": "The heading of the section of a password reset link and removing two-factor authentication, on an account's Management page. Read by moderators."
+  },
+  "staff_accounts.recovery.link": {
+    "defaultMessage": "發出密碼重設連結…",
+    "description": "The button that asks to issue a password reset link for an account. Read by moderators."
+  },
+  "staff_accounts.recovery.link.confirm": {
+    "defaultMessage": "要為 {handle} 發出密碼重設連結嗎？",
+    "description": "The question before a password reset link is issued. Read by moderators."
+  },
+  "staff_accounts.recovery.link.confirm.about": {
+    "defaultMessage": "持有連結的人可以設定此帳號的密碼。請先以其他方式確認對方身分，並只將連結交給本人。",
+    "description": "Under the question before a password reset link is issued. Read by moderators."
+  },
+  "staff_accounts.recovery.link.issue": {
+    "defaultMessage": "發出",
+    "description": "The confirmation's button that issues a password reset link. Read by moderators."
+  },
+  "staff_accounts.recovery.link.value": {
+    "defaultMessage": "密碼重設連結",
+    "description": "The name of the password reset link shown once, to copy and pass on. Read by moderators."
+  },
+  "staff_accounts.recovery.link.copy": {
+    "defaultMessage": "複製連結",
+    "description": "The button that copies a password reset link. Read by moderators."
+  },
+  "staff_accounts.recovery.link.done": {
+    "defaultMessage": "連結已發出。只會顯示這一次。",
+    "description": "Said after a password reset link was issued. Read by moderators."
+  },
+  "staff_accounts.recovery.link.once": {
+    "defaultMessage": "連結只能使用一次，有效期限到 {until}，若密碼以其他方式變更，連結即失效。",
+    "description": "Under a password reset link: until when it works. Read by moderators."
+  },
+  "staff_accounts.recovery.link.providers": {
+    "defaultMessage": "目前登入僅限登入提供者，因此連結不會設定密碼。只有在限制於 {until} 前結束時才有效。",
+    "description": "Under a password reset link while sign-in is limited to login providers. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor": {
+    "defaultMessage": "移除雙重驗證…",
+    "description": "The button that asks to remove an account's two-factor authentication. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.confirm": {
+    "defaultMessage": "要移除 {handle} 的雙重驗證嗎？",
+    "description": "The question before an account's two-factor authentication is removed. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.confirm.about": {
+    "defaultMessage": "之後對方只用密碼登入。請先以其他方式確認對方身分。",
+    "description": "Under the question before two-factor authentication is removed. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.remove": {
+    "defaultMessage": "移除",
+    "description": "The confirmation's button that removes two-factor authentication. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.done": {
+    "defaultMessage": "{handle} 現在不使用雙重驗證登入。",
+    "description": "Said after an account's two-factor authentication was removed. Read by moderators."
+  },
+  "staff_accounts.refetch.title": {
+    "defaultMessage": "來自其所屬伺服器的貼文",
+    "description": "The heading of the section that refetches a remote account's posts, on its Management page. Read by moderators."
+  },
+  "staff_accounts.refetch.submit": {
+    "defaultMessage": "重新擷取貼文",
+    "description": "The button that queues the refetch of a remote account's newest posts from its server. Read by moderators."
+  },
+  "staff_accounts.refetch.done": {
+    "defaultMessage": "已在背景重新擷取貼文，每分鐘 100 則。",
+    "description": "Said after the refetch of a remote account's posts was queued. Read by moderators."
+  },
+  "staff_accounts.appeals.filters": {
+    "defaultMessage": "篩選申訴",
+    "description": "For assistive technology, the name of the filters over a list of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.state": {
+    "defaultMessage": "狀態",
+    "description": "The filter of a list of appeals by where they stand. Read by moderators."
+  },
+  "staff_accounts.appeals.state.any": {
+    "defaultMessage": "任何狀態",
+    "description": "The value of the State filter of appeals that keeps every one. Read by moderators."
+  },
+  "staff_accounts.appeals.table": {
+    "defaultMessage": "申訴",
+    "description": "For assistive technology, the name of the table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.account": {
+    "defaultMessage": "帳號",
+    "description": "The column of who appealed, in a table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.action": {
+    "defaultMessage": "處置",
+    "description": "The column of the action appealed, in the table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.submitted": {
+    "defaultMessage": "送出時間",
+    "description": "The column of when an appeal was sent, in a table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.state": {
+    "defaultMessage": "狀態",
+    "description": "The column of an appeal's state, in a table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.empty.pending": {
+    "defaultMessage": "沒有等待裁決的申訴。",
+    "description": "In place of the table of appeals when none waits. Read by moderators."
+  },
+  "staff_accounts.appeals.empty.filtered": {
+    "defaultMessage": "沒有符合的申訴。清除篩選條件即可查看所有申訴。",
+    "description": "In place of a table of appeals when none matches the filter. Read by moderators."
+  },
+  "staff_accounts.appeals.loading": {
+    "defaultMessage": "正在載入申訴…",
+    "description": "At /moderation/appeals while the appeals are read. Read by moderators."
+  },
+  "staff_accounts.appeals.failed": {
+    "defaultMessage": "無法載入申訴。",
+    "description": "At /moderation/appeals when the appeals could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.appeal.title": {
+    "defaultMessage": "{handle} 的申訴",
+    "description": "The title of an appeal's screen, naming who appealed. Read by moderators."
+  },
+  "staff_accounts.appeal.back": {
+    "defaultMessage": "申訴",
+    "description": "The way back from an appeal to the list of appeals. Read by moderators."
+  },
+  "staff_accounts.appeal.missing": {
+    "defaultMessage": "此位址沒有申訴。",
+    "description": "At an appeal's screen whose appeal the server does not have. Read by moderators."
+  },
+  "staff_accounts.appeal.all": {
+    "defaultMessage": "所有申訴",
+    "description": "The link after the notice that an address names no appeal. Read by moderators."
+  },
+  "staff_accounts.appeal.loading": {
+    "defaultMessage": "正在載入申訴…",
+    "description": "At an appeal's screen while it is read. Read by moderators."
+  },
+  "staff_accounts.appeal.failed": {
+    "defaultMessage": "無法載入申訴。",
+    "description": "At an appeal's screen when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.appeal.facts": {
+    "defaultMessage": "申訴",
+    "description": "For assistive technology, the name of the list of an appeal's facts. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.state": {
+    "defaultMessage": "狀態",
+    "description": "A term of an appeal's facts. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.submitted": {
+    "defaultMessage": "送出時間",
+    "description": "A term of an appeal's facts: when it was sent. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.action": {
+    "defaultMessage": "申訴的處置",
+    "description": "A term of an appeal's facts: the action it appeals. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.category": {
+    "defaultMessage": "原因",
+    "description": "A term of an appeal's facts: the action's kind of reason. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.public_reason": {
+    "defaultMessage": "處置時告知的原因",
+    "description": "A term of an appeal's facts: the reason the action told the account. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.issued": {
+    "defaultMessage": "處置時間",
+    "description": "A term of an appeal's facts: when the action was taken. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.decided": {
+    "defaultMessage": "裁決時間",
+    "description": "A term of an appeal's facts: when it was decided. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.decider": {
+    "defaultMessage": "裁決者",
+    "description": "A term of an appeal's facts: who decided it. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.decision_reason": {
+    "defaultMessage": "裁決時告知的原因",
+    "description": "A term of an appeal's facts: the explanation the user was told of the decision. Read by moderators."
+  },
+  "staff_accounts.appeal.action": {
+    "defaultMessage": "{handle} 的{kind}",
+    "description": "The value of Action appealed: the action's kind and its account, a link to its page. Read by moderators."
+  },
+  "staff_accounts.appeal.text": {
+    "defaultMessage": "對方的陳述",
+    "description": "The heading of the text of an appeal, as its user wrote it. Read by moderators."
+  },
+  "staff_accounts.appeal.decide": {
+    "defaultMessage": "裁決",
+    "description": "The heading of the decision of a pending appeal. Read by moderators."
+  },
+  "staff_accounts.appeal.reason": {
+    "defaultMessage": "告知對方的原因",
+    "description": "The label of the field of the explanation a decision tells the user who appealed. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold": {
+    "defaultMessage": "維持",
+    "description": "The button that upholds an appeal, keeping its action, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn": {
+    "defaultMessage": "撤銷",
+    "description": "The button that overturns an appeal, lifting its action, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold.confirm": {
+    "defaultMessage": "要維持原決定嗎？",
+    "description": "The question before an appeal is decided by upholding what was appealed: an action, or an automated review's refusal of a post. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold.about": {
+    "defaultMessage": "處置維持不變，並會通知對方。此操作無法復原。",
+    "description": "Under the question before an appeal is upheld. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold.ban_about": {
+    "defaultMessage": "封禁將成為定案，帳號會在 {date} 刪除，並會通知對方。此操作無法復原。請輸入帳號的帳號名稱以確認。",
+    "description": "Under the question before an appeal of a ban is upheld, over the field of the handle typed to confirm. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn.confirm": {
+    "defaultMessage": "要撤銷原決定嗎？",
+    "description": "The question before an appeal is decided by overturning what was appealed: an action, or an automated review's refusal of a post. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn.about": {
+    "defaultMessage": "處置會立即解除，並會通知對方。已刪除的貼文不會恢復。此操作無法復原。",
+    "description": "Under the question before an appeal of an action other than a ban is overturned. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn.ban_about": {
+    "defaultMessage": "封禁將被撤銷，帳號的刪除也會取消，並會通知對方，對方可再次登入。此操作無法復原。",
+    "description": "Under the question before an appeal of a ban is overturned. Read by moderators."
+  },
+  "staff_accounts.appeal.upheld": {
+    "defaultMessage": "已維持處置。",
+    "description": "Said after an appeal was upheld. Read by moderators."
+  },
+  "staff_accounts.appeal.overturned": {
+    "defaultMessage": "已撤銷並解除處置。",
+    "description": "Said after an appeal was overturned. Read by moderators."
+  },
+  "staff_accounts.appeal.ban_final": {
+    "defaultMessage": "維持原決定會使封禁定案：帳號將在 {date} 刪除。",
+    "description": "Over Uphold and Overturn of an appeal of a ban: what upholding does. Read by moderators."
+  },
+  "staff_accounts.registrations.table": {
+    "defaultMessage": "註冊申請",
+    "description": "For assistive technology, the name of the table of registrations that wait for approval. Read by moderators."
+  },
+  "staff_accounts.registrations.column.account": {
+    "defaultMessage": "帳號",
+    "description": "The column of the accounts' handles in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.email": {
+    "defaultMessage": "電子郵件地址",
+    "description": "The column of the email addresses in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.reason": {
+    "defaultMessage": "想加入的原因",
+    "description": "The column of why each person wants to join, in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.submitted": {
+    "defaultMessage": "註冊時間",
+    "description": "The column of when each person signed up, in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.state": {
+    "defaultMessage": "狀態",
+    "description": "The column of a registration's state, in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.unconfirmed": {
+    "defaultMessage": "電子郵件尚未確認",
+    "description": "Under a registration's handle when its person has not confirmed their email address. Read by moderators."
+  },
+  "staff_accounts.registrations.no_email": {
+    "defaultMessage": "沒有電子郵件地址",
+    "description": "In the email column of a registration that has none, or once it is decided. Read by moderators."
+  },
+  "staff_accounts.registrations.no_reason": {
+    "defaultMessage": "未提供原因",
+    "description": "In the reason column of a registration whose person gave none. Read by moderators."
+  },
+  "staff_accounts.registrations.empty": {
+    "defaultMessage": "沒有等待核准的註冊申請。",
+    "description": "In place of the table of registrations when none waits. Read by moderators."
+  },
+  "staff_accounts.registrations.loading": {
+    "defaultMessage": "正在載入註冊申請…",
+    "description": "At /moderation/registrations while the registrations are read. Read by moderators."
+  },
+  "staff_accounts.registrations.failed": {
+    "defaultMessage": "無法載入註冊申請。",
+    "description": "At /moderation/registrations when the registrations could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.registrations.approve": {
+    "defaultMessage": "核准",
+    "description": "The action on the registrations picked that approves them, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.registrations.reject": {
+    "defaultMessage": "拒絕",
+    "description": "The action on the registrations picked that rejects them, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.registrations.approve.confirm": {
+    "defaultMessage": "{count, plural, other {要核准 # 件註冊申請嗎？}}",
+    "description": "The question before the registrations picked are approved. Read by moderators."
+  },
+  "staff_accounts.registrations.approve.about": {
+    "defaultMessage": "對方可立即使用應用程式。",
+    "description": "The line under the note's field before registrations are approved. Read by moderators."
+  },
+  "staff_accounts.registrations.reject.confirm": {
+    "defaultMessage": "{count, plural, other {要拒絕 # 件註冊申請嗎？}}",
+    "description": "The question before the registrations picked are rejected. Read by moderators."
+  },
+  "staff_accounts.registrations.reject.about": {
+    "defaultMessage": "對方無法使用此帳號。",
+    "description": "The line under the note's field before registrations are rejected. Read by moderators."
+  },
+  "staff_accounts.registrations.note": {
+    "defaultMessage": "給版主的備註",
+    "description": "The label of the field of a note on a decision of registrations, which only the moderators read. Read by moderators."
+  },
+  "staff_accounts.registrations.approved": {
+    "defaultMessage": "{count, plural, other {已核准 # 件註冊申請。}}",
+    "description": "Said after registrations were approved. Read by moderators."
+  },
+  "staff_accounts.registrations.rejected": {
+    "defaultMessage": "{count, plural, other {已拒絕 # 件註冊申請。}}",
+    "description": "Said after registrations were rejected. Read by moderators."
+  },
+  "staff_accounts.registrations.facts": {
+    "defaultMessage": "註冊申請",
+    "description": "For assistive technology, the name of the facts of one registration in the list of registrations: its email address, kept until shown, and why the person wants to join. Read by moderators."
+  },
+  "staff_accounts.block_kind": {
+    "defaultMessage": "{kind, select, email_domain {電子郵件網域} email_hash {電子郵件地址} ip_range {IP 範圍} other {電子郵件網域}}",
+    "description": "What a sign-up block matches, in its list, its filter, its page and the form of a new one. Read by moderators."
+  },
+  "staff_accounts.block_severity": {
+    "defaultMessage": "{severity, select, reject {拒絕註冊} require_approval {保留待核准} other {拒絕註冊}}",
+    "description": "What a sign-up block does to a sign-up it matches. Read by moderators."
+  },
+  "staff_accounts.blocks.add": {
+    "defaultMessage": "新增封鎖",
+    "description": "The button to the form of a new sign-up block, and that form's title. Read by moderators."
+  },
+  "staff_accounts.blocks.import": {
+    "defaultMessage": "從清單新增",
+    "description": "The button to the form that adds sign-up blocks from a list, and that form's title. Read by moderators."
+  },
+  "staff_accounts.blocks.filters": {
+    "defaultMessage": "篩選註冊封鎖",
+    "description": "For assistive technology, the name of the filters over the sign-up blocks. Read by moderators."
+  },
+  "staff_accounts.blocks.kind": {
+    "defaultMessage": "比對對象",
+    "description": "The filter of sign-up blocks by what they match, and the label of that choice in the form of a new block. Read by moderators."
+  },
+  "staff_accounts.blocks.kind.any": {
+    "defaultMessage": "全部",
+    "description": "The value of the Matches filter that keeps every block. Read by moderators."
+  },
+  "staff_accounts.blocks.all": {
+    "defaultMessage": "包含已結束的",
+    "description": "The filter of sign-up blocks that also shows those lifted or expired. Read by moderators."
+  },
+  "staff_accounts.blocks.table": {
+    "defaultMessage": "註冊封鎖",
+    "description": "For assistive technology, the name of the table of sign-up blocks. Read by moderators."
+  },
+  "staff_accounts.blocks.column.value": {
+    "defaultMessage": "值",
+    "description": "The column of what a sign-up block matches, and of a skipped line's value. Read by moderators."
+  },
+  "staff_accounts.blocks.column.kind": {
+    "defaultMessage": "比對對象",
+    "description": "The column of what kind of value a sign-up block matches. Read by moderators."
+  },
+  "staff_accounts.blocks.column.severity": {
+    "defaultMessage": "處理方式",
+    "description": "The column of what a sign-up block does to a sign-up. Read by moderators."
+  },
+  "staff_accounts.blocks.column.ends": {
+    "defaultMessage": "結束時間",
+    "description": "The column of when a sign-up block ends. Read by moderators."
+  },
+  "staff_accounts.blocks.column.state": {
+    "defaultMessage": "狀態",
+    "description": "The column of a sign-up block's state. Read by moderators."
+  },
+  "staff_accounts.blocks.column.line": {
+    "defaultMessage": "行",
+    "description": "The column of a skipped line's number. Read by moderators."
+  },
+  "staff_accounts.blocks.column.reason": {
+    "defaultMessage": "原因",
+    "description": "The column of why a line was skipped. Read by moderators."
+  },
+  "staff_accounts.blocks.hash": {
+    "defaultMessage": "雜湊 {hash}…",
+    "description": "The value of a block of one email address, of which only a hash is kept: its start. Read by moderators."
+  },
+  "staff_accounts.blocks.empty": {
+    "defaultMessage": "目前沒有生效中的註冊封鎖。新增一項即可拒絕註冊或保留待核准。",
+    "description": "In place of the table of sign-up blocks when none is in effect. Read by moderators."
+  },
+  "staff_accounts.blocks.empty.filtered": {
+    "defaultMessage": "沒有符合的註冊封鎖。清除篩選條件即可查看生效中的封鎖。",
+    "description": "In place of the table of sign-up blocks when none matches the filters. Read by moderators."
+  },
+  "staff_accounts.blocks.loading": {
+    "defaultMessage": "正在載入註冊封鎖…",
+    "description": "At /moderation/signup-blocks while the blocks are read. Read by moderators."
+  },
+  "staff_accounts.blocks.failed": {
+    "defaultMessage": "無法載入註冊封鎖。",
+    "description": "At /moderation/signup-blocks when the blocks could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.blocks.back": {
+    "defaultMessage": "註冊封鎖",
+    "description": "The way back from a sign-up block's page or form to the list of blocks. Read by moderators."
+  },
+  "staff_accounts.blocks.severity": {
+    "defaultMessage": "處理方式",
+    "description": "The label of the choice of what a new sign-up block does. Read by moderators."
+  },
+  "staff_accounts.blocks.length": {
+    "defaultMessage": "期間",
+    "description": "The label of the choice of how long a new sign-up block lasts. Read by moderators."
+  },
+  "staff_accounts.blocks.comment": {
+    "defaultMessage": "給版主的註解",
+    "description": "The label of the field of a sign-up block's comment. Read by moderators."
+  },
+  "staff_accounts.blocks.value": {
+    "defaultMessage": "{kind, select, email_hash {電子郵件地址} ip_range {IP 範圍} other {電子郵件網域}}",
+    "description": "The label of the field of a new sign-up block's value, by what it matches. Read by moderators."
+  },
+  "staff_accounts.blocks.value.hint": {
+    "defaultMessage": "{kind, select, email_hash {只會保存地址的雜湊值。+ 之後的子地址也會符合。} ip_range {如 192.0.2.0/24 的範圍，或單一位址。} other {如 spam.example 的網域。其子網域也會符合。}}",
+    "description": "Under the field of a new sign-up block's value: what to write. Read by moderators."
+  },
+  "staff_accounts.blocks.value.blank": {
+    "defaultMessage": "{kind, select, email_hash {請輸入電子郵件地址。} ip_range {請輸入 IP 範圍或位址。} other {請輸入網域。}}",
+    "description": "Under the field of a new sign-up block's value when it is empty. Read by moderators."
+  },
+  "staff_accounts.blocks.value.invalid": {
+    "defaultMessage": "{kind, select, email_hash {這不是電子郵件地址。請輸入如 name@example.com 的地址。} ip_range {這不是 IP 範圍。請輸入如 192.0.2.0/24 的範圍。} other {這不是網域。請輸入如 spam.example 的網域。}}",
+    "description": "Under the field of a new sign-up block's value when the server refused it for its kind. Read by moderators."
+  },
+  "staff_accounts.blocks.add.submit": {
+    "defaultMessage": "新增封鎖",
+    "description": "The button of the form of a new sign-up block. Read by moderators."
+  },
+  "staff_accounts.blocks.list": {
+    "defaultMessage": "清單",
+    "description": "The label of the field of the list of values to block sign-ups by. Read by moderators."
+  },
+  "staff_accounts.blocks.list.blank": {
+    "defaultMessage": "請貼上或輸入清單。",
+    "description": "Under the field of the list of sign-up blocks when it is empty. Read by moderators."
+  },
+  "staff_accounts.blocks.list.hint": {
+    "defaultMessage": "每行一個值，或第一欄為值的 CSV。空白行與以 # 開頭的行會略過。最多 10,000 筆。",
+    "description": "Under the field of the list of values to block sign-ups by. Read by moderators."
+  },
+  "staff_accounts.blocks.import.submit": {
+    "defaultMessage": "新增封鎖",
+    "description": "The button of the form that adds sign-up blocks from a list. Read by moderators."
+  },
+  "staff_accounts.blocks.imported": {
+    "defaultMessage": "{count, plural, other {已新增 # 項封鎖}}",
+    "description": "The title of the result of adding sign-up blocks from a list. Read by moderators."
+  },
+  "staff_accounts.blocks.skipped": {
+    "defaultMessage": "{count, plural, other {已略過 # 行}}",
+    "description": "The heading of the table of the lines a list's import skipped. Read by moderators."
+  },
+  "staff_accounts.blocks.skipped.none": {
+    "defaultMessage": "所有行都已新增。",
+    "description": "In place of the table of skipped lines when the import skipped none. Read by moderators."
+  },
+  "staff_accounts.blocks.line": {
+    "defaultMessage": "第 {line} 行",
+    "description": "A skipped line's number, in the table of skipped lines. Read by moderators."
+  },
+  "staff_accounts.blocks.skip_reason": {
+    "defaultMessage": "{reason, select, invalid {不符合該類型的格式} duplicate {與前面的行重複} already_blocked {已封鎖} other {已略過}}",
+    "description": "Why an import of sign-up blocks skipped a line. Read by moderators."
+  },
+  "staff_accounts.blocks.to_list": {
+    "defaultMessage": "返回註冊封鎖",
+    "description": "The button after an import's result, to the list of sign-up blocks. Read by moderators."
+  },
+  "staff_accounts.block.missing": {
+    "defaultMessage": "此位址沒有註冊封鎖。",
+    "description": "At a sign-up block's page whose block the server does not have. Read by moderators."
+  },
+  "staff_accounts.block.all": {
+    "defaultMessage": "所有註冊封鎖",
+    "description": "The link after the notice that an address names no sign-up block. Read by moderators."
+  },
+  "staff_accounts.block.loading": {
+    "defaultMessage": "正在載入註冊封鎖…",
+    "description": "At a sign-up block's page while it is read. Read by moderators."
+  },
+  "staff_accounts.block.failed": {
+    "defaultMessage": "無法載入註冊封鎖。",
+    "description": "At a sign-up block's page when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.block.facts": {
+    "defaultMessage": "註冊封鎖",
+    "description": "For assistive technology, the name of the list of a sign-up block's facts. Read by moderators."
+  },
+  "staff_accounts.block.fact.state": {
+    "defaultMessage": "狀態",
+    "description": "A term of a sign-up block's facts. Read by moderators."
+  },
+  "staff_accounts.block.fact.kind": {
+    "defaultMessage": "比對對象",
+    "description": "A term of a sign-up block's facts: what kind of value it matches. Read by moderators."
+  },
+  "staff_accounts.block.fact.value": {
+    "defaultMessage": "值",
+    "description": "A term of a sign-up block's facts: its value as the server keeps it. Read by moderators."
+  },
+  "staff_accounts.block.fact.severity": {
+    "defaultMessage": "處理方式",
+    "description": "A term of a sign-up block's facts: what it does. Read by moderators."
+  },
+  "staff_accounts.block.fact.created": {
+    "defaultMessage": "新增時間",
+    "description": "A term of a sign-up block's facts: when it was added. Read by moderators."
+  },
+  "staff_accounts.block.fact.ends": {
+    "defaultMessage": "結束時間",
+    "description": "A term of a sign-up block's facts: when it ends. Read by moderators."
+  },
+  "staff_accounts.block.fact.lifted": {
+    "defaultMessage": "解除時間",
+    "description": "A term of a sign-up block's facts: when it was lifted. Read by moderators."
+  },
+  "staff_accounts.block.fact.comment": {
+    "defaultMessage": "註解",
+    "description": "A term of a sign-up block's facts: the moderators' comment. Read by moderators."
+  },
+  "staff_accounts.block.fact.ban": {
+    "defaultMessage": "來源",
+    "description": "A term of a sign-up block's facts: the ban it was made from. Read by moderators."
+  },
+  "staff_accounts.block.from_ban": {
+    "defaultMessage": "一項封禁",
+    "description": "The value of Made from in a sign-up block's facts, a link to the ban's page. Read by moderators."
+  },
+  "staff_accounts.block.lift": {
+    "defaultMessage": "解除",
+    "description": "The button that lifts a sign-up block. Read by moderators."
+  },
+  "staff_accounts.block.lifted": {
+    "defaultMessage": "已解除註冊封鎖。",
+    "description": "Said after a sign-up block was lifted. Read by moderators."
+  },
+  "staff_accounts.invite_state": {
+    "defaultMessage": "{state, select, usable {可使用} revoked {已撤回} expired {已過期} exhausted {已用完} creator_ineligible {建立者目前不能邀請} other {可使用}}",
+    "description": "Where an invite stands, in the list of invites. Read by moderators."
+  },
+  "staff_accounts.invites.table": {
+    "defaultMessage": "邀請",
+    "description": "For assistive technology, the name of the table of invites. Read by moderators."
+  },
+  "staff_accounts.invites.column.code": {
+    "defaultMessage": "代碼",
+    "description": "The column of the invites' codes. Read by moderators."
+  },
+  "staff_accounts.invites.column.uses": {
+    "defaultMessage": "已註冊",
+    "description": "The column of how many signed up with an invite, of how many it allows. Read by moderators."
+  },
+  "staff_accounts.invites.column.ends": {
+    "defaultMessage": "結束時間",
+    "description": "The column of when an invite stops working. Read by moderators."
+  },
+  "staff_accounts.invites.column.state": {
+    "defaultMessage": "狀態",
+    "description": "The column of an invite's state. Read by moderators."
+  },
+  "staff_accounts.invites.by": {
+    "defaultMessage": "{kind, select, member {成員的邀請，由 {handle} 建立} other {管理團隊的邀請，由 {handle} 建立}}",
+    "description": "Under an invite's code: who created it, and whether as a member or as the staff. Read by moderators."
+  },
+  "staff_accounts.invites.by_cli": {
+    "defaultMessage": "在伺服器命令列建立",
+    "description": "Under an invite's code when it was made on the command line. Read by moderators."
+  },
+  "staff_accounts.invites.by_gone": {
+    "defaultMessage": "由已不存在的帳號建立",
+    "description": "Under an invite's code when its creator deleted their account. Read by moderators."
+  },
+  "staff_accounts.invites.uses": {
+    "defaultMessage": "{uses, plural, other {# 人}}",
+    "description": "How many signed up with an invite without a limit. Read by moderators."
+  },
+  "staff_accounts.invites.uses_of": {
+    "defaultMessage": "{uses} / {max}",
+    "description": "How many signed up with an invite of how many it allows. Read by moderators."
+  },
+  "staff_accounts.invites.never": {
+    "defaultMessage": "永不",
+    "description": "When an invite with no end stops working, and the choice of no end in the form of a new invite. Read by moderators."
+  },
+  "staff_accounts.invites.unlimited": {
+    "defaultMessage": "無上限",
+    "description": "How many may sign up with a new invite that has no limit. Read by moderators."
+  },
+  "staff_accounts.invites.create": {
+    "defaultMessage": "建立邀請",
+    "description": "The button to the form of a new invite, and that form's title. Read by moderators."
+  },
+  "staff_accounts.invites.create.submit": {
+    "defaultMessage": "建立",
+    "description": "The button of the form of a new invite. Read by moderators."
+  },
+  "staff_accounts.invites.length": {
+    "defaultMessage": "有效期間",
+    "description": "The label of the choice of how long a new invite works. Read by moderators."
+  },
+  "staff_accounts.invites.back": {
+    "defaultMessage": "邀請",
+    "description": "The way back from the form of a new invite to the list of invites. Read by moderators."
+  },
+  "staff_accounts.invites.made": {
+    "defaultMessage": "已建立邀請",
+    "description": "The title of what takes the form's place once an invite is created. Read by moderators."
+  },
+  "staff_accounts.invites.link": {
+    "defaultMessage": "註冊連結",
+    "description": "The name of a new invite's link, to copy and pass on. Read by moderators."
+  },
+  "staff_accounts.invites.copy": {
+    "defaultMessage": "複製連結",
+    "description": "The button that copies a new invite's link. Read by moderators."
+  },
+  "staff_accounts.invites.code": {
+    "defaultMessage": "代碼",
+    "description": "A term of a new invite's facts: its code, which people may type instead. Read by moderators."
+  },
+  "staff_accounts.invites.to_list": {
+    "defaultMessage": "返回邀請",
+    "description": "The button after a new invite, to the list of invites. Read by moderators."
+  },
+  "staff_accounts.invites.revoke": {
+    "defaultMessage": "撤銷",
+    "description": "The action on the invites picked that revokes them, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.invites.revoke.confirm": {
+    "defaultMessage": "{count, plural, other {要撤回 # 項邀請嗎？}}",
+    "description": "The question before the invites picked are revoked. Read by moderators."
+  },
+  "staff_accounts.invites.revoke.about": {
+    "defaultMessage": "之後沒有人能用這些邀請註冊。已註冊的人保有他們的帳號。此操作無法復原。",
+    "description": "Under the question before invites are revoked. Read by moderators."
+  },
+  "staff_accounts.invites.revoked": {
+    "defaultMessage": "{count, plural, other {已撤回 # 項邀請。}}",
+    "description": "Said after invites were revoked. Read by moderators."
+  },
+  "staff_accounts.invites.empty": {
+    "defaultMessage": "還沒有邀請。建立一項，讓大家用其連結註冊。",
+    "description": "In place of the table of invites when there is none. Read by moderators."
+  },
+  "staff_accounts.invites.loading": {
+    "defaultMessage": "正在載入邀請…",
+    "description": "At /moderation/invites while the invites are read. Read by moderators."
+  },
+  "staff_accounts.invites.failed": {
+    "defaultMessage": "無法載入邀請。",
+    "description": "At /moderation/invites when the invites could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.invites.max_uses": {
+    "defaultMessage": "可註冊人數（留空表示無上限）",
+    "description": "The label of the field of how many may sign up with a new invite. Read by moderators."
+  },
+  "staff_accounts.invites.no_end": {
+    "defaultMessage": "無結束時間",
+    "description": "In the form of a new invite, under Works for: the choice of an invite that works until it is revoked or used up. Read by moderators."
+  },
+  "staff_accounts.hook": {
+    "defaultMessage": "{hook, select, inbound_status {來自其他伺服器的貼文} inbound_follow {來自其他伺服器的追蹤} signup_check {註冊} media_check {上傳的媒體} local_status {此處的貼文} inbound_actor {來自其他伺服器的個人檔案} local_profile {此處的個人檔案} other {某項審查}}",
+    "description": "What a decision hook reviews, as the name of the hook in the automated reviews' records. Read by moderators."
+  },
+  "staff_accounts.hook_outcome": {
+    "defaultMessage": "{outcome, select, allow {已允許} drop {已捨棄} flag {已檢舉} mark_sensitive {已標為敏感內容} require_approval {保留待核准} reject {已拒絕} timeout {逾時} error {失敗} invalid {回應未知} breaker_open {失敗後已略過} other {已決定}}",
+    "description": "What a decision of a decision hook records: a verdict, or a kind of failure. Read by moderators."
+  },
+  "staff_accounts.hook_mode": {
+    "defaultMessage": "{mode, select, observe {觀察中} enforce {強制執行} other {觀察中}}",
+    "description": "The mode a decision hook was in when it decided: recording only, or acting on its verdict. Read by moderators."
+  },
+  "staff_accounts.hook_reason": {
+    "defaultMessage": "{reason, select, spam {垃圾訊息} harassment {騷擾} sexual {性相關內容} violence {暴力} illegal {違法內容} malware {惡意軟體} other {其他}}",
+    "description": "The coded reason of a decision hook's verdict. Read by moderators."
+  },
+  "staff_accounts.decisions.summary": {
+    "defaultMessage": "最近 7 天",
+    "description": "For assistive technology, the name of the counts of each hook's decisions of the last 7 days. Read by moderators."
+  },
+  "staff_accounts.decisions.no_hooks": {
+    "defaultMessage": "沒有自動審查掛載外掛。",
+    "description": "At /moderation/hook-decisions when no decision hook has a plugin. Read by moderators."
+  },
+  "staff_accounts.decisions.filters": {
+    "defaultMessage": "篩選決定",
+    "description": "For assistive technology, the name of the filters over the decisions. Read by moderators."
+  },
+  "staff_accounts.decisions.hook": {
+    "defaultMessage": "審查",
+    "description": "The filter of decisions by their hook. Read by moderators."
+  },
+  "staff_accounts.decisions.hook.any": {
+    "defaultMessage": "所有審查",
+    "description": "The value of the Review filter that keeps every hook. Read by moderators."
+  },
+  "staff_accounts.decisions.mode": {
+    "defaultMessage": "模式",
+    "description": "The filter of decisions by the mode they were made in. Read by moderators."
+  },
+  "staff_accounts.decisions.mode.any": {
+    "defaultMessage": "所有模式",
+    "description": "The value of the Mode filter that keeps every mode. Read by moderators."
+  },
+  "staff_accounts.decisions.outcome": {
+    "defaultMessage": "結果",
+    "description": "The filter of decisions by their outcome. Read by moderators."
+  },
+  "staff_accounts.decisions.outcome.any": {
+    "defaultMessage": "除允許外的所有結果",
+    "description": "The value of the Outcome filter that keeps every outcome but Allowed, which the list leaves out by default. Read by moderators."
+  },
+  "staff_accounts.decisions.table": {
+    "defaultMessage": "決定",
+    "description": "For assistive technology, the name of the table of decisions. Read by moderators."
+  },
+  "staff_accounts.decisions.column.hook": {
+    "defaultMessage": "審查",
+    "description": "The column of what a decision's hook reviews. Read by moderators."
+  },
+  "staff_accounts.decisions.column.outcome": {
+    "defaultMessage": "結果",
+    "description": "The column of a decision's outcome. Read by moderators."
+  },
+  "staff_accounts.decisions.column.mode": {
+    "defaultMessage": "模式",
+    "description": "The column of a decision's mode. Read by moderators."
+  },
+  "staff_accounts.decisions.column.decided": {
+    "defaultMessage": "時間",
+    "description": "The column of when a decision was made. Read by moderators."
+  },
+  "staff_accounts.decisions.column.state": {
+    "defaultMessage": "狀態",
+    "description": "The column of whether a decision stands or was cancelled. Read by moderators."
+  },
+  "staff_accounts.decisions.empty": {
+    "defaultMessage": "沒有審查攔下或標記任何內容，也沒有失敗的審查。",
+    "description": "In place of the table of decisions when there is none. Read by moderators."
+  },
+  "staff_accounts.decisions.empty.filtered": {
+    "defaultMessage": "沒有符合的決定。清除篩選條件即可查看所有決定。",
+    "description": "In place of the table of decisions when none matches the filters. Read by moderators."
+  },
+  "staff_accounts.decisions.loading": {
+    "defaultMessage": "正在載入決定…",
+    "description": "At /moderation/hook-decisions while the decisions are read. Read by moderators."
+  },
+  "staff_accounts.decisions.failed": {
+    "defaultMessage": "無法載入決定。",
+    "description": "At /moderation/hook-decisions when the decisions could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.decisions.summary.hook": {
+    "defaultMessage": "{hook}，{mode, select, observe {觀察中} enforce {強制執行} other {已關閉}}",
+    "description": "Under the count of a hook's decisions of the last 7 days: the hook and its mode now. Read by moderators."
+  },
+  "staff_accounts.decision.stands": {
+    "defaultMessage": "有效",
+    "description": "The state of a decision of a hook that no moderator cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.cancelled": {
+    "defaultMessage": "已取消",
+    "description": "The state of a decision of a hook that a moderator cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.title": {
+    "defaultMessage": "{hook}：{outcome}",
+    "description": "The title of a decision's page: what its hook reviews and its outcome. Read by moderators."
+  },
+  "staff_accounts.decision.back": {
+    "defaultMessage": "自動審查",
+    "description": "The way back from a decision, or the appeals of refused posts, to the decisions. Read by moderators."
+  },
+  "staff_accounts.decision.missing": {
+    "defaultMessage": "此位址沒有決定。",
+    "description": "At a decision's page whose decision the server does not have. Read by moderators."
+  },
+  "staff_accounts.decision.all": {
+    "defaultMessage": "所有決定",
+    "description": "The link after the notice that an address names no decision. Read by moderators."
+  },
+  "staff_accounts.decision.loading": {
+    "defaultMessage": "正在載入決定…",
+    "description": "At a decision's page while it is read. Read by moderators."
+  },
+  "staff_accounts.decision.failed": {
+    "defaultMessage": "無法載入決定。",
+    "description": "At a decision's page when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.decision.facts": {
+    "defaultMessage": "決定",
+    "description": "For assistive technology, the name of the list of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.state": {
+    "defaultMessage": "狀態",
+    "description": "A term of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.hook": {
+    "defaultMessage": "審查",
+    "description": "A term of a decision's facts: what its hook reviews. Read by moderators."
+  },
+  "staff_accounts.decision.fact.outcome": {
+    "defaultMessage": "結果",
+    "description": "A term of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.mode": {
+    "defaultMessage": "模式",
+    "description": "A term of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.reason": {
+    "defaultMessage": "原因",
+    "description": "A term of a decision's facts: the coded reason of its verdict. Read by moderators."
+  },
+  "staff_accounts.decision.fact.note": {
+    "defaultMessage": "審查附註",
+    "description": "A term of a decision's facts: the plugin's note for the moderators. Read by moderators."
+  },
+  "staff_accounts.decision.fact.account": {
+    "defaultMessage": "帳號",
+    "description": "A term of a decision's facts: the account its subject belongs to. Read by moderators."
+  },
+  "staff_accounts.decision.fact.subject": {
+    "defaultMessage": "對象",
+    "description": "A term of a decision's facts: what identifies its subject for the hook (a URI). Read by moderators."
+  },
+  "staff_accounts.decision.fact.decided": {
+    "defaultMessage": "時間",
+    "description": "A term of a decision's facts: when it was made. Read by moderators."
+  },
+  "staff_accounts.decision.fact.latency": {
+    "defaultMessage": "耗時",
+    "description": "A term of a decision's facts: how long the call took. Read by moderators."
+  },
+  "staff_accounts.decision.fact.restorable": {
+    "defaultMessage": "可還原至",
+    "description": "A term of a decision's facts: until when cancelling a drop processes the activity again. Read by moderators."
+  },
+  "staff_accounts.decision.fact.cancelled": {
+    "defaultMessage": "取消時間",
+    "description": "A term of a decision's facts: when a moderator cancelled it. Read by moderators."
+  },
+  "staff_accounts.decision.latency": {
+    "defaultMessage": "{ms} 毫秒",
+    "description": "The value of Took in a decision's facts, in milliseconds. Read by moderators."
+  },
+  "staff_accounts.decision.cancel": {
+    "defaultMessage": "取消決定",
+    "description": "The button that asks to cancel a decision, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.decision.keep": {
+    "defaultMessage": "保留",
+    "description": "The button of the confirmation of a decision's cancellation that keeps the decision. Read by moderators."
+  },
+  "staff_accounts.decision.cancel.confirm": {
+    "defaultMessage": "要取消這項決定嗎？",
+    "description": "The question before a decision of a hook is cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.cancel.about": {
+    "defaultMessage": "{outcome, select, mark_sensitive {敏感內容標記會移除。管理處置所加的標記會保留。} flag {決定會取消，其檢舉仍照常等待處理。} drop {只要伺服器還保有被捨棄的內容，就會重新處理；之後只會記錄取消。} require_approval {決定會取消並記錄，註冊申請維持原狀。} other {決定會取消，並記錄在稽核紀錄中。}}此操作無法復原。",
+    "description": "Under the question before a decision is cancelled: what cancelling does for its outcome. Read by moderators."
+  },
+  "staff_accounts.decision.cancelled_now": {
+    "defaultMessage": "已取消決定。",
+    "description": "Said after a decision of a hook was cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.by_appeal": {
+    "defaultMessage": "被拒絕的貼文可透過作者的申訴重新審議",
+    "description": "On the page of a post refused by the review of posts here, the link to the appeals of refused posts. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.title": {
+    "defaultMessage": "被拒絕貼文的申訴",
+    "description": "The title of the screen of the authors' appeals of posts the review of posts refused, and the button to it. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.table": {
+    "defaultMessage": "被拒絕貼文的申訴",
+    "description": "For assistive technology, the name of the table of appeals of refused posts. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.empty.pending": {
+    "defaultMessage": "沒有等待裁決的被拒絕貼文申訴。",
+    "description": "In place of the table of appeals of refused posts when none waits. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.loading": {
+    "defaultMessage": "正在載入申訴…",
+    "description": "At /moderation/hook-decisions/appeals while the appeals are read. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.failed": {
+    "defaultMessage": "無法載入申訴。",
+    "description": "At /moderation/hook-decisions/appeals when they could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.title": {
+    "defaultMessage": "{handle} 被拒絕的貼文",
+    "description": "The title of an appeal of a refused post, naming its author. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.back": {
+    "defaultMessage": "被拒絕貼文的申訴",
+    "description": "The way back from an appeal of a refused post to their list. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.all": {
+    "defaultMessage": "所有被拒絕貼文的申訴",
+    "description": "The link after the notice that an address names no appeal of a refused post. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.fact.decision": {
+    "defaultMessage": "決定",
+    "description": "A term of an appeal of a refused post: the decision appealed, a link to its page. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.post": {
+    "defaultMessage": "對方嘗試發出的貼文",
+    "description": "The heading of the text of a refused post, as its author wrote it. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.comment": {
+    "defaultMessage": "對方的補充",
+    "description": "The heading of the comment the author of a refused post added to their appeal. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.uphold.about": {
+    "defaultMessage": "拒絕維持不變，其貼文仍照常審查。此操作無法復原。",
+    "description": "Under the question before an appeal of a refused post is upheld. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.overturn.about": {
+    "defaultMessage": "拒絕會取消，其貼文不再受審查。貼文不會恢復：對方可以重新發出。此操作無法復原。",
+    "description": "Under the question before an appeal of a refused post is overturned. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.upheld": {
+    "defaultMessage": "已維持拒絕。",
+    "description": "Said after an appeal of a refused post was upheld. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.overturned": {
+    "defaultMessage": "已撤銷拒絕。其貼文不再受審查。",
+    "description": "Said after an appeal of a refused post was overturned. Read by moderators."
+  },
+  "staff_accounts.report.act": {
+    "defaultMessage": "對此帳號採取行動",
+    "description": "On a report's screen, at the end of the reported account's line: the way to its moderation screen. Read by moderators."
+  },
+  "staff_accounts.place.end": {
+    "defaultMessage": "{kind, select, event {取消活動} other {結束聊天室}}",
+    "description": "On a report's screen, the button that asks to end the voice chat room or cancel the event it points at, and the confirmation's button. Read by moderators."
+  },
+  "staff_accounts.place.confirm": {
+    "defaultMessage": "{kind, select, event {要為所有人取消此活動嗎？} other {要為所有人結束此聊天室嗎？}}",
+    "description": "The question before a moderator ends a voice chat room or cancels an event. Read by moderators."
+  },
+  "staff_accounts.place.reason.hint": {
+    "defaultMessage": "{kind, select, event {看到活動的每個人都會看到取消說明。此操作無法復原。} other {只有版主看得到；參與者會看到聊天室已結束。此操作無法復原。}}",
+    "description": "Under the field of the reason a moderator ends a room or cancels an event: who reads it. Read by moderators."
+  },
+  "staff_accounts.place.done": {
+    "defaultMessage": "{kind, select, event {已取消活動。} other {已結束聊天室。}}",
+    "description": "Said after a moderator ended a room or cancelled an event. Read by moderators."
+  },
+  "staff_accounts.place.reason": {
+    "defaultMessage": "原因（選填）",
+    "description": "The label of the field of why a moderator ends a room or cancels an event. Read by moderators."
+  },
+  "staff_accounts.action_category": {
+    "defaultMessage": "{category, select, spam {垃圾訊息} legal {法律理由} violation {違反伺服器規則} other {其他}}",
+    "description": "The kind of reason of a moderation action, in the words the account it is on reads: in the form of a new action, the lists of actions and their facts. Read by moderators."
+  }
+}

@@ -1,0 +1,710 @@
+{
+  "staff_supporters.entry": {
+    "defaultMessage": "支持者",
+    "description": "Name of the administration screen of the supporter plans, tips and subscriptions, at /admin/supporters, and its title."
+  },
+  "staff_supporters.back.program": {
+    "defaultMessage": "支持者",
+    "description": "The way back, over a screen under Supporters, to the first page of Supporters in the administration."
+  },
+  "staff_supporters.back.plans": {
+    "defaultMessage": "方案",
+    "description": "The way back, over a plan's screen or the new plan's form, to the list of the supporter plans in the administration."
+  },
+  "staff_supporters.back.subscriptions": {
+    "defaultMessage": "訂閱",
+    "description": "The way back, over a subscription's screen, to the list of subscriptions in the administration."
+  },
+  "staff_supporters.cancel": {
+    "defaultMessage": "取消",
+    "description": "The button that closes a confirmation on a screen of Supporters in the administration without doing anything."
+  },
+  "staff_supporters.write_failed": {
+    "defaultMessage": "無法完成。請重新載入頁面後再試一次。",
+    "description": "On a screen of Supporters in the administration, when a change failed for a reason the server did not name."
+  },
+  "staff_supporters.forbidden": {
+    "defaultMessage": "你的帳號已無權限管理支持者，因此你無法使用這個畫面。",
+    "description": "In the place of a screen of Supporters when the server refuses the reader the permission manage_supporters."
+  },
+  "staff_supporters.doors": {
+    "defaultMessage": "方案與訂閱",
+    "description": "Heading, and name for assistive technology, of the two links to the plans and to the subscriptions on the first page of Supporters."
+  },
+  "staff_supporters.plans": {
+    "defaultMessage": "方案",
+    "description": "Name of the list of supporter plans in the administration, the link to it, and its screen's title."
+  },
+  "staff_supporters.plans.loading": {
+    "defaultMessage": "正在載入方案…",
+    "description": "While the supporter plans are read."
+  },
+  "staff_supporters.plans.failed": {
+    "defaultMessage": "無法載入方案。請檢查網路連線後再試一次。",
+    "description": "When the supporter plans could not be read; Try again follows."
+  },
+  "staff_supporters.plans.create": {
+    "defaultMessage": "建立方案",
+    "description": "Button that opens the form of a new supporter plan, and that form's title."
+  },
+  "staff_supporters.plans.empty": {
+    "defaultMessage": "目前沒有方案。建立一個即可開始接受訂閱。",
+    "description": "In the place of the list of plans while there is none."
+  },
+  "staff_supporters.plans.column.plan": {
+    "defaultMessage": "方案",
+    "description": "Header of the column of the plans' names."
+  },
+  "staff_supporters.plans.column.price": {
+    "defaultMessage": "價格",
+    "description": "Header of the column of the plans' monthly prices."
+  },
+  "staff_supporters.plans.column.members": {
+    "defaultMessage": "成員",
+    "description": "Header of the column of the plans' member counts."
+  },
+  "staff_supporters.plans.column.standing": {
+    "defaultMessage": "狀態",
+    "description": "Header of the column of where each plan stands."
+  },
+  "staff_supporters.plans.monthly": {
+    "defaultMessage": "每月 {price}",
+    "description": "A plan's monthly price."
+  },
+  "staff_supporters.plans.members": {
+    "defaultMessage": "{count, plural, other {# 位成員}}",
+    "description": "How many subscriptions hold a plan's role."
+  },
+  "staff_supporters.subscriptions": {
+    "defaultMessage": "訂閱",
+    "description": "Name of the list of subscriptions to the supporter plans in the administration, the link to it, and its screen's title."
+  },
+  "staff_supporters.subscriptions.loading": {
+    "defaultMessage": "正在載入訂閱…",
+    "description": "While the subscriptions are read."
+  },
+  "staff_supporters.subscriptions.failed": {
+    "defaultMessage": "無法載入訂閱。請檢查網路連線後再試一次。",
+    "description": "When the subscriptions could not be read; Try again follows."
+  },
+  "staff_supporters.subscriptions.filters": {
+    "defaultMessage": "篩選",
+    "description": "Name of the filters over the subscriptions."
+  },
+  "staff_supporters.subscriptions.plan": {
+    "defaultMessage": "方案",
+    "description": "Name of the filter of the subscriptions by plan."
+  },
+  "staff_supporters.subscriptions.plan.any": {
+    "defaultMessage": "所有方案",
+    "description": "The option of the plan filter that shows every plan."
+  },
+  "staff_supporters.subscriptions.state": {
+    "defaultMessage": "狀態",
+    "description": "Name of the filter of the subscriptions by state."
+  },
+  "staff_supporters.subscriptions.state.any": {
+    "defaultMessage": "所有狀態",
+    "description": "The option of the state filter that shows every state."
+  },
+  "staff_supporters.subscriptions.empty": {
+    "defaultMessage": "目前沒有訂閱。",
+    "description": "In the place of the subscriptions while there is none."
+  },
+  "staff_supporters.subscriptions.empty.filtered": {
+    "defaultMessage": "沒有符合這些篩選條件的訂閱。",
+    "description": "In the place of the subscriptions when the filters match none; Clear filters is above."
+  },
+  "staff_supporters.subscriptions.column.subscriber": {
+    "defaultMessage": "訂閱者",
+    "description": "Header of the column of the subscribers' handles."
+  },
+  "staff_supporters.subscriptions.column.plan": {
+    "defaultMessage": "方案",
+    "description": "Header of the column of each subscription's plan and period."
+  },
+  "staff_supporters.subscriptions.column.ends": {
+    "defaultMessage": "期間",
+    "description": "Header of the column of when each subscription's period ends."
+  },
+  "staff_supporters.subscriptions.column.state": {
+    "defaultMessage": "狀態",
+    "description": "Header of the column of each subscription's state."
+  },
+  "staff_supporters.program": {
+    "defaultMessage": "支持者方案",
+    "description": "Heading of the section of the first page of Supporters that says whether the supporter program is on, and turns it on or off."
+  },
+  "staff_supporters.program.loading": {
+    "defaultMessage": "正在載入支持者方案…",
+    "description": "On the first page of Supporters while the program is read."
+  },
+  "staff_supporters.program.failed": {
+    "defaultMessage": "無法載入支持者方案。請檢查網路連線後再試一次。",
+    "description": "On the first page of Supporters when the program could not be read; Try again follows."
+  },
+  "staff_supporters.program.state": {
+    "defaultMessage": "狀態",
+    "description": "Term of the fact that says whether the supporter program is on."
+  },
+  "staff_supporters.program.on": {
+    "defaultMessage": "開啟",
+    "description": "The supporter program is on."
+  },
+  "staff_supporters.program.off": {
+    "defaultMessage": "關閉",
+    "description": "The supporter program is off."
+  },
+  "staff_supporters.program.on_since": {
+    "defaultMessage": "自 {at} 起開啟",
+    "description": "The supporter program is on, and since when ({at}: a date and time)."
+  },
+  "staff_supporters.program.off_since": {
+    "defaultMessage": "自 {at} 起關閉",
+    "description": "The supporter program is off, and since when ({at}: a date and time)."
+  },
+  "staff_supporters.program.configured": {
+    "defaultMessage": "設定中的付款提供者",
+    "description": "Term of the fact that names the payment provider of the deployment's configuration, which only the configuration changes."
+  },
+  "staff_supporters.program.no_provider": {
+    "defaultMessage": "無",
+    "description": "The deployment's configuration names no payment provider."
+  },
+  "staff_supporters.program.enabled_with": {
+    "defaultMessage": "開啟時使用",
+    "description": "Term of the fact that names the payment provider the supporter program was turned on with."
+  },
+  "staff_supporters.program.email": {
+    "defaultMessage": "電子郵件",
+    "description": "Term of the fact that says whether the server sends email, which the supporter program needs."
+  },
+  "staff_supporters.program.email.yes": {
+    "defaultMessage": "伺服器會寄送電子郵件",
+    "description": "The server sends email."
+  },
+  "staff_supporters.program.email.no": {
+    "defaultMessage": "伺服器不寄送電子郵件",
+    "description": "The server sends no email, so the supporter program cannot be turned on."
+  },
+  "staff_supporters.program.live": {
+    "defaultMessage": "持續中的訂閱",
+    "description": "Term of the fact that counts the subscriptions that go on."
+  },
+  "staff_supporters.program.live.count": {
+    "defaultMessage": "{count, plural, other {# 筆訂閱}}",
+    "description": "How many subscriptions go on."
+  },
+  "staff_supporters.program.warning": {
+    "defaultMessage": "{warning, select, no_provider {設定中沒有付款提供者。請設定 payments 金鑰以開啟支持者方案。} no_email {伺服器不寄送電子郵件。請設定電子郵件以開啟支持者方案。} provider_mismatch {設定中的付款提供者與開啟支持者方案時使用的不同。在你關閉再重新開啟支持者方案之前，新的訂閱與變更都會被拒絕。} no_commerce_disclosure {商業揭露內容是空的。請在收款前寫好。} other {請查看支持者方案的設定。}}",
+    "description": "A warning about the supporter program, by what the server reports, with what to do."
+  },
+  "staff_supporters.program.turn_on": {
+    "defaultMessage": "開啟支持者方案",
+    "description": "Button that turns the supporter program on."
+  },
+  "staff_supporters.program.turn_off": {
+    "defaultMessage": "關閉支持者方案",
+    "description": "Button that turns the supporter program off, shown while no subscription goes on."
+  },
+  "staff_supporters.program.cannot_on": {
+    "defaultMessage": "處理完上方的警告之前，無法開啟支持者方案。",
+    "description": "In the place of Turn the program on, while the server says the program cannot be turned on."
+  },
+  "staff_supporters.program.cannot_off": {
+    "defaultMessage": "仍有持續中的訂閱時，無法關閉支持者方案。請停用所有方案，待訂閱結束後再關閉。",
+    "description": "In the place of Turn the program off, while subscriptions go on."
+  },
+  "staff_supporters.program.done.on": {
+    "defaultMessage": "支持者方案已開啟。",
+    "description": "Said once the supporter program was turned on."
+  },
+  "staff_supporters.program.done.off": {
+    "defaultMessage": "支持者方案已關閉。",
+    "description": "Said once the supporter program was turned off."
+  },
+  "staff_supporters.program.refused.unavailable": {
+    "defaultMessage": "無法開啟支持者方案：伺服器缺少付款提供者或電子郵件。",
+    "description": "Said when the server refused to turn the program on because the deployment lacks what it needs."
+  },
+  "staff_supporters.program.refused.live": {
+    "defaultMessage": "仍有持續中的訂閱時，無法關閉支持者方案。",
+    "description": "Said when the server refused to turn the program off because subscriptions go on."
+  },
+  "staff_supporters.disclosure": {
+    "defaultMessage": "商業揭露",
+    "description": "Heading of the section of the first page of Supporters about the commerce disclosure (the notice of the Act on Specified Commercial Transactions)."
+  },
+  "staff_supporters.disclosure.published": {
+    "defaultMessage": "商業揭露已公開。",
+    "description": "The commerce disclosure has text and is published at /about/commerce."
+  },
+  "staff_supporters.disclosure.none": {
+    "defaultMessage": "商業揭露內容是空的，因此沒有公開任何內容。",
+    "description": "The commerce disclosure has no text."
+  },
+  "staff_supporters.disclosure.read": {
+    "defaultMessage": "閱讀",
+    "description": "Link to the published commerce disclosure, after the sentence that says it is published."
+  },
+  "staff_supporters.disclosure.edit": {
+    "defaultMessage": "編輯商業揭露",
+    "description": "Link to the screen where the commerce disclosure is written, for a reader who may change the server's texts."
+  },
+  "staff_supporters.list": {
+    "defaultMessage": "支持者名單",
+    "description": "Heading of the section of the first page of Supporters about who may read the list of supporters."
+  },
+  "staff_supporters.list.loading": {
+    "defaultMessage": "正在載入誰可以閱讀名單…",
+    "description": "While the setting of who may read the supporter list is read."
+  },
+  "staff_supporters.list.failed": {
+    "defaultMessage": "無法載入誰可以閱讀名單。請檢查網路連線後再試一次。",
+    "description": "When the setting of who may read the supporter list could not be read; Try again follows."
+  },
+  "staff_supporters.list.now": {
+    "defaultMessage": "{audience, select, off {沒有人可以閱讀支持者名單。} signed_in {只有登入這個伺服器的人可以閱讀支持者名單。} other {所有人都可以閱讀支持者名單。}}擁有變更伺服器設定權限的管理員可以變更這項設定。",
+    "description": "For a reader who may not change the server's settings: who may read the supporter list now, and who changes it."
+  },
+  "staff_supporters.list.field": {
+    "defaultMessage": "誰可以閱讀名單",
+    "description": "Label of the choice of who may read the supporter list."
+  },
+  "staff_supporters.list.audience": {
+    "defaultMessage": "{audience, select, off {沒有人} signed_in {登入這個伺服器的人} other {所有人}}",
+    "description": "An option of who may read the supporter list."
+  },
+  "staff_supporters.list.save": {
+    "defaultMessage": "儲存",
+    "description": "Button that saves who may read the supporter list."
+  },
+  "staff_supporters.list.done": {
+    "defaultMessage": "{audience, select, off {現在沒有人可以閱讀支持者名單。} signed_in {現在只有已登入的人可以閱讀支持者名單。} other {現在所有人都可以閱讀支持者名單。}}",
+    "description": "Said once who may read the supporter list was saved."
+  },
+  "staff_supporters.tips": {
+    "defaultMessage": "贊助",
+    "description": "Heading of the section of the first page of Supporters about tips, one-time payments to the server with nothing in return."
+  },
+  "staff_supporters.tips.loading": {
+    "defaultMessage": "正在載入贊助…",
+    "description": "While the state of the tips is read."
+  },
+  "staff_supporters.tips.failed": {
+    "defaultMessage": "無法載入贊助。請檢查網路連線後再試一次。",
+    "description": "When the state of the tips could not be read; Try again follows."
+  },
+  "staff_supporters.tips.state": {
+    "defaultMessage": "狀態",
+    "description": "Term of the fact that says whether users can tip now."
+  },
+  "staff_supporters.tips.accepting": {
+    "defaultMessage": "使用者現在可以贊助",
+    "description": "The tips are on and users can tip."
+  },
+  "staff_supporters.tips.not_accepting": {
+    "defaultMessage": "已開啟，但使用者現在無法贊助",
+    "description": "The tips are on, but the server takes none now (the program is off, or the provider takes no one-time payments)."
+  },
+  "staff_supporters.tips.off": {
+    "defaultMessage": "關閉",
+    "description": "The tips are off."
+  },
+  "staff_supporters.tips.limits": {
+    "defaultMessage": "允許的金額（{currency}）",
+    "description": "Term of the fact that gives the smallest and largest amount of a tip the provider allows in a currency ({currency}: a code such as JPY)."
+  },
+  "staff_supporters.tips.range": {
+    "defaultMessage": "{min} 到 {max}",
+    "description": "The smallest and largest amount of a tip allowed."
+  },
+  "staff_supporters.tips.no_one_time": {
+    "defaultMessage": "付款提供者不接受一次性付款，因此使用者無法贊助。",
+    "description": "Warning when the configured provider takes no one-time payments."
+  },
+  "staff_supporters.tips.limit_reached": {
+    "defaultMessage": "使用者在一小時內已發起伺服器允許的贊助次數上限。一小時過去後即可再次贊助。",
+    "description": "Warning when the server-wide rate limit of tips was reached in the last hour."
+  },
+  "staff_supporters.tips.take": {
+    "defaultMessage": "接受贊助",
+    "description": "Checkbox that turns the tips on."
+  },
+  "staff_supporters.tips.currency": {
+    "defaultMessage": "幣別",
+    "description": "Label of the choice of the tips' currency."
+  },
+  "staff_supporters.tips.amounts": {
+    "defaultMessage": "金額",
+    "description": "Label of the field of the tips' amounts."
+  },
+  "staff_supporters.tips.amounts.hint": {
+    "defaultMessage": "1 到 6 個金額，每行一個",
+    "description": "Under the field of the tips' amounts. Read by administrators."
+  },
+  "staff_supporters.tips.amounts.invalid": {
+    "defaultMessage": "請以數字寫下 1 到 6 個 {currency} 金額，每行一個。",
+    "description": "Under the field of the tips' amounts when it holds none, more than six, or one that is not an amount of the currency. Read by administrators."
+  },
+  "staff_supporters.tips.unavailable": {
+    "defaultMessage": "無法開啟贊助：必須先開啟支持者方案，且付款提供者要接受一次性付款。",
+    "description": "Beside Save the tips when the server refused to turn the tips on."
+  },
+  "staff_supporters.tips.save": {
+    "defaultMessage": "儲存贊助設定",
+    "description": "Button that saves the tips."
+  },
+  "staff_supporters.tips.done.on": {
+    "defaultMessage": "贊助設定已儲存。",
+    "description": "Said once the tips were turned on or their amounts changed."
+  },
+  "staff_supporters.tips.done.off": {
+    "defaultMessage": "贊助已關閉。",
+    "description": "Said once the tips were turned off."
+  },
+  "staff_supporters.tips.refused": {
+    "defaultMessage": "{reason, select, count {請選擇 1 到 6 個不同的金額。} currency {請以同一種幣別（日圓或美元）寫下所有金額。} other {每個金額必須介於 ¥100 到 ¥100,000，或 US$1 到 US$1,000，且至少要達到提供者的最低一次性收費。}}",
+    "description": "Under the field of the tips' amounts when the server refused them, by the rule they break."
+  },
+  "staff_supporters.payments": {
+    "defaultMessage": "付款提供者",
+    "description": "Heading of the section of the first page of Supporters about the state of the payment provider of the configuration."
+  },
+  "staff_supporters.payments.loading": {
+    "defaultMessage": "正在載入付款提供者的狀態…",
+    "description": "While the payment provider's state is read."
+  },
+  "staff_supporters.payments.failed": {
+    "defaultMessage": "無法載入付款提供者的狀態。請檢查網路連線後再試一次。",
+    "description": "When the payment provider's state could not be read; Try again follows."
+  },
+  "staff_supporters.payments.none": {
+    "defaultMessage": "設定中沒有付款提供者。",
+    "description": "In the payment provider's section when the deployment configures none."
+  },
+  "staff_supporters.payments.mode": {
+    "defaultMessage": "模式",
+    "description": "Term of the fact that says whether the provider's keys are test or live keys."
+  },
+  "staff_supporters.payments.zone": {
+    "defaultMessage": "報表的時區",
+    "description": "Term of the fact that names the time zone in which the provider's reports date the income."
+  },
+  "staff_supporters.payments.webhook": {
+    "defaultMessage": "最近一次 Webhook 投遞",
+    "description": "Term of the fact that says when the provider's last webhook delivery was received."
+  },
+  "staff_supporters.payments.webhook.none": {
+    "defaultMessage": "沒有記錄",
+    "description": "No webhook delivery is recorded (they are kept 45 days)."
+  },
+  "staff_supporters.payments.reconciliation": {
+    "defaultMessage": "最近一次核對",
+    "description": "Term of the fact about the last reconciliation with the payment provider."
+  },
+  "staff_supporters.payments.reconciliation.none": {
+    "defaultMessage": "尚未核對",
+    "description": "No reconciliation has run yet."
+  },
+  "staff_supporters.payments.reconciliation.run": {
+    "defaultMessage": "{outcome, select, succeeded {成功} partial {部分完成，繼續中} other {失敗}}，{at}：已檢查 {checked} 筆，已更正 {corrected} 筆",
+    "description": "The last reconciliation: how it ended, when, and how many subscriptions it read again and corrected."
+  },
+  "staff_supporters.payments.warning": {
+    "defaultMessage": "{warning, select, no_webhook {沒有 Webhook 投遞的記錄。請在提供者那裡檢查 Webhook 端點。} reconciliation_corrected {最近一次核對更正了本來應由 Webhook 處理的訂閱。請在提供者那裡檢查 Webhook。} duplicate_charge {有重複的訂閱尚未取消並退款。每次核對都會再試一次；選擇「立即核對」可馬上再試。} other {請查看付款提供者的設定。}}",
+    "description": "A warning about the payment provider, by what the server reports, with what to do."
+  },
+  "staff_supporters.payments.reconcile": {
+    "defaultMessage": "立即核對",
+    "description": "Button that asks for a reconciliation with the payment provider now."
+  },
+  "staff_supporters.payments.done": {
+    "defaultMessage": "已將核對排入佇列。",
+    "description": "Said once a reconciliation was queued."
+  },
+  "staff_supporters.payments.too_soon": {
+    "defaultMessage": "這一小時內已核對過。請在下一小時再試。",
+    "description": "Said when the server refused a reconciliation because one ran in the last hour."
+  },
+  "staff_supporters.payments.mode.value": {
+    "defaultMessage": "{mode, select, test {測試：不會收費} other {正式}}",
+    "description": "Whether the payment provider's keys are test keys, with which nothing is charged, or live keys."
+  },
+  "staff_supporters.payments.error": {
+    "defaultMessage": "{kind, select, request_cap {已用完請求上限。請等待後續處理，或在下一小時選擇「立即核對」。} permission {密鑰錯誤或缺少權限。請檢查設定中的金鑰。} not_found {提供者找不到所要求的內容。請檢查設定中提供者的帳號。} invalid_request {提供者拒絕了請求。請檢查提供者的設定，然後選擇「立即核對」。} throttled {提供者忙碌中。請等待下次核對，或在下一小時選擇「立即核對」。} unavailable {提供者停止服務。請等待下次核對，或在下一小時選擇「立即核對」。} invalid_signature {簽章不符。請檢查 Webhook 密鑰。} stale_signature {簽章太舊。請檢查伺服器的時鐘。} mode_mismatch {金鑰的模式與帳號的不同。請使用同一種模式的金鑰。} other {提供者的回應是伺服器無法讀取的內容。請在下一小時選擇「立即核對」。}}",
+    "description": "Why the last reconciliation stopped, with what to do."
+  },
+  "staff_supporters.permission": {
+    "defaultMessage": "{permission, select, view_finance {讀取伺服器的財務} create_custom_emojis {申請自訂表情符號} start_voice_rooms {開啟語音聊天室} create_invites {邀請他人} keep_posts_longer {超過刪除上限仍保留貼文} create_articles {撰寫文章} create_events {建立活動} other {其他權限}}",
+    "description": "A permission a supporter plan's role may give, by its name."
+  },
+  "staff_supporters.plan.standing": {
+    "defaultMessage": "{standing, select, retired {已停用} preparing {準備中} hidden {已隱藏} other {接受訂閱中}}",
+    "description": "Where a plan stands: retired; preparing its prices at the provider; hidden from new subscriptions; or taking them."
+  },
+  "staff_supporters.plan.standing_term": {
+    "defaultMessage": "狀態",
+    "description": "Term of the fact of where a plan stands."
+  },
+  "staff_supporters.plan.loading": {
+    "defaultMessage": "正在載入方案…",
+    "description": "While a plan is read."
+  },
+  "staff_supporters.plan.failed": {
+    "defaultMessage": "無法載入方案。請檢查網路連線後再試一次。",
+    "description": "When a plan could not be read; Try again follows."
+  },
+  "staff_supporters.plan.missing": {
+    "defaultMessage": "這個方案不存在。位址可能有誤。",
+    "description": "At the address of a plan the server does not have; the link to the plans follows."
+  },
+  "staff_supporters.plan.prices": {
+    "defaultMessage": "價格",
+    "description": "Term of the fact of a plan's monthly and yearly prices."
+  },
+  "staff_supporters.plan.members_term": {
+    "defaultMessage": "成員",
+    "description": "Term of the fact of how many subscriptions hold a plan's role."
+  },
+  "staff_supporters.plan.name": {
+    "defaultMessage": "名稱",
+    "description": "Label of a plan's name."
+  },
+  "staff_supporters.plan.name.blank": {
+    "defaultMessage": "請寫下方案的名稱。",
+    "description": "Under the name's field when it is empty."
+  },
+  "staff_supporters.plan.description": {
+    "defaultMessage": "說明",
+    "description": "Label of a plan's description."
+  },
+  "staff_supporters.plan.price": {
+    "defaultMessage": "每月價格",
+    "description": "Label of a plan's monthly price."
+  },
+  "staff_supporters.plan.price.invalid": {
+    "defaultMessage": "請以數字寫下 {currency} 的價格，僅限數字。",
+    "description": "Under the monthly price when it is no amount of the currency."
+  },
+  "staff_supporters.plan.currency": {
+    "defaultMessage": "幣別",
+    "description": "Label of the choice of a plan's currency."
+  },
+  "staff_supporters.plan.emoji": {
+    "defaultMessage": "每月自訂表情符號數量",
+    "description": "Label of how many custom emoji a plan's members may create each month."
+  },
+  "staff_supporters.plan.rank": {
+    "defaultMessage": "順序",
+    "description": "Label of a plan's order: a higher one is a higher plan."
+  },
+  "staff_supporters.plan.number.blank": {
+    "defaultMessage": "請寫下數字。",
+    "description": "Under a number field of a plan's form when it is empty."
+  },
+  "staff_supporters.plan.visibility": {
+    "defaultMessage": "可見度",
+    "description": "Label of whether a plan takes new subscriptions."
+  },
+  "staff_supporters.plan.permissions": {
+    "defaultMessage": "權限",
+    "description": "Label of the permissions of a plan's role, and its fact."
+  },
+  "staff_supporters.plan.permissions.none": {
+    "defaultMessage": "無",
+    "description": "A plan's role has no permission."
+  },
+  "staff_supporters.plan.retired_at": {
+    "defaultMessage": "停用時間",
+    "description": "Term of the fact of when a plan was retired."
+  },
+  "staff_supporters.plan.create": {
+    "defaultMessage": "建立方案",
+    "description": "Submit button of a new plan's form."
+  },
+  "staff_supporters.plan.save": {
+    "defaultMessage": "儲存",
+    "description": "Submit button of the change of a plan."
+  },
+  "staff_supporters.plan.change": {
+    "defaultMessage": "變更方案",
+    "description": "Heading of the form that changes a plan."
+  },
+  "staff_supporters.plan.refused.retired": {
+    "defaultMessage": "方案已在此期間被停用，因此無法變更。",
+    "description": "Beside Save when the server refused to change a plan that was retired."
+  },
+  "staff_supporters.plan.done.saved": {
+    "defaultMessage": "方案已儲存。新價格適用於新的訂閱與方案變更。",
+    "description": "Said once a plan was saved."
+  },
+  "staff_supporters.plan.done.retired": {
+    "defaultMessage": "方案已停用。",
+    "description": "Said once a plan was retired."
+  },
+  "staff_supporters.plan.retire": {
+    "defaultMessage": "停用方案",
+    "description": "Heading of the section that retires a plan."
+  },
+  "staff_supporters.plan.retire.about": {
+    "defaultMessage": "{count, plural, =0 {停用後，方案將永久不再接受新的訂閱。} other {停用後，方案將永久不再接受新的訂閱，它的 # 筆訂閱也不會續訂。}}",
+    "description": "Above Retire the plan…, what retiring does."
+  },
+  "staff_supporters.plan.retire.ask": {
+    "defaultMessage": "停用方案…",
+    "description": "Button that asks to retire a plan."
+  },
+  "staff_supporters.plan.retire.confirm": {
+    "defaultMessage": "要停用 {name} 嗎？",
+    "description": "Title of the confirmation that retires a plan ({name}: its name)."
+  },
+  "staff_supporters.plan.retire.confirm.about": {
+    "defaultMessage": "{count, plural, =0 {方案從現在起不再接受訂閱。這無法復原。} other {方案從現在起不再接受訂閱。它的 # 位訂閱者會保有福利到期間結束，且不會續訂；尚未付款的訂閱會立即關閉。他們會收到通知。這無法復原。}}",
+    "description": "Body of the confirmation that retires a plan: what happens to its subscribers."
+  },
+  "staff_supporters.plan.retire.do": {
+    "defaultMessage": "停用",
+    "description": "Confirmation button that retires a plan."
+  },
+  "staff_supporters.plan.prices.value": {
+    "defaultMessage": "每月 {monthly}，每年 {yearly}（折扣 {discount}%）",
+    "description": "A plan's prices."
+  },
+  "staff_supporters.plan.role": {
+    "defaultMessage": "角色",
+    "description": "Label of the role a plan is on, its fact and its field. Read by administrators."
+  },
+  "staff_supporters.plan.role.hint": {
+    "defaultMessage": "沒有持有者、只有成員權限、位階低於版主的角色的名稱",
+    "description": "Line under the field of the role's key, for a reader who cannot list the roles. Read by administrators."
+  },
+  "staff_supporters.plan.role.choose": {
+    "defaultMessage": "選擇角色",
+    "description": "The first option of the choice of a plan's role, while none is chosen. Read by administrators."
+  },
+  "staff_supporters.plan.role.none": {
+    "defaultMessage": "沒有可用於方案的角色。請先在版主之下建立一個只有成員權限的角色。",
+    "description": "In the place of the choice of a plan's role when no role qualifies. Read by administrators."
+  },
+  "staff_supporters.plan.role.blank": {
+    "defaultMessage": "請選擇方案給予的角色。",
+    "description": "Under the role's field when none is chosen. Read by administrators."
+  },
+  "staff_supporters.plan.role.loading": {
+    "defaultMessage": "正在載入角色…",
+    "description": "In the place of the role of a new supporter plan while the roles load. Read by administrators."
+  },
+  "staff_supporters.plan.discount": {
+    "defaultMessage": "年繳折扣（%）",
+    "description": "Label of a plan's discount for paying yearly, in percent."
+  },
+  "staff_supporters.plan.visibility.value": {
+    "defaultMessage": "{visibility, select, hidden {已隱藏：不接受新的訂閱} other {公開}}",
+    "description": "An option of a plan's visibility."
+  },
+  "staff_supporters.plan.position": {
+    "defaultMessage": "角色位階",
+    "description": "Label of the position of a plan's role, below the moderators. Read by administrators."
+  },
+  "staff_supporters.state": {
+    "defaultMessage": "{state, select, active {生效中} canceling {期間結束時終止} past_due {付款失敗} pending {尚未付款} lapsed {已失效} expired {已結束} revoked {已退款} other {未付款而關閉}}",
+    "description": "The state of a subscription to a supporter plan."
+  },
+  "staff_supporters.subscriber_gone": {
+    "defaultMessage": "已清除的帳號",
+    "description": "In the place of a subscriber's handle when the account was erased."
+  },
+  "staff_supporters.subscription.terms": {
+    "defaultMessage": "{plan}，{interval, select, year {年繳} other {月繳}}",
+    "description": "A subscription's plan and how often it is paid."
+  },
+  "staff_supporters.subscription.until": {
+    "defaultMessage": "到 {at}",
+    "description": "When a subscription's current period ends."
+  },
+  "staff_supporters.subscription.no_period": {
+    "defaultMessage": "沒有期間",
+    "description": "A subscription with no period (not paid yet, or closed unpaid)."
+  },
+  "staff_supporters.subscription.title": {
+    "defaultMessage": "{subscriber} 的訂閱",
+    "description": "Title of a subscription's screen."
+  },
+  "staff_supporters.subscription.loading": {
+    "defaultMessage": "正在載入訂閱…",
+    "description": "While a subscription is read."
+  },
+  "staff_supporters.subscription.failed": {
+    "defaultMessage": "無法載入訂閱。請檢查網路連線後再試一次。",
+    "description": "When a subscription could not be read; Try again follows."
+  },
+  "staff_supporters.subscription.missing": {
+    "defaultMessage": "這個訂閱不存在。位址可能有誤。",
+    "description": "At the address of a subscription the server does not have; the link to the subscriptions follows."
+  },
+  "staff_supporters.subscription.state": {
+    "defaultMessage": "狀態",
+    "description": "Term of the fact of a subscription's state."
+  },
+  "staff_supporters.subscription.plan": {
+    "defaultMessage": "方案",
+    "description": "Term of the fact of a subscription's plan and period."
+  },
+  "staff_supporters.subscription.price": {
+    "defaultMessage": "價格",
+    "description": "Term of the fact of a subscription's price."
+  },
+  "staff_supporters.subscription.price.value": {
+    "defaultMessage": "每{interval, select, year {年} other {月}} {price}",
+    "description": "A subscription's price per period."
+  },
+  "staff_supporters.subscription.started": {
+    "defaultMessage": "開始時間",
+    "description": "Term of the fact of when a subscription started."
+  },
+  "staff_supporters.subscription.period_ends": {
+    "defaultMessage": "期間結束",
+    "description": "Term of the fact of when a subscription's period ends."
+  },
+  "staff_supporters.subscription.grace_until": {
+    "defaultMessage": "保有角色到 {at}",
+    "description": "Under the state of a subscription whose payment failed: when it loses the plan's role. {at} is a date and a time. Read by administrators."
+  },
+  "staff_supporters.subscription.scheduled": {
+    "defaultMessage": "已排定的變更",
+    "description": "Term of the fact that a change of plan or period waits for the period's end."
+  },
+  "staff_supporters.subscription.scheduled.value": {
+    "defaultMessage": "在期間結束時",
+    "description": "When a scheduled change applies."
+  },
+  "staff_supporters.subscription.end": {
+    "defaultMessage": "結束訂閱",
+    "description": "Heading of the section that ends a subscription at once."
+  },
+  "staff_supporters.subscription.end.ask": {
+    "defaultMessage": "立即結束…",
+    "description": "Button that asks to end a subscription at once."
+  },
+  "staff_supporters.subscription.end.confirm": {
+    "defaultMessage": "要立即結束 {subscriber} 的訂閱嗎？",
+    "description": "Title of the confirmation that ends a subscription."
+  },
+  "staff_supporters.subscription.end.do": {
+    "defaultMessage": "立即結束",
+    "description": "Confirmation button that ends a subscription."
+  },
+  "staff_supporters.subscription.end.about": {
+    "defaultMessage": "結束訂閱會立即收回方案的角色並停止計費。不會退款；如有需要，請到提供者那裡退款。",
+    "description": "Above End now…, what ending a subscription does. Read by administrators."
+  },
+  "staff_supporters.subscription.end.confirm.about": {
+    "defaultMessage": "角色會立即收回，計費會停止，且不會退款。這無法復原。",
+    "description": "Body of the confirmation that ends a subscription. Read by administrators."
+  },
+  "staff_supporters.subscription.done.ended": {
+    "defaultMessage": "訂閱已結束。",
+    "description": "Said once a subscription was ended."
+  }
+}

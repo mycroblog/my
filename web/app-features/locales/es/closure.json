@@ -1,0 +1,54 @@
+{
+  "closure.closed_title": {
+    "defaultMessage": "{name} ha cerrado",
+    "description": "The title of the screen that replaces every other after the server closed (its name in place of {name}); the reader can only take their data away."
+  },
+  "closure.closed_export": {
+    "defaultMessage": "Puedes descargar tus datos hasta el {date}.",
+    "description": "Under the title of the closed server's screen: the last day the reader can still sign in and take their data ({date}, a date written out in the reader's language)."
+  },
+  "closure.request_export": {
+    "defaultMessage": "Solicitar una exportación de tus datos",
+    "description": "The button on the closed server's screen that starts building an archive of everything the reader has (posts, profile, follows), to download when it is ready."
+  },
+  "closure.export_requested": {
+    "defaultMessage": "Tu exportación se está preparando. Podrás descargarla aquí cuando esté lista.",
+    "description": "What the closed server's screen says while the archive of the reader's data is being built (after a request, and on every visit until it is ready); the request button waits meanwhile."
+  },
+  "closure.export_failed": {
+    "defaultMessage": "No se pudo solicitar la exportación. Inténtalo más tarde.",
+    "description": "What the closed server's screen says when the server refused the request of an archive of the reader's data (one already being built, too many today)."
+  },
+  "closure.download_follows": {
+    "defaultMessage": "Descargar a quién sigues en CSV",
+    "description": "The button on the closed server's screen that saves the list of accounts the reader follows as a CSV file, which another server can import."
+  },
+  "closure.download_failed": {
+    "defaultMessage": "No se pudo descargar a quién sigues. Inténtalo de nuevo.",
+    "description": "What the closed server's screen says when the download of the reader's follows as CSV failed."
+  },
+  "closure.sign_out": {
+    "defaultMessage": "Cerrar sesión",
+    "description": "The link at the end of the closed server's screen that signs the reader out."
+  },
+  "closure.export_ready": {
+    "defaultMessage": "Tu exportación está lista. Puedes descargarla hasta el {date}.",
+    "description": "On the closed server's screen once the archive of the reader's data is built: until when it can be downloaded ({date}, a date written out in the reader's language)."
+  },
+  "closure.download_export": {
+    "defaultMessage": "Descargar tu exportación",
+    "description": "The button on the closed server's screen that saves the archive of the reader's data once it is ready."
+  },
+  "closure.export_build_failed": {
+    "defaultMessage": "No se pudo preparar tu última exportación. Solicita otra.",
+    "description": "On the closed server's screen when the server failed to build the archive the reader requested last."
+  },
+  "closure.export_download_failed": {
+    "defaultMessage": "No se pudo descargar la exportación. Inténtalo de nuevo.",
+    "description": "What the closed server's screen says when the download of the ready archive of the reader's data failed."
+  },
+  "closure.progress": {
+    "defaultMessage": "Progreso del cierre",
+    "description": "The link on the closed server's screen, for an administrator who closes it, to the progress of the deletion of the accounts on other servers. Read by administrators."
+  }
+}

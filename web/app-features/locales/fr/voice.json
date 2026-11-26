@@ -1,0 +1,554 @@
+{
+  "voice.rooms": {
+    "defaultMessage": "Salons ouverts maintenant",
+    "description": "The name of the list of the open voice chat rooms on the rooms' screen, for assistive technology."
+  },
+  "voice.rooms_loading": {
+    "defaultMessage": "Chargement des salons…",
+    "description": "In place of the list of voice chat rooms while the first of them load."
+  },
+  "voice.rooms_failed": {
+    "defaultMessage": "Les salons n’ont pas pu être chargés.",
+    "description": "In place of the list of voice chat rooms when they could not be loaded, beside a button to try again."
+  },
+  "voice.rooms_empty": {
+    "defaultMessage": "Aucun salon n’est ouvert pour le moment.",
+    "description": "In place of the list of voice chat rooms when none is open that the reader sees."
+  },
+  "voice.back": {
+    "defaultMessage": "Salons vocaux",
+    "description": "The back button at the top of a voice chat room's page, which leads to the list of rooms."
+  },
+  "voice.loading": {
+    "defaultMessage": "Chargement du salon…",
+    "description": "In place of a voice chat room while it loads."
+  },
+  "voice.failed": {
+    "defaultMessage": "Le salon n’a pas pu être chargé.",
+    "description": "In place of a voice chat room when it could not be loaded, beside a button to try again."
+  },
+  "voice.retry": {
+    "defaultMessage": "Réessayer",
+    "description": "The button after a voice chat room's or a list's failure to load that loads it again."
+  },
+  "voice.hosted_by": {
+    "defaultMessage": "Organisé par {host}",
+    "description": "Under a voice chat room's title on its page: who hosts it ({host}, a display name)."
+  },
+  "voice.speakers": {
+    "defaultMessage": "Intervenants",
+    "description": "The heading of the participants of a voice chat room who may speak (the host, the co-hosts, the speakers), and the name of their list."
+  },
+  "voice.listeners": {
+    "defaultMessage": "Auditeurs",
+    "description": "The heading of the participants of a voice chat room who listen, and the name of their list."
+  },
+  "voice.no_listeners": {
+    "defaultMessage": "Personne n’écoute pour le moment.",
+    "description": "Under the heading Listeners of a voice chat room while it has none."
+  },
+  "voice.role_host": {
+    "defaultMessage": "Hôte",
+    "description": "Under a participant's name in a voice chat room: they host it."
+  },
+  "voice.role_cohost": {
+    "defaultMessage": "Co-hôte",
+    "description": "Under a participant's name in a voice chat room: they are a co-host."
+  },
+  "voice.speaking": {
+    "defaultMessage": "Parle",
+    "description": "Said of a participant of a voice chat room while they speak, for assistive technology; their avatar is ringed."
+  },
+  "voice.mic_off": {
+    "defaultMessage": "Micro coupé",
+    "description": "Said of a speaker of a voice chat room whose microphone is off; a crossed-out microphone on their avatar."
+  },
+  "voice.hand": {
+    "defaultMessage": "Main levée",
+    "description": "Said of a participant of a voice chat room who raised a hand to speak; a hand on their avatar."
+  },
+  "voice.blocked": {
+    "defaultMessage": "Bloqué",
+    "description": "Under the name of a participant of a voice chat room whom the reader blocks or who blocks the reader; they are shown, marked, and their reactions are hidden."
+  },
+  "voice.join_note": {
+    "defaultMessage": "Lorsque vous rejoignez le salon, votre nom apparaît dans la liste des participants pour toutes les personnes qui peuvent le voir.",
+    "description": "Over the Join button of a voice chat room the reader is not in: what joining shows of them."
+  },
+  "voice.join_moves": {
+    "defaultMessage": "Vous quittez {room} lorsque vous rejoignez celui-ci.",
+    "description": "Over the Join button of a voice chat room while the reader is in another one ({room}, its name): one can be in one room at a time."
+  },
+  "voice.join_full": {
+    "defaultMessage": "Le salon est complet. Réessayez plus tard.",
+    "description": "After pressing Join, when the voice chat room has as many people as the server allows."
+  },
+  "voice.join_hosting": {
+    "defaultMessage": "Vous animez un autre salon. Terminez-le ou transmettez-le avant de rejoindre celui-ci.",
+    "description": "After pressing Join, when the reader hosts another open voice chat room."
+  },
+  "voice.join": {
+    "defaultMessage": "Rejoindre",
+    "description": "The button that joins the reader to a voice chat room, as a listener."
+  },
+  "voice.join_unavailable": {
+    "defaultMessage": "Ce navigateur ne peut pas utiliser le chat vocal sur cette page. Ouvrez l’adresse de ce serveur avec https:// ou utilisez un autre navigateur.",
+    "description": "After pressing Join, when the browser gives the page no microphone or sound: the page is not served over HTTPS, or the browser does not support it."
+  },
+  "voice.join_failed": {
+    "defaultMessage": "Vous n’avez pas pu rejoindre le salon. Réessayez.",
+    "description": "After pressing Join, when joining failed for any other reason."
+  },
+  "voice.connecting": {
+    "defaultMessage": "Connexion…",
+    "description": "In a voice chat room the reader joined, until its connection is up."
+  },
+  "voice.reconnecting": {
+    "defaultMessage": "La connexion a été perdue. Reconnexion…",
+    "description": "In a voice chat room the reader is in, while its connection is down and comes back by itself."
+  },
+  "voice.muted_by": {
+    "defaultMessage": "{name} a coupé votre micro. Vous pouvez le réactiver.",
+    "description": "In a voice chat room the reader speaks in, after a host or a co-host ({name}, their display name) muted the reader."
+  },
+  "voice.muted_by_someone": {
+    "defaultMessage": "Un hôte a coupé votre micro. Vous pouvez le réactiver.",
+    "description": "In a voice chat room the reader speaks in, after a host or co-host who is no longer listed muted the reader."
+  },
+  "voice.mic_failed": {
+    "defaultMessage": "{reason, select, denied {Le navigateur n’a pas été autorisé à utiliser votre micro. Autorisez-le dans les paramètres du site, puis réessayez.} missing {Aucun micro n’a été trouvé. Branchez-en un, puis réessayez.} busy {Une autre application utilise votre micro. Fermez-la, puis réessayez.} refused {Vous n’êtes plus intervenant dans ce salon. Pour reprendre la parole, utilisez Lever la main ou Parler.} other {Votre micro n’a pas pu être activé. Réessayez.}}",
+    "description": "In a voice chat room, when the reader's microphone could not be turned on: the browser refused it ({reason} denied), there is none (missing), another app holds it (busy), the reader is a listener again and the server did not let them speak (refused; Raise hand and Speak are the controls that ask to speak), or anything else (other)."
+  },
+  "voice.hear_room": {
+    "defaultMessage": "Écouter le salon",
+    "description": "The button in a voice chat room, and in the call's bar, while the browser holds the room's sound back until the reader presses something: pressing it plays the sound."
+  },
+  "voice.hear_held": {
+    "defaultMessage": "Le navigateur retient le son du salon.",
+    "description": "Beside the Hear the room button in a voice chat room, while the browser holds its sound back until a press."
+  },
+  "voice.controls": {
+    "defaultMessage": "Commandes du salon",
+    "description": "The name of the toolbar of a voice chat room's controls (the microphone, the hand, reactions, leaving), for assistive technology."
+  },
+  "voice.mute": {
+    "defaultMessage": "Couper le micro",
+    "description": "The microphone's control in a voice chat room while it is on: pressing it turns it off."
+  },
+  "voice.unmute": {
+    "defaultMessage": "Réactiver le micro",
+    "description": "The microphone's control in a voice chat room while it is off: pressing it turns it on."
+  },
+  "voice.speak": {
+    "defaultMessage": "Parler",
+    "description": "The control of a listener of a voice chat room who may speak without asking: pressing it makes them a speaker."
+  },
+  "voice.listen": {
+    "defaultMessage": "Arrêter de parler",
+    "description": "The control of a speaker of a voice chat room that makes them a listener again."
+  },
+  "voice.raise_hand": {
+    "defaultMessage": "Lever la main",
+    "description": "The control of a listener of a voice chat room who may not speak without asking: pressing it asks the hosts to let them speak."
+  },
+  "voice.lower_hand": {
+    "defaultMessage": "Baisser la main",
+    "description": "The control of a listener of a voice chat room whose hand is raised: pressing it takes the request back."
+  },
+  "voice.react": {
+    "defaultMessage": "Réagir",
+    "description": "The control of a voice chat room that opens the emoji picker to send a reaction, which everyone in the room sees for a moment."
+  },
+  "voice.leave": {
+    "defaultMessage": "Quitter",
+    "description": "The control of a voice chat room that leaves it."
+  },
+  "voice.act_failed": {
+    "defaultMessage": "{action, select, speak {La prise de parole} listen {L’arrêt de la parole} raise {Le fait de lever la main} lower {Le fait de baisser la main} leave {Le départ} end {La fermeture du salon} other {La réaction}} n’a pas abouti. Réessayez.",
+    "description": "In a voice chat room, when the server refused or did not answer what the reader pressed: action is which of them (speak, listen to stop speaking, raise or lower the hand, leave, end: the host ending the room, or other: sending a reaction)."
+  },
+  "voice.end_room": {
+    "defaultMessage": "Terminer le salon",
+    "description": "The button beside the notice that the host must choose before leaving: it ends the voice chat room for everyone."
+  },
+  "voice.output": {
+    "defaultMessage": "Sortie audio",
+    "description": "The name of the choice, in a voice chat room, of the speakers or headphones the room's sound plays on."
+  },
+  "voice.output_default": {
+    "defaultMessage": "Par défaut du système",
+    "description": "The first choice of the sound output in a voice chat room: the device's default speakers."
+  },
+  "voice.output_unnamed": {
+    "defaultMessage": "Sortie {number}",
+    "description": "A choice of the sound output in a voice chat room whose device the browser does not name until the site may use the microphone ({number}, its place in the list)."
+  },
+  "voice.end": {
+    "defaultMessage": "{kind, select, removed {{reason, select, removed {Un hôte vous a retiré de {room}. Vous ne pouvez plus le rejoindre.} blocked {Vous avez été retiré de {room} à cause d’un blocage.} suspended {Vous avez été retiré de {room} parce que votre compte a été suspendu.} disconnected {Vous avez été retiré de {room} parce que la connexion a été perdue.} other {Vous n’êtes plus dans {room}.}}} replaced {Vous avez rejoint {room} sur un autre appareil : vous l’avez donc quitté sur celui-ci.} ended {{reason, select, host {L’hôte a terminé {room}.} moderator {Un modérateur a terminé {room}.} time_limit {{room} a atteint sa limite de durée et s’est terminé.} disabled {{room} s’est terminé parce que le chat vocal a été désactivé sur ce serveur.} host_disconnected {{room} s’est terminé parce que son hôte a perdu la connexion.} other {{room} s’est terminé.}}} lost {La connexion à {room} a été perdue.} other {Le son de {room} ne fonctionne plus : vous n’y êtes donc plus.}}",
+    "description": "Why the reader is no longer in the voice chat room {room} (its name), on its page and in a toast on the other screens: {kind} removed (with {reason}: removed by a host, blocked, suspended, disconnected), replaced (joined on another device), ended (with {reason}: why the room ended), lost (the server dropped the session), or other (the sound failed)."
+  },
+  "voice.end_close": {
+    "defaultMessage": "Fermer",
+    "description": "The button at the end of the toast that says why the reader is no longer in a voice chat room."
+  },
+  "voice.ended": {
+    "defaultMessage": "Ce salon est terminé.",
+    "description": "On the page of a voice chat room that ended, under its name when the server shows it."
+  },
+  "voice.unavailable": {
+    "defaultMessage": "Ce salon n’est pas ouvert, ou vous ne pouvez pas le voir.",
+    "description": "On the page of a voice chat room the reader does not see: it never was, or it is not shown to them."
+  },
+  "voice.local_only": {
+    "defaultMessage": "Seules les personnes ayant un compte sur ce serveur peuvent rejoindre ses salons.",
+    "description": "On the page of a voice chat room for a visitor who is not signed in, beside the sign-in button."
+  },
+  "voice.open_now": {
+    "defaultMessage": "Ouvert maintenant",
+    "description": "On a voice chat room's page for a visitor, while the room is open and the server shows its summary."
+  },
+  "voice.off": {
+    "defaultMessage": "Le chat vocal n’est pas disponible sur ce serveur.",
+    "description": "On a voice chat page while the server has voice chat turned off."
+  },
+  "voice.open_hosted_by": {
+    "defaultMessage": "Ouvert maintenant · Organisé par {host}",
+    "description": "On a voice chat room's page for a visitor, under its name, while the room is open and the server shows its summary with its host ({host}, a display name)."
+  },
+  "voice.end_open": {
+    "defaultMessage": "Ouvrir le salon",
+    "description": "The action of the toast that says why the reader is no longer in a voice chat room: it opens the room's page, which says it again."
+  },
+  "voice.self": {
+    "defaultMessage": "Vous",
+    "description": "Under the name on the reader's own tile among the participants of a voice chat room: the tile is theirs. A line of its own, which a long name never cuts."
+  },
+  "voice.sign_in_join": {
+    "defaultMessage": "Se connecter pour rejoindre",
+    "description": "The button on a voice chat room's page for a visitor who is not signed in: the sign-in, which comes back to the room, where they can join it."
+  },
+  "voice.open": {
+    "defaultMessage": "Ouvrir un salon",
+    "description": "Over the list of voice chat rooms, the button that leads to the form that opens one; and the title of that form."
+  },
+  "voice.open.submit": {
+    "defaultMessage": "Ouvrir et rejoindre",
+    "description": "The button at the foot of the form that opens a voice chat room: it opens the room and joins the reader to it as its host."
+  },
+  "voice.open.not_allowed": {
+    "defaultMessage": "Vous ne pouvez pas ouvrir de salons sur ce serveur. Ses administrateurs choisissent qui le peut.",
+    "description": "In place of the form that opens a voice chat room, for a reader who may not open rooms."
+  },
+  "voice.form.name": {
+    "defaultMessage": "Nom",
+    "description": "The label of the field of a voice chat room's name, in the form that opens a room or changes its settings."
+  },
+  "voice.form.name_empty": {
+    "defaultMessage": "Donnez un nom au salon.",
+    "description": "Under the name field of a voice chat room's form, when the reader sends it with no name."
+  },
+  "voice.form.name_rule": {
+    "defaultMessage": "Un nom fait de 1 à 100 caractères sur une seule ligne.",
+    "description": "Under the name field of a voice chat room's form, when the server refused the name without saying why."
+  },
+  "voice.form.icon": {
+    "defaultMessage": "Icône",
+    "description": "The heading of the choice of the emoji shown before a voice chat room's name, in the room's form; also the name of that group for assistive technology."
+  },
+  "voice.form.icon_choose": {
+    "defaultMessage": "Choisir un émoji",
+    "description": "The button that opens the emoji picker to choose a voice chat room's icon, while it has none; also the picker's name."
+  },
+  "voice.form.icon_change": {
+    "defaultMessage": "Changer d’émoji",
+    "description": "The button that opens the emoji picker to choose another icon for a voice chat room, beside the one chosen; also the picker's name."
+  },
+  "voice.form.icon_remove": {
+    "defaultMessage": "Retirer l’icône",
+    "description": "Beside the icon chosen for a voice chat room, the button that leaves the room without one."
+  },
+  "voice.form.icon_rule": {
+    "defaultMessage": "L’icône est un émoji, ou un émoji personnalisé de ce serveur.",
+    "description": "Under the icon of a voice chat room's form, when the server refused the icon without saying why."
+  },
+  "voice.form.description": {
+    "defaultMessage": "Description",
+    "description": "The label of the field of a voice chat room's description, in the room's form."
+  },
+  "voice.form.description_rule": {
+    "defaultMessage": "Une description fait 500 caractères au maximum.",
+    "description": "Under the description field of a voice chat room's form, when the server refused it without saying why."
+  },
+  "voice.form.hashtags": {
+    "defaultMessage": "Hashtags",
+    "description": "The label of the field of a voice chat room's hashtags, in the room's form."
+  },
+  "voice.form.hashtags_hint": {
+    "defaultMessage": "5 au maximum, séparés par des espaces.",
+    "description": "Under the label of the hashtags field of a voice chat room's form: how many and how to write them."
+  },
+  "voice.form.hashtags_rule": {
+    "defaultMessage": "Un salon a 5 hashtags au maximum, séparés par des espaces.",
+    "description": "Under the hashtags field of a voice chat room's form, when it holds more than 5 or the server refused them."
+  },
+  "voice.form.visibility": {
+    "defaultMessage": "Qui peut voir le salon",
+    "description": "The heading of the choice of who sees a voice chat room, in the room's form; also the choice's name."
+  },
+  "voice.form.visibility_choice": {
+    "defaultMessage": "{visibility, select, local {Tout le monde sur ce serveur} followers {Vos abonnés} following {Les personnes que vous suivez} mutuals {Les personnes que vous suivez et qui vous suivent en retour} other {Uniquement les personnes invitées}}",
+    "description": "An option of who sees a voice chat room: visibility is local, followers, following, mutuals, or other (invited: only the people the host or a co-host invites)."
+  },
+  "voice.form.speakers": {
+    "defaultMessage": "Qui peut parler sans demander",
+    "description": "The heading of the choice of who may speak in a voice chat room without raising a hand, in the room's form; also the choice's name."
+  },
+  "voice.form.speakers_choice": {
+    "defaultMessage": "{speakers, select, everyone {Tout le monde dans le salon} followers {Vos abonnés} following {Les personnes que vous suivez} mutuals {Les personnes que vous suivez et qui vous suivent en retour} other {Uniquement les personnes autorisées à parler}}",
+    "description": "An option of who speaks in a voice chat room without asking: speakers is everyone, followers, following, mutuals, or other (manual: only the people the host or a co-host lets speak)."
+  },
+  "voice.form.post": {
+    "defaultMessage": "Publication de lancement",
+    "description": "The heading of the post that tells that a voice chat room opened, in the form that opens a room."
+  },
+  "voice.form.post_check": {
+    "defaultMessage": "{visibility, select, local {Publier sur ce serveur que le salon est ouvert} other {Publier auprès de vos abonnés que le salon est ouvert}}",
+    "description": "The checkbox of the start post in the form that opens a voice chat room: visibility is local (a post for this server) or other (followers: a post for the reader's followers)."
+  },
+  "voice.form.post_text": {
+    "defaultMessage": "Texte de la publication",
+    "description": "The label of the text of the start post in the form that opens a voice chat room."
+  },
+  "voice.form.post_draft": {
+    "defaultMessage": "J’ai ouvert le salon vocal « {name} ».",
+    "description": "The text the start post of a voice chat room starts with, which the reader may change: name is the room's name as written."
+  },
+  "voice.form.post_link": {
+    "defaultMessage": "Le lien du salon est ajouté à la fin de la publication.",
+    "description": "Under the text of the start post of a voice chat room."
+  },
+  "voice.form.post_refused": {
+    "defaultMessage": "La publication n’a pas pu être envoyée : le salon ne s’est donc pas ouvert. Modifiez le texte, ou ouvrez le salon sans la publication.",
+    "description": "Under the text of the start post when the server refused the post without saying why."
+  },
+  "voice.form.not_sent": {
+    "defaultMessage": "Corrigez ce qui est signalé, puis réessayez.",
+    "description": "Before the button of a voice chat room's form, when the form or the server found something wrong with a field."
+  },
+  "voice.form.open_refused": {
+    "defaultMessage": "{kind, select, not_eligible {Vous ne pouvez pas ouvrir de salons sur ce serveur.} too_many_rooms {Le nombre de salons ouverts autorisé par ce serveur est atteint. Réessayez plus tard.} other {Vous animez un autre salon. Terminez-le ou transmettez-le avant d’ouvrir celui-ci.}}",
+    "description": "Before the button of the form that opens a voice chat room, when the server refused it: kind is not_eligible (the reader may not open rooms), too_many_rooms (the server's limit), or other (the reader hosts another open room)."
+  },
+  "voice.form.failed": {
+    "defaultMessage": "L’envoi n’a pas abouti. Vérifiez votre connexion et réessayez.",
+    "description": "Before the button of a voice chat room's form, when the server could not be reached or failed."
+  },
+  "voice.form.post_without": {
+    "defaultMessage": "Pour ouvrir le salon sans elle, décochez la publication de lancement.",
+    "description": "Under the text of the start post of a voice chat room, after what the server said of a post it refused: the way to open the room anyway."
+  },
+  "voice.settings.title": {
+    "defaultMessage": "Paramètres du salon",
+    "description": "The title of the form that changes an open voice chat room's settings, and the item of the room's menu that leads to it."
+  },
+  "voice.settings.submit": {
+    "defaultMessage": "Enregistrer",
+    "description": "The button at the foot of the form that changes an open voice chat room's settings."
+  },
+  "voice.settings.host_only": {
+    "defaultMessage": "Seul l’hôte du salon, {host}, change ses paramètres.",
+    "description": "In place of a voice chat room's settings, for a reader who is not its host: host is the host's name."
+  },
+  "voice.settings.ended": {
+    "defaultMessage": "Ce salon est terminé : ses paramètres et ses invitations ont disparu avec lui.",
+    "description": "In place of a voice chat room's settings or invitations, when the room ended."
+  },
+  "voice.settings.end_heading": {
+    "defaultMessage": "Terminer le salon",
+    "description": "The heading of the last part of a voice chat room's settings, which ends the room for everyone."
+  },
+  "voice.room_back": {
+    "defaultMessage": "Retour au salon",
+    "description": "The back button of a screen under a voice chat room (its settings, its invitations), which leads to the room."
+  },
+  "voice.host.op": {
+    "defaultMessage": "{op, select, grant {Lui donner la parole} dismiss {Refuser la main levée} revoke {Passer en auditeur} mute {Couper son micro} remove {Retirer du salon…} cohost {Nommer co-hôte} uncohost {Retirer comme co-hôte} other {Nommer hôte…}}",
+    "description": "An item of the menu a host or co-host opens on a participant of a voice chat room: op is grant (lets them speak, also the answer to a raised hand), dismiss (turns the raised hand down), revoke (makes a speaker a listener), mute (turns their microphone off), remove (takes them out for good, asked first), cohost, uncohost, or other (hand_over: makes them the host, asked first)."
+  },
+  "voice.host.menu": {
+    "defaultMessage": "Actions pour {name}",
+    "description": "The name of the menu a host or co-host opens on a participant of a voice chat room: name is the participant's."
+  },
+  "voice.host.cohosts_full": {
+    "defaultMessage": "Un salon a jusqu’à {count, plural, one {# co-hôte} other {# co-hôtes}}.",
+    "description": "Under Make co-host in a participant's menu, when the room has as many co-hosts as it can: count is that number."
+  },
+  "voice.host.failed": {
+    "defaultMessage": "{cause, select, cohosts {Le salon a autant de co-hôtes que possible. Retirez-en un d’abord.} next_host {{name} ne peut pas animer de salons. Choisissez quelqu’un d’autre.} other {{op, select, grant {Donner la parole à {name}} dismiss {Refuser la main levée de {name}} revoke {Passer {name} en auditeur} mute {Couper le micro de {name}} remove {Retirer {name}} cohost {Nommer {name} co-hôte} uncohost {Retirer {name} comme co-hôte} other {Nommer {name} hôte}} n’a pas abouti. Réessayez.}}",
+    "description": "In a voice chat room, when what a host or co-host did to a participant was refused or did not finish: cause is cohosts (too many co-hosts), next_host (the participant may not host rooms), or other, which names the operation op (grant, dismiss, revoke, mute, remove, cohost, uncohost, or other: hand_over); name is the participant's."
+  },
+  "voice.host.cancel": {
+    "defaultMessage": "Annuler",
+    "description": "The button that closes a dialog of a voice chat room's host (removing someone, handing over, ending, leaving) without doing it."
+  },
+  "voice.host.ask_title": {
+    "defaultMessage": "{op, select, remove {Retirer {name} du salon ?} other {Nommer {name} hôte ?}}",
+    "description": "The question of the dialog before removing a participant of a voice chat room (op remove) or handing the room over to them (other): name is the participant's."
+  },
+  "voice.host.ask_text": {
+    "defaultMessage": "{op, select, remove {Cette personne quitte le salon et ne peut plus le rejoindre.} other {Vous restez dans le salon. {name} l’anime alors, et peut le terminer.}}",
+    "description": "What follows removing a participant (op remove) or handing the room over to them (other), in its dialog: name is the participant's."
+  },
+  "voice.host.ask_confirm": {
+    "defaultMessage": "{op, select, remove {Retirer} other {Nommer hôte}}",
+    "description": "The button that confirms removing a participant of a voice chat room (op remove) or handing the room over to them (other)."
+  },
+  "voice.host.room_menu": {
+    "defaultMessage": "Gérer le salon",
+    "description": "The name of the menu at the top of a voice chat room's page, for its host and co-hosts: its settings, its invitations, ending it."
+  },
+  "voice.host.end": {
+    "defaultMessage": "Terminer le salon…",
+    "description": "An item of a voice chat room's menu, for its host: ends the room for everyone, asked first."
+  },
+  "voice.host.end_title": {
+    "defaultMessage": "Terminer le salon ?",
+    "description": "The question of the dialog before the host ends a voice chat room."
+  },
+  "voice.host.end_text": {
+    "defaultMessage": "Tout le monde le quitte. Cette action est irréversible.",
+    "description": "What follows ending a voice chat room, in its dialog."
+  },
+  "voice.host.done": {
+    "defaultMessage": "{op, select, remove {Vous avez retiré {name} du salon.} other {{name} anime désormais le salon.}}",
+    "description": "Said in a voice chat room once the host removed a participant (op remove) or handed the room over to them (other: hand_over): name is the participant's."
+  },
+  "voice.leave_dialog.title": {
+    "defaultMessage": "Qui anime le salon ensuite ?",
+    "description": "The title of the dialog that opens when the host of a voice chat room leaves it while others are in it; also the name of its choice."
+  },
+  "voice.leave_dialog.text": {
+    "defaultMessage": "D’autres personnes sont encore dans le salon. Transmettez-le à l’une d’elles, ou terminez-le pour tout le monde.",
+    "description": "Under the title of the dialog of a host who leaves a voice chat room while others are in it."
+  },
+  "voice.leave_dialog.next": {
+    "defaultMessage": "{cohost, select, yes {Transmettre à {name}, co-hôte} other {Transmettre à {name}}}",
+    "description": "An option of the dialog of a host who leaves a voice chat room: makes the participant name the host; cohost is yes for a co-host, else other."
+  },
+  "voice.leave_dialog.end": {
+    "defaultMessage": "Terminer le salon",
+    "description": "The last option of the dialog of a host who leaves a voice chat room: ends the room instead of handing it over."
+  },
+  "voice.leave_dialog.confirm": {
+    "defaultMessage": "Transmettre et quitter",
+    "description": "The button of the dialog of a host who leaves a voice chat room, while a next host is chosen."
+  },
+  "voice.leave_dialog.end_confirm": {
+    "defaultMessage": "Terminer et quitter",
+    "description": "The button of the dialog of a host who leaves a voice chat room, while ending the room is chosen."
+  },
+  "voice.leave_dialog.refused": {
+    "defaultMessage": "{name} ne peut pas animer de salons. Choisissez quelqu’un d’autre, ou terminez le salon.",
+    "description": "In the dialog of a host who leaves a voice chat room, when the server refused the next host chosen: name is theirs."
+  },
+  "voice.leave_dialog.failed": {
+    "defaultMessage": "Vous n’avez pas pu quitter. Réessayez.",
+    "description": "In the dialog of a host who leaves a voice chat room, when the leave did not finish."
+  },
+  "voice.leave_dialog.gone": {
+    "defaultMessage": "{name} a quitté le salon. Choisissez quelqu’un d’autre, ou terminez le salon.",
+    "description": "In the dialog of a host who leaves a voice chat room, when the participant they chose as the next host left meanwhile: name is theirs."
+  },
+  "voice.invitations.title": {
+    "defaultMessage": "Invitations",
+    "description": "The title of the screen of a voice chat room's invitations, the heading of their list, its name, and the item of the room's menu that leads to it."
+  },
+  "voice.invitations.loading": {
+    "defaultMessage": "Chargement des invitations…",
+    "description": "In place of the invitations of a voice chat room while they load."
+  },
+  "voice.invitations.failed": {
+    "defaultMessage": "Les invitations n’ont pas pu être chargées.",
+    "description": "In place of the invitations of a voice chat room when they could not be loaded, beside a button to try again."
+  },
+  "voice.invitations.none": {
+    "defaultMessage": "Personne n’est encore invité.",
+    "description": "In place of the invitations of a voice chat room while there are none."
+  },
+  "voice.invitations.as": {
+    "defaultMessage": "{role, select, speaker {Invité comme intervenant} other {Invité comme auditeur}}",
+    "description": "Beside an account in the invitations of a voice chat room: role is speaker or other (listener)."
+  },
+  "voice.invitations.revoke": {
+    "defaultMessage": "Révoquer",
+    "description": "The button that revokes an invitation to a voice chat room, beside the account invited."
+  },
+  "voice.invitations.revoked": {
+    "defaultMessage": "Vous avez révoqué l’invitation de {name}.",
+    "description": "Said on the invitations screen of a voice chat room after the reader revoked one: name is the account's."
+  },
+  "voice.invitations.revoke_failed": {
+    "defaultMessage": "L’invitation de {name} n’a pas pu être révoquée. Réessayez.",
+    "description": "Said on the invitations screen of a voice chat room when a revocation did not finish: name is the account's."
+  },
+  "voice.invitations.hosts_only": {
+    "defaultMessage": "Seuls l’hôte et les co-hôtes du salon y invitent des personnes.",
+    "description": "In place of a voice chat room's invitations, for a reader who is neither its host nor a co-host."
+  },
+  "voice.invite.heading": {
+    "defaultMessage": "Inviter quelqu’un",
+    "description": "The heading of the part of a voice chat room's invitations screen that finds people and invites them."
+  },
+  "voice.invite.search": {
+    "defaultMessage": "Nom ou identifiant",
+    "description": "The label of the field that finds people to invite to a voice chat room."
+  },
+  "voice.invite.search_hint": {
+    "defaultMessage": "Seules les personnes de ce serveur peuvent être invitées.",
+    "description": "Under the label of the field that finds people to invite to a voice chat room."
+  },
+  "voice.invite.clear": {
+    "defaultMessage": "Effacer",
+    "description": "The button that empties the field that finds people to invite to a voice chat room."
+  },
+  "voice.invite.role": {
+    "defaultMessage": "Inviter comme",
+    "description": "The name of the choice of as what people are invited to a voice chat room, for assistive technology."
+  },
+  "voice.invite.role_choice": {
+    "defaultMessage": "{role, select, speaker {Intervenant, qui peut parler sans demander} other {Auditeur}}",
+    "description": "An option of as what people are invited to a voice chat room: role is speaker or other (listener)."
+  },
+  "voice.invite.searching": {
+    "defaultMessage": "Recherche…",
+    "description": "In place of the people found to invite to a voice chat room while the search runs."
+  },
+  "voice.invite.search_failed": {
+    "defaultMessage": "La recherche n’a pas abouti. Réessayez.",
+    "description": "In place of the people found to invite to a voice chat room when the search failed."
+  },
+  "voice.invite.none_found": {
+    "defaultMessage": "Personne sur ce serveur ne correspond.",
+    "description": "In place of the people found to invite to a voice chat room when the search found none."
+  },
+  "voice.invite.found": {
+    "defaultMessage": "Personnes trouvées",
+    "description": "The name of the list of people found to invite to a voice chat room, for assistive technology."
+  },
+  "voice.invite.invite": {
+    "defaultMessage": "Inviter",
+    "description": "The button beside an account found that invites it to a voice chat room."
+  },
+  "voice.invite.invited": {
+    "defaultMessage": "Invité",
+    "description": "In place of Invite beside an account found that is invited to the voice chat room already."
+  },
+  "voice.invite.done": {
+    "defaultMessage": "{role, select, speaker {Vous avez invité {name} comme intervenant.} other {Vous avez invité {name} comme auditeur.}}",
+    "description": "Said on the invitations screen of a voice chat room after an invitation: name is the account's, role speaker or other (listener)."
+  },
+  "voice.invite.refused": {
+    "defaultMessage": "{kind, select, already_invited {{name} a déjà été invité à ce salon. Une personne ne peut être invitée qu’une fois à un salon.} invalid_invitee {{name} ne peut pas être invité à ce salon.} rate_limited {Ce salon a envoyé autant d’invitations que possible pour le moment. Réessayez plus tard.} other {{name} n’a pas pu être invité. Réessayez.}}",
+    "description": "Said on the invitations screen of a voice chat room when an invitation was refused: kind is already_invited (once per room, also after a revocation), invalid_invitee (a block between them and a host, removed from the room, not an active local account), rate_limited, or other; name is the account's."
+  }
+}

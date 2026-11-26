@@ -1,0 +1,566 @@
+{
+  "staff_audit.group.records": {
+    "defaultMessage": "Registros",
+    "description": "The heading, at /moderation, of the group of the audit log. Read by moderators."
+  },
+  "staff_audit.entry.audit_log": {
+    "defaultMessage": "Registro de auditoría",
+    "description": "The name of the moderators' audit log, in the list of moderation screens, as its title and as the name of its log. Read by moderators."
+  },
+  "staff_audit.forbidden": {
+    "defaultMessage": "Tu cuenta ya no tiene permiso para leer el registro de auditoría.",
+    "description": "On the audit log of the moderators (/moderation/audit-log), in its place when the server refuses the reader the log. Read by moderators."
+  },
+  "staff_audit.loading": {
+    "defaultMessage": "Cargando el registro de auditoría…",
+    "description": "On the audit log of the moderators (/moderation/audit-log), while the log is read. Read by moderators."
+  },
+  "staff_audit.failed": {
+    "defaultMessage": "No se pudo cargar el registro de auditoría.",
+    "description": "On the audit log of the moderators (/moderation/audit-log), when the log could not be read; Try again follows. Read by moderators."
+  },
+  "staff_audit.empty": {
+    "defaultMessage": "Todavía no hay nada registrado.",
+    "description": "On the audit log of the moderators (/moderation/audit-log), when the log holds nothing. Read by moderators."
+  },
+  "staff_audit.empty.filtered": {
+    "defaultMessage": "Nada de lo registrado coincide con estos filtros.",
+    "description": "On the audit log of the moderators (/moderation/audit-log), when the filters leave nothing; Clear filters is above. Read by moderators."
+  },
+  "staff_audit.filters": {
+    "defaultMessage": "Filtrar el registro de auditoría",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the name of the filters, for assistive technology. Read by moderators."
+  },
+  "staff_audit.filter.actor": {
+    "defaultMessage": "Quién",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the filter of who did the operations. Read by moderators."
+  },
+  "staff_audit.filter.actor.any": {
+    "defaultMessage": "Cualquiera",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the choice of anyone in the filter of who. Read by moderators."
+  },
+  "staff_audit.filter.actor.me": {
+    "defaultMessage": "Tú",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the choice of the reader in the filter of who. Read by moderators."
+  },
+  "staff_audit.filter.target_kind": {
+    "defaultMessage": "Sobre",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the filter of the kind of what the operations acted on. Read by moderators."
+  },
+  "staff_audit.filter.target_kind.any": {
+    "defaultMessage": "Cualquier cosa",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the choice of every kind of target. Read by moderators."
+  },
+  "staff_audit.filter.action": {
+    "defaultMessage": "Operación",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the filter of the kind of operation, offered once a kind of target is chosen. Read by moderators."
+  },
+  "staff_audit.filter.action.any": {
+    "defaultMessage": "Cualquier operación",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the choice of every kind of operation. Read by moderators."
+  },
+  "staff_audit.filter.target": {
+    "defaultMessage": "Solo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the toggle that keeps only the operations on one target; turning it off shows every target. Read by moderators."
+  },
+  "staff_audit.same_actor": {
+    "defaultMessage": "Sus otras operaciones",
+    "description": "On the audit log of the moderators (/moderation/audit-log), under an entry's Details, the link to the operations of the same person. Read by moderators."
+  },
+  "staff_audit.same_target": {
+    "defaultMessage": "Otras operaciones sobre esto",
+    "description": "On the audit log of the moderators (/moderation/audit-log), under an entry's Details, the link to the operations on the same target. Read by moderators."
+  },
+  "staff_audit.actor": {
+    "defaultMessage": "{kind, select, cli {La línea de comandos} system {El servidor} remote {Otro servidor} other {Alguien}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), who did an operation when it was not a person (the start of an entry's sentence). Read by moderators."
+  },
+  "staff_audit.actor.gone": {
+    "defaultMessage": "Una cuenta que ya no existe",
+    "description": "On the audit log of the moderators (/moderation/audit-log), who did an operation when their account is gone (the start of an entry's sentence). Read by moderators."
+  },
+  "staff_audit.action.account_action_issued": {
+    "defaultMessage": "{actor} tomó una acción sobre {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_action_issued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.account_action_lifted": {
+    "defaultMessage": "{actor} levantó una acción sobre {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_action_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_action_issued": {
+    "defaultMessage": "{actor} tomó una acción sobre el dominio {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_action_issued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_action_lifted": {
+    "defaultMessage": "{actor} levantó una acción sobre el dominio {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_action_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.report_assigned": {
+    "defaultMessage": "{actor} asignó la denuncia sobre {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_assigned` (Assign to me on a report, or an assignment from the command line, which may name another moderator): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.report_unassigned": {
+    "defaultMessage": "{actor} quitó la asignación de la denuncia sobre {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_unassigned` (Unassign on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.report_resolved": {
+    "defaultMessage": "{actor} resolvió la denuncia sobre {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_resolved` (Resolve on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.report_reopened": {
+    "defaultMessage": "{actor} reabrió la denuncia sobre {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_reopened` (Reopen on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.report_note_added": {
+    "defaultMessage": "{actor} añadió una nota a la denuncia sobre {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_note_added` (Add note on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.report_forwarded": {
+    "defaultMessage": "{actor} envió la denuncia sobre {target} al servidor de la cuenta",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_forwarded` (Send to their server on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.registration_approved": {
+    "defaultMessage": "{actor} aprobó el registro de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `registration_approved`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.registration_rejected": {
+    "defaultMessage": "{actor} rechazó el registro de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `registration_rejected`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.setting_changed": {
+    "defaultMessage": "{actor} cambió la configuración {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `setting_changed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.text_changed": {
+    "defaultMessage": "{actor} cambió el texto del servidor {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `text_changed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.rule_added": {
+    "defaultMessage": "{actor} añadió la regla {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `rule_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.rule_revised": {
+    "defaultMessage": "{actor} revisó la regla {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `rule_revised`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.rule_moved": {
+    "defaultMessage": "{actor} movió la regla {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `rule_moved`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.rule_retired": {
+    "defaultMessage": "{actor} retiró la regla {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `rule_retired`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.appeal_upheld": {
+    "defaultMessage": "{actor} confirmó la medida que {target} apeló",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `appeal_upheld` (Uphold on an appeal): `target` the handle of the account that appealed, linked to the appeal. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.appeal_overturned": {
+    "defaultMessage": "{actor} revocó la medida que {target} apeló",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `appeal_overturned` (Overturn on an appeal): `target` the handle of the account that appealed, linked to the appeal. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.account_deletion_canceled": {
+    "defaultMessage": "{actor} canceló la eliminación de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_deletion_canceled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.revealed_private_data": {
+    "defaultMessage": "{actor} vio el correo electrónico y las direcciones IP de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `revealed_private_data`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.signup_block_added": {
+    "defaultMessage": "{actor} bloqueó los registros desde {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `signup_block_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.signup_block_lifted": {
+    "defaultMessage": "{actor} levantó el bloqueo de registros de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `signup_block_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.hook_decision_applied": {
+    "defaultMessage": "{actor} aplicó la decisión de la revisión automática sobre {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_decision_applied`: `target` the handle of the account the decision is about, linked to the decision. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.hook_decision_overridden": {
+    "defaultMessage": "{actor} canceló la decisión de la revisión automática sobre {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_decision_overridden` (Cancel the decision): `target` the handle of the account the decision is about, linked to the decision. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.hook_appeal_upheld": {
+    "defaultMessage": "{actor} confirmó el rechazo de una publicación que {target} apeló",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_appeal_upheld` (Uphold on an appeal of a refused post): `target` the handle of the account that appealed, linked to the decision. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.two_factor_disabled": {
+    "defaultMessage": "{actor} quitó la autenticación en dos pasos de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `two_factor_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.password_reset_link_issued": {
+    "defaultMessage": "{actor} emitió un enlace para restablecer la contraseña de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `password_reset_link_issued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.email_suppression_lifted": {
+    "defaultMessage": "{actor} reanudó el correo electrónico a {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `email_suppression_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.account_moved": {
+    "defaultMessage": "{actor} movió la cuenta limitada {target} a otra cuenta de este servidor",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_moved`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_created": {
+    "defaultMessage": "{actor} añadió el emoji personalizado {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_image_replaced": {
+    "defaultMessage": "{actor} reemplazó la imagen del emoji personalizado {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_image_replaced`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_copied": {
+    "defaultMessage": "{actor} copió el emoji personalizado {target} de otro servidor",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_copied`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_updated": {
+    "defaultMessage": "{actor} cambió el emoji personalizado {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_enabled": {
+    "defaultMessage": "{actor} activó el emoji personalizado {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_disabled": {
+    "defaultMessage": "{actor} desactivó el emoji personalizado {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_deleted": {
+    "defaultMessage": "{actor} eliminó el emoji personalizado {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_created": {
+    "defaultMessage": "{actor} añadió el webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_updated": {
+    "defaultMessage": "{actor} cambió el webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_deleted": {
+    "defaultMessage": "{actor} eliminó el webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_enabled": {
+    "defaultMessage": "{actor} activó el webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_disabled": {
+    "defaultMessage": "{actor} desactivó el webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_secret_rotated": {
+    "defaultMessage": "{actor} generó un secreto nuevo para el webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_secret_rotated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.announcement_created": {
+    "defaultMessage": "{actor} escribió el anuncio {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `announcement_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.announcement_updated": {
+    "defaultMessage": "{actor} cambió el anuncio {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `announcement_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.announcement_published": {
+    "defaultMessage": "{actor} publicó el anuncio {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `announcement_published`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.announcement_withdrawn": {
+    "defaultMessage": "{actor} retiró el anuncio {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `announcement_withdrawn`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.announcement_deleted": {
+    "defaultMessage": "{actor} eliminó el borrador del anuncio {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `announcement_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of the draft it deleted, as it was then. Read by moderators."
+  },
+  "staff_audit.action.invite_created": {
+    "defaultMessage": "{actor} creó la invitación {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `invite_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.invite_revoked": {
+    "defaultMessage": "{actor} revocó la invitación {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `invite_revoked`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_added": {
+    "defaultMessage": "{actor} añadió el relay {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_followed": {
+    "defaultMessage": "{actor} siguió al relay {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_followed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_unfollowed": {
+    "defaultMessage": "{actor} dejó de seguir al relay {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_unfollowed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_removed": {
+    "defaultMessage": "{actor} quitó el relay {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_removed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_accepted": {
+    "defaultMessage": "{actor} aceptó el seguimiento de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_accepted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_rejected": {
+    "defaultMessage": "{actor} rechazó el seguimiento de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_rejected`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.status_refetch_queued": {
+    "defaultMessage": "{actor} pidió volver a obtener la publicación {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `status_refetch_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.account_statuses_refetch_queued": {
+    "defaultMessage": "{actor} pidió volver a obtener las publicaciones de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_statuses_refetch_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_statuses_refetch_queued": {
+    "defaultMessage": "{actor} pidió volver a obtener las publicaciones del servidor {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_statuses_refetch_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.billing_import_queued": {
+    "defaultMessage": "{actor} inició la importación de las facturas de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `billing_import_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.cost_item_created": {
+    "defaultMessage": "{actor} añadió el costo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `cost_item_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.cost_item_relabeled": {
+    "defaultMessage": "{actor} cambió el nombre o la categoría del costo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `cost_item_relabeled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.cost_item_price_revised": {
+    "defaultMessage": "{actor} revisó el importe del costo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `cost_item_price_revised`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.cost_item_end_changed": {
+    "defaultMessage": "{actor} cambió el final del costo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `cost_item_end_changed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.cost_item_deleted": {
+    "defaultMessage": "{actor} eliminó el costo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `cost_item_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_program_enabled": {
+    "defaultMessage": "{actor} activó los planes de apoyo con {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_program_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_program_disabled": {
+    "defaultMessage": "{actor} desactivó los planes de apoyo con {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_program_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_tips_enabled": {
+    "defaultMessage": "{actor} activó las propinas ({target})",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_tips_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_tips_revised": {
+    "defaultMessage": "{actor} cambió los importes de las propinas ({target})",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_tips_revised`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_tips_disabled": {
+    "defaultMessage": "{actor} desactivó las propinas ({target})",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_tips_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_plan_created": {
+    "defaultMessage": "{actor} creó el plan {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_plan_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_plan_revised": {
+    "defaultMessage": "{actor} revisó el plan {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_plan_revised`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_plan_retired": {
+    "defaultMessage": "{actor} retiró el plan {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_plan_retired`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_subscription_ended": {
+    "defaultMessage": "{actor} terminó la suscripción {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_subscription_ended`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_request_submitted": {
+    "defaultMessage": "{actor} solicitó el emoji personalizado {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_request_submitted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_request_withdrawn": {
+    "defaultMessage": "{actor} retiró la solicitud del emoji personalizado {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_request_withdrawn`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_request_approved": {
+    "defaultMessage": "{actor} aprobó la solicitud del emoji personalizado {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_request_approved`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_request_rejected": {
+    "defaultMessage": "{actor} rechazó la solicitud del emoji personalizado {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_request_rejected`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.payment_reconcile_queued": {
+    "defaultMessage": "{actor} inició la comprobación de los pagos con {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `payment_reconcile_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.oauth_client_disabled": {
+    "defaultMessage": "{actor} desactivó la aplicación {target} y cerró su sesión en todas partes",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `oauth_client_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.oauth_client_enabled": {
+    "defaultMessage": "{actor} activó la aplicación {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `oauth_client_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.oauth_client_host_denied": {
+    "defaultMessage": "{actor} denegó las aplicaciones de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `oauth_client_host_denied`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.oauth_client_host_allowed": {
+    "defaultMessage": "{actor} volvió a permitir las aplicaciones de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `oauth_client_host_allowed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.service_closure_announced": {
+    "defaultMessage": "{actor} anunció el cierre del servicio o cambió sus fechas",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `service_closure_announced`: `actor` who did it. Read by moderators."
+  },
+  "staff_audit.action.service_closure_withdrawn": {
+    "defaultMessage": "{actor} retiró el cierre del servicio",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `service_closure_withdrawn`: `actor` who did it. Read by moderators."
+  },
+  "staff_audit.action.service_closure_closed": {
+    "defaultMessage": "{actor} cerró el servicio",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `service_closure_closed`: `actor` who did it. Read by moderators."
+  },
+  "staff_audit.action.service_closure_delivery_completed": {
+    "defaultMessage": "{actor} terminó de avisar a otros servidores del cierre",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `service_closure_delivery_completed`: `actor` who did it (the server). Read by moderators."
+  },
+  "staff_audit.action.voice_room_ended": {
+    "defaultMessage": "{actor} finalizó la sala de chat de voz {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `voice_room_ended`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_created": {
+    "defaultMessage": "{actor} añadió el proveedor de inicio de sesión {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_updated": {
+    "defaultMessage": "{actor} cambió el proveedor de inicio de sesión {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_deleted": {
+    "defaultMessage": "{actor} eliminó el proveedor de inicio de sesión {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_enabled": {
+    "defaultMessage": "{actor} activó el proveedor de inicio de sesión {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_disabled": {
+    "defaultMessage": "{actor} desactivó el proveedor de inicio de sesión {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_secret_rotated": {
+    "defaultMessage": "{actor} reemplazó el secreto de cliente del proveedor de inicio de sesión {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_secret_rotated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.link_card_domain_fetch_stopped": {
+    "defaultMessage": "{actor} dejó de obtener tarjetas de enlace de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `link_card_domain_fetch_stopped`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.link_card_domain_images_stopped": {
+    "defaultMessage": "{actor} dejó de obtener imágenes de tarjetas de enlace de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `link_card_domain_images_stopped`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.link_card_domain_rule_removed": {
+    "defaultMessage": "{actor} reanudó la obtención de tarjetas de enlace de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `link_card_domain_rule_removed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.instance_marked_available": {
+    "defaultMessage": "{actor} reanudó los envíos a {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `instance_marked_available`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.delivery_revealed": {
+    "defaultMessage": "{actor} vio los campos ocultos de un envío a {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `delivery_revealed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.account_deliveries_viewed": {
+    "defaultMessage": "{actor} listó los envíos de {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_deliveries_viewed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_allow_added": {
+    "defaultMessage": "{actor} permitió federar con {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_allow_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_allow_removed": {
+    "defaultMessage": "{actor} quitó a {target} de la lista de permitidos",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_allow_removed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_subscription_created": {
+    "defaultMessage": "{actor} se suscribió a la lista de bloqueo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_subscription_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_subscription_updated": {
+    "defaultMessage": "{actor} cambió la configuración de la lista de bloqueo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_subscription_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_subscription_deleted": {
+    "defaultMessage": "{actor} dejó de seguir la lista de bloqueo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_subscription_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_draft_accepted": {
+    "defaultMessage": "{actor} aceptó un borrador de la lista de bloqueo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_draft_accepted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_draft_rejected": {
+    "defaultMessage": "{actor} rechazó un borrador de la lista de bloqueo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_draft_rejected`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_fetch_queued": {
+    "defaultMessage": "{actor} pidió obtener ahora la lista de bloqueo {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_fetch_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.event_canceled": {
+    "defaultMessage": "{actor} canceló el evento {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `event_canceled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.role_granted": {
+    "defaultMessage": "{actor} concedió el rol {target} a {person}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_granted`: `actor` who did it, `target` the role's name, `person` the handle of whom it was granted to. Read by moderators."
+  },
+  "staff_audit.action.role_revoked": {
+    "defaultMessage": "{actor} revocó el rol {target} a {person}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_revoked`: `actor` who did it, `target` the role's name, `person` the handle of whom it was revoked from. Read by moderators."
+  },
+  "staff_audit.action.role_created": {
+    "defaultMessage": "{actor} creó el rol {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.role_updated": {
+    "defaultMessage": "{actor} cambió el rol {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.role_deleted": {
+    "defaultMessage": "{actor} eliminó el rol {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.other": {
+    "defaultMessage": "{actor} hizo una operación sobre {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of a kind of operation this app does not know yet (a newer server's): `actor` who did it, `target` what it acted on. Read by moderators."
+  },
+  "staff_audit.target_kind": {
+    "defaultMessage": "{kind, select, account {Cuentas} status {Publicaciones} domain {Dominios} report {Denuncias} appeal {Apelaciones} user {Registros} role {Roles} setting {Configuración} rule {Reglas} signup_block {Bloqueos de registro} custom_emoji {Emojis personalizados} webhook {Webhooks} announcement {Anuncios} invite {Invitaciones} relay {Relays} billing_source {Importaciones de facturas} cost_item {Costos} supporter_program {Planes de apoyo y propinas} supporter_plan {Planes} supporter_subscription {Suscripciones} custom_emoji_request {Solicitudes de emoji} payment_provider {Proveedores de pago} oauth_client {Aplicaciones} oauth_client_host {Hosts de aplicaciones} instance {El servicio} voice_room {Salas de chat de voz} login_provider {Proveedores de inicio de sesión} link_card_domain {Dominios de tarjetas de enlace} hook_decision {Revisiones automáticas} domain_allow {Dominios permitidos} domain_list_subscription {Suscripciones a listas de bloqueo} event {Eventos} other {Otra cosa}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), a kind of target in the filter of what the operations acted on. Read by moderators."
+  },
+  "staff_audit.action_kind": {
+    "defaultMessage": "{action, select, account_action_issued {Acción tomada} account_action_lifted {Acción levantada} domain_action_issued {Acción de dominio tomada} domain_action_lifted {Acción de dominio levantada} report_assigned {Denuncia asignada} report_unassigned {Denuncia sin asignar} report_resolved {Denuncia resuelta} report_reopened {Denuncia reabierta} report_note_added {Nota de denuncia añadida} report_forwarded {Denuncia enviada} registration_approved {Registro aprobado} registration_rejected {Registro rechazado} setting_changed {Configuración cambiada} text_changed {Texto del servidor cambiado} rule_added {Regla añadida} rule_revised {Regla revisada} rule_moved {Regla movida} rule_retired {Regla retirada} role_granted {Rol concedido} role_revoked {Rol revocado} role_created {Rol creado} role_updated {Rol cambiado} role_deleted {Rol eliminado} appeal_upheld {Acción confirmada tras apelación} appeal_overturned {Acción revocada tras apelación} account_deletion_canceled {Eliminación cancelada} revealed_private_data {Correo y direcciones IP mostrados} signup_block_added {Bloqueo de registro añadido} signup_block_lifted {Bloqueo de registro levantado} hook_decision_applied {Revisión automática aplicada} hook_decision_overridden {Revisión automática cancelada} hook_appeal_upheld {Rechazo confirmado tras apelación} two_factor_disabled {Autenticación en dos pasos quitada} password_reset_link_issued {Enlace de restablecimiento de contraseña emitido} email_suppression_lifted {Correo reanudado} account_moved {Cuenta movida} custom_emoji_created {Emoji personalizado añadido} custom_emoji_image_replaced {Imagen de emoji personalizado reemplazada} custom_emoji_copied {Emoji personalizado copiado} custom_emoji_updated {Emoji personalizado cambiado} custom_emoji_enabled {Emoji personalizado activado} custom_emoji_disabled {Emoji personalizado desactivado} custom_emoji_deleted {Emoji personalizado eliminado} webhook_created {Webhook añadido} webhook_updated {Webhook cambiado} webhook_deleted {Webhook eliminado} webhook_enabled {Webhook activado} webhook_disabled {Webhook desactivado} webhook_secret_rotated {Secreto de webhook renovado} announcement_created {Anuncio escrito} announcement_updated {Anuncio cambiado} announcement_published {Anuncio publicado} announcement_withdrawn {Anuncio retirado} announcement_deleted {Borrador de anuncio eliminado} invite_created {Invitación creada} invite_revoked {Invitación revocada} relay_added {Relay añadido} relay_followed {Relay seguido} relay_unfollowed {Relay dejado de seguir} relay_removed {Relay quitado} relay_accepted {Relay aceptado} relay_rejected {Relay rechazado} status_refetch_queued {Nueva obtención de publicación} account_statuses_refetch_queued {Nueva obtención de publicaciones de cuenta} domain_statuses_refetch_queued {Nueva obtención de publicaciones de servidor} billing_import_queued {Importación de facturas iniciada} cost_item_created {Costo añadido} cost_item_relabeled {Costo renombrado} cost_item_price_revised {Importe de costo revisado} cost_item_end_changed {Final de costo cambiado} cost_item_deleted {Costo eliminado} supporter_program_enabled {Planes de apoyo activados} supporter_program_disabled {Planes de apoyo desactivados} supporter_tips_enabled {Propinas activadas} supporter_tips_revised {Propinas cambiadas} supporter_tips_disabled {Propinas desactivadas} supporter_plan_created {Plan creado} supporter_plan_revised {Plan revisado} supporter_plan_retired {Plan retirado} supporter_subscription_ended {Suscripción terminada} custom_emoji_request_submitted {Solicitud de emoji enviada} custom_emoji_request_withdrawn {Solicitud de emoji retirada} custom_emoji_request_approved {Solicitud de emoji aprobada} custom_emoji_request_rejected {Solicitud de emoji rechazada} payment_reconcile_queued {Comprobación de pagos iniciada} oauth_client_disabled {Aplicación desactivada} oauth_client_enabled {Aplicación activada} oauth_client_host_denied {Host de aplicaciones denegado} oauth_client_host_allowed {Host de aplicaciones permitido} service_closure_announced {Cierre anunciado} service_closure_withdrawn {Cierre retirado} service_closure_closed {Servicio cerrado} service_closure_delivery_completed {Cierre comunicado} voice_room_ended {Sala de chat de voz finalizada} login_provider_created {Proveedor de inicio de sesión añadido} login_provider_updated {Proveedor de inicio de sesión cambiado} login_provider_deleted {Proveedor de inicio de sesión eliminado} login_provider_enabled {Proveedor de inicio de sesión activado} login_provider_disabled {Proveedor de inicio de sesión desactivado} login_provider_secret_rotated {Secreto de proveedor de inicio de sesión reemplazado} link_card_domain_fetch_stopped {Tarjetas de enlace detenidas} link_card_domain_images_stopped {Imágenes de tarjetas de enlace detenidas} link_card_domain_rule_removed {Regla de tarjetas de enlace quitada} instance_marked_available {Envíos reanudados} delivery_revealed {Envío mostrado} account_deliveries_viewed {Envíos de cuenta listados} domain_allow_added {Dominio permitido} domain_allow_removed {Dominio quitado de la lista de permitidos} domain_list_subscription_created {Suscripción a lista de bloqueo} domain_list_subscription_updated {Configuración de lista de bloqueo cambiada} domain_list_subscription_deleted {Suscripción a lista de bloqueo cancelada} domain_list_draft_accepted {Borrador de lista de bloqueo aceptado} domain_list_draft_rejected {Borrador de lista de bloqueo rechazado} domain_list_fetch_queued {Obtención de lista de bloqueo} event_canceled {Evento cancelado} other {Otra operación}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), a kind of operation in the filter of operations. Read by moderators."
+  },
+  "staff_audit.signup_block": {
+    "defaultMessage": "{kind, select, email_domain {el dominio de correo {value}} email_hash {una dirección de correo electrónico} ip_range {el rango de IP {value}} other {{value}}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), what a sign-up block is named by in an entry's sentence: `kind` its kind, `value` what it blocks. Read by moderators."
+  },
+  "staff_audit.role": {
+    "defaultMessage": "{key, select, admin {Administrador} moderator {Moderador} other {{key}}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), a role named in an entry's sentence by its key; the built-in ones by their names. Read by moderators."
+  },
+  "staff_audit.provider": {
+    "defaultMessage": "{key, select, stripe {Stripe} payjp {PAY.JP} other {{key}}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), a payment provider named in an entry's sentence by its key (`stripe`, `payjp`). Read by moderators."
+  }
+}

@@ -1,0 +1,566 @@
+{
+  "staff_audit.group.records": {
+    "defaultMessage": "记录",
+    "description": "The heading, at /moderation, of the group of the audit log. Read by moderators."
+  },
+  "staff_audit.entry.audit_log": {
+    "defaultMessage": "审计日志",
+    "description": "The name of the moderators' audit log, in the list of moderation screens, as its title and as the name of its log. Read by moderators."
+  },
+  "staff_audit.forbidden": {
+    "defaultMessage": "你的账号已无权查看审计日志。",
+    "description": "On the audit log of the moderators (/moderation/audit-log), in its place when the server refuses the reader the log. Read by moderators."
+  },
+  "staff_audit.loading": {
+    "defaultMessage": "正在加载审计日志…",
+    "description": "On the audit log of the moderators (/moderation/audit-log), while the log is read. Read by moderators."
+  },
+  "staff_audit.failed": {
+    "defaultMessage": "无法加载审计日志。",
+    "description": "On the audit log of the moderators (/moderation/audit-log), when the log could not be read; Try again follows. Read by moderators."
+  },
+  "staff_audit.empty": {
+    "defaultMessage": "还没有任何记录。",
+    "description": "On the audit log of the moderators (/moderation/audit-log), when the log holds nothing. Read by moderators."
+  },
+  "staff_audit.empty.filtered": {
+    "defaultMessage": "没有符合这些筛选条件的记录。",
+    "description": "On the audit log of the moderators (/moderation/audit-log), when the filters leave nothing; Clear filters is above. Read by moderators."
+  },
+  "staff_audit.filters": {
+    "defaultMessage": "筛选审计日志",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the name of the filters, for assistive technology. Read by moderators."
+  },
+  "staff_audit.filter.actor": {
+    "defaultMessage": "操作者",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the filter of who did the operations. Read by moderators."
+  },
+  "staff_audit.filter.actor.any": {
+    "defaultMessage": "任何人",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the choice of anyone in the filter of who. Read by moderators."
+  },
+  "staff_audit.filter.actor.me": {
+    "defaultMessage": "你",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the choice of the reader in the filter of who. Read by moderators."
+  },
+  "staff_audit.filter.target_kind": {
+    "defaultMessage": "对象",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the filter of the kind of what the operations acted on. Read by moderators."
+  },
+  "staff_audit.filter.target_kind.any": {
+    "defaultMessage": "任何对象",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the choice of every kind of target. Read by moderators."
+  },
+  "staff_audit.filter.action": {
+    "defaultMessage": "操作",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the filter of the kind of operation, offered once a kind of target is chosen. Read by moderators."
+  },
+  "staff_audit.filter.action.any": {
+    "defaultMessage": "任何操作",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the choice of every kind of operation. Read by moderators."
+  },
+  "staff_audit.filter.target": {
+    "defaultMessage": "仅 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the toggle that keeps only the operations on one target; turning it off shows every target. Read by moderators."
+  },
+  "staff_audit.same_actor": {
+    "defaultMessage": "其操作者的其他操作",
+    "description": "On the audit log of the moderators (/moderation/audit-log), under an entry's Details, the link to the operations of the same person. Read by moderators."
+  },
+  "staff_audit.same_target": {
+    "defaultMessage": "针对此对象的其他操作",
+    "description": "On the audit log of the moderators (/moderation/audit-log), under an entry's Details, the link to the operations on the same target. Read by moderators."
+  },
+  "staff_audit.actor": {
+    "defaultMessage": "{kind, select, cli {命令行} system {服务器} remote {其他服务器} other {某人}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), who did an operation when it was not a person (the start of an entry's sentence). Read by moderators."
+  },
+  "staff_audit.actor.gone": {
+    "defaultMessage": "已不存在的账号",
+    "description": "On the audit log of the moderators (/moderation/audit-log), who did an operation when their account is gone (the start of an entry's sentence). Read by moderators."
+  },
+  "staff_audit.action.account_action_issued": {
+    "defaultMessage": "{actor} 对 {target} 采取了措施",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_action_issued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.account_action_lifted": {
+    "defaultMessage": "{actor} 解除了对 {target} 的措施",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_action_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_action_issued": {
+    "defaultMessage": "{actor} 对域名 {target} 采取了措施",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_action_issued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_action_lifted": {
+    "defaultMessage": "{actor} 解除了对域名 {target} 的措施",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_action_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.report_assigned": {
+    "defaultMessage": "{actor} 分配了对 {target} 的举报",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_assigned` (Assign to me on a report, or an assignment from the command line, which may name another moderator): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.report_unassigned": {
+    "defaultMessage": "{actor} 取消分配了对 {target} 的举报",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_unassigned` (Unassign on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.report_resolved": {
+    "defaultMessage": "{actor} 处理了对 {target} 的举报",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_resolved` (Resolve on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.report_reopened": {
+    "defaultMessage": "{actor} 重新打开了对 {target} 的举报",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_reopened` (Reopen on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.report_note_added": {
+    "defaultMessage": "{actor} 为对 {target} 的举报添加了备注",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_note_added` (Add note on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.report_forwarded": {
+    "defaultMessage": "{actor} 将对 {target} 的举报发送给了该账号所在的服务器",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_forwarded` (Send to their server on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.registration_approved": {
+    "defaultMessage": "{actor} 批准了 {target} 的注册",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `registration_approved`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.registration_rejected": {
+    "defaultMessage": "{actor} 拒绝了 {target} 的注册",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `registration_rejected`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.setting_changed": {
+    "defaultMessage": "{actor} 修改了设置 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `setting_changed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.text_changed": {
+    "defaultMessage": "{actor} 修改了服务器文本 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `text_changed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.rule_added": {
+    "defaultMessage": "{actor} 添加了规则 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `rule_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.rule_revised": {
+    "defaultMessage": "{actor} 修订了规则 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `rule_revised`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.rule_moved": {
+    "defaultMessage": "{actor} 移动了规则 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `rule_moved`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.rule_retired": {
+    "defaultMessage": "{actor} 停用了规则 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `rule_retired`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.appeal_upheld": {
+    "defaultMessage": "{actor} 维持了 {target} 申诉的措施",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `appeal_upheld` (Uphold on an appeal): `target` the handle of the account that appealed, linked to the appeal. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.appeal_overturned": {
+    "defaultMessage": "{actor} 撤销了 {target} 申诉的措施",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `appeal_overturned` (Overturn on an appeal): `target` the handle of the account that appealed, linked to the appeal. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.account_deletion_canceled": {
+    "defaultMessage": "{actor} 取消了 {target} 的删除",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_deletion_canceled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.revealed_private_data": {
+    "defaultMessage": "{actor} 查看了 {target} 的电子邮件地址和 IP 地址",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `revealed_private_data`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.signup_block_added": {
+    "defaultMessage": "{actor} 屏蔽了来自 {target} 的注册",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `signup_block_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.signup_block_lifted": {
+    "defaultMessage": "{actor} 解除了对 {target} 的注册屏蔽",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `signup_block_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.hook_decision_applied": {
+    "defaultMessage": "{actor} 采用了自动审查对 {target} 的决定",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_decision_applied`: `target` the handle of the account the decision is about, linked to the decision. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.hook_decision_overridden": {
+    "defaultMessage": "{actor} 取消了自动审查对 {target} 的决定",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_decision_overridden` (Cancel the decision): `target` the handle of the account the decision is about, linked to the decision. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.hook_appeal_upheld": {
+    "defaultMessage": "{actor} 支持了 {target} 对帖子被拒绝的申诉",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_appeal_upheld` (Uphold on an appeal of a refused post): `target` the handle of the account that appealed, linked to the decision. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
+  },
+  "staff_audit.action.two_factor_disabled": {
+    "defaultMessage": "{actor} 移除了 {target} 的双重身份验证",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `two_factor_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.password_reset_link_issued": {
+    "defaultMessage": "{actor} 为 {target} 签发了密码重置链接",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `password_reset_link_issued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.email_suppression_lifted": {
+    "defaultMessage": "{actor} 恢复了向 {target} 发送电子邮件",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `email_suppression_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.account_moved": {
+    "defaultMessage": "{actor} 将受限账号 {target} 移动到了此服务器的另一个账号",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_moved`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_created": {
+    "defaultMessage": "{actor} 添加了自定义表情 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_image_replaced": {
+    "defaultMessage": "{actor} 替换了自定义表情 {target} 的图片",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_image_replaced`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_copied": {
+    "defaultMessage": "{actor} 从其他服务器复制了自定义表情 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_copied`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_updated": {
+    "defaultMessage": "{actor} 修改了自定义表情 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_enabled": {
+    "defaultMessage": "{actor} 启用了自定义表情 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_disabled": {
+    "defaultMessage": "{actor} 停用了自定义表情 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_deleted": {
+    "defaultMessage": "{actor} 删除了自定义表情 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_created": {
+    "defaultMessage": "{actor} 添加了 Webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_updated": {
+    "defaultMessage": "{actor} 修改了 Webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_deleted": {
+    "defaultMessage": "{actor} 删除了 Webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_enabled": {
+    "defaultMessage": "{actor} 开启了 Webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_disabled": {
+    "defaultMessage": "{actor} 关闭了 Webhook {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.webhook_secret_rotated": {
+    "defaultMessage": "{actor} 为 Webhook {target} 生成了新密钥",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `webhook_secret_rotated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.announcement_created": {
+    "defaultMessage": "{actor} 撰写了公告 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `announcement_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.announcement_updated": {
+    "defaultMessage": "{actor} 修改了公告 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `announcement_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.announcement_published": {
+    "defaultMessage": "{actor} 发布了公告 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `announcement_published`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.announcement_withdrawn": {
+    "defaultMessage": "{actor} 撤回了公告 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `announcement_withdrawn`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.announcement_deleted": {
+    "defaultMessage": "{actor} 删除了公告草稿 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `announcement_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of the draft it deleted, as it was then. Read by moderators."
+  },
+  "staff_audit.action.invite_created": {
+    "defaultMessage": "{actor} 创建了邀请 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `invite_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.invite_revoked": {
+    "defaultMessage": "{actor} 撤销了邀请 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `invite_revoked`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_added": {
+    "defaultMessage": "{actor} 添加了中继 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_followed": {
+    "defaultMessage": "{actor} 关注了中继 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_followed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_unfollowed": {
+    "defaultMessage": "{actor} 取消关注了中继 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_unfollowed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_removed": {
+    "defaultMessage": "{actor} 移除了中继 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_removed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_accepted": {
+    "defaultMessage": "{actor} 接受了 {target} 的关注",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_accepted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.relay_rejected": {
+    "defaultMessage": "{actor} 拒绝了 {target} 的关注",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_rejected`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.status_refetch_queued": {
+    "defaultMessage": "{actor} 请求重新获取帖子 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `status_refetch_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.account_statuses_refetch_queued": {
+    "defaultMessage": "{actor} 请求重新获取 {target} 的帖子",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_statuses_refetch_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_statuses_refetch_queued": {
+    "defaultMessage": "{actor} 请求重新获取服务器 {target} 的帖子",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_statuses_refetch_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.billing_import_queued": {
+    "defaultMessage": "{actor} 开始导入 {target} 的账单",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `billing_import_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.cost_item_created": {
+    "defaultMessage": "{actor} 添加了成本 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `cost_item_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.cost_item_relabeled": {
+    "defaultMessage": "{actor} 重命名或重新分类了成本 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `cost_item_relabeled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.cost_item_price_revised": {
+    "defaultMessage": "{actor} 调整了成本 {target} 的金额",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `cost_item_price_revised`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.cost_item_end_changed": {
+    "defaultMessage": "{actor} 更改了成本 {target} 的结束日期",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `cost_item_end_changed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.cost_item_deleted": {
+    "defaultMessage": "{actor} 删除了成本 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `cost_item_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_program_enabled": {
+    "defaultMessage": "{actor} 使用 {target} 开启了支持者方案",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_program_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_program_disabled": {
+    "defaultMessage": "{actor} 使用 {target} 关闭了支持者方案",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_program_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_tips_enabled": {
+    "defaultMessage": "{actor} 开启了打赏（{target}）",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_tips_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_tips_revised": {
+    "defaultMessage": "{actor} 更改了打赏金额（{target}）",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_tips_revised`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_tips_disabled": {
+    "defaultMessage": "{actor} 关闭了打赏（{target}）",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_tips_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_plan_created": {
+    "defaultMessage": "{actor} 创建了方案 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_plan_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_plan_revised": {
+    "defaultMessage": "{actor} 修订了方案 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_plan_revised`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_plan_retired": {
+    "defaultMessage": "{actor} 停用了方案 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_plan_retired`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.supporter_subscription_ended": {
+    "defaultMessage": "{actor} 终止了订阅 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_subscription_ended`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_request_submitted": {
+    "defaultMessage": "{actor} 申请了自定义表情 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_request_submitted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_request_withdrawn": {
+    "defaultMessage": "{actor} 撤回了自定义表情 {target} 的申请",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_request_withdrawn`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_request_approved": {
+    "defaultMessage": "{actor} 批准了自定义表情 {target} 的申请",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_request_approved`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.custom_emoji_request_rejected": {
+    "defaultMessage": "{actor} 拒绝了自定义表情 {target} 的申请",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `custom_emoji_request_rejected`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.payment_reconcile_queued": {
+    "defaultMessage": "{actor} 开始用 {target} 核对付款",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `payment_reconcile_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.oauth_client_disabled": {
+    "defaultMessage": "{actor} 关闭了应用 {target}，并让它在所有地方退出登录",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `oauth_client_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.oauth_client_enabled": {
+    "defaultMessage": "{actor} 开启了应用 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `oauth_client_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.oauth_client_host_denied": {
+    "defaultMessage": "{actor} 拒绝了 {target} 的应用",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `oauth_client_host_denied`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.oauth_client_host_allowed": {
+    "defaultMessage": "{actor} 重新允许了 {target} 的应用",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `oauth_client_host_allowed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.service_closure_announced": {
+    "defaultMessage": "{actor} 发布了停止服务公告，或修改了其日期",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `service_closure_announced`: `actor` who did it. Read by moderators."
+  },
+  "staff_audit.action.service_closure_withdrawn": {
+    "defaultMessage": "{actor} 撤回了停止服务公告",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `service_closure_withdrawn`: `actor` who did it. Read by moderators."
+  },
+  "staff_audit.action.service_closure_closed": {
+    "defaultMessage": "{actor} 关闭了服务",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `service_closure_closed`: `actor` who did it. Read by moderators."
+  },
+  "staff_audit.action.service_closure_delivery_completed": {
+    "defaultMessage": "{actor} 已向其他服务器通知完停止服务",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `service_closure_delivery_completed`: `actor` who did it (the server). Read by moderators."
+  },
+  "staff_audit.action.voice_room_ended": {
+    "defaultMessage": "{actor} 结束了语音聊天室 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `voice_room_ended`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_created": {
+    "defaultMessage": "{actor} 添加了登录方式 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_updated": {
+    "defaultMessage": "{actor} 修改了登录方式 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_deleted": {
+    "defaultMessage": "{actor} 删除了登录方式 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_enabled": {
+    "defaultMessage": "{actor} 开启了登录方式 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_disabled": {
+    "defaultMessage": "{actor} 关闭了登录方式 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_disabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.login_provider_secret_rotated": {
+    "defaultMessage": "{actor} 更换了登录方式 {target} 的客户端密钥",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `login_provider_secret_rotated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.link_card_domain_fetch_stopped": {
+    "defaultMessage": "{actor} 停止了从 {target} 获取链接卡片",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `link_card_domain_fetch_stopped`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.link_card_domain_images_stopped": {
+    "defaultMessage": "{actor} 停止了从 {target} 获取链接卡片图片",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `link_card_domain_images_stopped`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.link_card_domain_rule_removed": {
+    "defaultMessage": "{actor} 恢复了从 {target} 获取链接卡片",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `link_card_domain_rule_removed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.instance_marked_available": {
+    "defaultMessage": "{actor} 恢复了向 {target} 的投递",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `instance_marked_available`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.delivery_revealed": {
+    "defaultMessage": "{actor} 查看了向 {target} 投递的隐藏字段",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `delivery_revealed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.account_deliveries_viewed": {
+    "defaultMessage": "{actor} 列出了 {target} 的投递",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_deliveries_viewed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_allow_added": {
+    "defaultMessage": "{actor} 允许 {target} 联合",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_allow_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_allow_removed": {
+    "defaultMessage": "{actor} 将 {target} 从允许列表中移除",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_allow_removed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_subscription_created": {
+    "defaultMessage": "{actor} 订阅了屏蔽列表 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_subscription_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_subscription_updated": {
+    "defaultMessage": "{actor} 修改了屏蔽列表 {target} 的设置",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_subscription_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_subscription_deleted": {
+    "defaultMessage": "{actor} 取消订阅了屏蔽列表 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_subscription_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_draft_accepted": {
+    "defaultMessage": "{actor} 采纳了屏蔽列表 {target} 的草稿",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_draft_accepted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_draft_rejected": {
+    "defaultMessage": "{actor} 拒绝了屏蔽列表 {target} 的草稿",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_draft_rejected`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.domain_list_fetch_queued": {
+    "defaultMessage": "{actor} 请求立即获取屏蔽列表 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_fetch_queued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.event_canceled": {
+    "defaultMessage": "{actor} 取消了活动 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `event_canceled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.role_granted": {
+    "defaultMessage": "{actor} 将角色 {target} 授予了 {person}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_granted`: `actor` who did it, `target` the role's name, `person` the handle of whom it was granted to. Read by moderators."
+  },
+  "staff_audit.action.role_revoked": {
+    "defaultMessage": "{actor} 收回了 {person} 的角色 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_revoked`: `actor` who did it, `target` the role's name, `person` the handle of whom it was revoked from. Read by moderators."
+  },
+  "staff_audit.action.role_created": {
+    "defaultMessage": "{actor} 创建了角色 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.role_updated": {
+    "defaultMessage": "{actor} 修改了角色 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_updated`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.role_deleted": {
+    "defaultMessage": "{actor} 删除了角色 {target}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+  },
+  "staff_audit.action.other": {
+    "defaultMessage": "{actor} 对 {target} 执行了操作",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of a kind of operation this app does not know yet (a newer server's): `actor` who did it, `target` what it acted on. Read by moderators."
+  },
+  "staff_audit.target_kind": {
+    "defaultMessage": "{kind, select, account {账号} status {帖子} domain {域名} report {举报} appeal {申诉} user {注册} role {角色} setting {设置} rule {规则} signup_block {注册屏蔽} custom_emoji {自定义表情} webhook {Webhook} announcement {公告} invite {邀请} relay {中继} billing_source {账单导入} cost_item {成本} supporter_program {支持者方案和打赏} supporter_plan {方案} supporter_subscription {订阅} custom_emoji_request {表情申请} payment_provider {支付服务商} oauth_client {应用} oauth_client_host {应用主机} instance {服务} voice_room {语音聊天室} login_provider {登录方式} link_card_domain {链接卡片域名} hook_decision {自动审查} domain_allow {允许的域名} domain_list_subscription {屏蔽列表订阅} event {活动} other {其他}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), a kind of target in the filter of what the operations acted on. Read by moderators."
+  },
+  "staff_audit.action_kind": {
+    "defaultMessage": "{action, select, account_action_issued {采取措施} account_action_lifted {解除措施} domain_action_issued {对域名采取措施} domain_action_lifted {解除对域名的措施} report_assigned {分配举报} report_unassigned {取消分配举报} report_resolved {处理举报} report_reopened {重新打开举报} report_note_added {添加举报备注} report_forwarded {发送举报} registration_approved {批准注册} registration_rejected {拒绝注册} setting_changed {修改设置} text_changed {修改服务器文本} rule_added {添加规则} rule_revised {修订规则} rule_moved {移动规则} rule_retired {停用规则} role_granted {授予角色} role_revoked {收回角色} role_created {创建角色} role_updated {修改角色} role_deleted {删除角色} appeal_upheld {申诉后维持措施} appeal_overturned {申诉后撤销措施} account_deletion_canceled {取消删除} revealed_private_data {查看电子邮件和 IP 地址} signup_block_added {添加注册屏蔽} signup_block_lifted {解除注册屏蔽} hook_decision_applied {采用自动审查} hook_decision_overridden {取消自动审查} hook_appeal_upheld {申诉后维持拒绝} two_factor_disabled {移除双重身份验证} password_reset_link_issued {签发密码重置链接} email_suppression_lifted {恢复电子邮件} account_moved {移动账号} custom_emoji_created {添加自定义表情} custom_emoji_image_replaced {替换自定义表情图片} custom_emoji_copied {复制自定义表情} custom_emoji_updated {修改自定义表情} custom_emoji_enabled {启用自定义表情} custom_emoji_disabled {停用自定义表情} custom_emoji_deleted {删除自定义表情} webhook_created {添加 Webhook} webhook_updated {修改 Webhook} webhook_deleted {删除 Webhook} webhook_enabled {开启 Webhook} webhook_disabled {关闭 Webhook} webhook_secret_rotated {更新 Webhook 密钥} announcement_created {撰写公告} announcement_updated {修改公告} announcement_published {发布公告} announcement_withdrawn {撤回公告} announcement_deleted {删除公告草稿} invite_created {创建邀请} invite_revoked {撤销邀请} relay_added {添加中继} relay_followed {关注中继} relay_unfollowed {取消关注中继} relay_removed {移除中继} relay_accepted {接受中继} relay_rejected {拒绝中继} status_refetch_queued {重新获取帖子} account_statuses_refetch_queued {重新获取账号的帖子} domain_statuses_refetch_queued {重新获取服务器的帖子} billing_import_queued {开始导入账单} cost_item_created {添加成本} cost_item_relabeled {重命名成本} cost_item_price_revised {调整成本金额} cost_item_end_changed {更改成本结束日期} cost_item_deleted {删除成本} supporter_program_enabled {开启支持者方案} supporter_program_disabled {关闭支持者方案} supporter_tips_enabled {开启打赏} supporter_tips_revised {更改打赏} supporter_tips_disabled {关闭打赏} supporter_plan_created {创建方案} supporter_plan_revised {修订方案} supporter_plan_retired {停用方案} supporter_subscription_ended {终止订阅} custom_emoji_request_submitted {提交表情申请} custom_emoji_request_withdrawn {撤回表情申请} custom_emoji_request_approved {批准表情申请} custom_emoji_request_rejected {拒绝表情申请} payment_reconcile_queued {开始核对付款} oauth_client_disabled {关闭应用} oauth_client_enabled {开启应用} oauth_client_host_denied {拒绝应用主机} oauth_client_host_allowed {允许应用主机} service_closure_announced {发布停止服务公告} service_closure_withdrawn {撤回停止服务公告} service_closure_closed {服务已关闭} service_closure_delivery_completed {已通知停止服务} voice_room_ended {结束语音聊天室} login_provider_created {添加登录方式} login_provider_updated {修改登录方式} login_provider_deleted {删除登录方式} login_provider_enabled {开启登录方式} login_provider_disabled {关闭登录方式} login_provider_secret_rotated {更换登录方式密钥} link_card_domain_fetch_stopped {停止链接卡片} link_card_domain_images_stopped {停止链接卡片图片} link_card_domain_rule_removed {移除链接卡片规则} instance_marked_available {恢复投递} delivery_revealed {查看投递} account_deliveries_viewed {列出账号的投递} domain_allow_added {允许域名} domain_allow_removed {从允许列表移除域名} domain_list_subscription_created {订阅屏蔽列表} domain_list_subscription_updated {修改屏蔽列表设置} domain_list_subscription_deleted {取消订阅屏蔽列表} domain_list_draft_accepted {采纳屏蔽列表草稿} domain_list_draft_rejected {拒绝屏蔽列表草稿} domain_list_fetch_queued {获取屏蔽列表} event_canceled {取消活动} other {其他操作}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), a kind of operation in the filter of operations. Read by moderators."
+  },
+  "staff_audit.signup_block": {
+    "defaultMessage": "{kind, select, email_domain {电子邮件域名 {value}} email_hash {某个电子邮件地址} ip_range {IP 范围 {value}} other {{value}}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), what a sign-up block is named by in an entry's sentence: `kind` its kind, `value` what it blocks. Read by moderators."
+  },
+  "staff_audit.role": {
+    "defaultMessage": "{key, select, admin {管理员} moderator {审核员} other {{key}}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), a role named in an entry's sentence by its key; the built-in ones by their names. Read by moderators."
+  },
+  "staff_audit.provider": {
+    "defaultMessage": "{key, select, stripe {Stripe} payjp {PAY.JP} other {{key}}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), a payment provider named in an entry's sentence by its key (`stripe`, `payjp`). Read by moderators."
+  }
+}

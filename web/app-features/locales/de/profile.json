@@ -1,0 +1,286 @@
+{
+  "profile.follow": {
+    "defaultMessage": "Folgen",
+    "description": "The button of a profile that follows the account."
+  },
+  "profile.follow_back": {
+    "defaultMessage": "Zurückfolgen",
+    "description": "The button of a profile of an account that follows the reader, which follows it back."
+  },
+  "profile.request_follow": {
+    "defaultMessage": "Folgeanfrage senden",
+    "description": "The button of a profile of an account that approves its followers, which asks to follow it."
+  },
+  "profile.following": {
+    "defaultMessage": "Folge ich",
+    "description": "The button of a profile of an account the reader follows; pressing it unfollows the account."
+  },
+  "profile.requested": {
+    "defaultMessage": "Angefragt",
+    "description": "The button of a profile of an account whose approval the reader's follow request awaits; pressing it withdraws the request."
+  },
+  "profile.unblock": {
+    "defaultMessage": "Blockierung aufheben",
+    "description": "The button, and the item of a profile's menu, that stops blocking the account."
+  },
+  "profile.block": {
+    "defaultMessage": "Blockieren …",
+    "description": "The item of a profile's menu, and of a post's menu under its author, that blocks the account after a confirmation."
+  },
+  "profile.mute": {
+    "defaultMessage": "Stummschalten",
+    "description": "The item of a profile's menu that mutes the account."
+  },
+  "profile.unmute": {
+    "defaultMessage": "Stummschaltung aufheben",
+    "description": "The item of a profile's menu, and the action of its muted line, that stops muting the account."
+  },
+  "profile.more": {
+    "defaultMessage": "Mehr",
+    "description": "The button of a profile that opens the menu of what else the reader may do with the account."
+  },
+  "profile.open_original": {
+    "defaultMessage": "Originalseite öffnen",
+    "description": "The item of a profile's menu, and the action of its line about a remote account, that opens the account's page on its own server."
+  },
+  "profile.follows_you": {
+    "defaultMessage": "Folgt dir",
+    "description": "The badge beside the handle of an account that follows the reader."
+  },
+  "profile.bot": {
+    "defaultMessage": "Bot",
+    "description": "The badge beside the name of an automated account."
+  },
+  "profile.locked": {
+    "defaultMessage": "Folgeanfragen müssen genehmigt werden",
+    "description": "The line of a profile, and the label of the lock beside its name, of an account that approves its followers."
+  },
+  "profile.following_count": {
+    "defaultMessage": "Folgt",
+    "description": "The label of the number of accounts the account follows."
+  },
+  "profile.followers_count": {
+    "defaultMessage": "Follower",
+    "description": "The label of the number of accounts that follow the account."
+  },
+  "profile.joined": {
+    "defaultMessage": "Beigetreten am {date}",
+    "description": "When the account was created, on its profile. date is the month and the year."
+  },
+  "profile.featured": {
+    "defaultMessage": "Vorgestellte Hashtags",
+    "description": "The heading of the hashtags the account features on its profile."
+  },
+  "profile.tag_posts": {
+    "defaultMessage": "{count, plural, one {# Beitrag} other {# Beiträge}}",
+    "description": "How many of the account's posts carry a hashtag it features. count is how many."
+  },
+  "profile.tabs": {
+    "defaultMessage": "Beiträge des Kontos",
+    "description": "What the tabs of a profile choose between, for assistive technology."
+  },
+  "profile.posts": {
+    "defaultMessage": "Beiträge",
+    "description": "The tab of a profile that shows the account's posts, without its replies."
+  },
+  "profile.posts_and_replies": {
+    "defaultMessage": "Beiträge und Antworten",
+    "description": "The tab of a profile that shows the account's posts and its replies."
+  },
+  "profile.media": {
+    "defaultMessage": "Medien",
+    "description": "The tab of a profile that shows the account's posts with images or other media."
+  },
+  "profile.articles": {
+    "defaultMessage": "Artikel",
+    "description": "The tab of a profile that shows only the account's articles (long posts with a title, a summary and a cover)."
+  },
+  "profile.pinned": {
+    "defaultMessage": "Angeheftet",
+    "description": "The line over a post the account pinned to its profile."
+  },
+  "profile.remote": {
+    "defaultMessage": "Informationen von {domain} sind möglicherweise unvollständig.",
+    "description": "The line of a profile of an account on another server. domain is that server's domain name."
+  },
+  "profile.blocked": {
+    "defaultMessage": "Du hast dieses Konto blockiert.",
+    "description": "The line of a profile of an account the reader blocks."
+  },
+  "profile.blocked_posts": {
+    "defaultMessage": "Seine Beiträge sind ausgeblendet, solange du es blockierst.",
+    "description": "What a profile of an account the reader blocks says in place of its posts."
+  },
+  "profile.muted": {
+    "defaultMessage": "Du hast dieses Konto stummgeschaltet. Seine Beiträge bleiben aus deinen Timelines heraus.",
+    "description": "The line of a profile of an account the reader mutes."
+  },
+  "profile.locked_posts": {
+    "defaultMessage": "Nur seine Follower sehen seine anderen Beiträge.",
+    "description": "What a profile of an account that approves its followers says under its posts, to a reader who does not follow it."
+  },
+  "profile.loading": {
+    "defaultMessage": "Das Profil wird geladen …",
+    "description": "What a profile says while the account loads."
+  },
+  "profile.failed": {
+    "defaultMessage": "Das Profil konnte nicht geladen werden.",
+    "description": "What a profile says when the account could not be found or loaded, beside a button to try again."
+  },
+  "profile.title": {
+    "defaultMessage": "{name} ({handle})",
+    "description": "The heading of a profile, for assistive technology, and the document's title. name is the account's display name, handle its @handle."
+  },
+  "profile.follows_back": {
+    "defaultMessage": "Zurück zum Profil",
+    "description": "The button at the top of an account's list of follows or followers that goes back to its profile."
+  },
+  "profile.follows_tabs": {
+    "defaultMessage": "Folgt und Follower",
+    "description": "What the tabs of an account's lists of follows and followers choose between, for assistive technology."
+  },
+  "profile.follows_hidden_private": {
+    "defaultMessage": "{name} zeigt dir diese Liste nicht.",
+    "description": "In place of an account's list of follows or followers that its owner keeps from the reader: shown to nobody, or to their followers only while the reader does not follow them (the server does not say which). name is the account's name."
+  },
+  "profile.followers_empty": {
+    "defaultMessage": "Noch keine Follower.",
+    "description": "In place of the list of an account's followers when it has none."
+  },
+  "profile.following_empty": {
+    "defaultMessage": "Folgt noch niemandem.",
+    "description": "In place of the list of the accounts an account follows when it follows none."
+  },
+  "profile.followers_loading": {
+    "defaultMessage": "Die Follower werden geladen …",
+    "description": "While the list of an account's followers loads."
+  },
+  "profile.following_loading": {
+    "defaultMessage": "Die gefolgten Konten werden geladen …",
+    "description": "While the list of the accounts an account follows loads."
+  },
+  "profile.followers_failed": {
+    "defaultMessage": "Die Follower konnten nicht geladen werden.",
+    "description": "When the list of an account's followers failed to load; Try again follows it."
+  },
+  "profile.following_failed": {
+    "defaultMessage": "Die gefolgten Konten konnten nicht geladen werden.",
+    "description": "When the list of the accounts an account follows failed to load; Try again follows it."
+  },
+  "profile.retry": {
+    "defaultMessage": "Erneut versuchen",
+    "description": "The action after the line that an account's list of follows or followers failed to load, which loads it again."
+  },
+  "profile.action_failed": {
+    "defaultMessage": "{action, select, follow {Das Folgen} unfollow {Das Entfolgen} mute {Das Stummschalten} unmute {Das Aufheben der Stummschaltung} block {Das Blockieren} unblock {Das Aufheben der Blockierung} remove_follower {Das Entfernen des Followers} notify {Die Benachrichtigungseinstellung} note {Das Speichern der Notiz} mute_server {Das Stummschalten des Servers} list_add {Das Hinzufügen zur Liste} list_remove {Das Entfernen aus der Liste} other {Das Aufheben der Stummschaltung des Servers}} wurde nicht abgeschlossen.",
+    "description": "The notice at the bottom of the page when the reader's action on an account, from its profile, a row of a list of accounts or a post's menu, got no answer from the server (the network), beside Try again: following it (or asking to) or unfollowing it (or taking the request back), muting or unmuting it, blocking or unblocking it, removing it from their followers, being notified of its new posts or not, saving their private note on it, muting or unmuting its server, putting it in one of their lists or taking it out. action is which of them."
+  },
+  "profile.note": {
+    "defaultMessage": "Private Notiz",
+    "description": "The name of the box where the reader writes their private note on an account, for assistive technology."
+  },
+  "profile.note_add": {
+    "defaultMessage": "Notiz hinzufügen, die nur du sehen kannst",
+    "description": "The line of a profile, with the note glyph, that opens the editor of the reader's private note on the account while there is none."
+  },
+  "profile.note_edit": {
+    "defaultMessage": "Notiz bearbeiten",
+    "description": "Read before the reader's private note on a profile, which is a button: pressing it opens the note's editor in place (for assistive technology)."
+  },
+  "profile.note_save": {
+    "defaultMessage": "Speichern",
+    "description": "The button that keeps the reader's private note on an account."
+  },
+  "profile.cancel": {
+    "defaultMessage": "Abbrechen",
+    "description": "The button of the editor of the reader's private note on an account, and of the confirmations of blocking an account and removing a follower, that closes them and keeps everything as it was."
+  },
+  "profile.notify": {
+    "defaultMessage": "Bei neuen Beiträgen benachrichtigen",
+    "description": "The control of a profile that notifies the reader of the account's new posts."
+  },
+  "profile.block_confirm_title": {
+    "defaultMessage": "{handle} blockieren?",
+    "description": "The question of the confirmation before blocking an account. handle is its @handle."
+  },
+  "profile.block_confirm_text": {
+    "defaultMessage": "Folgebeziehungen zwischen euch enden, und solange die Blockierung besteht, kann keiner von euch dem anderen folgen oder dessen Beiträge sehen. Du kannst die Blockierung später aufheben, aber die Folgebeziehungen kommen nicht zurück.",
+    "description": "What blocking an account does, in its confirmation: the follows both ways end, neither can follow or see the other while it lasts, and unblocking does not restore the follows."
+  },
+  "profile.block_confirm": {
+    "defaultMessage": "Blockieren",
+    "description": "The button of the confirmation that blocks the account."
+  },
+  "profile.remove_follower": {
+    "defaultMessage": "Follower entfernen …",
+    "description": "The item of a profile's menu, of an account that follows the reader, that removes it from their followers after a confirmation."
+  },
+  "profile.remove_follower_title": {
+    "defaultMessage": "{handle} aus deinen Followern entfernen?",
+    "description": "The question of the confirmation before removing an account from the reader's followers. handle is its @handle."
+  },
+  "profile.remove_follower_text": {
+    "defaultMessage": "Die Person sieht deine Beiträge nur für Follower nicht mehr. Sie kann dir erneut folgen.",
+    "description": "What removing a follower does, in its confirmation."
+  },
+  "profile.remove_follower_confirm": {
+    "defaultMessage": "Entfernen",
+    "description": "The button of the confirmation that removes the account from the reader's followers."
+  },
+  "profile.mute_server": {
+    "defaultMessage": "Server stummschalten",
+    "description": "The item of a profile's or a post's menu, under the server's name, that mutes that server for the reader: its posts leave the reader's timelines other than home, its boosts leave home, its accounts stop notifying them; the accounts of it the reader follows stay on home."
+  },
+  "profile.unmute_server": {
+    "defaultMessage": "Stummschaltung des Servers aufheben",
+    "description": "The item of a profile's or a post's menu, under the server's name, that stops muting that server."
+  },
+  "profile.server_muted": {
+    "defaultMessage": "Du hast den Server {domain} stummgeschaltet.",
+    "description": "The line of the profile of an account whose server the reader mutes; Unmute follows it. domain is the server's name."
+  },
+  "profile.server_muted_now": {
+    "defaultMessage": "Du hast den Server {domain} stummgeschaltet.",
+    "description": "In place of a post whose server the reader just muted from its menu; Undo follows it. domain is the server's name."
+  },
+  "profile.muted_now": {
+    "defaultMessage": "Du hast {handle} stummgeschaltet.",
+    "description": "In place of a post whose author the reader just muted from its menu; Undo follows it. handle is the @handle."
+  },
+  "profile.blocked_now": {
+    "defaultMessage": "Du hast {handle} blockiert.",
+    "description": "In place of a post whose author the reader just blocked from its menu; Unblock follows it (not Undo: the follows the block ended do not come back). handle is the @handle."
+  },
+  "profile.undo": {
+    "defaultMessage": "Rückgängig",
+    "description": "The action after a line that says the reader just muted an account or a server from a post's menu, which undoes it."
+  },
+  "profile.moved_to": {
+    "defaultMessage": "Umgezogen zu {handle}",
+    "description": "The line of the profile of an account that moved, naming the account it moved to; the handle is a link to it. handle is that account's @handle."
+  },
+  "profile.go_to_new": {
+    "defaultMessage": "Zum neuen Konto",
+    "description": "The button of the profile of an account that moved, which opens the account it moved to."
+  },
+  "profile.not_found": {
+    "defaultMessage": "{handle} wurde nicht gefunden. Das Konto existiert möglicherweise nicht mehr, oder der Link ist falsch. Prüfe den Link oder gehe zurück.",
+    "description": "In place of a profile of an account that does not exist or is not available (deleted, deactivated: never say which), under a button back. handle is the @handle that was opened."
+  },
+  "profile.not_found_back": {
+    "defaultMessage": "Zurück",
+    "description": "The button over the line that an account is not here, which goes back to where the reader came from."
+  },
+  "profile.add_to_list": {
+    "defaultMessage": "Zur Liste hinzufügen",
+    "description": "The item of a profile's menu, and the title of what it opens, that puts the account in the reader's lists."
+  },
+  "profile.add_to_list_followed_only": {
+    "defaultMessage": "Du kannst nur Konten hinzufügen, denen du folgst",
+    "description": "Under Add to list, muted, on a profile of an account the reader does not follow."
+  },
+  "profile.events": {
+    "defaultMessage": "Kommende Veranstaltungen",
+    "description": "The name of the list of the upcoming events an account organizes, on its profile, for assistive technology."
+  }
+}

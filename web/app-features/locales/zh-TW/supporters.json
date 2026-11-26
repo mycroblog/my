@@ -1,0 +1,182 @@
+{
+  "supporters.retry": {
+    "defaultMessage": "重試",
+    "description": "The button that reads again what the supporters' page could not read."
+  },
+  "supporters.list.about": {
+    "defaultMessage": "支持此伺服器並選擇列名的人，依其方案列出。",
+    "description": "Under the heading of the supporters list."
+  },
+  "supporters.list.signed_in": {
+    "defaultMessage": "只有登入此伺服器的人才能看到支持者名單。",
+    "description": "In the supporters list's place for a visitor, where the server shows it to signed-in readers; Sign in follows."
+  },
+  "supporters.list.loading": {
+    "defaultMessage": "正在載入支持者…",
+    "description": "In the supporters list's place while it is read."
+  },
+  "supporters.list.failed": {
+    "defaultMessage": "無法載入支持者。",
+    "description": "In the supporters list's place when it could not be read; Try again follows."
+  },
+  "supporters.list.empty": {
+    "defaultMessage": "還沒有人選擇列名。",
+    "description": "In the supporters list's place while nobody is on it."
+  },
+  "supporters.period": {
+    "defaultMessage": "{interval, select, month {每月} other {每年}}",
+    "description": "A choice of the billing period over the plans ({interval}: month or year)."
+  },
+  "supporters.period.label": {
+    "defaultMessage": "計費週期",
+    "description": "The name of the choice of the billing period (monthly or yearly) over the plans, for assistive technology."
+  },
+  "supporters.save": {
+    "defaultMessage": "{upTo, select, yes {最多省下 {percent}%} other {省下 {percent}%}}",
+    "description": "Under Yearly in the choice of the billing period: what paying yearly saves against twelve monthly payments, in whole percent; upTo is yes where the plans save different shares and this is the most."
+  },
+  "supporters.plans": {
+    "defaultMessage": "方案",
+    "description": "The heading of the supporter plans on the supporters' page, and the name of their list."
+  },
+  "supporters.yours": {
+    "defaultMessage": "你的方案",
+    "description": "On the card of the plan the reader pays for, at the period chosen, in the place of its button."
+  },
+  "supporters.per": {
+    "defaultMessage": "{interval, select, month {/ 月} other {/ 年}}",
+    "description": "After a plan's price, the period it is paid for ({interval}: month or year)."
+  },
+  "supporters.price_note.month": {
+    "defaultMessage": "或每年 {year}",
+    "description": "Under a plan's monthly price: its yearly price ({year}, an amount such as ¥5,000)."
+  },
+  "supporters.includes": {
+    "defaultMessage": "包含 {plan} 的所有內容",
+    "description": "On the card of a plan above the lowest: it holds the perks of the plan under it ({plan}, that plan's name, the operator's)."
+  },
+  "supporters.refused": {
+    "defaultMessage": "{kind, select, ineligible {你的帳號目前無法訂閱。請重新載入頁面查看原因。} subscribed {你已經在支持此伺服器。請重新載入頁面查看你的方案。} plan_unavailable {此方案目前不接受新的訂閱。請選擇其他方案。} closing {此伺服器即將關閉，所以不接受新的訂閱。} unavailable {目前無法開始訂閱。請稍後再試。} state {你的訂閱目前無法變更。請重新載入頁面查看目前狀態。} payment_failed {付款失敗。沒有收取任何費用，你的方案維持不變。請在設定的「支持者」下的「付款與發票」中更換信用卡，然後再試一次。} payment_processing {付款處理中。付款完成後，你的方案就會變更。} other {無法完成。請重試。}}",
+    "description": "In the question before subscribing or changing the plan, in its text's place, when the server refused it ({kind}: why)."
+  },
+  "supporters.commerce": {
+    "defaultMessage": "商業揭露",
+    "description": "The link to the server's commerce disclosure, after what subscribing or changing the plan does, in the question before it."
+  },
+  "supporters.failed": {
+    "defaultMessage": "無法載入支持者頁面。",
+    "description": "In the supporters' page's place when what it shows could not be read; Try again follows."
+  },
+  "supporters.loading": {
+    "defaultMessage": "正在載入支持者頁面…",
+    "description": "In the supporters' page's place while what it shows is read."
+  },
+  "supporters.none": {
+    "defaultMessage": "此伺服器不在這裡接受支持。",
+    "description": "The supporters' page of a server whose plans, tips and supporters list are all off, or of the native app, which shows no purchase, where the list is off."
+  },
+  "supporters.plans.failed": {
+    "defaultMessage": "無法載入方案。",
+    "description": "In the plans' place on the supporters' page when they could not be read; Try again follows."
+  },
+  "supporters.plans.loading": {
+    "defaultMessage": "正在載入方案…",
+    "description": "In the plans' place on the supporters' page while they are read."
+  },
+  "supporters.plans.none": {
+    "defaultMessage": "目前沒有可訂閱的方案。",
+    "description": "In the plans' place on the supporters' page while the server offers none."
+  },
+  "supporters.subscribe": {
+    "defaultMessage": "選擇",
+    "description": "The button on a plan's card that asks before leaving for the payment provider's checkout of that plan, at the period chosen; the card names it by its plan for assistive technology (Choose Supporter)."
+  },
+  "supporters.switch": {
+    "defaultMessage": "切換",
+    "description": "The button on a plan's card, for a reader subscribed to another plan or period, that asks before changing to it."
+  },
+  "supporters.checkout.confirm": {
+    "defaultMessage": "前往付款",
+    "description": "The button of the question before subscribing that leaves for the payment provider's checkout."
+  },
+  "supporters.checkout.cancel": {
+    "defaultMessage": "暫時不要",
+    "description": "The button of the question before subscribing that closes it with nothing done."
+  },
+  "supporters.checkout.text": {
+    "defaultMessage": "你現在支付 {price}，之後每{interval, select, month {月} other {年}}支付 {price}，直到你取消為止。付款完成後，福利即開始。你可以隨時在設定的「支持者方案與贊助」中取消，已付費的期間結束前，福利仍會保留。",
+    "description": "What subscribing does, in the question before the payment provider's checkout ({price}: the plan's price at the period; {interval}: month or year)."
+  },
+  "supporters.checkout.title": {
+    "defaultMessage": "要訂閱 {plan}（{interval, select, month {每月} other {每年}}）嗎？",
+    "description": "The question before leaving for the payment provider's checkout ({plan}: the plan's name, the operator's; {interval}: month or year)."
+  },
+  "supporters.change.confirm": {
+    "defaultMessage": "{when, select, now {立即變更} other {排程變更}}",
+    "description": "The button of the question before changing the plan ({when}: now, or at the end of the period)."
+  },
+  "supporters.change.keep": {
+    "defaultMessage": "保留我的方案",
+    "description": "A button that keeps the reader's plan as it is: in the question before a change, and beside a change scheduled for the period's end, which it cancels."
+  },
+  "supporters.change.text": {
+    "defaultMessage": "{when, select, now {本期剩餘時間的差額會立即收取，付款完成後方案隨即變更。之後每{interval, select, month {月} other {年}}支付 {price}。} other {現在不會收取任何費用。你會保有 {plan} 到 {date}，之後方案才會變更，並每{interval, select, month {月} other {年}}支付 {price}。}}",
+    "description": "What a change of the plan does, in the question before it ({when}: now or at the period's end on {date}; {plan}: the reader's plan now; {price}: the new price at {interval})."
+  },
+  "supporters.change.price_kept": {
+    "defaultMessage": "你目前支付 {kept}，這是為你保留的舊價格。變更後你會支付方案今日的價格，即使之後回到 {plan} 也一樣。",
+    "description": "In the question before changing the plan, when the reader renews at an earlier price than the plan's price now ({kept}: what they pay; {plan}: their plan's name)."
+  },
+  "supporters.change.title": {
+    "defaultMessage": "{when, select, now {要立即變更為 {plan}（{interval, select, month {每月} other {每年}}）嗎？} other {要在 {date} 變更為 {plan}（{interval, select, month {每月} other {每年}}）嗎？}}",
+    "description": "The question before changing the plan or the period ({when}: now, the difference charged at once, or at the end of the period, on {date}; {plan}: the new plan's name)."
+  },
+  "supporters.subscription": {
+    "defaultMessage": "你的訂閱",
+    "description": "The heading of the reader's subscription in the Supporter screen, and the link to it from the plans after the sentence that says they support the server."
+  },
+  "supporters.yours.plan": {
+    "defaultMessage": "你正以 {plan} 支持此伺服器。",
+    "description": "Over the plans, for a reader who supports the server ({plan}: their plan's name, the operator's)."
+  },
+  "supporters.yours.lapsed": {
+    "defaultMessage": "你的 {plan} 付款失敗，福利已終止。請在你的訂閱中更新付款方式。",
+    "description": "Over the plans, for a reader whose subscription's payment failed and whose 7 days of grace ended ({plan}: its plan's name); the link to their subscription follows."
+  },
+  "supporters.sign_in": {
+    "defaultMessage": "登入",
+    "description": "The link to the sign-in after a sentence of the supporters' page that asks for an account; it comes back to the page."
+  },
+  "supporters.bar.subscribe": {
+    "defaultMessage": "{reason, select, signed_out {訂閱需要此伺服器上的帳號。} email_unverified {請驗證你的電子郵件地址後再訂閱。} not_local {只有在此伺服器上有帳號的人才能訂閱。} restricted {你的帳號受限期間無法訂閱。} subscribed {你已經在支持此伺服器。} other {你目前無法訂閱。}}",
+    "description": "Why the reader is not offered to subscribe to a plan ({reason})."
+  },
+  "supporters.bar.tip": {
+    "defaultMessage": "{reason, select, signed_out {贊助需要此伺服器上的帳號。} email_unverified {請驗證你的電子郵件地址後再贊助。} not_local {只有在此伺服器上有帳號的人才能贊助。} restricted {你的帳號受限期間無法贊助。} other {你目前無法贊助。}}",
+    "description": "Why the reader is not offered to tip the server ({reason})."
+  },
+  "supporters.tip": {
+    "defaultMessage": "贊助伺服器",
+    "description": "The heading of the tip on the supporters' page, the screen of the tip in the settings, and the row of the settings that leads there."
+  },
+  "supporters.tip.about": {
+    "defaultMessage": "贊助是對營運 {server} 的人所提供服務的一次性感謝，不會有任何回饋。",
+    "description": "What a tip is, beside the way to tip and the choice of its amount ({server}: the server's name). It is no purchase and brings nothing in return."
+  },
+  "supporters.tip.go": {
+    "defaultMessage": "贊助",
+    "description": "The link of the supporters' page to the screen that pays a tip."
+  },
+  "supporters.list": {
+    "defaultMessage": "支持者",
+    "description": "The heading of the supporters list on the supporters' page."
+  },
+  "supporters.changed": {
+    "defaultMessage": "{when, select, now {你的方案現在是 {plan}（{interval, select, month {每月} other {每年}}）。} other {你的方案將在 {date} 變更為 {plan}（{interval, select, month {每月} other {每年}}）。}}",
+    "description": "Under the plans, once a change of the plan was made ({when}: now, or scheduled for {date})."
+  },
+  "supporters.same_plan": {
+    "defaultMessage": "{plan}（{interval, select, month {每月} other {每年}}）已是你目前的方案。",
+    "description": "Under the plans, when a change the reader asked for again was already made (its first answer did not reach them): the plan is theirs ({plan}: its name)."
+  }
+}

@@ -1,0 +1,610 @@
+{
+  "staff_finance.group": {
+    "defaultMessage": "资金",
+    "description": "Heading of the group of administration screens about the server's running costs, income and supporter plans, at /admin."
+  },
+  "staff_finance.entry": {
+    "defaultMessage": "成本和收入",
+    "description": "Name of the administration screen of the server's running costs and income, at /admin/finance, and its title; apart from Finance, the menu's page of the finance for its readers. Read by administrators."
+  },
+  "staff_finance.back.root": {
+    "defaultMessage": "成本和收入",
+    "description": "The way back from a screen under Costs and income to its first page, at /admin/finance."
+  },
+  "staff_finance.back.costs": {
+    "defaultMessage": "成本",
+    "description": "The way back from a cost item's screen, or the form of a new one, to the list of cost items."
+  },
+  "staff_finance.cancel": {
+    "defaultMessage": "取消",
+    "description": "The button of a question on a Finance screen that does nothing."
+  },
+  "staff_finance.forbidden": {
+    "defaultMessage": "你的账号可能已无权管理服务器的财务。",
+    "description": "On a Finance screen, when the server refuses the reader because their roles no longer allow it."
+  },
+  "staff_finance.doors": {
+    "defaultMessage": "财务页面",
+    "description": "Heading of the list of the screens under Finance (costs, income, billing imports, publication) on /admin/finance."
+  },
+  "staff_finance.costs": {
+    "defaultMessage": "成本",
+    "description": "Name of the screen of the cost items, at /admin/finance/costs, and its title."
+  },
+  "staff_finance.costs.record": {
+    "defaultMessage": "记录成本",
+    "description": "Button at the head of the list of cost items that opens the form of a new one."
+  },
+  "staff_finance.costs.record_it": {
+    "defaultMessage": "记录成本",
+    "description": "The submit button of the form of a new cost item."
+  },
+  "staff_finance.costs.new": {
+    "defaultMessage": "记录成本",
+    "description": "Title of the form of a new cost item, at /admin/finance/costs/new."
+  },
+  "staff_finance.costs.loading": {
+    "defaultMessage": "正在加载成本…",
+    "description": "On the list of cost items while it loads."
+  },
+  "staff_finance.costs.failed": {
+    "defaultMessage": "无法加载成本。请检查网络连接后重试。",
+    "description": "On the list of cost items when it could not be loaded, before Try again."
+  },
+  "staff_finance.costs.empty": {
+    "defaultMessage": "尚未记录任何成本。",
+    "description": "In the place of the list of cost items while there is none; Record a cost stands over it."
+  },
+  "staff_finance.costs.column.item": {
+    "defaultMessage": "项目",
+    "description": "Column of the list of cost items: the item's name, its provider under it."
+  },
+  "staff_finance.costs.column.schedule": {
+    "defaultMessage": "频率",
+    "description": "Column of the list of cost items: how often it is paid."
+  },
+  "staff_finance.costs.column.price": {
+    "defaultMessage": "金额",
+    "description": "Column of the list of cost items: its price today."
+  },
+  "staff_finance.costs.column.end": {
+    "defaultMessage": "状态",
+    "description": "Column of the list of cost items: whether it goes on, ends, or ended."
+  },
+  "staff_finance.costs.going_on": {
+    "defaultMessage": "进行中",
+    "description": "State of a repeating cost item without an end."
+  },
+  "staff_finance.costs.ends": {
+    "defaultMessage": "{date} 结束",
+    "description": "State of a repeating cost item whose last payment date is today or later. {date} is that date."
+  },
+  "staff_finance.costs.ended": {
+    "defaultMessage": "{date} 已结束",
+    "description": "State of a repeating cost item whose last payment date has passed. {date} is that date."
+  },
+  "staff_finance.costs.once_on": {
+    "defaultMessage": "{date} 一次性支付",
+    "description": "State of a cost item paid once. {date} is its payment date."
+  },
+  "staff_finance.income": {
+    "defaultMessage": "收入",
+    "description": "Name of the screen of the income and its money movements, at /admin/finance/income, and its title."
+  },
+  "staff_finance.income.totals": {
+    "defaultMessage": "各期收入",
+    "description": "Name, for assistive technology, of the table of the income per period."
+  },
+  "staff_finance.income.column.gross": {
+    "defaultMessage": "总额",
+    "description": "Column of the income: the amount paid, before fees."
+  },
+  "staff_finance.income.column.fee": {
+    "defaultMessage": "手续费",
+    "description": "Column of the income: the payment provider's fees."
+  },
+  "staff_finance.income.column.net": {
+    "defaultMessage": "净额",
+    "description": "Column of the income: what remains after the fees."
+  },
+  "staff_finance.income.column.balance": {
+    "defaultMessage": "结余",
+    "description": "Column of the income per period: the net income less the costs."
+  },
+  "staff_finance.income.column.source": {
+    "defaultMessage": "来源",
+    "description": "Column of the net income of a period by where it came from."
+  },
+  "staff_finance.income.column.on": {
+    "defaultMessage": "日期",
+    "description": "Column of the money movements: the date it falls on."
+  },
+  "staff_finance.income.column.payer": {
+    "defaultMessage": "付款人",
+    "description": "Column of the money movements: the account that paid, or none."
+  },
+  "staff_finance.income.by_source": {
+    "defaultMessage": "{period}的净收入（按来源）",
+    "description": "Heading of the net income of the latest period by where it came from. {period} is the period's name."
+  },
+  "staff_finance.income.source": {
+    "defaultMessage": "{source, select, subscription {订阅} one_time {打赏} unknown {其他款项} other {}}",
+    "description": "Where income came from: the supporter plans' subscriptions, the tips, or other money of the payment provider's account."
+  },
+  "staff_finance.income.movements": {
+    "defaultMessage": "资金流水",
+    "description": "Heading of the list of the payment provider's money movements, newest first."
+  },
+  "staff_finance.income.filters": {
+    "defaultMessage": "筛选资金流水",
+    "description": "Name, for assistive technology, of the filters over the money movements."
+  },
+  "staff_finance.income.kind.label": {
+    "defaultMessage": "类型",
+    "description": "Name of the filter of the money movements by kind."
+  },
+  "staff_finance.income.kind.any": {
+    "defaultMessage": "所有类型",
+    "description": "The filter of the money movements that shows every kind."
+  },
+  "staff_finance.income.kind": {
+    "defaultMessage": "{kind, select, payment {付款} refund {退款} chargeback {拒付} chargeback_reversal {申诉获胜} fee {手续费} other {}}",
+    "description": "A kind of money movement, as a filter."
+  },
+  "staff_finance.income.what": {
+    "defaultMessage": "{source, select, subscription {订阅} one_time {打赏} unknown {其他款项} other {}}的{kind, select, payment {付款} refund {退款} chargeback {拒付} chargeback_reversal {申诉获胜} fee {手续费} other {}}",
+    "description": "Line under a money movement's payer: what kind of movement it is, and of what."
+  },
+  "staff_finance.income.erased": {
+    "defaultMessage": "已删除的账号",
+    "description": "In the place of the payer of a money movement whose account was erased."
+  },
+  "staff_finance.income.none": {
+    "defaultMessage": "无账号",
+    "description": "In the place of the payer of a money movement that no account made (a fee)."
+  },
+  "staff_finance.income.movements.loading": {
+    "defaultMessage": "正在加载资金流水…",
+    "description": "In the place of the money movements while they load."
+  },
+  "staff_finance.income.movements.failed": {
+    "defaultMessage": "无法加载资金流水。请检查网络连接后重试。",
+    "description": "In the place of the money movements when they could not be loaded, before Try again."
+  },
+  "staff_finance.income.movements.empty": {
+    "defaultMessage": "还没有任何资金流动。",
+    "description": "In the place of the money movements while there is none."
+  },
+  "staff_finance.income.movements.none": {
+    "defaultMessage": "没有此类型的资金流水。清除筛选即可查看所有类型。",
+    "description": "In the place of the money movements filtered by a kind that has none."
+  },
+  "staff_finance.imports": {
+    "defaultMessage": "账单导入",
+    "description": "Name of the screen of the imports of cloud providers' usage charges, at /admin/finance/imports, and its title."
+  },
+  "staff_finance.imports.loading": {
+    "defaultMessage": "正在加载账单导入…",
+    "description": "On the billing imports' screen while it loads."
+  },
+  "staff_finance.imports.failed": {
+    "defaultMessage": "无法加载账单导入。请检查网络连接后重试。",
+    "description": "On the billing imports' screen when it could not be loaded, before Try again."
+  },
+  "staff_finance.imports.facts": {
+    "defaultMessage": "{provider} 的导入",
+    "description": "Name, for assistive technology, of the facts of a billing source. {provider} is the cloud provider's name."
+  },
+  "staff_finance.imports.method": {
+    "defaultMessage": "读取方式",
+    "description": "Fact of a billing source: how it reads the provider's data."
+  },
+  "staff_finance.imports.zone": {
+    "defaultMessage": "账单月份所用时区",
+    "description": "Fact of a billing source: the time zone of its billing months."
+  },
+  "staff_finance.imports.never": {
+    "defaultMessage": "从未",
+    "description": "Fact of a billing source that has never imported, or never succeeded."
+  },
+  "staff_finance.imports.succeeded": {
+    "defaultMessage": "{at} 成功",
+    "description": "Fact of a billing source's last import that succeeded. {at} is when."
+  },
+  "staff_finance.imports.failed_at": {
+    "defaultMessage": "{at} 失败",
+    "description": "Fact of a billing source's last import that failed. {at} is when."
+  },
+  "staff_finance.imports.error": {
+    "defaultMessage": "{kind, select, permission {凭据可能无权读取账单数据。请授予运维指南中指明的权限。} not_enabled {服务商的账单数据未启用。请在服务商的控制台中启用。} not_found {数据集、表或订阅不存在。请检查配置中的名称。} throttled {服务商要求降低请求频率。请等待下次导入，或稍后再立即导入。} request_cap {已达到计费请求的上限，因此没有发起调用。请提高上限，或等到次日或下月。} bytes_cap {查询将扫描超过上限的数据。请在配置中提高上限。} invalid_response {服务商返回了服务器无法读取的内容。请等待下次导入，或稍后再立即导入。} unavailable {无法连接到服务商。请等待下次导入，或稍后再立即导入。} other {请查看服务器日志，然后立即导入。}}",
+    "description": "Why a billing source's last import failed, and what to do. Read by administrators."
+  },
+  "staff_finance.imports.last_success": {
+    "defaultMessage": "上次成功",
+    "description": "Fact of a billing source: when its last successful import ran."
+  },
+  "staff_finance.imports.requests_of": {
+    "defaultMessage": "{count, number} / {cap, number}",
+    "description": "A count of billed requests against its cap."
+  },
+  "staff_finance.imports.months": {
+    "defaultMessage": "{provider} 的账单月份",
+    "description": "Name, for assistive technology, of the table of a billing source's months. {provider} is the cloud provider's name."
+  },
+  "staff_finance.imports.no_months": {
+    "defaultMessage": "尚未导入任何用量费用。",
+    "description": "In the place of a billing source's months while none is imported."
+  },
+  "staff_finance.imports.column.month": {
+    "defaultMessage": "账单月份",
+    "description": "Column of a billing source's months: the month."
+  },
+  "staff_finance.imports.column.kind": {
+    "defaultMessage": "数据",
+    "description": "Column of a billing source's months: whether its figures are an estimate, final, or corrected."
+  },
+  "staff_finance.imports.column.total": {
+    "defaultMessage": "合计",
+    "description": "Column of a billing source's months: its total, a figure a currency."
+  },
+  "staff_finance.imports.kind": {
+    "defaultMessage": "{kind, select, estimate {预估} final {最终} correction {已更正} other {}}",
+    "description": "Whether the figures of a billing month are an estimate, final, or corrected after they were final."
+  },
+  "staff_finance.imports.now": {
+    "defaultMessage": "立即导入",
+    "description": "Button that asks for an import of a billing source now, besides the daily one."
+  },
+  "staff_finance.imports.run": {
+    "defaultMessage": "{answer, select, queued {已将 {provider} 的导入加入队列，运行后结果会显示在这里。} too_soon {{provider} 在过去一小时内已导入过。请稍后再试。} unknown {配置已不再导入 {provider}。} other {}}",
+    "description": "Said after Import now: queued, refused because one ran in the last UTC hour, or refused because the source is no longer enabled. {provider} is the cloud provider's name."
+  },
+  "staff_finance.imports.run_failed": {
+    "defaultMessage": "未能将导入加入队列。请检查网络连接后重试。",
+    "description": "Said when Import now failed for another reason."
+  },
+  "staff_finance.imports.none": {
+    "defaultMessage": "服务器不导入任何用量费用。云服务商在服务器配置（billing_sources）中设置。",
+    "description": "On the billing imports' screen while the configuration enables no billing source. Read by administrators."
+  },
+  "staff_finance.imports.method.value": {
+    "defaultMessage": "{method, select, cost_explorer {AWS Cost Explorer，按服务} bigquery {导出到 BigQuery 的 Cloud Billing 数据，按服务} budget {Cloud Billing 预算，每月一个预估总额} billable_usage {Cloudflare 的计费用量，按产品} plugin {插件报告的内容} other {}}",
+    "description": "How a billing source reads the provider's data."
+  },
+  "staff_finance.imports.requests_today": {
+    "defaultMessage": "今日计费请求数（UTC）",
+    "description": "Fact of a billing source: the billed requests of its imports this UTC day."
+  },
+  "staff_finance.imports.requests_month": {
+    "defaultMessage": "本月计费请求数（UTC）",
+    "description": "Fact of a billing source: the billed requests of its imports this UTC month."
+  },
+  "staff_finance.imports.bytes": {
+    "defaultMessage": "本月计费字节数（UTC）",
+    "description": "Fact of a billing source that reads BigQuery or a plugin: the bytes billed this UTC month. Read by administrators."
+  },
+  "staff_finance.publication": {
+    "defaultMessage": "公开内容",
+    "description": "Name of the screen of what the server publishes of its finance, at /admin/finance/publication, and its title. Read by administrators."
+  },
+  "staff_finance.publication.loading": {
+    "defaultMessage": "正在加载公开内容…",
+    "description": "On the publication screen while the settings load."
+  },
+  "staff_finance.publication.failed": {
+    "defaultMessage": "无法加载公开内容。请检查网络连接后重试。",
+    "description": "On the publication screen when the settings could not be loaded, before Try again."
+  },
+  "staff_finance.publication.costs": {
+    "defaultMessage": "成本",
+    "description": "Heading and name of the choice of what the server publishes of its costs."
+  },
+  "staff_finance.publication.costs.option": {
+    "defaultMessage": "{value, select, private {不公开} totals {合计} breakdown {合计和明细} other {}}",
+    "description": "An option of what the server publishes of its costs, and the fact of what it publishes now."
+  },
+  "staff_finance.publication.costs.about": {
+    "defaultMessage": "{value, select, private {管理员以外的人都看不到成本。} totals {所有人都能在“关于”页面看到各期按币种统计的合计。} breakdown {所有人还能看到按服务商和类别统计的成本，由此可知服务器运行在哪家云上。} other {}}",
+    "description": "Under an option of what the server publishes of its costs: what it publishes. Item names, memos and payments are never published."
+  },
+  "staff_finance.publication.income": {
+    "defaultMessage": "收入",
+    "description": "Heading and name of the choice of what the server publishes of its income."
+  },
+  "staff_finance.publication.income.option": {
+    "defaultMessage": "{value, select, private {不公开} totals {合计} plans {合计和各方案的成员数} other {}}",
+    "description": "An option of what the server publishes of its income, and the fact of what it publishes now."
+  },
+  "staff_finance.publication.income.about": {
+    "defaultMessage": "{value, select, private {管理员以外的人都看不到收入。} totals {所有人都能看到各期的净收入。若同时公开成本，还会显示结余。} plans {所有人还能看到各方案有多少成员。成员较少时，别人可能猜出他们是谁。} other {}}",
+    "description": "Under an option of what the server publishes of its income: what it publishes. Payments and who paid are never published."
+  },
+  "staff_finance.publication.meter": {
+    "defaultMessage": "筹款进度条",
+    "description": "Heading and name of the choice of the funding meter: how far this month's net income goes toward the monthly target."
+  },
+  "staff_finance.publication.meter.allowed": {
+    "defaultMessage": "{case, select, both_private {成本和收入都不公开时，进度条只能显示百分比。} both_published {成本和收入都公开时，进度条还能显示金额。} one_side {成本和收入只公开其中一项时，无法显示进度条，否则会泄露另一项。} other {}}",
+    "description": "Over the choice of the funding meter: which choices the costs' and the income's publication allow, and why."
+  },
+  "staff_finance.publication.meter.option": {
+    "defaultMessage": "{value, select, off {不显示} percent {百分比} amounts {百分比和金额} other {}}",
+    "description": "An option of the funding meter, and the fact of what it shows now."
+  },
+  "staff_finance.publication.meter.about": {
+    "defaultMessage": "{value, select, off {任何地方都不显示进度条。} percent {所有人都能看到本月收入达到目标的比例，向下取整到 1%。} amounts {所有人还能看到本月的净收入和目标金额。} other {}}",
+    "description": "Under an option of the funding meter: what it shows."
+  },
+  "staff_finance.publication.target": {
+    "defaultMessage": "每月目标",
+    "description": "Field of the funding meter's monthly target, an amount."
+  },
+  "staff_finance.publication.target.hint": {
+    "defaultMessage": "留空时，若本月成本为单一币种，则使用本月成本。",
+    "description": "Under the funding meter's target."
+  },
+  "staff_finance.publication.target.shown": {
+    "defaultMessage": "每月 {amount}",
+    "description": "Under the funding meter's monthly target once it holds an amount: that amount as money. {amount} is the amount with its currency."
+  },
+  "staff_finance.publication.target.currency": {
+    "defaultMessage": "目标币种",
+    "description": "Field of the currency of the funding meter's target."
+  },
+  "staff_finance.publication.target.costs_currency": {
+    "defaultMessage": "本月成本的币种",
+    "description": "Option of the currency of the funding meter's target: the currency of this month's costs."
+  },
+  "staff_finance.publication.target.invalid": {
+    "defaultMessage": "请用数字填写金额，小数位数不能超过该币种的位数（20000、150.50）。",
+    "description": "Under the funding meter's target when it is not an amount of its currency."
+  },
+  "staff_finance.publication.rail": {
+    "defaultMessage": "同时在宽屏的侧栏中显示进度条",
+    "description": "Checkbox of the funding meter: whether the wide layout's side column shows it too."
+  },
+  "staff_finance.publication.viewer": {
+    "defaultMessage": "财务页面",
+    "description": "Heading of what people with the permission to read the finance see on /finance."
+  },
+  "staff_finance.publication.viewer.names": {
+    "defaultMessage": "显示成本项目的名称",
+    "description": "Checkbox: whether people who read the finance see the cost items' names."
+  },
+  "staff_finance.publication.viewer.memos": {
+    "defaultMessage": "显示成本项目的备注",
+    "description": "Checkbox: whether people who read the finance see the cost items' memos."
+  },
+  "staff_finance.publication.viewer.income": {
+    "defaultMessage": "他们的收入",
+    "description": "Name of the choice of what people who read the finance see of the income."
+  },
+  "staff_finance.publication.viewer_income.option": {
+    "defaultMessage": "{value, select, totals {合计} plans {合计和各方案的成员数} other {}}",
+    "description": "An option of what people who read the finance see of the income."
+  },
+  "staff_finance.publication.viewer_income.about": {
+    "defaultMessage": "{value, select, totals {各期的净收入和结余。} plans {还有各方案的成员数。不会显示谁付了款、付了多少。} other {}}",
+    "description": "Under an option of what people who read the finance see of the income."
+  },
+  "staff_finance.publication.save": {
+    "defaultMessage": "保存",
+    "description": "The submit button of the publication screen."
+  },
+  "staff_finance.publication.saved": {
+    "defaultMessage": "已保存。更改立即生效。",
+    "description": "Said once the publication settings are saved."
+  },
+  "staff_finance.publication.unchanged": {
+    "defaultMessage": "没有任何变化。",
+    "description": "Said when Save is pressed on the publication screen without a change."
+  },
+  "staff_finance.publication.not_saved": {
+    "defaultMessage": "未保存任何内容。请修正标记的项目后重新保存。",
+    "description": "Before the submit button of the publication screen when a choice or the target was refused."
+  },
+  "staff_finance.publication.not_yours": {
+    "defaultMessage": "只有可以修改服务器设置的管理员才能更改公开内容。",
+    "description": "On the publication screen, to a reader who may not change the server's settings, under what is published now."
+  },
+  "staff_finance.schedule": {
+    "defaultMessage": "{schedule, select, once {一次性} weeks {{count, plural, other {每 # 周}}} months {{count, plural, other {每 # 个月}}} years {{count, plural, other {每 # 年}}} other {}}",
+    "description": "How often a cost item is paid. {count} is its N of every N weeks, months or years."
+  },
+  "staff_finance.cost.name": {
+    "defaultMessage": "名称",
+    "description": "Field of a cost item: its name, such as VPS or Domain example.org."
+  },
+  "staff_finance.cost.name.blank": {
+    "defaultMessage": "请填写付款项目。",
+    "description": "Under the name field of a cost item when it is empty."
+  },
+  "staff_finance.cost.provider": {
+    "defaultMessage": "服务商",
+    "description": "Field of a cost item: who is paid, such as Sakura Cloud or AWS."
+  },
+  "staff_finance.cost.provider.blank": {
+    "defaultMessage": "请填写收款方。",
+    "description": "Under the provider field of a cost item when it is empty."
+  },
+  "staff_finance.cost.category": {
+    "defaultMessage": "分类",
+    "description": "Field of a cost item: its category (servers, storage, domain…)."
+  },
+  "staff_finance.cost.schedule": {
+    "defaultMessage": "频率",
+    "description": "Field of a cost item: how often it is paid, a choice of once, weeks, months or years, and the N beside it."
+  },
+  "staff_finance.cost.schedule.option": {
+    "defaultMessage": "{schedule, select, once {一次性} weeks {{count, plural, other {周}}} months {{count, plural, other {个月}}} years {{count, plural, other {年}}} other {}}",
+    "description": "Option of how often a cost item is paid: once, or the unit after the number of weeks, months or years between two payments, which stands before it. {count} is that number."
+  },
+  "staff_finance.cost.interval": {
+    "defaultMessage": "每",
+    "description": "Name, for assistive technology, of the number of weeks, months or years between two payments of a cost item."
+  },
+  "staff_finance.cost.interval.blank": {
+    "defaultMessage": "请输入 1 到 {max} 之间的数字。",
+    "description": "Under the number of weeks, months or years of a cost item when it is empty or out of range."
+  },
+  "staff_finance.cost.paid_on": {
+    "defaultMessage": "付款日期",
+    "description": "Field and fact of a cost item paid once: its payment date."
+  },
+  "staff_finance.cost.starts": {
+    "defaultMessage": "首次付款日期",
+    "description": "Field and fact of a repeating cost item: its first payment date."
+  },
+  "staff_finance.cost.starts.blank": {
+    "defaultMessage": "请选择付款日期。",
+    "description": "Under the first payment date of a cost item when it is empty."
+  },
+  "staff_finance.cost.ends": {
+    "defaultMessage": "最后一次付款日期",
+    "description": "Field and fact of a repeating cost item: its last payment date, which may be left empty."
+  },
+  "staff_finance.cost.ends.before": {
+    "defaultMessage": "请选择不早于首次付款的日期。",
+    "description": "Under the last payment date of a cost item when it is before the first payment."
+  },
+  "staff_finance.cost.no_end": {
+    "defaultMessage": "无结束时间",
+    "description": "Fact of a repeating cost item without a last payment date."
+  },
+  "staff_finance.cost.amount": {
+    "defaultMessage": "金额",
+    "description": "Field of the price of a new cost item, in its currency."
+  },
+  "staff_finance.cost.currency": {
+    "defaultMessage": "币种",
+    "description": "Field of the currency of a new cost item's price."
+  },
+  "staff_finance.cost.memo": {
+    "defaultMessage": "备注",
+    "description": "Field and fact of a cost item: a note of the administrators'."
+  },
+  "staff_finance.cost.memo.hint": {
+    "defaultMessage": "不会公开。",
+    "description": "Under the memo field of a cost item."
+  },
+  "staff_finance.cost.not_recorded": {
+    "defaultMessage": "未记录任何内容。请修正标记的项目后重新记录。",
+    "description": "Before the submit button of a new cost item when a field is wrong."
+  },
+  "staff_finance.cost.loading": {
+    "defaultMessage": "正在加载成本…",
+    "description": "On a cost item's screen while it loads."
+  },
+  "staff_finance.cost.failed": {
+    "defaultMessage": "无法加载此成本。请检查网络连接后重试。",
+    "description": "On a cost item's screen when it could not be loaded, before Try again."
+  },
+  "staff_finance.cost.missing": {
+    "defaultMessage": "没有这条成本记录，可能已被删除。",
+    "description": "At the address of a cost item the server does not have."
+  },
+  "staff_finance.cost.missing.all": {
+    "defaultMessage": "所有成本",
+    "description": "Link from a cost item that is not recorded to the list of cost items."
+  },
+  "staff_finance.cost.facts": {
+    "defaultMessage": "关于此成本",
+    "description": "Name, for assistive technology, of the facts of a cost item."
+  },
+  "staff_finance.cost.recorded": {
+    "defaultMessage": "记录时间",
+    "description": "Fact of a cost item: when it was recorded."
+  },
+  "staff_finance.cost.prices": {
+    "defaultMessage": "价格",
+    "description": "Heading of a cost item's prices, each with the date it applies from, and of the form of a new price."
+  },
+  "staff_finance.cost.revise": {
+    "defaultMessage": "调整价格",
+    "description": "Button that records a new price of a cost item from a date."
+  },
+  "staff_finance.cost.revise.date": {
+    "defaultMessage": "生效日期",
+    "description": "Field of a new price of a cost item: the date from which the payments take it."
+  },
+  "staff_finance.cost.revise.date_before": {
+    "defaultMessage": "请选择不早于首次付款的日期。",
+    "description": "Under the date of a new price of a cost item when it is before the first payment."
+  },
+  "staff_finance.cost.revise.done": {
+    "defaultMessage": "自 {date} 起，价格为 {price}。",
+    "description": "Said once a new price of a cost item is recorded."
+  },
+  "staff_finance.cost.revise.amount": {
+    "defaultMessage": "新价格（{currency}）",
+    "description": "Field of a new price of a cost item. {currency} is its currency's code."
+  },
+  "staff_finance.cost.label": {
+    "defaultMessage": "详情",
+    "description": "Heading of the form that changes a cost item's name, provider, category and memo."
+  },
+  "staff_finance.cost.label.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves a cost item's name, provider, category and memo."
+  },
+  "staff_finance.cost.label.done": {
+    "defaultMessage": "已保存。",
+    "description": "Said once a cost item's name, provider, category and memo are saved."
+  },
+  "staff_finance.cost.end": {
+    "defaultMessage": "结束",
+    "description": "Heading of the form of a repeating cost item's last payment date."
+  },
+  "staff_finance.cost.end.date": {
+    "defaultMessage": "最后一次付款日期",
+    "description": "Field of a repeating cost item's last payment date, on its screen."
+  },
+  "staff_finance.cost.end.set": {
+    "defaultMessage": "在此日期结束",
+    "description": "Button that sets a repeating cost item's last payment date. Its payments after that date go away; past ones stay."
+  },
+  "staff_finance.cost.end.move": {
+    "defaultMessage": "更改结束日期",
+    "description": "Button that moves a repeating cost item's last payment date."
+  },
+  "staff_finance.cost.end.remove": {
+    "defaultMessage": "取消结束日期",
+    "description": "Button that makes a repeating cost item go on with no end."
+  },
+  "staff_finance.cost.end.done": {
+    "defaultMessage": "最后一次付款日期为 {date}。",
+    "description": "Said once a repeating cost item's last payment date is set."
+  },
+  "staff_finance.cost.end.removed": {
+    "defaultMessage": "此成本将持续下去，没有结束日期。",
+    "description": "Said once a repeating cost item's end is removed."
+  },
+  "staff_finance.cost.delete": {
+    "defaultMessage": "删除",
+    "description": "Heading of the last section of a cost item's screen, which deletes it."
+  },
+  "staff_finance.cost.delete.about": {
+    "defaultMessage": "删除后，此成本会从所有期间（包括过去的期间）中移除，就像从未记录过一样。此操作无法撤销。",
+    "description": "Under Delete on a cost item's screen, and in its confirmation."
+  },
+  "staff_finance.cost.delete.ask": {
+    "defaultMessage": "删除此成本…",
+    "description": "Button that asks before deleting a cost item."
+  },
+  "staff_finance.cost.delete.confirm": {
+    "defaultMessage": "删除 {name}？",
+    "description": "Title of the confirmation of deleting a cost item. {name} is its name."
+  },
+  "staff_finance.cost.delete.do": {
+    "defaultMessage": "删除",
+    "description": "Button of the confirmation that deletes a cost item."
+  },
+  "staff_finance.cost.write_failed": {
+    "defaultMessage": "未能保存。请检查网络连接后重试。",
+    "description": "Said when a change of a cost item failed for a reason that names no field."
+  },
+  "staff_finance.cost.amount.invalid": {
+    "defaultMessage": "请用数字填写金额，小数位数不能超过该币种的位数（1650、12.50）。",
+    "description": "Under an amount of a cost item when it is not a number, or has more decimals than its currency."
+  }
+}

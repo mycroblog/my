@@ -1,0 +1,302 @@
+{
+  "staff_roles.entry": {
+    "defaultMessage": "角色",
+    "description": "The name of the screen of the roles and their permissions, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_roles.loading": {
+    "defaultMessage": "正在加载角色…",
+    "description": "On a screen of roles while the roles are read. Read by administrators."
+  },
+  "staff_roles.failed": {
+    "defaultMessage": "无法加载角色。",
+    "description": "On a screen of roles when the roles could not be read, before Try again. Read by administrators."
+  },
+  "staff_roles.missing": {
+    "defaultMessage": "此地址没有对应的角色，可能已被删除。",
+    "description": "At /admin/roles/{key} for a key no role has, before the link to all roles. Read by administrators."
+  },
+  "staff_roles.all": {
+    "defaultMessage": "所有角色",
+    "description": "The link to /admin/roles under the sentence that an address names no role. Read by administrators."
+  },
+  "staff_roles.list.count": {
+    "defaultMessage": "{count, plural, other {# 个角色}}",
+    "description": "The heading of the list of every role at /admin/roles: how many there are. Read by administrators."
+  },
+  "staff_roles.add": {
+    "defaultMessage": "添加角色",
+    "description": "The button at the end of the heading of the roles that opens the form of a new role. Read by administrators."
+  },
+  "staff_roles.row.place": {
+    "defaultMessage": "位次 {position}",
+    "description": "A fact of a role in a list: its place among the roles, a number from 0 to 1000; a higher one outranks a lower one. Read by administrators."
+  },
+  "staff_roles.row.permissions": {
+    "defaultMessage": "{count, plural, =0 {无权限} other {# 项权限}}",
+    "description": "A fact of a role in the list of roles: how many permissions it grants. Read by administrators."
+  },
+  "staff_roles.row.badge": {
+    "defaultMessage": "徽章：{label}",
+    "description": "A fact of a role in the list of roles: the label of its badge, as the staff wrote it. Read by administrators."
+  },
+  "staff_roles.row.plan": {
+    "defaultMessage": "方案：{name}",
+    "description": "A fact of a role in the list of roles: the name of the supporter plan that grants it, as the staff wrote it. Read by administrators."
+  },
+  "staff_roles.state.above": {
+    "defaultMessage": "高于你的角色",
+    "description": "At the end of a role's row: the role is above the reader's highest role, so they cannot change, grant or revoke it. Read by administrators."
+  },
+  "staff_roles.state.plan": {
+    "defaultMessage": "来自方案",
+    "description": "At the end of a role's row: a supporter plan grants the role, so its plan, not the reader, sets it. Read by administrators."
+  },
+  "staff_roles.state.builtin": {
+    "defaultMessage": "内置",
+    "description": "At the end of a role's row: one of the server's own roles (admin, moderator), which cannot be deleted. Read by administrators."
+  },
+  "staff_roles.fixed.above": {
+    "defaultMessage": "此角色高于你的最高角色 {key}，因此你无法修改。",
+    "description": "On the page of a role above the reader's highest role (its key, as written), under what the role is. Read by administrators."
+  },
+  "staff_roles.fixed.admin": {
+    "defaultMessage": "管理员角色始终拥有全部权限和最高位次，只能修改它的徽章。",
+    "description": "On the page of the built-in admin role, under what it is. Read by administrators."
+  },
+  "staff_roles.fixed.plan": {
+    "defaultMessage": "此角色由支持者方案授予。请在方案中修改它的位次和权限。",
+    "description": "On the page of a role a supporter plan grants, under what it is. Read by administrators."
+  },
+  "staff_roles.permission": {
+    "defaultMessage": "{permission, select, manage_reports {处理举报} manage_accounts {管理账号} manage_domains {管理其他服务器} manage_rules {编辑规则} manage_settings {修改服务器设置} manage_roles {管理角色} manage_invites {管理邀请} view_audit {查看审计日志} manage_jobs {管理任务} manage_login_recovery {恢复登录} manage_custom_emojis {管理自定义表情} manage_webhooks {管理 Webhook} manage_announcements {撰写公告} manage_finance {管理财务} view_finance {查看财务} manage_supporters {管理支持者方案} create_custom_emojis {申请自定义表情} manage_oauth_apps {管理 OAuth 应用} manage_service_closure {发布停止服务公告} start_voice_rooms {开设语音聊天室} manage_errors {处理错误} manage_login_providers {管理登录方式} create_invites {创建邀请} keep_posts_longer {更长时间保留帖子} create_articles {撰写文章} create_events {创建活动} other {{permission}}}",
+    "description": "The name of a permission a role grants, as a checkbox of a role's form and in a list of them. Read by administrators."
+  },
+  "staff_roles.role": {
+    "defaultMessage": "角色",
+    "description": "The heading of the section of a role's name and place, on a role's page and the form of a new one. Read by administrators."
+  },
+  "staff_roles.key": {
+    "defaultMessage": "名称",
+    "description": "The field of a new role's name, its key, which never changes later. Read by administrators."
+  },
+  "staff_roles.key.rule": {
+    "defaultMessage": "1 到 64 个小写字母（a 到 z）、数字、_ 和 -，之后无法修改。",
+    "description": "Under the name of a new role: the rule its value follows, also when it was refused. Read by administrators."
+  },
+  "staff_roles.key.taken": {
+    "defaultMessage": "已有名为 {key} 的角色，请换一个名称。",
+    "description": "Under the name of a new role when another role has it. Read by administrators."
+  },
+  "staff_roles.position": {
+    "defaultMessage": "位次",
+    "description": "The field of a role's place among the roles, a number. Read by administrators."
+  },
+  "staff_roles.position.about": {
+    "defaultMessage": "从 {min} 到 {max}。位次较高的角色优先于位次较低的角色。",
+    "description": "Under the place of a role: the numbers the reader may give it (up to their own highest role; for a role with staff permissions, above the supporter plans' roles) and what the place means. Read by administrators."
+  },
+  "staff_roles.position.rule": {
+    "defaultMessage": "请选择 0 到 {max} 之间的位次。",
+    "description": "Under the place of a role when the server refused it. Read by administrators."
+  },
+  "staff_roles.position.reach": {
+    "defaultMessage": "请选择 0 到 {max} 之间的位次，不能高于你自己的最高角色。",
+    "description": "Under the place of a role when it is empty or above what the reader may give. Read by administrators."
+  },
+  "staff_roles.position.plans": {
+    "defaultMessage": "拥有管理员权限的角色须高于支持者方案的角色，请选择 {min} 以上的位次。",
+    "description": "Under the place of a role with staff permissions (or a built-in role) when it is at or below the highest place of a supporter plan's role. Read by administrators."
+  },
+  "staff_roles.permissions": {
+    "defaultMessage": "权限",
+    "description": "The heading of the section of a role's permissions, a checkbox each. Read by administrators."
+  },
+  "staff_roles.permissions.fixed": {
+    "defaultMessage": "此角色还授予你不具备的 {names}，因此它们保持不变。",
+    "description": "Under the checkboxes of a role's permissions: the permissions the role grants that the reader lacks, as a list. Read by administrators."
+  },
+  "staff_roles.permissions.refused": {
+    "defaultMessage": "无法保存这些权限。请检查后重新保存。",
+    "description": "Under the first permission of a role's form when the server refused the permissions with no list of which. Read by administrators."
+  },
+  "staff_roles.permissions.missing": {
+    "defaultMessage": "你的角色已不再授予 {names}，因此你无法授予或收回它们。请撤销你对它们的修改后重新保存。",
+    "description": "Under the first permission of a role's form when the server refused a change of permissions the reader no longer holds (a list). Read by administrators."
+  },
+  "staff_roles.facts.permissions": {
+    "defaultMessage": "授予 {names}。",
+    "description": "On the page of a role the reader cannot change: the permissions it grants, as a list. Read by administrators."
+  },
+  "staff_roles.facts.no_permissions": {
+    "defaultMessage": "不授予任何权限。",
+    "description": "On the page of a role the reader cannot change, for one with no permission. Read by administrators."
+  },
+  "staff_roles.facts.plan": {
+    "defaultMessage": "{retired, select, true {由支持者方案“{name}”授予，该方案已停用。} other {由支持者方案“{name}”授予。}}",
+    "description": "On the page of a role a supporter plan grants: the plan's name, as the staff wrote it, and whether the plan is retired (retired is true or false). Read by administrators."
+  },
+  "staff_roles.badge": {
+    "defaultMessage": "徽章",
+    "description": "The heading of the section of a role's badge. Read by administrators."
+  },
+  "staff_roles.badge.about": {
+    "defaultMessage": "最多 {max} 个字符，单行；留空则不显示。",
+    "description": "Under the heading of a role's badge: the rule of its label. Read by administrators."
+  },
+  "staff_roles.badge.label": {
+    "defaultMessage": "文字",
+    "description": "The field of the label of a role's badge. Read by administrators."
+  },
+  "staff_roles.badge.label.rule": {
+    "defaultMessage": "请写在一行内，最多 {max} 个字符。",
+    "description": "Under the label of a role's badge when it is too long or has a line break. Read by administrators."
+  },
+  "staff_roles.badge.color": {
+    "defaultMessage": "颜色",
+    "description": "The choice of the color of a role's badge, with the badge as it shows under it. Read by administrators."
+  },
+  "staff_roles.badge.color.name": {
+    "defaultMessage": "{color, select, neutral {灰色} red {红色} orange {橙色} yellow {黄色} green {绿色} teal {青色} blue {蓝色} purple {紫色} pink {粉色} other {{color}}}",
+    "description": "A color a role's badge may take, in the choice of its color. Read by administrators."
+  },
+  "staff_roles.badge.color.refused": {
+    "defaultMessage": "无法使用此颜色，请换一个。",
+    "description": "Under the color of a role's badge when the server refused it. Read by administrators."
+  },
+  "staff_roles.save": {
+    "defaultMessage": "保存",
+    "description": "The button of the submit bar of a role's form. Read by administrators."
+  },
+  "staff_roles.create": {
+    "defaultMessage": "创建角色",
+    "description": "The button of the submit bar of a new role's form. Read by administrators."
+  },
+  "staff_roles.new": {
+    "defaultMessage": "新角色",
+    "description": "The title of the form of a new role, at /admin/roles/new. Read by administrators."
+  },
+  "staff_roles.save.refused": {
+    "defaultMessage": "未保存任何内容。请修正标记的项目后重新保存。",
+    "description": "Beside Save when the server or the form refused a field of a role, which is marked under it. Read by administrators."
+  },
+  "staff_roles.save.failed": {
+    "defaultMessage": "未保存任何内容。请检查网络连接后重试。",
+    "description": "Beside Save of a role's form when the save failed with no field named. Read by administrators."
+  },
+  "staff_roles.save.builtin": {
+    "defaultMessage": "管理员角色保留全部权限和位次，未保存任何内容。",
+    "description": "Beside Save of a role's form when the server refused a change of a built-in role. Read by administrators."
+  },
+  "staff_roles.save.plan": {
+    "defaultMessage": "此角色由支持者方案授予，其位次和权限须在方案中修改，未保存任何内容。",
+    "description": "Beside Save of a role's form when the server refused a change that would break a supporter plan's role. Read by administrators."
+  },
+  "staff_roles.save.forbidden": {
+    "defaultMessage": "你的角色已不允许此操作。请重新加载页面，查看你可以做什么。",
+    "description": "Beside a role's Save, or in a section of an account's roles, when the server refused the reader the change (403). Read by administrators."
+  },
+  "staff_roles.delete": {
+    "defaultMessage": "删除角色",
+    "description": "The heading of the last section of a role's page, apart, which deletes it. Read by administrators."
+  },
+  "staff_roles.delete.about": {
+    "defaultMessage": "只有无人持有的角色才能删除。",
+    "description": "Under the heading of the section that deletes a role. Read by administrators."
+  },
+  "staff_roles.delete.press": {
+    "defaultMessage": "删除",
+    "description": "The button that deletes a role, and the confirmation of its question. Read by administrators."
+  },
+  "staff_roles.delete.title": {
+    "defaultMessage": "删除角色 {key}？",
+    "description": "The question before deleting a role (its key, as written). Read by administrators."
+  },
+  "staff_roles.delete.text": {
+    "defaultMessage": "角色及其徽章将被永久删除。请输入角色名称以确认删除。",
+    "description": "Under the question before deleting a role, over the field of its name to type. Read by administrators."
+  },
+  "staff_roles.delete.cancel": {
+    "defaultMessage": "保留角色",
+    "description": "The button that closes the question before deleting a role, keeping it. Read by administrators."
+  },
+  "staff_roles.delete.held": {
+    "defaultMessage": "有人持有此角色，因此未删除。请先从他们那里收回。",
+    "description": "In the section that deletes a role when the server refused it because users hold it. Read by administrators."
+  },
+  "staff_roles.delete.failed": {
+    "defaultMessage": "未能删除角色。请检查网络连接后重试。",
+    "description": "In the section that deletes a role when the deletion failed for another reason. Read by administrators."
+  },
+  "staff_roles.irreversible": {
+    "defaultMessage": "此操作无法撤销。",
+    "description": "The mark beside the button that deletes a role. Read by administrators."
+  },
+  "staff_roles.account": {
+    "defaultMessage": "角色",
+    "description": "The heading of the section of an account's Management screen that lists the roles it holds, with Grant and Revoke. Read by administrators."
+  },
+  "staff_roles.account.none": {
+    "defaultMessage": "此人没有任何角色。",
+    "description": "In the section of an account's roles while it holds none. Read by administrators."
+  },
+  "staff_roles.account.none_to_grant": {
+    "defaultMessage": "没有你可以授予的其他角色。",
+    "description": "In the section of an account's roles, in the place of Grant, when the reader may grant none of the roles it lacks. Read by administrators."
+  },
+  "staff_roles.account.grant_role": {
+    "defaultMessage": "要授予的角色",
+    "description": "The choice of a role to grant to an account, beside Grant. Read by administrators."
+  },
+  "staff_roles.account.grant": {
+    "defaultMessage": "授予",
+    "description": "The button that grants the chosen role to an account. Read by administrators."
+  },
+  "staff_roles.account.revoke": {
+    "defaultMessage": "撤销",
+    "description": "The button of a role an account holds that takes it from the account. Read by administrators."
+  },
+  "staff_roles.account.granted": {
+    "defaultMessage": "{handle} 现在拥有 {key}。",
+    "description": "In the section of an account's roles once a role (its key, as written) was granted to the account (its handle). Read by administrators."
+  },
+  "staff_roles.account.revoked": {
+    "defaultMessage": "{handle} 不再拥有 {key}。",
+    "description": "In the section of an account's roles once a role (its key) was revoked from the account (its handle). Read by administrators."
+  },
+  "staff_roles.account.grant_failed": {
+    "defaultMessage": "未能授予 {key}。请检查网络连接后重试。",
+    "description": "In the section of an account's roles when granting a role (its key) failed. Read by administrators."
+  },
+  "staff_roles.account.revoke_failed": {
+    "defaultMessage": "未能收回 {key}。请检查网络连接后重试。",
+    "description": "In the section of an account's roles when revoking a role (its key) failed. Read by administrators."
+  },
+  "staff_roles.account.plan": {
+    "defaultMessage": "{key} 由支持者方案授予：订阅时获得，订阅结束时失去。",
+    "description": "In the section of an account's roles when the server refused to grant or revoke a plan's role (its key). Read by administrators."
+  },
+  "staff_roles.account.last_admin": {
+    "defaultMessage": "这是服务器唯一的管理员，因此角色会保留。请先将它授予其他人。",
+    "description": "In the section of an account's roles when the server refused to revoke admin from its only holder. Read by administrators."
+  },
+  "staff_roles.account.own.title": {
+    "defaultMessage": "收回你自己的 {key}？",
+    "description": "The question before the reader revokes a role (its key) from their own account. Read by administrators."
+  },
+  "staff_roles.account.own.text": {
+    "defaultMessage": "你将失去该角色赋予你的能力，可能也包括重新授予它的权限。",
+    "description": "Under the question before the reader revokes a role from their own account. Read by administrators."
+  },
+  "staff_roles.account.own.cancel": {
+    "defaultMessage": "保留角色",
+    "description": "The button that closes the question before the reader revokes a role from themselves, keeping it. Read by administrators."
+  },
+  "staff_roles.account.role": {
+    "defaultMessage": "角色",
+    "description": "The heading of the column of role names in the table of the roles an account holds, on its Management page. Read by administrators."
+  },
+  "staff_roles.account.act": {
+    "defaultMessage": "变更",
+    "description": "The heading of the column of Revoke buttons (or why a role cannot be revoked) in the table of an account's roles. Read by administrators."
+  }
+}

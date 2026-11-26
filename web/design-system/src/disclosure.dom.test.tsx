@@ -78,7 +78,7 @@ test("the button's label is in the reader's locale, marked with its language; an
   for (const [locale, name, lang] of [
     ["ja", "表示", "ja"],
     ["ja-JP", "表示", "ja"],
-    ["de", "Show", "en"],
+    ["it", "Show", "en"],
   ] as const) {
     const { unmount } = warning({ locale });
     expect(languageOf(screen.getByText(name))).toBe(lang);

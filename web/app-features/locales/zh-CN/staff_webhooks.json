@@ -1,0 +1,386 @@
+{
+  "staff_webhooks.entry": {
+    "defaultMessage": "Webhook",
+    "description": "The name of the screen of the webhooks that send the server's events to other services, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_webhooks.loading": {
+    "defaultMessage": "正在加载 Webhook…",
+    "description": "At /admin/webhooks while the webhooks are read. Read by administrators."
+  },
+  "staff_webhooks.failed": {
+    "defaultMessage": "无法加载 Webhook。",
+    "description": "At /admin/webhooks when the webhooks could not be read, before Try again. Read by administrators."
+  },
+  "staff_webhooks.one.loading": {
+    "defaultMessage": "正在加载 Webhook…",
+    "description": "At /admin/webhooks/{id} while the webhook is read. Read by administrators."
+  },
+  "staff_webhooks.one.failed": {
+    "defaultMessage": "无法加载此 Webhook。",
+    "description": "At /admin/webhooks/{id} when the webhook could not be read, before Try again. Read by administrators."
+  },
+  "staff_webhooks.missing": {
+    "defaultMessage": "此地址没有对应的 Webhook，可能已被删除。",
+    "description": "At /admin/webhooks/{id} for an ID that names no webhook, before the link to all webhooks. Read by administrators."
+  },
+  "staff_webhooks.all": {
+    "defaultMessage": "所有 Webhook",
+    "description": "The link to /admin/webhooks under the sentence that an address names no webhook. Read by administrators."
+  },
+  "staff_webhooks.list.count": {
+    "defaultMessage": "{count, plural, other {# 个 Webhook}}",
+    "description": "The heading of the list of webhooks at /admin/webhooks: how many there are. Read by administrators."
+  },
+  "staff_webhooks.add": {
+    "defaultMessage": "设置 Webhook",
+    "description": "The button that opens the form of a new webhook, at the end of the webhooks' heading or under the sentence that there is none. Read by administrators."
+  },
+  "staff_webhooks.empty": {
+    "defaultMessage": "还没有 Webhook。设置一个，即可将服务器的事件发送到其他服务。",
+    "description": "In the list of webhooks while there is none, over Set up a webhook. Read by administrators."
+  },
+  "staff_webhooks.row.events": {
+    "defaultMessage": "{count, plural, other {# 个事件}}",
+    "description": "A fact of a webhook in the list: how many kinds of events it receives. Read by administrators."
+  },
+  "staff_webhooks.state.on": {
+    "defaultMessage": "已开启",
+    "description": "At the end of a webhook's row: it receives its events. Read by administrators."
+  },
+  "staff_webhooks.state.off": {
+    "defaultMessage": "已关闭",
+    "description": "At the end of a webhook's row: it receives nothing. Read by administrators."
+  },
+  "staff_webhooks.state.failing": {
+    "defaultMessage": "投递失败",
+    "description": "The state of a webhook in the list of webhooks while its deliveries keep failing; it is still on. Read by administrators."
+  },
+  "staff_webhooks.state.server_off": {
+    "defaultMessage": "已被服务器关闭",
+    "description": "The state of a webhook in the list of webhooks that the server turned off, after its deliveries kept failing or its address answered that it is gone. Read by administrators."
+  },
+  "staff_webhooks.standing.failing": {
+    "defaultMessage": "自 {since} 起，{count, plural, other {已连续 # 次投递失败}}",
+    "description": "Where a webhook that is on stands, in its row: how many attempts failed in a row and since when (a date and time). Read by administrators."
+  },
+  "staff_webhooks.standing.failing_off": {
+    "defaultMessage": "已被服务器关闭：投递持续失败",
+    "description": "Where a webhook stands, in its row, after the server turned it off for deliveries that failed for 72 hours and 20 attempts. Read by administrators."
+  },
+  "staff_webhooks.standing.gone": {
+    "defaultMessage": "已被服务器关闭：其地址返回资源已不存在",
+    "description": "Where a webhook stands, in its row, after the server turned it off because its address answered 410 Gone. Read by administrators."
+  },
+  "staff_webhooks.new": {
+    "defaultMessage": "新 Webhook",
+    "description": "The title of the form of a new webhook, at /admin/webhooks/new. Read by administrators."
+  },
+  "staff_webhooks.create": {
+    "defaultMessage": "设置",
+    "description": "The button of the submit bar of a new webhook's form. Read by administrators."
+  },
+  "staff_webhooks.save": {
+    "defaultMessage": "保存",
+    "description": "The button of the submit bar of a webhook's form. Read by administrators."
+  },
+  "staff_webhooks.endpoint": {
+    "defaultMessage": "发送目标",
+    "description": "The heading of the section of a webhook's address and description. Read by administrators."
+  },
+  "staff_webhooks.url": {
+    "defaultMessage": "地址",
+    "description": "The field of the URL a webhook posts its messages to, and the name of that fact on a webhook's page. Read by administrators."
+  },
+  "staff_webhooks.url.rule": {
+    "defaultMessage": "以 https:// 或 http:// 开头的地址，不含用户名，也不含 # 之后的部分，最长 2048 字节。",
+    "description": "Under the address of a webhook: the rule its value follows, also when it was refused. Read by administrators."
+  },
+  "staff_webhooks.description": {
+    "defaultMessage": "用途",
+    "description": "The field of a webhook's description, optional. Read by administrators."
+  },
+  "staff_webhooks.description.rule": {
+    "defaultMessage": "请写在一行内，最多 {max} 个字符。",
+    "description": "Under the description of a webhook when it is too long or has a control character. Read by administrators."
+  },
+  "staff_webhooks.group": {
+    "defaultMessage": "{group, select, reports {举报} accounts {账号和注册} domains {其他服务器} posts {帖子} emoji {自定义表情} errors {错误} other {{group}}}",
+    "description": "The heading of a group of events a webhook may receive, a checkbox each. Read by administrators."
+  },
+  "staff_webhooks.event": {
+    "defaultMessage": "{event, select, report_created {提交了举报} report_resolved {举报已处理} report_reopened {举报被重新打开} registration_pending {有注册等待批准} account_created {创建了账号} account_updated {本站账号修改了资料} moderation_action_created {对账号采取了管理措施} moderation_action_lifted {解除了对账号的管理措施} appeal_created {提出了申诉} domain_moderation_action_created {对服务器采取了管理措施} domain_moderation_action_lifted {解除了对服务器的管理措施} status_created {本站账号发布了公开帖子} custom_emoji_created {添加了自定义表情} custom_emoji_updated {自定义表情发生变化} custom_emoji_deleted {删除了自定义表情} error_group_created {出现了新的错误} error_group_regressed {已解决的错误再次出现} webhook_test {测试消息} other {{event}}}",
+    "description": "An event a webhook may receive, as a checkbox of its form and as a delivery's name in its history; webhook_test is the test message. Read by administrators."
+  },
+  "staff_webhooks.events.none": {
+    "defaultMessage": "请至少选择一个事件。",
+    "description": "Under the first event of a webhook's form when none is chosen. Read by administrators."
+  },
+  "staff_webhooks.events.missing": {
+    "defaultMessage": "你的角色已不允许处理需要 {names} 的事件。请撤销你对它们的修改后重新保存。",
+    "description": "Under the first event of a webhook's form when the server refused events whose permissions (a list) the reader no longer holds. Read by administrators."
+  },
+  "staff_webhooks.save.refused": {
+    "defaultMessage": "未保存任何内容。请修正标记的项目后重新保存。",
+    "description": "Beside Save when the server or the form refused a field of a webhook, which is marked under it. Read by administrators."
+  },
+  "staff_webhooks.save.failed": {
+    "defaultMessage": "未保存任何内容。请检查网络连接后重试。",
+    "description": "Beside Save of a webhook's form when the save failed with no field named. Read by administrators."
+  },
+  "staff_webhooks.save.forbidden": {
+    "defaultMessage": "你的角色已不允许此操作。请重新加载页面，查看你可以做什么。",
+    "description": "Beside Save of a webhook's form when the server refused the reader (403). Read by administrators."
+  },
+  "staff_webhooks.secret": {
+    "defaultMessage": "密钥",
+    "description": "The heading of the section of a webhook's secret shown once, and the name of the value to copy. Read by administrators."
+  },
+  "staff_webhooks.secret.once": {
+    "defaultMessage": "密钥只会在此时显示。请将它复制到接收消息的服务中，该服务会用它校验消息的签名。",
+    "description": "Right over a webhook's secret shown once. Read by administrators."
+  },
+  "staff_webhooks.secret.copy": {
+    "defaultMessage": "复制密钥",
+    "description": "The button that copies a webhook's secret shown once. Read by administrators."
+  },
+  "staff_webhooks.secret.created": {
+    "defaultMessage": "已设置 Webhook",
+    "description": "The title of the view that takes the form's place once a new webhook was set up, over its secret. Read by administrators."
+  },
+  "staff_webhooks.secret.rotated": {
+    "defaultMessage": "Webhook 已有新密钥",
+    "description": "The title of the view that takes the place of the new-secret section once a new secret was made. Read by administrators."
+  },
+  "staff_webhooks.secret.done": {
+    "defaultMessage": "完成",
+    "description": "The button after a secret shown once, which leaves it: to the new webhook's page, or back to the webhook's page as it was. Read by administrators."
+  },
+  "staff_webhooks.summary.on": {
+    "defaultMessage": "已开启",
+    "description": "The title of a webhook's summary while it receives its events and its last delivery worked. Read by administrators."
+  },
+  "staff_webhooks.summary.on.about": {
+    "defaultMessage": "{count, plural, other {接收 # 种事件。}}",
+    "description": "Under On, the summary of a webhook that is on and works: how many kinds of events it receives. Read by administrators."
+  },
+  "staff_webhooks.summary.failing": {
+    "defaultMessage": "投递失败",
+    "description": "The title of a webhook's summary while it is on and its last attempts failed. Read by administrators."
+  },
+  "staff_webhooks.summary.failing.about": {
+    "defaultMessage": "自 {since} 起，{count, plural, other {已连续 # 次尝试失败}}。连续 20 次尝试失败且持续 72 小时以上时，服务器会关闭此 Webhook。",
+    "description": "Under the title that a webhook's deliveries are failing: how many attempts, since when (a date and time), and when the server turns it off. Read by administrators."
+  },
+  "staff_webhooks.summary.off": {
+    "defaultMessage": "已关闭",
+    "description": "The title of a webhook's summary after an administrator turned it off. Read by administrators."
+  },
+  "staff_webhooks.summary.off.about": {
+    "defaultMessage": "重新开启之前，它不会接收任何内容。关闭期间发生的事件之后不会补发。",
+    "description": "Under the title that a webhook is off. Read by administrators."
+  },
+  "staff_webhooks.summary.failing_off": {
+    "defaultMessage": "已被服务器关闭",
+    "description": "The title of a webhook's summary after the server turned it off for deliveries that kept failing. Read by administrators."
+  },
+  "staff_webhooks.summary.failing_off.about": {
+    "defaultMessage": "投递已持续失败 72 小时，且连续失败 20 次。待其地址恢复正常后再开启。",
+    "description": "Under the title that the server turned a webhook off for failing deliveries. Read by administrators."
+  },
+  "staff_webhooks.summary.gone": {
+    "defaultMessage": "已被服务器关闭",
+    "description": "The title of a webhook's summary after the server turned it off because its address answered 410 Gone. Read by administrators."
+  },
+  "staff_webhooks.summary.gone.about": {
+    "defaultMessage": "其地址返回资源已不存在（410）。请修改地址，或在恢复正常后开启。",
+    "description": "Under the title that the server turned a webhook off because its address said it is gone. Read by administrators."
+  },
+  "staff_webhooks.test": {
+    "defaultMessage": "发送测试",
+    "description": "The button that sends a test message to a webhook that is on. Read by administrators."
+  },
+  "staff_webhooks.test.sent": {
+    "defaultMessage": "测试消息正在发送，会显示在投递记录中。",
+    "description": "Beside Send a test once the server took the test message. Read by administrators."
+  },
+  "staff_webhooks.test.failed": {
+    "defaultMessage": "未能发送测试。请检查网络连接后重试。",
+    "description": "Beside Send a test when the server did not take it. Read by administrators."
+  },
+  "staff_webhooks.turn_off": {
+    "defaultMessage": "关闭",
+    "description": "The button that turns a webhook off. Read by administrators."
+  },
+  "staff_webhooks.turn_on": {
+    "defaultMessage": "开启",
+    "description": "The button that turns a webhook on. Read by administrators."
+  },
+  "staff_webhooks.turned_off": {
+    "defaultMessage": "Webhook 已关闭。",
+    "description": "Beside the summary's buttons once a webhook was turned off. Read by administrators."
+  },
+  "staff_webhooks.turned_on": {
+    "defaultMessage": "Webhook 已开启。",
+    "description": "Beside the summary's buttons once a webhook was turned on. Read by administrators."
+  },
+  "staff_webhooks.switch.failed": {
+    "defaultMessage": "没有任何变化。请检查网络连接后重试。",
+    "description": "Beside the summary's buttons when turning a webhook on or off failed. Read by administrators."
+  },
+  "staff_webhooks.facts": {
+    "defaultMessage": "Webhook",
+    "description": "The heading of the section of what a webhook is: its address and dates. Read by administrators."
+  },
+  "staff_webhooks.facts.created": {
+    "defaultMessage": "设置时间",
+    "description": "The name of the fact of when a webhook was set up, over the date and time. Read by administrators."
+  },
+  "staff_webhooks.facts.revised": {
+    "defaultMessage": "最后修改",
+    "description": "The name of the fact of when a webhook's address, description or events last changed, over the date and time. Read by administrators."
+  },
+  "staff_webhooks.deliveries": {
+    "defaultMessage": "投递记录",
+    "description": "The heading of the section of a webhook's deliveries of the last 14 days. Read by administrators."
+  },
+  "staff_webhooks.deliveries.loading": {
+    "defaultMessage": "正在加载投递记录…",
+    "description": "In the section of a webhook's deliveries while they are read. Read by administrators."
+  },
+  "staff_webhooks.deliveries.failed": {
+    "defaultMessage": "无法加载投递记录。",
+    "description": "In the section of a webhook's deliveries when they could not be read, before Try again. Read by administrators."
+  },
+  "staff_webhooks.deliveries.empty": {
+    "defaultMessage": "最近 14 天没有发送任何内容。",
+    "description": "In the section of a webhook's deliveries while there is none. Read by administrators."
+  },
+  "staff_webhooks.delivery.attempts": {
+    "defaultMessage": "{count, plural, =0 {尚未发送} other {# 次尝试}}",
+    "description": "A fact of a delivery: how many times it was sent. Read by administrators."
+  },
+  "staff_webhooks.delivery.attempt": {
+    "defaultMessage": "{at}：{outcome, select, succeeded {响应 {code}} http_error {响应 {code}} timeout {15 秒内无响应} connection_error {无法连接} forbidden_destination {此服务器不允许连接该地址} other {{outcome}}}",
+    "description": "A fact of a delivery: what its last attempt got (an HTTP status code, or why it got none) and when (a date and time). Read by administrators."
+  },
+  "staff_webhooks.delivery.status": {
+    "defaultMessage": "{status, select, pending {等待中} succeeded {已送达} failing {失败} other {{status}}}",
+    "description": "At the end of a delivery's row: where it stands. Read by administrators."
+  },
+  "staff_webhooks.delivery.redeliver": {
+    "defaultMessage": "重新发送",
+    "description": "The button of a delivery that sends its message again. Read by administrators."
+  },
+  "staff_webhooks.delivery.again": {
+    "defaultMessage": "稍后会重新发送。",
+    "description": "The last line of a delivery's row once the server took Send again. Read by administrators."
+  },
+  "staff_webhooks.delivery.again_failed": {
+    "defaultMessage": "未能重新发送。请检查网络连接后重试。",
+    "description": "The last line of a delivery's row when Send again failed. Read by administrators."
+  },
+  "staff_webhooks.delivery.body": {
+    "defaultMessage": "发送的内容",
+    "description": "Over the body of the request a delivery sent (a JSON document), folded under its row until shown; also the name of the block that holds it. Read by administrators."
+  },
+  "staff_webhooks.delivery.body_copy": {
+    "defaultMessage": "复制发送的内容",
+    "description": "The button under the body of the request a delivery sent, which copies it. Read by administrators."
+  },
+  "staff_webhooks.delivery.body_withheld": {
+    "defaultMessage": "只有拥有该事件所需权限的人才能看到发送的内容。",
+    "description": "Under a delivery's row, in place of the body of its request, for a reader who lacks the permission its event needs (a report's: Handle reports). Read by administrators."
+  },
+  "staff_webhooks.rotate": {
+    "defaultMessage": "新密钥",
+    "description": "The heading of the section of a webhook's page that makes a new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.about": {
+    "defaultMessage": "生成新密钥后的 24 小时内，旧密钥也会继续为消息签名。",
+    "description": "Under the heading of the section that makes a webhook's new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.press": {
+    "defaultMessage": "生成新密钥",
+    "description": "The button that makes a webhook's new secret, and the confirmation of its question. Read by administrators."
+  },
+  "staff_webhooks.rotate.title": {
+    "defaultMessage": "生成新密钥？",
+    "description": "The question before making a webhook's new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.text": {
+    "defaultMessage": "新密钥只显示一次。24 小时后只有新密钥会为消息签名，请在此之前更新接收消息的服务。",
+    "description": "Under the question before making a webhook's new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.cancel": {
+    "defaultMessage": "保留密钥",
+    "description": "The button that closes the question before making a new secret, keeping the current one. Read by administrators."
+  },
+  "staff_webhooks.rotate.failed": {
+    "defaultMessage": "未能生成新密钥。请检查网络连接后重试。",
+    "description": "In the section that makes a webhook's new secret when it failed. Read by administrators."
+  },
+  "staff_webhooks.delete": {
+    "defaultMessage": "删除 Webhook",
+    "description": "The heading of the last section of a webhook's page, apart, which deletes it. Read by administrators."
+  },
+  "staff_webhooks.delete.about": {
+    "defaultMessage": "它将不再接收任何内容，其投递记录也不再列出。",
+    "description": "Under the heading of the section that deletes a webhook. Read by administrators."
+  },
+  "staff_webhooks.delete.press": {
+    "defaultMessage": "删除",
+    "description": "The button that deletes a webhook, and the confirmation of its question. Read by administrators."
+  },
+  "staff_webhooks.delete.title": {
+    "defaultMessage": "删除发往 {host} 的 Webhook？",
+    "description": "The question before deleting a webhook, named by its address's host. Read by administrators."
+  },
+  "staff_webhooks.delete.text": {
+    "defaultMessage": "Webhook 及其投递记录将被永久删除。请输入其主机名以确认删除。",
+    "description": "Under the question before deleting a webhook, over the field of its host to type. Read by administrators."
+  },
+  "staff_webhooks.delete.cancel": {
+    "defaultMessage": "保留 Webhook",
+    "description": "The button that closes the question before deleting a webhook, keeping it. Read by administrators."
+  },
+  "staff_webhooks.delete.failed": {
+    "defaultMessage": "未能删除 Webhook。请检查网络连接后重试。",
+    "description": "In the section that deletes a webhook when the deletion failed. Read by administrators."
+  },
+  "staff_webhooks.irreversible": {
+    "defaultMessage": "此操作无法撤销。",
+    "description": "The mark beside the button that deletes a webhook. Read by administrators."
+  },
+  "staff_webhooks.locked.events": {
+    "defaultMessage": "事件",
+    "description": "On the page of a webhook the reader cannot change, the name over the list of the events it receives. Read by administrators."
+  },
+  "staff_webhooks.locked": {
+    "defaultMessage": "它接收的事件中包含你的角色无权修改的部分，因此只有可以处理全部事件的人才能修改它。你仍然可以测试、开启或关闭、更换密钥或删除它。",
+    "description": "On the page of a webhook that receives an event whose permission the reader lacks, in the place of its form: why it cannot be changed, and what the reader may still do. Read by administrators."
+  },
+  "staff_webhooks.column.host": {
+    "defaultMessage": "地址",
+    "description": "The heading of the column of the webhooks' hosts in the list of webhooks. Read by administrators."
+  },
+  "staff_webhooks.column.events": {
+    "defaultMessage": "事件",
+    "description": "The heading of the column of how many events each webhook receives, in the list of webhooks. Read by administrators."
+  },
+  "staff_webhooks.column.state": {
+    "defaultMessage": "状态",
+    "description": "The heading of the column of where a webhook or a delivery stands, in the list of webhooks and of deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.event": {
+    "defaultMessage": "事件",
+    "description": "The heading of the column of the deliveries' events, in a webhook's deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.attempt": {
+    "defaultMessage": "尝试次数",
+    "description": "The heading of the column of a delivery's attempts and the last one's outcome, in a webhook's deliveries. Read by administrators."
+  },
+  "staff_webhooks.column.redeliver": {
+    "defaultMessage": "重新发送",
+    "description": "The heading of the column of the Send again buttons, in a webhook's deliveries. Read by administrators."
+  }
+}

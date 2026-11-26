@@ -16,11 +16,11 @@
     "description": "Name of the instance's privacy policy in the link preview of its page (/about/privacy)."
   },
   "preview.document.commerce_disclosure": {
-    "defaultMessage": "Mentions commerciales",
+    "defaultMessage": "Mentions légales de vente",
     "description": "Name of the instance's commerce disclosures of its supporter plans in the link preview of their page (/about/commerce)."
   },
   "preview.document.link_card_crawler": {
-    "defaultMessage": "Outil de récupération des cartes de lien",
+    "defaultMessage": "Robot des aperçus de liens",
     "description": "Name of the page that tells site operators about the crawler that fetches the links in posts, in the link preview of that page (/about/crawler)."
   },
   "preview.avatar_alt": {

@@ -1,0 +1,450 @@
+{
+  "notifications.label": {
+    "defaultMessage": "Notificações",
+    "description": "The name of the feed of the reader's notifications, for assistive technology."
+  },
+  "notifications.filters": {
+    "defaultMessage": "Mostrar",
+    "description": "What the tabs over the notifications choose between (all of them, or the mentions), for assistive technology."
+  },
+  "notifications.all": {
+    "defaultMessage": "Todas",
+    "description": "The tab that shows every notification."
+  },
+  "notifications.mentions": {
+    "defaultMessage": "Menções",
+    "description": "The tab that shows only the notifications that speak to the reader: mentions, quotes and new posts of the accounts they asked to be notified of."
+  },
+  "notifications.waiting": {
+    "defaultMessage": "Aguardando aprovação",
+    "description": "The title of the screen of the replies, boosts and quotes of the reader's posts that wait for the reader's approval."
+  },
+  "notifications.waiting_count": {
+    "defaultMessage": "{count, plural, one {# aguardando sua aprovação} many {# de aguardando sua aprovação} other {# aguardando sua aprovação}}",
+    "description": "The row at the top of the notifications that opens the replies, boosts and quotes that wait for the reader's approval; count is how many."
+  },
+  "notifications.waiting_loading": {
+    "defaultMessage": "Carregando respostas, impulsos e citações para aprovar…",
+    "description": "What the screen of the replies, boosts and quotes waiting for the reader's approval (notifications.waiting) says while the first of them load."
+  },
+  "notifications.waiting_loading_more": {
+    "defaultMessage": "Carregando mais…",
+    "description": "What the screen of what waits for the reader's approval (notifications.waiting) says under its list while more load."
+  },
+  "notifications.waiting_failed": {
+    "defaultMessage": "Não foi possível carregar as respostas, os impulsos e as citações para aprovar.",
+    "description": "What the screen of what waits for the reader's approval (notifications.waiting) says when the first of them could not be loaded, beside a button to try again."
+  },
+  "notifications.waiting_failed_more": {
+    "defaultMessage": "Não foi possível carregar mais.",
+    "description": "What the screen of what waits for the reader's approval (notifications.waiting) says under its list when more could not be loaded, beside a button to try again."
+  },
+  "notifications.waiting_empty": {
+    "defaultMessage": "Nada está aguardando sua aprovação.",
+    "description": "What the screen of the replies, boosts and quotes waiting for the reader's approval (notifications.waiting) says when none waits."
+  },
+  "notifications.requests_hint": {
+    "defaultMessage": "De contas que suas configurações de notificação seguram",
+    "description": "The hint under the row of the notification requests."
+  },
+  "notifications.unread": {
+    "defaultMessage": "Não lidas",
+    "description": "The mark of an unread notification, for assistive technology."
+  },
+  "notifications.read_all": {
+    "defaultMessage": "Marcar todas como lidas",
+    "description": "The button over the notifications that marks every notification read."
+  },
+  "notifications.dismiss": {
+    "defaultMessage": "Dispensar notificação",
+    "description": "The button or menu item at the end of a notification that takes it out of the list for good."
+  },
+  "notifications.dismiss_failed": {
+    "defaultMessage": "Não foi possível dispensar a notificação.",
+    "description": "The notice at the bottom of the page when dismissing a notification failed; it is back in the list, and Try again follows."
+  },
+  "notifications.gone": {
+    "defaultMessage": "Essa notificação não existe mais.",
+    "description": "Over the notifications, when a link to one notification (from a push or an email) led to one that is dismissed, or is not the reader's."
+  },
+  "notifications.approve": {
+    "defaultMessage": "Aprovar",
+    "description": "The button of a notification asking to reply to, boost or quote the reader's post that approves it."
+  },
+  "notifications.decline": {
+    "defaultMessage": "Recusar",
+    "description": "The button of a follow request, or of a request to reply to, boost or quote the reader's post, that refuses it."
+  },
+  "notifications.open_draft": {
+    "defaultMessage": "Abrir o rascunho",
+    "description": "Under a notification that a scheduled post could not be published: opens its draft in the composer, to fix it and post or schedule it again."
+  },
+  "notifications.approved": {
+    "defaultMessage": "Aprovado",
+    "description": "What a request to reply to, boost or quote the reader's post says on the screen of what waits for approval once the reader approved it (notifications.approve); focus moves to it."
+  },
+  "notifications.declined": {
+    "defaultMessage": "Recusado",
+    "description": "What a follow request, or a request to reply to, boost or quote the reader's post, says once the reader declined it (notifications.decline); on the screen of what waits for approval, focus moves to it."
+  },
+  "notifications.loading": {
+    "defaultMessage": "Carregando notificações…",
+    "description": "What the notifications say while the first of them load."
+  },
+  "notifications.loading_more": {
+    "defaultMessage": "Carregando mais notificações…",
+    "description": "What the notifications say under them while more load."
+  },
+  "notifications.failed": {
+    "defaultMessage": "Não foi possível carregar as notificações.",
+    "description": "What the notifications say when the first of them could not be loaded, beside a button to try again."
+  },
+  "notifications.retry": {
+    "defaultMessage": "Tentar novamente",
+    "description": "The button after the notifications in the column beside the timeline that could not be loaded; it loads them again."
+  },
+  "notifications.failed_more": {
+    "defaultMessage": "Não foi possível carregar mais notificações.",
+    "description": "What the notifications say under them when more could not be loaded, beside a button to try again."
+  },
+  "notifications.empty": {
+    "defaultMessage": "Ainda não há notificações.",
+    "description": "What the notifications say when the reader has none."
+  },
+  "notifications.untitled_event": {
+    "defaultMessage": "um evento",
+    "description": "The name of an event without a title, in the sentence of a notification about it."
+  },
+  "notifications.kind.account_moved": {
+    "defaultMessage": "{name} mudou para outra conta",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of an account that the user followed, which moved to another account. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_account_moved": {
+    "defaultMessage": "Uma conta limitada em {instance} foi movida para outra conta",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: an account that the moderators limit moved to another account, which does not get the limit. It never names the accounts. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_appeal": {
+    "defaultMessage": "Uma nova contestação aguarda os moderadores de {instance}",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: a user appealed a moderation action. It never names the user. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_custom_emoji_request": {
+    "defaultMessage": "Um pedido de emoji personalizado aguarda análise em {instance}",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator: a user requested a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_report": {
+    "defaultMessage": "Uma nova denúncia aguarda os moderadores de {instance}",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: someone reported an account that had no open report. It never names the accounts. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_sign_up": {
+    "defaultMessage": "Um novo cadastro aguarda aprovação em {instance}",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: a new user signed up and waits for approval. It never names the user. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_webhook_disabled": {
+    "defaultMessage": "Um webhook de {instance} foi desativado",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.announcement": {
+    "defaultMessage": "Comunicado de {instance}: {title}",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.auto_delete_limit": {
+    "defaultMessage": "{instance}: as publicações com mais de {days, plural, one {# dia} many {# de dias} other {# dias}} serão excluídas automaticamente {daysLeft, plural, =0 {a partir de agora} one {em # dia} many {em # de dias} other {em # dias}}",
+    "description": "The sentence of a notification in the reader's list of notifications: {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.scheduled_status_failed": {
+    "defaultMessage": "{instance}: não foi possível publicar sua publicação agendada{reason, select, restricted { porque sua conta não pode publicar agora} reply_unavailable { porque a publicação que ela responde não está mais disponível} quote_unavailable { porque a publicação que ela cita não está mais disponível} media_unavailable { porque um arquivo anexado não está mais disponível} invalid { porque ela não atende aos requisitos de uma publicação} rejected { porque a revisão automática do servidor não a aceitou} other {}}",
+    "description": "The sentence of a notification in the reader's list of notifications: {reason} says why: restricted (the account may not post now), reply_unavailable (the post it replies to is gone or does not take the reply), quote_unavailable (the post it quotes is gone or may not be quoted), media_unavailable (an attached file is gone or failed processing), invalid (the post does not pass the checks, such as its length), rejected (the server's automated review refused it). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.appeal_decided": {
+    "defaultMessage": "Os moderadores de {instance} analisaram sua contestação",
+    "description": "The sentence of a notification in the reader's list of notifications: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.custom_emoji_request_decided": {
+    "defaultMessage": "Os administradores de {instance} analisaram seu pedido de emoji personalizado",
+    "description": "The sentence of a notification in the reader's list of notifications: an administrator approved or rejected the user's request for a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.boost": {
+    "defaultMessage": "{name} impulsionou sua publicação",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that boosted the user's post. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.favourite": {
+    "defaultMessage": "{name} favoritou sua publicação",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that favourited the user's post. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.follow": {
+    "defaultMessage": "{name} seguiu você",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that followed the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.follow_accepted": {
+    "defaultMessage": "{name} aceitou seu pedido para seguir",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that accepted the user's follow request. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.follow_request": {
+    "defaultMessage": "{name} pediu para seguir você",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that asked to follow the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.mention": {
+    "defaultMessage": "{name} mencionou você",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that wrote a post that mentions the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.moderation_notice": {
+    "defaultMessage": "Os moderadores de {instance} enviaram um aviso a você",
+    "description": "The sentence of a notification in the reader's list of notifications: a notice to the user from the moderators. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.other": {
+    "defaultMessage": "Você tem uma nova notificação em {instance}",
+    "description": "The sentence of a notification in the reader's list of notifications: {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.poll_closed": {
+    "defaultMessage": "Uma enquete de que você participou terminou",
+    "description": "The sentence of a notification in the reader's list of notifications: a poll that the user created or voted in has ended. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.quote": {
+    "defaultMessage": "{name} citou sua publicação",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that quoted the user's post in a post of its own. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.reaction": {
+    "defaultMessage": "{name} reagiu à sua publicação",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that reacted to the user's post with an emoji. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.relationships_severed": {
+    "defaultMessage": "{instance} encerrou alguns dos seus vínculos de seguir com contas de outros servidores",
+    "description": "The sentence of a notification in the reader's list of notifications: follows between the user and accounts of other servers ended, because the moderators suspended a server or an account, or because this server stopped federating with a server (it federates only with the servers it allows). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.report_resolved": {
+    "defaultMessage": "Uma denúncia que você fez em {instance} foi resolvida",
+    "description": "The sentence of a notification in the reader's list of notifications: the moderators resolved a report that the user filed. It never says how. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.status": {
+    "defaultMessage": "{name} publicou",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of an account that the user subscribes to, which made a new post. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_payment_failed": {
+    "defaultMessage": "Um pagamento do seu plano de apoio em {instance} falhou",
+    "description": "The sentence of a notification in the reader's list of notifications: a payment for the user's supporter plan failed. It never says where to pay (the app shows no way to pay). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_plan_retired": {
+    "defaultMessage": "Seu plano de apoio em {instance} foi descontinuado",
+    "description": "The sentence of a notification in the reader's list of notifications: the administrators retired the user's supporter plan, whose subscription ends with its period. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_subscription_ended": {
+    "defaultMessage": "Seu plano de apoio em {instance} terminou",
+    "description": "The sentence of a notification in the reader's list of notifications: the user's supporter subscription ended (a payment kept failing, a refund, a retired plan, or a cancellation). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.service_closure_announced": {
+    "defaultMessage": "{instance} será encerrado: exporte seus dados antes disso",
+    "description": "The sentence of a notification in the reader's list of notifications, to every user: the administrators announced that the server closes on a date. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.service_closure_rescheduled": {
+    "defaultMessage": "A data de encerramento de {instance} mudou",
+    "description": "The sentence of a notification in the reader's list of notifications, to every user: the administrators changed the dates of the announced closure of the server. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.service_closure_withdrawn": {
+    "defaultMessage": "O encerramento de {instance} foi cancelado",
+    "description": "The sentence of a notification in the reader's list of notifications, to every user: the administrators withdrew the announced closure of the server, which goes on. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_service_closure_due": {
+    "defaultMessage": "A data de encerramento de {instance} já passou: encerre o servidor",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who may close the server: the closing date of the announced closure has passed, and the server closes only when an administrator closes it. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_error_group_created": {
+    "defaultMessage": "Um novo erro foi registrado em {instance}",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who manages the errors: the server or the web client reported an error of a new kind. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_error_group_regressed": {
+    "defaultMessage": "Um erro resolvido aconteceu de novo em {instance}",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who manages the errors: an error that an administrator marked resolved happened again with a newer version of the server. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_error_group_others": {
+    "defaultMessage": "Mais erros foram registrados em {instance}",
+    "description": "The sentence of a notification in the reader's list of notifications, to an administrator who manages the errors: more new or recurring errors happened in this hour than are notified one by one, and they are counted in one notification. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_hook_failing": {
+    "defaultMessage": "Uma revisão externa de {instance} continua falhando",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_domain_list_failing": {
+    "defaultMessage": "Uma assinatura de lista de bloqueio de {instance} continua falhando",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.admin_hook_appeal": {
+    "defaultMessage": "Uma contestação de uma publicação recusada aguarda os moderadores de {instance}",
+    "description": "The sentence of a notification in the reader's list of notifications, to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.hook_appeal_decided": {
+    "defaultMessage": "Os moderadores de {instance} analisaram sua contestação de uma publicação recusada",
+    "description": "The sentence of a notification in the reader's list of notifications: the moderators upheld or overturned the user's appeal of a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.supporter_service_closure": {
+    "defaultMessage": "Sua assinatura de apoiador em {instance} foi cancelada porque o servidor será encerrado",
+    "description": "The sentence of a notification in the reader's list of notifications: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.voice_room_started": {
+    "defaultMessage": "{name} iniciou uma sala de chat de voz",
+    "description": "The sentence of a notification in the reader's list of notifications: an account that the user follows opened a voice chat room that the user may join. {name} is the display name, or the @handle, of the host. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.voice_room_invited": {
+    "defaultMessage": "{name} convidou você para uma sala de chat de voz",
+    "description": "The sentence of a notification in the reader's list of notifications: the host or a co-host of a voice chat room invited the user to it. {name} is the display name, or the @handle, of the account that invited the user. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.reply_request": {
+    "defaultMessage": "{name} pediu para responder à sua publicação",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account whose reply to the user's post waits for the user's approval. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.boost_request": {
+    "defaultMessage": "{name} pediu para impulsionar sua publicação",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account whose boost of the user's post waits for the user's approval. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.quote_request": {
+    "defaultMessage": "{name} pediu para citar sua publicação",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account whose quote of the user's post waits for the user's approval. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.interaction_accepted": {
+    "defaultMessage": "{name} aprovou sua resposta, impulso ou citação",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the author of a post who approved the user's reply to it, boost of it, or quote of it. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.interaction_rejected": {
+    "defaultMessage": "{name} recusou sua resposta, impulso ou citação",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_invited": {
+    "defaultMessage": "{name} convidou você para {title}",
+    "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that invited them. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_schedule_confirmed": {
+    "defaultMessage": "A data de {title} foi definida",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_changed": {
+    "defaultMessage": "A data ou o local de {title} mudou",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_canceled": {
+    "defaultMessage": "{title} foi cancelado",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_reminder": {
+    "defaultMessage": "{unit, select, day {{count, plural, one {{title} começa em # dia} many {{title} começa em # de dias} other {{title} começa em # dias}}} hour {{count, plural, one {{title} começa em # hora} many {{title} começa em # de horas} other {{title} começa em # horas}}} other {{count, plural, one {{title} começa em # minuto} many {{title} começa em # de minutos} other {{title} começa em # minutos}}}}",
+    "description": "The sentence of a notification in the reader's list of notifications: {unit} is day, hour, or minute, and {count} how many of them before the start. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_started": {
+    "defaultMessage": "{title} está começando",
+    "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_room_unavailable": {
+    "defaultMessage": "A sala de chat de voz de {title} não pode abrir",
+    "description": "The sentence of a notification in the reader's list of notifications: The event itself stays. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.kind.event_board_posted": {
+    "defaultMessage": "{name} escreveu no mural de {title}",
+    "description": "The sentence of a notification in the reader's list of notifications: someone wrote a new post on the board of an event the reader reads and answered going or maybe; the post's first words follow under it. {name} is the display name, or the @handle, of the writer. {title} is the title of the event, as its organizers wrote it, or the words of notifications.untitled_event when it has none. Its words are those of the Web Push notification of the same kind."
+  },
+  "notifications.requests": {
+    "defaultMessage": "{count, plural, one {# notificação retida} many {# de notificações retidas} other {# notificações retidas}} · {people, plural, one {de # pessoa} many {de # de pessoas} other {de # pessoas}}",
+    "description": "The row at the top of the notifications that opens the requests: notifications the reader's notification policy held back, one request per account. people is how many accounts, count how many notifications."
+  },
+  "notifications.follow_requests": {
+    "defaultMessage": "Pedidos para seguir",
+    "description": "The title of the screen of the accounts that ask to follow the reader."
+  },
+  "notifications.follow_requests_count": {
+    "defaultMessage": "{count, plural, one {# pedido para seguir} many {# de pedidos para seguir} other {# pedidos para seguir}}",
+    "description": "The row over the notifications that counts the follow requests and opens their screen. count is how many."
+  },
+  "notifications.follow_requests_empty": {
+    "defaultMessage": "Nenhum pedido para seguir.",
+    "description": "In place of the follow requests when there are none."
+  },
+  "notifications.follow_requests_loading": {
+    "defaultMessage": "Carregando os pedidos para seguir…",
+    "description": "While the follow requests load."
+  },
+  "notifications.follow_requests_failed": {
+    "defaultMessage": "Não foi possível carregar os pedidos para seguir.",
+    "description": "When the follow requests failed to load; Try again follows it."
+  },
+  "notifications.held": {
+    "defaultMessage": "Notificações retidas",
+    "description": "The title of the screen of the notifications the reader's notification policy held back, one row per account that sent them, and of the screen of one account's."
+  },
+  "notifications.held_about": {
+    "defaultMessage": "Aceitar move as notificações de uma pessoa para as suas notificações e deixa passar as próximas. Dispensar as exclui.",
+    "description": "The line under the title of the held-back notifications (notifications.held), over the accounts, that says what accepting and dismissing do."
+  },
+  "notifications.held_count": {
+    "defaultMessage": "{count, plural, one {# notificação} many {# de notificações} other {# notificações}}",
+    "description": "Under an account on the screen of the held-back notifications: how many of its notifications are held back. count is how many."
+  },
+  "notifications.held_accept": {
+    "defaultMessage": "Aceitar",
+    "description": "The button of an account's held-back notifications that moves them into the notifications and lets its later ones through."
+  },
+  "notifications.held_dismiss": {
+    "defaultMessage": "Dispensar",
+    "description": "The button of an account's held-back notifications that drops them; later ones are held back again."
+  },
+  "notifications.held_accepted": {
+    "defaultMessage": "Aceito",
+    "description": "What an account's held-back notifications say in place of the buttons once the reader accepted them (notifications.held_accept); focus moves to it."
+  },
+  "notifications.held_dismissed": {
+    "defaultMessage": "Dispensado",
+    "description": "What an account's held-back notifications say in place of the buttons once the reader dismissed them (notifications.held_dismiss); focus moves to it."
+  },
+  "notifications.held_loading": {
+    "defaultMessage": "Carregando notificações retidas…",
+    "description": "What the screens of the held-back notifications say while the first of them load."
+  },
+  "notifications.held_failed": {
+    "defaultMessage": "Não foi possível carregar as notificações retidas.",
+    "description": "What the screens of the held-back notifications say when they could not be loaded, beside a button to try again."
+  },
+  "notifications.held_empty": {
+    "defaultMessage": "Nenhuma notificação está retida.",
+    "description": "What the screen of the held-back notifications says when none is held back."
+  },
+  "notifications.held_none": {
+    "defaultMessage": "Nenhuma notificação desta pessoa está retida agora.",
+    "description": "What the screen of one account's held-back notifications says when it holds none (they were answered elsewhere, or about posts gone)."
+  },
+  "notifications.held_gone": {
+    "defaultMessage": "Esta pessoa não tem notificações retidas agora.",
+    "description": "What the screen of one account's held-back notifications says when the server no longer lists its request (answered elsewhere)."
+  },
+  "notifications.push_offer": {
+    "defaultMessage": "Receba suas notificações neste dispositivo, mesmo com o app fechado.",
+    "description": "The prompt over the notifications' tabs that offers to turn Web Push on for this device."
+  },
+  "notifications.push_turn_on": {
+    "defaultMessage": "Ativar",
+    "description": "The primary button of the Web Push prompt (notifications.push_offer): asks the browser's permission if it must, then turns push notifications on for this device."
+  },
+  "notifications.push_not_now": {
+    "defaultMessage": "Agora não",
+    "description": "The button of the Web Push prompt that closes it for good on this device; push stays off."
+  },
+  "notifications.push_closed": {
+    "defaultMessage": "A pergunta do navegador foi fechada sem resposta. Escolha Ativar para perguntar de novo.",
+    "description": "Under the Web Push prompt when the reader closed the browser's permission question without allowing or blocking; Turn on stays."
+  },
+  "notifications.push_blocked": {
+    "defaultMessage": "Seu navegador bloqueia notificações deste site. Permita-as nas configurações do navegador.",
+    "description": "Under the Web Push prompt when the browser blocks the site's notifications (the reader refused); only Not now stays."
+  },
+  "notifications.push_failed": {
+    "defaultMessage": "Não foi possível ativar as notificações. Recarregue ou atualize o app e tente novamente.",
+    "description": "Under the Web Push prompt when subscribing or registering the subscription failed; Turn on stays."
+  },
+  "notifications.push_on": {
+    "defaultMessage": "As notificações estão ativadas neste dispositivo.",
+    "description": "The line in place of the Web Push prompt once push notifications are on for this device."
+  },
+  "notifications.push_settings": {
+    "defaultMessage": "Escolha quais tipos nas configurações",
+    "description": "The link after notifications.push_on, once the reader turned Web Push on from the prompt over the notifications: it leads to the notification settings page (settings.entry.notifications), where they choose which kinds of notification are pushed, and turn it off."
+  },
+  "notifications.held_settings": {
+    "defaultMessage": "Configurações de notificação",
+    "description": "The link on the screen Held-back notifications (notifications.held), after notifications.held_about or notifications.held_empty: it leads to the notification settings page (settings.entry.notifications), where the reader chooses whose notifications are held back."
+  }
+}
