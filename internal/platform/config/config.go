@@ -34,7 +34,17 @@ const (
 	RoleAll    Role = "all"
 	RoleWeb    Role = "web"
 	RoleWorker Role = "worker"
+	// RoleSFU is a media node of voice = sfu (ADR-0101 §10): it runs no jobs, and its HTTP
+	// server answers only the health checks.
+	RoleSFU Role = "sfu"
 )
+
+// ServesAPI reports whether a process of the role serves the client API, the web client, and
+// the other public routes: all and web. A worker and a media node answer only the health checks.
+func (r Role) ServesAPI() bool { return r != RoleWorker && r != RoleSFU }
+
+// RunsJobs reports whether a process of the role runs jobs: all and worker.
+func (r Role) RunsJobs() bool { return r != RoleWeb && r != RoleSFU }
 
 // The values of logs_exporter (ADR-0055 §20).
 const (
@@ -336,14 +346,14 @@ type Config struct {
 	// (build tag e2e_fakes) have and only with the development profile (ADR-0015 §6).
 	TranslatorFake bool
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
-	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
-	Voice                   string
-	VoiceP2PMaxParticipants int
-	VoiceMaxParticipants    int
-	VoiceMaxRoomDuration    time.Duration
-	VoiceMaxOpenRooms       int
-	// The STUN and TURN servers of voice = p2p (ADR-0101 §1, §5); VoiceTURN is "none", "coturn",
-	// or "cloudflare", and VoiceICETransportPolicy "all" or "relay".
+	// Voice* limits bound the rooms: VoiceMaxParticipants (2 to 500) bounds the maximum of every
+	// room (ADR-0100 §3), and a zero duration or count is no limit.
+	Voice                string
+	VoiceMaxParticipants int
+	VoiceMaxRoomDuration time.Duration
+	VoiceMaxOpenRooms    int
+	// The STUN and TURN servers of voice = p2p and sfu (ADR-0101 §1, §5, §15); VoiceTURN is
+	// "none", "coturn", or "cloudflare", and VoiceICETransportPolicy "all" or "relay".
 	VoiceSTUNURLs               []string
 	VoiceTURN                   string
 	VoiceTURNURLs               []string
@@ -352,6 +362,15 @@ type Config struct {
 	VoiceTURNCloudflareAPIToken string
 	VoiceTURNCredentialTTL      time.Duration
 	VoiceICETransportPolicy     string
+	// The media nodes of voice = sfu (ADR-0101 §10, §11, §14, §15): the UDP port of the UDP mux
+	// and the port of the passive ICE-TCP, the public IP of a node behind NAT ("" for the
+	// node's own), the wss: URL that the clients connect to ("" for the default of
+	// VoiceSFUURL), and how many participants a node holds.
+	VoiceSFUUDPPort      int
+	VoiceSFUTCPPort      int
+	VoiceSFUPublicIP     string
+	VoiceSFUPublicURL    string
+	VoiceSFUNodeCapacity int
 	// The LiveKit server of voice = livekit (ADR-0101 §14); VoiceLiveKitAPIURL defaults to
 	// VoiceLiveKitURL over https (http for ws).
 	VoiceLiveKitURL       string
@@ -590,8 +609,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("translator_deepl_api_key", redact(c.TranslatorDeepLAPIKey != "")),
 		slog.String("translator_deepl_url", c.TranslatorDeepLURL),
 		slog.String("voice", c.Voice),
-		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
-		slog.Int("voice_sfu_max_participants", c.VoiceMaxParticipants),
+		slog.Int("voice_max_participants", c.VoiceMaxParticipants),
 		slog.Duration("voice_max_room_duration", c.VoiceMaxRoomDuration),
 		slog.Int("voice_max_open_rooms", c.VoiceMaxOpenRooms),
 		slog.Any("voice_stun_urls", c.VoiceSTUNURLs),
@@ -602,6 +620,11 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("voice_turn_cloudflare_api_token", redact(c.VoiceTURNCloudflareAPIToken != "")),
 		slog.Duration("voice_turn_credential_ttl", c.VoiceTURNCredentialTTL),
 		slog.String("voice_ice_transport_policy", c.VoiceICETransportPolicy),
+		slog.Int("voice_sfu_udp_port", c.VoiceSFUUDPPort),
+		slog.Int("voice_sfu_tcp_port", c.VoiceSFUTCPPort),
+		slog.String("voice_sfu_public_ip", c.VoiceSFUPublicIP),
+		slog.String("voice_sfu_public_url", c.VoiceSFUPublicURL),
+		slog.Int("voice_sfu_node_capacity", c.VoiceSFUNodeCapacity),
 		slog.String("voice_livekit_url", c.VoiceLiveKitURL),
 		slog.String("voice_livekit_api_url", c.VoiceLiveKitAPIURL),
 		slog.String("voice_livekit_api_key", c.VoiceLiveKitAPIKey),

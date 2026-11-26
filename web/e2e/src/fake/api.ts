@@ -2293,6 +2293,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ...finance.instance,
     ...supporting.instance,
     voice_enabled: o.voiceOff !== true,
+    ...(o.voiceOff === true ? {} : { voice_max_participants: 10 }),
     voice_room_starters: o.voiceStarters ?? "everyone",
     event_creators: o.eventCreators ?? "everyone",
     full_text_search:
@@ -2477,6 +2478,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         speakers: r.speakers ?? "everyone",
         host: accountOf(r.host),
         opened_at: new Date(started - (i + 1) * 30 * minute).toISOString(),
+        max_participants: 10,
         participants_count: participants.length,
         participants,
         can_speak: false,

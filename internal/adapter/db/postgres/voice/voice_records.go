@@ -32,7 +32,7 @@ func (r *Repository) Revisions(ctx context.Context, tx uow.Tx, roomID string) ([
 			ID: row.ID, RoomID: row.RoomID,
 			Settings: voice.Settings{
 				Name: row.Name, Description: row.Description, Visibility: voice.Visibility(row.Visibility), Speakers: voice.Speakers(row.Speakers),
-				Icon: voice.IconOf(row.IconEmojiKey, postgres.FromNullString(row.IconCustomEmojiID)),
+				Icon: voice.IconOf(row.IconEmojiKey, postgres.FromNullString(row.IconCustomEmojiID)), MaxParticipants: maxParticipantsOf(row.MaxParticipants),
 			},
 			RevisedByAccountID: row.RevisedByAccountID, RevisedAt: postgres.UTC(row.RevisedAt),
 		}

@@ -2634,6 +2634,28 @@ components:
       $ref: ./components/schemas/VoiceRoomVisibility.yaml
     VoiceSession:
       $ref: ./components/schemas/VoiceSession.yaml
+    VoiceSFUAnswer:
+      $ref: ./components/schemas/VoiceSFUAnswer.yaml
+    VoiceSFUCandidate:
+      $ref: ./components/schemas/VoiceSFUCandidate.yaml
+    VoiceSFUClientMessage:
+      $ref: ./components/schemas/VoiceSFUClientMessage.yaml
+    VoiceSFUError:
+      $ref: ./components/schemas/VoiceSFUError.yaml
+    VoiceSFUMigrate:
+      $ref: ./components/schemas/VoiceSFUMigrate.yaml
+    VoiceSFUNodeMessage:
+      $ref: ./components/schemas/VoiceSFUNodeMessage.yaml
+    VoiceSFUOffer:
+      $ref: ./components/schemas/VoiceSFUOffer.yaml
+    VoiceSFURestart:
+      $ref: ./components/schemas/VoiceSFURestart.yaml
+    VoiceSFUSpeaking:
+      $ref: ./components/schemas/VoiceSFUSpeaking.yaml
+    VoiceSFUTrack:
+      $ref: ./components/schemas/VoiceSFUTrack.yaml
+    VoiceSFUVersion:
+      $ref: ./components/schemas/VoiceSFUVersion.yaml
     VoiceStartPost:
       $ref: ./components/schemas/VoiceStartPost.yaml
     VoiceSignal:

@@ -128,7 +128,7 @@ func TestAppVoice(t *testing.T) {
 	t.Parallel()
 	var logs bytes.Buffer
 	cfg := loadConfig(t, map[string]string{
-		"MY_DATABASE_URL": newDatabase(t, true), "MY_VOICE": "p2p", "MY_VOICE_P2P_MAX_PARTICIPANTS": "6",
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_VOICE": "p2p", "MY_VOICE_MAX_PARTICIPANTS": "6",
 		"MY_VOICE_MAX_ROOM_DURATION": "2h", "MY_VOICE_MAX_OPEN_ROOMS": "3",
 	})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.NewTextHandler(&logs, nil))})
@@ -136,7 +136,7 @@ func TestAppVoice(t *testing.T) {
 		t.Fatalf("NewApp: %v", err)
 	}
 	t.Cleanup(func() { _ = app.Close() })
-	want := platform.Voice{Method: platform.VoiceP2P, P2PMaxParticipants: 6, MaxParticipants: 10, MaxRoomDuration: 2 * time.Hour, MaxOpenRooms: 3}
+	want := platform.Voice{Method: platform.VoiceP2P, MaxParticipants: 6, MaxRoomDuration: 2 * time.Hour, MaxOpenRooms: 3}
 	if app.Voice != want || !app.Voice.Enabled() || app.Voice.RoomCapacity() != 6 {
 		t.Errorf("Voice = %+v, want %+v, enabled, rooms of 6", app.Voice, want)
 	}
@@ -145,7 +145,7 @@ func TestAppVoice(t *testing.T) {
 	if off.Enabled() || (platform.Voice{}).Enabled() {
 		t.Error("voice = off is enabled")
 	}
-	if sfu := (platform.Voice{Method: platform.VoiceLiveKit, P2PMaxParticipants: 10, MaxParticipants: 100}); sfu.RoomCapacity() != 100 {
+	if sfu := (platform.Voice{Method: platform.VoiceLiveKit, MaxParticipants: 100}); sfu.RoomCapacity() != 100 {
 		t.Errorf("livekit room capacity = %d, want 100", sfu.RoomCapacity())
 	}
 }

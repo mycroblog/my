@@ -130,6 +130,11 @@ properties:
       Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
       they are off, and clients then show no entry to them.
     type: boolean
+  voice_max_participants:
+    description: |
+      The most people a voice chat room may hold, the bound of a room's `max_participants`.
+      Given while the voice chat rooms are on.
+    type: integer
   article_authoring:
     description: |
       Who may write new articles (`createArticle`): `everyone` (every local user who is not

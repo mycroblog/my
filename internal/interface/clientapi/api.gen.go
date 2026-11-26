@@ -5408,6 +5408,7 @@ func (e VoiceEndReason) Valid() bool {
 const (
 	VoiceGrantKindLivekit VoiceGrantKind = "livekit"
 	VoiceGrantKindP2p     VoiceGrantKind = "p2p"
+	VoiceGrantKindSfu     VoiceGrantKind = "sfu"
 	VoiceGrantKindSora    VoiceGrantKind = "sora"
 )
 
@@ -5417,6 +5418,8 @@ func (e VoiceGrantKind) Valid() bool {
 	case VoiceGrantKindLivekit:
 		return true
 	case VoiceGrantKindP2p:
+		return true
+	case VoiceGrantKindSfu:
 		return true
 	case VoiceGrantKindSora:
 		return true
@@ -5527,6 +5530,126 @@ func (e VoiceRoomVisibility) Valid() bool {
 	case VoiceRoomVisibilityLocal:
 		return true
 	case VoiceRoomVisibilityMutuals:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceSFUAnswerType.
+const (
+	VoiceSFUAnswerTypeAnswer VoiceSFUAnswerType = "answer"
+)
+
+// Valid indicates whether the value is a known member of the VoiceSFUAnswerType enum.
+func (e VoiceSFUAnswerType) Valid() bool {
+	switch e {
+	case VoiceSFUAnswerTypeAnswer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceSFUCandidateType.
+const (
+	VoiceSFUCandidateTypeCandidate VoiceSFUCandidateType = "candidate"
+)
+
+// Valid indicates whether the value is a known member of the VoiceSFUCandidateType enum.
+func (e VoiceSFUCandidateType) Valid() bool {
+	switch e {
+	case VoiceSFUCandidateTypeCandidate:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceSFUErrorType.
+const (
+	VoiceSFUErrorTypeError VoiceSFUErrorType = "error"
+)
+
+// Valid indicates whether the value is a known member of the VoiceSFUErrorType enum.
+func (e VoiceSFUErrorType) Valid() bool {
+	switch e {
+	case VoiceSFUErrorTypeError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceSFUMigrateType.
+const (
+	VoiceSFUMigrateTypeMigrate VoiceSFUMigrateType = "migrate"
+)
+
+// Valid indicates whether the value is a known member of the VoiceSFUMigrateType enum.
+func (e VoiceSFUMigrateType) Valid() bool {
+	switch e {
+	case VoiceSFUMigrateTypeMigrate:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceSFUOfferType.
+const (
+	VoiceSFUOfferTypeOffer VoiceSFUOfferType = "offer"
+)
+
+// Valid indicates whether the value is a known member of the VoiceSFUOfferType enum.
+func (e VoiceSFUOfferType) Valid() bool {
+	switch e {
+	case VoiceSFUOfferTypeOffer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceSFURestartType.
+const (
+	VoiceSFURestartTypeRestart VoiceSFURestartType = "restart"
+)
+
+// Valid indicates whether the value is a known member of the VoiceSFURestartType enum.
+func (e VoiceSFURestartType) Valid() bool {
+	switch e {
+	case VoiceSFURestartTypeRestart:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceSFUSpeakingType.
+const (
+	VoiceSFUSpeakingTypeSpeaking VoiceSFUSpeakingType = "speaking"
+)
+
+// Valid indicates whether the value is a known member of the VoiceSFUSpeakingType enum.
+func (e VoiceSFUSpeakingType) Valid() bool {
+	switch e {
+	case VoiceSFUSpeakingTypeSpeaking:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceSFUVersion.
+const (
+	VoiceSFUVersionN1 VoiceSFUVersion = 1
+)
+
+// Valid indicates whether the value is a known member of the VoiceSFUVersion enum.
+func (e VoiceSFUVersion) Valid() bool {
+	switch e {
+	case VoiceSFUVersionN1:
 		return true
 	default:
 		return false
@@ -13017,6 +13140,10 @@ type Instance struct {
 	// they are off, and clients then show no entry to them.
 	VoiceEnabled bool `json:"voice_enabled"`
 
+	// VoiceMaxParticipants The most people a voice chat room may hold, the bound of a room's `max_participants`.
+	// Given while the voice chat rooms are on.
+	VoiceMaxParticipants *int `json:"voice_max_participants,omitempty"`
+
 	// VoiceRoomStarters Who may open voice chat rooms: `everyone` (every local user who is not limited) or
 	// `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
 	// voice chat is off.
@@ -17839,8 +17966,22 @@ type Visibility string
 type VoiceEndReason string
 
 // VoiceGrant What the client of a session needs to connect to the audio of a room. `kind` is the method
-// of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
+// of the server (`p2p`, `sfu`, `livekit`, or `sora`); the client asks for a new grant before
 // `expires_at`.
+//
+// With `sfu`, `url` is the `wss:` URL of the server's media node that holds the room and `token`
+// a ticket for it, which connects once and only within 30 seconds. The client opens a
+// WebSocket to `url` with the query parameter `ticket` set to `token`
+// (`GET <url>?ticket=<token>`, an upgrade to the WebSocket protocol; browsers cannot send
+// headers on a WebSocket, so the ticket travels in the URL). An expired or used ticket, or
+// one for another node, is refused. Each message is a JSON text frame with a version `v` (1)
+// and a `type`: the client sends a `VoiceSFUClientMessage` and receives a
+// `VoiceSFUNodeMessage`. The node always makes the offer, on one `RTCPeerConnection` for the
+// session: its first `offer` has one transceiver that receives the user's microphone and one
+// that sends the audio of each speaker, and it offers again only when the speakers change. A
+// client that changes network sends `restart` and gets an offer that restarts ICE. When the
+// WebSocket closes while the connection lives, or on `migrate`, the client asks for a new
+// grant (`POST /voice/rooms/{id}/grant`) and connects to its `url` with the same session.
 type VoiceGrant struct {
 	ExpiresAt time.Time `json:"expires_at"`
 
@@ -17848,16 +17989,18 @@ type VoiceGrant struct {
 	IceServers []VoiceIceServer `json:"ice_servers"`
 	Kind       VoiceGrantKind   `json:"kind"`
 
-	// Options The options of the method for the client.
+	// Options The options of the method for the client; empty for `p2p` and `sfu`.
 	Options map[string]string `json:"options"`
 
 	// RelayOnly Whether the client connects through TURN only (`iceTransportPolicy` `relay`).
 	RelayOnly bool `json:"relay_only"`
 
-	// Token The access token of the media server; omitted for `p2p`.
+	// Token The access token of the media server, the single-use ticket of the media node for `sfu`;
+	// omitted for `p2p`.
 	Token *string `json:"token,omitempty"`
 
-	// Url The endpoint of the media server; omitted for `p2p`.
+	// Url The endpoint of the media server, the `wss:` URL of the media node for `sfu`; omitted for
+	// `p2p`.
 	Url *string `json:"url,omitempty"`
 }
 
@@ -17925,6 +18068,12 @@ type VoiceRoom struct {
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
+
+	// MaxParticipants How many people the room holds, the host included: the host's maximum, or the server's
+	// (`voice_max_participants` of `Instance`) when the host set none or the server's is lower.
+	// A join while the room holds as many people is a 409. The room may hold more after the
+	// host lowered it; nobody leaves for it.
+	MaxParticipants int `json:"max_participants"`
 
 	// Name The name of the room, 1 to 100 characters.
 	Name string `json:"name"`
@@ -18058,8 +18207,22 @@ type VoiceRoomInvitationPage struct {
 // client sends the session's heartbeats every 15 seconds.
 type VoiceRoomJoin struct {
 	// Grant What the client of a session needs to connect to the audio of a room. `kind` is the method
-	// of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
+	// of the server (`p2p`, `sfu`, `livekit`, or `sora`); the client asks for a new grant before
 	// `expires_at`.
+	//
+	// With `sfu`, `url` is the `wss:` URL of the server's media node that holds the room and `token`
+	// a ticket for it, which connects once and only within 30 seconds. The client opens a
+	// WebSocket to `url` with the query parameter `ticket` set to `token`
+	// (`GET <url>?ticket=<token>`, an upgrade to the WebSocket protocol; browsers cannot send
+	// headers on a WebSocket, so the ticket travels in the URL). An expired or used ticket, or
+	// one for another node, is refused. Each message is a JSON text frame with a version `v` (1)
+	// and a `type`: the client sends a `VoiceSFUClientMessage` and receives a
+	// `VoiceSFUNodeMessage`. The node always makes the offer, on one `RTCPeerConnection` for the
+	// session: its first `offer` has one transceiver that receives the user's microphone and one
+	// that sends the audio of each speaker, and it offers again only when the speakers change. A
+	// client that changes network sends `restart` and gets an offer that restarts ICE. When the
+	// WebSocket closes while the connection lives, or on `migrate`, the client asks for a new
+	// grant (`POST /voice/rooms/{id}/grant`) and connects to its `url` with the same session.
 	Grant VoiceGrant `json:"grant"`
 
 	// Room An open voice chat room: its settings, its host, and its participants in the order they
@@ -18116,6 +18279,11 @@ type VoiceRoomSettings struct {
 	// emoji of this server, with or without colons. Omitted or empty for none. Any other value,
 	// such as a custom emoji of another server, is refused with `422`.
 	Icon *string `json:"icon,omitempty"`
+
+	// MaxParticipants How many people the room holds, the host included, from 2 to the server's maximum
+	// (`voice_max_participants` of `Instance`); the server's maximum when omitted. Any other
+	// number is a 422.
+	MaxParticipants *int `json:"max_participants,omitempty"`
 
 	// Name 1 to 100 characters on one line.
 	Name string `json:"name"`
@@ -18181,6 +18349,11 @@ type VoiceRoomUpdate struct {
 	// Icon The emoji shown before the name, as in `VoiceRoomSettings`; empty removes it.
 	Icon *string `json:"icon,omitempty"`
 
+	// MaxParticipants How many people the room holds, from 2 to the server's maximum, as in
+	// `VoiceRoomSettings`. A maximum below the people in the room is accepted: nobody leaves,
+	// and joins are refused until fewer people are in it.
+	MaxParticipants *int `json:"max_participants,omitempty"`
+
 	// Name 1 to 100 characters on one line.
 	Name *string `json:"name,omitempty"`
 
@@ -18200,6 +18373,145 @@ type VoiceRoomUpdate struct {
 // follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 // invited users always see it, and a block with the host or a co-host always hides it.
 type VoiceRoomVisibility string
+
+// VoiceSFUAnswer The client's answer to the node's latest `offer`.
+type VoiceSFUAnswer struct {
+	// Sdp The session description of the answer.
+	Sdp  string             `json:"sdp"`
+	Type VoiceSFUAnswerType `json:"type"`
+
+	// V The version of the messages of the media node's WebSocket. A message of a version that the
+	// receiver does not know is refused with an `error`.
+	V VoiceSFUVersion `json:"v"`
+}
+
+// VoiceSFUAnswerType defines model for VoiceSFUAnswer.Type.
+type VoiceSFUAnswerType string
+
+// VoiceSFUCandidate An ICE candidate of the connection, which the client and the node both send.
+type VoiceSFUCandidate struct {
+	// Candidate The JSON of an `RTCIceCandidateInit` with only `candidate`, `sdpMid`, `sdpMLineIndex`,
+	// and `usernameFragment`; `candidate` is empty (no more candidates) or a `candidate:`
+	// attribute on one line.
+	Candidate string                `json:"candidate"`
+	Type      VoiceSFUCandidateType `json:"type"`
+
+	// V The version of the messages of the media node's WebSocket. A message of a version that the
+	// receiver does not know is refused with an `error`.
+	V VoiceSFUVersion `json:"v"`
+}
+
+// VoiceSFUCandidateType defines model for VoiceSFUCandidate.Type.
+type VoiceSFUCandidateType string
+
+// VoiceSFUClientMessage A message that the client sends to the media node over the WebSocket of a `sfu` grant
+// (`VoiceGrant`), one JSON text frame each. `type` tells which. No operation takes it.
+type VoiceSFUClientMessage struct {
+	union json.RawMessage
+}
+
+// VoiceSFUError The node refused the connection or a message, and closes the WebSocket after it. Clients
+// branch on `code`, never on `message`.
+type VoiceSFUError struct {
+	// Code Why: `invalid_ticket` (the ticket expired, was used, or is for another node; ask for a
+	// new grant), `invalid_message` (a message the node does not understand),
+	// `unsupported_version` (a `v` the node does not know), or `room_unavailable` (the session
+	// or the room is no longer on the node). A client treats an unknown code as
+	// `room_unavailable`.
+	Code string `json:"code"`
+
+	// Message A description of the error in English, for logs.
+	Message string            `json:"message"`
+	Type    VoiceSFUErrorType `json:"type"`
+
+	// V The version of the messages of the media node's WebSocket. A message of a version that the
+	// receiver does not know is refused with an `error`.
+	V VoiceSFUVersion `json:"v"`
+}
+
+// VoiceSFUErrorType defines model for VoiceSFUError.Type.
+type VoiceSFUErrorType string
+
+// VoiceSFUMigrate The node is stopping and the room moved to another node: the client asks for a new grant
+// (`POST /voice/rooms/{id}/grant`) and connects to its `url` with the same session. The node
+// closes the WebSocket after it.
+type VoiceSFUMigrate struct {
+	Type VoiceSFUMigrateType `json:"type"`
+
+	// V The version of the messages of the media node's WebSocket. A message of a version that the
+	// receiver does not know is refused with an `error`.
+	V VoiceSFUVersion `json:"v"`
+}
+
+// VoiceSFUMigrateType defines model for VoiceSFUMigrate.Type.
+type VoiceSFUMigrateType string
+
+// VoiceSFUNodeMessage A message that the media node sends to the client over the WebSocket of a `sfu` grant
+// (`VoiceGrant`), one JSON text frame each. `type` tells which; a client ignores a `type` it
+// does not know. No operation returns it.
+type VoiceSFUNodeMessage struct {
+	union json.RawMessage
+}
+
+// VoiceSFUOffer The node's offer for the session's connection, which the client answers with an `answer`:
+// the first one on connecting, then one each time the speakers change or ICE restarts.
+type VoiceSFUOffer struct {
+	// Sdp The session description of the offer.
+	Sdp string `json:"sdp"`
+
+	// Tracks Which transceiver carries the audio of which speaker. The transceiver that receives the
+	// user's microphone is not listed.
+	Tracks []VoiceSFUTrack   `json:"tracks"`
+	Type   VoiceSFUOfferType `json:"type"`
+
+	// V The version of the messages of the media node's WebSocket. A message of a version that the
+	// receiver does not know is refused with an `error`.
+	V VoiceSFUVersion `json:"v"`
+}
+
+// VoiceSFUOfferType defines model for VoiceSFUOffer.Type.
+type VoiceSFUOfferType string
+
+// VoiceSFURestart Asks the node to restart ICE, after the client's network changed; the node answers with an
+// `offer` that restarts it.
+type VoiceSFURestart struct {
+	Type VoiceSFURestartType `json:"type"`
+
+	// V The version of the messages of the media node's WebSocket. A message of a version that the
+	// receiver does not know is refused with an `error`.
+	V VoiceSFUVersion `json:"v"`
+}
+
+// VoiceSFURestartType defines model for VoiceSFURestart.Type.
+type VoiceSFURestartType string
+
+// VoiceSFUSpeaking Who makes sound now, from the audio levels that the node receives; it arrives at most every
+// 250 milliseconds.
+type VoiceSFUSpeaking struct {
+	// Participants The account IDs of the speakers who make sound; empty when nobody does.
+	Participants []Id                 `json:"participants"`
+	Type         VoiceSFUSpeakingType `json:"type"`
+
+	// V The version of the messages of the media node's WebSocket. A message of a version that the
+	// receiver does not know is refused with an `error`.
+	V VoiceSFUVersion `json:"v"`
+}
+
+// VoiceSFUSpeakingType defines model for VoiceSFUSpeaking.Type.
+type VoiceSFUSpeakingType string
+
+// VoiceSFUTrack A transceiver of an `offer` that sends the audio of one speaker.
+type VoiceSFUTrack struct {
+	// Mid The `mid` of the transceiver in the offer's session description.
+	Mid string `json:"mid"`
+
+	// Participant The account ID of the speaker, as in the `account` of a `VoiceRoomParticipant`.
+	Participant Id `json:"participant"`
+}
+
+// VoiceSFUVersion The version of the messages of the media node's WebSocket. A message of a version that the
+// receiver does not know is refused with an `error`.
+type VoiceSFUVersion int
 
 // VoiceSession A session of the user in a voice chat room.
 type VoiceSession struct {
@@ -18263,8 +18575,22 @@ type VoiceStreamEndReason string
 // VoiceStreamGrant The data of a `grant` event of a voice chat room stream.
 type VoiceStreamGrant struct {
 	// Grant What the client of a session needs to connect to the audio of a room. `kind` is the method
-	// of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
+	// of the server (`p2p`, `sfu`, `livekit`, or `sora`); the client asks for a new grant before
 	// `expires_at`.
+	//
+	// With `sfu`, `url` is the `wss:` URL of the server's media node that holds the room and `token`
+	// a ticket for it, which connects once and only within 30 seconds. The client opens a
+	// WebSocket to `url` with the query parameter `ticket` set to `token`
+	// (`GET <url>?ticket=<token>`, an upgrade to the WebSocket protocol; browsers cannot send
+	// headers on a WebSocket, so the ticket travels in the URL). An expired or used ticket, or
+	// one for another node, is refused. Each message is a JSON text frame with a version `v` (1)
+	// and a `type`: the client sends a `VoiceSFUClientMessage` and receives a
+	// `VoiceSFUNodeMessage`. The node always makes the offer, on one `RTCPeerConnection` for the
+	// session: its first `offer` has one transceiver that receives the user's microphone and one
+	// that sends the audio of each speaker, and it offers again only when the speakers change. A
+	// client that changes network sends `restart` and gets an offer that restarts ICE. When the
+	// WebSocket closes while the connection lives, or on `migrate`, the client asks for a new
+	// grant (`POST /voice/rooms/{id}/grant`) and connects to its `url` with the same session.
 	Grant VoiceGrant `json:"grant"`
 
 	// Reconnect Whether the client connects to the audio again with the new grant.
@@ -23847,6 +24173,352 @@ type ReactInVoiceRoomJSONRequestBody = VoiceReaction
 
 // SendVoiceSignalJSONRequestBody defines body for SendVoiceSignal for application/json ContentType.
 type SendVoiceSignalJSONRequestBody = VoiceSignal
+
+// AsVoiceSFUAnswer returns the union data inside the VoiceSFUClientMessage as a VoiceSFUAnswer
+func (t VoiceSFUClientMessage) AsVoiceSFUAnswer() (VoiceSFUAnswer, error) {
+	var body VoiceSFUAnswer
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromVoiceSFUAnswer overwrites any union data inside the VoiceSFUClientMessage as the provided VoiceSFUAnswer
+func (t *VoiceSFUClientMessage) FromVoiceSFUAnswer(v VoiceSFUAnswer) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"answer"}`))
+	t.union = b
+	return err
+}
+
+// MergeVoiceSFUAnswer performs a merge with any union data inside the VoiceSFUClientMessage, using the provided VoiceSFUAnswer
+func (t *VoiceSFUClientMessage) MergeVoiceSFUAnswer(v VoiceSFUAnswer) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"answer"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsVoiceSFUCandidate returns the union data inside the VoiceSFUClientMessage as a VoiceSFUCandidate
+func (t VoiceSFUClientMessage) AsVoiceSFUCandidate() (VoiceSFUCandidate, error) {
+	var body VoiceSFUCandidate
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromVoiceSFUCandidate overwrites any union data inside the VoiceSFUClientMessage as the provided VoiceSFUCandidate
+func (t *VoiceSFUClientMessage) FromVoiceSFUCandidate(v VoiceSFUCandidate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"candidate"}`))
+	t.union = b
+	return err
+}
+
+// MergeVoiceSFUCandidate performs a merge with any union data inside the VoiceSFUClientMessage, using the provided VoiceSFUCandidate
+func (t *VoiceSFUClientMessage) MergeVoiceSFUCandidate(v VoiceSFUCandidate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"candidate"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsVoiceSFURestart returns the union data inside the VoiceSFUClientMessage as a VoiceSFURestart
+func (t VoiceSFUClientMessage) AsVoiceSFURestart() (VoiceSFURestart, error) {
+	var body VoiceSFURestart
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromVoiceSFURestart overwrites any union data inside the VoiceSFUClientMessage as the provided VoiceSFURestart
+func (t *VoiceSFUClientMessage) FromVoiceSFURestart(v VoiceSFURestart) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"restart"}`))
+	t.union = b
+	return err
+}
+
+// MergeVoiceSFURestart performs a merge with any union data inside the VoiceSFUClientMessage, using the provided VoiceSFURestart
+func (t *VoiceSFUClientMessage) MergeVoiceSFURestart(v VoiceSFURestart) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"restart"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t VoiceSFUClientMessage) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t VoiceSFUClientMessage) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "answer":
+		return t.AsVoiceSFUAnswer()
+	case "candidate":
+		return t.AsVoiceSFUCandidate()
+	case "restart":
+		return t.AsVoiceSFURestart()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t VoiceSFUClientMessage) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *VoiceSFUClientMessage) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsVoiceSFUOffer returns the union data inside the VoiceSFUNodeMessage as a VoiceSFUOffer
+func (t VoiceSFUNodeMessage) AsVoiceSFUOffer() (VoiceSFUOffer, error) {
+	var body VoiceSFUOffer
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromVoiceSFUOffer overwrites any union data inside the VoiceSFUNodeMessage as the provided VoiceSFUOffer
+func (t *VoiceSFUNodeMessage) FromVoiceSFUOffer(v VoiceSFUOffer) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"offer"}`))
+	t.union = b
+	return err
+}
+
+// MergeVoiceSFUOffer performs a merge with any union data inside the VoiceSFUNodeMessage, using the provided VoiceSFUOffer
+func (t *VoiceSFUNodeMessage) MergeVoiceSFUOffer(v VoiceSFUOffer) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"offer"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsVoiceSFUCandidate returns the union data inside the VoiceSFUNodeMessage as a VoiceSFUCandidate
+func (t VoiceSFUNodeMessage) AsVoiceSFUCandidate() (VoiceSFUCandidate, error) {
+	var body VoiceSFUCandidate
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromVoiceSFUCandidate overwrites any union data inside the VoiceSFUNodeMessage as the provided VoiceSFUCandidate
+func (t *VoiceSFUNodeMessage) FromVoiceSFUCandidate(v VoiceSFUCandidate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"candidate"}`))
+	t.union = b
+	return err
+}
+
+// MergeVoiceSFUCandidate performs a merge with any union data inside the VoiceSFUNodeMessage, using the provided VoiceSFUCandidate
+func (t *VoiceSFUNodeMessage) MergeVoiceSFUCandidate(v VoiceSFUCandidate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"candidate"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsVoiceSFUSpeaking returns the union data inside the VoiceSFUNodeMessage as a VoiceSFUSpeaking
+func (t VoiceSFUNodeMessage) AsVoiceSFUSpeaking() (VoiceSFUSpeaking, error) {
+	var body VoiceSFUSpeaking
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromVoiceSFUSpeaking overwrites any union data inside the VoiceSFUNodeMessage as the provided VoiceSFUSpeaking
+func (t *VoiceSFUNodeMessage) FromVoiceSFUSpeaking(v VoiceSFUSpeaking) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"speaking"}`))
+	t.union = b
+	return err
+}
+
+// MergeVoiceSFUSpeaking performs a merge with any union data inside the VoiceSFUNodeMessage, using the provided VoiceSFUSpeaking
+func (t *VoiceSFUNodeMessage) MergeVoiceSFUSpeaking(v VoiceSFUSpeaking) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"speaking"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsVoiceSFUMigrate returns the union data inside the VoiceSFUNodeMessage as a VoiceSFUMigrate
+func (t VoiceSFUNodeMessage) AsVoiceSFUMigrate() (VoiceSFUMigrate, error) {
+	var body VoiceSFUMigrate
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromVoiceSFUMigrate overwrites any union data inside the VoiceSFUNodeMessage as the provided VoiceSFUMigrate
+func (t *VoiceSFUNodeMessage) FromVoiceSFUMigrate(v VoiceSFUMigrate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"migrate"}`))
+	t.union = b
+	return err
+}
+
+// MergeVoiceSFUMigrate performs a merge with any union data inside the VoiceSFUNodeMessage, using the provided VoiceSFUMigrate
+func (t *VoiceSFUNodeMessage) MergeVoiceSFUMigrate(v VoiceSFUMigrate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"migrate"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsVoiceSFUError returns the union data inside the VoiceSFUNodeMessage as a VoiceSFUError
+func (t VoiceSFUNodeMessage) AsVoiceSFUError() (VoiceSFUError, error) {
+	var body VoiceSFUError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromVoiceSFUError overwrites any union data inside the VoiceSFUNodeMessage as the provided VoiceSFUError
+func (t *VoiceSFUNodeMessage) FromVoiceSFUError(v VoiceSFUError) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"error"}`))
+	t.union = b
+	return err
+}
+
+// MergeVoiceSFUError performs a merge with any union data inside the VoiceSFUNodeMessage, using the provided VoiceSFUError
+func (t *VoiceSFUNodeMessage) MergeVoiceSFUError(v VoiceSFUError) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	b, err = runtime.JSONMerge(b, []byte(`{"type":"error"}`))
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t VoiceSFUNodeMessage) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t VoiceSFUNodeMessage) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "candidate":
+		return t.AsVoiceSFUCandidate()
+	case "error":
+		return t.AsVoiceSFUError()
+	case "migrate":
+		return t.AsVoiceSFUMigrate()
+	case "offer":
+		return t.AsVoiceSFUOffer()
+	case "speaking":
+		return t.AsVoiceSFUSpeaking()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t VoiceSFUNodeMessage) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *VoiceSFUNodeMessage) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {

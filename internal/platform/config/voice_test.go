@@ -32,12 +32,12 @@ func TestLoadVoice(t *testing.T) {
 		}
 	})
 	t.Run("a limit of 0 removes it", func(t *testing.T) {
-		cfg, _, err := Load(source(with(minimal(), "MY_VOICE_MAX_ROOM_DURATION", "0", "MY_VOICE_SFU_MAX_PARTICIPANTS", "0", "MY_VOICE_MAX_OPEN_ROOMS", "0"), nil))
+		cfg, _, err := Load(source(with(minimal(), "MY_VOICE_MAX_ROOM_DURATION", "0", "MY_VOICE_MAX_OPEN_ROOMS", "0"), nil))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.VoiceMaxRoomDuration != 0 || cfg.VoiceMaxParticipants != 0 || cfg.VoiceMaxOpenRooms != 0 {
-			t.Errorf("limits = %v, %d, %d; want none", cfg.VoiceMaxRoomDuration, cfg.VoiceMaxParticipants, cfg.VoiceMaxOpenRooms)
+		if cfg.VoiceMaxRoomDuration != 0 || cfg.VoiceMaxOpenRooms != 0 {
+			t.Errorf("limits = %v, %d; want none", cfg.VoiceMaxRoomDuration, cfg.VoiceMaxOpenRooms)
 		}
 	})
 	t.Run("off checks nothing else", func(t *testing.T) {
@@ -50,7 +50,7 @@ func TestLoadVoice(t *testing.T) {
 		}
 	})
 	t.Run("p2p with coturn and relay", func(t *testing.T) {
-		cfg, _, err := Load(source(with(minimal(), "MY_VOICE", "p2p", "MY_VOICE_P2P_MAX_PARTICIPANTS", "50",
+		cfg, _, err := Load(source(with(minimal(), "MY_VOICE", "p2p", "MY_VOICE_MAX_PARTICIPANTS", "50",
 			"MY_VOICE_MAX_ROOM_DURATION", "4h", "MY_VOICE_MAX_OPEN_ROOMS", "20",
 			"MY_VOICE_STUN_URLS", "stun:stun.example.org:3478, stuns:stun.example.org",
 			"MY_VOICE_TURN", "coturn", "MY_VOICE_TURN_COTURN_URLS", "turn:turn.example.org:3478?transport=udp,turns:turn.example.org:5349",
@@ -59,7 +59,7 @@ func TestLoadVoice(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.VoiceP2PMaxParticipants != 50 || cfg.VoiceMaxRoomDuration != 4*time.Hour || cfg.VoiceMaxOpenRooms != 20 ||
+		if cfg.VoiceMaxParticipants != 50 || cfg.VoiceMaxRoomDuration != 4*time.Hour || cfg.VoiceMaxOpenRooms != 20 ||
 			!slices.Equal(cfg.VoiceSTUNURLs, []string{"stun:stun.example.org:3478", "stuns:stun.example.org"}) ||
 			!slices.Equal(cfg.VoiceTURNURLs, []string{"turn:turn.example.org:3478?transport=udp", "turns:turn.example.org:5349"}) ||
 			cfg.VoiceTURNSecret != "s3cret" || cfg.VoiceICETransportPolicy != "relay" || cfg.VoiceTURNCredentialTTL != 6*time.Hour {
@@ -159,11 +159,11 @@ func TestLoadVoiceInvalid(t *testing.T) {
 		},
 		{
 			name: "p2p room limits out of range",
-			env:  with(minimal(), "MY_VOICE", "p2p", "MY_VOICE_P2P_MAX_PARTICIPANTS", "51", "MY_VOICE_MAX_OPEN_ROOMS", "-1", "MY_VOICE_MAX_ROOM_DURATION", "-1h"),
+			env:  with(minimal(), "MY_VOICE", "p2p", "MY_VOICE_MAX_PARTICIPANTS", "51", "MY_VOICE_MAX_OPEN_ROOMS", "-1", "MY_VOICE_MAX_ROOM_DURATION", "-1h"),
 			want: []string{
-				"voice_p2p_max_participants (MY_VOICE_P2P_MAX_PARTICIPANTS): must be a whole number from 2 to 50",
 				"voice_max_room_duration (MY_VOICE_MAX_ROOM_DURATION): must be 0 or a positive Go duration",
 				"voice_max_open_rooms (MY_VOICE_MAX_OPEN_ROOMS): must be a whole number from 0",
+				"voice_max_participants (MY_VOICE_MAX_PARTICIPANTS): must be at most 50 with voice = p2p",
 			},
 		},
 		{
@@ -327,14 +327,14 @@ func TestConfigKeyNames(t *testing.T) {
 	for _, want := range []string{
 		"database", "payments", "voice_sora_join_secret", "voice_turn_coturn_urls", "voice_turn_coturn_secret",
 		"stream_sns_queue_prefix", "mail_smtp_host", "mail_smtp_port", "mail_smtp_username", "mail_smtp_password",
-		"mail_ses_region", "mail_ses_configuration_set", "mail_ses_sns_topic_arn", "voice_sfu_max_participants",
+		"mail_ses_region", "mail_ses_configuration_set", "mail_ses_sns_topic_arn", "voice_max_participants",
 		"relay_max_activities_per_hour", "media_unattached_retention", "dynamic_client_unredeemed_retention", "dynamic_client_idle_retention",
 	} {
 		if !keys[want] {
 			t.Errorf("no setting %s", want)
 		}
 	}
-	for _, old := range []string{"db", "payments_provider", "smtp_host", "ses_region", "voice_max_participants", "relay_ingest_hourly_limit", "media_unattached_ttl"} {
+	for _, old := range []string{"db", "payments_provider", "smtp_host", "ses_region", "voice_p2p_max_participants", "voice_sfu_max_participants", "relay_ingest_hourly_limit", "media_unattached_ttl"} {
 		if keys[old] {
 			t.Errorf("the setting %s still exists", old)
 		}

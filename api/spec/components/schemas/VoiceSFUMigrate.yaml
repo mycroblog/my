@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+title: migrate
+description: |
+  The node is stopping and the room moved to another node: the client asks for a new grant
+  (`POST /voice/rooms/{id}/grant`) and connects to its `url` with the same session. The node
+  closes the WebSocket after it.
+type: object
+required: [v, type]
+properties:
+  v:
+    $ref: ./VoiceSFUVersion.yaml
+  type:
+    type: string
+    enum: [migrate]

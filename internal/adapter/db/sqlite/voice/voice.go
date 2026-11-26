@@ -4,6 +4,7 @@ package voice
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
@@ -52,6 +53,7 @@ func (r *Repository) InsertRevision(ctx context.Context, tx uow.Tx, rev appvoice
 	if err := q.InsertVoiceRoomRevision(ctx, voicegen.InsertVoiceRoomRevisionParams{
 		ID: rev.ID, RoomID: rev.RoomID, Name: s.Name, Description: s.Description, Visibility: string(s.Visibility),
 		Speakers: string(s.Speakers), IconEmojiKey: s.Icon.Key(), IconCustomEmojiID: sqlite.ToNullString(s.Icon.CustomEmojiID),
+		MaxParticipants:    sql.NullInt64{Int64: int64(s.MaxParticipants), Valid: s.MaxParticipants != 0},
 		RevisedByAccountID: rev.RevisedByAccountID, RevisedAt: sqlite.ToMillis(rev.RevisedAt),
 	}); err != nil {
 		return sqlite.Wrap(err, "insert voice room revision")
@@ -255,7 +257,7 @@ func voiceRoomRecord(row voicegen.GetVoiceRoomRow) appvoice.RoomRecord {
 			ID: row.RevisionID, RoomID: row.ID,
 			Settings: voice.Settings{
 				Name: row.Name, Description: row.Description, Visibility: voice.Visibility(row.Visibility), Speakers: voice.Speakers(row.Speakers),
-				Icon: voice.IconOf(row.IconEmojiKey, row.IconCustomEmojiID.String),
+				Icon: voice.IconOf(row.IconEmojiKey, row.IconCustomEmojiID.String), MaxParticipants: int(row.MaxParticipants.Int64),
 			},
 			RevisedByAccountID: row.RevisedByAccountID, RevisedAt: sqlite.FromMillis(row.RevisedAt),
 		},

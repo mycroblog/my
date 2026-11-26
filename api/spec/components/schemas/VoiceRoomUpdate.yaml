@@ -20,3 +20,9 @@ properties:
     $ref: ./VoiceRoomVisibility.yaml
   speakers:
     $ref: ./VoiceRoomSpeakers.yaml
+  max_participants:
+    description: |
+      How many people the room holds, from 2 to the server's maximum, as in
+      `VoiceRoomSettings`. A maximum below the people in the room is accepted: nobody leaves,
+      and joins are refused until fewer people are in it.
+    type: integer

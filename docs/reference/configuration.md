@@ -204,18 +204,22 @@ An instance setting that has never been set reads as its default, which is defin
 | [`search_meilisearch_index`](#search_meilisearch_index) | `MY_SEARCH_MEILISEARCH_INDEX` | `my-statuses` | no | no |
 | [`search_meilisearch_index_settings_file`](#search_meilisearch_index_settings_file) | `MY_SEARCH_MEILISEARCH_INDEX_SETTINGS_FILE` | none | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
-| [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
-| [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
+| [`voice_max_participants`](#voice_max_participants) | `MY_VOICE_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_max_room_duration`](#voice_max_room_duration) | `MY_VOICE_MAX_ROOM_DURATION` | `4h` | no | no |
 | [`voice_max_open_rooms`](#voice_max_open_rooms) | `MY_VOICE_MAX_OPEN_ROOMS` | `10` | no | no |
 | [`voice_stun_urls`](#voice_stun_urls) | `MY_VOICE_STUN_URLS` | none | no | no |
 | [`voice_turn`](#voice_turn) | `MY_VOICE_TURN` | `none` | no | no |
-| [`voice_turn_coturn_urls`](#voice_turn_coturn_urls) | `MY_VOICE_TURN_COTURN_URLS` | none | when `voice = p2p` and `voice_turn = coturn` | no |
-| [`voice_turn_coturn_secret`](#voice_turn_coturn_secret) | `MY_VOICE_TURN_COTURN_SECRET` | none | when `voice = p2p` and `voice_turn = coturn` | yes |
-| [`voice_turn_cloudflare_key_id`](#voice_turn_cloudflare_key_id) | `MY_VOICE_TURN_CLOUDFLARE_KEY_ID` | none | when `voice = p2p` and `voice_turn = cloudflare` | no |
-| [`voice_turn_cloudflare_api_token`](#voice_turn_cloudflare_api_token) | `MY_VOICE_TURN_CLOUDFLARE_API_TOKEN` | none | when `voice = p2p` and `voice_turn = cloudflare` | yes |
+| [`voice_turn_coturn_urls`](#voice_turn_coturn_urls) | `MY_VOICE_TURN_COTURN_URLS` | none | when `voice = p2p` or `sfu` and `voice_turn = coturn` | no |
+| [`voice_turn_coturn_secret`](#voice_turn_coturn_secret) | `MY_VOICE_TURN_COTURN_SECRET` | none | when `voice = p2p` or `sfu` and `voice_turn = coturn` | yes |
+| [`voice_turn_cloudflare_key_id`](#voice_turn_cloudflare_key_id) | `MY_VOICE_TURN_CLOUDFLARE_KEY_ID` | none | when `voice = p2p` or `sfu` and `voice_turn = cloudflare` | no |
+| [`voice_turn_cloudflare_api_token`](#voice_turn_cloudflare_api_token) | `MY_VOICE_TURN_CLOUDFLARE_API_TOKEN` | none | when `voice = p2p` or `sfu` and `voice_turn = cloudflare` | yes |
 | [`voice_turn_credential_ttl`](#voice_turn_credential_ttl) | `MY_VOICE_TURN_CREDENTIAL_TTL` | `6h` | no | no |
 | [`voice_ice_transport_policy`](#voice_ice_transport_policy) | `MY_VOICE_ICE_TRANSPORT_POLICY` | `all` | no | no |
+| [`voice_sfu_udp_port`](#voice_sfu_udp_port) | `MY_VOICE_SFU_UDP_PORT` | `7882` | no | no |
+| [`voice_sfu_tcp_port`](#voice_sfu_tcp_port) | `MY_VOICE_SFU_TCP_PORT` | `7881` | no | no |
+| [`voice_sfu_public_ip`](#voice_sfu_public_ip) | `MY_VOICE_SFU_PUBLIC_IP` | the node's own address | no | no |
+| [`voice_sfu_public_url`](#voice_sfu_public_url) | `MY_VOICE_SFU_PUBLIC_URL` | `wss://<host>/voice/sfu` (`ws:` when `web_origin` is plain HTTP on `host`) | no | no |
+| [`voice_sfu_node_capacity`](#voice_sfu_node_capacity) | `MY_VOICE_SFU_NODE_CAPACITY` | `500` | no | no |
 | [`voice_livekit_url`](#voice_livekit_url) | `MY_VOICE_LIVEKIT_URL` | none | when `voice = livekit` | no |
 | [`voice_livekit_api_url`](#voice_livekit_api_url) | `MY_VOICE_LIVEKIT_API_URL` | `voice_livekit_url` with `https:` (`http:` for `ws:`) | no | no |
 | [`voice_livekit_api_key`](#voice_livekit_api_key) | `MY_VOICE_LIVEKIT_API_KEY` | none | when `voice = livekit` | no |
@@ -468,6 +472,7 @@ What this process runs.
 | `all` | HTTP server and job worker in one process. |
 | `web` | HTTP server only. |
 | `worker` | Job worker only; the HTTP server answers only the health checks ([running the server](../operations/running.md)). |
+| `sfu` | A media node of `voice = sfu`, which runs no jobs; the HTTP server answers only the health checks. Needs `voice = sfu`. |
 
 ### `worker_job_types`
 
@@ -1778,23 +1783,16 @@ How the voice chat rooms connect their participants. With `off`, the voice chat 
 | Value | Description |
 | --- | --- |
 | `off` | No voice chat. |
-| `p2p` | The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect. |
+| `p2p` | The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. `voice_max_participants` may be at most 50. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect. |
+| `sfu` | The server's own media nodes carry the audio: each browser connects to the node that holds its room, at `voice_sfu_public_url`, and the node forwards the audio of the speakers to the participants. The browsers may use the TURN servers of `voice_turn`; `voice_ice_transport_policy = relay` is refused. This build has no media node yet, so the server does not start with it. |
 | `livekit` | A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`. |
 | `sora` | A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_sora_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. |
 
-### `voice_p2p_max_participants`
+### `voice_max_participants`
 
-How many people a room of `voice = p2p` holds, from 2 to 50; one more is refused. Every speaker sends their audio to every other participant, so a larger room needs more upload bandwidth of each speaker.
+The most people a room may hold, from 2 to 500 and at most 50 with `voice = p2p`: the default and the bound of the maximum that the host of each room sets. A join beyond a room's maximum is refused. With `p2p` every speaker sends their audio to every other participant, so a larger room needs more upload bandwidth of each speaker.
 
-- Environment variable: `MY_VOICE_P2P_MAX_PARTICIPANTS`
-- Default: `10`
-- Required: no
-
-### `voice_sfu_max_participants`
-
-How many people a room of `voice = livekit` or `voice = sora` holds; one more is refused. `0` sets no limit.
-
-- Environment variable: `MY_VOICE_SFU_MAX_PARTICIPANTS`
+- Environment variable: `MY_VOICE_MAX_PARTICIPANTS`
 - Default: `10`
 - Required: no
 
@@ -1816,7 +1814,7 @@ How many rooms may be open on the server at the same time; opening one more is r
 
 ### `voice_stun_urls`
 
-The STUN servers with which the browsers of `voice = p2p` find their public addresses, comma-separated `stun:` or `stuns:` URLs such as `stun:stun.example.org:3478`. Empty uses none. `voice = livekit` and `voice = sora` do not use it and warn at start when it is set.
+The STUN servers with which the browsers of `voice = p2p` find their public addresses (a media node of `voice = sfu` has a public address and needs none), comma-separated `stun:` or `stuns:` URLs such as `stun:stun.example.org:3478`. Empty uses none. `voice = livekit` and `voice = sora` do not use it and warn at start when it is set.
 
 - Environment variable: `MY_VOICE_STUN_URLS`
 - Default: none
@@ -1824,7 +1822,7 @@ The STUN servers with which the browsers of `voice = p2p` find their public addr
 
 ### `voice_turn`
 
-The TURN server that relays the audio of `voice = p2p` between browsers that cannot reach each other directly, with short-lived credentials for each participant. The server checks the setting at start and gives the browsers the TURN servers of coturn or Cloudflare. `voice = livekit` and `voice = sora` do not use it and warn at start when it is not `none`.
+The TURN server that relays the audio of `voice = p2p` and `voice = sfu` for browsers that cannot reach the other browsers or the media node directly, with short-lived credentials for each participant. The server checks the setting at start and gives the browsers the TURN servers of coturn or Cloudflare. `voice = livekit` and `voice = sora` do not use it and warn at start when it is not `none`.
 
 - Environment variable: `MY_VOICE_TURN`
 - Default: `none`
@@ -1842,7 +1840,7 @@ The URLs of the coturn server of `voice_turn = coturn`, comma-separated `turn:` 
 
 - Environment variable: `MY_VOICE_TURN_COTURN_URLS`
 - Default: none
-- Required: when `voice = p2p` and `voice_turn = coturn`
+- Required: when `voice = p2p` or `sfu` and `voice_turn = coturn`
 
 ### `voice_turn_coturn_secret`
 
@@ -1850,7 +1848,7 @@ The `static-auth-secret` of the coturn server of `voice_turn = coturn`, which si
 
 - Environment variable: `MY_VOICE_TURN_COTURN_SECRET` or `MY_VOICE_TURN_COTURN_SECRET_FILE`
 - Default: none
-- Required: when `voice = p2p` and `voice_turn = coturn`
+- Required: when `voice = p2p` or `sfu` and `voice_turn = coturn`
 
 ### `voice_turn_cloudflare_key_id`
 
@@ -1858,7 +1856,7 @@ The ID of the TURN key of `voice_turn = cloudflare`, from Cloudflare's dashboard
 
 - Environment variable: `MY_VOICE_TURN_CLOUDFLARE_KEY_ID`
 - Default: none
-- Required: when `voice = p2p` and `voice_turn = cloudflare`
+- Required: when `voice = p2p` or `sfu` and `voice_turn = cloudflare`
 
 ### `voice_turn_cloudflare_api_token`
 
@@ -1866,7 +1864,7 @@ The API token of the TURN key of `voice_turn = cloudflare`, with which the serve
 
 - Environment variable: `MY_VOICE_TURN_CLOUDFLARE_API_TOKEN` or `MY_VOICE_TURN_CLOUDFLARE_API_TOKEN_FILE`
 - Default: none
-- Required: when `voice = p2p` and `voice_turn = cloudflare`
+- Required: when `voice = p2p` or `sfu` and `voice_turn = cloudflare`
 
 ### `voice_turn_credential_ttl`
 
@@ -1878,7 +1876,7 @@ How long the TURN credentials of a participant stay valid, a Go duration; the we
 
 ### `voice_ice_transport_policy`
 
-Which connections the browsers of `voice = p2p` make. `voice = livekit` and `voice = sora` do not use it and warn at start when it is `relay`.
+Which connections the browsers of `voice = p2p` make. `voice = sfu` refuses `relay`: the browsers connect only to the media node, so the participants never learn each other's IP addresses, and relaying would only add TURN traffic. `voice = livekit` and `voice = sora` do not use it and warn at start when it is `relay`.
 
 - Environment variable: `MY_VOICE_ICE_TRANSPORT_POLICY`
 - Default: `all`
@@ -1888,6 +1886,46 @@ Which connections the browsers of `voice = p2p` make. `voice = livekit` and `voi
 | --- | --- |
 | `all` | Direct connections where possible and the TURN server otherwise; the participants of a room may learn each other's IP addresses. |
 | `relay` | Only through the TURN server, which hides the participants' IP addresses from each other; needs `voice_turn`. |
+
+### `voice_sfu_udp_port`
+
+The UDP port on which a media node of `voice = sfu` receives the audio of every session (one port for all of them).
+
+- Environment variable: `MY_VOICE_SFU_UDP_PORT`
+- Default: `7882`
+- Required: no
+
+### `voice_sfu_tcp_port`
+
+The TCP port on which a media node of `voice = sfu` receives the audio of the browsers that cannot use UDP (ICE over TCP).
+
+- Environment variable: `MY_VOICE_SFU_TCP_PORT`
+- Default: `7881`
+- Required: no
+
+### `voice_sfu_public_ip`
+
+The public IP address of a media node of `voice = sfu` behind NAT, which the node gives the browsers as its address.
+
+- Environment variable: `MY_VOICE_SFU_PUBLIC_IP`
+- Default: the node's own address
+- Required: no
+
+### `voice_sfu_public_url`
+
+The `wss:` URL of a media node of `voice = sfu` that the browsers connect to, such as `wss://sfu1.example.org/voice/sfu`; `ws:` is accepted for localhost only. Each node of several has its own.
+
+- Environment variable: `MY_VOICE_SFU_PUBLIC_URL`
+- Default: `wss://<host>/voice/sfu` (`ws:` when `web_origin` is plain HTTP on `host`)
+- Required: no
+
+### `voice_sfu_node_capacity`
+
+How many participants a media node of `voice = sfu` holds. A room on the node reserves its maximum, and a room goes only to a node with room for its maximum.
+
+- Environment variable: `MY_VOICE_SFU_NODE_CAPACITY`
+- Default: `500`
+- Required: no
 
 ### `voice_livekit_url`
 
@@ -3118,4 +3156,7 @@ Deadline of one call of the `local.profile` plugin, less than `30s`.
 
 Using one of these keys, in the config file or as its environment variable (or `<NAME>_FILE`), stops the server with an error.
 
-None.
+| Key | Environment variable | Replacement or reason |
+| --- | --- | --- |
+| `voice_p2p_max_participants` | `MY_VOICE_P2P_MAX_PARTICIPANTS` | [`voice_max_participants`](#voice_max_participants) |
+| `voice_sfu_max_participants` | `MY_VOICE_SFU_MAX_PARTICIPANTS` | set voice_max_participants (2 to 500), the most people a room of any voice method may hold |

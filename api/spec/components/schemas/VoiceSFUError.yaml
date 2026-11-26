@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+title: error
+description: |
+  The node refused the connection or a message, and closes the WebSocket after it. Clients
+  branch on `code`, never on `message`.
+type: object
+required: [v, type, code, message]
+properties:
+  v:
+    $ref: ./VoiceSFUVersion.yaml
+  type:
+    type: string
+    enum: [error]
+  code:
+    description: |
+      Why: `invalid_ticket` (the ticket expired, was used, or is for another node; ask for a
+      new grant), `invalid_message` (a message the node does not understand),
+      `unsupported_version` (a `v` the node does not know), or `room_unavailable` (the session
+      or the room is no longer on the node). A client treats an unknown code as
+      `room_unavailable`.
+    type: string
+  message:
+    description: A description of the error in English, for logs.
+    type: string

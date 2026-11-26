@@ -198,6 +198,7 @@ var schema = []field{
 			{value: string(RoleAll), doc: "HTTP server and job worker in one process."},
 			{value: string(RoleWeb), doc: "HTTP server only."},
 			{value: string(RoleWorker), doc: "Job worker only; the HTTP server answers only the health checks ([running the server](../operations/running.md))."},
+			{value: string(RoleSFU), doc: "A media node of `voice = sfu`, which runs no jobs; the HTTP server answers only the health checks. Needs `voice = sfu`."},
 		},
 		set: func(c *Config, v string) { c.Role = Role(v) },
 	},
@@ -1318,24 +1319,18 @@ var schema = []field{
 		def: "off",
 		choices: []choice{
 			{value: "off", doc: "No voice chat."},
-			{value: "p2p", doc: "The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect."},
+			{value: "p2p", doc: "The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. `voice_max_participants` may be at most 50. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect."},
+			{value: "sfu", doc: "The server's own media nodes carry the audio: each browser connects to the node that holds its room, at `voice_sfu_public_url`, and the node forwards the audio of the speakers to the participants. The browsers may use the TURN servers of `voice_turn`; `voice_ice_transport_policy = relay` is refused. This build has no media node yet, so the server does not start with it."},
 			{value: "livekit", doc: "A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`."},
 			{value: "sora", doc: "A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_sora_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server."},
 		},
 		set: func(c *Config, v string) { c.Voice = v },
 	},
 	{
-		key:   "voice_p2p_max_participants",
-		doc:   "How many people a room of `voice = p2p` holds, from 2 to 50; one more is refused. Every speaker sends their audio to every other participant, so a larger room needs more upload bandwidth of each speaker.",
-		def:   strconv.Itoa(defaultVoiceP2PMaxParticipants),
-		check: checkVoiceP2PMaxParticipants,
-		set:   func(c *Config, v string) { c.VoiceP2PMaxParticipants, _ = strconv.Atoi(v) },
-	},
-	{
-		key:   "voice_sfu_max_participants",
-		doc:   "How many people a room of `voice = livekit` or `voice = sora` holds; one more is refused. `0` sets no limit.",
+		key:   "voice_max_participants",
+		doc:   "The most people a room may hold, from 2 to 500 and at most 50 with `voice = p2p`: the default and the bound of the maximum that the host of each room sets. A join beyond a room's maximum is refused. With `p2p` every speaker sends their audio to every other participant, so a larger room needs more upload bandwidth of each speaker.",
 		def:   strconv.Itoa(defaultVoiceMaxParticipants),
-		check: checkNonNegativeInt,
+		check: checkVoiceMaxParticipants,
 		set:   func(c *Config, v string) { c.VoiceMaxParticipants, _ = strconv.Atoi(v) },
 	},
 	{
@@ -1354,13 +1349,13 @@ var schema = []field{
 	},
 	{
 		key:   "voice_stun_urls",
-		doc:   "The STUN servers with which the browsers of `voice = p2p` find their public addresses, comma-separated `stun:` or `stuns:` URLs such as `stun:stun.example.org:3478`. Empty uses none. `voice = livekit` and `voice = sora` do not use it and warn at start when it is set.",
+		doc:   "The STUN servers with which the browsers of `voice = p2p` find their public addresses (a media node of `voice = sfu` has a public address and needs none), comma-separated `stun:` or `stuns:` URLs such as `stun:stun.example.org:3478`. Empty uses none. `voice = livekit` and `voice = sora` do not use it and warn at start when it is set.",
 		check: checkVoiceURLs("stun", "stuns"),
 		set:   func(c *Config, v string) { c.VoiceSTUNURLs = splitList(v) },
 	},
 	{
 		key: "voice_turn",
-		doc: "The TURN server that relays the audio of `voice = p2p` between browsers that cannot reach each other directly, with short-lived credentials for each participant. The server checks the setting at start and gives the browsers the TURN servers of coturn or Cloudflare. `voice = livekit` and `voice = sora` do not use it and warn at start when it is not `none`.",
+		doc: "The TURN server that relays the audio of `voice = p2p` and `voice = sfu` for browsers that cannot reach the other browsers or the media node directly, with short-lived credentials for each participant. The server checks the setting at start and gives the browsers the TURN servers of coturn or Cloudflare. `voice = livekit` and `voice = sora` do not use it and warn at start when it is not `none`.",
 		def: "none",
 		choices: []choice{
 			{value: "none", doc: "No TURN server: browsers behind strict NATs or firewalls may not connect."},
@@ -1372,7 +1367,7 @@ var schema = []field{
 	{
 		key:          "voice_turn_coturn_urls",
 		doc:          "The URLs of the coturn server of `voice_turn = coturn`, comma-separated `turn:` or `turns:` URLs such as `turn:turn.example.org:3478?transport=udp, turns:turn.example.org:5349`.",
-		requiredWhen: "when `voice = p2p` and `voice_turn = coturn`",
+		requiredWhen: "when `voice = p2p` or `sfu` and `voice_turn = coturn`",
 		check:        checkVoiceURLs("turn", "turns"),
 		set:          func(c *Config, v string) { c.VoiceTURNURLs = splitList(v) },
 	},
@@ -1380,14 +1375,14 @@ var schema = []field{
 		key:          "voice_turn_coturn_secret",
 		doc:          "The `static-auth-secret` of the coturn server of `voice_turn = coturn`, which signs the short-lived credentials that the server gives the participants.",
 		secret:       true,
-		requiredWhen: "when `voice = p2p` and `voice_turn = coturn`",
+		requiredWhen: "when `voice = p2p` or `sfu` and `voice_turn = coturn`",
 		check:        checkNotBlank,
 		set:          func(c *Config, v string) { c.VoiceTURNSecret = v },
 	},
 	{
 		key:          "voice_turn_cloudflare_key_id",
 		doc:          "The ID of the TURN key of `voice_turn = cloudflare`, from Cloudflare's dashboard.",
-		requiredWhen: "when `voice = p2p` and `voice_turn = cloudflare`",
+		requiredWhen: "when `voice = p2p` or `sfu` and `voice_turn = cloudflare`",
 		check:        checkNotBlank,
 		set:          func(c *Config, v string) { c.VoiceTURNCloudflareKeyID = strings.TrimSpace(v) },
 	},
@@ -1395,7 +1390,7 @@ var schema = []field{
 		key:          "voice_turn_cloudflare_api_token",
 		doc:          "The API token of the TURN key of `voice_turn = cloudflare`, with which the server asks Cloudflare for the credentials of each participant.",
 		secret:       true,
-		requiredWhen: "when `voice = p2p` and `voice_turn = cloudflare`",
+		requiredWhen: "when `voice = p2p` or `sfu` and `voice_turn = cloudflare`",
 		check:        checkNotBlank,
 		set:          func(c *Config, v string) { c.VoiceTURNCloudflareAPIToken = v },
 	},
@@ -1408,13 +1403,48 @@ var schema = []field{
 	},
 	{
 		key: "voice_ice_transport_policy",
-		doc: "Which connections the browsers of `voice = p2p` make. `voice = livekit` and `voice = sora` do not use it and warn at start when it is `relay`.",
+		doc: "Which connections the browsers of `voice = p2p` make. `voice = sfu` refuses `relay`: the browsers connect only to the media node, so the participants never learn each other's IP addresses, and relaying would only add TURN traffic. `voice = livekit` and `voice = sora` do not use it and warn at start when it is `relay`.",
 		def: "all",
 		choices: []choice{
 			{value: "all", doc: "Direct connections where possible and the TURN server otherwise; the participants of a room may learn each other's IP addresses."},
 			{value: "relay", doc: "Only through the TURN server, which hides the participants' IP addresses from each other; needs `voice_turn`."},
 		},
 		set: func(c *Config, v string) { c.VoiceICETransportPolicy = v },
+	},
+	{
+		key:   "voice_sfu_udp_port",
+		doc:   "The UDP port on which a media node of `voice = sfu` receives the audio of every session (one port for all of them).",
+		def:   strconv.Itoa(defaultVoiceSFUUDPPort),
+		check: checkVoiceSFUPort,
+		set:   func(c *Config, v string) { c.VoiceSFUUDPPort, _ = strconv.Atoi(v) },
+	},
+	{
+		key:   "voice_sfu_tcp_port",
+		doc:   "The TCP port on which a media node of `voice = sfu` receives the audio of the browsers that cannot use UDP (ICE over TCP).",
+		def:   strconv.Itoa(defaultVoiceSFUTCPPort),
+		check: checkVoiceSFUPort,
+		set:   func(c *Config, v string) { c.VoiceSFUTCPPort, _ = strconv.Atoi(v) },
+	},
+	{
+		key:    "voice_sfu_public_ip",
+		doc:    "The public IP address of a media node of `voice = sfu` behind NAT, which the node gives the browsers as its address.",
+		defDoc: "the node's own address",
+		check:  checkIPAddress,
+		set:    func(c *Config, v string) { c.VoiceSFUPublicIP = strings.TrimSpace(v) },
+	},
+	{
+		key:    "voice_sfu_public_url",
+		doc:    "The `wss:` URL of a media node of `voice = sfu` that the browsers connect to, such as `wss://sfu1.example.org/voice/sfu`; `ws:` is accepted for localhost only. Each node of several has its own.",
+		defDoc: "`wss://<host>/voice/sfu` (`ws:` when `web_origin` is plain HTTP on `host`)",
+		check:  checkVoiceWebSocketURL,
+		set:    func(c *Config, v string) { c.VoiceSFUPublicURL = v },
+	},
+	{
+		key:   "voice_sfu_node_capacity",
+		doc:   "How many participants a media node of `voice = sfu` holds. A room on the node reserves its maximum, and a room goes only to a node with room for its maximum.",
+		def:   strconv.Itoa(defaultVoiceSFUNodeCapacity),
+		check: checkPositiveInt,
+		set:   func(c *Config, v string) { c.VoiceSFUNodeCapacity, _ = strconv.Atoi(v) },
 	},
 	{
 		key:          "voice_livekit_url",
@@ -1664,7 +1694,7 @@ func pprofChecks(vals map[string]string) []Issue {
 	case l == "":
 	case l == effectiveListen(vals):
 		return []Issue{{Key: "pprof_listen", Message: "must differ from listen: the profiles are never served on the public listener"}}
-	case l == vals["tls_http_listen"] && vals["tls"] != "" && vals["tls"] != TLSOff && vals["role"] != string(RoleWorker):
+	case l == vals["tls_http_listen"] && vals["tls"] != "" && vals["tls"] != TLSOff && Role(vals["role"]).ServesAPI():
 		return []Issue{{Key: "pprof_listen", Message: "must differ from tls_http_listen"}}
 	case l == vals["metrics_listen"] && vals["metrics_exporter"] == "prometheus":
 		return []Issue{{Key: "pprof_listen", Message: "must differ from metrics_listen"}}

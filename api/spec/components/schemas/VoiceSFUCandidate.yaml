@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+title: candidate
+description: An ICE candidate of the connection, which the client and the node both send.
+type: object
+required: [v, type, candidate]
+properties:
+  v:
+    $ref: ./VoiceSFUVersion.yaml
+  type:
+    type: string
+    enum: [candidate]
+  candidate:
+    description: |
+      The JSON of an `RTCIceCandidateInit` with only `candidate`, `sdpMid`, `sdpMLineIndex`,
+      and `usernameFragment`; `candidate` is empty (no more candidates) or a `candidate:`
+      attribute on one line.
+    type: string
+    maxLength: 16384

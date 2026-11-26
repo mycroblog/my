@@ -25,7 +25,10 @@ type retiredKey struct {
 // the minor release that changes the key and the next one, the releases an upgrade passes
 // through (ADR-0023 §7). scripts/release-notes.sh reads the literal for the release notes: keep
 // its strings literal, or that script fails.
-var retiredKeys []retiredKey
+var retiredKeys = []retiredKey{
+	{key: "voice_p2p_max_participants", renamedTo: "voice_max_participants"},
+	{key: "voice_sfu_max_participants", removed: "set voice_max_participants (2 to 500), the most people a room of any voice method may hold"},
+}
 
 func (r *retiredKey) env() string { return EnvPrefix + strings.ToUpper(r.key) }
 

@@ -290,6 +290,22 @@ type Settings struct {
 	Speakers   Speakers
 	// Icon is the emoji shown before the name, the zero Icon for none.
 	Icon Icon
+	// MaxParticipants is the host's maximum of the people in the room, from
+	// MinMaxParticipants to the operator's maximum; 0 for none, which leaves the operator's.
+	MaxParticipants int
+}
+
+// MinMaxParticipants is the smallest maximum of the people in a room (ADR-0100 §3).
+const MinMaxParticipants = 2
+
+// Capacity returns how many people the room of s holds when the operator allows at most
+// operatorMax (0 for no limit): the smaller of the host's maximum and the operator's, and the
+// operator's when the host set none (ADR-0100 §3, §5). 0 is no limit.
+func (s Settings) Capacity(operatorMax int) int {
+	if s.MaxParticipants > 0 && (operatorMax <= 0 || s.MaxParticipants < operatorMax) {
+		return s.MaxParticipants
+	}
+	return operatorMax
 }
 
 // MaxIconLength bounds the bytes of the Unicode emoji of an icon, as icon_emoji_key does.
@@ -339,6 +355,8 @@ const (
 	FieldVisibility  SettingsField = "visibility"
 	FieldSpeakers    SettingsField = "speakers"
 	FieldIcon        SettingsField = "icon"
+	// FieldMaxParticipants is the room's maximum, the name of the property of the client API.
+	FieldMaxParticipants SettingsField = "max_participants"
 )
 
 // SettingsError reports the invalid setting.
@@ -355,8 +373,9 @@ type GraphemeCounter func(s string) int
 // characters; a description of at most MaxDescriptionLength characters without control
 // characters other than line breaks; at most MaxHashtags hashtags, each with a name and a
 // normalized name of 1 to MaxHashtagLength characters without # or white space, unique by the
-// normalized name; a known visibility and speakers setting; and at most one emoji of an icon.
-// It returns a *SettingsError.
+// normalized name; a known visibility and speakers setting; at most one emoji of an icon; and
+// no maximum of the people, or one of at least MinMaxParticipants (the application layer bounds it
+// by the operator's). It returns a *SettingsError.
 func (s Settings) Validate(graphemes GraphemeCounter) error {
 	invalid := func(f SettingsField) error { return &SettingsError{Field: f} }
 	switch {
@@ -373,6 +392,8 @@ func (s Settings) Validate(graphemes GraphemeCounter) error {
 		return invalid(FieldSpeakers)
 	case !s.Icon.valid():
 		return invalid(FieldIcon)
+	case s.MaxParticipants != 0 && s.MaxParticipants < MinMaxParticipants:
+		return invalid(FieldMaxParticipants)
 	}
 	return nil
 }

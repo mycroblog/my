@@ -49,6 +49,8 @@ type VoiceRooms interface {
 	HandOver(ctx context.Context, byAccountID, roomID, accountID string) (appvoice.RoomView, error)
 	BlockedAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
 	CanSpeak(ctx context.Context, accountID string, v appvoice.RoomView) (bool, error)
+	// MaxParticipants is the operator's maximum of the people of a room, 0 for no limit.
+	MaxParticipants() int
 	VoiceParticipants
 	VoiceSurfaces
 	VoiceConnections
@@ -192,13 +194,18 @@ func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomV
 	if err != nil {
 		return nil, err
 	}
+	// The operator's maximum bounds the host's (ADR-0100 §3); none while the voice chat is off.
+	operatorMax := 0
+	if s.o.Voice != nil {
+		operatorMax = s.o.Voice.MaxParticipants()
+	}
 	out := make([]VoiceRoom, 0, len(views))
 	for i, v := range views {
 		st := v.Revision.Settings
 		r := VoiceRoom{
 			Id: v.ID, Name: st.Name, Description: st.Description, Hashtags: make([]string, 0, len(st.Hashtags)),
 			Visibility: VoiceRoomVisibility(st.Visibility), Speakers: VoiceRoomSpeakers(st.Speakers),
-			Host: byID[v.Head.HostAccountID], OpenedAt: v.OpenedAt.UTC(), ParticipantsCount: len(v.Participants),
+			MaxParticipants: st.Capacity(operatorMax), Host: byID[v.Head.HostAccountID], OpenedAt: v.OpenedAt.UTC(), ParticipantsCount: len(v.Participants),
 			Participants: make([]VoiceRoomParticipant, 0, len(v.Participants)), Icon: icons[st.Icon],
 			CanSpeak: canSpeak[i],
 		}
@@ -371,7 +378,7 @@ func (s *Server) OpenVoiceRoom(ctx context.Context, req OpenVoiceRoomRequestObje
 		return OpenVoiceRoomdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusForbidden, ProblemTypeInsufficientScope,
 			l.ServerErrorsInsufficientScope(), l.ServerErrorsInsufficientScopeDetail(identity.ScopeWriteStatuses))), nil
 	}
-	in := appvoice.SettingsInput{Name: b.Name, Description: deref(b.Description), Icon: deref(b.Icon)}
+	in := appvoice.SettingsInput{Name: b.Name, Description: deref(b.Description), Icon: deref(b.Icon), MaxParticipants: b.MaxParticipants}
 	if b.Hashtags != nil {
 		in.Hashtags = *b.Hashtags
 	}
@@ -434,7 +441,9 @@ func (s *Server) UpdateVoiceRoom(ctx context.Context, req UpdateVoiceRoomRequest
 		return respond[UpdateVoiceRoomdefaultApplicationProblemPlusJSONResponse](p, err)
 	}
 	b := req.Body
-	patch := appvoice.SettingsPatch{Name: b.Name, Description: b.Description, Hashtags: b.Hashtags, Icon: b.Icon}
+	patch := appvoice.SettingsPatch{
+		Name: b.Name, Description: b.Description, Hashtags: b.Hashtags, Icon: b.Icon, MaxParticipants: b.MaxParticipants,
+	}
 	if b.Visibility != nil {
 		vis := voice.Visibility(*b.Visibility)
 		patch.Visibility = &vis

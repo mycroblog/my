@@ -26,7 +26,8 @@ var (
 	ErrNotEligible = errors.New("voice: the account may not host a room")
 	// ErrNotHost reports an operation of the host by another participant.
 	ErrNotHost = errors.New("voice: only the host may do this")
-	// ErrRoomFull reports a room that holds as many people as the operator allows (ADR-0100 §5).
+	// ErrRoomFull reports a room that holds as many people as its maximum allows, the smaller of
+	// the host's and the operator's (ADR-0100 §3, §5).
 	ErrRoomFull = errors.New("voice: the room is full")
 	// ErrTooManyRooms reports that as many rooms are open as the operator allows.
 	ErrTooManyRooms = errors.New("voice: too many rooms are open")
@@ -106,7 +107,8 @@ type Emojis interface {
 type Config struct {
 	// Transport is the method of the voice setting, "" when it is off.
 	Transport voice.Transport
-	// Capacity bounds the people of a room, 0 for no limit.
+	// Capacity is the operator's maximum of the people of a room (voice_max_participants), which
+	// bounds the maximum that a host sets; 0 for no limit.
 	Capacity int
 	// MaxOpenRooms bounds the rooms open at once, 0 for no limit.
 	MaxOpenRooms int
@@ -217,6 +219,9 @@ type SettingsInput struct {
 	// Icon is the emoji of the icon (FR-923): a Unicode emoji, or the shortcode of a custom
 	// emoji of this instance with or without its colons; "" for none.
 	Icon string
+	// MaxParticipants is the host's maximum of the people in the room, from
+	// voice.MinMaxParticipants to Config.Capacity; nil for none, which leaves the operator's.
+	MaxParticipants *int
 	// Post is the start post of Open, nil for none (ADR-0100 §9).
 	Post *StartPost
 }
@@ -230,6 +235,9 @@ type SettingsPatch struct {
 	Speakers    *voice.Speakers
 	// Icon replaces the icon as SettingsInput.Icon gives it; "" removes it.
 	Icon *string
+	// MaxParticipants replaces the host's maximum as SettingsInput.MaxParticipants gives it. A
+	// maximum below the people in the room removes nobody (ADR-0100 §5).
+	MaxParticipants *int
 }
 
 // settings returns the settings of in, with the icon that in names, the defaults for the empty
@@ -240,6 +248,9 @@ func (s *Service) settings(ctx context.Context, in SettingsInput) (voice.Setting
 		return voice.Settings{}, err
 	}
 	if settings.Icon, err = s.icon(ctx, in.Icon); err != nil {
+		return voice.Settings{}, err
+	}
+	if err := s.checkMaxParticipants(in.MaxParticipants); err != nil {
 		return voice.Settings{}, err
 	}
 	return settings, nil
@@ -257,8 +268,30 @@ func (s *Service) patched(ctx context.Context, cur voice.Settings, p SettingsPat
 			return voice.Settings{}, err
 		}
 	}
+	// Only a new maximum is bounded by the operator's: a room keeps the one it has after the
+	// operator lowered theirs, and Capacity applies the operator's.
+	if err := s.checkMaxParticipants(p.MaxParticipants); err != nil {
+		return voice.Settings{}, err
+	}
 	return settings, nil
 }
+
+// checkMaxParticipants refuses a host's maximum above the operator's with a *voice.SettingsError
+// of FieldMaxParticipants; Settings.Validate refuses one below voice.MinMaxParticipants.
+func (s *Service) checkMaxParticipants(n *int) error {
+	if n != nil && s.d.Config.Capacity > 0 && *n > s.d.Config.Capacity {
+		return &voice.SettingsError{Field: voice.FieldMaxParticipants}
+	}
+	return nil
+}
+
+// MaxParticipants returns the operator's maximum of the people of a room, the bound of a host's
+// maximum (ADR-0100 §3); 0 for no limit.
+func (s *Service) MaxParticipants() int { return s.d.Config.Capacity }
+
+// Capacity returns how many people the room of v holds now: the smaller of the host's maximum
+// and the operator's (ADR-0100 §3, §5); 0 for no limit. A join at it fails with ErrRoomFull.
+func (s *Service) Capacity(v RoomView) int { return v.Revision.Settings.Capacity(s.d.Config.Capacity) }
 
 // icon returns the icon that name gives (SettingsInput.Icon), the zero Icon for ""; an emoji
 // that a local account may not use fails with a *voice.SettingsError of FieldIcon.
@@ -332,6 +365,12 @@ func (in SettingsInput) settings() (voice.Settings, error) {
 	s := voice.Settings{
 		Name: in.Name, Description: normalizeLines(in.Description), Visibility: in.Visibility, Speakers: in.Speakers,
 	}
+	if in.MaxParticipants != nil {
+		if s.MaxParticipants = *in.MaxParticipants; s.MaxParticipants == 0 {
+			// 0 is no maximum in voice.Settings, not a maximum a host may give.
+			return voice.Settings{}, &voice.SettingsError{Field: voice.FieldMaxParticipants}
+		}
+	}
 	if s.Visibility == "" {
 		s.Visibility = voice.DefaultVisibility
 	}
@@ -352,6 +391,9 @@ func (in SettingsInput) settings() (voice.Settings, error) {
 // apply returns cur changed by p without the icon, validated.
 func (p SettingsPatch) apply(cur voice.Settings) (voice.Settings, error) {
 	in := SettingsInput{Name: cur.Name, Description: cur.Description, Visibility: cur.Visibility, Speakers: cur.Speakers}
+	if cur.MaxParticipants != 0 {
+		in.MaxParticipants = &cur.MaxParticipants
+	}
 	for _, t := range cur.Hashtags {
 		in.Hashtags = append(in.Hashtags, t.Name)
 	}
@@ -369,6 +411,9 @@ func (p SettingsPatch) apply(cur voice.Settings) (voice.Settings, error) {
 	}
 	if p.Speakers != nil {
 		in.Speakers = *p.Speakers
+	}
+	if p.MaxParticipants != nil {
+		in.MaxParticipants = p.MaxParticipants
 	}
 	if in.Visibility == "" || in.Speakers == "" {
 		f := voice.FieldVisibility

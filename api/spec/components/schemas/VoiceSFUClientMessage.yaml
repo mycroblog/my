@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A message that the client sends to the media node over the WebSocket of a `sfu` grant
+  (`VoiceGrant`), one JSON text frame each. `type` tells which. No operation takes it.
+oneOf:
+  - $ref: ./VoiceSFUAnswer.yaml
+  - $ref: ./VoiceSFUCandidate.yaml
+  - $ref: ./VoiceSFURestart.yaml
+discriminator:
+  propertyName: type
+  mapping:
+    answer: ./VoiceSFUAnswer.yaml
+    candidate: ./VoiceSFUCandidate.yaml
+    restart: ./VoiceSFURestart.yaml
