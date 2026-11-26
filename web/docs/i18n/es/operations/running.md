@@ -687,7 +687,6 @@ Mantén estos juntos, en workers con el mismo ajuste. Los trabajos de una misma 
 | Tipos | Qué mantienen en orden |
 | --- | --- |
 | `federation.fanout`, `federation.deliver` | Las entregas de un favorito y de su deshacer |
-| `voice.apply_media_event`, `voice.apply` | Los eventos de una sala de voz |
 | `supporters.sync`, `supporters.command` | Los cambios de una suscripción |
 
 Cuando actualices:

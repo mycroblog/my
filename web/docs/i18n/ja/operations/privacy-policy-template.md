@@ -100,7 +100,6 @@
 | `{{IF payjp}}` | `payments = payjp` | メールアドレスとプラン。ブラウザーはサーバーの支払いのページで payjp.js を読み込み、カードは PAY.JP の iframe に入力され、名前とメールアドレスは 3-D セキュアのために PAY.JP に送られます（[PAY.JP](payments-payjp.md#card-data-and-pci-dss)）。 |
 | `{{IF error reports}}` | `errors_exporter` | アカウント、IP アドレス、本文、ヘッダーを取り除いた報告。取り除く処理はパターンで照合するため、利用者の文章の断片が残ることがあります（[エラーの報告](error-reporting.md#what-scrubbing-does-and-does-not-guarantee)）。 |
 | `{{IF telemetry}}` | `metrics_exporter`、`traces_exporter` | アカウントやクライアントの IP アドレスを含まないメトリクスとスパン。外向きのリクエストのスパンには、リモートのサーバーのホスト名が入ります（[運用](running.md)）。 |
-| `{{IF voice media server}}` | `voice` が `livekit` または `sora` | 参加者の IP アドレス、話している間の音声、セッション ID、ルームの ID。アカウントの ID は送られません（[通話](voice.md)）。 |
 | `{{IF turn}}` | `voice_stun_urls`、`voice_turn` | STUN と TURN のサーバーは参加者の IP アドレスを知り、TURN サーバーは暗号化された音声を中継します。 |
 | `{{IF webhooks}}` | [サーバーの Webhook](webhooks.md) | 受信側はイベントの本文を受け取ります。申請者のメールアドレスや通報のコメントを含むものもあります。 |
 | `{{IF follow review}}` | `plugin_inbound_follow_address` が設定され、`hook_inbound_follow_mode` が `off` 以外 | ほかのサーバーからのフォローそれぞれについて、2 つのアカウントのアドレス。フォローが届いたときにサーバーが送ります（[判定フック](decision-hooks.md)）。記録される判定には、アクティビティのアドレスと、どのアカウントが送ったかが残ります。 |
@@ -263,7 +262,6 @@ We use these services to run the instance. {{SAY WHETHER EACH ACTS ON YOUR BEHAL
 | {{IF payjp}} PAY.JP | Taking payments for supporter plans | Your email address, cardholder name, and plan. You enter card details in PAY.JP's frame, whose script runs on our payment pages | {{COUNTRY}} | {{LINK}} |
 | {{IF error reports}} {{ERROR TRACKER}} | Fixing faults | Error reports with personal details removed by pattern | {{COUNTRY}} | {{LINK}} |
 | {{IF telemetry}} {{METRICS OR TRACING SERVICE}} | Watching the health of the service | Measurements, and the names of other servers we contact | {{COUNTRY}} | {{LINK}} |
-| {{IF voice media server}} {{VOICE SERVICE}} | Carrying voice chat | Your IP address and audio while you speak in a room, and a session ID. Not your account | {{COUNTRY}} | {{LINK}} |
 | {{IF turn}} {{STUN OR TURN SERVICE}} | Connecting voice chat | Your IP address, and encrypted audio when relayed | {{COUNTRY}} | {{LINK}} |
 
 {{IF peer-to-peer voice}} In voice chat rooms, your browser connects directly to other participants, so they can see your IP address.

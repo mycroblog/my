@@ -109,7 +109,9 @@ func (r Role) Valid() bool { return r == RoleSpeaker || r == RoleListener }
 // the voice setting at the time, never off.
 type Transport string
 
-// The transports of a room.
+// The transports of a room. TransportLiveKit and TransportSora are methods that the voice setting
+// no longer takes: the rooms opened with them stay in the history, and voice.sweep ends one that
+// is still open.
 const (
 	TransportP2P     Transport = "p2p"
 	TransportSFU     Transport = "sfu"

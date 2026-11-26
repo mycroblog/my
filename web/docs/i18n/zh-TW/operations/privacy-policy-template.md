@@ -100,7 +100,6 @@
 | `{{IF payjp}}` | `payments = payjp` | 電子郵件地址和方案。瀏覽器會在伺服器的付款頁面上載入 payjp.js，卡片資料會輸入到 PAY.JP 的 iframe 中，姓名和電子郵件地址則會為了 3-D Secure 送到 PAY.JP（[PAY.JP](payments-payjp.md#card-data-and-pci-dss)）。 |
 | `{{IF error reports}}` | `errors_exporter` | 已清理、不含帳號、IP 位址、內文或標頭的報告。清理是依模式比對的，因此可能會殘留部分使用者文字（[錯誤回報](error-reporting.md#what-scrubbing-does-and-does-not-guarantee)）。 |
 | `{{IF telemetry}}` | `metrics_exporter`、`traces_exporter` | 不含帳號或用戶端 IP 位址的指標和 span。對外請求的 span 會包含遠端伺服器的主機名稱（[執行](running.md)）。 |
-| `{{IF voice media server}}` | `voice` 為 `livekit` 或 `sora` | 參與者的 IP 位址、他們發言時的音訊、工作階段 ID 和聊天室 ID。不會送出帳號的 ID（[語音聊天](voice.md)）。 |
 | `{{IF turn}}` | `voice_stun_urls`、`voice_turn` | STUN 和 TURN 伺服器會看到參與者的 IP 位址，TURN 伺服器還會轉送他們加密過的音訊。 |
 | `{{IF webhooks}}` | [伺服器 webhook](webhooks.md) | 你的接收端會收到事件內容。部分事件包含申請者的電子郵件地址或檢舉的留言。 |
 | `{{IF follow review}}` | 已設定 `plugin_inbound_follow_address` 且 `hook_inbound_follow_mode` 不是 `off` | 來自其他伺服器的每個追蹤所涉及的兩個帳號的位址，在追蹤送達時由伺服器送出（[決策掛鉤](decision-hooks.md)）。記錄的決定會保存該活動的位址以及是哪個帳號送出的。 |
@@ -263,7 +262,6 @@ We use these services to run the instance. {{SAY WHETHER EACH ACTS ON YOUR BEHAL
 | {{IF payjp}} PAY.JP | Taking payments for supporter plans | Your email address, cardholder name, and plan. You enter card details in PAY.JP's frame, whose script runs on our payment pages | {{COUNTRY}} | {{LINK}} |
 | {{IF error reports}} {{ERROR TRACKER}} | Fixing faults | Error reports with personal details removed by pattern | {{COUNTRY}} | {{LINK}} |
 | {{IF telemetry}} {{METRICS OR TRACING SERVICE}} | Watching the health of the service | Measurements, and the names of other servers we contact | {{COUNTRY}} | {{LINK}} |
-| {{IF voice media server}} {{VOICE SERVICE}} | Carrying voice chat | Your IP address and audio while you speak in a room, and a session ID. Not your account | {{COUNTRY}} | {{LINK}} |
 | {{IF turn}} {{STUN OR TURN SERVICE}} | Connecting voice chat | Your IP address, and encrypted audio when relayed | {{COUNTRY}} | {{LINK}} |
 
 {{IF peer-to-peer voice}} In voice chat rooms, your browser connects directly to other participants, so they can see your IP address.

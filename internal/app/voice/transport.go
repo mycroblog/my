@@ -4,7 +4,6 @@ package voice
 
 import (
 	"context"
-	"net/http"
 	"time"
 )
 
@@ -22,9 +21,8 @@ type Transport interface {
 	// Grant returns what the client of a participant session needs to connect.
 	// canSpeak is whether the session may publish audio now.
 	Grant(ctx context.Context, room RoomRef, session Session, canSpeak bool) (Grant, error)
-	// SetSpeaking allows or stops the audio of a session. Reconnect reports that the
-	// client must connect again with a new grant for the change to take effect.
-	SetSpeaking(ctx context.Context, room RoomRef, session Session, canSpeak bool) (reconnect bool, err error)
+	// SetSpeaking allows or stops the audio of a session.
+	SetSpeaking(ctx context.Context, room RoomRef, session Session, canSpeak bool) error
 	// Mute stops the audio of a session; Unmute lifts it when the participant turns the
 	// microphone on again.
 	Mute(ctx context.Context, room RoomRef, session Session) error
@@ -39,9 +37,7 @@ type Transport interface {
 
 // Capabilities tell the room domain how to drive a transport.
 type Capabilities struct {
-	ServerEnforced  bool // false for p2p: speaking is enforced by the relay and the peers (ADR-0101 §4)
-	ConnectCallback bool // the media server asks before every connect (ConnectAuthorizer)
-	Events          bool // the media server sends events (EventSource)
+	ServerEnforced bool // false for p2p: speaking is enforced by the relay and the peers (ADR-0101 §4)
 }
 
 // RoomRef names a room on a transport: the room's ID, which the adapter maps to the name of
@@ -65,20 +61,16 @@ type Session struct {
 type SessionRef struct {
 	ID        string
 	AccountID string
-	// Connection is the media server's ID of the session's current connection (LiveKit's
-	// participant SID), empty when it has none; a full reconnect gives a new one.
-	Connection string
 }
 
 // Grant is what the client of a session needs to connect (ADR-0101 §2).
 type Grant struct {
-	Kind      string            // "p2p", "sfu", "livekit", "sora"
-	URL       string            // the SFU endpoint (the media node's wss: URL for sfu); empty for p2p
-	Token     string            // the SFU access token (the node's single-use ticket for sfu); empty for p2p
-	Options   map[string]string // method-specific options for the client (ADR-0101)
-	ICE       []ICEServer       // STUN / TURN servers with short-lived credentials
-	RelayOnly bool              // iceTransportPolicy = "relay"
-	ExpiresAt time.Time         // the client asks for a new grant before this
+	Kind      string      // "p2p" or "sfu"
+	URL       string      // the media node's wss: URL for sfu; empty for p2p
+	Token     string      // the node's single-use ticket for sfu; empty for p2p
+	ICE       []ICEServer // STUN / TURN servers with short-lived credentials
+	RelayOnly bool        // iceTransportPolicy = "relay"
+	ExpiresAt time.Time   // the client asks for a new grant before this
 }
 
 // ICEServer is a STUN or TURN server of a grant, the RTCIceServer of the browser.
@@ -95,66 +87,4 @@ type ICEServer struct {
 // fails; a lower maximum is left for the transport to notice on its own.
 type MaximumReserver interface {
 	ReserveMaximum(ctx context.Context, room RoomRef) error
-}
-
-// ConnectAuthorizer is implemented by a transport whose media server asks before every
-// connect; decide applies the room domain (bans, roles, one room per account). The status and
-// the response are the answer to the media server; err reports a request that did not
-// authenticate, whose status refuses it.
-type ConnectAuthorizer interface {
-	AuthorizeConnect(ctx context.Context, header http.Header, body []byte, decide func(ConnectAttempt) ConnectDecision) (status int, response []byte, err error)
-}
-
-// ConnectAttempt is a connection that a media server asks about.
-type ConnectAttempt struct {
-	Room    RoomRef
-	Session string
-	// Speaker reports a connection that publishes audio.
-	Speaker bool
-	// Token is the join value that the client presented, which the adapter verified.
-	Token string
-}
-
-// ConnectDecision is the answer of the room domain to a ConnectAttempt.
-type ConnectDecision struct {
-	Allowed bool
-	// Reason is why a connection is refused, for the media server's log.
-	Reason string
-}
-
-// SessionDeduplicator is implemented by a transport whose media server may hold several
-// connections of one session (Sora with default_duplicate_client_id = allow, ADR-0101 §12):
-// Deduplicate keeps the newest connection of the session and disconnects the others.
-// JobApplyMediaEvent calls it when a live session joins the media path.
-type SessionDeduplicator interface {
-	Deduplicate(ctx context.Context, room RoomRef, session Session) error
-}
-
-// EventSource is implemented by a transport whose media server sends events.
-type EventSource interface {
-	// ParseEvents verifies and decodes one delivery of events.
-	ParseEvents(ctx context.Context, header http.Header, body []byte) ([]Event, error)
-}
-
-// EventKind is what a media server reports.
-type EventKind string
-
-// The kinds of the events of a media server.
-const (
-	MediaSessionJoined EventKind = "joined"
-	MediaSessionLeft   EventKind = "left"
-	MediaRoomFinished  EventKind = "room_finished"
-)
-
-// Event is one event of a media server; ID deduplicates it.
-type Event struct {
-	ID      string
-	Kind    EventKind
-	Room    RoomRef
-	Session string
-	// Connection is the media server's ID of the connection the event is about (LiveKit's
-	// participant SID), empty when it has none: a left event of an old connection does not
-	// disconnect a session that connected again.
-	Connection string
-	OccurredAt time.Time
 }

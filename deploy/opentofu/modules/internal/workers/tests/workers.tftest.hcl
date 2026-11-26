@@ -79,8 +79,8 @@ run "types_that_must_stay_together_may_not_split_across_workers" {
 
   variables {
     workers = {
-      a = { job_types = ["voice.apply"] }
-      b = { job_types = ["voice.apply_media_event"] }
+      a = { job_types = ["supporters.sync"] }
+      b = { job_types = ["supporters.command"] }
     }
   }
 

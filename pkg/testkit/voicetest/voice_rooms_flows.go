@@ -4,9 +4,7 @@ package voicetest
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"net/http"
 	"slices"
 	"strconv"
 	"sync"
@@ -30,8 +28,7 @@ import (
 // operations of the participants, the host, and the co-hosts with their permissions, the co-hosts,
 // the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11), a transport that gives no
 // grant leaving nothing behind, admissions and sessions that a change committed meanwhile does not
-// undo, and, on a media server, the reconciliation of voice.sweep and the events of
-// voice.apply_media_event (ADR-0101 §13), the following of the visibility and the speakers, and
+// undo, and, on a media server, the reconciliation of voice.sweep (ADR-0101 §13), the following of the visibility and the speakers, and
 // the rooms opened by a schedule with their wait, co-host candidates, and invitations (ADR-0100
 // §3, §4, §16). These are the flows of ADR-0153 §1, which
 // internal/flowtest/voice runs once on SQLite; VoiceRoomsContract checks the repository's methods
@@ -52,8 +49,7 @@ func VoiceRoomsFlows(t *testing.T, newHarness VoiceFactory) {
 		{"SweepsOnce", roomsSweep, ""},
 		{"ListsVisibleRooms", roomsList, ""},
 		{"ReactsToSuspensions", roomsSuspension, ""},
-		{"ReconcilesTheMediaPath", roomsMedia, voice.TransportLiveKit},
-		{"AuthorizesConnections", roomsConnect, voice.TransportSora},
+		{"ReconcilesTheMediaPath", roomsMedia, voice.TransportSFU},
 		{"SpeaksAndRaisesHands", roomsSpeaking, ""},
 		{"MutesAndRemoves", roomsRemove, ""},
 		{"AssignsCohosts", roomsCohosts, ""},
@@ -67,7 +63,6 @@ func VoiceRoomsFlows(t *testing.T, newHarness VoiceFactory) {
 		{"KeepsTheNewerSession", roomsNewerSession, ""},
 		{"RunsItsJobsAgain", roomsJobsAgain, ""},
 		{"LeavesAClaimToItsEvaluation", roomsClaimedElsewhere, ""},
-		{"KeepsTheNewerSessionOnTheMediaPath", roomsNewerMediaSession, voice.TransportLiveKit},
 		{"StreamsTheRoom", roomsStream, ""},
 		{"RelaysSignals", roomsSignals, ""},
 		{"SendsMicReactionsAndGrants", roomsMicReactions, ""},
@@ -83,7 +78,7 @@ func VoiceRoomsFlows(t *testing.T, newHarness VoiceFactory) {
 		{"OpensByASchedule", roomsScheduled, ""},
 		{"WaitsForTheFirstParticipantAndTheHost", roomsWaits, ""},
 		{"AssignsCandidatesAndEndsByTheSchedule", roomsScheduledCohosts, ""},
-		{"OpensAScheduledRoomOnTheMediaPathAtTheFirstJoin", roomsScheduledMedia, voice.TransportLiveKit},
+		{"OpensAScheduledRoomOnTheMediaPathAtTheFirstJoin", roomsScheduledMedia, voice.TransportSFU},
 		{"BoundsTheRoomByItsMaximum", roomsMaximum, ""},
 		{"BoundsAScheduledRoomByItsMaximum", roomsScheduledMaximum, ""},
 	}
@@ -230,17 +225,13 @@ func (m *roomsMembers) set(fn func()) {
 	fn()
 }
 
-// roomsTransport records the calls of JobApply; reconnect makes SetSpeaking ask the client to
-// connect again.
+// roomsTransport records the calls of JobApply.
 type roomsTransport struct {
-	mu        sync.Mutex
-	calls     []string
-	reconnect bool
+	mu    sync.Mutex
+	calls []string
 	// enforced makes it a media server that holds the sessions of media, by room.
 	enforced bool
 	media    map[string][]string
-	// conns is the connection of each session on the media path, by session ID.
-	conns map[string]string
 	// grantErr fails the grants when set, as a TURN source that cannot be reached does.
 	grantErr error
 	// onSessions runs once, at the next call of Sessions, outside the lock.
@@ -268,32 +259,20 @@ func (r *roomsTransport) count(c string) int {
 func (r *roomsTransport) Capabilities() appvoice.Capabilities {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return appvoice.Capabilities{ServerEnforced: r.enforced, Events: r.enforced}
+	return appvoice.Capabilities{ServerEnforced: r.enforced}
 }
 
-// sfu makes the transport a media server that holds the sessions it was told of with connect
-// and sends the events of deliver.
+// sfu makes the transport a media server that holds the sessions it was told of with connect.
 func (r *roomsTransport) sfu() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.enforced, r.media, r.conns = true, map[string][]string{}, map[string]string{}
+	r.enforced, r.media = true, map[string][]string{}
 }
 
 func (r *roomsTransport) connect(room string, sessions ...string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.media[room] = append(r.media[room], sessions...)
-}
-
-// connectAs puts a session on the media path of a room with the connection conn, replacing a
-// connection of the same session as a full reconnect does.
-func (r *roomsTransport) connectAs(room, session, conn string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if !slices.Contains(r.media[room], session) {
-		r.media[room] = append(r.media[room], session)
-	}
-	r.conns[session] = conn
 }
 
 // vanish drops the media room as a media server that closed it does.
@@ -310,29 +289,6 @@ func (r *roomsTransport) disconnect(room, session string) {
 	r.media[room] = slices.DeleteFunc(r.media[room], func(id string) bool { return id == session })
 }
 
-// AuthorizeConnect implements appvoice.ConnectAuthorizer: the body is the JSON of the attempt,
-// the answer the JSON of the decision, and a header X-Bad refuses the request with 401.
-func (*roomsTransport) AuthorizeConnect(_ context.Context, h http.Header, body []byte, decide func(appvoice.ConnectAttempt) appvoice.ConnectDecision) (int, []byte, error) {
-	if h.Get("X-Bad") != "" {
-		return http.StatusUnauthorized, nil, errors.New("bad credentials")
-	}
-	var a appvoice.ConnectAttempt
-	if err := json.Unmarshal(body, &a); err != nil {
-		return http.StatusOK, nil, nil
-	}
-	b, err := json.Marshal(decide(a))
-	return http.StatusOK, b, err
-}
-
-// ParseEvents implements appvoice.EventSource: the body is the JSON of the events, and a
-// header X-Bad refuses the delivery.
-func (*roomsTransport) ParseEvents(_ context.Context, h http.Header, body []byte) ([]appvoice.Event, error) {
-	if h.Get("X-Bad") != "" {
-		return nil, errors.New("bad signature")
-	}
-	var evs []appvoice.Event
-	return evs, json.Unmarshal(body, &evs)
-}
 func (r *roomsTransport) Open(_ context.Context, room appvoice.RoomRef) error {
 	r.add("open:" + room.ID)
 	return nil
@@ -345,11 +301,9 @@ func (r *roomsTransport) Grant(_ context.Context, _ appvoice.RoomRef, s appvoice
 	}
 	return appvoice.Grant{Kind: "test", Token: s.ID, ExpiresAt: time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
 }
-func (r *roomsTransport) SetSpeaking(_ context.Context, _ appvoice.RoomRef, s appvoice.Session, canSpeak bool) (bool, error) {
+func (r *roomsTransport) SetSpeaking(_ context.Context, _ appvoice.RoomRef, s appvoice.Session, canSpeak bool) error {
 	r.add("speak:" + s.ID + ":" + strconv.FormatBool(canSpeak))
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return r.reconnect, nil
+	return nil
 }
 func (r *roomsTransport) Mute(_ context.Context, _ appvoice.RoomRef, s appvoice.Session) error {
 	r.add("mute:" + s.ID)
@@ -384,7 +338,7 @@ func (r *roomsTransport) Sessions(_ context.Context, room appvoice.RoomRef) ([]a
 	defer r.mu.Unlock()
 	var out []appvoice.SessionRef
 	for _, id := range r.media[room.ID] {
-		out = append(out, appvoice.SessionRef{ID: id, Connection: r.conns[id]})
+		out = append(out, appvoice.SessionRef{ID: id})
 	}
 	return out, nil
 }
@@ -808,6 +762,24 @@ func roomsSweep(t *testing.T, e *roomsEnv) {
 	}
 	e.wantEnded(t, r2, voice.EndDisabled)
 
+	// A room still open on a method that the voice setting no longer takes, opened before the
+	// upgrade, ends on the next sweep of the method that runs now, and stays in the history.
+	for _, removed := range []voice.Transport{voice.TransportLiveKit, voice.TransportSora} {
+		for _, now := range []voice.Transport{voice.TransportP2P, voice.TransportSFU} {
+			j, err := e.newSvc(appvoice.Config{Transport: removed}).Open(ctx, e.account(true), appvoice.SettingsInput{Name: "Room"})
+			if err != nil {
+				t.Fatalf("Open on %s: %v", removed, err)
+			}
+			if err := e.newSvc(appvoice.Config{Transport: now}).Sweep(ctx); err != nil {
+				t.Fatal(err)
+			}
+			e.wantEnded(t, j.Room.ID, voice.EndDisabled)
+			if got := e.room(t, j.Room.ID).Transport; got != removed {
+				t.Errorf("the transport of an ended room of %s = %q, want it kept", removed, got)
+			}
+		}
+	}
+
 	// Rooms whose participants are all gone end once, however many sweeps race.
 	host := e.account(true)
 	r3 := e.open(t, host, appvoice.SettingsInput{}).Room.ID
@@ -1017,11 +989,8 @@ func roomsSuspension(t *testing.T, e *roomsEnv) {
 // roomsMedia checks a room on a media server (ADR-0101 §2, ADR-0101 §13): voice.sweep removes
 // the sessions on the media path that are not in the room and disconnects the participants the
 // media path has not seen for longer than the life of a grant, applies the room's state to a
-// session it sees for the first time, and opens a media room again that vanished;
-// voice.apply_media_event removes a session that joined without being in the room, applies the room's
-// state to one that is, disconnects one that left unless it connected again, and opens a media
-// room again that finished while the room is open; a session taken away cannot be revived by
-// heartbeats; and a delivery of another method or that does not verify is refused.
+// session it sees, opens a media room again that vanished, and takes away a session that left the
+// media path, which heartbeats cannot revive.
 func roomsMedia(t *testing.T, e *roomsEnv) {
 	ctx := t.Context()
 	e.transport.sfu()
@@ -1065,76 +1034,12 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 		t.Errorf("transport calls = %v, want the host's state applied on each sweep that sees it", e.transport.calls)
 	}
 
-	deliver := func(transport string, h http.Header, evs ...appvoice.Event) appvoice.MediaWebhookOutcome {
-		t.Helper()
-		body, err := json.Marshal(evs)
-		if err != nil {
-			t.Fatal(err)
-		}
-		res, err := e.svc.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: transport, Header: h, Body: body, ClientIP: "192.0.2.1"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		return res.Outcome
-	}
-	ref := appvoice.RoomRef{ID: r}
-	joined := appvoice.Event{ID: "EV_1", Kind: appvoice.MediaSessionJoined, Room: ref, Session: "intruder"}
-	for range 2 {
-		if got := deliver("livekit", nil, joined); got != appvoice.MediaWebhookAccepted {
-			t.Fatalf("delivery = %s, want accepted", got)
-		}
-	}
-	if got := deliver("livekit", nil, appvoice.Event{ID: "EV_2", Kind: appvoice.MediaSessionJoined, Room: ref, Session: hj.Session}); got != appvoice.MediaWebhookAccepted {
-		t.Fatalf("delivery = %s, want accepted", got)
-	}
-	if e.transport.count("remove:intruder") != 2 || e.transport.count("remove:"+hj.Session) != 0 {
-		t.Errorf("transport calls = %v, want the intruder removed and the host kept", e.transport.calls)
-	}
-	keys := map[string]int{}
-	for _, res := range e.jobs.Results() {
-		if res.Job.Type == appvoice.JobApplyMediaEvent {
-			keys[res.Job.IdempotencyKey]++
-		}
-	}
-	if keys["voice.apply_media_event:livekit:EV_1"] != 2 || keys["voice.apply_media_event:livekit:EV_2"] != 1 {
-		t.Errorf("media event jobs = %v, want one key per event", keys)
-	}
-
-	if got := deliver("sora", nil, joined); got != appvoice.MediaWebhookNotFound {
-		t.Errorf("delivery of another method = %s, want not_found", got)
-	}
-	if got := deliver("livekit", http.Header{"X-Bad": {"1"}}, joined); got != appvoice.MediaWebhookRejected {
-		t.Errorf("delivery that does not verify = %s, want rejected", got)
-	}
-	p2p := e.newSvc(appvoice.Config{Transport: voice.TransportP2P})
-	if res, err := p2p.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: "livekit", Body: []byte("[]")}); err != nil || res.Outcome != appvoice.MediaWebhookNotFound {
-		t.Errorf("delivery to voice = p2p = %+v, %v; want not_found", res, err)
-	}
-
-	deliver("livekit", nil, appvoice.Event{ID: "EV_3", Kind: appvoice.MediaRoomFinished, Room: ref})
-	if e.transport.count("open:"+r) != 2 {
-		t.Errorf("transport calls = %v, want the media room opened again", e.transport.calls)
-	}
 	noGrace := func(what string) {
 		t.Helper()
 		if _, err := e.h.Voice.FindHostGrace(ctx, nil, r); !errors.Is(err, appvoice.ErrNotFound) {
 			t.Errorf("%s: host grace %v, want none", what, err)
 		}
 	}
-
-	// A session that joins gets the room's state, whatever its grant said: a listener may not
-	// speak.
-	l2 := e.join(t, e.account(false), r)
-	deliver("livekit", nil, appvoice.Event{ID: "EV_5", Kind: appvoice.MediaSessionJoined, Room: ref, Session: l2.Session, Connection: "PA_l2"})
-	if e.transport.count("speak:"+l2.Session+":false") != 1 || e.transport.count("speak:"+hj.Session+":true") != 3 {
-		t.Errorf("transport calls = %v, want the roles applied on join", e.transport.calls)
-	}
-
-	// A full reconnect: the new connection joins before the old one's left arrives.
-	e.transport.connectAs(r, hj.Session, "PA_new")
-	deliver("livekit", nil, appvoice.Event{ID: "EV_6", Kind: appvoice.MediaSessionLeft, Room: ref, Session: hj.Session, Connection: "PA_old"})
-	noGrace("left of an old connection")
-	e.beat(t, host, r, hj.Session)
 
 	// A media room that vanished is opened again, and its sessions get the time to connect.
 	e.transport.vanish(r)
@@ -1143,22 +1048,24 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 			t.Fatal(err)
 		}
 	}
-	if e.transport.count("open:"+r) != 3 {
+	if e.transport.count("open:"+r) != 2 {
 		t.Errorf("transport calls = %v, want the vanished media room opened again once", e.transport.calls)
 	}
 	noGrace("a vanished media room")
-	e.transport.connectAs(r, hj.Session, "PA_3")
+	e.transport.connect(r, hj.Session)
 	if err := e.svc.Sweep(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if e.transport.count("speak:"+hj.Session+":true") != 4 {
+	if e.transport.count("speak:"+hj.Session+":true") != 3 {
 		t.Errorf("transport calls = %v, want the host's state applied after it connected again", e.transport.calls)
 	}
 
 	// The host leaves the media path: the grace starts, and its session cannot be revived by
 	// heartbeats; the client joins again.
 	e.transport.disconnect(r, hj.Session)
-	deliver("livekit", nil, appvoice.Event{ID: "EV_7", Kind: appvoice.MediaSessionLeft, Room: ref, Session: hj.Session, Connection: "PA_3"})
+	if err := e.svc.Sweep(ctx); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := e.h.Voice.FindHostGrace(ctx, nil, r); err != nil {
 		t.Errorf("host grace after the host left the media path: %v, want one", err)
 	}
@@ -1262,133 +1169,6 @@ func roomsConcurrent(t *testing.T, e *roomsEnv) {
 	}
 	if _, ok := e.participants(t, room)[rec.Head.HostAccountID]; !ok {
 		t.Errorf("the host %s is not in the room", rec.Head.HostAccountID)
-	}
-}
-
-// roomsConnect checks the decisions of the connections that a media server asks about
-// (ADR-0101 §13): the current, live session of a participant of an open room connects, a
-// connection that publishes audio only as a speaker; a session that is not live (unknown or
-// replaced), of a banned participant, past the capacity in the order of joining, or of a room
-// that is not open is refused; a request that does not authenticate is rejected; and the
-// endpoint of another method is not found.
-func roomsConnect(t *testing.T, e *roomsEnv) {
-	ctx := t.Context()
-	e.transport.sfu()
-	host, listener, banned := e.account(true), e.account(false), e.account(false)
-	hj := e.open(t, host, appvoice.SettingsInput{})
-	r := hj.Room.ID
-	old := e.join(t, listener, r).Session
-	bj := e.join(t, banned, r)
-	// The listener joins again from another device: the first session is replaced.
-	lj := e.join(t, listener, r)
-	ban := appvoice.Ban{ID: e.ids.NewID(), RoomID: r, AccountID: banned, BannedByAccountID: host, BannedAt: e.clock.Now()}
-	err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		if err := e.h.Voice.LockRoom(ctx, tx, r); err != nil {
-			return err
-		}
-		_, err := e.h.Voice.InsertBan(ctx, tx, ban)
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	authorize := func(svc *appvoice.Service, transport string, h http.Header, a appvoice.ConnectAttempt) appvoice.MediaConnectResult {
-		t.Helper()
-		body, err := json.Marshal(a)
-		if err != nil {
-			t.Fatal(err)
-		}
-		res, err := svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: transport, Header: h, Body: body, ClientIP: "192.0.2.1"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		return res
-	}
-	decision := func(svc *appvoice.Service, a appvoice.ConnectAttempt) appvoice.ConnectDecision {
-		t.Helper()
-		res := authorize(svc, "sora", nil, a)
-		if res.Outcome != appvoice.MediaWebhookAccepted || res.Status != http.StatusOK {
-			t.Fatalf("AuthorizeMediaConnect(%+v) = %+v, want an answer", a, res)
-		}
-		var d appvoice.ConnectDecision
-		if err := json.Unmarshal(res.Body, &d); err != nil {
-			t.Fatal(err)
-		}
-		return d
-	}
-	room := appvoice.RoomRef{ID: r}
-	limited := e.newSvc(appvoice.Config{Transport: voice.TransportSora, Capacity: 1})
-	for name, c := range map[string]struct {
-		svc     *appvoice.Service
-		attempt appvoice.ConnectAttempt
-		reason  string
-	}{
-		"host speaks":             {attempt: appvoice.ConnectAttempt{Room: room, Session: hj.Session, Speaker: true}},
-		"listener listens":        {attempt: appvoice.ConnectAttempt{Room: room, Session: lj.Session}},
-		"listener speaks":         {attempt: appvoice.ConnectAttempt{Room: room, Session: lj.Session, Speaker: true}, reason: "not a speaker"},
-		"replaced session":        {attempt: appvoice.ConnectAttempt{Room: room, Session: old}, reason: "session not live"},
-		"unknown session":         {attempt: appvoice.ConnectAttempt{Room: room, Session: "unknown"}, reason: "session not live"},
-		"session of another room": {attempt: appvoice.ConnectAttempt{Room: appvoice.RoomRef{ID: e.ids.NewID()}, Session: lj.Session}, reason: "room not open"},
-		"banned":                  {attempt: appvoice.ConnectAttempt{Room: room, Session: bj.Session}, reason: "banned from the room"},
-		"host within capacity":    {svc: limited, attempt: appvoice.ConnectAttempt{Room: room, Session: hj.Session, Speaker: true}},
-		"listener past capacity":  {svc: limited, attempt: appvoice.ConnectAttempt{Room: room, Session: lj.Session}, reason: "room full"},
-	} {
-		svc := c.svc
-		if svc == nil {
-			svc = e.svc
-		}
-		d := decision(svc, c.attempt)
-		if d.Allowed != (c.reason == "") || d.Reason != c.reason {
-			t.Errorf("%s: decision = %+v, want reason %q", name, d, c.reason)
-		}
-	}
-
-	if res := authorize(e.svc, "sora", http.Header{"X-Bad": {"1"}}, appvoice.ConnectAttempt{Room: room, Session: hj.Session}); res.Outcome != appvoice.MediaWebhookRejected || res.Status != http.StatusUnauthorized {
-		t.Errorf("request that does not authenticate = %+v, want rejected with 401", res)
-	}
-	if res := authorize(e.svc, "livekit", nil, appvoice.ConnectAttempt{Room: room, Session: hj.Session}); res.Outcome != appvoice.MediaWebhookNotFound {
-		t.Errorf("request of another method = %+v, want not_found", res)
-	}
-
-	// Only the requests that do not verify count against the limits, each endpoint its own:
-	// a busy media server is never refused.
-	ip := "192.0.2.9"
-	attempt, err := json.Marshal(appvoice.ConnectAttempt{Room: room, Session: lj.Session})
-	if err != nil {
-		t.Fatal(err)
-	}
-	for i := range appvoice.MediaConnectIPLimit.Max + 1 {
-		res, err := e.svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: "sora", Body: attempt, ClientIP: ip})
-		if err != nil || res.Outcome != appvoice.MediaWebhookAccepted {
-			t.Fatalf("authentic request %d = %+v, %v; want an answer", i, res, err)
-		}
-		ev, err := e.svc.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: "sora", Body: []byte("[]"), ClientIP: ip})
-		if err != nil || ev.Outcome != appvoice.MediaWebhookAccepted {
-			t.Fatalf("authentic delivery %d = %+v, %v; want accepted", i, ev, err)
-		}
-	}
-	bad := http.Header{"X-Bad": {"1"}}
-	var last appvoice.MediaConnectResult
-	for range appvoice.MediaConnectIPLimit.Max + 1 {
-		if last, err = e.svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: "sora", Header: bad, Body: attempt, ClientIP: ip}); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if last.Outcome != appvoice.MediaWebhookRateLimited || last.RetryAfter <= 0 {
-		t.Errorf("request past the limit of the ones that do not verify = %+v, want rate_limited", last)
-	}
-	if ev, err := e.svc.ReceiveMediaEvents(ctx, appvoice.MediaWebhook{Transport: "sora", Header: bad, Body: []byte("[]"), ClientIP: ip}); err != nil || ev.Outcome != appvoice.MediaWebhookRejected {
-		t.Errorf("delivery that does not verify, under its own limit = %+v, %v; want rejected", ev, err)
-	}
-	if res, err := e.svc.AuthorizeMediaConnect(ctx, appvoice.MediaWebhook{Transport: "sora", Body: attempt, ClientIP: ip}); err != nil || res.Outcome != appvoice.MediaWebhookAccepted {
-		t.Errorf("authentic request past the limit = %+v, %v; want an answer", res, err)
-	}
-	if err := e.svc.End(ctx, host, r); err != nil {
-		t.Fatal(err)
-	}
-	if d := decision(e.svc, appvoice.ConnectAttempt{Room: room, Session: hj.Session, Speaker: true}); d.Allowed || d.Reason != "room not open" {
-		t.Errorf("connection to an ended room = %+v, want refused", d)
 	}
 }
 

@@ -682,7 +682,6 @@ Keep these together, on workers with the same setting. Jobs of one ordering key 
 | Types | What they keep in order |
 | --- | --- |
 | `federation.fanout`, `federation.deliver` | The deliveries of a like and its undo |
-| `voice.apply_media_event`, `voice.apply` | The events of one voice room |
 | `supporters.sync`, `supporters.command` | The changes of one subscription |
 
 When you upgrade:

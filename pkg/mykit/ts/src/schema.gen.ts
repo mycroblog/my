@@ -5189,8 +5189,6 @@ export interface paths {
          *       `data` is a `VoiceStreamSignal`.
          *     - `muted`: the host or a co-host muted the session; turn the microphone off. `data` is a
          *       `VoiceStreamMuted`.
-         *     - `grant`: a new grant for the session. `data` is a `VoiceStreamGrant`; when `reconnect` is
-         *       true, connect to the audio again with it.
          *     - `removed`, `replaced`, `ended`: the session left the room, the user joined from another
          *       device, or the room ended. `data` is a `VoiceStreamEnd`, and the stream ends after it.
          *
@@ -19672,7 +19670,7 @@ export interface components {
          *       `replace`, `none`).
          *     - `press`: the time from a press to its response, named by the action ID (`post.reply`).
          *     - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
-         *       call transport (`p2p`, `sfu`, `livekit`, `sora`).
+         *       call transport (`p2p` or `sfu`).
          * @enum {string}
          */
         UXMetric: "lcp" | "inp" | "long_frame" | "transition" | "press" | "call_rtt" | "call_jitter" | "call_packet_loss";
@@ -19696,8 +19694,7 @@ export interface components {
         VoiceEndReason: "host" | "empty" | "host_disconnected" | "host_ineligible" | "moderator" | "time_limit" | "disabled" | "host_absent" | "unattended";
         /**
          * @description What the client of a session needs to connect to the audio of a room. `kind` is the method
-         *     of the server (`p2p`, `sfu`, `livekit`, or `sora`); the client asks for a new grant before
-         *     `expires_at`.
+         *     of the server (`p2p` or `sfu`); the client asks for a new grant before `expires_at`.
          *
          *     With `sfu`, `url` is the `wss:` URL of the server's media node that holds the room and `token`
          *     a ticket for it, which connects once and only within 30 seconds. The client opens a
@@ -19715,21 +19712,11 @@ export interface components {
          */
         VoiceGrant: {
             /** @enum {string} */
-            kind: "p2p" | "sfu" | "livekit" | "sora";
-            /**
-             * @description The endpoint of the media server, the `wss:` URL of the media node for `sfu`; omitted for
-             *     `p2p`.
-             */
+            kind: "p2p" | "sfu";
+            /** @description The `wss:` URL of the media node for `sfu`; omitted for `p2p`. */
             url?: string;
-            /**
-             * @description The access token of the media server, the single-use ticket of the media node for `sfu`;
-             *     omitted for `p2p`.
-             */
+            /** @description The single-use ticket of the media node for `sfu`; omitted for `p2p`. */
             token?: string;
-            /** @description The options of the method for the client; empty for `p2p` and `sfu`. */
-            options: {
-                [key: string]: string;
-            };
             /** @description The STUN and TURN servers of the connections. */
             ice_servers: components["schemas"]["VoiceIceServer"][];
             /** @description Whether the client connects through TURN only (`iceTransportPolicy` `relay`). */
@@ -20198,15 +20185,6 @@ export interface components {
         VoiceStreamEnd: {
             /** @enum {string} */
             reason: "left" | "moved" | "disconnected" | "removed" | "blocked" | "suspended" | "room_ended" | "replaced" | "host" | "empty" | "host_disconnected" | "host_ineligible" | "moderator" | "time_limit" | "disabled" | "host_absent" | "unattended";
-        };
-        /**
-         * grant
-         * @description The data of a `grant` event of a voice chat room stream.
-         */
-        VoiceStreamGrant: {
-            grant: components["schemas"]["VoiceGrant"];
-            /** @description Whether the client connects to the audio again with the new grant. */
-            reconnect: boolean;
         };
         /**
          * mic
@@ -28537,7 +28515,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/event-stream": components["schemas"]["VoiceRoom"] | components["schemas"]["VoiceStreamMic"] | components["schemas"]["VoiceStreamReaction"] | components["schemas"]["VoiceStreamSignal"] | components["schemas"]["VoiceStreamMuted"] | components["schemas"]["VoiceStreamGrant"] | components["schemas"]["VoiceStreamEnd"];
+                    "text/event-stream": components["schemas"]["VoiceRoom"] | components["schemas"]["VoiceStreamMic"] | components["schemas"]["VoiceStreamReaction"] | components["schemas"]["VoiceStreamSignal"] | components["schemas"]["VoiceStreamMuted"] | components["schemas"]["VoiceStreamEnd"];
                 };
             };
             default: components["responses"]["Problem"];

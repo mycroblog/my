@@ -119,13 +119,6 @@ tasks:
     cmds:
       - go test -count=1 -run S3Server ./internal/adapter/blob/s3/
 
-  test-voice:
-    desc: Run the voice.Transport contract of voice = livekit on a livekit-server --dev container (pkg/testkit/livekittest) (needs Docker; CI in the slow suite)
-    env:
-      TEST_LIVEKIT: container
-    cmds:
-      - go test -count=1 -run LiveKitServer ./internal/adapter/voice/livekit/
-
   test-acme:
     desc: Run the instance.ACMEClient contract of the ACME adapter and the server with tls = acme (-run Pebble in internal/adapter/acme and internal/platform) against Pebble, Let's Encrypt's test CA, run as a Go tool from tools/go.mod (pkg/testkit/pebbletest) (CI in the slow suite, and in the merge queue when the ACME code changes)
     env:

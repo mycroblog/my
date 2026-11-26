@@ -1,7 +1,7 @@
 # Run voice chat
 
 Voice chat lets signed-in users open a room, invite others and talk. It is off until you choose how the audio travels.
-This guide covers that choice, the STUN and TURN servers or the media server each choice needs, and what to know about deployment, privacy and moderation.
+This guide covers that choice, the STUN and TURN servers or the media nodes each choice needs, and what to know about deployment, privacy and moderation.
 Every setting named here is described in the [configuration reference](../reference/configuration.md#voice).
 
 ## Choose how the audio travels
@@ -12,37 +12,33 @@ Every setting named here is described in the [configuration reference](../refere
 | --- | --- | --- |
 | `off` | Nothing. The voice chat API answers `404`, the web client shows no voice chat, and the other `voice_*` settings are not checked at start. | The default. |
 | `p2p` | The participants' browsers send audio straight to each other. The server relays only the messages that set up the connections. | Small rooms and the cheapest setup: no extra server except an optional STUN or TURN server. |
-| `livekit` | A LiveKit server, self-hosted or LiveKit Cloud. | Larger rooms, and strict control over who can speak. |
-| `sora` | A Sora server, self-hosted or Sora Cloud. | The same, if you already run Sora. |
+| `sfu` | The server's own media nodes: each browser sends its audio to the node that holds its room, which forwards the speakers' audio to the participants. | Larger rooms, and strict control over who can speak. |
 
-![The three methods side by side. With p2p, the server relays the signals and the browsers send audio to each other, or through a TURN server. With livekit and sora, the browsers send signals and audio to the media server, and the server talks to that media server through its API and webhooks. The list below describes each method.](images/voice-methods.svg)
+![The two methods side by side. With p2p, the server relays the signals and the browsers send audio to each other, or through a TURN server. With sfu, the browsers get their grants from the server and send signals and audio to the media node of their room. The list below describes each method.](images/voice-methods.svg)
 
 In every method the server (`my serve`) holds the rooms, who takes part in them and their sessions, and hands each
-participant a grant: what the browser needs to connect. It never carries the audio. What differs is where the signaling
-(the messages that set up a connection) and the audio go:
+participant a grant: what the browser needs to connect. What differs is where the signaling (the messages that set up a
+connection) and the audio go:
 
 - **`p2p`.** A browser sends its signals (offers, answers and ICE candidates) to the server, which passes them to the
   other browser over the room's event stream; a signal waits in the key-value store for at most 30 seconds. The audio
   goes straight from browser to browser. The grant lists the STUN servers of `voice_stun_urls` and the TURN server of
   `voice_turn` (`coturn` or `cloudflare`) with short-lived credentials. A browser learns its public address from STUN,
   and the TURN server relays the audio when the two browsers find no direct path.
-- **`livekit`.** The grant holds `voice_livekit_url` and a 60-second access token. The browser sends its signals and its
-  audio to the LiveKit server, which brings its own STUN and TURN and forwards the audio to the other participants (a selective forwarding unit,
-  or SFU).
-  The server creates the LiveKit rooms and changes who may speak through LiveKit's API, and LiveKit reports joins and
-  leaves to the server with webhooks.
-- **`sora`.** The grant holds `voice_sora_signaling_urls` and a signed join value. The browser sends its signals and its
-  audio to the Sora server, which brings its own STUN and TURN. Sora asks the server's auth webhook before every
-  connection, the server controls the rooms through Sora's API, and Sora reports connections with webhooks.
+- **`sfu`.** The server places each room on a media node (a selective forwarding unit, or SFU): a process with
+  `role = all` or `sfu`. The grant holds the `wss:` URL of that node (`voice_sfu_public_url`) and a single-use ticket.
+  The browser sends its signals over a WebSocket to the node and its audio to the node's UDP port `voice_sfu_udp_port`
+  (TCP `voice_sfu_tcp_port` when UDP is blocked), and the node forwards the audio of the speakers to the other
+  participants. The TURN server of `voice_turn` relays for the browsers that cannot reach the node directly.
 
 Notes on the choice:
 
 - With `p2p` the audio never passes through this server (it passes through the TURN server when one is used). The server's load is only the room messages, heartbeats and streams.
-- A small instance is best served by `p2p`, or by the free Build plan of LiveKit Cloud (see [LiveKit Cloud](#livekit-cloud)).
-- With `livekit` or `sora`, the STUN and TURN settings and the ICE policy below are not used (the server warns at start if you set them), because the media server brings its own servers. Participants' IP addresses are then visible only to the media server, not to the other participants.
+- A small instance is best served by `p2p`.
+- With `sfu` the browsers reach only the media node, so participants' IP addresses are visible to the node, not to the other participants. `voice_stun_urls` is not needed, since a node has a public address, and `voice_ice_transport_policy = relay` is refused.
 - Serve the instance over HTTPS: browsers allow microphone access only on secure pages.
 
-The limits keep the cost of a paid media server bounded. `0` removes any of them except the last:
+The limits keep the cost of the rooms bounded. `0` removes any of them except the last:
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
@@ -76,7 +72,7 @@ docker compose up -d
 Two browsers connect to each other when at least one of them is speaking; two people who only listen do not connect.
 A speaker therefore sends a separate copy of their audio to every other participant. Speech in Opus takes roughly 30 to 50 kbit/s with overhead, so a speaker in a room of 10 uploads about 9 copies, a few hundred kbit/s,
 and a speaker in a room of 50 uploads 49 copies, around 2 Mbit/s, which a phone on mobile data or a home connection may not sustain. The number of connections in a room of N people is at most N(N-1)/2: 45 for 10 and 1,225 for 50.
-That is why the default is 10. Raise `voice_max_participants` only when your users have the upload bandwidth; use `livekit` or `sora` for large rooms.
+That is why the default is 10. Raise `voice_max_participants` only when your users have the upload bandwidth; use `sfu` for large rooms.
 
 ### STUN and TURN
 
@@ -141,102 +137,14 @@ With `relay`, browsers use only the TURN server, so a participant sees the TURN 
 Only some participants may speak in a room: the hosts and the listeners a host allows. In `p2p` this is enforced in two places: the server refuses to relay a connection offer that would send audio from someone who may not speak, and the other browsers do not play audio from a participant who is not a speaker.
 
 That stops ordinary users and the official web client, but it is not a complete defense. **Two participants with modified clients who work together can still exchange audio**: a modified client of someone who may not speak can send it, and a modified client of a receiver can play it, and the server cannot see inside the encrypted media.
-If you must guarantee who speaks, for example for moderated public events, use `livekit` or `sora`, where the media server itself drops the audio of anyone without permission.
+If you must guarantee who speaks, for example for moderated public events, use `sfu`, where the media node itself forwards only the audio of the speakers.
 
 ## Deployment notes
 
 - **Two streams per user**: during a call a participant holds the room's own event stream (Server-Sent Events) in addition to the stream the app always opens. Size connection limits for two long-lived requests per user in a call.
 - **Several processes**: use a shared stream adapter (`stream` set to `postgres`, `valkey`, `sns` or `pubsub`), as for the rest of the app. With `stream = hub` and a `role` other than `all`, the server warns at start that voice chat will not work across processes.
 - **Cloud Run**: a stream is a request, and CPU is allocated while it is open. When the request timeout cuts it, the client reconnects. Set the timeout as long as you can: `service.request_timeout_seconds` of [Deploying on Google Cloud](deploy-google-cloud.md#limits).
-- **Media servers need a VM**: LiveKit and Sora take audio over UDP in a long-running process. Cloud Run accepts only HTTP requests, so it cannot host them. Run them (and coturn) on a VM, or use LiveKit Cloud, Sora Cloud or Cloudflare TURN.
-
-## LiveKit
-
-Set `voice = livekit` and:
-
-| Setting | Value |
-| --- | --- |
-| `voice_livekit_url` | The `wss:` URL browsers connect to, for example `wss://livekit.example.org`. |
-| `voice_livekit_api_url` | The `https:` URL this server calls, when it differs from the one above. By default it is the same host with `https:`. |
-| `voice_livekit_api_key`, `voice_livekit_api_secret` | A key pair of the LiveKit server. The secret signs the participants' access tokens and verifies the webhooks. |
-
-The server creates each room on LiveKit, names it with the room ID, and gives each participant a 60-second access token. A listener's token cannot publish; a speaker's can publish a microphone only.
-
-### Self-hosted LiveKit
-
-In `livekit.yaml`:
-
-```yaml
-keys:
-  <api key>: <api secret>
-room:
-  # Rooms are created only by this server.
-  auto_create: false
-  # Audio only.
-  enabled_codecs:
-    - mime: audio/opus
-    - mime: audio/red
-webhook:
-  api_key: <api key>
-  urls:
-    - https://<your domain>/voice/webhooks/livekit
-```
-
-- The LiveKit server must reach the webhook URL over HTTPS. The server verifies the signature of every webhook with the API secret.
-- Webhooks only speed things up. Every minute the server compares the participants of each open room with what LiveKit reports and removes anyone who should not be there, so a webhook lost while the instance was cold is made up.
-- To try it on your machine, `livekit-server --dev` starts with a fixed development key pair.
-- **A removed participant can rejoin for a short time.** Self-hosted LiveKit cannot revoke a token: it keeps sending fresh tokens to connected clients, each valid for up to about 10 minutes. Someone who is removed can therefore rejoin with their latest token for up to about 10 minutes, until the server notices (the join webhook or the one-minute check) and cuts them, and they may be heard for a few seconds to a minute meanwhile. Use LiveKit Cloud if removal must be immediate: it revokes the token at once.
-
-### LiveKit Cloud
-
-Use the project's WebSocket URL, API key and secret, and add `https://<your domain>/voice/webhooks/livekit` as a webhook endpoint in the project's settings.
-The free Build plan gives 5,000 minutes and 50 GB per month and 100 concurrent connections, as checked on 2026-10-26; check LiveKit's pricing page for the current plans.
-
-## Sora
-
-**The Sora adapter is tested only against a simulated Sora that follows Sora's documentation, not against a real Sora server.** Try it on a staging instance with a real Sora before you depend on it.
-
-Set `voice = sora`, `voice_sora_signaling_urls` (comma-separated `wss:` URLs browsers connect to), `voice_sora_join_secret` (at least 32 bytes, for example from `openssl rand -base64 32`; it signs the values with which participants join) and `voice_sora_mode` (`self_hosted` or `cloud`).
-The instance must be served over HTTPS, because Sora calls back to `https://<your domain>`.
-
-### Webhooks
-
-Sora calls two endpoints of this server:
-
-| Endpoint | Purpose |
-| --- | --- |
-| `/voice/webhooks/sora/auth` | The auth webhook. Sora calls it before every connection. The server allows it only for a participant who is in the room, not removed, allowed to speak if connecting as a speaker, and within the size limit, and it tells Sora to accept audio only. |
-| `/voice/webhooks/sora/events` | The event and session webhooks (connections created and destroyed, sessions ended). |
-
-**The auth webhook must answer in time.** Sora waits 5 seconds when self-hosted and 10 seconds on Sora Cloud. The server answers from its own data without calling anything else, but a cold start of the instance (Cloud Run scaling from zero) can exceed that, and the connection is then refused. Keep an instance warm while voice chat is in use.
-
-When self-hosting, set `default_duplicate_client_id = evict` in `sora.conf`. A listener who becomes a speaker reconnects under the same identity (Sora cannot change a connection's role), and `evict` makes Sora drop the old connection when the new one arrives.
-With the default `allow`, the server cuts the old connection itself once it learns of the new one, so the two overlap for a moment.
-
-### Self-hosted Sora
-
-| Setting | Value |
-| --- | --- |
-| `voice_sora_mode` | `self_hosted` |
-| `voice_sora_api_url` | The `https:` URL of a reverse proxy in front of Sora's HTTP API. |
-| `voice_sora_api_header_name`, `voice_sora_api_header_value` | The header with which the proxy authenticates this server, for example `Authorization` and `Basic ...`. |
-| `voice_sora_webhook_username`, `voice_sora_webhook_password` | The Basic credentials of the webhooks. Required. |
-
-**Sora's own HTTP API has no authentication** and is meant to listen on the loopback address only. Never expose it. Put a reverse proxy that requires a credential in front of it, and give that credential to this server through the two header settings.
-Configure the webhook URLs in Sora with the same Basic credentials. The server accepts only an `https:` API URL (`http:` only for localhost) and does not start without the webhook credentials. mTLS is not supported, because Cloud Run and the load balancer in front of ECS end TLS before the server.
-
-### Sora Cloud
-
-Set `voice_sora_mode = cloud`, `voice_sora_cloud_project_id` and `voice_sora_cloud_api_key`. The server signs the access tokens with the key, calls the API with it, and verifies the webhook signatures with it; no Basic credentials are needed.
-
-### Behavior to expect
-
-- A listener who is allowed to speak reconnects automatically as a speaker, so there is a short gap while the new connection starts.
-- A speaker whose right is taken away is silenced at once by a forwarding filter, then reconnected as a listener.
-
-### Licensing
-
-Sora is a commercial product of Shiguredo. As checked on 2026-10-26: Sora Cloud has a base fee of ¥5,000 per month and no free period; self-hosting needs a package license, paid in advance for a number of concurrent connections and a period. The product page says it is not offered to companies, organizations or individuals outside Japan, so check that you may buy it before you plan around it. LiveKit is open source when self-hosted.
+- **Media nodes need a VM**: a media node of `sfu` takes audio over UDP in a long-running process. Cloud Run accepts only HTTP requests, so it cannot host one. Run the processes with `role = sfu` (and coturn) on a VM, or use Cloudflare TURN.
 
 ## Ending rooms and records
 

@@ -313,8 +313,7 @@ func (vs *voiceStream) handle(ctx context.Context, e stream.Event) error {
 			return err
 		}
 		vs.sentMessages.add(e.MessageID)
-		switch {
-		case m.Signal != nil:
+		if m.Signal != nil {
 			sig := VoiceStreamSignal{From: m.Signal.From, Kind: VoiceSignalKind(m.Signal.Kind)}
 			if m.Signal.SDP != "" {
 				sig.Sdp = &m.Signal.SDP
@@ -323,8 +322,6 @@ func (vs *voiceStream) handle(ctx context.Context, e stream.Event) error {
 				sig.Candidate = &m.Signal.Candidate
 			}
 			return vs.event("signal", sig)
-		case m.Grant != nil:
-			return vs.event("grant", VoiceStreamGrant{Grant: newVoiceGrant(m.Grant.Grant), Reconnect: m.Grant.Reconnect})
 		}
 	}
 	return nil

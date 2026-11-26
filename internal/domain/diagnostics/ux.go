@@ -40,7 +40,7 @@ var UXMetrics = []UXMetric{UXLCP, UXINP, UXLongFrame, UXTransition, UXPress, UXC
 var UXInteractionKinds = []string{"push", "pop", "modal", "replace", "none"}
 
 // UXCallTransports are the names of the call metrics: the implementations of the room session.
-var UXCallTransports = []string{"p2p", "sfu", "livekit", "sora"}
+var UXCallTransports = []string{"p2p", "sfu"}
 
 // UXOtherName is the name that stands for the names past MaxUXNames of a metric.
 const UXOtherName = "other"

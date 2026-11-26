@@ -12,21 +12,17 @@
 | --- | --- | --- |
 | `off` | 无。语音聊天 API 返回 `404`，Web 客户端不显示语音聊天，启动时也不会检查其他 `voice_*` 设置。 | 默认值。 |
 | `p2p` | 参与者的浏览器把音频直接发给彼此。服务器只中继用于建立连接的消息。 | 小房间和成本最低的部署：除了可选的 STUN 或 TURN 服务器之外，不需要额外的服务器。 |
-| `livekit` | LiveKit 服务器，自托管或 LiveKit Cloud。 | 较大的房间，以及对谁能发言的严格控制。 |
-| `sora` | Sora 服务器，自托管或 Sora Cloud。 | 同上，适合你已经在运行 Sora 的情况。 |
 
 ![三种方式并排比较。使用 p2p 时，服务器中继信令，浏览器之间直接发送音频，或者经由 TURN 服务器。使用 livekit 和 sora 时，浏览器把信令和音频发送给媒体服务器，服务器通过它的 API 和 webhook 与该媒体服务器通信。下面的列表介绍了每种方式。](images/voice-methods.svg)
 
 无论哪种方式，服务器（`my serve`）都会保存房间、谁参与其中以及它们的会话，并给每位参与者一个授权：浏览器连接所需的内容。它从不传输音频。不同之处在于信令（用于建立连接的消息）和音频走向何处：
 
 - **`p2p`。** 浏览器把它的信令（offer、answer 和 ICE 候选）发送给服务器，服务器通过房间的事件流把它们传给另一个浏览器；信令在键值存储中最多等待 30 秒。音频直接从浏览器传到浏览器。授权中列出了 `voice_stun_urls` 的 STUN 服务器，以及 `voice_turn`（`coturn` 或 `cloudflare`）的 TURN 服务器和短期凭据。浏览器通过 STUN 得知自己的公网地址，当两个浏览器找不到直连路径时，TURN 服务器会中继音频。
-- **`livekit`。** 授权中包含 `voice_livekit_url` 和一个 60 秒的访问令牌。浏览器把它的信令和音频发送给 LiveKit 服务器，该服务器自带 STUN 和 TURN，并把音频转发给其他参与者（选择性转发单元，即 SFU）。服务器创建 LiveKit 房间，并通过 LiveKit 的 API 更改谁可以发言，LiveKit 则通过 webhook 向服务器报告加入和离开。
-- **`sora`。** 授权中包含 `voice_sora_signaling_urls` 和一个已签名的加入值。浏览器把它的信令和音频发送给 Sora 服务器，该服务器自带 STUN 和 TURN。Sora 会在每次连接之前询问服务器的认证 webhook，服务器通过 Sora 的 API 控制房间，Sora 则通过 webhook 报告连接。
 
 关于选择的说明：
 
 - 使用 `p2p` 时，音频从不经过本服务器（如果使用了 TURN 服务器，则经过它）。服务器的负载只有房间消息、心跳和流。
-- 小型实例最适合使用 `p2p`，或者 LiveKit Cloud 的免费 Build 套餐（请参阅 [LiveKit Cloud](#livekit-cloud)）。
+- 小型实例最适合使用 `p2p`，或者 LiveKit Cloud 的免费 Build 套餐（请参阅 LiveKit Cloud）。
 - 使用 `livekit` 或 `sora` 时，下面的 STUN 和 TURN 设置以及 ICE 策略不会被使用（如果你设置了它们，服务器会在启动时发出警告），因为媒体服务器自带服务器。此时参与者的 IP 地址只有媒体服务器能看到，其他参与者看不到。
 - 请通过 HTTPS 提供实例服务：浏览器只允许在安全页面上访问麦克风。
 
@@ -138,99 +134,6 @@ denied-peer-ip=192.168.0.0-192.168.255.255
 - **多个进程**：和应用的其他部分一样，使用共享的流适配器（`stream` 设为 `postgres`、`valkey`、`sns` 或 `pubsub`）。使用 `stream = hub` 且 `role` 不是 `all` 时，服务器会在启动时警告语音聊天无法跨进程工作。
 - **Cloud Run**：一个流就是一个请求，打开期间会分配 CPU。请求超时切断它后，客户端会重新连接。请把超时时间设得尽可能长：见[在 Google Cloud 上部署](deploy-google-cloud.md#limits)中的 `service.request_timeout_seconds`。
 - **媒体服务器需要虚拟机**：LiveKit 和 Sora 在长时间运行的进程中通过 UDP 接收音频。Cloud Run 只接受 HTTP 请求，因此无法托管它们。请在虚拟机上运行它们（以及 coturn），或使用 LiveKit Cloud、Sora Cloud 或 Cloudflare TURN。
-
-<!-- source: livekit b16c1d192419 -->
-## LiveKit
-
-设置 `voice = livekit`，以及：
-
-| 设置 | 值 |
-| --- | --- |
-| `voice_livekit_url` | 浏览器连接的 `wss:` URL，例如 `wss://livekit.example.org`。 |
-| `voice_livekit_api_url` | 本服务器调用的 `https:` URL，在与上面不同时设置。默认是同一主机加 `https:`。 |
-| `voice_livekit_api_key`、`voice_livekit_api_secret` | LiveKit 服务器的一对密钥。secret 用于签名参与者的访问令牌和验证 webhook。 |
-
-服务器在 LiveKit 上创建每个房间，以房间 ID 命名，并给每位参与者一个有效期 60 秒的访问令牌。听众的令牌不能发布；发言者的令牌只能发布麦克风。
-
-<!-- source: self-hosted-livekit 2b118136f4dc -->
-### 自行托管 LiveKit
-
-在 `livekit.yaml` 中：
-
-```yaml
-keys:
-  <api key>: <api secret>
-room:
-  # Rooms are created only by this server.
-  auto_create: false
-  # Audio only.
-  enabled_codecs:
-    - mime: audio/opus
-    - mime: audio/red
-webhook:
-  api_key: <api key>
-  urls:
-    - https://<your domain>/voice/webhooks/livekit
-```
-
-- LiveKit 服务器必须能通过 HTTPS 访问 webhook URL。服务器会用 API secret 验证每个 webhook 的签名。
-- webhook 只起加速作用。服务器每分钟都会把每个开放房间的参与者与 LiveKit 报告的情况进行比较，并移除不应在场的人，因此实例冷启动期间丢失的 webhook 也会得到弥补。
-- 要在你的机器上试用，`livekit-server --dev` 会使用固定的开发密钥对启动。
-- **被移出的参与者可以在短时间内重新加入**。自行托管的 LiveKit 无法吊销令牌：它会不断向已连接的客户端发送新令牌，每个最长有效约 10 分钟。因此，被移出的人最多可以在约 10 分钟内用最新的令牌重新加入，直到服务器察觉（通过加入 webhook 或每分钟的检查）并将其切断，在此期间其声音可能会被听到几秒到一分钟。如果必须立即移出，请使用 LiveKit Cloud：它会立即吊销令牌。
-
-<!-- source: livekit-cloud 5bd9f833be11 -->
-### LiveKit Cloud
-
-使用项目的 WebSocket URL、API key 和 secret，并在项目设置中将 `https://<your domain>/voice/webhooks/livekit` 添加为 webhook 端点。免费的 Build 套餐每月提供 5,000 分钟和 50 GB，以及 100 个并发连接（2026-10-26 核实）；当前套餐请查看 LiveKit 的价格页面。
-
-<!-- source: sora 5e9209dd3baa -->
-## Sora
-
-**Sora 适配器只针对按照 Sora 文档模拟的 Sora 进行过测试，没有针对真实的 Sora 服务器测试过**。在依赖它之前，请在预发布实例上用真实的 Sora 试用。
-
-设置 `voice = sora`、`voice_sora_signaling_urls`（浏览器连接的 `wss:` URL，以逗号分隔）、`voice_sora_join_secret`（至少 32 字节，例如用 `openssl rand -base64 32` 生成；用于签名参与者加入时使用的值）和 `voice_sora_mode`（`self_hosted` 或 `cloud`）。实例必须通过 HTTPS 提供，因为 Sora 会回调 `https://<your domain>`。
-
-<!-- source: webhooks 11b2c486a476 -->
-### Webhook
-
-Sora 会调用本服务器的两个端点：
-
-| 端点 | 用途 |
-| --- | --- |
-| `/voice/webhooks/sora/auth` | 认证 webhook。Sora 在每次连接前调用它。服务器只允许在房间中、未被移出、以发言者身份连接时有发言权限、且未超出人数限制的参与者连接，并告诉 Sora 只接受音频。 |
-| `/voice/webhooks/sora/events` | 事件和会话 webhook（连接的创建与销毁、会话结束）。 |
-
-**认证 webhook 必须及时响应**。自行托管时 Sora 等待 5 秒，Sora Cloud 上等待 10 秒。服务器根据自己的数据响应，不调用其他任何东西，但实例冷启动（Cloud Run 从零开始扩容）可能会超出这个时间，此时连接会被拒绝。使用语音聊天期间，请保持一个实例处于运行状态。
-
-自行托管时，请在 `sora.conf` 中设置 `default_duplicate_client_id = evict`。成为发言者的听众会以相同身份重新连接（Sora 无法更改连接的角色），`evict` 会让 Sora 在新连接到达时断开旧连接。使用默认的 `allow` 时，服务器在得知新连接后会自己切断旧连接，因此两者会短暂重叠。
-
-<!-- source: self-hosted-sora dd3244368b73 -->
-### 自行托管 Sora
-
-| 设置 | 值 |
-| --- | --- |
-| `voice_sora_mode` | `self_hosted` |
-| `voice_sora_api_url` | Sora HTTP API 前面的反向代理的 `https:` URL。 |
-| `voice_sora_api_header_name`、`voice_sora_api_header_value` | 代理用来认证本服务器的请求头，例如 `Authorization` 和 `Basic ...`。 |
-| `voice_sora_webhook_username`、`voice_sora_webhook_password` | webhook 的 Basic 凭据。必填。 |
-
-**Sora 自身的 HTTP API 没有认证**，本应只在回环地址上监听。切勿将其暴露。请在它前面放一个要求凭据的反向代理，并通过这两项请求头设置把该凭据交给本服务器。在 Sora 中用相同的 Basic 凭据配置 webhook URL。服务器只接受 `https:` 的 API URL（只有 localhost 可以用 `http:`），没有 webhook 凭据时不会启动。不支持 mTLS，因为 Cloud Run 和 ECS 前面的负载均衡器会在服务器之前终止 TLS。
-
-<!-- source: sora-cloud ac4935c7f7a7 -->
-### Sora Cloud
-
-设置 `voice_sora_mode = cloud`、`voice_sora_cloud_project_id` 和 `voice_sora_cloud_api_key`。服务器用该密钥签名访问令牌、调用 API 并验证 webhook 签名；不需要 Basic 凭据。
-
-<!-- source: behavior-to-expect 03fd5e1655fa -->
-### 预期行为
-
-- 被允许发言的听众会自动以发言者身份重新连接，因此在新连接建立期间会有短暂的中断。
-- 被取消发言权的发言者会立即被转发过滤器静音，然后以听众身份重新连接。
-
-<!-- source: licensing 534e304817e3 -->
-### 许可
-
-Sora 是 Shiguredo的商业产品。截至 2026-10-26 的核实：Sora Cloud 的基本费用为每月 5,000 日元，没有免费期；自行托管需要购买套餐许可，按并发连接数和期限预先付费。产品页面称不向日本以外的公司、组织或个人提供，因此在围绕它做规划之前，请先确认你能否购买。自行托管的 LiveKit 是开源的。
 
 <!-- source: ending-rooms-and-records b4d3d196ecd7 -->
 ## 结束房间与记录

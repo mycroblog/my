@@ -29,7 +29,6 @@ function grantOf(ticket: string, url = "wss://node1.example/voice/sfu"): RoomGra
     kind: "sfu",
     url,
     token: ticket,
-    options: {},
     iceServers: [{ urls: ["turn:turn.example"], username: "u1", credential: "c1" }],
     relayOnly: false,
     expiresAt: Date.now() + 60_000,

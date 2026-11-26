@@ -2664,8 +2664,6 @@ components:
       $ref: ./components/schemas/VoiceSignalKind.yaml
     VoiceStreamEnd:
       $ref: ./components/schemas/VoiceStreamEnd.yaml
-    VoiceStreamGrant:
-      $ref: ./components/schemas/VoiceStreamGrant.yaml
     VoiceStreamMic:
       $ref: ./components/schemas/VoiceStreamMic.yaml
     VoiceStreamMuted:

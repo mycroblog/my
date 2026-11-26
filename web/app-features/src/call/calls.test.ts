@@ -288,7 +288,7 @@ test("the grant the server gave again is the one handed to the audio, and it is 
   const answered: VoiceGrant[] = [];
   const grants = s.fake.script("POST /voice/rooms/{id}/grant", {
     change: (grant) => {
-      const given = { ...grant, expires_at: expiresIn(120_000), options: { round: String(answered.length) } };
+      const given = { ...grant, expires_at: expiresIn(120_000), token: `round-${String(answered.length)}` };
       answered.push(given);
       return given;
     },
@@ -306,26 +306,6 @@ test("the grant the server gave again is the one handed to the audio, and it is 
   expect(on.sessions[0]?.renewed).toEqual(answered.map(roomGrant));
   expect(on.sessions[0]?.reconnected).toEqual([]);
   expect({ ended: call.ended, audio: call.audio === on.sessions[0] }).toEqual({ ended: false, audio: true });
-});
-
-test("a grant the stream sends is handed to the audio, to connect again with when the server says so", async () => {
-  const { fake, call } = await joined();
-  const grant = (round: string): VoiceGrant => ({
-    kind: "p2p",
-    options: { round },
-    ice_servers: [],
-    relay_only: false,
-    expires_at: new Date(on.clock.now() + 6 * 60 * 60_000).toISOString(),
-  });
-  fake.voice.send({ event: "grant", data: { grant: grant("renew"), reconnect: false } });
-  await on.clock.advance(0);
-  fake.voice.send({ event: "grant", data: { grant: grant("reconnect"), reconnect: true } });
-  await on.clock.advance(0);
-  expect({ renewed: on.sessions[0]?.renewed, reconnected: on.sessions[0]?.reconnected }).toEqual({
-    renewed: [roomGrant(grant("renew"))],
-    reconnected: [roomGrant(grant("reconnect"))],
-  });
-  expect(call.ended).toBe(false);
 });
 
 test("the shell's bar shows the room, and its microphone is the call's", async () => {

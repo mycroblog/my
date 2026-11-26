@@ -37,10 +37,6 @@ const VoiceSFUPath = "/voice/sfu"
 // (ADR-0101 §5).
 const maxCloudflareTURNTTL = 48 * time.Hour
 
-// minVoiceJoinSecretBytes bounds the secret that signs the join values of voice = sora from
-// below, the size of the HMAC-SHA256 key it keys.
-const minVoiceJoinSecretBytes = 32
-
 // voiceChecks rejects the voice settings that cannot connect a room (ADR-0101 §1, ADR-0101 §14),
 // and role = sfu without voice = sfu (§10). With voice = off it checks no other voice_* setting:
 // they are not used.
@@ -77,64 +73,20 @@ func voiceChecks(vals map[string]string, present map[string]bool) []Issue {
 				issues = append(issues, Issue{Key: "voice_turn_credential_ttl", Message: "must be at most 48h with voice_turn = cloudflare"})
 			}
 		}
-	case "livekit":
-		require("voice is livekit", "voice_livekit_url", "voice_livekit_api_key", "voice_livekit_api_secret")
-	case "sora":
-		require("voice is sora", "voice_sora_mode", "voice_sora_signaling_urls", "voice_sora_join_secret")
-		switch vals["voice_sora_mode"] {
-		case "self_hosted":
-			// The API of a self-hosted Sora has no authentication of its own, and its webhooks
-			// are accepted only with Basic authentication (ADR-0101 §14).
-			require("voice_sora_mode is self_hosted", "voice_sora_api_url", "voice_sora_webhook_username", "voice_sora_webhook_password")
-		case "cloud":
-			require("voice_sora_mode is cloud", "voice_sora_cloud_project_id", "voice_sora_cloud_api_key")
-		}
-		if present["voice_sora_api_header_name"] {
-			require("voice_sora_api_header_name is set", "voice_sora_api_header_value")
-		}
-		if present["voice_sora_api_header_value"] {
-			require("voice_sora_api_header_value is set", "voice_sora_api_header_name")
-		}
 	}
 	return issues
 }
 
 // VoiceWarnings returns the voice settings that work but that the operator likely did not
 // mean, for the log at start (ADR-0101 §1, ADR-0101 §12): p2p without STUN and TURN, which
-// connects only the browsers on the same network, and the STUN and TURN settings that LiveKit
-// and Sora do not use.
+// connects only the browsers on the same network.
 func VoiceWarnings(c *Config) []Finding {
 	var out []Finding
 	warn := func(key, msg string) { out = append(out, Finding{Severity: SeverityWarning, Key: key, Message: msg}) }
-	switch c.Voice {
-	case "p2p":
-		if len(c.VoiceSTUNURLs) == 0 && c.VoiceTURN == "none" {
-			warn("voice", "is p2p without voice_stun_urls and voice_turn, so only browsers on the same network connect")
-		}
-	case "livekit", "sora":
-		if len(c.VoiceSTUNURLs) > 0 {
-			warn("voice_stun_urls", "is not used with voice = "+c.Voice+", whose own STUN and TURN servers serve the browsers")
-		}
-		if c.VoiceTURN != "" && c.VoiceTURN != "none" {
-			warn("voice_turn", "is not used with voice = "+c.Voice+", whose own STUN and TURN servers serve the browsers")
-		}
-		if c.VoiceICETransportPolicy == "relay" {
-			warn("voice_ice_transport_policy", "is not used with voice = "+c.Voice+", whose own STUN and TURN servers serve the browsers")
-		}
+	if c.Voice == "p2p" && len(c.VoiceSTUNURLs) == 0 && c.VoiceTURN == "none" {
+		warn("voice", "is p2p without voice_stun_urls and voice_turn, so only browsers on the same network connect")
 	}
 	return out
-}
-
-// voiceAPIURL returns the default of voice_livekit_api_url: voice_livekit_url with https for
-// wss and http for ws.
-func voiceAPIURL(livekitURL string) string {
-	switch {
-	case strings.HasPrefix(livekitURL, "wss://"):
-		return "https://" + strings.TrimPrefix(livekitURL, "wss://")
-	case strings.HasPrefix(livekitURL, "ws://"):
-		return "http://" + strings.TrimPrefix(livekitURL, "ws://")
-	}
-	return ""
 }
 
 func checkVoiceMaxParticipants(v string) error {
@@ -214,19 +166,6 @@ func checkVoiceWebSocketURL(v string) error {
 	return checkVoiceServerURL(v, "wss", "ws")
 }
 
-func checkVoiceWebSocketURLs(v string) error {
-	list := splitList(v)
-	if len(list) == 0 {
-		return errors.New("must be comma-separated wss URLs")
-	}
-	for _, s := range list {
-		if err := checkVoiceWebSocketURL(s); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // checkVoiceHTTPURL accepts an https URL, or an http one on a loopback host.
 func checkVoiceHTTPURL(v string) error {
 	return checkVoiceServerURL(v, "https", "http")
@@ -241,30 +180,6 @@ func checkVoiceServerURL(v, secure, insecure string) error {
 	}
 	if u.Scheme == insecure && !isLoopbackHost(u.Hostname()) {
 		return fmt.Errorf("must be %s; %s is accepted only for localhost, 127.0.0.1, or [::1]", secure, insecure)
-	}
-	return nil
-}
-
-// checkHeaderName accepts an HTTP field name (RFC 9110 §5.1).
-func checkHeaderName(v string) error {
-	v = strings.TrimSpace(v)
-	if v == "" {
-		return errors.New("must be an HTTP header name")
-	}
-	if strings.ContainsFunc(v, func(r rune) bool { return !isTokenChar(r) }) {
-		return errors.New("must be an HTTP header name, such as Authorization")
-	}
-	return nil
-}
-
-// isTokenChar reports whether r may be in an HTTP token (RFC 9110 §5.6.2).
-func isTokenChar(r rune) bool {
-	return r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("!#$%&'*+-.^_`|~", r)
-}
-
-func checkVoiceJoinSecret(v string) error {
-	if len(v) < minVoiceJoinSecretBytes {
-		return fmt.Errorf("must be at least %d bytes; generate one with openssl rand -base64 32", minVoiceJoinSecretBytes)
 	}
 	return nil
 }

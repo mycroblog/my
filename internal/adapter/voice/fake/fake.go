@@ -66,7 +66,7 @@ func (t *Transport) Connect(room voice.RoomRef, s voice.Session) {
 	if t.media[room.ID] == nil {
 		t.media[room.ID] = map[string]voice.SessionRef{}
 	}
-	t.media[room.ID][s.ID] = voice.SessionRef{ID: s.ID, AccountID: s.AccountID}
+	t.media[room.ID][s.ID] = voice.SessionRef(s)
 }
 
 // IsOpen reports whether the media path of a room is open.
@@ -102,22 +102,15 @@ func (t *Transport) Grant(_ context.Context, room voice.RoomRef, s voice.Session
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.record(Call{Op: "grant", Room: room.ID, Session: s.ID, CanSpeak: canSpeak})
-	speak := "false"
-	if canSpeak {
-		speak = "true"
-	}
-	return voice.Grant{
-		Kind: Kind, URL: "wss://media.invalid/" + room.ID, Token: s.ID, Options: map[string]string{"can_speak": speak},
-		ExpiresAt: t.clock.Now().Add(GrantTTL),
-	}, nil
+	return voice.Grant{Kind: Kind, URL: "wss://media.invalid/" + room.ID, Token: s.ID, ExpiresAt: t.clock.Now().Add(GrantTTL)}, nil
 }
 
-// SetSpeaking implements voice.Transport; the change applies without reconnecting.
-func (t *Transport) SetSpeaking(_ context.Context, room voice.RoomRef, s voice.Session, canSpeak bool) (bool, error) {
+// SetSpeaking implements voice.Transport.
+func (t *Transport) SetSpeaking(_ context.Context, room voice.RoomRef, s voice.Session, canSpeak bool) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.record(Call{Op: "set_speaking", Room: room.ID, Session: s.ID, CanSpeak: canSpeak})
-	return false, nil
+	return nil
 }
 
 // Mute implements voice.Transport.

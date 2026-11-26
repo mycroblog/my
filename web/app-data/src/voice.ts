@@ -40,7 +40,6 @@ export type VoiceStreamEvent =
   | { readonly type: "reaction"; readonly participant: string; readonly emoji: string }
   | { readonly type: "signal"; readonly signal: Schemas["VoiceStreamSignal"] }
   | { readonly type: "muted"; readonly by: string }
-  | { readonly type: "grant"; readonly grant: VoiceGrant; readonly reconnect: boolean }
   | { readonly type: "removed" | "replaced" | "ended"; readonly reason: VoiceEndReason };
 
 // ---- Queries ----------------------------------------------------------------------------------------------------------
@@ -669,10 +668,6 @@ export function parseVoiceStreamEvent(event: string, data: string): VoiceStreamE
         : null;
     case "muted":
       return typeof v["by"] === "string" ? { type: "muted", by: v["by"] } : null;
-    case "grant":
-      return typeof v["grant"] === "object" && v["grant"] !== null && typeof v["reconnect"] === "boolean"
-        ? { type: "grant", grant: v["grant"] as VoiceGrant, reconnect: v["reconnect"] }
-        : null;
     case "removed":
     case "replaced":
     case "ended":

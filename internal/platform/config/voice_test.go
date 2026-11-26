@@ -10,16 +10,6 @@ import (
 	"time"
 )
 
-const testJoinSecret = "0123456789abcdef0123456789abcdef"
-
-// soraSelfHosted is a valid environment of voice = sora on a self-hosted Sora.
-func soraSelfHosted() map[string]string {
-	return with(minimal(), "MY_VOICE", "sora", "MY_VOICE_SORA_MODE", "self_hosted",
-		"MY_VOICE_SORA_SIGNALING_URLS", "wss://sora1.example.org/signaling, wss://sora2.example.org/signaling",
-		"MY_VOICE_SORA_API_URL", "https://sora-api.example.org", "MY_VOICE_SORA_WEBHOOK_USERNAME", "sora",
-		"MY_VOICE_SORA_WEBHOOK_PASSWORD", "hunter2", "MY_VOICE_SORA_JOIN_SECRET", testJoinSecret)
-}
-
 // TestLoadVoice checks the voice settings that start (ADR-0101 §1, ADR-0101 §14).
 func TestLoadVoice(t *testing.T) {
 	t.Run("the limits have defaults", func(t *testing.T) {
@@ -45,8 +35,8 @@ func TestLoadVoice(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.Voice != "off" || cfg.VoiceLiveKitAPIURL != "" || len(VoiceWarnings(cfg)) != 0 {
-			t.Errorf("voice = %q, api url %q, warnings %v; want off and nothing", cfg.Voice, cfg.VoiceLiveKitAPIURL, VoiceWarnings(cfg))
+		if cfg.Voice != "off" || len(VoiceWarnings(cfg)) != 0 {
+			t.Errorf("voice = %q, warnings %v; want off and nothing", cfg.Voice, VoiceWarnings(cfg))
 		}
 	})
 	t.Run("p2p with coturn and relay", func(t *testing.T) {
@@ -76,45 +66,6 @@ func TestLoadVoice(t *testing.T) {
 			t.Fatal(err)
 		}
 		if cfg.VoiceTURNCloudflareKeyID != "key" || cfg.VoiceTURNCloudflareAPIToken != "token" || cfg.VoiceTURNCredentialTTL != 48*time.Hour {
-			t.Errorf("config = %+v", cfg)
-		}
-	})
-	t.Run("livekit derives its API URL", func(t *testing.T) {
-		for _, tc := range []struct{ url, api string }{
-			{"wss://livekit.example.org", "https://livekit.example.org"},
-			{"ws://localhost:7880", "http://localhost:7880"},
-		} {
-			cfg, _, err := Load(source(with(minimal(), "MY_VOICE", "livekit", "MY_VOICE_LIVEKIT_URL", tc.url,
-				"MY_VOICE_LIVEKIT_API_KEY", "APIkey", "MY_VOICE_LIVEKIT_API_SECRET", "secret"), nil))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if cfg.VoiceLiveKitAPIURL != tc.api || cfg.VoiceLiveKitAPIKey != "APIkey" || cfg.VoiceLiveKitAPISecret != "secret" {
-				t.Errorf("livekit %s: api url %q, want %q", tc.url, cfg.VoiceLiveKitAPIURL, tc.api)
-			}
-		}
-		cfg, _, err := Load(source(with(minimal(), "MY_VOICE", "livekit", "MY_VOICE_LIVEKIT_URL", "wss://livekit.example.org",
-			"MY_VOICE_LIVEKIT_API_URL", "https://livekit-api.internal.example.org", "MY_VOICE_LIVEKIT_API_KEY", "k", "MY_VOICE_LIVEKIT_API_SECRET", "s"), nil))
-		if err != nil || cfg.VoiceLiveKitAPIURL != "https://livekit-api.internal.example.org" {
-			t.Errorf("explicit api url = %+v, %v", cfg, err)
-		}
-	})
-	t.Run("sora self-hosted and cloud", func(t *testing.T) {
-		cfg, _, err := Load(source(with(soraSelfHosted(), "MY_VOICE_SORA_API_HEADER_NAME", "Authorization", "MY_VOICE_SORA_API_HEADER_VALUE", "Basic abc"), nil))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if cfg.VoiceSoraMode != "self_hosted" || len(cfg.VoiceSoraSignalingURLs) != 2 || cfg.VoiceSoraAPIHeaderName != "Authorization" ||
-			cfg.VoiceSoraAPIHeaderValue != "Basic abc" || cfg.VoiceSoraWebhookPassword != "hunter2" || cfg.VoiceJoinSecret != testJoinSecret {
-			t.Errorf("config = %+v", cfg)
-		}
-		cfg, _, err = Load(source(with(minimal(), "MY_VOICE", "sora", "MY_VOICE_SORA_MODE", "cloud",
-			"MY_VOICE_SORA_SIGNALING_URLS", "wss://sora.example.com/signaling", "MY_VOICE_SORA_CLOUD_PROJECT_ID", "project",
-			"MY_VOICE_SORA_CLOUD_API_KEY", "key", "MY_VOICE_SORA_JOIN_SECRET", testJoinSecret), nil))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if cfg.VoiceSoraCloudProjectID != "project" || cfg.VoiceSoraCloudAPIKey != "key" {
 			t.Errorf("config = %+v", cfg)
 		}
 	})
@@ -175,82 +126,6 @@ func TestLoadVoiceInvalid(t *testing.T) {
 			},
 		},
 		{
-			name: "livekit without its server",
-			env:  with(minimal(), "MY_VOICE", "livekit"),
-			want: []string{
-				"voice_livekit_url (MY_VOICE_LIVEKIT_URL): required when voice is livekit",
-				"voice_livekit_api_key (MY_VOICE_LIVEKIT_API_KEY): required when voice is livekit",
-				"voice_livekit_api_secret (MY_VOICE_LIVEKIT_API_SECRET): required when voice is livekit",
-			},
-		},
-		{
-			name: "livekit over plain ws to a remote host",
-			env: with(minimal(), "MY_VOICE", "livekit", "MY_VOICE_LIVEKIT_URL", "ws://livekit.example.org",
-				"MY_VOICE_LIVEKIT_API_URL", "http://livekit.example.org", "MY_VOICE_LIVEKIT_API_KEY", "k", "MY_VOICE_LIVEKIT_API_SECRET", "s"),
-			want: []string{
-				"voice_livekit_url (MY_VOICE_LIVEKIT_URL): must be wss; ws is accepted only for localhost",
-				"voice_livekit_api_url (MY_VOICE_LIVEKIT_API_URL): must be https; http is accepted only for localhost",
-			},
-		},
-		{
-			name:  "livekit secret in the config file",
-			env:   with(minimal(), "MY_VOICE", "livekit", "MY_VOICE_LIVEKIT_URL", "wss://livekit.example.org", "MY_VOICE_LIVEKIT_API_KEY", "k"),
-			file:  "my.toml",
-			files: map[string]string{"my.toml": "voice_livekit_api_secret = \"s\"\n"},
-			want: []string{
-				"voice_livekit_api_secret (MY_VOICE_LIVEKIT_API_SECRET): is a secret; set MY_VOICE_LIVEKIT_API_SECRET or MY_VOICE_LIVEKIT_API_SECRET_FILE instead of the config file",
-			},
-		},
-		{
-			name: "sora without mode, signaling, and join secret",
-			env:  with(minimal(), "MY_VOICE", "sora"),
-			want: []string{
-				"voice_sora_mode (MY_VOICE_SORA_MODE): required when voice is sora",
-				"voice_sora_signaling_urls (MY_VOICE_SORA_SIGNALING_URLS): required when voice is sora",
-				"voice_sora_join_secret (MY_VOICE_SORA_JOIN_SECRET): required when voice is sora",
-			},
-		},
-		{
-			name: "sora self_hosted without webhook Basic auth and API",
-			env:  with(soraSelfHosted(), "MY_VOICE_SORA_API_URL", unset, "MY_VOICE_SORA_WEBHOOK_USERNAME", unset, "MY_VOICE_SORA_WEBHOOK_PASSWORD", unset),
-			want: []string{
-				"voice_sora_api_url (MY_VOICE_SORA_API_URL): required when voice_sora_mode is self_hosted",
-				"voice_sora_webhook_username (MY_VOICE_SORA_WEBHOOK_USERNAME): required when voice_sora_mode is self_hosted",
-				"voice_sora_webhook_password (MY_VOICE_SORA_WEBHOOK_PASSWORD): required when voice_sora_mode is self_hosted",
-			},
-		},
-		{
-			name: "sora self_hosted without the webhook password",
-			env:  with(soraSelfHosted(), "MY_VOICE_SORA_WEBHOOK_PASSWORD", unset),
-			want: []string{"voice_sora_webhook_password (MY_VOICE_SORA_WEBHOOK_PASSWORD): required when voice_sora_mode is self_hosted"},
-		},
-		{
-			name: "sora API header without its value",
-			env:  with(soraSelfHosted(), "MY_VOICE_SORA_API_HEADER_NAME", "Authorization"),
-			want: []string{"voice_sora_api_header_value (MY_VOICE_SORA_API_HEADER_VALUE): required when voice_sora_api_header_name is set"},
-		},
-		{
-			name: "sora API header value without its name",
-			env:  with(soraSelfHosted(), "MY_VOICE_SORA_API_HEADER_VALUE", "Basic abc"),
-			want: []string{"voice_sora_api_header_name (MY_VOICE_SORA_API_HEADER_NAME): required when voice_sora_api_header_value is set"},
-		},
-		{
-			name: "sora cloud without project and key",
-			env:  with(soraSelfHosted(), "MY_VOICE_SORA_MODE", "cloud"),
-			want: []string{
-				"voice_sora_cloud_project_id (MY_VOICE_SORA_CLOUD_PROJECT_ID): required when voice_sora_mode is cloud",
-				"voice_sora_cloud_api_key (MY_VOICE_SORA_CLOUD_API_KEY): required when voice_sora_mode is cloud",
-			},
-		},
-		{
-			name: "sora with a short join secret and an insecure signaling URL",
-			env:  with(soraSelfHosted(), "MY_VOICE_SORA_JOIN_SECRET", "short", "MY_VOICE_SORA_SIGNALING_URLS", "wss://sora.example.org/signaling, ws://sora.example.org/signaling"),
-			want: []string{
-				"voice_sora_signaling_urls (MY_VOICE_SORA_SIGNALING_URLS): must be wss; ws is accepted only for localhost",
-				"voice_sora_join_secret (MY_VOICE_SORA_JOIN_SECRET): must be at least 32 bytes",
-			},
-		},
-		{
 			name: "unknown voice method",
 			env:  with(minimal(), "MY_VOICE", "jitsi"),
 			want: []string{`voice (MY_VOICE): unknown value "jitsi"`},
@@ -284,8 +159,64 @@ func TestLoadVoiceInvalid(t *testing.T) {
 	}
 }
 
-// TestVoiceWarnings checks the warnings at start: p2p without STUN and TURN, and the STUN and
-// TURN settings that an SFU does not use.
+// TestLoadRemovedVoiceMethods checks that a deployment set for LiveKit or Sora, which the voice
+// setting no longer takes, does not start, and that the error tells to set voice = sfu and what it
+// needs, or voice = p2p.
+func TestLoadRemovedVoiceMethods(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		env  map[string]string
+		file string
+		want []string
+	}{
+		{
+			name: "voice = livekit",
+			env:  with(minimal(), "MY_VOICE", "livekit"),
+			want: []string{`voice (MY_VOICE): "livekit" was removed: LiveKit is no longer supported; set voice = sfu, where the server's own media nodes carry the audio: a process with role = all or sfu runs one, which the browsers reach at voice_sfu_public_url over WebSocket and at voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) for the audio; or set voice = p2p. A room still open on LiveKit ends at the first sweep.`},
+		},
+		{
+			name: "voice = sora",
+			env:  with(minimal(), "MY_VOICE", "sora"),
+			want: []string{`voice (MY_VOICE): "sora" was removed: Sora is no longer supported; set voice = sfu, where the server's own media nodes carry the audio: a process with role = all or sfu runs one, which the browsers reach at voice_sfu_public_url over WebSocket and at voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) for the audio; or set voice = p2p. A room still open on Sora ends at the first sweep.`},
+		},
+		{
+			name: "a LiveKit setting left with voice = sfu",
+			env:  with(minimal(), "MY_VOICE", "sfu", "MY_VOICE_LIVEKIT_API_SECRET_FILE", "/run/secrets/livekit"),
+			want: []string{"environment variable MY_VOICE_LIVEKIT_API_SECRET_FILE was removed: LiveKit is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p"},
+		},
+		{
+			name: "a Sora setting in the config file",
+			env:  with(minimal(), "MY_VOICE", "p2p", "MY_VOICE_STUN_URLS", "stun:stun.example.org"),
+			file: `voice_sora_signaling_urls = "wss://sora.example.org/signaling"`,
+			want: []string{`config file my.toml: key "voice_sora_signaling_urls" was removed: Sora is no longer supported; delete it and set voice = sfu, the server's own media nodes, which need the browsers to reach voice_sfu_udp_port (UDP) and voice_sfu_tcp_port (TCP) of each node, or voice = p2p`},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var files map[string]string
+			if tc.file != "" {
+				files = map[string]string{"my.toml": tc.file}
+			}
+			src := envSource(tc.env, files)
+			if files != nil {
+				src.File = "my.toml"
+			}
+			cfg, _, err := Load(src)
+			if cfg != nil {
+				t.Fatalf("Load() config = %+v, want nil", cfg)
+			}
+			if got := issueStrings(t, err); !slices.Equal(got, tc.want) {
+				t.Errorf("issues =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(tc.want, "\n"))
+			}
+		})
+	}
+	for i := range schema {
+		if f := &schema[i]; f.key == "voice" && slices.ContainsFunc(f.choices, func(c choice) bool { return c.value == "livekit" || c.value == "sora" }) {
+			t.Errorf("voice still takes %v", allowedValues(f))
+		}
+	}
+}
+
+// TestVoiceWarnings checks the warning at start of p2p without STUN and TURN.
 func TestVoiceWarnings(t *testing.T) {
 	keys := func(env map[string]string) []string {
 		t.Helper()
@@ -308,13 +239,6 @@ func TestVoiceWarnings(t *testing.T) {
 	if got := keys(with(minimal(), "MY_VOICE", "p2p", "MY_VOICE_STUN_URLS", "stun:stun.example.org")); len(got) != 0 {
 		t.Errorf("p2p with STUN warns about %v, want nothing", got)
 	}
-	if got := keys(with(soraSelfHosted(), "MY_VOICE_STUN_URLS", "stun:stun.example.org", "MY_VOICE_TURN", "coturn",
-		"MY_VOICE_ICE_TRANSPORT_POLICY", "relay")); !slices.Equal(got, []string{"voice_stun_urls", "voice_turn", "voice_ice_transport_policy"}) {
-		t.Errorf("sora with STUN and TURN warns about %v", got)
-	}
-	if got := keys(soraSelfHosted()); len(got) != 0 {
-		t.Errorf("sora warns about %v, want nothing", got)
-	}
 }
 
 // TestConfigKeyNames keeps the settings of an adapter under <selector>_<adapter>_ and the selectors
@@ -325,7 +249,7 @@ func TestConfigKeyNames(t *testing.T) {
 		keys[k.key] = true
 	}
 	for _, want := range []string{
-		"database", "payments", "voice_sora_join_secret", "voice_turn_coturn_urls", "voice_turn_coturn_secret",
+		"database", "payments", "voice_turn_coturn_urls", "voice_turn_coturn_secret",
 		"stream_sns_queue_prefix", "mail_smtp_host", "mail_smtp_port", "mail_smtp_username", "mail_smtp_password",
 		"mail_ses_region", "mail_ses_configuration_set", "mail_ses_sns_topic_arn", "voice_max_participants",
 		"relay_max_activities_per_hour", "media_unattached_retention", "dynamic_client_unredeemed_retention", "dynamic_client_idle_retention",
@@ -334,7 +258,7 @@ func TestConfigKeyNames(t *testing.T) {
 			t.Errorf("no setting %s", want)
 		}
 	}
-	for _, old := range []string{"db", "payments_provider", "smtp_host", "ses_region", "voice_p2p_max_participants", "voice_sfu_max_participants", "relay_ingest_hourly_limit", "media_unattached_ttl"} {
+	for _, old := range []string{"db", "payments_provider", "smtp_host", "ses_region", "voice_p2p_max_participants", "voice_sfu_max_participants", "voice_livekit_url", "voice_sora_join_secret", "relay_ingest_hourly_limit", "media_unattached_ttl"} {
 		if keys[old] {
 			t.Errorf("the setting %s still exists", old)
 		}

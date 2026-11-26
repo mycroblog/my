@@ -25,7 +25,8 @@ func TestValidUXName(t *testing.T) {
 		{diagnostics.UXPress, "post.reply", true},
 		{diagnostics.UXPress, "post", false},
 		{diagnostics.UXPress, "Post.Reply", false},
-		{diagnostics.UXCallRTT, "livekit", true},
+		{diagnostics.UXCallRTT, "sfu", true},
+		{diagnostics.UXCallRTT, "livekit", false},
 		{diagnostics.UXCallPacketLoss, "webrtc", false},
 		{diagnostics.UXMetric("cls"), "/", false},
 	}

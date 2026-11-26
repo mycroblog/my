@@ -19,7 +19,7 @@ set -euo pipefail
   exit 2
 }
 
-ALL=(postgres stream mail blob voice search acme)
+ALL=(postgres stream mail blob search acme)
 if [ "$1" = --all ]; then
   printf '%s\n' "${ALL[@]}"
   exit 0
@@ -45,9 +45,6 @@ while IFS= read -r path; do
       ;;&
     internal/adapter/blob/s3/* | pkg/testkit/blob.go | pkg/testkit/blobtest/* | pkg/testkit/s3test/*)
       selected[blob]=1
-      ;;&
-    internal/adapter/voice/livekit/* | pkg/testkit/voicetest/voice_transport_contract.go | pkg/testkit/livekittest/*)
-      selected[voice]=1
       ;;&
     internal/adapter/search/* | pkg/testkit/searchtest/search_index_contract.go | pkg/testkit/elasticsearchtest/* | \
       pkg/testkit/meilisearchtest/*)

@@ -39,7 +39,7 @@ func TestJobTypeNames(t *testing.T) {
 		"supporters.purge_payment_receipts", "supporters.reconcile_payments", "supporters.apply_payment_event",
 		"supporters.sync_due", "supporters.cancel_for_closure", "identity.reject_for_closure", "identity.queue_closure_reminders",
 		"instance.closure_delete_actors", "instance.check_closure_delivery", "notification.closure_fanout",
-		"notification.closure_due", "notification.post_subscribers", "webhook.purge_messages", "voice.apply_media_event",
+		"notification.closure_due", "notification.post_subscribers", "webhook.purge_messages",
 		"finance.import_billing",
 	} {
 		if !slices.Contains(types, want) {

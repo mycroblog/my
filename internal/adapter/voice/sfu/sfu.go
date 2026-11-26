@@ -123,8 +123,8 @@ func (t *Transport) ReserveMaximum(ctx context.Context, room voice.RoomRef) erro
 }
 
 // SetSpeaking implements voice.Transport; the node reads the room again and applies it.
-func (*Transport) SetSpeaking(context.Context, voice.RoomRef, voice.Session, bool) (bool, error) {
-	return false, nil
+func (*Transport) SetSpeaking(context.Context, voice.RoomRef, voice.Session, bool) error {
+	return nil
 }
 
 // Mute implements voice.Transport; the node reads the room again and applies it.

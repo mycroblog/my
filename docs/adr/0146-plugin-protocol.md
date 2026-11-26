@@ -105,7 +105,7 @@
 プラグインの宛先へは `kernel.HTTPClient` を **通さない**。
 
 - `kernel.HTTPClient` はプライベートのアドレスを拒むが、サイドカーや社内のプラグインはそこにある。§5 により宛先は運営者だけが決め、リモートのサーバーも利用者も影響できないので、AGENTS.md の SSRF の規則の対象（リモートのサーバーや利用者が影響できる宛先）に当たらない
-- 手本は `internal/adapter/voice/livekit/livekit.go` と `internal/platform/voice.go` の `voiceHTTPClient`（[ADR-0101](0101-voice-chat-transport.md) §10）: adapter は `Options.HTTPClient` で受け、`internal/platform` が組み立て、リダイレクトを追わない。Connect の文書も RPC のクライアントにリダイレクトを追わせない設定を例示する
+- 手本は `internal/adapter/voice/turncloudflare` と `internal/platform/voice.go` の `voiceHTTPClient`（[ADR-0101](0101-voice-chat-transport.md) §5）: adapter は `Options.HTTPClient` で受け、`internal/platform` が組み立て、リダイレクトを追わない。Connect の文書も RPC のクライアントにリダイレクトを追わせない設定を例示する
 - lint は `http.DefaultClient`・`http.Get` などだけを禁じる（`.golangci.yml` の `forbidigo`）ので、専用の `*http.Client` は通る
 
 voice との違いが 2 つある。

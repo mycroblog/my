@@ -1103,22 +1103,6 @@
     "env": "MY_VOICE_ICE_TRANSPORT_POLICY",
     "secret": false
   },
-  "voice_livekit_api_key": {
-    "env": "MY_VOICE_LIVEKIT_API_KEY",
-    "secret": false
-  },
-  "voice_livekit_api_secret": {
-    "env": "MY_VOICE_LIVEKIT_API_SECRET",
-    "secret": true
-  },
-  "voice_livekit_api_url": {
-    "env": "MY_VOICE_LIVEKIT_API_URL",
-    "secret": false
-  },
-  "voice_livekit_url": {
-    "env": "MY_VOICE_LIVEKIT_URL",
-    "secret": false
-  },
   "voice_max_open_rooms": {
     "env": "MY_VOICE_MAX_OPEN_ROOMS",
     "secret": false
@@ -1153,46 +1137,6 @@
   },
   "voice_sfu_udp_port": {
     "env": "MY_VOICE_SFU_UDP_PORT",
-    "secret": false
-  },
-  "voice_sora_api_header_name": {
-    "env": "MY_VOICE_SORA_API_HEADER_NAME",
-    "secret": false
-  },
-  "voice_sora_api_header_value": {
-    "env": "MY_VOICE_SORA_API_HEADER_VALUE",
-    "secret": true
-  },
-  "voice_sora_api_url": {
-    "env": "MY_VOICE_SORA_API_URL",
-    "secret": false
-  },
-  "voice_sora_cloud_api_key": {
-    "env": "MY_VOICE_SORA_CLOUD_API_KEY",
-    "secret": true
-  },
-  "voice_sora_cloud_project_id": {
-    "env": "MY_VOICE_SORA_CLOUD_PROJECT_ID",
-    "secret": false
-  },
-  "voice_sora_join_secret": {
-    "env": "MY_VOICE_SORA_JOIN_SECRET",
-    "secret": true
-  },
-  "voice_sora_mode": {
-    "env": "MY_VOICE_SORA_MODE",
-    "secret": false
-  },
-  "voice_sora_signaling_urls": {
-    "env": "MY_VOICE_SORA_SIGNALING_URLS",
-    "secret": false
-  },
-  "voice_sora_webhook_password": {
-    "env": "MY_VOICE_SORA_WEBHOOK_PASSWORD",
-    "secret": true
-  },
-  "voice_sora_webhook_username": {
-    "env": "MY_VOICE_SORA_WEBHOOK_USERNAME",
     "secret": false
   },
   "voice_stun_urls": {

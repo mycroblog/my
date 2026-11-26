@@ -165,8 +165,8 @@ Delete this activity when `voice = off`.
 | --- | --- |
 | Purposes | Running voice chat rooms, and moderating them |
 | Data subjects | Hosts and participants |
-| Personal data | Room name, description, hosts, and how the room ended; who took part, spoke, raised a hand, was invited, or was removed. IP addresses and audio pass through the voice media server or TURN server, or reach other participants directly with `voice = p2p`. The server records no audio |
-| Recipients | Hosting, voice media server, STUN and TURN, participants |
+| Personal data | Room name, description, hosts, and how the room ended; who took part, spoke, raised a hand, was invited, or was removed. IP addresses and audio pass through the media nodes of the server with `voice = sfu` or a TURN server, or reach other participants directly with `voice = p2p`. The server records no audio |
+| Recipients | Hosting, STUN and TURN, participants |
 | Erasure | Participants `{{90 days}}` from the end of the room, or as long as a report about it. Rooms stay, with the name and description emptied at the author's erasure. At the services: {{THEIR PERIOD}} |
 | Legal basis | {{e.g. contract, legitimate interests}} |
 

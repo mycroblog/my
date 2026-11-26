@@ -135,8 +135,8 @@ func (t *Transport) count(ctx context.Context, outcome string) {
 }
 
 // SetSpeaking implements voice.Transport; the relay of the signaling enforces it.
-func (*Transport) SetSpeaking(context.Context, voice.RoomRef, voice.Session, bool) (bool, error) {
-	return false, nil
+func (*Transport) SetSpeaking(context.Context, voice.RoomRef, voice.Session, bool) error {
+	return nil
 }
 
 // Mute implements voice.Transport; the stream of the room tells the clients.

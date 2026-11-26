@@ -544,7 +544,6 @@ histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_buck
 | 类型 | 保持顺序的内容 |
 | --- | --- |
 | `federation.fanout`、`federation.deliver` | 一个喜欢及其撤销的投递 |
-| `voice.apply_media_event`、`voice.apply` | 一个语音房间的事件 |
 | `supporters.sync`、`supporters.command` | 一个订阅的变更 |
 
 升级时：

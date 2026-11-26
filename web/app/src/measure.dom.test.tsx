@@ -135,7 +135,7 @@ test("a slow press, a slow route and a call's quality reach the server's report 
   ]);
   page.timeline.give("long-animation-frame", [{ startTime: 4000, duration: 150 }]);
   await press("Reply");
-  const call = handMadeCall("livekit");
+  const call = handMadeCall("sfu");
   reportQuality(call.session);
   call.say({ rtt: 80, jitter: 5, packetLoss: 0.02 });
 
@@ -147,9 +147,9 @@ test("a slow press, a slow route and a call's quality reach the server's report 
   expect(ofMetric(sent, "long_frame")).toEqual([{ name: statusRoute, value: 150 }]);
   expect(ofMetric(sent, "press").map(({ name }) => name)).toEqual(["post.reply"]);
   expect(ofMetric(sent, "press")[0]?.value).toBeGreaterThanOrEqual(80);
-  expect(ofMetric(sent, "call_rtt")).toEqual([{ name: "livekit", value: 80 }]);
-  expect(ofMetric(sent, "call_jitter")).toEqual([{ name: "livekit", value: 5 }]);
-  expect(ofMetric(sent, "call_packet_loss")).toEqual([{ name: "livekit", value: 2 }]);
+  expect(ofMetric(sent, "call_rtt")).toEqual([{ name: "sfu", value: 80 }]);
+  expect(ofMetric(sent, "call_jitter")).toEqual([{ name: "sfu", value: 5 }]);
+  expect(ofMetric(sent, "call_packet_loss")).toEqual([{ name: "sfu", value: 2 }]);
 });
 
 test("each visit of a route gives its own worst interaction, and the change of screen is named by its kind", async () => {
@@ -216,7 +216,7 @@ test.each([
   page.firstInput();
   page.timeline.give("event", [{ startTime: 3000, duration: 320, interactionId: 1 }]);
   await press("Reply");
-  const call = handMadeCall("sora");
+  const call = handMadeCall("sfu");
   reportQuality(call.session);
   call.say({ rtt: 80, jitter: 5, packetLoss: 0.02 });
   page.hide();

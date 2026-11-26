@@ -92,7 +92,7 @@ const (
 	surfaceAdmin       = "admin"
 	// surfacePayments is the endpoint that the payment provider calls (ADR-0074 §3).
 	surfacePayments = "payments"
-	// surfaceVoice is the endpoints that the media servers of the voice chat call (ADR-0101 §13).
+	// surfaceVoice is the WebSocket of the media node of voice = sfu (ADR-0101 §11).
 	surfaceVoice = "voice"
 	// surfaceQueue is the endpoints that the platform's queue and scheduler call (ADR-0004 §13).
 	surfaceQueue = "queue"

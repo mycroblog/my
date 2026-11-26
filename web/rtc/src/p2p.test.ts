@@ -27,7 +27,6 @@ import type { IncomingSignal, OutgoingSignal, RoomEnvironment, RoomGrant, RoomMe
 
 const grant: RoomGrant = {
   kind: "p2p",
-  options: {},
   iceServers: [{ urls: ["stun:stun.example"] }, { urls: ["turn:turn.example"], username: "u1", credential: "c1" }],
   relayOnly: false,
   expiresAt: Date.parse("2026-10-26T18:00:00Z"),

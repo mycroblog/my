@@ -127,10 +127,9 @@ type Deps struct {
 	Clock      kernel.Clock
 	IDs        kernel.IDGenerator
 	Heartbeats *Heartbeats
-	// RateLimiter bounds the invitations (InvitationLimit), the signals (SignalLimit), the
-	// reactions (ReactionLimit), and the deliveries of a media server's events and connections
-	// that do not verify (MediaWebhookIPLimit, MediaConnectIPLimit); without one, the Service keeps the counters in the
-	// KeyValueStore of Heartbeats.
+	// RateLimiter bounds the invitations (InvitationLimit), the signals (SignalLimit), and the
+	// reactions (ReactionLimit); without one, the Service keeps the counters in the KeyValueStore
+	// of Heartbeats.
 	RateLimiter *kernel.RateLimiter
 	// Transport carries the audio of the rooms of Config.Transport; nil when the voice chat
 	// is off.

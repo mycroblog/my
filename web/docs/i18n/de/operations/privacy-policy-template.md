@@ -100,7 +100,6 @@ Jeder Dienst, der personenbezogene Daten erhält, erscheint nur in der Erklärun
 | `{{IF payjp}}` | `payments = payjp` | Die E-Mail-Adresse und der Unterstützungsplan. Der Browser lädt payjp.js auf den Zahlungsseiten des Servers, die Karte kommt in den iframe von PAY.JP, und der Name und die E-Mail-Adresse gehen für 3-D Secure an PAY.JP ([PAY.JP](payments-payjp.md#card-data-and-pci-dss)). |
 | `{{IF error reports}}` | `errors_exporter` | Bereinigte Berichte ohne Konto, IP-Adresse, Body oder Header. Das Scrubbing arbeitet mit Mustern, sodass ein Fragment von Nutzertext bleiben kann ([Fehlerberichte](error-reporting.md#what-scrubbing-does-and-does-not-guarantee)). |
 | `{{IF telemetry}}` | `metrics_exporter`, `traces_exporter` | Metriken und Spans ohne Konten oder Client-IP-Adressen. Spans ausgehender Anfragen nennen die Hostnamen von Remote-Servern ([Betrieb](running.md)). |
-| `{{IF voice media server}}` | `voice` ist `livekit` oder `sora` | IP-Adressen der Teilnehmer, ihr Audio, während sie sprechen, eine Sitzungs-ID und die Raum-ID. Die ID des Kontos wird nicht gesendet ([Sprachchat](voice.md)). |
 | `{{IF turn}}` | `voice_stun_urls`, `voice_turn` | STUN- und TURN-Server sehen die IP-Adressen der Teilnehmer, und ein TURN-Server leitet ihr verschlüsseltes Audio weiter. |
 | `{{IF webhooks}}` | [Server-Webhooks](webhooks.md) | Dein Empfänger erhält Ereignis-Bodys. Manche tragen die E-Mail-Adresse eines Antragstellers oder den Kommentar einer Meldung. |
 | `{{IF follow review}}` | `plugin_inbound_follow_address` ist gesetzt und `hook_inbound_follow_mode` ist nicht `off` | Die Adressen der beiden Konten jedes Follows von einem anderen Server, vom Server gesendet, wenn der Follow eintrifft ([Entscheidungs-Hooks](decision-hooks.md)). Die erfasste Entscheidung behält die Adresse der Aktivität und welches Konto sie gesendet hat. |
@@ -263,7 +262,6 @@ We use these services to run the instance. {{SAY WHETHER EACH ACTS ON YOUR BEHAL
 | {{IF payjp}} PAY.JP | Taking payments for supporter plans | Your email address, cardholder name, and plan. You enter card details in PAY.JP's frame, whose script runs on our payment pages | {{COUNTRY}} | {{LINK}} |
 | {{IF error reports}} {{ERROR TRACKER}} | Fixing faults | Error reports with personal details removed by pattern | {{COUNTRY}} | {{LINK}} |
 | {{IF telemetry}} {{METRICS OR TRACING SERVICE}} | Watching the health of the service | Measurements, and the names of other servers we contact | {{COUNTRY}} | {{LINK}} |
-| {{IF voice media server}} {{VOICE SERVICE}} | Carrying voice chat | Your IP address and audio while you speak in a room, and a session ID. Not your account | {{COUNTRY}} | {{LINK}} |
 | {{IF turn}} {{STUN OR TURN SERVICE}} | Connecting voice chat | Your IP address, and encrypted audio when relayed | {{COUNTRY}} | {{LINK}} |
 
 {{IF peer-to-peer voice}} In voice chat rooms, your browser connects directly to other participants, so they can see your IP address.

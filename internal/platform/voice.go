@@ -24,25 +24,22 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/domain/voice"
 	"github.com/mycroblog/my/internal/interface/clientapi"
-	voicehttp "github.com/mycroblog/my/internal/interface/voice"
 	"github.com/mycroblog/my/internal/interface/web"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // Voice methods: the values of the voice setting (ADR-0101 §1).
 const (
-	VoiceOff     = "off"
-	VoiceP2P     = "p2p"
-	VoiceSFU     = "sfu"
-	VoiceLiveKit = "livekit"
-	VoiceSora    = "sora"
+	VoiceOff = "off"
+	VoiceP2P = "p2p"
+	VoiceSFU = "sfu"
 )
 
 // Voice is how the voice chat runs (ADR-0101 §1): the method that connects the rooms and the
 // operator's limits of the rooms. The composition root passes it on to the voice chat; with
 // the method off, the voice chat API answers 404 (ADR-0100 §2).
 type Voice struct {
-	// Method is VoiceOff, VoiceP2P, VoiceSFU, VoiceLiveKit, or VoiceSora.
+	// Method is VoiceOff, VoiceP2P, or VoiceSFU.
 	Method string
 	// MaxParticipants bounds the maximum of every room (voice_max_participants), 0 for no limit.
 	MaxParticipants int
@@ -72,9 +69,8 @@ func newVoice(cfg *config.Config) Voice {
 
 // setUpVoice builds the voice module (ADR-0100): the projectors of its projections, its
 // subscriptions to the events that change who may be in a room, its jobs, the rooms over the
-// transport of the voice setting (ADR-0101 §2), and the endpoints of the events of the media
-// servers (ADR-0101 §13). The jobs run with the voice chat off too, so that
-// voice.sweep ends the rooms left open (disabled).
+// transport of the voice setting (ADR-0101 §2). The jobs run with the voice chat off too, so that
+// voice.sweep ends the rooms left open (disabled), as it ends those of another method.
 func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	appvoice.RegisterProjectors(a.Projectors, repo)
 	heartbeats := appvoice.NewHeartbeats(a.KV, repo)
@@ -99,18 +95,8 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 		if transport, a.VoiceNode, err = a.newSFU(cfg, turn); err != nil {
 			return fmt.Errorf("voice = sfu: %w", err)
 		}
-	case VoiceLiveKit:
-		var err error
-		if transport, err = a.newLiveKitTransport(cfg); err != nil {
-			return fmt.Errorf("voice = livekit: %w", err)
-		}
-	case VoiceSora:
-		var err error
-		if transport, err = a.newSoraTransport(cfg); err != nil {
-			return fmt.Errorf("voice = sora: %w", err)
-		}
 	default:
-		return fmt.Errorf("voice = %s: this build has no transport for it; use p2p, livekit, sora, or off", a.Voice.Method)
+		return fmt.Errorf("voice = %s: this build has no transport for it; use p2p, sfu, or off", a.Voice.Method)
 	}
 	outbox := a.Outbox
 	if outbox == nil {
@@ -133,10 +119,6 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	a.VoiceRooms.RegisterCommitHooks(a.Projectors)
 	a.VoiceRooms.RegisterEligibilityProjectors(a.Projectors)
 	a.VoiceRooms.RegisterJobs(a.Handlers, a.Scheduler)
-	// The endpoints of the media servers' events answer 404 unless the voice chat runs on
-	// their method.
-	voicehttp.New(voicehttp.Options{Webhooks: a.VoiceRooms, Problem: a.writeStatusProblem, Logger: a.Logger}).
-		Register(surfaceRouter{a, surfaceVoice})
 	return nil
 }
 
@@ -154,7 +136,7 @@ type VoiceNode interface {
 }
 
 // voiceHTTPClient returns the HTTP client of a voice adapter that calls a server the operator
-// configured (an SFU, Cloudflare's TURN service; ADR-0101 §10): it does not follow redirects, so
+// configured (Cloudflare's TURN service; ADR-0101 §10): it does not follow redirects, so
 // that a request and its credentials reach that server only.
 func voiceHTTPClient(timeout time.Duration) *http.Client {
 	return &http.Client{

@@ -14,22 +14,17 @@ Chaque paramètre nommé ici est décrit dans la [référence de la configuratio
 | --- | --- | --- |
 | `off` | Rien. L’API du chat vocal répond `404`, le client web n’affiche aucun chat vocal, et les autres réglages `voice_*` ne sont pas vérifiés au démarrage. | La valeur par défaut. |
 | `p2p` | Les navigateurs des participants s’envoient l’audio directement. Le serveur ne relaie que les messages qui établissent les connexions. | Les petits salons et l’installation la moins coûteuse : aucun serveur supplémentaire, hormis un serveur STUN ou TURN facultatif. |
-| `livekit` | Un serveur LiveKit, auto-hébergé ou LiveKit Cloud. | Les salons plus grands, et un contrôle strict de qui peut parler. |
-| `sora` | Un serveur Sora, auto-hébergé ou Sora Cloud. | Pareil, si vous exploitez déjà Sora. |
 
 ![Les trois méthodes côte à côte. Avec p2p, le serveur relaie les signaux et les navigateurs s’envoient l’audio, ou le font passer par un serveur TURN. Avec livekit et sora, les navigateurs envoient les signaux et l’audio au serveur média, et le serveur dialogue avec ce serveur média par son API et ses webhooks. La liste ci-dessous décrit chaque méthode.](images/voice-methods.svg)
 
 Dans chaque méthode, le serveur (`my serve`) détient les salons, les personnes qui y participent et leurs sessions, et remet à chaque participant une autorisation : ce dont le navigateur a besoin pour se connecter. Il ne transporte jamais l’audio. Ce qui diffère, c’est où vont la signalisation (les messages qui établissent une connexion) et l’audio :
 
 - **`p2p`.** Un navigateur envoie ses signaux (offres, réponses et candidats ICE) au serveur, qui les transmet à l’autre navigateur par le flux d’événements du salon ; un signal attend dans le magasin clé-valeur au plus 30 secondes. L’audio va directement de navigateur à navigateur. L’autorisation liste les serveurs STUN de `voice_stun_urls` et le serveur TURN de `voice_turn` (`coturn` ou `cloudflare`) avec des identifiants de courte durée. Un navigateur apprend son adresse publique par STUN, et le serveur TURN relaie l’audio lorsque les deux navigateurs ne trouvent aucun chemin direct.
-- **`livekit`.** L’autorisation contient `voice_livekit_url` et un jeton d’accès de 60 secondes. Le navigateur envoie ses signaux et son audio au serveur LiveKit, qui apporte ses propres STUN et TURN et transmet l’audio aux autres participants (une unité de transmission sélective, ou SFU).
-  Le serveur crée les salons LiveKit et change qui peut parler par l’API de LiveKit, et LiveKit signale les arrivées et les départs au serveur par des webhooks.
-- **`sora`.** L’autorisation contient `voice_sora_signaling_urls` et une valeur de participation signée. Le navigateur envoie ses signaux et son audio au serveur Sora, qui apporte ses propres STUN et TURN. Sora interroge le webhook d’authentification du serveur avant chaque connexion, le serveur contrôle les salons par l’API de Sora, et Sora signale les connexions par des webhooks.
 
 Remarques sur le choix :
 
 - Avec `p2p`, l’audio ne passe jamais par ce serveur (il passe par le serveur TURN lorsqu’on en utilise un). La charge du serveur se limite aux messages des salons, aux signaux de présence et aux flux.
-- Une petite instance est mieux servie par `p2p`, ou par la formule gratuite Build de LiveKit Cloud (voir [LiveKit Cloud](#livekit-cloud)).
+- Une petite instance est mieux servie par `p2p`, ou par la formule gratuite Build de LiveKit Cloud (voir LiveKit Cloud).
 - Avec `livekit` ou `sora`, les réglages STUN et TURN et la politique ICE ci-dessous ne sont pas utilisés (le serveur avertit au démarrage si vous les définissez), car le serveur média apporte ses propres serveurs. Les adresses IP des participants ne sont alors visibles que du serveur média, pas des autres participants.
 - Servez l’instance en HTTPS : les navigateurs n’autorisent l’accès au micro que sur des pages sécurisées.
 
@@ -150,103 +145,6 @@ Si vous devez garantir qui parle, par exemple pour des événements publics mod�
 - **Plusieurs processus** : utilisez un adaptateur de flux partagé (`stream` défini sur `postgres`, `valkey`, `sns` ou `pubsub`), comme pour le reste de l’application. Avec `stream = hub` et un `role` autre que `all`, le serveur avertit au démarrage que le chat vocal ne fonctionnera pas d’un processus à l’autre.
 - **Cloud Run** : un flux est une requête, et le CPU est alloué tant qu’elle est ouverte. Lorsque le délai d’expiration de la requête la coupe, le client se reconnecte. Réglez le délai aussi long que vous le pouvez : `service.request_timeout_seconds` de [Déployer sur Google Cloud](deploy-google-cloud.md#limits).
 - **Les serveurs média ont besoin d’une VM** : LiveKit et Sora reçoivent l’audio en UDP dans un processus de longue durée. Cloud Run n’accepte que des requêtes HTTP et ne peut donc pas les héberger. Exécutez-les (et coturn) sur une VM, ou utilisez LiveKit Cloud, Sora Cloud ou Cloudflare TURN.
-
-<!-- source: livekit b16c1d192419 -->
-## LiveKit
-
-Définissez `voice = livekit` et :
-
-| Paramètre | Valeur |
-| --- | --- |
-| `voice_livekit_url` | L’URL `wss:` à laquelle les navigateurs se connectent, par exemple `wss://livekit.example.org`. |
-| `voice_livekit_api_url` | L’URL `https:` que ce serveur appelle, quand elle diffère de la précédente. Par défaut, c’est le même hôte avec `https:`. |
-| `voice_livekit_api_key`, `voice_livekit_api_secret` | Une paire de clés du serveur LiveKit. Le secret signe les jetons d’accès des participants et vérifie les webhooks. |
-
-Le serveur crée chaque salon vocal sur LiveKit, le nomme avec l’ID du salon vocal, et donne à chaque participant un jeton d’accès de 60 secondes. Le jeton d’un auditeur ne peut pas publier ; celui d’un intervenant peut publier un microphone uniquement.
-
-<!-- source: self-hosted-livekit 2b118136f4dc -->
-### LiveKit auto-hébergé
-
-Dans `livekit.yaml` :
-
-```yaml
-keys:
-  <api key>: <api secret>
-room:
-  # Rooms are created only by this server.
-  auto_create: false
-  # Audio only.
-  enabled_codecs:
-    - mime: audio/opus
-    - mime: audio/red
-webhook:
-  api_key: <api key>
-  urls:
-    - https://<your domain>/voice/webhooks/livekit
-```
-
-- Le serveur LiveKit doit atteindre l’URL du webhook en HTTPS. Le serveur vérifie la signature de chaque webhook avec le secret d’API.
-- Les webhooks ne font qu’accélérer les choses. Chaque minute, le serveur compare les participants de chaque salon vocal ouvert avec ce que LiveKit signale et retire toute personne qui ne devrait pas s’y trouver : un webhook perdu pendant que l’instance était froide est donc rattrapé.
-- Pour l’essayer sur votre machine, `livekit-server --dev` démarre avec une paire de clés de développement fixe.
-- **Un participant retiré peut se reconnecter pendant un court moment.** LiveKit auto-hébergé ne peut pas révoquer un jeton : il continue d’envoyer de nouveaux jetons aux clients connectés, chacun valable jusqu’à environ 10 minutes. Une personne retirée peut donc se reconnecter avec son dernier jeton pendant environ 10 minutes au plus, jusqu’à ce que le serveur s’en aperçoive (le webhook d’arrivée ou la vérification à la minute) et la coupe, et elle peut être entendue pendant quelques secondes à une minute entre-temps. Utilisez LiveKit Cloud si le retrait doit être immédiat : il révoque le jeton aussitôt.
-
-<!-- source: livekit-cloud 5bd9f833be11 -->
-### LiveKit Cloud
-
-Utilisez l’URL WebSocket, la clé d’API et le secret du projet, et ajoutez `https://<your domain>/voice/webhooks/livekit` comme point de terminaison de webhook dans les paramètres du projet.
-La formule gratuite Build offre 5 000 minutes et 50 Go par mois et 100 connexions simultanées, telles que vérifiées le 2026-10-26 ; consultez la page de tarifs de LiveKit pour les formules actuelles.
-
-<!-- source: sora 5e9209dd3baa -->
-## Sora
-
-**L’adaptateur Sora n’est testé que contre un Sora simulé qui suit la documentation de Sora, pas contre un vrai serveur Sora.** Essayez-le sur une instance de préproduction avec un vrai Sora avant d’en dépendre.
-
-Définissez `voice = sora`, `voice_sora_signaling_urls` (des URL `wss:` séparées par des virgules auxquelles les navigateurs se connectent), `voice_sora_join_secret` (au moins 32 octets, par exemple issus de `openssl rand -base64 32` ; il signe les valeurs avec lesquelles les participants rejoignent) et `voice_sora_mode` (`self_hosted` ou `cloud`).
-L’instance doit être servie en HTTPS, car Sora rappelle `https://<your domain>`.
-
-<!-- source: webhooks 11b2c486a476 -->
-### Webhooks
-
-Sora appelle deux points de terminaison de ce serveur :
-
-| Point de terminaison | Rôle |
-| --- | --- |
-| `/voice/webhooks/sora/auth` | Le webhook d’authentification. Sora l’appelle avant chaque connexion. Le serveur ne l’autorise que pour un participant qui est dans le salon vocal, non retiré, autorisé à parler s’il se connecte comme intervenant, et dans la limite de taille, et il indique à Sora de n’accepter que l’audio. |
-| `/voice/webhooks/sora/events` | Les webhooks d’événements et de sessions (connexions créées et détruites, sessions terminées). |
-
-**Le webhook d’authentification doit répondre à temps.** Sora attend 5 secondes en auto-hébergé et 10 secondes sur Sora Cloud. Le serveur répond à partir de ses propres données sans rien appeler d’autre, mais un démarrage à froid de l’instance (Cloud Run qui monte depuis zéro) peut dépasser ce délai, et la connexion est alors refusée. Gardez une instance chaude tant que le chat vocal est utilisé.
-
-En auto-hébergement, définissez `default_duplicate_client_id = evict` dans `sora.conf`. Un auditeur qui devient intervenant se reconnecte sous la même identité (Sora ne peut pas changer le rôle d’une connexion), et `evict` fait que Sora abandonne l’ancienne connexion à l’arrivée de la nouvelle.
-Avec la valeur par défaut `allow`, le serveur coupe lui-même l’ancienne connexion dès qu’il apprend l’existence de la nouvelle : les deux coexistent donc un instant.
-
-<!-- source: self-hosted-sora dd3244368b73 -->
-### Sora auto-hébergé
-
-| Paramètre | Valeur |
-| --- | --- |
-| `voice_sora_mode` | `self_hosted` |
-| `voice_sora_api_url` | L’URL `https:` d’un reverse proxy devant l’API HTTP de Sora. |
-| `voice_sora_api_header_name`, `voice_sora_api_header_value` | L’en-tête avec lequel le proxy authentifie ce serveur, par exemple `Authorization` et `Basic ...`. |
-| `voice_sora_webhook_username`, `voice_sora_webhook_password` | Les identifiants Basic des webhooks. Obligatoires. |
-
-**L’API HTTP propre de Sora n’a aucune authentification** et est prévue pour n’écouter que sur l’adresse de bouclage. Ne l’exposez jamais. Placez devant elle un reverse proxy qui exige un identifiant, et donnez cet identifiant à ce serveur via les deux paramètres d’en-tête.
-Configurez les URL des webhooks dans Sora avec les mêmes identifiants Basic. Le serveur n’accepte qu’une URL d’API en `https:` (`http:` uniquement pour localhost) et ne démarre pas sans les identifiants des webhooks. mTLS n’est pas pris en charge, car Cloud Run et l’équilibreur de charge devant ECS terminent TLS avant le serveur.
-
-<!-- source: sora-cloud ac4935c7f7a7 -->
-### Sora Cloud
-
-Définissez `voice_sora_mode = cloud`, `voice_sora_cloud_project_id` et `voice_sora_cloud_api_key`. Le serveur signe les jetons d’accès avec la clé, appelle l’API avec elle et vérifie avec elle les signatures des webhooks ; aucun identifiant Basic n’est nécessaire.
-
-<!-- source: behavior-to-expect 03fd5e1655fa -->
-### Comportement à prévoir
-
-- Un auditeur autorisé à parler se reconnecte automatiquement comme intervenant : il y a donc un court intervalle pendant que la nouvelle connexion démarre.
-- Un intervenant dont le droit est retiré est réduit au silence aussitôt par un filtre de transfert, puis reconnecté comme auditeur.
-
-<!-- source: licensing 534e304817e3 -->
-### Licence
-
-Sora est un produit commercial de Shiguredo. Tel que vérifié le 2026-10-26 : Sora Cloud a des frais de base de 5 000 ¥ par mois et aucune période gratuite ; l’auto-hébergement exige une licence par forfait, payée à l’avance pour un nombre de connexions simultanées et une période. La page du produit indique qu’il n’est pas proposé aux entreprises, organisations ou particuliers hors du Japon : vérifiez donc que vous pouvez l’acheter avant de bâtir vos plans dessus. LiveKit est open source quand il est auto-hébergé.
 
 <!-- source: ending-rooms-and-records b4d3d196ecd7 -->
 ## Terminer les salons vocaux et les enregistrements

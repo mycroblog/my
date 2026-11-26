@@ -689,7 +689,6 @@ Gardez-les ensemble, sur des workers ayant le même paramètre. Les tâches d’
 | Types | Ce qu’ils maintiennent dans l’ordre |
 | --- | --- |
 | `federation.fanout`, `federation.deliver` | Les remises d’un J’aime et de son annulation |
-| `voice.apply_media_event`, `voice.apply` | Les événements d’un même salon vocal |
 | `supporters.sync`, `supporters.command` | Les modifications d’un même abonnement |
 
 Lors d’une mise à niveau :

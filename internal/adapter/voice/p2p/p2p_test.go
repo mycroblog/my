@@ -39,7 +39,7 @@ func TestVoiceTransportContract(t *testing.T) {
 			Connect: func(_ *testing.T, room appvoice.RoomRef, s appvoice.Session) {
 				hb.mu.Lock()
 				defer hb.mu.Unlock()
-				hb.live[room.ID] = append(hb.live[room.ID], appvoice.SessionRef{ID: s.ID, AccountID: s.AccountID})
+				hb.live[room.ID] = append(hb.live[room.ID], appvoice.SessionRef(s))
 			},
 		}
 	})
@@ -59,7 +59,7 @@ func TestGrant(t *testing.T) {
 	if len(g.ICE) != 1 || !slices.Equal(g.ICE[0].URLs, []string{"stun:a.example.org", "stuns:b.example.org"}) {
 		t.Errorf("ICE = %+v, want the STUN servers", g.ICE)
 	}
-	if c := tr.Capabilities(); c.ServerEnforced || c.ConnectCallback || c.Events {
+	if c := tr.Capabilities(); c.ServerEnforced {
 		t.Errorf("Capabilities = %+v, want none", c)
 	}
 	none, _ := p2p.New(p2p.Options{Clock: clock}).Grant(t.Context(), appvoice.RoomRef{ID: "r"}, appvoice.Session{ID: "s"}, false)
@@ -175,7 +175,7 @@ func TestVoiceTransportContractWithCoturn(t *testing.T) {
 			Connect: func(_ *testing.T, room appvoice.RoomRef, s appvoice.Session) {
 				hb.mu.Lock()
 				defer hb.mu.Unlock()
-				hb.live[room.ID] = append(hb.live[room.ID], appvoice.SessionRef{ID: s.ID, AccountID: s.AccountID})
+				hb.live[room.ID] = append(hb.live[room.ID], appvoice.SessionRef(s))
 			},
 		}
 	})

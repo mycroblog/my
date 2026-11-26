@@ -546,7 +546,6 @@ histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_buck
 | 類型 | 維持順序的對象 |
 | --- | --- |
 | `federation.fanout`、`federation.deliver` | 喜歡及其撤銷的傳送 |
-| `voice.apply_media_event`、`voice.apply` | 同一個語音聊天室的事件 |
 | `supporters.sync`、`supporters.command` | 同一個訂閱的變更 |
 
 升級時：
