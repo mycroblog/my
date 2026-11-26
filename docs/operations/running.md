@@ -39,6 +39,28 @@ If the request's `X-Request-Id` is at most 128 characters of letters, digits and
 Logs inside a trace (requests and jobs) also carry `trace_id` and `span_id` (see [Traces](#traces)).
 With `logs_exporter = gcp`, for Cloud Run, the lines also carry the fields of Cloud Logging that link a line to its trace in Cloud Trace, and each access line its request as `httpRequest`; the other fields stay as they are.
 
+With `logs_exporter = otlp`, the server sends the lines as OpenTelemetry log records over OTLP/HTTP to the receiver at `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`), with `OTEL_EXPORTER_OTLP_HEADERS`.
+Each record has the fields of its line as attributes and the trace and span of its line, so an OpenTelemetry Collector that every host sends to gathers the logs of all of them in one place, next to their traces (`traces_exporter = otlp`).
+The lines written before the server has started, and the records that the receiver did not take, still go to standard error, followed by a line `otlp logs export failed`.
+A burst of more than 2,048 lines while the receiver is slow drops the lines that do not fit in the send queue.
+A minimal pipeline of the Collector for the logs:
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+exporters:
+  otlphttp:
+    endpoint: http://loki:3100/otlp # any receiver of OTLP logs, such as Loki
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      exporters: [otlphttp]
+```
+
 Each HTTP request and each job execution writes one line when it finishes. The line has the same names and values as the labels of the [metrics](#metrics) below,
 so with `metrics_exporter = none` a platform can build log-based metrics (counters and distributions) from these lines.
 
