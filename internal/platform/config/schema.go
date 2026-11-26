@@ -724,6 +724,13 @@ var schema = []field{
 		},
 	},
 	{
+		key:   "instance_settings_cache_ttl",
+		doc:   "How long each process keeps the instance settings it read, as a Go duration, so that it reads them about once per this period instead of on every use. A change of the settings shows at once in the process that made it, and within this period in the others. A long period suits an instance whose settings rarely change; a new one, still being set up, wants a short one. `0` reads them every time.",
+		def:   "10s",
+		check: checkNonNegativeDuration,
+		set:   func(c *Config, v string) { c.InstanceSettingsCacheTTL, _ = time.ParseDuration(v) },
+	},
+	{
 		key:   "projection_verify_interval",
 		doc:   "How often the worker verifies every projection against its sources (`projection.verify`), as a Go duration. It reports a drift in the log and the metric `my.projection.drifts` and corrects nothing: `my projection rebuild` does. Each verification derives a projection again inside a transaction, which loads the database. `0` schedules none; `my projection verify` still runs by hand.",
 		def:   "0",

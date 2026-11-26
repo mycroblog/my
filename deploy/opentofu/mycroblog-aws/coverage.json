@@ -91,6 +91,7 @@
     "dynamic_client_*",
     "errors_environment",
     "errors_sentry_dsn",
+    "instance_settings_cache_ttl",
     "job_attempt_retention",
     "kek_previous",
     "kms_dek_cache_*",

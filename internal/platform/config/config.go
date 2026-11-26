@@ -163,6 +163,9 @@ type Config struct {
 	KEK                            []byte
 	PreviousKEKs                   [][]byte
 	// KMSKey and PreviousKMSKeys name the keys of the KMS of a key_manager other than local;
+	// InstanceSettingsCacheTTL is how long a process keeps the instance settings it read (0 reads
+	// them every time).
+	InstanceSettingsCacheTTL time.Duration
 	// ProjectionVerifyInterval is how often the worker verifies the projections (0 schedules none).
 	ProjectionVerifyInterval time.Duration
 	// DEKCacheTTL and DEKCacheEntries bound the cache of the DEKs it unwraps (0 disables it).
@@ -494,6 +497,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.Int("kek_previous", len(c.PreviousKEKs)),
 		slog.String("kms_key", c.KMSKey),
 		slog.Int("kms_key_previous", len(c.PreviousKMSKeys)),
+		slog.Duration("instance_settings_cache_ttl", c.InstanceSettingsCacheTTL),
 		slog.Duration("projection_verify_interval", c.ProjectionVerifyInterval),
 		slog.Duration("kms_dek_cache_ttl", c.DEKCacheTTL),
 		slog.Int("kms_dek_cache_entries", c.DEKCacheEntries),

@@ -179,6 +179,10 @@
     "env": "MY_HTTP_ALLOW_PRIVATE_NETWORKS",
     "secret": false
   },
+  "instance_settings_cache_ttl": {
+    "env": "MY_INSTANCE_SETTINGS_CACHE_TTL",
+    "secret": false
+  },
   "job_attempt_retention": {
     "env": "MY_JOB_ATTEMPT_RETENTION",
     "secret": false

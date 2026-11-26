@@ -565,7 +565,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.setUpAccount(cfg, repos.accounts)
-	a.setUpInstance(repos.instances)
+	a.setUpInstance(cfg, repos.instances)
 	if err := a.verifyDomainsAtStart(ctx, opts.CheckDomainsOnly); err != nil {
 		return nil, err
 	}

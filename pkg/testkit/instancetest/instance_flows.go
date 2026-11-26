@@ -55,6 +55,7 @@ func InstanceFlows(t *testing.T, newHarness InstanceFactory) {
 		{"StoresCanonicalValues", instanceStoresCanonicalValues},
 		{"RejectsInvalidSettings", instanceRejectsInvalidSettings},
 		{"SetsSeveralSettingsAtOnce", instanceSetsSeveralSettings},
+		{"KeepsSettingsForTheirTTL", instanceKeepsSettingsForTheirTTL},
 		{"KeepsTextRevisions", instanceKeepsTextRevisions},
 		{"ClearsTexts", instanceClearsTexts},
 		{"RejectsInvalidTexts", instanceRejectsInvalidTexts},
@@ -262,6 +263,63 @@ func instanceRejectsInvalidSettings(t *testing.T, e *instanceEnv) {
 	}
 	if _, err := e.service.SettingHistory(ctx, "no_such_key", 10); !errors.Is(err, instance.ErrUnknownKey) {
 		t.Errorf("SettingHistory(unknown) = %v, want ErrUnknownKey", err)
+	}
+}
+
+// countingSettings counts the reads of the current settings.
+type countingSettings struct {
+	appinstance.Repository
+	reads int
+}
+
+func (c *countingSettings) ListCurrentSettings(ctx context.Context) ([]instance.CurrentSetting, error) {
+	c.reads++
+	return c.Repository.ListCurrentSettings(ctx)
+}
+
+// instanceKeepsSettingsForTheirTTL checks Deps.SettingsTTL (#3532) with two services standing
+// for two processes: each reads the settings once per TTL; a change shows at once in the
+// process that made it and, in the other, once the TTL is over; a TTL of 0 reads every time.
+func instanceKeepsSettingsForTheirTTL(t *testing.T, e *instanceEnv) {
+	ctx := t.Context()
+	process := func(ttl time.Duration) (*appinstance.Service, *countingSettings) {
+		repo := &countingSettings{Repository: e.h.Instance}
+		return appinstance.NewService(appinstance.Deps{
+			UnitOfWork: e.h.UnitOfWork, Repository: repo, Clock: e.clock, IDs: e.ids,
+			Blobs: e.blobs, Sealer: e.sealer, SingleUserAccounts: e.accounts, SettingsTTL: ttl,
+		}), repo
+	}
+	mode := func(s *appinstance.Service) instance.RegistrationMode {
+		t.Helper()
+		settings, err := s.Settings(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return settings.RegistrationMode()
+	}
+	a, _ := process(10 * time.Second)
+	b, bReads := process(10 * time.Second)
+	initial := mode(b)
+	if mode(b); bReads.reads != 1 {
+		t.Errorf("reads within the TTL = %d, want 1", bReads.reads)
+	}
+	if _, err := a.SetSettings(ctx, []appinstance.SetSettingInput{{Key: instance.SettingRegistrationMode, Value: "invite"}}); err != nil {
+		t.Fatal(err)
+	}
+	if got := mode(a); got != instance.RegistrationInvite {
+		t.Errorf("registration_mode in the process that changed it = %v, want invite at once", got)
+	}
+	if got := mode(b); got != initial {
+		t.Errorf("registration_mode in another process within the TTL = %v, want %v as it kept it", got, initial)
+	}
+	e.clock.Advance(10 * time.Second)
+	if got := mode(b); got != instance.RegistrationInvite || bReads.reads != 2 {
+		t.Errorf("registration_mode in another process after the TTL = %v after %d reads, want invite after 2", got, bReads.reads)
+	}
+	c, cReads := process(0)
+	mode(c)
+	if mode(c); cReads.reads != 2 {
+		t.Errorf("reads with a TTL of 0 = %d, want one per use", cReads.reads)
 	}
 }
 

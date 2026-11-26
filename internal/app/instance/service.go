@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/blob"
@@ -47,6 +48,9 @@ type Deps struct {
 	// FundingTargets checks the currency and the digits of the funding meter's target (ADR-0067
 	// §22); nil checks only their shapes.
 	FundingTargets FundingTargets
+	// SettingsTTL is how long the Service keeps the settings it read (#3532): a change that another
+	// process makes shows here within it, one this Service makes at once. 0 reads them every time.
+	SettingsTTL time.Duration
 }
 
 // FundingTargets checks the monthly target of the funding meter in the currencies the finance
@@ -106,18 +110,62 @@ type LocalAccounts interface {
 // key, so neither overrides the other (docs/reference/configuration.md).
 type Service struct {
 	d Deps
+
+	// mu guards what the Service keeps of the settings: kept, read at keptAt, while kept is
+	// true; gen counts the changes, so that a read that a change overtook keeps nothing.
+	mu       sync.Mutex
+	settings instance.Settings
+	keptAt   time.Time
+	kept     bool
+	gen      uint64
 }
 
 // NewService returns a Service on d.
 func NewService(d Deps) *Service { return &Service{d: d} }
 
-// Settings returns the current value of every setting, defaults included.
+// Settings returns the current value of every setting, defaults included, as the Service read
+// them within Deps.SettingsTTL.
 func (s *Service) Settings(ctx context.Context) (instance.Settings, error) {
+	ttl := s.d.SettingsTTL
+	if ttl <= 0 {
+		return s.readSettings(ctx)
+	}
+	s.mu.Lock()
+	if s.kept && s.d.Clock.Now().Sub(s.keptAt) < ttl {
+		settings := s.settings
+		s.mu.Unlock()
+		return settings, nil
+	}
+	gen := s.gen
+	s.mu.Unlock()
+	at := s.d.Clock.Now()
+	settings, err := s.readSettings(ctx)
+	if err != nil {
+		return instance.Settings{}, err
+	}
+	s.mu.Lock()
+	if s.gen == gen {
+		s.settings, s.keptAt, s.kept = settings, at, true
+	}
+	s.mu.Unlock()
+	return settings, nil
+}
+
+// readSettings reads the current value of every setting from the repository.
+func (s *Service) readSettings(ctx context.Context) (instance.Settings, error) {
 	cur, err := s.d.Repository.ListCurrentSettings(ctx)
 	if err != nil {
 		return instance.Settings{}, err
 	}
 	return instance.NewSettings(cur), nil
+}
+
+// forgetSettings drops what the Service keeps of the settings, after a change.
+func (s *Service) forgetSettings() {
+	s.mu.Lock()
+	s.gen++
+	s.kept = false
+	s.mu.Unlock()
 }
 
 // DefaultLocale returns the current value of the default_locale setting.
@@ -309,7 +357,8 @@ func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]ins
 	now := s.d.Clock.Now()
 	revs := make([]instance.SettingRevision, 0, len(ins)+1)
 	audits := make([]appmoderation.AuditRecorded, 0, len(ins)+1)
-	current, err := s.Settings(ctx)
+	// The checks of the change read the settings as they are now, not as this process keeps them.
+	current, err := s.readSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -364,6 +413,8 @@ func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]ins
 		}
 		return nil
 	})
+	// A failed commit may still have written: forget either way.
+	s.forgetSettings()
 	if err != nil {
 		return nil, err
 	}
