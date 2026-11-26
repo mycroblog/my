@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package otel holds the kernel.Meter and kernel.Tracer adapters on the OpenTelemetry Go SDK.
+// Package otel holds the kernel.Meter and kernel.Tracer adapters on the OpenTelemetry Go SDK,
+// and the slog.Handler that sends the log lines over OTLP (Logs).
 //
 // The Meter (ADR-0055 §1, §2) aggregates the measurements in the process and exports them in
 // the Prometheus text format, which Handler serves for a scrape (metrics_exporter = prometheus),
@@ -12,7 +13,8 @@
 // go.schedule.duration, and the GC cycles and pauses) from the OpenTelemetry contrib runtime
 // instrumentation and runtime/metrics.
 //
-// The Tracer (ADR-0055) exports the spans over OTLP/HTTP; see Tracer.
+// The Tracer (ADR-0055) exports the spans over OTLP/HTTP; see Tracer. Logs (ADR-0055 §20)
+// export the log lines; see Logs.
 //
 // The resource carries service.name, service.version, my.role, and service.namespace (the
 // instance's host), and the attributes of OTEL_RESOURCE_ATTRIBUTES, which can replace
