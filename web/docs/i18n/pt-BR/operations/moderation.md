@@ -466,14 +466,14 @@ No cliente web, use “Buscar publicações novamente” na página Análise da 
 - Ele não busca em um domínio com `suspend`, nem em um domínio `unavailable` porque as entregas falharam. Uma busca com falha do mesmo URI é lembrada por 1 hora, e uma nova busca nesse intervalo não o busca.
 - Sua requisição é gravada no registro de auditoria como `status_refetch_queued`, `account_statuses_refetch_queued` ou `domain_statuses_refetch_queued`.
 
-<!-- source: checking-what-reached-a-remote-server 6c1ec9c8cef1 -->
+<!-- source: checking-what-reached-a-remote-server 320117beafdd -->
 ## Verificar o que chegou a um servidor remoto
 
 Quando um usuário pergunta se uma publicação, um follow ou um accept chegou a outro servidor, liste as entregas a esse servidor com a API de administração.
 Ela mostra cada entrega de uma atividade a uma inbox do servidor, das mais novas para as mais antigas, com cada tentativa e o que o servidor respondeu, inclusive as entregas que tiveram êxito.
 Ela exige a permissão `manage_domains`.
 No cliente web, a seção **Entregas** da tela do servidor remoto (`/moderation/instances/{domain}`) mostra a mesma lista, com seus filtros por **ID da atividade** e **Conta local**, e **Mostrar** para cada campo oculto em **Detalhes** de uma entrega mascarada; a tela diz quais deles são registrados no registro de auditoria antes de serem exibidos.
-A lista Servidores remotos mostra apenas os servidores que as entregas não conseguiram alcançar. Para abrir qualquer outro servidor, digite o domínio dele, um handle nele ou uma URL nele em **Abrir um servidor** acima da lista,
+A lista Servidores remotos mostra todos os servidores que este servidor conhece. Para abrir um que ela não lista, digite o domínio dele, um handle nele ou uma URL nele em **Abrir um servidor** acima da lista,
 ou use **Abrir o servidor da conta** na página Análise de uma conta remota ou em uma denúncia sobre uma conta remota, ou o domínio em uma entrada do registro de auditoria sobre um domínio.
 
 ```sh
@@ -563,7 +563,7 @@ deixa a denúncia como está.
   O motivo é só para os moderadores; os participantes veem apenas que a sala terminou. Funciona também com o chat de voz desativado, e o registro de auditoria grava `voice_room_ended`.
   No cliente web, a página da denúncia de uma sala aberta tem “Encerrar a sala”, que pede confirmação antes, com o motivo.
 
-<!-- source: events cbc3e19bfdb6 -->
+<!-- source: events 72a8d513f936 -->
 ### Eventos
 
 - Um usuário local pode denunciar um evento que consegue ver, inclusive um cancelado (`POST /api/v1/reports` com `event_id`, e `account_id` definido como o organizador do evento).
@@ -573,6 +573,7 @@ deixa a denúncia como está.
 - Quem tem `manage_reports` pode cancelar um evento com `POST /api/v1/admin/events/{id}/cancel` (corpo `{"reason": "..."}`, opcional, até 500 caracteres).
   O motivo é mostrado com o cancelamento a todos que veem o evento. Os usuários que responderam que vão ou talvez e os usuários convidados são notificados, como no cancelamento feito pelo próprio organizador, e o registro de auditoria grava `event_canceled`.
   Um evento já cancelado responde `409` `event-closed`. No cliente web, a página da denúncia de um evento tem “Cancelar o evento”, que pede confirmação antes, com o motivo.
+- Uma publicação no mural de um evento é denunciada, analisada e excluída como qualquer outra publicação (`status_ids`, com `account_id` definido como o de quem a escreveu). A denúncia dela nunca é encaminhada, e a exclusão dela nunca sai do servidor.
 - Suspender ou excluir o organizador cancela os eventos do organizador que ainda não começaram, inclusive os ainda em votação de data (`gathering.cancel_organized`), e notifica seus participantes. Esses cancelamentos não nomeiam ninguém como quem os cancelou, e revogar a suspensão não os restaura. Os eventos que já começaram não são cancelados.
 
 <!-- source: notifications-for-moderators-and-the-pending-counts 0d1c327abe83 -->
@@ -609,7 +610,7 @@ Novas denúncias, cadastros aguardando aprovação e recursos chegam às pessoas
 `GET /api/v1/admin/counts` retorna o número de denúncias abertas (`open_reports`, exige `manage_reports`), o número de cadastros aguardando aprovação (`pending_registrations`) e o número de recursos aguardando análise (`pending_appeals`) (ambos exigem `manage_accounts`), o número de solicitações de emojis personalizados aguardando decisão (`pending_custom_emoji_requests`, exige `manage_custom_emojis`) e o número de grupos de erros abertos, novos, regredidos ou reativados (`open_error_groups`, exige `manage_errors`).
 Os itens para os quais você não tem permissão não são retornados.
 
-<!-- source: audit-log 8334cc0280f5 -->
+<!-- source: audit-log 6a072e747840 -->
 ## Registro de auditoria
 
 As operações de moderadores e administradores são registradas, uma linha cada, no registro de auditoria (`audit_log_entries`) na mesma transação da operação.
@@ -669,7 +670,7 @@ Filtre por quem fez (você, ou a pessoa de uma entrada em “Outras operações 
 - A lista vai das mais novas para as mais antigas com paginação por keyset (`-before <entry id>` na CLI).
 - Não há API nem CLI para atualizar ou excluir o registro de auditoria. As linhas antigas são removidas após o [período de retenção](#record-retention-and-holds).
 
-<!-- source: record-retention-and-holds 9861d8570a91 -->
+<!-- source: record-retention-and-holds 888b0178e795 -->
 ## Retenção de registros e retenções legais
 
 Depois do período de retenção de cada tipo de registro, jobs horários (`moderation.purge_records`, `identity.purge_origins`, `voice.purge_records` e `gathering.purge_records`) removem os registros de moderação.
@@ -683,14 +684,16 @@ Você pode alterar os períodos nas configurações da instância, mas não abai
 | Ações contra contas (motivo, nota, publicações alvo, revogação) e recursos | `moderation_actions_retention_days` | 365 dias | 180 dias | O fim da ação |
 | Registro de auditoria | `audit_log_retention_days` | 730 dias | 365 dias | O registro |
 | Bloqueios de cadastro | Nenhuma (não pode ser alterada) | 30 dias | n/d | O que vier primeiro entre a revogação e a expiração |
+| As buscas de uma assinatura de lista de bloqueio; a última que não falhou, e as falhas depois dela, permanecem | Nenhuma (não pode ser alterada) | 30 dias | n/d | A busca |
 | Quem participou de uma sala de chat de voz (participações, oradores e ouvintes, mãos levantadas, convites, remoções) | `voice_participants_retention_days` | 90 dias | 30 dias | O fim da sala |
 | As decisões dos [hooks de decisão](decision-hooks.md#the-decisions) | `hook_decisions_retention_days` | 90 dias | 30 dias | A decisão |
-| As respostas, aprovações, convites e votos nas datas candidatas de um evento | `event_records_retention_days` | 90 dias | 30 dias | O que vier primeiro entre o fim do evento (para um evento cuja data nunca foi fixada, o fim da última data candidata) e o cancelamento dele |
+| As respostas, aprovações, convites, votos nas datas candidatas e publicações do mural de um evento | `event_records_retention_days` | 90 dias | 30 dias | O que vier primeiro entre o fim do evento (para um evento cuja data nunca foi fixada, o fim da última data candidata) e o cancelamento dele |
 
 - As denúncias abertas nunca são removidas. Uma denúncia a que uma ação se refere (`report_id` da ação) permanece até essa ação ser removida.
 - O fim de uma ação é o que vier primeiro entre a revogação e a expiração. Para uma ação que foi contestada, se a análise vier depois disso, o fim é o momento da análise, e a ação é mantida enquanto o recurso aguarda análise.
   `warn` e `delete_statuses` não têm efeito duradouro, então o fim é o momento em que foram emitidos. Uma ação sem fim (um `ban`, um `suspend` sem horário de término e assim por diante) não é removida até ser revogada.
-- As publicações para as quais uma denúncia ou uma ação aponta não são excluídas fisicamente pelo job de limpeza, junto com sua mídia anexada, até essa denúncia ou ação ser removida, mesmo que o autor as tenha excluído (elas somem da vista). As publicações remotas também permanecem além do período de retenção (inclusive a configuração da instância `remote_status_max_retention_days`).
+- Uma publicação excluída some da vista na hora, e o job horário `content.purge_deleted_statuses` remove o texto, a mídia e a enquete dela 7 dias depois, quando o `Delete` dela já teve tempo de chegar aos outros servidores; o registro da URI dela permanece.
+  As publicações para as quais uma denúncia ou uma ação aponta não são excluídas fisicamente, junto com sua mídia anexada, até essa denúncia ou ação ser removida. As publicações remotas também permanecem além do período de retenção (inclusive a configuração da instância `remote_status_max_retention_days`).
 - Um bloqueio de cadastro que não tem nem revogação nem horário de término permanece enquanto estiver em vigor.
 - Os registros de quem participou de uma sala de chat de voz para a qual uma denúncia aponta permanecem até essa denúncia ser removida. A sala em si (seu nome, descrição, anfitriões e como terminou) nunca é removida.
 - As respostas, os votos e os convites de um evento para o qual uma denúncia aponta permanecem até essa denúncia ser removida, e também os que nomeiam uma conta sob retenção legal. O evento em si (suas configurações e lugares, sua data e datas candidatas, seus coorganizadores e seu cancelamento) nunca é removido; depois que as respostas somem, ele não conta ninguém como participante.

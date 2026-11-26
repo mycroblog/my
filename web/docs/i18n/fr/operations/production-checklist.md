@@ -136,17 +136,24 @@ Les paramètres d’instance résident dans la base de données et peuvent être
   - Seules les personnes qui en ont besoin détiennent le rôle `admin` ; les modérateurs détiennent `moderator` ou un rôle avec uniquement les permissions qu’ils utilisent. Listez-les avec `my admin role` et passez-les en revue dans les écrans d’administration.
 - **Détails** : [administrateurs et rôles](admin-cli.md), [modération](moderation.md) (permissions et récupération de connexion).
 
-<!-- source: operations aac00b13fc38 -->
+<!-- source: operations cdf72295a7bb -->
 ## Exploitation
 
-- **Sauvegardes et récupération** : la base de données, le magasin de blobs (`blob_fs_dir` ou le bucket) et la KEK sont sauvegardés selon un calendrier, dans un endroit distinct du serveur, et une restauration vers un serveur neuf a été répétée : le serveur restauré démarre et les comptes peuvent se connecter et publier. On ne sait pas qu’une sauvegarde jamais restaurée fonctionne. La base de données et les médias ne doivent pas se trouver dans un répertoire temporaire ; `my config check` avertit lorsque c’est le cas.
+- **Sauvegardes et reprise** : la base de données, le magasin de blobs (`blob_fs_dir` ou le bucket) et la KEK sont sauvegardés selon un calendrier,
+  dans un lieu distinct du serveur, et une restauration sur un serveur neuf a été répétée : le serveur restauré démarre et les comptes
+  peuvent se connecter et publier. Une sauvegarde qui n’a jamais été restaurée n’est pas réputée fonctionner. La base de données et les médias ne doivent pas se trouver dans un
+  répertoire temporaire ; `my config check` avertit lorsque c’est le cas.
   Voir [gestion des clés](key-management.md) (sauvegarde de la KEK) et [base de données](database.md).
-- **Surveillance et alertes** : un moniteur externe vérifie `/health/live` et alerte une personne capable d’agir, et les tâches mortes de la file de tâches sont surveillées. Voir [surveillance](monitoring.md) et [exécuter le serveur](running.md) (vérifications d’état, métriques et file de tâches).
-- **L’image** : l’instance exécute une image publiée épinglée par condensat (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, tirée des notes de la version), et non une image qui change à un redémarrage, et [sa provenance a été vérifiée](running.md#verify-an-image). Il n’y a pas de tag `latest`.
-  Une mise à niveau change cette version délibérément et suit [Mise à niveau](database.md#upgrading), une version mineure à la fois.
-- **Code source (AGPL-3.0)** : le serveur doit proposer son code source à toutes les personnes qui l’utilisent. Laissez [`source_url`](../reference/configuration.md#source_url) à sa valeur par défaut pour une version publiée non modifiée ; faites-le pointer vers votre propre code source lorsque vous exécutez un fork ou une version modifiée. Vérifiez le lien sur `/about`.
+- **Supervision et alertes** : un moniteur externe vérifie `/health/live` et alerte quelqu’un qui peut agir, et les jobs morts de la file des jobs
+  sont surveillés. Voir [supervision](monitoring.md) et [exécuter le serveur](running.md) (sondes de santé, métriques et file des jobs).
+- **L’image** : l’instance exécute une image publiée, épinglée par son digest (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, tiré des notes de la version, ou
+  [`image.digest`](deploy-opentofu.md#pinning-the-image-by-digest) avec OpenTofu), et non une image qui change à chaque redémarrage, et [sa provenance a été vérifiée](running.md#verify-an-image). Il n’y a pas de tag `latest`.
+  Une mise à niveau change cette version volontairement et suit [Mettre à niveau](database.md#upgrading), une version mineure à la fois.
+- **Code source (AGPL-3.0)** : le serveur doit offrir son code source à toute personne qui l’utilise. Laissez
+  [`source_url`](../reference/configuration.md#source_url) à sa valeur par défaut pour une version publiée non modifiée ; faites-le pointer vers votre propre
+  source lorsque vous exécutez un fork ou une version modifiée. Vérifiez le lien sur `/about`.
   Voir [exécuter le serveur](running.md) (publier le code source).
-- **Maintenance** : sachez comment placer le serveur en mode de maintenance avant d’en avoir besoin. Voir [maintenance](maintenance.md).
+- **Maintenance** : sachez comment mettre le serveur en mode maintenance avant d’en avoir besoin. Voir [maintenance](maintenance.md).
 
 <!-- source: federation a5ab186ec04b -->
 ## Fédération

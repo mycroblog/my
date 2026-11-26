@@ -1,7 +1,7 @@
-<!-- source: sending-email-through-amazon-ses cb9101de6cc9 -->
+<!-- source: sending-email-through-amazon-ses 6deee2054246 -->
 # 透過 Amazon SES 寄送電子郵件
 
-如何讓 Amazon SES 準備好寄送伺服器的電子郵件：用 DNS 紀錄驗證寄件者的網域、離開新帳號一開始所在的沙盒，並讓帳號維持良好的狀態。OpenTofu 模組 [`mycroblog-aws`](../../deploy/opentofu/README.md#aws) 預設透過 SES 寄送，並建立身分與權限；紀錄和正式環境存取權的申請則是你自己要做的步驟。設定本身列在[寄送電子郵件](email.md#amazon-ses-api)。
+如何讓 Amazon SES 準備好寄送伺服器的電子郵件：用 DNS 紀錄驗證寄件者的網域、離開新帳號一開始所在的沙盒，並讓帳號維持良好的狀態。OpenTofu 模組 [`mycroblog-aws`](deploy-aws.md#email-through-amazon-ses) 預設透過 SES 寄送，並建立身分與權限；紀錄和正式環境存取權的申請則是你自己要做的步驟。設定本身列在[寄送電子郵件](email.md#amazon-ses-api)。
 
 **AWS 部署從未被實際套用過**，因此這些步驟來自 AWS 的文件，尚未在本專案的伺服器上完整照做過。
 

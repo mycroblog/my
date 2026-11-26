@@ -11,10 +11,10 @@ Les métriques comptent chaque tentative par source, résultat et type d’éche
 Pour AWS et Google Cloud, aucun identifiant n’est conservé dans la configuration de ce serveur. Donnez à l’environnement d’exécution ce que lit la chaîne d’identifiants par défaut du SDK de chaque fournisseur (pour AWS, le rôle d’exécution, les variables d’environnement ou les fichiers d’identifiants partagés ; pour Google Cloud, les Application Default Credentials).
 Cloudflare n’a pas de telle chaîne : son import lit donc un jeton d’API dans [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare).
 
-<!-- source: with-the-opentofu-modules a8e849af2fcd -->
+<!-- source: with-the-opentofu-modules 9f123e4796b9 -->
 ## Avec les modules OpenTofu
 
-Sur Google Cloud, la section `billing` de [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) définit `billing_sources = gcp` et réalise les parties de ce guide que l’API du fournisseur permet, avec `billing_account_id`, `method` (`bigquery` ou `budget`) et `dataset_location`. Elle n’importe que les coûts de Google Cloud. Sur AWS, le module [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) de l’exemple AWS fait de même pour les coûts d’AWS. Aucun des deux n’a encore été appliqué sur un compte réel.
+Sur Google Cloud, la section `billing` de [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) définit `billing_sources = gcp` et réalise les parties de ce guide que l’API du fournisseur permet, avec `billing_account_id`, `method` (`bigquery` ou `budget`) et `dataset_location`. Elle importe les seuls coûts de Google Cloud. Sur AWS, le module [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) de l’exemple AWS fait de même pour les coûts d’AWS. Aucun n’a encore été appliqué sur un compte réel.
 
 | Étape de ce guide | Avec les modules |
 | --- | --- |
@@ -22,12 +22,12 @@ Sur Google Cloud, la section `billing` de [`mycroblog-gcp`](../../deploy/opentof
 | Activer Cost Explorer, Linked Account Access, les tags d’allocation des coûts | À la main, dans la console AWS |
 | Le jeu de données de l’export, et les rôles de « Rôles IAM » | La section `billing` |
 | Activer l’export (« Standard usage cost ») | À la main, dans la console Google Cloud, avec un rôle sur le compte de facturation |
-| Le sujet et l’abonnement pull d’un budget, et le rôle d’abonné | La section `billing` avec `method = "budget"` |
-| Créer le budget et le relier au sujet | À la main, dans la console Google Cloud, avec un rôle sur le compte de facturation |
-| Activer l’API BigQuery ou Pub/Sub | À la main, comme dans [Déployer sur Cloud Run](deploy-google-cloud.md#1-enable-the-apis) |
+| Le topic et l’abonnement pull d’un budget, et le rôle d’abonné | La section `billing` avec `method = "budget"` |
+| Créer le budget et le relier au topic | À la main, dans la console Google Cloud, avec un rôle sur le compte de facturation |
+| Activer l’API BigQuery ou Pub/Sub | À la main, comme dans [Déployer sur Google Cloud](deploy-google-cloud.md#1-enable-the-apis) |
 | Les coûts d’AWS sur Cloud Run | Pas par `mycroblog-gcp`. Créez à la main le rôle de [Appeler depuis Cloud Run avec une identité web](#calling-from-cloud-run-with-web-identity), et définissez `billing_sources = aws` et `billing_aws_role_arn` dans `settings`, sans la section `billing` |
-| Cloudflare | Pas par ces modules. Sur Cloud Run, sans la section `billing`, définissez `billing_sources` et `billing_cloudflare_account_id` dans `settings`, et `billing_cloudflare_api_token` dans `secrets`, comme pour un plugin |
-| Un plugin | Pas par ces modules. Sur Cloud Run, sans la section `billing`, définissez `billing_sources = plugin` et les paramètres [du plugin](#a-plugin-billing_sources--plugin) dans `settings`. À côté de la section `billing`, le module refuse `billing_sources` dans `settings` |
+| Cloudflare | Pas par ces modules. Sur Cloud Run, sans la section `billing`, définissez `billing_sources`, `billing_cloudflare_account_id` dans `settings` et `billing_cloudflare_api_token` dans `secrets`, comme pour un plugin |
+| Un plugin | Pas par ces modules. Sur Cloud Run, sans la section `billing`, définissez `billing_sources = plugin` et les réglages du [plugin](#a-plugin-billing_sources--plugin) dans `settings`. À côté de la section `billing`, le module refuse `billing_sources` dans `settings` |
 
 <!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS (`billing_sources = aws`)

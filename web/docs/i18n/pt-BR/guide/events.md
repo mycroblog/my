@@ -31,7 +31,12 @@ Um evento pode ter um lugar para encontro presencial, um link online (uma transm
 
 Os links para mapas, reuniões online e os links de uma descrição abrem em uma nova aba e informam o site de destino: eles saem deste servidor, que nunca os verifica.
 
-<!-- source: organizing-an-event d6a7b15b234f -->
+<!-- source: the-board 074b939b2717 -->
+## O mural
+
+Cada evento tem um mural para o que as pessoas precisam saber antes e durante ele. O organizador, os coorganizadores e as pessoas que responderam “Vou” ou “Talvez” veem a página do evento como duas abas, “Detalhes” e “Mural”; quem não é uma delas não vê mural nenhum. No mural, “Escrever no mural” abre o editor, e a publicação vai somente para o mural: ela nunca aparece em uma linha do tempo, em um perfil nem na busca, nunca é enviada a outros servidores e não pode ser impulsionada nem citada. As publicações do mural são editadas, excluídas, respondidas, favoritadas e reagidas como qualquer publicação. Quem pode escrever é uma escolha do organizador; quando você não pode, o mural diz quem pode. Depois que o evento é cancelado, ou 7 dias depois de ele terminar, o mural passa a ser somente leitura. Uma nova publicação no mural notifica quem o lê, e a notificação abre o mural.
+
+<!-- source: organizing-an-event e8a2d468ac33 -->
 ## Organizar um evento
 
 Escolha “Novo evento” na lista de eventos. O editor pede:
@@ -40,10 +45,11 @@ Escolha “Novo evento” na lista de eventos. O editor pede:
 - **Fuso horário do evento**, **Início** e **Fim**. Os horários são os do fuso horário do evento, que começa igual ao seu. Um evento dura no máximo 7 dias e começa dentro de um ano. Para deixar que as pessoas escolham a data, selecione “Pedir que as pessoas respondam a datas candidatas” e informe até 20 candidatas, cada uma com início e fim.
 - **Lugares**: “Encontro presencial” (um nome, um endereço e um link de mapa opcional) e “Link online” (um nome e uma URL), e **Quem vê o lugar e o link**: “Somente os participantes que você aprovar” ou “Todos que veem o evento”. Quando o chat de voz está ativado e você pode iniciar salas, “Sala de chat de voz” abre uma sala para o evento no horário de início, com **Quem pode falar sem pedir**.
 - **Quem vê o evento**: todos neste servidor, os seguidores do organizador, as pessoas que o organizador segue, os seguimentos mútuos do organizador, ou apenas as pessoas convidadas. As pessoas que você convida e as que responderam sempre o veem.
+- **Quem pode escrever no mural**: somente você, você e os coorganizadores (o padrão) ou todos que leem o mural.
 - **Capacidade**, quantas pessoas podem responder “Vou”; deixe vazio para não ter limite.
 
-Na página do evento, o organizador e os coorganizadores aprovam participantes (“Aprovar” e “Revogar aprovação”), convidam pessoas deste servidor em “Convites” e alteram o evento com “Editar evento”. Somente o organizador muda quem vê o evento, indica até três “Coorganizadores” e cancela o evento com “Cancelar evento”, opcionalmente com um motivo que o evento então mostra. Um evento cancelado continua legível, mas não recebe mais respostas.
+Na página do evento, o organizador e os coorganizadores aprovam participantes (“Aprovar” e “Revogar aprovação”), convidam pessoas deste servidor em “Convites” e alteram o evento com “Editar evento”. Somente o organizador muda quem vê o evento e quem pode escrever no mural, indica até três “Coorganizadores” e cancela o evento com “Cancelar evento”, opcionalmente com um motivo que o evento então mostra. Um evento cancelado continua legível, mas não recebe mais respostas.
 
 Os moderadores do servidor também podem cancelar um evento; a página dele então informa isso, com o motivo deles. Alguns servidores permitem que apenas algumas pessoas criem eventos: quando você não pode, ao tentar criar um aparece “Você não pode criar eventos neste servidor.”
 
-Se você respondeu “Vou” ou “Talvez”, os lembretes chegam um dia e uma hora antes de o evento começar. Para todas as notificações de eventos (convites, alterações, cancelamentos e lembretes), consulte [Notificações](notifications.md).
+Se você respondeu “Vou” ou “Talvez”, os lembretes chegam um dia e uma hora antes de o evento começar. Para todas as notificações de eventos (convites, alterações, cancelamentos, lembretes e novas publicações no mural), consulte [Notificações](notifications.md).

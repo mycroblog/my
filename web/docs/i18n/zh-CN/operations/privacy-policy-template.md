@@ -22,7 +22,7 @@
 
 当你更改下文中的某项设置或某项服务时，以及每次升级的发布说明提到个人数据时，请重新审查这份政策。
 
-<!-- source: the-periods-and-their-settings 8313baaa97d8 -->
+<!-- source: the-periods-and-their-settings eb30a5027cca -->
 ## 期限及其设置
 
 `my instance list` 会显示每一个实例设置，以及它是否为默认值。期限的更改会在其每小时任务的下一次运行时生效。超出范围的值会被拒绝。
@@ -35,7 +35,7 @@
 | 针对账号的措施，以及申诉 | 365 天 | `moderation_actions_retention_days` | 180-3650 | 措施结束 |
 | 审计日志 | 730 天 | `audit_log_retention_days` | 365-3650 | 记录产生 |
 | 谁参与了语音聊天房间 | 90 天 | `voice_participants_retention_days` | 30-3650 | 房间结束 |
-| 谁回复、对日期投票以及受邀参加某个活动 | 90 天 | `event_records_retention_days` | 30-3650 | 活动结束和取消中较早的一个 |
+| 谁回复、对日期投票以及受邀参加某个活动，以及公告板上的帖子 | 90 天 | `event_records_retention_days` | 30-3650 | 活动结束和取消中较早的一个 |
 | 外部审查的决定（在你使用时） | 90 天 | `hook_decisions_retention_days` | 30-3650 | 决定 |
 | 这里没有任何内容引用的远程帖子 | 90 天 | `remote_status_retention_days` | 1-3650 | 帖子发布 |
 | 任何远程帖子 | 无限制（`0`） | `remote_status_max_retention_days` | 0-3650 | 帖子发布 |
@@ -124,7 +124,7 @@
 - **Web Push。** 用户启用它时，其浏览器会选择推送服务，并把推送服务的地址告诉服务器。消息正文是为该浏览器加密的，因此推送服务应该无法读取。但推送服务能看到订阅地址、每条消息的大小和时间，以及你的服务器的联系方式（VAPID subject），并且在浏览器离线期间最多保留消息 48 小时。
 - **联邦。** 参见模板的第 5 节。`federation_mode` 可以关闭联邦或限制其方向，中继则由你自己添加（[中继](relays.md)）。
 
-<!-- source: the-template 5a65f2c53778 -->
+<!-- source: the-template 7d380628fcdc -->
 ## 模板
 
 ```markdown
@@ -177,6 +177,7 @@ This policy covers people with an account here, people who read pages here witho
 | {{IF voice}} Who took part in a room: participation, speakers, raised hands, invitations, removals | Moderating rooms | {{90 days}} from the end of the room, or as long as a report about the room. We record neither audio nor text chat |
 | Events: title, description, date, places, organizers, and cancellation | Showing events to the people who may see them | Kept. The title, description, and places you wrote are removed when your account is erased |
 | Invitations to events, your answers to them and to their candidate dates, and their approval | Showing who comes and who can come on which date, and showing the address and link to the approved | {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept |
+| Your posts on the board of an event | Telling its organizers and the people going what the event needs | Until you delete them, or {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept. They are never sent to other servers |
 | {{IF payments}} Supporter plans: the provider's IDs for you and your subscription, amounts, periods, and states. Not your card details | Running your subscription, and accounting | {{PERIOD AND REASON, e.g. as long as tax law requires}}. The link to the provider's customer goes when your account is erased |
 | {{IF payments}} Your choice to appear in the list of supporters | Showing the list | Until the subscription ends or your account is erased |
 | {{IF tips}} Tips: the amount, when you paid, the provider's ID of the payment, refunds and chargebacks. Not your card details | Taking the tip, and accounting | Until your account is erased; the amounts stay in the accounts without you. The provider keeps the payment and the email address of its page: {{ITS PERIOD}} |

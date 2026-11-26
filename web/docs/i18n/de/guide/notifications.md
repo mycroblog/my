@@ -4,7 +4,7 @@
 Wähle in der Navigation „Benachrichtigungen“. Die Navigation zeigt, wie viele Benachrichtigungen ungelesen sind
 („Benachrichtigungen, 3 ungelesen“).
 
-<!-- source: what-you-are-notified-of afff09e059ac -->
+<!-- source: what-you-are-notified-of f82164242973 -->
 ## Worüber du benachrichtigt wirst
 
 Wenn dir jemand folgt, dich erwähnt oder auf deine Beiträge reagiert, erscheint es hier. Diese Arten kannst du sehen:
@@ -16,7 +16,7 @@ Wenn dir jemand folgt, dich erwähnt oder auf deine Beiträge reagiert, erschein
 - Eine Umfrage, an der du teilgenommen hast, ist beendet.
 - Ein Konto, dem du folgst, ist zu einem anderen Konto umgezogen, und was mit deinem Folgen geschehen ist.
 - Sprachchat: Jemand hat einen Sprachchat-Raum gestartet oder dich in einen eingeladen.
-- Veranstaltungen: Jemand hat dich zu einer Veranstaltung eingeladen; die Organisatoren haben den Termin einer Veranstaltung festgelegt, deren Terminvorschläge du beantwortet hast oder zu der du eingeladen warst; eine Veranstaltung, an der du teilnimmst, vielleicht teilnimmst oder zu der du eingeladen warst, hat Datum, Ort oder Sprachchat-Raum geändert oder wurde abgesagt; eine Veranstaltung, an der du teilnimmst oder vielleicht teilnimmst, beginnt bald (eine Erinnerung) oder beginnt jetzt; und der Sprachchat-Raum einer Veranstaltung, die du organisierst, kann nicht geöffnet werden, konnte zum Beginn nicht geöffnet werden oder es kam niemand (die Veranstaltung selbst findet weiter statt). Erinnerungen kommen einen Tag und eine Stunde vor dem Beginn; eine App kann diese auf bis zu drei Zeitpunkte zwischen 5 Minuten und 7 Tagen vorher ändern oder ausschalten. Ändert sich das Datum, folgen die Erinnerungen dem neuen Datum. E-Mails zu Veranstaltungen nennen nie, wo die Veranstaltung stattfindet, und Erinnerungs-E-Mails werden sofort gesendet, statt zu warten, ob die Benachrichtigung ungelesen bleibt.
+- Veranstaltungen: Jemand hat dich zu einer Veranstaltung eingeladen; die Organisatoren haben den Termin einer Veranstaltung festgelegt, deren Terminvorschläge du beantwortet hast oder zu der du eingeladen warst; eine Veranstaltung, an der du teilnimmst, vielleicht teilnimmst oder zu der du eingeladen warst, hat Datum, Ort oder Sprachchat-Raum geändert oder wurde abgesagt; eine Veranstaltung, an der du teilnimmst oder vielleicht teilnimmst, beginnt bald (eine Erinnerung) oder beginnt jetzt, oder jemand hat auf ihrer Pinnwand geschrieben (ein Beitrag, der dich erwähnt, benachrichtigt dich nur über die Erwähnung); und der Sprachchat-Raum einer Veranstaltung, die du organisierst, kann nicht geöffnet werden, konnte zum Beginn nicht geöffnet werden oder es kam niemand (die Veranstaltung selbst findet weiter statt). Erinnerungen kommen einen Tag und eine Stunde vor dem Beginn; eine App kann diese auf bis zu drei Zeitpunkte zwischen 5 Minuten und 7 Tagen vorher ändern oder ausschalten. Ändert sich das Datum, folgen die Erinnerungen dem neuen Datum. E-Mails zu Veranstaltungen nennen nie, wo die Veranstaltung stattfindet, und Erinnerungs-E-Mails werden sofort gesendet, statt zu warten, ob die Benachrichtigung ungelesen bleibt.
 - Mitteilungen der Moderatoren des Servers, das Ergebnis eines Einspruchs und die Erledigung einer Meldung, die du gemacht hast.
 - Ankündigungen und Nachrichten der Administratoren über den Server, zum Beispiel wenn er schließen wird.
 - Das Maximum des Servers für die Aufbewahrung von Beiträgen gilt künftig für deine Beiträge, und ab wann (siehe [Alte Beiträge automatisch löschen](posting.md#deleting-old-posts-automatically)).

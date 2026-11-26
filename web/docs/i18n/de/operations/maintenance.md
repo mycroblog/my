@@ -109,7 +109,7 @@ Die Fehlerseiten der Frontends unten beantworten die Fehler des Servers mit der 
 (`502` und `504` sowie das eigene `503` des Load Balancers, wo er kein gesundes Backend hat), oder schalte die Regel nur ein, solange `my serve` nicht laufen kann:
 Eine Regel auf jedes `503` würde auch die eigenen Antworten des Wartungsmodus ersetzen, etwa das Problem, das die Client-API und der Web-Client lesen.
 
-<!-- source: cloud-run 8bed844981b6 -->
+<!-- source: cloud-run b150825c7bf0 -->
 ### Cloud Run
 
 Deploye eine neue Revision mit der Variable und entferne sie danach:
@@ -121,7 +121,7 @@ gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAIN
 ```
 
 Setze es mit dem OpenTofu-Modul stattdessen im Block, als `settings = { maintenance = "true" }`, und wende es an, denn das nächste Apply stellt
-wieder her, was der Block sagt: [Auf Cloud Run bereitstellen](deploy-opentofu.md#the-maintenance-mode) beschreibt es rund um ein Upgrade.
+wieder her, was der Block sagt: [Mit OpenTofu bereitstellen](deploy-opentofu.md#the-maintenance-mode) beschreibt es rund um ein Upgrade.
 
 Wenn Cloud Run direkt ohne Load Balancer erreichbar ist, steht nichts davor, daher ist der Wartungsmodus das einzige Werkzeug.
 
@@ -140,13 +140,13 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-<!-- source: aws-ecs afc0ba5adee4 -->
+<!-- source: aws-ecs 0b5f487093f4 -->
 ### AWS ECS
 
 Registriere eine Revision der Task-Definition des Dienstes mit `MY_MAINTENANCE=true` in der Umgebung des Containers, aktualisiere den Dienst darauf
 und tue danach dasselbe ohne die Variable. Setze es mit dem OpenTofu-Modul stattdessen im Block, als `settings = { maintenance = "true" }`,
 und wende es an, denn das nächste Apply stellt wieder her, was der Block sagt: Wende rund um ein Upgrade zuerst den Modus an, dann das neue Release, dann den Block ohne ihn,
-wie es [Auf Cloud Run bereitstellen](deploy-opentofu.md#the-maintenance-mode) tut.
+wie es [Mit OpenTofu bereitstellen](deploy-opentofu.md#the-maintenance-mode) tut.
 
 **Wenn `my serve` nicht laufen kann**, hinter CloudFront: Lade das exportierte `index.html` in einen S3-Bucket hoch, der eine zweite Origin ist
 (die Fehlerseite kann nicht von der ausfallenden Origin kommen), und füge benutzerdefinierte Fehlerantworten für `502` und `504` hinzu (und `503` nur, solange `my serve` nicht laufen kann)

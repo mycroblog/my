@@ -1,7 +1,7 @@
-<!-- source: sending-email-through-amazon-ses cb9101de6cc9 -->
+<!-- source: sending-email-through-amazon-ses 6deee2054246 -->
 # 通过 Amazon SES 发送电子邮件
 
-如何让 Amazon SES 做好发送服务器电子邮件的准备：用 DNS 记录验证发件人的域名、离开新账号起步时所处的沙盒，并让账号保持良好状态。OpenTofu 模块 [`mycroblog-aws`](../../deploy/opentofu/README.md#aws) 默认通过 SES 发送，并会创建身份和权限；这些记录以及生产访问权限的申请则是你自己要完成的步骤。设置本身见[发送电子邮件](email.md#amazon-ses-api)。
+如何让 Amazon SES 做好发送服务器电子邮件的准备：用 DNS 记录验证发件人的域名、离开新账号起步时所处的沙盒，并让账号保持良好状态。OpenTofu 模块 [`mycroblog-aws`](deploy-aws.md#email-through-amazon-ses) 默认通过 SES 发送，并会创建身份和权限；这些记录以及生产访问权限的申请则是你自己要完成的步骤。设置本身见[发送电子邮件](email.md#amazon-ses-api)。
 
 **AWS 部署从未被应用过**，所以这些步骤来自 AWS 的文档，尚未在本项目的服务器上完整走过一遍。
 

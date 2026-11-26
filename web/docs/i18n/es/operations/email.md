@@ -194,7 +194,7 @@ plugin una solicitud sin destinatario, que este debe rechazar. El servidor no pu
 el que llega: sus cabeceras deben contener `Message-ID`, `Date` y `Auto-Submitted: auto-generated`.
 Consulta [Probar un plugin](plugins.md#test-a-plugin).
 
-<!-- source: receive-ses-notifications-sns e21b650ab5fe -->
+<!-- source: receive-ses-notifications-sns aa8911000390 -->
 ### Recibir las notificaciones de SES (SNS)
 
 Los rebotes y las quejas de SES van a un tema de SNS, y una suscripción HTTPS a ese tema los entrega al
@@ -254,7 +254,7 @@ dominio en Punycode coincide también en su forma Unicode); si ninguna coincide,
 | --- | --- |
 | Un rebote cuyo `bounceType` es `Permanent` (cualquier subtipo, como `General`, `NoEmail`, `Suppressed` u `OnAccountSuppressionList`) | `hard_bounce` |
 | Una queja (salvo aquellas cuyo `complaintFeedbackType` es `not-spam`) | `complaint` |
-| Un rebote `Transient` o `Undetermined`, y otras notificaciones como entrega o envío | No se registra (responde `200`) |
+| Un rebote `Transient` o `Undetermined`, otras notificaciones como entrega o envío, y cualquier notificación cuyo `mail.source` no sea la dirección de `mail_from` (correo que envió otra instancia que comparte el tema o el conjunto de configuración) | No se registra (responde `200`) |
 
 El `feedbackId` de SES es la clave única de un registro, así que, por muchas veces que SNS envíe la misma notificación, hay un solo registro.
 

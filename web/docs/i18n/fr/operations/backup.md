@@ -194,13 +194,19 @@ La base de données nomme les fichiers médias qu’elle utilise, et la copie de
 L’autre ordre est pire : chaque fichier téléversé entre la sauvegarde des médias et celle de la base de données manquerait après une restauration,
 y compris les médias des nouvelles publications. Réaliser les deux en mode maintenance évite l’un et l’autre écart.
 
-<!-- source: on-the-opentofu-targets 9862430f808c -->
+<!-- source: on-the-opentofu-targets a0188744140f -->
 ### Sur les cibles OpenTofu
 
-Les modules ne conservent aucune sauvegarde propre au-delà de ce que le fournisseur offre : le PostgreSQL géré de Cloud SQL et de RDS dispose de sauvegardes automatiques avec une durée de conservation que vous définissez, alors qu’une base de données avec seulement l’historique du fournisseur (Neon) ne peut remonter que jusqu’où va cet historique. Planifiez-les vous-même, avec des identifiants que l’instance ne détient pas :
+Les modules ne conservent aucune sauvegarde propre, au-delà de ce que le fournisseur offre : le PostgreSQL géré de
+[Cloud SQL](deploy-google-cloud.md#cloud-sql) et de [RDS](deploy-aws.md#2-choose-the-database) a des sauvegardes automatiques dont vous réglez la rétention, tandis qu’une base qui n’a que l’historique du fournisseur (Neon) ne peut remonter que jusqu’où cet historique va.
+Planifiez ces sauvegardes vous-même, avec des identifiants que l’instance ne détient pas :
 
-1. **La base de données, chaque jour.** Exécutez `pg_dump` sur le PostgreSQL de l’instance depuis une machine ou une tâche planifiée extérieure au fournisseur qui héberge la base de données (voir [PostgreSQL](#postgresql)), chiffrez l’export et écrivez-le dans un bucket d’un autre compte ou fournisseur. Conservez les générations de [Fréquence et destination](#how-often-and-where). La tâche n’a besoin que de `database_url` ; elle ne doit pas détenir la KEK.
-2. **Les médias, juste après.** Avec `versioning = true` sur le module du bucket, les versions sont la copie pour les derniers `noncurrent_version_days` ; pour la perte du compte, exécutez aussi `rclone copy` du bucket de l’instance vers un bucket ailleurs, comme dans [Médias dans un bucket](#media-in-a-bucket), selon le calendrier de l’export de la base de données.
+1. **La base de données, chaque jour.** Exécutez `pg_dump` sur le PostgreSQL de l’instance depuis une machine ou une tâche planifiée extérieure au fournisseur qui héberge la
+   base (voir [PostgreSQL](#postgresql)), chiffrez la sauvegarde et écrivez-la dans un bucket d’un autre compte ou d’un autre fournisseur. Conservez les générations de
+   [À quelle fréquence et où](#how-often-and-where). La tâche n’a besoin que de `database_url` ; elle ne doit pas détenir la KEK.
+2. **Les médias, juste après.** Avec `versioning = true` sur le module de bucket, les versions constituent la copie pour les `noncurrent_version_days` derniers jours ;
+   pour la perte du compte, exécutez aussi `rclone copy` du bucket de l’instance vers un bucket ailleurs, comme dans
+   [Les médias dans un bucket](#media-in-a-bucket), selon le calendrier de la sauvegarde de la base.
 3. **La KEK et la configuration** ne font pas partie du calendrier : sauvegardez-les lorsqu’elles changent ([La KEK et la configuration](#the-kek-and-the-configuration)).
 
 <!-- source: the-kek-and-the-configuration b3d65ec5edb5 -->

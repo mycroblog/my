@@ -161,17 +161,24 @@ ou com `my instance set`. `my config check -instance` avisa sobre os textos, con
     Liste-os com `my admin role` e revise-os nas telas de administração.
 - **Detalhes**: [administradores e papéis](admin-cli.md), [moderação](moderation.md) (permissões e recuperação de login).
 
-<!-- source: operations aac00b13fc38 -->
+<!-- source: operations cdf72295a7bb -->
 ## Operação
 
-- **Backups e recuperação**: o banco de dados, o armazenamento de blobs (`blob_fs_dir` ou o bucket) e a KEK têm backup agendado, em um lugar separado do servidor, e uma restauração para um servidor novo foi ensaiada: o servidor restaurado inicia e as contas conseguem entrar e publicar. Um backup que nunca foi restaurado não se sabe se funciona. O banco de dados e a mídia não podem estar em um diretório temporário; `my config check` avisa quando estão.
+- **Backups e recuperação**: o banco de dados, o armazenamento de blobs (`blob_fs_dir` ou o bucket) e a KEK têm backup agendado,
+  em um lugar separado do servidor, e uma restauração em um servidor novo foi ensaiada: o servidor restaurado inicia e as contas
+  conseguem entrar e publicar. Não se sabe se um backup que nunca foi restaurado funciona. O banco de dados e a mídia não devem ficar em um
+  diretório temporário; `my config check` avisa quando ficam.
   Veja [gerenciamento de chaves](key-management.md) (backup da KEK) e [banco de dados](database.md).
-- **Monitoramento e alertas**: um monitor externo verifica `/health/live` e avisa alguém que possa agir, e os jobs mortos da fila de jobs são observados. Veja [monitoramento](monitoring.md) e [executando o servidor](running.md) (verificações de saúde, métricas e a fila de jobs).
-- **A imagem**: a instância executa uma imagem lançada e fixada por digest (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, das notas da versão), e não uma que muda a cada reinício, e [a sua proveniência foi verificada](running.md#verify-an-image). Não existe tag `latest`.
-  Uma atualização muda essa versão de propósito e segue [Atualizando](database.md#upgrading), uma versão menor de cada vez.
-- **Código-fonte (AGPL-3.0)**: o servidor precisa oferecer o seu código-fonte a todos que o usam. Deixe [`source_url`](../reference/configuration.md#source_url) no padrão para uma versão lançada sem modificações; aponte-o para o seu próprio código-fonte quando executar um fork ou uma versão modificada. Verifique o link em `/about`.
-  Veja [executando o servidor](running.md) (publicação do código-fonte).
-- **Manutenção**: saiba colocar o servidor em modo de manutenção antes de precisar dele. Veja [manutenção](maintenance.md).
+- **Monitoramento e alertas**: um monitor externo verifica `/health/live` e alerta alguém que possa agir, e os jobs mortos da fila de jobs
+  são vigiados. Veja [monitoramento](monitoring.md) e [executar o servidor](running.md) (verificações de saúde, métricas e a fila de jobs).
+- **A imagem**: a instância executa uma imagem lançada fixada por digest (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, das notas da release, ou
+  [`image.digest`](deploy-opentofu.md#pinning-the-image-by-digest) com o OpenTofu), não uma que muda a cada reinício, e [a procedência dela foi verificada](running.md#verify-an-image). Não existe tag `latest`.
+  Uma atualização muda essa versão de propósito e segue [Atualizar](database.md#upgrading), uma versão menor de cada vez.
+- **Código-fonte (AGPL-3.0)**: o servidor deve oferecer o seu código-fonte a todos que o usam. Deixe
+  [`source_url`](../reference/configuration.md#source_url) no padrão para uma release sem modificações; aponte-o para o seu próprio
+  código-fonte quando você executar um fork ou uma versão modificada. Verifique o link em `/about`.
+  Veja [executar o servidor](running.md) (publicar o código-fonte).
+- **Manutenção**: saiba como colocar o servidor no modo de manutenção antes de precisar. Veja [manutenção](maintenance.md).
 
 <!-- source: federation a5ab186ec04b -->
 ## Federação

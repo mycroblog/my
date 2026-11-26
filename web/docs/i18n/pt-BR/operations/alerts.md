@@ -63,23 +63,27 @@ a taxa de requisições, os códigos de status e a latência; as execuções de 
 e os servidores remotos; e a CPU e a memória de cada processo. Importe-o no Grafana (**Dashboards** → **New** → **Import**) e escolha a sua
 fonte de dados do Prometheus; a variável **Job** dele seleciona o job de coleta (`my` por padrão).
 
-<!-- source: google-cloud-cloud-run addd07c417a9 -->
+<!-- source: google-cloud-cloud-run 0db55ed9d56b -->
 ### Google Cloud (Cloud Run)
 
-Com `metrics_exporter = none`, crie os alertas a partir do que o Cloud Run e o Cloud Logging já têm:
+Com `metrics_exporter = none`, monte os alertas a partir do que o Cloud Run e o Cloud Logging já têm:
 
-- **Erros HTTP e latência**: a contagem de requisições do Cloud Run por classe de código de resposta e a métrica de latência de requisições do serviço.
-- **Erros**: as linhas `error report` vão para o Error Reporting, que as agrupa e pode notificar você sobre erros novos e recorrentes ([Relatório de erros](error-reporting.md#google-cloud-cloud-run)).
-- **Jobs e requisições**: o servidor grava uma linha de log por requisição HTTP (`msg` = `http request`) e por execução de job (`msg` = `job`), com os
+- **Erros HTTP e latência**: a contagem de requisições do Cloud Run por classe de código de resposta e a métrica de latência das requisições do serviço.
+- **Erros**: as linhas `error report` vão para o Error Reporting, que as agrupa e pode notificar você de erros novos e recorrentes ([Relatório de erros](error-reporting.md#google-cloud-cloud-run)).
+- **Jobs e requisições**: o servidor escreve uma linha de log por requisição HTTP (`msg` = `http request`) e por execução de job (`msg` = `job`), com os
   mesmos rótulos das métricas. Crie métricas baseadas em logs a partir delas, por exemplo um contador de `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
-  para jobs com falha, ou uma distribuição de `jsonPayload.duration_seconds` filtrada por `jsonPayload."my.surface"="client_api"` para a latência.
-- **Acúmulo na fila e armazenamento**: a cada 15 minutos o job `metrics.snapshot` grava uma linha (`msg` = `metrics snapshot`) com os valores
-  da instância inteira, como `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size` e `my.media.stored_bytes`. Crie métricas baseadas em logs a partir dos campos dela;
-  uma lacuna nessas linhas significa que o tick ou a fila parou. A métrica de profundidade da fila do Cloud Tasks conta os sinais que aguardam entrega.
+  para os jobs com falha, ou uma distribuição de `jsonPayload.duration_seconds` filtrada por `jsonPayload."my.surface"="client_api"` para a latência.
+  A linha de um POST para uma caixa de entrada também tem os rótulos de `my.inbox.activities`: `activity.type`, `my.outcome` e `my.inbox.rejection`.
+- **Fila acumulada e armazenamento**: a cada 15 minutos o job `metrics.snapshot` escreve uma linha (`msg` = `metrics snapshot`) com os valores
+  da instância inteira, como `my.queue.oldest_ready_age` (por tipo de job), `my.queue.dead`, `my.db.size` e `my.media.stored_bytes` (por origem). Um filtro não pode
+  comparar campos de um grupo, então a linha também tem `my.queue.oldest_ready_age.max` e `my.media.stored_bytes.total`. Crie métricas baseadas em logs
+  a partir dos campos dela; uma lacuna nessas linhas significa que o tick ou a fila parou. A métrica de profundidade da fila do Cloud Tasks conta os sinais que aguardam entrega.
+- **Adaptadores e o pool do banco de dados**: as linhas `http request` e `job` também trazem os campos de `MyAdapterErrors`, `MyDBPoolSaturated` e
+  `MyDBPoolWaiting`: as operações dos adaptadores da requisição ou do job, e o uso e as esperas do pool do processo ([as linhas](running.md#start-the-server)).
 - **Banco de dados**: as métricas de utilização de disco e de conexões do Cloud SQL, ou os alertas de uso do seu provedor de banco de dados.
 - **Custo**: um orçamento do Cloud Billing com limites de alerta ([Custo e orçamento](#cost-and-budget)).
 
-A seção `monitoring` do [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) cria esses itens como políticas com os nomes da tabela abaixo, e [o README do módulo por trás dela](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) lista cada alerta que ela cobre de outra forma ou não consegue expressar. Ela nunca foi aplicada. Uma métrica que só o tráfego produz tem lacunas em um serviço que escala a zero, então um alerta sobre a ausência dela dispara em falso; a verificação de disponibilidade dela é o que percebe um servidor ocioso que morreu.
+A seção `monitoring` de [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) cria esses itens como políticas com os nomes da tabela abaixo, e [o README do módulo por trás dela](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) lista cada alerta que ela cobre de outra forma ou não consegue expressar. Ela nunca foi aplicada. Uma métrica que só o tráfego produz tem lacunas em um serviço que escala a zero, então um alerta sobre a ausência dela dispara em falso; é a verificação de disponibilidade dela que percebe um servidor ocioso e morto.
 
 <!-- source: aws-ecs ce4eac5fd50d -->
 ### AWS ECS
@@ -137,7 +141,7 @@ Gravidade: **page** = agir agora, **ticket** = durante o horário de expediente.
 | Custo | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 por 6 h | ticket | Permissões ausentes, a exportação de cobrança não configurada, o limite de requisições atingido, o provedor indisponível |
 | Custo | Orçamento excedido | – | – | – | Tráfego, armazenamento ou uma configuração errada custando mais que o planejado ([abaixo](#cost-and-budget)) |
 
-<!-- source: where-to-look 988be973ea5b -->
+<!-- source: where-to-look 3211df763cac -->
 ## Onde procurar
 
 Estas ferramentas voltam na maioria das entradas do runbook abaixo.
@@ -148,8 +152,8 @@ Estas ferramentas voltam na maioria das entradas do runbook abaixo.
 - **O comando `my job`** em um host que tem a configuração do servidor (`queue = db` e `cloudtasks`):
   `my job list` lista os jobs com falha, os mais novos primeiro; `my job retry <id>...` os coloca de volta na fila; `my job delete <id>...` os descarta.
   É seguro executar os jobs de novo.
-- **A tela de servidores remotos** (Moderação → Servidores remotos, `/moderation/instances`, exige `manage_domains`): os servidores que as entregas não conseguiram alcançar
-  e aqueles cujas entregas estão pausadas, com o motivo e quando. “Retomar as entregas” marca um servidor como disponível de novo. “Abrir um servidor” abre a página de qualquer servidor pelo domínio dele, listado ou não.
+- **A tela de servidores remotos** (Moderação → Servidores remotos, `/moderation/instances`, exige `manage_domains`): todos os servidores que este servidor conhece, com o software e o estado deles;
+  filtre pelos que as entregas não conseguiram alcançar ou pelos pausados. “Retomar as entregas” marca um servidor como disponível de novo. “Abrir um servidor” abre a página de qualquer servidor pelo domínio dele, listado ou não.
 - **Os logs**: linhas JSON na saída de erro padrão. Cada requisição HTTP termina com uma linha cujo `msg` é `http request`, cada execução de job com uma linha cujo `msg` é `job`
   (`INFO` para sucesso, `WARN` para nova tentativa, `ERROR` para um job que falhou definitivamente, com `error`, `job_id` e `my.job.type`).
   As linhas dentro de uma requisição trazem o `request_id` dela, que o cliente vê como `X-Request-Id`.
@@ -269,24 +273,24 @@ Corrija:
 - Se servidores remotos foram pausados durante a interrupção, eles são retomados na próxima entrega bem-sucedida, na próxima requisição assinada ou no teste diário; você também pode pressionar
   “Retomar entregas” na tela de servidores remotos.
 
-<!-- source: myremoteserverspaused 17c3ec51fb53 -->
+<!-- source: myremoteserverspaused 0f1e420b43eb -->
 ### MyRemoteServersPaused
 
 As entregas a 5 ou mais servidores foram pausadas no último dia. Um servidor é pausado depois que as entregas a ele falham em 7 dias diferentes, então algumas pausas por semana
 são normais: servidores são desativados. Muitas de uma vez significam que muitos servidores falharam por dias ao mesmo tempo. `my_federation_instances` com
-`my_federation_instance_state` = `available` conta os servidores que ainda recebem entregas mas falharam em algum dia; um salto ali vem antes das pausas.
+`my_federation_instance_state` = `available` conta os servidores que ainda recebem entregas, mas falharam em algum dia; um salto ali vem antes das pausas.
 
 A métrica não tem rótulo por servidor (os rótulos nunca carregam um domínio remoto). Verifique:
 
-- A tela de servidores remotos: a aba “Pausados” lista os servidores pausados, com quando e por quê. Se eles têm algo em comum (um provedor de hospedagem, um software)
+- A tela de servidores remotos: o filtro “Indisponível” lista os servidores pausados; a página de cada servidor diz desde quando. Se eles compartilham algo (um provedor de hospedagem, um software)
   ou estão espalhados.
 - `MyDeliveryFailuresHigh` e `MyDeliveryAllFailing` na última semana: um problema de rede deste lado que durou dias pausa muitos servidores.
 
-Corrija:
+Correção:
 
-- Servidores que não existem mais: nada. Os servidores pausados são testados diariamente e retomados sozinhos quando respondem.
-- Depois de um problema deste lado: repare-o e então pressione “Retomar entregas” para os servidores que importam para você, ou aguarde o teste diário.
-- Um servidor cujo operador informa que bloqueia este: nada deste lado ajuda. Para parar de federar com um servidor de propósito, use uma ação de domínio
+- Servidores que desapareceram: nada. Os servidores pausados são sondados diariamente e retomam sozinhos quando respondem.
+- Depois de um problema deste lado: conserte-o e então pressione “Retomar as entregas” para os servidores que lhe interessam, ou espere a sondagem diária.
+- Um servidor cujo operador informa que bloqueia este: nada deste lado ajuda. Para deixar de federar com um servidor de propósito, use uma ação de domínio
   (Moderação → Ações de domínio).
 
 <!-- source: myinboxrejectionshigh ee5a244ccf12 -->
@@ -473,19 +477,19 @@ Corrija:
 O trabalho espera por uma conexão livre com o banco de dados, ou desistiu de esperar após [`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) (os timeouts existem só no PostgreSQL): as requisições respondem `503`, e os jobs são executados mais tarde. Siga [MyDBPoolSaturated](#mydbpoolsaturated);
 verifique também se o próprio banco de dados não está no limite de conexões.
 
-<!-- source: mydatabasestoragelarge edf767115918 -->
+<!-- source: mydatabasestoragelarge 2dd93b626b08 -->
 ### MyDatabaseStorageLarge
 
-O banco de dados ocupa mais do que você planejou. `my_db_size_bytes` é o tamanho do banco de dados PostgreSQL (`pg_database_size`, o que os limites de armazenamento dos provedores contam)
-ou do arquivo SQLite (sem o write-ahead log). Isso é crescimento, não uma falha. Defina o limite na regra com uma margem abaixo do limite de armazenamento
-do plano do seu banco de dados, ou do volume que contém o arquivo SQLite, que também precisa ter espaço para o write-ahead log e para os backups.
+O banco de dados ocupa mais do que você planejou. `my_db_size_bytes` é o tamanho das tabelas e dos índices do esquema PostgreSQL da instância (os limites de armazenamento dos provedores
+contam o banco de dados inteiro) ou do arquivo SQLite (sem o write-ahead log). Isto é crescimento, não uma falha. Defina o limite na regra com uma margem abaixo do limite de armazenamento
+do plano do seu banco de dados, ou do volume que guarda o arquivo SQLite, que também precisa manter espaço para o write-ahead log e para os backups.
 
-Corrija:
+Correção:
 
 - Aumente o plano ou o volume.
-- As publicações remotas são removidas após a configuração da instância `remote_status_retention_days`; reduzi-la desacelera o crescimento.
-- As linhas excluídas liberam espaço que ambos os bancos de dados reaproveitam, mas o tamanho raramente diminui: o PostgreSQL mantém o espaço de suas tabelas, e o SQLite mantém as páginas livres
-  no arquivo até um `VACUUM` (execute com `sqlite3` enquanto o servidor está parado).
+- As publicações remotas são removidas depois da configuração da instância `remote_status_retention_days`; diminuí-la reduz o crescimento.
+- As linhas excluídas liberam espaço que os dois bancos de dados reaproveitam, mas o tamanho raramente diminui: o PostgreSQL mantém o espaço das suas tabelas, e o SQLite mantém as
+  páginas livres no arquivo até um `VACUUM` (executado com `sqlite3` enquanto o servidor está parado).
 
 <!-- source: myfiledescriptorsnearlimit 8a3112c11968 -->
 ### MyFileDescriptorsNearLimit

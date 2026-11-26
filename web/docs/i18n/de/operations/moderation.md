@@ -467,14 +467,14 @@ Verwende im Web-Client „Beiträge erneut abrufen“ auf der Prüfseite des Kon
 - Er ruft nicht von einer Domain mit einem `suspend` ab und auch nicht von einer Domain, die `unavailable` ist, weil Zustellungen fehlgeschlagen sind. Ein fehlgeschlagener Abruf derselben URI wird 1 Stunde lang gemerkt, und ein erneuter Abruf in dieser Zeit ruft sie nicht ab.
 - Deine Anforderung wird im Audit-Log als `status_refetch_queued`, `account_statuses_refetch_queued` oder `domain_statuses_refetch_queued` festgehalten.
 
-<!-- source: checking-what-reached-a-remote-server 6c1ec9c8cef1 -->
+<!-- source: checking-what-reached-a-remote-server 320117beafdd -->
 ## Prüfen, was einen entfernten Server erreicht hat
 
 Wenn ein Nutzer fragt, ob ein Beitrag, ein Follow oder ein Accept einen anderen Server erreicht hat, liste die Zustellungen an diesen Server mit der Admin-API auf.
 Sie zeigt jede Zustellung einer Aktivität an eine Inbox des Servers, die neueste zuerst, mit jedem Versuch und dem, was der Server geantwortet hat, die erfolgreichen Zustellungen eingeschlossen.
 Sie braucht die Berechtigung `manage_domains`.
 Im Web-Client zeigt der Abschnitt **Zustellungen** des Bildschirms eines entfernten Servers (`/moderation/instances/{domain}`) dieselbe Liste, mit ihren Filtern nach **Aktivitäts-ID** und **Lokalem Konto** und **Anzeigen** für jedes verborgene Feld unter **Details** einer maskierten Zustellung; der Bildschirm sagt, welche davon im Audit-Log festgehalten werden, bevor sie laufen.
-Die Liste Entfernte Server zeigt nur die Server, die Zustellungen nicht erreicht haben. Um einen anderen Server zu öffnen, gib seine Domain, ein Handle auf ihm oder eine URL auf ihm unter **Server öffnen** über der Liste ein
+Die Liste Entfernte Server zeigt jeden Server, den dieser Server kennt. Um einen zu öffnen, den sie nicht aufführt, gib seine Domain, ein Handle auf ihm oder eine URL auf ihm unter **Server öffnen** über der Liste ein
 oder nutze **Server des Kontos öffnen** auf der Prüfungsseite eines entfernten Kontos oder bei einer Meldung über ein entferntes Konto oder die Domain in einem Audit-Log-Eintrag über eine Domain.
 
 ```sh
@@ -564,7 +564,7 @@ lässt die Meldung, wie sie ist.
   Der Grund ist nur für die Moderatoren; die Teilnehmer sehen nur, dass der Raum beendet wurde. Es funktioniert auch, während der Sprachchat aus ist, und das Audit-Log hält `voice_room_ended` fest.
   Im Web-Client hat die Seite der Meldung eines offenen Raums „Raum beenden“, was zuerst nachfragt, mit dem Grund.
 
-<!-- source: events cbc3e19bfdb6 -->
+<!-- source: events 72a8d513f936 -->
 ### Veranstaltungen
 
 - Ein lokaler Nutzer kann eine Veranstaltung melden, die er sehen kann, auch eine abgesagte (`POST /api/v1/reports` mit `event_id` und `account_id` auf den Organisator der Veranstaltung gesetzt).
@@ -574,6 +574,7 @@ lässt die Meldung, wie sie ist.
 - Wer `manage_reports` hat, kann eine Veranstaltung mit `POST /api/v1/admin/events/{id}/cancel` absagen (Body `{"reason": "..."}`, optional, bis zu 500 Zeichen).
   Der Grund wird mit der Absage allen gezeigt, die die Veranstaltung sehen. Die Nutzer, die mit „Ich komme“ oder „Vielleicht“ geantwortet haben, und die eingeladenen Nutzer werden benachrichtigt, wie bei der eigenen Absage des Organisators, und das Audit-Log hält `event_canceled` fest.
   Eine bereits abgesagte Veranstaltung antwortet mit `409` `event-closed`. Im Web-Client hat die Seite der Meldung einer Veranstaltung „Veranstaltung absagen“, was zuerst nachfragt, mit dem Grund.
+- Ein Beitrag auf der Pinnwand einer Veranstaltung wird wie jeder andere Beitrag gemeldet, geprüft und gelöscht (`status_ids`, mit `account_id` auf seinen Verfasser gesetzt). Seine Meldung wird nie weitergeleitet, und seine Löschung verlässt nie den Server.
 - Das Sperren oder Löschen des Organisators sagt die Veranstaltungen des Organisators ab, die noch nicht begonnen haben, auch die, für die noch ein Termin abgestimmt wird (`gathering.cancel_organized`), und benachrichtigt ihre Teilnehmer. Diese Absagen nennen niemanden als den, der sie abgesagt hat, und das Aufheben der Sperre stellt sie nicht wieder her. Bereits begonnene Veranstaltungen werden nicht abgesagt.
 
 <!-- source: notifications-for-moderators-and-the-pending-counts 0d1c327abe83 -->
@@ -610,7 +611,7 @@ Neue Meldungen, Registrierungen, die auf Genehmigung warten, und Einsprüche err
 `GET /api/v1/admin/counts` liefert die Zahl der offenen Meldungen (`open_reports`, braucht `manage_reports`), die Zahl der Registrierungen, die auf Genehmigung warten (`pending_registrations`), und die Zahl der Einsprüche, die auf Prüfung warten (`pending_appeals`) (beide brauchen `manage_accounts`), die Zahl der Anfragen für eigene Emojis, die auf eine Entscheidung warten (`pending_custom_emoji_requests`, braucht `manage_custom_emojis`), und die Zahl der offenen Fehlergruppen, neu, wieder aufgetreten oder wieder aktiviert (`open_error_groups`, braucht `manage_errors`).
 Dinge, für die dir die Berechtigung fehlt, werden nicht geliefert.
 
-<!-- source: audit-log 8334cc0280f5 -->
+<!-- source: audit-log 6a072e747840 -->
 ## Audit-Log
 
 Operationen von Moderatoren und Administratoren werden je eine Zeile im Audit-Log (`audit_log_entries`) in derselben Transaktion wie die Operation festgehalten.
@@ -670,7 +671,7 @@ Filtere nach dem, der es getan hat (du oder die Person eines Eintrags unter „W
 - Die Liste zeigt die neuesten zuerst mit Keyset-Paging (`-before <entry id>` in der CLI).
 - Es gibt keine API und keine CLI, um das Audit-Log zu ändern oder zu löschen. Alte Zeilen werden nach der [Aufbewahrungsfrist](#record-retention-and-holds) entfernt.
 
-<!-- source: record-retention-and-holds 9861d8570a91 -->
+<!-- source: record-retention-and-holds 888b0178e795 -->
 ## Aufbewahrung von Aufzeichnungen und Sperren
 
 Nach dem Aufbewahrungszeitraum für jede Art von Datensatz entfernen stündliche Jobs (`moderation.purge_records`, `identity.purge_origins`, `voice.purge_records` und `gathering.purge_records`) Moderationsdatensätze.
@@ -684,17 +685,19 @@ Du kannst die Zeiträume in den Instanzeinstellungen ändern, aber nicht unter d
 | Maßnahmen gegen Konten (Grund, Notiz, Zielbeiträge, Aufhebung) und Einsprüche | `moderation_actions_retention_days` | 365 Tage | 180 Tage | Dem Ende der Maßnahme |
 | Audit-Log | `audit_log_retention_days` | 730 Tage | 365 Tage | Der Erfassung |
 | Registrierungssperren | Keine (nicht änderbar) | 30 Tage | n/a | Dem früheren Zeitpunkt von Aufhebung und Ablauf |
+| Die Abrufe eines Blocklisten-Abonnements; der letzte, der nicht fehlgeschlagen ist, und die Fehlschläge danach bleiben | Keine (nicht änderbar) | 30 Tage | n/a | Dem Abruf |
 | Wer an einem Sprachchat-Raum teilgenommen hat (Teilnahmen, Sprecher und Zuhörer, gehobene Hände, Einladungen, Entfernungen) | `voice_participants_retention_days` | 90 Tage | 30 Tage | Dem Ende des Raums |
 | Die Entscheidungen der [Entscheidungs-Hooks](decision-hooks.md#the-decisions) | `hook_decisions_retention_days` | 90 Tage | 30 Tage | Der Entscheidung |
-| Die Antworten, Genehmigungen, Einladungen und Stimmen zu den Terminvorschlägen einer Veranstaltung | `event_records_retention_days` | 90 Tage | 30 Tage | Dem früheren Zeitpunkt von Ende der Veranstaltung (bei einer Veranstaltung, deren Datum nie festgelegt wurde, dem Ende ihres letzten Terminvorschlags) und ihrer Absage |
+| Die Antworten, Genehmigungen, Einladungen, Stimmen zu den Terminvorschlägen und Pinnwand-Beiträge einer Veranstaltung | `event_records_retention_days` | 90 Tage | 30 Tage | Dem früheren Zeitpunkt von Ende der Veranstaltung (bei einer Veranstaltung, deren Datum nie festgelegt wurde, dem Ende ihres letzten Terminvorschlags) und ihrer Absage |
 
 - Offene Meldungen werden nie entfernt. Eine Meldung, auf die eine Maßnahme verweist (`report_id` der Maßnahme), bleibt, bis diese Maßnahme entfernt wird.
 - Das Ende einer Maßnahme ist der frühere Zeitpunkt von Aufhebung und Ablauf. Kommt bei einer Maßnahme, gegen die Einspruch eingelegt wurde, die Prüfung später als das, ist das Ende der Zeitpunkt der Prüfung, und die Maßnahme wird behalten, solange der Einspruch auf Prüfung wartet.
   `warn` und `delete_statuses` haben keine dauerhafte Wirkung, daher ist das Ende der Zeitpunkt, zu dem sie ergriffen wurden. Eine Maßnahme ohne Ende (ein `ban`, ein `suspend` ohne Endzeit und so weiter) wird nicht entfernt, bis sie aufgehoben wird.
-- Beiträge, auf die eine Meldung oder eine Maßnahme verweist, werden vom Purge-Job mit ihren angehängten Medien nicht physisch gelöscht, bis diese Meldung oder Maßnahme entfernt wird, auch wenn der Autor sie gelöscht hat (sie verschwinden aus der Ansicht). Entfernte Beiträge bleiben auch über den Aufbewahrungszeitraum hinaus (einschließlich der Instanzeinstellung `remote_status_max_retention_days`).
+- Ein gelöschter Beitrag verschwindet sofort aus der Ansicht, und der stündliche Job `content.purge_deleted_statuses` entfernt seinen Text, seine Medien und seine Umfrage 7 Tage später, wenn sein `Delete` Zeit hatte, die anderen Server zu erreichen; der Datensatz seiner URI bleibt.
+  Beiträge, auf die eine Meldung oder eine Maßnahme verweist, werden mit ihren angehängten Medien nicht physisch gelöscht, bis diese Meldung oder Maßnahme entfernt wird. Entfernte Beiträge bleiben auch über den Aufbewahrungszeitraum hinaus (einschließlich der Instanzeinstellung `remote_status_max_retention_days`).
 - Eine Registrierungssperre, die weder eine Aufhebung noch eine Endzeit hat, bleibt, solange sie in Kraft ist.
 - Die Datensätze darüber, wer an einem Sprachchat-Raum teilgenommen hat, auf den eine Meldung verweist, bleiben, bis diese Meldung entfernt wird. Der Raum selbst (sein Name, seine Beschreibung, seine Hosts und wie er endete) wird nie entfernt.
-- Die Antworten, Stimmen und Einladungen einer Veranstaltung, auf die eine Meldung verweist, bleiben, bis diese Meldung entfernt wird, ebenso die, die ein Konto unter einer Sperre nennen. Die Veranstaltung selbst (ihre Einstellungen und Orte, ihr Datum und ihre Terminvorschläge, ihre Co-Veranstalter und ihre Absage) wird nie entfernt; sobald ihre Antworten weg sind, zählt sie niemanden als Zusage.
+- Die Antworten, Stimmen, Einladungen und Pinnwand-Beiträge einer Veranstaltung, auf die eine Meldung verweist, bleiben, bis diese Meldung entfernt wird, ebenso die, die ein Konto unter einer Sperre nennen. Die Veranstaltung selbst (ihre Einstellungen und Orte, ihr Datum und ihre Terminvorschläge, ihre Co-Veranstalter und ihre Absage) wird nie entfernt; sobald ihre Antworten weg sind, zählt sie niemanden als Zusage.
 - Ein Job-Lauf entfernt nur eine begrenzte Zahl von Zeilen pro Art (100 auf einmal, 20 Mal, bei Maßnahmen, Meldungen und Registrierungssperren; 1.000 Zeilen auf einmal, 20 Mal, beim Audit-Log). Der nächste Lauf entfernt den Rest.
 
 <!-- source: holds f3bf57c2c258 -->

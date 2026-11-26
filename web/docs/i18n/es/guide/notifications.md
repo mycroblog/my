@@ -4,7 +4,7 @@
 Elige «Notificaciones» en la navegación. La navegación muestra cuántas notificaciones no has leído
 («Notificaciones, 3 sin leer»).
 
-<!-- source: what-you-are-notified-of afff09e059ac -->
+<!-- source: what-you-are-notified-of f82164242973 -->
 ## De qué se te notifica
 
 Cuando alguien te sigue, te menciona o reacciona a tus publicaciones, aparece aquí. Los tipos que puedes ver son:
@@ -16,7 +16,7 @@ Cuando alguien te sigue, te menciona o reacciona a tus publicaciones, aparece aq
 - Una encuesta en la que participaste ha terminado.
 - Una cuenta que sigues se mudó a otra cuenta, y qué pasó con tu seguimiento.
 - Chat de voz: alguien abrió una sala de chat de voz, o te invitó a una.
-- Eventos: alguien te invitó a un evento; los organizadores fijaron la fecha de un evento cuyas fechas candidatas respondiste, o al que te invitaron; un evento al que vas, quizá vayas o te invitaron cambió su fecha, su lugar o su sala de chat de voz, o se canceló; un evento al que vas o quizá vayas empieza pronto (un recordatorio) o empieza ahora; y la sala de chat de voz de un evento que organizas no puede abrirse, no pudo abrirse al empezar, o nadie llegó (el evento sigue adelante). Los recordatorios llegan un día y una hora antes del inicio; una aplicación puede cambiarlos a hasta tres momentos, de 5 minutos a 7 días antes, o desactivarlos. Cuando cambia la fecha, los recordatorios siguen la nueva fecha. Los correos de eventos nunca dicen dónde se celebra el evento, y los correos de recordatorio se envían de inmediato en lugar de esperar a que la notificación siga sin leer.
+- Eventos: alguien te invitó a un evento; los organizadores fijaron la fecha de un evento cuyas fechas candidatas respondiste, o al que te invitaron; un evento al que vas, quizá vayas o te invitaron cambió su fecha, su lugar o su sala de chat de voz, o se canceló; un evento al que vas o quizá vayas empieza pronto (un recordatorio) o empieza ahora, o alguien escribió en su tablón (una publicación que te menciona te notifica solo de la mención); y la sala de chat de voz de un evento que organizas no puede abrirse, no pudo abrirse al empezar, o nadie llegó (el evento sigue adelante). Los recordatorios llegan un día y una hora antes del inicio; una aplicación puede cambiarlos a hasta tres momentos, de 5 minutos a 7 días antes, o desactivarlos. Cuando cambia la fecha, los recordatorios siguen la nueva fecha. Los correos de eventos nunca dicen dónde se celebra el evento, y los correos de recordatorio se envían de inmediato en lugar de esperar a que la notificación siga sin leer.
 - Avisos de los moderadores del servidor, el resultado de una apelación y la resolución de una denuncia que presentaste.
 - Anuncios y mensajes de los administradores sobre el servidor, por ejemplo cuando va a cerrar.
 - El máximo del servidor para conservar publicaciones se aplicará a tus publicaciones, y desde cuándo (consulta [Eliminar publicaciones antiguas automáticamente](posting.md#deleting-old-posts-automatically)).

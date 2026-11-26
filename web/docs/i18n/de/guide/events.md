@@ -31,7 +31,7 @@ Eine Veranstaltung kann einen Treffpunkt vor Ort, einen Online-Link (einen Strea
 
 Links zu Karten, Online-Meetings und die Links in einer Beschreibung öffnen sich in einem neuen Tab und nennen die Website, zu der sie führen: Sie verlassen diesen Server, der sie nie überprüft.
 
-<!-- source: organizing-an-event d6a7b15b234f -->
+<!-- source: organizing-an-event e8a2d468ac33 -->
 ## Eine Veranstaltung organisieren
 
 Wähle in der Liste der Veranstaltungen „Neue Veranstaltung“. Der Editor fragt nach:
@@ -40,10 +40,16 @@ Wähle in der Liste der Veranstaltungen „Neue Veranstaltung“. Der Editor fra
 - **Zeitzone der Veranstaltung**, **Beginn** und **Ende**. Die Zeiten gelten in der Zeitzone der Veranstaltung, die zunächst deine eigene ist. Eine Veranstaltung dauert höchstens 7 Tage und beginnt innerhalb eines Jahres. Damit die Leute das Datum wählen können, wähle „Terminvorschläge zur Abstimmung stellen“ und gib stattdessen bis zu 20 Vorschläge ein, jeweils mit Beginn und Ende.
 - **Orte**: „Treffen vor Ort“ (ein Name, eine Adresse und ein optionaler Kartenlink) und „Online-Link“ (ein Name und eine URL) sowie **Wer den Ort und den Link sieht**: „Nur die Teilnehmer, die du genehmigst“ oder „Alle, die die Veranstaltung sehen“. Ist der Sprachchat eingeschaltet und du darfst Räume starten, öffnet „Sprachchat-Raum“ zu Beginn der Veranstaltung einen Raum für sie, mit **Wer ohne Nachfrage sprechen darf**.
 - **Wer die Veranstaltung sieht**: alle auf diesem Server, die Follower des Organisators, die Leute, denen der Organisator folgt, gegenseitige Follower des Organisators oder nur eingeladene Leute. Leute, die du einlädst, und Leute, die geantwortet haben, sehen sie immer.
+- **Wer auf der Pinnwand schreiben darf**: nur du, du und die Co-Veranstalter (die Voreinstellung) oder alle, die die Pinnwand lesen.
 - **Obergrenze**, wie viele Leute „Ich komme“ antworten können; lass das Feld leer für keine Begrenzung.
 
-Auf der Seite der Veranstaltung genehmigen der Organisator und die Co-Veranstalter Teilnehmer („Genehmigen“ und „Genehmigung widerrufen“), laden unter „Einladungen“ Leute dieses Servers ein und ändern die Veranstaltung mit „Veranstaltung bearbeiten“. Nur der Organisator ändert, wer die Veranstaltung sieht, benennt bis zu drei „Co-Veranstalter“ und sagt die Veranstaltung mit „Veranstaltung absagen“ ab, optional mit einem Grund, den die Veranstaltung dann zeigt. Eine abgesagte Veranstaltung bleibt lesbar, nimmt aber keine Antworten mehr an.
+Auf der Seite der Veranstaltung genehmigen der Organisator und die Co-Veranstalter Teilnehmer („Genehmigen“ und „Genehmigung widerrufen“), laden unter „Einladungen“ Leute dieses Servers ein und ändern die Veranstaltung mit „Veranstaltung bearbeiten“. Nur der Organisator ändert, wer die Veranstaltung sieht und wer auf der Pinnwand schreiben darf, benennt bis zu drei „Co-Veranstalter“ und sagt die Veranstaltung mit „Veranstaltung absagen“ ab, optional mit einem Grund, den die Veranstaltung dann zeigt. Eine abgesagte Veranstaltung bleibt lesbar, nimmt aber keine Antworten mehr an.
 
 Die Moderatoren des Servers können eine Veranstaltung ebenfalls absagen; ihre Seite sagt das dann mit ihrem Grund. Manche Server erlauben nur bestimmten Leuten, Veranstaltungen zu erstellen: Wenn du das nicht darfst, steht beim Erstellen „Du kannst auf diesem Server keine Veranstaltungen erstellen.“
 
-Wenn du „Ich komme“ oder „Vielleicht“ geantwortet hast, kommen Erinnerungen einen Tag und eine Stunde vor Beginn der Veranstaltung. Alle Benachrichtigungen zu Veranstaltungen (Einladungen, Änderungen, Absagen und Erinnerungen) findest du unter [Benachrichtigungen](notifications.md).
+Wenn du „Ich komme“ oder „Vielleicht“ geantwortet hast, kommen Erinnerungen einen Tag und eine Stunde vor Beginn der Veranstaltung. Alle Benachrichtigungen zu Veranstaltungen (Einladungen, Änderungen, Absagen, Erinnerungen und neue Beiträge auf der Pinnwand) findest du unter [Benachrichtigungen](notifications.md).
+
+<!-- source: the-board 074b939b2717 -->
+## Die Pinnwand
+
+Jede Veranstaltung hat eine Pinnwand für das, was die Leute vor und während der Veranstaltung wissen müssen. Der Organisator, die Co-Veranstalter und die Leute, die „Ich komme“ oder „Vielleicht“ geantwortet haben, sehen die Seite der Veranstaltung als zwei Tabs, „Details“ und „Pinnwand“; alle anderen sehen gar keine Pinnwand. Auf der Pinnwand öffnet „Auf die Pinnwand schreiben“ das Eingabefeld, und der Beitrag erscheint nur auf der Pinnwand: Er wird nie in einer Timeline, einem Profil oder der Suche gezeigt, nie an andere Server gesendet und kann weder geteilt noch zitiert werden. Beiträge auf der Pinnwand werden bearbeitet, gelöscht, beantwortet, favorisiert und mit Reaktionen versehen wie jeder Beitrag. Wer schreiben darf, entscheidet der Organisator; wenn du nicht schreiben kannst, sagt die Pinnwand, wer es kann. Ist die Veranstaltung abgesagt oder liegt ihr Ende 7 Tage zurück, ist die Pinnwand schreibgeschützt. Ein neuer Beitrag auf der Pinnwand benachrichtigt ihre Leser, und die Benachrichtigung öffnet die Pinnwand.

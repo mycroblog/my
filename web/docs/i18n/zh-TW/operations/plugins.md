@@ -103,7 +103,7 @@
 
 呼叫的期限是 `plugin_<kind>_timeout`，外掛會以 `Connect-Timeout-Ms`（gRPC 為 `grpc-timeout`）收到它。外掛可以忽略這個標頭：伺服器無論如何都會停止等待。對於請求可能需要等待的種類（`key_manager`、`translator`、`search`、`signup.check`、`media.check`、`local.status`、`inbound.actor` 和 `local.profile`），期限必須少於 30 秒；其他種類則必須少於 5 分鐘，也就是任務可以執行的時間。
 
-<!-- source: test-a-plugin 5d8195bb27f5 -->
+<!-- source: test-a-plugin f954dc9b5d3e -->
 ## 測試外掛
 
 `my plugin test` 會對執行中的外掛執行某個種類的契約，並回報每個案例。它不讀取任何設定，因此只需要 `my` 執行檔。
@@ -120,7 +120,7 @@ FAIL echo_empty: the outcome is OUTCOME_UNSPECIFIED, not OUTCOME_OK
 2 passed, 1 failed, 0 skipped
 ```
 
-有案例失敗時，結束代碼為 1。旗標的意義與設定相同：`--protocol`、`--token-file`、`--tls-ca-file`、`--tls-cert-file`、`--tls-key-file` 和 `--timeout`。它套用與伺服器相同的規則，因此 `--kind mailer` 會拒絕 `http://` 位址。受測的外掛可能是真正在使用的外掛，因此做了呼叫本身以外事情的案例，只有在旗標要求時才會執行。如果這個版本還沒有某個種類的契約，會回報 `reachable` 和一個 `SKIP`。
+有案例失敗時，結束代碼為 1。旗標的意義與設定相同：`--protocol`、`--token-file`、`--tls-ca-file`、`--tls-cert-file`、`--tls-key-file` 和 `--timeout`；`--instance` 是在 `My-Instance` 標頭中傳送的 `host`（預設為 `my.test`）。它套用與伺服器相同的規則，因此 `--kind mailer` 會拒絕 `http://` 位址。受測的外掛可能是真正在使用的外掛，因此做了呼叫本身以外事情的案例，只有在旗標要求時才會執行。如果這個版本還沒有某個種類的契約，會回報 `reachable` 和一個 `SKIP`。
 
 `--kind billing` 只檢查在不允許任何計費請求時，外掛會拒絕產生任何花費。`--billed` 還會實際擷取本月和上個月的資料，並像匯入時一樣檢查回應；這可能會在外掛背後的供應商產生費用。[匯入雲端使用費用](billing-import.md#a-plugin-billing_sources--plugin)收錄了這個種類的契約。
 
@@ -287,7 +287,7 @@ Content-Type: application/json
 
 不存在或未知的 `outcome`、失敗的呼叫，以及違反這些規則的頁面，都視為 `OUTCOME_FAILED`，這種頁面的內容不會顯示。一個呼叫最多持續 `plugin_search_timeout`（預設 10 秒），而且不論該設定為何，最多 10 秒。
 
-<!-- source: converting-media 36df3dbdb21b -->
+<!-- source: converting-media 14a4c14a3699 -->
 ## 轉換媒體
 
 媒體外掛負責上傳處理中繁重的部分，讓它可以在另一台機器上執行。共有三個種類，每個種類可以分別選擇：
@@ -296,7 +296,7 @@ Content-Type: application/json
 - `media_video` 重新封裝（remux）影片：帶有影像軌的檔案，不論有沒有聲音。
 - `media_audio` 重新封裝只有音訊的檔案。
 
-其餘的任務仍由伺服器自己處理。它會偵測每個上傳檔案的格式、區分影片和音訊檔案、在上傳到達時依上限檢查，並製作遠端媒體的預覽。設定維持 `native` 的種類會在伺服器中處理。
+其餘的任務仍由伺服器自己處理。它會偵測每個上傳檔案的格式、區分影片和音訊檔案、在上傳到達時依上限檢查，並製作遠端媒體的預覽。設定維持 `native` 的種類會在伺服器中處理。`media_image` 外掛也可以接收 AVIF、HEIC 和 APNG 上傳檔案，而伺服器從不解碼這些格式：它會在從檔頭讀出尺寸和影格之後，接受外掛所宣告的那些格式。
 
 ```sh
 # Only videos go to a plugin, on a machine of its own; images and audio stay in the server.
@@ -311,10 +311,10 @@ MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 - **伺服器不信任輸出**。它會從內容偵測每個輸出的格式，絕不依據外掛的宣告，並以該格式的內容類型和副檔名提供。它會在與上傳相同的上限下解碼每個輸出，並檢查其大小是否相符。如果輸出比宣告的大或超過這些上限、格式不是外掛宣告的格式，或是該變體不接受的格式，上傳就會以伺服器無法處理的檔案失敗。
 - **失敗只會造成延遲**。外掛停止運作或失敗時，任務會在稍後重試，與內建處理器相同。需要立即取得自訂表情符號圖片的操作（例如複製遠端表情符號，或接受表情符號申請），在外掛失敗期間會失敗。
 
-<!-- source: the-contract-2 812c987c276c -->
+<!-- source: the-contract-2 480cea98aa91 -->
 ### 契約
 
-服務是 `my.plugin.media.v1.MediaService`，RPC 為處理圖片的 `Process`，以及處理影片或音訊檔案的 `Remux`。兩者都是雙向串流，因此外掛需要 Connect 或 gRPC 函式庫和 HTTP/2：使用 `proto` 或 `grpc`，透過 ALPN 為 `h2` 的 TLS，或在 Unix socket 或純 TCP 上透過明文 HTTP/2（h2c）。
+服務是 `my.plugin.media.v1.MediaService`，RPC 為處理圖片的 `Process`、處理影片或音訊檔案的 `Remux`，以及 `Describe`，它會宣告 `Process` 除了 JPEG、PNG、GIF 和 WebP 之外還接收哪些格式。伺服器在啟動時以及之後每 5 分鐘呼叫一次 `Describe`；沒有它的外掛只會得到那四種格式，而 APNG 會被當作靜態 PNG。另外兩個是雙向串流，因此外掛需要 Connect 或 gRPC 函式庫和 HTTP/2：使用 `proto` 或 `grpc`，透過 ALPN 為 `h2` 的 TLS，或在 Unix socket 或純 TCP 上透過明文 HTTP/2（h2c）。
 
 呼叫是半雙工的：
 
@@ -322,7 +322,7 @@ MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 2. 外掛以 `head` 回應，其 `outcome` 即為結果。為 `OUTCOME_OK` 時，`Process` 的 head 還包含套用 EXIF 方向後的圖片尺寸，以及小型靜態輸出的 blurhash。
 3. 對每個輸出，外掛傳送一個 `part`，指明輸出並宣告其格式、尺寸和長度，接著是每則最多 1 MiB 的 `chunk` 訊息。
 
-`Process` 回傳小、中、大三種靜態輸出，以及多影格圖片的三種動態輸出。小和中的輸出為 WebP；大的靜態輸出為 JPEG 或 PNG（自訂表情符號一律為 PNG），大的動態輸出為 GIF。`Remux` 回傳以原本容器封裝、不含中繼資料的檔案，以及其中嵌入的封面圖片（如果有的話）。伺服器從 `Process` 最多讀取圖片上限的兩倍，從 `Remux` 則對檔案讀取最多影片上限、對封面讀取最多圖片上限。
+`Process` 回傳小、中、大三種靜態輸出，並且可以為多影格圖片回傳三種動態輸出；每個動態輸出至少必須有兩個影格。小和中的輸出為 WebP；大的靜態輸出為 JPEG 或 PNG（自訂表情符號一律為 PNG），大的動態輸出為 GIF。`Remux` 回傳以原本容器封裝、不含中繼資料的檔案，以及其中嵌入的封面圖片（如果有的話）。伺服器從 `Process` 最多讀取圖片上限的兩倍，從 `Remux` 則對檔案讀取最多影片上限、對封面讀取最多圖片上限。
 
 | `outcome` | 意義 | 伺服器的處理 |
 | --- | --- | --- |

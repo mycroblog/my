@@ -185,7 +185,7 @@ oder mit `my instance set`. `my config check -instance` warnt vor den Texten, Ko
     Liste sie mit `my admin role` auf und überprüfe sie in den Administrations-Screens.
 - **Details**: [Administratoren und Rollen](admin-cli.md), [Moderation](moderation.md) (Berechtigungen und Anmelde-Wiederherstellung).
 
-<!-- source: operations aac00b13fc38 -->
+<!-- source: operations cdf72295a7bb -->
 ## Betrieb
 
 - **Backups und Wiederherstellung**: Die Datenbank, der Blob-Store (`blob_fs_dir` oder der Bucket) und der KEK werden nach einem Zeitplan gesichert,
@@ -195,7 +195,7 @@ oder mit `my instance set`. `my config check -instance` warnt vor den Texten, Ko
   Siehe [Schlüsselverwaltung](key-management.md) (den KEK sichern) und [Datenbank](database.md).
 - **Monitoring und Alarme**: Ein externer Monitor prüft `/health/live` und alarmiert jemanden, der handeln kann, und die toten Jobs der Job-Queue
   werden beobachtet. Siehe [Monitoring](monitoring.md) und [den Server betreiben](running.md) (Health-Checks, Metriken und die Job-Queue).
-- **Das Image**: Die Instanz betreibt ein veröffentlichtes Image, das per Digest festgelegt ist (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, aus den Notizen des Releases), keines,
+- **Das Image**: Die Instanz betreibt ein veröffentlichtes Image, das per Digest festgelegt ist (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, aus den Notizen des Releases, oder per [`image.digest`](deploy-opentofu.md#pinning-the-image-by-digest) mit OpenTofu), keines,
   das sich bei einem Neustart ändert, und [seine Provenienz wurde geprüft](running.md#verify-an-image). Es gibt kein Tag `latest`.
   Ein Upgrade ändert diese Version mit Absicht und folgt [Upgrade](database.md#upgrading), jeweils eine Minor-Version.
 - **Quellcode (AGPL-3.0)**: Der Server muss seinen Quellcode allen anbieten, die ihn nutzen. Lass

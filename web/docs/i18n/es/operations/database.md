@@ -247,11 +247,11 @@ kubectl rollout status deployment/my
 Si el Job falla, `kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check` (o `-c schema`, `-c upgrade`) muestra el motivo, y el Deployment se queda con la imagen anterior.
 Con SQLite en un volumen, monta el mismo volumen en el Job y detén antes los pods del Deployment: SQLite admite un solo escritor.
 
-<!-- source: cloud-run 9e7486b6a4af -->
+<!-- source: cloud-run 4cd76d9b85b5 -->
 ### Cloud Run
 
 Con el módulo de OpenTofu, una actualización es un apply de la versión nueva, que ejecuta `my upgrade` en el job de migración antes de que los servicios tomen
-la imagen nueva, y se detiene ahí cuando falla: consulta [Desplegar en Cloud Run](deploy-opentofu.md#upgrading). A mano:
+la imagen nueva, y se detiene ahí cuando falla: consulta [Desplegar con OpenTofu](deploy-opentofu.md#upgrading). A mano:
 
 Los jobs de Cloud Run ejecutan un contenedor cada uno, así que crea un job por paso y ejecútalos en orden con `--wait`, que falla cuando falla el job.
 Da a los jobs las mismas variables de entorno y secretos que al servicio.
@@ -316,21 +316,22 @@ Para cruzar más de una versión menor, actualiza pasando por la última versió
 De `v0.1.3` a `v0.4.0`, por ejemplo: la última `v0.1.x`, luego la última `v0.2.x`, luego la última `v0.3.x` y después `v0.4.0`.
 `my db upgrade -check` detiene un salto que perdería datos y nombra la versión por la que hay que pasar; hasta ese punto no ha cambiado nada.
 
-<!-- source: checking-and-rebuilding-projections 40b848afd40d -->
+<!-- source: checking-and-rebuilding-projections df54e4ad696f -->
 ## Comprobar y reconstruir proyecciones
 
 Algunas tablas son proyecciones: el servidor las deriva de los eventos y recursos de su módulo (las restricciones de una cuenta a partir de sus
-acciones de moderación, por ejemplo). El worker comprueba todas las proyecciones una vez al día y corrige cualquier diferencia que encuentre. Para comprobar o corregir una a mano:
+acciones de moderación, por ejemplo). Con `projection_verify_interval` definido, el worker comprueba todas las proyecciones con esa periodicidad y registra cualquier
+diferencia que encuentre (contada por `my.projection.drifts`) sin corregirla; de forma predeterminada no comprueba nada. Para comprobar o corregir una a mano:
 
 ```sh
 my projection list              # each projection with its module and tables
-my projection verify [<name>]   # derive every projection, or the one named, and print the rows that differ; changes nothing
+my projection verify [<name>]   # derive every projection, or the one named, into temporary copies and print the rows that differ
 my projection rebuild [<name>]  # derive them the same way and write the difference
 ```
 
 - `<name>` es una proyección o una de sus tablas.
 - `verify` muestra las filas que contienen las tablas pero que las fuentes no derivan (`-`) y las filas que derivan las fuentes pero que faltan en las tablas (`+`),
-  y termina con `1` cuando hay alguna diferencia.
+  hasta 1.000 de cada tabla en cada sentido, y termina con `1` cuando hay alguna diferencia. No bloquea ninguna fila, así que puede ejecutarse mientras la instancia trabaja.
 - `rebuild` escribe como máximo 500 filas por transacción, de modo que los lectores nunca ven una proyección vaciada. Ejecútalo cuando la instancia esté tranquila:
   una fila que cambia durante la reconstrucción conserva su valor nuevo, y un `verify` posterior informa de cualquier diferencia que quede.
 

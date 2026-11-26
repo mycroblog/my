@@ -137,7 +137,7 @@ O servidor limita o que envia para que o serviço não seja inundado:
 
 Acompanhe o contador `my.errors.exported`: `my.outcome` é `success`, `dropped` (acima de um limite, a fila estava cheia ou o serviço pediu para desacelerar) ou `failed` (o serviço não pôde ser alcançado ou recusou o relatório) ([Executando o servidor](running.md#metrics)).
 
-<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
+<!-- source: sentry-glitchtip-and-datadog 81bdd8389ace -->
 ### Sentry, GlitchTip e Datadog
 
 ```sh
@@ -145,7 +145,7 @@ MY_ERRORS_EXPORTER=sentry
 MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; the DSN is a secret
 ```
 
-Com os módulos OpenTofu, deixe os erros da seção `observability` por conta das configurações, e o módulo cria o segredo do DSN para você preencher, que a saída `secrets_to_fill` lista:
+Com os módulos do OpenTofu, deixe os erros da seção `observability` para as configurações, e o módulo cria o segredo do DSN para você preencher, que a saída `secrets_to_fill` dele lista:
 
 ```hcl
   observability = { errors = "settings" }
@@ -153,11 +153,11 @@ Com os módulos OpenTofu, deixe os erros da seção `observability` por conta da
   secrets       = ["errors_sentry_dsn"]
 ```
 
-O servidor fala o protocolo do Sentry por conta própria, então nenhum SDK do Sentry está envolvido e nenhuma variável de ambiente `SENTRY_*` é lida. Ele define a impressão digital, para que o serviço agrupe por ela, e as tags `service` (`my`), `my.role`, `my.error.where` e `error.fingerprint`. A release é a versão do servidor e o ambiente é `errors_environment`.
+O servidor fala o protocolo do Sentry por conta própria, então nenhum SDK do Sentry é usado e nenhuma variável de ambiente `SENTRY_*` é lida. Ele define o fingerprint, para que o serviço agrupe por ele, e as tags `service` (`my`), `service.namespace` (o `host`), `my.role`, `my.error.where` e `error.fingerprint`. A release é a versão do servidor e o ambiente é `errors_environment`.
 
-- **Sentry** (hospedado ou instalado por você): copie o DSN das chaves de cliente do projeto.
+- **Sentry** (hospedado ou autohospedado): copie o DSN das chaves de cliente do projeto.
 - **GlitchTip**: copie o DSN do projeto. Ele é de código aberto e roda em um servidor pequeno. Verifique quais regras de alerta a sua versão oferece para problemas novos e recorrentes.
-- **Datadog Error Tracking**: use o DSN do Sentry do seu site do Datadog, `https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`. O Datadog exige a tag `service`, que o servidor sempre define. O Datadog guarda esses eventos como logs e os agrupa no Error Tracking. Se, em vez disso, você enviar a linha de log ao Datadog por um agente ou um encaminhador (Error Tracking for Logs), a pilha fica em `message`; mapeie-a para `error.stack` com um pipeline de logs, senão o Datadog não a vê como pilha. O exportador `sentry` não precisa desse mapeamento.
+- **Datadog Error Tracking**: use o DSN do Sentry do seu site do Datadog, `https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`. O Datadog exige a tag `service`, que o servidor sempre define. O Datadog armazena esses eventos como logs e os agrupa no Error Tracking. Se você enviar a linha de log ao Datadog com um agente ou um encaminhador (Error Tracking for Logs), a stack está em `message`; mapeie-a para `error.stack` com um pipeline de logs, ou o Datadog não a reconhece como uma stack. O exportador `sentry` não precisa desse mapeamento.
 
 <!-- source: otlp-backends fe964b8f1b2c -->
 ### Backends OTLP

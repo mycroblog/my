@@ -61,50 +61,57 @@ Le binaire publié et l’image de conteneur contiennent tous les adaptateurs du
 `my config check` signale d’un coup tous les problèmes de la configuration, avant que vous démarriez le serveur
 ([liste de contrôle de production](production-checklist.md)).
 
-<!-- source: from-a-small-server-to-a-large-one 2f46b66f047c -->
+<!-- source: from-a-small-server-to-a-large-one ed28f8cf5385 -->
 ## D’un petit serveur à un grand
 
-![Trois étapes d’un petit serveur à un grand : un processus sur SQLite et le système de fichiers, puis PostgreSQL et le stockage objet derrière un CDN, puis des processus web et worker séparés avec un courtier de flux. La liste ci-dessous décrit chaque étape.](images/growth.svg)
+![Trois étapes d’un petit serveur à un grand : un seul processus sur SQLite et le système de fichiers, puis PostgreSQL et un stockage d’objets derrière un CDN, puis des processus web et worker séparés avec un broker de flux. La liste ci-dessous décrit chaque étape.](images/growth.svg)
 
-1. **Commencer petit.** Un processus avec `role = all`, sur SQLite, avec les médias sur le système de fichiers et les valeurs par défaut pour
-   le reste : la file et le magasin clé-valeur dans la base de données, et le flux en temps réel dans le processus. Les fichiers Docker
-   Compose de `deploy/docker` démarrent cette configuration sur une machine ([déployer avec Docker Compose](deploy-docker-compose.md)).
+1. **Commencer petit.** Un seul processus avec `role = all`, sur SQLite, avec les médias sur le système de fichiers et les valeurs par défaut pour
+   le reste : la file d’attente et le magasin clé-valeur dans la base de données, et le flux en temps réel à l’intérieur du processus. Les fichiers Docker
+   Compose de `deploy/docker` démarrent cette configuration sur une seule machine ([déployer avec Docker Compose](deploy-docker-compose.md)).
    Elle convient à un serveur personnel ou petit. `stream = hub` n’atteint que le processus dans lequel il s’exécute ; cette configuration reste donc à un
    seul processus.
 2. **Sortir les données.** PostgreSQL pour la base de données, un bucket compatible S3 ou Google Cloud Storage pour les médias,
    et un CDN devant les médias. Le serveur reste un seul processus, mais il ne dépend plus d’un seul disque, et les
-   processus de l’étape suivante peuvent partager les données. Décidez-le avant le premier démarrage si vous le pouvez : déplacer ensuite les données
-   de SQLite et du système de fichiers est un travail à part ([ce qu’il faut sauvegarder](backup.md#what-to-back-up) liste
+   processus de l’étape suivante peuvent partager les données. Décidez-le avant le premier démarrage si vous le pouvez : déplacer plus tard les données
+   de SQLite et du système de fichiers est un travail à part entière ([ce qu’il faut sauvegarder](backup.md#what-to-back-up) liste
    ce qui doit être déplacé).
-3. **Monter en charge.** Exécutez des processus avec `role = web` pour les requêtes et `role = worker` pour les jobs, autant que chacun
-   en exige, et répartissez les workers par type de job ([répartir les workers](running.md#splitting-workers-by-job-type)).
-   Avec plus d’un processus, le flux en temps réel a besoin d’un courtier qui atteint tous les processus (`postgres`, `valkey`,
-   `sns` ou `pubsub`), et le magasin clé-valeur doit être partagé (`db` ou `valkey`), car `memory` garde séparées les limites de
-   débit et les réponses aux écritures renvoyées de chaque processus. La file de jobs reste dans
+3. **Passer à l’échelle.** Exécutez des processus `role = web` pour les requêtes et `role = worker` pour les jobs, autant que chacun
+   en demande, et répartissez les workers par type de job ([répartir les workers](running.md#splitting-workers-by-job-type)).
+   Avec plus d’un processus, le flux en temps réel a besoin d’un broker qui atteint chaque processus (`postgres`, `valkey`,
+   `sns` ou `pubsub`), et le magasin clé-valeur doit être partagé (`db` ou `valkey`), puisque `memory` garde séparés, pour chaque processus, les limites
+   de débit et les réponses aux écritures renvoyées. La file des jobs reste dans
    PostgreSQL, ou passe à Google Cloud Tasks ([Cloud Tasks](running.md#cloud-tasks)).
 
-Le [déploiement sur Cloud Run](deploy-google-cloud.md) est un exemple de configuration entre la deuxième et la troisième étape :
-`role = all` sur Cloud Run, PostgreSQL sur Neon, les médias dans Cloud Storage, Cloud Tasks pour les jobs et Pub/Sub pour le
-flux, sans aucune instance en cours d’exécution tant que personne n’utilise le serveur.
+<!-- source: ways-to-deploy eeb6d182d4dc -->
+## Façons de déployer
 
-<!-- source: where-to-go-next 2f1d25c01f8a -->
+- **[Docker Compose](deploy-docker-compose.md)** sur une seule machine : la première étape, ou la deuxième avec PostgreSQL et un bucket.
+- **[Google Cloud](deploy-google-cloud.md)** : `role = all` sur Cloud Run, PostgreSQL comme Neon, médias dans Cloud Storage, Cloud
+  Tasks pour les jobs et Pub/Sub pour le flux, sans aucune instance en marche tant que personne n’utilise le serveur.
+- **[AWS](deploy-aws.md)** : `role = all` sur ECS Fargate, PostgreSQL comme Neon, médias dans S3, jobs dans la base de données et SNS
+  pour le flux.
+
+Sur les deux clouds, un module OpenTofu crée tout le déploiement : [Déployer avec OpenTofu](deploy-opentofu.md) donne les étapes qu’ils partagent.
+
+<!-- source: where-to-go-next 48f37c91b820 -->
 ## Où aller ensuite
 
 Lisez les guides de l’opérateur dans cet ordre :
 
-1. **Démarrer :** [lancer le serveur](running.md) ou [le déployer sur Cloud Run](deploy-google-cloud.md), puis parcourez la
+1. **Premiers pas :** [exécuter le serveur](running.md) et [le déployer](#ways-to-deploy), puis parcourez la
    [liste de contrôle de production](production-checklist.md) avant de l’ouvrir aux utilisateurs.
-2. **Configurer l’instance :** ses [paramètres](instance-settings.md), l’[inscription](registration.md),
+2. **Configurer le serveur :** ses [réglages](instance-settings.md), l’[inscription](registration.md),
    les [fournisseurs de connexion externes](login-providers.md), l’[e-mail](email.md), le [CAPTCHA](captcha.md), le [CDN](cdn.md),
-   les [aperçus de liens](link-previews.md), et les [moteurs de recherche et robots d’IA](crawlers.md).
+   les [aperçus de liens](link-previews.md) et les [moteurs de recherche et robots d’IA](crawlers.md).
 3. **Activer des fonctionnalités :** la [modération](moderation.md), les [relais](relays.md), les [webhooks](webhooks.md),
-   les [plugins](plugins.md) et les [hooks de décision](decision-hooks.md), le [chat vocal](voice.md), la [recherche plein texte](search.md),
-   les [soutiens](supporters.md) et leurs paiements, et l’[import des coûts cloud](billing-import.md).
-4. **L’exploiter au quotidien :** la [supervision](monitoring.md), les [alertes](alerts.md), les [rapports d’erreurs](error-reporting.md),
+   les [plugins](plugins.md) et les [hooks de décision](decision-hooks.md), le [chat vocal](voice.md), la [recherche en texte intégral](search.md),
+   les [soutiens](supporters.md) et leurs paiements, et l’[importation des coûts cloud](billing-import.md).
+4. **L’exploiter au quotidien :** la [supervision](monitoring.md), les [alertes](alerts.md), le [rapport d’erreurs](error-reporting.md),
    la [maintenance](maintenance.md), la [sauvegarde](backup.md), la [base de données](database.md),
-   la [clé de chiffrement de clés](key-management.md), et les [administrateurs et rôles](admin-cli.md).
-5. **Juridique et fermeture :** les modèles de [politique de confidentialité](privacy-policy-template.md) et de
+   la [clé de chiffrement de clés](key-management.md) et les [administrateurs et rôles](admin-cli.md).
+5. **Aspects juridiques et fermeture :** les modèles de [politique de confidentialité](privacy-policy-template.md) et de
    [registre des traitements](processing-record-template.md), et la [fermeture du service](service-closure.md).
 
-La [référence de configuration](../reference/configuration.md) liste tous les paramètres, et la [référence des tâches](../reference/jobs.md)
-toutes les tâches que les workers exécutent.
+La [référence de configuration](../reference/configuration.md) liste chaque réglage, et la [référence des jobs](../reference/jobs.md)
+chaque job que les workers exécutent.

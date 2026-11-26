@@ -3,7 +3,7 @@
 
 本頁說明如何啟動和停止伺服器、取得其映像檔，以及在執行期間監看它：指標、追蹤、任務佇列和健康檢查。
 
-<!-- source: start-the-server 5faa7632b863 -->
+<!-- source: start-the-server 93f89c7d7b66 -->
 ## 啟動伺服器
 
 ```sh
@@ -27,7 +27,7 @@ my version        # print the version of the binary
 
 日誌會以 JSON Lines 格式輸出到標準錯誤。每一行都有 `level`（`DEBUG`、`INFO`、`WARN`、`ERROR`）和 `severity`，後者是以 Cloud Logging 讀取的形式表示的同一個等級（`DEBUG`、`INFO`、`WARNING`、`ERROR`，以及用於讓程序停止之錯誤的 `CRITICAL`）。處理請求時寫入的日誌會帶有 `request_id`，同一個 ID 也會在 `X-Request-Id` 回應標頭中傳回。如果請求的 `X-Request-Id` 最多 128 個字元，且只由英文字母、數字和 `-_.:` 組成，就會被視為負載平衡器指定的 ID 而原樣使用。追蹤內（請求和任務）的日誌也會帶有 `trace_id` 和 `span_id`（請參閱[追蹤](#traces)）。
 
-每個 HTTP 請求和每次任務執行在結束時都會寫入一行。這一行的名稱和值與下方[指標](#metrics)的標籤相同，所以在 `metrics_exporter = none` 的 Cloud Run 上，你可以從這些行建立 Cloud Logging 的記錄型指標（計數器和分布）。
+每個 HTTP 請求和每次任務執行在結束時都會寫入一行。這一行的名稱和值與下方[指標](#metrics)的標籤相同，所以在 `metrics_exporter = none` 時，平台可以從這些行建立記錄型指標（計數器和分布）。
 
 | 行（`msg`） | 欄位 |
 | --- | --- |
@@ -35,7 +35,10 @@ my version        # print the version of the binary
 | `job`（成功和 `postponed` 時為 `INFO`，`retry` 時為 `WARN`，`dead` 時為 `ERROR`） | `my.job.type` 和 `my.outcome` 的值與 `my.job.duration` 的標籤相同。另外還有 `duration_seconds`（`my.job.duration`）、`wait_seconds`（`my.job.wait`）、`job_id`、`attempt`，以及失敗時的 `error` |
 | `error report`（`ERROR`；讓程序停止的失敗為 `CRITICAL`） | 每個回報的錯誤一行（[錯誤回報](#error-reports)） |
 
-<!-- source: error-reports a81ecfe83871 -->
+使用 `metrics_exporter = none` 時，`http request` 和 `job` 行還會帶有轉接器和資料庫連線池的[系統指標](#system-metrics)。
+當請求或任務執行了佇列、鍵值、串流或 blob 操作時：`my.adapter.operations.total`、`my.adapter.errors.total`，以及 `my.adapter.errors`，也就是依 `my.adapter` 分類的錯誤（例如 `{"kv.valkey": 2}`）。`db.client.connection.usage`，也就是已使用的連線數除以連線池的上限（有上限時）。不為零時，還有 `my.db.client.connection.waits`、`db.client.connection.wait_time`（秒）和 `db.client.connection.timeouts`：它們是自該程序上一行以來的增加量，因此各行的總和就是該程序的總數。
+
+<!-- source: error-reports b70c69ddef24 -->
 ### 錯誤回報
 
 [錯誤回報](error-reporting.md)指南說明在各平台上去哪裡閱讀這些行、「錯誤」畫面、通知，以及把回報傳送到錯誤追蹤服務。
@@ -68,7 +71,7 @@ my version        # print the version of the binary
 
 欄位名稱是包含 `.` 的單一鍵，而不是巢狀結構。在 Cloud Logging 的篩選器和擷取中請加上引號（例如 `jsonPayload."http.route"`，分布值則用 `EXTRACT(jsonPayload.duration_seconds)`）。作為標籤使用的欄位只會取有限集合中的值；`url.path`、`request_id` 和 `job_id` 絕不會是標籤。
 
-使用 `metrics_exporter = emf` 時，這兩行本身就是 EMF 行。`http request` 行帶有 `http.server.request.duration` 的值，`job` 行帶有 `my.job.duration` 和 `my.job.wait` 的值（鍵以指標命名），另外還有 `_aws` 指示詞、`service.name`、`service.version` 和 `my.role`。這三個指標不會寫在其他任何行上。你在 `metrics_emf_dimensions` 中選擇的欄位會依 EMF 的要求以字串寫入（例如維度 `http.response.status_code` 為 `"200"`）。日誌輸出到標準錯誤，其他 EMF 行則輸出到標準輸出。ECS 的 `awslogs` 日誌驅動程式會把兩者都送到 CloudWatch Logs，所以會從兩者擷取指標。
+使用 `metrics_exporter = emf` 時，這兩行本身就是 EMF 行。`http request` 行帶有 `http.server.request.duration` 的值，`job` 行帶有 `my.job.duration` 和 `my.job.wait` 的值（鍵以指標命名），另外還有 `_aws` 指示詞、`service.name`、`service.version`、`my.role` 和 `service.namespace`（`host`）。這三個指標不會寫在其他任何行上。你在 `metrics_emf_dimensions` 中選擇的欄位會依 EMF 的要求以字串寫入（例如維度 `http.response.status_code` 為 `"200"`）。日誌輸出到標準錯誤，其他 EMF 行則輸出到標準輸出。ECS 的 `awslogs` 日誌驅動程式會把兩者都送到 CloudWatch Logs，所以會從兩者擷取指標。
 
 <!-- source: docker-compose-files 9f0633524036 -->
 ## Docker Compose 檔案
@@ -199,7 +202,7 @@ CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 
 **與 Caddy 比較**。由 `my` 提供 HTTPS 就沒有 HTTP/3、回應壓縮（伺服器會傳送已壓縮的網頁用戶端檔案，其餘一概不壓縮）、自己的存取日誌（伺服器的 `http request` 日誌行仍然存在），也沒有透過 DNS 驗證的憑證，包括萬用字元憑證。需要其中任何一項時，請繼續使用 `compose.caddy.yaml` 或其他代理。
 
-<!-- source: get-the-image 89a97ed4f1d2 -->
+<!-- source: get-the-image 123f0112b538 -->
 ## 取得映像檔
 
 伺服器映像檔是 `ghcr.io/mycroblog/my`，公開提供，支援 `linux/amd64` 和 `linux/arm64`，並包含所有轉接器。
@@ -222,9 +225,8 @@ ghcr.io/mycroblog/my:0.1.0@sha256:...
 執行的位置：
 
 - **Docker Compose**：`deploy/docker/compose.yaml` 會執行 `.env` 中 `MY_VERSION` 所指的映像檔（[Docker Compose 檔案](#docker-compose-files)）。若要改為從簽出的原始碼建置，請加上覆寫檔 `compose.build.yaml`（`docker compose -f compose.yaml -f compose.build.yaml up -d --build`），並把 `MY_VERSION` 設為你自己取的名稱，因為它是你本機映像檔的名稱，也是 `my version` 會顯示的內容。
+- **Google Cloud 與 AWS**：OpenTofu 模組會直接執行 `ghcr.io` 的映像檔，也就是它們的 `ref` 所指定的版本（[以 OpenTofu 部署](deploy-opentofu.md#the-root-modules)）。
 - **Kubernetes**：直接從 `ghcr.io` 拉取。
-- **Cloud Run**：直接使用 `ghcr.io` 的映像檔。部署時會把標籤解析為摘要值。
-- **AWS（ECS、EKS）**：把映像檔複製到 Amazon ECR，或使用 ECR 提取快取（需要 ghcr.io 的憑證）。
 
 <!-- source: verify-an-image 76b9a1293edb -->
 ### 驗證映像檔
@@ -239,7 +241,31 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 
 除非映像檔是由這個儲存庫的發布工作流程建置，否則第一個指令會失敗。若是 `nightly` 映像檔，請改用 `--signer-workflow mycroblog/my/.github/workflows/nightly.yml` 驗證。它會顯示提交，也就是該版本標籤的提交；映像檔的標籤 `org.opencontainers.image.revision` 也會指出同一個提交。
 
-<!-- source: publish-the-source-code-agpl-30 2f3b73ce9dfc -->
+<!-- source: get-the-binary 2608f7bdd54d -->
+## 取得執行檔
+
+若要不透過容器執行 `my`，每個發布版本都會附上映像檔中的執行檔，支援 `linux/amd64` 和 `linux/arm64`，檔名為 `my_<version>_linux_<arch>.tar.gz`。它是單一的靜態執行檔，網頁用戶端已內含在其中；封存檔中還有 `LICENSE`、`licenses/` 中的授權聲明，以及一份 README。沒有其他作業系統的建置。
+
+```sh
+curl -fsSLO https://github.com/mycroblog/my/releases/download/v0.1.0/my_v0.1.0_linux_amd64.tar.gz
+tar xzf my_v0.1.0_linux_amd64.tar.gz my
+./my version
+```
+
+設定方式與映像檔相同（[設定參考](../reference/configuration.md)），而且每個版本都要依照[升級](database.md#upgrading)的說明進行：不會有任何東西替你套用結構描述。
+
+<!-- source: verify-a-binary 03daabe0c940 -->
+### 驗證執行檔
+
+和映像檔一樣，每個封存檔都有透過 Sigstore 簽署的來源證明，而發布版本會在 `SHA256SUMS` 中列出各封存檔的 SHA-256：
+
+```sh
+gh attestation verify my_v0.1.0_linux_amd64.tar.gz -R mycroblog/my \
+  --signer-workflow mycroblog/my/.github/workflows/release.yml
+sha256sum --ignore-missing -c SHA256SUMS
+```
+
+<!-- source: publish-the-source-code-agpl-30 2e87c44ffb2f -->
 ## 公開原始碼（AGPL-3.0）
 
 `my` 以 AGPL-3.0-only 授權。AGPL-3.0 第 13 條要求，任何執行伺服器並讓使用者透過網路與其互動的人，都必須向這些使用者提供取得正在執行之程式的對應原始碼的方法。這適用於所有與伺服器互動的人，而不只是擁有帳號的人。
@@ -260,6 +286,10 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 網頁用戶端實例資訊頁面（`/about`）的「原始碼」區段，以及入口頁面（`/`）上的連結
 - NodeInfo（`/nodeinfo/2.1`）中的 `metadata.sourceCode`。`https:` URL 也會以 `software.repository` 公開（NodeInfo 2.1 的結構描述在 `software.repository` 中只允許 `http(s)` URL，所以 `mailto:` 值只會出現在 `metadata.sourceCode` 中）
 
+映像檔在 `/usr/share/doc/my/LICENSE` 附有 `my` 的授權條款，並在 `/usr/share/doc/my/licenses/` 附有二進位檔中第三方程式碼與資料的授權聲明：
+`go-modules.md` 是 Go 模組的，`npm-packages.md` 和 `npm-packages-sw.md` 是網頁用戶端的 npm 套件的，另外還有它內含的資料與字型的授權條款。
+如果你散布映像檔或二進位檔，請連同這些檔案一起提供。
+
 <!-- source: when-you-fork-or-modify-my be83256fe6a3 -->
 ### 當你分支或修改 `my` 時
 
@@ -273,17 +303,17 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 確認垃圾郵件過濾不會擋掉索取請求。
 - 使用你願意公開的地址：任何人都能在資訊頁面、入口頁面和 NodeInfo 中看到它。
 
-<!-- source: metrics 000df571a6a0 -->
+<!-- source: metrics a5fd8092d408 -->
 ## 指標
 
 設定 `metrics_exporter`（預設 `none`）會匯出服務指標。相關設定請參閱[設定參考](../reference/configuration.md)。
 
 | `metrics_exporter` | 輸出路徑 | 適用於 |
 | --- | --- | --- |
-| `none` | 不匯出任何內容。量測幾乎不產生成本。整個實例的值仍會每 15 分鐘寫成一行 `metrics snapshot` 日誌 | Cloud Run（改用平台的指標和記錄型指標） |
+| `none` | 不匯出任何內容。量測幾乎不產生成本。整個實例的值仍會每 15 分鐘寫成一行 `metrics snapshot` 日誌，轉接器和連線池的值則寫進請求與任務行 | Google Cloud，由平台的指標和記錄型指標取而代之（[在 Google Cloud 上部署](deploy-google-cloud.md#monitoring-and-alerts)） |
 | `prometheus` | `metrics_listen`（預設 `127.0.0.1:9464`）上的 `GET /metrics`。這是與公開的 `listen` 分開的監聽器，不需驗證，在每種 `role` 下都會執行 | 自行架設（由相容 Prometheus 的伺服器或 KEDA 擷取） |
 | `otlp` | 透過 OTLP/HTTP 傳送到 OpenTelemetry Collector。目的地取自 `OTEL_EXPORTER_OTLP_ENDPOINT` 等標準 OTel 環境變數 | 可以執行收集器的環境 |
-| `emf` | CloudWatch Embedded Metric Format 的 JSON 行。請求和任務的指標附在上述結束時的日誌行上；其他指標會在請求或任務結束時寫到標準輸出，每組標籤一行 | AWS ECS |
+| `emf` | CloudWatch Embedded Metric Format 的 JSON 行。請求和任務的指標附在上述結束時的日誌行上；其他指標會在請求或任務結束時寫到標準輸出，每組標籤一行 | AWS（[在 AWS 上部署](deploy-aws.md#monitoring-and-alerts)） |
 
 指標列在下方。在 Prometheus 中，名稱中的 `.` 會變成 `_`，並加上單位後綴（`_seconds`，計數器則為 `_total`）。
 
@@ -306,6 +336,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.job.duration` | 直方圖，秒 | `my.job.type`（已註冊的任務類型，或 `other`）、`my.outcome`（`success` / `retry` / `dead` / `postponed`：`postponed` 是沒有做任何任務、也不消耗任務嘗試次數的執行，例如等待其主機的連結卡片擷取） |
 | `my.job.wait` | 直方圖，秒 | `my.job.type` |
 | `my.link_card.host_pauses` | 計數器 | `http.response.status_code`（`429` / `503`）。每次暫停從某個主機擷取連結卡片時計一次；請參閱[連結預覽](link-previews.md#limits-per-host) |
+| `my.projection.drifts` | 計數器 | `my.projection`（投影的名稱）。每次排程驗證發現投影有差異時計一次；請參閱[檢查與重建投影](database.md#checking-and-rebuilding-projections) |
 | `my.translation.requests` | 計數器 | `my.outcome`（`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`）。每次請求翻譯檢視者可以看到的貼文，或版主要求翻譯檢舉的貼文或留言時計一次：由作者自己的文字、保留的翻譯或服務提供者回答，或因沒有服務提供者可以接收該貼文、已達每月上限、沒有服務提供者支援該語言，或沒有服務提供者傳回可用的翻譯而拒絕。 |
 | `my.translation.lock_waits` | 計數器 | 無。每個等待另一個正在把同一則貼文翻譯成同一種語言的請求、而不是去詢問服務提供者的請求計一次 |
 | `my.translation.characters` | 計數器 | `my.provider`（翻譯服務提供者的 ID）。傳送給服務提供者的貼文和檢舉留言的字元數，不含標記，包括失敗的呼叫。這就是[每月上限](instance-settings.md#admin-screens-and-the-client-api)所計算的數量，可能與服務提供者的計費不同 |
@@ -323,7 +354,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.queue.dead` | 量測計 | 無 |
 | `my.instance.users`、`my.instance.statuses` | 量測計 | 無（本站的使用者數和貼文數，與 NodeInfo 相同） |
 | `my.media.stored_bytes` | 量測計，位元組 | `my.media.origin`（`local` / `remote_cache`） |
-| `my.db.size` | 量測計，位元組 | 無（資料庫的大小：PostgreSQL 為 `pg_database_size`；SQLite 為不含預寫日誌的資料庫檔案） |
+| `my.db.size` | 量測計，位元組 | 無（資料庫的大小：PostgreSQL 為目前結構描述的關聯；SQLite 為不含預寫日誌的資料庫檔案） |
 | `my.billing.import.failing` | 量測計 | `my.billing.source`（該來源最新一次匯入失敗時為 1，否則為 0） |
 | `my.federation.instances` | 量測計 | `my.federation.instance.state`（`available`：仍會傳送到、但自上次回應以來至少有一天失敗的伺服器；`unavailable`：傳送已暫停的伺服器） |
 | `my.metrics.snapshot.age` | 量測計，秒 | `my.metrics.snapshot.part`（`queue` / `totals`） |
@@ -369,12 +400,12 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - `db.client.connection.pending_requests` 不會匯出：pgx 和 `database/sql` 的統計資料不會回報有多少請求在等待，所以改以等待的次數和時間代替。
 - 請針對 `go.memory.used` 的總和與 `go.memory.limit` 的比率，以及 `db.client.connection.wait_time` 的增長（表示已達連線池上限）設定警示。
 
-<!-- source: memory-limit-gomemlimit 8ea44722eefd -->
+<!-- source: memory-limit-gomemlimit 66320a6c7b76 -->
 ### 記憶體上限（`GOMEMLIMIT`）
 
-`GOMEMLIMIT` 是由營運者設定的 Go 執行階段環境變數；應用程式不會自行決定。沒有設定時，Go 以其預設值（無上限）執行，堆積在接近容器記憶體上限時也不會積極回收。在有容器記憶體上限的環境中（Cloud Run、ECS、Kubernetes），請把它設為該上限的約 90%（例如 512 MiB 的容器設為 `GOMEMLIMIT=460MiB`）。不要設定 `GOMAXPROCS`：Go 的預設值會依循容器的 CPU 上限。
+`GOMEMLIMIT` 是由營運者設定的 Go 執行階段環境變數；應用程式不會自行決定。沒有設定時，Go 以其預設值（無上限）執行，堆積在接近容器記憶體上限時也不會積極回收。有容器記憶體上限時，請把它設為該上限的約 90%（例如 512 MiB 的容器設為 `GOMEMLIMIT=460MiB`）。OpenTofu 模組會依每個服務的大小，為它如此設定。不要設定 `GOMAXPROCS`：Go 的預設值會依循容器的 CPU 上限。
 
-<!-- source: traces 8dfd96f79f54 -->
+<!-- source: traces 15eb90e8584a -->
 ## 追蹤
 
 設定 `traces_exporter`（預設 `none`）會匯出分散式追蹤。相關設定請參閱[設定參考](../reference/configuration.md)。
@@ -398,33 +429,10 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | --- | --- | --- |
 | 預設、小型自行架設 | `traces_exporter = none` | 不匯出任何 span。請在日誌中追蹤 `request_id` 和 `job_id`。如果受信任的代理提供了 `traceparent`，其 `trace_id` 和 `span_id` 會加到日誌中 |
 | 自行架設（Jaeger、Tempo、OpenTelemetry Collector 等） | `traces_exporter = otlp`、`traces_flush = batch` | 透過 OTLP/HTTP 傳送到位於 `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`（或 `OTEL_EXPORTER_OTLP_ENDPOINT`，預設 `http://localhost:4318`）的接收端。驗證標頭放在 `OTEL_EXPORTER_OTLP_HEADERS` 中。若要確實保留錯誤和緩慢的追蹤，請使用 Collector 的尾端取樣 |
-| Google Cloud（Cloud Run） | `none`，或以 `otlp` 搭配 `unit` 啟用追蹤 | 請參閱下文 |
-| AWS（ECS） | `none`，或以 `otlp` 搭配 `batch` 啟用追蹤 | 請參閱下文 |
+| Google Cloud | `traces_exporter = none` | Cloud Trace 會顯示 Cloud Run 為每個請求記錄的追蹤：[在 Google Cloud 上部署](deploy-google-cloud.md#traces) |
+| AWS | `traces_exporter = otlp`，送到每個 task 中的收集器 | X-Ray：[追蹤到 X-Ray](deploy-aws.md#traces-to-x-ray) |
 
-<!-- source: cloud-run 7f1a21bbfbef -->
-### Cloud Run
-
-即使使用 `none`，Cloud Run 自動建立的請求追蹤與日誌中的 `trace_id` 也會共用同一個 ID（當你以 `trusted_proxies` 信任來自 Cloud Run 前端的連線時）。Cloud Run 是否一律覆寫公開請求的 `traceparent` 尚未驗證。日誌並未採用 Cloud Logging 所辨識的追蹤欄位格式（`logging.googleapis.com/trace`）。
-
-若要把應用程式的 span 傳送到 Cloud Trace，請在同一個服務中 **以 sidecar 執行 OpenTelemetry Collector**。伺服器不持有任何 Google 憑證；由 sidecar 以 Application Default Credentials 傳送到 Cloud Trace 的 OTLP 端點。
-
-- 伺服器（輸入容器）：`MY_TRACES_EXPORTER=otlp`、`MY_TRACES_FLUSH=unit`、`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`
-- Sidecar：一個 OpenTelemetry Collector，以 `otlp` 接收器透過 HTTP 在 `localhost:4318` 上接收，並以 `googlecloud` 匯出器或 `otlphttp` 匯出器（`https://telemetry.googleapis.com`，搭配 `googleclientauth` 擴充功能）傳送。請授予服務帳號寫入 Cloud Trace 的權限。
-- 在每個被記錄的請求或任務結束時，`unit` 會在返回之前把目前為止的 span 清出到 sidecar。為了讓 sidecar 能在沒有分配 CPU 時傳送它們，啟用追蹤的配置請使用以執行個體計費的方式。
-- 費用是 sidecar 的資源以及 span 的數量（Cloud Trace 定價）。請以 `traces_sample_ratio` 選擇比率。
-
-<!-- source: aws-ecs cc7dd1ec1e83 -->
-### AWS ECS
-
-若要傳送到 X-Ray，請在每個任務中以 sidecar 容器執行 **AWS Distro for OpenTelemetry（ADOT）Collector**。伺服器沒有 SigV4 簽章功能；由 Collector 以任務角色簽章並傳送到 X-Ray。[OpenTofu 部署](../../deploy/opentofu/README.md#sections-of-mycroblog-aws)的 `mycroblog-aws` 模組預設就會完成這一切（`observability.traces = "x-ray"`）；本節其餘部分適用於你自己的任務定義。
-
-- 伺服器：`MY_TRACES_EXPORTER=otlp`、`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces`，以及預設的 `MY_TRACES_FLUSH=batch`，因為程序會持續執行。
-- Collector：使用固定版本的映像檔，例如 `public.ecr.aws/aws-observability/aws-otel-collector:v0.50.0`，設定放在變數 `AOT_CONFIG_CONTENT` 中：以 HTTP 在 `127.0.0.1:4318` 上接收的 `otlp` 接收器，以及 `awsxray` 匯出器。X-Ray 的 OTLP 端點（`https://xray.<region>.amazonaws.com/v1/traces`，透過使用 `sigv4auth` 擴充功能的 `otlphttp` 匯出器）也可以，但帳號需要開啟 CloudWatch Transaction Search。
-- 授予任務角色 `xray:PutTraceSegments`，`awsxray` 匯出器會用它寫入。伺服器自己對追蹤取樣，所以 Collector 不需要 X-Ray 的取樣規則。
-- 分一部分任務資源給 Collector：`mycroblog-aws` 給它 32 個 CPU 單位和 128 MiB，其餘給伺服器，並把 `GOMEMLIMIT` 設為其餘資源的 90%。讓伺服器的容器依賴 Collector 的啟動，這樣 Collector 會在伺服器之後才停止，並收到最後的 span。
-- 費用是 sidecar 在任務資源中所佔的份額，以及 X-Ray 記錄的追蹤數量（每月前 100,000 筆免費）。預設的 `traces_sample_ratio` 為 0.01，每天 100,000 個請求大約會記錄每月 30,000 筆追蹤。
-
-<!-- source: profiles e3f49c0becf3 -->
+<!-- source: profiles d19dd2bf22e2 -->
 ## 效能剖析
 
 [系統指標](#system-metrics)說明程序使用了多少記憶體和 CPU；Go 執行階段的剖析（profile）則說明是什麼在使用它們。`pprof_listen` 指定一個監聽器的位址，該監聽器在 `/debug/pprof/` 下提供剖析資料，適用於每種 `role`。預設為空，也就是不開啟監聽器。
@@ -436,10 +444,11 @@ go tool pprof -sample_index=inuse_space http://127.0.0.1:6060/debug/pprof/heap  
 go tool pprof -sample_index=alloc_space http://127.0.0.1:6060/debug/pprof/heap   # what has allocated since the start
 go tool pprof 'http://127.0.0.1:6060/debug/pprof/profile?seconds=30'             # where the CPU goes, for 30 seconds
 curl 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1'                       # every goroutine, by where it waits
+go tool pprof 'http://127.0.0.1:6060/debug/pprof/mutex?seconds=30'               # where goroutines wait on locks, for 30 seconds
 curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '               # the runtime's memory statistics
 ```
 
-這個監聽器沒有驗證，剖析資料會顯示程序的內部，而且取得剖析會消耗 CPU：請讓它只在 loopback 上，並透過通道連線（`ssh -L 6060:127.0.0.1:6060 <host>`、`kubectl port-forward`），用完後取消設定。堆積剖析只涵蓋 Go 的堆積。程序的常駐記憶體還包含已讀入的二進位檔分頁、堆疊和執行階段自己的結構；這些請看記憶體統計。mutex 和 block 剖析是空的：伺服器不對它們取樣。
+這個監聽器沒有驗證，剖析資料會顯示程序的內部，而且取得剖析會消耗 CPU：請讓它只在 loopback 上，並透過通道連線（`ssh -L 6060:127.0.0.1:6060 <host>`、`kubectl port-forward`），用完後取消設定。堆積剖析只涵蓋 Go 的堆積。程序的常駐記憶體還包含已讀入的二進位檔分頁、堆疊和執行階段自己的結構；這些請看記憶體統計。block 和 mutex 剖析只在帶有 `seconds` 的請求取得它們的期間取樣，沒有它時是空的。
 
 <!-- source: stop-the-server 37d4c0cc3d97 -->
 ## 停止伺服器
@@ -558,7 +567,7 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 沒有到期的任務時，一個槽位會輪詢，其他槽位則等待，所以閒置的程序對資料庫造成的負擔與一次執行一個任務的程序相同。
 
-<!-- source: waiting-for-a-database-connection f481d577ea58 -->
+<!-- source: waiting-for-a-database-connection 795c0fd7f769 -->
 ### 等待資料庫連線
 
 使用 `database = postgres` 時，每個陳述式和交易都會先等待程序連線池中的空閒連線。[`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout)（預設 `60s`）只限制這段等待時間，不限制其他任何事：已經取得連線的長時間查詢或交易會繼續執行，無論需要多久。`0` 表示無限期等待。SQLite 沒有需要等待的連線數上限，所以在 SQLite 上設定它會在啟動時失敗。
@@ -574,38 +583,37 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 - **調低它** 可以快速卸載負載：用戶端會在 `Retry-After` 之後重試，而不是讓請求一直保持開啟。請讓它比你最慢的一般交易更長，否則短暫的流量高峰就會開始回應 `503`。
 - **先調整連線池的大小**。一個程序需要的連線數大約等於它同時執行的任務數。`database_url` 中的 `pool_max_conns` 預設為 4 和 CPU 數之中較大者，而所有程序合計必須低於資料庫的連線上限。
   - 使用 [`worker_job_concurrency`](#running-several-jobs-at-once) 時，槽位也會等待連線，而且這個設定必須低於連線池的上限。
-  - 在 Cloud Run 上，服務預設每個執行個體接受 80 個同時請求。連線池為 4 時，一波緩慢的請求會在這裡排隊，所以請調高 `pool_max_conns`、降低服務的並行數，或兩者都做。
+  - 在 Google Cloud 上，一個執行個體會同時接受許多請求：[外部 PostgreSQL](deploy-google-cloud.md#an-external-postgresql) 會決定它的連線池大小。
 - **頻繁出現 `503` 或 `db.client.connection.timeouts`** 表示連線池太小或查詢變慢了；更長的逾時只會掩蓋問題。請依照 [`MyDBPoolSaturated`](alerts.md#mydbpoolsaturated) 處理。
 
-<!-- source: cloud-tasks 287213e090b5 -->
+<!-- source: cloud-tasks f14d9721ba24 -->
 ### Cloud Tasks
 
-[在 Cloud Run 上部署](deploy-google-cloud.md)會以 OpenTofu 模組設定以下所有項目。
+[在 Google Cloud 上部署](deploy-google-cloud.md)會以 OpenTofu 模組設定以下所有項目。
 
 使用 `queue = cloudtasks` 時，任務留在資料庫中（`database = postgres`），Google Cloud Tasks 只負責為每個任務喚醒伺服器：
 
 - 對於伺服器儲存、重試或放回的每個任務，伺服器會在交易提交後於 `queue_cloudtasks_queue` 中建立一個 Cloud Tasks 任務。這個任務會在任務到期時，以任務的 ID 為內文，帶著 `queue_cloudtasks_service_account` 的 OIDC ID 權杖呼叫 `POST {queue_cloudtasks_url}/_internal/jobs`。到期時間在 30 天以後的任務，會在 30 天時發出訊號，並在該任務送達時再次發出訊號。
 - 收到任務的程序會執行任務，並在記錄其結果後回應 `204`，即使任務已經執行過或尚未到期也一樣。失敗的任務會由伺服器在下一次嘗試時間重試，而不是由 Cloud Tasks 重試。Cloud Tasks 只在回應為 `5xx`（無法連線到資料庫）或 `401`（伺服器拒絕的權杖）時才會重試任務，所以它的 `retryConfig` 不需要調整。
-- 沒有程序會輪詢資料表，也沒有程序會自行執行定期任務。請建立一個 Cloud Scheduler 任務，每分鐘（`* * * * *`）以同一個服務帳號的 OIDC 權杖（設定了 `queue_cloudtasks_audience` 時，並帶有該對象）呼叫 `POST {queue_cloudtasks_url}/_internal/tick`。每次 tick 都會把已到週期的定期任務放入佇列，整個實例只放一次（週期會在 KV 中被佔用，所以 `kv` 必須是 `db` 或 `valkey`），並再次為已到期超過 2 分鐘仍未執行的任務發出訊號，以補救遺失的訊號。
+- 沒有程序會輪詢資料表，也沒有程序會自行執行定期任務。一個 Cloud Scheduler 任務會呼叫 `POST {queue_cloudtasks_url}/_internal/tick`，預設每分鐘一次（`* * * * *`），並帶有同一個服務帳號的 OIDC 權杖（設定了 `queue_cloudtasks_audience` 時，並帶有該對象）。每次 tick 都會把已到週期的定期任務放入佇列，整個實例只放一次（週期會在 KV 中被佔用，所以 `kv` 必須是 `db` 或 `valkey`），並再次為已到期超過 2 分鐘仍未執行的任務發出訊號，以補救遺失的訊號。
 - `/_internal/jobs` 和 `/_internal/tick` 由 `role = all` 或 `worker` 的程序提供，只接受由 Google 為 `queue_cloudtasks_service_account` 簽署、電子郵件已驗證，且唯一的對象為 `queue_cloudtasks_audience`（預設為被呼叫的 URL）的權杖。其他任何請求都是 `401`。
 - 一次投遞執行一個任務，最多持續 5 分鐘的租約。請讓 `queue_cloudtasks_dispatch_deadline`（預設 10 分鐘）和 Cloud Run 服務的請求逾時比這更長。
 - 伺服器自己的服務帳號需要佇列上的 `roles/cloudtasks.enqueuer`，以及 `queue_cloudtasks_service_account` 上的 `roles/iam.serviceAccountUser`。它以 Application Default Credentials 進行驗證。
 
-<!-- source: how-late-periodic-jobs-run 3f0a97bda72d -->
+<!-- source: how-late-periodic-jobs-run 775fb52d1df8 -->
 ### 週期性任務會晚多久執行
 
 週期性任務會在它的時間之後，最多晚一個觸發週期執行，再加上平台啟動它所需的時間。這決定了活動的提醒與開始通知會晚多久送達，以及它們的語音聊天室會晚多久開啟，因為 `gathering.queue_due` 會啟動它們：提醒最多會晚表中的間隔那麼久。這些值是排程器程式碼與各平台觸發器所給定的值；它們並未在運作中的伺服器上量測過。
 
 | 平台 | 由什麼啟動週期性任務 | 活動提醒或開始的預期延遲 |
 | --- | --- | --- |
-| 自行架設與 Docker Compose（`queue = db`） | 每個 `role = all` 或 `worker` 的程序中的排程器，從程序啟動起每分鐘檢查一次，並讓每個任務在整台伺服器每個週期只加入佇列一次 | 最多 1 分鐘，再加上 worker 取走任務的約一秒 |
-| AWS ECS Fargate（`queue = db`） | 同一個排程器，在 worker 工作中 | 最多 1 分鐘，再加上約一秒 |
-| Cloud Run（`queue = cloudtasks`） | Cloud Scheduler 依它的排程呼叫 `/_internal/tick`，預設為 `* * * * *`（每分鐘）；然後 Cloud Tasks 為每個任務喚醒伺服器 | 最多 1 分鐘，再加上在沒有實例執行時啟動實例的時間（冷啟動，通常是幾秒）。使用較長的 `tick_schedule`（例如 `*/10 * * * *`）時，最多是該間隔 |
-| AWS Lambda | `my` 沒有 Lambda 部署；在 AWS 上，請在 ECS Fargate 上執行它 | — |
+| 自行架設與 [Docker Compose](deploy-docker-compose.md)（`queue = db`） | 每個 `role = all` 或 `worker` 的程序中的排程器，從程序啟動起每分鐘檢查一次，並讓每個任務在整台伺服器每個週期只加入佇列一次 | 最多 1 分鐘，再加上 worker 取走任務的約一秒 |
+| [AWS](deploy-aws.md)（`queue = db`） | 同一個排程器，在每個 task 中 | 最多 1 分鐘，再加上約一秒 |
+| [Google Cloud](deploy-google-cloud.md)（`queue = cloudtasks`） | Cloud Scheduler 依 `queue.tick_schedule` 呼叫 `/_internal/tick`，預設為每分鐘一次；然後 Cloud Tasks 為每個任務喚醒伺服器 | 最多 1 分鐘，再加上在沒有實例執行時啟動實例的時間（冷啟動，通常是幾秒）。使用較長的 `tick_schedule` 時，最多是該間隔（[如何降低成本](deploy-google-cloud.md#where-care-reduces-it)） |
 
 如果提醒會在活動開始之後才送達，就不會送出，活動結束後的開始通知也一樣。所以當觸發間隔超過 5 分鐘時，最短的提醒可能會遺失。
 
-<!-- source: routing-job-types-to-their-own-queues 292b3f6071a8 -->
+<!-- source: routing-job-types-to-their-own-queues f4098db6215c -->
 ### 把任務類型路由到各自的佇列
 
 使用 `queue = cloudtasks` 時，任務程序無法選擇它執行的任務：`worker_job_types` 只適用於 `queue = db`，因為由平台決定誰接收訊號。若要讓某些任務類型擁有自己的容量，請把它們的訊號送到它們自己的佇列，並在平台上設定該佇列的容量。只要你沒有設定路由，就不會有任何改變。
@@ -614,14 +622,8 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 
 左邊是[任務參考](../reference/jobs.md)中的任務類型或前綴。名稱優先於前綴，較長的前綴優先於較短的前綴。不符合任何路由的類型（包括之後的版本新增的類型）會使用預設佇列（`queue_cloudtasks_queue`），所以它們會繼續執行。`my config check` 會檢查路由的格式；不符合任何任務類型的左邊會讓 `my serve` 在啟動時中止。
 
-**讓每個程序都使用相同的路由，包括 `role = web`**。訊號由儲存任務的程序發出：使用者大部分的操作（例如貼文的第一個任務）由 web 程序發出，而任務所儲存的任務、重試、排序鍵的下一個任務，以及遺失訊號的清查，則由任務程序發出。在每種角色有各自設定的環境中（例如 Cloud Run 服務），請把相同的值傳給所有角色：
-
-```sh
-routes='federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com'
-gcloud run services update my-web --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-gcloud run services update my-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-```
+**讓每個程序都使用相同的路由，包括 `role = web`**。訊號由儲存任務的程序發出：使用者大部分的操作（例如貼文的第一個任務）由 web 程序發出，而任務所儲存的任務、重試、排序鍵的下一個任務，以及遺失訊號的清查，則由任務程序發出。在 Google Cloud 上，`workers` 會讓每個 worker 各有自己的佇列和服務，並讓每個服務使用相同的路由與權限：
+[將工作拆分給 worker](deploy-opentofu.md#splitting-jobs-into-workers)。
 
 路由不同的程序不會產生錯誤，也不會遺失任務：它的訊號會送到另一個佇列，任務會在那裡、在你設定的容量之外執行。`my.queue.oldest_ready_age` 不會顯示這種情況，因為那些任務沒有在等待。為了比較各程序，每個程序都會在啟動時記錄一行，內含其 `routes` 及其 `routes_hash`：這個雜湊值在每個地方都必須相同。若要查看訊號送往何處，請查看平台本身每個佇列的指標。
 

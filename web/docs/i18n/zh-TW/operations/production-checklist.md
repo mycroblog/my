@@ -136,13 +136,13 @@ my config check -instance  # also the instance settings in the database
   - 只有需要的人才擁有 `admin` 角色；版主擁有 `moderator`，或只含他們會用到之權限的角色。請用 `my admin role` 列出，並在管理畫面中檢視。
 - **詳細說明**：[管理員與角色](admin-cli.md)、[審核](moderation.md)（權限和登入復原）。
 
-<!-- source: operations aac00b13fc38 -->
+<!-- source: operations cdf72295a7bb -->
 ## 營運
 
 - **備份與復原**：資料庫、blob 儲存（`blob_fs_dir` 或 bucket）和 KEK 都按排程備份到與伺服器分開的地方，而且已經演練過還原到全新的伺服器：還原後的伺服器能啟動，帳號能登入並發文。從未還原過的備份，無法確定它能用。資料庫和媒體不可放在暫存目錄中；放在那裡時，`my config check` 會發出警告。
   請參閱[金鑰管理](key-management.md)（備份 KEK）和[資料庫](database.md)。
 - **監控與警示**：外部監控會檢查 `/health/live`，並向能採取行動的人發出警示，而且會監看任務佇列中的失敗任務（dead jobs）。請參閱[監控](monitoring.md)和[執行伺服器](running.md)（健康檢查、指標與任務佇列）。
-- **映像檔**：實例執行的是以 digest 固定的已發行映像檔（`ghcr.io/mycroblog/my:0.1.0@sha256:...`，取自該版本的說明），而不是重新啟動就會變動的映像檔，而且[它的來源已經驗證過](running.md#verify-an-image)。沒有 `latest` 標籤。升級會刻意變更該版本，並遵循[升級](database.md#upgrading)，一次升一個次要版本。
+- **映像檔**：實例執行的是以 digest 固定的已發行映像檔（`ghcr.io/mycroblog/my:0.1.0@sha256:...`，取自該版本的說明，或使用 OpenTofu 時的 [`image.digest`](deploy-opentofu.md#pinning-the-image-by-digest)），而不是重新啟動就會變動的映像檔，而且[它的來源已經驗證過](running.md#verify-an-image)。沒有 `latest` 標籤。升級會刻意變更該版本，並遵循[升級](database.md#upgrading)，一次升一個次要版本。
 - **原始碼（AGPL-3.0）**：伺服器必須向每位使用者提供它的原始碼。未修改的發行版請將 [`source_url`](../reference/configuration.md#source_url) 維持預設值；執行分支或修改過的版本時，請將它指向你自己的原始碼。請在 `/about` 驗證該連結。
   請參閱[執行伺服器](running.md)（公布原始碼）。
 - **維護**：在需要之前，先知道如何將伺服器切換到維護模式。請參閱[維護](maintenance.md)。

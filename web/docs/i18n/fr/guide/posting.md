@@ -1,7 +1,7 @@
 <!-- source: posting-and-choosing-who-sees-a-post 5c4adb3025f6 -->
 # Publier et choisir qui voit une publication
 
-<!-- source: writing-a-post 5f24a2f4b092 -->
+<!-- source: writing-a-post a7aea00e3d00 -->
 ## Rédiger une publication
 
 Choisissez « Écrire une publication » pour ouvrir le formulaire « Nouvelle publication ». Saisissez votre texte dans « Votre publication » et choisissez « Publier ». Le formulaire indique combien de
@@ -15,7 +15,7 @@ caractères il vous reste. Outre le texte, vous pouvez :
 - Répondre à une publication (« Répondre ») ou en citer une (« Citer »).
 
 Une publication qui n’a pas pu être envoyée reste sous « Publications en cours d’envoi », où vous pouvez la « Renvoyer », la « Modifier » ou l’« Abandonner ».
-Un serveur peut refuser une publication après une revue automatisée. Lorsque le refus peut être contesté, la publication propose « Contester ».
+Un serveur peut refuser une publication après une revue automatisée. Lorsque le refus peut être contesté, la publication propose « Contester », qui envoie son texte aux modérateurs, avec ce que vous écrivez pour eux dans « Ce que les modérateurs doivent savoir ».
 
 <!-- source: drafts-and-scheduled-posts 9cee5f0d17b2 -->
 ## Brouillons et publications programmées
@@ -94,49 +94,32 @@ approbation » permet à tous les autres de demander au lieu d’être refusé
 - Les demandes qui vous attendent sont listées dans « En attente d’approbation », ouvert par la ligne en haut des notifications. « Approuver » ajoute la réponse, le boost ou la citation à votre publication, et la conversation en dessous affiche aussitôt une réponse approuvée ; « Refuser » la tient à l’écart.
 - Sur la publication de quelqu’un d’autre, « Répondre » n’est pas affiché et « Booster » ne peut pas être actionné lorsque son auteur ne vous le permet pas. Lorsque l’auteur les approuve à la main, le formulaire le dit avant que vous répondiez, et après que vous avez boosté, la publication indique « Boost en attente d’approbation ».
 
-<!-- source: after-posting e11fd06a76e8 -->
+<!-- source: after-posting a9f5b9c75fb4 -->
 ## Après la publication
 
-Sous une publication, vous trouvez « Répondre », « Booster », « Citer », « Favori », « Réagir » et « Plus ». « Plus » propose « Copier le lien », « Ouvrir
-la page d’origine » (pour une publication d’un autre serveur), « Partager » et « Marque-page » ; vos marque-pages se trouvent sur la page « Marque-pages »,
-et vous seul les voyez. Sur votre propre publication, il propose aussi « Modifier » (pas pour une publication avec un sondage), « Supprimer et réécrire… » et
-« Supprimer… ». Les deux suppressions demandent d’abord confirmation. « Supprimer… » retire la publication pour tout le monde, avec ses boosts et ses favoris ;
-« Supprimer et réécrire… » fait de même et ouvre le formulaire avec son texte, ses images et son sondage comme nouvelle publication.
+Sous une publication, vous trouvez « Répondre », « Booster », « Citer », « Favori », « Réagir » et « Plus ». « Plus » propose « Copier le lien », « Ouvrir la page d’origine » (pour une publication d’un autre serveur), « Partager » et « Ajouter aux marque-pages » ; vos marque-pages sont sur la page « Marque-pages », et vous seul les voyez ; les publications que vous avez mises en favori sont sur la page « Favoris ». Sur votre propre publication, « Plus » propose aussi « Modifier » (pas pour une publication avec un sondage), « Supprimer et réécrire… » et « Supprimer… ». Les deux suppressions demandent d’abord confirmation. « Supprimer… » retire la publication pour tout le monde, avec ses boosts et ses favoris ; « Supprimer et réécrire… » fait de même et ouvre le formulaire avec son texte, ses images et son sondage comme une nouvelle publication.
 
-Une publication modifiée affiche « · modifiée » après son heure ; choisissez-le pour ouvrir « Historique des modifications », de la version la plus récente à la plus ancienne, avec les
-changements marqués.
+Une publication modifiée affiche « · modifiée » après son heure ; choisissez-le pour ouvrir « Historique des modifications », la version la plus récente en premier, avec les changements signalés.
 
-Un sondage accepte un vote, ou plusieurs lorsque son auteur le permet : choisissez, puis « Voter ». Les résultats s’affichent une fois que vous avez voté ou que le
-sondage est terminé, et pour son auteur à tout moment. « Réagir » ouvre un sélecteur d’émojis (recherche, catégories, teinte de peau et émojis
-personnalisés de ce serveur) ; chaque personne donne à une publication un favori ou une réaction. Sur la page même de la publication, un émoji liste
-les personnes qui ont réagi avec lui. Le formulaire comporte aussi un bouton « Ajouter un émoji ».
+Un sondage accepte un vote, ou plusieurs lorsque son auteur le permet : choisissez, puis « Voter ». Les résultats s’affichent une fois que vous avez voté ou que le sondage est terminé, et à son auteur à tout moment. « Réagir » ouvre un sélecteur d’émojis (recherche, catégories, teinte de peau et émojis personnalisés de ce serveur) ; chaque personne donne à une publication un favori ou une réaction. Sur la page même de la publication, un émoji liste les personnes qui ont réagi avec lui. Le formulaire a aussi un bouton « Ajouter un émoji ».
 
-Une publication dans une autre langue que la vôtre propose « Traduire » lorsque le serveur dispose d’un service de traduction ou que votre navigateur peut
-traduire ; « Afficher l’original » revient en arrière. Derrière un avertissement de contenu, la ligne se trouve dans le bandeau de l’avertissement. Si le serveur envoie
-le texte des publications à un service de traduction, « Qui peut la voir » vous indique pour quels choix.
+Une publication dans une autre langue que la vôtre propose « Traduire » lorsque le serveur dispose d’un service de traduction ou que votre navigateur sait traduire ; « Afficher l’original » revient en arrière. Derrière un avertissement de contenu, la ligne se trouve dans la bande de l’avertissement. Si le serveur envoie le texte des publications à un service de traduction, « Qui peut la voir » vous indique pour quels choix.
 
-Les images, les GIF, les vidéos et les fichiers audio s’affichent dans la publication. Choisissez une image pour ouvrir la visionneuse : faites glisser ou utilisez les flèches, zoomez et
-lisez sa description. Un média marqué comme sensible reste masqué sous une ligne telle que « Image sensible », jusqu’à ce que vous choisissiez « Afficher ». Un lien dans une
-publication s’affiche sous forme de carte.
+Les images, les GIF, les vidéos et les fichiers audio s’affichent dans la publication. Choisissez une image pour ouvrir la visionneuse : balayez ou utilisez les flèches, zoomez et lisez sa description. Un média marqué comme sensible reste masqué sous une ligne comme « Image sensible », jusqu’à ce que vous choisissiez « Afficher ». Un lien dans une publication s’affiche sous forme de carte.
 
-<!-- source: writing-an-article 3bc498986329 -->
+<!-- source: writing-an-article 7abd5d8b1ffd -->
 ## Rédiger un article
 
-« Écrire un article », sous le formulaire de nouvelle publication, ouvre l’éditeur d’articles, une page à part. Donnez à l’article un titre, un
-résumé si vous le souhaitez (laissé vide, il est tiré du début du corps), une image de couverture avec sa description, et le
-corps, écrit en Markdown : `#` ouvre un titre, `**text**` met en gras, et « Gras » et « Lien » au-dessus du corps font de même pour
-le texte que vous sélectionnez (Ctrl+B et Ctrl+K, ou Cmd sur un Mac). Déposez ou collez des images dans le corps, ou choisissez-les avec « Ajouter des
-images » : chacune est téléversée et placée à l’endroit du curseur sous la forme `![](media:…)` ; écrivez sa description entre les crochets. Seules les images que vous téléversez s’affichent dans un article ; une image d’une autre adresse devient un lien avec sa description.
+« Écrire un article » sous le formulaire de nouvelle publication ouvre l’éditeur d’articles, une page à part. Donnez à l’article un titre, un résumé si vous le souhaitez (laissé vide, il est tiré du début du corps), une image de couverture avec sa description, et le corps, écrit en Markdown : `#` commence un titre, `**text**` met en gras, et « Gras » et « Lien » au-dessus du corps font de même pour le texte que vous sélectionnez (Ctrl+B et Ctrl+K, ou Cmd sur un Mac). Déposez ou collez des images dans le corps, ou choisissez-les avec « Ajouter des images » : chacune est téléversée et se place là où se trouve le curseur sous la forme `![](media:…)` ; écrivez sa description entre les crochets. Seules les images que vous téléversez s’affichent dans un article ; une image provenant d’une autre adresse devient un lien portant sa description.
 
 - Les hashtags vont dans leur propre champ, séparés par des espaces ; l’article est listé sous eux, et un `#` dans le corps reste du texte. Les mentions dans le corps renvoient vers les personnes mais ne les notifient pas.
-- « Aperçu » montre l’article tel que les lecteurs le verront, rendu par le serveur exactement comme il sera publié, avec la taille du corps et le nombre de ses images par rapport aux limites de ce serveur.
+- « Aperçu » affiche l’article tel que les lecteurs le verront, rendu par le serveur exactement comme il sera publié, avec la taille du corps et le nombre de ses images au regard des limites de ce serveur.
 - « Marquer comme sensible » montre d’abord aux lecteurs le titre et le résumé, et replie la couverture et le corps. Un article ne peut pas être « Direct ».
-- Pendant que vous écrivez, l’article est enregistré comme brouillon à chaque pause (« Brouillon enregistré »), de sorte qu’il s’ouvre sur tout appareil depuis « Brouillons et publications programmées », où « Modifier » le ramène dans l’éditeur. Si le brouillon a été modifié entre-temps sur un autre appareil, rien n’est écrasé : votre texte reste dans l’éditeur, et « Enregistrer comme nouveau brouillon » le conserve comme un autre brouillon.
-- « Publier » publie l’article maintenant et ouvre sa page ; « Programmer » le publie à l’heure que vous choisissez, comme pour une publication.
+- Pendant que vous écrivez, l’article est enregistré comme brouillon chaque fois que vous faites une pause (« Brouillon enregistré »), de sorte qu’il s’ouvre sur tout appareil depuis « Brouillons et publications programmées », où « Modifier » le ramène dans l’éditeur. Si le brouillon a été modifié entre-temps sur un autre appareil, rien n’est écrasé : votre texte reste dans l’éditeur, et « Enregistrer comme nouveau brouillon » le conserve comme un autre brouillon.
+- « Publier » publie l’article tout de suite et ouvre sa page ; « Programmer » le publie à l’heure que vous choisissez, comme pour une publication. Un article que la revue automatisée a refusé propose « Contester » comme une publication, et envoie son corps, pas son titre ni son résumé.
 - Pour modifier un article que vous avez publié, choisissez « Modifier » dans son menu « Plus d’actions ». L’éditeur s’ouvre avec ce que vous avez écrit ; « Enregistrer les modifications » le remplace, et la version précédente reste dans son « Historique des modifications ». Qui peut voir un article ne change pas.
 
-Un serveur peut ne laisser que certaines personnes écrire de nouveaux articles ; « Écrire un article » n’est alors pas affiché aux autres, qui peuvent toujours
-modifier les articles qu’elles ont publiés.
+Un serveur peut ne laisser que certaines personnes écrire de nouveaux articles ; « Écrire un article » n’est alors pas affiché pour les autres, qui peuvent toujours modifier les articles qu’elles ont publiés.
 
 <!-- source: reading-articles f2811fffd462 -->
 ## Lire des articles

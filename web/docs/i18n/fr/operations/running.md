@@ -3,7 +3,7 @@
 
 Comment démarrer et arrêter le serveur, obtenir son image et le surveiller pendant son fonctionnement : métriques, traces, file de tâches et contrôles de santé.
 
-<!-- source: start-the-server 5faa7632b863 -->
+<!-- source: start-the-server 93f89c7d7b66 -->
 ## Démarrer le serveur
 
 ```sh
@@ -41,7 +41,7 @@ Si le `X-Request-Id` de la requête compte au plus 128 caractères parmi les let
 Les journaux à l’intérieur d’une trace (requêtes et jobs) portent aussi `trace_id` et `span_id` (voir [Traces](#traces)).
 
 Chaque requête HTTP et chaque exécution de job écrit une ligne à sa fin. La ligne a les mêmes noms et valeurs que les étiquettes des [métriques](#metrics) ci-dessous ;
-sur Cloud Run avec `metrics_exporter = none`, vous pouvez donc construire à partir de ces lignes des métriques basées sur les journaux de Cloud Logging (compteurs et distributions).
+avec `metrics_exporter = none`, une plateforme peut donc construire à partir de ces lignes des métriques basées sur les journaux (compteurs et distributions).
 
 | Ligne (`msg`) | Champs |
 | --- | --- |
@@ -49,7 +49,13 @@ sur Cloud Run avec `metrics_exporter = none`, vous pouvez donc construire à par
 | `job` (`INFO` en cas de succès et pour `postponed`, `WARN` pour `retry`, `ERROR` pour `dead`) | `my.job.type` et `my.outcome` ont les mêmes valeurs que les étiquettes de `my.job.duration`. Aussi `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt`, et `error` en cas d’échec |
 | `error report` (`ERROR` ; `CRITICAL` pour un échec qui arrête le processus) | Une ligne par erreur signalée ([Signalements d’erreurs](#error-reports)) |
 
-<!-- source: error-reports a81ecfe83871 -->
+Avec `metrics_exporter = none`, les lignes `http request` et `job` portent aussi les [métriques système](#system-metrics) des adaptateurs et du pool de la base de données.
+Lorsque la requête ou le job a exécuté des opérations de file, de clé-valeur, de flux ou de blob : `my.adapter.operations.total`, `my.adapter.errors.total` et
+`my.adapter.errors`, les erreurs par `my.adapter` (comme `{"kv.valkey": 2}`). `db.client.connection.usage`, les connexions utilisées sur le maximum du pool,
+lorsqu’il en a un. Lorsqu’elles ne sont pas nulles, `my.db.client.connection.waits`, `db.client.connection.wait_time` (secondes) et `db.client.connection.timeouts` : l’augmentation
+depuis la ligne précédente du processus ; leur somme sur les lignes est donc le total du processus.
+
+<!-- source: error-reports b70c69ddef24 -->
 ### Rapports d’erreurs
 
 Le guide [Rapports d’erreurs](error-reporting.md) explique où lire ces lignes sur chaque plateforme, l’écran Erreurs, les notifications, et l’envoi de rapports à un outil de suivi d’erreurs.
@@ -85,7 +91,7 @@ Aucune autre ligne ne porte de pile ; Error Reporting ne trouve donc que les p
 Un nom de champ est une clé unique qui contient `.` ; il n’est pas imbriqué. Mettez-le entre guillemets dans les filtres et extractions de Cloud Logging (par exemple `jsonPayload."http.route"`, et `EXTRACT(jsonPayload.duration_seconds)` pour une valeur de distribution).
 Les champs utilisés comme libellés ne prennent leurs valeurs que dans un ensemble fini ; `url.path`, `request_id` et `job_id` ne sont jamais des libellés.
 
-Avec `metrics_exporter = emf`, ces deux lignes sont les lignes EMF elles-mêmes. La ligne `http request` porte la valeur de `http.server.request.duration`, et la ligne `job` porte les valeurs de `my.job.duration` et `my.job.wait` (clés nommées d’après les métriques), plus la directive `_aws`, `service.name`, `service.version` et `my.role`. Ces trois métriques ne sont écrites sur aucune autre ligne. Les champs que vous choisissez dans `metrics_emf_dimensions` sont écrits sous forme de chaînes, comme l’exige EMF (par exemple la dimension `http.response.status_code` vaut `"200"`).
+Avec `metrics_exporter = emf`, ces deux lignes sont les lignes EMF elles-mêmes. La ligne `http request` porte la valeur de `http.server.request.duration`, et la ligne `job` porte les valeurs de `my.job.duration` et `my.job.wait` (clés nommées d’après les métriques), plus la directive `_aws`, `service.name`, `service.version`, `my.role` et `service.namespace` (le `host`). Ces trois métriques ne sont écrites sur aucune autre ligne. Les champs que vous choisissez dans `metrics_emf_dimensions` sont écrits sous forme de chaînes, comme l’exige EMF (par exemple la dimension `http.response.status_code` vaut `"200"`).
 Les journaux vont vers la sortie d’erreur standard et les autres lignes EMF vers la sortie standard. Le pilote de journaux `awslogs` d’ECS envoie les deux à CloudWatch Logs ; les métriques sont donc extraites des deux.
 
 <!-- source: docker-compose-files 9f0633524036 -->
@@ -307,7 +313,7 @@ le conteneur partage le réseau de la machine et a besoin de la même capacité 
 client web compressés et ne compresse rien d’autre), à un journal d’accès propre (les lignes de journal `http request` du serveur subsistent), et aux certificats validés par
 DNS, y compris les certificats génériques. Conservez `compose.caddy.yaml`, ou un autre proxy, lorsque vous avez besoin de l’un d’eux.
 
-<!-- source: get-the-image 89a97ed4f1d2 -->
+<!-- source: get-the-image 123f0112b538 -->
 ## Obtenir l’image
 
 L’image du serveur est `ghcr.io/mycroblog/my`, publique, pour `linux/amd64` et `linux/arm64`, avec tous les adaptateurs.
@@ -331,9 +337,8 @@ ghcr.io/mycroblog/my:0.1.0@sha256:...
 Où l’exécuter :
 
 - **Docker Compose** : `deploy/docker/compose.yaml` exécute l’image de `MY_VERSION` dans `.env` ([fichiers Docker Compose](#docker-compose-files)). Pour la construire plutôt depuis un checkout, ajoutez la surcharge `compose.build.yaml` (`docker compose -f compose.yaml -f compose.build.yaml up -d --build`), et définissez `MY_VERSION` sur un nom à vous, puisqu’il nomme votre image locale et c’est ce qu’affiche `my version`.
+- **Google Cloud et AWS** : les modules OpenTofu exécutent l’image de `ghcr.io` telle quelle, la version que nomme leur `ref` ([Déployer avec OpenTofu](deploy-opentofu.md#the-root-modules)).
 - **Kubernetes** : récupérez-la depuis `ghcr.io` telle quelle.
-- **Cloud Run** : utilisez directement l’image `ghcr.io`. Un déploiement résout le tag en condensat.
-- **AWS (ECS, EKS)** : copiez l’image dans Amazon ECR, ou utilisez un pull through cache d’ECR, qui nécessite des identifiants ghcr.io.
 
 <!-- source: verify-an-image 76b9a1293edb -->
 ### Vérifier une image
@@ -348,7 +353,34 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 
 La première commande échoue sauf si l’image a été construite par le workflow de publication de ce dépôt. Pour une image `nightly`, vérifiez-la plutôt avec `--signer-workflow mycroblog/my/.github/workflows/nightly.yml`. Elle affiche le commit, qui est celui du tag de la version ; le label `org.opencontainers.image.revision` de l’image nomme le même.
 
-<!-- source: publish-the-source-code-agpl-30 2f3b73ce9dfc -->
+<!-- source: get-the-binary 2608f7bdd54d -->
+## Obtenir le binaire
+
+Pour exécuter `my` sans conteneur, chaque version joint le binaire de l’image, pour `linux/amd64` et `linux/arm64`,
+sous la forme `my_<version>_linux_<arch>.tar.gz`. C’est un seul binaire statique contenant le client web ; l’archive contient aussi
+`LICENSE`, les mentions de licence dans `licenses/` et un README. Il n’existe pas de build pour d’autres systèmes d’exploitation.
+
+```sh
+curl -fsSLO https://github.com/mycroblog/my/releases/download/v0.1.0/my_v0.1.0_linux_amd64.tar.gz
+tar xzf my_v0.1.0_linux_amd64.tar.gz my
+./my version
+```
+
+Configurez-le comme l’image est configurée ([référence de configuration](../reference/configuration.md)), et suivez
+[Mettre à niveau](database.md#upgrading) pour chaque version : rien n’applique le schéma à votre place.
+
+<!-- source: verify-a-binary 03daabe0c940 -->
+### Vérifier un binaire
+
+Chaque archive a une provenance signée via Sigstore, comme une image, et la version liste les SHA-256 des archives dans `SHA256SUMS` :
+
+```sh
+gh attestation verify my_v0.1.0_linux_amd64.tar.gz -R mycroblog/my \
+  --signer-workflow mycroblog/my/.github/workflows/release.yml
+sha256sum --ignore-missing -c SHA256SUMS
+```
+
+<!-- source: publish-the-source-code-agpl-30 2e87c44ffb2f -->
 ## Publier le code source (AGPL-3.0)
 
 `my` est sous licence AGPL-3.0-only. La section 13 de l’AGPL-3.0 exige de quiconque exécute le serveur et laisse des utilisateurs interagir avec lui via un réseau
@@ -371,6 +403,10 @@ La valeur apparaît à ces endroits :
 - `metadata.sourceCode` dans NodeInfo (`/nodeinfo/2.1`). Une URL `https:` est aussi publiée sous `software.repository`
   (le schéma NodeInfo 2.1 n’autorise qu’une URL `http(s)` dans `software.repository` ; une valeur `mailto:` n’apparaît donc que dans `metadata.sourceCode`)
 
+L’image porte la licence de `my` dans `/usr/share/doc/my/LICENSE`, et les mentions de licence du code et des données tiers contenus dans le binaire dans `/usr/share/doc/my/licenses/` :
+`go-modules.md` pour les modules Go, `npm-packages.md` et `npm-packages-sw.md` pour les paquets npm du client web, et les licences de ses données et polices intégrées.
+Si vous distribuez l’image ou le binaire, transmettez ces fichiers avec lui.
+
 <!-- source: when-you-fork-or-modify-my be83256fe6a3 -->
 ### Lorsque vous forkez ou modifiez `my`
 
@@ -386,17 +422,17 @@ Si vous exécutez une version officielle non modifiée, gardez la valeur par dé
 - Assurez-vous que le filtrage antispam ne supprime pas les demandes.
 - Utilisez une adresse que vous acceptez de rendre publique : n’importe qui peut la voir sur la page d’informations, sur la page d’accueil et dans NodeInfo.
 
-<!-- source: metrics 000df571a6a0 -->
+<!-- source: metrics a5fd8092d408 -->
 ## Métriques
 
 Le paramètre `metrics_exporter` (par défaut `none`) exporte les métriques du service. Ses paramètres associés se trouvent dans la [référence de la configuration](../reference/configuration.md).
 
 | `metrics_exporter` | Chemin | Adapté à |
 | --- | --- | --- |
-| `none` | Rien n’est exporté. L’instrumentation ne coûte presque rien. Les valeurs de toute l’instance vont quand même dans une ligne de journal `metrics snapshot` toutes les 15 minutes | Cloud Run (utilisez plutôt les métriques de la plateforme et les métriques basées sur les journaux) |
+| `none` | Rien n’est exporté. L’instrumentation ne coûte presque rien. Les valeurs de toute l’instance vont quand même dans une ligne de journal `metrics snapshot` toutes les 15 minutes, et celles des adaptateurs et du pool dans les lignes de requêtes et de jobs | Google Cloud, où les métriques de la plateforme et les métriques basées sur les journaux en tiennent lieu ([Déployer sur Google Cloud](deploy-google-cloud.md#monitoring-and-alerts)) |
 | `prometheus` | `GET /metrics` sur `metrics_listen` (par défaut `127.0.0.1:9464`). C’est un écouteur distinct du `listen` public, sans authentification, qui s’exécute pour chaque `role` | Auto-hébergé (collecté par un serveur compatible Prometheus ou KEDA) |
 | `otlp` | Envoyé à un OpenTelemetry Collector via OTLP/HTTP. La destination provient des variables d’environnement OTel standard comme `OTEL_EXPORTER_OTLP_ENDPOINT` | Les configurations où vous pouvez exécuter un collecteur |
-| `emf` | Lignes JSON au format CloudWatch Embedded Metric Format. Les métriques de requêtes et de jobs voyagent sur les lignes de journal de fin ci-dessus ; les autres sont écrites sur la sortie standard, une ligne par ensemble d’étiquettes, à la fin d’une requête ou d’un job | AWS ECS |
+| `emf` | Lignes JSON au format CloudWatch Embedded Metric Format. Les métriques de requêtes et de jobs voyagent sur les lignes de journal de fin ci-dessus ; les autres sont écrites sur la sortie standard, une ligne par ensemble d’étiquettes, à la fin d’une requête ou d’un job | AWS ([Déployer sur AWS](deploy-aws.md#monitoring-and-alerts)) |
 
 Les métriques sont listées ci-dessous. Dans Prometheus, `.` dans un nom devient `_` et un suffixe d’unité (`_seconds`, et `_total` pour un compteur) est ajouté.
 
@@ -419,6 +455,7 @@ Les métriques sont listées ci-dessous. Dans Prometheus, `.` dans un nom devien
 | `my.job.duration` | Histogramme, secondes | `my.job.type` (un type de job enregistré, ou `other`), `my.outcome` (`success` / `retry` / `dead` / `postponed` : `postponed` est une exécution qui n’a fait aucun travail et n’utilise aucune des tentatives du job, comme la récupération d’une carte de lien qui attend son hôte) |
 | `my.job.wait` | Histogramme, secondes | `my.job.type` |
 | `my.link_card.host_pauses` | Compteur | `http.response.status_code` (`429` / `503`). Un par pause des récupérations de cartes de lien auprès d’un hôte ; voir [Aperçus de liens](link-previews.md#limits-per-host) |
+| `my.projection.drifts` | Compteur | `my.projection` (le nom d’une projection). Un par vérification planifiée qui a constaté que la projection avait dérivé ; voir [Vérifier et reconstruire les projections](database.md#checking-and-rebuilding-projections) |
 | `my.translation.requests` | Compteur | `my.outcome` (`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`). Un par demande de traduction d’une publication que le spectateur peut voir, ou de la publication ou du commentaire d’un signalement qu’un modérateur demande : satisfaite à partir des propres mots de l’auteur, d’une traduction conservée ou d’un fournisseur, ou refusée parce qu’aucun fournisseur ne peut recevoir la publication, qu’une limite mensuelle est atteinte, qu’aucun fournisseur ne traduit la langue, ou qu’aucun fournisseur n’a renvoyé de traduction utilisable. |
 | `my.translation.lock_waits` | Compteur | Aucune. Une par demande qui a attendu une autre demande traduisant la même publication dans la même langue, au lieu de solliciter un fournisseur |
 | `my.translation.characters` | Compteur | `my.provider` (l’ID d’un fournisseur de traduction). Les caractères des publications et des commentaires de signalements envoyés au fournisseur, sans marqueurs, y compris les appels qui échouent. C’est ce que comptent les [limites mensuelles](instance-settings.md#admin-screens-and-the-client-api), et cela peut différer de ce que le fournisseur facture |
@@ -436,7 +473,7 @@ Les métriques sont listées ci-dessous. Dans Prometheus, `.` dans un nom devien
 | `my.queue.dead` | Jauge | Aucune |
 | `my.instance.users`, `my.instance.statuses` | Jauge | Aucune (les nombres d’utilisateurs locaux et de publications, comme dans NodeInfo) |
 | `my.media.stored_bytes` | Jauge, octets | `my.media.origin` (`local` / `remote_cache`) |
-| `my.db.size` | Jauge, octets | Aucune (la taille de la base de données : `pg_database_size` pour PostgreSQL ; le fichier de la base de données sans son journal d’écriture anticipée pour SQLite) |
+| `my.db.size` | Jauge, octets | Aucune (la taille de la base de données : les relations du schéma courant pour PostgreSQL ; le fichier de la base de données sans son journal d’écriture anticipée pour SQLite) |
 | `my.billing.import.failing` | Jauge | `my.billing.source` (1 lorsque le dernier import de la source a échoué, 0 sinon) |
 | `my.federation.instances` | Jauge | `my.federation.instance.state` (`available` : les serveurs auxquels les livraisons vont encore mais qui ont échoué au moins un jour depuis leur dernière réponse ; `unavailable` : les serveurs dont les livraisons sont suspendues) |
 | `my.metrics.snapshot.age` | Jauge, secondes | `my.metrics.snapshot.part` (`queue` / `totals`) |
@@ -486,15 +523,15 @@ Ne les utilisez pas pour déclencher la mise à l’échelle ; utilisez-les po
 - `db.client.connection.pending_requests` n’est pas exporté : les statistiques de pgx et de `database/sql` ne signalent pas combien attendent ; le nombre et la durée des attentes en tiennent donc lieu.
 - Mettez en place une alerte sur le rapport entre la somme de `go.memory.used` et `go.memory.limit`, et sur la croissance de `db.client.connection.wait_time` (la limite du pool est atteinte).
 
-<!-- source: memory-limit-gomemlimit 8ea44722eefd -->
+<!-- source: memory-limit-gomemlimit 66320a6c7b76 -->
 ### Limite de mémoire (`GOMEMLIMIT`)
 
 `GOMEMLIMIT` est une variable d’environnement du runtime Go que l’opérateur définit ; l’application ne la choisit pas.
 Sans elle, Go s’exécute avec sa valeur par défaut (aucune limite), et le tas ne se vide pas de façon anticipée à l’approche de la limite de mémoire du conteneur.
-Sur les configurations avec une limite de mémoire de conteneur (Cloud Run, ECS, Kubernetes), définissez-la à environ 90 % de cette limite (par exemple `GOMEMLIMIT=460MiB` pour un conteneur de 512 Mio).
+Avec une limite de mémoire de conteneur, définissez-la à environ 90 % de cette limite (par exemple `GOMEMLIMIT=460MiB` pour un conteneur de 512 Mio). Les modules OpenTofu la définissent ainsi pour chaque service, d’après sa taille.
 Ne définissez pas `GOMAXPROCS` : la valeur par défaut de Go suit la limite de processeur du conteneur.
 
-<!-- source: traces 8dfd96f79f54 -->
+<!-- source: traces 15eb90e8584a -->
 ## Traces
 
 Le réglage `traces_exporter` (`none` par défaut) exporte des traces distribuées. Ses réglages associés se trouvent dans la [référence de configuration](../reference/configuration.md).
@@ -519,35 +556,10 @@ Un span en échec a `error.type` (un nom fini tel que `timeout`, ou un code de s
 | --- | --- | --- |
 | Par défaut, petit auto-hébergement | `traces_exporter = none` | Aucun span n’est exporté. Suivez `request_id` et `job_id` dans les journaux. Si un proxy de confiance fournit un `traceparent`, son `trace_id` et son `span_id` sont ajoutés aux journaux |
 | Auto-hébergement (Jaeger, Tempo, un OpenTelemetry Collector, etc.) | `traces_exporter = otlp`, `traces_flush = batch` | Envoyé par OTLP/HTTP au récepteur à `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` (ou `OTEL_EXPORTER_OTLP_ENDPOINT`, `http://localhost:4318` par défaut). Les en-têtes d’authentification vont dans `OTEL_EXPORTER_OTLP_HEADERS`. Pour conserver de façon fiable les erreurs et les traces lentes, utilisez l’échantillonnage en queue du Collector |
-| Google Cloud (Cloud Run) | `none`, ou `otlp` avec `unit` pour activer les traces | Voir ci-dessous |
-| AWS (ECS) | `none`, ou `otlp` avec `batch` pour activer les traces | Voir ci-dessous |
+| Google Cloud | `traces_exporter = none` | Cloud Trace montre la trace que Cloud Run enregistre pour chaque requête : [Déployer sur Google Cloud](deploy-google-cloud.md#traces) |
+| AWS | `traces_exporter = otlp`, vers un collector dans chaque tâche | X-Ray : [Traces vers X-Ray](deploy-aws.md#traces-to-x-ray) |
 
-<!-- source: cloud-run 7f1a21bbfbef -->
-### Cloud Run
-
-Même avec `none`, la trace de requête que Cloud Run crée automatiquement et le `trace_id` dans les journaux partagent le même ID (lorsque vous faites confiance avec `trusted_proxies` à la connexion en amont de Cloud Run).
-Le fait que Cloud Run écrase toujours le `traceparent` des requêtes publiques n’est pas encore vérifié.
-Les journaux n’ont pas la forme du champ de trace que Cloud Logging reconnaît (`logging.googleapis.com/trace`).
-
-Pour envoyer les spans de l’application à Cloud Trace, exécutez un **OpenTelemetry Collector en sidecar** dans le même service. Le serveur ne détient aucun identifiant Google ; le sidecar envoie au point de terminaison OTLP de Cloud Trace avec les Application Default Credentials.
-
-- Serveur (le conteneur d’entrée) : `MY_TRACES_EXPORTER=otlp`, `MY_TRACES_FLUSH=unit`, `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`
-- Sidecar : un OpenTelemetry Collector qui reçoit avec un récepteur `otlp` en HTTP sur `localhost:4318` et envoie avec l’exportateur `googlecloud`, ou l’exportateur `otlphttp` (`https://telemetry.googleapis.com`, avec l’extension `googleclientauth`). Accordez au compte de service la permission d’écrire dans Cloud Trace.
-- À la fin de chaque requête ou tâche enregistrée, `unit` vide les spans accumulés vers le sidecar avant de retourner. Pour que le sidecar puisse les envoyer alors qu’aucun processeur n’est alloué, utilisez la facturation par instance pour une configuration avec traces activées.
-- Le coût est celui des ressources du sidecar et du volume de spans (tarifs de Cloud Trace). Choisissez le ratio avec `traces_sample_ratio`.
-
-<!-- source: aws-ecs cc7dd1ec1e83 -->
-### AWS ECS
-
-Pour envoyer vers X-Ray, exécutez le **AWS Distro for OpenTelemetry (ADOT) Collector** comme conteneur sidecar dans chaque tâche. Le serveur n’a pas de signature SigV4 ; le Collector signe avec le rôle de la tâche et envoie vers X-Ray. Le module `mycroblog-aws` du [déploiement OpenTofu](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) fait tout cela par défaut (`observability.traces = "x-ray"`) ; le reste de cette section s’adresse à une définition de tâche à vous.
-
-- Serveur : `MY_TRACES_EXPORTER=otlp`, `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces`, et la valeur par défaut `MY_TRACES_FLUSH=batch`, puisque le processus reste actif.
-- Collector : une image épinglée par version, comme `public.ecr.aws/aws-observability/aws-otel-collector:v0.50.0`, avec sa configuration dans la variable `AOT_CONFIG_CONTENT` : un récepteur `otlp` sur HTTP à `127.0.0.1:4318` et l’exportateur `awsxray`. Le point de terminaison OTLP de X-Ray (`https://xray.<region>.amazonaws.com/v1/traces`, par un exportateur `otlphttp` avec l’extension `sigv4auth`) fonctionne aussi, mais exige que CloudWatch Transaction Search soit activé pour le compte.
-- Accordez au rôle de la tâche `xray:PutTraceSegments`, avec lequel l’exportateur `awsxray` écrit. Le serveur échantillonne lui-même les traces ; le Collector n’a donc besoin d’aucune règle d’échantillonnage de X-Ray.
-- Donnez au Collector une part de la tâche : `mycroblog-aws` lui donne 32 unités de CPU et 128 MiB, et le reste au serveur, avec `GOMEMLIMIT` à 90 % de ce reste. Faites dépendre le conteneur du serveur du démarrage de celui du Collector, afin que le Collector s’arrête après le serveur et reçoive ses derniers spans.
-- Le coût est la part du sidecar dans les ressources de la tâche, et le nombre de traces qu’enregistre X-Ray (les 100 000 premières par mois sont gratuites). La valeur par défaut `traces_sample_ratio` de 0,01 enregistre environ 30 000 traces par mois pour 100 000 requêtes par jour.
-
-<!-- source: profiles e3f49c0becf3 -->
+<!-- source: profiles d19dd2bf22e2 -->
 ## Profils
 
 Les [métriques système](#system-metrics) disent combien de mémoire et de CPU un processus utilise ; un profil du runtime Go dit ce qui les utilise.
@@ -560,12 +572,13 @@ go tool pprof -sample_index=inuse_space http://127.0.0.1:6060/debug/pprof/heap  
 go tool pprof -sample_index=alloc_space http://127.0.0.1:6060/debug/pprof/heap   # what has allocated since the start
 go tool pprof 'http://127.0.0.1:6060/debug/pprof/profile?seconds=30'             # where the CPU goes, for 30 seconds
 curl 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1'                       # every goroutine, by where it waits
+go tool pprof 'http://127.0.0.1:6060/debug/pprof/mutex?seconds=30'               # where goroutines wait on locks, for 30 seconds
 curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '               # the runtime's memory statistics
 ```
 
 L’écouteur n’a pas d’authentification, un profil montre l’intérieur du processus, et en prendre un coûte du CPU : gardez-le sur loopback et atteignez-le par un tunnel (`ssh -L 6060:127.0.0.1:6060 <host>`, `kubectl port-forward`), puis désactivez-le lorsque vous avez terminé.
 Le profil du tas ne couvre que le tas Go. La mémoire résidente du processus contient aussi les pages du binaire qui ont été lues, les piles et les propres structures du runtime ; les statistiques de mémoire les donnent.
-Les profils de mutex et de blocage sont vides : le serveur ne les échantillonne pas.
+Les profils de blocage et de mutex n’échantillonnent que pendant qu’une requête avec `seconds` les prend, et sont vides sans elle.
 
 <!-- source: stop-the-server 37d4c0cc3d97 -->
 ## Arrêter le serveur
@@ -692,7 +705,7 @@ Pour décider d’augmenter, lisez `my.job.wait` par `my.job.type` : si les jobs
 
 Tant qu’aucun job n’est dû, un emplacement interroge et les autres attendent ; un processus inactif coûte donc à la base de données ce que coûte un processus à un seul job.
 
-<!-- source: waiting-for-a-database-connection f481d577ea58 -->
+<!-- source: waiting-for-a-database-connection 795c0fd7f769 -->
 ### Attendre une connexion à la base de données
 
 Avec `database = postgres`, chaque instruction et chaque transaction attend d’abord une connexion libre du pool du processus.
@@ -711,39 +724,38 @@ Choisissez une valeur d’après le fonctionnement de votre serveur :
 - **Abaissez-la** pour délester rapidement : les clients réessaient après `Retry-After` au lieu de garder leurs requêtes ouvertes. Gardez-la supérieure à vos transactions normales les plus lentes, faute de quoi une courte rafale se met à recevoir des `503`.
 - **Dimensionnez d’abord le pool.** Un processus a besoin d’à peu près autant de connexions qu’il exécute de travaux à la fois. `pool_max_conns` dans `database_url` vaut par défaut le plus grand de 4 et du nombre de processeurs, et tous les processus ensemble doivent rester sous la limite de connexions de la base de données.
   - Avec [`worker_job_concurrency`](#running-several-jobs-at-once), les emplacements attendent aussi des connexions, et le paramètre doit rester inférieur au maximum du pool.
-  - Sur Cloud Run, un service accepte 80 requêtes simultanées par instance par défaut. Avec un pool de 4, une rafale de requêtes lentes fait la queue ici ; augmentez donc `pool_max_conns`, abaissez la simultanéité du service, ou les deux.
+  - Sur Google Cloud, une instance accepte de nombreuses requêtes à la fois : [Un PostgreSQL externe](deploy-google-cloud.md#an-external-postgresql) dimensionne son pool.
 - **Des `503` fréquents ou des `db.client.connection.timeouts`** signifient que le pool est trop petit ou que les requêtes sont devenues plus lentes ; un délai plus long ne fait que le masquer. Suivez [`MyDBPoolSaturated`](alerts.md#mydbpoolsaturated).
 
-<!-- source: cloud-tasks 287213e090b5 -->
+<!-- source: cloud-tasks f14d9721ba24 -->
 ### Cloud Tasks
 
-[Déployer sur Cloud Run](deploy-google-cloud.md) met en place tout ce qui suit avec des modules OpenTofu.
+[Déployer sur Google Cloud](deploy-google-cloud.md) met en place tout ce qui suit avec des modules OpenTofu.
 
 Avec `queue = cloudtasks`, les tâches restent dans la base de données (`database = postgres`), et Google Cloud Tasks ne fait que réveiller le serveur pour chacune d’elles :
 
 - Pour chaque tâche qu’il stocke, relance ou remet en file, le serveur crée une tâche dans `queue_cloudtasks_queue` une fois la transaction validée. La tâche appelle `POST {queue_cloudtasks_url}/_internal/jobs` à l’heure à laquelle la tâche est due, avec l’ID de la tâche comme corps et un jeton d’ID OIDC de `queue_cloudtasks_service_account`. Une tâche due à plus de 30 jours est signalée à 30 jours, et de nouveau lorsque cette tâche arrive.
 - Le processus qui reçoit la tâche exécute le travail et répond `204` une fois son résultat enregistré, y compris lorsque le travail a déjà été exécuté ou n’est pas dû. Une tâche qui échoue est relancée par le serveur à sa prochaine heure de tentative, pas par Cloud Tasks. Cloud Tasks ne relance une tâche que lorsque la réponse est `5xx` (la base de données n’a pas pu être jointe) ou `401` (un jeton que le serveur a refusé) ; son `retryConfig` n’a donc besoin d’aucun réglage.
-- Aucun processus n’interroge la table et aucun processus n’exécute de lui-même les tâches périodiques. Créez un travail Cloud Scheduler qui appelle `POST {queue_cloudtasks_url}/_internal/tick` chaque minute (`* * * * *`) avec un jeton OIDC du même compte de service (et l’audience de `queue_cloudtasks_audience`, lorsqu’elle est définie). Chaque tick met en file les tâches périodiques dont la période est venue, une fois pour toute l’instance (les périodes sont réservées dans le KV ; `kv` doit donc être `db` ou `valkey`), et signale de nouveau les tâches dues depuis plus de 2 minutes sans s’être exécutées, ce qui récupère un signal perdu.
+- Aucun processus n’interroge la table et aucun processus n’exécute de lui-même les tâches périodiques. Un job Cloud Scheduler appelle `POST {queue_cloudtasks_url}/_internal/tick`, chaque minute (`* * * * *`) par défaut, avec un jeton OIDC du même compte de service (et l’audience de `queue_cloudtasks_audience`, lorsqu’elle est définie). Chaque tick met en file les tâches périodiques dont la période est venue, une fois pour toute l’instance (les périodes sont réservées dans le KV ; `kv` doit donc être `db` ou `valkey`), et signale de nouveau les tâches dues depuis plus de 2 minutes sans s’être exécutées, ce qui récupère un signal perdu.
 - `/_internal/jobs` et `/_internal/tick` sont servis par les processus avec `role = all` ou `worker`, et n’acceptent qu’un jeton signé par Google pour `queue_cloudtasks_service_account` avec une adresse e-mail vérifiée, dont la seule audience est `queue_cloudtasks_audience` ou, par défaut, l’URL appelée. Toute autre requête reçoit un `401`.
 - Une livraison exécute une tâche, pendant au plus le bail de 5 minutes. Gardez `queue_cloudtasks_dispatch_deadline` (10 minutes par défaut) et le délai d’attente des requêtes du service Cloud Run supérieurs à cette durée.
 - Le compte de service propre du serveur a besoin de `roles/cloudtasks.enqueuer` sur la file et de `roles/iam.serviceAccountUser` sur `queue_cloudtasks_service_account`. Il s’authentifie avec les Application Default Credentials.
 
-<!-- source: how-late-periodic-jobs-run 3f0a97bda72d -->
+<!-- source: how-late-periodic-jobs-run 775fb52d1df8 -->
 ### Avec quel retard s’exécutent les tâches périodiques
 
 Une tâche périodique s’exécute avec jusqu’à une période de son déclencheur après son heure, plus le temps que met la plateforme à la démarrer. C’est ce qui détermine le retard avec lequel arrivent les rappels et les notifications de début des événements et avec lequel s’ouvrent leurs salons de chat vocal, puisque `gathering.queue_due` les démarre : un rappel a un retard pouvant aller jusqu’à l’intervalle du tableau. Les valeurs sont celles que donnent le code de l’ordonnanceur et le déclencheur de chaque plateforme ; elles n’ont pas été mesurées sur un serveur en fonctionnement.
 
 | Plateforme | Ce qui démarre les tâches périodiques | Retard attendu d’un rappel ou du début d’un événement |
 | --- | --- | --- |
-| Auto-hébergement et Docker Compose (`queue = db`) | L’ordonnanceur de chaque processus avec `role = all` ou `worker` vérifie une fois par minute, à partir du démarrage du processus, et met en file chaque tâche une fois par période pour tout le serveur | Jusqu’à 1 minute, plus environ une seconde pour qu’un worker prenne la tâche |
-| AWS ECS Fargate (`queue = db`) | Le même ordonnanceur, dans les tâches worker | Jusqu’à 1 minute, plus environ une seconde |
-| Cloud Run (`queue = cloudtasks`) | Cloud Scheduler appelle `/_internal/tick` selon son calendrier, `* * * * *` (chaque minute) par défaut ; Cloud Tasks réveille ensuite le serveur pour chaque tâche | Jusqu’à 1 minute, plus le démarrage d’une instance lorsqu’aucune ne tourne (un démarrage à froid, généralement quelques secondes). Avec un `tick_schedule` plus long, tel que `*/10 * * * *`, jusqu’à cet intervalle |
-| AWS Lambda | `my` n’a pas de déploiement Lambda ; sur AWS, exécutez-le sur ECS Fargate | — |
+| Auto-hébergement et [Docker Compose](deploy-docker-compose.md) (`queue = db`) | L’ordonnanceur de chaque processus avec `role = all` ou `worker` vérifie une fois par minute, à partir du démarrage du processus, et met en file chaque tâche une fois par période pour tout le serveur | Jusqu’à 1 minute, plus environ une seconde pour qu’un worker prenne la tâche |
+| [AWS](deploy-aws.md) (`queue = db`) | Le même ordonnanceur, dans chaque tâche | Jusqu’à 1 minute, plus environ une seconde |
+| [Google Cloud](deploy-google-cloud.md) (`queue = cloudtasks`) | Cloud Scheduler appelle `/_internal/tick` selon `queue.tick_schedule`, chaque minute par défaut ; Cloud Tasks réveille ensuite le serveur pour chaque tâche | Jusqu’à 1 minute, plus le démarrage d’une instance lorsqu’aucune ne tourne (un démarrage à froid, généralement quelques secondes). Avec un `tick_schedule` plus long, jusqu’à cet intervalle ([Là où le soin le réduit](deploy-google-cloud.md#where-care-reduces-it)) |
 
 Un rappel qui arriverait après le début de son événement n’est pas envoyé, pas plus qu’une notification de début après la fin de l’événement.
 Avec un tick de plus de 5 minutes, les rappels les plus courts peuvent donc être perdus.
 
-<!-- source: routing-job-types-to-their-own-queues 292b3f6071a8 -->
+<!-- source: routing-job-types-to-their-own-queues f4098db6215c -->
 ### Acheminer des types de tâches vers leurs propres files
 
 Avec `queue = cloudtasks`, un worker ne peut pas choisir les tâches qu’il exécute : `worker_job_types` ne fonctionne qu’avec `queue = db`, car la plateforme décide qui reçoit un signal.
@@ -759,14 +771,8 @@ Les types qui ne correspondent à aucune route, y compris ceux qu’ajoute une v
 
 **Donnez à chaque processus les mêmes routes, `role = web` compris.** Un signal est envoyé par le processus qui stocke la tâche : un processus web pour la plupart de ce que font les utilisateurs, comme la
 première tâche d’une publication, et un worker pour les tâches qu’une tâche stocke, retente, la tâche suivante d’une clé d’ordre et le balayage des signaux perdus.
-Lorsque chaque rôle a ses propres paramètres, comme les services Cloud Run, transmettez la même valeur à tous :
-
-```sh
-routes='federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com'
-gcloud run services update my-web --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-gcloud run services update my-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
-```
+Sur Google Cloud, `workers` donne à chaque worker sa propre file et son propre service, et à chaque service les mêmes routes et permissions :
+[Répartir les jobs en workers](deploy-opentofu.md#splitting-jobs-into-workers).
 
 Un processus avec d’autres routes ne lève aucune erreur et ne perd aucune tâche : ses signaux vont vers une autre file, et les tâches s’y exécutent, en dehors de la capacité que vous avez définie.
 `my.queue.oldest_ready_age` ne le montre pas, car ces tâches n’attendent pas. Pour comparer les processus, chacun consigne au démarrage une ligne avec ses `routes` et leur `routes_hash` :

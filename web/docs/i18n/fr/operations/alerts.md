@@ -61,7 +61,7 @@ promtool test rules alerts.test.yml
 [`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) est un tableau de bord Grafana des mêmes métriques Prometheus :
 le débit de requêtes, les codes d’état et la latence ; les exécutions de tâches, le temps de travail de chaque type de tâche et la file ; les envois, les activités de la boîte de réception et les serveurs distants ; ainsi que le CPU et la mémoire de chaque processus. Importez-le dans Grafana (**Dashboards** → **New** → **Import**) et choisissez votre source de données Prometheus ; sa variable **Job** sélectionne la tâche de collecte (`my` par défaut).
 
-<!-- source: google-cloud-cloud-run addd07c417a9 -->
+<!-- source: google-cloud-cloud-run 0db55ed9d56b -->
 ### Google Cloud (Cloud Run)
 
 Avec `metrics_exporter = none`, construisez les alertes à partir de ce que Cloud Run et Cloud Logging offrent déjà :
@@ -69,15 +69,19 @@ Avec `metrics_exporter = none`, construisez les alertes à partir de ce que Clou
 - **Erreurs HTTP et latence** : le nombre de requêtes de Cloud Run par classe de code de réponse et la métrique de latence des requêtes du service.
 - **Erreurs** : les lignes `error report` vont dans Error Reporting, qui les regroupe et peut vous notifier des erreurs nouvelles et récurrentes ([Signalement des erreurs](error-reporting.md#google-cloud-cloud-run)).
 - **Jobs et requêtes** : le serveur écrit une ligne de journal par requête HTTP (`msg` = `http request`) et par exécution de job (`msg` = `job`), avec les
-  mêmes étiquettes que les métriques. Créez-en des métriques basées sur les journaux, par exemple un compteur de `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
+  mêmes étiquettes que les métriques. Faites-en des métriques basées sur les journaux, par exemple un compteur de `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   pour les jobs en échec, ou une distribution de `jsonPayload.duration_seconds` filtrée sur `jsonPayload."my.surface"="client_api"` pour la latence.
+  La ligne d’un POST vers une boîte de réception porte aussi les étiquettes de `my.inbox.activities` : `activity.type`, `my.outcome` et `my.inbox.rejection`.
 - **Arriéré de la file et stockage** : toutes les 15 minutes, le job `metrics.snapshot` écrit une ligne (`msg` = `metrics snapshot`) avec les valeurs
-  de toute l’instance, telles que `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size` et `my.media.stored_bytes`. Créez-en des métriques basées sur les journaux à partir de ses champs ;
-  une absence de ces lignes signifie que le tick ou la file s’est arrêté. La métrique de profondeur de file de Cloud Tasks compte les signaux en attente de livraison.
+  de toute l’instance, comme `my.queue.oldest_ready_age` (par type de job), `my.queue.dead`, `my.db.size` et `my.media.stored_bytes` (par origine). Un filtre ne peut pas
+  comparer les champs d’un groupe entre eux ; la ligne porte donc aussi `my.queue.oldest_ready_age.max` et `my.media.stored_bytes.total`. Faites-en des métriques basées sur les journaux
+  à partir de ses champs ; un trou dans ces lignes signifie que le tick ou la file s’est arrêté. La métrique de profondeur de file de Cloud Tasks compte les signaux en attente de livraison.
+- **Adaptateurs et pool de la base de données** : les lignes `http request` et `job` portent aussi les champs de `MyAdapterErrors`, `MyDBPoolSaturated` et
+  `MyDBPoolWaiting` : les opérations d’adaptateur de la requête ou du job, et l’utilisation du pool du processus et ses attentes ([les lignes](running.md#start-the-server)).
 - **Base de données** : les métriques d’utilisation du disque et de connexions de Cloud SQL, ou les alertes d’utilisation de votre fournisseur de base de données.
 - **Coût** : un budget Cloud Billing avec des seuils d’alerte ([Coût et budget](#cost-and-budget)).
 
-La section `monitoring` de [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) les crée sous forme de politiques portant les noms du tableau ci-dessous, et [le README du module qui la sous-tend](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) liste chaque alerte qu’il couvre différemment ou ne peut pas exprimer. Elle n’a jamais été appliquée. Une métrique que seul le trafic produit présente des trous sur un service qui descend à zéro instance, si bien qu’une alerte sur son absence se déclenche à tort ; c’est sa vérification de disponibilité qui remarque un serveur inactif mort.
+La section `monitoring` de [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) les crée sous forme de politiques portant les noms du tableau ci-dessous, et [le README du module qui la sous-tend](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) liste chaque alerte qu’il couvre autrement ou ne peut pas exprimer. Elle n’a jamais été appliquée. Une métrique que seul le trafic produit a des trous sur un service qui se met à l’échelle jusqu’à zéro ; une alerte sur son absence se déclenche donc à tort, et c’est son contrôle de disponibilité qui remarque un serveur inactif mort.
 
 <!-- source: aws-ecs ce4eac5fd50d -->
 ### AWS ECS
@@ -135,7 +139,7 @@ Gravité : **page** = agir tout de suite, **ticket** = pendant les heures de t
 | Coût | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 pendant 6 h | ticket | Permissions manquantes, l’export de facturation n’est pas configuré, le plafond de requêtes est atteint, le fournisseur est indisponible |
 | Coût | Budget dépassé | – | – | – | Trafic, stockage ou une mauvaise configuration qui coûte plus que prévu ([ci-dessous](#cost-and-budget)) |
 
-<!-- source: where-to-look 988be973ea5b -->
+<!-- source: where-to-look 3211df763cac -->
 ## Où regarder
 
 Ces outils reviennent dans la plupart des entrées du guide d’exploitation ci-dessous.
@@ -144,10 +148,10 @@ Ces outils reviennent dans la plupart des entrées du guide d’exploitation ci-
   le plus ancien job en attente ; sa page **Jobs** (`/admin/jobs/list`) liste les jobs d’un état, et la page de chaque job contient sa dernière erreur et les tentatives qui n’ont pas abouti. Les jobs en attente ne sont listés que pour les files conservées dans la base de données
   (`queue = db` et `cloudtasks`) ; les jobs en échec et les tentatives sont listés pour toutes les files.
 - **La commande `my job`** sur un hôte qui dispose de la configuration du serveur (`queue = db` et `cloudtasks`) :
-  `my job list` liste les jobs en échec, du plus récent au plus ancien ; `my job retry <id>...` les remet en file ; `my job delete <id>...` les abandonne.
+  `my job list` liste les jobs en échec, les plus récents en premier ; `my job retry <id>...` les remet dans la file ; `my job delete <id>...` les abandonne.
   Les jobs peuvent être réexécutés sans risque.
-- **L’écran des serveurs distants** (Modération → Serveurs distants, `/moderation/instances`, exige `manage_domains`) : les serveurs que les livraisons n’ont pas pu atteindre,
-  et ceux dont les livraisons sont suspendues, avec la raison et la date. « Reprendre les livraisons » marque de nouveau un serveur comme disponible. « Ouvrir un serveur » ouvre la page de n’importe quel serveur par son domaine, listé ou non.
+- **L’écran des serveurs distants** (Modération → Serveurs distants, `/moderation/instances`, exige `manage_domains`) : chaque serveur que ce serveur connaît, avec son logiciel et son état ;
+  filtrez pour ne garder que ceux que les livraisons n’ont pas pu atteindre ou ceux dont les livraisons sont suspendues. « Reprendre les livraisons » marque de nouveau un serveur comme disponible. « Ouvrir un serveur » ouvre la page de n’importe quel serveur par son domaine, listé ou non.
 - **Les journaux** : des lignes JSON sur l’erreur standard. Chaque requête HTTP se termine par une ligne dont le `msg` est `http request`, chaque exécution de job par une ligne dont le `msg` est `job`
   (`INFO` pour un succès, `WARN` pour une nouvelle tentative, `ERROR` pour un job définitivement en échec, avec `error`, `job_id` et `my.job.type`).
   Les lignes à l’intérieur d’une requête portent son `request_id`, que le client voit sous la forme `X-Request-Id`.
@@ -267,23 +271,23 @@ Correctif :
 - Si des serveurs distants ont été suspendus pendant la panne, ils reprennent au prochain envoi réussi, à la prochaine requête signée ou au sondage quotidien ; vous pouvez aussi appuyer sur
   « Reprendre les envois » dans l’écran des serveurs distants.
 
-<!-- source: myremoteserverspaused 17c3ec51fb53 -->
+<!-- source: myremoteserverspaused 0f1e420b43eb -->
 ### MyRemoteServersPaused
 
-Les envois vers 5 serveurs ou plus ont été suspendus au cours du dernier jour. Un serveur est suspendu après que les envois vers lui ont échoué sur 7 jours différents : quelques suspensions par semaine
+Les livraisons vers 5 serveurs ou plus ont été suspendues au cours du dernier jour. Un serveur est suspendu après que les livraisons vers lui ont échoué sur 7 jours différents : quelques suspensions par semaine
 sont donc normales, car des serveurs ferment. Beaucoup à la fois signifient que beaucoup de serveurs ont échoué pendant des jours en même temps. `my_federation_instances` avec
-`my_federation_instance_state` = `available` compte les serveurs vers lesquels on envoie encore mais qui ont échoué un jour ou l’autre ; un saut à cet endroit précède les suspensions.
+`my_federation_instance_state` = `available` compte les serveurs vers lesquels on livre encore mais qui ont échoué un jour ou l’autre ; un saut à cet endroit précède les suspensions.
 
 La métrique n’a pas d’étiquette par serveur (les étiquettes ne portent jamais un domaine distant). À vérifier :
 
-- L’écran des serveurs distants : l’onglet « Suspendus » liste les serveurs suspendus, avec le moment et la raison. S’ils ont quelque chose en commun (un hébergeur, un logiciel)
+- L’écran des serveurs distants : le filtre « Indisponibles » liste les serveurs suspendus ; la page de chaque serveur indique depuis quand. S’ils ont quelque chose en commun (un hébergeur, un logiciel)
   ou s’ils sont dispersés.
 - `MyDeliveryFailuresHigh` et `MyDeliveryAllFailing` sur la dernière semaine : un problème de réseau de ce côté qui a duré des jours suspend beaucoup de serveurs.
 
 Correctif :
 
 - Serveurs disparus : rien. Les serveurs suspendus sont sondés chaque jour et reprennent d’eux-mêmes lorsqu’ils répondent.
-- Après un problème de ce côté : réparez-le, puis appuyez sur « Reprendre les envois » pour les serveurs qui vous importent, ou attendez le sondage quotidien.
+- Après un problème de ce côté : réparez-le, puis appuyez sur « Reprendre les livraisons » pour les serveurs qui vous importent, ou attendez le sondage quotidien.
 - Un serveur dont l’opérateur signale qu’il bloque celui-ci : rien de ce côté ne peut aider. Pour cesser volontairement de se fédérer avec un serveur, utilisez une mesure sur le domaine
   (Modération → Mesures sur les domaines).
 
@@ -471,19 +475,19 @@ Correctif :
 Du travail attend une connexion de base de données libre, ou a renoncé à attendre après [`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) (les délais d’attente ne concernent que PostgreSQL) : les requêtes répondent `503`, et les tâches s’exécutent de nouveau plus tard. Suivez [MyDBPoolSaturated](#mydbpoolsaturated) ;
 vérifiez aussi que la base de données elle-même n’est pas à sa limite de connexions.
 
-<!-- source: mydatabasestoragelarge edf767115918 -->
+<!-- source: mydatabasestoragelarge 2dd93b626b08 -->
 ### MyDatabaseStorageLarge
 
-La base de données occupe plus que prévu. `my_db_size_bytes` est la taille de la base PostgreSQL (`pg_database_size`, ce que comptent les limites de stockage des fournisseurs)
-ou du fichier SQLite (son journal d’écriture anticipée exclu). C’est de la croissance, non une panne. Fixez le seuil de la règle à une marge sous la limite de stockage
-de votre formule de base de données, ou du volume qui contient le fichier SQLite, qui doit aussi garder de la place pour le journal d’écriture anticipée et pour les sauvegardes.
+La base de données occupe plus que prévu. `my_db_size_bytes` est la taille des tables et des index du schéma PostgreSQL de l’instance (les limites de stockage
+des fournisseurs comptent toute la base de données) ou du fichier SQLite (son journal d’écriture anticipée exclu). C’est de la croissance, pas une panne. Fixez le seuil de la règle avec une marge sous la limite de stockage
+de votre offre de base de données, ou du volume qui contient le fichier SQLite, qui doit aussi garder de la place pour le journal d’écriture anticipée et pour les sauvegardes.
 
 Correctif :
 
-- Relevez la formule ou le volume.
-- Les publications distantes sont supprimées après le paramètre d’instance `remote_status_retention_days` ; l’abaisser ralentit la croissance.
+- Augmentez l’offre ou le volume.
+- Les publications distantes sont supprimées après le réglage d’instance `remote_status_retention_days` ; le diminuer ralentit la croissance.
 - Les lignes supprimées libèrent de l’espace que les deux bases de données réutilisent, mais la taille baisse rarement : PostgreSQL conserve l’espace de ses tables, et SQLite conserve les pages
-  libres dans le fichier jusqu’à un `VACUUM` (exécuté avec `sqlite3` pendant que le serveur est arrêté).
+  libres dans le fichier jusqu’à un `VACUUM` (à exécuter avec `sqlite3` pendant que le serveur est arrêté).
 
 <!-- source: myfiledescriptorsnearlimit 8a3112c11968 -->
 ### MyFileDescriptorsNearLimit

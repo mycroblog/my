@@ -103,7 +103,7 @@
 
 调用的截止时间是 `plugin_<kind>_timeout`，插件以 `Connect-Timeout-Ms`（gRPC 上为 `grpc-timeout`）的形式收到它。插件可以忽略这个请求头：服务器到时仍会停止等待。对于请求可能需要等待的类别（`key_manager`、`translator`、`search`、`signup.check`、`media.check`、`local.status`、`inbound.actor` 和 `local.profile`），截止时间必须小于 30 秒；对于其他类别，必须小于任务可运行的时长 5 分钟。
 
-<!-- source: test-a-plugin 5d8195bb27f5 -->
+<!-- source: test-a-plugin f954dc9b5d3e -->
 ## 测试插件
 
 `my plugin test` 针对正在运行的插件执行某个类别的契约，并报告每个用例的结果。它不读取任何配置，所以只需要 `my` 二进制文件。
@@ -120,7 +120,7 @@ FAIL echo_empty: the outcome is OUTCOME_UNSPECIFIED, not OUTCOME_OK
 2 passed, 1 failed, 0 skipped
 ```
 
-有用例失败时，退出码为 1。各个标志的含义与对应设置相同：`--protocol`、`--token-file`、`--tls-ca-file`、`--tls-cert-file`、`--tls-key-file` 和 `--timeout`。它采用与服务器相同的规则，所以 `--kind mailer` 会拒绝 `http://` 地址。被测试的插件可能是真实在用的插件，所以除调用本身之外还会产生其他影响的用例，只有在某个标志要求时才会运行。如果当前版本还没有某个类别的契约，会报告 `reachable` 和一个 `SKIP`。
+有用例失败时，退出码为 1。各个标志的含义与对应设置相同：`--protocol`、`--token-file`、`--tls-ca-file`、`--tls-cert-file`、`--tls-key-file` 和 `--timeout`；`--instance` 是在 `My-Instance` 头中发送的 `host`（默认 `my.test`）。它采用与服务器相同的规则，所以 `--kind mailer` 会拒绝 `http://` 地址。被测试的插件可能是真实在用的插件，所以除调用本身之外还会产生其他影响的用例，只有在某个标志要求时才会运行。如果当前版本还没有某个类别的契约，会报告 `reachable` 和一个 `SKIP`。
 
 `--kind billing` 只检查在不允许任何计费请求时，插件是否拒绝产生任何花费。`--billed` 还会真正获取本月和上个月的数据，并像导入时那样检查回答；这可能会在插件背后的服务商处产生费用。[导入云使用费用](billing-import.md#a-plugin-billing_sources--plugin)中有该类别的契约。
 
@@ -287,7 +287,7 @@ Content-Type: application/json
 
 缺失或未知的 `outcome`、失败的调用，以及违反这些规则的页面，都按 `OUTCOME_FAILED` 处理，这样的页面中任何内容都不会显示。一次调用最长持续 `plugin_search_timeout`（默认 10 秒），无论该设置是多少，最多 10 秒。
 
-<!-- source: converting-media 36df3dbdb21b -->
+<!-- source: converting-media 14a4c14a3699 -->
 ## 转换媒体
 
 媒体插件承担处理上传文件中最繁重的部分，因此可以在另一台机器上运行。媒体插件有三个类别，你可以分别选择：
@@ -296,7 +296,7 @@ Content-Type: application/json
 - `media_video` 对视频重新封装：带视频轨的文件，无论是否有声音。
 - `media_audio` 对纯音频文件重新封装。
 
-其余部分仍由服务器自己完成。它检测每个上传文件的格式，区分视频和音频文件，在上传文件到达时检查它是否超出限制，并为远程媒体生成预览。设置仍为 `native` 的类别在服务器中处理。
+其余部分仍由服务器自己完成。它检测每个上传文件的格式，区分视频和音频文件，在上传文件到达时检查它是否超出限制，并为远程媒体生成预览。设置仍为 `native` 的类别在服务器中处理。`media_image` 插件还可以接收 AVIF、HEIC 和 APNG 上传文件，这些格式服务器自己从不解码：服务器会接受插件声明的格式，并先从文件头中读取其尺寸和帧数。
 
 ```sh
 # Only videos go to a plugin, on a machine of its own; images and audio stay in the server.
@@ -311,10 +311,10 @@ MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 - **服务器不信任输出**。它根据内容检测每个输出的格式，绝不依据插件声明的格式，并以该格式的内容类型和文件扩展名提供它。它在与上传文件相同的限制下解码每个输出，并检查其大小是否符合。如果输出大于声明的大小或超出这些限制、格式不是插件声明的格式，或者格式不是该变体接受的格式，上传就会作为服务器无法处理的文件而失败。
 - **失败只是延迟**。插件没有运行或失败时，任务会稍后重试，与内置处理器相同。需要立即获得自定义表情符号图片的操作（例如复制远程表情符号或接受相关请求）在插件失败期间会失败。
 
-<!-- source: the-contract-2 812c987c276c -->
+<!-- source: the-contract-2 480cea98aa91 -->
 ### 契约
 
-服务是 `my.plugin.media.v1.MediaService`，RPC `Process` 用于图片，`Remux` 用于视频或音频文件。两者都是双向流式传输，所以插件需要 Connect 或 gRPC 库以及 HTTP/2：`proto` 或 `grpc`，通过带 ALPN `h2` 的 TLS，或者在 Unix 套接字或普通 TCP 上使用明文 HTTP/2（h2c）。
+服务是 `my.plugin.media.v1.MediaService`，RPC `Process` 用于图片，`Remux` 用于视频或音频文件，`Describe` 则声明 `Process` 除 JPEG、PNG、GIF 和 WebP 之外还接受的格式。服务器在启动时以及之后每 5 分钟调用一次 `Describe`；没有它的插件只获得这四种格式，APNG 会被当作静态 PNG。另外两个 RPC 都是双向流式传输，所以插件需要 Connect 或 gRPC 库以及 HTTP/2：`proto` 或 `grpc`，通过带 ALPN `h2` 的 TLS，或者在 Unix 套接字或普通 TCP 上使用明文 HTTP/2（h2c）。
 
 调用是半双工的：
 
@@ -322,7 +322,7 @@ MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 2. 插件回复一个 `head`，其 `outcome` 就是结果。结果为 `OUTCOME_OK` 时，`Process` 的 head 还包含按 EXIF 方向调整后的图片尺寸，以及小尺寸静态输出的 blurhash。
 3. 对于每个输出，插件发送一个 `part`，写明输出的名称并声明其格式、尺寸和长度，随后是最大 1 MiB 的 `chunk` 消息。
 
-`Process` 返回小、中、大三种静态输出，对于多于一帧的图片，还返回三种动态输出。小尺寸和中尺寸的输出是 WebP；大尺寸静态输出是 JPEG 或 PNG（自定义表情符号总是 PNG），大尺寸动态输出是 GIF。`Remux` 返回去除了元数据、保留原容器格式的文件，以及其中内嵌的封面图片（如果有）。服务器从 `Process` 最多读取图片限制的两倍，从 `Remux` 读取文件时最多读取视频限制，读取封面时最多读取图片限制。
+`Process` 返回小、中、大三种静态输出，对于多于一帧的图片，还可以返回三种动态输出；每个动态输出至少要有两帧。小尺寸和中尺寸的输出是 WebP；大尺寸静态输出是 JPEG 或 PNG（自定义表情符号总是 PNG），大尺寸动态输出是 GIF。`Remux` 返回去除了元数据、保留原容器格式的文件，以及其中内嵌的封面图片（如果有）。服务器从 `Process` 最多读取图片限制的两倍，从 `Remux` 读取文件时最多读取视频限制，读取封面时最多读取图片限制。
 
 | `outcome` | 含义 | 服务器的处理 |
 | --- | --- | --- |

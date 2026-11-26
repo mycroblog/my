@@ -25,7 +25,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 - URLs werden bei jedem Lesen neu gebildet und nicht in der Datenbank gespeichert, eine Änderung von `media_origin` ändert also auch die URLs vorhandener Medien.
   Alte URLs, die entfernte Server gespeichert haben, funktionieren weiter, solange `/media/` auf der alten Origin weiter ausliefert.
 
-<!-- source: point-the-cdn-at-the-server ffb279f38f08 -->
+<!-- source: point-the-cdn-at-the-server c9ebf6b731e5 -->
 ## Das CDN auf den Server richten
 
 - Mache den öffentlichen Hostnamen des Servers (`https://{host}`) zur Origin (zum Backend). Das CDN muss vom Server nur Pfade unter `/media/` abrufen.

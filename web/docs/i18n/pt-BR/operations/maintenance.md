@@ -106,10 +106,10 @@ As páginas de erro dos front ends abaixo respondem aos erros do servidor com a 
 (`502` e `504`, e o `503` do próprio balanceador de carga quando ele não tem backend saudável), ou ative a regra somente enquanto o `my serve` não consegue rodar:
 uma regra para todo `503` também substituiria as próprias respostas do modo de manutenção, como o problema que a API do cliente e o cliente web leem.
 
-<!-- source: cloud-run 8bed844981b6 -->
+<!-- source: cloud-run b150825c7bf0 -->
 ### Cloud Run
 
-Implante uma nova revisão com a variável e remova-a depois:
+Faça o deploy de uma nova revisão com a variável e remova-a depois:
 
 ```sh
 gcloud run services update my --region=asia-northeast1 \
@@ -117,15 +117,15 @@ gcloud run services update my --region=asia-northeast1 \
 gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE,MY_MAINTENANCE_UNTIL
 ```
 
-Com o módulo OpenTofu, defina-o no bloco, como `settings = { maintenance = "true" }`, e aplique, pois a próxima aplicação restaura
-o que o bloco diz: [Implantando no Cloud Run](deploy-opentofu.md#the-maintenance-mode) mostra isso em torno de uma atualização.
+Com o módulo do OpenTofu, defina-a no bloco, como `settings = { maintenance = "true" }`, e aplique, já que o próximo apply restaura
+o que o bloco diz: [Implantar com o OpenTofu](deploy-opentofu.md#the-maintenance-mode) a trata em torno de uma atualização.
 
-Quando o Cloud Run é exposto diretamente, sem balanceador de carga, não há nada na frente dele, então o modo de manutenção é a única ferramenta.
+Quando o Cloud Run é exposto diretamente, sem um balanceador de carga, não há nada na frente dele, então o modo de manutenção é a única ferramenta.
 
-**Quando o `my serve` não consegue rodar** atrás de um Application Load Balancer externo global: envie o `index.html` exportado para um bucket do Cloud Storage
-adicionado como backend bucket, e adicione uma política de resposta de erro personalizada que responda os `502` e `504` do backend com ele e `overrideResponseCode: 503`.
-Apenas o Application Load Balancer externo global tem respostas de erro personalizadas (não os regionais nem os clássicos), e a política se aplica apenas
-às respostas do backend, não às que o Google Front End gera por conta própria. Este caminho não consegue enviar `Retry-After`: os cabeçalhos personalizados da origem do erro não são adicionados.
+**Quando `my serve` não pode executar** atrás de um Application Load Balancer externo global: envie o `index.html` exportado a um bucket do Cloud Storage
+adicionado como bucket de backend e adicione uma política de resposta de erro personalizada que responda aos `502` e `504` do backend com ele e `overrideResponseCode: 503`.
+Somente o Application Load Balancer externo global tem respostas de erro personalizadas (não os regionais nem os clássicos), e a política se aplica apenas
+às respostas do backend, não às que o próprio Google Front End produz. Este caminho não pode enviar `Retry-After`: os cabeçalhos personalizados da fonte de erro não são adicionados.
 
 ```yaml
 # Part of the URL map (gcloud compute url-maps import).
@@ -137,21 +137,21 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-<!-- source: aws-ecs afc0ba5adee4 -->
+<!-- source: aws-ecs 0b5f487093f4 -->
 ### AWS ECS
 
-Registre uma revisão da task definition do serviço com `MY_MAINTENANCE=true` no ambiente do contêiner, atualize o serviço para ela,
-e faça o mesmo sem a variável depois. Com o módulo OpenTofu, defina-o no bloco, como `settings = { maintenance = "true" }`,
-e aplique, pois a próxima aplicação restaura o que o bloco diz: em torno de uma atualização, aplique o modo, depois a nova versão, depois o bloco sem ele,
-como faz [Implantando no Cloud Run](deploy-opentofu.md#the-maintenance-mode).
+Registre uma revisão da definição de tarefa do serviço com `MY_MAINTENANCE=true` no ambiente do contêiner, atualize o serviço para ela
+e faça o mesmo sem a variável depois. Com o módulo do OpenTofu, defina-a no bloco, como `settings = { maintenance = "true" }`,
+e aplique, já que o próximo apply restaura o que o bloco diz: em torno de uma atualização, aplique o modo, depois a nova release, depois o bloco sem ele,
+como faz [Implantar com o OpenTofu](deploy-opentofu.md#the-maintenance-mode).
 
-**Quando o `my serve` não consegue rodar** atrás do CloudFront: envie o `index.html` exportado para um bucket do S3 que seja uma segunda origem
-(a página de erro não pode vir da origem que está falhando), e adicione respostas de erro personalizadas para `502` e `504` (e `503` somente enquanto o `my serve` não consegue rodar)
+**Quando `my serve` não pode executar** atrás do CloudFront: envie o `index.html` exportado a um bucket do S3 que seja uma segunda origem
+(a página de erro não pode vir da origem que está falhando) e adicione respostas de erro personalizadas para `502` e `504` (e `503` apenas enquanto `my serve` não pode executar)
 com `ResponsePagePath: /maintenance/index.html` e `ResponseCode: 503`.
-O CloudFront pode adicionar `Retry-After` por meio de uma response headers policy com um cabeçalho personalizado, mas a política se aplica a toda resposta do comportamento de cache,
-então anexe-a apenas para a manutenção e desanexe-a depois.
+O CloudFront pode adicionar `Retry-After` por meio de uma política de cabeçalhos de resposta com um cabeçalho personalizado, mas a política se aplica a todas as respostas do comportamento de cache,
+então anexe-a apenas durante a manutenção e desanexe-a depois.
 
-A resposta fixa de um Application Load Balancer não consegue carregar a página exportada: o corpo tem no máximo 1.024 caracteres e não define cabeçalhos como `Retry-After`.
+A resposta fixa de um Application Load Balancer não pode levar a página exportada: o corpo dela tem no máximo 1.024 caracteres e ela não define cabeçalhos como `Retry-After`.
 Use-a apenas para um texto curto e o status:
 
 ```json
@@ -165,7 +165,7 @@ Use-a apenas para um texto curto e o status:
 }
 ```
 
-Sem `Retry-After`, outros servidores tentam de novo no próprio cronograma, que a janela acima já permite.
+Sem `Retry-After`, os outros servidores tentam de novo no próprio ritmo, que a janela acima já prevê.
 
 <!-- source: docker-compose d564c0b39ae8 -->
 ### Docker Compose

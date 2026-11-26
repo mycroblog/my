@@ -248,13 +248,13 @@ kubectl rollout status deployment/my
 Se o Job falhar, `kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check` (ou `-c schema`, `-c upgrade`) mostra o motivo, e o Deployment continua na imagem anterior.
 Com SQLite em um volume, monte o mesmo volume no Job e pare antes os pods do Deployment: o SQLite aceita um único escritor.
 
-<!-- source: cloud-run 9e7486b6a4af -->
+<!-- source: cloud-run 4cd76d9b85b5 -->
 ### Cloud Run
 
-Com o módulo OpenTofu, uma atualização é um apply da nova versão, que executa `my upgrade` no job de migração antes de os serviços adotarem
-a nova imagem, e para ali quando ele falha: veja [Implantação no Cloud Run](deploy-opentofu.md#upgrading). Manualmente:
+Com o módulo do OpenTofu, uma atualização é um apply da nova release, que executa `my upgrade` no job de migração antes de os serviços adotarem
+a nova imagem, e para ali quando ele falha: veja [Implantar com o OpenTofu](deploy-opentofu.md#upgrading). Manualmente:
 
-Os jobs do Cloud Run executam um contêiner cada, então crie um job por passo e execute-os em ordem com `--wait`, que falha quando o job falha.
+Os jobs do Cloud Run executam um contêiner cada, então crie um job por etapa e execute-os em ordem com `--wait`, que falha quando o job falha.
 Dê aos jobs as mesmas variáveis de ambiente e os mesmos segredos do serviço.
 
 ```sh
@@ -274,7 +274,7 @@ gcloud run jobs execute my-upgrade-check --region=asia-northeast1 --wait &&
   gcloud run deploy my --region=asia-northeast1 --image=ghcr.io/mycroblog/my:0.2.0 --remove-env-vars=MY_MAINTENANCE
 ```
 
-Para verificar antes o SQL, implante o job do esquema com `--args=schema,apply,-dry-run`, execute-o e leia os logs dele antes de reimplantá-lo para o apply.
+Para verificar o SQL antes, faça o deploy do job de esquema com `--args=schema,apply,-dry-run`, execute-o e leia os logs dele antes de refazer o deploy dele para o apply.
 
 <!-- source: backing-up b597d3139c2b -->
 ### Backup
@@ -317,23 +317,24 @@ Para atravessar mais de uma versão menor, atualize passando pelo último patch 
 De `v0.1.3` para `v0.4.0`, por exemplo: o último `v0.1.x`, depois o último `v0.2.x`, depois o último `v0.3.x` e então `v0.4.0`.
 `my db upgrade -check` interrompe um salto que perderia dados e nomeia a versão por onde passar; nesse ponto, nada foi alterado.
 
-<!-- source: checking-and-rebuilding-projections 40b848afd40d -->
+<!-- source: checking-and-rebuilding-projections df54e4ad696f -->
 ## Verificar e reconstruir projeções
 
 Algumas tabelas são projeções: o servidor as deriva dos eventos e dos recursos do módulo delas (as restrições de uma conta a partir das suas
-ações de moderação, por exemplo). O worker verifica todas as projeções uma vez por dia e corrige qualquer diferença que encontrar. Para verificar ou corrigir uma manualmente:
+ações de moderação, por exemplo). Com `projection_verify_interval` definido, o worker verifica cada projeção nesse agendamento e registra no log qualquer
+diferença que encontra (contada por `my.projection.drifts`) sem corrigi-la; por padrão ele não verifica. Para verificar ou corrigir uma manualmente:
 
 ```sh
 my projection list              # each projection with its module and tables
-my projection verify [<name>]   # derive every projection, or the one named, and print the rows that differ; changes nothing
+my projection verify [<name>]   # derive every projection, or the one named, into temporary copies and print the rows that differ
 my projection rebuild [<name>]  # derive them the same way and write the difference
 ```
 
 - `<name>` é uma projeção ou uma das suas tabelas.
-- `verify` imprime as linhas que as tabelas contêm mas as fontes não derivam (`-`) e as linhas que as fontes derivam mas as tabelas não têm (`+`),
-  e termina com `1` quando alguma difere.
-- `rebuild` grava no máximo 500 linhas por transação, de modo que os leitores nunca veem uma projeção esvaziada. Execute-o enquanto a instância está calma:
-  uma linha que muda durante a reconstrução mantém o novo valor, e um `verify` posterior relata qualquer diferença restante.
+- `verify` imprime as linhas que as tabelas têm mas as fontes não derivam (`-`) e as linhas que as fontes derivam mas as tabelas não têm (`+`),
+  até 1.000 de cada tabela em cada sentido, e termina com `1` quando alguma difere. Ele não bloqueia nenhuma linha, então pode ser executado enquanto a instância trabalha.
+- `rebuild` grava no máximo 500 linhas por transação, de modo que os leitores nunca vejam uma projeção esvaziada. Execute-o enquanto a instância está calma:
+  uma linha que muda durante a reconstrução mantém o novo valor, e um `verify` posterior informa qualquer diferença que restar.
 
 <!-- source: recreating-erasing-every-row 9ff993b99448 -->
 ## Recriar (apagar todas as linhas)

@@ -10,24 +10,24 @@ Como criar o primeiro administrador, gerenciar papéis pela linha de comando, an
 - O schema é aplicado ao banco de dados (`my schema apply`; veja [database.md](database.md)).
 - `host` e `account_domain` são definitivos. O primeiro comando que usa o banco de dados os registra, e todo comando posterior se recusa a executar quando a configuração é diferente (veja [Configurações que não podem ser mudadas depois](production-checklist.md#settings-you-cannot-change-later)).
 
-<!-- source: creating-an-administrator 9be8b2ee8d85 -->
-## Criando um administrador
+<!-- source: creating-an-administrator fb4f4b92bb01 -->
+## Criar um administrador
 
 ```sh
 my admin create -username alice -email alice@example.com
 ```
 
-- Em um terminal, o comando pede a senha duas vezes, sem exibi-la.
+- Em um terminal, o comando pede a senha duas vezes, sem exibi-la na tela.
 - Quando a entrada padrão não é um terminal, a primeira linha da entrada padrão é a senha (por exemplo `my admin create ... < password.txt`).
-  A senha não pode ser passada como argumento de linha de comando nem como variável de ambiente, porque ambos vão parar em listas de processos e no histórico do shell.
-- Onde um comando avulso não tem nem terminal nem entrada padrão, como um [job do Cloud Run](deploy-opentofu.md#5-create-the-first-administrator), adicione `-password-link`. O comando então não lê senha: ele define uma aleatória que ninguém conhece e imprime um link depois da linha `created admin`, que define a senha uma vez, por uma hora, como `my admin account password-reset-link` (o log de auditoria o registra como `password_reset_link_issued`).
-  Quem puder ler a saída do comando pode usar o link, e em uma plataforma assim essa saída fica nos logs da plataforma até o link ser usado ou expirar. Abra o link logo. Se ele expirar, emita outro com `my admin account password-reset-link @alice`. Se a emissão do link falhar, o administrador já existe: o comando diz isso e termina com o código 1, e o mesmo comando dá um novo link.
+  A senha não pode ser passada como argumento de linha de comando nem como variável de ambiente, porque ambos acabam em listas de processos e no histórico do shell.
+- Onde um comando avulso não tem nem terminal nem entrada padrão, como [o console de uma implantação com OpenTofu](deploy-opentofu.md#5-create-the-first-administrator), acrescente `-password-link`. O comando então não lê senha alguma: ele define uma senha aleatória que ninguém conhece e imprime um link depois da linha `created admin`, que define a senha uma única vez, durante uma hora, como `my admin account password-reset-link` (o log de auditoria o registra como `password_reset_link_issued`).
+  Quem puder ler a saída do comando pode usar o link, e em uma plataforma assim essa saída fica nos logs da plataforma até o link ser usado ou expirar. Abra o link imediatamente. Se ele expirar, emita outro com `my admin account password-reset-link @alice`. Se a emissão do link falhar, o administrador já existe: o comando informa isso e termina com o código 1, e o mesmo comando dá um novo link.
 - Uma senha tem de 8 a 128 caracteres. Ela nunca aparece na saída, nos logs nem em uma mensagem de erro.
-- Uma transação cria o usuário, a senha, o endereço de e-mail principal, a conta local (com as chaves dela) e a concessão do papel `admin` (sem concedente, o que significa a CLI).
-  Os papéis embutidos são criados antes se estiverem faltando.
+- Uma transação cria o usuário, a senha, o endereço de e-mail principal, a conta local (com suas chaves) e a concessão do papel `admin` (sem concedente, o que significa a CLI).
+  Os papéis embutidos são criados primeiro, se estiverem faltando.
 - Em caso de sucesso, o comando imprime `created admin @alice@<account_domain> (user <id>, account <id>)` e termina com o código 0.
-- Em um [servidor de uma só pessoa](instance-settings.md#one-person-server), o comando não cria nenhuma conta e termina com o código 1.
-  Enquanto o [login está limitado a provedores de login](login-providers.md#limit-sign-in-to-login-providers), ele também avisa que a senha não pode entrar até o limite terminar.
+- Em um [servidor de uma só pessoa](instance-settings.md#one-person-server), o comando não cria conta e termina com o código 1.
+  Enquanto [o login está limitado a provedores de login](login-providers.md#limit-sign-in-to-login-providers), ele também avisa que a senha não pode ser usada para entrar até o limite acabar.
 
 <!-- source: running-it-again 197692f7f103 -->
 ## Executando de novo

@@ -130,7 +130,7 @@ CloudWatch Logs 會把這一行當作一般的 JSON 讀取。
 
 請留意計數器 `my.errors.exported`：`my.outcome` 為 `success`、`dropped`（超過限制、佇列已滿，或服務要求放慢速度）或 `failed`（無法連線到服務，或服務拒絕了回報）（[執行伺服器](running.md#metrics)）。
 
-<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
+<!-- source: sentry-glitchtip-and-datadog 81bdd8389ace -->
 ### Sentry、GlitchTip 與 Datadog
 
 ```sh
@@ -146,7 +146,7 @@ MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; t
   secrets       = ["errors_sentry_dsn"]
 ```
 
-伺服器本身就使用 Sentry 協定，因此不涉及任何 Sentry SDK，也不會讀取任何 `SENTRY_*` 環境變數。它會設定指紋，讓服務依指紋分組，並設定標籤 `service`（`my`）、`my.role`、`my.error.where` 和 `error.fingerprint`。版本（release）是伺服器的版本，環境（environment）是 `errors_environment`。
+伺服器本身就使用 Sentry 協定，因此不涉及任何 Sentry SDK，也不會讀取任何 `SENTRY_*` 環境變數。它會設定指紋，讓服務依指紋分組，並設定標籤 `service`（`my`）、`service.namespace`（`host`）、`my.role`、`my.error.where` 和 `error.fingerprint`。版本（release）是伺服器的版本，環境（environment）是 `errors_environment`。
 
 - **Sentry**（託管或自行架設）：從專案的用戶端金鑰複製 DSN。
 - **GlitchTip**：複製專案的 DSN。它是開放原始碼軟體，可以在小型伺服器上執行。請確認你使用的版本針對新問題與再次發生的問題提供了哪些警報規則。

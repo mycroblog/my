@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## 键
 
-<!-- source: settings-one-key-one-value d7de299cd54d -->
+<!-- source: settings-one-key-one-value 50097b9aa7e6 -->
 ### 设置（一个键对应一个值）
 
 | 键 | 类型 | 默认值 | 说明 |
@@ -63,17 +63,17 @@
 | `indexable_default` | `true` / `false` | `false` | 新账号 `indexable` 的默认值。更改它不会改变现有账号 |
 | `auto_delete_default_enabled` | `true` / `false` | `false` | 新账号是否一开始就启用自动删除旧帖子。它与其他 `auto_delete_default_*` 键一起构成新账号获得的策略（[自动删除旧帖子](#automatic-deletion-of-old-posts)） |
 | `auto_delete_default_min_age_days` | 整数 1-3650（天） | `30` | 新账号的策略在帖子发布多少天后删除它 |
-| `auto_delete_default_keep_articles` | `true` / `false` | `true` | 新账号的策略是否保留[文章](#articles) |
 | `auto_delete_default_keep_pinned`、`auto_delete_default_keep_bookmarked`、`auto_delete_default_keep_favourited` | `true` / `false` | `true` | 新账号的策略是否保留作者置顶、加入书签或喜欢的帖子 |
 | `auto_delete_default_keep_media`、`auto_delete_default_keep_polls` | `true` / `false` | `false` | 新账号的策略是否保留带有媒体或投票的帖子 |
+| `auto_delete_default_keep_articles` | `true` / `false` | `true` | 新账号的策略是否保留[文章](#articles) |
 | `auto_delete_default_keep_public`、`auto_delete_default_keep_local`、`auto_delete_default_keep_unlisted`、`auto_delete_default_keep_private` | `true` / `false` | `false` | 新账号的策略是否保留该可见范围的帖子 |
 | `auto_delete_default_keep_direct` | `true` / `false` | `true` | 新账号的策略是否保留私信帖子 |
 | `auto_delete_default_keep_min_boosts`、`auto_delete_default_keep_min_favourites` | 整数 0-1000000 | `0` | 新账号的策略会保留被转发或喜欢至少这么多次的帖子。`0` 表示不设阈值 |
 | `auto_delete_max_age_days` | 整数 0-3650（天） | `0` | 任何本站帖子在发布后最多保留的天数（[上限](#a-maximum-for-keeping-posts)）。`0` 表示不设上限 |
 | `auto_delete_max_allow_pinned` | `true` / `false` | `true` | 在上限之下是否仍可保留置顶的帖子 |
 | `auto_delete_max_kept_pins` | 整数 1-5 | `5` | 在上限之下有多少个置顶可以保留帖子，最近置顶的优先。`5` 是一个账号置顶数的上限，会保留所有置顶的帖子 |
-| `auto_delete_max_allow_articles` | `true` / `false` | `true` | 在上限之下是否仍可保留文章 |
 | `auto_delete_max_allow_bookmarked`、`auto_delete_max_allow_favourited`、`auto_delete_max_allow_media`、`auto_delete_max_allow_polls` | `true` / `false` | `false` | 在上限之下是否仍可保留作者加入书签或喜欢的帖子，或带有媒体或投票的帖子 |
+| `auto_delete_max_allow_articles` | `true` / `false` | `true` | 在上限之下是否仍可保留文章 |
 | `auto_delete_max_allow_visibilities` | `true` / `false` | `false` | 在上限之下是否仍可按可见范围保留帖子 |
 | `auto_delete_max_allow_thresholds` | `true` / `false` | `false` | 在上限之下是否仍可按转发数和喜欢数保留帖子 |
 | `auto_delete_grace_days` | 整数 0-365（天） | `30` | 新受到上限约束的账号在收到通知后，还能按自己的设置保留多少天。更改它不会移动已通知账号的日期 |
@@ -115,7 +115,7 @@
 | `translation_server_monthly_characters` | 整数 0-1000000000000 | `500000` | 整个服务器在一个 UTC 月内最多可以向翻译服务商发送多少字符。为 `0` 时不发送任何内容。没有表示无限制的值：请设置一个较大的数字 |
 | `translation_retention_days` | 整数 1-3650（天） | `30` | 翻译在生成后保留的天数。阅读不会延长这一期限，帖子删除时它也随之删除 |
 | `translation_reports_to_server` | 布尔值 | `false` | 审核员能否将举报的文本（被举报的帖子和举报人的说明）发送给服务器端服务商。无论由谁发起，每个服务商仍然只接收 `translation_provider_visibilities` 允许它接收的可见范围：被举报的私信帖子只发送给允许 `direct` 的服务商，说明按 `private` 计。说明的翻译和已删除帖子的翻译永远不会保留，字符数只计入 `translation_server_monthly_characters`。为 `false` 时，举报的任何内容都不会到达服务商 |
-| `event_records_retention_days` | 整数 30-3650（天） | `90` | 在活动结束或被取消之后，保留谁回复了它、谁获得批准、谁受到邀请，以及谁对它的候选日期投了票，保留多少天。日期始终没有确定的活动，以它最后一个候选日期为结束。活动本身（它的设置、地点、日期和候选日期，以及取消）会一直保留。被举报活动的记录会与该举报保留得一样久，保全措施的适用方式与其他记录相同（[记录保留](moderation.md#record-retention-and-holds)） |
+| `event_records_retention_days` | 整数 30-3650（天） | `90` | 在活动结束或被取消之后，保留谁回复了它、谁获得批准、谁受到邀请，谁对它的候选日期投了票，以及它的公告板上的帖子，保留多少天。日期始终没有确定的活动，以它最后一个候选日期为结束。活动本身（它的设置、地点、日期和候选日期，以及取消）会一直保留。被举报活动的记录会与该举报保留得一样久，保全措施的适用方式与其他记录相同（[记录保留](moderation.md#record-retention-and-holds)） |
 | `voice_participants_retention_days` | 整数 30-3650（天） | `90` | 语音聊天房间结束后，保留参与记录的天数：参与情况、发言者和听众、举手、邀请和移出。房间本身（名称、简介、主持人以及结束方式）会保留。被举报房间的记录与举报保留同样长的时间，保全措施与其他记录一样适用 |
 | `hook_inbound_status_mode`、`hook_inbound_follow_mode`、`hook_signup_check_mode`、`hook_media_check_mode`、`hook_local_status_mode`、`hook_inbound_actor_mode`、`hook_local_profile_mode` | `off`、`observe`、`enforce` | `observe` | 每个[决策钩子](decision-hooks.md#modes)在有插件时作用到什么程度。`off` 只能经由 `observe` 变为 `enforce`。 |
 | `hook_inbound_status_on_failure`、`hook_inbound_follow_on_failure`、`hook_media_check_on_failure`、`hook_inbound_actor_on_failure` | `pass`、`retry` | `pass` | 钩子在强制执行时，其插件出错后如何处理（[详情](decision-hooks.md#when-the-plugin-fails)）。 |
@@ -193,7 +193,7 @@
 - 旧帖子的自动删除会保留文章，除非用户关闭这一点（新账号用 `auto_delete_default_keep_articles`，在上限之下用 `auto_delete_max_allow_articles`）。
 - `GET /api/v1/instance` 会在 `limits.articles` 中返回这些限制，并在 `article_authoring` 中返回撰写设置。请用 `my instance set` 设置它们，例如 `my instance set article_authoring permission`。
 
-<!-- source: events 07dccecf6936 -->
+<!-- source: events b51d3b629557 -->
 ### 活动
 
 本站用户可以规划带有日期、时区和最多三个地点的活动：本服务器的语音聊天室、线下见面的地点，以及一个链接。主办者可以不设日期，改为提供最多 20 个候选日期：能看到该活动的用户对每个日期回复能参加、可能参加或不能参加，然后主办者或共同主办者确定其中一个，这就确定了日期。在此之前，没有人回复自己是否会来。活动只面向本服务器的用户：它们从不联邦化，远程用户和未登录的访客都看不到任何活动。
@@ -205,7 +205,7 @@
 - 活动的地址和链接只显示给主办者或共同主办者批准的参加者，除非主办者向所有能看到该活动的人显示它们。链接必须是 `http` 或 `https`，服务器从不打开它们。
 - 能看到活动的用户可以把它保存为 iCalendar（`.ics`）文件，添加到自己的日历中。该文件只写明该用户能看到的地点，因此留给已获批准的参加者的地址永远不会出现在其中。没有日历订阅地址。
 - 每位用户每小时最多创建 10 个活动，每个活动每小时最多发出 100 份邀请。
-- 用户可以举报活动，审核员可以取消活动；封禁或删除主办者会取消该主办者尚未开始的活动（[审核](moderation.md#events)）。谁回复了、谁受到邀请，会在活动结束后保留 `event_records_retention_days`，对其候选日期的投票也是如此。
+- 用户可以举报活动，审核员可以取消活动；封禁或删除主办者会取消该主办者尚未开始的活动（[审核](moderation.md#events)）。谁回复了、谁受到邀请，会在活动结束后保留 `event_records_retention_days`，对其候选日期的投票和公告板上的帖子也是如此。
 
 <!-- source: texts-one-key-one-value cc74b8e2bdda -->
 ### 文本（一个键对应一个值）

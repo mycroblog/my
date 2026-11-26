@@ -154,13 +154,13 @@ Apenas alguns participantes podem falar em uma sala: os anfitriões e os ouvinte
 Isso detém usuários comuns e o cliente web oficial, mas não é uma defesa completa. **Dois participantes com clientes modificados que trabalhem juntos ainda podem trocar áudio**: o cliente modificado de alguém que não pode falar pode enviá-lo, e o cliente modificado de um receptor pode reproduzi-lo, e o servidor não consegue ver o interior da mídia criptografada.
 Se você precisa garantir quem fala, por exemplo em eventos públicos moderados, use `livekit` ou `sora`, em que o próprio servidor de mídia descarta o áudio de quem não tem permissão.
 
-<!-- source: deployment-notes b0f03da306b7 -->
+<!-- source: deployment-notes 9daf6e4d8d98 -->
 ## Notas de implantação
 
-- **Dois fluxos por usuário**: durante uma chamada, um participante mantém o fluxo de eventos próprio da sala (Server-Sent Events) além do fluxo que o app sempre abre. Dimensione os limites de conexão para duas requisições de longa duração por usuário em uma chamada.
-- **Vários processos**: use um adaptador de fluxo compartilhado (`stream` definido como `postgres`, `valkey`, `sns` ou `pubsub`), como no resto do app. Com `stream = hub` e um `role` diferente de `all`, o servidor avisa na inicialização que o chat de voz não funcionará entre processos.
-- **Cloud Run**: um fluxo é uma requisição, e a CPU é alocada enquanto ele está aberto. Quando o tempo limite da requisição o interrompe, o cliente se reconecta. Defina o tempo limite o mais longo que puder.
-- **Servidores de mídia precisam de uma VM**: LiveKit e Sora recebem áudio por UDP em um processo de longa duração. O Cloud Run aceita apenas requisições HTTP, então não pode hospedá-los. Execute-os (e o coturn) em uma VM, ou use LiveKit Cloud, Sora Cloud ou Cloudflare TURN.
+- **Dois streams por usuário**: durante uma chamada, um participante mantém o stream de eventos da própria sala (Server-Sent Events), além do stream que o app sempre abre. Dimensione os limites de conexão para duas requisições longas por usuário em uma chamada.
+- **Vários processos**: use um adaptador de stream compartilhado (`stream` definido como `postgres`, `valkey`, `sns` ou `pubsub`), como no resto do app. Com `stream = hub` e um `role` diferente de `all`, o servidor avisa ao iniciar que o chat de voz não funcionará entre processos.
+- **Cloud Run**: um stream é uma requisição, e a CPU é alocada enquanto ela está aberta. Quando o timeout da requisição a corta, o cliente se reconecta. Defina o timeout o mais longo que puder: `service.request_timeout_seconds` de [Implantar no Google Cloud](deploy-google-cloud.md#limits).
+- **Servidores de mídia precisam de uma VM**: o LiveKit e o Sora recebem áudio por UDP em um processo de longa duração. O Cloud Run aceita apenas requisições HTTP, então não pode hospedá-los. Execute-os (e o coturn) em uma VM, ou use o LiveKit Cloud, o Sora Cloud ou o Cloudflare TURN.
 
 <!-- source: livekit b16c1d192419 -->
 ## LiveKit

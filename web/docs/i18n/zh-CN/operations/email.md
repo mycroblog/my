@@ -147,7 +147,7 @@ my plugin test --kind mailer --mail-to you@example.com --mail-from noreply@socia
 
 第一条只检查插件是否响应，不发送任何邮件。第二条向 `--mail-to` 发送一封真实的邮件，并向插件发送一个没有收件人的请求，插件必须拒绝它。插件拿到消息后服务器就看不到它了，因此请查看实际收到的邮件：其邮件头中必须有 `Message-ID`、`Date` 和 `Auto-Submitted: auto-generated`。参见[测试插件](plugins.md#test-a-plugin)。
 
-<!-- source: receive-ses-notifications-sns e21b650ab5fe -->
+<!-- source: receive-ses-notifications-sns aa8911000390 -->
 ### 接收 SES 通知（SNS）
 
 SES 的退信和投诉会发送到一个 SNS 主题，该主题上的 HTTPS 订阅再把它们投递到服务器的 `POST /mail/events/ses`。只有设置了 `mail_ses_sns_topic_arn` 时这个端点才会开放；否则它回答 `404`。
@@ -194,7 +194,7 @@ aws sns subscribe --region ap-northeast-1 \
 | --- | --- |
 | `bounceType` 为 `Permanent` 的退信（任何子类型，例如 `General`、`NoEmail`、`Suppressed` 或 `OnAccountSuppressionList`） | `hard_bounce` |
 | 投诉（`complaintFeedbackType` 为 `not-spam` 的除外） | `complaint` |
-| `Transient` 或 `Undetermined` 的退信，以及投递、发送等其他通知 | 不记录（回答 `200`） |
+| `Transient` 或 `Undetermined` 的退信，投递、发送等其他通知，以及 `mail.source` 不是 `mail_from` 地址的任何通知（共用该主题或配置集的另一个实例发出的邮件） | 不记录（回答 `200`） |
 
 SES 的 `feedbackId` 是记录的唯一键，因此无论 SNS 把同一条通知发送多少次，都只有一条记录。
 

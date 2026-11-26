@@ -3,26 +3,26 @@
 
 Escolha “Notificações” na navegação. A navegação mostra quantas notificações não foram lidas (“Notificações, 3 não lidas”).
 
-<!-- source: what-you-are-notified-of afff09e059ac -->
-## Sobre o que você é notificado
+<!-- source: what-you-are-notified-of f82164242973 -->
+## Do que você é notificado
 
 Quando alguém segue você, menciona você ou reage às suas publicações, isso aparece aqui. Os tipos que você pode ver são:
 
-- Menções, citações, impulsos, favoritos e reações com emoji às suas publicações. Vários impulsos ou favoritos de uma mesma publicação são agrupados em uma linha (“... e mais 2 impulsionaram sua publicação”). Uma resposta ou um impulso vindo de outro servidor que esteja fora de quem você deixa responder ou impulsionar a publicação, ou que aguarde a sua aprovação, não notifica ninguém de uma menção (veja [Publicar](posting.md#other-things-to-know)).
-- Seguidores: alguém seguiu você, pediu para seguir você ou aceitou o seu pedido para seguir. Um seguimento oferece “Seguir de volta”. A linha no topo, “... pedidos para seguir”, abre os pedidos que ainda aguardam, onde você “Aprova” ou “Recusa” cada um, e ela então diz “Aprovado” ou “Recusado”.
-- Pedidos de aprovação: alguém pediu para responder, impulsionar ou citar uma publicação sua, que aguarda a sua aprovação, e o autor de uma publicação aprovou ou recusou a sua própria resposta, impulso ou citação. A linha no topo, “... aguardando a sua aprovação”, abre a lista em que você os responde (veja [Publicar](posting.md#who-can-reply-boost-and-quote)).
-- Novas publicações de contas das quais você escolheu ser notificado (“Notificar-me sobre novas publicações”).
+- Menções, citações, impulsos, favoritos e reações com emoji às suas publicações. Vários impulsos ou favoritos de uma mesma publicação são agrupados em uma linha (“… e mais 2 pessoas impulsionaram sua publicação”). Uma resposta ou um impulso de outro servidor que esteja fora de quem você permite que responda ou impulsione a publicação, ou que aguarde a sua aprovação, não notifica ninguém de uma menção (veja [Publicar](posting.md#other-things-to-know)).
+- Seguidores: alguém seguiu você, pediu para seguir você ou aceitou o seu pedido de seguir. Um novo seguidor oferece “Seguir de volta”. A linha no topo, “… pedidos para seguir”, abre os pedidos que ainda aguardam, onde você escolhe “Aprovar” ou “Recusar” cada um, e ele então diz “Aprovado” ou “Recusado”.
+- Pedidos de aprovação: alguém pediu para responder, impulsionar ou citar a sua publicação, o que aguarda a sua aprovação, e o autor de uma publicação aprovou ou recusou a sua própria resposta, impulso ou citação. A linha no topo, “… aguardando a sua aprovação”, abre a lista onde você os responde (veja [Publicar](posting.md#who-can-reply-boost-and-quote)).
+- Novas publicações de contas cujas publicações você escolheu receber notificações (“Notificar-me de novas publicações”).
 - Uma enquete da qual você participou terminou.
 - Uma conta que você segue mudou para outra conta, e o que aconteceu com o seu seguimento.
 - Chat de voz: alguém iniciou uma sala de chat de voz ou convidou você para uma.
-- Eventos: alguém convidou você para um evento; os organizadores fixaram a data de um evento cujas datas candidatas você respondeu, ou para o qual você foi convidado; um evento ao qual você vai, talvez vá ou foi convidado mudou de data, lugar ou sala de chat de voz, ou foi cancelado; um evento ao qual você vai ou talvez vá começa em breve (um lembrete) ou começa agora; e a sala de chat de voz de um evento que você organiza não pode abrir, não conseguiu abrir no início ou ninguém entrou (o evento em si continua). Os lembretes chegam um dia e uma hora antes do início; um app pode alterá-los para até três horários, de 5 minutos a 7 dias antes, ou desativá-los. Quando a data muda, os lembretes acompanham a nova data. Os e-mails de eventos nunca dizem onde o evento acontece, e os e-mails de lembrete são enviados na hora, em vez de esperar a notificação continuar sem leitura.
-- Avisos dos moderadores do servidor, o resultado de uma contestação e a resolução de uma denúncia que você fez.
-- Anúncios e mensagens dos administradores sobre o servidor, por exemplo quando ele vai ser encerrado.
-- O limite do servidor para manter publicações vai valer para as suas publicações, e a partir de quando (veja [Excluir publicações antigas automaticamente](posting.md#deleting-old-posts-automatically)).
-- Uma publicação que você agendou não pôde ser publicada no horário, e o motivo, por exemplo porque a publicação a que ela responde não está mais disponível. O rascunho é mantido, então você pode corrigi-lo e agendá-lo de novo; “Abrir seus rascunhos” leva até ele. Esta notificação nunca é enviada por e-mail.
-- Moderadores e administradores também recebem notificações sobre o que os aguarda, como novas denúncias e cadastros.
+- Eventos: alguém convidou você para um evento; os organizadores definiram a data de um evento cujas datas candidatas você respondeu, ou para o qual você foi convidado; um evento a que você vai, a que talvez vá ou para o qual foi convidado mudou de data, de lugar ou de sala de chat de voz, ou foi cancelado; um evento a que você vai ou a que talvez vá começa em breve (um lembrete) ou começa agora, ou alguém escreveu no mural dele (uma publicação que menciona você notifica apenas a menção); e a sala de chat de voz de um evento que você organiza não pode abrir, não pôde abrir no início ou ninguém entrou (o evento em si continua). Os lembretes chegam um dia e uma hora antes do início; um app pode alterá-los para até três horários, de 5 minutos a 7 dias antes, ou desativá-los. Quando a data muda, os lembretes seguem a nova data. Os e-mails de eventos nunca dizem onde o evento acontece, e os e-mails de lembrete são enviados na hora, em vez de esperar a notificação continuar sem leitura.
+- Avisos dos moderadores do servidor, o resultado de um recurso e a resolução de uma denúncia que você fez.
+- Comunicados e mensagens dos administradores sobre o servidor, por exemplo quando ele vai ser encerrado.
+- O máximo do servidor para manter publicações passará a valer para as suas publicações, e a partir de quando (veja [Excluir publicações antigas automaticamente](posting.md#deleting-old-posts-automatically)).
+- Uma publicação que você agendou não pôde ser publicada no horário, e o motivo, por exemplo porque a publicação a que ela responde não está mais disponível. O rascunho é mantido, para você corrigi-lo e agendá-lo de novo; “Abrir seus rascunhos” leva até ele. Esta notificação nunca é enviada por e-mail.
+- Moderadores e administradores também recebem notificações sobre o que os aguarda, como novas denúncias e novos cadastros.
 
-Cada notificação tem um link para o que ela se refere, por exemplo “Abrir publicação” ou “Abrir a denúncia”.
+Cada notificação leva ao assunto dela, por exemplo “Abrir publicação” ou “Abrir a denúncia”.
 
 <!-- source: reading-and-filtering 5cc002476d89 -->
 ## Ler e filtrar

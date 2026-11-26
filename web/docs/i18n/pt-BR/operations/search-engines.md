@@ -8,7 +8,7 @@ Como executar cada mecanismo de busca que a busca de texto completo das publica�
 
 `search = elasticsearch` mantém o índice em um cluster Elasticsearch de versão 8 ou posterior, autogerenciado ou no Elastic Cloud Hosted. Ele foi verificado com o Elasticsearch 9.5 e 8.19. O servidor é dono dos campos do índice, nos quais escreve, filtra, ordena e pagina. Você pode ser dono das configurações do índice: a análise, os shards e as réplicas. Sem configurações próprias, as incluídas não precisam de plugin e encontram japonês como [descrito abaixo](#how-the-built-in-analysis-finds-japanese).
 
-<!-- source: setting-it-up 3e02c35ff319 -->
+<!-- source: setting-it-up bf8c46897990 -->
 ### Configuração
 
 1. Execute o Elasticsearch. Um único nó basta para a maioria dos servidores. Para um início rápido no mesmo host:
@@ -299,7 +299,7 @@ docker run -d --name meilisearch --restart unless-stopped \
 
 `MEILI_ENV=production` se recusa a iniciar sem uma chave mestra e desativa a prévia de busca incluída. O Meilisearch fala HTTP simples: coloque-o atrás de TLS, ou mantenha-o em uma rede privada, quando o `my` o alcançar por qualquer coisa que não seja um link local ou privado.
 
-<!-- source: settings 74547d71e962 -->
+<!-- source: settings 1ae3d39c472d -->
 ### Configurações
 
 ```toml
@@ -349,7 +349,7 @@ Para atualizar o próprio Meilisearch, siga o guia de atualização dele (um dum
 
 A consulta de uma busca é fixa, seja qual for o conteúdo do arquivo de configurações: `matchingStrategy: all`, para que uma publicação tenha todas as palavras; `sort: status_id:desc`, das mais recentes para as mais antigas; um `filter` no ID da publicação para a próxima página; um `limit` da página mais um; `attributesToRetrieve` do ID da publicação; e `showMatchesPosition`, que identifica uma consulta sem nenhuma palavra. As aspas duplas de uma frase e o sinal de menos antes de uma palavra, que o Meilisearch leria como operadores, são descartados, então uma consulta é sempre de palavras simples.
 
-<!-- source: tuning-meilisearch df827448e06c -->
+<!-- source: tuning-meilisearch bc54de1bbf95 -->
 ### Ajustar o Meilisearch
 
 Ajuste o mecanismo com um arquivo JSON de [configurações de índice do Meilisearch](https://www.meilisearch.com/docs/reference/api/settings), nomeado por `search_meilisearch_index_settings_file`. O servidor o verifica na inicialização, quando `search = meilisearch`: ele deve existir e ser um objeto JSON, não deve definir as quatro configurações que o próprio servidor define, e seus `rankingRules`, quando os tem, devem começar com `sort`, o que mantém os resultados das mais recentes para as mais antigas. O Meilisearch verifica os valores quando o servidor os envia. O servidor nunca registra o conteúdo do arquivo no log.

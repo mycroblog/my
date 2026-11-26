@@ -63,7 +63,7 @@ la tasa de solicitudes, los códigos de estado y la latencia; las ejecuciones de
 y los servidores remotos; y la CPU y la memoria de cada proceso. Impórtalo en Grafana (**Dashboards** → **New** → **Import**) y elige tu
 origen de datos de Prometheus; su variable **Job** selecciona el trabajo de recopilación (`my` de forma predeterminada).
 
-<!-- source: google-cloud-cloud-run addd07c417a9 -->
+<!-- source: google-cloud-cloud-run 0db55ed9d56b -->
 ### Google Cloud (Cloud Run)
 
 Con `metrics_exporter = none`, construye las alertas a partir de lo que Cloud Run y Cloud Logging ya tienen:
@@ -73,9 +73,13 @@ Con `metrics_exporter = none`, construye las alertas a partir de lo que Cloud Ru
 - **Jobs y solicitudes**: el servidor escribe una línea de registro por solicitud HTTP (`msg` = `http request`) y por ejecución de job (`msg` = `job`), con las
   mismas etiquetas que las métricas. Crea métricas basadas en registros a partir de ellas, por ejemplo un contador de `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   para los jobs fallidos, o una distribución de `jsonPayload.duration_seconds` filtrada por `jsonPayload."my.surface"="client_api"` para la latencia.
+  La línea de un POST a un inbox también tiene las etiquetas de `my.inbox.activities`: `activity.type`, `my.outcome` y `my.inbox.rejection`.
 - **Cola acumulada y almacenamiento**: cada 15 minutos el job `metrics.snapshot` escribe una línea (`msg` = `metrics snapshot`) con los valores
-  de toda la instancia, como `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size` y `my.media.stored_bytes`. Crea métricas basadas en registros a partir de sus campos;
-  un hueco en estas líneas significa que el tick o la cola se detuvo. La métrica de profundidad de cola de Cloud Tasks cuenta las señales que esperan ser entregadas.
+  de toda la instancia, como `my.queue.oldest_ready_age` (por tipo de job), `my.queue.dead`, `my.db.size` y `my.media.stored_bytes` (por origen). Un filtro no puede
+  comparar entre los campos de un grupo, así que la línea también tiene `my.queue.oldest_ready_age.max` y `my.media.stored_bytes.total`. Crea métricas basadas en registros
+  a partir de sus campos; un hueco en estas líneas significa que el tick o la cola se detuvo. La métrica de profundidad de cola de Cloud Tasks cuenta las señales que esperan ser entregadas.
+- **Adaptadores y el pool de la base de datos**: las líneas `http request` y `job` también llevan los campos de `MyAdapterErrors`, `MyDBPoolSaturated` y
+  `MyDBPoolWaiting`: las operaciones de adaptador de la solicitud o del job, y el uso y las esperas del pool del proceso ([las líneas](running.md#start-the-server)).
 - **Base de datos**: las métricas de utilización de disco y de conexiones de Cloud SQL, o las alertas de uso de tu proveedor de base de datos.
 - **Coste**: un presupuesto de Cloud Billing con umbrales de alerta ([Coste y presupuesto](#cost-and-budget)).
 
@@ -137,7 +141,7 @@ Gravedad: **page** = actuar ya, **ticket** = en horario laboral. «–» en la c
 | Coste | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 1 durante 6 h | ticket | Permisos que faltan, la exportación de facturación sin configurar, se alcanzó el tope de solicitudes, el proveedor no disponible |
 | Coste | Presupuesto superado | – | – | – | Tráfico, almacenamiento o una mala configuración que cuesta más de lo previsto ([abajo](#cost-and-budget)) |
 
-<!-- source: where-to-look 988be973ea5b -->
+<!-- source: where-to-look 3211df763cac -->
 ## Dónde mirar
 
 Estas herramientas reaparecen en la mayoría de las entradas del runbook de abajo.
@@ -148,8 +152,8 @@ Estas herramientas reaparecen en la mayoría de las entradas del runbook de abaj
 - **El comando `my job`** en un host que tiene la configuración del servidor (`queue = db` y `cloudtasks`):
   `my job list` enumera los jobs fallidos, los más recientes primero; `my job retry <id>...` los devuelve a la cola; `my job delete <id>...` los descarta.
   Es seguro ejecutar los jobs de nuevo.
-- **La pantalla de servidores remotos** (Moderación → Servidores remotos, `/moderation/instances`, necesita `manage_domains`): los servidores a los que fallaron las entregas,
-  y aquellos cuyas entregas están en pausa, con el motivo y cuándo. «Reanudar las entregas» marca un servidor como disponible de nuevo. «Abrir un servidor» abre la página de cualquier servidor por su dominio, figure o no en la lista.
+- **La pantalla de servidores remotos** (Moderación → Servidores remotos, `/moderation/instances`, necesita `manage_domains`): cada servidor que este servidor conoce, con su software y su estado;
+  filtra por aquellos a los que las entregas no llegaron o por los que están en pausa. «Reanudar las entregas» marca un servidor como disponible de nuevo. «Abrir un servidor» abre la página de cualquier servidor por su dominio, figure o no en la lista.
 - **Los registros**: líneas JSON en la salida de error estándar. Cada solicitud HTTP termina con una línea cuyo `msg` es `http request`, y cada ejecución de job con una línea cuyo `msg` es `job`
   (`INFO` si tiene éxito, `WARN` si se reintenta, `ERROR` para un job que falló definitivamente, con `error`, `job_id` y `my.job.type`).
   Las líneas dentro de una solicitud llevan su `request_id`, que el cliente ve como `X-Request-Id`.
@@ -269,7 +273,7 @@ Soluciona:
 - Si se pusieron en pausa servidores remotos durante la interrupción, se reanudan con la siguiente entrega correcta, petición firmada o con el sondeo diario; también puedes pulsar
   «Reanudar envíos» en la pantalla de servidores remotos.
 
-<!-- source: myremoteserverspaused 17c3ec51fb53 -->
+<!-- source: myremoteserverspaused 0f1e420b43eb -->
 ### MyRemoteServersPaused
 
 Se pusieron en pausa las entregas a 5 o más servidores en el último día. Un servidor se pone en pausa cuando las entregas a él fallaron en 7 días distintos, así que unas pocas pausas a la semana
@@ -278,7 +282,7 @@ son normales: los servidores se cierran. Muchas a la vez significan que muchos s
 
 La métrica no tiene etiqueta por servidor (las etiquetas nunca llevan un dominio remoto). Comprueba:
 
-- La pantalla de servidores remotos: la pestaña «En pausa» enumera los servidores en pausa, con cuándo y por qué. Si comparten algo (un proveedor de alojamiento, un software)
+- La pantalla de servidores remotos: el filtro «No disponibles» enumera los servidores en pausa; la página de cada servidor dice desde cuándo. Si comparten algo (un proveedor de alojamiento, un software)
   o están dispersos.
 - `MyDeliveryFailuresHigh` y `MyDeliveryAllFailing` durante la última semana: un problema de red de este lado que duró días pone en pausa a muchos servidores.
 
@@ -473,11 +477,11 @@ Soluciona:
 El trabajo espera una conexión libre con la base de datos, o dejó de esperar tras [`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) (los timeouts son solo de PostgreSQL): las peticiones responden `503` y los trabajos se ejecutan de nuevo más tarde. Sigue [MyDBPoolSaturated](#mydbpoolsaturated);
 comprueba también que la propia base de datos no ha alcanzado su límite de conexiones.
 
-<!-- source: mydatabasestoragelarge edf767115918 -->
+<!-- source: mydatabasestoragelarge 2dd93b626b08 -->
 ### MyDatabaseStorageLarge
 
-La base de datos ocupa más de lo que habías previsto. `my_db_size_bytes` es el tamaño de la base de datos PostgreSQL (`pg_database_size`, lo que cuentan los límites de almacenamiento
-de los proveedores) o del archivo SQLite (sin contar su registro de escritura anticipada). Esto es crecimiento, no un fallo. Define el umbral de la regla con un margen por debajo del límite de almacenamiento
+La base de datos ocupa más de lo que habías previsto. `my_db_size_bytes` es el tamaño de las tablas y los índices del esquema PostgreSQL de la instancia (los límites de almacenamiento
+de los proveedores cuentan toda la base de datos) o del archivo SQLite (sin contar su registro de escritura anticipada). Esto es crecimiento, no un fallo. Define el umbral de la regla con un margen por debajo del límite de almacenamiento
 de tu plan de base de datos, o del volumen que contiene el archivo SQLite, que también debe dejar espacio para el registro de escritura anticipada y para las copias de seguridad.
 
 Soluciona:

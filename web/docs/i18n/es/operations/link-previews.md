@@ -219,7 +219,7 @@ Las peticiones no envían cookies ni `Referer`, y nada indica qué cuenta o publ
 Dice lo que hace este servidor, a partir de `link_cards` y `link_cards_ignore_robots_txt`, y muestra el contacto de la instancia (`contact_account`, `contact_email`). Define un contacto, para que un sitio tenga dónde preguntar: sin él, la página dice que este servidor no publica ninguno.
 Con `link_cards_ignore_robots_txt` activado, la página dice que un sitio no puede rechazar a este servidor en `robots.txt`.
 
-<!-- source: robotstxt e8d2deaef93d -->
+<!-- source: robotstxt 8646f54fafaf -->
 ### robots.txt
 
 El nombre en `robots.txt` es `my-linkcard`, en mayúsculas o minúsculas. Sin un grupo con ese nombre, se aplica el grupo `*`, como indica la RFC 9309. Se leen `Allow`, `Disallow`, `*` y `$`, gana la coincidencia más larga y `Allow` gana un empate; `Crawl-delay` y otros registros no se leen.
@@ -233,7 +233,7 @@ El nombre en `robots.txt` es `my-linkcard`, en mayúsculas o minúsculas. Sin un
 | Más de 5 redirecciones | Sin archivo: obtiene la página | 24 horas |
 
 - La URL de la página se comprueba antes de solicitarla, sea cual sea la visibilidad de la publicación. Lo mismo ocurre con cada URL a la que redirige, contra el `robots.txt` del origen de esa URL, y una redirección a una URL rechazada termina ahí: el servidor no la solicita y no crea tarjeta.
-- Una URL que `robots.txt` no permite no se vuelve a obtener durante 24 horas, como cualquier otro fallo de una página. Cuando el archivo solo no se pudo leer, el servidor vuelve a intentar la página una hora después, hasta el límite de intentos del trabajo.
+- Una URL que `robots.txt` no permite no se vuelve a obtener durante 24 horas, como cualquier otro fallo de una página. Cuando el archivo solo no se pudo leer, el servidor vuelve a intentar la página una hora después, hasta el límite de intentos del trabajo, y después deja la publicación sin tarjeta. El error del trabajo indica el estado o el fallo de red.
 - Una imagen se comprueba de la misma manera contra su propio origen. Una imagen no permitida deja una tarjeta sin imagen. Cuando el archivo solo no se pudo leer, se mantiene una imagen registrada antes y una imagen nueva se omite hasta la siguiente nueva obtención.
 - Una nueva obtención, que una publicación puede provocar 14 días después de la última, elimina la tarjeta cuando `robots.txt` no permite su URL. Cuando el archivo solo no se pudo leer, la tarjeta se mantiene.
 - El servidor no recorre sus tarjetas para volver a comprobarlas, así que un sitio que cambia sus reglas pierde una tarjeta en la siguiente nueva obtención de esa tarjeta.

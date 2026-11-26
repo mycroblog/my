@@ -49,15 +49,16 @@ promtool test rules alerts.test.yml
 
 [`deploy/monitoring/grafana/my.json`](../../deploy/monitoring/grafana/my.json) 是基于同一组 Prometheus 指标的 Grafana 仪表盘：请求速率、状态码和延迟；任务运行次数、各任务类型的 worker 耗时和队列；投递、收件箱活动和远程服务器；以及每个进程的 CPU 和内存。在 Grafana 中导入它（**Dashboards** → **New** → **Import**），并选择你的 Prometheus 数据源；它的 **Job** 变量用于选择抓取任务（默认是 `my`）。
 
-<!-- source: google-cloud-cloud-run addd07c417a9 -->
+<!-- source: google-cloud-cloud-run 0db55ed9d56b -->
 ### Google Cloud（Cloud Run）
 
 在 `metrics_exporter = none` 时，请用 Cloud Run 和 Cloud Logging 已有的数据来构建告警：
 
 - **HTTP 错误和延迟**：Cloud Run 按响应码类别统计的请求数，以及该服务的请求延迟指标。
 - **错误**：`error report` 日志行会进入 Error Reporting，它会对错误分组，并可在出现新错误和重复错误时通知你（[错误报告](error-reporting.md#google-cloud-cloud-run)）。
-- **任务和请求**：服务器为每个 HTTP 请求（`msg` = `http request`）和每次任务运行（`msg` = `job`）写一行日志，标签与指标相同。可以据此创建基于日志的指标，例如用 `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"` 对失败的任务计数，或者对按 `jsonPayload."my.surface"="client_api"` 过滤的 `jsonPayload.duration_seconds` 做分布统计来得到延迟。
-- **队列积压和存储**：任务 `metrics.snapshot` 每 15 分钟写一行日志（`msg` = `metrics snapshot`），其中是整个实例范围的值，例如 `my.queue.oldest_ready_age`、`my.queue.dead`、`my.db.size` 和 `my.media.stored_bytes`。请根据它的字段创建基于日志的指标；这些日志行出现间隔，说明定时触发或队列已停止。Cloud Tasks 的队列深度指标统计的是等待投递的信号。
+- **任务和请求**：服务器为每个 HTTP 请求（`msg` = `http request`）和每次任务运行（`msg` = `job`）写一行日志，标签与指标相同。可以据此创建基于日志的指标，例如用 `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"` 对失败的任务计数，或者对按 `jsonPayload."my.surface"="client_api"` 过滤的 `jsonPayload.duration_seconds` 做分布统计来得到延迟。向收件箱发送 POST 的那一行还带有 `my.inbox.activities` 的标签：`activity.type`、`my.outcome` 和 `my.inbox.rejection`。
+- **队列积压和存储**：任务 `metrics.snapshot` 每 15 分钟写一行日志（`msg` = `metrics snapshot`），其中是整个实例范围的值，例如 `my.queue.oldest_ready_age`（按任务类型）、`my.queue.dead`、`my.db.size` 和 `my.media.stored_bytes`（按来源）。过滤条件无法跨一个分组的字段进行比较，所以这一行还带有 `my.queue.oldest_ready_age.max` 和 `my.media.stored_bytes.total`。请根据它的字段创建基于日志的指标；这些日志行出现间隔，说明 tick 或队列已停止。Cloud Tasks 的队列深度指标统计的是等待投递的信号。
+- **适配器和数据库连接池**：`http request` 和 `job` 行还带有 `MyAdapterErrors`、`MyDBPoolSaturated` 和 `MyDBPoolWaiting` 所需的字段：该请求或任务的适配器操作，以及进程对连接池的使用和等待（[这些行](running.md#start-the-server)）。
 - **数据库**：Cloud SQL 的磁盘使用率和连接数指标，或你的数据库提供商的用量告警。
 - **成本**：带有告警阈值的 Cloud Billing 预算（[成本和预算](#cost-and-budget)）。
 
@@ -115,20 +116,20 @@ promtool test rules alerts.test.yml
 | 费用 | [`MyBillingImportFailing`](#mybillingimportfailing) | `my_billing_import_failing` | 为 1，持续 6 小时 | ticket | 缺少权限、未设置账单导出、达到请求上限、服务商不可用 |
 | 费用 | 超出预算 | – | – | – | 流量、存储或配置错误导致费用超出计划（[见下文](#cost-and-budget)） |
 
-<!-- source: where-to-look 988be973ea5b -->
+<!-- source: where-to-look 3211df763cac -->
 ## 查看哪里
 
 下面的运维手册条目中，大多会再次用到这些工具。
 
-- **任务页面**（管理 → 任务，`/admin/jobs`，需要 `manage_jobs`）：按状态（排队中、运行中、重试中、失败）和类型统计的数量，以及等待最久的任务；它的 **任务** 页面（`/admin/jobs/list`）列出某一状态的任务，每个任务的页面有它最近的错误和未成功的尝试。待处理的任务只会列出保存在数据库中的队列的（`queue = db` 和 `cloudtasks`）；失败的任务和尝试则会列出所有队列的。
+- **任务页面**（管理 → 任务，`/admin/jobs`，需要 `manage_jobs`）：按状态（排队中、运行中、重试中、失败）和类型统计的数量，以及等待最久的任务；它的**任务**页面（`/admin/jobs/list`）列出某一状态的任务，每个任务的页面有它最近的错误和未成功的尝试。待处理的任务只会列出保存在数据库中的队列的（`queue = db` 和 `cloudtasks`）；失败的任务和尝试则会列出所有队列的。
 - **`my job` 命令**，在具有服务器配置的主机上运行（`queue = db` 和 `cloudtasks`）：`my job list` 按最新在前列出失败的任务；`my job retry <id>...` 把它们放回队列；`my job delete <id>...` 丢弃它们。任务可以安全地重新运行。
-- **远程服务器页面**（审核 → 远程服务器，`/moderation/instances`，需要 `manage_domains`）：投递未能到达的服务器，以及投递已暂停的服务器，并附有原因和时间。“恢复投递”会把服务器重新标为可用。“打开服务器”会按域名打开任意服务器的页面，无论它是否在列表中。
+- **远程服务器页面**（审核 → 远程服务器，`/moderation/instances`，需要 `manage_domains`）：本服务器所知的每一台服务器，带有它的软件和状态；可以筛选出投递未能到达的服务器，或已暂停的服务器。“恢复投递”会把服务器重新标为可用。“打开服务器”会按域名打开任意服务器的页面，无论它是否在列表中。
 - **日志**：标准错误上的 JSON 行。每个 HTTP 请求以一行 `msg` 为 `http request` 的日志结束，每次任务运行以一行 `msg` 为 `job` 的日志结束（成功为 `INFO`，重试为 `WARN`，彻底失败的任务为 `ERROR`，并带有 `error`、`job_id` 和 `my.job.type`）。请求内部的日志行带有它的 `request_id`，客户端看到的是 `X-Request-Id`。
   - `federation.deliver` 一次运行的日志行还会说明投递去了哪里以及结果如何：`my.delivery.domain`（远程服务器的域名）、`activity.type`（例如 `Create`）、`my.delivery.outcome`（`succeeded`、`retryable_failure`、`permanent_failure` 或 `skipped`），以及 `http.response.status_code`（收件箱的响应，在它没有响应或没有发送任何内容时不存在）。`my.outcome` 仍是这次任务运行的结果。该日志行从不写出发送者、活动或收件箱 URL。Cloud Logging：`jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
   - Docker Compose：`docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging：`jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights：``filter msg = "job" and `my.outcome` = "dead"``
-- **错误报告**：`error report` 日志行和 错误页面（管理 → 错误，`/admin/errors`，需要 `manage_errors`）（[错误报告](error-reporting.md)）。
+- **错误报告**：`error report` 日志行和“错误”页面（管理 → 错误，`/admin/errors`，需要 `manage_errors`）（[错误报告](error-reporting.md)）。
 - **追踪**，在 `traces_exporter = otlp` 时：日志行带有 `trace_id`；在你的追踪后端中打开它，可以看到慢请求的时间花在了哪里。
 - **维护模式**（[维护](maintenance.md)）：以维护页面应答每个请求，并且不触碰任何适配器。在你修复数据库或 KV 存储时使用它。
 
@@ -231,14 +232,14 @@ promtool test rules alerts.test.yml
 - 如果投递已用完重试次数，请在任务页面上重新运行失败的 `federation.deliver` 任务。
 - 如果远程服务器在故障期间被暂停，它们会在下一次成功投递、收到签名请求或每日探测时恢复；你也可以在远程服务器页面上点击“恢复投递”。
 
-<!-- source: myremoteserverspaused 17c3ec51fb53 -->
+<!-- source: myremoteserverspaused 0f1e420b43eb -->
 ### MyRemoteServersPaused
 
 过去一天内，有 5 个或更多服务器的投递被暂停。在 7 个不同的日子投递失败后，服务器会被暂停，因此每周有少量暂停是正常的：服务器会关停。一次性出现很多则意味着许多服务器同时失败了数天。`my_federation_instance_state` = `available` 的 `my_federation_instances` 统计的是仍在投递但曾在某天失败的服务器；该值的跳升会先于暂停出现。
 
 该指标没有按服务器区分的标签（标签从不携带远程域名）。检查：
 
-- 远程服务器页面：“已暂停”标签页列出了被暂停的服务器，以及暂停的时间和原因。看看它们是否有共同点（同一托管服务商、同一软件），还是分散各处。
+- 远程服务器页面：“不可用”筛选会列出被暂停的服务器，每个服务器的页面会说明从什么时候开始。看看它们是否有共同点（同一托管服务商、同一软件），还是分散各处。
 - 过去一周的 `MyDeliveryFailuresHigh` 和 `MyDeliveryAllFailing`：本方持续数天的网络问题会导致许多服务器被暂停。
 
 处理：
@@ -421,10 +422,10 @@ Go 运行时使用了超过 90% 的 `GOMEMLIMIT`。接近上限时，垃圾回�
 
 工作在等待空闲的数据库连接，或在 [`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) 之后放弃等待（超时仅适用于 PostgreSQL）：请求返回 `503`，任务稍后再次运行。请按照 [MyDBPoolSaturated](#mydbpoolsaturated) 处理；同时检查数据库本身是否已达到其连接数上限。
 
-<!-- source: mydatabasestoragelarge edf767115918 -->
+<!-- source: mydatabasestoragelarge 2dd93b626b08 -->
 ### MyDatabaseStorageLarge
 
-数据库占用的空间超出了你的规划。`my_db_size_bytes` 是 PostgreSQL 数据库的大小（`pg_database_size`，即服务商的存储上限所统计的大小），或 SQLite 文件的大小（不含其预写日志）。这是增长，而不是故障。请在规则中把阈值设为比你的数据库套餐存储上限低一定余量的值；对于 SQLite，则是比存放 SQLite 文件的卷的上限低一定余量的值，该卷还必须为预写日志和备份留出空间。
+数据库占用的空间超出了你的规划。`my_db_size_bytes` 是实例的 PostgreSQL schema 中各表和索引的大小（服务商的存储上限统计的是整个数据库），或 SQLite 文件的大小（不含其预写日志）。这是增长，而不是故障。请在规则中把阈值设为比你的数据库套餐存储上限低一定余量的值，或比存放 SQLite 文件的卷的上限低一定余量的值，该卷还必须为预写日志和备份留出空间。
 
 处理：
 

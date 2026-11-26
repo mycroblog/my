@@ -4,26 +4,26 @@
 Choisissez « Notifications » dans la navigation. La navigation indique combien de notifications ne sont pas lues
 (« Notifications, 3 non lues »).
 
-<!-- source: what-you-are-notified-of afff09e059ac -->
+<!-- source: what-you-are-notified-of f82164242973 -->
 ## Ce dont vous êtes notifié
 
 Lorsque quelqu’un vous suit, vous mentionne ou réagit à vos publications, cela apparaît ici. Les types que vous pouvez voir sont :
 
 - Les mentions, citations, boosts, favoris et réactions par émoji à vos publications. Plusieurs boosts ou favoris d’une même publication sont regroupés sur une seule ligne (« … et 2 autres ont boosté votre publication »). Une réponse ou un boost venant d’un autre serveur qui sort du cadre de qui vous laissez répondre à la publication ou la booster, ou qui attend votre approbation, ne notifie personne d’une mention (voir [Publier](posting.md#other-things-to-know)).
-- Les abonnements : quelqu’un vous a suivi, a demandé à vous suivre ou a accepté votre demande d’abonnement. Un abonnement propose « Suivre en retour ». La ligne en haut, « … demandes d’abonnement », ouvre les demandes qui attendent encore, où vous « Approuvez » ou « Refusez » chacune d’elles, et elle indique alors « Approuvée » ou « Refusée ».
+- Les abonnements : quelqu’un s’est abonné à vous, a demandé à s’abonner à vous ou a accepté votre demande d’abonnement. Un abonnement propose « Suivre en retour ». La ligne en haut, « … demandes d’abonnement », ouvre les demandes encore en attente, où vous « Approuvez » ou « Refusez » chacune, et elle indique ensuite « Approuvée » ou « Refusée ».
 - Les demandes d’approbation : quelqu’un a demandé à répondre à votre publication, à la booster ou à la citer, ce qui attend votre approbation, et l’auteur d’une publication a approuvé ou refusé votre propre réponse, boost ou citation. La ligne en haut, « … en attente de votre approbation », ouvre la liste où vous y répondez (voir [Publier](posting.md#who-can-reply-boost-and-quote)).
-- Les nouvelles publications des comptes dont vous avez choisi d’être notifié (« M’avertir des nouvelles publications »).
+- Les nouvelles publications des comptes dont vous avez choisi d’être notifié (« Me notifier des nouvelles publications »).
 - Un sondage auquel vous avez participé est terminé.
-- Un compte que vous suivez a déménagé vers un autre compte, et ce qu’est devenu votre abonnement.
-- Le chat vocal : quelqu’un a ouvert un salon vocal ou vous a invité à en rejoindre un.
-- Les événements : quelqu’un vous a invité à un événement ; les organisateurs ont fixé la date d’un événement dont vous avez répondu aux dates candidates, ou auquel vous avez été invité ; un événement auquel vous participez, auquel vous participerez peut-être ou auquel vous avez été invité a changé de date, de lieu ou de salon vocal, ou a été annulé ; un événement auquel vous participez ou participerez peut-être commence bientôt (un rappel) ou commence maintenant ; et le salon vocal d’un événement que vous organisez ne peut pas s’ouvrir, n’a pas pu s’ouvrir au début, ou personne n’est venu (l’événement a lieu quand même). Les rappels arrivent un jour et une heure avant le début ; une application peut les modifier, jusqu’à trois fois, de 5 minutes à 7 jours avant, ou les désactiver. Lorsque la date change, les rappels suivent la nouvelle date. Les e-mails d’événement n’indiquent jamais où l’événement a lieu, et les e-mails de rappel sont envoyés aussitôt, sans attendre que la notification reste non lue.
+- Un compte que vous suivez a migré vers un autre compte, et ce qu’il est advenu de votre abonnement.
+- Le chat vocal : quelqu’un a ouvert un salon de chat vocal ou vous a invité à en rejoindre un.
+- Les événements : quelqu’un vous a invité à un événement ; les organisateurs ont fixé la date d’un événement dont vous aviez répondu aux dates candidates, ou auquel vous étiez invité ; un événement auquel vous participez, auquel vous participerez peut-être ou auquel vous étiez invité a changé de date, de lieu ou de salon de chat vocal, ou a été annulé ; un événement auquel vous participez ou participerez peut-être commence bientôt (un rappel) ou commence maintenant, ou quelqu’un a écrit sur son tableau (une publication qui vous mentionne ne vous notifie que de la mention) ; et le salon de chat vocal d’un événement que vous organisez ne peut pas s’ouvrir, n’a pas pu s’ouvrir au début, ou personne n’est venu (l’événement lui-même a lieu). Les rappels arrivent un jour et une heure avant le début ; une application peut les changer pour jusqu’à trois moments, de 5 minutes à 7 jours avant, ou les désactiver. Lorsque la date change, les rappels suivent la nouvelle date. Les e-mails d’événement n’indiquent jamais où l’événement a lieu, et les e-mails de rappel sont envoyés tout de suite au lieu d’attendre que la notification reste non lue.
 - Les avis des modérateurs du serveur, le résultat d’une contestation et la résolution d’un signalement que vous avez fait.
-- Les annonces et les messages des administrateurs concernant le serveur, par exemple lorsqu’il va fermer.
-- La durée maximale de conservation des publications fixée par le serveur s’appliquera à vos publications, et à partir de quand (voir [Supprimer automatiquement les anciennes publications](posting.md#deleting-old-posts-automatically)).
-- Une publication que vous aviez programmée n’a pas pu être publiée à l’heure prévue, avec la raison, par exemple parce que la publication à laquelle elle répond n’est plus disponible. Le brouillon est conservé : vous pouvez le corriger et le programmer de nouveau ; « Ouvrir vos brouillons » y mène. Cette notification n’est jamais envoyée par e-mail.
-- Les modérateurs et les administrateurs reçoivent aussi des notifications sur ce qui les attend, comme les nouveaux signalements et les nouvelles inscriptions.
+- Les annonces et messages des administrateurs au sujet du serveur, par exemple lorsqu’il va fermer.
+- Le maximum de conservation des publications du serveur va s’appliquer à vos publications, et à partir de quand (voir [Supprimer automatiquement les anciennes publications](posting.md#deleting-old-posts-automatically)).
+- Une publication que vous avez programmée n’a pas pu être publiée à l’heure prévue, et pourquoi, par exemple parce que la publication à laquelle elle répond n’est plus disponible. Le brouillon est conservé, afin que vous puissiez le corriger et le programmer de nouveau ; « Ouvrir vos brouillons » y mène. Cette notification n’est jamais envoyée par e-mail.
+- Les modérateurs et les administrateurs reçoivent aussi des notifications sur ce qui les attend, comme les nouveaux signalements et inscriptions.
 
-Chaque notification renvoie vers ce dont elle parle, par exemple « Ouvrir la publication » ou « Ouvrir le signalement ».
+Chaque notification renvoie à ce dont elle parle, par exemple « Ouvrir la publication » ou « Ouvrir le signalement ».
 
 <!-- source: reading-and-filtering 5cc002476d89 -->
 ## Lire et filtrer

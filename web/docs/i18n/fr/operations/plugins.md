@@ -141,7 +141,7 @@ gRPC). Un plugin peut ignorer cet en-tête : le serveur cesse d’attendre de 
 types qu’une requête peut attendre (`key_manager`, `translator`, `search`, `signup.check`, `media.check`, `local.status`, `inbound.actor` et `local.profile`), et
 inférieur à 5 minutes, la durée maximale d’une tâche, pour les autres.
 
-<!-- source: test-a-plugin 5d8195bb27f5 -->
+<!-- source: test-a-plugin f954dc9b5d3e -->
 ## Tester un plugin
 
 `my plugin test` exécute le contrat d’un type contre un plugin en marche et rapporte chaque cas. Il ne lit aucune configuration :
@@ -159,44 +159,45 @@ FAIL echo_empty: the outcome is OUTCOME_UNSPECIFIED, not OUTCOME_OK
 2 passed, 1 failed, 0 skipped
 ```
 
-Le code de sortie est 1 quand un cas échoue. Les options ont le sens des paramètres : `--protocol`, `--token-file`, `--tls-ca-file`,
-`--tls-cert-file`, `--tls-key-file` et `--timeout`. Il applique les mêmes règles que le serveur : `--kind mailer` refuse donc une
-adresse `http://`. Le plugin testé peut être un vrai plugin : un cas qui fait plus que l’appel lui-même ne s’exécute donc que si
-une option le demande. Un type dont la version n’a pas encore le contrat rapporte `reachable` et un `SKIP`.
+Le code de sortie est 1 lorsqu’un cas échoue. Les options ont le sens des réglages : `--protocol`, `--token-file`, `--tls-ca-file`,
+`--tls-cert-file`, `--tls-key-file` et `--timeout` ; `--instance` est le `host` envoyé dans l’en-tête `My-Instance`
+(par défaut `my.test`). Il applique les mêmes règles que le serveur : `--kind mailer` refuse donc une
+adresse `http://`. Le plugin testé peut être un vrai plugin ; un cas qui fait plus que l’appel lui-même ne s’exécute donc que
+si une option le demande. Un type dont la version n’a pas encore le contrat rapporte `reachable` et un `SKIP`.
 
-`--kind billing` vérifie seulement que le plugin refuse de dépenser quoi que ce soit quand aucune requête facturée n’est autorisée. `--billed` effectue aussi
-une vraie récupération du mois en cours et du mois précédent, et vérifie la réponse comme le fait un import ; cela peut coûter de l’argent auprès
-des prestataires derrière le plugin. [Importer les coûts d’utilisation du cloud](billing-import.md#a-plugin-billing_sources--plugin) contient le
+`--kind billing` vérifie seulement que le plugin refuse de dépenser quoi que ce soit lorsqu’aucune requête facturée n’est autorisée. `--billed` fait aussi
+une vraie récupération du mois en cours et du mois précédent, et vérifie la réponse comme le fait une importation ; cela peut coûter de l’argent auprès
+des fournisseurs derrière le plugin. [Importer les coûts d’utilisation du cloud](billing-import.md#a-plugin-billing_sources--plugin) donne le
 contrat de ce type.
 
-`--kind mailer` n’effectue aucun appel du RPC sauf si `--mail-to` nomme un destinataire. Avec lui, la commande envoie un vrai message à cette adresse,
+`--kind mailer` n’appelle aucun RPC, sauf si `--mail-to` nomme un destinataire. Avec lui, la commande envoie un vrai message à cette adresse,
 depuis `--mail-from` (par défaut : la même adresse), et vérifie que le plugin refuse une requête sans destinataire.
-[Envoyer des e-mails](email.md#a-plugin-mail--plugin) contient le contrat de ce type.
+[Envoyer des e-mails](email.md#a-plugin-mail--plugin) donne le contrat de ce type.
 
-`--kind translator` envoie quelques phrases anglaises fixes, en les traduisant vers le japonais (`--translate-from` et `--translate-to`
-choisissent une autre paire pour un plugin qui n’en a que certaines). Un service derrière le plugin qui facture au caractère facture aussi ceux-ci,
+`--kind translator` envoie quelques phrases anglaises fixes, en les traduisant en japonais (`--translate-from` et `--translate-to`
+choisissent une autre paire pour un plugin qui n’en a que quelques-unes). Un service derrière le plugin qui facture au caractère facture aussi celles-ci,
 environ 200 caractères. Il vérifie la forme des réponses, et que le plugin refuse la langue `qaa`, un code que l’ISO 639
-réserve à un usage privé. Il ne peut pas juger les mots : lisez vous-même une traduction du plugin.
-[Traduire des publications](#translating-posts) contient le contrat de ce type.
+réserve à l’usage privé. Il ne peut pas juger les mots : lisez vous-même une traduction du plugin.
+[Traduire des publications](#translating-posts) donne le contrat de ce type.
 
-`--kind search` effectue des recherches, et n’écrit et ne retire que ses propres documents : quelques-uns avec des ID qu’aucune publication n’a, d’un
-auteur qui n’est aucun compte, contenant un mot fabriqué pour l’exécution, qu’il retire à la fin. Il vérifie qu’une requête sans
+`--kind search` effectue des recherches, et n’écrit et ne supprime que ses propres documents : quelques-uns avec des ID qu’aucune publication n’a, d’un
+auteur qui n’est aucun compte, contenant un mot fabriqué pour l’exécution, qu’il supprime à la fin. Il vérifie qu’une requête sans
 mot ne trouve rien, qu’une requête dans le langage de requête d’un moteur ou en japonais n’échoue pas, que le plugin refuse un
-curseur qu’il n’a pas émis, et que les documents sont trouvés du plus récent au plus ancien, page par page, remplacés, et retirés par publication et par
-auteur. `--clear-index` exécute aussi les cas qui retirent tous les documents d’une visibilité et l’index entier : ne l’utilisez que
-contre un index de test. [Rechercher des publications](#searching-posts) contient le contrat de ce type.
+curseur qu’il n’a pas émis, et que les documents sont trouvés du plus récent au plus ancien, page par page, remplacés, et supprimés par publication et par
+auteur. `--clear-index` exécute aussi les cas qui suppriment tous les documents d’une visibilité et l’index entier : ne l’utilisez que
+sur un index de test. [Rechercher des publications](#searching-posts) donne le contrat de ce type.
 
 `--kind media_image`, `--kind media_video` et `--kind media_audio` n’envoient que de petits fichiers de test qu’ils fabriquent eux-mêmes :
-une photo, un émoji et un GIF animé, un MP4 avec une piste vidéo et une piste son, ou un MP3. Chacun cache un lieu ou un
-titre dans ses métadonnées, et un cas échoue quand cela revient dans une sortie. Ils vérifient chaque sortie comme le fait le serveur.
-[Convertir des médias](#converting-media) contient le contrat de ces types.
+une photo, un émoji et un GIF animé, un MP4 avec une piste vidéo et une piste son, ou un MP3. Chacun cache une position ou un
+titre dans ses métadonnées, et un cas échoue lorsque cela revient dans une sortie. Ils vérifient chaque sortie comme le fait le serveur.
+[Convertir des médias](#converting-media) donne le contrat de ces types.
 
 `--kind key_manager` exécute les vérifications que le serveur exécute à chaque démarrage, et vérifie que le plugin refuse une valeur modifiée et une
-KEK qu’il ne détient pas. Il n’envoie que des clés qu’il invente et jette, il est donc sûr contre un vrai magasin de clés, qui peut facturer
-les appels. Il vérifie que les réponses ont la bonne forme, pas comment le plugin conserve sa KEK.
-[Gérer la clé](key-management.md#a-plugin) contient le contrat de ce type.
+KEK qu’il ne détient pas. Il n’envoie que des clés qu’il invente et jette, et peut donc être utilisé sans risque contre un vrai magasin de clés, qui peut facturer
+les appels. Il vérifie que les réponses ont la bonne forme, pas la manière dont le plugin garde sa KEK.
+[Gérer la clé](key-management.md#a-plugin) donne le contrat de ce type.
 
-`probe` est le plus petit type, et le serveur ne lui délègue rien. Servez-le en premier, pour vérifier le transport, le
+`probe` est le plus petit type, et le serveur ne lui délègue rien. Servez-le d’abord, pour vérifier le transport, le
 protocole et l’authentification avant d’écrire le reste du plugin.
 
 <!-- source: translating-posts c9d31b2b9157 -->
@@ -402,19 +403,20 @@ Un `outcome` manquant ou inconnu, un appel échoué et une page qui enfreint ces
 d’une telle page n’est affiché. Un appel dure au plus `plugin_search_timeout` (10 secondes par défaut), et 10 secondes quelle que soit la valeur de ce
 paramètre.
 
-<!-- source: converting-media 36df3dbdb21b -->
+<!-- source: converting-media 14a4c14a3699 -->
 ## Convertir des médias
 
-Un plugin média accomplit la partie lourde du traitement des envois, afin qu’il puisse tourner sur une autre machine. Il existe trois types,
+Un plugin média accomplit la partie lourde du traitement des téléversements, afin qu’elle puisse s’exécuter sur une autre machine. Il y a trois types,
 et vous choisissez chacun séparément :
 
-- `media_image` ré-encode les images en leurs variantes.
-- `media_video` remuxe les vidéos : des fichiers avec une piste vidéo, avec ou sans son.
-- `media_audio` remuxe les fichiers audio seuls.
+- `media_image` réencode les images en leurs variantes.
+- `media_video` remuxe les vidéos : les fichiers avec une piste vidéo, avec ou sans son.
+- `media_audio` remuxe les fichiers uniquement audio.
 
-Le serveur fait toujours le reste lui-même. Il détecte le format de chaque envoi, distingue les vidéos des fichiers audio, vérifie chaque
-envoi par rapport aux limites à son arrivée, et fabrique les aperçus des médias distants. Un type dont le paramètre reste `native` est
-traité dans le serveur.
+Le serveur fait toujours lui-même le reste. Il détecte le format de chaque téléversement, distingue les vidéos des fichiers audio, vérifie chaque
+téléversement au regard des limites à son arrivée, et fabrique les aperçus des médias distants. Un type dont le réglage reste `native` est
+traité dans le serveur. Un plugin `media_image` peut aussi prendre des téléversements AVIF, HEIC et APNG, que le serveur ne
+décode jamais : il accepte ceux que son plugin déclare, après avoir lu leurs dimensions et leurs images dans leurs en-têtes.
 
 ```sh
 # Only videos go to a plugin, on a machine of its own; images and audio stay in the server.
@@ -422,55 +424,57 @@ MY_MEDIA_VIDEO=plugin
 MY_PLUGIN_MEDIA_VIDEO_ADDRESS=https://media.internal:9000
 ```
 
-Définissez `media_<kind> = plugin` et `plugin_media_<kind>_address` pour chaque type que vous confiez, puis redémarrez. Un plugin peut
-prendre plusieurs types : donnez-lui la même adresse pour chacun. Chaque type exécute au plus deux appels à la fois, et chaque appel dure au plus
-`plugin_media_<kind>_timeout` (4 minutes par défaut), afin qu’une vidéo lente ne retarde pas les images.
+Définissez `media_<kind> = plugin` et `plugin_media_<kind>_address` pour chaque type que vous confiez, puis redémarrez. Un même plugin peut
+prendre plusieurs types : donnez-lui la même adresse pour chacun. Chaque type exécute deux appels à la fois au plus, et chaque appel dure
+au plus `plugin_media_<kind>_timeout` (4 minutes par défaut) ; une vidéo lente ne retient donc pas les images.
 
-- **Retirer les métadonnées est le travail du plugin.** Les envois parviennent au plugin tels qu’ils ont été envoyés, avec leurs données EXIF et leurs
-  balises, qui peuvent contenir le lieu où une photo a été prise. Le serveur vérifie le format et la taille de chaque sortie, mais il ne peut pas
-  savoir si toute trace de métadonnées a disparu. `my plugin test --kind media_image` vérifie que le lieu de ses fichiers de test
+- **Retirer les métadonnées est le travail du plugin.** Les téléversements parviennent au plugin tels qu’ils ont été envoyés, avec leurs données EXIF et
+  leurs balises, qui peuvent contenir l’endroit où une photo a été prise. Le serveur vérifie le format et la taille de chaque sortie, mais il ne peut pas
+  savoir que toute trace de métadonnées a disparu. `my plugin test --kind media_image` vérifie que la position de ses fichiers de test
   ne revient pas ; vérifiez le reste dans le plugin.
-- **Le TCP simple envoie les fichiers sans chiffrement.** Les types de média acceptent `http://`, avec un avertissement au démarrage. Les envois, avec leurs
-  métadonnées, traversent alors le réseau en clair, et rien n’authentifie aucune des extrémités : quiconque se trouve sur ce réseau peut les lire
-  ou répondre à la place du plugin. Utilisez un socket Unix ou `https://` sauf si le réseau n’appartient qu’à vous.
+- **Le TCP simple envoie les téléversements sans chiffrement.** Les types média acceptent `http://`, avec un avertissement au démarrage. Les téléversements, avec leurs
+  métadonnées, traversent alors le réseau en clair, et rien n’authentifie ni l’une ni l’autre extrémité : n’importe qui sur ce réseau peut les lire
+  ou répondre à la place du plugin. Utilisez une socket Unix ou `https://`, sauf si le réseau n’appartient qu’à vous.
 - **Le serveur ne fait pas confiance à la sortie.** Il détecte le format de chaque sortie d’après son contenu, jamais d’après ce que le
-  plugin déclare, et la sert avec le type de contenu et l’extension de fichier de ce format. Il décode chaque sortie sous
-  les mêmes limites qu’un envoi, et vérifie qu’elle respecte sa taille. Une sortie plus grande que déclaré ou que ces
-  limites, d’un format que le plugin n’a pas déclaré, ou d’un format que la variante n’accepte pas, fait échouer l’envoi comme un fichier
+  plugin déclare, et la sert avec le type de contenu et l’extension de fichier de ce format. Il décode chaque sortie selon
+  les mêmes limites qu’un téléversement, et vérifie qu’elle respecte sa taille. Une sortie plus grande que déclaré ou que ces
+  limites, d’un format que le plugin n’a pas déclaré, ou d’un format que la variante n’accepte pas, fait échouer le téléversement comme un fichier
   que le serveur ne peut pas traiter.
-- **Un échec est un retard.** Quand le plugin est arrêté ou échoue, la tâche réessaie plus tard, comme avec le processeur intégré. Une
-  action qui a besoin immédiatement de l’image d’un émoji personnalisé, comme copier un émoji distant ou accepter une demande pour en obtenir un, échoue
+- **Une panne est un retard.** Lorsque le plugin est arrêté ou échoue, le job réessaie plus tard, comme avec le processeur intégré. Une
+  action qui a besoin tout de suite de l’image d’un émoji personnalisé, comme copier un émoji distant ou accepter une demande pour en obtenir un, échoue
   tant que le plugin échoue.
 
-<!-- source: the-contract-2 812c987c276c -->
+<!-- source: the-contract-2 480cea98aa91 -->
 ### Le contrat
 
-Le service est `my.plugin.media.v1.MediaService`, avec les RPC `Process` pour une image et `Remux` pour une vidéo ou un fichier audio.
-Les deux transmettent en flux dans les deux sens : le plugin a donc besoin d’une bibliothèque Connect ou gRPC et de HTTP/2 : `proto` ou `grpc`, sur TLS avec ALPN
-`h2`, ou sur HTTP/2 en clair (h2c) sur un socket Unix ou en TCP simple.
+Le service est `my.plugin.media.v1.MediaService`, avec les RPC `Process` pour une image et `Remux` pour une vidéo ou un fichier audio,
+et `Describe`, qui déclare les formats au-delà de JPEG, PNG, GIF et WebP que `Process` accepte. Le serveur appelle
+`Describe` au démarrage et toutes les 5 minutes ; un plugin qui n’en a pas ne reçoit que ces quatre formats, et un APNG comme un PNG fixe. Les deux
+autres diffusent dans les deux sens ; le plugin a donc besoin d’une bibliothèque Connect ou gRPC et de HTTP/2 : `proto` ou `grpc`, sur TLS avec ALPN
+`h2`, ou sur HTTP/2 en clair (h2c) sur une socket Unix ou en TCP simple.
 
-Un appel est semi-duplex :
+Un appel est en semi-duplex :
 
-1. Le serveur envoie un `head` : les limites, et pour une image son usage, les boîtes de ses trois tailles, et son point
-   focal. Le fichier suit dans des messages `chunk` de 1 MiB au plus. Le serveur ferme ensuite son côté.
-2. Le plugin répond par un `head` dont l'`outcome` est le résultat. Avec `OUTCOME_OK`, l’en-tête de `Process` contient aussi les
+1. Le serveur envoie un `head` : les limites, et pour une image son usage, les cadres de ses trois tailles et son point
+   focal. Le fichier suit dans des messages `chunk` de 1 Mio au plus. Le serveur ferme ensuite son côté.
+2. Le plugin répond par un `head` dont `outcome` est le résultat. Avec `OUTCOME_OK`, le head de `Process` contient aussi les
    dimensions de l’image après son orientation EXIF et le blurhash de la petite sortie fixe.
 3. Pour chaque sortie, le plugin envoie un `part`, qui nomme la sortie et déclare son format, ses dimensions et sa longueur,
-   suivi de messages `chunk` de 1 MiB au plus.
+   suivi de messages `chunk` de 1 Mio au plus.
 
-`Process` renvoie les sorties fixes petite, moyenne et grande, et les trois sorties animées d’une image de plus d’une
-image. Les sorties petite et moyenne sont en WebP ; la grande sortie fixe est un JPEG ou un PNG (toujours un PNG pour un émoji personnalisé),
-et la grande sortie animée un GIF. `Remux` renvoie le fichier dans son propre conteneur sans métadonnées, ainsi que l’image de couverture qu’il
+`Process` renvoie les sorties fixes petite, moyenne et grande, et peut renvoyer les trois sorties animées d’une image de plus
+d’une image ; chaque sortie animée doit avoir au moins deux images. Les sorties petite et moyenne sont en WebP ; la grande sortie fixe est un JPEG ou un PNG (toujours un PNG pour un émoji personnalisé),
+et la grande sortie animée un GIF. `Remux` renvoie le fichier dans son propre conteneur sans métadonnées, et l’image de couverture qu’il
 intègre, le cas échéant. Le serveur lit au plus deux fois la limite d’image depuis `Process`, et depuis `Remux` la limite vidéo pour le
 fichier et la limite d’image pour sa couverture.
 
 | `outcome` | Signification | Ce que fait le serveur |
 | --- | --- | --- |
 | `OUTCOME_OK` | Les sorties suivent | Les vérifie et les stocke |
-| `OUTCOME_TEMPORARY` | Le plugin a échoué | Réessaie la tâche plus tard |
-| `OUTCOME_UNSUPPORTED_FORMAT`, `OUTCOME_UNSUPPORTED_CODEC`, `OUTCOME_TOO_LARGE`, `OUTCOME_DIMENSIONS`, `OUTCOME_CORRUPT`, `OUTCOME_TOO_LONG` | Le fichier n’est pas acceptable | Marque l’envoi comme échoué |
+| `OUTCOME_TEMPORARY` | Le plugin a échoué | Réessaie le job plus tard |
+| `OUTCOME_UNSUPPORTED_FORMAT`, `OUTCOME_UNSUPPORTED_CODEC`, `OUTCOME_TOO_LARGE`, `OUTCOME_DIMENSIONS`, `OUTCOME_CORRUPT`, `OUTCOME_TOO_LONG` | Le fichier n’est pas acceptable | Marque le téléversement comme échoué |
 
-Un `outcome` manquant ou inconnu et un appel échoué comptent comme `OUTCOME_TEMPORARY`.
+Un `outcome` absent ou inconnu et un appel échoué comptent comme `OUTCOME_TEMPORARY`.
 
 <!-- source: a-plugin-with-no-library be054eb80e74 -->
 ## Un plugin sans bibliothèque

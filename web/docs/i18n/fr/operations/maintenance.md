@@ -109,10 +109,10 @@ Les pages d’erreur des frontaux ci-dessous répondent aux erreurs du serveur a
 (`502` et `504`, et le `503` propre au répartiteur de charge lorsqu’il n’a aucun backend sain), ou n’activez la règle que lorsque `my serve` ne peut pas s’exécuter :
 une règle sur chaque `503` remplacerait aussi les réponses propres du mode maintenance, comme le problème que lisent l’API cliente et le client web.
 
-<!-- source: cloud-run 8bed844981b6 -->
+<!-- source: cloud-run b150825c7bf0 -->
 ### Cloud Run
 
-Déployez une nouvelle révision avec la variable, puis supprimez-la ensuite :
+Déployez une nouvelle révision avec la variable, puis retirez-la ensuite :
 
 ```sh
 gcloud run services update my --region=asia-northeast1 \
@@ -120,14 +120,14 @@ gcloud run services update my --region=asia-northeast1 \
 gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE,MY_MAINTENANCE_UNTIL
 ```
 
-Avec le module OpenTofu, définissez-la plutôt dans le bloc, sous la forme `settings = { maintenance = "true" }`, et appliquez, puisque la prochaine application remet
-ce que dit le bloc : [Déployer sur Cloud Run](deploy-opentofu.md#the-maintenance-mode) l’utilise autour d’une mise à niveau.
+Avec le module OpenTofu, définissez-la plutôt dans le bloc, sous la forme `settings = { maintenance = "true" }`, et appliquez, car la prochaine application remet
+ce que dit le bloc : [Déployer avec OpenTofu](deploy-opentofu.md#the-maintenance-mode) l’utilise autour d’une mise à niveau.
 
-Lorsque Cloud Run est exposé directement, sans répartiteur de charge, il n’y a rien devant lui ; le mode maintenance est donc le seul outil.
+Lorsque Cloud Run est exposé directement, sans répartiteur de charge, il n’y a rien devant lui, et le mode maintenance est donc le seul outil.
 
 **Lorsque `my serve` ne peut pas s’exécuter** derrière un Application Load Balancer externe global : téléversez le `index.html` exporté dans un bucket Cloud Storage
-ajouté comme bucket backend, et ajoutez une politique de réponse d’erreur personnalisée qui répond avec lui aux `502` et `504` du backend, avec `overrideResponseCode: 503`.
-Seul l’Application Load Balancer externe global dispose de réponses d’erreur personnalisées (pas les régionaux ni les classiques), et la politique ne s’applique
+ajouté comme backend bucket, et ajoutez une politique de réponses d’erreur personnalisées qui répond aux `502` et `504` du backend avec lui et `overrideResponseCode: 503`.
+Seul l’Application Load Balancer externe global dispose de réponses d’erreur personnalisées (pas les versions régionales ou classiques), et la politique ne s’applique
 qu’aux réponses du backend, pas à celles que Google Front End produit lui-même. Ce chemin ne peut pas envoyer `Retry-After` : les en-têtes personnalisés de la source d’erreur ne sont pas ajoutés.
 
 ```yaml
@@ -140,22 +140,22 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-<!-- source: aws-ecs afc0ba5adee4 -->
+<!-- source: aws-ecs 0b5f487093f4 -->
 ### AWS ECS
 
-Enregistrez une révision de la définition de tâche du service avec `MY_MAINTENANCE=true` dans l’environnement du conteneur, mettez à jour le service avec elle,
+Enregistrez une révision de la définition de tâche du service avec `MY_MAINTENANCE=true` dans l’environnement du conteneur, mettez le service à jour avec elle,
 et faites de même sans la variable ensuite. Avec le module OpenTofu, définissez-la plutôt dans le bloc, sous la forme `settings = { maintenance = "true" }`,
-et appliquez, puisque la prochaine application remet ce que dit le bloc : autour d’une mise à niveau, appliquez le mode, puis la nouvelle version, puis le bloc sans lui,
-comme le fait [Déployer sur Cloud Run](deploy-opentofu.md#the-maintenance-mode).
+et appliquez, car la prochaine application remet ce que dit le bloc : autour d’une mise à niveau, appliquez le mode, puis la nouvelle version, puis le bloc sans lui,
+comme le fait [Déployer avec OpenTofu](deploy-opentofu.md#the-maintenance-mode).
 
 **Lorsque `my serve` ne peut pas s’exécuter** derrière CloudFront : téléversez le `index.html` exporté dans un bucket S3 qui est une seconde origine
-(la page d’erreur ne peut pas provenir de l’origine défaillante), et ajoutez des réponses d’erreur personnalisées pour `502` et `504` (et `503` seulement tant que `my serve` ne peut pas s’exécuter)
+(la page d’erreur ne peut pas venir de l’origine défaillante), et ajoutez des réponses d’erreur personnalisées pour `502` et `504` (et `503` seulement tant que `my serve` ne peut pas s’exécuter)
 avec `ResponsePagePath: /maintenance/index.html` et `ResponseCode: 503`.
 CloudFront peut ajouter `Retry-After` par une politique d’en-têtes de réponse avec un en-tête personnalisé, mais la politique s’applique à chaque réponse du comportement de cache ;
-ne l’attachez donc que pour la maintenance et détachez-la ensuite.
+n’attachez-la donc que pour la maintenance et détachez-la ensuite.
 
-La réponse fixe d’un Application Load Balancer ne peut pas porter la page exportée : son corps compte au plus 1 024 caractères et il ne définit aucun en-tête comme `Retry-After`.
-Ne l’utilisez que pour un court texte et l’état :
+La réponse fixe d’un Application Load Balancer ne peut pas porter la page exportée : son corps fait au plus 1 024 caractères et elle ne définit aucun en-tête tel que `Retry-After`.
+Utilisez-la seulement pour un court texte et le statut :
 
 ```json
 {
@@ -168,7 +168,7 @@ Ne l’utilisez que pour un court texte et l’état :
 }
 ```
 
-Sans `Retry-After`, les autres serveurs réessaient selon leur propre calendrier, ce que la fenêtre ci-dessus prévoit déjà.
+Sans `Retry-After`, les autres serveurs réessaient selon leur propre calendrier, que la fenêtre ci-dessus prévoit déjà.
 
 <!-- source: docker-compose d564c0b39ae8 -->
 ### Docker Compose

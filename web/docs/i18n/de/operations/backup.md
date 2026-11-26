@@ -213,11 +213,11 @@ Die Datenbank nennt die Mediendateien, die sie verwendet, und die Medienkopie en
 Die andere Reihenfolge ist schlimmer: Jede Datei, die zwischen dem Medien-Backup und dem Datenbank-Backup hochgeladen wurde, würde nach einer Wiederherstellung fehlen,
 auch die Medien neuer Beiträge. Beides im Wartungsmodus zu sichern vermeidet jede der Lücken.
 
-<!-- source: on-the-opentofu-targets 9862430f808c -->
+<!-- source: on-the-opentofu-targets a0188744140f -->
 ### Auf den OpenTofu-Zielen
 
-Die Module halten kein eigenes Backup über das hinaus, was der Anbieter bietet: Das verwaltete PostgreSQL von Cloud SQL und RDS hat automatische Backups
-mit einer Aufbewahrung, die du festlegst, während eine Datenbank mit nur der Historie des Anbieters (Neon) nur so weit zurückgehen kann, wie diese Historie reicht.
+Die Module halten kein eigenes Backup über das hinaus, was der Anbieter bietet: Das verwaltete PostgreSQL von
+[Cloud SQL](deploy-google-cloud.md#cloud-sql) und [RDS](deploy-aws.md#2-choose-the-database) hat automatische Backups mit einer Aufbewahrung, die du festlegst, während eine Datenbank mit nur der Historie des Anbieters (Neon) nur so weit zurückgehen kann, wie diese Historie reicht.
 Plane diese selbst, mit Zugangsdaten, die die Instanz nicht besitzt:
 
 1. **Die Datenbank, jeden Tag.** Führe `pg_dump` gegen das PostgreSQL der Instanz von einer Maschine oder einem geplanten Job außerhalb des Anbieters aus, der die

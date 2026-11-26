@@ -61,7 +61,7 @@ Die veröffentlichte Binärdatei und das Container-Image enthalten jeden Adapter
 `my config check` meldet alle Probleme der Konfiguration auf einmal, bevor du den Server startest
 ([Produktions-Checkliste](production-checklist.md)).
 
-<!-- source: from-a-small-server-to-a-large-one 2f46b66f047c -->
+<!-- source: from-a-small-server-to-a-large-one ed28f8cf5385 -->
 ## Vom kleinen Server zum großen
 
 ![Drei Schritte vom kleinen zum großen Server: ein Prozess auf SQLite und dem Dateisystem, dann PostgreSQL und Objektspeicher hinter einem CDN, dann getrennte Web- und Worker-Prozesse mit einem Stream-Broker. Die Liste unten beschreibt jeden Schritt.](images/growth.svg)
@@ -82,18 +82,25 @@ Die veröffentlichte Binärdatei und das Container-Image enthalten jeden Adapter
    und die Antworten auf erneut gesendete Schreibvorgänge jedes Prozesses getrennt hält. Die Job-Queue bleibt in
    PostgreSQL oder zieht zu Google Cloud Tasks um ([Cloud Tasks](running.md#cloud-tasks)).
 
-Die [Bereitstellung auf Cloud Run](deploy-google-cloud.md) ist ein Beispiel für ein Setup zwischen dem zweiten und dem dritten Schritt:
-`role = all` auf Cloud Run, PostgreSQL auf Neon, Medien in Cloud Storage, Cloud Tasks für die Jobs und Pub/Sub für den
-Stream, ohne laufende Instanz, solange niemand den Server nutzt.
+<!-- source: ways-to-deploy eeb6d182d4dc -->
+## Bereitstellungswege
 
-<!-- source: where-to-go-next 2f1d25c01f8a -->
+- **[Docker Compose](deploy-docker-compose.md)** auf einer Maschine: der erste Schritt oder, mit PostgreSQL und einem Bucket, der zweite.
+- **[Google Cloud](deploy-google-cloud.md)**: `role = all` auf Cloud Run, PostgreSQL wie Neon, Medien in Cloud Storage, Cloud
+  Tasks für die Jobs und Pub/Sub für den Stream, ohne laufende Instanz, solange niemand den Server nutzt.
+- **[AWS](deploy-aws.md)**: `role = all` auf ECS Fargate, PostgreSQL wie Neon, Medien in S3, die Jobs in der Datenbank und SNS
+  für den Stream.
+
+Auf beiden Clouds legt ein OpenTofu-Modul die gesamte Bereitstellung an: [Mit OpenTofu bereitstellen](deploy-opentofu.md) enthält die Schritte, die sie gemeinsam haben.
+
+<!-- source: where-to-go-next 48f37c91b820 -->
 ## Wie es weitergeht
 
 Lies die Betreiber-Leitfäden in dieser Reihenfolge:
 
-1. **Loslegen:** [den Server betreiben](running.md) oder [auf Cloud Run deployen](deploy-google-cloud.md), dann die
+1. **Loslegen:** [den Server betreiben](running.md) und [bereitstellen](#ways-to-deploy), dann die
    [Checkliste für den Produktivbetrieb](production-checklist.md) durchgehen, bevor du ihn für Nutzer öffnest.
-2. **Den Server konfigurieren:** ihre [Einstellungen](instance-settings.md), die [Registrierung](registration.md),
+2. **Den Server konfigurieren:** seine [Einstellungen](instance-settings.md), die [Registrierung](registration.md),
    [externe Login-Anbieter](login-providers.md), [E-Mail](email.md), [CAPTCHA](captcha.md), [das CDN](cdn.md),
    [Linkvorschauen](link-previews.md) und [Suchmaschinen und KI-Crawler](crawlers.md).
 3. **Funktionen einschalten:** [Moderation](moderation.md), [Relays](relays.md), [Webhooks](webhooks.md),

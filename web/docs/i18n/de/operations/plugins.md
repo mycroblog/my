@@ -144,7 +144,7 @@ gRPC). Ein Plugin darf diesen Header ignorieren: Der Server hört ohnehin auf zu
 Arten, auf die eine Anfrage warten kann (`key_manager`, `translator`, `search`, `signup.check`, `media.check`, `local.status`, `inbound.actor` und `local.profile`), unter 30 Sekunden bleiben und
 für die anderen unter 5 Minuten, so lange ein Job höchstens laufen darf.
 
-<!-- source: test-a-plugin 5d8195bb27f5 -->
+<!-- source: test-a-plugin f954dc9b5d3e -->
 ## Ein Plugin testen
 
 `my plugin test` führt den Vertrag einer Art gegen ein laufendes Plugin aus und meldet jeden Fall. Es liest keine Konfiguration,
@@ -163,7 +163,8 @@ FAIL echo_empty: the outcome is OUTCOME_UNSPECIFIED, not OUTCOME_OK
 ```
 
 Der Exit-Code ist 1, wenn ein Fall fehlschlägt. Die Flags bedeuten das, was die Einstellungen bedeuten: `--protocol`, `--token-file`, `--tls-ca-file`,
-`--tls-cert-file`, `--tls-key-file` und `--timeout`. Es wendet dieselben Regeln an wie der Server, sodass `--kind mailer` eine
+`--tls-cert-file`, `--tls-key-file` und `--timeout`; `--instance` ist der `host`, der im Header `My-Instance` gesendet wird
+(Standard `my.test`). Es wendet dieselben Regeln an wie der Server, sodass `--kind mailer` eine
 `http://`-Adresse ablehnt. Das getestete Plugin kann ein echtes sein, daher läuft ein Fall, der mehr tut als den Aufruf selbst, nur, wenn
 ein Flag ihn verlangt. Eine Art, deren Vertrag die Version noch nicht hat, meldet `reachable` und ein `SKIP`.
 
@@ -405,7 +406,7 @@ Ein fehlendes oder unbekanntes `outcome`, ein fehlgeschlagener Aufruf und eine S
 von einer solchen Seite wird angezeigt. Ein Aufruf dauert höchstens `plugin_search_timeout` (standardmäßig 10 Sekunden) und 10 Sekunden, was auch immer diese
 Einstellung sagt.
 
-<!-- source: converting-media 36df3dbdb21b -->
+<!-- source: converting-media 14a4c14a3699 -->
 ## Medien konvertieren
 
 Ein Medien-Plugin erledigt den schweren Teil der Verarbeitung von Uploads, sodass sie auf einer anderen Maschine laufen kann. Es gibt drei Arten,
@@ -417,7 +418,8 @@ und du wählst jede für sich:
 
 Der Server erledigt den Rest weiterhin selbst. Er erkennt das Format jedes Uploads, unterscheidet Videos von Audiodateien, prüft jeden
 Upload bei seinem Eintreffen gegen die Limits und erstellt die Vorschauen von Remote-Medien. Eine Art, deren Einstellung `native` bleibt, wird
-im Server verarbeitet.
+im Server verarbeitet. Ein `media_image`-Plugin darf auch Uploads von AVIF, HEIC und APNG übernehmen, die der Server nie dekodiert:
+Er akzeptiert die, die sein Plugin angibt, nachdem er ihre Abmessungen und Frames aus ihren Headern gelesen hat.
 
 ```sh
 # Only videos go to a plugin, on a machine of its own; images and audio stay in the server.
@@ -445,11 +447,13 @@ mehr als eine Art übernehmen: Gib ihm für jede dieselbe Adresse. Jede Art füh
   Aktion, die das Bild eines eigenen Emojis sofort braucht, etwa das Kopieren eines Remote-Emojis oder das Annehmen einer Anfrage dafür, schlägt fehl,
   solange das Plugin es tut.
 
-<!-- source: the-contract-2 812c987c276c -->
+<!-- source: the-contract-2 480cea98aa91 -->
 ### Der Vertrag
 
-Der Dienst ist `my.plugin.media.v1.MediaService`, mit den RPCs `Process` für ein Bild und `Remux` für eine Video- oder Audiodatei.
-Beide streamen in beide Richtungen, das Plugin braucht also eine Connect- oder gRPC-Bibliothek und HTTP/2: `proto` oder `grpc`, über TLS mit ALPN
+Der Dienst ist `my.plugin.media.v1.MediaService`, mit den RPCs `Process` für ein Bild und `Remux` für eine Video- oder Audiodatei
+und `Describe`, das die Formate jenseits von JPEG, PNG, GIF und WebP angibt, die `Process` annimmt. Der Server ruft
+`Describe` beim Start und alle 5 Minuten auf; ein Plugin ohne es bekommt nur diese vier und ein APNG als stehendes PNG. Die beiden
+anderen streamen in beide Richtungen, das Plugin braucht also eine Connect- oder gRPC-Bibliothek und HTTP/2: `proto` oder `grpc`, über TLS mit ALPN
 `h2` oder über unverschlüsseltes HTTP/2 (h2c) auf einem Unix-Socket oder einfachem TCP.
 
 Ein Aufruf ist halbduplex:
@@ -462,7 +466,7 @@ Ein Aufruf ist halbduplex:
    gefolgt von `chunk`-Nachrichten von höchstens 1 MiB.
 
 `Process` gibt die kleine, mittlere und große Standbild-Ausgabe zurück und die drei bewegten eines Bildes mit mehr als einem
-Frame. Die kleine und die mittlere Ausgabe sind WebP; die große Standbild-Ausgabe ist ein JPEG oder ein PNG (bei einem eigenen Emoji immer ein PNG),
+Frame; jede bewegte Ausgabe muss mindestens zwei Frames haben. Die kleine und die mittlere Ausgabe sind WebP; die große Standbild-Ausgabe ist ein JPEG oder ein PNG (bei einem eigenen Emoji immer ein PNG),
 und die große bewegte ein GIF. `Remux` gibt die Datei in ihrem eigenen Container ohne Metadaten zurück und das Titelbild, das sie
 einbettet, falls vorhanden. Der Server liest von `Process` höchstens das Doppelte des Bildlimits und von `Remux` das Videolimit für die
 Datei und das Bildlimit für ihr Cover.

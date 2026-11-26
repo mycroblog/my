@@ -185,7 +185,7 @@ o con `my instance set`. `my config check -instance` avisa de los textos, contac
     Enuméralos con `my admin role` y revísalos en las pantallas de administración.
 - **Detalles**: [administradores y roles](admin-cli.md), [moderación](moderation.md) (permisos y recuperación de inicio de sesión).
 
-<!-- source: operations aac00b13fc38 -->
+<!-- source: operations cdf72295a7bb -->
 ## Operaciones
 
 - **Copias de seguridad y recuperación**: la base de datos, el almacén de blobs (`blob_fs_dir` o el bucket) y la KEK tienen copias de seguridad programadas,
@@ -195,8 +195,8 @@ o con `my instance set`. `my config check -instance` avisa de los textos, contac
   Consulta [gestión de claves](key-management.md) (copia de seguridad de la KEK) y [base de datos](database.md).
 - **Monitorización y alertas**: un monitor externo comprueba `/health/live` y avisa a alguien que pueda actuar, y se vigilan los trabajos fallidos (dead) de la cola de trabajos.
   Consulta [monitorización](monitoring.md) y [ejecutar el servidor](running.md) (comprobaciones de salud, métricas y la cola de trabajos).
-- **La imagen**: la instancia ejecuta una imagen publicada fijada por digest (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, de las notas de la versión), no una
-  que cambia al reiniciar, y [se ha verificado su procedencia](running.md#verify-an-image). No existe la etiqueta `latest`.
+- **La imagen**: la instancia ejecuta una imagen publicada fijada por digest (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, de las notas de la versión, o
+  [`image.digest`](deploy-opentofu.md#pinning-the-image-by-digest) con OpenTofu), no una que cambia al reiniciar, y [se ha verificado su procedencia](running.md#verify-an-image). No existe la etiqueta `latest`.
   Una actualización cambia esa versión a propósito y sigue [Actualización](database.md#upgrading), una versión menor cada vez.
 - **Código fuente (AGPL-3.0)**: el servidor debe ofrecer su código fuente a todas las personas que lo usan. Deja
   [`source_url`](../reference/configuration.md#source_url) en su valor por defecto para una versión sin modificar; apúntalo a tu propio

@@ -109,7 +109,7 @@ Las páginas de error de los front ends que siguen responden a los errores del s
 (`502` y `504`, y el `503` propio del balanceador de carga donde no hay ningún backend sano), o activa la regla solo mientras `my serve` no pueda ejecutarse:
 una regla sobre cada `503` también reemplazaría las respuestas propias del modo de mantenimiento, como el problema que leen la API de cliente y el cliente web.
 
-<!-- source: cloud-run 8bed844981b6 -->
+<!-- source: cloud-run b150825c7bf0 -->
 ### Cloud Run
 
 Despliega una revisión nueva con la variable, y quítala después:
@@ -121,7 +121,7 @@ gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAIN
 ```
 
 Con el módulo de OpenTofu, defínelo en su lugar en el bloque, como `settings = { maintenance = "true" }`, y aplica, ya que el siguiente apply restablece
-lo que dice el bloque: [Desplegar en Cloud Run](deploy-opentofu.md#the-maintenance-mode) lo explica en torno a una actualización.
+lo que dice el bloque: [Desplegar con OpenTofu](deploy-opentofu.md#the-maintenance-mode) lo explica en torno a una actualización.
 
 Cuando Cloud Run está expuesto directamente, sin balanceador de carga, no hay nada delante de él, así que el modo de mantenimiento es la única herramienta.
 
@@ -140,13 +140,13 @@ defaultCustomErrorResponsePolicy:
       overrideResponseCode: 503
 ```
 
-<!-- source: aws-ecs afc0ba5adee4 -->
+<!-- source: aws-ecs 0b5f487093f4 -->
 ### AWS ECS
 
 Registra una revisión de la definición de tarea del servicio con `MY_MAINTENANCE=true` en el entorno del contenedor, actualiza el servicio a ella
 y haz lo mismo sin la variable después. Con el módulo de OpenTofu, defínelo en su lugar en el bloque, como `settings = { maintenance = "true" }`,
 y aplica, ya que el siguiente apply restablece lo que dice el bloque: en torno a una actualización, aplica el modo, luego la versión nueva y luego el bloque sin él,
-como hace [Desplegar en Cloud Run](deploy-opentofu.md#the-maintenance-mode).
+como hace [Desplegar con OpenTofu](deploy-opentofu.md#the-maintenance-mode).
 
 **Cuando `my serve` no puede ejecutarse** detrás de CloudFront: sube el `index.html` exportado a un bucket de S3 que sea un segundo origen
 (la página de error no puede venir del origen que falla), y añade respuestas de error personalizadas para `502` y `504` (y `503` solo mientras `my serve` no puede ejecutarse)

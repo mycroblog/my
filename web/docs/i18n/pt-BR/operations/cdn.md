@@ -24,13 +24,13 @@ MY_MEDIA_ORIGIN=https://media.example.org
 - As URLs são montadas a cada leitura e não são armazenadas no banco de dados, então mudar `media_origin` também muda as URLs da mídia existente.
   As URLs antigas que outros servidores guardaram continuam funcionando enquanto `/media/` na origem antiga continuar sendo servido.
 
-<!-- source: point-the-cdn-at-the-server ffb279f38f08 -->
+<!-- source: point-the-cdn-at-the-server c9ebf6b731e5 -->
 ## Apontar a CDN para o servidor
 
-- Faça da origem (backend) o nome de host público do servidor (`https://{host}`). A CDN precisa buscar no servidor apenas caminhos em `/media/`.
-- O servidor não restringe `/media/` e `/media/proxy/` pelo nome do host. Ele serve qualquer `Host` que a CDN enviar.
-- `/media/` não exige autenticação, e o Authorized Fetch não se aplica a ele. O servidor responde às requisições não assinadas vindas da CDN como são.
-- Para a mídia remota (`/media/proxy/{id}/{variant}?sig=...`), `sig` faz parte da URL. **Inclua a query string na chave de cache.** Caso contrário, URLs com assinaturas diferentes compartilham uma mesma entrada.
+- Faça da origem (backend) o nome de host público do servidor (`https://{host}`). A CDN só precisa buscar no servidor os caminhos sob `/media/`.
+- O servidor não restringe `/media/` e `/media/proxy/` por nome de host. Ele atende qualquer `Host` que a CDN enviar.
+- `/media/` não exige autenticação, e o Authorized Fetch não se aplica a ele. O servidor responde como estão as requisições sem assinatura vindas da CDN.
+- Para mídia remota (`/media/proxy/{id}/{variant}?sig=...`), `sig` faz parte da URL. **Inclua a query string na chave de cache.** Caso contrário, URLs com assinaturas diferentes compartilham uma única entrada.
 - Deixe o `Cache-Control` da origem decidir por quanto tempo as coisas ficam em cache (não o sobrescreva na CDN).
 
 | Caminho | `Cache-Control` |
@@ -38,9 +38,9 @@ MY_MEDIA_ORIGIN=https://media.example.org
 | `/media/{...}` (mídia local) | `public, max-age=31536000, immutable` (um ano) |
 | `/media/proxy/{...}` (mídia remota) | `public, max-age=` o número de segundos da configuração da instância `remote_media_cache_ttl_seconds` |
 
-As duas respostas saem com `Cross-Origin-Resource-Policy: cross-origin`, para que páginas de outras origens possam lê-las.
+Ambos são devolvidos com `Cross-Origin-Resource-Policy: cross-origin`, para que páginas de outras origens possam lê-los.
 
-No Cloud Run, `ingress-cloudflare-media` configura isso com OpenTofu: veja [Implantando no Cloud Run](deploy-google-cloud.md#cloudflare).
+No Cloud Run, `ingress-cloudflare-media` configura isso com o OpenTofu: veja [Implantar no Google Cloud](deploy-google-cloud.md#cloudflare).
 
 <!-- source: who-can-open-media-urls 27306b0bc9be -->
 ## Quem pode abrir URLs de mídia

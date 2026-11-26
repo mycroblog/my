@@ -22,7 +22,7 @@ O texto tem um único valor para todos os idiomas. Se você tem leitores em vár
 
 Revise a política quando mudar uma configuração abaixo ou um serviço, e após cada atualização cujas notas de versão mencionem dados pessoais.
 
-<!-- source: the-periods-and-their-settings 8313baaa97d8 -->
+<!-- source: the-periods-and-their-settings eb30a5027cca -->
 ## Os prazos e suas configurações
 
 `my instance list` mostra todas as configurações da instância e se cada uma está no valor padrão. Uma mudança em um prazo vale a partir da próxima execução do seu job horário. Valores fora do intervalo são recusados.
@@ -35,7 +35,7 @@ Revise a política quando mudar uma configuração abaixo ou um serviço, e apó
 | Ações contra contas e recursos | 365 dias | `moderation_actions_retention_days` | 180-3650 | O fim da ação |
 | Registro de auditoria | 730 dias | `audit_log_retention_days` | 365-3650 | O registro |
 | Quem participou de uma sala de chat de voz | 90 dias | `voice_participants_retention_days` | 30-3650 | O fim da sala |
-| Quem respondeu a um evento, votou nas datas dele e foi convidado para ele | 90 dias | `event_records_retention_days` | 30-3650 | O que vier primeiro entre o fim do evento e o cancelamento dele |
+| Quem respondeu a um evento, votou nas datas dele e foi convidado para ele, e as publicações do mural dele | 90 dias | `event_records_retention_days` | 30-3650 | O que vier primeiro entre o fim do evento e o cancelamento dele |
 | As decisões de uma análise externa, quando você usa uma | 90 dias | `hook_decisions_retention_days` | 30-3650 | A decisão |
 | Publicações remotas a que nada aqui se refere | 90 dias | `remote_status_retention_days` | 1-3650 | A publicação do post |
 | Qualquer publicação remota | Sem limite (`0`) | `remote_status_max_retention_days` | 0-3650 | A publicação do post |
@@ -124,7 +124,7 @@ Duas coisas chegam a terceiros sem uma configuração sua:
 - **Web Push.** Quando um usuário o ativa, o navegador dele escolhe o serviço de push e informa o endereço dele ao servidor. O corpo da mensagem é criptografado para esse navegador, então o serviço de push não deveria conseguir lê-lo. Ele vê o endereço da assinatura, o tamanho e a hora de cada mensagem e o contato (assunto VAPID) do seu servidor, e retém uma mensagem por até 48 horas enquanto o navegador está offline.
 - **Federação.** Veja a seção 5 do modelo. `federation_mode` a desativa ou limita a sua direção, e os relays ficam por sua conta ([relays](relays.md)).
 
-<!-- source: the-template 5a65f2c53778 -->
+<!-- source: the-template 7d380628fcdc -->
 ## O modelo
 
 ```markdown
@@ -177,6 +177,7 @@ This policy covers people with an account here, people who read pages here witho
 | {{IF voice}} Who took part in a room: participation, speakers, raised hands, invitations, removals | Moderating rooms | {{90 days}} from the end of the room, or as long as a report about the room. We record neither audio nor text chat |
 | Events: title, description, date, places, organizers, and cancellation | Showing events to the people who may see them | Kept. The title, description, and places you wrote are removed when your account is erased |
 | Invitations to events, your answers to them and to their candidate dates, and their approval | Showing who comes and who can come on which date, and showing the address and link to the approved | {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept |
+| Your posts on the board of an event | Telling its organizers and the people going what the event needs | Until you delete them, or {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept. They are never sent to other servers |
 | {{IF payments}} Supporter plans: the provider's IDs for you and your subscription, amounts, periods, and states. Not your card details | Running your subscription, and accounting | {{PERIOD AND REASON, e.g. as long as tax law requires}}. The link to the provider's customer goes when your account is erased |
 | {{IF payments}} Your choice to appear in the list of supporters | Showing the list | Until the subscription ends or your account is erased |
 | {{IF tips}} Tips: the amount, when you paid, the provider's ID of the payment, refunds and chargebacks. Not your card details | Taking the tip, and accounting | Until your account is erased; the amounts stay in the accounts without you. The provider keeps the payment and the email address of its page: {{ITS PERIOD}} |

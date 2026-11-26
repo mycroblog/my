@@ -194,7 +194,7 @@ Plugin eine Anfrage ohne Empfänger, die es ablehnen muss. Der Server kann die N
 die an, die ankommt: Ihre Header müssen `Message-ID`, `Date` und `Auto-Submitted: auto-generated` enthalten.
 Siehe [Ein Plugin testen](plugins.md#test-a-plugin).
 
-<!-- source: receive-ses-notifications-sns e21b650ab5fe -->
+<!-- source: receive-ses-notifications-sns aa8911000390 -->
 ### SES-Benachrichtigungen empfangen (SNS)
 
 SES-Bounces und -Beschwerden gehen an ein SNS-Topic, und ein HTTPS-Abo auf diesem Topic liefert sie an
@@ -254,7 +254,7 @@ Punycode-Domain passt auch in ihrer Unicode-Form); passt keine, tut er nichts.
 | --- | --- |
 | Ein Bounce, dessen `bounceType` `Permanent` ist (jeder Untertyp wie `General`, `NoEmail`, `Suppressed` oder `OnAccountSuppressionList`) | `hard_bounce` |
 | Eine Beschwerde (außer solchen, deren `complaintFeedbackType` `not-spam` ist) | `complaint` |
-| Ein Bounce, der `Transient` oder `Undetermined` ist, und andere Benachrichtigungen wie Zustellung oder Versand | Nicht aufgezeichnet (antwortet mit `200`) |
+| Ein Bounce, der `Transient` oder `Undetermined` ist, und andere Benachrichtigungen wie Zustellung oder Versand sowie jede Benachrichtigung, deren `mail.source` nicht die Adresse von `mail_from` ist (Mail, die eine andere Instanz gesendet hat, die das Topic oder das Configuration Set teilt) | Nicht aufgezeichnet (antwortet mit `200`) |
 
 Die SES-`feedbackId` ist der eindeutige Schlüssel eines Datensatzes, sodass es unabhängig davon, wie oft SNS dieselbe Benachrichtigung sendet, einen Datensatz gibt.
 

@@ -208,10 +208,10 @@ kubectl rollout status deployment/my
 
 如果 Job 失败，`kubectl logs job/my-upgrade-v0-2-0 -c upgrade-check`（或 `-c schema`、`-c upgrade`）会显示原因，Deployment 保持在旧镜像上。在卷上使用 SQLite 时，请在 Job 中挂载同一个卷，并先停止 Deployment 的 Pod：SQLite 只允许一个写入者。
 
-<!-- source: cloud-run 9e7486b6a4af -->
+<!-- source: cloud-run 4cd76d9b85b5 -->
 ### Cloud Run
 
-使用 OpenTofu 模块时，升级就是对新发布版本执行一次 apply：它会在服务换上新镜像之前，在迁移作业中运行 `my upgrade`，并在失败时停在那里：请参阅[在 Cloud Run 上部署](deploy-opentofu.md#upgrading)。手动操作时：
+使用 OpenTofu 模块时，升级就是对新发布版本执行一次 apply：它会在服务换上新镜像之前，在迁移作业中运行 `my upgrade`，并在失败时停在那里：请参阅[使用 OpenTofu 部署](deploy-opentofu.md#upgrading)。手动操作时：
 
 Cloud Run job 每个只运行一个容器，因此请为每个步骤创建一个 job，并使用 `--wait` 按顺序执行，job 失败时它也会失败。请给这些 job 与服务相同的环境变量和 secret。
 
@@ -268,19 +268,19 @@ gcloud run jobs execute my-upgrade-check --region=asia-northeast1 --wait &&
 
 要跨越多个次版本，请依次经过每个次版本的最新补丁版本升级，每次都运行完整的流程。例如从 `v0.1.3` 到 `v0.4.0`：先到最新的 `v0.1.x`，然后到最新的 `v0.2.x`，再到最新的 `v0.3.x`，最后到 `v0.4.0`。`my db upgrade -check` 会阻止会丢失数据的跳跃，并指出需要经过的版本；此时什么都还没有改变。
 
-<!-- source: checking-and-rebuilding-projections 40b848afd40d -->
+<!-- source: checking-and-rebuilding-projections df54e4ad696f -->
 ## 检查和重建 projection
 
-有些表是 projection：服务器根据其模块的事件和资源推导出它们（例如账号的限制由其审核操作推导而来）。worker 每天检查一次所有 projection，并修正发现的任何差异。手动检查或修正某个 projection：
+有些表是 projection：服务器根据其模块的事件和资源推导出它们（例如账号的限制由其审核操作推导而来）。设置了 `projection_verify_interval` 后，worker 会按该计划检查每个 projection，并记录发现的任何差异（计入 `my.projection.drifts`），但不会修正；默认不检查。手动检查或修正某个 projection：
 
 ```sh
 my projection list              # each projection with its module and tables
-my projection verify [<name>]   # derive every projection, or the one named, and print the rows that differ; changes nothing
+my projection verify [<name>]   # derive every projection, or the one named, into temporary copies and print the rows that differ
 my projection rebuild [<name>]  # derive them the same way and write the difference
 ```
 
 - `<name>` 是一个 projection 或其中的一张表。
-- `verify` 打印表中存在但来源推导不出的行（`-`），以及来源推导出但表中缺少的行（`+`），有任何差异时以 `1` 退出。
+- `verify` 打印表中存在但来源推导不出的行（`-`），以及来源推导出但表中缺少的行（`+`），每张表每个方向最多各 1,000 行，有任何差异时以 `1` 退出。它不锁定任何行，因此可以在实例运行时执行。
 - `rebuild` 每个事务最多写入 500 行，因此读取者永远不会看到被清空的 projection。请在实例空闲时运行：重建期间发生变化的行会保留其新值，之后运行 `verify` 会报告剩余的差异。
 
 <!-- source: recreating-erasing-every-row 9ff993b99448 -->

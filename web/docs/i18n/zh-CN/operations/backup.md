@@ -162,10 +162,10 @@ aws s3api put-bucket-lifecycle-configuration --bucket my-media --lifecycle-confi
 
 反过来的顺序更糟：在媒体备份和数据库备份之间上传的每个文件在恢复后都会丢失，包括新帖子的媒体。在维护模式下同时完成两项备份，可以避免这两种缺口。
 
-<!-- source: on-the-opentofu-targets 9862430f808c -->
+<!-- source: on-the-opentofu-targets a0188744140f -->
 ### 在 OpenTofu 目标上
 
-这些模块除了服务商提供的功能之外，不保留任何自己的备份：Cloud SQL 和 RDS 的托管 PostgreSQL 有自动备份，保留期由你设置，而只有服务商历史记录的数据库（Neon）只能回溯到该历史记录所及的范围。请自行安排以下事项，使用实例不持有的凭据：
+这些模块除了服务商提供的功能之外，不保留任何自己的备份：[Cloud SQL](deploy-google-cloud.md#cloud-sql) 和 [RDS](deploy-aws.md#2-choose-the-database) 的托管 PostgreSQL 有自动备份，保留期由你设置，而只有服务商历史记录的数据库（Neon）只能回溯到该历史记录所及的范围。请自行安排以下事项，使用实例不持有的凭据：
 
 1. **数据库，每天一次。** 在托管数据库的服务商之外的机器或定时任务上，对实例的 PostgreSQL 运行 `pg_dump`（请参阅 [PostgreSQL](#postgresql)），加密转储文件，并把它写入另一个账号或服务商的存储桶。请保留[备份频率和位置](#how-often-and-where)中所述的各代备份。该任务只需要 `database_url`，不需要其他任何内容；它绝不能持有 KEK。
 2. **媒体，紧接其后。** 在存储桶模块上设置 `versioning = true` 后，这些版本就是最近 `noncurrent_version_days` 天内的副本；若要防范账号丢失，还要按数据库转储的计划，如[存储桶中的媒体](#media-in-a-bucket)所述，运行 `rclone copy` 把实例的存储桶复制到别处的存储桶。

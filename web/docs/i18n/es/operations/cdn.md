@@ -25,7 +25,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 - Las URL se construyen cada vez que se leen y no se guardan en la base de datos, así que cambiar `media_origin` cambia también las URL de los archivos multimedia existentes.
   Las URL antiguas que guardaron servidores remotos siguen funcionando mientras `/media/` en el origen antiguo siga sirviendo.
 
-<!-- source: point-the-cdn-at-the-server ffb279f38f08 -->
+<!-- source: point-the-cdn-at-the-server c9ebf6b731e5 -->
 ## Apuntar el CDN al servidor
 
 - Haz que el origen (backend) sea el nombre de host público del servidor (`https://{host}`). El CDN solo necesita obtener del servidor las rutas bajo `/media/`.
@@ -41,7 +41,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 
 Ambos se devuelven con `Cross-Origin-Resource-Policy: cross-origin`, de modo que las páginas de otros orígenes pueden leerlos.
 
-En Cloud Run, `ingress-cloudflare-media` lo configura con OpenTofu: consulta [Despliegue en Cloud Run](deploy-google-cloud.md#cloudflare).
+En Cloud Run, `ingress-cloudflare-media` lo configura con OpenTofu: consulta [Despliegue en Google Cloud](deploy-google-cloud.md#cloudflare).
 
 <!-- source: who-can-open-media-urls 27306b0bc9be -->
 ## Quién puede abrir las URL de archivos multimedia

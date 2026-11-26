@@ -143,13 +143,13 @@ Seuls certains participants peuvent parler dans un salon vocal : les hôtes et
 Cela arrête les utilisateurs ordinaires et le client web officiel, mais ce n’est pas une défense complète. **Deux participants avec des clients modifiés qui coopèrent peuvent tout de même échanger de l’audio** : un client modifié de quelqu’un qui n’a pas le droit de parler peut l’envoyer, et un client modifié d’un destinataire peut le lire, et le serveur ne peut pas voir à l’intérieur des médias chiffrés.
 Si vous devez garantir qui parle, par exemple pour des événements publics modérés, utilisez `livekit` ou `sora`, où le serveur média lui-même abandonne l’audio de quiconque n’en a pas la permission.
 
-<!-- source: deployment-notes b0f03da306b7 -->
+<!-- source: deployment-notes 9daf6e4d8d98 -->
 ## Notes de déploiement
 
-- **Deux flux par utilisateur** : pendant un appel, un participant tient le flux d’événements propre au salon vocal (Server-Sent Events) en plus du flux que l’application ouvre toujours. Dimensionnez les limites de connexions pour deux requêtes de longue durée par utilisateur en appel.
-- **Plusieurs processus** : utilisez un adaptateur de flux partagé (`stream` défini sur `postgres`, `valkey`, `sns` ou `pubsub`), comme pour le reste de l’application. Avec `stream = hub` et un `role` autre que `all`, le serveur avertit au démarrage que le chat vocal ne fonctionnera pas entre processus.
-- **Cloud Run** : un flux est une requête, et le CPU est alloué tant qu’elle est ouverte. Quand le délai d’expiration de la requête la coupe, le client se reconnecte. Réglez le délai aussi long que possible.
-- **Les serveurs média ont besoin d’une VM** : LiveKit et Sora reçoivent l’audio en UDP dans un processus de longue durée. Cloud Run n’accepte que des requêtes HTTP et ne peut donc pas les héberger. Exécutez-les (ainsi que coturn) sur une VM, ou utilisez LiveKit Cloud, Sora Cloud ou Cloudflare TURN.
+- **Deux flux par utilisateur** : pendant un appel, un participant tient le flux d’événements propre au salon (Server-Sent Events) en plus du flux que l’application ouvre toujours. Dimensionnez les limites de connexions pour deux requêtes de longue durée par utilisateur en appel.
+- **Plusieurs processus** : utilisez un adaptateur de flux partagé (`stream` défini sur `postgres`, `valkey`, `sns` ou `pubsub`), comme pour le reste de l’application. Avec `stream = hub` et un `role` autre que `all`, le serveur avertit au démarrage que le chat vocal ne fonctionnera pas d’un processus à l’autre.
+- **Cloud Run** : un flux est une requête, et le CPU est alloué tant qu’elle est ouverte. Lorsque le délai d’expiration de la requête la coupe, le client se reconnecte. Réglez le délai aussi long que vous le pouvez : `service.request_timeout_seconds` de [Déployer sur Google Cloud](deploy-google-cloud.md#limits).
+- **Les serveurs média ont besoin d’une VM** : LiveKit et Sora reçoivent l’audio en UDP dans un processus de longue durée. Cloud Run n’accepte que des requêtes HTTP et ne peut donc pas les héberger. Exécutez-les (et coturn) sur une VM, ou utilisez LiveKit Cloud, Sora Cloud ou Cloudflare TURN.
 
 <!-- source: livekit b16c1d192419 -->
 ## LiveKit

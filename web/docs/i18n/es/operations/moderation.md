@@ -466,14 +466,14 @@ En el cliente web, usa «Volver a descargar publicaciones» en la página de Rev
 - No obtiene de un dominio con un `suspend`, ni de un dominio `unavailable` porque fallaron las entregas. Una obtención fallida del mismo URI se recuerda durante 1 hora, y una nueva obtención en ese tiempo no la intenta.
 - Tu petición se registra en el registro de auditoría como `status_refetch_queued`, `account_statuses_refetch_queued` o `domain_statuses_refetch_queued`.
 
-<!-- source: checking-what-reached-a-remote-server 6c1ec9c8cef1 -->
+<!-- source: checking-what-reached-a-remote-server 320117beafdd -->
 ## Comprobar qué llegó a un servidor remoto
 
 Cuando un usuario pregunta si una publicación, un seguimiento o una aceptación llegó a otro servidor, enumera las entregas a ese servidor con la API de administración.
 Muestra cada entrega de una actividad a un inbox del servidor, la más reciente primero, con cada intento y lo que respondió el servidor, incluidas las entregas que tuvieron éxito.
 Necesita el permiso `manage_domains`.
 En el cliente web, la sección **Entregas** de la pantalla del servidor remoto (`/moderation/instances/{domain}`) muestra la misma lista, con sus filtros por **ID de actividad** y **Cuenta local**, y **Mostrar** para cada campo oculto en **Detalles** de una entrega enmascarada; la pantalla dice cuáles de ellos se anotan en el registro de auditoría antes de ejecutarse.
-La lista de servidores remotos muestra solo los servidores a los que fallaron las entregas. Para abrir cualquier otro servidor, escribe su dominio, un identificador en él o una URL en él en **Abrir un servidor**, encima de la lista,
+La lista de servidores remotos muestra todos los servidores que este servidor conoce. Para abrir uno que no figura en ella, escribe su dominio, un identificador en él o una URL en él en **Abrir un servidor**, encima de la lista,
 o usa **Abrir el servidor de la cuenta** en la página Revisión de una cuenta remota o en una denuncia sobre una cuenta remota, o el dominio de una entrada del registro de auditoría sobre un dominio.
 
 ```sh
@@ -563,7 +563,7 @@ deja la denuncia como está.
   El motivo es solo para los moderadores; los participantes ven solo que la sala terminó. Funciona también mientras el chat de voz está desactivado, y el registro de auditoría anota `voice_room_ended`.
   En el cliente web, la página de la denuncia de una sala abierta tiene «Terminar la sala», que pregunta antes, con el motivo.
 
-<!-- source: events cbc3e19bfdb6 -->
+<!-- source: events 72a8d513f936 -->
 ### Eventos
 
 - Un usuario local puede denunciar un evento que puede ver, incluso uno cancelado (`POST /api/v1/reports` con `event_id`, y `account_id` definido como el organizador del evento).
@@ -573,6 +573,7 @@ deja la denuncia como está.
 - Quien tiene `manage_reports` puede cancelar un evento con `POST /api/v1/admin/events/{id}/cancel` (cuerpo `{"reason": "..."}`, opcional, hasta 500 caracteres).
   El motivo se muestra con la cancelación a todos los que ven el evento. Los usuarios que respondieron que van o quizá y los usuarios invitados reciben notificación, como en la propia cancelación del organizador, y el registro de auditoría anota `event_canceled`.
   Un evento ya cancelado responde `409` `event-closed`. En el cliente web, la página de la denuncia de un evento tiene «Cancelar el evento», que pregunta antes, con el motivo.
+- Una publicación del tablón de un evento se denuncia, se revisa y se elimina como cualquier otra publicación (`status_ids`, con `account_id` definido como quien la escribió). Su denuncia nunca se reenvía, y su eliminación nunca sale del servidor.
 - Suspender o eliminar al organizador cancela los eventos del organizador que aún no han empezado, incluidos los que aún sondean una fecha (`gathering.cancel_organized`), y notifica a sus asistentes. Estas cancelaciones no nombran a nadie como quien las canceló, y levantar la suspensión no las restaura. Los eventos que ya empezaron no se cancelan.
 
 <!-- source: notifications-for-moderators-and-the-pending-counts 0d1c327abe83 -->
@@ -609,7 +610,7 @@ Las denuncias nuevas, los registros pendientes de aprobación y las apelaciones 
 `GET /api/v1/admin/counts` devuelve el número de denuncias abiertas (`open_reports`, necesita `manage_reports`), el número de registros pendientes de aprobación (`pending_registrations`) y el número de apelaciones pendientes de revisión (`pending_appeals`) (ambos necesitan `manage_accounts`), el número de solicitudes de emoji personalizados pendientes de decisión (`pending_custom_emoji_requests`, necesita `manage_custom_emojis`) y el número de grupos de errores abiertos, nuevos, regresados o que dejaron de silenciarse (`open_error_groups`, necesita `manage_errors`).
 Los elementos para los que no tienes el permiso no se devuelven.
 
-<!-- source: audit-log 8334cc0280f5 -->
+<!-- source: audit-log 6a072e747840 -->
 ## Registro de auditoría
 
 Las operaciones de moderadores y administradores se anotan, una fila cada una, en el registro de auditoría (`audit_log_entries`) en la misma transacción que la operación.
@@ -669,7 +670,7 @@ Fíltralo por quién lo hizo (tú, o la persona de «Sus otras operaciones» de 
 - La lista va con la más reciente primero con paginación por clave (`-before <entry id>` en la CLI).
 - No hay API ni CLI para actualizar o eliminar el registro de auditoría. Las filas antiguas se eliminan tras el [periodo de conservación](#record-retention-and-holds).
 
-<!-- source: record-retention-and-holds 9861d8570a91 -->
+<!-- source: record-retention-and-holds 888b0178e795 -->
 ## Conservación de registros y retenciones
 
 Tras el período de retención de cada tipo de registro, trabajos horarios (`moderation.purge_records`, `identity.purge_origins`, `voice.purge_records` y `gathering.purge_records`) eliminan los registros de moderación.
@@ -683,17 +684,19 @@ Puedes cambiar los períodos en la configuración de la instancia, pero no por d
 | Acciones contra cuentas (motivo, nota, publicaciones objetivo, levantamiento) y apelaciones | `moderation_actions_retention_days` | 365 días | 180 días | El fin de la acción |
 | Registro de auditoría | `audit_log_retention_days` | 730 días | 365 días | El registro |
 | Bloqueos de registro | Ninguno (no se puede cambiar) | 30 días | n/a | Lo primero entre el levantamiento y la caducidad |
+| Las obtenciones de una suscripción a una lista de bloqueo; la última que no falló, y los fallos posteriores, se conservan | Ninguno (no se puede cambiar) | 30 días | n/a | La obtención |
 | Quién participó en una sala de chat de voz (participaciones, oradores y oyentes, manos levantadas, invitaciones, expulsiones) | `voice_participants_retention_days` | 90 días | 30 días | El fin de la sala |
 | Las decisiones de los [ganchos de decisión](decision-hooks.md#the-decisions) | `hook_decisions_retention_days` | 90 días | 30 días | La decisión |
-| Las respuestas, aprobaciones, invitaciones y votos sobre las fechas candidatas de un evento | `event_records_retention_days` | 90 días | 30 días | Lo primero entre el fin del evento (para un evento cuya fecha nunca se fijó, el fin de su última fecha candidata) y su cancelación |
+| Las respuestas, aprobaciones, invitaciones, votos sobre las fechas candidatas y publicaciones del tablón de un evento | `event_records_retention_days` | 90 días | 30 días | Lo primero entre el fin del evento (para un evento cuya fecha nunca se fijó, el fin de su última fecha candidata) y su cancelación |
 
 - Las denuncias abiertas nunca se eliminan. Una denuncia a la que se refiere una acción (`report_id` de la acción) se mantiene hasta que se elimine esa acción.
 - El fin de una acción es lo primero entre el levantamiento y la caducidad. Para una acción que fue apelada, si la revisión llega más tarde, el fin es la hora de la revisión, y la acción se conserva mientras la apelación espera revisión.
   `warn` y `delete_statuses` no tienen efecto duradero, así que el fin es la hora en que se emitieron. Una acción sin fin (un `ban`, un `suspend` sin hora de fin, etc.) no se elimina hasta que se levanta.
-- Las publicaciones a las que apunta una denuncia o una acción no se eliminan físicamente por el trabajo de purga, con sus archivos multimedia adjuntos, hasta que se elimine esa denuncia o acción, aunque el autor las haya eliminado (desaparecen de la vista). Las publicaciones remotas también se mantienen más allá del período de retención (incluido la configuración de instancia `remote_status_max_retention_days`).
+- Una publicación eliminada desaparece de la vista al instante, y el trabajo horario `content.purge_deleted_statuses` elimina su texto, multimedia y encuesta 7 días después, cuando su `Delete` ya ha tenido tiempo de llegar a los otros servidores; el registro de su URI permanece.
+  Las publicaciones a las que apunta una denuncia o una acción no se eliminan físicamente, con sus archivos multimedia adjuntos, hasta que se elimine esa denuncia o acción. Las publicaciones remotas también se mantienen más allá del período de retención (incluido la configuración de instancia `remote_status_max_retention_days`).
 - Un bloqueo de registro que no tiene ni levantamiento ni hora de fin se mantiene mientras esté en vigor.
 - Los registros de quién participó en una sala de chat de voz a la que apunta una denuncia se mantienen hasta que se elimine esa denuncia. La sala en sí (su nombre, descripción, anfitriones y cómo terminó) nunca se elimina.
-- Las respuestas, votos e invitaciones de un evento al que apunta una denuncia se mantienen hasta que se elimine esa denuncia, y también los que nombran una cuenta bajo una retención. El evento en sí (sus ajustes y lugares, su fecha y fechas candidatas, sus coorganizadores y su cancelación) nunca se elimina; una vez desaparecidas sus respuestas, no cuenta a nadie como asistente.
+- Las respuestas, votos, invitaciones y publicaciones del tablón de un evento al que apunta una denuncia se mantienen hasta que se elimine esa denuncia, y también los que nombran una cuenta bajo una retención. El evento en sí (sus ajustes y lugares, su fecha y fechas candidatas, sus coorganizadores y su cancelación) nunca se elimina; una vez desaparecidas sus respuestas, no cuenta a nadie como asistente.
 - Una ejecución del trabajo elimina solo un número limitado de filas por tipo (100 cada vez, 20 veces, para acciones, denuncias y bloqueos de registro; 1.000 filas cada vez, 20 veces, para el registro de auditoría). La siguiente ejecución elimina el resto.
 
 <!-- source: holds f3bf57c2c258 -->

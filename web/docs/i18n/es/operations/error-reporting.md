@@ -137,7 +137,7 @@ El servidor limita lo que envía para no saturar el servicio:
 
 Vigila el contador `my.errors.exported`: `my.outcome` es `success`, `dropped` (por encima de un límite, la cola estaba llena o el servicio pidió reducir el ritmo) o `failed` (no se pudo contactar con el servicio o este rechazó el informe) ([Ejecutar el servidor](running.md#metrics)).
 
-<!-- source: sentry-glitchtip-and-datadog 0d380a51f717 -->
+<!-- source: sentry-glitchtip-and-datadog 81bdd8389ace -->
 ### Sentry, GlitchTip y Datadog
 
 ```sh
@@ -153,7 +153,7 @@ Con los módulos de OpenTofu, deja los errores de la sección `observability` a 
   secrets       = ["errors_sentry_dsn"]
 ```
 
-El servidor habla el protocolo de Sentry por sí mismo, así que no interviene ningún SDK de Sentry y no se lee ninguna variable de entorno `SENTRY_*`. Define la huella, por lo que el servicio agrupa por ella, y las etiquetas `service` (`my`), `my.role`, `my.error.where` y `error.fingerprint`. La versión es la del servidor y el entorno es `errors_environment`.
+El servidor habla el protocolo de Sentry por sí mismo, así que no interviene ningún SDK de Sentry y no se lee ninguna variable de entorno `SENTRY_*`. Define la huella, por lo que el servicio agrupa por ella, y las etiquetas `service` (`my`), `service.namespace` (el `host`), `my.role`, `my.error.where` y `error.fingerprint`. La versión es la del servidor y el entorno es `errors_environment`.
 
 - **Sentry** (alojado o autoalojado): copia el DSN de las claves de cliente del proyecto.
 - **GlitchTip**: copia el DSN del proyecto. Es de código abierto y funciona en un servidor pequeño. Comprueba qué reglas de alerta ofrece tu versión para incidencias nuevas y recurrentes.

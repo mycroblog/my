@@ -346,7 +346,7 @@ sha256sum --ignore-missing -c SHA256SUMS
 - 請求がスパムフィルタで落ちないようにしてください。
 - 公開してよいアドレスを使ってください。情報のページ、ランディングページ、NodeInfo で誰でも見られます。
 
-<!-- source: metrics 584238f8a4d3 -->
+<!-- source: metrics a5fd8092d408 -->
 ## メトリクス
 
 設定 `metrics_exporter` (既定値 `none`) で、サービスのメトリクスを出力します。関連する設定は[設定リファレンス](../reference/configuration.md)にあります。
@@ -379,6 +379,7 @@ sha256sum --ignore-missing -c SHA256SUMS
 | `my.job.duration` | ヒストグラム、秒 | `my.job.type` (登録されたジョブの種類、または `other`)、`my.outcome` (`success` / `retry` / `dead` / `postponed`: `postponed` は、ホストを待つリンクカードの取得のように、何も処理せずジョブの試行回数も使わない実行です) |
 | `my.job.wait` | ヒストグラム、秒 | `my.job.type` |
 | `my.link_card.host_pauses` | カウンター | `http.response.status_code` (`429` / `503`)。あるホストからのリンクカードの取得を一時停止するたびに 1。[リンクのプレビュー](link-previews.md#limits-per-host)を参照 |
+| `my.projection.drifts` | カウンター | `my.projection` (プロジェクションの名前)。定期の確認でプロジェクションの差分を見つけるたびに 1。[プロジェクションの確認と作り直し](database.md#checking-and-rebuilding-projections)を参照 |
 | `my.translation.requests` | カウンター | `my.outcome` (`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`)。閲覧者が見られる投稿の翻訳、またはモデレーターが求めた通報の投稿やコメントの翻訳の要求 1 件ごとに 1。投稿者自身の言葉、保存した翻訳、または事業者から応えたか、あるいは投稿を受け取ってよい事業者がない、月ごとの上限に達した、その言語を翻訳する事業者がない、使える翻訳を返した事業者がない、のいずれかで拒否したかを表します。 |
 | `my.translation.lock_waits` | カウンター | なし。同じ投稿を同じ言語に翻訳している別のリクエストを、事業者に問い合わせる代わりに待ったリクエスト 1 件ごとに 1 |
 | `my.translation.characters` | カウンター | `my.provider` (翻訳の事業者の ID)。事業者に送った投稿と通報のコメントの文字数で、マーカーを除き、失敗した呼び出しも含みます。[月ごとの上限](instance-settings.md#admin-screens-and-the-client-api)が数えるのはこの値で、事業者の請求とは異なることがあります |

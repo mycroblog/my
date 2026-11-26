@@ -10,7 +10,7 @@ So legst du den ersten Administrator an, verwaltest Rollen auf der Kommandozeile
 - Das Schema ist auf die Datenbank angewendet (`my schema apply`; siehe [database.md](database.md)).
 - `host` und `account_domain` sind endgültig. Der erste Befehl, der die Datenbank verwendet, merkt sie sich, und jeder spätere Befehl weigert sich zu laufen, wenn die Konfiguration abweicht (siehe [Einstellungen, die du später nicht mehr ändern kannst](production-checklist.md#settings-you-cannot-change-later)).
 
-<!-- source: creating-an-administrator 9be8b2ee8d85 -->
+<!-- source: creating-an-administrator fb4f4b92bb01 -->
 ## Einen Administrator anlegen
 
 ```sh
@@ -20,7 +20,7 @@ my admin create -username alice -email alice@example.com
 - In einem Terminal fragt der Befehl zweimal nach dem Passwort, ohne es anzuzeigen.
 - Ist die Standardeingabe kein Terminal, ist die erste Zeile der Standardeingabe das Passwort (zum Beispiel `my admin create ... < password.txt`).
   Das Passwort lässt sich weder als Kommandozeilenargument noch als Umgebungsvariable übergeben, weil diese in Prozesslisten und der Shell-Historie landen.
-- Wo ein einmaliger Befehl weder ein Terminal noch eine Standardeingabe hat, etwa bei einem [Cloud Run job](deploy-opentofu.md#5-create-the-first-administrator), füge `-password-link` hinzu. Der Befehl liest dann kein Passwort: Er setzt ein zufälliges, das niemand erfährt, und gibt nach der Zeile `created admin` einen Link aus, der das Passwort einmalig und eine Stunde lang festlegen lässt, wie `my admin account password-reset-link` (das Audit-Log verzeichnet ihn als `password_reset_link_issued`).
+- Wo ein einmaliger Befehl weder ein Terminal noch eine Standardeingabe hat, etwa [in der Konsole eines OpenTofu-Deployments](deploy-opentofu.md#5-create-the-first-administrator), füge `-password-link` hinzu. Der Befehl liest dann kein Passwort: Er setzt ein zufälliges, das niemand erfährt, und gibt nach der Zeile `created admin` einen Link aus, der das Passwort einmalig und eine Stunde lang festlegen lässt, wie `my admin account password-reset-link` (das Audit-Log verzeichnet ihn als `password_reset_link_issued`).
   Wer die Ausgabe des Befehls lesen kann, kann den Link verwenden, und auf einer solchen Plattform bleibt diese Ausgabe in den Logs der Plattform, bis der Link benutzt wird oder abläuft. Öffne den Link sofort. Läuft er ab, stelle mit `my admin account password-reset-link @alice` einen neuen aus. Schlägt das Ausstellen des Links fehl, existiert der Administrator bereits: Der Befehl sagt das und endet mit Exit-Code 1, und derselbe Befehl liefert einen neuen Link.
 - Ein Passwort hat 8 bis 128 Zeichen. Es erscheint nie in der Ausgabe, in den Logs oder in einer Fehlermeldung.
 - Eine Transaktion legt den Nutzer, das Passwort, die primäre E-Mail-Adresse, das lokale Konto (mit seinen Schlüsseln) und die Zuweisung der Rolle `admin` an (ohne Vergebenden, das heißt: die CLI).

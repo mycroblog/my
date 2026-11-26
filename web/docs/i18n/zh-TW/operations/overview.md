@@ -50,7 +50,7 @@
 
 `my config check` 會在你啟動伺服器之前，一次回報設定中的所有問題（[正式環境檢查清單](production-checklist.md)）。
 
-<!-- source: from-a-small-server-to-a-large-one 2f46b66f047c -->
+<!-- source: from-a-small-server-to-a-large-one ed28f8cf5385 -->
 ## 從小型伺服器到大型伺服器
 
 ![從小型伺服器到大型伺服器的三個步驟：先是一個使用 SQLite 與檔案系統的程序，接著是 PostgreSQL 與位於 CDN 後方的物件儲存，再來是分開的 web 與 worker 程序加上串流代理。下面的清單說明每個步驟。](images/growth.svg)
@@ -61,14 +61,21 @@
 3. **向外擴充。** 為處理請求執行 `role = web` 的程序，為處理工作執行 `role = worker` 的程序，各需要多少就執行多少，並依工作類型拆分 worker（[依工作類型拆分 worker](running.md#splitting-workers-by-job-type)）。
    有多個程序時，即時串流需要一個能到達每個程序的代理（`postgres`、`valkey`、`sns` 或 `pubsub`），鍵值儲存也應該共用（`db` 或 `valkey`），因為 `memory` 會讓各程序的速率限制和對重新送出的寫入的回應各自獨立。工作佇列仍留在 PostgreSQL，或改用 Google Cloud Tasks（[Cloud Tasks](running.md#cloud-tasks)）。
 
-[Cloud Run 部署](deploy-google-cloud.md)是介於第二步和第三步之間的配置範例：Cloud Run 上的 `role = all`、Neon 上的 PostgreSQL、Cloud Storage 中的媒體、用 Cloud Tasks 處理工作，以及用 Pub/Sub 作為串流，沒有人使用伺服器時不會有執行個體在運作。
+<!-- source: ways-to-deploy eeb6d182d4dc -->
+## 部署方式
 
-<!-- source: where-to-go-next 2f1d25c01f8a -->
+- **[Docker Compose](deploy-docker-compose.md)**，在一台機器上：第一步，或搭配 PostgreSQL 與 bucket 的第二步。
+- **[Google Cloud](deploy-google-cloud.md)**：Cloud Run 上的 `role = all`、Neon 之類的 PostgreSQL、Cloud Storage 中的媒體、用 Cloud Tasks 處理工作，以及用 Pub/Sub 作為串流，沒有人使用伺服器時不會有執行個體在運作。
+- **[AWS](deploy-aws.md)**：ECS Fargate 上的 `role = all`、Neon 之類的 PostgreSQL、S3 中的媒體、資料庫中的工作，以及用 SNS 作為串流。
+
+在這兩個雲端上，都是由一個 OpenTofu 模組建立整個部署：兩者共通的步驟請見[以 OpenTofu 部署](deploy-opentofu.md)。
+
+<!-- source: where-to-go-next 48f37c91b820 -->
 ## 接下來該讀什麼
 
 請依照以下順序閱讀營運者指南：
 
-1. **開始使用**：[執行伺服器](running.md)或[部署到 Cloud Run](deploy-google-cloud.md)，然後在開放給使用者之前，逐項確認[正式環境檢查清單](production-checklist.md)。
+1. **開始使用**：[執行伺服器](running.md)並[部署它](#ways-to-deploy)，然後在開放給使用者之前，逐項確認[正式環境檢查清單](production-checklist.md)。
 2. **設定實例**：它的[設定](instance-settings.md)、[註冊](registration.md)、[外部登入提供者](login-providers.md)、[電子郵件](email.md)、[CAPTCHA](captcha.md)、[CDN](cdn.md)、[連結預覽](link-previews.md)，以及[搜尋引擎與 AI 爬蟲](crawlers.md)。
 3. **開啟功能**：[審核](moderation.md)、[中繼站](relays.md)、[webhook](webhooks.md)、[外掛](plugins.md)與[決策掛鉤](decision-hooks.md)、[語音聊天](voice.md)、[全文搜尋](search.md)、[支持者](supporters.md)及其付款，以及[匯入雲端費用](billing-import.md)。
 4. **日常營運**：[監控](monitoring.md)、[警示](alerts.md)、[錯誤回報](error-reporting.md)、[維護](maintenance.md)、[備份](backup.md)、[資料庫](database.md)、[金鑰加密金鑰](key-management.md)，以及[管理員與角色](admin-cli.md)。

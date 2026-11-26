@@ -19,7 +19,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 - 无论 `media_origin` 是什么，联邦 URI（例如 ActivityPub 对象的 `id`）都保持在 `https://{host}/` 下。改变的只是文件的提供位置，而不是标识符。
 - URL 在每次读取时生成，不存储在数据库中，因此修改 `media_origin` 也会改变现有媒体的 URL。只要旧源上的 `/media/` 继续提供服务，远程服务器保存的旧 URL 就仍然可用。
 
-<!-- source: point-the-cdn-at-the-server ffb279f38f08 -->
+<!-- source: point-the-cdn-at-the-server c9ebf6b731e5 -->
 ## 让 CDN 指向服务器
 
 - 将源站（后端）设为服务器的公开主机名（`https://{host}`）。CDN 只需从服务器获取 `/media/` 下的路径。
@@ -35,7 +35,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 
 两者都带有 `Cross-Origin-Resource-Policy: cross-origin` 返回，因此其他源的页面也能读取。
 
-在 Cloud Run 上，`ingress-cloudflare-media` 会用 OpenTofu 完成这些配置：见[在 Cloud Run 上部署](deploy-google-cloud.md#cloudflare)。
+在 Cloud Run 上，`ingress-cloudflare-media` 会用 OpenTofu 完成这些配置：见[在 Google Cloud 上部署](deploy-google-cloud.md#cloudflare)。
 
 <!-- source: who-can-open-media-urls 27306b0bc9be -->
 ## 谁能打开媒体 URL

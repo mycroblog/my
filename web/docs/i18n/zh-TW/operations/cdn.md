@@ -19,7 +19,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 - 聯邦 URI（例如 ActivityPub 物件的 `id`）不論 `media_origin` 為何，都維持在 `https://{host}/` 之下。改變的只有提供檔案的位置，而不是識別碼。
 - URL 是每次讀取時產生的，不會儲存在資料庫中，因此變更 `media_origin` 也會改變既有媒體的 URL。只要舊 origin 上的 `/media/` 持續提供服務，遠端伺服器儲存的舊 URL 就仍然有效。
 
-<!-- source: point-the-cdn-at-the-server ffb279f38f08 -->
+<!-- source: point-the-cdn-at-the-server c9ebf6b731e5 -->
 ## 讓 CDN 指向伺服器
 
 - 將 origin（後端）設為伺服器的公開主機名稱（`https://{host}`）。CDN 只需要從伺服器取得 `/media/` 底下的路徑。
@@ -35,7 +35,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 
 兩者回應時都帶有 `Cross-Origin-Resource-Policy: cross-origin`，因此其他 origin 的頁面也能讀取。
 
-在 Cloud Run 上，`ingress-cloudflare-media` 會用 OpenTofu 完成這些設定：請參閱[在 Cloud Run 上部署](deploy-google-cloud.md#cloudflare)。
+在 Cloud Run 上，`ingress-cloudflare-media` 會用 OpenTofu 完成這些設定：請參閱[在 Google Cloud 上部署](deploy-google-cloud.md#cloudflare)。
 
 <!-- source: who-can-open-media-urls 27306b0bc9be -->
 ## 誰能開啟媒體 URL

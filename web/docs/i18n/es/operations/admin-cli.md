@@ -10,7 +10,7 @@ Cómo crear al primer administrador, gestionar roles desde la línea de comandos
 - El esquema está aplicado en la base de datos (`my schema apply`; consulta [database.md](database.md)).
 - `host` y `account_domain` son definitivos. El primer comando que usa la base de datos los registra, y todos los comandos posteriores se niegan a ejecutarse si la configuración difiere (consulta [Settings you cannot change later](production-checklist.md#settings-you-cannot-change-later)).
 
-<!-- source: creating-an-administrator 9be8b2ee8d85 -->
+<!-- source: creating-an-administrator fb4f4b92bb01 -->
 ## Crear un administrador
 
 ```sh
@@ -20,7 +20,7 @@ my admin create -username alice -email alice@example.com
 - Desde un terminal, el comando pide la contraseña dos veces, sin mostrarla.
 - Cuando la entrada estándar no es un terminal, la primera línea de la entrada estándar es la contraseña (por ejemplo `my admin create ... < password.txt`).
   La contraseña no puede darse como argumento de la línea de comandos ni como variable de entorno, porque acaban en las listas de procesos y en el historial del shell.
-- Donde un comando puntual no tiene ni terminal ni entrada estándar, como un [job de Cloud Run](deploy-opentofu.md#5-create-the-first-administrator), añade `-password-link`. El comando entonces no lee ninguna contraseña: establece una aleatoria que nadie conoce e imprime un enlace después de la línea `created admin`, que establece la contraseña una sola vez, durante una hora, como `my admin account password-reset-link` (el registro de auditoría lo anota como `password_reset_link_issued`).
+- Donde un comando puntual no tiene ni terminal ni entrada estándar, como [la consola de un despliegue con OpenTofu](deploy-opentofu.md#5-create-the-first-administrator), añade `-password-link`. El comando entonces no lee ninguna contraseña: establece una aleatoria que nadie conoce e imprime un enlace después de la línea `created admin`, que establece la contraseña una sola vez, durante una hora, como `my admin account password-reset-link` (el registro de auditoría lo anota como `password_reset_link_issued`).
   Quien pueda leer la salida del comando puede usar el enlace, y en una plataforma así esa salida permanece en los registros de la plataforma hasta que el enlace se usa o caduca. Abre el enlace enseguida. Si caduca, emite otro con `my admin account password-reset-link @alice`. Si falla la emisión del enlace, el administrador ya existe: el comando lo dice y termina con el código 1, y el mismo comando da un enlace nuevo.
 - Una contraseña tiene de 8 a 128 caracteres. Nunca aparece en la salida, en los registros ni en un mensaje de error.
 - Una transacción crea el usuario, la contraseña, la dirección de correo principal, la cuenta local (con sus claves) y la concesión del rol `admin` (sin quien lo concede, lo que significa la CLI).
