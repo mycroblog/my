@@ -18,7 +18,7 @@
 - **你選擇的部分。** 圖中間的每個部分都有一個設定來選擇它的轉接器，列在[下一節](#parts-you-choose-by-configuration)。
 - **伺服器外部的服務。** CAPTCHA、語音聊天、付款、外掛程式和雲端成本的匯入，在你設定之前都保持關閉，設定之後伺服器才會呼叫你指定的服務。
 
-<!-- source: parts-you-choose-by-configuration 09f4f7287bde -->
+<!-- source: parts-you-choose-by-configuration 34c2a60744fd -->
 ## 你透過設定選擇的部分
 
 每個部分都是[設定參考](../reference/configuration.md)中的一項設定，可以在 TOML 檔案中設定，也可以用環境變數設定（`MY_` 加上大寫的鍵，例如 `MY_DATABASE`）。每個清單的第一個選項是預設值。
@@ -42,7 +42,7 @@
 | 貼文的全文搜尋 | [`search`](../reference/configuration.md#search) | `none`；或 `elasticsearch`、`opensearch`、`meilisearch`（[搜尋引擎](search-engines.md)）；或 `plugin`，放在另一個引擎前面的你自己的外掛程式 | [全文搜尋](search.md)、[搜尋外掛程式](plugins.md#searching-posts) |
 | 媒體用的 CDN | [`media_origin`](../reference/configuration.md#media_origin) | 未設定（伺服器從自己的來源提供媒體），或你的 CDN 的來源 | [透過 CDN 提供媒體](cdn.md) |
 | 雲端成本 | [`billing_sources`](../reference/configuration.md#billing_sources) | 無，或以下任何幾項：`aws`（AWS Cost Explorer）、`gcp`（Google Cloud 的帳單匯出或預算）、`cloudflare`（Cloudflare 的用量費用）、`plugin` | [匯入雲端成本](billing-import.md) |
-| 日誌 | [`logs_exporter`](../reference/configuration.md#logs_exporter) | `stderr`（JSON 行）、`gcp`（帶有 Cloud Logging 欄位的相同行） | [啟動伺服器](running.md#start-the-server) |
+| 日誌 | [`logs_exporter`](../reference/configuration.md#logs_exporter) | `stderr`（JSON 行）、`gcp`（帶有 Cloud Logging 欄位的相同行）、`otlp`（OpenTelemetry） | [啟動伺服器](running.md#start-the-server) |
 | 指標 | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`、`prometheus`、`otlp`（OpenTelemetry）、`emf`（CloudWatch） | [指標](running.md#metrics)、[警示](alerts.md) |
 | 追蹤 | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`、`otlp` | [追蹤](running.md#traces) |
 | 錯誤回報 | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none`（只有日誌行和錯誤群組）、`sentry`（Sentry、GlitchTip、Datadog）、`otlp` | [錯誤回報](error-reporting.md) |

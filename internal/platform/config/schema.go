@@ -1592,6 +1592,7 @@ var schema = []field{
 		choices: []choice{
 			{value: LogsStderr, doc: "JSON lines on standard error, which the platform or a log collector of the operator gathers."},
 			{value: LogsGCP, doc: "The same lines with the fields of Cloud Logging's structured logging, for Cloud Run: the trace fields that link a line to its trace in Cloud Trace (`logging.googleapis.com/trace`, `spanId`, and `trace_sampled`), and the request of each access line as `httpRequest`, without the query, the client IP, or the User-Agent."},
+			{value: LogsOTLP, doc: "OpenTelemetry log records over OTLP over HTTP (protobuf, gzip) to an OpenTelemetry Collector or another receiver, configured by the standard environment variables `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) and `OTEL_EXPORTER_OTLP_HEADERS`. Each record carries the attributes of the line and the trace and span of its context. The lines written before the exporter is ready, such as a startup failure, and the records that it fails to send go to standard error as JSON lines."},
 		},
 		set: func(c *Config, v string) { c.LogsExporter = v },
 	},

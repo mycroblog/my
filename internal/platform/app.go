@@ -364,6 +364,8 @@ type App struct {
 	closeMeter     func(ctx context.Context) error
 	// closeTracer flushes and stops the exporter of traces_exporter = otlp.
 	closeTracer func(ctx context.Context) error
+	// closeLogs sends the pending records and stops the exporter of logs_exporter = otlp.
+	closeLogs func(ctx context.Context) error
 	// page serves the web client's HTML at the GET paths that no route serves.
 	page http.Handler
 }
@@ -918,14 +920,27 @@ func (a *App) Close() error {
 		cancel()
 		a.closeMeter = nil
 	}
+	a.shutDownTracer()
+	var err error
+	if a.closer != nil {
+		err = a.closer()
+	}
+	// The logs go last, after every line of the other closers.
+	if a.closeLogs != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), meterCloseTimeout)
+		_ = a.closeLogs(ctx) // the records it cannot send are written on standard error
+		cancel()
+		a.closeLogs = nil
+	}
+	return err
+}
+
+// shutDownTracer flushes and stops the exporter of traces_exporter = otlp.
+func (a *App) shutDownTracer() {
 	if a.closeTracer != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), meterCloseTimeout)
 		_ = a.closeTracer(ctx) // the last spans are lost when the collector is down
 		cancel()
 		a.closeTracer = nil
 	}
-	if a.closer == nil {
-		return nil
-	}
-	return a.closer()
 }

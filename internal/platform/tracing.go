@@ -15,8 +15,9 @@ import (
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
-// setUpTracer builds the Tracer that cfg.TracesExporter selects (ADR-0055 §17) and makes the
-// logger write the trace and span IDs of every line logged with a traced context (§6).
+// setUpTracer builds the Tracer that cfg.TracesExporter selects (ADR-0055 §17), sends the lines
+// over OTLP with logs_exporter = otlp (§20), and makes the logger write the trace and span IDs of
+// every line logged with a traced context (§6).
 func (a *App) setUpTracer(ctx context.Context, cfg *config.Config, opts AppOptions) error {
 	switch {
 	case opts.Tracer != nil:
@@ -29,6 +30,12 @@ func (a *App) setUpTracer(ctx context.Context, cfg *config.Config, opts AppOptio
 		}
 	default:
 		return fmt.Errorf("traces_exporter %q is not implemented yet", cfg.TracesExporter)
+	}
+	if cfg.LogsExporter == config.LogsOTLP {
+		if err := a.setUpOTLPLogs(ctx, cfg, opts); err != nil {
+			a.shutDownTracer()
+			return fmt.Errorf("logs_exporter %s: %w", cfg.LogsExporter, err)
+		}
 	}
 	a.Logger = slog.New(traceIDHandler{Handler: a.Logger.Handler(), tracer: a.Tracer, gcp: cfg.LogsExporter == config.LogsGCP})
 	return nil

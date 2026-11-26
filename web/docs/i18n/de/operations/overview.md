@@ -27,7 +27,7 @@ Im Diagramm von oben nach unten:
 - **Dienste außerhalb des Servers.** CAPTCHA, Sprachchat, Zahlungen, Plugins und der Import der Cloud-Kosten bleiben jeweils aus,
   bis du sie einstellst, und der Server ruft dann den Dienst auf, den du nennst.
 
-<!-- source: parts-you-choose-by-configuration 09f4f7287bde -->
+<!-- source: parts-you-choose-by-configuration 34c2a60744fd -->
 ## Teile, die du per Konfiguration wählst
 
 Jeder Teil ist eine Einstellung der [Konfigurationsreferenz](../reference/configuration.md), gesetzt in einer TOML-Datei oder als
@@ -52,7 +52,7 @@ Wo ein Teil Daten hält, wähle ihn vor dem ersten Start: Die Daten ziehen nicht
 | Volltextsuche der Beiträge | [`search`](../reference/configuration.md#search) | `none`; oder `elasticsearch`, `opensearch` oder `meilisearch` ([Suchmaschinen](search-engines.md)); oder `plugin`, ein Plugin von dir vor einer anderen Suchmaschine | [Volltextsuche](search.md), [ein Such-Plugin](plugins.md#searching-posts) |
 | CDN für Medien | [`media_origin`](../reference/configuration.md#media_origin) | nicht gesetzt (der Server liefert Medien von seinem eigenen Origin aus) oder der Origin deines CDN | [Medien über ein CDN ausliefern](cdn.md) |
 | Cloud-Kosten | [`billing_sources`](../reference/configuration.md#billing_sources) | keine, oder beliebige von `aws` (AWS Cost Explorer), `gcp` (Billing-Export oder Budget von Google Cloud), `cloudflare` (Nutzungskosten von Cloudflare), `plugin` | [Cloud-Kosten importieren](billing-import.md) |
-| Logs | [`logs_exporter`](../reference/configuration.md#logs_exporter) | `stderr` (JSON-Zeilen), `gcp` (dieselben Zeilen mit den Feldern von Cloud Logging) | [Den Server starten](running.md#start-the-server) |
+| Logs | [`logs_exporter`](../reference/configuration.md#logs_exporter) | `stderr` (JSON-Zeilen), `gcp` (dieselben Zeilen mit den Feldern von Cloud Logging), `otlp` (OpenTelemetry) | [Den Server starten](running.md#start-the-server) |
 | Metriken | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`, `prometheus`, `otlp` (OpenTelemetry), `emf` (CloudWatch) | [Metriken](running.md#metrics), [Alarme](alerts.md) |
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
 | Fehlerberichte | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (nur die Logzeile und die Fehlergruppen), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Fehlerberichte](error-reporting.md) |

@@ -42,6 +42,8 @@ const (
 	LogsStderr = "stderr"
 	// LogsGCP writes them in the shape of Cloud Logging's structured logging.
 	LogsGCP = "gcp"
+	// LogsOTLP sends them as OpenTelemetry log records over OTLP/HTTP.
+	LogsOTLP = "otlp"
 )
 
 // Config is the validated configuration. Adapter fields hold the adapter name.
@@ -384,8 +386,8 @@ type Config struct {
 	MetricsListen        string
 	MetricsEMFNamespace  string
 	MetricsEMFDimensions []string
-	// LogsExporter is where the log lines go and in which shape (ADR-0055 §20): LogsStderr or
-	// LogsGCP.
+	// LogsExporter is where the log lines go and in which shape (ADR-0055 §20): LogsStderr,
+	// LogsGCP, or LogsOTLP.
 	LogsExporter string
 	// TracesExporter is the Tracer adapter, TracesSampleRatio the share of the root spans that
 	// are recorded, and TracesFlush when the spans are sent (ADR-0055 §17).

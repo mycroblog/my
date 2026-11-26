@@ -3,7 +3,7 @@
 
 サーバーの起動と停止、イメージの入手、そして稼働中の監視 (メトリクス、トレース、ジョブキュー、ヘルスチェック) の方法を説明します。
 
-<!-- source: start-the-server 3cc6acc9fe88 -->
+<!-- source: start-the-server 05b29144056b -->
 ## サーバーを起動する
 
 ```sh
@@ -40,6 +40,28 @@ Docker Compose の構成 (`deploy/docker/compose.yaml`。[Docker Compose での�
 リクエストの `X-Request-Id` が英数字と `-_.:` からなる 128 文字以内なら、ロードバランサーが割り当てた ID としてそのまま使います。
 トレースの中のログ (リクエストとジョブ) には `trace_id` と `span_id` も付きます ([トレース](#traces)を参照)。
 Cloud Run 向けの `logs_exporter = gcp` では、ログ行に、Cloud Trace のトレースへ行をリンクする Cloud Logging のフィールドも付き、アクセスログの行にはそのリクエストが `httpRequest` として付きます。ほかのフィールドはそのままです。
+
+`logs_exporter = otlp` では、サーバーはログ行を OpenTelemetry のログレコードとして、OTLP/HTTP で `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` または `OTEL_EXPORTER_OTLP_ENDPOINT`（既定は `http://localhost:4318`）の受け手へ、`OTEL_EXPORTER_OTLP_HEADERS` を付けて送ります。
+各レコードは、その行のフィールドを属性として持ち、その行のトレースとスパンを持ちます。そのため、すべてのホストが送る先の OpenTelemetry Collector が、全ホストのログをトレース（`traces_exporter = otlp`）の隣の 1 か所に集めます。
+サーバーが起動する前に書かれた行と、受け手が受け取らなかったレコードは、これまでどおり標準エラーに出て、そのあとに `otlp logs export failed` の行が続きます。
+受け手が遅い間に 2,048 行を超えるログが一度に出ると、送信キューに入りきらない行は捨てられます。
+ログのための Collector の最小のパイプライン:
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+exporters:
+  otlphttp:
+    endpoint: http://loki:3100/otlp # any receiver of OTLP logs, such as Loki
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      exporters: [otlphttp]
+```
 
 HTTP リクエストとジョブの実行は、それぞれ終わったときに 1 行を書きます。この行は下の[メトリクス](#metrics)のラベルと同じ名前と値を持つので、
 `metrics_exporter = none` でも、プラットフォームはこれらの行からログベースの指標 (カウンターと分布) を作れます。

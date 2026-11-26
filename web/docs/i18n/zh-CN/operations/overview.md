@@ -18,7 +18,7 @@
 - **你选择的组件。** 图中间的每个组件都有一个选择其适配器的设置，列在[下一节](#parts-you-choose-by-configuration)中。
 - **服务器外部的服务。** CAPTCHA、语音聊天、支付、插件和云费用导入在你设置之前都保持关闭，设置后服务器会调用你指定的服务。
 
-<!-- source: parts-you-choose-by-configuration 09f4f7287bde -->
+<!-- source: parts-you-choose-by-configuration 34c2a60744fd -->
 ## 通过配置选择的部分
 
 每个部分都是[配置参考](../reference/configuration.md)中的一个设置，可以写在 TOML 文件中，也可以作为环境变量设置（`MY_` 加上大写的键，例如 `MY_DATABASE`）。每个列表中的第一个选项是默认值。
@@ -42,7 +42,7 @@
 | 帖子的全文搜索 | [`search`](../reference/configuration.md#search) | `none`；或 `elasticsearch`、`opensearch` 或 `meilisearch`（[搜索引擎](search-engines.md)）；或 `plugin`，即在另一个引擎前面的你自己的插件 | [全文搜索](search.md)、[搜索插件](plugins.md#searching-posts) |
 | 媒体的 CDN | [`media_origin`](../reference/configuration.md#media_origin) | 未设置（服务器从它自己的源提供媒体），或你的 CDN 的源 | [通过 CDN 提供媒体](cdn.md) |
 | 云费用 | [`billing_sources`](../reference/configuration.md#billing_sources) | 无，或 `aws`（AWS Cost Explorer）、`gcp`（Google Cloud 的账单导出或预算）、`cloudflare`（Cloudflare 的用量费用）、`plugin` 中的任意几项 | [导入云费用](billing-import.md) |
-| 日志 | [`logs_exporter`](../reference/configuration.md#logs_exporter) | `stderr`（JSON 行）、`gcp`（带有 Cloud Logging 字段的相同行） | [启动服务器](running.md#start-the-server) |
+| 日志 | [`logs_exporter`](../reference/configuration.md#logs_exporter) | `stderr`（JSON 行）、`gcp`（带有 Cloud Logging 字段的相同行）、`otlp`（OpenTelemetry） | [启动服务器](running.md#start-the-server) |
 | 指标 | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`、`prometheus`、`otlp`（OpenTelemetry）、`emf`（CloudWatch） | [指标](running.md#metrics)、[告警](alerts.md) |
 | 追踪 | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`、`otlp` | [追踪](running.md#traces) |
 | 错误报告 | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none`（只有日志行和错误分组）、`sentry`（Sentry、GlitchTip、Datadog）、`otlp` | [错误报告](error-reporting.md) |
