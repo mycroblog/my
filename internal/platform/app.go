@@ -229,6 +229,9 @@ type App struct {
 	// VoiceRooms runs the voice chat rooms (ADR-0100) and their jobs; its use cases answer
 	// ErrDisabled while Voice is off.
 	VoiceRooms *appvoice.Service
+	// VoiceNode is the media node of voice = sfu that this process runs (ADR-0101 §10): with
+	// role = all or sfu only, nil otherwise. Serve starts it, drains it on shutdown, and closes it.
+	VoiceNode VoiceNode
 	// Events runs the events of the local users (ADR-0161).
 	Events *appgathering.Service
 	// BoardPurge deletes the posts of the boards of the events with their records (ADR-0161 §17).

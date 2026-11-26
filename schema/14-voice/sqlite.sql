@@ -14,7 +14,7 @@ CREATE TABLE voice_rooms (
   id TEXT NOT NULL PRIMARY KEY,
   opened_by_account_id TEXT NOT NULL,
   opened_at INTEGER NOT NULL,
-  transport TEXT NOT NULL CHECK (transport IN ('p2p', 'livekit', 'sora'))
+  transport TEXT NOT NULL CHECK (transport IN ('p2p', 'sfu', 'livekit', 'sora'))
 ) STRICT;
 
 -- Event (revision): the settings of a room; the settings it opened with are the first, and the

@@ -5,6 +5,7 @@ package voice
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"slices"
 
 	"github.com/mycroblog/my/internal/app/uow"
@@ -52,7 +53,7 @@ func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) 
 	session := newSessionID()
 	// The grant is issued before anything is written, so that a transport that gives no grant
 	// (ErrTransportUnavailable) leaves no room behind and the host can try again.
-	g, err := s.grant(ctx, room.ID, Session{ID: session, AccountID: accountID}, true)
+	g, err := s.grant(ctx, RoomRef{ID: room.ID, MaxParticipants: settings.Capacity(s.d.Config.Capacity)}, Session{ID: session, AccountID: accountID}, true)
 	if err != nil {
 		return Joined{}, err
 	}
@@ -349,7 +350,9 @@ func (s *Service) hostRoom(ctx context.Context, accountID, roomID string, checkE
 }
 
 // Update changes the settings of a room that accountID hosts, as a new revision (ADR-0100
-// §3). Invalid settings fail with a *voice.SettingsError.
+// §3). Invalid settings fail with a *voice.SettingsError. A maximum that rises is reserved on the
+// transport first (MaximumReserver), and a transport that has no room for it fails the change with
+// ErrTransportUnavailable.
 func (s *Service) Update(ctx context.Context, accountID, roomID string, p SettingsPatch) (RoomView, error) {
 	v, err := s.hostRoom(ctx, accountID, roomID, true)
 	if err != nil {
@@ -357,6 +360,9 @@ func (s *Service) Update(ctx context.Context, accountID, roomID string, p Settin
 	}
 	settings, err := s.patched(ctx, v.Revision.Settings, p)
 	if err != nil {
+		return RoomView{}, err
+	}
+	if err := s.reserveMaximum(ctx, v.RoomRecord, settings); err != nil {
 		return RoomView{}, err
 	}
 	rev := Revision{ID: s.d.IDs.NewID(), RoomID: roomID, Settings: settings, RevisedByAccountID: accountID, RevisedAt: s.now()}
@@ -376,6 +382,24 @@ func (s *Service) Update(ctx context.Context, accountID, roomID string, p Settin
 		return RoomView{}, err
 	}
 	return s.view(ctx, roomID)
+}
+
+// reserveMaximum reserves the maximum of settings on the transport of a room when it is larger
+// than the room's current one, outside any transaction (MaximumReserver).
+func (s *Service) reserveMaximum(ctx context.Context, rec RoomRecord, settings voice.Settings) error {
+	r, ok := s.d.Transport.(MaximumReserver)
+	if !ok || rec.Transport != s.d.Config.Transport {
+		return nil
+	}
+	cur, next := rec.Revision.Settings.Capacity(s.d.Config.Capacity), settings.Capacity(s.d.Config.Capacity)
+	if next == cur || (next < cur && next != 0) || cur == 0 {
+		return nil
+	}
+	if err := r.ReserveMaximum(ctx, RoomRef{ID: rec.ID, MaxParticipants: next}); err != nil {
+		s.d.Logger.WarnContext(ctx, "the voice transport has no room for the larger maximum", slog.String("room", rec.ID), slog.Any("error", err))
+		return errors.Join(ErrTransportUnavailable, err)
+	}
+	return nil
 }
 
 // End ends a room that accountID hosts (host, ADR-0100 §6).

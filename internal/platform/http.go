@@ -55,7 +55,8 @@ const readinessTimeout = 3 * time.Second
 // that no database can look up are a 400 before any route (rejectInvalidText). With origin_secret,
 // the requests that did not come through the CDN are refused before all of it (originCheck).
 // The worker role serves only the health checks, for the platform's probes, and the endpoints of
-// the push receiver and the trigger of queue = cloudtasks, which the web role does not serve.
+// the push receiver and the trigger of queue = cloudtasks, which the web role does not serve. The
+// media node of voice = sfu (role = all or sfu) serves its WebSocket at config.VoiceSFUPath.
 func (a *App) Handler() http.Handler { return a.handler(false) }
 
 // handler builds Handler. With gateDomains, as in Serve, requests other than the health checks
@@ -80,6 +81,12 @@ func (a *App) handler(gateDomains bool) http.Handler {
 			mux.Handle(r.pattern, r.handler)
 			targets[r.pattern] = routeTarget{route: routeOf(r.pattern), surface: r.surface}
 		}
+	}
+	if a.VoiceNode != nil {
+		// The WebSocket of the media node (ADR-0101 §11), only where the node runs.
+		pattern := "GET " + config.VoiceSFUPath
+		mux.Handle(pattern, a.VoiceNode)
+		targets[pattern] = routeTarget{route: config.VoiceSFUPath, surface: surfaceVoice}
 	}
 	h := a.problemFallback(mux, page, targets)
 	if gateDomains {

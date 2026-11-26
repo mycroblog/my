@@ -184,7 +184,8 @@ type Subscriber interface {
 type RoomSubscriber interface {
 	// SubscribeRoom opens a subscription of the session session to the signals of the voice
 	// chat room roomID: every signal of the room but the ones for another session
-	// (KindVoiceSignal to another To, KindVoiceMute of another SessionID). It counts toward the
+	// (KindVoiceSignal to another To, KindVoiceMute of another SessionID). A subscription without
+	// a session, a media node's (ADR-0101 §13), takes the KindVoiceMute of every session. It counts toward the
 	// subscriptions of the process, not of an account, and waits for the broker as Subscribe
 	// does.
 	SubscribeRoom(ctx context.Context, roomID, session string) (Subscription, error)

@@ -112,13 +112,14 @@ type Transport string
 // The transports of a room.
 const (
 	TransportP2P     Transport = "p2p"
+	TransportSFU     Transport = "sfu"
 	TransportLiveKit Transport = "livekit"
 	TransportSora    Transport = "sora"
 )
 
 // Valid reports whether t is a known transport.
 func (t Transport) Valid() bool {
-	return t == TransportP2P || t == TransportLiveKit || t == TransportSora
+	return t == TransportP2P || t == TransportSFU || t == TransportLiveKit || t == TransportSora
 }
 
 // State is whether a room is open (voice_room_heads.state).

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -27,16 +28,32 @@ const DefaultTLSACMEDirectory = "https://acme-v02.api.letsencrypt.org/directory"
 // check` warn.
 const TLSCertificateWarning = 14 * 24 * time.Hour
 
-// ServesTLS reports whether this process listens with TLS: tls is not off and the role is web or
-// all. A worker and a media node (sfu) serve their health checks in plain HTTP.
+// ServesTLS reports whether this process listens with TLS: tls is not off and the role is web,
+// all, or sfu. A worker serves its health checks in plain HTTP.
 func (c *Config) ServesTLS() bool {
-	return c.TLS != "" && c.TLS != TLSOff && c.Role.ServesAPI()
+	return c.TLS != "" && c.TLS != TLSOff && c.Role.ListensTLS()
+}
+
+// TLSHosts returns the hosts that the process serves with tls other than off: host and, when it
+// differs, the host of web_origin; for a media node (role = sfu), the host of its WebSocket's
+// URL (VoiceSFUURL).
+func (c *Config) TLSHosts() []string {
+	if c.Role == RoleSFU {
+		if u, err := url.Parse(c.VoiceSFUURL()); err == nil && u.Host != "" {
+			return []string{u.Host}
+		}
+	}
+	hosts := []string{c.Host}
+	if u, err := url.Parse(c.WebOrigin); err == nil && u.Host != "" {
+		hosts = append(hosts, u.Host)
+	}
+	return hosts
 }
 
 // defaultListen returns the default of listen: :443 when the process listens with TLS, :8080
 // otherwise.
 func defaultListen(mode string, role Role) string {
-	if mode != "" && mode != TLSOff && role.ServesAPI() {
+	if mode != "" && mode != TLSOff && role.ListensTLS() {
 		return ":443"
 	}
 	return ":8080"
@@ -63,7 +80,7 @@ func tlsChecks(vals map[string]string, present map[string]bool) []Issue {
 	if vals["tls"] == TLSACME {
 		issues = append(issues, acmeChecks(vals)...)
 	}
-	if vals["tls"] != "" && vals["tls"] != TLSOff && Role(vals["role"]).ServesAPI() {
+	if vals["tls"] != "" && vals["tls"] != TLSOff && Role(vals["role"]).ListensTLS() {
 		if l := vals["tls_http_listen"]; l != "" && l == effectiveListen(vals) {
 			issues = append(issues, Issue{Key: "tls_http_listen", Message: "must differ from listen, which serves https"})
 		}
@@ -153,7 +170,7 @@ func checkTLSFiles(c *Config, now time.Time, errorf, warnf func(key, format stri
 			return
 		}
 	}
-	host := c.Host
+	host := c.TLSHosts()[0]
 	if h, _, err := net.SplitHostPort(host); err == nil {
 		host = h
 	}

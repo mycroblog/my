@@ -269,6 +269,7 @@ func (s *Service) reopen(ctx context.Context, room RoomRef) error {
 	case rec.Head.State != voice.StateOpen || rec.Transport != s.d.Config.Transport:
 		return nil
 	}
+	room.MaxParticipants = rec.Revision.Settings.Capacity(s.d.Config.Capacity)
 	return s.d.Transport.Open(ctx, room)
 }
 
@@ -367,7 +368,7 @@ func (s *Service) reconcile(ctx context.Context, rec RoomRecord) error {
 			return err
 		}
 	}
-	room := RoomRef{ID: rec.ID}
+	room := RoomRef{ID: rec.ID, MaxParticipants: rec.Revision.Settings.Capacity(s.d.Config.Capacity)}
 	media, err := t.Sessions(ctx, room)
 	if err != nil {
 		return err

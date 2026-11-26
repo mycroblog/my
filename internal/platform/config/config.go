@@ -35,13 +35,18 @@ const (
 	RoleWeb    Role = "web"
 	RoleWorker Role = "worker"
 	// RoleSFU is a media node of voice = sfu (ADR-0101 §10): it runs no jobs, and its HTTP
-	// server answers only the health checks.
+	// server answers the health checks and the WebSocket of the node.
 	RoleSFU Role = "sfu"
 )
 
 // ServesAPI reports whether a process of the role serves the client API, the web client, and
-// the other public routes: all and web. A worker and a media node answer only the health checks.
+// the other public routes: all and web. A worker and a media node do not.
 func (r Role) ServesAPI() bool { return r != RoleWorker && r != RoleSFU }
+
+// ListensTLS reports whether a process of the role serves HTTPS itself with tls other than off:
+// all, web, and sfu, whose WebSocket the browsers reach on its public host name (ADR-0101 §15).
+// A worker serves its health checks in plain HTTP.
+func (r Role) ListensTLS() bool { return r != RoleWorker }
 
 // RunsJobs reports whether a process of the role runs jobs: all and worker.
 func (r Role) RunsJobs() bool { return r != RoleWeb && r != RoleSFU }

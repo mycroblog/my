@@ -63,6 +63,9 @@ type ServeOptions struct {
 //   - with pprof_listen set, every role serves the Go runtime's profiles there;
 //   - the worker and all roles run the job runner and the scheduler of periodic jobs, or with
 //     queue = cloudtasks or sqs serve the endpoints that run the jobs and tick the periodic ones;
+//   - with voice = sfu, the all and sfu roles run the media node (VoiceNode): it starts before the
+//     listener serves its WebSocket, and on shutdown it moves its rooms to other nodes and waits
+//     for its clients to leave before the requests are awaited;
 //   - every role first ensures the built-in roles, giving admin every permission.
 //
 // A process that started before the schema was applied or while the database was down verifies
@@ -99,6 +102,15 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	if err != nil {
 		_ = ln.Close()
 		return err
+	}
+	if a.VoiceNode != nil {
+		// The media node of voice = sfu (ADR-0101 §10): its sockets open before the WebSocket
+		// that leads to them serves.
+		if err := a.VoiceNode.Start(ctx); err != nil {
+			_ = ln.Close()
+			tlsLn.close()
+			return fmt.Errorf("voice media node: %w", err)
+		}
 	}
 
 	srv := &http.Server{
@@ -252,6 +264,13 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 
 	graceCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), opts.ShutdownTimeout)
 	defer cancel()
+	if a.VoiceNode != nil {
+		// The node moves its rooms to other nodes while the listener still takes the clients that
+		// come back to it (ADR-0101 §14), and leaves the rest of the timeout to the requests.
+		drainCtx, stopDrain := context.WithTimeout(graceCtx, opts.ShutdownTimeout-min(opts.ShutdownTimeout/5, voiceDrainReserve))
+		a.VoiceNode.Drain(drainCtx)
+		stopDrain()
+	}
 	if shutdownErr := srv.Shutdown(graceCtx); shutdownErr != nil {
 		err = errors.Join(err, fmt.Errorf("http server shutdown: %w", shutdownErr))
 	}
@@ -282,12 +301,21 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		a.Logger.ErrorContext(ctx, "job runner abandoned: a job did not stop after its cancellation",
 			slog.Duration("timeout", opts.JobStopTimeout))
 	}
+	if a.VoiceNode != nil {
+		if closeErr := a.VoiceNode.Close(graceCtx); closeErr != nil {
+			a.Logger.WarnContext(ctx, "the voice media node did not leave the registry", slog.Any("error", closeErr))
+		}
+	}
 	a.shutDownStreams(graceCtx)
 	if err == nil {
 		a.Logger.InfoContext(ctx, "stopped")
 	}
 	return err
 }
+
+// voiceDrainReserve is the part of the shutdown timeout that a draining media node leaves to the
+// requests, at most a fifth of it.
+const voiceDrainReserve = 5 * time.Second
 
 // mediaDescriber is the media processor of the plugins, whose Run asks the plugin of images for its formats until ctx
 // ends.

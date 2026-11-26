@@ -256,7 +256,8 @@ type subscription struct {
 }
 
 // wants reports whether a subscription takes a signal: a timeline subscription no notifications
-// or direct messages of its account, and a room subscription no voice signal for another session.
+// or direct messages of its account, and a room subscription no voice signal for another session;
+// a room subscription without a session (a media node's) takes the mute of every session.
 func (s *subscription) wants(e Event) bool {
 	switch e.Kind {
 	case KindNotifications, KindNotificationsRead, KindConversation:
@@ -264,7 +265,7 @@ func (s *subscription) wants(e Event) bool {
 	case KindVoiceSignal:
 		return e.To == "" || e.To == s.session
 	case KindVoiceMute:
-		return e.SessionID == s.session
+		return s.session == "" || e.SessionID == s.session
 	}
 	return true
 }

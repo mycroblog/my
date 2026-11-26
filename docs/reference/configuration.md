@@ -62,7 +62,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`worker_job_types`](#worker_job_types) | `MY_WORKER_JOB_TYPES` | none | no | no |
 | [`worker_job_types_except`](#worker_job_types_except) | `MY_WORKER_JOB_TYPES_EXCEPT` | none | no | no |
 | [`worker_job_concurrency`](#worker_job_concurrency) | `MY_WORKER_JOB_CONCURRENCY` | `1` | no | no |
-| [`listen`](#listen) | `MY_LISTEN` | `:443` with `tls` other than `off` in the `web` and `all` roles, `:8080` otherwise | no | no |
+| [`listen`](#listen) | `MY_LISTEN` | `:443` with `tls` other than `off` in the `web`, `all`, and `sfu` roles, `:8080` otherwise | no | no |
 | [`tls`](#tls) | `MY_TLS` | `off` | no | no |
 | [`tls_acme_directory`](#tls_acme_directory) | `MY_TLS_ACME_DIRECTORY` | `https://acme-v02.api.letsencrypt.org/directory` | no | no |
 | [`tls_acme_agree_terms`](#tls_acme_agree_terms) | `MY_TLS_ACME_AGREE_TERMS` | `false` | `tls = acme` (set to `true`) | no |
@@ -472,7 +472,7 @@ What this process runs.
 | `all` | HTTP server and job worker in one process. |
 | `web` | HTTP server only. |
 | `worker` | Job worker only; the HTTP server answers only the health checks ([running the server](../operations/running.md)). |
-| `sfu` | A media node of `voice = sfu`, which runs no jobs; the HTTP server answers only the health checks. Needs `voice = sfu`. |
+| `sfu` | A media node of `voice = sfu`, which runs no jobs; the HTTP server answers the health checks and the WebSocket of the node, and the node receives the audio on `voice_sfu_udp_port` and `voice_sfu_tcp_port`. Needs `voice = sfu`. |
 
 ### `worker_job_types`
 
@@ -500,15 +500,15 @@ How many jobs this process runs at once, from 1 to 128. Raise it for jobs that m
 
 ### `listen`
 
-TCP address the HTTP server listens on, as `host:port`. With `tls` other than `off`, the `web` and `all` roles serve HTTPS on it; the `worker` role always serves plain HTTP (its health checks).
+TCP address the HTTP server listens on, as `host:port`. With `tls` other than `off`, the `web`, `all`, and `sfu` roles serve HTTPS on it; the `worker` role always serves plain HTTP (its health checks).
 
 - Environment variable: `MY_LISTEN`
-- Default: `:443` with `tls` other than `off` in the `web` and `all` roles, `:8080` otherwise
+- Default: `:443` with `tls` other than `off` in the `web`, `all`, and `sfu` roles, `:8080` otherwise
 - Required: no
 
 ### `tls`
 
-Whether the server serves HTTPS itself, so that it runs without a reverse proxy ([serving HTTPS from the server](../operations/running.md#serving-https-from-the-server)). Only the `web` and `all` roles listen with TLS.
+Whether the server serves HTTPS itself, so that it runs without a reverse proxy ([serving HTTPS from the server](../operations/running.md#serving-https-from-the-server)). Only the `web`, `all`, and `sfu` roles listen with TLS; a media node (`role = sfu`) serves the host of `voice_sfu_public_url` instead of `host`.
 
 - Environment variable: `MY_TLS`
 - Default: `off`
@@ -1784,7 +1784,7 @@ How the voice chat rooms connect their participants. With `off`, the voice chat 
 | --- | --- |
 | `off` | No voice chat. |
 | `p2p` | The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. `voice_max_participants` may be at most 50. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect. |
-| `sfu` | The server's own media nodes carry the audio: each browser connects to the node that holds its room, at `voice_sfu_public_url`, and the node forwards the audio of the speakers to the participants. The browsers may use the TURN servers of `voice_turn`; `voice_ice_transport_policy = relay` is refused. This build has no media node yet, so the server does not start with it. |
+| `sfu` | The server's own media nodes carry the audio: each browser connects to the node that holds its room, at `voice_sfu_public_url`, and the node forwards the audio of the speakers to the participants. The processes with `role = all` or `sfu` run a node; the `web` and `worker` roles place the rooms on the nodes. The browsers may use the TURN servers of `voice_turn`; `voice_ice_transport_policy = relay` is refused. The build tag `no_voice_sfu` leaves the nodes out, and the server then does not start with it. |
 | `livekit` | A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`. |
 | `sora` | A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_sora_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. |
 
