@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-20
 - Deciders: @rosylilly
-- Issue: #645, #646, #814, #919, #3423
+- Issue: #645, #646, #814, #919, #3423, #3552, #3553
 
 ## Decision（決定）
 
@@ -15,6 +15,7 @@
 トレースの既定（`traces_exporter`）も `none` で、有効にするときのエクスポートは OTLP/HTTP だけにする。ジョブの実行は新しいトレースの根にして、enqueue した span へ link する。
 サーバーは OTLP の受け手の認証を持たず、Cloud Run ではコレクター（Cloud Run のサイドカー）を経由して Cloud Trace へ送る。
 `none` でもログには基盤から受けた trace ID を付けて、基盤のトレースと相関させる。
+ログの出口も同じ流儀の 1 つの設定で選び、Cloud Logging の形（`gcp`）と OTLP（`otlp`）を持つ（§20）。
 
 ### 1. 計測の port（ADR-0002 の依存の向き）
 
@@ -273,13 +274,26 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
 
 - slog のハンドラー（`requestIDHandler`）は、`Tracer.LogIDs` が返す `trace_id`・`span_id` もログの全行に付ける。`request_id`・`job_id` も残す
 - `traces_exporter = none` でも、信頼した入口（§15）の `traceparent` の trace ID をログに付ける。Cloud Run では自動のトレースとログが同じ trace ID でつながる
-  （Cloud Logging が trace のフィールドとして解釈するには `logging.googleapis.com/trace` の形 `projects/<id>/traces/<trace_id>` が要る。デプロイのテンプレートでプロジェクト ID を渡すかは M6 で決める。要検証）
+- Cloud Logging がトレースとして結ぶのは `logging.googleapis.com/trace`・`spanId`・`trace_sampled` のフィールドだけなので、`logs_exporter = gcp`（§20）がそこへ書く。trace には trace ID をそのまま書き、プロジェクト ID を持たない（LogEntry の仕様は `projects/<id>/traces/<id>` の形を非推奨とする。2026-11-26 確認。Cloud Run の標準出力から裸の ID で結ばれるかは要検証）
 
 ### 19. トレースの依存とライセンス
 
 - トレースのための直接の依存は `go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp`（Apache-2.0、v1.47.0 は 2026-10-02 公開。OTLP のメトリクスのエクスポーターと同じ版の系列）だけ。
   `otel/trace`・`otel/sdk` は既にあり、W3C の propagator は `go.opentelemetry.io/otel/propagation` にある。contrib（`otelhttp`・AWS の X-Ray の propagator）は使わない
 - すべて純 Go で、`CGO_ENABLED=0` を保つ。gRPC のエクスポーターは使わない（§2 と同じ）
+
+### 20. ログの出口（NFR-OPS-1）
+
+設定は `logs_exporter`（`stdout` | `gcp` | `otlp`）の 1 つで、既定は `stdout`。形式と送り先を別の設定に分けない。`gcp` と `otlp` を同時に使う構成はない（Collector を置くなら Cloud Logging の形への写像は Collector がする）ので、値は排他でよい。
+
+| 値 | 出し方 | 主なターゲット |
+| --- | --- | --- |
+| `stdout` | 標準出力の JSON の行（§5、§18）。集約は基盤か、運用者のログの収集器が行う | 既定・単一のホスト・ECS（`emf` も同じ行に載る） |
+| `gcp` | 同じ行を Cloud Logging の構造化ログの形にする: §18 の trace のフィールドと、リクエストの終わりの行の `httpRequest` | Cloud Run |
+| `otlp` | OTLP/HTTP（protobuf、gzip）で受け手へ。宛先は §17 と同じ OTel の標準の環境変数。各レコードは行と同じ属性と、文脈の trace・span を持つ | 複数のホストのログを 1 か所に集める Self-hosted、Collector のサイドカーを置く構成 |
+
+- `otlp` でも、エクスポーターの準備ができる前の行（起動の失敗）と送れなかったレコードは標準出力の JSON の行に出す。受け手が落ちてもログを失わず、普段は二重に出さない
+- ログは `my` の中で閉じた出口で、外部プラグイン（ADR-0146）には委譲しない（`採らなかった案`）
 
 ### 覆る条件
 
@@ -292,6 +306,8 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
 - コレクターのサイドカーの資源や起動時間の費用が、想定の規模で無視できない（M6 で計測）なら、アダプタが受け口の認証を持って直接送ることを再検討する
 - OTel の messaging の意味規約が Stable になって、非同期の処理の既定を親子に変えたら、§14 を見直す
 - 記録したリクエストの `unit` の遅れが利用者に見えるほど大きい（M6 で計測）なら、インスタンスベース課金の Cloud Run を `batch` に変える
+- Cloud Run の標準出力から裸の trace ID でトレースが結ばれないなら、`gcp` は起動時にメタデータサーバーからプロジェクト ID を取り、`projects/<id>/traces/<id>` の形で書く
+- `gcp` と `otlp` を同時に要する構成が現れたら、ログの形式と送り先を別の設定に分ける
 
 ## 経緯
 
@@ -299,6 +315,7 @@ NFR-OPS-1（JSON ログ、リクエスト ID / ジョブ ID の相関）、NFR-O
 サーバーが出していたのは slog の JSON ログと `request_id` だけで、決定者は、サービスの指標とシステムの指標の 2 つの方針がないとオートスケーリングの契機を作れないと指示した（#645、#646）。
 そこで計測の仕組みとサービスの指標、システムの指標をそれぞれ決め、後から M4 の要件の監査で NFR-OPS-2 のトレースが未実現と分かって、同じ仕組みの上にトレースを足した（#814）。
 スナップショットのジョブは当初 `metrics_exporter` が `none` 以外のときだけ登録していた。Cloud Run の `monitoring-gcp` は `none` のままログの行から指標を作るので、行が出ずにアラートが値を受け取れなかった（#2669）。決定者は、`none` でもジョブとログの行を残し、Gauge の登録だけを外すことにした（§4）。費用は DB への問い合わせが 15 分に 1 回増えることで、Cloud Run では既存の tick がジョブを起こすので Cloud Scheduler のジョブは増えない。
+ログは `request_id` と `trace_id` を持っていたが、Cloud Logging が読むフィールドになくトレースと結ばれず、複数のホストのログを集める出口もなかった。決定者は、ログの出口を他の `*_exporter` と同じ 1 つの設定にすると決めた（#3552、#3553。§20）。
 決済の webhook の受け口ができると、webhook が届かないことや署名の設定の誤りに気付けるよう、`my.surface` に `payments` を加えた（#919）。
 
 確かめた事実（メトリクスは 2026-10-20、トレースは 2026-10-21 確認）:
@@ -360,6 +377,12 @@ NFR-OPS-1（JSON ログ、リクエスト ID / ジョブ ID の相関）、NFR-O
 - ジョブへ引き継がない: 最も小さいが、NFR-OPS-1 の相関がリクエストとジョブの間で切れたままになる
 - OTLP に加えて Cloud Trace・X-Ray の独自の形式のエクスポーターを持つ、ログに span を書いて基盤に取り込ませる: どちらも OTLP/HTTP を 1 つ持ってコレクターに差を吸収させる形より、サーバーが抱えるものが増える
 
+ログの出口（§20）:
+
+- ロガーを外部プラグインの kind にする: 運営者が任意の送り先を足せるが、ログはリクエストごとに何行も出るので 1 行ごとの RPC は遅く、溜めればクラッシュの直前の行を失う。失敗を書く先がロガー自身で、ADR-0146 の「標準のプロトコルがないこと」にも反する。任意の送り先は `otlp` と Collector で足りる
+- 形式（`log_format`）と送り先（`logs_exporter`）を別の設定にする: 組み合わせを自由に選べるが、意味のある組み合わせがなく、ログの出し方を決める設定が 2 つになる。`metrics_exporter = emf` が形式を出口の値の 1 つにした前例に合わせた
+- `gcp` でプロジェクト ID を設定かメタデータサーバーから得て資源名の形で書く: 古い文書の形に合うが、LogEntry の仕様が非推奨とし、設定か起動時の問い合わせが増える。覆る条件に残す
+
 `my.surface`:
 
 - 決済の webhook を `web` に含める: 値が増えないが、`web` は Web クライアントのページの面で、webhook の失敗がページの要求の数に紛れる。呼ぶのが事業者のサーバーで性質も違う
@@ -392,11 +415,12 @@ NFR-OPS-1（JSON ログ、リクエスト ID / ジョブ ID の相関）、NFR-O
   - `unit` は記録したリクエストの応答を送信の分だけ遅らせる
   - `server.address` は連合先のホスト名を受け手に残す。1 人のサーバーの連合先は利用者の交友を示しうるので、運用者の受け手の扱いに依存する
   - Cloud Run でトレースを有効にすると、コレクターのサイドカーの資源と起動時間が増え、インスタンスベース課金になる
+  - `otlp` のログに使う OTLP のログのエクスポーターと slog の橋渡し（`otlploghttp`、`contrib/bridges/otelslog`）は v0 系で、版を上げるたびに変更がありうる（2026-11-26 確認）
   - `my.surface` の値が 1 つ増え、HTTP の指標の時系列が少し増える。課金が無効なら、この面には要求が来ない
 - 後続で必要になる作業（M6）
   - Cloud Run のログベースの指標・CloudWatch のダッシュボードとアラーム・microk8s の KEDA の `ScaledObject` と Prometheus の設定をデプロイのテンプレートに入れる
   - [deployment-targets.md](../architecture/deployment-targets.md) のターゲットごとのスケールの設定と `GOMEMLIMIT` の記述をテンプレートと合わせる
-  - デプロイのテンプレートの推奨の設定（Cloud Run の Collector のサイドカー）、Cloud Run のログの trace のフィールド、費用の実測を [deployment-targets.md](../architecture/deployment-targets.md) に書く
+  - デプロイのテンプレートの推奨の設定（Cloud Run の Collector のサイドカー、`logs_exporter = gcp`）、費用の実測を [deployment-targets.md](../architecture/deployment-targets.md) に書く
 
 ## Open Questions / 要検証
 
