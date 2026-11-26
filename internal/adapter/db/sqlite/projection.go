@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -50,23 +51,139 @@ func (s *ProjectionStore) Rows(ctx context.Context, tx uow.Tx, table string, off
 	if err != nil {
 		return nil, nil, Wrap(err, "read "+table)
 	}
+	out, err := collectValues(rows, len(cols))
+	if err != nil {
+		return nil, nil, Wrap(err, "read "+table)
+	}
+	return cols, out, nil
+}
+
+// collectValues returns the values of rows, of n columns each, and closes rows.
+func collectValues(rows *sql.Rows, n int) ([][]any, error) {
 	defer func() { _ = rows.Close() }()
 	var out [][]any
 	for rows.Next() {
-		values := make([]any, len(cols))
-		ptrs := make([]any, len(cols))
+		values := make([]any, n)
+		ptrs := make([]any, n)
 		for i := range values {
 			ptrs[i] = &values[i]
 		}
 		if err := rows.Scan(ptrs...); err != nil {
-			return nil, nil, Wrap(err, "read "+table)
+			return nil, err
 		}
 		out = append(out, values)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, nil, Wrap(err, "read "+table)
+	return out, rows.Err()
+}
+
+// Trial implements projection.Store.
+func (s *ProjectionStore) Trial(ctx context.Context, fn func(tx uow.Tx) error) error {
+	return s.db.trial(ctx, fn)
+}
+
+// createTable and createIndex match the start of the statements that sqlite_schema keeps for
+// a table and its indexes, up to the name of the table or the index.
+var (
+	createTable = regexp.MustCompile(`(?is)^\s*CREATE\s+TABLE\s+`)
+	createIndex = regexp.MustCompile(`(?is)^(\s*CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?)`)
+)
+
+// Shadow implements projection.Store: a temporary table made by the statements that created
+// the table and its indexes, and a copy of its rows. A temporary table comes first, also for the
+// statements that the connection prepared before it existed, which SQLite prepares again (#3535).
+func (s *ProjectionStore) Shadow(ctx context.Context, tx uow.Tx, tables []string) error {
+	sqlTx, err := s.db.txOf(tx)
+	if err != nil {
+		return err
 	}
-	return cols, out, nil
+	for _, table := range tables {
+		if _, err := s.tableColumns(ctx, sqlTx, table); err != nil {
+			return err
+		}
+		rows, err := sqlTx.QueryContext(ctx,
+			"SELECT type, sql FROM main.sqlite_schema WHERE tbl_name = ? AND sql IS NOT NULL ORDER BY type = 'index', name", table)
+		if err != nil {
+			return Wrap(err, "shadow "+table)
+		}
+		var stmts []string
+		for rows.Next() {
+			var kind, q string
+			if err := rows.Scan(&kind, &q); err != nil {
+				_ = rows.Close()
+				return Wrap(err, "shadow "+table)
+			}
+			switch kind {
+			case "table":
+				stmts = append(stmts, createTable.ReplaceAllString(q, "CREATE TEMPORARY TABLE "))
+			case "index":
+				stmts = append(stmts, createIndex.ReplaceAllString(q, "${1}temp."))
+			}
+		}
+		if err := rows.Err(); err != nil {
+			_ = rows.Close()
+			return Wrap(err, "shadow "+table)
+		}
+		_ = rows.Close()
+		if len(stmts) == 0 || !strings.Contains(strings.ToUpper(stmts[0]), "TEMPORARY") {
+			return fmt.Errorf("sqlite: shadow %s: no statement creates it", table)
+		}
+		stmts = append(stmts, fmt.Sprintf("INSERT INTO temp.%s SELECT * FROM main.%s", quote(table), quote(table)))
+		for _, q := range stmts {
+			if _, err := sqlTx.ExecContext(ctx, q); err != nil {
+				return Wrap(err, "shadow "+table)
+			}
+		}
+	}
+	return nil
+}
+
+// Diff implements projection.Store. SQLite has no EXCEPT ALL: a row that a table without a key
+// holds twice counts once.
+func (s *ProjectionStore) Diff(ctx context.Context, tx uow.Tx, table string, limit int) ([]string, int, [][]any, [][]any, bool, error) {
+	sqlTx, err := s.db.txOf(tx)
+	if err != nil {
+		return nil, 0, nil, nil, false, err
+	}
+	cols, err := s.tableColumns(ctx, sqlTx, table)
+	if err != nil {
+		return nil, 0, nil, nil, false, err
+	}
+	live, shadow := "main."+quote(table), "temp."+quote(table)
+	var n int
+	if err := sqlTx.QueryRowContext(ctx, "SELECT count(*) FROM "+live).Scan(&n); err != nil {
+		return nil, 0, nil, nil, false, Wrap(err, "count "+table)
+	}
+	list := quoteAll(cols)
+	var more bool
+	side := func(from, except string) ([][]any, error) {
+		bound := -1 // no limit
+		if limit > 0 {
+			bound = limit + 1
+		}
+		//nolint:gosec // the table and its columns come from the schema and are quoted
+		q := fmt.Sprintf("SELECT %[1]s FROM %[2]s EXCEPT SELECT %[1]s FROM %[3]s ORDER BY %[1]s LIMIT ?", list, from, except)
+		rows, err := sqlTx.QueryContext(ctx, q, bound)
+		if err != nil {
+			return nil, err
+		}
+		out, err := collectValues(rows, len(cols))
+		if err != nil {
+			return nil, err
+		}
+		if limit > 0 && len(out) > limit {
+			out, more = out[:limit], true
+		}
+		return out, nil
+	}
+	extra, err := side(live, shadow)
+	if err != nil {
+		return nil, 0, nil, nil, false, Wrap(err, "compare "+table)
+	}
+	missing, err := side(shadow, live)
+	if err != nil {
+		return nil, 0, nil, nil, false, Wrap(err, "compare "+table)
+	}
+	return cols, n, extra, missing, more, nil
 }
 
 // Delete implements projection.Store.

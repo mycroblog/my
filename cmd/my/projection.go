@@ -107,6 +107,15 @@ func printProjections(w io.Writer, ps []projection.Projection) {
 	_ = tw.Flush()
 }
 
+// moreRows says how many rows printDrift left out: rest, or more than that when verify listed
+// only the first of them.
+func moreRows(rest int, more bool) string {
+	if more {
+		return fmt.Sprintf("over %d", rest)
+	}
+	return fmt.Sprint(rest)
+}
+
 // printDrift prints the rows of each table that differ, "-" for a row that the table holds and
 // a rebuild does not derive and "+" for one that a rebuild derives and the table lacks.
 func printDrift(w io.Writer, r projection.Report) {
@@ -129,8 +138,8 @@ func printDrift(w io.Writer, r projection.Report) {
 				printed++
 			}
 		}
-		if rest := len(t.Extra) + len(t.Missing) - printed; rest > 0 {
-			_, _ = fmt.Fprintf(w, "    ... and %d more\n", rest)
+		if rest := len(t.Extra) + len(t.Missing) - printed; rest > 0 || t.More {
+			_, _ = fmt.Fprintf(w, "    ... and %s more\n", moreRows(rest, t.More))
 		}
 	}
 }
@@ -143,10 +152,10 @@ func projectionUsage(w io.Writer) {
 
 Projections are tables derived from the events and resources of their module.
 list shows each projection with its module and tables. verify derives every
-projection, or the one named, from its sources inside a transaction that it
-rolls back, prints the rows that differ from what the tables hold ("-" held but
-not derived, "+" derived but missing), and exits with 1 when any differ; it
-changes nothing. rebuild derives them the same way and writes the difference, at
+projection, or the one named, from its sources into temporary copies of its
+tables inside a transaction that it rolls back, so that the tables stay unlocked
+and unchanged, prints the rows that differ from what the tables hold ("-" held
+but not derived, "+" derived but missing), and exits with 1 when any differ. rebuild derives them the same way and writes the difference, at
 most 500 rows per transaction, so that readers never see an emptied projection.
 Run rebuild while the instance is quiet: a row that changes during the rebuild
 keeps its new value, and verify reports any drift that is left. <name> is a

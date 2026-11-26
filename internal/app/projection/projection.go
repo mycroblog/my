@@ -3,8 +3,9 @@
 // Package projection rebuilds and verifies the projections. It knows no table
 // of its own: each Projection names the tables that one module's rebuild function derives, and
 // the module's function does the deriving. The service runs that function inside a
-// transaction that it rolls back, reads what the function produced, and compares it with the
-// rows the projection holds now:
+// transaction that it rolls back, on temporary tables of the same names that start as copies of
+// the projection's tables, so that the projection's own tables are neither locked nor changed,
+// and the database compares what the function produced with what they hold (ADR-0172):
 //
 //   - Verify reports the difference and changes nothing.
 //   - Rebuild also writes the difference to the projection's tables, a bounded number of rows
@@ -26,10 +27,13 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// DefaultChunkSize is how many rows Rebuild writes per transaction and how many rows a read
-// of a projection returns at a time, well under the 3,000 rows per transaction that ADR-0003
-// allows.
+// DefaultChunkSize is how many rows Rebuild writes per transaction, well under the 3,000 rows
+// per transaction that ADR-0003 allows.
 const DefaultChunkSize = 500
+
+// DefaultDiffLimit is how many differing rows Verify returns of each table in each direction;
+// TableDiff.More tells that there are more.
+const DefaultDiffLimit = 1000
 
 // Projection is a set of projection tables that one rebuild function derives together.
 type Projection struct {
@@ -41,7 +45,8 @@ type Projection struct {
 	Tables []string
 	// Rebuild empties Tables and derives them again from their sources through u. The
 	// service passes a UnitOfWork whose transactions all run inside one transaction that it
-	// rolls back, so Rebuild must reach the database only through u.
+	// rolls back, in which Tables are temporary copies (Store.Shadow), so Rebuild must reach the
+	// database only through u.
 	Rebuild func(ctx context.Context, u uow.UnitOfWork) error
 }
 
@@ -50,6 +55,20 @@ type Projection struct {
 // and pass projectiontest.ProjectionStoreContract. A table that the schema does not declare is an
 // error.
 type Store interface {
+	// Trial runs fn in a transaction that it always rolls back, which sees one state of the
+	// database and takes no lock that a write of the instance waits for, apart from what fn
+	// writes outside the temporary tables.
+	Trial(ctx context.Context, fn func(tx uow.Tx) error) error
+	// Shadow creates inside tx, for each of tables, a temporary table of the same name with its
+	// columns, keys, and rows, which the statements of tx read and write in its place until tx
+	// ends; the table itself is left as it is.
+	Shadow(ctx context.Context, tx uow.Tx, tables []string) error
+	// Diff compares inside tx the shadow of table with the table: it returns the columns, how
+	// many rows the table holds, and, in the order of all their columns and up to limit of each
+	// (0 for all), the rows that the table holds and the shadow lacks (extra) and those that the
+	// shadow holds and the table lacks (missing), and whether either had more than limit. Values
+	// are as Rows returns them.
+	Diff(ctx context.Context, tx uow.Tx, table string, limit int) (columns []string, rows int, extra, missing [][]any, more bool, err error)
 	// Rows returns up to limit rows of table inside tx, skipping offset rows, in the order of
 	// all their columns, with the names of the columns. Values are what the driver scans into
 	// an any: they go back to Delete and Insert unchanged.
@@ -84,6 +103,8 @@ type TableDiff struct {
 	Extra []Row
 	// Missing are the rows that a rebuild derives and the table does not hold.
 	Missing []Row
+	// More tells that Extra or Missing lists only the first of the rows that differ (Verify).
+	More bool
 }
 
 // Empty reports whether the table holds what a rebuild derives.
@@ -115,6 +136,9 @@ type Options struct {
 	Projections []Projection
 	// ChunkSize is DefaultChunkSize when zero or less.
 	ChunkSize int
+	// DiffLimit is how many differing rows Verify lists of each table in each direction;
+	// DefaultDiffLimit when zero or less.
+	DiffLimit int
 	// Logger records the drift that JobVerify corrects; nil means slog.Default().
 	Logger *slog.Logger
 	// Jobs queues the next projection of a JobVerify run, outside any transaction; nil ends a
@@ -128,6 +152,7 @@ type Service struct {
 	store       Store
 	projections []Projection
 	chunk       int
+	diffLimit   int
 	logger      *slog.Logger
 	jobs        queue.JobQueue
 }
@@ -156,12 +181,16 @@ func NewService(opts Options) *Service {
 	if chunk <= 0 {
 		chunk = DefaultChunkSize
 	}
+	diffLimit := opts.DiffLimit
+	if diffLimit <= 0 {
+		diffLimit = DefaultDiffLimit
+	}
 	logger := opts.Logger
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &Service{
-		u: opts.UnitOfWork, store: opts.Store, projections: slices.Clone(opts.Projections), chunk: chunk, logger: logger,
+		u: opts.UnitOfWork, store: opts.Store, projections: slices.Clone(opts.Projections), chunk: chunk, diffLimit: diffLimit, logger: logger,
 		jobs: opts.Jobs,
 	}
 }
@@ -181,9 +210,9 @@ func (s *Service) Lookup(name string) (Projection, error) {
 }
 
 // Verify compares the tables of p with what its rebuild function derives from their sources
-// now, and changes nothing.
+// now, and changes nothing. It lists up to Options.DiffLimit rows of each table in each direction.
 func (s *Service) Verify(ctx context.Context, p Projection) (Report, error) {
-	return s.compare(ctx, p)
+	return s.compare(ctx, p, s.diffLimit)
 }
 
 // Rebuild derives the tables of p again and writes the difference from what they hold:
@@ -193,7 +222,7 @@ func (s *Service) Verify(ctx context.Context, p Projection) (Report, error) {
 // rebuild that runs while the instance writes to the projection leaves at most the drift of
 // those rows, which the next verification finds.
 func (s *Service) Rebuild(ctx context.Context, p Projection) (Report, error) {
-	r, err := s.compare(ctx, p)
+	r, err := s.compare(ctx, p, 0)
 	if err != nil {
 		return r, err
 	}
@@ -239,92 +268,42 @@ func (s *Service) write(ctx context.Context, table string, columns []string, row
 	return total, nil
 }
 
-// errRollback rolls back the transaction of a comparison.
-var errRollback = errors.New("projection: roll back")
-
-// compare reads the tables of p, runs its rebuild function, reads them again, and rolls all of
-// it back, in one transaction.
-func (s *Service) compare(ctx context.Context, p Projection) (Report, error) {
+// compare runs the rebuild function of p on temporary copies of its tables, and has the
+// database compare them with the tables, listing up to limit rows (0 for all) of each table
+// in each direction, all in a transaction that it rolls back.
+func (s *Service) compare(ctx context.Context, p Projection, limit int) (Report, error) {
 	var r Report
-	err := s.u.Tx(ctx, func(tx uow.Tx) error {
+	err := s.store.Trial(ctx, func(tx uow.Tx) error {
 		r = Report{Projection: p}
-		before := make([]table, len(p.Tables))
-		for i, name := range p.Tables {
-			t, err := s.read(ctx, tx, name)
-			if err != nil {
-				return err
-			}
-			before[i] = t
+		if err := s.store.Shadow(ctx, tx, p.Tables); err != nil {
+			return err
 		}
 		if err := p.Rebuild(ctx, within{tx}); err != nil {
 			return err
 		}
-		for i, name := range p.Tables {
-			after, err := s.read(ctx, tx, name)
+		for _, name := range p.Tables {
+			cols, n, extra, missing, more, err := s.store.Diff(ctx, tx, name, limit)
 			if err != nil {
-				return err
+				return fmt.Errorf("compare %s: %w", name, err)
 			}
-			r.Tables = append(r.Tables, diff(before[i], after))
+			r.Tables = append(r.Tables, TableDiff{
+				Table: name, Columns: cols, Rows: n, Extra: rowsOf(cols, extra), Missing: rowsOf(cols, missing), More: more,
+			})
 		}
-		return errRollback
+		return nil
 	})
-	if errors.Is(err, errRollback) {
-		return r, nil
-	}
 	if err != nil {
 		return Report{Projection: p}, fmt.Errorf("verify %s: %w", p.Name, err)
 	}
-	return r, errors.New("projection: the comparison was not rolled back")
+	return r, nil
 }
 
-type table struct {
-	name    string
-	columns []string
-	rows    []Row
-}
-
-func (s *Service) read(ctx context.Context, tx uow.Tx, name string) (table, error) {
-	t := table{name: name}
-	for offset := 0; ; offset += s.chunk {
-		cols, rows, err := s.store.Rows(ctx, tx, name, offset, s.chunk)
-		if err != nil {
-			return table{}, fmt.Errorf("read %s: %w", name, err)
-		}
-		t.columns = cols
-		for _, v := range rows {
-			t.rows = append(t.rows, Row{Values: v, key: format(cols, v)})
-		}
-		if len(rows) < s.chunk {
-			return t, nil
-		}
+func rowsOf(columns []string, values [][]any) []Row {
+	out := make([]Row, 0, len(values))
+	for _, v := range values {
+		out = append(out, Row{Values: v, key: format(columns, v)})
 	}
-}
-
-// diff returns the rows of before that after lacks and the rows of after that before lacks,
-// counting repeated rows.
-func diff(before, after table) TableDiff {
-	d := TableDiff{Table: before.name, Columns: after.columns, Rows: len(before.rows)}
-	if d.Columns == nil {
-		d.Columns = before.columns
-	}
-	count := map[string]int{}
-	for _, r := range after.rows {
-		count[r.key]++
-	}
-	for _, r := range before.rows {
-		if count[r.key] > 0 {
-			count[r.key]--
-			continue
-		}
-		d.Extra = append(d.Extra, r)
-	}
-	for _, r := range after.rows {
-		if count[r.key] > 0 {
-			count[r.key]--
-			d.Missing = append(d.Missing, r)
-		}
-	}
-	return d
+	return out
 }
 
 func format(columns []string, values []any) string {

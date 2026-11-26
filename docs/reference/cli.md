@@ -2752,10 +2752,10 @@ Usage:
 
 Projections are tables derived from the events and resources of their module.
 list shows each projection with its module and tables. verify derives every
-projection, or the one named, from its sources inside a transaction that it
-rolls back, prints the rows that differ from what the tables hold ("-" held but
-not derived, "+" derived but missing), and exits with 1 when any differ; it
-changes nothing. rebuild derives them the same way and writes the difference, at
+projection, or the one named, from its sources into temporary copies of its
+tables inside a transaction that it rolls back, so that the tables stay unlocked
+and unchanged, prints the rows that differ from what the tables hold ("-" held
+but not derived, "+" derived but missing), and exits with 1 when any differ. rebuild derives them the same way and writes the difference, at
 most 500 rows per transaction, so that readers never see an emptied projection.
 Run rebuild while the instance is quiet: a row that changes during the rebuild
 keeps its new value, and verify reports any drift that is left. <name> is a
