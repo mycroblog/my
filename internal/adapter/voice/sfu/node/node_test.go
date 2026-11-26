@@ -52,6 +52,7 @@ type env struct {
 	rooms     *rooms
 	hub       *stream.Hub
 	clock     *testkit.Clock
+	meter     *testkit.Meter
 	url       string
 }
 
@@ -66,6 +67,13 @@ func newEnv(t *testing.T) *env {
 // nodes share.
 func newNodeEnv(t *testing.T, id string, reg *sfu.Registry, clock *testkit.Clock, rs *rooms, hub *stream.Hub) *env {
 	t.Helper()
+	return newNodeEnvOn(t, id, reg, reg, clock, rs, hub)
+}
+
+// newNodeEnvOn is newNodeEnv with the registry that the node keeps its leases in, nodeReg, apart
+// from the one that the transport places the rooms with, reg: a test cuts the node's off.
+func newNodeEnvOn(t *testing.T, id string, nodeReg, reg *sfu.Registry, clock *testkit.Clock, rs *rooms, hub *stream.Hub) *env {
+	t.Helper()
 	udp, err := net.ListenPacket("udp4", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -75,14 +83,14 @@ func newNodeEnv(t *testing.T, id string, reg *sfu.Registry, clock *testkit.Clock
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = udp.Close(); _ = tcp.Close() })
-	e := &env{rooms: rs, hub: hub, clock: clock}
+	e := &env{rooms: rs, hub: hub, clock: clock, meter: testkit.NewMeter()}
 	t.Cleanup(e.hub.Close)
 	mux := httptest.NewServer(nil)
 	t.Cleanup(mux.Close)
 	e.url = "ws" + strings.TrimPrefix(mux.URL, "http")
 	e.node = node.New(node.Options{
 		ID: id, URL: e.url, Capacity: 50, UDPConn: udp, TCPListener: tcp, Loopback: true,
-		Registry: reg, Rooms: rs, Streams: e.hub,
+		Registry: nodeReg, Rooms: rs, Streams: e.hub, Meter: e.meter,
 	})
 	mux.Config.Handler = e.node
 	if err := e.node.Start(t.Context()); err != nil {

@@ -4,15 +4,19 @@ package platform_test
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"log/slog"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"testing"
 
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // TestVoiceSFUStartsOnlyWithSFU builds the App in every role with each method of the voice chat
@@ -46,7 +50,45 @@ func TestVoiceSFUStartsOnlyWithSFU(t *testing.T) {
 			if c.voice != "off" && !app.VoiceRooms.Enabled() {
 				t.Errorf("the voice chat is off with voice = %s", c.voice)
 			}
+			if !c.node {
+				// No WebSocket of the grants either.
+				req := httptest.NewRequest(http.MethodGet, config.VoiceSFUPath+"?ticket=t", nil)
+				req.Header.Set("Connection", "Upgrade")
+				req.Header.Set("Upgrade", "websocket")
+				req.Header.Set("Sec-WebSocket-Version", "13")
+				req.Header.Set("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
+				rec := httptest.NewRecorder()
+				app.Handler().ServeHTTP(rec, req)
+				if rec.Code != http.StatusNotFound {
+					t.Errorf("GET %s = %d, want 404 without a media node", config.VoiceSFUPath, rec.Code)
+				}
+			}
 		})
+	}
+}
+
+// TestVoiceSFURoleNeedsSFU refuses to start role = sfu with another method of the voice chat
+// (ADR-0101 §1, §10): no media node runs without voice = sfu, whatever the role.
+func TestVoiceSFURoleNeedsSFU(t *testing.T) {
+	t.Parallel()
+	kek := make([]byte, 32)
+	_, _ = rand.Read(kek)
+	load := func(voice string) error {
+		env := map[string]string{
+			"MY_HOST": "example.test", "MY_KEK": base64.StdEncoding.EncodeToString(kek), "MY_BLOB_FS_DIR": t.TempDir(),
+			"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_ROLE": "sfu", "MY_VOICE": voice,
+			"MY_VOICE_STUN_URLS": "stun:stun.example.org",
+		}
+		_, _, err := config.Load(config.Source{LookupEnv: func(k string) (string, bool) { v, ok := env[k]; return v, ok }})
+		return err
+	}
+	if err := load("sfu"); err != nil {
+		t.Fatalf("role = sfu with voice = sfu: %v", err)
+	}
+	for _, voice := range []string{"off", "p2p"} {
+		if err := load(voice); err == nil {
+			t.Errorf("role = sfu with voice = %s loads", voice)
+		}
 	}
 }
 
