@@ -28,7 +28,8 @@ SELECT account_id, tag_id, followed_at FROM feed_tag_follows ORDER BY account_id
 
 -- ListHomeTagEntries is the hashtag branch of the home timeline (FR-201, ADR-0013 sections 25 and
 -- 26): the public and local posts with a hashtag that the viewer follows, by authors other than
--- the viewer and the accounts the viewer follows (whose posts ListHomeEntries lists), within the
+-- the viewer and the accounts the viewer follows (whose posts ListHomeEntries lists), and by those
+-- authors too when ListHomeEntries leaves the post out as a reply without context, within the
 -- read window, each once with the followed tags it carries (tag_ids). It leaves
 -- out what the hashtag timeline leaves out (the authors and domains kept from discovery or
 -- hidden, the authors the viewer blocks, is blocked by, or mutes, the viewer's muted domains),
@@ -45,10 +46,12 @@ WHERE t.tag_id IN (SELECT ft.tag_id FROM feed_tag_follows ft WHERE ft.account_id
   AND (sqlc.narg(before)::uuid IS NULL OR t.entry_id < sqlc.narg(before)::uuid)
   AND t.entry_id >= COALESCE(sqlc.narg(window_floor)::uuid, '00000000-0000-0000-0000-000000000000')
   AND e.kind = 'post'
-  AND t.author_account_id <> sqlc.arg(viewer)
-  AND NOT EXISTS (
-    SELECT 1 FROM feed_follow_edges f
-    WHERE f.follower_account_id = sqlc.arg(viewer) AND f.followee_account_id = t.author_account_id)
+  AND ((e.author_account_id <> sqlc.arg(viewer) AND NOT EXISTS (
+      SELECT 1 FROM feed_follow_edges f
+      WHERE f.follower_account_id = sqlc.arg(viewer) AND f.followee_account_id = e.author_account_id))
+    OR (e.is_reply AND COALESCE(e.in_reply_to_account_id NOT IN (sqlc.arg(viewer), e.author_account_id), true) AND NOT EXISTS (
+      SELECT 1 FROM feed_follow_edges f
+      WHERE f.follower_account_id = sqlc.arg(viewer) AND f.followee_account_id = e.in_reply_to_account_id)))
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
     WHERE r.account_id = t.author_account_id

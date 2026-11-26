@@ -41,7 +41,8 @@ type Entry struct {
 	// content links the reply to its parent (appcontent.StatusCreated.ReplyLink), "" otherwise:
 	// the parent is not stored, is deleted, or the reply is held. The home timeline and the lists
 	// list a reply only when InReplyToAccountID is the viewer, the reply's author, or an account the
-	// viewer follows; the local and federated timelines only when it is the reply's author.
+	// viewer follows (one with a hashtag the viewer follows enters home through the hashtag branch
+	// all the same); the local and federated timelines only when it is the reply's author.
 	InReplyToStatusID  string
 	InReplyToAccountID string
 	// FollowedTagIDs are, for a post that the home timeline lists only for the hashtags the
