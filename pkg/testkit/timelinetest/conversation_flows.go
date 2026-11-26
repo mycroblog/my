@@ -21,10 +21,12 @@ import (
 
 // create inserts s with its first revision rev and puts it in a conversation, as the content
 // module does (ADR-0154 §2): conversationID, else the conversation of its stored parent, else a
-// new one of this server. It emits StatusCreated with the conversation and the reply links.
-func (e *timelineEnv) create(t *testing.T, s content.Status, rev content.Revision, conversationID string) error {
+// new one of this server. It emits StatusCreated with the conversation and the reply links. When
+// heldBy is the parent's author, s is a reply held out of its parent's thread (ADR-0155 §6), with
+// the reply request that waits for heldBy, as the content module stores one.
+func (e *timelineEnv) create(t *testing.T, s content.Status, rev content.Revision, conversationID, heldBy string) error {
 	t.Helper()
-	newID := e.IDs.NewID()
+	newID, requestID := e.IDs.NewID(), e.IDs.NewID()
 	return e.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
 		ctx, repo, conv := t.Context(), e.h.Statuses, conversationID
 		if err := repo.InsertStatus(ctx, tx, s); err != nil {
@@ -32,6 +34,18 @@ func (e *timelineEnv) create(t *testing.T, s content.Status, rev content.Revisio
 		}
 		if err := repo.InsertRevision(ctx, tx, rev); err != nil {
 			return err
+		}
+		if heldBy != "" {
+			approvals, ok := repo.(appcontent.ApprovalRepository)
+			if !ok {
+				return errors.New("the status repository keeps no reply requests")
+			}
+			if _, err := approvals.InsertInteractionRequest(ctx, tx, content.InteractionRequest{
+				ID: requestID, Kind: content.InteractionReply, Direction: content.DirectionInbound, TargetURI: s.InReplyToURI,
+				TargetAccountID: heldBy, InteractingURI: s.URI, InteractingAccountID: s.AuthorAccountID, CreatedAt: e.Clock.Now(),
+			}); err != nil {
+				return err
+			}
 		}
 		if conv == "" && s.InReplyToURI != "" {
 			p, err := repo.FindLiveStatusByURI(ctx, tx, s.InReplyToURI)
@@ -57,7 +71,7 @@ func (e *timelineEnv) create(t *testing.T, s content.Status, rev content.Revisio
 		if err := repo.InsertStatusConversation(ctx, tx, s.ID, conv); err != nil {
 			return err
 		}
-		ev, err := appcontent.LinkCreated(ctx, tx, repo, appcontent.StatusCreated{Status: s, Revision: rev, ConversationID: conv})
+		ev, err := appcontent.LinkCreated(ctx, tx, repo, appcontent.StatusCreated{Status: s, Revision: rev, ConversationID: conv, HeldReply: heldBy != ""})
 		if err != nil {
 			return err
 		}

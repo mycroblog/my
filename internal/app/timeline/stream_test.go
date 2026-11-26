@@ -69,6 +69,31 @@ func TestDeletedStatusOnTimeline(t *testing.T) {
 	}
 }
 
+// TestCommitHooksDoNotSignalRepliesLinkedLater checks that a parent stored after its replies
+// signals itself alone: the replies that it links become listable on the timelines (ADR-0013
+// §31), but the streams push only new posts.
+func TestCommitHooksDoNotSignalRepliesLinkedLater(t *testing.T) {
+	pub := &recordingPublisher{}
+	projectors := &uow.Projectors{}
+	apptimeline.RegisterCommitHooks(projectors, pub)
+	parent := appcontent.StatusCreated{
+		Status: appcontent.Status{ID: "parent", AuthorAccountID: "author", IsLocal: true, Visibility: appcontent.VisibilityPublic},
+	}
+	replies := []string{"reply", "other"}
+	parent.LinkedReplies = slices.Grow(parent.LinkedReplies, len(replies))[:len(replies)]
+	for i, id := range replies {
+		parent.LinkedReplies[i].StatusID, parent.LinkedReplies[i].ParentStatusID, parent.LinkedReplies[i].ParentAuthorAccountID = id, "parent", "author"
+	}
+	projectors.Committed(t.Context(), []uow.Event{parent})
+	var got []string
+	for _, ev := range pub.events {
+		got = append(got, string(ev.Kind)+" "+ev.EntryID)
+	}
+	if want := []string{string(stream.KindHomeEntry) + " parent", string(stream.KindPublicEntry) + " parent"}; !slices.Equal(got, want) {
+		t.Errorf("signals = %v, want %v", got, want)
+	}
+}
+
 type recordingPublisher struct{ events []stream.Event }
 
 func (p *recordingPublisher) Publish(e stream.Event) { p.events = append(p.events, e) }
