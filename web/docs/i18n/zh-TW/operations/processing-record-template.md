@@ -36,7 +36,7 @@ GDPR 第 30 條第 1 項要求控管者保存的處理活動紀錄，在軟體�
 | 軟體 | my，版本 {{版本}} |
 | 最後檢視 | {{日期、檢視者}} |
 
-<!-- source: recipients-used-in-this-record 8f1748f022f5 -->
+<!-- source: recipients-used-in-this-record a09123befeea -->
 ### 本紀錄使用的接收者
 
 以下名稱會在下方各項活動中使用。請列出你使用的每一個。
@@ -52,7 +52,7 @@ GDPR 第 30 條第 1 項要求控管者保存的處理活動紀錄，在軟體�
 | {{IF payments}} 付款服務商（Stripe 或 PAY.JP） | {{...}} | {{...}} |
 | {{IF error reports}} 錯誤追蹤服務 | {{...}} | {{...}} |
 | {{IF telemetry}} 指標與追蹤服務 | {{...}} | {{...}} |
-| {{IF voice}} 語音媒體伺服器、STUN 與 TURN | {{...}} | {{...}} |
+| {{IF voice}} STUN 與 TURN 服務（coturn 或 Cloudflare）；`voice = sfu` 的媒體節點屬於託管 | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook 接收端 | {{...}} | {{...}} |
 | {{IF follow review}} 追蹤審核服務 | {{...}} | {{...}} |
 | {{IF sign-up review}} 註冊審核服務 | {{...}} | {{...}} |

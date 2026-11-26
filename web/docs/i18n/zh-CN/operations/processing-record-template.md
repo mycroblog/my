@@ -36,7 +36,7 @@
 | 软件 | my，版本 {{VERSION}} |
 | 最近审查 | {{DATE, BY WHOM}} |
 
-<!-- source: recipients-used-in-this-record 8f1748f022f5 -->
+<!-- source: recipients-used-in-this-record a09123befeea -->
 ### 本记录中使用的接收方
 
 下文各项活动使用这些名称。请列出你使用的每一个接收方。
@@ -52,7 +52,7 @@
 | {{IF payments}} 支付服务商（Stripe 或 PAY.JP） | {{...}} | {{...}} |
 | {{IF error reports}} 错误跟踪服务 | {{...}} | {{...}} |
 | {{IF telemetry}} 指标和追踪服务 | {{...}} | {{...}} |
-| {{IF voice}} 语音媒体服务器、STUN 和 TURN | {{...}} | {{...}} |
+| {{IF voice}} STUN 和 TURN 服务（coturn 或 Cloudflare）；`voice = sfu` 的媒体节点属于托管 | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook 接收方 | {{...}} | {{...}} |
 | {{IF follow review}} 关注审查服务 | {{...}} | {{...}} |
 | {{IF sign-up review}} 注册审查服务 | {{...}} | {{...}} |

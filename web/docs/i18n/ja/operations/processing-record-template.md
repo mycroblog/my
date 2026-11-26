@@ -36,7 +36,7 @@ GDPR 第 30 条第 1 項が管理者に保持を求める処理活動の記録�
 | ソフトウェア | my、バージョン {{VERSION}} |
 | 最終見直し | {{DATE, BY WHOM}} |
 
-<!-- source: recipients-used-in-this-record 8f1748f022f5 -->
+<!-- source: recipients-used-in-this-record a09123befeea -->
 ### この記録で使う受領者
 
 以下の活動では、これらの名前を使います。使うものをそれぞれ記入してください。
@@ -52,7 +52,7 @@ GDPR 第 30 条第 1 項が管理者に保持を求める処理活動の記録�
 | {{IF payments}} 決済の事業者（Stripe または PAY.JP） | {{...}} | {{...}} |
 | {{IF error reports}} エラートラッカー | {{...}} | {{...}} |
 | {{IF telemetry}} メトリクスとトレースのサービス | {{...}} | {{...}} |
-| {{IF voice}} 通話のメディアサーバー、STUN と TURN | {{...}} | {{...}} |
+| {{IF voice}} STUN と TURN のサービス（coturn か Cloudflare）。`voice = sfu` のメディアノードはホスティングに含む | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook の受信側 | {{...}} | {{...}} |
 | {{IF follow review}} フォローの審査サービス | {{...}} | {{...}} |
 | {{IF sign-up review}} 登録の審査サービス | {{...}} | {{...}} |
