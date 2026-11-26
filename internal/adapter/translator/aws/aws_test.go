@@ -6,8 +6,10 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httptrace"
 	"strings"
 	"sync"
 	"testing"
@@ -256,6 +258,94 @@ func TestSplitsByTheSizeLimit(t *testing.T) {
 		if len(text) > MaxRequestBytes {
 			t.Errorf("call %d has %d bytes", i, len(text))
 		}
+	}
+}
+
+// gatedConn passes on every write of the connection, and holds each one after the first until
+// release is closed. The first write carries the head of a request and the start of its body; the
+// next one, the rest of a body larger than the transport's write buffer, after which net/http
+// copies the body once more to check that nothing is left.
+type gatedConn struct {
+	net.Conn
+	writes  int
+	release <-chan struct{}
+}
+
+func (c *gatedConn) Write(p []byte) (int, error) {
+	n, err := c.Conn.Write(p)
+	if c.writes++; c.writes > 1 {
+		<-c.release
+	}
+	return n, err
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+type readHook struct {
+	io.ReadCloser
+	before func()
+}
+
+func (b readHook) Read(p []byte) (int, error) {
+	b.before()
+	return b.ReadCloser.Read(p)
+}
+
+func TestWritesALargeRequestWholeWhenTheAnswerComesFirst(t *testing.T) {
+	t.Parallel()
+	release := make(chan struct{})
+	srv := httptest.NewTestServer(t, &standIn{})
+	open := sync.OnceFunc(func() { close(release) })
+	t.Cleanup(open)
+	transport := srv.Client().Transport.(*http.Transport).Clone()
+	dial := transport.DialContext
+	transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		conn, err := dial(ctx, network, addr)
+		if err != nil {
+			return nil, err
+		}
+		return &gatedConn{Conn: conn, release: release}, nil
+	}
+	wrote := make(chan error, 1)
+	var writeErr error
+	// The stand-in answers once it has the whole body, while the transport has yet to finish
+	// writing the request. The last check of the body runs only when the SDK reads the answer,
+	// which is after it has closed the body of the request.
+	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		r = r.WithContext(httptrace.WithClientTrace(r.Context(), &httptrace.ClientTrace{
+			WroteRequest: func(info httptrace.WroteRequestInfo) { wrote <- info.Err },
+		}))
+		resp, err := transport.RoundTrip(r)
+		if err != nil {
+			return nil, err
+		}
+		resp.Body = readHook{ReadCloser: resp.Body, before: sync.OnceFunc(func() {
+			open()
+			writeErr = <-wrote
+		})}
+		return resp, nil
+	})}
+	tr, err := NewFromConfig(awssdk.Config{
+		Region: "us-east-1", BaseEndpoint: awssdk.String("http://translate.example"), HTTPClient: client, RetryMaxAttempts: 1,
+		Credentials: awssdk.CredentialsProviderFunc(func(context.Context) (awssdk.Credentials, error) {
+			return awssdk.Credentials{AccessKeyID: "test", SecretAccessKey: "test", Source: "test"}, nil
+		}),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fragment := strings.Repeat("word ", 1800) // one call, its body several times the write buffer
+	got, err := tr.Translate(t.Context(), translation.Request{Fragments: []string{fragment}, SourceLanguage: "en", TargetLanguage: "de"})
+	if writeErr != nil {
+		t.Errorf("the request was written with %v, which closes the connection", writeErr)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Translations[0] != strings.ToUpper(fragment) {
+		t.Errorf("translation differs from the upper-cased fragment")
 	}
 }
 

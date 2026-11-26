@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"regexp"
 	"strings"
 	"unicode"
@@ -53,7 +55,28 @@ func NewFromConfig(cfg awssdk.Config) (*Translator, error) {
 	if cfg.Region == "" {
 		return nil, errors.New("translator aws: no AWS region: set translator_aws_region")
 	}
-	return New(translate.NewFromConfig(cfg)), nil
+	return New(translate.NewFromConfig(cfg, func(o *translate.Options) {
+		o.HTTPClient = bodyWithoutWriteTo{o.HTTPClient}
+	})), nil
+}
+
+// bodyWithoutWriteTo sends each request with a body that has no WriteTo method. The SDK closes
+// the body of a request as soon as its answer begins, and once closed, the body's WriteTo returns
+// io.EOF, which io.Copy passes on as an error. net/http copies a body once more after its
+// Content-Length to check that nothing is left; when the body is larger than the transport's
+// write buffer, the server can answer before that copy, and the io.EOF then closes the connection
+// while the answer is being read. A body without WriteTo is copied with Read, whose io.EOF is the
+// clean end of a copy.
+type bodyWithoutWriteTo struct {
+	next translate.HTTPClient
+}
+
+func (c bodyWithoutWriteTo) Do(r *http.Request) (*http.Response, error) {
+	if r.Body != nil && r.Body != http.NoBody {
+		r = r.WithContext(r.Context())
+		r.Body = struct{ io.ReadCloser }{r.Body}
+	}
+	return c.next.Do(r)
 }
 
 // unit is one piece of a fragment in a call.
