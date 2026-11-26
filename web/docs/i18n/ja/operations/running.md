@@ -3,7 +3,7 @@
 
 サーバーの起動と停止、イメージの入手、そして稼働中の監視 (メトリクス、トレース、ジョブキュー、ヘルスチェック) の方法を説明します。
 
-<!-- source: start-the-server 05b29144056b -->
+<!-- source: start-the-server c19e1ea32f07 -->
 ## サーバーを起動する
 
 ```sh
@@ -34,6 +34,7 @@ Docker Compose の構成 (`deploy/docker/compose.yaml`。[Docker Compose での�
 | `all` (既定) | すべてのルート | 動く |
 | `web` | すべてのルート | 動かない |
 | `worker` | ヘルスチェックだけ (プラットフォームのプローブ用) | 動く |
+| `sfu` | ヘルスチェックと、`voice = sfu` のメディアノードの WebSocket。ノードは自分の UDP と TCP のポートで音声を受けます ([通話の運用](voice.md#run-media-nodes)) | 動かない |
 
 ログは JSON Lines として標準エラーに出ます。どの行にも `level` (`DEBUG`、`INFO`、`WARN`、`ERROR`) と `severity` があります。後者は同じレベルを Cloud Logging が読む形で表したものです (`DEBUG`、`INFO`、`WARNING`、`ERROR`、そしてプロセスを止めるエラーには `CRITICAL`)。
 リクエストの処理中に書かれたログには `request_id` が付き、同じ ID がレスポンスヘッダー `X-Request-Id` で返されます。
@@ -117,7 +118,7 @@ HTTP リクエストとジョブの実行は、それぞれ終わったときに
 さらに `_aws` ディレクティブ、`service.name`、`service.version`、`my.role`、`service.namespace` (`host`) を持ちます。この 3 つのメトリクスはほかの行には書かれません。`metrics_emf_dimensions` で選んだフィールドは、EMF の求めるとおり文字列として書かれます (たとえばディメンション `http.response.status_code` は `"200"`)。
 ログは標準エラーに、ほかの EMF の行は標準出力に出ます。ECS のログドライバー `awslogs` は両方を CloudWatch Logs に送るので、メトリクスは両方から取り出されます。
 
-<!-- source: docker-compose-files 9f0633524036 -->
+<!-- source: docker-compose-files eab514676a87 -->
 ## Docker Compose のファイル
 
 `deploy/docker/` には、インスタンスをデプロイするためのものが入っています。`compose.yaml` は単独で動き、ほかのファイルはその上に重ねます。
@@ -128,6 +129,7 @@ HTTP リクエストとジョブの実行は、それぞれ終わったときに
 | `compose.postgres.yaml` | コンテナで動く PostgreSQL。ボリューム `postgres` に置きます | このマシンで PostgreSQL を使いたいとき。別の場所にある PostgreSQL サーバーを使うなら、このファイルは使わず、`.env` に `MY_DATABASE` と `MY_DATABASE_URL` を設定します |
 | `compose.s3.yaml` | S3 互換のバケットに置くメディア。`COMPOSE_PROFILES=garage` なら、ボリューム `garage` に置く 1 ノードの [Garage](https://garagehq.deuxfleurs.fr/) のストアも加えます | メディアが 1 台のディスクに収まらなくなったとき、またはバケットに置きたいとき。プロファイルがなければ、ストアは `MY_BLOB_S3_*` の設定で指定する外部のものです |
 | `compose.caddy.yaml` | ポート 80 と 443 で TLS 証明書を扱う Caddy | `MY_HOST` が公開のドメインで、このマシンでほかに TLS を終端するものがないとき |
+| `compose.sfu.yaml` | メディアノードを使う通話。サーバーを `role = web`、`worker`、`sfu` に分け、Caddy がノードの WebSocket をノードに送ります。`compose.postgres.yaml` と `compose.caddy.yaml` が必要です | `voice = sfu` を使いたいとき ([通話の運用](voice.md#docker-compose)) |
 | `compose.build.yaml` | チェックアウトからイメージをビルドする | 自分でビルドするとき |
 
 データベースとメディアのストアは、最初に起動する前に選んでください。ファイルを変えても、データはひとりでには移りません
@@ -168,7 +170,7 @@ cp example.env .env
 一度だけ動くサービス `garage-init` が、`up` のたびにストアを準備します。サーバーがメディアを自分で配信するので、ストアは Compose のネットワークの
 中にとどまります。1 ノードは 1 台のディスクです。ボリューム `garage` かバケットをバックアップしてください ([バックアップ](backup.md#media-in-a-bucket))。
 
-<!-- source: serving-https-from-the-server 45ec9231a41e -->
+<!-- source: serving-https-from-the-server 7b583c946805 -->
 ## サーバー自身による HTTPS の配信
 
 `my` は自分で HTTPS を配信できます。そのため、小さなマシンでは、ドメインとポート 80・443 があれば、リバースプロキシなしで 1 つのバイナリがサーバー全体を動かせます。
@@ -191,7 +193,7 @@ MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
 - **ポート。** サーバーは `listen` (`tls` が `off` 以外になると既定は `:443`) で HTTPS を配信します。`tls_http_listen` (既定は `:80`) では、`GET` と `HEAD` のリクエストを `https` の同じパスへ `301` で転送し、それ以外のメソッドには `400` で応えます。リクエストの本文が平文で流れることはありません。
 - **ホスト。** サーバーは `host` と、異なる場合は `web_origin` のホストを配信します。それ以外の名前に対するハンドシェイクは、証明書なしで失敗し、サーバーが証明書を注文することもありません。
 - **接続。** TLS 1.2 以降で、暗号スイートは Go の既定のもの、HTTP/2 と HTTP/1.1 に対応し、リクエストヘッダーは最大 64 KiB、HTTP/2 の接続あたりの同時ストリームは最大 100 です。タイムアウトは素の HTTP と同じです。サーバーは引き続きすべてのレスポンスに `Strict-Transport-Security` を付けます ([セキュリティヘッダー](#security-headers))。
-- **ロール。** TLS で待ち受けるのは `web` と `all` のロールだけです。`worker` は、ヘルスチェックを `listen` (既定は `:8080`) の素の HTTP で提供し、ポート 80 は開きません。
+- **ロール。** TLS で待ち受けるのは `web`、`all`、`sfu` のロールだけです。メディアノード (`role = sfu`) は、`host` ではなく `voice_sfu_public_url` のホストを配信します。`worker` は、ヘルスチェックを `listen` (既定は `:8080`) の素の HTTP で提供し、ポート 80 は開きません。
 - **クライアントのアドレス。** 前段にプロキシがなければ、接続の相手がクライアントです。`trusted_proxies` は空のままにしてください。前段の CDN が `https` でサーバーに接続する場合にだけ設定します。
 - **メンテナンスモード。** `my serve -maintenance` は `tls` も証明書も読まず、`listen` (設定しなければ `:8080`) で素の HTTP で応えます。メンテナンス中は `MY_LISTEN` とファイアウォールをそのポートに合わせるか、メンテナンス用にリバースプロキシを残してください。
 
@@ -369,7 +371,7 @@ sha256sum --ignore-missing -c SHA256SUMS
 - 請求がスパムフィルタで落ちないようにしてください。
 - 公開してよいアドレスを使ってください。情報のページ、ランディングページ、NodeInfo で誰でも見られます。
 
-<!-- source: metrics a5fd8092d408 -->
+<!-- source: metrics bb10bda1b8a4 -->
 ## メトリクス
 
 設定 `metrics_exporter` (既定値 `none`) で、サービスのメトリクスを出力します。関連する設定は[設定リファレンス](../reference/configuration.md)にあります。
@@ -414,6 +416,14 @@ sha256sum --ignore-missing -c SHA256SUMS
 | `my.billing.imports` | カウンター | `my.billing.source` (`aws` / `gcp` / `plugin`)、`my.outcome` (`success` / `failed`)、`error.type` (`failed` のときだけ。失敗の種類で、[クラウドの利用料金の取り込み](billing-import.md)のとおり)。再試行や、翌日の取り込みを待つ失敗も含め、すべての試行を数えます |
 | `my.supporter.tip_checkouts` | カウンター | `my.outcome` (`started` / `rate_limited` / `paid` / `expired`)。プロバイダーのページを得た投げ銭の開始ごと、上限によって拒否された開始ごと、支払われたか支払われずに終わった投げ銭ごとに 1。対応するアラートは[投げ銭](supporters.md#tips)を参照 |
 | `my.voice.turn.credentials` | カウンター | `my.voice.turn` (`coturn` / `cloudflare`)、`my.outcome` (`issued` / `reused` / `failed`)。通話の参加者がルームに参加するときや接続を更新するときに求めた TURN の認証情報 1 件ごとに 1。`reused` は同じ接続に以前発行した Cloudflare の認証情報をもう一度返したこと、`failed` は Cloudflare に届かないか拒否されたため、参加者がエラーを受け取って接続できなかったことを表します |
+| `my.voice.sfu.rooms`、`my.voice.sfu.sessions` | ゲージ | なし (`voice = sfu` のメディアノードごと。そのノードに接続のあるルームと、ノードに接続しているセッション) |
+| `my.voice.sfu.capacity.reserved`、`my.voice.sfu.capacity.connected` | ゲージ | なし (メディアノードごと。ノードに置かれたルームの最大人数の合計と、ノードに接続しているセッション。どちらも `voice_sfu_node_capacity` と比べます) |
+| `my.voice.sfu.packets` | カウンター | `my.outcome` (`forwarded` は、音声パケットを送った参加者ごとに 1。またはパケットを捨てた理由で、`silent`、`not_allowed` (話せない、またはミュートされている参加者)、`queue_full` (接続が追いつけなかった参加者)) |
+| `my.voice.sfu.bytes` | カウンター、バイト | なし (メディアノードが転送した音声) |
+| `my.voice.sfu.renegotiations`、`my.voice.sfu.ice_restarts`、`my.voice.sfu.migrations` | カウンター | なし (話す人が変わったための 2 回目以降の新しいオファー、ネットワークの変更のあとにクライアントが求めた ICE の再開、停止するノードが別のノードに送ったセッション) |
+| `my.voice.sfu.ticket_refusals` | カウンター | `my.voice.sfu.reason` (`invalid` は期限切れ、使用済み、未知のチケット、`other_node` は別のノードのチケット) |
+| `my.voice.sfu.client.rtt` | ヒストグラム、秒 | なし (参加者までの往復時間。参加者の RTCP レポートによる) |
+| `my.voice.sfu.client.packet_loss` | ヒストグラム、パーセント | なし (参加者までの経路での損失。参加者の RTCP レポートによる) |
 | `my.errors.exported` | カウンター | `my.outcome` (`success` / `dropped` / `failed`: `errors_exporter` のサービスへのエラーの報告 1 件ごとに 1。`dropped` は、すでに 1,000 件の報告が待っていたか、サービスがサーバーに送る速度を落とすよう求めたために、報告を送らなかったことを表します。サーバーは、もう一度送るまでサービスが求めるだけ待ちます。`failed` は、サービスに届かないか、サービスが報告を拒否したことを表します。報告は一度だけ送り、再試行はしません。停止の開始から 2 秒たってもまだ待っている報告は失われます) |
 | `my.queue.ready` | ゲージ | `my.job.type` (データベースのキューにある、実行できるジョブの数) |
 | `my.queue.oldest_ready_age` | ゲージ、秒 | `my.job.type` (データベースのキューで、種類ごとに最も古い実行できるジョブが待っている時間。実行できるジョブのない種類には値がありません) |
@@ -527,7 +537,7 @@ curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '              
 ヒーププロファイルが扱うのは Go のヒープだけです。プロセスの常駐メモリには、読み込まれたバイナリのページ、スタック、ランタイム自身の構造も含まれます。それらはメモリの統計で分かります。
 ブロックとミューテックスのプロファイルは、`seconds` を付けたリクエストが取得しているあいだだけサンプリングし、付けなければ空です。
 
-<!-- source: stop-the-server 37d4c0cc3d97 -->
+<!-- source: stop-the-server 72d71a40815a -->
 ## サーバーを停止する
 
 SIGTERM か SIGINT を受け取ると、サーバーは穏やかに停止します。
@@ -537,6 +547,8 @@ SIGTERM か SIGINT を受け取ると、サーバーは穏やかに停止しま�
 3. 25 秒たつと、残りのリクエストとジョブのコンテキストを取り消し、接続を閉じます。
    そのあと、取り消したジョブに結果を記録する時間をさらに最大 3 秒与えてから、終了コード 1 で終わります (合計で最大 28 秒。Kubernetes と ECS の既定の猶予期間 30 秒に収まります)。
    取り消したジョブは再試行されます。その 3 秒のうちに止まらないジョブや、途中で強制終了されたジョブは放棄され、リースが切れるとワーカーがもう一度取り上げるので、2 回実行されることがあります。
+
+`voice = sfu` のメディアノードを動かすプロセス (`role = sfu`、または `all`) は、まずそのノードをドレインします。新しいルームの受け入れをやめ、自分のルームを別のノードに移してクライアントにそこへ再接続するよう伝え、リクエストを待つ前に、25 秒のうち最大 20 秒、クライアントが退出するのを待ちます。猶予も同じく 30 秒以上にしてください (Docker の既定は 10 秒です。`stop_grace_period` か `docker stop -t 30` を設定します)。[通話の運用](voice.md#drain-a-node-for-a-deploy)を参照してください。
 
 サーバーのバックグラウンドのタスクの 1 つでパニックが起きても同じ停止が始まり、サーバーが壊れた状態で動き続けることはありません。
 ログの `serve failed` の行がそのタスクを示し、プラットフォームやプロセスマネージャーが再起動できるように、プロセスは終了コード 1 で終わります。
@@ -578,7 +590,7 @@ my job types                 # print every job type of this release
 - 誰も再試行しない dead ジョブは、失敗してから `dead_job_retention` (既定値 30 日。[設定](../reference/configuration.md#dead_job_retention)を参照) がたつと、1 時間ごとの掃除で削除されます。
 - `queue = inline` の dead ジョブはサーバーのプロセスのメモリにあるので、`my job` では扱えません (終了コード 1)。
 
-<!-- source: splitting-workers-by-job-type 89ced36a3c80 -->
+<!-- source: splitting-workers-by-job-type e3b4c4374dfb -->
 ### ジョブの種類ごとにワーカーを分ける
 
 既定では、どのワーカーもすべてのジョブの種類を、期限が来た順に、プロセスごとに 1 件ずつ実行します ([複数のジョブを同時に実行する](#running-several-jobs-at-once)を参照)。そのため配送が集中するとメールや通知が遅れ、ワーカーを足してもその時間はすべての種類で分け合うことになります。`queue = db` なら、一部の種類に専用のワーカーを割り当てられます。

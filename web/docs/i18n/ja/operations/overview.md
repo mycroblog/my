@@ -16,7 +16,7 @@
 - **選ぶ部品。** 図の中央にある各部品には、そのアダプターを選ぶ設定が 1 つずつあります。[次の節](#parts-you-choose-by-configuration)に一覧があります。
 - **サーバー外のサービス。** CAPTCHA、通話、支払い、プラグイン、クラウド費用の取り込みは、それぞれ設定するまで無効で、設定するとサーバーは指定したサービスを呼び出します。
 
-<!-- source: parts-you-choose-by-configuration 34c2a60744fd -->
+<!-- source: parts-you-choose-by-configuration 4d878bcd8b84 -->
 ## 設定で選ぶ部品
 
 どの部品も[設定リファレンス](../reference/configuration.md)の設定項目で、TOML ファイルか環境変数（`MY_` にキーを大文字にしたもの。例: `MY_DATABASE`）で設定します。各一覧の最初の選択肢が既定値です。データを保持する部品は、最初の起動の前に選んでください。設定を変えても、データが自動で移ることはありません。
@@ -32,7 +32,7 @@
 | アカウントの秘密鍵を暗号化する鍵管理 | [`key_manager`](../reference/configuration.md#key_manager) | `local`（あなたが保管する鍵暗号化鍵）、`gcpkms`（Google Cloud KMS）、`awskms`（AWS KMS）、`plugin` | [鍵の管理](key-management.md) |
 | メール | [`mail`](../reference/configuration.md#mail) | `none`、`smtp`、`ses`（Amazon SES）、`plugin` | [メールの送信](email.md) |
 | CAPTCHA | [`captcha`](../reference/configuration.md#captcha) | `none`、`turnstile`（Cloudflare Turnstile）、`hcaptcha`、`recaptcha`（Google reCAPTCHA v2） | [CAPTCHA](captcha.md) |
-| 通話 | [`voice`](../reference/configuration.md#voice) | `off`、`p2p`（ブラウザ同士。TURN は `voice_turn` で `none`、`coturn`、`cloudflare` のいずれか）、`livekit`、`sora` | [通話](voice.md) |
+| 通話 | [`voice`](../reference/configuration.md#voice) | `off`、`p2p`（ブラウザー同士）、`sfu`（サーバーのメディアノード）。それぞれに `voice_turn` の TURN（`none`、`coturn`、`cloudflare` のいずれか） | [通話](voice.md) |
 | サポーターの支払い | [`payments`](../reference/configuration.md#payments) | `none`、`stripe`、`payjp`（PAY.JP） | [サポーター](supporters.md)、[Stripe](payments-stripe.md)、[PAY.JP](payments-payjp.md) |
 | プラグイン | `plugin_<kind>_address` | 既定ではなし。種類ごとに 1 つのアドレス: `translator`、`search`、`billing`、`mailer`、`media_image`、`media_video`、`media_audio`、`key_manager`、および判定フックの `inbound.status`、`local.status`、`inbound.follow`、`signup.check`、`media.check`、`inbound.actor`、`local.profile` | [プラグイン](plugins.md)、[判定フック](decision-hooks.md) |
 | 投稿の翻訳 | `translator_<provider>_*`、[`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | なし（ブラウザ自身の翻訳だけ）、`libretranslate`、`deepl`、`google`（Google Cloud Translation）、`aws`（Amazon Translate）、または選んだサービスの前に置くあなたのプラグイン | [投稿の翻訳](translation.md)、[翻訳プラグイン](plugins.md#translating-posts) |
