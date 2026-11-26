@@ -64,7 +64,7 @@ entsprechend.
 - Das Anmelde-Cookie ist `Secure`. Chrome und Firefox akzeptieren es auf `http://localhost`; Safari (WebKit) nicht, nutze lokal also Chrome oder Firefox.
 - Links von Hashtags und Erwähnungen in Beitragstexten verwenden `https://`, da es die föderierten URLs sind.
 
-<!-- source: going-public a59510155d91 -->
+<!-- source: going-public 8a7149acda33 -->
 ## Öffentlich gehen
 
 - Setze `MY_HOST` in `.env` auf deine echte Domain, entferne `MY_WEB_ORIGIN` (es ist standardmäßig `https://{MY_HOST}`)
@@ -74,6 +74,9 @@ entsprechend.
   gespeichert und lässt sich später nicht mehr ändern.
 - Setze hinter einem eigenen Reverse-Proxy `MY_TRUSTED_PROXIES` in `.env`, damit Ratenbegrenzungen wie die bei der
   Anmeldung pro Client-IP gelten statt für den Proxy ([`trusted_proxies`](../reference/configuration.md#trusted_proxies)).
+- Sprachchat mit dem eigenen Medienknoten des Servers (`voice = sfu`) ist die Ebene `compose.sfu.yaml`: Sie betreibt den Server als
+  `role = web`, einen `worker` und einen Knoten `sfu` auf PostgreSQL hinter Caddy und veröffentlicht UDP 7882 und TCP 7881
+  ([Sprachchat](voice.md#docker-compose)).
 - Gehe die [Checkliste für den Produktivbetrieb](production-checklist.md) durch, bevor du den Server für Nutzer öffnest.
 - `docker compose down` stoppt den Stack. `down -v` löscht außerdem die Daten-Volumes.
 

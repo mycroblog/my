@@ -102,7 +102,7 @@ Es hilft nicht, wenn eine eigene Funktion der Plattform den Verkehr weiterleitet
 
 Ist keine davon gesetzt, wird nichts geprüft, und der Server verhält sich, als gäbe es diesen Abschnitt nicht.
 
-<!-- source: what-passes-without-the-header b79877bb91a3 -->
+<!-- source: what-passes-without-the-header e5891c904fa1 -->
 ### Was ohne den Header durchkommt
 
 | Anfrage | Warum |
@@ -111,7 +111,7 @@ Ist keine davon gesetzt, wird nichts geprüft, und der Server verhält sich, als
 | `POST` an Pfade unter `/_internal/` | Cloud Tasks und Cloud Scheduler rufen sie unter der eigenen URL des Servers auf. Sie tragen ihr eigenes signiertes Token |
 
 Alles andere braucht den Header, auch im Wartungsmodus: der Webclient und seine Assets, `/media/`, die Client-API, OAuth und ActivityPub, einschließlich der Zustellungen anderer Server.
-Alles, was den Server direkt unter seiner eigenen Adresse statt über das CDN aufruft, wird daher abgelehnt: ein eigener Webhook, ein Sprach-Medienserver, ein Skript. Richte es auf den Hostnamen des CDN.
+Alles, was den Server direkt unter seiner eigenen Adresse statt über das CDN aufruft, wird daher abgelehnt: ein eigener Webhook, ein Skript. Richte es auf den Hostnamen des CDN.
 
 Der Metriken-Port (`metrics_listen`) ist ein separater Listener, der nicht öffentlich ist und nicht geprüft wird.
 
