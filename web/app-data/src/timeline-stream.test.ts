@@ -52,9 +52,12 @@ const readAgain = (data: AppData) =>
 
 /** Marks the tab's local timeline as read, so that a later break shows. */
 const markRead = (data: AppData) => {
-  data.queryClient.getQueryCache().find({ queryKey: publicTimelineQuery(data, "local").queryKey })?.setState({
-    isInvalidated: false,
-  });
+  data.queryClient
+    .getQueryCache()
+    .find({ queryKey: publicTimelineQuery(data, "local").queryKey })
+    ?.setState({
+      isInvalidated: false,
+    });
 };
 
 /** Starts the stream of the local timeline in each tab of one browser, the first tab first. */
