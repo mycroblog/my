@@ -84,8 +84,8 @@
     "description": "After pressing Join (409 voice-room-full), when the voice chat room holds as many people as its maximum allows, or more after the maximum was lowered."
   },
   "voice.over_max": {
-    "defaultMessage": "{reader, select, host {More people are in the room than the maximum you set, {max}. No one was removed, and no one new can join until fewer than {max} are in it. To let new people join now, raise the maximum in Room settings.} other {More people are in the room than its maximum, {max}. No one was removed, and no one new can join until fewer than {max} are in it.}}",
-    "description": "A notice on a voice chat room's page while it holds more people than its maximum ({max}, a number), after the maximum was lowered: reader is host (the host, while the room's maximum is the one the host set; Room settings is the item of the room's menu) or other (everyone else, and the host when the server's lower maximum applies)."
+    "defaultMessage": "{reader, select, host {More people are in the room than the maximum you set, {max}. No one was removed, and no one new can join until fewer than {max} are in it. To let new people join now, raise the maximum.} other {More people are in the room than its maximum, {max}. No one was removed, and no one new can join until fewer than {max} are in it.}}",
+    "description": "A notice on a voice chat room's page while it holds more people than its maximum ({max}, a number), after the maximum was lowered: reader is host (the host, while the room's maximum is the one the host set; a link to Room settings, voice.settings.title, follows the host's sentence) or other (everyone else, and the host when the server's lower maximum applies)."
   },
   "voice.join_hosting": {
     "defaultMessage": "You host another room. End it or hand it over before you join this one.",

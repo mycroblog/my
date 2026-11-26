@@ -84,8 +84,8 @@
     "description": "After pressing Join (409 voice-room-full), when the voice chat room holds as many people as its maximum allows, or more after the maximum was lowered."
   },
   "voice.over_max": {
-    "defaultMessage": "{reader, select, host {ルームの人数が、あなたが設定した上限の {max} 人を超えています。退出させられた人はいませんが、{max} 人より少なくなるまで新しい人は参加できません。新しい人がすぐ参加できるようにするには、「ルームの設定」で上限を上げてください。} other {ルームの人数が上限の {max} 人を超えています。退出させられた人はいませんが、{max} 人より少なくなるまで新しい人は参加できません。}}",
-    "description": "A notice on a voice chat room's page while it holds more people than its maximum ({max}, a number), after the maximum was lowered: reader is host (the host, while the room's maximum is the one the host set; Room settings is the item of the room's menu) or other (everyone else, and the host when the server's lower maximum applies)."
+    "defaultMessage": "{reader, select, host {ルームの人数が、あなたが設定した上限の {max} 人を超えています。退出させられた人はいませんが、{max} 人より少なくなるまで新しい人は参加できません。新しい人がすぐ参加できるようにするには、上限を上げてください。} other {ルームの人数が上限の {max} 人を超えています。退出させられた人はいませんが、{max} 人より少なくなるまで新しい人は参加できません。}}",
+    "description": "A notice on a voice chat room's page while it holds more people than its maximum ({max}, a number), after the maximum was lowered: reader is host (the host, while the room's maximum is the one the host set; a link to Room settings, voice.settings.title, follows the host's sentence) or other (everyone else, and the host when the server's lower maximum applies)."
   },
   "voice.join_hosting": {
     "defaultMessage": "別のルームのホストです。そのルームを終了するか、ホストを渡してから参加してください。",
