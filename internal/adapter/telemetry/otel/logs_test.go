@@ -187,7 +187,7 @@ func TestLogsRecordOfALine(t *testing.T) {
 		t.Errorf("severity = %d %q, want 9 INFO", rec.Severity(), rec.SeverityText())
 	}
 	if b := rec.Body(); b.Type() != attribute.STRING || b.AsString() != "hello" {
-		t.Errorf("body = %v, want the string hello", b.Emit())
+		t.Errorf("body = %v, want the string hello", b.String())
 	}
 	want := []attribute.KeyValue{
 		attribute.Int64("a", 1),
@@ -204,9 +204,9 @@ func TestLogsRecordOfALine(t *testing.T) {
 		t.Fatalf("attributes = %v, want %v", got, want)
 	}
 	for i := range want {
-		if got[i].Key != want[i].Key || got[i].Value.Type() != want[i].Value.Type() || got[i].Value.Emit() != want[i].Value.Emit() {
-			t.Errorf("attribute %d = %s %s %q, want %s %s %q", i, got[i].Key, got[i].Value.Type(), got[i].Value.Emit(),
-				want[i].Key, want[i].Value.Type(), want[i].Value.Emit())
+		if got[i].Key != want[i].Key || got[i].Value.Type() != want[i].Value.Type() || got[i].Value.String() != want[i].Value.String() {
+			t.Errorf("attribute %d = %s %s %q, want %s %s %q", i, got[i].Key, got[i].Value.Type(), got[i].Value.String(),
+				want[i].Key, want[i].Value.Type(), want[i].Value.String())
 		}
 	}
 	if s := sink.got(); len(s) != 0 {
