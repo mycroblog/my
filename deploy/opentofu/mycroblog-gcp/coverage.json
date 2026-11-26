@@ -30,7 +30,7 @@
     "workers": ["worker_*"],
     "billing": ["billing_gcp_budget_subscription", "billing_gcp_method", "billing_gcp_table", "billing_sources"],
     "translation": ["translator_google_*"],
-    "observability": ["errors_exporter", "metrics_exporter", "traces_exporter"]
+    "observability": ["errors_exporter", "logs_exporter", "metrics_exporter", "traces_exporter"]
   },
   "fixed": ["media_max_av_bytes", "profile", "role", "vapid_private_key"],
   "generic": [

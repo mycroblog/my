@@ -532,6 +532,7 @@ module "observability" {
   source = "../modules/internal/observability-gcp"
 
   project_id = local.project_id
+  logs       = var.observability.logs
   metrics    = var.observability.metrics
   traces     = var.observability.traces
   errors     = var.observability.errors

@@ -227,6 +227,10 @@
     "env": "MY_LOGIN_PROVIDER_ALLOWED_DESTINATIONS",
     "secret": false
   },
+  "logs_exporter": {
+    "env": "MY_LOGS_EXPORTER",
+    "secret": false
+  },
   "mail": {
     "env": "MY_MAIL",
     "secret": false

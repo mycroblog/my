@@ -50,6 +50,7 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
       MY_ERRORS_EXPORTER                   = "none"
       MY_HOST                              = "social.example.org"
       MY_KEK_FILE                          = "/secrets/my-kek-file/value"
+      MY_LOGS_EXPORTER                     = "gcp"
       MY_MAIL                              = "smtp"
       MY_MAIL_FROM                         = "noreply@social.example.org"
       MY_MAIL_SMTP_HOST                    = "smtp.example.org"

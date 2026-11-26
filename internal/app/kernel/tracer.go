@@ -41,9 +41,10 @@ type Tracer interface {
 	// Linked returns ctx without a parent: the next span that ctx starts is the root of a new
 	// trace, linked to traceparent when it is valid (a job's TraceParent, ADR-0055 §14).
 	Linked(ctx context.Context, traceparent string) context.Context
-	// LogIDs returns the trace and span IDs that the log lines of ctx carry (ADR-0055 §18): those
-	// of the span in ctx, or else those of the remote parent of Continue; "" outside a trace.
-	LogIDs(ctx context.Context) (traceID, spanID string)
+	// LogIDs returns the trace context that the log lines of ctx carry (ADR-0055 §18): the IDs
+	// and the sampled flag of the span in ctx, or else those of the remote parent of Continue;
+	// the zero TraceParent outside a trace.
+	LogIDs(ctx context.Context) TraceParent
 }
 
 // Span is a span in progress. It is not safe for concurrent use.
@@ -301,9 +302,9 @@ func (NopTracer) Linked(ctx context.Context, _ string) context.Context {
 }
 
 // LogIDs implements Tracer.
-func (NopTracer) LogIDs(ctx context.Context) (string, string) {
+func (NopTracer) LogIDs(ctx context.Context) TraceParent {
 	p, _ := RemoteParent(ctx)
-	return p.TraceID, p.SpanID
+	return p
 }
 
 // WithRemoteParent returns ctx carrying the parsed traceparent as its remote parent, or ctx

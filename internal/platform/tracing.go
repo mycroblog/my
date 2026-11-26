@@ -30,31 +30,36 @@ func (a *App) setUpTracer(ctx context.Context, cfg *config.Config, opts AppOptio
 	default:
 		return fmt.Errorf("traces_exporter %q is not implemented yet", cfg.TracesExporter)
 	}
-	a.Logger = slog.New(traceIDHandler{Handler: a.Logger.Handler(), tracer: a.Tracer})
+	a.Logger = slog.New(traceIDHandler{Handler: a.Logger.Handler(), tracer: a.Tracer, gcp: cfg.LogsExporter == config.LogsGCP})
 	return nil
 }
 
 // traceIDHandler adds the trace and span IDs of the context (kernel.Tracer.LogIDs) to every
 // record, as trace_id and span_id, so that the logs and the traces of a request or a job
-// correlate (ADR-0055 §18).
+// correlate (ADR-0055 §18). With gcp (logs_exporter = gcp) it also writes them in the fields that
+// Cloud Logging links to Cloud Trace: the bare trace ID, the span ID, and the sampled flag.
 type traceIDHandler struct {
 	slog.Handler
 	tracer kernel.Tracer
+	gcp    bool
 }
 
 func (h traceIDHandler) Handle(ctx context.Context, r slog.Record) error {
-	if traceID, spanID := h.tracer.LogIDs(ctx); traceID != "" {
-		r.AddAttrs(slog.String("trace_id", traceID), slog.String("span_id", spanID))
+	if p := h.tracer.LogIDs(ctx); p.TraceID != "" {
+		r.AddAttrs(slog.String("trace_id", p.TraceID), slog.String("span_id", p.SpanID))
+		if h.gcp {
+			r.AddAttrs(slog.String(gcpTraceKey, p.TraceID), slog.String(gcpSpanIDKey, p.SpanID), slog.Bool(gcpTraceSampledKey, p.Sampled))
+		}
 	}
 	return h.Handler.Handle(ctx, r)
 }
 
 func (h traceIDHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return traceIDHandler{Handler: h.Handler.WithAttrs(attrs), tracer: h.tracer}
+	return traceIDHandler{Handler: h.Handler.WithAttrs(attrs), tracer: h.tracer, gcp: h.gcp}
 }
 
 func (h traceIDHandler) WithGroup(name string) slog.Handler {
-	return traceIDHandler{Handler: h.Handler.WithGroup(name), tracer: h.tracer}
+	return traceIDHandler{Handler: h.Handler.WithGroup(name), tracer: h.tracer, gcp: h.gcp}
 }
 
 // headerTraceParent carries the W3C trace context (Trace Context §3.2).

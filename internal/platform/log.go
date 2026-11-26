@@ -17,6 +17,17 @@ func NewLogger(w io.Writer, level slog.Leveler) *slog.Logger {
 	return slog.New(requestIDHandler{clientGoneHandler{json}})
 }
 
+// The fields of Cloud Logging's structured logging that logs_exporter = gcp adds to the lines
+// (ADR-0055 §20): the trace context of the entry (traceIDHandler, §18), and the request of the
+// access line (accessLog). The text of a line stays msg, which the log-based metrics and the
+// alerts read, and message stays the stack of the error report line (errorLogMessage).
+const (
+	gcpTraceKey        = "logging.googleapis.com/trace"
+	gcpSpanIDKey       = "logging.googleapis.com/spanId"
+	gcpTraceSampledKey = "logging.googleapis.com/trace_sampled"
+	gcpHTTPRequestKey  = "httpRequest"
+)
+
 // logSeverity is the ReplaceAttr of the process logger: it writes the record's level as level,
 // as before (the examples of alerts read it), followed by
 // severity, which Cloud Logging reads instead (ADR-0103 §4 (1)): DEBUG, INFO, WARNING, ERROR,

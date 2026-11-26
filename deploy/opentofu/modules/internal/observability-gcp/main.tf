@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# Where the metrics, the traces, and the error reports of a server on Cloud Run go: Google Cloud's own destinations, which read
-# what Cloud Run already sends them, so the server exports nothing and holds no Google credentials for them.
+# Where the logs, the metrics, the traces, and the error reports of a server on Cloud Run go: Google Cloud's own destinations,
+# which read what Cloud Run already sends them, so the server exports nothing and holds no Google credentials for them.
 #
+# - Cloud Logging: the server's lines in its shape (logs_exporter = gcp), which link each line to its trace and show the
+#   access lines as requests.
 # - Cloud Monitoring: Cloud Run's metrics, and the log-based metrics of monitoring-gcp, made from the server's log lines.
 # - Cloud Trace: the trace Cloud Run records of each request, whose ID the log lines carry.
 # - Error Reporting: the error report line, which it reads from Cloud Logging.
@@ -26,6 +28,18 @@ variable "project_id" {
   description = "The project of the service, where the APIs of the destinations are enabled."
   type        = string
   nullable    = false
+}
+
+variable "logs" {
+  description = "cloud-logging, or settings to leave logs_exporter to the settings input."
+  type        = string
+  default     = "cloud-logging"
+  nullable    = false
+
+  validation {
+    condition     = contains(["cloud-logging", "settings"], var.logs)
+    error_message = "logs must be cloud-logging or settings."
+  }
 }
 
 variable "metrics" {
@@ -65,11 +79,13 @@ variable "errors" {
 }
 
 locals {
-  # Each destination, by its signal: the API it needs, and the server's exporter for it, none since Cloud Run delivers.
+  # Each destination, by its signal: the API it needs, and the server's exporter for it: none since Cloud Run delivers, and
+  # for the logs, which Cloud Run delivers too, the shape of Cloud Logging.
   destinations = {
-    metrics = { on = var.metrics == "cloud-monitoring", api = "monitoring.googleapis.com", env = "MY_METRICS_EXPORTER" }
-    traces  = { on = var.traces == "cloud-trace", api = "cloudtrace.googleapis.com", env = "MY_TRACES_EXPORTER" }
-    errors  = { on = var.errors == "error-reporting", api = "clouderrorreporting.googleapis.com", env = "MY_ERRORS_EXPORTER" }
+    logs    = { on = var.logs == "cloud-logging", api = "logging.googleapis.com", env = "MY_LOGS_EXPORTER", value = "gcp" }
+    metrics = { on = var.metrics == "cloud-monitoring", api = "monitoring.googleapis.com", env = "MY_METRICS_EXPORTER", value = "none" }
+    traces  = { on = var.traces == "cloud-trace", api = "cloudtrace.googleapis.com", env = "MY_TRACES_EXPORTER", value = "none" }
+    errors  = { on = var.errors == "error-reporting", api = "clouderrorreporting.googleapis.com", env = "MY_ERRORS_EXPORTER", value = "none" }
   }
 }
 
@@ -88,8 +104,8 @@ output "platform" {
 }
 
 output "env" {
-  description = "The exporter of each signal that goes to Google Cloud: none, since Cloud Run sends the logs, the metrics, and the request traces itself."
-  value       = { for signal, d in local.destinations : d.env => "none" if d.on }
+  description = "The exporter of each signal that goes to Google Cloud: gcp for the logs, and none for the others, since Cloud Run sends the logs, the metrics, and the request traces itself."
+  value       = { for signal, d in local.destinations : d.env => d.value if d.on }
   depends_on  = [google_project_service.destination]
 }
 

@@ -1586,6 +1586,16 @@ var schema = []field{
 		},
 	},
 	{
+		key: "logs_exporter",
+		doc: "Where the log lines go, and in which shape. Every line carries `request_id` or `job_id`, and `trace_id` and `span_id` inside a trace, whatever this setting.",
+		def: LogsStderr,
+		choices: []choice{
+			{value: LogsStderr, doc: "JSON lines on standard error, which the platform or a log collector of the operator gathers."},
+			{value: LogsGCP, doc: "The same lines with the fields of Cloud Logging's structured logging, for Cloud Run: the trace fields that link a line to its trace in Cloud Trace (`logging.googleapis.com/trace`, `spanId`, and `trace_sampled`), and the request of each access line as `httpRequest`, without the query, the client IP, or the User-Agent."},
+		},
+		set: func(c *Config, v string) { c.LogsExporter = v },
+	},
+	{
 		key: "traces_exporter",
 		doc: "Where the distributed traces go: the spans of the HTTP requests, the job runs (each the root of a new trace linked to the request that enqueued it), the transactions and queries, the deliveries, and the outbound requests. Span attributes never carry an account, a URL or a path, a client IP, a User-Agent, an SQL text, or an error message; the outbound requests carry the destination's host name. No outbound request carries a `traceparent`, and an incoming `traceparent` is taken only from `trusted_proxies`.",
 		def: "none",

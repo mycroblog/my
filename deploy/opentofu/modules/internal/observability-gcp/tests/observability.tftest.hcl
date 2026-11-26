@@ -12,13 +12,13 @@ run "every_signal_to_google_cloud" {
   command = plan
 
   assert {
-    condition     = output.env == { MY_METRICS_EXPORTER = "none", MY_TRACES_EXPORTER = "none", MY_ERRORS_EXPORTER = "none" }
-    error_message = "the server exports nothing itself: Cloud Run delivers to the destinations"
+    condition     = output.env == { MY_LOGS_EXPORTER = "gcp", MY_METRICS_EXPORTER = "none", MY_TRACES_EXPORTER = "none", MY_ERRORS_EXPORTER = "none" }
+    error_message = "the server exports nothing itself: Cloud Run delivers to the destinations, and the logs are in the shape of Cloud Logging"
   }
 
   assert {
     condition = (
-      toset([for s in google_project_service.destination : s.service]) == toset(["monitoring.googleapis.com", "cloudtrace.googleapis.com", "clouderrorreporting.googleapis.com"]) &&
+      toset([for s in google_project_service.destination : s.service]) == toset(["logging.googleapis.com", "monitoring.googleapis.com", "cloudtrace.googleapis.com", "clouderrorreporting.googleapis.com"]) &&
       alltrue([for s in google_project_service.destination : s.project == "my-project" && !s.disable_on_destroy])
     )
     error_message = "the API of each destination must be enabled in the project, and stay enabled when the module goes"
@@ -47,6 +47,7 @@ run "every_signal_left_to_the_settings" {
   command = plan
 
   variables {
+    logs    = "settings"
     metrics = "settings"
     traces  = "settings"
     errors  = "settings"
