@@ -345,8 +345,10 @@ func (n *Node) discard(c *websocket.Conn) {
 	}
 }
 
-// serve reads the messages of a session's client until its WebSocket closes.
+// serve reads the messages of a session's client until its WebSocket closes, and then ends the
+// writer and the pinger of the WebSocket.
 func (n *Node) serve(c *websocket.Conn, ws *wsConn, p *peer) {
+	defer ws.close(websocket.StatusNormalClosure, "")
 	defer p.detach(ws)
 	for {
 		typ, data, err := c.Read(n.base)
