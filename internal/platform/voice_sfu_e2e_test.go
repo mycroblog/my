@@ -10,10 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coder/websocket"
-
 	"github.com/mycroblog/my/internal/adapter/voice/sfu"
 	"github.com/mycroblog/my/internal/adapter/voice/sfu/node"
+	"github.com/mycroblog/my/internal/adapter/voice/sfu/node/nodetest"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
@@ -47,18 +46,18 @@ func openTalk(e *accountsEnv, host, guest testUser) (opened, joined clientapi.Vo
 }
 
 // hears fails the test unless listener hears more than n further packets of account.
-func hears(t *testing.T, listener *sfuClient, account string, n int64, what string) {
+func hears(t *testing.T, listener *nodetest.Client, account string, n int64, what string) {
 	t.Helper()
-	from := listener.heardFrom(account)
-	if !testkit.Eventually(t, 10*time.Second, func() bool { return listener.heardFrom(account) > from+n }) {
-		t.Fatalf("%s: heard %d packets of %s, want more than %d", what, listener.heardFrom(account)-from, account, n)
+	from := listener.HeardFrom(account)
+	if !testkit.Eventually(t, 10*time.Second, func() bool { return listener.HeardFrom(account) > from+n }) {
+		t.Fatalf("%s: heard %d packets of %s, want more than %d", what, listener.HeardFrom(account)-from, account, n)
 	}
 }
 
 // stopsHearing fails the test unless the node of p drops the audio of account as not_allowed and
 // listener hears none of it while it does: once the drops began, a window of 10 more drops
 // reaches listener with no packet of account.
-func stopsHearing(t *testing.T, p *sfuProcess, listener *sfuClient, account, what string) {
+func stopsHearing(t *testing.T, p *sfuProcess, listener *nodetest.Client, account, what string) {
 	t.Helper()
 	dropsMore := func(n float64) {
 		t.Helper()
@@ -68,9 +67,9 @@ func stopsHearing(t *testing.T, p *sfuProcess, listener *sfuClient, account, wha
 		}
 	}
 	dropsMore(10)
-	heard := listener.heardFrom(account)
+	heard := listener.HeardFrom(account)
 	dropsMore(10)
-	if got := listener.heardFrom(account); got != heard {
+	if got := listener.HeardFrom(account); got != heard {
 		t.Errorf("%s: heard %d packets of %s while the node dropped them", what, got-heard, account)
 	}
 }
@@ -96,14 +95,14 @@ func TestVoiceSFURoomWorksInOneProcess(t *testing.T) {
 	}
 	a := connectSFU(t, opened.Grant, opened.Session)
 	b := connectSFU(t, joined.Grant, joined.Session)
-	waitConnected(t, a, b)
+	nodetest.WaitConnected(t, a, b)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	go a.speak(ctx, 30)
-	go b.speak(ctx, 30)
+	go a.Speak(ctx, 30)
+	go b.Speak(ctx, 30)
 	hears(t, b, alice.id, 10, "the listener")
 	stopsHearing(t, p, a, bob.id, "the listener's audio")
-	if n := a.heardFrom(bob.id); n != 0 {
+	if n := a.HeardFrom(bob.id); n != 0 {
 		t.Errorf("the host heard %d packets of the listener, want none", n)
 	}
 }
@@ -137,11 +136,11 @@ func TestVoiceSFURoomWorksAcrossWebAndNode(t *testing.T) {
 	}
 	a := connectSFU(t, opened.Grant, opened.Session)
 	b := connectSFU(t, joined.Grant, joined.Session)
-	waitConnected(t, a, b)
+	nodetest.WaitConnected(t, a, b)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	go a.speak(ctx, 30)
-	go b.speak(ctx, 30)
+	go a.Speak(ctx, 30)
+	go b.Speak(ctx, 30)
 	hears(t, b, alice.id, 10, "the listener on the node")
 	stopsHearing(t, sfuNode, a, bob.id, "the listener's audio on the node")
 
@@ -169,16 +168,16 @@ func TestVoiceSFUEnforcesAtTheForwarder(t *testing.T) {
 	room := "/voice/rooms/" + opened.Room.Id
 	a := connectSFU(t, opened.Grant, opened.Session)
 	b := connectSFU(t, joined.Grant, joined.Session)
-	waitConnected(t, a, b)
+	nodetest.WaitConnected(t, a, b)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	go a.speak(ctx, 30)
-	go b.speak(ctx, 30)
+	go a.Speak(ctx, 30)
+	go b.Speak(ctx, 30)
 
 	// A listener: dropped at the node.
 	hears(t, b, alice.id, 10, "the listener")
 	stopsHearing(t, p, a, bob.id, "a listener")
-	if n := a.heardFrom(bob.id); n != 0 {
+	if n := a.HeardFrom(bob.id); n != 0 {
 		t.Fatalf("the host heard %d packets of the listener", n)
 	}
 
@@ -197,10 +196,10 @@ func TestVoiceSFUEnforcesAtTheForwarder(t *testing.T) {
 	hears(t, a, bob.id, 10, "the host, once bob turns his microphone on")
 
 	// The host makes bob a listener again: the host gets a new offer, and bob is no longer heard.
-	offers := a.offers.Load()
+	offers := a.Offers()
 	e.want(e.do(http.MethodDelete, room+"/participants/"+bob.id+"/speaking_permission", alice.token, nil, nil), http.StatusOK, "revoke")
 	drainJobs(e)
-	if !testkit.Eventually(t, 10*time.Second, func() bool { return a.offers.Load() > offers }) {
+	if !testkit.Eventually(t, 10*time.Second, func() bool { return a.Offers() > offers }) {
 		t.Errorf("the host got no new offer once bob no longer speaks")
 	}
 	stopsHearing(t, p, a, bob.id, "a speaker made a listener")
@@ -208,7 +207,7 @@ func TestVoiceSFUEnforcesAtTheForwarder(t *testing.T) {
 	// The host removes bob: his connection closes with room_unavailable.
 	e.want(e.do(http.MethodDelete, room+"/participants/"+bob.id, alice.token, nil, nil), http.StatusOK, "remove")
 	drainJobs(e)
-	m, ok := b.waitError(10 * time.Second)
+	m, ok := b.WaitError(10 * time.Second)
 	if !ok {
 		t.Fatal("the removed participant got no error")
 	}
@@ -237,7 +236,7 @@ func TestVoiceSFUDrainMovesTheRoom(t *testing.T) {
 	}
 	a := connectSFU(t, opened.Grant, opened.Session)
 	b := connectSFU(t, joined.Grant, joined.Session)
-	waitConnected(t, a, b)
+	nodetest.WaitConnected(t, a, b)
 	second := newSFUProcess(t, env, "sfu")
 
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
@@ -247,14 +246,13 @@ func TestVoiceSFUDrainMovesTheRoom(t *testing.T) {
 		first.app.VoiceNode.Drain(ctx)
 		close(drained)
 	}()
-	for _, c := range []*sfuClient{a, b} {
+	for _, c := range []*nodetest.Client{a, b} {
 		select {
-		case <-c.migrated:
+		case <-c.Migrated():
 		case <-ctx.Done():
 			t.Fatal("a client of the draining node got no migrate")
 		}
-		_ = c.ws.Close(websocket.StatusNormalClosure, "")
-		_ = c.pc.Close()
+		c.Close()
 	}
 	ga := refreshGrant(e, alice.token, opened.Room.Id, opened.Session)
 	gb := refreshGrant(e, bob.token, opened.Room.Id, joined.Session)
@@ -265,10 +263,10 @@ func TestVoiceSFUDrainMovesTheRoom(t *testing.T) {
 	}
 	a2 := connectSFU(t, ga, opened.Session)
 	b2 := connectSFU(t, gb, joined.Session)
-	waitConnected(t, a2, b2)
+	nodetest.WaitConnected(t, a2, b2)
 	speaking, stop := context.WithCancel(t.Context())
 	defer stop()
-	go a2.speak(speaking, 30)
+	go a2.Speak(speaking, 30)
 	hears(t, b2, alice.id, 10, "the listener on the second node")
 	select {
 	case <-drained:
@@ -294,11 +292,11 @@ func TestVoiceSFUMetrics(t *testing.T) {
 	opened, joined := openTalk(e, alice, bob)
 	a := connectSFU(t, opened.Grant, opened.Session)
 	b := connectSFU(t, joined.Grant, joined.Session)
-	waitConnected(t, a, b)
+	nodetest.WaitConnected(t, a, b)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	go a.speak(ctx, 30)
-	go b.speak(ctx, 30)
+	go a.Speak(ctx, 30)
+	go b.Speak(ctx, 30)
 	hears(t, b, alice.id, 10, "the listener")
 	if !testkit.Eventually(t, 10*time.Second, func() bool { return p.packets(node.DropNotAllowed) > 0 }) {
 		t.Error("no packet counted as not_allowed")
@@ -315,9 +313,9 @@ func TestVoiceSFUMetrics(t *testing.T) {
 	}
 
 	// The host's client asks for an ICE restart: counted, and offered.
-	offers := a.offers.Load()
-	a.send(node.ClientMessage{V: node.Version, Type: node.TypeRestart})
-	if !testkit.Eventually(t, 10*time.Second, func() bool { return a.offers.Load() > offers }) {
+	offers := a.Offers()
+	a.Send(node.ClientMessage{V: node.Version, Type: node.TypeRestart})
+	if !testkit.Eventually(t, 10*time.Second, func() bool { return a.Offers() > offers }) {
 		t.Error("no offer after a restart")
 	}
 	if got := p.meter.Sum(node.ICERestarts.Name, nil); got != 1 {
@@ -325,15 +323,12 @@ func TestVoiceSFUMetrics(t *testing.T) {
 	}
 
 	// A ticket that does not exist is refused and counted as invalid.
-	ws, res, err := websocket.Dial(t.Context(), p.url+"?ticket=unknown", nil)
+	read, closeConn, err := nodetest.DialRaw(t.Context(), p.url, "unknown")
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
-	if res != nil && res.Body != nil {
-		_ = res.Body.Close()
-	}
-	_, _, _ = ws.Read(t.Context())
-	_ = ws.CloseNow()
+	_ = read()
+	closeConn()
 	if !testkit.Eventually(t, 5*time.Second, func() bool {
 		return p.meter.Sum(node.TicketRefusals.Name, map[string]string{"my.voice.sfu.reason": node.RefusalInvalid}) == 1
 	}) {
