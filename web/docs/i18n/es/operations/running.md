@@ -3,7 +3,7 @@
 
 Cómo arrancar y detener el servidor, obtener su imagen y vigilarlo mientras funciona: métricas, trazas, la cola de trabajos y las comprobaciones de salud.
 
-<!-- source: start-the-server 3cc6acc9fe88 -->
+<!-- source: start-the-server 05b29144056b -->
 ## Iniciar el servidor
 
 ```sh
@@ -40,6 +40,28 @@ Los registros escritos mientras se atiende una solicitud llevan un `request_id`,
 Si el `X-Request-Id` de la solicitud tiene como máximo 128 caracteres de letras, dígitos y `-_.:`, se usa tal cual, como el ID asignado por un balanceador de carga.
 Los registros dentro de una traza (solicitudes y jobs) también llevan `trace_id` y `span_id` (consulta [Trazas](#traces)).
 Con `logs_exporter = gcp`, para Cloud Run, las líneas también llevan los campos de Cloud Logging que enlazan una línea con su traza en Cloud Trace, y cada línea de acceso su solicitud como `httpRequest`; los demás campos quedan como están.
+
+Con `logs_exporter = otlp`, el servidor envía las líneas como registros de log de OpenTelemetry por OTLP/HTTP al receptor en `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` o `OTEL_EXPORTER_OTLP_ENDPOINT` (por defecto `http://localhost:4318`), con `OTEL_EXPORTER_OTLP_HEADERS`.
+Cada registro lleva los campos de su línea como atributos y la traza y el span de su línea, así que un OpenTelemetry Collector al que envía cada host reúne los registros de todos ellos en un solo lugar, junto a sus trazas (`traces_exporter = otlp`).
+Las líneas escritas antes de que el servidor haya arrancado, y los registros que el receptor no aceptó, siguen yendo a la salida de error estándar, seguidas de una línea `otlp logs export failed`.
+Una ráfaga de más de 2.048 líneas mientras el receptor va lento descarta las líneas que no caben en la cola de envío.
+Una canalización mínima del Collector para los registros:
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+exporters:
+  otlphttp:
+    endpoint: http://loki:3100/otlp # any receiver of OTLP logs, such as Loki
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      exporters: [otlphttp]
+```
 
 Cada solicitud HTTP y cada ejecución de job escribe una línea cuando termina. La línea tiene los mismos nombres y valores que las etiquetas de las [métricas](#metrics) de abajo,
 así que con `metrics_exporter = none` una plataforma puede construir métricas basadas en registros (contadores y distribuciones) a partir de estas líneas.

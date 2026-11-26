@@ -3,7 +3,7 @@
 
 本文介绍如何启动和停止服务器、获取镜像，以及在运行期间监控它：指标、追踪、任务队列和健康检查。
 
-<!-- source: start-the-server 3cc6acc9fe88 -->
+<!-- source: start-the-server 05b29144056b -->
 ## 启动服务器
 
 ```sh
@@ -26,6 +26,24 @@ my version        # print the version of the binary
 | `worker` | 仅健康检查（供平台探针使用） | 运行 |
 
 日志以 JSON Lines 格式写入标准错误。每一行都有 `level`（`DEBUG`、`INFO`、`WARN`、`ERROR`）和 `severity`，后者是以 Cloud Logging 读取的形式表示的同一级别（`DEBUG`、`INFO`、`WARNING`、`ERROR`，以及用于导致进程停止的错误的 `CRITICAL`）。处理请求期间写入的日志带有 `request_id`，同一 ID 也会在 `X-Request-Id` 响应头中返回。如果请求的 `X-Request-Id` 不超过 128 个字符，且只由字母、数字和 `-_.:` 组成，就会作为负载均衡器分配的 ID 原样使用。追踪中的日志（请求和任务）还带有 `trace_id` 和 `span_id`（参见[追踪](#traces)）。对于 Cloud Run，使用 `logs_exporter = gcp` 时，日志行还带有把一行链接到 Cloud Trace 中其追踪的 Cloud Logging 字段，每个访问日志行还以 `httpRequest` 带有其请求；其他字段保持不变。
+
+使用 `logs_exporter = otlp` 时，服务器把日志行作为 OpenTelemetry 日志记录，通过 OTLP/HTTP 发送到 `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` 或 `OTEL_EXPORTER_OTLP_ENDPOINT`（默认 `http://localhost:4318`）处的接收方，并带上 `OTEL_EXPORTER_OTLP_HEADERS`。每条记录把其所在行的字段作为属性，并带有该行的追踪和 span，因此每台主机都发往的 OpenTelemetry Collector 会把所有主机的日志汇集到一处，放在它们的追踪（`traces_exporter = otlp`）旁边。服务器启动之前写入的行，以及接收方没有接受的记录，仍然写入标准错误，之后跟着一行 `otlp logs export failed`。如果接收方变慢时一次出现超过 2,048 行，放不进发送队列的行会被丢弃。日志的 Collector 最小管道：
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+exporters:
+  otlphttp:
+    endpoint: http://loki:3100/otlp # any receiver of OTLP logs, such as Loki
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      exporters: [otlphttp]
+```
 
 每个 HTTP 请求和每次任务执行在结束时都会写入一行。这一行使用与下面[指标](#metrics)的标签相同的名称和值，因此在 `metrics_exporter = none` 时，平台可以基于这些行构建基于日志的指标（计数器和分布）。
 

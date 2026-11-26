@@ -3,7 +3,7 @@
 
 Como iniciar e parar o servidor, obter a imagem dele e acompanhá-lo enquanto roda: métricas, traces, a fila de jobs e verificações de saúde.
 
-<!-- source: start-the-server 3cc6acc9fe88 -->
+<!-- source: start-the-server 05b29144056b -->
 ## Iniciando o servidor
 
 ```sh
@@ -40,6 +40,28 @@ Os logs gravados ao tratar uma requisição trazem um `request_id`, e o mesmo ID
 Se o `X-Request-Id` da requisição tem no máximo 128 caracteres de letras, dígitos e `-_.:`, ele é usado como está, como o ID atribuído por um balanceador de carga.
 Os logs dentro de um trace (requisições e jobs) também trazem `trace_id` e `span_id` (veja [Traces](#traces)).
 Com `logs_exporter = gcp`, para o Cloud Run, as linhas também trazem os campos do Cloud Logging que vinculam uma linha ao seu trace no Cloud Trace, e cada linha de acesso a sua requisição como `httpRequest`; os demais campos ficam como estão.
+
+Com `logs_exporter = otlp`, o servidor envia as linhas como registros de log do OpenTelemetry por OTLP/HTTP ao receptor em `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` ou `OTEL_EXPORTER_OTLP_ENDPOINT` (padrão `http://localhost:4318`), com `OTEL_EXPORTER_OTLP_HEADERS`.
+Cada registro traz os campos da sua linha como atributos e o trace e o span da sua linha, então um OpenTelemetry Collector para o qual cada host envia reúne os logs de todos eles em um só lugar, ao lado dos seus traces (`traces_exporter = otlp`).
+As linhas escritas antes de o servidor iniciar, e os registros que o receptor não aceitou, continuam indo para a saída de erro padrão, seguidos de uma linha `otlp logs export failed`.
+Uma rajada de mais de 2.048 linhas enquanto o receptor está lento descarta as linhas que não cabem na fila de envio.
+Um pipeline mínimo do Collector para os logs:
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+exporters:
+  otlphttp:
+    endpoint: http://loki:3100/otlp # any receiver of OTLP logs, such as Loki
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      exporters: [otlphttp]
+```
 
 Cada requisição HTTP e cada execução de job grava uma linha quando termina. A linha tem os mesmos nomes e valores dos rótulos das [métricas](#metrics) abaixo,
 então, com `metrics_exporter = none`, uma plataforma pode criar métricas baseadas em logs (contadores e distribuições) a partir dessas linhas.

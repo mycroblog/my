@@ -3,7 +3,7 @@
 
 So startest und stoppst du den Server, beziehst sein Image und beobachtest ihn im Betrieb: Metriken, Traces, die Job-Warteschlange und Health-Checks.
 
-<!-- source: start-the-server 3cc6acc9fe88 -->
+<!-- source: start-the-server 05b29144056b -->
 ## Den Server starten
 
 ```sh
@@ -40,6 +40,28 @@ Logs, die beim Bearbeiten einer Anfrage geschrieben werden, tragen eine `request
 Hat die `X-Request-Id` der Anfrage höchstens 128 Zeichen aus Buchstaben, Ziffern und `-_.:`, wird sie unverändert verwendet, als die von einem Load Balancer vergebene ID.
 Logs innerhalb eines Traces (Anfragen und Jobs) tragen außerdem `trace_id` und `span_id` (siehe [Traces](#traces)).
 Mit `logs_exporter = gcp`, für Cloud Run, tragen die Zeilen außerdem die Felder von Cloud Logging, die eine Zeile mit ihrem Trace in Cloud Trace verknüpfen, und jede Zugriffszeile ihre Anfrage als `httpRequest`; die übrigen Felder bleiben, wie sie sind.
+
+Mit `logs_exporter = otlp` sendet der Server die Zeilen als OpenTelemetry-Log-Records über OTLP/HTTP an den Empfänger unter `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` oder `OTEL_EXPORTER_OTLP_ENDPOINT` (Standard `http://localhost:4318`), mit `OTEL_EXPORTER_OTLP_HEADERS`.
+Jeder Record trägt die Felder seiner Zeile als Attribute und den Trace und Span seiner Zeile, sodass ein OpenTelemetry Collector, an den jeder Host sendet, die Logs aller Hosts an einem Ort sammelt, neben ihren Traces (`traces_exporter = otlp`).
+Die Zeilen, die geschrieben werden, bevor der Server gestartet ist, und die Records, die der Empfänger nicht angenommen hat, gehen weiterhin auf die Standardfehlerausgabe, gefolgt von einer Zeile `otlp logs export failed`.
+Ein Schwall von mehr als 2.048 Zeilen, während der Empfänger langsam ist, verwirft die Zeilen, die nicht in die Sendewarteschlange passen.
+Eine minimale Pipeline des Collectors für die Logs:
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+exporters:
+  otlphttp:
+    endpoint: http://loki:3100/otlp # any receiver of OTLP logs, such as Loki
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      exporters: [otlphttp]
+```
 
 Jede HTTP-Anfrage und jede Job-Ausführung schreibt am Ende eine Zeile. Die Zeile hat dieselben Namen und Werte wie die Labels der [Metriken](#metrics) unten,
 sodass eine Plattform mit `metrics_exporter = none` aus diesen Zeilen logbasierte Metriken (Zähler und Verteilungen) bauen kann.
