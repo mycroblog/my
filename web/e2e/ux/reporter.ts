@@ -9,12 +9,12 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Reporter, TestCase, TestResult } from "@playwright/test/reporter";
-import { bundles, type Manifest } from "../src/ux/bundle";
+import { bundles } from "../src/ux/bundle";
 import { judge, type Report } from "../src/ux/judge";
 import { summarize, type Run } from "../src/ux/measures";
 import { markdown } from "../src/ux/report";
 import { root } from "../src/server/paths";
-import { buildDir, cpuThrottling } from "./lab";
+import { buildManifest, cpuThrottling, readBuild } from "./lab";
 
 function commit(): string | null {
   if (process.env["GITHUB_SHA"] !== undefined) return process.env["GITHUB_SHA"];
@@ -39,14 +39,13 @@ export default class UXReporter implements Reporter {
   }
 
   onEnd(): void {
-    const manifest = JSON.parse(readFileSync(join(buildDir, ".vite/manifest.json"), "utf8")) as Manifest;
     const report: Report = {
       version: 1,
       commit: commit(),
       date: new Date().toISOString(),
       cpuThrottling,
       measures: summarize(this.runs),
-      bundles: bundles(manifest, (file) => readFileSync(join(buildDir, file))),
+      bundles: bundles(buildManifest(), readBuild),
       failed: [...this.failed].sort(),
     };
     const lastFile = process.env["UX_LAST"];
