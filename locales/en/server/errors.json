@@ -804,8 +804,8 @@
     "description": "API error title for HTTP 403 when a participant who is not the host of a voice chat room changes its settings, ends it, or hands it over."
   },
   "errors.voice.room_full": {
-    "defaultMessage": "The room is full. Try again when someone leaves.",
-    "description": "API error title for HTTP 409 when a user joins a voice chat room that holds as many people as the server allows."
+    "defaultMessage": "The room is full. Try again when fewer people are in it.",
+    "description": "API error title for HTTP 409 when a user joins a voice chat room that holds as many people as its maximum allows (the host's, else the server's), or more after the maximum was lowered."
   },
   "errors.voice.too_many_rooms": {
     "defaultMessage": "No more rooms can be opened now. Try again later.",

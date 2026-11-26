@@ -79,10 +79,6 @@
     "defaultMessage": "Du verlässt {room}, wenn du diesem Raum beitrittst.",
     "description": "Over the Join button of a voice chat room while the reader is in another one ({room}, its name): one can be in one room at a time."
   },
-  "voice.join_full": {
-    "defaultMessage": "Der Raum ist voll. Versuche es später erneut.",
-    "description": "After pressing Join, when the voice chat room has as many people as the server allows."
-  },
   "voice.join_hosting": {
     "defaultMessage": "Du hostest einen anderen Raum. Beende ihn oder übergib ihn, bevor du diesem beitrittst.",
     "description": "After pressing Join, when the reader hosts another open voice chat room."

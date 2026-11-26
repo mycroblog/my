@@ -1072,7 +1072,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.voice.room_full": {
-    "defaultMessage": "[Ŧħḗḗ řǿǿǿǿḿ īş ƒŭŭŀŀ. Ŧřẏ ȧȧɠȧȧīƞ ẇħḗḗƞ şǿǿḿḗḗǿǿƞḗḗ ŀḗḗȧȧṽḗḗş.]",
+    "defaultMessage": "[Ŧħḗḗ řǿǿǿǿḿ īş ƒŭŭŀŀ. Ŧřẏ ȧȧɠȧȧīƞ ẇħḗḗƞ ƒḗḗẇḗḗř ƥḗḗǿǿƥŀḗḗ ȧȧřḗḗ īƞ īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.voice.too_many_cohosts": {

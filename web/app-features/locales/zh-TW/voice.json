@@ -79,10 +79,6 @@
     "defaultMessage": "加入這個聊天室時，你會離開 {room}。",
     "description": "Over the Join button of a voice chat room while the reader is in another one ({room}, its name): one can be in one room at a time."
   },
-  "voice.join_full": {
-    "defaultMessage": "聊天室已滿。請稍後再試。",
-    "description": "After pressing Join, when the voice chat room has as many people as the server allows."
-  },
   "voice.join_hosting": {
     "defaultMessage": "你正在主持另一個聊天室。請先結束它或轉交給別人，再加入這個聊天室。",
     "description": "After pressing Join, when the reader hosts another open voice chat room."

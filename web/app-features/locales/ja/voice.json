@@ -80,8 +80,12 @@
     "description": "Over the Join button of a voice chat room while the reader is in another one ({room}, its name): one can be in one room at a time."
   },
   "voice.join_full": {
-    "defaultMessage": "ルームが満員です。しばらくしてからもう一度試してください。",
-    "description": "After pressing Join, when the voice chat room has as many people as the server allows."
+    "defaultMessage": "ルームが満員です。人数が減ってから、もう一度試してください。",
+    "description": "After pressing Join (409 voice-room-full), when the voice chat room holds as many people as its maximum allows, or more after the maximum was lowered."
+  },
+  "voice.over_max": {
+    "defaultMessage": "{reader, select, host {ルームの人数が、あなたが設定した上限の {max} 人を超えています。退出させられた人はいませんが、{max} 人より少なくなるまで新しい人は参加できません。新しい人がすぐ参加できるようにするには、「ルームの設定」で上限を上げてください。} other {ルームの人数が上限の {max} 人を超えています。退出させられた人はいませんが、{max} 人より少なくなるまで新しい人は参加できません。}}",
+    "description": "A notice on a voice chat room's page while it holds more people than its maximum ({max}, a number), after the maximum was lowered: reader is host (the host, while the room's maximum is the one the host set; Room settings is the item of the room's menu) or other (everyone else, and the host when the server's lower maximum applies)."
   },
   "voice.join_hosting": {
     "defaultMessage": "別のルームのホストです。そのルームを終了するか、ホストを渡してから参加してください。",
@@ -306,6 +310,22 @@
   "voice.form.speakers_choice": {
     "defaultMessage": "{speakers, select, everyone {参加した全員} followers {あなたのフォロワー} following {あなたがフォローしている人} mutuals {相互フォローの人} other {許可された人だけ}}",
     "description": "An option of who speaks in a voice chat room without asking: speakers is everyone, followers, following, mutuals, or other (manual: only the people the host or a co-host lets speak)."
+  },
+  "voice.form.max_participants": {
+    "defaultMessage": "参加できる人数",
+    "description": "The label of the number field of the most people a voice chat room holds at once, in the form that opens a room and in its settings; also named in the field's errors."
+  },
+  "voice.form.max_participants_hint": {
+    "defaultMessage": "2〜{max} 人。空欄のときは、このサーバーの上限の {max} 人です。",
+    "description": "Under the label of the field How many can be in the room of a voice chat room's form: the range, and what an empty field means ({max}, the server's maximum of the people in a room, a number)."
+  },
+  "voice.form.max_participants_rule": {
+    "defaultMessage": "参加できる人数には 2〜{max} の数を入れるか、空欄にしてください。",
+    "description": "Under the field How many can be in the room of a voice chat room's form, when the form or the server (422, field max_participants) refused the number: below 2 or above {max}, the server's maximum of the people in a room."
+  },
+  "voice.form.max_participants_unavailable": {
+    "defaultMessage": "いまはサーバーにその人数分の空きがないため、設定を保存しませんでした。参加できる人数を減らすか、しばらくしてからもう一度試してください。",
+    "description": "Under the field How many can be in the room of an open voice chat room's settings, when the host raised the number and the server answered 503: it has no space for that many people now. A number no larger than the room's current maximum is always saved."
   },
   "voice.form.post": {
     "defaultMessage": "開始の投稿",
