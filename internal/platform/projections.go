@@ -23,6 +23,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/app/webhook"
+	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // projectionRepositories are the repositories whose modules' rebuild functions the projections
@@ -61,11 +62,13 @@ func (r *repositories) projectionRepositories() projectionRepositories {
 }
 
 // setUpProjections builds the service of `my projection` and registers the projection.verify
-// job. Each projection runs its module's rebuild function; the order is
+// job, which runs on a schedule only with projection_verify_interval. Each projection runs its module's rebuild function; the order is
 // the order of `my projection list` and of the job.
-func (a *App) setUpProjections(store projection.Store, r projectionRepositories) {
+func (a *App) setUpProjections(cfg *config.Config, store projection.Store, r projectionRepositories) {
 	a.Projections = projection.NewService(projection.Options{
-		UnitOfWork: a.UnitOfWork, Store: store, Logger: a.Logger, Jobs: a.Jobs,
+		UnitOfWork: a.UnitOfWork, Store: store, Logger: a.Logger, Jobs: a.Jobs, Meter: a.Meter,
+		// The worker verifies them on a schedule only when the operator asks for one (#3534).
+		VerifyInterval: cfg.ProjectionVerifyInterval,
 		Projections: []projection.Projection{
 			{
 				Name: "instance", Module: "instance",

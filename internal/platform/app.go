@@ -584,7 +584,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.setUpRetention(repos.retention, repos.statuses)
-	a.setUpProjections(repos.projections, repos.projectionRepositories())
+	a.setUpProjections(cfg, repos.projections, repos.projectionRepositories())
 	if err := a.setUpDataUpgrades(repos.dataUpgrades, repos.finance, opts.DataUpgrades); err != nil {
 		return nil, err
 	}

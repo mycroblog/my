@@ -43,7 +43,7 @@ import (
 // dialects, and checks that each one verifies, that verify finds the rows that raw SQL breaks
 // and changes nothing, and that rebuild restores them and keeps the fetch state of the remote
 // actors' heads, which no event records, and the restriction rows whose end has passed. The
-// scheduled job projection.verify corrects them.
+// job projection.verify reports the drift and corrects nothing.
 func TestProjectionsVerifyAndRebuild(t *testing.T) {
 	t.Parallel()
 	for _, dialect := range []string{"sqlite", "postgres"} {
@@ -593,9 +593,10 @@ func checkProjections(t *testing.T, a *platform.App, exec func(string), count fu
 		t.Errorf("Verify(feeds) a second time = %v, %v; want drift", r.Drifted(), err)
 	}
 
-	// The scheduled job corrects every projection.
-	if !slices.ContainsFunc(a.Scheduler.Schedules(), func(s queue.Schedule) bool { return s.Name == projection.JobVerify }) {
-		t.Errorf("no %s schedule", projection.JobVerify)
+	// The job is not scheduled without projection_verify_interval, and reports the drift of every
+	// projection without correcting it (#3534).
+	if slices.ContainsFunc(a.Scheduler.Schedules(), func(s queue.Schedule) bool { return s.Name == projection.JobVerify }) {
+		t.Errorf("a %s schedule without projection_verify_interval", projection.JobVerify)
 	}
 	if err := a.Jobs.Enqueue(ctx, queue.NewJob{Type: projection.JobVerify}); err != nil {
 		t.Fatalf("Enqueue = %v", err)
@@ -603,9 +604,18 @@ func checkProjections(t *testing.T, a *platform.App, exec func(string), count fu
 	if n, err := a.Runner.Drain(ctx); err != nil || n == 0 {
 		t.Fatalf("Drain = %d, %v; want the job run", n, err)
 	}
+	if r, err := svc.Verify(ctx, again); err != nil || !r.Drifted() {
+		t.Errorf("Verify(feeds) after the job = %v, %v; want the drift left", r.Drifted(), err)
+	}
+	// Rebuild corrects every projection.
+	for _, p := range svc.List() {
+		if _, err := svc.Rebuild(ctx, p); err != nil {
+			t.Fatalf("Rebuild(%s) = %v", p.Name, err)
+		}
+	}
 	for name, r := range verifyAll() {
 		if r.Drifted() {
-			t.Errorf("Verify(%s) after the job = %+v, want no drift", name, r.Tables)
+			t.Errorf("Verify(%s) after Rebuild = %+v, want no drift", name, r.Tables)
 		}
 	}
 	if n := count("SELECT COUNT(*) FROM remote_account_heads WHERE inbox_url = 'https://remote.example/users/dave/inbox' AND consecutive_fetch_failures = 3"); n != 1 {
