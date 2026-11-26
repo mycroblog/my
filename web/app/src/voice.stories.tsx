@@ -13,7 +13,9 @@
 // settings and invitations (and their addresses for a reader who does not host it), and the rooms one hosted in the
 // settings.
 // More of the open rooms, the invitations of the reader's room and the rooms they hosted than a page holds, before and
-// after Show more (pages.samples.ts, `more`).
+// after Show more (pages.samples.ts, `more`). And a room's maximum of people (ADR-0100 §3, §5): its field in the form
+// and the settings (where a server with no room for more refuses it raised, once Save is pressed), a room that is full
+// before the reader joins, and a room over its lowered maximum as a listener and as its host see it.
 
 import { PreviewStill } from "@my/design-system/preview";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -48,6 +50,13 @@ export const RoomsVisitor: Story = { parameters: screen({ at: "/voice", signedOu
 export const BeforeJoin: Story = { parameters: screen({ at: "/voice/{room:0}" }) };
 export const RoomLoading: Story = { parameters: screen({ at: "/voice/{room:0}", state: "loading" }) };
 export const RoomError: Story = { parameters: screen({ at: "/voice/{room:0}", state: "error" }) };
+/**
+ * A room that holds as many as its maximum, 8 of 8: the count marked, the notice under its description before who is
+ * in it, and Join, which a press may still find a place for (or is refused next to it).
+ */
+export const RoomFull: Story = {
+  parameters: screen({ at: "/voice/{room:0}", server: { voiceMax: { rooms: [8] } } }),
+};
 /** A room before joining, while the reader is in another one: joining leaves it. */
 export const BeforeJoinInAnother: Story = {
   parameters: screen({ at: "/voice/{room:1}", joined: { room: 0 } }),
@@ -96,6 +105,13 @@ export const Reconnecting: Story = {
   parameters: screen({ at: "/voice/{room:0}", joined: { room: 0, steps: ["reconnecting"] } }),
 };
 
+/**
+ * In a room whose host lowered its maximum below the people in it, 9 of 7: the count marked, and the notice that no
+ * one was removed and that no one new joins until fewer are in it.
+ */
+export const OverMax: Story = {
+  parameters: screen({ at: "/voice/{room:0}", joined: { room: 0, steps: ["lowered"] } }),
+};
 /** A host removed the reader: the room's page says so over the room. */
 export const Removed: Story = {
   parameters: screen({ at: "/voice/{room:0}", joined: { room: 0, steps: ["removed"] } }),
@@ -145,8 +161,9 @@ export const RoomsCannotOpen: Story = {
   parameters: screen({ at: "/voice", server: { voiceStarters: "permitted" } }),
 };
 /**
- * The form that opens a room: its name, icon, description, hashtags, who sees it and who speaks, and the start post,
- * checked, whose draft holds the room's name as it is written.
+ * The form that opens a room: its name, icon, description, hashtags, who sees it, how many can be in it (empty, for
+ * the server's maximum, which its hint names) and who speaks, and the start post, checked, whose draft holds the
+ * room's name as it is written.
  */
 export const OpenRoom: Story = { parameters: screen({ at: "/voice/new" }) };
 /** The form's address for a reader who may not open rooms. */
@@ -162,6 +179,13 @@ export const Opened: Story = {
  * listeners; each tile but the reader's opens what the host may do with them.
  */
 export const Hosting: Story = { parameters: screen({ at: "/voice/{room:2}", joined: { room: 2 } }) };
+/**
+ * The reader lowered the maximum of the room they host below the people in it, 6 of 4: the notice says how to let new
+ * people join now.
+ */
+export const HostingOverMax: Story = {
+  parameters: screen({ at: "/voice/{room:2}", joined: { room: 2, steps: ["lowered"] } }),
+};
 /** The host let the raised hand speak: the hand is down. */
 export const HostGranted: Story = {
   parameters: screen({ at: "/voice/{room:2}", joined: { room: 2, steps: ["granted"] } }),
@@ -174,8 +198,18 @@ export const HostCohost: Story = {
 export const HandedOver: Story = {
   parameters: screen({ at: "/voice/{room:2}", joined: { room: 2, steps: ["handed-over"] } }),
 };
-/** The settings of the room the reader hosts, as the room has them. */
+/** The settings of the room the reader hosts, as the room has them: how many can be in it, the server's 10 here. */
 export const RoomSettings: Story = { parameters: screen({ at: "/voice/{room:2}/settings" }) };
+/**
+ * The settings of a room of 6 at most, on a server whose media node has no room for more now: a maximum raised past 6
+ * is refused once Save is pressed, said under its field; one of 2 to 6 is saved.
+ */
+export const RoomSettingsNoRoom: Story = {
+  parameters: screen({
+    at: "/voice/{room:2}/settings",
+    server: { voiceMax: { rooms: [undefined, undefined, 6], noRoom: true } },
+  }),
+};
 /** The settings' address of a room the reader does not host. */
 export const RoomSettingsNotHost: Story = { parameters: screen({ at: "/voice/{room:0}/settings" }) };
 /** The invitations of the room the reader hosts, none yet, with the search of who to invite. */

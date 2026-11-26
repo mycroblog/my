@@ -2,16 +2,16 @@
 
 // A voice chat room's page, at /voice/{id} (ADR-0100 §5, §9, §10; ADR-0101 §7; FR-924, FR-930), for the listener:
 //
-// - Before joining: the room's title (its icon, its name, how many are in it), who hosts it and its description, who
-//   is in it (the speakers on its stage, the listeners under them), and Join, the screen's one action, at its foot
-//   under the sentence that joining shows the reader's name in that list (and that it leaves the room the reader is
-//   in, if any).
+// - Before joining: the room's title (its icon, its name, how many are in it of its maximum, marked once it is full),
+//   who hosts it and its description, that it is full where it is, who is in it (the speakers on its stage, the
+//   listeners under them), and Join, the screen's one action, at its foot under the sentence that joining shows the
+//   reader's name in that list (and that it leaves the room the reader is in, if any), and why a join failed.
 // - In it, the call of calls.ts: the participants as the room's stream has them, who talks ringed, the microphones off
 //   and the raised hands marked, the reactions rising over the stage (a blocked participant's hidden), and the
 //   reader's controls at its foot: a speaker's microphone and Stop speaking; a listener's Speak where they may speak
 //   without asking, else their hand; a reaction from the emoji picker of ADR-0091; and Leave. Under the stage, the
 //   choice of where the sound plays, where the browser lets the page choose it, kept with the call. What the call goes
-//   through is said under the host: connecting, the connection lost, a host who muted the reader, a microphone the
+//   through is said under the host: more people in the room than its maximum, which was lowered; connecting, the connection lost, a host who muted the reader, a microphone the
 //   browser refused, the sound the browser holds back (with the press that plays it), a press that did not finish, a
 //   leave the server refused to a host. The shell shows no call bar on this page: the room's controls are its own.
 // - For its host and co-hosts (host.tsx): a participant's tile opens what they may do with them, the room's menu in
@@ -55,6 +55,7 @@ import {
   EmojiPickerPopover,
   EmojiPickerSheet,
   FeedNotice,
+  FormAlert,
   FrameFoot,
   GroupHeading,
   ModalPresence,
@@ -279,9 +280,12 @@ function Back({ onBack, t }: { onBack: () => void; t: T }) {
   return <BackButton onPress={onBack}>{t("voice.back")}</BackButton>;
 }
 
-/** The head of a room's page: back to the rooms, then its title, and the room's menu at its end. */
+/**
+ * The head of a room's page: back to the rooms, then its title with how many are in it of its maximum, and the room's
+ * menu at its end.
+ */
 function Head({ room, onBack, menu, t }: { room: VoiceRoom; onBack: () => void; menu?: ReactNode; t: T }) {
-  const count = useHeadcount(room.participants_count);
+  const count = useHeadcount(room.participants_count, room.max_participants);
   const title = <RoomTitle icon={roomIcon(room.icon)} name={room.name} count={count} />;
   return (
     <ScreenHead back={<Back onBack={onBack} t={t} />}>
@@ -318,6 +322,19 @@ function About({ room, t }: { room: VoiceRoom; t: T }) {
       )}
     </Stack>
   );
+}
+
+/**
+ * What a room in the call says while more people are in it than its maximum, after its maximum was lowered; null
+ * while it is not. Its host reads how to let new people join, while the maximum in force is the one they set (below
+ * the server's); everyone else, and the host under the server's lower maximum, reads that no one was removed.
+ */
+function useOverMax(state: VoiceCallState | null, t: T): string | null {
+  const serverMax = useInstance()?.voice_max_participants;
+  if (state === null || state.room.participants_count <= state.room.max_participants) return null;
+  const max = state.room.max_participants;
+  const own = state.self?.hosting === true && serverMax !== undefined && max < serverMax;
+  return t("voice.over_max", { reader: own ? "host" : "other", max });
 }
 
 /** A line of what the call goes through, for the eye: the live region says it to assistive technology. */
@@ -421,6 +438,12 @@ function BeforeJoin({
       {report.dialog}
       {end !== null && <Line>{endSentence(end, t)}</Line>}
       <About room={room} t={t} />
+      {/* The room's state, before who is in it; Join stays, for a place someone may have just left. */}
+      {room.participants_count >= room.max_participants && (
+        <FormAlert regular announce={false}>
+          {t("voice.join_full")}
+        </FormAlert>
+      )}
       <Participants room={room} live={undefined} t={t} />
       <FrameFoot>
         <div ref={foot}>
@@ -433,7 +456,12 @@ function BeforeJoin({
                 {t("voice.join_moves", { room: other.room.name })}
               </Box>
             )}
-            {failure !== null && <Line>{t(joinWords[failure])}</Line>}
+            {/* The page's live region says it: the notice is for the eye. */}
+            {failure !== null && (
+              <FormAlert regular announce={false}>
+                {t(joinWords[failure])}
+              </FormAlert>
+            )}
             {/* The screen's one action, the foot's whole width, where the thumb is. */}
             <Stack>
               <Button kind="primary" size="form" busy={busy} onPress={join}>
@@ -611,6 +639,7 @@ function InRoom({
   t: T;
 }) {
   const { room, self } = state;
+  const overMax = useOverMax(state, t);
   // Which of the reader's presses failed last, as the line names it.
   const [failed, setFailed] = useState<FailedAction | null>(null);
   const [hostFailed, setHostFailed] = useState<HostFailure | null>(null);
@@ -720,6 +749,11 @@ function InRoom({
       />
       {report.dialog}
       <About room={room} t={t} />
+      {overMax !== null && (
+        <FormAlert regular announce={false}>
+          {overMax}
+        </FormAlert>
+      )}
       {callStatus(state, t).map((words) => (
         <Line
           key={words}
@@ -944,7 +978,12 @@ export function VoiceRoomScreen({
   useEffect(() => {
     if (end !== null) sawRoomEnd(end.roomId);
   }, [end]);
-  const status = [...(endSaid === null || inIt ? [] : [endSaid]), ...(inIt ? callStatus(state, t) : [])];
+  const overMax = useOverMax(inIt ? state : null, t);
+  const status = [
+    ...(endSaid === null || inIt ? [] : [endSaid]),
+    ...(inIt ? callStatus(state, t) : []),
+    ...(overMax === null ? [] : [overMax]),
+  ];
   const page = (() => {
     if (off) return <FeedNotice lead>{t("voice.off")}</FeedNotice>;
     if (inIt)

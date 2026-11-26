@@ -57,6 +57,11 @@ export type FakeVoice = {
   readonly participantLeaves: (accountId: string) => void;
   /** A host lets the reader speak in the room they are in (an explicit grant): its stream says the room again. */
   readonly grantReader: () => void;
+  /**
+   * The host of the reader's room, another than the reader, sets its maximum to `max`, below the people in it too
+   * (nobody leaves): its stream says the room again.
+   */
+  readonly hostSetsMax: (max: number) => void;
   /** The ID the next room the reader opens takes, known before it opens (a story's address). */
   readonly nextRoomId: () => string;
   /** The start posts of the rooms the reader opened, in order: the fake posts them nowhere. */
@@ -75,6 +80,18 @@ export type FakeVoiceMany = {
   readonly rooms?: number;
   readonly history?: number;
   readonly invited?: readonly string[];
+};
+
+/**
+ * The most people a room holds: the server's (`server`, the instance's `voice_max_participants`, 10 by default), each
+ * open room's by its place in the list (`rooms`, the server's where none), which a join at it refuses (409
+ * `voice-room-full`); and whether the media node has no room for more now (`noRoom`), which refuses a room's maximum
+ * raised (503 `voice-unavailable`).
+ */
+export type FakeVoiceMax = {
+  readonly server?: number;
+  readonly rooms?: readonly (number | undefined)[];
+  readonly noRoom?: boolean;
 };
 
 /** Why the fake refuses to open a room, as the server's problem types name it. */
@@ -102,6 +119,10 @@ export type VoiceContext = {
   readonly openRefusal?: FakeVoiceOpenRefusal | undefined;
   /** More rooms, hosted rooms and invitations than a page holds; none by default. */
   readonly many?: FakeVoiceMany | undefined;
+  /** The server's maximum of the people in a room, the bound of a room's own. */
+  readonly max: number;
+  /** The media node has no room for more now: a room's maximum raised is refused. */
+  readonly noRoom: boolean;
   /** The account of the person of `username` of this server; undefined for none. */
   readonly accountByName: (username: string) => Schema<"Account"> | undefined;
   /** A new ID, for a room or an invitation, newer than every one before. */
@@ -352,14 +373,24 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
     return name === "" ? {} : { icon: { name } };
   };
   const tagsOf = (tags: readonly string[] | undefined) => (tags ?? []).map((tag) => tag.replace(/^#/, ""));
-  /** What the server refuses of a room's settings: a name with nothing in it or too long, more than 5 hashtags. */
-  const settingsFault = (body: { name: string; hashtags?: readonly string[] | undefined }): Refusal | null => {
+  /**
+   * What the server refuses of a room's settings: a name with nothing in it or too long, more than 5 hashtags, a
+   * maximum out of 2 to the server's.
+   */
+  const settingsFault = (body: {
+    name: string;
+    hashtags?: readonly string[] | undefined;
+    max_participants?: number | undefined;
+  }): Refusal | null => {
     const name = body.name.trim();
     // The server counts a name's characters as a reader sees them (graphemes).
     const length = [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(name)].length;
     if (name === "" || length > 100 || name.includes("\n"))
       return c.problem(422, "This value is not valid", { field: "name" });
     if ((body.hashtags?.length ?? 0) > 5) return c.problem(422, "This value is not valid", { field: "hashtags" });
+    const max = body.max_participants;
+    if (max !== undefined && (!Number.isInteger(max) || max < 2 || max > c.max))
+      return c.problem(422, "This value is not valid", { field: "max_participants" });
     return null;
   };
 
@@ -430,7 +461,7 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
         speakers: body.speakers ?? "manual",
         host: c.viewer(),
         opened_at: at,
-        max_participants: body.max_participants ?? 10,
+        max_participants: body.max_participants ?? c.max,
         participants_count: 0,
         participants: [],
         can_speak: false,
@@ -447,6 +478,9 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
       if (room.host.id !== c.viewer().id) return notHost();
       const fault = settingsFault({ name: room.name, ...body });
       if (fault !== null) return fault;
+      // A maximum raised past the room the media node has now is refused, and nothing is saved.
+      if (c.noRoom && body.max_participants !== undefined && body.max_participants > room.max_participants)
+        return c.problem(503, "The voice chat is unavailable", { type: "/api/v1/problems/voice-unavailable" });
       if (body.name !== undefined) room.name = body.name.trim();
       if (body.icon !== undefined) {
         delete room.icon;
@@ -456,6 +490,8 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
       if (body.hashtags !== undefined) room.hashtags = tagsOf(body.hashtags);
       if (body.visibility !== undefined) room.visibility = body.visibility;
       if (body.speakers !== undefined) room.speakers = body.speakers;
+      // Lowered below the people in it, nobody leaves.
+      if (body.max_participants !== undefined) room.max_participants = body.max_participants;
       const kept = c.history.find((h) => h.id === room.id);
       if (kept !== undefined) kept.name = room.name;
       return changed(room);
@@ -569,6 +605,10 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
     "POST /voice/rooms/{id}/participation": ({ params }) => {
       const room = c.off ? undefined : roomOf(params.id);
       if (room === undefined) return c.notFound();
+      // A room that holds as many as its maximum, or more after it was lowered, takes no one new; a participant who
+      // joins again from another device keeps their place.
+      if (viewerIn(room) === undefined && room.participants.length >= room.max_participants)
+        return c.problem(409, "The room is full", { type: "/api/v1/problems/voice-room-full" });
       // The host of a room joins it as its host, on the stage (a room opened for a scheduled time waits for them).
       return { status: 200, body: enter(room, room.host.id === c.viewer().id) };
     },
@@ -677,6 +717,12 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
     hiddenRoomId: () => c.hidden.id,
     startPosts: () => startPosts,
     nextRoomId: () => (reserved ??= c.newId()),
+    hostSetsMax: (max) => {
+      const room = joined === null ? undefined : roomOf(joined.room);
+      if (room === undefined) return;
+      room.max_participants = max;
+      write("state", streamed(room));
+    },
     participantLeaves: (accountId) => {
       const room = joined === null ? undefined : roomOf(joined.room);
       if (room === undefined) return;

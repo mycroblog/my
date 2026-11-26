@@ -219,12 +219,17 @@ export type NumberFieldProps = {
   value?: number | null | undefined;
   defaultValue?: number | null | undefined;
   /**
-   * The whole number from `min` to `max` the field holds once the reader left it or pressed Enter, `null` for an empty
-   * field: told once, and only when it is another than its owner knew.
+   * The whole number from `min` to `max` (any, unclamped) the field holds once the reader left it or pressed Enter,
+   * `null` for an empty field: told once, and only when it is another than its owner knew.
    */
   onChange?: ((value: number | null) => void) | undefined;
   min?: number | undefined;
   max?: number | undefined;
+  /**
+   * False: a number out of `min` to `max` stays as the reader entered it, for a form that checks the range itself and
+   * says its rule under the field; else the field takes the nearest number of its range in its place.
+   */
+  clamp?: boolean | undefined;
   /** What it counts, after the field ("days"). */
   unit?: string | undefined;
   isDisabled?: boolean | undefined;
@@ -250,6 +255,7 @@ export function NumberField({
   onChange,
   min,
   max,
+  clamp = true,
   unit,
   isDisabled,
   invalid,
@@ -279,8 +285,8 @@ export function NumberField({
     const now =
       entry !== undefined
         ? entry.value
-        : held === null
-          ? null
+        : held === null || !clamp
+          ? held
           : Math.min(max ?? Infinity, Math.max(min ?? -Infinity, held));
     if (now === known) return;
     setKnown(now);
@@ -313,8 +319,9 @@ export function NumberField({
           onKeyUp={(e) => {
             if (e.key === "Enter") tell();
           }}
-          {...(min === undefined ? {} : { minValue: min })}
-          {...(max === undefined ? {} : { maxValue: max })}
+          // Unclamped, the field knows no range: the form's own check says what is out of it, when the form checks.
+          {...(min === undefined || !clamp ? {} : { minValue: min })}
+          {...(max === undefined || !clamp ? {} : { maxValue: max })}
           formatOptions={WHOLE}
           isWheelDisabled
           isInvalid={invalid === true || holder.invalid === true}

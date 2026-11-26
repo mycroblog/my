@@ -677,10 +677,16 @@ export const focusOnLoadAttribute = "data-focus-on-load";
 export function FormAlert({
   focus = false,
   regular = false,
+  announce = true,
   action,
   children,
 }: {
   focus?: boolean;
+  /**
+   * It announces itself; false on a page that says what changes in a live region of its own, or for a state the page
+   * shows as it opens (a room that is full).
+   */
+  announce?: boolean;
   /** In the text's own weight: what happened, which the button after it acts on (a draft gone), rather than what is wrong. */
   regular?: boolean;
   /** What the reader may do about it, after the sentence (a `TextButton`: open the newer draft). */
@@ -694,7 +700,7 @@ export function FormAlert({
       as={
         <p
           className={form({ regular }).alert()}
-          role="alert"
+          role={announce ? "alert" : undefined}
           tabIndex={-1}
           {...{ [focusOnLoadAttribute]: focus ? "" : undefined }}
         />

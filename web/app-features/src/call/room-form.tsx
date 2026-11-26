@@ -4,6 +4,9 @@
 // or a custom emoji of this server, from the emoji picker of ADR-0091), its description, up to 5 hashtags, who sees it
 // and who speaks without asking.
 //
+// After who sees it, how many people the room holds (ADR-0100 §3): from 2 to the server's maximum, empty for the
+// server's own.
+//
 // - Opening a room, at /voice/new, for a reader who may open rooms (FR-922): the form, and under it the start post,
 //   offered for a room of the local and followers visibilities only, checked at first, with a draft that holds the
 //   room's name until the reader writes their own; Open sends it in the reader's gesture, which joins them to the room
@@ -11,7 +14,9 @@
 //   (not allowed to open rooms, too many open, hosting another room) are said before Open; what it says of a field
 //   stands under that field.
 // - Changing the settings of an open room, at /voice/{id}/settings, for its host: the same form with the room's
-//   settings, Save sending them; another reader is told that only the host changes them.
+//   settings, Save sending them (the maximum only once changed, an emptied one as the server's); another reader is
+//   told that only the host changes them. A maximum raised past what the server has room for now stays unsaved, said
+//   under its field.
 
 import { nameOf, roomIcon } from "@my/app-components";
 import {
@@ -19,6 +24,7 @@ import {
   refusedMember,
   endVoiceRoom,
   updateVoiceRoom,
+  useInstance,
   useMayOpenVoiceRooms,
   useViewer,
   useVoiceRoom,
@@ -46,6 +52,7 @@ import {
   FormSection,
   GroupHeading,
   ModalPresence,
+  NumberField,
   Row,
   ScreenStack,
   ScreenTitle,
@@ -78,8 +85,13 @@ type Draft = {
   /** The hashtags as the reader wrote them, separated by spaces or commas. */
   readonly hashtags: string;
   readonly visibility: VoiceRoomVisibility;
+  /** How many people the room holds, the host included; null for the server's maximum. */
+  readonly maxParticipants: number | null;
   readonly speakers: VoiceRoomSpeakers;
 };
+
+/** The fewest people a room's maximum holds (ADR-0100 §3). */
+const leastMaximum = 2;
 
 const visibilities: readonly VoiceRoomVisibility[] = ["local", "followers", "following", "mutuals", "invited"];
 const speakerChoices: readonly VoiceRoomSpeakers[] = ["everyone", "followers", "following", "mutuals", "manual"];
@@ -94,26 +106,66 @@ const hashtagsOf = (text: string): string[] =>
     .map((tag) => tag.replace(/^[#＃]+/u, ""))
     .filter((tag) => tag !== "");
 
-/** The draft of a room's settings: the server's defaults for a new one, else the room's own. */
+/** The draft of a room's settings: the server's defaults for a new one, else the room's own (its maximum in force). */
 function draftOf(room: VoiceRoom | undefined): Draft {
   if (room === undefined)
-    return { name: "", icon: null, description: "", hashtags: "", visibility: "local", speakers: "manual" };
+    return {
+      name: "",
+      icon: null,
+      description: "",
+      hashtags: "",
+      visibility: "local",
+      maxParticipants: null,
+      speakers: "manual",
+    };
   return {
     name: room.name,
     icon: room.icon === undefined ? null : { name: room.icon.name, shown: roomIcon(room.icon) },
     description: room.description,
     hashtags: room.hashtags.map((tag) => `#${tag}`).join(" "),
     visibility: room.visibility,
+    maxParticipants: room.max_participants,
     speakers: room.speakers,
   };
 }
 
+/**
+ * The maximum a send holds, as the request's member: a new room's only where the reader entered one (none is the
+ * server's); an open room's only once it changed, an emptied one as the server's maximum, since a change of the
+ * settings keeps what it leaves out (`serverMax`, the instance's `voice_max_participants`, unknown: nothing).
+ */
+export function maxParticipantsSent(
+  maximum: number | null,
+  was: number | null,
+  opening: boolean,
+  serverMax: number | undefined,
+): { max_participants?: number } {
+  if (opening) return maximum === null ? {} : { max_participants: maximum };
+  if (maximum === was) return {};
+  const sent = maximum ?? serverMax;
+  return sent === undefined ? {} : { max_participants: sent };
+}
+
+/**
+ * What the form says of a maximum before sending: a number below 2, above the server's maximum (`serverMax`, where
+ * known) or not whole breaks the rule (`voice.form.max_participants_rule`); an empty field breaks none.
+ */
+export function maxParticipantsBroken(maximum: number | null, serverMax: number | undefined): boolean {
+  if (maximum === null) return false;
+  return !Number.isInteger(maximum) || maximum < leastMaximum || (serverMax !== undefined && maximum > serverMax);
+}
+
 /** The field of the form that a member of the request names (`hashtags[2]`, `post.text`), by its key. */
-type FieldKey = "name" | "icon" | "description" | "hashtags" | "post";
+type FieldKey = "name" | "icon" | "description" | "hashtags" | "max_participants" | "post";
 
 function fieldOf(member: string): FieldKey | undefined {
   const head = member.split(/[.[]/u)[0];
-  return head === "name" || head === "icon" || head === "description" || head === "hashtags" || head === "post"
+  return head === "name" ||
+    head === "icon" ||
+    head === "description" ||
+    head === "hashtags" ||
+    head === "max_participants" ||
+    head === "post"
     ? head
     : undefined;
 }
@@ -140,15 +192,18 @@ const codePoints = (text: string): number => {
 
 /**
  * What the form finds wrong before sending, by the server's own counts: a name with nothing in it or longer than 100
- * characters (1,000 code points), a description longer than 500 code points, more hashtags than a room has.
+ * characters (1,000 code points), a description longer than 500 code points, more hashtags than a room has, a maximum
+ * out of 2 to the server's (`serverMax`).
  */
-function checked(draft: Draft, t: T): Faults {
+function checked(draft: Draft, t: T, serverMax: number | undefined): Faults {
   const fields: Partial<Record<FieldKey, string>> = {};
   const name = draft.name.trim();
   if (name === "") fields.name = t("voice.form.name_empty");
   else if (graphemes(name) > 100 || codePoints(name) > 1_000) fields.name = t("voice.form.name_rule");
   if (codePoints(draft.description) > 500) fields.description = t("voice.form.description_rule");
   if (hashtagsOf(draft.hashtags).length > hashtagLimit) fields.hashtags = t("voice.form.hashtags_rule");
+  if (maxParticipantsBroken(draft.maxParticipants, serverMax))
+    fields.max_participants = ruleOf("max_participants", t, serverMax);
   return { fields, form: Object.keys(fields).length === 0 ? undefined : t("voice.form.not_sent") };
 }
 
@@ -158,8 +213,18 @@ const fieldRules = {
   icon: "voice.form.icon_rule",
   description: "voice.form.description_rule",
   hashtags: "voice.form.hashtags_rule",
+  max_participants: "voice.form.max_participants_rule",
   post: "voice.form.post_refused",
 } as const;
+
+/**
+ * The words of the rule of `key`; the maximum's names the server's maximum (the form shows no field of it while that
+ * is unknown, and sends none: only the form's own sentence is left to say then).
+ */
+function ruleOf(key: FieldKey, t: T, serverMax: number | undefined): string {
+  if (key !== "max_participants") return t(fieldRules[key]);
+  return serverMax === undefined ? t("voice.form.not_sent") : t(fieldRules[key], { max: serverMax });
+}
 
 /** The icon's choice: the emoji picker on a button, and the emoji chosen with the way to remove it. */
 function IconField({
@@ -308,6 +373,7 @@ type StartPost = {
 function RoomForm({
   initial,
   opening,
+  serverMax,
   sheet,
   busy,
   refused,
@@ -319,6 +385,8 @@ function RoomForm({
   initial: Draft;
   /** A new room's form, which offers the start post. */
   opening: boolean;
+  /** The most people a room may hold on this server (the instance's `voice_max_participants`), once known. */
+  serverMax: number | undefined;
   sheet: boolean;
   busy: boolean;
   /** What the server refused of the last send, until the reader changes something (`onEdit`). */
@@ -339,13 +407,13 @@ function RoomForm({
     setDraft({ ...draft, ...next });
     onEdit();
     // The form's own check goes again with each change, so a mark goes as its value is put right.
-    if (faults.form !== undefined) setFaults(checked({ ...draft, ...next }, t));
+    if (faults.form !== undefined) setFaults(checked({ ...draft, ...next }, t, serverMax));
   };
   const offersPost = opening && (draft.visibility === "local" || draft.visibility === "followers");
   const postText = post.text ?? t("voice.form.post_draft", { name: draft.name.trim() });
   const fieldId = (key: FieldKey) => `${id}-${key}`;
   // A refusal takes the focus to the first field it marks, its error in view.
-  const order: readonly FieldKey[] = ["name", "icon", "description", "hashtags", "post"];
+  const order: readonly FieldKey[] = ["name", "icon", "description", "hashtags", "max_participants", "post"];
   const firstFault = order.find((key) => shown.fields[key] !== undefined);
   // Once a press found something wrong, or the server's answer to it did, never as the reader types.
   const focusFault = useEffectEvent(() => {
@@ -360,18 +428,24 @@ function RoomForm({
       onSubmit={(e) => {
         e.preventDefault();
         if (busy) return;
-        const found = checked(draft, t);
+        // The number as the field holds it now: Enter in it sends the form before the field tells its owner.
+        const entered = new FormData(e.currentTarget).get("max_participants");
+        const now: Draft =
+          typeof entered === "string" ? { ...draft, maxParticipants: entered === "" ? null : Number(entered) } : draft;
+        setDraft(now);
+        const found = checked(now, t, serverMax);
         setFaults(found);
         setTries(tries + 1);
         if (found.form !== undefined) return;
-        const icon = draft.icon?.name;
+        const icon = now.icon?.name;
         onSend({
-          name: draft.name.trim(),
+          name: now.name.trim(),
           ...(icon === undefined ? (opening ? {} : { icon: "" }) : { icon }),
-          description: draft.description,
-          hashtags: hashtagsOf(draft.hashtags),
-          visibility: draft.visibility,
-          speakers: draft.speakers,
+          description: now.description,
+          hashtags: hashtagsOf(now.hashtags),
+          visibility: now.visibility,
+          ...maxParticipantsSent(now.maxParticipants, initial.maxParticipants, opening, serverMax),
+          speakers: now.speakers,
           ...(offersPost && post.posted ? { post: { text: postText } } : {}),
         });
       }}
@@ -429,6 +503,35 @@ function RoomForm({
             change({ visibility });
           }}
         />
+        {serverMax !== undefined && (
+          <Stack gap="form-page-field-gap">
+            <Box as="p" id={`${fieldId("max_participants")}-label`} weight="label">
+              {t("voice.form.max_participants")}
+            </Box>
+            <NumberField
+              id={fieldId("max_participants")}
+              name="max_participants"
+              labelledBy={`${fieldId("max_participants")}-label`}
+              describedBy={`${fieldId("max_participants")}-${shown.fields.max_participants === undefined ? "hint" : "error"}`}
+              value={draft.maxParticipants}
+              min={leastMaximum}
+              max={serverMax}
+              clamp={false}
+              invalid={shown.fields.max_participants !== undefined}
+              onChange={(maxParticipants) => {
+                change({ maxParticipants });
+              }}
+            />
+            {/* The error stands in the hint's place. */}
+            {shown.fields.max_participants === undefined ? (
+              <Box as="p" id={`${fieldId("max_participants")}-hint`} text="caption" tone="muted">
+                {t("voice.form.max_participants_hint", { max: serverMax })}
+              </Box>
+            ) : (
+              <FieldError id={`${fieldId("max_participants")}-error`}>{shown.fields.max_participants}</FieldError>
+            )}
+          </Stack>
+        )}
         <Choice
           heading={t("voice.form.speakers")}
           keys={speakerChoices}
@@ -487,12 +590,16 @@ function RoomForm({
   );
 }
 
+/** Whether the server refused for want of room on its media node now (503 `voice-unavailable`). */
+const voiceUnavailable = (error: ProblemError): boolean =>
+  error.status === 503 && error.problem.type === "/api/v1/problems/voice-unavailable";
+
 /**
  * What the server's refusal of a send says, by field and before the button. With a start post (`posted`), what the
  * server says of the post (its members `text` and `language`, a post the reader may not post now) stands under the
  * post's text, with the way to open the room without it.
  */
-function refusalFaults(error: unknown, t: T, posted: boolean): Faults {
+function refusalFaults(error: unknown, t: T, posted: boolean, serverMax: number | undefined): Faults {
   const member = refusedMember(error);
   if (posted && error instanceof ProblemError && voiceOpenRefusal(error) === null) {
     const ofPost = member !== undefined && (member.member === "text" || member.member === "language");
@@ -503,7 +610,12 @@ function refusalFaults(error: unknown, t: T, posted: boolean): Faults {
   }
   const key = member === undefined ? undefined : fieldOf(member.member);
   if (member !== undefined && key !== undefined)
-    return { fields: { [key]: member.said || t(fieldRules[key]) }, form: t("voice.form.not_sent") };
+    return {
+      fields: {
+        [key]: key === "max_participants" ? ruleOf(key, t, serverMax) : member.said || ruleOf(key, t, serverMax),
+      },
+      form: t("voice.form.not_sent"),
+    };
   const kind = voiceOpenRefusal(error);
   if (kind !== null) return { fields: {}, form: t("voice.form.open_refused", { kind: kind.replaceAll("-", "_") }) };
   if (error instanceof CallUnavailableError) return { fields: {}, form: t("voice.join_unavailable") };
@@ -530,6 +642,7 @@ export function VoiceRoomOpen({
   const { t } = stringsIn(useLocale().locale);
   const may = useMayOpenVoiceRooms();
   const off = useVoiceOff();
+  const serverMax = useInstance()?.voice_max_participants;
   const [busy, setBusy] = useState(false);
   const [refused, setRefused] = useState<Faults>(noFaults);
   const back = <BackButton onPress={onBack}>{t("voice.back")}</BackButton>;
@@ -544,6 +657,7 @@ export function VoiceRoomOpen({
         <RoomForm
           initial={draftOf(undefined)}
           opening
+          serverMax={serverMax}
           sheet={sheet}
           busy={busy}
           refused={refused}
@@ -560,7 +674,7 @@ export function VoiceRoomOpen({
               },
               (error: unknown) => {
                 setBusy(false);
-                setRefused(refusalFaults(error, t, settings.post !== undefined));
+                setRefused(refusalFaults(error, t, settings.post !== undefined, serverMax));
               },
             );
           }}
@@ -592,6 +706,7 @@ export function VoiceRoomSettingsScreen({
   const { t } = stringsIn(useLocale().locale);
   const viewer = useViewer();
   const { room, error, refetch } = useVoiceRoom(id);
+  const serverMax = useInstance()?.voice_max_participants;
   const [busy, setBusy] = useState(false);
   const [refused, setRefused] = useState<Faults>(noFaults);
   const [ending, setEnding] = useState(false);
@@ -638,6 +753,7 @@ export function VoiceRoomSettingsScreen({
         key={room.id}
         initial={draftOf(room)}
         opening={false}
+        serverMax={serverMax}
         sheet={sheet}
         busy={busy}
         refused={refused}
@@ -649,7 +765,16 @@ export function VoiceRoomSettingsScreen({
           setBusy(true);
           updateVoiceRoom(data, id, settings).then(onBack, (e: unknown) => {
             setBusy(false);
-            setRefused(refusalFaults(e, t, false));
+            // A raised maximum the media node has no room for now: nothing was saved, said under the maximum.
+            const noRoom = settings.max_participants !== undefined && e instanceof ProblemError && voiceUnavailable(e);
+            setRefused(
+              noRoom
+                ? {
+                    fields: { max_participants: t("voice.form.max_participants_unavailable") },
+                    form: t("voice.form.not_sent"),
+                  }
+                : refusalFaults(e, t, false, serverMax),
+            );
           });
         }}
         t={t}

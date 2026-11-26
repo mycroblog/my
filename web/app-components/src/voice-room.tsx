@@ -43,11 +43,20 @@ export function roomIcon(icon: RoomIcon | undefined): ReactNode {
   return <CustomEmoji shortcode={icon.emoji.shortcode} url={icon.emoji.url} staticUrl={icon.emoji.static_url} />;
 }
 
-/** How many are in a room, as its figure and its words, in the reader's locale. */
-export function useHeadcount(count: number): Headcount {
+/**
+ * How many are in a room, as its figure and its words, in the reader's locale; against the room's maximum where `max`
+ * is given ("8/10"), full once the count reaches it.
+ */
+export function useHeadcount(count: number, max?: number): Headcount {
   const { locale } = useLocale();
   const { t } = stringsIn(locale);
-  return { shown: new Intl.NumberFormat(locale).format(count), label: t("room.count", { count }) };
+  const figure = new Intl.NumberFormat(locale);
+  if (max === undefined) return { shown: figure.format(count), label: t("room.count", { count }) };
+  return {
+    shown: `${figure.format(count)}/${figure.format(max)}`,
+    label: t("room.count_max", { count, max }),
+    full: count >= max,
+  };
 }
 
 /**
