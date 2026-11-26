@@ -188,7 +188,7 @@ LLM を翻訳の提供元にしない。どの版でも同梱しない。
 - 設定の鍵（API キーは config に置き、API では返さない）と、`tools/agentkit/context-map.yaml` の項目
 - 登録情報: ID・表示名・リンク・ロゴ。応答とインスタンスの情報で配るので、クライアントは提供元の種類を知らずに表示できる
 - `docs/operations/` の運営者向けの文書（ひな形の「選ぶサービス」に受け取るものを足す）
-- HTTP クライアントの選択: 運営者が設定した宛先なので、SSRF を防ぐ `kernel.HTTPClient` ではなくアダプタの HTTP クライアントを使う（`internal/adapter/voice/livekit` が例）
+- HTTP クライアントの選択: 運営者が設定した宛先なので、SSRF を防ぐ `kernel.HTTPClient` ではなくアダプタの HTTP クライアントを使う（`internal/adapter/voice/turncloudflare` が例）
 - §8 の印が実際の出力で戻るかの確認と、§要検証の表にある規約・データの扱いの確認
 
 ### この決定を見直す条件

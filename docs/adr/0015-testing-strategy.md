@@ -14,7 +14,7 @@
 | レベル | 対象 | 実行環境 | 実行タイミング |
 | --- | --- | --- | --- |
 | Unit | domain / application（フェイクのポート使用） | ローカル・CI | 本検査 |
-| Contract | 各ポートの全アダプタ（同一スイート） | SQLite in-memory / pgmem（§3）/ PG（コンテナ）/ Garage（S3 互換。`pkg/testkit/s3test`）/ Floci（SNS・SQS。ADR-0050 §5）/ Cloud Tasks エミュレータ | 本検査は SQLite・pgmem（§3）・メモリの偽物で回す。コンテナの契約（`postgres-contract`・`stream-contract`・`blob-contract`・`voice-contract`・`search-contract`・`mail-integration`）は、そのアダプタが変わったときの本検査と、遅い検査（全部）。クラウド実体が必要なものは nightly |
+| Contract | 各ポートの全アダプタ（同一スイート） | SQLite in-memory / pgmem（§3）/ PG（コンテナ）/ Garage（S3 互換。`pkg/testkit/s3test`）/ Floci（SNS・SQS。ADR-0050 §5）/ Cloud Tasks エミュレータ | 本検査は SQLite・pgmem（§3）・メモリの偽物で回す。コンテナの契約（`postgres-contract`・`stream-contract`・`blob-contract`・`search-contract`・`mail-integration`）は、そのアダプタが変わったときの本検査と、遅い検査（全部）。クラウド実体が必要なものは nightly |
 | Build matrix | `CGO_ENABLED=0` で linux/amd64・linux/arm64 をビルド | CI | `CGO_ENABLED=0` のビルドは本検査。arm64 のイメージは遅い検査 |
 | API conformance | OpenAPI スキーマとサーバー実装・生成クライアントの一致 | CI | 本検査 |
 | Federation fixtures | 実サーバー由来の JSON を入力にした受信・生成の回帰テスト | CI | 本検査 |

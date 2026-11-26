@@ -138,7 +138,7 @@ v0.1.0 のタグの前に、`deploy/opentofu` の公開の単位を「役割ご�
   - 何かとは、リソースを作る、権限を与える、API を有効にする、ネットワークにつなぐ、値を生成する、のいずれかである。
   - 例: Google Cloud Translation と Amazon Translate（API の有効化と IAM の付与）は `translation`。Cloud Monitoring・Cloud Trace・Error Reporting、CloudWatch の EMF（権限と出力先）は `observability`。Amazon OpenSearch Service の IAM 署名は `search`。
   - 同じ口でも、何もしなくてよい選択肢はセクションに入れない。例えば DeepL は `translation` の `kind` にしない。
-- **URL と secret を渡すだけで使える外部のサービスは、§11 の汎用の口で受ける。** DeepL、LibreTranslate、Stripe、PAY.JP、captcha、Sentry、LiveKit Cloud、Sora、外部の Elasticsearch・Meilisearch などである。アダプタが増えても公開モジュールを変えずに済む。
+- **URL と secret を渡すだけで使える外部のサービスは、§11 の汎用の口で受ける。** DeepL、LibreTranslate、Stripe、PAY.JP、captcha、Sentry、外部の Elasticsearch・Meilisearch などである。アダプタが増えても公開モジュールを変えずに済む。
 - **プラグインのサーバー自体のデプロイは範囲の外**とする。プラグインは別のサービスで、作り方も言語も利用者が決めるからである。プラグインのアドレスとトークンは、§11 の汎用の口で渡す。
 - インスタンス設定（`translation_providers` など、データベースに持つ設定）は設定ではないので、OpenTofu は扱わない。
 

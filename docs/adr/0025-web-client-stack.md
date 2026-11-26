@@ -30,7 +30,7 @@
 | 部品カタログ | Storybook 10（`@storybook/react-vite`、a11y アドオン） |
 | lint | Oxlint（`oxlint`、`oxlint-tsgolint`。§8）、`knip` |
 
-音声通話の `livekit-client` と `sora-js-sdk` は ADR-0101 が足す。
+音声通話はブラウザの WebRTC と WebSocket だけを使い、依存を足さない（ADR-0101 §7）。
 
 選定の理由:
 
