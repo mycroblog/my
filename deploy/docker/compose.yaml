@@ -77,6 +77,8 @@ services:
       # Loopback only: federation needs HTTPS, so put a TLS-terminating reverse proxy in front (compose.caddy.yaml).
       - "127.0.0.1:${MY_HTTP_PORT:-8080}:8080"
     restart: unless-stopped
+    # The server takes up to 28 s to stop (running.md, "Stop the server"); Docker's default of 10 s would cut it short.
+    stop_grace_period: 30s
 
 secrets:
   my_kek:
