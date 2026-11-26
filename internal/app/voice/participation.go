@@ -168,7 +168,7 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 	}
 	for _, p := range v.Participants {
 		if p.AccountID == accountID {
-			return s.rejoin(ctx, p)
+			return s.rejoin(ctx, p, s.Capacity(v))
 		}
 	}
 	prev, err := s.leaveForJoin(ctx, accountID, roomID)
@@ -191,7 +191,7 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 	if accountID == v.Head.HostAccountID {
 		role = voice.RoleSpeaker
 	}
-	g, err := s.grant(ctx, roomID, Session{ID: session, AccountID: accountID}, role == voice.RoleSpeaker)
+	g, err := s.grant(ctx, RoomRef{ID: roomID, MaxParticipants: s.Capacity(v)}, Session{ID: session, AccountID: accountID}, role == voice.RoleSpeaker)
 	if err != nil {
 		return Joined{}, err
 	}
@@ -306,13 +306,13 @@ func (s *Service) recheckBlocks(ctx context.Context, roomID, accountID string) e
 // that a transport that gives no grant leaves the previous session current; a session that
 // changed since it was read (another device, or an evaluation of the expiry that ends the
 // participation) fails with ErrConflict.
-func (s *Service) rejoin(ctx context.Context, p Participant) (Joined, error) {
+func (s *Service) rejoin(ctx context.Context, p Participant, capacity int) (Joined, error) {
 	old, err := s.d.Heartbeats.current(ctx, p.ParticipationID)
 	if err != nil {
 		return Joined{}, err
 	}
 	session := newSessionID()
-	g, err := s.grant(ctx, p.RoomID, Session{ID: session, AccountID: p.AccountID}, p.Role == voice.RoleSpeaker)
+	g, err := s.grant(ctx, RoomRef{ID: p.RoomID, MaxParticipants: capacity}, Session{ID: session, AccountID: p.AccountID}, p.Role == voice.RoleSpeaker)
 	if err != nil {
 		return Joined{}, err
 	}

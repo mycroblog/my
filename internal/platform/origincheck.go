@@ -13,6 +13,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/i18n"
+	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // OriginRefused counts the requests that the origin check refused (origin_secret): a CDN that
@@ -69,7 +70,7 @@ func (a *App) originCheck(next http.Handler) http.Handler {
 		for _, h := range [...]string{headerXForwardedFor, headerForwarded, headerTraceParent, HeaderRequestID} {
 			r.Header.Del(h)
 		}
-		if originExempt(r) {
+		if originExempt(r) || a.voiceNodeRequest(r) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -90,6 +91,13 @@ func originProved(values []string, accepted [][sha256.Size]byte) bool {
 		match |= subtle.ConstantTimeCompare(sum[:], accepted[i][:])
 	}
 	return match == 1
+}
+
+// voiceNodeRequest tells whether r opens the WebSocket of the media node of this process, which
+// the browsers reach on the node's own host rather than through the CDN (ADR-0101 §15); its
+// single-use ticket authorizes it.
+func (a *App) voiceNodeRequest(r *http.Request) bool {
+	return a.VoiceNode != nil && r.Method == http.MethodGet && r.URL.Path == config.VoiceSFUPath
 }
 
 // originExempt tells whether r stays reachable without the secret: a health check, for the

@@ -145,9 +145,9 @@ func (s *Service) RefreshGrant(ctx context.Context, accountID, roomID, session s
 	if err := s.enabled(); err != nil {
 		return Grant{}, err
 	}
-	_, p, err := s.session(ctx, accountID, roomID, session)
+	v, p, err := s.session(ctx, accountID, roomID, session)
 	if err != nil {
 		return Grant{}, err
 	}
-	return s.grant(ctx, roomID, Session{ID: session, AccountID: accountID}, p.Role == voice.RoleSpeaker)
+	return s.grant(ctx, RoomRef{ID: roomID, MaxParticipants: s.Capacity(v)}, Session{ID: session, AccountID: accountID}, p.Role == voice.RoleSpeaker)
 }

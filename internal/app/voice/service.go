@@ -810,10 +810,10 @@ func (s *Service) canHost(ctx context.Context, accountID string) (bool, error) {
 }
 
 // grant asks the transport for the grant of a session, outside any transaction.
-func (s *Service) grant(ctx context.Context, roomID string, session Session, canSpeak bool) (Grant, error) {
-	g, err := s.d.Transport.Grant(ctx, RoomRef{ID: roomID}, session, canSpeak)
+func (s *Service) grant(ctx context.Context, room RoomRef, session Session, canSpeak bool) (Grant, error) {
+	g, err := s.d.Transport.Grant(ctx, room, session, canSpeak)
 	if err != nil {
-		s.d.Logger.WarnContext(ctx, "the voice transport gave no grant", slog.String("room", roomID), slog.Any("error", err))
+		s.d.Logger.WarnContext(ctx, "the voice transport gave no grant", slog.String("room", room.ID), slog.Any("error", err))
 		return Grant{}, errors.Join(ErrTransportUnavailable, err)
 	}
 	if s.d.Transport.Capabilities().ServerEnforced {

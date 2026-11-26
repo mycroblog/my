@@ -45,8 +45,13 @@ type Capabilities struct {
 }
 
 // RoomRef names a room on a transport: the room's ID, which the adapter maps to the name of
-// its media server.
-type RoomRef struct{ ID string }
+// its media server. MaxParticipants is the room's maximum, the smaller of the host's and the
+// operator's, on the calls that may place the room (Open, Grant): the media nodes of voice = sfu
+// reserve it (ADR-0101 §14). It is 0 when the caller does not know it.
+type RoomRef struct {
+	ID              string
+	MaxParticipants int
+}
 
 // Session is one connection of a participant: a new opaque ID every time a device joins
 // (ADR-0101 §2), of the participation of AccountID.
@@ -67,9 +72,9 @@ type SessionRef struct {
 
 // Grant is what the client of a session needs to connect (ADR-0101 §2).
 type Grant struct {
-	Kind      string            // "p2p", "livekit", "sora"
-	URL       string            // the SFU endpoint; empty for p2p
-	Token     string            // the SFU access token; empty for p2p
+	Kind      string            // "p2p", "sfu", "livekit", "sora"
+	URL       string            // the SFU endpoint (the media node's wss: URL for sfu); empty for p2p
+	Token     string            // the SFU access token (the node's single-use ticket for sfu); empty for p2p
 	Options   map[string]string // method-specific options for the client (ADR-0101)
 	ICE       []ICEServer       // STUN / TURN servers with short-lived credentials
 	RelayOnly bool              // iceTransportPolicy = "relay"

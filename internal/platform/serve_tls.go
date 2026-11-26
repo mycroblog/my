@@ -12,7 +12,6 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
-	"net/url"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -32,9 +31,8 @@ const tlsMaxHeaderBytes = 64 << 10
 // off (ADR-0163 §9); Go's default is 250.
 const tlsMaxConcurrentStreams = 100
 
-// setUpTLS makes the holder of the certificates when this process listens with TLS: the web and
-// all roles with tls other than off. Its hosts are host and, when it differs, the host of
-// web_origin. With tls = acme it also makes the manager that obtains their certificates, and
+// setUpTLS makes the holder of the certificates when this process listens with TLS: the web, all,
+// and sfu roles with tls other than off. Its hosts are config.TLSHosts. With tls = acme it also makes the manager that obtains their certificates, and
 // answers the CA's challenges on both listeners (ADR-0163 §3).
 func (a *App) setUpTLS(cfg *config.Config, opts AppOptions) error {
 	a.acmeClient = opts.ACMEClient
@@ -42,7 +40,7 @@ func (a *App) setUpTLS(cfg *config.Config, opts AppOptions) error {
 	if !cfg.ServesTLS() {
 		return nil
 	}
-	a.TLSCertificates = tlsserve.NewHolder(tlsHosts(cfg)...)
+	a.TLSCertificates = tlsserve.NewHolder(cfg.TLSHosts()...)
 	a.registerTLSExpiry(a.TLSCertificates)
 	if cfg.TLS != config.TLSACME {
 		return nil
@@ -58,16 +56,6 @@ func (a *App) setUpTLS(cfg *config.Config, opts AppOptions) error {
 	})
 	a.TLSHTTPChallenge = tlsserve.HTTP01Handler(answers.HTTP01)
 	return nil
-}
-
-// tlsHosts returns the hosts that the server serves with tls other than off: host and, when it
-// differs, the host of web_origin.
-func tlsHosts(cfg *config.Config) []string {
-	hosts := []string{cfg.Host}
-	if u, err := url.Parse(cfg.WebOrigin); err == nil && u.Host != "" {
-		hosts = append(hosts, u.Host)
-	}
-	return hosts
 }
 
 // newTLSManager returns the manager of tls = acme that installs the certificates into holder.

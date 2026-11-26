@@ -91,8 +91,14 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 			RelayOnly: cfg.VoiceICETransportPolicy == "relay", Sessions: heartbeats, Clock: a.Clock, Meter: a.Meter,
 		})
 	case VoiceSFU:
-		// The media nodes of ADR-0101 §10 to §16 are not in this build yet.
-		return errors.New("voice = sfu: this build has no media node (SFU) yet; use p2p, livekit, sora, or off")
+		// Nothing of the SFU exists with another method: no Pion, socket, registry, or route.
+		turn, err := a.voiceTURN(cfg)
+		if err != nil {
+			return err
+		}
+		if transport, a.VoiceNode, err = a.newSFU(cfg, turn); err != nil {
+			return fmt.Errorf("voice = sfu: %w", err)
+		}
 	case VoiceLiveKit:
 		var err error
 		if transport, err = a.newLiveKitTransport(cfg); err != nil {
@@ -132,6 +138,19 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	voicehttp.New(voicehttp.Options{Webhooks: a.VoiceRooms, Problem: a.writeStatusProblem, Logger: a.Logger}).
 		Register(surfaceRouter{a, surfaceVoice})
 	return nil
+}
+
+// VoiceNode is the media node of voice = sfu (ADR-0101 §10): the WebSocket of the grants at
+// config.VoiceSFUPath and the media.
+type VoiceNode interface {
+	http.Handler
+	// Start opens the media sockets and registers the node.
+	Start(ctx context.Context) error
+	// Drain moves the node's rooms to other nodes and waits for its clients to leave until ctx
+	// ends (ADR-0101 §14).
+	Drain(ctx context.Context)
+	// Close closes the connections and the sockets and takes the node out of the registry.
+	Close(ctx context.Context) error
 }
 
 // voiceHTTPClient returns the HTTP client of a voice adapter that calls a server the operator

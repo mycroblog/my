@@ -151,7 +151,7 @@ func (a *App) tlsCommandManager() (*instance.TLSManager, error) {
 	if a.TLSManager != nil {
 		return a.TLSManager, nil
 	}
-	return a.newTLSManager(tlsserve.NewHolder(tlsHosts(a.Config)...))
+	return a.newTLSManager(tlsserve.NewHolder(a.Config.TLSHosts()...))
 }
 
 // normalizeTLSHost returns host as the manager compares it: lower case, without a port or a

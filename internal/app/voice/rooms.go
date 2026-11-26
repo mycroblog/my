@@ -52,7 +52,7 @@ func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) 
 	session := newSessionID()
 	// The grant is issued before anything is written, so that a transport that gives no grant
 	// (ErrTransportUnavailable) leaves no room behind and the host can try again.
-	g, err := s.grant(ctx, room.ID, Session{ID: session, AccountID: accountID}, true)
+	g, err := s.grant(ctx, RoomRef{ID: room.ID, MaxParticipants: settings.Capacity(s.d.Config.Capacity)}, Session{ID: session, AccountID: accountID}, true)
 	if err != nil {
 		return Joined{}, err
 	}
