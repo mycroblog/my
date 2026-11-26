@@ -32,6 +32,9 @@ func (r *Repository) InsertReplayed(ctx context.Context, tx uow.Tx, entries []ap
 			p.OriginalAuthorDomains = append(p.OriginalAuthorDomains, e.OriginalAuthorDomain)
 			p.Visibilities, p.IsLocals, p.Languages = append(p.Visibilities, string(e.Visibility)), append(p.IsLocals, e.IsLocal), append(p.Languages, e.Language)
 			p.RevisionSeqs, p.IsReplies = append(p.RevisionSeqs, seq), append(p.IsReplies, e.IsReply)
+			// "" stands for NULL, which the query writes for it.
+			p.InReplyToStatusIds = append(p.InReplyToStatusIds, e.InReplyToStatusID)
+			p.InReplyToAccountIds = append(p.InReplyToAccountIds, e.InReplyToAccountID)
 		}
 		if err := q.InsertManyFeedEntries(ctx, p); err != nil {
 			return postgres.Wrap(err, "insert feed entries")

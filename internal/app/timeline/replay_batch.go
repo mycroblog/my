@@ -201,6 +201,36 @@ func (b *replayBatch) DeleteStatusEntries(ctx context.Context, tx uow.Tx, status
 	return b.Repository.DeleteStatusEntries(ctx, tx, statusID)
 }
 
+func (b *replayBatch) SetReplyTargets(ctx context.Context, tx uow.Tx, parentStatusID, parentAccountID string, replyStatusIDs []string) error {
+	if err := b.before(ctx, tx); err != nil {
+		return err
+	}
+	for _, id := range replyStatusIDs {
+		if e, ok := b.known[id]; ok && e.Kind == timeline.KindPost {
+			e.InReplyToStatusID, e.InReplyToAccountID = parentStatusID, parentAccountID
+			b.known[id] = e
+		}
+	}
+	return b.Repository.SetReplyTargets(ctx, tx, parentStatusID, parentAccountID, replyStatusIDs)
+}
+
+func (b *replayBatch) ClearReplyTargetsTo(ctx context.Context, tx uow.Tx, parentStatusIDs []string) error {
+	if err := b.before(ctx, tx); err != nil {
+		return err
+	}
+	gone := map[string]bool{}
+	for _, id := range parentStatusIDs {
+		gone[id] = true
+	}
+	for id, e := range b.known {
+		if gone[e.InReplyToStatusID] {
+			e.InReplyToStatusID, e.InReplyToAccountID = "", ""
+			b.known[id] = e
+		}
+	}
+	return b.Repository.ClearReplyTargetsTo(ctx, tx, parentStatusIDs)
+}
+
 func (b *replayBatch) DeleteStatusEntriesOf(ctx context.Context, tx uow.Tx, statusIDs []string) error {
 	if err := b.before(ctx, tx); err != nil {
 		return err

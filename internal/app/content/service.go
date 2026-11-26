@@ -497,8 +497,16 @@ func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Po
 	if err := repo.InsertRevision(ctx, tx, rev); err != nil {
 		return Post{}, err
 	}
-	var created uow.Event = StatusCreated{Status: p.st, Revision: rev, ConversationID: ins.ConversationID, HeldReply: p.reply != nil}
-	if b := p.board; b != nil {
+	var created uow.Event
+	if b := p.board; b == nil {
+		// insertStatus took the lock keys of the status, which keep its reply links as the
+		// projector of StatusCreated finds them.
+		ev := StatusCreated{Status: p.st, Revision: rev, ConversationID: ins.ConversationID, HeldReply: p.reply != nil}
+		if ev.ReplyLink, ev.LinkedReplies, err = createdEventLinks(ctx, tx, repo, p.st, ev.HeldReply); err != nil {
+			return Post{}, err
+		}
+		created = ev
+	} else {
 		// A board post is announced to no one but its board (board.go).
 		if err := repo.InsertStatusBoard(ctx, tx, p.st.ID, b.gatheringID); err != nil {
 			return Post{}, err

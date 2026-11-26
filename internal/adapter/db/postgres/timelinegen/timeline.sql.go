@@ -46,6 +46,18 @@ func (q *Queries) AdjustManyTagUsage(ctx context.Context, arg AdjustManyTagUsage
 	return err
 }
 
+const clearFeedReplyTargetsTo = `-- name: ClearFeedReplyTargetsTo :exec
+UPDATE feed_entries SET in_reply_to_status_id = NULL, in_reply_to_account_id = NULL
+WHERE in_reply_to_status_id = ANY($1::uuid[])
+`
+
+// ClearFeedReplyTargetsTo takes the reply target off the entries that reply to the deleted parents
+// parent_status_ids.
+func (q *Queries) ClearFeedReplyTargetsTo(ctx context.Context, parentStatusIds []string) error {
+	_, err := q.db.Exec(ctx, clearFeedReplyTargetsTo, parentStatusIds)
+	return err
+}
+
 const countListMembers = `-- name: CountListMembers :one
 SELECT count(*) FROM list_members WHERE list_id = $1
 `
@@ -406,7 +418,8 @@ func (q *Queries) FeedFollowEdgeExists(ctx context.Context, arg FeedFollowEdgeEx
 
 const getFeedEntry = `-- name: GetFeedEntry :one
 SELECT id, kind, status_id, author_account_id, author_domain, original_author_account_id,
-  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply,
+  in_reply_to_status_id, in_reply_to_account_id
 FROM feed_entries WHERE id = $1
 `
 
@@ -426,6 +439,8 @@ func (q *Queries) GetFeedEntry(ctx context.Context, id string) (FeedEntry, error
 		&i.Language,
 		&i.RevisionSeq,
 		&i.IsReply,
+		&i.InReplyToStatusID,
+		&i.InReplyToAccountID,
 	)
 	return i, err
 }
@@ -500,8 +515,9 @@ const insertFeedEntry = `-- name: InsertFeedEntry :execrows
 
 INSERT INTO feed_entries (
   id, kind, status_id, author_account_id, author_domain, original_author_account_id,
-  original_author_domain, visibility, is_local, language, revision_seq, is_reply
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply,
+  in_reply_to_status_id, in_reply_to_account_id
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 ON CONFLICT (id) DO NOTHING
 `
 
@@ -518,6 +534,8 @@ type InsertFeedEntryParams struct {
 	Language                string
 	RevisionSeq             int32
 	IsReply                 bool
+	InReplyToStatusID       *string
+	InReplyToAccountID      *string
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
@@ -537,6 +555,8 @@ func (q *Queries) InsertFeedEntry(ctx context.Context, arg InsertFeedEntryParams
 		arg.Language,
 		arg.RevisionSeq,
 		arg.IsReply,
+		arg.InReplyToStatusID,
+		arg.InReplyToAccountID,
 	)
 	if err != nil {
 		return 0, err
@@ -634,13 +654,15 @@ const insertManyFeedEntries = `-- name: InsertManyFeedEntries :exec
 
 INSERT INTO feed_entries (
   id, kind, status_id, author_account_id, author_domain, original_author_account_id,
-  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply,
+  in_reply_to_status_id, in_reply_to_account_id
 )
 SELECT unnest($1::uuid[]), unnest($2::text[]), unnest($3::uuid[]),
   unnest($4::uuid[]), unnest($5::text[]),
   unnest($6::uuid[]), unnest($7::text[]),
   unnest($8::text[]), unnest($9::boolean[]), unnest($10::text[]),
-  unnest($11::integer[]), unnest($12::boolean[])
+  unnest($11::integer[]), unnest($12::boolean[]),
+  NULLIF(unnest($13::text[]), '')::uuid, NULLIF(unnest($14::text[]), '')::uuid
 ON CONFLICT (id) DO NOTHING
 `
 
@@ -657,6 +679,8 @@ type InsertManyFeedEntriesParams struct {
 	Languages                []string
 	RevisionSeqs             []int32
 	IsReplies                []bool
+	InReplyToStatusIds       []string
+	InReplyToAccountIds      []string
 }
 
 // The rows that a rebuild derived (InsertReplayed, ADR-0172 §4), many entries in one statement each
@@ -675,6 +699,8 @@ func (q *Queries) InsertManyFeedEntries(ctx context.Context, arg InsertManyFeedE
 		arg.Languages,
 		arg.RevisionSeqs,
 		arg.IsReplies,
+		arg.InReplyToStatusIds,
+		arg.InReplyToAccountIds,
 	)
 	return err
 }
@@ -758,7 +784,8 @@ func (q *Queries) ListAllFeedDomainMutes(ctx context.Context) ([]FeedDomainMute,
 const listAllFeedEntries = `-- name: ListAllFeedEntries :many
 
 SELECT id, kind, status_id, author_account_id, author_domain, original_author_account_id,
-  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply,
+  in_reply_to_status_id, in_reply_to_account_id
 FROM feed_entries ORDER BY id
 `
 
@@ -785,6 +812,8 @@ func (q *Queries) ListAllFeedEntries(ctx context.Context) ([]FeedEntry, error) {
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 		); err != nil {
 			return nil, err
 		}
@@ -1346,7 +1375,8 @@ type ListFeedFollowersAmongParams struct {
 // its end is NULL or after now. A domain restriction also covers the subdomains of its domain.
 // ListHomeEntries is the home timeline (FR-201) of a viewer: the posts of the viewer and of the
 // accounts the viewer follows, their boosts unless the follow hides them, and the viewer's own
-// boosts, within the read window (id >= window_floor).
+// boosts, within the read window (id >= window_floor). A reply is listed only when its parent's
+// author is known and is the viewer, the reply's own author, or an account the viewer follows.
 // The accounts among follower_ids whose home timelines follow the followee.
 func (q *Queries) ListFeedFollowersAmong(ctx context.Context, arg ListFeedFollowersAmongParams) ([]string, error) {
 	rows, err := q.db.Query(ctx, listFeedFollowersAmong, arg.Followee, arg.FollowerIds)
@@ -1370,7 +1400,8 @@ func (q *Queries) ListFeedFollowersAmong(ctx context.Context, arg ListFeedFollow
 
 const listHomeEntries = `-- name: ListHomeEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_entries e
 WHERE e.author_account_id IN (
     SELECT f.followee_account_id FROM feed_follow_edges f WHERE f.follower_account_id = $1
@@ -1380,6 +1411,9 @@ WHERE e.author_account_id IN (
   AND (e.kind = 'post' OR e.author_account_id = $1 OR EXISTS (
     SELECT 1 FROM feed_follow_edges f
     WHERE f.follower_account_id = $1 AND f.followee_account_id = e.author_account_id AND f.show_boosts))
+  AND (NOT e.is_reply OR e.in_reply_to_account_id IN ($1, e.author_account_id) OR EXISTS (
+    SELECT 1 FROM feed_follow_edges f
+    WHERE f.follower_account_id = $1 AND f.followee_account_id = e.in_reply_to_account_id))
   AND (e.visibility <> 'direct' OR e.author_account_id = $1 OR EXISTS (
     SELECT 1 FROM feed_direct_recipients d WHERE d.recipient_account_id = $1 AND d.entry_id = e.id))
   AND NOT EXISTS (
@@ -1447,6 +1481,8 @@ func (q *Queries) ListHomeEntries(ctx context.Context, arg ListHomeEntriesParams
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 		); err != nil {
 			return nil, err
 		}
@@ -1460,7 +1496,8 @@ func (q *Queries) ListHomeEntries(ctx context.Context, arg ListHomeEntriesParams
 
 const listListEntries = `-- name: ListListEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_entries e
 WHERE e.author_account_id IN (
     SELECT m.member_account_id FROM list_members m
@@ -1472,6 +1509,9 @@ WHERE e.author_account_id IN (
   AND (e.kind = 'post' OR EXISTS (
     SELECT 1 FROM feed_follow_edges f
     WHERE f.follower_account_id = $2 AND f.followee_account_id = e.author_account_id AND f.show_boosts))
+  AND (NOT e.is_reply OR e.in_reply_to_account_id IN ($2, e.author_account_id) OR EXISTS (
+    SELECT 1 FROM feed_follow_edges f
+    WHERE f.follower_account_id = $2 AND f.followee_account_id = e.in_reply_to_account_id))
   AND (e.visibility <> 'direct' OR EXISTS (
     SELECT 1 FROM feed_direct_recipients d WHERE d.recipient_account_id = $2 AND d.entry_id = e.id))
   AND NOT EXISTS (
@@ -1511,7 +1551,8 @@ type ListListEntriesParams struct {
 }
 
 // ListListEntries is the timeline of a list: ListHomeEntries with the authors (posters and
-// boosters) limited to the members of the list, which never include the viewer.
+// boosters) limited to the members of the list, which never include the viewer, and the replies
+// limited as ListHomeEntries limits them.
 func (q *Queries) ListListEntries(ctx context.Context, arg ListListEntriesParams) ([]FeedEntry, error) {
 	rows, err := q.db.Query(ctx, listListEntries,
 		arg.ListID,
@@ -1543,6 +1584,8 @@ func (q *Queries) ListListEntries(ctx context.Context, arg ListListEntriesParams
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 		); err != nil {
 			return nil, err
 		}
@@ -1662,9 +1705,11 @@ func (q *Queries) ListListsOfOwner(ctx context.Context, ownerAccountID string) (
 
 const listLocalEntries = `-- name: ListLocalEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_entries e
 WHERE e.is_local AND e.kind = 'post' AND e.visibility IN ('public', 'local')
+  AND (NOT e.is_reply OR e.in_reply_to_account_id = e.author_account_id)
   AND ($1::boolean OR e.visibility = 'public')
   AND ($2::uuid IS NULL OR e.id < $2::uuid)
   AND e.id >= COALESCE($3::uuid, '00000000-0000-0000-0000-000000000000')
@@ -1696,7 +1741,9 @@ type ListLocalEntriesParams struct {
 // ListLocalEntries is the local timeline (FR-202): the public and local posts of local accounts
 // (public only when include_local is 0, for visitors that are not logged in), except those of
 // authors kept from discovery and those the viewer (NULL for none) blocks, is blocked by, or mutes,
-// from window_floor (NULL for no bound) up.
+// from window_floor (NULL for no bound) up. A reply is listed only when it replies to its own author.
+// The terms of the partial index feed_entries_local are written as it writes them, so that the
+// planner uses it.
 func (q *Queries) ListLocalEntries(ctx context.Context, arg ListLocalEntriesParams) ([]FeedEntry, error) {
 	rows, err := q.db.Query(ctx, listLocalEntries,
 		arg.IncludeLocal,
@@ -1728,6 +1775,8 @@ func (q *Queries) ListLocalEntries(ctx context.Context, arg ListLocalEntriesPara
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 		); err != nil {
 			return nil, err
 		}
@@ -1741,7 +1790,8 @@ func (q *Queries) ListLocalEntries(ctx context.Context, arg ListLocalEntriesPara
 
 const listProfileEntries = `-- name: ListProfileEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_entries e
 WHERE e.author_account_id = $1
   AND ($2::uuid IS NULL OR e.id < $2::uuid)
@@ -1838,6 +1888,8 @@ func (q *Queries) ListProfileEntries(ctx context.Context, arg ListProfileEntries
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 		); err != nil {
 			return nil, err
 		}
@@ -1851,7 +1903,8 @@ func (q *Queries) ListProfileEntries(ctx context.Context, arg ListProfileEntries
 
 const listProfileTagEntries = `-- name: ListProfileTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
 WHERE t.author_account_id = $1 AND t.tag_id = $2
@@ -1923,6 +1976,8 @@ func (q *Queries) ListProfileTagEntries(ctx context.Context, arg ListProfileTagE
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 		); err != nil {
 			return nil, err
 		}
@@ -1936,9 +1991,11 @@ func (q *Queries) ListProfileTagEntries(ctx context.Context, arg ListProfileTagE
 
 const listPublicEntries = `-- name: ListPublicEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_entries e
 WHERE e.kind = 'post' AND e.visibility = 'public'
+  AND (NOT e.is_reply OR e.in_reply_to_account_id = e.author_account_id)
   AND ($1::uuid IS NULL OR e.id < $1::uuid)
   AND e.id >= COALESCE($2::uuid, '00000000-0000-0000-0000-000000000000')
   AND NOT EXISTS (
@@ -1977,7 +2034,9 @@ type ListPublicEntriesParams struct {
 // ListPublicEntries is the federated timeline (FR-202): the public posts of local and remote
 // accounts, except those of authors and domains kept from discovery and those the viewer (NULL for
 // none) blocks, is blocked by, or mutes,
-// from window_floor (NULL for no bound) up.
+// from window_floor (NULL for no bound) up. A reply is listed only when it replies to its own author.
+// The terms of the partial index feed_entries_public are written as it writes them, so that the
+// planner uses it.
 func (q *Queries) ListPublicEntries(ctx context.Context, arg ListPublicEntriesParams) ([]FeedEntry, error) {
 	rows, err := q.db.Query(ctx, listPublicEntries,
 		arg.Before,
@@ -2008,6 +2067,8 @@ func (q *Queries) ListPublicEntries(ctx context.Context, arg ListPublicEntriesPa
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 		); err != nil {
 			return nil, err
 		}
@@ -2021,7 +2082,8 @@ func (q *Queries) ListPublicEntries(ctx context.Context, arg ListPublicEntriesPa
 
 const listTagEntries = `-- name: ListTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
 WHERE t.tag_id = $1 AND t.visibility IN ('public', 'local')
@@ -2102,6 +2164,8 @@ func (q *Queries) ListTagEntries(ctx context.Context, arg ListTagEntriesParams) 
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 		); err != nil {
 			return nil, err
 		}
@@ -2136,6 +2200,25 @@ func (q *Queries) ListTagUsageOf(ctx context.Context, ids []string) ([]TagUsage,
 		return nil, err
 	}
 	return items, nil
+}
+
+const setFeedReplyTargets = `-- name: SetFeedReplyTargets :exec
+UPDATE feed_entries SET in_reply_to_status_id = $1::uuid,
+  in_reply_to_account_id = $2::uuid
+WHERE kind = 'post' AND status_id = ANY($3::uuid[])
+`
+
+type SetFeedReplyTargetsParams struct {
+	ParentStatusID  string
+	ParentAccountID string
+	StatusIds       []string
+}
+
+// SetFeedReplyTargets gives the post entries of the replies status_ids their parent and its
+// author, as content links them.
+func (q *Queries) SetFeedReplyTargets(ctx context.Context, arg SetFeedReplyTargetsParams) error {
+	_, err := q.db.Exec(ctx, setFeedReplyTargets, arg.ParentStatusID, arg.ParentAccountID, arg.StatusIds)
+	return err
 }
 
 const updateFeedEntriesRevision = `-- name: UpdateFeedEntriesRevision :execrows

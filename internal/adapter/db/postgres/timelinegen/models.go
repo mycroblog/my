@@ -64,6 +64,8 @@ type FeedEntry struct {
 	Language                string
 	RevisionSeq             int32
 	IsReply                 bool
+	InReplyToStatusID       *string
+	InReplyToAccountID      *string
 }
 
 type FeedExclusion struct {

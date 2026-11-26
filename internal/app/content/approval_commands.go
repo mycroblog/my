@@ -413,7 +413,16 @@ func (s *Interactions) release(ctx context.Context, tx uow.Tx, uri string) error
 	if err != nil {
 		return err
 	}
-	return tx.Emit(ctx, StatusReleased{Status: st, Revision: rev})
+	// The lock keys that the projector of StatusReleased takes, held from here, keep the link
+	// that the event carries as the projector makes it.
+	if err := s.d.Statuses.LockStatusKeys(ctx, tx, statusLockKeys(st, false)); err != nil {
+		return err
+	}
+	link, err := replyLinkOf(ctx, tx, s.d.Statuses, st)
+	if err != nil {
+		return err
+	}
+	return tx.Emit(ctx, StatusReleased{Status: st, Revision: rev, ReplyLink: link})
 }
 
 // recordApprovedBoost records in tx the boost that the approved request r asked for, when no

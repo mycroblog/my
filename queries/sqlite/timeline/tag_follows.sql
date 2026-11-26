@@ -37,6 +37,7 @@ SELECT account_id, tag_id, followed_at FROM feed_tag_follows ORDER BY account_id
 -- name: ListHomeTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id,
   CAST(group_concat(t.tag_id, ',') AS TEXT) AS tag_ids
 FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id

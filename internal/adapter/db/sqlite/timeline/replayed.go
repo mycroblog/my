@@ -34,6 +34,9 @@ func (r *Repository) InsertReplayed(ctx context.Context, tx uow.Tx, entries []ap
 			Language                string `json:"language"`
 			RevisionSeq             int64  `json:"revision_seq"`
 			IsReply                 int64  `json:"is_reply"`
+			// nil writes NULL: an entry without a reply target.
+			InReplyToStatusID  *string `json:"in_reply_to_status_id"`
+			InReplyToAccountID *string `json:"in_reply_to_account_id"`
 		}
 		rows := make([]row, len(entries))
 		for i, e := range entries {
@@ -42,6 +45,7 @@ func (r *Repository) InsertReplayed(ctx context.Context, tx uow.Tx, entries []ap
 				OriginalAuthorAccountID: e.OriginalAuthorAccountID, OriginalAuthorDomain: e.OriginalAuthorDomain,
 				Visibility: string(e.Visibility), IsLocal: sqlite.BoolToInt(e.IsLocal), Language: e.Language,
 				RevisionSeq: int64(e.RevisionSeq), IsReply: sqlite.BoolToInt(e.IsReply),
+				InReplyToStatusID: nonEmpty(e.InReplyToStatusID), InReplyToAccountID: nonEmpty(e.InReplyToAccountID),
 			}
 		}
 		list, err := json.Marshal(rows)
@@ -94,4 +98,12 @@ func (r *Repository) InsertReplayed(ctx context.Context, tx uow.Tx, entries []ap
 		}
 	}
 	return applyTagUsage(ctx, q, usage)
+}
+
+// nonEmpty returns nil for "" and a pointer to s otherwise.
+func nonEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

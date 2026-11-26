@@ -34,6 +34,15 @@ type StatusCreated struct {
 	// notifies no one. A local one is published to no one either (Unpublished). StatusReleased
 	// releases it.
 	HeldReply bool
+	// ReplyLink is the link of the status to its parent that storing it made in
+	// status_reply_links: set for a reply that is not held whose parent is stored and live, nil
+	// otherwise. A parent stored later links the reply then (LinkedReplies of its StatusCreated),
+	// the release of a held reply links it (StatusReleased.ReplyLink), and the deletion of the
+	// parent takes the link away.
+	ReplyLink *content.ReplyLink
+	// LinkedReplies are the links that storing the status made from the stored replies that
+	// waited for it as their parent: those neither deleted nor held, the status itself left out.
+	LinkedReplies []content.ReplyLink
 }
 
 // Unpublished reports whether the status is shown to its author alone until StatusReleased: a

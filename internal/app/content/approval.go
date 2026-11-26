@@ -190,6 +190,10 @@ func (InteractionAnswered) EventType() string { return EventInteractionAnswered 
 type StatusReleased struct {
 	Status   content.Status
 	Revision content.Revision
+	// ReplyLink is the link of the reply to its parent that the release made in
+	// status_reply_links, as StatusCreated.ReplyLink: nil when the parent is not stored or is
+	// deleted.
+	ReplyLink *content.ReplyLink
 }
 
 // EventType implements uow.Event.

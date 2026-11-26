@@ -9,6 +9,7 @@ package timelinegen
 
 import (
 	"context"
+	"database/sql"
 )
 
 const countFeedTagFollows = `-- name: CountFeedTagFollows :one
@@ -176,6 +177,7 @@ func (q *Queries) ListFeedTagFollows(ctx context.Context, accountID string) ([]F
 const listHomeTagEntries = `-- name: ListHomeTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id,
   CAST(group_concat(t.tag_id, ',') AS TEXT) AS tag_ids
 FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
@@ -235,6 +237,8 @@ type ListHomeTagEntriesRow struct {
 	Language                string
 	RevisionSeq             int64
 	IsReply                 int64
+	InReplyToStatusID       sql.NullString
+	InReplyToAccountID      sql.NullString
 	TagIds                  string
 }
 
@@ -275,6 +279,8 @@ func (q *Queries) ListHomeTagEntries(ctx context.Context, arg ListHomeTagEntries
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 			&i.TagIds,
 		); err != nil {
 			return nil, err

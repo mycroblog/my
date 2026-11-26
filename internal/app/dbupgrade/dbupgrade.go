@@ -42,7 +42,8 @@ type Step struct {
 	Description string
 	// Run rewrites the rows through u, in transactions that each change a bounded number of rows
 	// (ADR-0003) and that hold no external I/O. It must be safe to run again after it failed or
-	// completed. Nil means that the step has nothing left to run (its contract has shipped).
+	// completed. Nil means that the step has nothing to rewrite: its contract has shipped, or it
+	// only rebuilds Projections (a changed projection, schema/README.md class B).
 	Run func(ctx context.Context, u uow.UnitOfWork) error
 	// Projections name the projections (`my projection list`) to rebuild after Run.
 	Projections []string

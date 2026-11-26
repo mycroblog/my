@@ -21,7 +21,7 @@ import (
 
 // create inserts s with its first revision rev and puts it in a conversation, as the content
 // module does (ADR-0154 §2): conversationID, else the conversation of its stored parent, else a
-// new one of this server. It emits StatusCreated with the conversation.
+// new one of this server. It emits StatusCreated with the conversation and the reply links.
 func (e *timelineEnv) create(t *testing.T, s content.Status, rev content.Revision, conversationID string) error {
 	t.Helper()
 	newID := e.IDs.NewID()
@@ -57,7 +57,11 @@ func (e *timelineEnv) create(t *testing.T, s content.Status, rev content.Revisio
 		if err := repo.InsertStatusConversation(ctx, tx, s.ID, conv); err != nil {
 			return err
 		}
-		return tx.Emit(ctx, appcontent.StatusCreated{Status: s, Revision: rev, ConversationID: conv})
+		ev, err := appcontent.LinkCreated(ctx, tx, repo, appcontent.StatusCreated{Status: s, Revision: rev, ConversationID: conv})
+		if err != nil {
+			return err
+		}
+		return tx.Emit(ctx, ev)
 	})
 }
 

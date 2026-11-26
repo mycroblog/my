@@ -594,22 +594,23 @@ func timelinePublic(t *testing.T, e *timelineEnv) {
 		e.post(t, remote, v, postOpts{})
 	}
 	e.boost(t, bob, far)
-	reply := e.post(t, other, content.VisibilityPublic, postOpts{inReplyTo: far.URI})
+	own := e.public(t, other)
+	reply := e.post(t, other, content.VisibilityPublic, postOpts{inReplyTo: own.URI})
 	public := func(viewer appcontent.Viewer, want ...string) {
 		t.Helper()
 		p, err := e.svc.Public(t.Context(), viewer, apptimeline.Query{Limit: apptimeline.MaxLimit})
 		expectPage(t, "Public", p, err, want...)
 	}
 	// Only public posts, local or remote; no local posts even for a logged-in viewer, no boosts.
-	public(viewerOf(bob), pub.ID, far.ID, reply.ID)
-	public(anonymous, pub.ID, far.ID, reply.ID)
+	public(viewerOf(bob), pub.ID, far.ID, own.ID, reply.ID)
+	public(anonymous, pub.ID, far.ID, own.ID, reply.ID)
 
 	// The viewer's mutes and blocks apply.
 	if _, err := e.graph.Mute(t.Context(), bob, other, appgraph.MuteInput{}); err != nil {
 		t.Fatalf("Mute: %v", err)
 	}
 	public(viewerOf(bob), pub.ID, far.ID)
-	public(anonymous, pub.ID, far.ID, reply.ID)
+	public(anonymous, pub.ID, far.ID, own.ID, reply.ID)
 
 	// A domain restriction covers the domain and its subdomains; an author restriction the author.
 	err := e.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {

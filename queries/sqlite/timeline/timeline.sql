@@ -6,13 +6,15 @@
 -- name: InsertFeedEntry :execrows
 INSERT INTO feed_entries (
   id, kind, status_id, author_account_id, author_domain, original_author_account_id,
-  original_author_domain, visibility, is_local, language, revision_seq, is_reply
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply,
+  in_reply_to_status_id, in_reply_to_account_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (id) DO NOTHING;
 
 -- name: GetFeedEntry :one
 SELECT id, kind, status_id, author_account_id, author_domain, original_author_account_id,
-  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply,
+  in_reply_to_status_id, in_reply_to_account_id
 FROM feed_entries WHERE id = ?;
 
 -- UpdateFeedEntriesRevision moves the entries of a status (the post and its boosts) to a
@@ -20,6 +22,19 @@ FROM feed_entries WHERE id = ?;
 -- name: UpdateFeedEntriesRevision :execrows
 UPDATE feed_entries SET language = sqlc.arg(language), revision_seq = sqlc.arg(revision_seq)
 WHERE status_id = sqlc.arg(status_id) AND revision_seq < sqlc.arg(revision_seq);
+
+-- SetFeedReplyTargets gives the post entries of the replies status_ids (a JSON array) their parent
+-- and its author, as content links them.
+-- name: SetFeedReplyTargets :exec
+UPDATE feed_entries SET in_reply_to_status_id = CAST(sqlc.arg(parent_status_id) AS TEXT),
+  in_reply_to_account_id = CAST(sqlc.arg(parent_account_id) AS TEXT)
+WHERE kind = 'post' AND status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)));
+
+-- ClearFeedReplyTargetsTo takes the reply target off the entries that reply to the deleted parents
+-- parent_status_ids (a JSON array).
+-- name: ClearFeedReplyTargetsTo :exec
+UPDATE feed_entries SET in_reply_to_status_id = NULL, in_reply_to_account_id = NULL
+WHERE in_reply_to_status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(parent_status_ids) AS TEXT)));
 
 -- name: DeleteFeedEntry :exec
 DELETE FROM feed_entries WHERE id = ?;
@@ -95,7 +110,8 @@ DELETE FROM feed_domain_mutes;
 
 -- name: ListAllFeedEntries :many
 SELECT id, kind, status_id, author_account_id, author_domain, original_author_account_id,
-  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply,
+  in_reply_to_status_id, in_reply_to_account_id
 FROM feed_entries ORDER BY id;
 
 -- name: ListAllFeedDirectRecipients :many
@@ -133,10 +149,12 @@ WHERE followee_account_id = sqlc.arg(followee) AND follower_account_id IN (SELEC
 
 -- ListHomeEntries is the home timeline (FR-201) of a viewer: the posts of the viewer and of the
 -- accounts the viewer follows, their boosts unless the follow hides them, and the viewer's own
--- boosts, within the read window (id >= window_floor).
+-- boosts, within the read window (id >= window_floor). A reply is listed only when its parent's
+-- author is known and is the viewer, the reply's own author, or an account the viewer follows.
 -- name: ListHomeEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_entries e
 WHERE e.author_account_id IN (
     SELECT f.followee_account_id FROM feed_follow_edges f WHERE f.follower_account_id = sqlc.arg(viewer)
@@ -146,6 +164,9 @@ WHERE e.author_account_id IN (
   AND (e.kind = 'post' OR e.author_account_id = sqlc.arg(viewer) OR EXISTS (
     SELECT 1 FROM feed_follow_edges f
     WHERE f.follower_account_id = sqlc.arg(viewer) AND f.followee_account_id = e.author_account_id AND f.show_boosts = 1))
+  AND (e.is_reply = 0 OR e.in_reply_to_account_id IN (sqlc.arg(viewer), e.author_account_id) OR EXISTS (
+    SELECT 1 FROM feed_follow_edges f
+    WHERE f.follower_account_id = sqlc.arg(viewer) AND f.followee_account_id = e.in_reply_to_account_id))
   AND (e.visibility <> 'direct' OR e.author_account_id = sqlc.arg(viewer) OR EXISTS (
     SELECT 1 FROM feed_direct_recipients d WHERE d.recipient_account_id = sqlc.arg(viewer) AND d.entry_id = e.id))
   AND NOT EXISTS (
@@ -175,12 +196,16 @@ LIMIT sqlc.arg(page_limit);
 -- ListLocalEntries is the local timeline (FR-202): the public and local posts of local accounts
 -- (public only when include_local is 0, for visitors that are not logged in), except those of
 -- authors kept from discovery and those the viewer ('' for none) blocks, is blocked by, or mutes,
--- from window_floor ('' for no bound) up.
+-- from window_floor ('' for no bound) up. A reply is listed only when it replies to its own author.
+-- The terms of the partial index feed_entries_local are written as it writes them, so that the
+-- planner uses it.
 -- name: ListLocalEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_entries e
 WHERE e.is_local = 1 AND e.kind = 'post' AND e.visibility IN ('public', 'local')
+  AND (e.is_reply = 0 OR e.in_reply_to_account_id = e.author_account_id)
   AND (CAST(sqlc.arg(include_local) AS INTEGER) = 1 OR e.visibility = 'public')
   AND (CAST(sqlc.arg(before) AS TEXT) = '' OR e.id < CAST(sqlc.arg(before) AS TEXT))
   AND e.id >= CAST(sqlc.arg(window_floor) AS TEXT)
@@ -200,12 +225,16 @@ LIMIT sqlc.arg(page_limit);
 -- ListPublicEntries is the federated timeline (FR-202): the public posts of local and remote
 -- accounts, except those of authors and domains kept from discovery and those the viewer ('' for
 -- none) blocks, is blocked by, or mutes,
--- from window_floor ('' for no bound) up.
+-- from window_floor ('' for no bound) up. A reply is listed only when it replies to its own author.
+-- The terms of the partial index feed_entries_public are written as it writes them, so that the
+-- planner uses it.
 -- name: ListPublicEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_entries e
 WHERE e.kind = 'post' AND e.visibility = 'public'
+  AND (e.is_reply = 0 OR e.in_reply_to_account_id = e.author_account_id)
   AND (CAST(sqlc.arg(before) AS TEXT) = '' OR e.id < CAST(sqlc.arg(before) AS TEXT))
   AND e.id >= CAST(sqlc.arg(window_floor) AS TEXT)
   AND NOT EXISTS (
@@ -236,7 +265,8 @@ LIMIT sqlc.arg(page_limit);
 -- the posts that reply to a status (the Atom feed of a hashtag, FR-213).
 -- name: ListTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
 WHERE t.tag_id = sqlc.arg(tag_id) AND t.visibility IN ('public', 'local')
@@ -274,7 +304,8 @@ LIMIT sqlc.arg(page_limit);
 -- exclude_boosts the boosts.
 -- name: ListProfileEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_entries e
 WHERE e.author_account_id = sqlc.arg(author)
   AND (CAST(sqlc.arg(before) AS TEXT) = '' OR e.id < CAST(sqlc.arg(before) AS TEXT))
@@ -314,7 +345,8 @@ LIMIT sqlc.arg(page_limit);
 -- tag_id (the posts of a profile tagged with it): no boosts, which carry no hashtags of their own.
 -- name: ListProfileTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
 WHERE t.author_account_id = sqlc.arg(author) AND t.tag_id = sqlc.arg(tag_id)
@@ -445,10 +477,12 @@ DELETE FROM list_members WHERE NOT EXISTS (
 SELECT list_id, member_account_id, owner_account_id, added_at FROM list_members ORDER BY list_id, member_account_id;
 
 -- ListListEntries is the timeline of a list: ListHomeEntries with the authors (posters and
--- boosters) limited to the members of the list, which never include the viewer.
+-- boosters) limited to the members of the list, which never include the viewer, and the replies
+-- limited as ListHomeEntries limits them.
 -- name: ListListEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
-  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id
 FROM feed_entries e
 WHERE e.author_account_id IN (
     SELECT m.member_account_id FROM list_members m
@@ -460,6 +494,9 @@ WHERE e.author_account_id IN (
   AND (e.kind = 'post' OR EXISTS (
     SELECT 1 FROM feed_follow_edges f
     WHERE f.follower_account_id = sqlc.arg(viewer) AND f.followee_account_id = e.author_account_id AND f.show_boosts = 1))
+  AND (e.is_reply = 0 OR e.in_reply_to_account_id IN (sqlc.arg(viewer), e.author_account_id) OR EXISTS (
+    SELECT 1 FROM feed_follow_edges f
+    WHERE f.follower_account_id = sqlc.arg(viewer) AND f.followee_account_id = e.in_reply_to_account_id))
   AND (e.visibility <> 'direct' OR EXISTS (
     SELECT 1 FROM feed_direct_recipients d WHERE d.recipient_account_id = sqlc.arg(viewer) AND d.entry_id = e.id))
   AND NOT EXISTS (
@@ -589,11 +626,13 @@ ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires
 -- name: InsertManyFeedEntries :exec
 INSERT INTO feed_entries (
   id, kind, status_id, author_account_id, author_domain, original_author_account_id,
-  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply,
+  in_reply_to_status_id, in_reply_to_account_id
 )
 SELECT value ->> '$.id', value ->> '$.kind', value ->> '$.status_id', value ->> '$.author_account_id', value ->> '$.author_domain',
   value ->> '$.original_author_account_id', value ->> '$.original_author_domain', value ->> '$.visibility',
-  value ->> '$.is_local', value ->> '$.language', value ->> '$.revision_seq', value ->> '$.is_reply'
+  value ->> '$.is_local', value ->> '$.language', value ->> '$.revision_seq', value ->> '$.is_reply',
+  value ->> '$.in_reply_to_status_id', value ->> '$.in_reply_to_account_id'
 FROM json_each(CAST(sqlc.arg(entries) AS TEXT)) WHERE true
 ON CONFLICT (id) DO NOTHING;
 

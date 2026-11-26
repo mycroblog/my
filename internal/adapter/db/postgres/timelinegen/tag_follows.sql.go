@@ -167,6 +167,7 @@ func (q *Queries) ListFeedTagFollows(ctx context.Context, accountID string) ([]F
 const listHomeTagEntries = `-- name: ListHomeTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id,
   array_agg(t.tag_id ORDER BY t.tag_id)::uuid[] AS tag_ids
 FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
@@ -226,6 +227,8 @@ type ListHomeTagEntriesRow struct {
 	Language                string
 	RevisionSeq             int32
 	IsReply                 bool
+	InReplyToStatusID       *string
+	InReplyToAccountID      *string
 	TagIds                  []string
 }
 
@@ -266,6 +269,8 @@ func (q *Queries) ListHomeTagEntries(ctx context.Context, arg ListHomeTagEntries
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 			&i.TagIds,
 		); err != nil {
 			return nil, err
