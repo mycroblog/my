@@ -55,6 +55,8 @@ export {
   receiveHomeStatuses,
   receiveListsGap,
   receiveListStatuses,
+  receivePublicGap,
+  receivePublicStatuses,
   useTimelineArrivals,
   type Arrival,
   type StreamedTimeline,
@@ -684,7 +686,15 @@ export {
   type StatusShadow,
 } from "./shadow";
 export type { Status, StatusPage } from "./statuses";
-export { startStream, streamStateOf, useStreamState, watchStreamState, type StreamState } from "./stream";
+export {
+  startStream,
+  startTimelineStream,
+  streamStateOf,
+  useStreamState,
+  useTimelineStream,
+  watchStreamState,
+  type StreamState,
+} from "./stream";
 export { retryStream } from "./stream-retry";
 export { statusContextQuery, statusQuery, useThread, type StatusContext, type Thread } from "./thread";
 export {

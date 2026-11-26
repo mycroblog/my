@@ -1,22 +1,31 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// What starts the session's stream again once the server refused it (stream.ts), apart from the stream so that the
-// timelines it fills can ask for it when the reader pulls one, without importing what imports them.
+// What starts the streams of a tab again once the server refused them (stream.ts), apart from the streams so that the
+// timelines they fill can ask for it when the reader pulls one, without importing what imports them.
 import type { AppData } from "./app-data";
 
-const retries = new WeakMap<AppData, () => void>();
+const retries = new WeakMap<AppData, Set<() => void>>();
 
-/** Makes retry what retryStream calls for `data`, until the function it returns is called. */
+/** Adds retry to what retryStream calls for `data`, until the function it returns is called. */
 export function onStreamRetry(data: AppData, retry: () => void): () => void {
-  retries.set(data, retry);
+  let all = retries.get(data);
+  if (!all) {
+    all = new Set();
+    retries.set(data, all);
+  }
+  const mine = () => {
+    retry();
+  };
+  all.add(mine);
   return () => {
-    if (retries.get(data) === retry) retries.delete(data);
+    all.delete(mine);
   };
 }
 
 /**
- * Starts the stream of `data` again when it is `stopped` (the server refused it): its state goes `connecting`, then
- * `open`, or `stopped` again if the server refuses it again. In any other state, or without a stream, it does nothing.
+ * Starts each stream of `data` again that is `stopped` (the server refused it): the session's, and those of the public
+ * timelines it shows. Its state goes `connecting`, then `open`, or `stopped` again if the server refuses it again. A
+ * stream in any other state is left as it is, and without a stream it does nothing.
  */
 export function retryStream(data: AppData): void {
-  retries.get(data)?.();
+  for (const retry of retries.get(data) ?? []) retry();
 }

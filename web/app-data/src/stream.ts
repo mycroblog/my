@@ -4,12 +4,21 @@
 // other tabs, and every tab puts the events into its own cache. The server replays nothing (ADR-0093 §6): whenever a
 // stream opens after a break, a reconnection or another tab taking the stream over, every tab reads again what it may
 // have missed. A browser without the group runs a stream in each tab. The leading tab shares the state of its stream
-// too, so that every tab shows the same one.
+// too, so that every tab shows the same one. The stream of a public timeline (ADR-0013 §17) is shared the same way, by
+// the tabs that show that timeline, from when the first of them opens it until the last leaves it.
 import { runStream, type Sleep, type StreamEvent, type StreamOptions } from "@mycroblog/mykit";
 import { joinTabGroup, type TabGroup } from "@my/platform";
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import type { AppData } from "./app-data";
-import { receiveDeletion, receiveHomeGap, receiveHomeStatuses, receiveListsGap, receiveListStatuses } from "./arrivals";
+import {
+  receiveDeletion,
+  receiveHomeGap,
+  receiveHomeStatuses,
+  receiveListsGap,
+  receiveListStatuses,
+  receivePublicGap,
+  receivePublicStatuses,
+} from "./arrivals";
 import { receiveConversation, receiveConversationsGap } from "./conversations";
 import {
   receiveNotification,
@@ -19,6 +28,7 @@ import {
 } from "./notifications";
 import { useAppData } from "./provider";
 import { onStreamRetry } from "./stream-retry";
+import type { PublicTimelineKind } from "./timeline";
 
 /**
  * The state of the session's stream: `connecting` until it first opens, `open` while it is open, `reconnecting`
@@ -130,7 +140,67 @@ const wait: Sleep = (ms, signal) =>
 export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
   const { connection } = data;
   if (connection === undefined) return () => {};
-  const tabs = deps.tabs === undefined ? joinTabGroup(`my:stream:${connection.server}`) : deps.tabs;
+  return shareStream(data, deps, {
+    group: `my:stream:${connection.server}`,
+    options: connection,
+    missed: false,
+    state: () => streamStateOf(data),
+    setState: (state) => {
+      setStreamState(data, state);
+    },
+    route: (message) => {
+      route(data, message);
+    },
+  });
+}
+
+/**
+ * Starts the stream of the public timeline of `kind` (ADR-0013 §17) for a screen that shows it, until the function it
+ * returns is called. As the session's stream, it is one per browser: the tabs that show the timeline form a group, the
+ * one that leads it reads the stream and passes its events to the others, and the stream closes once no tab shows the
+ * timeline. Since the server replays nothing, the timeline is read again whenever its stream opens: posts may have
+ * come between its first page and the stream, or while another tab led it. Data without a connection (a visitor, whom
+ * the server does not stream to) has no stream. Once the server refused it (the instance turned the timeline off),
+ * retryStream starts it again.
+ */
+export function startTimelineStream(data: AppData, kind: PublicTimelineKind, deps: StreamDeps = {}): () => void {
+  const { connection } = data;
+  if (connection === undefined) return () => {};
+  let state: StreamState | undefined;
+  return shareStream(data, deps, {
+    group: `my:stream:${connection.server}:${kind}`,
+    options: { ...connection, timeline: kind },
+    missed: true,
+    state: () => state,
+    setState: (next) => {
+      state = next;
+    },
+    route: (message) => {
+      routeTimeline(data, kind, message);
+    },
+  });
+}
+
+/** What shareStream reads, and what it does with what it reads. */
+type SharedStream = {
+  /** The name of the group of the tabs that share the stream. */
+  readonly group: string;
+  /** What runStream reads: the connection, and the timeline of a public timeline's stream. */
+  readonly options: Omit<StreamOptions, "signal" | "sleep" | "onOpen" | "onEvent" | "onError">;
+  /** Whether the tabs may have missed events before the stream first opens, and so read again once it does. */
+  readonly missed: boolean;
+  readonly state: () => StreamState | undefined;
+  readonly setState: (state: StreamState | undefined) => void;
+  /** Puts an event of the stream, or a break, into this tab's data. */
+  readonly route: (message: Exclude<SharedMessage, { kind: "state" }>) => void;
+};
+
+/**
+ * Reads a stream that the tabs of the browser share, until the function it returns is called: the tab that leads the
+ * group reads it and passes what it reads to the others, and every tab puts it into its own data.
+ */
+function shareStream(data: AppData, deps: StreamDeps, stream: SharedStream): () => void {
+  const tabs = deps.tabs === undefined ? joinTabGroup(stream.group) : deps.tabs;
   const run = deps.run ?? runStream;
   const stop = new AbortController();
   // missed: whether the tabs may have missed events before this stream (another tab led one, or it was refused), and
@@ -141,7 +211,7 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
     };
     state("connecting");
     return run({
-      ...connection,
+      ...stream.options,
       signal: stop.signal,
       // runStream waits here, and only here, between a connection that ended or failed and the next one.
       sleep: (ms, signal) => {
@@ -156,13 +226,15 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
         share({ kind: "event", event });
       },
     }).catch(() => {
-      // The server refused the stream for good (the session ended, or a scope is missing): the screens read the
-      // server as they open, the next tab to lead tries again, and a pull of a timeline retries it (retryStream).
+      // The server refused the stream for good (the session ended, a scope is missing, or the timeline was turned
+      // off): the screens read the server as they open, the next tab to lead tries again, and a pull of a timeline
+      // retries it (retryStream).
       state("stopped");
     });
   };
   const receive = (message: SharedMessage) => {
-    route(data, message);
+    if (message.kind === "state") stream.setState(message.state);
+    else stream.route(message);
   };
   // Whether this tab reads a stream of its own (alone, or where the browser refused the lock), until it is refused.
   let reading = false;
@@ -174,17 +246,17 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
     });
   };
   if (tabs === null) {
-    readAlone(false);
+    readAlone(stream.missed);
     const unretry = onStreamRetry(data, () => {
-      if (streamStateOf(data) === "stopped") readAlone(true);
+      if (stream.state() === "stopped") readAlone(true);
     });
     return () => {
       stop.abort();
       unretry();
-      setStreamState(data, undefined);
+      stream.setState(undefined);
     };
   }
-  setStreamState(data, "connecting");
+  stream.setState("connecting");
   // Whether this tab leads the group, and so answers the tabs that ask for the state of its stream.
   let leading = false;
   // Whether this tab waits for the lead or holds it: a tab whose stream was refused gave the lead up and waits no more.
@@ -222,16 +294,16 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
   const unlisten = tabs.listen((message) => {
     if (!isStreamMessage(message)) return;
     if (message.kind === "ask") {
-      const state = streamStateOf(data);
+      const state = stream.state();
       if (leading && state !== undefined) tabs.post({ kind: "state", state } satisfies StreamMessage);
     } else if (message.kind === "retry") join(true);
     else receive(message);
   });
-  join(false);
+  join(stream.missed);
   // A retry brings every tab that gave the lead up back into the queue: the first to take it reads, and the others
   // follow it and take over when it goes, as before the refusal.
   const unretry = onStreamRetry(data, () => {
-    if (streamStateOf(data) !== "stopped") return;
+    if (stream.state() !== "stopped") return;
     tabs.post({ kind: "retry" } satisfies StreamMessage);
     join(true);
   });
@@ -242,8 +314,14 @@ export function startStream(data: AppData, deps: StreamDeps = {}): () => void {
     unretry();
     unlisten();
     tabs.close();
-    setStreamState(data, undefined);
+    stream.setState(undefined);
   };
+}
+
+/** Reads the stream of the public timeline of `kind` while the screen that calls it shows that timeline. */
+export function useTimelineStream(kind: PublicTimelineKind): void {
+  const data = useAppData();
+  useEffect(() => startTimelineStream(data, kind), [data, kind]);
 }
 
 /** What a tab puts into its own data, from its stream or from the leading tab's. */
@@ -251,14 +329,10 @@ type SharedMessage = Exclude<StreamMessage, { kind: "ask" | "retry" }>;
 
 /**
  * Puts what the stream says into the cache: new statuses of the home timeline or of a list, a deleted status, a
- * notification, the count of the notification requests, what the reader read on a device, a conversation of the direct messages, or a break;
- * and the state of the stream into the tab's own.
+ * notification, the count of the notification requests, what the reader read on a device, a conversation of the direct
+ * messages, or a break.
  */
-function route(data: AppData, message: SharedMessage): void {
-  if (message.kind === "state") {
-    setStreamState(data, message.state);
-    return;
-  }
+function route(data: AppData, message: Exclude<SharedMessage, { kind: "state" }>): void {
   if (message.kind === "gap") {
     receiveHomeGap(data);
     receiveListsGap(data);
@@ -293,6 +367,21 @@ function route(data: AppData, message: SharedMessage): void {
       // The announcements are read again as the shell lists them.
       break;
   }
+}
+
+/** Puts what the stream of the public timeline of `kind` says into the cache: a new status, a deleted one, or a break. */
+function routeTimeline(
+  data: AppData,
+  kind: PublicTimelineKind,
+  message: Exclude<SharedMessage, { kind: "state" }>,
+): void {
+  if (message.kind === "gap") {
+    receivePublicGap(data, kind);
+    return;
+  }
+  const { event } = message;
+  if (event.type === "update") receivePublicStatuses(data, kind, [event.status]);
+  else if (event.type === "delete") receiveDeletion(data, event.id);
 }
 
 /** Whether a message from another tab, which may run another version of the client (ADR-0028 §14), is one it reads. */
