@@ -113,6 +113,7 @@
     "payments*",
     "plugin_*",
     "pprof_listen",
+    "projection_verify_interval",
     "push_allowed_destinations",
     "relay_max_activities_per_hour",
     "remote_custom_emoji_max_bytes",

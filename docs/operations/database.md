@@ -303,7 +303,8 @@ From `v0.1.3` to `v0.4.0`, for example: the latest `v0.1.x`, then the latest `v0
 ## Checking and rebuilding projections
 
 Some tables are projections: the server derives them from the events and resources of their module (an account's restrictions from its
-moderation actions, say). The worker checks every projection once a day and corrects any difference it finds. To check or correct one by hand:
+moderation actions, say). With `projection_verify_interval` set, the worker checks every projection on that schedule and logs any
+difference it finds (counted by `my.projection.drifts`) without correcting it; by default it does not check. To check or correct one by hand:
 
 ```sh
 my projection list              # each projection with its module and tables

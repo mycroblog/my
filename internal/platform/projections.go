@@ -15,6 +15,7 @@ import (
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/projection"
@@ -23,6 +24,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/app/webhook"
+	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // projectionRepositories are the repositories whose modules' rebuild functions the projections
@@ -60,12 +62,27 @@ func (r *repositories) projectionRepositories() projectionRepositories {
 	}
 }
 
+// ProjectionDrifts is the my.projection.drifts metric: the verifications of projection.verify that
+// found a projection drifted from its sources, by projection, which the job reports and leaves.
+var ProjectionDrifts = kernel.Instrument{
+	Name: "my.projection.drifts", Unit: "{verification}", Description: "Verifications of the scheduled projection.verify that found a projection drifted from its sources, by projection.",
+	LabelKeys: []string{labelProjection},
+}
+
+const labelProjection = "my.projection"
+
 // setUpProjections builds the service of `my projection` and registers the projection.verify
-// job. Each projection runs its module's rebuild function; the order is
+// job, which runs on a schedule only with projection_verify_interval. Each projection runs its module's rebuild function; the order is
 // the order of `my projection list` and of the job.
-func (a *App) setUpProjections(store projection.Store, r projectionRepositories) {
+func (a *App) setUpProjections(cfg *config.Config, store projection.Store, r projectionRepositories) {
+	drifts := kernel.MeterOrNop(a.Meter).Counter(ProjectionDrifts)
 	a.Projections = projection.NewService(projection.Options{
 		UnitOfWork: a.UnitOfWork, Store: store, Logger: a.Logger, Jobs: a.Jobs,
+		// The worker verifies them on a schedule only when the operator asks for one (#3534).
+		VerifyInterval: cfg.ProjectionVerifyInterval,
+		OnDrift: func(ctx context.Context, name string) {
+			drifts.Add(ctx, 1, kernel.NewLabels(labelProjection, name))
+		},
 		Projections: []projection.Projection{
 			{
 				Name: "instance", Module: "instance",
