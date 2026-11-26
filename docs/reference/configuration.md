@@ -127,6 +127,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`kek_previous`](#kek_previous) | `MY_KEK_PREVIOUS` | none | no | yes |
 | [`kms_key`](#kms_key) | `MY_KMS_KEY` | none | when `key_manager` is `gcpkms` or `awskms` | no |
 | [`kms_key_previous`](#kms_key_previous) | `MY_KMS_KEY_PREVIOUS` | none | no | no |
+| [`instance_settings_cache_ttl`](#instance_settings_cache_ttl) | `MY_INSTANCE_SETTINGS_CACHE_TTL` | `10s` | no | no |
 | [`kms_dek_cache_ttl`](#kms_dek_cache_ttl) | `MY_KMS_DEK_CACHE_TTL` | `10m` | no | no |
 | [`kms_dek_cache_entries`](#kms_dek_cache_entries) | `MY_KMS_DEK_CACHE_ENTRIES` | `1024` | no | no |
 | [`mail`](#mail) | `MY_MAIL` | `none` | no | no |
@@ -1082,6 +1083,14 @@ Previous keys of the same KMS, comma-separated, each in the format of `kms_key`.
 
 - Environment variable: `MY_KMS_KEY_PREVIOUS`
 - Default: none
+- Required: no
+
+### `instance_settings_cache_ttl`
+
+How long each process keeps the instance settings it read, as a Go duration, so that it reads them about once per this period instead of on every use. A change of the settings shows at once in the process that made it, and within this period in the others. A long period suits an instance whose settings rarely change; a new one, still being set up, wants a short one. `0` reads them every time.
+
+- Environment variable: `MY_INSTANCE_SETTINGS_CACHE_TTL`
+- Default: `10s`
 - Required: no
 
 ### `kms_dek_cache_ttl`

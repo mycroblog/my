@@ -14,6 +14,7 @@
 - アダプタ選択は明示的なキー（例: `MY_DATABASE=postgres`, `MY_DATABASE_URL=...`, `MY_QUEUE=cloudtasks`, `MY_BLOB=s3`）。URL スキームからの推測はしない。
 - 秘密情報は環境変数 / シークレットストア（Secret Manager, Secrets Manager / SSM, Kubernetes Secret）から。Docker と Kubernetes の secret をファイルで渡せるよう `<NAME>_FILE`（ファイルのパスから読む）も受け付ける。設定ファイルには書けない。
 - この設定と、DB に持つインスタンス設定は同じキーを持たず、どちらも他方を上書きしない。再起動で反映するデプロイの構成（アダプタ・接続先・ホスト名・秘密情報）はこの設定に、運営者が稼働中に変える方針と文章はインスタンス設定に置く。1 つの値の出どころを 1 つにして、どちらが効いているかを迷わせないため。
+- 各プロセスはインスタンス設定を `instance_settings_cache_ttl`（既定 10 秒）の間持つ。変更は他のプロセスに最大この間遅れて届く。
 
 ### 2. パッケージング
 

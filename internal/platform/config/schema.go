@@ -724,6 +724,13 @@ var schema = []field{
 		},
 	},
 	{
+		key:   "instance_settings_cache_ttl",
+		doc:   "How long each process keeps the instance settings it read, as a Go duration, so that it reads them about once per this period instead of on every use. A change of the settings shows at once in the process that made it, and within this period in the others. A long period suits an instance whose settings rarely change; a new one, still being set up, wants a short one. `0` reads them every time.",
+		def:   "10s",
+		check: checkNonNegativeDuration,
+		set:   func(c *Config, v string) { c.InstanceSettingsCacheTTL, _ = time.ParseDuration(v) },
+	},
+	{
 		key:   "kms_dek_cache_ttl",
 		doc:   "How long the server keeps a data-encryption key that the KMS or plugin decrypted, as a Go duration, so that a secret in use reaches it about once per this period and process. `0` disables the cache. Not used when `key_manager = local`.",
 		def:   "10m",
