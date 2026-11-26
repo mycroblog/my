@@ -1,13 +1,13 @@
-# ADR-0101: 通話の接続と SFU: 方式のポート・P2P のシグナリング・STUN / TURN・LiveKit と Sora
+# ADR-0101: 通話の接続と SFU: 方式のポート・P2P のシグナリング・STUN / TURN・my の SFU
 
 - Status: Accepted
 - Date: 2026-10-26
 - Deciders: @rosylilly
-- Issue: #1349, #1350, #2863
+- Issue: #1349, #1350, #2863, #3559
 
 ## Decision（決定）
 
-通話の方式はインスタンスで 1 つ（`voice = off / p2p / livekit / sora`）で、全ルームが同じ方式を使う。§1〜§9 が方式に共通の部分と P2P、§10〜§16 が SFU（LiveKit のセルフホストと LiveKit Cloud、ライセンスを買うセルフホストの Sora と Sora Cloud）を決める。
+通話の方式はインスタンスで 1 つ（`voice = off / p2p / sfu`）で、全ルームが同じ方式を使う。§1〜§9 が方式に共通の部分と P2P、§10〜§16 が my に組み込んだ音声だけの SFU を決める。
 
 ### 1. 設定
 
@@ -15,9 +15,8 @@
 
 | キー | 値 | 既定 |
 | --- | --- | --- |
-| `voice` | `off` / `p2p` / `livekit` / `sora` | `off` |
-| `voice_p2p_max_participants` | P2P のルームの人数の上限（2〜50） | `10` |
-| `voice_sfu_max_participants` | SFU のルームの人数の上限（0 は上限なし） | `10` |
+| `voice` | `off` / `p2p` / `sfu` | `off` |
+| `voice_max_participants` | ルームの人数の上限の最大（2〜500。`p2p` では 50 まで）。ルームの上限（ADR-0100 §3）はこれを超えない | `10` |
 | `voice_max_room_duration` | 1 ルームの最長時間（0 は上限なし） | `4h` |
 | `voice_max_open_rooms` | 同時に開けるルームの数（0 は上限なし） | `10` |
 | `voice_stun_urls` | STUN の URL の一覧（`stun:` / `stuns:`） | なし |
@@ -26,17 +25,21 @@
 | `voice_turn_coturn_secret` | coturn の `static-auth-secret`（秘密） | なし |
 | `voice_turn_cloudflare_key_id` / `voice_turn_cloudflare_api_token` | Cloudflare の TURN キーの ID と API トークン（トークンは秘密） | なし |
 | `voice_turn_credential_ttl` | TURN の資格情報の有効期間（`cloudflare` では 48 時間まで） | `6h` |
-| `voice_ice_transport_policy` | `all` / `relay`（TURN 経由だけ） | `all` |
+| `voice_ice_transport_policy` | `all` / `relay`（TURN 経由だけ。`p2p` だけ） | `all` |
+| `voice_sfu_udp_port` / `voice_sfu_tcp_port` | SFU のノードが媒体を受ける UDP（mux）と ICE-TCP のポート（§15） | `7882` / `7881` |
+| `voice_sfu_public_ip` | SFU のノードの公開の IP（NAT の内側のとき） | なし（ノードの IP） |
+| `voice_sfu_public_url` | クライアントがつなぐノードの `wss:` の URL（§11） | サーバーの公開の URL から |
+| `voice_sfu_node_capacity` | ノード 1 台の容量（参加者の数。§14） | `500` |
 
 - `voice = off` のとき、通話の API は `404` を返し、Web は通話の画面と入口を出さない（ADR-0100 §2）。起動時に他の `voice_*` は検査しない。
 - 起動時の検査（失敗したら起動しない）: `voice_ice_transport_policy = relay` で `voice_turn = none` は誤り（TURN がないと繋がらない）。`voice_turn = coturn` で URL か秘密がない、`cloudflare` でキーかトークンがない、または `voice_turn_credential_ttl` が 48 時間を超えるのも誤り。
   `voice = p2p` で STUN も TURN もないときは警告をログに出す（同じ LAN の中でしか繋がらない）。
-- SFU（`livekit` / `sora`）のときの `voice_stun_urls`・`voice_turn*`・`voice_ice_transport_policy` の扱いは §12、SFU の接続先の設定は §14。
+- `voice = sfu` で `voice_ice_transport_policy = relay` は誤り、`voice = p2p` で `voice_max_participants` が 50 を超えるのも誤り（§15）。`role = sfu` で `voice` が `sfu` でないのも誤り（§10）。
 - 上限は §1 の設定で、ADR-0100 §5・§6 が評価する（参加の `409`、`voice.sweep` の `time_limit`、開く操作の `409`）。
 
 ### 2. 方式のポート
 
-`internal/app/voice` に置く。型は標準ライブラリだけで、SDK の型を出さない。adapter は `internal/adapter/voice/<name>`（`p2p`、§10 の `livekit`・`sora`、テスト用の `fake`）。契約は `testkit.VoiceTransportContract`。
+`internal/app/voice` に置く。型は標準ライブラリだけで、SDK の型を出さない。adapter は `internal/adapter/voice/<name>`（`p2p`、§13 の `sfu`、テスト用の `fake`）。契約は `testkit.VoiceTransportContract`。
 形は spike #1347 のレポート（[ポートの形の案](https://github.com/mycroblog/my/issues/1347#issuecomment-6406319607)）の差を吸収するように決める。
 
 ```go
@@ -49,9 +52,8 @@ type Transport interface {
     // Grant returns what the client of a participant session needs to connect.
     // canSpeak is whether the session may publish audio now.
     Grant(ctx context.Context, room RoomRef, session Session, canSpeak bool) (Grant, error)
-    // SetSpeaking allows or stops the audio of a session. Reconnect reports that the
-    // client must connect again with a new grant for the change to take effect.
-    SetSpeaking(ctx context.Context, room RoomRef, session Session, canSpeak bool) (reconnect bool, err error)
+    // SetSpeaking allows or stops the audio of a session.
+    SetSpeaking(ctx context.Context, room RoomRef, session Session, canSpeak bool) error
     // Mute stops the audio of a session; Unmute lifts it when the participant turns the
     // microphone on again.
     Mute(ctx context.Context, room RoomRef, session Session) error
@@ -65,31 +67,16 @@ type Transport interface {
 }
 
 type Capabilities struct {
-    ServerEnforced  bool // false for p2p: speaking is enforced by the relay and the peers (§4)
-    ConnectCallback bool // the media server asks before every connect (ConnectAuthorizer)
-    Events          bool // the media server sends events (EventSource)
+    ServerEnforced bool // false for p2p: speaking is enforced by the relay and the peers (§4)
 }
 
 type Grant struct {
-    Kind      string            // "p2p", "livekit", "sora"
-    URL       string            // the SFU endpoint; empty for p2p
-    Token     string            // the SFU access token; empty for p2p
-    Options   map[string]string // method-specific options for the client (§12)
-    ICE       []ICEServer       // STUN / TURN servers with short-lived credentials
+    Kind      string      // "p2p", "sfu"
+    URL       string      // the wss: URL of the node that holds the room (§11); empty for p2p
+    Token     string      // the single-use ticket for that node (§11); empty for p2p
+    ICE       []ICEServer // STUN / TURN servers with short-lived credentials
     RelayOnly bool              // iceTransportPolicy = "relay"
     ExpiresAt time.Time         // the client asks for a new grant before this
-}
-
-// ConnectAuthorizer is implemented by a transport whose media server asks before every
-// connect; decide applies the room domain (bans, roles, one room per account).
-type ConnectAuthorizer interface {
-    AuthorizeConnect(ctx context.Context, header http.Header, body []byte, decide func(ConnectAttempt) ConnectDecision) (status int, response []byte, err error)
-}
-
-// EventSource is implemented by a transport whose media server sends events.
-type EventSource interface {
-    // ParseEvents verifies and decodes one delivery of events.
-    ParseEvents(ctx context.Context, header http.Header, body []byte) ([]Event, error)
 }
 ```
 
@@ -97,12 +84,10 @@ type EventSource interface {
   セッションの ID は `KeyValueStore` のハートビートの値のキーで、DB には書かない。SFU の利用者の識別子もセッションの ID である（§12）。
 - **呼び出しの時機**: ポートの呼び出しは外部の I/O になりうるので、トランザクションの中では呼ばない。ルームの変更をコミットしたら、outbox のジョブ `voice.apply`（冪等。キーは（ルーム, 変更のイベント））が `Open`・`SetSpeaking`・`Mute`・`Remove`・`Close` を呼ぶ（[ADR-0004](0004-job-queue-abstraction.md)）。
   `Grant` は参加と更新の要求の中で、`Unmute` はマイクの操作（§6）の中で、トランザクションの外で呼ぶ。
-- **再接続**: `SetSpeaking` が `reconnect` を返したら（接続の途中で役割を変えられない方式）、`voice.apply` はそのセッションのストリームに新しい `Grant` を `grant` のイベント（`reconnect: true`）で送り、クライアントは入り直す。
 - **照合**: `Sessions` は ADR-0100 §6 の `voice.sweep` が開いたルームごとに呼び、ルームのドメインにいてメディアの経路にいないセッションを退出させ（ハートビートが生きていても）、メディアの経路にいてドメインで退出・禁止のセッションを `Remove` する。
-  イベント（`EventSource`）は照合を早めるだけで、届くことを前提にしない。受け口とイベントの扱いは §13。
-- **P2P の adapter**: `Capabilities` はすべて偽。`Grant` は §5 の ICE の設定だけを返す。`Open`・`SetSpeaking`（`reconnect` は偽）・`Mute`・`Unmute`・`Remove`・`Close` はメディアを持たないので何もしない。`Sessions` はハートビートの値を返す。
+- **P2P の adapter**: `Capabilities` はすべて偽。`Grant` は §5 の ICE の設定だけを返す。`Open`・`SetSpeaking`・`Mute`・`Unmute`・`Remove`・`Close` はメディアを持たないので何もしない。`Sessions` はハートビートの値を返す。
   P2P の強制は §4 のシグナリングの中継と §3 のストリームのイベントが行う。
-- 上のコードは決定の形で、コメントと任意のインターフェース（重複接続の `SessionDeduplicator`。§12）を含む全体は `internal/app/voice/transport.go` にある。
+- **SFU の adapter** は §13。
 - adapter の失敗は `voice.apply` が再試行する。再試行を尽くしたら dead job に残し、ルームの状態（DB）は変えない（ルームのドメインが正で、メディアの経路が後から従い、`voice.sweep` の照合が残りを直す）。
 
 ### 3. ルームのストリーム
@@ -118,7 +103,6 @@ type EventSource interface {
   | `reaction` | `{participant, emoji}` | 全員（送った人とブロックの関係にある人を除く。ADR-0100 §10） |
   | `signal` | `{from, kind, sdp?, candidate?}`（§4） | 宛先のセッション |
   | `muted` | `{by}` | ミュートされたセッション |
-  | `grant` | `{grant, reconnect}`（話せるようになって方式が入り直しを要するときなど。§2） | そのセッション |
   | `removed` / `replaced` / `ended` | `{reason}`。送った後に閉じる | そのセッション / 全員 |
 
 - 開くと `: connected` と最初の `state` を送り、その後 15 秒ごとに `: heartbeat` のコメント行を送る。ハートビートのたびにアクセストークンを照合し直す（いまのストリームと同じ）。
@@ -131,7 +115,7 @@ type EventSource interface {
 - `state` は 1 秒に 1 回までにまとめる（同じルームの `voice_room` の知らせが続いても、最後に読み直した状態を 1 回送る）。
 - **再接続**: 切れたら、クライアントは同じセッションで開き直し、最初の `state` で追いつく。`Last-Event-ID` での再開はしない。ハートビートの値（45 秒、ADR-0100 §6）が切れる前に戻れば、参加は続く。
   Cloud Run のリクエストの時間切れは、この再接続で吸収する。
-- 通話の間は 1 人につき SSE が 2 本になる。
+- P2P の通話の間は 1 人につき SSE が 2 本になる。SFU では SSE と、ノードとの WebSocket（§11）が 1 本ずつになる。
 
 ### 4. P2P のシグナリング
 
@@ -175,13 +159,13 @@ ADR-0100 §14 の形に、接続のための次の操作を加える（細部は
 - `POST /voice/rooms/{id}/participation` は `{session, grant}` を返す。クライアントはそのセッションでストリームを開く。
 - `POST /voice/rooms/{id}/heartbeat`（`{session}`、15 秒ごと）: ADR-0100 §6 のハートビート。応答は `204`。ストリームを開いているだけではハートビートにしない（中継の装置がバッファしてストリームの書き込みが失敗しないことがあり、端末が生きていることを確かめられないため）。
 - `POST /voice/rooms/{id}/mic`（`{session, on}`）: マイクのオン・オフ。DB に書かず、`voice_mic` の知らせで配る。ミュートさせられた後にオンにするときは、`Transport.Unmute` を呼んでから配る（§2）。
-- `POST /voice/rooms/{id}/grant`（`{session}`）: 資格情報の取り直し（§5）。
+- `POST /voice/rooms/{id}/grant`（`{session}`）: 資格情報の取り直し（§5）。SFU では、つなぎ直し・移動・ノードの喪失（§11・§14）のときの新しいノードの URL とチケットも、これで得る。
 
 ### 7. クライアントの実装の置き場所と、ブラウザの前提
 
 - 音声を運ぶものは `@my/rtc`（[ADR-0025](0025-web-client-stack.md) §2）に置く。mycroblog を知らない `RoomSession` が、接続・マイクの公開・ミュート・出力の選択と、参加者・発話・通信の品質のイベントを持つ。
-  実装は Web の 3 つ（P2P、LiveKit、Sora）で、P2P のシグナリングはポートとして外から渡す。P2P はブラウザの WebRTC の API だけを使い、依存を足さない。SFU のブラウザの SDK は §15。
-- ネイティブの実装は、platform の Tauri の実装が Tauri のプラグインから差し出す（LiveKit の Swift / Kotlin / Rust、Sora の iOS / Android / C++ の SDK）。**P2P もネイティブで実装できる設計にする**（libwebrtc を組み込む）。v0.1.0 では Tauri のアプリを作らない。
+  実装は Web の 2 つ（P2P と SFU）で、どちらもブラウザの WebRTC の API だけを使い、依存を足さない。P2P のシグナリングはポートとして外から渡し、SFU はノードとの WebSocket（§11）を自分で持つ。
+- ネイティブのアプリ（別のリポジトリ）は、どちらの方式も libwebrtc と WebSocket だけで実装できる。v0.1.0 では作らない。
   iOS では WKWebView と CallKit が両立せず（Apple の DTS、Developer Forums の thread 767949、2026-11-12 に確認）、Android で画面のロックを越える通話には foreground service と Jetpack の Telecom が要る（Android の文書、2026-11-12 に確認）。画面のロックや電話の着信を越えて続く通話には、ネイティブの音声が要る。
 - 通話の安定（回線が替わったときの ICE の再起動、つなぎ直し、デバイスの切り替え）は `RoomSession` の実装が持つ。`app-features` の通話は、ホスト・挙手・発話の許可などルームの状態だけを持つ。通話は、シェルが残すスロットに出て、画面を移っても続く。
 - 実装は通信の品質（RTT・ジッタ・パケットロス）を ADR-0167 の計測に送る。
@@ -198,147 +182,113 @@ ADR-0100 §14 の形に、接続のための次の操作を加える（細部は
 | --- | --- |
 | 1 プロセス（SQLite、`stream = hub`） | すべてプロセスの中で動く。`KeyValueStore` は `db` |
 | 複数プロセス | `stream` を `postgres` / `valkey` / `sns` / `pubsub` にする（いまのストリームと同じ）。`stream = hub` で `role` が `all` 以外のときは、起動時の警告に通話を含める |
-| Cloud Run | ストリームはリクエストで、開いている間 CPU が割り当てられる。リクエストの時間切れで切れたら §3 の再接続 |
+| Cloud Run | ストリームはリクエストで、開いている間 CPU が割り当てられる。リクエストの時間切れで切れたら §3 の再接続。`role = sfu` は動かせない（§15） |
+| SFU のノード（`role = sfu`） | `stream` と `KeyValueStore` を web と共有する（§13・§14）。公開の IP・UDP と TCP のポート・ホスト名と TLS が要る |
 
 - P2P では、音声はこのサーバーを通らない（TURN を使うときは TURN のサーバーを通る）。サーバーの負荷はシグナリング・ハートビート・ストリームだけである。
 
 ### 9. 運営者の文書と計測
 
-- `docs/operations/` に通話の文書を置く: 方式の選び方、P2P の人数と回線の目安、STUN / TURN の設定（coturn・Cloudflare）、`relay` の意味、§4 の強制の限界、構成ごとの注意（§8）。`tools/agentkit/context-map.yaml` の `voice` の項目の `userdocs` にする。
+- `docs/operations/` に通話の文書を置く（SFU の分は §16）: 方式の選び方、P2P の人数と回線の目安、STUN / TURN の設定（coturn・Cloudflare）、`relay` の意味、§4 の強制の限界、構成ごとの注意（§8）。`tools/agentkit/context-map.yaml` の `voice` の項目の `userdocs` にする。
 - 計測（[ADR-0055](0055-service-observability.md)）: 開いたルームの数・参加者の数（Gauge）、中継したシグナリングと拒んだシグナリング（理由ごと）・TURN の資格情報の発行と失敗（Counter）。名前は ADR-0055 の規則で実装のときに決め、`agentkit docs inventory` の文書に載せる。
 
-### 10. SFU: 置き場所とビルド
+### 10. SFU: 置き場所と起動
 
-- adapter は `internal/adapter/voice/livekit` と `internal/adapter/voice/sora`。Webhook の受け口は新しい `internal/interface/voice`（client API の OpenAPI に載せない。事業者が呼ぶ経路で、利用者は呼ばない。[ADR-0074](0074-payment-provider-port.md) の `internal/interface/payments` と同じ扱い）。
-- ビルドタグ `no_voice_livekit`・`no_voice_sora` で外せる。外したビルドで `voice` にその値を設定すると、起動時に `config.ExcludedError` で止まる（`no_payments_stripe` と同じ形）。
-- HTTP のクライアントは adapter が持つ専用のもの（タイムアウト 5 秒）。SFU は運営者が設定した宛先で、セルフホストの SFU はプライベートの IP にありうるので、SSRF の防御の `kernel.HTTPClient` は通さない（AGENTS.md の「運営者が設定した事業者の API」の規則）。`http.DefaultClient` は使わない。
+- SFU は my の中にあり、外部のメディアサーバーを使わない。扱うのは音声（Opus）だけで、映像・画面の共有・配信は考えない（配信を作るなら別の仕組みにする）。
+- 役割に `sfu` を足す（`all` / `web` / `worker` / `sfu`）。`role = sfu` のプロセスは §11 の WebSocket と媒体だけを受け、ジョブを実行しない。`all` は 1 プロセスで SFU も動かす。
+- **SFU が動くのは `voice = sfu` のときだけ**。それ以外の値では、どの役割でも Pion・UDP と TCP の受け口・ノードの登録・WebSocket の受け口を作らない。`role = sfu` で `voice` が `sfu` でなければ起動しない。
+- 依存は `pion/webrtc` v4（MIT）と、WebSocket の `coder/websocket`（ISC）（確認日 2026-11-26: 最新の版は v4.2.29 と v1.8.15）。ビルドタグ `no_voice_sfu` で外せ、外したビルドで `voice = sfu` にすると起動時に止まる。
 
-### 11. SFU: サーバー側の呼び出し
+### 11. SFU: 接続とシグナリング
 
-- SDK を使わず、`net/http` と自前の HS256 の JWT で、LiveKit の Twirp（HTTP + JSON）と Sora の HTTP API を呼ぶ。JWT は HS256 だけで、`crypto/hmac` と `encoding/json` で書く（数十行）。`server-sdk-go` は `CGO_ENABLED=0` でビルドできるが、RoomService のクライアントだけで 311 のパッケージ（pion/webrtc、moby/buildkit、prometheus など）を引き、バイナリが約 22 MB になる（spike の手元の計測）ので使わない。
-- LiveKit の Twirp は `POST <api_url>/twirp/livekit.RoomService/<Method>`、`Authorization: Bearer <JWT>`、JSON。Sora は `POST <api_url>/`（`x-sora-target: Sora_20xxxxxx.<Method>`）、Sora Cloud は `POST https://api.sora-cloud.shiguredo.app/sora-api` に `Authorization: Bearer <API キー>`。
-- 契約テスト `testkit.VoiceTransportContract` を、LiveKit は `livekit-server --dev`（CI のコンテナ）と `httptest` の fake の両方で、Sora は `httptest` の fake だけで回す。本物での確認は利用する運営者に任せる。fake は spike のレポートの要求と応答の形に沿う。
+- **入口**: `voice = sfu` の参加と取り直し（§6）の応答の `grant` は、ルームを持つノードの `wss://` の URL と、使い捨てのチケット（30 秒、`KeyValueStore`）を返す。ブラウザは WebSocket にヘッダーを付けられないので、チケットは URL のクエリで渡す。
+  ノードはチケットを消費して（ルーム, セッション）を得る。期限切れ・使用済み・別のノード宛てのチケットは拒む。
+- **シグナリングはノードとの WebSocket で直接行う**。web は媒体に関わらない。ルームの状態は §3 のストリームのまま。
+- **offer はサーバーだけが出す**（glare がない）。1 セッションに `RTCPeerConnection` は 1 本。最初の offer は、本人のマイクを受ける 1 本と、話者 1 人ごとの送信の 1 本を持つ。話者の顔ぶれが変わったときだけ再 offer し、マイクのオン・オフや無音では再 offer しない。
+- **メッセージ**は版（`v`）のある JSON で、client API の OpenAPI にスキーマとして載せる。TypeScript もネイティブのアプリもそこから型を作る。種類は `offer`・`answer`・`candidate`・`restart`（クライアントが ICE の再起動を求める）・`speaking`（§12）・`migrate`（§14）・`error`。
+  ネイティブのアプリは libwebrtc と WebSocket だけで実装できる。
+- **再接続**: 回線が替わったら、クライアントは `restart` を送り、サーバーは ICE の再起動の offer を出す。PeerConnection が生きたまま WebSocket が切れたら、取り直しで新しいチケットを得て同じセッションでつなぎ直す。ノードが落ちたら §14。
 
-### 12. SFU: ポートの各操作
+### 12. SFU: 転送と強制
 
-| 操作（§2） | LiveKit | Sora |
-| --- | --- | --- |
-| `Capabilities` | `ServerEnforced`・`Events` | `ServerEnforced`・`ConnectCallback`・`Events` |
-| `Open` | `CreateRoom`（名前はルームの ID、`max_participants` は `voice_sfu_max_participants`、`empty_timeout`・`departure_timeout` は短く）。冪等 | 何もしない（最初の接続でセッションができる） |
-| `Grant` | アクセストークン（JWT、寿命 60 秒。`roomJoin`・`room`・`canSubscribe: true`・`canPublishData: false`。話者は `canPublish: true` と `canPublishSources: ["microphone"]`、聞き手は `canPublish: false`）と、クライアント向けの URL | my が署名した寿命 60 秒の参加の値（ルーム・セッション・役割）を `metadata` に入れさせる。Sora Cloud は加えて Cloud の `access_token`（JWT、HS256、`channel_id`・`role`・`exp`）。`Options` に `role`（`sendrecv` / `recvonly`）と `channel_id` |
-| `SetSpeaking`（許可） | `UpdateParticipant` の `permission`。再接続なし（`reconnect` は偽） | 役割を変えられないので `reconnect` を真で返す。クライアントは `sendrecv` の新しい `Grant` で入り直す（聞き手は受信のみで入り、聞くだけの人にマイクの許可を求めず上りの帯域も使わない） |
-| `SetSpeaking`（取り消し） | `UpdateParticipant` で `canPublish: false`（公開中のトラックは自動で非公開になる） | 転送フィルター（そのコネクションの `audio` を `block`）ですぐ止め、`reconnect` を真で返して `recvonly` で入り直させる |
-| `Mute` | `GetParticipant` でトラックを引き、`MutePublishedTrack(muted: true)` | 転送フィルターでそのコネクションの音声を `block` |
-| `Unmute` | 何もしない（本人がクライアントでオンにする。サーバーのミュートの後も、本人のミュートの解除の要求はそのまま通る） | 転送フィルターを消す |
-| `Remove` | `RemoveParticipant` | `DisconnectConnection` |
-| `Close` | `DeleteRoom` | `TerminateSession` |
-| `Sessions` | `ListParticipants` | `ListChannelConnections` |
+- Opus をそのまま転送する。変換・ミキシング・帯域の推定・NACK はしない。サーバーの offer で DTX と帯域内の FEC を有効にする。
+- **強制は転送の段で行う**。話せない（ADR-0100 §4 で話者でない）セッションと、ミュートさせられたセッションの RTP は、SDP が何であっても捨てる。退出・退出させられたセッションは接続を切る。P2P の結託の限界（§4）はない。
+- **無音を捨てる**: クライアントが付ける音量の拡張ヘッダー（RFC 6464）で無音のパケットを捨て、音を出している話者はすべて転送する。捨てた分の欠けは、受け手には DTX と同じに見えるよう連番を詰める。
+  転送の量は「音を出している話者 × 参加者」で、上限はルームの人数の上限（ADR-0100 §3）が抑える。
+- **発話の表示**: 同じ音量からノードが話している人を求め、WebSocket の `speaking` で 250 ms に 1 回まで送る。
+- **遅い受け手がルームを止めない**: 受け手ごとの送信は長さに上限のある列を通し、あふれたら捨てて数える。転送の経路でルーム全体のロックを取らない。
 
-- **Sora の転送フィルター**: 1 人の送り手の音声をチャネルの全員に対して止めるのは、チャネル単位のフィルター（`CreateChannelForwardingFilter`、`action: block`）の 1 つの規則に `{"field": "connection_id", "operator": "is_in", "values": [送り手]}` と `{"field": "kind", "operator": "is_in", "values": ["audio"]}` を AND で並べる。
-  `connection_id` は送り手のコネクションを指す（確認日 2026-10-26: [転送フィルター](https://sora-doc.shiguredo.jp/FORWARDING_FILTER.html)）。`allow` は `block` より優先されるので、my は `allow` の規則を作らない。
-- **LiveKit のミュートの解除**: `MutePublishedTrack(muted: true)` はサーバーがトラックを止めて本人に知らせるだけで、本人のクライアントからのミュートの解除の要求は制限なく通る（確認日 2026-10-26: `livekit/livekit` のコミット `385aa40` の `pkg/rtc/participant.go` の `SetTrackMuted` と `pkg/rtc/signalling/signalhandler.go`）。
-  サーバーからの解除（`muted: false`）は既定で無効（`enable_remote_unmute`）なので、my は使わない。
-- **SFU の利用者の識別子**: §2 のセッションの ID を使う（LiveKit の `identity`、Sora の `client_id`）。アカウントの ID は SFU に渡さない。同じアカウントの別の端末は別のセッションで、my が前のセッションを `Remove` する（ADR-0100 §5）。
-  禁止や退出の後に古いトークンで入ってきた接続は、識別子が生きたセッションでないので、§13 の照合で切れる。
-- **Sora の入り直しと `client_id`**: 役割を変える入り直し（§12）は同じセッション、つまり同じ `client_id` で行う。同じ `client_id` の接続が重なったときの扱いは Sora の設定 `default_duplicate_client_id`（`allow` / `evict`、既定は `allow`）で決まり、
-  `evict` なら新しい接続を受けて古い接続を切る（確認日 2026-10-26: [セッションウェブフック](https://sora-doc.shiguredo.jp/SESSION_WEBHOOK.html)、[sora.conf](https://sora-doc.shiguredo.jp/SORA_CONF.html)。文書の版 2026.1.3）。
-  運営者の文書はセルフホストで `evict` を勧める。`allow` のとき（と、この設定を変えられるか文書で確かめられない Sora Cloud）は、my が同じ `client_id` の新しい接続の `connection.created` を受けたときと §13 の照合で、古い方の接続を `DisconnectConnection` で切る。
-  新しい接続ができてから古い接続を切るので、途切れは新しい接続が音声を流し始めるまでの間になる。
-- **音声だけ**: LiveKit はトークンの `canPublishSources: ["microphone"]`、Sora は認証 Webhook の応答の `video: false`・`audio: true`・`audio_codec_type: "OPUS"`。運営者の文書は、セルフホストの LiveKit の `room.enabled_codecs` を音声だけにし、`room.auto_create` を `false` にすることを勧める（my の外でルームを作らせない）。
-- **SFU の TURN**: SFU のときの STUN / TURN は SFU が持つもの（LiveKit の組み込みの TURN、Sora の TURN）を使い、`Grant.ICE` は空、`voice_stun_urls`・`voice_turn*`・`voice_ice_transport_policy` は使わない（起動時に設定されていれば警告）。
-  SFU の構成では利用者の IP は SFU にだけ見え、他の参加者には見えない。
+### 13. SFU: ルームの状態への追従
 
-### 13. SFU: 参加の認可・イベント・照合
+- ルームのドメインが正で、ノードはそれに従う（§2）。ノードは自分が持つルームの `voice_room`・`voice_mute` の知らせ（§3）を受けるたびと、定期的に（`voice.sweep` と同じ 1 分ごと）、ルームの状態を読み直して、話せる人・ミュート・いなくなった人・終わったルームを当てはめる。
+  知らせが落ちても、次の読み直しで直る。ノードの間の新しい呼び出しは作らない。
+- 方式のポート（§2）の `sfu` の adapter は、`Open` でルームを置き（§14）、`Grant` で §11 のチケットを出し、`Close` でルームを外す。`SetSpeaking`・`Mute`・`Unmute`・`Remove` は、ノードが状態を読み直すので何もしない。`Sessions` は、ノードが報告するつながっているセッションを返す。
 
-- **Sora の認証 Webhook**（`ConnectAuthorizer`）: `POST /voice/webhooks/sora/auth`。Sora が接続のたびに呼び、my は参加の値の署名と期限、セッションが生きていること、ルームで禁止されていないこと、`role` が `sendrecv` なら話者であること（ADR-0100 §4）、人数の上限を確かめ、`allowed` と §12 の音声の設定と `client_id` を返す。
-  拒むときは `{"allowed": false, "reason": …}`（100 バイトまで）。応答の既定のタイムアウトは 5 秒（Sora Cloud は 10 秒）なので、判定は投影と KV の読み出しだけにし、外部の I/O をしない。冷えた起動で間に合わないことがある（運営者の文書）。
-- **イベント**（`EventSource`）: LiveKit は `POST /voice/webhooks/livekit`（`Authorization` の JWT を API シークレットで検証し、JWT の `sha256` と本文の SHA-256 を定数時間で比べる）。Sora は `POST /voice/webhooks/sora/events`。
-  検証した参加・退出・ルームの終了は、イベントの `id` を冪等キーにした outbox のジョブ `voice.apply_media_event` に積む。ジョブは、参加が生きたセッションでなければ（禁止・退出の後・未知）`Remove` し、退出ならそのセッションのハートビートの値を消して ADR-0100 §6 の切断として扱う。受信の行は DB に残さない（イベントは照合を早めるだけ。§2）。
-- **照合**: ADR-0100 §6 の `voice.sweep`（1 分ごと）が、開いたルームごとに `Sessions` を呼ぶ（§2）。開いたルームの数は運営者の上限で抑えられ、呼び出しは 1 ルーム 1 回。
-- **Webhook が届かないとき**: LiveKit の Webhook は、送る前にキューで 30 秒を超えた知らせを捨て、送るときは失敗したら最大 4 回、1〜30 秒の間隔で再送する（確認日 2026-10-26: `livekit/protocol` のコミット `b20af9b` の `webhook/resource_url_notifier.go` の `MaxAge = 30s`、
-  `go-retryablehttp` v0.7.8 の既定 `RetryMax = 4`・`RetryWaitMin = 1s`・`RetryWaitMax = 30s`）。my が冷えた起動で応えられないと知らせは失われうるので、照合が正である。
-- **セルフホストの LiveKit の再入室**: `RemoveParticipant` はセルフホストではトークンを失効させない（失効の処理は LiveKit Cloud だけ）。接続中のクライアントはサーバーから 5 分ごとに新しいトークンを受け取り、その寿命は 10 分か元のトークンの残りの長い方である。
-  退出させた人は、手元の最新のトークンで最大でおよそ 10 分、入り直せる（確認日 2026-10-26: `livekit/livekit` のコミット `385aa40` の `pkg/service/roommanager.go` の `RemoveParticipant`・`refreshToken`・`tokenRefreshInterval = 5m`・`tokenDefaultTTL = 10m`）。
-  入ってきたら参加の Webhook（`participant_joined`）か 1 分ごとの照合で見つけ、すぐ切る。その間、数秒から 1 分ほど音が聞こえうることを運営者の文書に書き、厳密さが要るなら LiveKit Cloud を勧める（LiveKit Cloud の `RemoveParticipant` はトークンをすぐ失効させる）。
+### 14. SFU: 配置・容量・drain・ノードの喪失
 
-### 14. SFU: 設定と守り方
+- **登録**: ノードは `KeyValueStore` に、公開の URL・容量・予約の合計・つながっている数・drain 中かを、リース（5 秒ごとに更新、15 秒で切れる）で置く。ルームとノードの対応も、持つノードが更新するリースである。
+- **配置**: ルームは 1 台のノードに置き、ノードをまたがない。ノードの容量（参加者の数）に対して、置いたルームの**人数の上限の合計**を予約として数え、入るノードのうち合計の最も小さいものに置く。
+  置いた後にルームの人が増えても、ノードは容量を超えない。どのノードにも入らなければ、開く操作か最初の参加を `503` で拒む。
+- **drain**: 止める合図（SIGTERM）で、ノードは新しいルームを受けなくなり、持つルームを他のノードに置き直して、WebSocket で `migrate` を送る。クライアントは取り直しで新しいノードのチケットを得てつなぎ直す（音の途切れは 1〜2 秒）。
+  置き直す先がないときは、ルームが終わるか止める期限まで待つ。
+- **ノードの喪失**: WebSocket が切れ、リースが切れたら、ルームの対応は消える。クライアントの取り直しが別のノードにルームを置き直す。
 
-§1 の表に加えて次のキーを置く。秘密は `_FILE` でも渡せ、TOML には書けない。
+### 15. SFU: ネットワーク
 
-| キー | 意味 |
-| --- | --- |
-| `voice_livekit_url` | クライアントが繋ぐ URL（`wss:`） |
-| `voice_livekit_api_url` | my が呼ぶ API の URL（既定は `voice_livekit_url` の `https:`） |
-| `voice_livekit_api_key` / `voice_livekit_api_secret` | API キーとシークレット（シークレットは秘密）。アクセストークンの署名と Webhook の検証に使う |
-| `voice_sora_mode` | `self_hosted` / `cloud` |
-| `voice_sora_signaling_urls` | クライアントが繋ぐシグナリングの URL の一覧（`wss:`） |
-| `voice_sora_api_url` | `self_hosted`: my が呼ぶ API の URL（運営者の認証つきのリバースプロキシ） |
-| `voice_sora_api_header_name` / `voice_sora_api_header_value` | `self_hosted`: API の呼び出しに付けるヘッダー（値は秘密。例 `Authorization: Basic …`） |
-| `voice_sora_webhook_username` / `voice_sora_webhook_password` | `self_hosted`: Sora の Webhook の Basic 認証（パスワードは秘密）。必須 |
-| `voice_sora_cloud_project_id` / `voice_sora_cloud_api_key` | `cloud`: プロジェクトの ID と API キー（秘密）。`access_token` の署名、API の Bearer、Webhook の署名（`sora-cloud-signature`、HMAC-SHA256）の検証に使う |
-| `voice_sora_join_secret` | Sora の参加の値（§12）の署名の秘密。`voice = sora` で必須 |
+- ノードは公開の IP で ICE-lite として動き、媒体を UDP の 1 つのポート（UDP mux）と、受け身の ICE-TCP の 1 つのポートで受ける。NAT の内側のノードは公開の IP を設定で渡す。ノードの WebSocket は公開のホスト名と TLS を持つ。
+- **TURN は §5 のものを使う**（`none` / coturn / Cloudflare。資格情報の発行と取り直しは P2P と同じ）。既定の `none` では UDP と ICE-TCP だけで、443 番しか通らない利用者のために TURN/TLS が要る運営者が足す。ノードは公開の IP を持つので、SFU に STUN は要らない。
+- **`relay` は `voice = sfu` で起動時に誤り**にする。SFU では利用者の IP はもともと他の参加者に見えず、ノードにだけ見える。`relay` は TURN の転送量を増やすだけである。
+- Cloud Run は UDP を受けられないので、`role = sfu` は動かせない。Cloud Run の web の横に、公開の IP を持つ VM の SFU のノードを置く。
 
-- セルフホストの Sora の HTTP API には認証がなく、ループバックだけで受ける設定が勧められている。my はそのまま呼ばず、運営者が API の前に認証つきのリバースプロキシを置き、my はそのヘッダーを付ける。Webhook は HTTPS と Basic 認証を必須にし、どちらかが欠けた設定では起動しない。
-  Cloud Run は受け側で mTLS を終端できないので、mTLS は使わない。
-- Sora Cloud のチャネルの ID は `<ルームの ID>@<プロジェクトの ID>`。
+### 16. SFU: 計測・運営者の文書・消した方式
 
-### 15. SFU: ブラウザの SDK
-
-- `livekit-client`（Apache-2.0）と `sora-js-sdk`（Apache-2.0）を `@my/rtc` の依存に持つ。[ADR-0025](0025-web-client-stack.md) の技術スタックへの追加はこの ADR が決める。
-- 大きさ（spike の手元の計測、`bun build --minify`、gzip -9）: `livekit-client` 約 586 KB（gzip 150 KB）、`sora-js-sdk` 約 49 KB（gzip 11 KB）。通話の画面に入り、`Grant.Kind` が分かってから、その方式の SDK だけを動的な `import()` で読み込む。
-  他の画面のバンドルは増えない。
-- SDK を使うコードは方式ごとに置き、P2P と同じ `RoomSession`（§7）に包む。
-
-### 16. SFU: 運営者の文書
-
-§9 の通話の文書に次も書く:
-
-- 方式の選び方: 小さなインスタンスには P2P か LiveKit Cloud の無料のプラン（Build: $0、月 5,000 分・50 GB・同時 100 接続。確認日 2026-10-26、[LiveKit の料金](https://livekit.com/pricing)）。LiveKit と Sora はメディアを UDP で受ける常駐のプロセスなので、Cloud Run ではなく別の VM で動かす（Cloud Run のサービスが受けるのは HTTP の要求だけ: 確認日 2026-10-26、[Cloud Run のコンテナの契約](https://docs.cloud.google.com/run/docs/container-contract)）
-- LiveKit: セルフホストの設定（`auto_create: false`・`enabled_codecs`・Webhook の URL `/voice/webhooks/livekit`）、`livekit-server --dev` での試し方、セルフホストの再入室の制限（§13）
-- Sora: リバースプロキシと Basic 認証の置き方、Webhook の URL（`/voice/webhooks/sora/auth`・`/voice/webhooks/sora/events`）、認証 Webhook のタイムアウトと冷えた起動、聞き手が話者になるときの途切れ（§12）。
-  料金とライセンスの形（Sora Cloud は月の基本料 5,000 円から、無料の期間はない。パッケージは同時接続数と期間の前払い。製品のページは海外の法人・団体・個人には提供していないと書く）。
-  **Sora の adapter は実際の Sora で確かめていない**（文書に沿った fake でだけ試している）
+- 計測（ADR-0055）: ノードごとの、開いたルーム・セッション・予約とつながっている数（Gauge）、転送したパケットとバイト、捨てたもの（理由: 無音・話せない・列のあふれ）、再 offer・ICE の再起動・移動（Counter）、RTCP から求めたクライアントの RTT と損失（Histogram）。
+  話者の多いルームの負荷は転送の量で見える。
+- 運営者の文書（§9）: 方式の選び方、`role = sfu` のノードの動かし方（ポート・公開の IP と URL・TLS・容量）、drain、TURN、Cloud Run との組み合わせ、見るべき指標、ルームと参加者 1 人の CPU とメモリの実測。
+- LiveKit と Sora は消した。消した値（`voice = livekit / sora` とその設定、方式ごとの人数の上限、ビルドタグ）を設定したデプロイは、何を設定すればよいかを言って起動しない。
 
 ### この決定を見直す条件
 
-- P2P の利用が上限の人数でも成り立たないと分かったとき（既定の人数を下げる）。
+- P2P の利用が上限の人数でも成り立たないと分かったとき（P2P の人数の上限を下げる）。
 - `Bus` の adapter のいずれかで KV の読み直しが遅すぎて接続が間に合わないと分かったとき（本文を `Bus` の知らせに載せる案を通話の知らせに限って検討する）。
-- LiveKit の Twirp か Sora の HTTP API が、自前の呼び出しでは追いにくい頻度で変わると分かったとき（`server-sdk-go` か、生成したクライアントにする）。
-- Sora が接続の途中で役割を変える API を出したとき（§12 の入り直しをやめる）。
-- セルフホストの LiveKit がトークンを失効させる手段を持ったとき（§13 の制限を外す）。
+- 1 台のノードに収まらないルームが要るとき（ノードをまたぐ転送を設計する）。
+- 音を出す話者の多いルームで転送の量が指標の上で問題になったとき（音量の大きい順に上位の人だけ転送する案を検討する）。
+- 映像や配信が要るとき（この SFU は広げず、別の仕組みを決める）。
 
 ## 経緯
 
 M4.3（Voice Chat、epic #1345）のルームの振る舞いとデータモデルは ADR-0100 が決め、設定 `voice`、ルームのストリームとハートビートの経路、マイクとミュートの配り方、運営者の上限をこの ADR に任せた（FR-920・FR-921）。P2P なら最小の構成（Cloud Run・1 プロセスの SQLite）で、WebSocket の基盤も常駐のメディアサーバーも要らないようにし、ルームのドメインが正で、方式を 1 つのポートに閉じ込めることを優先した。`Bus` の約束（ADR-0050: 1 KiB まで、内容を載せない）は崩さず、運営者が望めば相手に IP を見せない構成にできるようにした。
 
-SFU は spike #1347（[レポート](https://github.com/mycroblog/my/issues/1347#issuecomment-6406319607)、確認日 2026-10-26）の後に決めた。この ADR の SFU の第三者の事実は、断りがなければそのレポートの出典に基づく。Sora の adapter は fake だけで確かめることにし、聞き手は受信のみで入って話者になるときに入り直すこと、セルフホストの LiveKit の再入室の間に音が聞こえうることを文書で示すことを受け入れた。サーバーレスで動くよう my から SFU への呼び出しは 1 回の HTTP で終わらせ、運営者が使わない adapter はビルドから外せるようにした。
+SFU は初め LiveKit と Sora の adapter だった（spike #1347）が、epic #3559 で my の SFU に替えた。3 つの方式は `@my/rtc` に 3 つの実装を要し、ネイティブのアプリは SFU ごとの SDK と libwebrtc の組み込みを要した。Sora は動く台数ごとにライセンスが要り、実機では確かめていなかった。音声だけの SFU は、Opus をそのまま転送すれば、映像に要る帯域の推定・サイマルキャスト・キーフレームの扱いがなく小さい。
+P2P は、UDP を受けられない構成（Cloud Run だけ）と小さなインスタンスのために残した。SFU は役割として web・worker と別に水平に増やせ、1 プロセスでもすべて動くことを条件にした。ノードの容量はルームの上限を予約して数え、ルームが置いた後に育ってもノードが不安定にならないことを、台数の効率より優先した。
 
 ## 採らなかった案
 
-- `GET /streaming` に通話のイベントを混ぜる: 接続は 1 本で済むが、各接続が「いまどのルームにいるか」を知り、別のプロセスで受けた参加の要求に合わせて購読を替える必要があり、アカウントのストリームの上限（8）と通話の 1 本の規則も混ざる。
-- シグナリングの本文を `Bus` の知らせに載せ、通話だけ上限を広げる: KV が要らないが、音声だけでも SDP は 1 KiB を超えることが多く、PostgreSQL の `NOTIFY` の上限（8,000 バイト未満）にも近づき、上限を広げると ADR-0050 のすべての adapter の前提が変わる。
-- 参加者のすべての組を結ぶ（フルメッシュ）: 話者の切り替えが単純だが、10 人・話者 2 人で 45 組（話者を含む組だけなら 17 組）になり、聞き手どうしの接続は音声を運ばず、ICE と TURN の割り当てを無駄に使う（`relay` では TURN の料金にも効く）。
-- LiveKit の `server-sdk-go`: 書く量は少なく版の追従も SDK に任せられるが、311 パッケージ・約 22 MB を引き、Sora は結局自前の呼び出しになる。
-- SFU のプロトコルをブラウザで自前で書く: SDK に依存しないが、LiveKit と Sora のシグナリングのプロトコルを保つ費用が大きく、版の追従が要る。
-- ブラウザの SDK を静的に読み込む: 単純だが、通話を使わない利用者にも 150 KB（gzip）を読ませる。
-- ネイティブのアプリでは SFU だけにし、P2P は WebView に残すか使えなくする: libwebrtc を組み込まずに済むが、小さなインスタンスの通話が画面のロックや着信で切れる。決定者は、v0.1.0 では作らないがネイティブの P2P もできる設計を選んだ（#2863）。
+- LiveKit と Sora を残す: 運営者が SFU を選べるが、クライアントの実装が方式の数だけ要り、ネイティブのアプリは各 SDK を組み込む。
+- SFU だけにして P2P も消す: 実装は 1 つになるが、UDP を受けられる VM がない構成では通話が使えない。
+- シグナリングを web を通して運ぶ（今の P2P のように `POST` とストリーム）: 公開の入口が 1 つで済むが、サーバーからの再 offer が `Bus` と KV を通り、遅れと部品が増える。web への WebSocket をノードに中継する案も、web に長い接続とプロキシの層を持たせる。
+- クライアントも offer する（perfect negotiation）: P2P と同じ手順にできるが、サーバーとの間で glare の扱いが要る。サーバーだけが offer すれば手順が一方向で、ネイティブの実装が単純になる。
+- 音量の大きい上位の話者だけ転送する: 騒がしいルームの負荷を固定できるが、同時に話した人が聞こえなくなる。無音を捨てたうえで計測で見る（見直す条件に置く）。
+- ノードの容量をつながっている数で数える: 台数は少なく済むが、置いた後にルームが育つとノードが容量を超える。
+- drain でルームの終わりを待つ: 途切れはないが、デプロイが通話の長さ（最長 4 時間）に縛られる。
+- SFU に TURN を組み込む: 外部のサービスが要らないが、443 番で受けるには WebSocket とは別の IP かポートと TLS が要り、P2P と共通の §5 があるので足さない。
+- ネイティブのアプリでは SFU だけにし、P2P は WebView に残すか使えなくする: 決定者は、v0.1.0 では作らないがネイティブの P2P もできる設計を選んだ（#2863）。どちらの方式も libwebrtc だけで実装できる。
 
 ## Consequences（影響）
 
-- 良い影響: P2P では新しい基盤なしで通話が動く。いまのストリームの仕組み（`Hub`・`Relay`・`Bus`）をそのまま使い、構成ごとの差がない。
-- 良い影響: 方式のポートがルームのドメインと音声の経路を分ける。ルームの状態は DB が正で、メディアの経路が後から従う。
-- 良い影響: `relay` で、設定に従う利用者の IP を相手に見せない構成にできる。SFU のときは利用者の IP が他の参加者に見えず、発話の制限を SFU が強制する（P2P の結託の限界がない）。
-- 良い影響: どちらの SFU も 1 回の HTTP の呼び出しだけで動かせ、サーバーの依存は増えない。通話を使わない画面のバンドルは増えない。
+- 良い影響: P2P では新しい基盤なしで通話が動く。いまのストリームの仕組み（`Hub`・`Relay`・`Bus`）をそのまま使う。
+- 良い影響: 方式のポートがルームのドメインと音声の経路を分ける。ルームの状態は DB が正で、ノードが後から従う。
+- 良い影響: SFU では発話の制限をサーバーが強制し、利用者の IP は他の参加者に見えない。外部のメディアサーバーもライセンスも要らない。
+- 良い影響: クライアントの実装は P2P と SFU の 2 つで、どちらも素の WebRTC なので、ネイティブのアプリは libwebrtc だけで書ける。
+- 良い影響: SFU のノードは役割として増減でき、drain でデプロイが通話を待たない。
 - 悪い影響: P2P の発話の制限は、結託した改造クライアントを防げない（§4）。文書で示し、厳密さが要る運営者には SFU を勧める。
-- 悪い影響: 通話の間は SSE が 1 人 2 本になり、接続の数が増える。
-- 悪い影響: シグナリングの本文を KV に置くので、`KeyValueStore = db` では接続のたびに数十行の書き込みが起きる（短い期限で消える）。
-- 悪い影響: SFU では `voice.apply` のジョブを通るので、発話の取り消し・退出させる操作がメディアの経路に効くまでキューの遅れが乗る。
-- 悪い影響: Sora では聞き手が話者になるとき、話者が聞き手に戻るときに入り直しで、その人の音が新しい接続の確立まで途切れる（長さは実機でしか測れず、Sora は fake でだけ試すので測らない）。
-- 悪い影響: セルフホストの LiveKit では、退出させた人が切られるまで数秒から 1 分ほど聞こえうる。
-- 悪い影響: Sora の adapter は実機で確かめず、Sora の API の変化に気づくのが運営者の報告になる。セルフホストの Sora は、運営者がリバースプロキシを置く手間を負う。
-- 悪い影響: Sora の認証 Webhook は同期で、my の冷えた起動が参加の失敗になりうる。
+- 悪い影響: 通話の間は SSE が 1 人 2 本（P2P）、または SSE と WebSocket が 1 本ずつ（SFU）になり、接続の数が増える。
+- 悪い影響: シグナリングの本文を KV に置くので、P2P で `KeyValueStore = db` では接続のたびに数十行の書き込みが起きる（短い期限で消える）。
+- 悪い影響: SFU のノードは公開の IP・UDP と TCP のポート・ホスト名と TLS を要し、Cloud Run だけの構成では動かない。
+- 悪い影響: ノードの容量をルームの上限で予約するので、空きの多いルームが席を押さえ、台数が多めに要る。
+- 悪い影響: 音を出す話者が多いルームでは、転送の量が話者の数とともに増える（人数の上限だけが抑える）。
+- 悪い影響: drain とノードの喪失では、音が 1〜2 秒途切れる。
 
 ## Open Questions / 要検証
 
 - iOS のホーム画面の Web アプリを背面にしたとき、マイクの取り込み（WebRTC の送信）が続くか（要検証: 実機。公開の文書では確かめられない）
-- Sora Cloud で `default_duplicate_client_id` を `evict` にできるか（要検証: Sora Cloud の文書に記載がない。できなくても §12 の切り直しで動く）
