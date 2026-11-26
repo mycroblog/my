@@ -49,11 +49,12 @@ curl -H 'Accept: application/activity+json' http://localhost:8080/ap/actors/<the
 - 登入用的 cookie 帶有 `Secure`。Chrome 和 Firefox 在 `http://localhost` 上會接受它；Safari（WebKit）不會，所以在本機請使用 Chrome 或 Firefox。
 - 貼文內文中的主題標籤和提及的連結使用 `https://`，因為它們是聯邦用的 URL。
 
-<!-- source: going-public a59510155d91 -->
+<!-- source: going-public 8a7149acda33 -->
 ## 對外公開
 
 - 把 `.env` 中的 `MY_HOST` 設成你真正的網域，移除 `MY_WEB_ORIGIN`（預設為 `https://{MY_HOST}`），並在伺服器前端終止 TLS：`compose.caddy.yaml` 這一層會為此執行 Caddy（[Docker Compose 檔案](running.md#docker-compose-files)），或是讓伺服器自己提供 HTTPS（[由伺服器提供 HTTPS](running.md#serving-https-from-the-server)）。`MY_HOST` 會在第一次啟動時儲存到資料庫，之後無法變更。
 - 如果在你自己的反向代理後方執行，請在 `.env` 中設定 `MY_TRUSTED_PROXIES`，讓登入等速率限制依用戶端 IP 套用，而不是套用到代理伺服器上（[`trusted_proxies`](../reference/configuration.md#trusted_proxies)）。
+- 使用伺服器自己的媒體節點（`voice = sfu`）的語音聊天是 `compose.sfu.yaml` 這一層：它在 Caddy 後方的 PostgreSQL 上，把伺服器以 `role = web`、一個 `worker` 和一個 `sfu` 節點執行，並公開 UDP 7882 和 TCP 7881（[語音聊天](voice.md#docker-compose)）。
 - 在對使用者開放伺服器之前，請逐項檢查[正式環境檢查清單](production-checklist.md)。
 - `docker compose down` 會停止整個堆疊。`down -v` 還會刪除資料磁碟區。
 

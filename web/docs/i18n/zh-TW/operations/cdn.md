@@ -84,7 +84,7 @@ CDN 只能保護伺服器免受經過它的請求影響。當 origin 也能透�
 
 這些都未設定時，不會進行任何檢查，伺服器的行為就如同這一節不存在。
 
-<!-- source: what-passes-without-the-header b79877bb91a3 -->
+<!-- source: what-passes-without-the-header e5891c904fa1 -->
 ### 沒有標頭也能通過的請求
 
 | 請求 | 原因 |
@@ -93,7 +93,7 @@ CDN 只能保護伺服器免受經過它的請求影響。當 origin 也能透�
 | `POST` 到 `/_internal/` 路徑 | Cloud Tasks 和 Cloud Scheduler 會以伺服器自己的 URL 呼叫它們。它們帶有自己簽署的權杖 |
 
 其他所有請求都需要標頭，維護模式下也一樣：網頁用戶端及其資源、`/media/`、用戶端 API、OAuth 和 ActivityPub，包括其他伺服器的傳送。
-所以任何不經過 CDN、直接以伺服器自己的位址呼叫它的東西都會被拒絕：你自己的 webhook、語音媒體伺服器、腳本。請將它指向 CDN 的主機名稱。
+所以任何不經過 CDN、直接以伺服器自己的位址呼叫它的東西都會被拒絕：你自己的 webhook、腳本。請將它指向 CDN 的主機名稱。
 
 指標埠（`metrics_listen`）是另一個不公開的監聽器，不會被檢查。
 
