@@ -308,13 +308,13 @@ difference it finds (counted by `my.projection.drifts`) without correcting it; b
 
 ```sh
 my projection list              # each projection with its module and tables
-my projection verify [<name>]   # derive every projection, or the one named, and print the rows that differ; changes nothing
+my projection verify [<name>]   # derive every projection, or the one named, into temporary copies and print the rows that differ
 my projection rebuild [<name>]  # derive them the same way and write the difference
 ```
 
 - `<name>` is a projection or one of its tables.
 - `verify` prints the rows the tables hold but the sources do not derive (`-`) and the rows the sources derive but the tables lack (`+`),
-  and exits with `1` when any differ.
+  up to 1,000 of each table each way, and exits with `1` when any differ. It locks no row, so it can run while the instance works.
 - `rebuild` writes at most 500 rows per transaction, so readers never see an emptied projection. Run it while the instance is quiet:
   a row that changes during the rebuild keeps its new value, and a later `verify` reports any difference left.
 

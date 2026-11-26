@@ -150,6 +150,21 @@ func (d *DB) Read(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
 	return fn(&Tx{tx: pgTx, owner: d.pool, projectors: d.opts.Projectors, readOnly: true})
 }
 
+// trial runs fn in a transaction that it always rolls back, for a verification of a projection
+// that writes only to temporary tables (ADR-0172): REPEATABLE READ, so that every statement sees
+// one state of the database, and without a retry, since it writes nothing that conflicts.
+func (d *DB) trial(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
+	sctx, span := dbtrace.StartTx(ctx, d.tracer.get(), dbtrace.SystemPostgreSQL)
+	defer func() { dbtrace.End(span, err) }()
+	pgTx, err := d.conns.BeginTx(sctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead})
+	if err != nil {
+		return fmt.Errorf("postgres: begin: %w", err)
+	}
+	// Roll back even when ctx has ended, so that the connection returns to the pool clean.
+	defer func() { _ = pgTx.Rollback(context.WithoutCancel(ctx)) }()
+	return fn(&Tx{tx: pgTx, owner: d.pool, projectors: d.opts.Projectors})
+}
+
 func (d *DB) attempt(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
 	sctx, span := dbtrace.StartTx(ctx, d.tracer.get(), dbtrace.SystemPostgreSQL)
 	defer func() { dbtrace.End(span, err) }()

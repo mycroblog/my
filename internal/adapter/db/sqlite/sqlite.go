@@ -280,6 +280,24 @@ func (d *DB) Read(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
 	return holdingTransaction(d.db, func() error { return fn(tx) })
 }
 
+// trial runs fn in a transaction that it always rolls back, for a verification of a projection
+// that writes only to temporary tables (ADR-0172 §3). It begins deferred on a connection of the
+// write pool (the driver ignores _txlock for a read-only transaction and does not stop it from
+// writing), so it takes no lock of the main database that a writer waits for, and in WAL it
+// sees one state of the database from its first read.
+func (d *DB) trial(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
+	sctx, span := dbtrace.StartTx(ctx, d.tracer, dbtrace.SystemSQLite)
+	defer func() { dbtrace.End(span, err) }()
+	checkSecondConnection(d.db)
+	sqlTx, err := d.db.BeginTx(sctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return fmt.Errorf("sqlite: begin: %w", err)
+	}
+	defer func() { _ = sqlTx.Rollback() }()
+	tx := &Tx{tx: sqlTx, owner: d.db, db: dbtrace.Wrap(sqlTx, d.tracer, dbtrace.SystemSQLite), projectors: d.opts.Projectors}
+	return holdingTransaction(d.db, func() error { return fn(tx) })
+}
+
 func (d *DB) attempt(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
 	sctx, span := dbtrace.StartTx(ctx, d.tracer, dbtrace.SystemSQLite)
 	defer func() { dbtrace.End(span, err) }()

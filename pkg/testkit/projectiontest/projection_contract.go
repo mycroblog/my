@@ -43,6 +43,10 @@ func ProjectionStoreContract(t *testing.T, newHarness func(t *testing.T) Project
 		t.Parallel()
 		projectionServiceDrift(t, newHarness(t))
 	})
+	t.Run("verify locks nothing and changes nothing, and bounds what it lists", func(t *testing.T) {
+		t.Parallel()
+		projectionVerifyLeavesTables(t, newHarness(t))
+	})
 	t.Run("the verify job runs one projection per job and moves past one that fails", func(t *testing.T) {
 		t.Parallel()
 		projectionVerifyChain(t, newHarness(t))
@@ -252,6 +256,70 @@ func projectionServiceDrift(t *testing.T, h ProjectionStoreHarness) {
 	}
 	if r, err := svc.Verify(ctx, p); err != nil || r.Drifted() {
 		t.Errorf("Verify after Rebuild = %+v, %v; want no drift", r, err)
+	}
+}
+
+// projectionVerifyLeavesTables checks ADR-0172 §1–§3: while a verification derives the
+// projection, a write to its table commits at once; the verification compares what it derived
+// with the table as the database was when it began, changes nothing, and lists up to its limit.
+func projectionVerifyLeavesTables(t *testing.T, h ProjectionStoreHarness) {
+	ctx := t.Context()
+	writeTallies(t, h, true, tally("a", 0, 1, nil), tally("b", 0, 2, nil))
+	sources := [][]any{tally("a", 0, 1, nil), tally("b", 0, 2, nil), tally("c", 0, 3, nil), tally("d", 0, 4, nil), tally("e", 0, 5, nil)}
+	var concurrent error
+	p := projection.Projection{
+		Name: "tallies", Module: "testkit", Tables: []string{"poll_tallies"},
+		Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
+			return u.Tx(ctx, func(tx uow.Tx) error {
+				_, rows, err := h.Store.Rows(ctx, tx, "poll_tallies", 0, 100)
+				if err != nil {
+					return err
+				}
+				if _, err := h.Store.Delete(ctx, tx, "poll_tallies", tallyColumns, rows); err != nil {
+					return err
+				}
+				// Another writer of the instance changes the table meanwhile, and must not wait.
+				done := make(chan struct{})
+				go func() {
+					defer close(done)
+					wctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+					defer cancel()
+					concurrent = h.UnitOfWork.Tx(wctx, func(wtx uow.Tx) error {
+						if _, err := h.Store.Delete(wctx, wtx, "poll_tallies", tallyColumns, [][]any{tally("b", 0, 2, nil)}); err != nil {
+							return err
+						}
+						_, err := h.Store.Insert(wctx, wtx, "poll_tallies", tallyColumns, [][]any{tally("z", 0, 9, nil)})
+						return err
+					})
+				}()
+				<-done
+				_, err = h.Store.Insert(ctx, tx, "poll_tallies", tallyColumns, sources)
+				return err
+			})
+		},
+	}
+	svc := projection.NewService(projection.Options{UnitOfWork: h.UnitOfWork, Store: h.Store, Projections: []projection.Projection{p}, DiffLimit: 2})
+	r, err := svc.Verify(ctx, p)
+	if err != nil {
+		t.Fatalf("Verify = %v", err)
+	}
+	if concurrent != nil {
+		t.Fatalf("a write to the table during the verification = %v, want it committed at once", concurrent)
+	}
+	if want := []string{tallyLine("a", "0 1 <nil>"), tallyLine("z", "0 9 <nil>")}; !slices.Equal(readTallies(t, h, 0, 100), want) {
+		t.Errorf("table after Verify = %q, want %q: the concurrent write, and nothing of the verification", readTallies(t, h, 0, 100), want)
+	}
+	if len(r.Tables) != 1 {
+		t.Fatalf("Verify = %+v, want one table", r)
+	}
+	// The table as it was when the verification began held a and b; c, d, and e are missing,
+	// of which the limit lists two.
+	d := r.Tables[0]
+	if d.Rows != 2 || len(d.Extra) != 0 || len(d.Missing) != 2 || !d.More {
+		t.Errorf("Verify = %d rows, %d extra, %d missing, more %v; want 2, 0, 2 (the first of 3), true", d.Rows, len(d.Extra), len(d.Missing), d.More)
+	}
+	if r, err := svc.Rebuild(ctx, p); err != nil || r.Inserted < 3 {
+		t.Errorf("Rebuild = %+v, %v; want every missing row inserted, past the limit of Verify", r, err)
 	}
 }
 

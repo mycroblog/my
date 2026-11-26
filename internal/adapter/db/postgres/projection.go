@@ -51,12 +51,22 @@ func (s *ProjectionStore) Rows(ctx context.Context, tx uow.Tx, table string, off
 	if err != nil {
 		return nil, nil, Wrap(err, "read "+table)
 	}
+	out, err := collectValues(rows)
+	if err != nil {
+		return nil, nil, Wrap(err, "read "+table)
+	}
+	return cols, out, nil
+}
+
+// collectValues returns the values of rows, timestamps in UTC and uuids in their logical form,
+// and closes rows.
+func collectValues(rows pgx.Rows) ([][]any, error) {
 	defer rows.Close()
 	var out [][]any
 	for rows.Next() {
 		values, err := rows.Values()
 		if err != nil {
-			return nil, nil, Wrap(err, "read "+table)
+			return nil, err
 		}
 		for i, v := range values {
 			switch x := v.(type) {
@@ -69,10 +79,93 @@ func (s *ProjectionStore) Rows(ctx context.Context, tx uow.Tx, table string, off
 		}
 		out = append(out, values)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, nil, Wrap(err, "read "+table)
+	return out, rows.Err()
+}
+
+// Trial implements projection.Store.
+func (s *ProjectionStore) Trial(ctx context.Context, fn func(tx uow.Tx) error) error {
+	return s.db.trial(ctx, fn)
+}
+
+// Shadow implements projection.Store: a temporary table LIKE the table, with its defaults,
+// constraints, and indexes, and a copy of its rows. A temporary table comes first in the search
+// path, also for the statements that the connection prepared before it existed (#3535).
+func (s *ProjectionStore) Shadow(ctx context.Context, tx uow.Tx, tables []string) error {
+	pgTx, err := s.db.txOf(tx)
+	if err != nil {
+		return err
 	}
-	return cols, out, nil
+	var schema string
+	if err := pgTx.QueryRow(ctx, "SELECT current_schema()").Scan(&schema); err != nil {
+		return Wrap(err, "read the schema")
+	}
+	for _, table := range tables {
+		if _, err := s.tableColumns(ctx, pgTx, table); err != nil {
+			return err
+		}
+		live := quote(schema) + "." + quote(table)
+		for _, q := range []string{
+			fmt.Sprintf("CREATE TEMPORARY TABLE %s (LIKE %s INCLUDING ALL) ON COMMIT DROP", quote(table), live),
+			fmt.Sprintf("INSERT INTO pg_temp.%s SELECT * FROM %s", quote(table), live),
+		} {
+			if _, err := pgTx.Exec(ctx, q); err != nil {
+				return Wrap(err, "shadow "+table)
+			}
+		}
+	}
+	return nil
+}
+
+// Diff implements projection.Store, with EXCEPT ALL, which counts a repeated row.
+func (s *ProjectionStore) Diff(ctx context.Context, tx uow.Tx, table string, limit int) ([]string, int, [][]any, [][]any, bool, error) {
+	pgTx, err := s.db.txOf(tx)
+	if err != nil {
+		return nil, 0, nil, nil, false, err
+	}
+	cols, err := s.tableColumns(ctx, pgTx, table)
+	if err != nil {
+		return nil, 0, nil, nil, false, err
+	}
+	var schema string
+	if err := pgTx.QueryRow(ctx, "SELECT current_schema()").Scan(&schema); err != nil {
+		return nil, 0, nil, nil, false, Wrap(err, "read the schema")
+	}
+	live, shadow := quote(schema)+"."+quote(table), "pg_temp."+quote(table)
+	var n int
+	if err := pgTx.QueryRow(ctx, "SELECT count(*) FROM "+live).Scan(&n); err != nil {
+		return nil, 0, nil, nil, false, Wrap(err, "count "+table)
+	}
+	list := quoteAll(cols)
+	var more bool
+	side := func(from, except string) ([][]any, error) {
+		// NULL is LIMIT ALL.
+		var bound any
+		if limit > 0 {
+			bound = limit + 1
+		}
+		q := fmt.Sprintf("SELECT %[1]s FROM (SELECT %[1]s FROM %[2]s EXCEPT ALL SELECT %[1]s FROM %[3]s) d ORDER BY %[1]s LIMIT $1", list, from, except)
+		rows, err := pgTx.Query(ctx, q, bound)
+		if err != nil {
+			return nil, err
+		}
+		out, err := collectValues(rows)
+		if err != nil {
+			return nil, err
+		}
+		if limit > 0 && len(out) > limit {
+			out, more = out[:limit], true
+		}
+		return out, nil
+	}
+	extra, err := side(live, shadow)
+	if err != nil {
+		return nil, 0, nil, nil, false, Wrap(err, "compare "+table)
+	}
+	missing, err := side(shadow, live)
+	if err != nil {
+		return nil, 0, nil, nil, false, Wrap(err, "compare "+table)
+	}
+	return cols, n, extra, missing, more, nil
 }
 
 // Delete implements projection.Store.
@@ -109,14 +202,27 @@ func (s *ProjectionStore) Insert(ctx context.Context, tx uow.Tx, table string, c
 	return execRows(ctx, pgTx, q, rows, "insert into "+table)
 }
 
+// execRows runs q once per row, all in one round trip (ADR-0172 §4).
 func execRows(ctx context.Context, tx pgx.Tx, q string, rows [][]any, what string) (int64, error) {
-	var total int64
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	b := &pgx.Batch{}
 	for _, r := range rows {
-		tag, err := tx.Exec(ctx, q, r...)
+		b.Queue(q, r...)
+	}
+	res := tx.SendBatch(ctx, b)
+	var total int64
+	for range rows {
+		tag, err := res.Exec()
 		if err != nil {
+			_ = res.Close()
 			return total, Wrap(err, what)
 		}
 		total += tag.RowsAffected()
+	}
+	if err := res.Close(); err != nil {
+		return total, Wrap(err, what)
 	}
 	return total, nil
 }
