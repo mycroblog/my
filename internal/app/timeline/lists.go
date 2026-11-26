@@ -253,13 +253,16 @@ func (s *Service) ListTimeline(ctx context.Context, viewer appcontent.Viewer, id
 }
 
 // EntryLists returns the IDs of the lists of a logged-in viewer whose timelines list e, an entry
-// that the viewer's home timeline lists (HomeEntry): those that have its author as a member. A
-// list timeline applies the rules of home to its members, so a home entry by a member is on it.
+// that the viewer's home timeline lists (HomeEntry): those that have its author as a member, when
+// the follow branch of home lists e. A list timeline applies the rules of that branch to its
+// members, so an entry that it lists by a member is on the list, and one that only the hashtag
+// branch lists (FollowedTagIDs, such as a member's reply without context with a followed hashtag)
+// is on none.
 func (s *Service) EntryLists(ctx context.Context, viewer appcontent.Viewer, e Entry) ([]string, error) {
 	if !loggedIn(viewer) {
 		return nil, ErrLoginRequired
 	}
-	if e.AuthorAccountID == viewer.AccountID {
+	if e.AuthorAccountID == viewer.AccountID || len(e.FollowedTagIDs) > 0 {
 		return nil, nil
 	}
 	return s.d.Repository.ListIDsWithMember(ctx, viewer.AccountID, e.AuthorAccountID)
