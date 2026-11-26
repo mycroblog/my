@@ -398,7 +398,8 @@ func GraphSource(repo appgraph.Repository) Source {
 // writes a replayBatch gathers.
 // The restrictions are left alone: RebuildRestrictions derives them. The lists
 // are not projections and stay, but a member whose follow the rebuilt feed_follow_edges no longer
-// holds leaves them, as the end of the follow would have taken it out.
+// holds leaves them, as the end of the follow would have taken it out; so a rebuild of the
+// projection service shadows list_members with the projection's tables.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository, sources ...Source) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		// The projectors write through a batch, a few statements for many rows (ADR-0172 §4).
