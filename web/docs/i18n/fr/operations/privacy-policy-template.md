@@ -83,7 +83,7 @@ Le serveur ne les retire que lorsqu’un compte est effacé, ou jamais. Une loi 
 - Le dernier rapport de chaque groupe d’erreurs, que le rapport suivant de ce groupe remplace. Il est nettoyé par motifs ; un fragment de texte d’utilisateur peut donc subsister.
 - Les sauvegardes, vos journaux, et les journaux de votre plateforme et de votre proxy. Le serveur ne gère pas ceux-ci : [sauvegarde](backup.md#how-often-and-where) décrit les générations à conserver, et une sauvegarde restaurée ramène des données effacées.
 
-<!-- source: the-services-you-choose 81461216c966 -->
+<!-- source: the-services-you-choose ae854360ee1c -->
 ## Les services que vous choisissez
 
 Chaque service qui reçoit des données personnelles n’apparaît dans la politique que si vous l’avez activé. Remplissez le tableau de la section 6 à partir de cette liste, et lisez la politique et le contrat du service : ce que le service fait des données après leur arrivée n’est pas quelque chose que ce document peut vous dire.
@@ -123,7 +123,7 @@ Deux choses atteignent des tiers sans paramètre de votre part :
 - **Web Push.** Quand un utilisateur l’active, son navigateur choisit le service de push et donne son adresse au serveur. Le corps du message est chiffré pour ce navigateur : le service de push ne devrait donc pas pouvoir le lire. Il voit en revanche l’adresse d’abonnement, la taille et l’heure de chaque message, et le contact (sujet VAPID) de votre serveur, et il conserve un message jusqu’à 48 heures pendant que le navigateur est hors ligne.
 - **Fédération.** Voir la section 5 du modèle. `federation_mode` la désactive ou en limite le sens, et les relais sont à vous d’ajouter ([relais](relays.md)).
 
-<!-- source: the-template 7d380628fcdc -->
+<!-- source: the-template 35479e0aacb5 -->
 ## Le modèle
 
 ```markdown

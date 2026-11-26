@@ -83,7 +83,7 @@ El servidor los elimina solo cuando se borra una cuenta, o nunca. Una ley puede 
 - El último informe de cada grupo de errores, que el siguiente informe de ese grupo sustituye. Se depura por patrones, así que puede quedar un fragmento de texto de un usuario.
 - Las copias de seguridad, tus registros y los registros de tu plataforma y de tu proxy. El servidor no los gestiona: la [copia de seguridad](backup.md#how-often-and-where) describe las generaciones que conservar, y una copia de seguridad restaurada devuelve datos borrados.
 
-<!-- source: the-services-you-choose 81461216c966 -->
+<!-- source: the-services-you-choose ae854360ee1c -->
 ## Los servicios que eliges
 
 Cada servicio que recibe datos personales aparece en la política solo si lo activaste. Rellena la tabla de la sección 6 a partir de esta lista, y lee la política y el contrato del propio servicio: lo que el servicio hace con los datos una vez que llegan no es algo que este documento pueda decirte.
@@ -123,7 +123,7 @@ Dos cosas llegan a terceros sin un ajuste tuyo:
 - **Web Push.** Cuando un usuario lo activa, su navegador elige el servicio de push y da su dirección al servidor. El cuerpo del mensaje está cifrado para ese navegador, así que el servicio de push no debería poder leerlo. Sí ve la dirección de la suscripción, el tamaño y la hora de cada mensaje y el contacto (asunto VAPID) de tu servidor, y retiene un mensaje hasta 48 horas mientras el navegador está desconectado.
 - **Federación.** Consulta la sección 5 de la plantilla. `federation_mode` la desactiva o limita su dirección, y los relays los añades tú ([relays](relays.md)).
 
-<!-- source: the-template 7d380628fcdc -->
+<!-- source: the-template 35479e0aacb5 -->
 ## La plantilla
 
 ```markdown

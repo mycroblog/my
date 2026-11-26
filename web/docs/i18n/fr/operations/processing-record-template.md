@@ -36,7 +36,7 @@ Si vous exploitez une instance pour le compte de quelqu’un d’autre, vous pou
 | Logiciel | my, version {{VERSION}} |
 | Dernière révision | {{DATE, BY WHOM}} |
 
-<!-- source: recipients-used-in-this-record 8f1748f022f5 -->
+<!-- source: recipients-used-in-this-record a09123befeea -->
 ### Destinataires utilisés dans ce registre
 
 Ces noms sont utilisés dans les activités ci-dessous. Listez chacun de ceux que vous utilisez.
@@ -52,7 +52,7 @@ Ces noms sont utilisés dans les activités ci-dessous. Listez chacun de ceux qu
 | {{IF payments}} Fournisseur de paiement (Stripe ou PAY.JP) | {{...}} | {{...}} |
 | {{IF error reports}} Outil de suivi des erreurs | {{...}} | {{...}} |
 | {{IF telemetry}} Service de métriques et de traces | {{...}} | {{...}} |
-| {{IF voice}} Serveur multimédia vocal, STUN et TURN | {{...}} | {{...}} |
+| {{IF voice}} Service STUN et TURN (coturn ou Cloudflare) ; les nœuds média de `voice = sfu` font partie de l’hébergement | {{...}} | {{...}} |
 | {{IF webhooks}} Destinataires de webhooks | {{...}} | {{...}} |
 | {{IF follow review}} Service d’examen des abonnements | {{...}} | {{...}} |
 | {{IF sign-up review}} Service d’examen des inscriptions | {{...}} | {{...}} |
@@ -171,7 +171,7 @@ Ces noms sont utilisés dans les activités ci-dessous. Listez chacun de ceux qu
 
 L’export propre à l’utilisateur ne contient ni adresses e-mail, ni adresses IP, ni notifications, ni préférences. Pour une réponse complète, utilisez `my admin account export-moderation` pour les enregistrements de modération et [l’affichage](moderation.md#account-management) pour les adresses e-mail et IP, et lisez le reste dans la base de données. L’export de modération omet l’identité des personnes qui signalent : vérifiez qu’un commentaire n’en révèle pas une avant de le remettre.
 
-<!-- source: 9-voice-chat e0bf1be42da8 -->
+<!-- source: 9-voice-chat 3b9cd4f9a05b -->
 ### 9. Chat vocal
 
 Supprimez cette activité lorsque `voice = off`.
@@ -180,8 +180,8 @@ Supprimez cette activité lorsque `voice = off`.
 | --- | --- |
 | Finalités | Exploiter des salons de chat vocal, et les modérer |
 | Personnes concernées | Les hôtes et les participants |
-| Données personnelles | Nom du salon, description, hôtes, et manière dont le salon s’est terminé ; qui a participé, parlé, levé la main, été invité ou été retiré. Les adresses IP et l’audio transitent par le serveur multimédia vocal ou le serveur TURN, ou parviennent directement aux autres participants avec `voice = p2p`. Le serveur n’enregistre aucun audio |
-| Destinataires | Hébergement, serveur multimédia vocal, STUN et TURN, participants |
+| Données personnelles | Nom du salon, description, hôtes, et manière dont le salon s’est terminé ; qui a participé, parlé, levé la main, été invité ou été retiré. Les adresses IP et l’audio transitent par les nœuds média du serveur avec `voice = sfu` ou par un serveur TURN, ou parviennent directement aux autres participants avec `voice = p2p`. Le serveur n’enregistre aucun audio |
+| Destinataires | Hébergement, STUN et TURN, participants |
 | Effacement | Participants `{{90 days}}` après la fin du salon, ou aussi longtemps qu’un signalement le concernant. Les salons restent, avec le nom et la description vidés lors de l’effacement de l’auteur. Chez les services : {{THEIR PERIOD}} |
 | Base juridique | {{e.g. contract, legitimate interests}} |
 

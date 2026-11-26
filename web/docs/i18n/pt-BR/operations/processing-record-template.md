@@ -36,7 +36,7 @@ Se você administra uma instância em nome de outra pessoa, pode ser operador (p
 | Software | my, versão {{VERSION}} |
 | Última revisão | {{DATE, BY WHOM}} |
 
-<!-- source: recipients-used-in-this-record 8f1748f022f5 -->
+<!-- source: recipients-used-in-this-record a09123befeea -->
 ### Destinatários usados neste registro
 
 Estes nomes são usados nas atividades abaixo. Liste cada um que você usa.
@@ -52,7 +52,7 @@ Estes nomes são usados nas atividades abaixo. Liste cada um que você usa.
 | {{IF payments}} Provedor de pagamento (Stripe ou PAY.JP) | {{...}} | {{...}} |
 | {{IF error reports}} Rastreador de erros | {{...}} | {{...}} |
 | {{IF telemetry}} Serviço de métricas e rastreamento | {{...}} | {{...}} |
-| {{IF voice}} Servidor de mídia de voz, STUN e TURN | {{...}} | {{...}} |
+| {{IF voice}} Serviço STUN e TURN (coturn ou Cloudflare); os nós de mídia de `voice = sfu` fazem parte da hospedagem | {{...}} | {{...}} |
 | {{IF webhooks}} Receptores de webhook | {{...}} | {{...}} |
 | {{IF follow review}} Serviço de análise de pedidos de seguir | {{...}} | {{...}} |
 | {{IF sign-up review}} Serviço de análise de cadastros | {{...}} | {{...}} |
@@ -171,7 +171,7 @@ Estes nomes são usados nas atividades abaixo. Liste cada um que você usa.
 
 A exportação do próprio usuário não contém endereços de e-mail, endereços IP, notificações nem preferências. Para uma resposta completa, use `my admin account export-moderation` para os registros de moderação e a [revelação](moderation.md#account-management) para endereços de e-mail e IP, e leia o restante no banco de dados. A exportação de moderação omite as identidades dos denunciantes: verifique se um comentário não revela uma antes de entregá-lo.
 
-<!-- source: 9-voice-chat e0bf1be42da8 -->
+<!-- source: 9-voice-chat 3b9cd4f9a05b -->
 ### 9. Chat de voz
 
 Exclua esta atividade quando `voice = off`.
@@ -180,8 +180,8 @@ Exclua esta atividade quando `voice = off`.
 | --- | --- |
 | Finalidades | Administrar salas de chat de voz e moderá-las |
 | Titulares dos dados | Anfitriões e participantes |
-| Dados pessoais | Nome da sala, descrição, anfitriões e como a sala terminou; quem participou, falou, levantou a mão, foi convidado ou foi removido. Endereços IP e áudio passam pelo servidor de mídia de voz ou pelo servidor TURN, ou chegam diretamente aos outros participantes com `voice = p2p`. O servidor não grava áudio |
-| Destinatários | Hospedagem, servidor de mídia de voz, STUN e TURN, participantes |
+| Dados pessoais | Nome da sala, descrição, anfitriões e como a sala terminou; quem participou, falou, levantou a mão, foi convidado ou foi removido. Endereços IP e áudio passam pelos nós de mídia do servidor com `voice = sfu` ou por um servidor TURN, ou chegam diretamente aos outros participantes com `voice = p2p`. O servidor não grava áudio |
+| Destinatários | Hospedagem, STUN e TURN, participantes |
 | Exclusão | Participantes `{{90 days}}` a partir do fim da sala, ou enquanto durar uma denúncia sobre ela. As salas permanecem, com o nome e a descrição apagados na exclusão do autor. Nos serviços: {{THEIR PERIOD}} |
 | Base legal | {{e.g. contract, legitimate interests}} |
 

@@ -3,7 +3,7 @@
 
 Cómo arrancar y detener el servidor, obtener su imagen y vigilarlo mientras funciona: métricas, trazas, la cola de trabajos y las comprobaciones de salud.
 
-<!-- source: start-the-server 05b29144056b -->
+<!-- source: start-the-server c19e1ea32f07 -->
 ## Iniciar el servidor
 
 ```sh
@@ -34,6 +34,7 @@ La [lista de comprobación de producción](production-checklist.md) enumera las 
 | `all` (predeterminado) | Todas las rutas | Se ejecuta |
 | `web` | Todas las rutas | No se ejecuta |
 | `worker` | Solo comprobaciones de salud (para sondas de la plataforma) | Se ejecuta |
+| `sfu` | Comprobaciones de salud y el WebSocket del nodo multimedia de `voice = sfu`, que recibe el audio en sus propios puertos UDP y TCP ([Chat de voz](voice.md#run-media-nodes)) | No se ejecuta |
 
 Los registros van a la salida de error estándar como JSON Lines. Cada línea tiene `level` (`DEBUG`, `INFO`, `WARN`, `ERROR`) y `severity`, el mismo nivel en la forma que lee Cloud Logging (`DEBUG`, `INFO`, `WARNING`, `ERROR` y `CRITICAL` para un error que detiene el proceso).
 Los registros escritos mientras se atiende una solicitud llevan un `request_id`, y el mismo ID se devuelve en la cabecera de respuesta `X-Request-Id`.
@@ -118,7 +119,7 @@ Con `metrics_exporter = emf`, estas dos líneas son las propias líneas EMF. La 
 además de la directiva `_aws`, `service.name`, `service.version`, `my.role` y `service.namespace` (el `host`). Estas tres métricas no se escriben en ninguna otra línea. Los campos que eliges en `metrics_emf_dimensions` se escriben como cadenas, como exige EMF (por ejemplo, la dimensión `http.response.status_code` es `"200"`).
 Los registros van a la salida de error estándar y las demás líneas EMF van a la salida estándar. El controlador de registros `awslogs` de ECS envía ambas a CloudWatch Logs, así que las métricas se extraen de las dos.
 
-<!-- source: docker-compose-files 9f0633524036 -->
+<!-- source: docker-compose-files eab514676a87 -->
 ## Archivos de Docker Compose
 
 `deploy/docker/` contiene lo que despliega una instancia. `compose.yaml` se ejecuta solo, y los demás archivos se apilan sobre él.
@@ -129,6 +130,7 @@ Los registros van a la salida de error estándar y las demás líneas EMF van a 
 | `compose.postgres.yaml` | PostgreSQL en un contenedor, en el volumen `postgres` | Quieres PostgreSQL en esta máquina. Para un servidor PostgreSQL en otro lugar, omítelo y define `MY_DATABASE` y `MY_DATABASE_URL` en `.env` |
 | `compose.s3.yaml` | Multimedia en un bucket compatible con S3; con `COMPOSE_PROFILES=garage` también un almacén [Garage](https://garagehq.deuxfleurs.fr/) de un nodo en el volumen `garage` | La multimedia supera un disco, o la quieres en un bucket. Sin el perfil, el almacén es el externo de los ajustes `MY_BLOB_S3_*` |
 | `compose.caddy.yaml` | Caddy, con certificados TLS en los puertos 80 y 443 | `MY_HOST` es un dominio público y nada más termina TLS en esta máquina |
+| `compose.sfu.yaml` | Chat de voz con un nodo multimedia: el servidor se divide en `role = web`, `worker` y `sfu`, y Caddy envía el WebSocket del nodo al nodo. Necesita `compose.postgres.yaml` y `compose.caddy.yaml` | Quieres `voice = sfu` ([Chat de voz](voice.md#docker-compose)) |
 | `compose.build.yaml` | Construye la imagen desde un checkout | Ejecutas tu propia compilación |
 
 Elige la base de datos y el almacén de multimedia antes del primer arranque: los datos no se mueven solos cuando cambian los archivos
@@ -169,7 +171,7 @@ El servidor confía en el `X-Forwarded-For` de los pools de direcciones predeter
 El servicio puntual `garage-init` prepara el almacén en cada `up`. Permanece dentro de la red de Compose, ya que el servidor
 sirve la multimedia por sí mismo. Un nodo es un disco: haz copia de seguridad del volumen `garage` o del bucket ([Copias de seguridad](backup.md#media-in-a-bucket)).
 
-<!-- source: serving-https-from-the-server 45ec9231a41e -->
+<!-- source: serving-https-from-the-server 7b583c946805 -->
 ## Servir HTTPS desde el servidor
 
 `my` puede servir HTTPS por sí mismo, de modo que una máquina pequeña ejecute todo el servidor como un solo binario con un dominio y los puertos 80 y 443,
@@ -199,7 +201,8 @@ MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
 - **Conexiones.** TLS 1.2 o posterior con los conjuntos de cifrado predeterminados de Go, HTTP/2 y HTTP/1.1, como máximo 64 KiB de cabeceras
   de solicitud, y como máximo 100 streams concurrentes en una conexión HTTP/2. Los timeouts son los de HTTP sin cifrar. El servidor
   sigue añadiendo `Strict-Transport-Security` a cada respuesta ([Cabeceras de seguridad](#security-headers)).
-- **Roles.** Solo los roles `web` y `all` escuchan con TLS. Un `worker` sirve sus comprobaciones de salud en HTTP sin cifrar en
+- **Roles.** Solo los roles `web`, `all` y `sfu` escuchan con TLS. Un nodo multimedia (`role = sfu`) sirve el host de
+  `voice_sfu_public_url` en lugar de `host`. Un `worker` sirve sus comprobaciones de salud en HTTP sin cifrar en
   `listen` (`:8080` por defecto) y no abre el puerto 80.
 - **Direcciones de cliente.** Sin un proxy delante, el par de la conexión es el cliente: deja `trusted_proxies` vacío.
   Defínelo solo cuando una CDN delante se conecta al servidor por `https`.
@@ -443,7 +446,7 @@ Si ejecutas una versión oficial sin modificar, conserva el valor por defecto.
 - Asegúrate de que el filtro de spam no descarte las solicitudes.
 - Usa una dirección que no te importe hacer pública: cualquiera puede verla en la página de información, la página de inicio y en NodeInfo.
 
-<!-- source: metrics a5fd8092d408 -->
+<!-- source: metrics d456616d0cb0 -->
 ## Métricas
 
 El ajuste `metrics_exporter` (`none` por defecto) exporta las métricas del servicio. Sus ajustes relacionados están en la [referencia de configuración](../reference/configuration.md).
@@ -488,6 +491,15 @@ Las métricas se enumeran abajo. En Prometheus, `.` en un nombre pasa a `_` y se
 | `my.billing.imports` | Contador | `my.billing.source` (`aws` / `gcp` / `plugin`), `my.outcome` (`success` / `failed`), `error.type` (solo con `failed`: el tipo de fallo, como en [Importar los cargos de uso en la nube](billing-import.md)). Cada intento cuenta, incluidos los reintentos y los fallos que esperan a la siguiente importación diaria |
 | `my.supporter.tip_checkouts` | Contador | `my.outcome` (`started` / `rate_limited` / `paid` / `expired`). Uno por inicio de una propina que obtuvo la página del proveedor, por inicio que rechazaron los límites y por propina que se pagó o terminó sin pagar; consulta [propinas](supporters.md#tips) para las alertas a las que sirve |
 | `my.voice.turn.credentials` | Contador | `my.voice.turn` (`coturn` / `cloudflare`), `my.outcome` (`issued` / `reused` / `failed`). Uno por credencial TURN que pidió un participante del chat de voz al unirse a una sala o al renovar su conexión: `reused` significa que se devolvieron de nuevo credenciales de Cloudflare emitidas antes para la misma conexión, y `failed` significa que no se pudo llegar a Cloudflare o este rechazó, así que el participante recibió un error y no pudo conectarse |
+| `my.voice.sfu.rooms`, `my.voice.sfu.sessions` | Indicador | Ninguna (por nodo multimedia de `voice = sfu`: las salas con conexiones en el nodo y las sesiones conectadas a él) |
+| `my.voice.sfu.capacity.reserved`, `my.voice.sfu.capacity.connected` | Indicador | Ninguna (por nodo multimedia: la suma de los máximos de las salas colocadas en él y las sesiones conectadas a él, ambas frente a `voice_sfu_node_capacity`) |
+| `my.voice.sfu.packets` | Contador | `my.outcome` (`forwarded`, uno por participante al que se envió un paquete de audio; o el motivo por el que se descartó un paquete: `silent`, `not_allowed` para un participante que no puede hablar o está silenciado, `queue_full` para un participante cuya conexión no pudo seguir el ritmo) |
+| `my.voice.sfu.bytes` | Contador, bytes | Ninguna (el audio que reenvió el nodo multimedia) |
+| `my.voice.sfu.renegotiations`, `my.voice.sfu.ice_restarts`, `my.voice.sfu.migrations` | Contador | Ninguna (ofertas nuevas después de la primera, porque cambiaron quienes hablan; reinicios de ICE que pidieron los clientes tras un cambio de red; sesiones que un nodo que se detiene envió a otro nodo) |
+| `my.voice.sfu.ticket_refusals` | Contador | `my.voice.sfu.reason` (`invalid` para un ticket caducado, usado o desconocido, `other_node` para un ticket de otro nodo) |
+| `my.voice.sfu.client.rtt` | Histograma, segundos | Ninguna (el tiempo de ida y vuelta a los participantes, según sus informes RTCP) |
+| `my.voice.sfu.client.packet_loss` | Histograma, porcentaje | Ninguna (la pérdida en el camino hacia los participantes, según sus informes RTCP) |
+| `my.voice.sfu.offer.wait` | Histograma, segundos | Ninguna (el tiempo desde que un participante se une hasta la primera oferta del nodo de medios) |
 | `my.errors.exported` | Contador | `my.outcome` (`success` / `dropped` / `failed`: uno por informe de error para el servicio de `errors_exporter`. `dropped` significa que el informe no se envió porque ya esperaban 1000 informes o el servicio pidió al servidor que fuera más despacio, y el servidor espera lo que el servicio pida antes de enviar de nuevo; `failed` significa que no se pudo llegar al servicio o este rechazó el informe. Un informe se envía una vez y nunca se reintenta, y los informes que aún esperan 2 segundos después de iniciarse un apagado se pierden) |
 | `my.queue.ready` | Indicador | `my.job.type` (el número de jobs ejecutables en la cola de la base de datos) |
 | `my.queue.oldest_ready_age` | Indicador, segundos | `my.job.type` (cuánto ha esperado el job ejecutable más antiguo de cada tipo en la cola de la base de datos; un tipo sin jobs ejecutables no tiene valor) |
@@ -601,7 +613,7 @@ El listener no tiene autenticación, un perfil muestra las interioridades del pr
 El perfil del heap cubre solo el heap de Go. La memoria residente del proceso también contiene las páginas del binario que se leyeron, las pilas y las propias estructuras del runtime; las estadísticas de memoria las dan.
 Los perfiles de bloqueo y de mutex solo muestrean mientras una solicitud con `seconds` los toma, y están vacíos sin ella.
 
-<!-- source: stop-the-server 37d4c0cc3d97 -->
+<!-- source: stop-the-server 72d71a40815a -->
 ## Detener el servidor
 
 Con SIGTERM o SIGINT el servidor se apaga de forma ordenada.
@@ -611,6 +623,11 @@ Con SIGTERM o SIGINT el servidor se apaga de forma ordenada.
 3. Pasados 25 segundos cancela el contexto de las solicitudes y trabajos restantes y cierra las conexiones.
    Después da a un trabajo cancelado hasta 3 segundos más para registrar su resultado y termina con el código 1 (28 segundos como máximo en total, dentro del periodo de gracia de 30 segundos por defecto de Kubernetes y ECS).
    Un trabajo cancelado se reintenta. Un trabajo que no se detiene en esos 3 segundos, o que se mata a medias, se abandona y un worker lo vuelve a tomar cuando caduca su concesión, así que puede ejecutarse dos veces.
+
+Un proceso que ejecuta un nodo multimedia de `voice = sfu` (`role = sfu`, o `all`) lo vacía primero: deja de aceptar salas,
+mueve sus salas a otros nodos e indica a sus clientes que se reconecten allí, y espera hasta 20 de los 25 segundos a que
+se vayan antes de esperar a las solicitudes. Dale el mismo periodo de gracia de al menos 30 segundos (el predeterminado de Docker es 10:
+define `stop_grace_period` o usa `docker stop -t 30`). Consulta [Chat de voz](voice.md#drain-a-node-for-a-deploy).
 
 Un pánico en una de las tareas en segundo plano del servidor inicia el mismo apagado, para que el servidor nunca siga funcionando en un estado roto.
 La línea de registro `serve failed` nombra la tarea, y el proceso termina con el código 1 para que la plataforma o el gestor de procesos lo reinicie.
@@ -652,7 +669,7 @@ my job types                 # print every job type of this release
 - Un job muerto que nadie reintenta lo elimina la limpieza horaria una vez que ha pasado `dead_job_retention` (30 días por defecto; consulta el [ajuste](../reference/configuration.md#dead_job_retention)) desde el fallo.
 - Los jobs muertos de `queue = inline` viven en la memoria del proceso del servidor, así que `my job` no puede gestionarlos (código de salida 1).
 
-<!-- source: splitting-workers-by-job-type 89ced36a3c80 -->
+<!-- source: splitting-workers-by-job-type e3b4c4374dfb -->
 ### Dividir los workers por tipo de trabajo
 
 Por defecto cada worker ejecuta todos los tipos de trabajo, en el orden en que vencieron, un trabajo a la vez por proceso (consulta [Ejecutar varios trabajos a la vez](#running-several-jobs-at-once)). Entonces una ráfaga de entregas retrasa el correo electrónico y las notificaciones, y cualquier worker que añadas reparte su tiempo entre todos. Con `queue = db` puedes dar a algunos tipos sus propios workers:

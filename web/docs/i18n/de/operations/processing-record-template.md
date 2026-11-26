@@ -36,7 +36,7 @@ Wenn du einen Server im Auftrag eines anderen betreibst, kannst du für ihn Auft
 | Software | my, Version {{VERSION}} |
 | Zuletzt überprüft | {{DATUM, VON WEM}} |
 
-<!-- source: recipients-used-in-this-record 8f1748f022f5 -->
+<!-- source: recipients-used-in-this-record a09123befeea -->
 ### In diesem Verzeichnis verwendete Empfänger
 
 Diese Namen werden unter den Tätigkeiten unten verwendet. Liste jeden auf, den du einsetzt.
@@ -52,7 +52,7 @@ Diese Namen werden unter den Tätigkeiten unten verwendet. Liste jeden auf, den 
 | {{IF payments}} Zahlungsanbieter (Stripe oder PAY.JP) | {{...}} | {{...}} |
 | {{IF error reports}} Fehler-Tracker | {{...}} | {{...}} |
 | {{IF telemetry}} Metrik- und Tracing-Dienst | {{...}} | {{...}} |
-| {{IF voice}} Voice-Media-Server, STUN und TURN | {{...}} | {{...}} |
+| {{IF voice}} STUN- und TURN-Dienst (coturn oder Cloudflare); die Medienknoten von `voice = sfu` gehören zum Hosting | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook-Empfänger | {{...}} | {{...}} |
 | {{IF follow review}} Follow-Prüfdienst | {{...}} | {{...}} |
 | {{IF sign-up review}} Registrierungs-Prüfdienst | {{...}} | {{...}} |
@@ -171,7 +171,7 @@ Diese Namen werden unter den Tätigkeiten unten verwendet. Liste jeden auf, den 
 
 Der Export des Nutzers selbst enthält keine E-Mail-Adressen, IP-Adressen, Benachrichtigungen oder Einstellungen. Für eine vollständige Antwort verwende `my admin account export-moderation` für Moderationsaufzeichnungen und [Offenlegen](moderation.md#account-management) für E-Mail- und IP-Adressen, und lies den Rest aus der Datenbank. Der Moderationsexport lässt die Identität der Melder aus: Prüfe, dass ein Kommentar keine verrät, bevor du ihn übergibst.
 
-<!-- source: 9-voice-chat e0bf1be42da8 -->
+<!-- source: 9-voice-chat 3b9cd4f9a05b -->
 ### 9. Sprachchat
 
 Lösche diese Tätigkeit, wenn `voice = off`.
@@ -180,8 +180,8 @@ Lösche diese Tätigkeit, wenn `voice = off`.
 | --- | --- |
 | Zwecke | Sprachchat-Räume betreiben und sie moderieren |
 | Betroffene | Hosts und Teilnehmer |
-| Personenbezogene Daten | Raumname, Beschreibung, Hosts und wie der Raum endete; wer teilgenommen, gesprochen, die Hand gehoben hat, eingeladen oder entfernt wurde. IP-Adressen und Audio laufen über den Voice-Media-Server oder TURN-Server, oder erreichen andere Teilnehmer mit `voice = p2p` direkt. Der Server zeichnet kein Audio auf |
-| Empfänger | Hosting, Voice-Media-Server, STUN und TURN, Teilnehmer |
+| Personenbezogene Daten | Raumname, Beschreibung, Hosts und wie der Raum endete; wer teilgenommen, gesprochen, die Hand gehoben hat, eingeladen oder entfernt wurde. IP-Adressen und Audio laufen mit `voice = sfu` über die Medienknoten des Servers oder über einen TURN-Server, oder erreichen andere Teilnehmer mit `voice = p2p` direkt. Der Server zeichnet kein Audio auf |
+| Empfänger | Hosting, STUN und TURN, Teilnehmer |
 | Löschung | Teilnehmer `{{90 days}}` ab dem Ende des Raums, oder so lange wie eine Meldung dazu. Räume bleiben, wobei Name und Beschreibung bei der Löschung des Autors geleert werden. Bei den Diensten: {{IHRE FRIST}} |
 | Rechtsgrundlage | {{z. B. Vertrag, berechtigte Interessen}} |
 

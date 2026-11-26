@@ -3,7 +3,7 @@
 
 本頁說明如何啟動和停止伺服器、取得其映像檔，以及在執行期間監看它：指標、追蹤、任務佇列和健康檢查。
 
-<!-- source: start-the-server 05b29144056b -->
+<!-- source: start-the-server c19e1ea32f07 -->
 ## 啟動伺服器
 
 ```sh
@@ -24,6 +24,7 @@ my version        # print the version of the binary
 | `all`（預設） | 所有路由 | 執行 |
 | `web` | 所有路由 | 不執行 |
 | `worker` | 只有健康檢查（供平台探測使用） | 執行 |
+| `sfu` | 健康檢查，以及 `voice = sfu` 媒體節點的 WebSocket；該節點在自己的 UDP 和 TCP 連接埠上接收音訊（[語音聊天](voice.md#run-media-nodes)） | 不執行 |
 
 日誌會以 JSON Lines 格式輸出到標準錯誤。每一行都有 `level`（`DEBUG`、`INFO`、`WARN`、`ERROR`）和 `severity`，後者是以 Cloud Logging 讀取的形式表示的同一個等級（`DEBUG`、`INFO`、`WARNING`、`ERROR`，以及用於讓程序停止之錯誤的 `CRITICAL`）。處理請求時寫入的日誌會帶有 `request_id`，同一個 ID 也會在 `X-Request-Id` 回應標頭中傳回。如果請求的 `X-Request-Id` 最多 128 個字元，且只由英文字母、數字和 `-_.:` 組成，就會被視為負載平衡器指定的 ID 而原樣使用。追蹤內（請求和任務）的日誌也會帶有 `trace_id` 和 `span_id`（請參閱[追蹤](#traces)）。對於 Cloud Run，使用 `logs_exporter = gcp` 時，日誌行還會帶有將一行連結到 Cloud Trace 中其追蹤的 Cloud Logging 欄位，每個存取日誌行也會以 `httpRequest` 帶有其請求；其他欄位維持不變。
 
@@ -91,7 +92,7 @@ service:
 
 使用 `metrics_exporter = emf` 時，這兩行本身就是 EMF 行。`http request` 行帶有 `http.server.request.duration` 的值，`job` 行帶有 `my.job.duration` 和 `my.job.wait` 的值（鍵以指標命名），另外還有 `_aws` 指示詞、`service.name`、`service.version`、`my.role` 和 `service.namespace`（`host`）。這三個指標不會寫在其他任何行上。你在 `metrics_emf_dimensions` 中選擇的欄位會依 EMF 的要求以字串寫入（例如維度 `http.response.status_code` 為 `"200"`）。日誌輸出到標準錯誤，其他 EMF 行則輸出到標準輸出。ECS 的 `awslogs` 日誌驅動程式會把兩者都送到 CloudWatch Logs，所以會從兩者擷取指標。
 
-<!-- source: docker-compose-files 9f0633524036 -->
+<!-- source: docker-compose-files eab514676a87 -->
 ## Docker Compose 檔案
 
 `deploy/docker/` 存放部署實例所需的檔案。`compose.yaml` 可以單獨執行，其他檔案則疊加在它之上。
@@ -102,6 +103,7 @@ service:
 | `compose.postgres.yaml` | 容器中的 PostgreSQL，放在磁碟區 `postgres` 中 | 你想在這台機器上使用 PostgreSQL。若要使用其他地方的 PostgreSQL 伺服器，請不要加上它，並在 `.env` 中設定 `MY_DATABASE` 和 `MY_DATABASE_URL` |
 | `compose.s3.yaml` | 把媒體放在相容 S3 的儲存貯體中；搭配 `COMPOSE_PROFILES=garage` 時，還會在磁碟區 `garage` 中加上單節點的 [Garage](https://garagehq.deuxfleurs.fr/) 儲存 | 媒體超出一顆硬碟的容量，或你想把媒體放在儲存貯體中。不使用該設定檔時，儲存空間是 `MY_BLOB_S3_*` 設定所指的外部儲存 |
 | `compose.caddy.yaml` | Caddy，在連接埠 80 和 443 上提供 TLS 憑證 | `MY_HOST` 是公開網域，而這台機器上沒有其他元件終止 TLS |
+| `compose.sfu.yaml` | 帶有媒體節點的語音聊天：伺服器拆分為 `role = web`、`worker` 和 `sfu`，Caddy 把節點的 WebSocket 轉給節點。需要 `compose.postgres.yaml` 和 `compose.caddy.yaml` | 你想使用 `voice = sfu`（[語音聊天](voice.md#docker-compose)） |
 | `compose.build.yaml` | 從簽出的原始碼建置映像檔 | 你執行自己的建置 |
 
 請在第一次啟動前選好資料庫和媒體儲存：檔案變更時，資料不會自動搬移（[備份](backup.md)說明了哪些資料需要搬移）。
@@ -128,7 +130,7 @@ cp example.env .env
 
 **內附的 Garage**。搭配 `COMPOSE_PROFILES=garage` 的 `compose.s3.yaml` 需要 `example.env` 開頭所列的值。一次性的服務 `garage-init` 會在每次 `up` 時準備儲存空間。它只在 Compose 網路內部運作，因為媒體由伺服器自己提供。一個節點就是一顆硬碟：請備份磁碟區 `garage` 或儲存貯體（[備份](backup.md#media-in-a-bucket)）。
 
-<!-- source: serving-https-from-the-server 45ec9231a41e -->
+<!-- source: serving-https-from-the-server 7b583c946805 -->
 ## 由伺服器提供 HTTPS
 
 `my` 可以自己提供 HTTPS，讓小型機器只靠一個二進位檔、一個網域和連接埠 80 與 443 就能執行整個伺服器，不需要反向代理。使用 `tls = acme` 時，它會向 Let's Encrypt 等 ACME 憑證授權單位取得憑證。使用 `tls = files` 時，它會提供你準備的憑證和金鑰，並由 certbot 等其他工具負責更新。
@@ -150,7 +152,7 @@ MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
 - **連接埠**。伺服器在 `listen` 上提供 HTTPS（`tls` 不是 `off` 時，預設為 `:443`）。在 `tls_http_listen`（預設為 `:80`）上，它會把 `GET` 和 `HEAD` 請求以 `301` 導向同一路徑的 `https` 位址，並對其他所有方法回應 `400`，讓請求內文不會以明文傳送。
 - **主機**。伺服器提供 `host`，以及與之不同時的 `web_origin` 的主機。對其他任何名稱的交握都會因為沒有憑證而失敗，也絕不會讓伺服器去申請憑證。
 - **連線**。TLS 1.2 或更新版本，使用 Go 預設的加密套件，支援 HTTP/2 和 HTTP/1.1，請求標頭最多 64 KiB，HTTP/2 連線最多 100 個並行串流。逾時與純 HTTP 相同。伺服器仍會在每個回應加上 `Strict-Transport-Security`（[安全性標頭](#security-headers)）。
-- **角色**。只有 `web` 和 `all` 角色會以 TLS 監聽。`worker` 在 `listen`（預設為 `:8080`）上以純 HTTP 提供健康檢查，並且不開啟連接埠 80。
+- **角色**。只有 `web`、`all` 和 `sfu` 角色會以 TLS 監聽。媒體節點（`role = sfu`）提供的是 `voice_sfu_public_url` 的主機，而不是 `host`。`worker` 在 `listen`（預設為 `:8080`）上以純 HTTP 提供健康檢查，並且不開啟連接埠 80。
 - **用戶端位址**。前面沒有代理時，連線的對端就是用戶端：請讓 `trusted_proxies` 保持空白。只有前面的 CDN 以 `https` 連線到伺服器時才設定它。
 - **維護模式**。`my serve -maintenance` 既不讀取 `tls`，也不讀取憑證，並在 `listen`（除非你另外設定，否則為 `:8080`）上以純 HTTP 回應，所以維護期間請把 `MY_LISTEN` 和防火牆指向該連接埠，或保留一個反向代理供維護使用。
 
@@ -321,7 +323,7 @@ sha256sum --ignore-missing -c SHA256SUMS
 - 確認垃圾郵件過濾不會擋掉索取請求。
 - 使用你願意公開的地址：任何人都能在資訊頁面、入口頁面和 NodeInfo 中看到它。
 
-<!-- source: metrics a5fd8092d408 -->
+<!-- source: metrics d456616d0cb0 -->
 ## 指標
 
 設定 `metrics_exporter`（預設 `none`）會匯出服務指標。相關設定請參閱[設定參考](../reference/configuration.md)。
@@ -366,6 +368,15 @@ sha256sum --ignore-missing -c SHA256SUMS
 | `my.billing.imports` | 計數器 | `my.billing.source`（`aws` / `gcp` / `plugin`）、`my.outcome`（`success` / `failed`）、`error.type`（僅在 `failed` 時：失敗的種類，如[匯入雲端使用費用](billing-import.md)所述）。每次嘗試都會計入，包括重試和等待下一次每日匯入的失敗 |
 | `my.supporter.tip_checkouts` | 計數器 | `my.outcome`（`started` / `rate_limited` / `paid` / `expired`）。每次取得服務提供者頁面的小費發起計一次，每次被限制拒絕的發起計一次，以及每筆已付款或未付款即結束的小費計一次；它所支援的警示請參閱[小費](supporters.md#tips) |
 | `my.voice.turn.credentials` | 計數器 | `my.voice.turn`（`coturn` / `cloudflare`）、`my.outcome`（`issued` / `reused` / `failed`）。語音聊天參與者在加入聊天室或更新連線時要求的每個 TURN 憑證計一次：`reused` 表示再次傳回先前為同一個連線發出的 Cloudflare 憑證，`failed` 表示無法連線到 Cloudflare 或遭到拒絕，參與者因此收到錯誤而無法連線 |
+| `my.voice.sfu.rooms`、`my.voice.sfu.sessions` | 量測計 | 無（每個 `voice = sfu` 的媒體節點：節點上有連線的聊天室數，以及連到該節點的工作階段數） |
+| `my.voice.sfu.capacity.reserved`、`my.voice.sfu.capacity.connected` | 量測計 | 無（每個媒體節點：安排在其上的聊天室上限之和，以及連到它的工作階段數，兩者都與 `voice_sfu_node_capacity` 對照） |
+| `my.voice.sfu.packets` | 計數器 | `my.outcome`（`forwarded`，每向一位參與者傳送一個音訊封包計一次；或封包被丟棄的原因：`silent`；`not_allowed` 表示不能發言或被靜音的參與者；`queue_full` 表示連線跟不上的參與者） |
+| `my.voice.sfu.bytes` | 計數器，位元組 | 無（媒體節點轉送的音訊） |
+| `my.voice.sfu.renegotiations`、`my.voice.sfu.ice_restarts`、`my.voice.sfu.migrations` | 計數器 | 無（第一次之後因發言者變動而產生的新 offer；用戶端在網路變更後要求的 ICE 重新啟動；停止中的節點送往另一個節點的工作階段） |
+| `my.voice.sfu.ticket_refusals` | 計數器 | `my.voice.sfu.reason`（`invalid` 表示已過期、已使用或未知的票證，`other_node` 表示另一個節點的票證） |
+| `my.voice.sfu.client.rtt` | 直方圖，秒 | 無（到參與者的往返時間，來自他們的 RTCP 報告） |
+| `my.voice.sfu.client.packet_loss` | 直方圖，百分比 | 無（到參與者途中的封包遺失，來自他們的 RTCP 報告） |
+| `my.voice.sfu.offer.wait` | 直方圖，秒 | 無（從參與者加入到媒體節點送出第一個 offer 的時間） |
 | `my.errors.exported` | 計數器 | `my.outcome`（`success` / `dropped` / `failed`：傳給 `errors_exporter` 服務的每份錯誤回報計一次。`dropped` 表示因為已有 1,000 份回報在等待，或服務要求伺服器放慢速度而沒有傳送，伺服器會依服務要求的時間等待後才再次傳送；`failed` 表示無法連線到服務或服務拒絕了回報。回報只會傳送一次，絕不重試，而關機開始 2 秒後仍在等待的回報會遺失） |
 | `my.queue.ready` | 量測計 | `my.job.type`（資料庫佇列中可執行的任務數） |
 | `my.queue.oldest_ready_age` | 量測計，秒 | `my.job.type`（資料庫佇列中各類型最舊的可執行任務已等待的時間；沒有可執行任務的類型沒有值） |
@@ -468,7 +479,7 @@ curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '              
 
 這個監聽器沒有驗證，剖析資料會顯示程序的內部，而且取得剖析會消耗 CPU：請讓它只在 loopback 上，並透過通道連線（`ssh -L 6060:127.0.0.1:6060 <host>`、`kubectl port-forward`），用完後取消設定。堆積剖析只涵蓋 Go 的堆積。程序的常駐記憶體還包含已讀入的二進位檔分頁、堆疊和執行階段自己的結構；這些請看記憶體統計。block 和 mutex 剖析只在帶有 `seconds` 的請求取得它們的期間取樣，沒有它時是空的。
 
-<!-- source: stop-the-server 37d4c0cc3d97 -->
+<!-- source: stop-the-server 72d71a40815a -->
 ## 停止伺服器
 
 收到 SIGTERM 或 SIGINT 時，伺服器會正常關機。
@@ -476,6 +487,8 @@ curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '              
 1. 停止接受新的連線和取得任務。
 2. 最多等待 25 秒，讓處理中的請求和執行中的任務完成。
 3. 25 秒後，取消剩餘請求和任務的 context 並關閉連線。接著再給被取消的任務最多 3 秒記錄其結果，然後以代碼 1 結束（總計最多 28 秒，在 Kubernetes 和 ECS 預設的 30 秒寬限期之內）。被取消的任務會重試。在這 3 秒內沒有停止，或在中途被終止的任務會被放棄，並在其租約到期時由任務程序重新取得，所以可能會執行兩次。
+
+執行 `voice = sfu` 媒體節點的程序（`role = sfu` 或 `all`）會先排空它：停止接收聊天室，把聊天室轉移到其他節點並通知其用戶端到那裡重新連線，最多等待 25 秒中的 20 秒讓用戶端離開，然後才等待請求。請給它同樣至少 30 秒的寬限期（Docker 預設為 10 秒：請設定 `stop_grace_period` 或使用 `docker stop -t 30`）。請參閱[語音聊天](voice.md#drain-a-node-for-a-deploy)。
 
 伺服器的背景作業發生 panic 時，也會啟動相同的關機流程，讓伺服器絕不會在損壞的狀態下繼續執行。`serve failed` 日誌行會指出該作業，程序會以代碼 1 結束，由平台或程序管理工具重新啟動它。
 
@@ -511,7 +524,7 @@ my job types                 # print every job type of this release
 - 沒有人重試的 dead 任務，會在失敗後經過 `dead_job_retention`（預設 30 天；請參閱[該設定](../reference/configuration.md#dead_job_retention)）時由每小時的清理移除。
 - `queue = inline` 的 dead 任務存放在伺服器程序的記憶體中，所以 `my job` 無法處理它們（結束代碼 1）。
 
-<!-- source: splitting-workers-by-job-type 89ced36a3c80 -->
+<!-- source: splitting-workers-by-job-type e3b4c4374dfb -->
 ### 依任務類型分開任務程序
 
 預設情況下，每個任務程序都會執行所有任務類型，依任務到期的順序，每個程序一次執行一個任務（請參閱[同時執行多個任務](#running-several-jobs-at-once)）。這樣一來，大量的傳送會延誤電子郵件和通知，而你新增的任何任務程序也會把時間分給所有類型。使用 `queue = db` 時，你可以讓某些類型擁有自己的任務程序：

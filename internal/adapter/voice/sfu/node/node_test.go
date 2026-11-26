@@ -74,6 +74,12 @@ func newNodeEnv(t *testing.T, id string, reg *sfu.Registry, clock *testkit.Clock
 // from the one that the transport places the rooms with, reg: a test cuts the node's off.
 func newNodeEnvOn(t *testing.T, id string, nodeReg, reg *sfu.Registry, clock *testkit.Clock, rs *rooms, hub *stream.Hub) *env {
 	t.Helper()
+	return newNodeEnvWith(t, id, nodeReg, reg, clock, rs, hub, 50)
+}
+
+// newNodeEnvWith is newNodeEnvOn with the capacity of the node.
+func newNodeEnvWith(t *testing.T, id string, nodeReg, reg *sfu.Registry, clock *testkit.Clock, rs *rooms, hub *stream.Hub, capacity int) *env {
+	t.Helper()
 	udp, err := net.ListenPacket("udp4", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -89,7 +95,7 @@ func newNodeEnvOn(t *testing.T, id string, nodeReg, reg *sfu.Registry, clock *te
 	t.Cleanup(mux.Close)
 	e.url = "ws" + strings.TrimPrefix(mux.URL, "http")
 	e.node = node.New(node.Options{
-		ID: id, URL: e.url, Capacity: 50, UDPConn: udp, TCPListener: tcp, Loopback: true,
+		ID: id, URL: e.url, Capacity: capacity, UDPConn: udp, TCPListener: tcp, Loopback: true,
 		Registry: nodeReg, Rooms: rs, Streams: e.hub, Meter: e.meter,
 	})
 	mux.Config.Handler = e.node

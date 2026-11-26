@@ -17,6 +17,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -82,6 +83,9 @@ type Node struct {
 	draining atomic.Bool
 	sessions atomic.Int64
 
+	// offers bounds the offers that the node makes at once (offer).
+	offers chan struct{}
+
 	mu    sync.Mutex
 	rooms map[string]*room
 	held  []sfu.HeldRoom
@@ -93,7 +97,7 @@ func New(o Options) *Node {
 		o.Logger = slog.New(slog.DiscardHandler)
 	}
 	o.Logger = o.Logger.With(slog.String("component", "voice.sfu"))
-	return &Node{o: o, rooms: map[string]*room{}}
+	return &Node{o: o, rooms: map[string]*room{}, offers: make(chan struct{}, runtime.GOMAXPROCS(0))}
 }
 
 // ID returns the ID of the node in the registry.
@@ -160,6 +164,11 @@ func (n *Node) Reserved() int {
 
 // Totals returns the totals of the packet path since the node started.
 func (n *Node) Totals() Totals { return n.stats.totals() }
+
+// offer offers p its current slots in a goroutine of its own, at most GOMAXPROCS offers at once.
+func (n *Node) offer(p *peer) {
+	n.run("voice.sfu.offer", func() { p.offerSpeakers(n.base, n.offers) })
+}
 
 // takeSession counts a new session, false when the node holds its capacity.
 func (n *Node) takeSession() bool {
@@ -345,8 +354,10 @@ func (n *Node) discard(c *websocket.Conn) {
 	}
 }
 
-// serve reads the messages of a session's client until its WebSocket closes.
+// serve reads the messages of a session's client until its WebSocket closes, and then ends the
+// writer and the pinger of the WebSocket.
 func (n *Node) serve(c *websocket.Conn, ws *wsConn, p *peer) {
+	defer ws.close(websocket.StatusNormalClosure, "")
 	defer p.detach(ws)
 	for {
 		typ, data, err := c.Read(n.base)

@@ -36,7 +36,7 @@
 | 软件 | my，版本 {{VERSION}} |
 | 最近审查 | {{DATE, BY WHOM}} |
 
-<!-- source: recipients-used-in-this-record 8f1748f022f5 -->
+<!-- source: recipients-used-in-this-record a09123befeea -->
 ### 本记录中使用的接收方
 
 下文各项活动使用这些名称。请列出你使用的每一个接收方。
@@ -52,7 +52,7 @@
 | {{IF payments}} 支付服务商（Stripe 或 PAY.JP） | {{...}} | {{...}} |
 | {{IF error reports}} 错误跟踪服务 | {{...}} | {{...}} |
 | {{IF telemetry}} 指标和追踪服务 | {{...}} | {{...}} |
-| {{IF voice}} 语音媒体服务器、STUN 和 TURN | {{...}} | {{...}} |
+| {{IF voice}} STUN 和 TURN 服务（coturn 或 Cloudflare）；`voice = sfu` 的媒体节点属于托管 | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook 接收方 | {{...}} | {{...}} |
 | {{IF follow review}} 关注审查服务 | {{...}} | {{...}} |
 | {{IF sign-up review}} 注册审查服务 | {{...}} | {{...}} |
@@ -171,7 +171,7 @@
 
 用户自己的导出不包含电子邮件地址、IP 地址、通知或偏好设置。要完整回应请求，请用 `my admin account export-moderation` 导出审核记录，用[查看](moderation.md#account-management)获取电子邮件地址和 IP 地址，其余内容从数据库中读取。审核记录导出不包含举报者的身份：交出之前，请检查评论中是否会透露举报者。
 
-<!-- source: 9-voice-chat e0bf1be42da8 -->
+<!-- source: 9-voice-chat 3b9cd4f9a05b -->
 ### 9. 语音聊天
 
 当 `voice = off` 时删除此活动。
@@ -180,8 +180,8 @@
 | --- | --- |
 | 目的 | 运行语音聊天房间并进行审核 |
 | 数据主体 | 主持人和参与者 |
-| 个人数据 | 房间名称、描述、主持人以及房间如何结束；谁参加、发言、举手、受到邀请或被移出。IP 地址和音频经过语音媒体服务器或 TURN 服务器，或者在 `voice = p2p` 时直接到达其他参与者。服务器不录制任何音频 |
-| 接收方 | 托管、语音媒体服务器、STUN 和 TURN、参与者 |
+| 个人数据 | 房间名称、描述、主持人以及房间如何结束；谁参加、发言、举手、受到邀请或被移出。IP 地址和音频在 `voice = sfu` 时经过服务器的媒体节点，或者经过 TURN 服务器，或者在 `voice = p2p` 时直接到达其他参与者。服务器不录制任何音频 |
+| 接收方 | 托管、STUN 和 TURN、参与者 |
 | 删除 | 参与者在房间结束后 `{{90 days}}`，或者与有关该房间的举报保留同样长的时间。房间会保留，在创建者的账号删除时清空名称和描述。在这些服务处：{{THEIR PERIOD}} |
 | 法律依据 | {{e.g. contract, legitimate interests}} |
 

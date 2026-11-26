@@ -117,10 +117,10 @@ check_order() {
 
 # Each layer, alone and all together, is a valid Compose file with the settings its header asks for.
 echo "docker-smoke: checking the layers" >&2
-for layers in postgres s3 caddy "postgres s3 caddy"; do
+for layers in postgres s3 caddy "postgres caddy sfu" "postgres s3 caddy sfu"; do
 	files=()
 	for layer in $layers; do files+=(-f "$root/deploy/docker/compose.$layer.yaml"); done
-	POSTGRES_PASSWORD=smoke "${compose[@]}" "${files[@]}" config -q
+	POSTGRES_PASSWORD=smoke MY_VOICE_SFU_PUBLIC_IP=203.0.113.10 "${compose[@]}" "${files[@]}" config -q
 done
 
 # An image is never a test build: the Dockerfile refuses the test-only build tag e2e_fakes before it compiles anything.

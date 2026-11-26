@@ -28,7 +28,7 @@ De arriba abajo en el diagrama:
 - **Servicios externos al servidor.** El CAPTCHA, el chat de voz, los pagos, los plugins y la importación de costes de la nube permanecen desactivados
   hasta que los configuras, y el servidor llama entonces al servicio que nombras.
 
-<!-- source: parts-you-choose-by-configuration 34c2a60744fd -->
+<!-- source: parts-you-choose-by-configuration 4d878bcd8b84 -->
 ## Partes que eliges por configuración
 
 Cada parte es un ajuste de la [referencia de configuración](../reference/configuration.md), definido en un archivo TOML o como
@@ -46,7 +46,7 @@ Donde una parte guarda datos, elígela antes del primer arranque: los datos no s
 | Gestor de claves, que cifra las claves privadas de las cuentas | [`key_manager`](../reference/configuration.md#key_manager) | `local` (una clave de cifrado de claves que guardas tú), `gcpkms` (Google Cloud KMS), `awskms` (AWS KMS), `plugin` | [Gestionar la clave](key-management.md) |
 | Correo | [`mail`](../reference/configuration.md#mail) | `none`, `smtp`, `ses` (Amazon SES), `plugin` | [Enviar correo](email.md) |
 | CAPTCHA | [`captcha`](../reference/configuration.md#captcha) | `none`, `turnstile` (Cloudflare Turnstile), `hcaptcha`, `recaptcha` (Google reCAPTCHA v2) | [CAPTCHA](captcha.md) |
-| Chat de voz | [`voice`](../reference/configuration.md#voice) | `off`, `p2p` (de navegador a navegador, con TURN de `voice_turn`: `none`, `coturn` o `cloudflare`), `livekit`, `sora` | [Chat de voz](voice.md) |
+| Chat de voz | [`voice`](../reference/configuration.md#voice) | `off`, `p2p` (de navegador a navegador), `sfu` (los nodos multimedia del servidor), cada uno con TURN de `voice_turn`: `none`, `coturn` o `cloudflare` | [Chat de voz](voice.md) |
 | Pagos de mecenas | [`payments`](../reference/configuration.md#payments) | `none`, `stripe`, `payjp` (PAY.JP) | [Mecenas](supporters.md), [Stripe](payments-stripe.md), [PAY.JP](payments-payjp.md) |
 | Plugins | `plugin_<kind>_address` | ninguno por defecto; una dirección para cada tipo: `translator`, `search`, `billing`, `mailer`, `media_image`, `media_video`, `media_audio`, `key_manager` y los hooks de decisión `inbound.status`, `local.status`, `inbound.follow`, `signup.check`, `media.check`, `inbound.actor`, `local.profile` | [Plugins](plugins.md), [hooks de decisión](decision-hooks.md) |
 | Traducción de publicaciones | `translator_<provider>_*`, [`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | ninguno (solo la traducción del propio navegador); `libretranslate`, `deepl`, `google` (Google Cloud Translation), `aws` (Amazon Translate) o un plugin tuyo delante del servicio que elijas | [Traducir publicaciones](translation.md), [un plugin traductor](plugins.md#translating-posts) |

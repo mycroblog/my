@@ -231,6 +231,9 @@ type slotTrack struct {
 	lastSeq uint16
 	lastTS  uint32
 	lastAt  time.Time
+	// header is the header that write rewrites and writes, kept so that a packet costs no
+	// allocation: the writer of the sender reads it during WriteRTP only.
+	header rtp.Header
 }
 
 var _ webrtc.TrackLocal = (*slotTrack)(nil)
@@ -287,13 +290,14 @@ func (t *slotTrack) write(pkt *packet, now func() time.Time) (int, bool) {
 		t.tsOff = t.lastTS + ticks - in.Timestamp
 		t.started, t.from, t.fromSSR = true, pkt.source, in.SSRC
 	}
-	h := *in
+	h := &t.header
+	*h = *in
 	h.SSRC, h.PayloadType = b.ssrc, b.payloadType
 	h.SequenceNumber = pkt.seq + t.seqOff
 	h.Timestamp = in.Timestamp + t.tsOff
 	h.Padding, h.PaddingSize = false, 0
 	t.lastSeq, t.lastTS, t.lastAt = h.SequenceNumber, h.Timestamp, at
-	n, err := b.writer.WriteRTP(&h, pkt.rtp.Payload)
+	n, err := b.writer.WriteRTP(h, pkt.rtp.Payload)
 	if err != nil {
 		// The connection closed meanwhile.
 		return 0, false

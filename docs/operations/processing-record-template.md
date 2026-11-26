@@ -47,7 +47,7 @@ These names are used under the activities below. List each one you use.
 | {{IF payments}} Payment provider (Stripe or PAY.JP) | {{...}} | {{...}} |
 | {{IF error reports}} Error tracker | {{...}} | {{...}} |
 | {{IF telemetry}} Metrics and tracing service | {{...}} | {{...}} |
-| {{IF voice}} Voice media server, STUN and TURN | {{...}} | {{...}} |
+| {{IF voice}} STUN and TURN service (coturn or Cloudflare); the media nodes of `voice = sfu` are part of the hosting | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook receivers | {{...}} | {{...}} |
 | {{IF follow review}} Follow review service | {{...}} | {{...}} |
 | {{IF sign-up review}} Sign-up review service | {{...}} | {{...}} |

@@ -33,9 +33,8 @@ connection) and the audio go:
 
 Notes on the choice:
 
-- With `p2p` the audio never passes through this server (it passes through the TURN server when one is used). The server's load is only the room messages, heartbeats and streams.
-- A small instance is best served by `p2p`.
-- With `sfu` the browsers reach only the media node, so participants' IP addresses are visible to the node, not to the other participants. `voice_stun_urls` is not needed, since a node has a public address, and `voice_ice_transport_policy = relay` is refused.
+- **`p2p`** needs no UDP port on the server: the audio never passes through it (it passes through the TURN server when one is used), and the server's load is only the room messages, heartbeats and streams. It fits a small instance, small rooms, and a deployment on Cloud Run alone.
+- **`sfu`** enforces on the server who may speak: the node forwards only the audio of the speakers. The browsers reach only the media node, so participants' IP addresses are visible to the node, not to the other participants. It needs a machine with a public IP and open UDP and TCP ports for each node ([Media nodes](#media-nodes)). `voice_stun_urls` is not needed, since a node has a public address, and `voice_ice_transport_policy = relay` is refused.
 - Serve the instance over HTTPS: browsers allow microphone access only on secure pages.
 
 The limits keep the cost of the rooms bounded. `0` removes any of them except the last:
@@ -139,12 +138,143 @@ Only some participants may speak in a room: the hosts and the listeners a host a
 That stops ordinary users and the official web client, but it is not a complete defense. **Two participants with modified clients who work together can still exchange audio**: a modified client of someone who may not speak can send it, and a modified client of a receiver can play it, and the server cannot see inside the encrypted media.
 If you must guarantee who speaks, for example for moderated public events, use `sfu`, where the media node itself forwards only the audio of the speakers.
 
+## Media nodes
+
+With `voice = sfu`, every room is held by one media node, whose process forwards the room's audio. A room never spans
+nodes.
+
+### Run media nodes
+
+- **`role = all`** runs a node in the same process as everything else, at `wss://<host>/voice/sfu`. One machine with
+  the UDP and TCP ports open is enough.
+- **`role = sfu`** runs a node of its own, beside the `web` and `worker` processes. It shares their database, their
+  `stream` (not `hub`) and their `kv` (not `memory`): the nodes register themselves and their rooms in the key-value
+  store, and learn of changes to their rooms through the stream. It runs no jobs and serves only the health checks and
+  the node's WebSocket. Run as many as you need: a `web` process places each new room on the node with the fewest
+  places reserved that has room for it. A `web` process runs no node.
+
+What each node needs:
+
+| What | Setting | Notes |
+| --- | --- | --- |
+| A public IP address | `voice_sfu_public_ip` behind NAT | The node gives the browsers this address, or its own address when it is not set. A cloud VM or a container usually has a private address of its own: set it. |
+| The UDP port, open to the internet | `voice_sfu_udp_port` (7882) | All sessions of the node share it. |
+| The TCP port, open to the internet | `voice_sfu_tcp_port` (7881) | For browsers on networks that block UDP. |
+| A `wss:` URL with TLS | `voice_sfu_public_url` (`wss://<host>/voice/sfu`) | Each node has its own, such as `wss://sfu1.example.org/voice/sfu`. A reverse proxy in front terminates TLS and forwards the WebSocket, or the node serves HTTPS itself: the `tls` settings work on `role = sfu`, for the host of `voice_sfu_public_url` ([Serving HTTPS from the server](running.md#serving-https-from-the-server)). |
+| How many participants it holds | `voice_sfu_node_capacity` (500) | See [Capacity](#capacity). |
+
+Forward the UDP and TCP ports to the node unchanged: the node gives the browsers its own port numbers. A node on
+another host than `host` also needs `voice_sfu_origins` on the `web` processes, such as `wss://*.sfu.example.org`, so
+that the web client's Content Security Policy allows the connection.
+
+### Docker Compose
+
+The layer [`compose.sfu.yaml`](../../deploy/docker/compose.sfu.yaml) runs the server as `role = web`, a `worker`, and
+a media node `sfu` on one machine, on PostgreSQL behind Caddy ([Docker Compose files](running.md#docker-compose-files)):
+
+```sh
+# In .env:
+# COMPOSE_FILE=compose.yaml:compose.postgres.yaml:compose.caddy.yaml:compose.sfu.yaml
+# MY_VOICE_SFU_PUBLIC_IP=203.0.113.10   the public address of this machine
+docker compose up -d
+```
+
+- Caddy sends `/voice/sfu` to the node and every other request to the server, so the node's URL is the default
+  `wss://<MY_HOST>/voice/sfu` and `voice_sfu_origins` is not needed.
+- Open UDP 7882 and TCP 7881 in the machine's firewall, besides 80 and 443.
+- The layer sets `voice = sfu` and `stream = postgres` for the three processes, whatever `.env` says.
+
+### Capacity
+
+A room reserves its maximum (the host's maximum for the room, or `voice_max_participants`) on its node when it is
+placed, however many have joined. A node takes a room only while the sum of its reservations stays within
+`voice_sfu_node_capacity`, so a node never holds more participants than its capacity. When no node has room for a
+room's maximum, opening the room or its first join answers `503`, and the user can try again later.
+
+Set `voice_sfu_node_capacity` from what the machine can forward ([Measured cost](#measured-cost)), and keep
+`voice_max_participants` no larger than your rooms need: a room of 500 reserves 500 places even with 3 people in it.
+
+### Measured cost
+
+Measured with simulated clients sending Opus audio at 50 packets per second, on an AMD Ryzen 9 7900 (12 cores) with
+Linux under WSL2 and Go 1.27, everything on loopback. CPU is in cores of that machine; memory is the node's heap and
+goroutine stacks on top of the rest of the process.
+
+| What | CPU | Memory |
+| --- | --- | --- |
+| An idle node | none measurable | about 0.1 MiB |
+| Each open room | none measurable | under about 25 KiB |
+| Each participant | about 0.0002 cores while silent | about 180 KiB |
+| Each forwarded stream (a speaker heard by one participant) | 18 to 27 µs per packet, about 0.001 cores | under about 25 KiB |
+| A room of 100 with 3 speakers making sound | about 0.3 cores | about 23 MiB |
+
+A faster or slower machine scales these figures; a node's own metrics ([Metrics to watch](#metrics-to-watch)) show
+what it carries.
+
+The cost of forwarding follows the packets the node sends: the audio of every speaker goes to every other
+participant, so a room of N participants with K speakers sends about K × (N − 1) streams of 30 to 50 kbit/s. A room of
+many listeners and few speakers is cheap; a room where everyone speaks at once costs the most. Plan the node's
+outbound bandwidth the same way.
+
+### Drain a node for a deploy
+
+On SIGTERM a node drains before it stops:
+
+1. It stops taking new rooms.
+2. It places each of its rooms on another node and tells the room's clients to move. They reconnect to the new node
+   with a new grant, and the audio stops for about 1 to 2 seconds.
+3. It waits until its clients have left, for at most 20 of the 25 seconds of the shutdown, then waits for the
+   remaining requests and exits ([Stop the server](running.md#stop-the-server)).
+
+Give the process a grace period of at least 30 seconds before it is killed (Kubernetes and ECS default to 30, Docker
+to 10, which `compose.sfu.yaml` raises), and restart the nodes one at a time, so that the others can take their rooms.
+A room that no other node has room for stays on the draining node until it ends or the 20 seconds pass. **With a
+single node**, every room stays: its participants lose the audio when the node exits, and reconnect once the new node
+has started.
+
+### When a node is lost
+
+When a node stops without draining (a crash, a lost machine), its clients' WebSockets close and its leases in the
+key-value store expire within 15 seconds. The clients ask for a new grant, and the `web` process places the room again
+on another node. A room loses nothing with its node: its participants, speakers and mutes are in the database.
+
+### TURN for clients without UDP
+
+A browser reaches a node over UDP, or over TCP when UDP is blocked. On networks that let only port 443 through (some
+corporate and public networks) it needs a TURN server over TLS on 443: set `voice_turn` to `coturn`, with a `turns:`
+URL on port 443 in `voice_turn_coturn_urls`, or to `cloudflare`, as for `p2p` ([coturn](#coturn),
+[Cloudflare TURN](#cloudflare-turn)). `voice_ice_transport_policy = relay` is refused with `sfu`: the participants
+already see only the node's address.
+
+### Cloud Run
+
+Cloud Run accepts only HTTP requests, so `role = sfu` cannot run there. Run the `web` and `worker` processes on Cloud
+Run and the nodes on VMs with a public IP, sharing the database, the `stream` (`postgres` or `pubsub`) and the `kv`
+(`db` or `valkey`) with them. Give each node its own host name and `voice_sfu_public_url`, serve TLS on the node
+(`tls = acme`) or in front of it, and set `voice_sfu_origins` on the Cloud Run service to the nodes' origins. The
+OpenTofu modules of [Deploying on Google Cloud](deploy-google-cloud.md) do not create the nodes.
+
+### Metrics to watch
+
+Every node exports its own `my.voice.sfu.*` metrics ([Metrics](running.md#metrics)).
+
+| Metric | What it tells you |
+| --- | --- |
+| `my.voice.sfu.capacity.reserved` against `voice_sfu_node_capacity` | How full a node is for new rooms. When every node is near it, new rooms get `503`: add a node, or raise the capacity if the node has CPU to spare. |
+| `my.voice.sfu.capacity.connected`, `my.voice.sfu.sessions`, `my.voice.sfu.rooms` | Who is connected. Far below the reservations means the rooms' maximums are larger than they need. |
+| `my.voice.sfu.packets` by `my.outcome` | `forwarded` is the node's work. `silent` and `not_allowed` (a participant who may not speak or is muted) are dropped by design. `queue_full` means a participant's connection could not keep up: a slow client when it is a few, a node short of CPU or bandwidth when it rises for every client at once. |
+| `my.voice.sfu.bytes` | The audio forwarded: the node's outbound bandwidth. |
+| `my.voice.sfu.client.rtt`, `my.voice.sfu.client.packet_loss` | The quality on the way to the participants. High for most clients points at the node's network or location; for a few, at their own networks. |
+| `my.voice.sfu.offer.wait` | How long a joining participant waits for the node's first offer: milliseconds on a node with CPU to spare; seconds mean joins wait on a busy node. |
+| `my.voice.sfu.migrations`, `my.voice.sfu.ice_restarts`, `my.voice.sfu.renegotiations` | Rooms moved by a drain, clients that changed networks, and changes of speakers. |
+| `my.voice.sfu.ticket_refusals` by `my.voice.sfu.reason` | An `other_node` that keeps rising means clients reach another node than the one of their grant: check that each node's `voice_sfu_public_url` leads to that node. |
+
 ## Deployment notes
 
 - **Two streams per user**: during a call a participant holds the room's own event stream (Server-Sent Events) in addition to the stream the app always opens. Size connection limits for two long-lived requests per user in a call.
 - **Several processes**: use a shared stream adapter (`stream` set to `postgres`, `valkey`, `sns` or `pubsub`), as for the rest of the app. With `stream = hub` and a `role` other than `all`, the server warns at start that voice chat will not work across processes.
 - **Cloud Run**: a stream is a request, and CPU is allocated while it is open. When the request timeout cuts it, the client reconnects. Set the timeout as long as you can: `service.request_timeout_seconds` of [Deploying on Google Cloud](deploy-google-cloud.md#limits).
-- **Media nodes need a VM**: a media node of `sfu` takes audio over UDP in a long-running process. Cloud Run accepts only HTTP requests, so it cannot host one. Run the processes with `role = sfu` (and coturn) on a VM, or use Cloudflare TURN.
+- **Media nodes need a VM**: a media node of `sfu` takes audio over UDP in a long-running process, which Cloud Run cannot host ([Cloud Run](#cloud-run)).
 
 ## Ending rooms and records
 

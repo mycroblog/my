@@ -3,7 +3,7 @@
 
 本文介绍如何启动和停止服务器、获取镜像，以及在运行期间监控它：指标、追踪、任务队列和健康检查。
 
-<!-- source: start-the-server 05b29144056b -->
+<!-- source: start-the-server c19e1ea32f07 -->
 ## 启动服务器
 
 ```sh
@@ -24,6 +24,7 @@ my version        # print the version of the binary
 | `all`（默认） | 所有路由 | 运行 |
 | `web` | 所有路由 | 不运行 |
 | `worker` | 仅健康检查（供平台探针使用） | 运行 |
+| `sfu` | 健康检查，以及 `voice = sfu` 媒体节点的 WebSocket；该节点在自己的 UDP 和 TCP 端口上接收音频（[语音聊天](voice.md#run-media-nodes)） | 不运行 |
 
 日志以 JSON Lines 格式写入标准错误。每一行都有 `level`（`DEBUG`、`INFO`、`WARN`、`ERROR`）和 `severity`，后者是以 Cloud Logging 读取的形式表示的同一级别（`DEBUG`、`INFO`、`WARNING`、`ERROR`，以及用于导致进程停止的错误的 `CRITICAL`）。处理请求期间写入的日志带有 `request_id`，同一 ID 也会在 `X-Request-Id` 响应头中返回。如果请求的 `X-Request-Id` 不超过 128 个字符，且只由字母、数字和 `-_.:` 组成，就会作为负载均衡器分配的 ID 原样使用。追踪中的日志（请求和任务）还带有 `trace_id` 和 `span_id`（参见[追踪](#traces)）。对于 Cloud Run，使用 `logs_exporter = gcp` 时，日志行还带有把一行链接到 Cloud Trace 中其追踪的 Cloud Logging 字段，每个访问日志行还以 `httpRequest` 带有其请求；其他字段保持不变。
 
@@ -90,7 +91,7 @@ service:
 
 当 `metrics_exporter = emf` 时，这两行本身就是 EMF 行。`http request` 行携带 `http.server.request.duration` 的值，`job` 行携带 `my.job.duration` 和 `my.job.wait` 的值（键以指标命名），另外还有 `_aws` 指令、`service.name`、`service.version`、`my.role` 和 `service.namespace`（即 `host`）。这三个指标不会写在其他任何行上。你在 `metrics_emf_dimensions` 中选择的字段按 EMF 的要求以字符串写入（例如维度 `http.response.status_code` 为 `"200"`）。日志写入标准错误，其他 EMF 行写入标准输出。ECS 的 `awslogs` 日志驱动会把两者都发送到 CloudWatch Logs，因此会从两者中提取指标。
 
-<!-- source: docker-compose-files 9f0633524036 -->
+<!-- source: docker-compose-files eab514676a87 -->
 ## Docker Compose 文件
 
 `deploy/docker/` 中存放着部署实例所需的文件。`compose.yaml` 可以单独运行，其他文件叠加在它之上。
@@ -101,6 +102,7 @@ service:
 | `compose.postgres.yaml` | 容器中的 PostgreSQL，位于卷 `postgres` 中 | 你想在这台机器上运行 PostgreSQL。如果 PostgreSQL 服务器在别处，就不要使用它，而是在 `.env` 中设置 `MY_DATABASE` 和 `MY_DATABASE_URL` |
 | `compose.s3.yaml` | 把媒体放在兼容 S3 的存储桶中；配合 `COMPOSE_PROFILES=garage` 时，还会在卷 `garage` 中运行一个单节点的 [Garage](https://garagehq.deuxfleurs.fr/) 存储 | 媒体超出了一块磁盘，或者你想把它们放进存储桶。不使用该 profile 时，存储是 `MY_BLOB_S3_*` 设置所指定的外部存储 |
 | `compose.caddy.yaml` | Caddy，在 80 和 443 端口上提供 TLS 证书 | `MY_HOST` 是公网域名，且这台机器上没有其他程序终结 TLS |
+| `compose.sfu.yaml` | 带媒体节点的语音聊天：服务器拆分为 `role = web`、`worker` 和 `sfu`，Caddy 把节点的 WebSocket 转给节点。需要 `compose.postgres.yaml` 和 `compose.caddy.yaml` | 你想使用 `voice = sfu`（[语音聊天](voice.md#docker-compose)） |
 | `compose.build.yaml` | 从检出的代码构建镜像 | 你自己构建镜像 |
 
 请在首次启动前选好数据库和媒体存储：文件改变时，数据不会自行迁移（[备份](backup.md)说明了需要迁移哪些内容）。
@@ -128,7 +130,7 @@ cp example.env .env
 
 **内置的 Garage。** 配合 `COMPOSE_PROFILES=garage` 使用 `compose.s3.yaml` 时，需要 `example.env` 顶部列出的那些值。一次性服务 `garage-init` 会在每次 `up` 时准备存储。它只留在 Compose 网络内部，因为媒体由服务器自己提供。一个节点就是一块磁盘：请备份卷 `garage` 或存储桶（[备份](backup.md#media-in-a-bucket)）。
 
-<!-- source: serving-https-from-the-server 45ec9231a41e -->
+<!-- source: serving-https-from-the-server 7b583c946805 -->
 ## 由服务器提供 HTTPS
 
 `my` 可以自己提供 HTTPS，这样一台小机器只需一个二进制文件、一个域名以及 80 和 443 端口，就能运行整个服务器，而不需要反向代理。使用 `tls = acme` 时，它会从 Let's Encrypt 这样的 ACME 证书颁发机构获取证书。使用 `tls = files` 时，它会提供你给出的证书和密钥，由你用 certbot 之类的其他工具保持更新。
@@ -150,7 +152,7 @@ MY_TLS_KEY_FILE=/etc/letsencrypt/live/social.example/privkey.pem
 - **端口。** 服务器在 `listen` 上提供 HTTPS（`tls` 不为 `off` 时默认为 `:443`）。在 `tls_http_listen`（默认 `:80`）上，它会用 `301` 把 `GET` 和 `HEAD` 请求重定向到 `https` 上的同一路径，并对其他所有方法返回 `400`，这样就不会有请求体以明文传输。
 - **主机。** 服务器为 `host` 提供服务；当 `web_origin` 的主机与之不同时，也为它提供服务。对任何其他名称的握手都会因没有证书而失败，也绝不会让服务器去申请证书。
 - **连接。** TLS 1.2 或更高版本，使用 Go 默认的密码套件，支持 HTTP/2 和 HTTP/1.1，请求头最多 64 KiB，一个 HTTP/2 连接上最多 100 个并发流。超时与普通 HTTP 相同。服务器仍会给每个响应添加 `Strict-Transport-Security`（[安全响应头](#security-headers)）。
-- **角色。** 只有 `web` 和 `all` 角色会以 TLS 监听。`worker` 在 `listen`（默认 `:8080`）上以普通 HTTP 提供健康检查，且不会打开 80 端口。
+- **角色。** 只有 `web`、`all` 和 `sfu` 角色会以 TLS 监听。媒体节点（`role = sfu`）提供的是 `voice_sfu_public_url` 的主机，而不是 `host`。`worker` 在 `listen`（默认 `:8080`）上以普通 HTTP 提供健康检查，且不会打开 80 端口。
 - **客户端地址。** 前面没有代理时，连接的对端就是客户端：请让 `trusted_proxies` 保持为空。只有当前面的 CDN 通过 `https` 连接服务器时才设置它。
 - **维护模式。** `my serve -maintenance` 既不读取 `tls`，也不读取证书，并在 `listen`（除非你设置了，否则为 `:8080`）上以普通 HTTP 响应，因此在它运行期间，请让 `MY_LISTEN` 和防火墙指向该端口，或者为维护保留一个反向代理。
 
@@ -319,7 +321,7 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 - 确保垃圾邮件过滤不会丢弃索取请求。
 - 使用你愿意公开的地址：任何人都能在信息页面、首页和 NodeInfo 中看到它。
 
-<!-- source: metrics a5fd8092d408 -->
+<!-- source: metrics d456616d0cb0 -->
 ## 指标
 
 设置 `metrics_exporter`（默认 `none`）用于导出服务指标。相关设置见[配置参考](../reference/configuration.md)。
@@ -364,6 +366,15 @@ docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ js
 | `my.billing.imports` | Counter | `my.billing.source`（`aws` / `gcp` / `plugin`）、`my.outcome`（`success` / `failed`）、`error.type`（仅在 `failed` 时：失败的种类，与[导入云用量费用](billing-import.md)中相同）。每次尝试都计入，包括重试和等待下一次每日导入的失败 |
 | `my.supporter.tip_checkouts` | Counter | `my.outcome`（`started` / `rate_limited` / `paid` / `expired`）。每发起一笔得到服务商页面的打赏记一次，每被限制拒绝的发起记一次，每笔已付款或未付款而结束的打赏记一次；它所服务的告警见[打赏](supporters.md#tips) |
 | `my.voice.turn.credentials` | Counter | `my.voice.turn`（`coturn` / `cloudflare`）、`my.outcome`（`issued` / `reused` / `failed`）。语音聊天参与者在加入房间或续期连接时每请求一次 TURN 凭据计一次：`reused` 表示再次返回了之前为同一连接签发的 Cloudflare 凭据，`failed` 表示无法连接到 Cloudflare 或被其拒绝，参与者因此收到错误而无法连接 |
+| `my.voice.sfu.rooms`、`my.voice.sfu.sessions` | Gauge | 无（每个 `voice = sfu` 的媒体节点：节点上有连接的房间数，以及连到该节点的会话数） |
+| `my.voice.sfu.capacity.reserved`、`my.voice.sfu.capacity.connected` | Gauge | 无（每个媒体节点：安排在其上的房间的上限之和，以及连到它的会话数，两者都与 `voice_sfu_node_capacity` 对比） |
+| `my.voice.sfu.packets` | Counter | `my.outcome`（`forwarded`，每向一位参与者发送一个音频数据包计一次；或数据包被丢弃的原因：`silent`；`not_allowed` 表示无权发言或被静音的参与者；`queue_full` 表示连接跟不上的参与者） |
+| `my.voice.sfu.bytes` | Counter，字节 | 无（媒体节点转发的音频） |
+| `my.voice.sfu.renegotiations`、`my.voice.sfu.ice_restarts`、`my.voice.sfu.migrations` | Counter | 无（第一次之后因发言者变化而产生的新 offer；客户端在网络变化后要求的 ICE 重启；停止中的节点发往另一个节点的会话） |
+| `my.voice.sfu.ticket_refusals` | Counter | `my.voice.sfu.reason`（`invalid` 表示已过期、已使用或未知的票据，`other_node` 表示另一个节点的票据） |
+| `my.voice.sfu.client.rtt` | Histogram，秒 | 无（到参与者的往返时间，来自他们的 RTCP 报告） |
+| `my.voice.sfu.client.packet_loss` | Histogram，百分比 | 无（到参与者途中的丢包，来自他们的 RTCP 报告） |
+| `my.voice.sfu.offer.wait` | Histogram，秒 | 无（从参与者加入到媒体节点发出第一个 offer 的时间） |
 | `my.errors.exported` | Counter | `my.outcome`（`success` / `dropped` / `failed`：发往 `errors_exporter` 服务的每份错误报告计一次。`dropped` 表示因已有 1,000 份报告在等待，或者服务要求服务器放慢速度而没有发送该报告，服务器会按服务要求的时长等待后再发送；`failed` 表示无法连接到服务或服务拒绝了报告。报告只发送一次，从不重试，关闭过程开始 2 秒后仍在等待的报告会丢失） |
 | `my.queue.ready` | Gauge | `my.job.type`（数据库队列中可运行任务的数量） |
 | `my.queue.oldest_ready_age` | Gauge，秒 | `my.job.type`（数据库队列中每种类型最早的可运行任务已等待的时长；没有可运行任务的类型没有值） |
@@ -466,7 +477,7 @@ curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '              
 
 监听器没有认证，profile 会暴露进程的内部细节，而且采集一次会消耗 CPU：请让它保持在回环地址上，并通过隧道访问（`ssh -L 6060:127.0.0.1:6060 <host>`、`kubectl port-forward`），用完后取消设置。堆 profile 只覆盖 Go 堆。进程的常驻内存还包括已读取的二进制文件页面、栈和运行时自身的结构；这些可以从内存统计中看到。block 和 mutex profile 只在带 `seconds` 的请求采集它们期间才采样，没有它时是空的。
 
-<!-- source: stop-the-server 37d4c0cc3d97 -->
+<!-- source: stop-the-server 72d71a40815a -->
 ## 停止服务器
 
 收到 SIGTERM 或 SIGINT 时，服务器会优雅地关闭。
@@ -474,6 +485,8 @@ curl 'http://127.0.0.1:6060/debug/pprof/heap?debug=1' | grep '^# '              
 1. 它停止接受新连接和领取任务。
 2. 它最多等待 25 秒，让进行中的请求和正在运行的任务完成。
 3. 25 秒后，它会取消剩余请求和任务的上下文并关闭连接。然后它再给被取消的任务最多 3 秒来记录结果，并以退出码 1 退出（总共最多 28 秒，在 Kubernetes 和 ECS 默认的 30 秒宽限期之内）。被取消的任务会重试。在这 3 秒内没有停止，或者中途被终止的任务会被放弃，并在其租约到期后由 worker 重新领取，因此它可能运行两次。
+
+运行 `voice = sfu` 媒体节点的进程（`role = sfu` 或 `all`）会先排空它：停止接收房间，把房间转移到其他节点并通知其客户端到那里重新连接，最多等待 25 秒中的 20 秒让客户端离开，然后才等待请求。请给它同样至少 30 秒的宽限期（Docker 默认为 10 秒：请设置 `stop_grace_period` 或使用 `docker stop -t 30`）。参见[语音聊天](voice.md#drain-a-node-for-a-deploy)。
 
 服务器的某个后台任务发生 panic 时，也会开始同样的关闭过程，使服务器永远不会在损坏的状态下继续运行。`serve failed` 日志行会指出是哪个任务，进程以退出码 1 退出，由平台或进程管理器重新启动它。
 
@@ -509,7 +522,7 @@ my job types                 # print every job type of this release
 - 没有人重试的 dead 任务，会在失败后经过 `dead_job_retention`（默认 30 天；参见该[设置](../reference/configuration.md#dead_job_retention)）时被每小时一次的清理删除。
 - `queue = inline` 的 dead 任务存在于服务器进程的内存中，因此 `my job` 无法处理它们（退出码 1）。
 
-<!-- source: splitting-workers-by-job-type 89ced36a3c80 -->
+<!-- source: splitting-workers-by-job-type e3b4c4374dfb -->
 ### 按任务类型拆分 worker
 
 默认情况下，每个 worker 都运行所有任务类型，按任务到期的顺序，每个进程一次运行一个任务（参见[同时运行多个任务](#running-several-jobs-at-once)）。这样一来，一阵突发的投递会延迟电子邮件和通知，而你新增的任何 worker 也要把时间分给所有这些任务。使用 `queue = db` 时，你可以为某些类型分配专用的 worker：

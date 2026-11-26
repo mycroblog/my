@@ -18,7 +18,7 @@
 - **你選擇的部分。** 圖中間的每個部分都有一個設定來選擇它的轉接器，列在[下一節](#parts-you-choose-by-configuration)。
 - **伺服器外部的服務。** CAPTCHA、語音聊天、付款、外掛程式和雲端成本的匯入，在你設定之前都保持關閉，設定之後伺服器才會呼叫你指定的服務。
 
-<!-- source: parts-you-choose-by-configuration 34c2a60744fd -->
+<!-- source: parts-you-choose-by-configuration 4d878bcd8b84 -->
 ## 你透過設定選擇的部分
 
 每個部分都是[設定參考](../reference/configuration.md)中的一項設定，可以在 TOML 檔案中設定，也可以用環境變數設定（`MY_` 加上大寫的鍵，例如 `MY_DATABASE`）。每個清單的第一個選項是預設值。
@@ -35,7 +35,7 @@
 | 金鑰管理員，用來加密帳號的私密金鑰 | [`key_manager`](../reference/configuration.md#key_manager) | `local`（由你保管的金鑰加密金鑰）、`gcpkms`（Google Cloud KMS）、`awskms`（AWS KMS）、`plugin` | [管理金鑰](key-management.md) |
 | 電子郵件 | [`mail`](../reference/configuration.md#mail) | `none`、`smtp`、`ses`（Amazon SES）、`plugin` | [寄送電子郵件](email.md) |
 | CAPTCHA | [`captcha`](../reference/configuration.md#captcha) | `none`、`turnstile`（Cloudflare Turnstile）、`hcaptcha`、`recaptcha`（Google reCAPTCHA v2） | [CAPTCHA](captcha.md) |
-| 語音聊天 | [`voice`](../reference/configuration.md#voice) | `off`、`p2p`（瀏覽器對瀏覽器，TURN 由 `voice_turn` 決定：`none`、`coturn` 或 `cloudflare`）、`livekit`、`sora` | [語音聊天](voice.md) |
+| 語音聊天 | [`voice`](../reference/configuration.md#voice) | `off`、`p2p`（瀏覽器對瀏覽器）、`sfu`（伺服器的媒體節點），各自的 TURN 由 `voice_turn` 決定：`none`、`coturn` 或 `cloudflare` | [語音聊天](voice.md) |
 | 支持者付款 | [`payments`](../reference/configuration.md#payments) | `none`、`stripe`、`payjp`（PAY.JP） | [支持者](supporters.md)、[Stripe](payments-stripe.md)、[PAY.JP](payments-payjp.md) |
 | 外掛程式 | `plugin_<kind>_address` | 預設都沒有；每種類型一個位址：`translator`、`search`、`billing`、`mailer`、`media_image`、`media_video`、`media_audio`、`key_manager`，以及決策掛鉤 `inbound.status`、`local.status`、`inbound.follow`、`signup.check`、`media.check`、`inbound.actor`、`local.profile` | [外掛程式](plugins.md)、[決策掛鉤](decision-hooks.md) |
 | 貼文翻譯 | `translator_<provider>_*`、[`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | 無（只有瀏覽器自己的翻譯）；`libretranslate`、`deepl`、`google`（Google Cloud Translation）、`aws`（Amazon Translate），或是放在你所選服務前面的你自己的外掛程式 | [翻譯貼文](translation.md)、[翻譯外掛程式](plugins.md#translating-posts) |

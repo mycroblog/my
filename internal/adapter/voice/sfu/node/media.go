@@ -13,6 +13,7 @@ import (
 	"github.com/pion/interceptor"
 	"github.com/pion/logging"
 	"github.com/pion/sdp/v3"
+	"github.com/pion/transport/v5/stdnet"
 	"github.com/pion/webrtc/v4"
 )
 
@@ -58,7 +59,16 @@ func newMedia(ctx context.Context, o Options, logger *slog.Logger) (*media, erro
 		m.udp, m.tcp, m.own = udp, tcp, true
 	}
 	logs := pionLogs{logger: logger}
+	// One view of the network interfaces for every connection: without it, each connection's ICE
+	// agent lists the interfaces again (a netlink dump), which made an offer take milliseconds
+	// alone and tens of them in a burst of joins. The node's candidates come from its muxes.
+	nw, err := stdnet.NewNet()
+	if err != nil {
+		m.close()
+		return nil, fmt.Errorf("list the network interfaces: %w", err)
+	}
 	var se webrtc.SettingEngine
+	se.SetNet(nw)
 	se.LoggerFactory = logs
 	se.SetLite(true)
 	se.SetNetworkTypes([]webrtc.NetworkType{webrtc.NetworkTypeUDP4, webrtc.NetworkTypeUDP6, webrtc.NetworkTypeTCP4, webrtc.NetworkTypeTCP6})

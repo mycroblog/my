@@ -68,6 +68,9 @@ client API, and media work over plain HTTP at `http://localhost:8080` (ActivityP
   start and cannot be changed later.
 - Behind a reverse proxy of your own, set `MY_TRUSTED_PROXIES` in `.env` so that rate limits such as the one on sign-in
   apply per client IP rather than to the proxy ([`trusted_proxies`](../reference/configuration.md#trusted_proxies)).
+- Voice chat with the server's own media node (`voice = sfu`) is the layer `compose.sfu.yaml`: it runs the server as
+  `role = web`, a `worker` and an `sfu` node on PostgreSQL behind Caddy, and publishes UDP 7882 and TCP 7881
+  ([Voice chat](voice.md#docker-compose)).
 - Before opening the server to users, go through the [production checklist](production-checklist.md).
 - `docker compose down` stops the stack. `down -v` also deletes the data volumes.
 

@@ -83,7 +83,7 @@ Der Server entfernt diese nur, wenn ein Konto gelöscht wird, oder nie. Ein Gese
 - Die neueste Meldung jeder Fehlergruppe, die die nächste Meldung dieser Gruppe ersetzt. Sie wird nach Muster bereinigt, sodass ein Fragment von Benutzertext bleiben kann.
 - Backups, deine Logs und die Logs deiner Plattform und deines Proxys. Der Server verwaltet diese nicht: [Backup](backup.md#how-often-and-where) beschreibt die Generationen, die zu behalten sind, und ein wiederhergestelltes Backup bringt gelöschte Daten zurück.
 
-<!-- source: the-services-you-choose 81461216c966 -->
+<!-- source: the-services-you-choose ae854360ee1c -->
 ## Die Dienste, die du wählst
 
 Jeder Dienst, der personenbezogene Daten erhält, erscheint nur in der Erklärung, wenn du ihn eingeschaltet hast. Fülle die Tabelle von Abschnitt 6 anhand dieser Liste und lies die eigene Datenschutzerklärung und den Vertrag des Dienstes: Was der Dienst mit den Daten tut, nachdem sie angekommen sind, kann dieses Dokument dir nicht sagen.
@@ -123,7 +123,7 @@ Zwei Dinge erreichen Dritte ohne eine Einstellung von dir:
 - **Web Push.** Wenn ein Nutzer es einschaltet, wählt sein Browser den Push-Dienst und gibt dem Server dessen Adresse. Der Nachrichtentext ist für diesen Browser verschlüsselt, der Push-Dienst sollte ihn also nicht lesen können. Er sieht die Subscription-Adresse, die Größe und Zeit jeder Nachricht und den Kontakt (VAPID-Subject) deines Servers, und er hält eine Nachricht bis zu 48 Stunden, während der Browser offline ist.
 - **Föderation.** Siehe Abschnitt 5 der Vorlage. `federation_mode` schaltet sie aus oder begrenzt ihre Richtung, und Relays kannst du selbst hinzufügen ([Relays](relays.md)).
 
-<!-- source: the-template 7d380628fcdc -->
+<!-- source: the-template 35479e0aacb5 -->
 ## Die Vorlage
 
 ```markdown

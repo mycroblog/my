@@ -93,15 +93,16 @@ type discard struct{}
 func (discard) WriteRTP(h *rtp.Header, p []byte) (int, error) { return h.MarshalSize() + len(p), nil }
 func (discard) Write(b []byte) (int, error)                   { return len(b), nil }
 
-// BenchmarkForward forwards the packets of one speaker to n subscribers, each with its writer.
+// BenchmarkForward forwards the packets of one speaker to n subscribers. One op is a packet
+// received, checked, queued for every subscriber, and rewritten and written by each subscriber's
+// slot, drained in the same goroutine so that no packet is dropped for a full queue: ns/forward is
+// the cost of one forwarded packet on the path of ADR-0101 §12, without SRTP and the socket.
 func BenchmarkForward(b *testing.B) {
-	for _, n := range []int{10, 100, 500} {
+	for _, n := range []int{1, 10, 50, 100} {
 		b.Run(fmt.Sprintf("subscribers=%d", n), func(b *testing.B) {
 			f := newForwarder(newStats(nil), time.Now)
 			src := &source{levelID: 1}
 			src.allowed.Store(true)
-			done := make(chan struct{})
-			var wg sync.WaitGroup
 			subs := make([]*subscriber, n)
 			for i := range subs {
 				s := newSubscriber()
@@ -109,7 +110,6 @@ func BenchmarkForward(b *testing.B) {
 				slot.binding.Store(&binding{ssrc: uint32(i), payloadType: 111, writer: discard{}})
 				s.slots.Store(&map[*source]*slotTrack{src: slot})
 				subs[i] = s
-				wg.Go(func() { f.write(s, done) })
 			}
 			f.setSubscribers(subs)
 			raw := audioPacket(b, 100, 0, 0, 30)
@@ -120,10 +120,19 @@ func BenchmarkForward(b *testing.B) {
 				m := copy(pkt.buf[:], raw)
 				pkt.buf[2], pkt.buf[3] = byte(i>>8), byte(i)
 				f.receive(src, pkt, m)
+				for _, s := range subs {
+					d := <-s.queue
+					if _, ok := d.slot.write(d.pkt, f.now); !ok {
+						b.Fatal("the slot did not write")
+					}
+					d.pkt.release()
+				}
 			}
 			b.StopTimer()
-			close(done)
-			wg.Wait()
+			b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N*n), "ns/forward")
+			if tot := f.stats.totals(); tot.QueueFull != 0 {
+				b.Errorf("totals = %+v, want no packet dropped", tot)
+			}
 		})
 	}
 }

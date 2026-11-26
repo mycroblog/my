@@ -372,7 +372,7 @@ func TestVoiceSFUMetrics(t *testing.T) {
 		{node.Rooms.Name, nil}, {node.Sessions.Name, nil}, {node.CapacityReserved.Name, nil}, {node.CapacityConnected.Name, nil},
 		{node.Packets.Name, []string{"my.outcome"}}, {node.Bytes.Name, nil}, {node.Renegotiations.Name, nil},
 		{node.ICERestarts.Name, nil}, {node.Migrations.Name, nil}, {node.TicketRefusals.Name, []string{"my.voice.sfu.reason"}},
-		{node.ClientRTT.Name, nil}, {node.ClientPacketLoss.Name, nil},
+		{node.ClientRTT.Name, nil}, {node.ClientPacketLoss.Name, nil}, {node.OfferWait.Name, nil},
 	} {
 		got, ok := p.meter.Instrument(i.name)
 		if !ok {
