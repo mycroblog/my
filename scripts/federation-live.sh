@@ -11,6 +11,9 @@
 #   scenarios.log        the go test output
 # and removes the stack, unless FEDERATION_LIVE_KEEP=1.
 #
+# With MY_BUILT_IMAGE=<image>, an image of this tree's app stage (the slow suite's image-build), it starts that image
+# instead of building one; the other images of the stack are built or pulled as without it.
+#
 # Usage: scripts/federation-live.sh [go test flags, e.g. -run TestFollow]
 #   (needs docker with compose, go, curl, jq, openssl)
 set -euo pipefail
@@ -121,7 +124,13 @@ cleanup() {
 trap cleanup EXIT
 
 log "starting the stack"
-"${compose[@]}" up -d --build --quiet-pull
+if [[ -n "${MY_BUILT_IMAGE:-}" ]]; then
+	# Under the name compose.yaml gives the server's services, which `up` then starts without building them.
+	docker tag "$MY_BUILT_IMAGE" "my:$MY_VERSION"
+	"${compose[@]}" up -d --quiet-pull
+else
+	"${compose[@]}" up -d --build --quiet-pull
+fi
 
 # Reach a server through the proxy as the other servers do: by its host name, over TLS with the private CA.
 https() {

@@ -13,6 +13,9 @@
 #   scripts/restore-drill.sh                 # SQLite and PostgreSQL
 #   scripts/restore-drill.sh postgres
 #
+# With MY_BUILT_IMAGE=<image>, an image of this tree's app stage (the slow suite's image-build), it starts that image
+# instead of building one.
+#
 # Needs docker with compose, curl, jq, openssl.
 # The jq filters take their values as $variables (--arg), not from the shell.
 # shellcheck disable=SC2016
@@ -64,10 +67,14 @@ cleanup() {
 trap cleanup EXIT
 
 # --- Images and remote.test ----------------------------------------------------------------------
-echo "restore-drill: building the image" >&2
 version="$(git -C "$root" describe --tags --match 'v[0-9]*' --always --dirty 2>/dev/null || echo dev)"
 export MY_IMAGE="my-restore-drill:$version"
-docker build -q --build-arg "VERSION=$version" --target app -t "$MY_IMAGE" "$root" >/dev/null
+if [[ -n "${MY_BUILT_IMAGE:-}" ]]; then
+	docker tag "$MY_BUILT_IMAGE" "$MY_IMAGE"
+else
+	echo "restore-drill: building the image" >&2
+	docker build -q --build-arg "VERSION=$version" --target app -t "$MY_IMAGE" "$root" >/dev/null
+fi
 
 remote_test_files "$work"
 cp "$root/schema/ddl/postgres.bootstrap.sql" "$work/postgres.bootstrap.sql"

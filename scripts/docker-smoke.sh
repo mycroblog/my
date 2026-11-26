@@ -14,6 +14,8 @@
 # check of the layers is `docker compose config` on each of them.
 # Prints the logs on failure and always removes the stack and its volume.
 # With SMOKE_PUBLISHED=<image tag> (0.1.0), it pulls that published image instead of building, to check a release.
+# With MY_BUILT_IMAGE=<image>, an image of this tree's app stage built with VERSION=MY_VERSION (the slow suite's
+# image-build), it starts that image instead of building one.
 # Usage: scripts/docker-smoke.sh   (needs docker with compose, curl, jq, openssl)
 set -euo pipefail
 
@@ -132,8 +134,12 @@ if [[ -n "$published" ]]; then
 	"${compose[@]}" pull
 else
 	# The building option, and then the local image under the published name: nothing below can reach the registry.
-	"${build[@]}" build
-	docker tag "my:$MY_VERSION" "$published_image"
+	if [[ -n "${MY_BUILT_IMAGE:-}" ]]; then
+		docker tag "$MY_BUILT_IMAGE" "$published_image"
+	else
+		"${build[@]}" build
+		docker tag "my:$MY_VERSION" "$published_image"
+	fi
 fi
 "${compose[@]}" up -d --pull never
 wait_ready
