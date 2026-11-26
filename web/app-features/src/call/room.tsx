@@ -312,12 +312,12 @@ function About({ room, t }: { room: VoiceRoom; t: T }) {
   return (
     <Stack gap="hair">
       {!hostShown && (
-        <Box as="p" tone="muted" dir="auto">
+        <Box as="p" text="body" tone="muted" dir="auto">
           {t("voice.hosted_by", { host: nameOf(room.host) })}
         </Box>
       )}
       {room.description !== "" && (
-        <Box as="p" keeps="lines" dir="auto">
+        <Box as="p" text="body" keeps="lines" dir="auto">
           {room.description}
         </Box>
       )}
