@@ -3,6 +3,7 @@
 package node
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -50,11 +51,22 @@ type peer struct {
 
 	// canSpeak is whether the session is a speaker, under room.mu.
 	canSpeak bool
+	// joined is when the session joined the node, for OfferWait.
+	joined time.Time
 
-	mu          sync.Mutex
-	ws          *wsConn
-	slots       []*slot
-	offered     bool
+	// slotsMu holds the slots and dirty, apart from mu, so that the room sets the slots of every
+	// session without waiting for an offer that one of them is making.
+	slotsMu sync.Mutex
+	slots   []*slot
+	// dirty reports slots that changed since the last offer was made.
+	dirty bool
+	// offered reports a session that was offered once; it is set under mu.
+	offered atomic.Bool
+
+	mu sync.Mutex
+	ws *wsConn
+	// offerSlots are the slots with a speaker of the current offer, under mu.
+	offerSlots  []offerSlot
 	negotiating bool
 	// pending is an offer to make after the answer to the current one, restart whether it
 	// restarts ICE.
@@ -77,7 +89,7 @@ func newPeer(r *room, session, account string) (*peer, error) {
 	if err != nil {
 		return nil, err
 	}
-	p := &peer{room: r, session: session, account: account, sub: newSubscriber(), pc: pc, done: make(chan struct{})}
+	p := &peer{room: r, session: session, account: account, sub: newSubscriber(), pc: pc, done: make(chan struct{}), joined: time.Now()}
 	p.connectTimer = time.AfterFunc(ConnectTimeout, func() {
 		if !p.connected.Load() {
 			p.close(CodeRoomUnavailable, "the connection did not connect")
@@ -177,14 +189,15 @@ func (p *peer) send(m Message) {
 	}
 }
 
-// setSpeakers makes the slots of the session carry want, the speakers it hears, and offers again
-// when they changed (or for the first offer). A slot of a speaker who stopped carries the next new
-// one; a new transceiver is added only when no slot is free.
-func (p *peer) setSpeakers(want []*peer) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+// setSpeakers makes the slots of the session carry want, the speakers it hears, and reports
+// whether the session needs an offer (offerSpeakers): its slots changed, or it was never offered.
+// A slot of a speaker who stopped carries the next new one; a new transceiver is added only when
+// no slot is free. It does not wait for an offer in flight.
+func (p *peer) setSpeakers(want []*peer) bool {
+	p.slotsMu.Lock()
+	defer p.slotsMu.Unlock()
 	if p.closed.Load() {
-		return
+		return false
 	}
 	changed := false
 	for _, s := range p.slots {
@@ -216,13 +229,37 @@ func (p *peer) setSpeakers(want []*peer) {
 			}
 		}
 		p.sub.slots.Store(&m)
+		p.dirty = true
 	}
-	if changed || !p.offered {
-		p.negotiateLocked(false)
-	}
+	return p.dirty || !p.offered.Load()
 }
 
-// newSlotLocked adds a transceiver that sends to the session.
+// offerSpeakers offers the session its current slots when they changed since its last offer, or
+// when it was never offered. One negotiation runs at a time on the connection: an offer that
+// finds one in flight is made after its answer, with the slots of then. It makes the offer while
+// it holds one of slots, which bounds the offers that the node makes at once.
+func (p *peer) offerSpeakers(ctx context.Context, slots chan struct{}) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.closed.Load() {
+		return
+	}
+	p.slotsMu.Lock()
+	need := p.dirty || !p.offered.Load()
+	p.slotsMu.Unlock()
+	if !need {
+		return
+	}
+	select {
+	case slots <- struct{}{}:
+	case <-ctx.Done():
+		return
+	}
+	defer func() { <-slots }()
+	p.negotiateLocked(false)
+}
+
+// newSlotLocked adds a transceiver that sends to the session; slotsMu is held.
 func (p *peer) newSlotLocked() (*slot, error) {
 	track := newSlotTrack(fmt.Sprintf("speaker-%d", len(p.slots)))
 	tr, err := p.pc.AddTransceiverFromTrack(track, webrtc.RTPTransceiverInit{Direction: webrtc.RTPTransceiverDirectionSendonly})
@@ -242,6 +279,16 @@ func (p *peer) negotiateLocked(restart bool) {
 		return
 	}
 	p.pending, p.restart = false, false
+	// The offer carries the slots of now: a change after this is dirty again, and offered next.
+	p.slotsMu.Lock()
+	p.dirty = false
+	p.offerSlots = p.offerSlots[:0]
+	for _, s := range p.slots {
+		if s.speaker != nil {
+			p.offerSlots = append(p.offerSlots, offerSlot{tr: s.tr, participant: s.speaker.account})
+		}
+	}
+	p.slotsMu.Unlock()
 	offer, err := p.pc.CreateOffer(&webrtc.OfferOptions{ICERestart: restart})
 	if err != nil {
 		p.room.node.o.Logger.Warn("a voice chat media node could not make an offer", "error", err)
@@ -256,27 +303,36 @@ func (p *peer) negotiateLocked(restart bool) {
 	case <-gathered:
 	case <-time.After(gatherTimeout):
 	}
-	st := p.room.node.stats
-	if p.offered {
-		st.renegotiations.Add(p.room.node.base, 1, kernel.Labels{})
+	st, ctx := p.room.node.stats, p.room.node.base
+	if p.offered.Load() {
+		st.renegotiations.Add(ctx, 1, kernel.Labels{})
+	} else {
+		st.offerWait.Record(ctx, time.Since(p.joined).Seconds(), kernel.Labels{})
 	}
 	if restart {
-		st.restarts.Add(p.room.node.base, 1, kernel.Labels{})
+		st.restarts.Add(ctx, 1, kernel.Labels{})
 	}
-	p.offered, p.negotiating = true, true
+	p.negotiating = true
+	p.offered.Store(true)
 	p.sendOfferLocked()
 }
 
-// sendOfferLocked sends the current offer with the speaker of each slot.
+// offerSlot is a slot with a speaker when the current offer was made.
+type offerSlot struct {
+	tr          *webrtc.RTPTransceiver
+	participant string
+}
+
+// sendOfferLocked sends the current offer with the speaker of each of its slots.
 func (p *peer) sendOfferLocked() {
 	ld := p.pc.LocalDescription()
 	if ld == nil || p.ws == nil {
 		return
 	}
 	tracks := []Track{}
-	for _, s := range p.slots {
-		if s.speaker != nil && s.tr.Mid() != "" {
-			tracks = append(tracks, Track{Mid: s.tr.Mid(), Participant: s.speaker.account})
+	for _, s := range p.offerSlots {
+		if mid := s.tr.Mid(); mid != "" {
+			tracks = append(tracks, Track{Mid: mid, Participant: s.participant})
 		}
 	}
 	p.ws.send(Message{V: Version, Type: TypeOffer, SDP: ld.SDP, Tracks: tracks})

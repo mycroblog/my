@@ -65,6 +65,13 @@ var (
 		Description: "Round-trip time to the clients of the voice chat media node, from their RTCP receiver reports.",
 		Buckets:     []float64{0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.5, 1, 2},
 	}
+	// OfferWait is the time from a session's join to its first offer: a burst of joins into a
+	// room shows in it.
+	OfferWait = kernel.Instrument{
+		Name: "my.voice.sfu.offer.wait", Unit: "s",
+		Description: "Time from a join to the first offer of the voice chat media node to the session.",
+		Buckets:     []float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10},
+	}
 	ClientPacketLoss = kernel.Instrument{
 		Name: "my.voice.sfu.client.packet_loss", Unit: "%",
 		Description: "Packet loss on the way to the clients of the voice chat media node, from their RTCP receiver reports.",
@@ -88,7 +95,7 @@ type stats struct {
 	silent, notAllowed, queueFull    atomic.Uint64
 	renegotiations, restarts         kernel.Counter
 	migrations, refusals             kernel.Counter
-	rtt, loss                        kernel.Histogram
+	rtt, loss, offerWait             kernel.Histogram
 }
 
 func newStats(m kernel.Meter) *stats {
@@ -96,7 +103,7 @@ func newStats(m kernel.Meter) *stats {
 	s := &stats{
 		renegotiations: m.Counter(Renegotiations), restarts: m.Counter(ICERestarts),
 		migrations: m.Counter(Migrations), refusals: m.Counter(TicketRefusals),
-		rtt: m.Histogram(ClientRTT), loss: m.Histogram(ClientPacketLoss),
+		rtt: m.Histogram(ClientRTT), loss: m.Histogram(ClientPacketLoss), offerWait: m.Histogram(OfferWait),
 	}
 	m.ObservableCounter(Packets, func(_ context.Context, o kernel.GaugeObserver) error {
 		o.Observe(float64(s.forwardedPackets.Load()), kernel.NewLabels("my.outcome", OutcomeForwarded))

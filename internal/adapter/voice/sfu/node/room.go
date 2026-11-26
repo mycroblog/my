@@ -160,10 +160,14 @@ func (r *room) peerList() []*peer {
 	return ps
 }
 
-// applySpeakers gives each connection a slot for every speaker but itself.
+// applySpeakers gives each connection a slot for every speaker but itself, and offers the
+// connections whose slots changed. The slots are set in order under speakersMu; the offers are
+// made outside it, several connections at once (Node.offer), so that a burst of joins or one slow
+// offer holds up no other connection's offer. Each offer carries the slots of when it is made, and
+// a connection whose slots change meanwhile is offered again, so every connection ends with an
+// offer of the current speakers.
 func (r *room) applySpeakers() {
 	r.speakersMu.Lock()
-	defer r.speakersMu.Unlock()
 	ps := r.peerList()
 	var speakers []*peer
 	r.mu.Lock()
@@ -173,8 +177,15 @@ func (r *room) applySpeakers() {
 		}
 	}
 	r.mu.Unlock()
+	var offer []*peer
 	for _, p := range ps {
-		p.setSpeakers(slices.DeleteFunc(slices.Clone(speakers), func(s *peer) bool { return s == p }))
+		if p.setSpeakers(slices.DeleteFunc(slices.Clone(speakers), func(s *peer) bool { return s == p })) {
+			offer = append(offer, p)
+		}
+	}
+	r.speakersMu.Unlock()
+	for _, p := range offer {
+		r.node.offer(p)
 	}
 }
 
