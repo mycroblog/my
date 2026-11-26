@@ -851,6 +851,38 @@ func timelineHidesDeletedAuthors(t *testing.T, e *timelineEnv) {
 	e.home(t, alice, carols.ID)
 }
 
+// perRowWrites counts the calls of the repository's writes of one row of an entry, its tags or
+// recipients, a follow edge, or an exclusion.
+type perRowWrites struct {
+	apptimeline.Repository
+	n int
+}
+
+func (p *perRowWrites) InsertEntry(ctx context.Context, tx uow.Tx, en apptimeline.Entry) (bool, error) {
+	p.n++
+	return p.Repository.InsertEntry(ctx, tx, en)
+}
+
+func (p *perRowWrites) ReplaceTags(ctx context.Context, tx uow.Tx, en apptimeline.Entry, tagIDs []string, revisedAt time.Time) error {
+	p.n++
+	return p.Repository.ReplaceTags(ctx, tx, en, tagIDs, revisedAt)
+}
+
+func (p *perRowWrites) ReplaceDirectRecipients(ctx context.Context, tx uow.Tx, entryID string, accountIDs []string) error {
+	p.n++
+	return p.Repository.ReplaceDirectRecipients(ctx, tx, entryID, accountIDs)
+}
+
+func (p *perRowWrites) UpsertFollowEdge(ctx context.Context, tx uow.Tx, f apptimeline.FollowEdge) error {
+	p.n++
+	return p.Repository.UpsertFollowEdge(ctx, tx, f)
+}
+
+func (p *perRowWrites) UpsertExclusion(ctx context.Context, tx uow.Tx, x apptimeline.Exclusion) error {
+	p.n++
+	return p.Repository.UpsertExclusion(ctx, tx, x)
+}
+
 func timelineProjectionEqualsRebuild(t *testing.T, e *timelineEnv) {
 	ctx := t.Context()
 	rng := rand.New(rand.NewPCG(101, 6)) //nolint:gosec // a fixed seed keeps the test reproducible
@@ -956,8 +988,14 @@ func timelineProjectionEqualsRebuild(t *testing.T, e *timelineEnv) {
 		apptimeline.ContentSource(e.h.Statuses, e.h.Interactions), apptimeline.GraphSource(e.h.Graph),
 	}
 	for range 2 {
-		if err := apptimeline.RebuildProjections(ctx, e.h.UnitOfWork, e.h.Timeline, sources...); err != nil {
+		// The rebuild writes the rows of the replay in batches: no row of an entry, a tag, a
+		// recipient, a follow, or an exclusion reaches the repository alone (ADR-0172 §4).
+		counted := &perRowWrites{Repository: e.h.Timeline}
+		if err := apptimeline.RebuildProjections(ctx, e.h.UnitOfWork, counted, sources...); err != nil {
 			t.Fatalf("RebuildProjections: %v", err)
+		}
+		if counted.n != 0 {
+			t.Errorf("RebuildProjections wrote %d rows one at a time, want every one in a batch", counted.n)
 		}
 		rebuilt, err := e.h.Timeline.Snapshot(ctx)
 		if err != nil {
