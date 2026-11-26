@@ -56,6 +56,9 @@ func timelineScene(t *testing.T, size int) (map[string]int, sceneOf) {
 	e.follow(t, bob, carol)
 	authors := []timelineUser{alice, carol}
 	var posts []string
+	// The last post of each author, which its replies answer: a reply to its own author is on
+	// every timeline.
+	lastOf := map[string]string{}
 	for i := range size {
 		if i%4 == 3 && len(posts) > 0 {
 			e.boost(t, carol, posts[len(posts)-1])
@@ -67,8 +70,8 @@ func timelineScene(t *testing.T, size int) (map[string]int, sceneOf) {
 		}
 		// Replies, quotes, polls, and pictures among the posts, each with its own parts to read.
 		switch last := len(posts) - 1; {
-		case last >= 0 && i%5 == 1:
-			in.InReplyToID = posts[last]
+		case lastOf[in.AuthorAccountID] != "" && i%5 == 1:
+			in.InReplyToID = lastOf[in.AuthorAccountID]
 		case last >= 0 && i%5 == 2:
 			in.QuotedStatusID = posts[last]
 		case i%7 == 4:
@@ -89,6 +92,7 @@ func timelineScene(t *testing.T, size int) (map[string]int, sceneOf) {
 			t.Fatalf("Create(%d): %v", i, err)
 		}
 		posts = append(posts, p.Status.ID)
+		lastOf[in.AuthorAccountID] = p.Status.ID
 		fetchLinkCard(t, app, p.Status.ID)
 	}
 

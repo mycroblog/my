@@ -13,6 +13,9 @@
 -- Projection: one entry per status (kind post, id = status ID) and per live boost (kind boost,
 -- id = boost ID) of a status that is not deleted. author_* is the poster or the booster,
 -- original_author_* the author of the status; a domain is '' for a local account.
+-- in_reply_to_status_id and in_reply_to_account_id are the parent of a reply and its author while
+-- content links the reply to its parent (status_reply_links: both stored and live, the reply not
+-- held), NULL otherwise; a boost has none.
 CREATE TABLE feed_entries (
   id TEXT NOT NULL PRIMARY KEY,
   kind TEXT NOT NULL CHECK (kind IN ('post', 'boost')),
@@ -25,12 +28,17 @@ CREATE TABLE feed_entries (
   is_local INTEGER NOT NULL CHECK (is_local IN (0, 1)),
   language TEXT NOT NULL,
   revision_seq INTEGER NOT NULL CHECK (revision_seq >= 1),
-  is_reply INTEGER NOT NULL CHECK (is_reply IN (0, 1))
+  is_reply INTEGER NOT NULL CHECK (is_reply IN (0, 1)),
+  in_reply_to_status_id TEXT,
+  in_reply_to_account_id TEXT
 ) STRICT;
 CREATE INDEX feed_entries_author_account_id_id ON feed_entries (author_account_id, id);
 CREATE INDEX feed_entries_status_id ON feed_entries (status_id);
-CREATE INDEX feed_entries_local ON feed_entries (id) WHERE is_local = 1 AND kind = 'post' AND visibility IN ('public', 'local');
-CREATE INDEX feed_entries_public ON feed_entries (id) WHERE kind = 'post' AND visibility = 'public';
+-- The local and federated timelines list a reply only when it replies to its own author.
+CREATE INDEX feed_entries_local ON feed_entries (id) WHERE is_local = 1 AND kind = 'post' AND visibility IN ('public', 'local') AND (is_reply = 0 OR in_reply_to_account_id = author_account_id);
+CREATE INDEX feed_entries_public ON feed_entries (id) WHERE kind = 'post' AND visibility = 'public' AND (is_reply = 0 OR in_reply_to_account_id = author_account_id);
+-- The deletion of a parent clears the reply target of the entries that reply to it.
+CREATE INDEX feed_entries_in_reply_to_status_id ON feed_entries (in_reply_to_status_id) WHERE in_reply_to_status_id IS NOT NULL;
 
 -- Projection: the recipients (current mentions) of a direct post.
 CREATE TABLE feed_direct_recipients (

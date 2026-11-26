@@ -26,7 +26,8 @@ import (
 // their expiry and the subdomains of a domain; the home, local, federated, hashtag, profile, and
 // list timelines with their filters, languages, read window, and keyset paging; the facts of a
 // page and the muted domains; the lists with their members; the followed hashtags with the
-// hashtag branch of home; the featured hashtags with their usage; the keyword filters; and the
+// hashtag branch of home; the reply targets of the entries and the replies that each timeline
+// lists by them; the featured hashtags with their usage; the keyword filters; and the
 // projections emptied for a rebuild. The timeline use cases and projectors on top of it are TimelineFlows, which
 // internal/flowtest/timeline runs once on SQLite.
 func TimelineContract(t *testing.T, newHarness TimelineFactory) {
@@ -51,6 +52,7 @@ func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 		{"KeepsConversations", timelineRepoConversations},
 		{"KeepsFollowedTags", timelineRepoTagFollows},
 		{"ListsTheHashtagBranchOfHome", timelineRepoHomeTags},
+		{"ListsRepliesByTheirParentsAuthors", timelineRepoReplies},
 		{"KeepsKeywordFilters", timelineRepoKeywordFilters},
 		{"KeepsFeaturedTags", timelineRepoFeaturedTags},
 	}
@@ -90,8 +92,10 @@ func (r *timelineRepo) remote() timelineAuthor {
 type entryOpts struct {
 	language string
 	reply    bool
-	tags     []string
-	direct   []string
+	// parent makes the post a reply to the status of parent, whose author is known.
+	parent *apptimeline.Entry
+	tags   []string
+	direct []string
 }
 
 // post inserts the post entry of a new status by a, with its tags and direct recipients.
@@ -105,7 +109,10 @@ func (r *timelineRepo) post(t *testing.T, a timelineAuthor, v appcontent.Visibil
 	e := apptimeline.Entry{
 		ID: id, Kind: timeline.KindPost, StatusID: id, AuthorAccountID: a.id, AuthorDomain: a.domain,
 		OriginalAuthorAccountID: a.id, OriginalAuthorDomain: a.domain, Visibility: v, IsLocal: a.domain == "",
-		Language: o.language, RevisionSeq: 1, IsReply: o.reply,
+		Language: o.language, RevisionSeq: 1, IsReply: o.reply || o.parent != nil,
+	}
+	if o.parent != nil {
+		e.InReplyToStatusID, e.InReplyToAccountID = o.parent.StatusID, o.parent.OriginalAuthorAccountID
 	}
 	r.insert(t, e, o)
 	return e
@@ -117,6 +124,7 @@ func (r *timelineRepo) boost(t *testing.T, a timelineAuthor, of apptimeline.Entr
 	r.clock.Advance(time.Second)
 	e := of
 	e.ID, e.Kind, e.AuthorAccountID, e.AuthorDomain, e.IsLocal, e.IsReply = r.ids.NewID(), timeline.KindBoost, a.id, a.domain, a.domain == "", false
+	e.InReplyToStatusID, e.InReplyToAccountID = "", ""
 	r.insert(t, e, entryOpts{})
 	return e
 }

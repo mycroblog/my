@@ -40,7 +40,8 @@ func (r *Repository) InsertEntry(ctx context.Context, tx uow.Tx, e apptimeline.E
 		AuthorAccountID: e.AuthorAccountID, AuthorDomain: e.AuthorDomain,
 		OriginalAuthorAccountID: e.OriginalAuthorAccountID, OriginalAuthorDomain: e.OriginalAuthorDomain,
 		Visibility: string(e.Visibility), IsLocal: sqlite.BoolToInt(e.IsLocal), Language: e.Language, RevisionSeq: int64(e.RevisionSeq),
-		IsReply: sqlite.BoolToInt(e.IsReply),
+		IsReply:           sqlite.BoolToInt(e.IsReply),
+		InReplyToStatusID: sqlite.ToNullString(e.InReplyToStatusID), InReplyToAccountID: sqlite.ToNullString(e.InReplyToAccountID),
 	})
 	if err != nil {
 		return false, sqlite.Wrap(err, "insert feed entry")
@@ -129,6 +130,40 @@ func (r *Repository) DeleteStatusEntriesOf(ctx context.Context, tx uow.Tx, statu
 		return err
 	}
 	return sqlite.Wrap(q.DeleteFeedEntriesOfStatuses(ctx, list), "delete feed entries of statuses")
+}
+
+// SetReplyTargets implements timeline.Repository.
+func (r *Repository) SetReplyTargets(ctx context.Context, tx uow.Tx, parentStatusID, parentAccountID string, replyStatusIDs []string) error {
+	if len(replyStatusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	list, err := sqlite.JSONList(replyStatusIDs)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.SetFeedReplyTargets(ctx, timelinegen.SetFeedReplyTargetsParams{
+		ParentStatusID: parentStatusID, ParentAccountID: parentAccountID, StatusIds: list,
+	}), "set the reply targets of feed entries")
+}
+
+// ClearReplyTargetsTo implements timeline.Repository.
+func (r *Repository) ClearReplyTargetsTo(ctx context.Context, tx uow.Tx, parentStatusIDs []string) error {
+	if len(parentStatusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	list, err := sqlite.JSONList(parentStatusIDs)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.ClearFeedReplyTargetsTo(ctx, list), "clear the reply targets of feed entries")
 }
 
 func deleteEntryChildren(ctx context.Context, q *timelinegen.Queries, entryID string) error {
@@ -622,6 +657,7 @@ func entryFrom(row timelinegen.FeedEntry) apptimeline.Entry {
 		OriginalAuthorAccountID: row.OriginalAuthorAccountID, OriginalAuthorDomain: row.OriginalAuthorDomain,
 		Visibility: appcontent.Visibility(row.Visibility), IsLocal: row.IsLocal == 1,
 		Language: row.Language, RevisionSeq: int(row.RevisionSeq), IsReply: row.IsReply == 1,
+		InReplyToStatusID: row.InReplyToStatusID.String, InReplyToAccountID: row.InReplyToAccountID.String,
 	}
 }
 

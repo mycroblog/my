@@ -37,6 +37,14 @@ type Entry struct {
 	RevisionSeq int
 	// IsReply is true for a post that replies to a status; a boost never is one.
 	IsReply bool
+	// InReplyToStatusID and InReplyToAccountID are the parent of a reply and its author while
+	// content links the reply to its parent (appcontent.StatusCreated.ReplyLink), "" otherwise:
+	// the parent is not stored, is deleted, or the reply is held. The home timeline and the lists
+	// list a reply only when InReplyToAccountID is the viewer, the reply's author, or an account the
+	// viewer follows (one with a hashtag the viewer follows enters home through the hashtag branch
+	// all the same); the local and federated timelines only when it is the reply's author.
+	InReplyToStatusID  string
+	InReplyToAccountID string
 	// FollowedTagIDs are, for a post that the home timeline lists only for the hashtags the
 	// viewer follows (ADR-0013 §28), those of its hashtags, sorted; nil for every other entry.
 	// FollowedTags are their names, sorted, which Service fills in.
@@ -249,6 +257,12 @@ type Repository interface {
 	// DeleteStatusEntriesOf is DeleteStatusEntries of each of statusIDs, with one statement per
 	// part.
 	DeleteStatusEntriesOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
+	// SetReplyTargets gives the post entries of the replies replyStatusIDs the parent
+	// parentStatusID and its author parentAccountID (Entry.InReplyToStatusID, InReplyToAccountID).
+	SetReplyTargets(ctx context.Context, tx uow.Tx, parentStatusID, parentAccountID string, replyStatusIDs []string) error
+	// ClearReplyTargetsTo takes the reply target off the entries that reply to one of
+	// parentStatusIDs, which are deleted.
+	ClearReplyTargetsTo(ctx context.Context, tx uow.Tx, parentStatusIDs []string) error
 	// ReplaceDirectRecipients makes accountIDs the direct recipients of an entry.
 	ReplaceDirectRecipients(ctx context.Context, tx uow.Tx, entryID string, accountIDs []string) error
 	// ReplaceTags makes tagIDs the tags of entry e, whose current revision is from revisedAt,

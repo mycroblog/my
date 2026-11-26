@@ -94,6 +94,7 @@ func (r *Repository) ListHomeTags(ctx context.Context, hq apptimeline.HomeQuery)
 			ID: row.ID, Kind: row.Kind, StatusID: row.StatusID, AuthorAccountID: row.AuthorAccountID, AuthorDomain: row.AuthorDomain,
 			OriginalAuthorAccountID: row.OriginalAuthorAccountID, OriginalAuthorDomain: row.OriginalAuthorDomain,
 			Visibility: row.Visibility, IsLocal: row.IsLocal, Language: row.Language, RevisionSeq: row.RevisionSeq, IsReply: row.IsReply,
+			InReplyToStatusID: row.InReplyToStatusID, InReplyToAccountID: row.InReplyToAccountID,
 		})
 		e.FollowedTagIDs = slices.Clone(row.TagIds)
 		slices.Sort(e.FollowedTagIDs)

@@ -457,7 +457,8 @@ func (q *Queries) ListFeedConversationsAmong(ctx context.Context, arg ListFeedCo
 
 const listFeedEntriesByID = `-- name: ListFeedEntriesByID :many
 SELECT id, kind, status_id, author_account_id, author_domain, original_author_account_id,
-  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply,
+  in_reply_to_status_id, in_reply_to_account_id
 FROM feed_entries WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
 ORDER BY id
 `
@@ -484,6 +485,8 @@ func (q *Queries) ListFeedEntriesByID(ctx context.Context, ids string) ([]FeedEn
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 		); err != nil {
 			return nil, err
 		}

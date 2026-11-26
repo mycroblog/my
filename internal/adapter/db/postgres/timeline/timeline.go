@@ -43,7 +43,8 @@ func (r *Repository) InsertEntry(ctx context.Context, tx uow.Tx, e apptimeline.E
 		AuthorAccountID: e.AuthorAccountID, AuthorDomain: e.AuthorDomain,
 		OriginalAuthorAccountID: e.OriginalAuthorAccountID, OriginalAuthorDomain: e.OriginalAuthorDomain,
 		Visibility: string(e.Visibility), IsLocal: e.IsLocal, Language: e.Language, RevisionSeq: seq,
-		IsReply: e.IsReply,
+		IsReply:           e.IsReply,
+		InReplyToStatusID: postgres.ToNullString(e.InReplyToStatusID), InReplyToAccountID: postgres.ToNullString(e.InReplyToAccountID),
 	})
 	if err != nil {
 		return false, postgres.Wrap(err, "insert feed entry")
@@ -133,6 +134,32 @@ func (r *Repository) DeleteStatusEntriesOf(ctx context.Context, tx uow.Tx, statu
 		return err
 	}
 	return postgres.Wrap(q.DeleteFeedEntriesOfStatuses(ctx, list), "delete feed entries of statuses")
+}
+
+// SetReplyTargets implements timeline.Repository.
+func (r *Repository) SetReplyTargets(ctx context.Context, tx uow.Tx, parentStatusID, parentAccountID string, replyStatusIDs []string) error {
+	if len(replyStatusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return postgres.Wrap(q.SetFeedReplyTargets(ctx, timelinegen.SetFeedReplyTargetsParams{
+		ParentStatusID: parentStatusID, ParentAccountID: parentAccountID, StatusIds: replyStatusIDs,
+	}), "set the reply targets of feed entries")
+}
+
+// ClearReplyTargetsTo implements timeline.Repository.
+func (r *Repository) ClearReplyTargetsTo(ctx context.Context, tx uow.Tx, parentStatusIDs []string) error {
+	if len(parentStatusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return postgres.Wrap(q.ClearFeedReplyTargetsTo(ctx, parentStatusIDs), "clear the reply targets of feed entries")
 }
 
 func deleteEntryChildren(ctx context.Context, q *timelinegen.Queries, entryID string) error {
@@ -597,6 +624,8 @@ func entryFrom(row timelinegen.FeedEntry) apptimeline.Entry {
 		OriginalAuthorAccountID: row.OriginalAuthorAccountID, OriginalAuthorDomain: row.OriginalAuthorDomain,
 		Visibility: appcontent.Visibility(row.Visibility), IsLocal: row.IsLocal,
 		Language: row.Language, RevisionSeq: int(row.RevisionSeq), IsReply: row.IsReply,
+		InReplyToStatusID:  postgres.FromNullString(row.InReplyToStatusID),
+		InReplyToAccountID: postgres.FromNullString(row.InReplyToAccountID),
 	}
 }
 

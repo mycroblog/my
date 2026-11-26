@@ -35,7 +35,8 @@ type StatusFactory func(t *testing.T, opts uow.Options) StatusHarness
 // the content module's synchronous projectors: storing statuses with their revisions and
 // children, the unique keys (URI, Idempotency-Key, revision seq, deletion), revisions moving
 // the head, deletions as tombstones that remove the status from every projection, reply links
-// in either order of arrival with the replies count, held replies left out of both, the post
+// in either order of arrival with the replies count and in the StatusCreated events that
+// LinkCreated fills, held replies left out of both, the post
 // counters, tags, and the property
 // that incrementally updated projections equal a rebuild from the sources.
 func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
@@ -56,6 +57,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"DeletesManyStatuses", statusDeletesMany},
 		{"LinksReplies", statusLinksReplies},
 		{"KeepsHeldRepliesOutOfTheThread", statusKeepsHeldReplies},
+		{"PutsTheReplyLinksInStatusCreated", statusCreatedCarriesReplyLinks},
 		{"CountsPosts", statusCountsPosts},
 		{"CountsLocalPosts", statusCountsLocalPosts},
 		{"CountsDailyLocalPublicPosts", statusCountsDailyLocalPublicPosts},

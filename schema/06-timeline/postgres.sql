@@ -13,6 +13,9 @@
 -- Projection: one entry per status (kind post, id = status ID) and per live boost (kind boost,
 -- id = boost ID) of a status that is not deleted. author_* is the poster or the booster,
 -- original_author_* the author of the status; a domain is '' for a local account.
+-- in_reply_to_status_id and in_reply_to_account_id are the parent of a reply and its author while
+-- content links the reply to its parent (status_reply_links: both stored and live, the reply not
+-- held), NULL otherwise; a boost has none.
 CREATE TABLE feed_entries (
   id uuid NOT NULL PRIMARY KEY,
   kind text NOT NULL CHECK (kind IN ('post', 'boost')),
@@ -25,12 +28,17 @@ CREATE TABLE feed_entries (
   is_local boolean NOT NULL,
   language text NOT NULL,
   revision_seq integer NOT NULL CHECK (revision_seq >= 1),
-  is_reply boolean NOT NULL
+  is_reply boolean NOT NULL,
+  in_reply_to_status_id uuid,
+  in_reply_to_account_id uuid
 );
 CREATE INDEX feed_entries_author_account_id_id ON feed_entries (author_account_id, id);
 CREATE INDEX feed_entries_status_id ON feed_entries (status_id);
-CREATE INDEX feed_entries_local ON feed_entries (id) WHERE is_local AND kind = 'post' AND visibility IN ('public', 'local');
-CREATE INDEX feed_entries_public ON feed_entries (id) WHERE kind = 'post' AND visibility = 'public';
+-- The local and federated timelines list a reply only when it replies to its own author.
+CREATE INDEX feed_entries_local ON feed_entries (id) WHERE is_local AND kind = 'post' AND visibility IN ('public', 'local') AND (NOT is_reply OR in_reply_to_account_id = author_account_id);
+CREATE INDEX feed_entries_public ON feed_entries (id) WHERE kind = 'post' AND visibility = 'public' AND (NOT is_reply OR in_reply_to_account_id = author_account_id);
+-- The deletion of a parent clears the reply target of the entries that reply to it.
+CREATE INDEX feed_entries_in_reply_to_status_id ON feed_entries (in_reply_to_status_id) WHERE in_reply_to_status_id IS NOT NULL;
 
 -- Projection: the recipients (current mentions) of a direct post.
 CREATE TABLE feed_direct_recipients (

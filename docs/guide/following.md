@@ -56,6 +56,10 @@ operators can turn either one off, or show it only to people who are signed in; 
 "Languages to show", under "Timelines" in the "Display and posting" settings, limits every timeline to the languages
 you choose; posts with no language set still show.
 
+Replies show only where you can follow the conversation. Home and your lists show a reply when it answers you, someone
+you follow, or its author's own post; the Local and Federated timelines show a reply only when it continues its
+author's own thread. Open a post to see all its replies; hashtag pages and profiles show replies too.
+
 A hashtag page (for example `#cats`) shows the public posts and the posts for neighbors with that tag.
 
 ## Following hashtags

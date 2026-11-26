@@ -196,6 +196,11 @@ func (a *App) setUpProjections(cfg *config.Config, store projection.Store, r pro
 				Tables: []string{
 					"feed_entries", "feed_direct_recipients", "feed_tag_entries", "tag_usage", "feed_follow_edges", "feed_exclusions", "feed_domain_mutes",
 					"feed_conversation_participants", "feed_conversations",
+					// Not a projection, but the rebuild takes out the members whose follow the
+					// rebuilt feed_follow_edges lacks: shadowed like the others, so that the
+					// verification writes no table of the database, and the rebuild writes those
+					// deletions as it writes the rest of the difference.
+					"list_members",
 				},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return timeline.RebuildProjections(ctx, u, r.feeds,

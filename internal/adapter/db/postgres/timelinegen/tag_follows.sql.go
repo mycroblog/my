@@ -167,6 +167,7 @@ func (q *Queries) ListFeedTagFollows(ctx context.Context, accountID string) ([]F
 const listHomeTagEntries = `-- name: ListHomeTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply,
+  e.in_reply_to_status_id, e.in_reply_to_account_id,
   array_agg(t.tag_id ORDER BY t.tag_id)::uuid[] AS tag_ids
 FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
@@ -175,10 +176,12 @@ WHERE t.tag_id IN (SELECT ft.tag_id FROM feed_tag_follows ft WHERE ft.account_id
   AND ($2::uuid IS NULL OR t.entry_id < $2::uuid)
   AND t.entry_id >= COALESCE($3::uuid, '00000000-0000-0000-0000-000000000000')
   AND e.kind = 'post'
-  AND t.author_account_id <> $1
-  AND NOT EXISTS (
-    SELECT 1 FROM feed_follow_edges f
-    WHERE f.follower_account_id = $1 AND f.followee_account_id = t.author_account_id)
+  AND ((e.author_account_id <> $1 AND NOT EXISTS (
+      SELECT 1 FROM feed_follow_edges f
+      WHERE f.follower_account_id = $1 AND f.followee_account_id = e.author_account_id))
+    OR (e.is_reply AND COALESCE(e.in_reply_to_account_id NOT IN ($1, e.author_account_id), true) AND NOT EXISTS (
+      SELECT 1 FROM feed_follow_edges f
+      WHERE f.follower_account_id = $1 AND f.followee_account_id = e.in_reply_to_account_id)))
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
     WHERE r.account_id = t.author_account_id
@@ -226,12 +229,15 @@ type ListHomeTagEntriesRow struct {
 	Language                string
 	RevisionSeq             int32
 	IsReply                 bool
+	InReplyToStatusID       *string
+	InReplyToAccountID      *string
 	TagIds                  []string
 }
 
 // ListHomeTagEntries is the hashtag branch of the home timeline (FR-201, ADR-0013 sections 25 and
 // 26): the public and local posts with a hashtag that the viewer follows, by authors other than
-// the viewer and the accounts the viewer follows (whose posts ListHomeEntries lists), within the
+// the viewer and the accounts the viewer follows (whose posts ListHomeEntries lists), and by those
+// authors too when ListHomeEntries leaves the post out as a reply without context, within the
 // read window, each once with the followed tags it carries (tag_ids). It leaves
 // out what the hashtag timeline leaves out (the authors and domains kept from discovery or
 // hidden, the authors the viewer blocks, is blocked by, or mutes, the viewer's muted domains),
@@ -266,6 +272,8 @@ func (q *Queries) ListHomeTagEntries(ctx context.Context, arg ListHomeTagEntries
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+			&i.InReplyToStatusID,
+			&i.InReplyToAccountID,
 			&i.TagIds,
 		); err != nil {
 			return nil, err

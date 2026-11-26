@@ -147,7 +147,8 @@ ORDER BY o.conversation_id, o.account_id;
 
 -- name: ListFeedEntriesByID :many
 SELECT id, kind, status_id, author_account_id, author_domain, original_author_account_id,
-  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply,
+  in_reply_to_status_id, in_reply_to_account_id
 FROM feed_entries WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)))
 ORDER BY id;
 

@@ -54,8 +54,9 @@ type TimelineFactory func(t *testing.T, opts uow.Options) TimelineHarness
 // remote), the tag_usage projection and the prefix search of hashtags over it (ADR-0092 §1), the
 // property that incrementally updated projections equal a rebuild from the events the content and
 // graph modules replay, the lists with their timelines (ADR-0013, timeline_lists_flows.go), the
-// direct messages by conversation (FR-212, conversation_flows.go), and the followed hashtags
-// with their posts on home (ADR-0013 §24 to §28, timeline_tag_follows_flows.go).
+// direct messages by conversation (FR-212, conversation_flows.go), the followed hashtags
+// with their posts on home (ADR-0013 §24 to §28, timeline_tag_follows_flows.go), and the replies
+// that each timeline and stream shows (ADR-0013 §31, timeline_replies_flows.go).
 func TimelineFlows(t *testing.T, newHarness TimelineFactory) {
 	t.Helper()
 	cases := []struct {
@@ -96,6 +97,8 @@ func TimelineFlows(t *testing.T, newHarness TimelineFactory) {
 		{"FollowedTagCommands", timelineFollowedTagCommands},
 		{"HomeShowsPostsOfFollowedTags", timelineHomeFollowedTags},
 		{"HomeFollowedTagsForStreams", timelineHomeFollowedTagStreams},
+		{"ShowsRepliesWithTheirContext", timelineReplies},
+		{"HomeShowsRepliesOfFollowedTags", timelineRepliesOfFollowedTags},
 		{"KeywordFilterCommands", timelineKeywordFilterCommands},
 		{"ExportsKeywordFilters", timelineKeywordFilterExport},
 		{"FeaturedTagCommands", timelineFeaturedTagCommands},
@@ -178,6 +181,11 @@ type postOpts struct {
 	language string
 	// inReplyTo is the URI of the status replied to, "" for none.
 	inReplyTo string
+	// uri is the URI of the status, "" for one of its own: a reply posted before may wait for it.
+	uri string
+	// heldBy is, for a reply held out of its parent's thread until heldBy accepts it, the
+	// parent's author; "" for a reply that is not held.
+	heldBy string
 	// conversation is the ID of the conversation the status joins; "" joins its stored parent's,
 	// else a new one (ADR-0154 §2).
 	conversation string
@@ -192,12 +200,15 @@ func (e *timelineEnv) post(t *testing.T, author string, v content.Visibility, o 
 		s.IsLocal = false
 		s.URI = "https://" + timelineRemoteDomain + "/statuses/" + s.ID
 	}
+	if o.uri != "" {
+		s.URI = o.uri
+	}
 	rev := e.FirstRevision(s, o.mentions...)
 	rev.TagIDs = o.tags
 	if o.language != "" {
 		rev.Language = o.language
 	}
-	if err := e.create(t, s, rev, o.conversation); err != nil {
+	if err := e.create(t, s, rev, o.conversation, o.heldBy); err != nil {
 		t.Fatalf("create status: %v", err)
 	}
 	return s
@@ -594,22 +605,23 @@ func timelinePublic(t *testing.T, e *timelineEnv) {
 		e.post(t, remote, v, postOpts{})
 	}
 	e.boost(t, bob, far)
-	reply := e.post(t, other, content.VisibilityPublic, postOpts{inReplyTo: far.URI})
+	own := e.public(t, other)
+	reply := e.post(t, other, content.VisibilityPublic, postOpts{inReplyTo: own.URI})
 	public := func(viewer appcontent.Viewer, want ...string) {
 		t.Helper()
 		p, err := e.svc.Public(t.Context(), viewer, apptimeline.Query{Limit: apptimeline.MaxLimit})
 		expectPage(t, "Public", p, err, want...)
 	}
 	// Only public posts, local or remote; no local posts even for a logged-in viewer, no boosts.
-	public(viewerOf(bob), pub.ID, far.ID, reply.ID)
-	public(anonymous, pub.ID, far.ID, reply.ID)
+	public(viewerOf(bob), pub.ID, far.ID, own.ID, reply.ID)
+	public(anonymous, pub.ID, far.ID, own.ID, reply.ID)
 
 	// The viewer's mutes and blocks apply.
 	if _, err := e.graph.Mute(t.Context(), bob, other, appgraph.MuteInput{}); err != nil {
 		t.Fatalf("Mute: %v", err)
 	}
 	public(viewerOf(bob), pub.ID, far.ID)
-	public(anonymous, pub.ID, far.ID, reply.ID)
+	public(anonymous, pub.ID, far.ID, own.ID, reply.ID)
 
 	// A domain restriction covers the domain and its subdomains; an author restriction the author.
 	err := e.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
@@ -904,10 +916,17 @@ func timelineProjectionEqualsRebuild(t *testing.T, e *timelineEnv) {
 		return out
 	}
 	visibilities := content.Visibilities()
-	for range 200 {
+	// Replies wait for parents that arrive later at these URIs; held replies wait for their
+	// release.
+	const latePool = 8
+	lateURI := func(i int) string { return fmt.Sprintf("https://%s/statuses/late-%d", timelineRemoteDomain, i) }
+	lateUsed := map[int]bool{}
+	var held []content.Status
+	released := 0
+	for range 300 {
 		e.Clock.Advance(time.Minute)
 		a, b := pick(locals), pick(accounts)
-		switch rng.IntN(13) {
+		switch rng.IntN(16) {
 		case 0, 1, 2:
 			author := pick(accounts)
 			v := visibilities[rng.IntN(len(visibilities))]
@@ -915,10 +934,45 @@ func timelineProjectionEqualsRebuild(t *testing.T, e *timelineEnv) {
 				v = content.VisibilityPublic
 			}
 			o := postOpts{mentions: subset(locals), tags: subset(tags), language: pick([]string{"en", "ja", "und"})}
-			if len(live) > 0 && rng.IntN(2) == 0 {
+			switch r := rng.IntN(8); {
+			case r < 3 && len(live) > 0:
 				o.inReplyTo = live[rng.IntN(len(live))].URI
+			case r == 3 && len(live) > 0:
+				parent := live[rng.IntN(len(live))]
+				o.inReplyTo, o.heldBy = parent.URI, parent.AuthorAccountID
+				held = append(held, e.post(t, author, v, o))
+				continue
+			case r == 4:
+				o.inReplyTo = lateURI(rng.IntN(latePool))
 			}
 			live = append(live, e.post(t, author, v, o))
+		case 13:
+			// A parent that replies may have waited for.
+			if n := rng.IntN(latePool); !lateUsed[n] {
+				lateUsed[n] = true
+				live = append(live, e.post(t, accounts[5], content.VisibilityPublic, postOpts{uri: lateURI(n), language: "en"}))
+			}
+		case 14:
+			// Several statuses deleted together, as a moderation action deletes them.
+			var batch []content.Status
+			for range 2 {
+				if len(live) > 0 {
+					i := rng.IntN(len(live))
+					batch = append(batch, live[i])
+					live = slices.Delete(live, i, i+1)
+				}
+			}
+			if len(batch) > 0 {
+				e.removeMany(t, batch...)
+			}
+		case 15:
+			if len(held) > 0 {
+				i := rng.IntN(len(held))
+				e.release(t, held[i])
+				live = append(live, held[i])
+				held = slices.Delete(held, i, i+1)
+				released++
+			}
 		case 3:
 			if len(live) > 0 {
 				s := live[rng.IntN(len(live))]
@@ -983,6 +1037,21 @@ func timelineProjectionEqualsRebuild(t *testing.T, e *timelineEnv) {
 		len(incremental.TagEntries) == 0 || len(incremental.TagUsage) == 0 || len(incremental.DirectRecipients) == 0 ||
 		len(incremental.ConversationParticipants) == 0 || len(incremental.ConversationHeads) == 0 {
 		t.Fatalf("the random history left some projection empty: %+v", incremental)
+	}
+	// Some replies have a known parent and some none, whether they wait for it, it was deleted,
+	// or they are held.
+	known, unknown := 0, 0
+	for _, en := range incremental.Entries {
+		switch {
+		case en.InReplyToAccountID != "":
+			known++
+		case en.IsReply:
+			unknown++
+		}
+	}
+	if known == 0 || unknown == 0 || len(held) == 0 || released == 0 || len(lateUsed) == 0 {
+		t.Fatalf("the random history has %d replies with a known parent, %d without, %d held, %d released, %d late parents; want some of each",
+			known, unknown, len(held), released, len(lateUsed))
 	}
 	sources := []apptimeline.Source{
 		apptimeline.ContentSource(e.h.Statuses, e.h.Interactions), apptimeline.GraphSource(e.h.Graph),

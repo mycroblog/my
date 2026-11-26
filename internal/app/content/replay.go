@@ -24,7 +24,9 @@ func (s *Service) IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bo
 // current conversation), then a Boosted for each live boost, ordered by boost ID. Deleted statuses and retracted boosts emit nothing, so a
 // projection that applies these events to empty tables ends where incremental updating did.
 // StatusCreated.HeldReply says the replies held out of their thread, as when they were created:
-// the timelines leave the unpublished ones out (StatusCreated.Unpublished). The posts of the boards
+// the timelines leave the unpublished ones out (StatusCreated.Unpublished). StatusCreated.ReplyLink
+// is the current link of each reply to its parent (status_reply_links), and LinkedReplies is
+// empty, since each reply carries its own link. The posts of the boards
 // of events, which no other module lists (board.go), emit nothing.
 func ReplayEvents(ctx context.Context, tx uow.Tx, statuses Repository, interactions InteractionRepository, emit func(uow.Event) error) error {
 	all, err := statuses.ListCurrentPosts(ctx, tx)
@@ -62,10 +64,24 @@ func ReplayEvents(ctx context.Context, tx uow.Tx, statuses Repository, interacti
 	for _, id := range heldIDs {
 		held[id] = true
 	}
+	// The current reply links, which incremental updating made one by one as the replies, their
+	// parents, and the releases came.
+	ids := make([]string, len(posts))
+	for i, p := range posts {
+		ids[i] = p.Status.ID
+	}
+	links, err := statuses.ReplyLinksOf(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
 	live := make(map[string]content.Status, len(posts))
 	for _, p := range posts {
 		live[p.Status.ID] = p.Status
-		if err := emit(StatusCreated{Status: p.Status, Revision: p.Revision, ConversationID: convs[p.Status.ID].ID, HeldReply: held[p.Status.ID]}); err != nil {
+		ev := StatusCreated{Status: p.Status, Revision: p.Revision, ConversationID: convs[p.Status.ID].ID, HeldReply: held[p.Status.ID]}
+		if l, ok := links[p.Status.ID]; ok {
+			ev.ReplyLink = &l
+		}
+		if err := emit(ev); err != nil {
 			return err
 		}
 	}

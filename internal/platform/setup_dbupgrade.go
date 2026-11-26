@@ -38,6 +38,11 @@ func (a *App) dataUpgrades(income appfinance.IncomeRepository) DataUpgrades {
 					return appfinance.UpgradeIncomeSources(ctx, u, income)
 				},
 			},
+			{
+				Key:         "timeline.feed_reply_targets",
+				Description: "Rebuilds the timeline entries so that each reply records the post and the account it replies to, by which the home, list, local, and federated timelines leave out the replies whose context the viewer cannot see.",
+				Projections: []string{"feeds"},
+			},
 		},
 	}
 }

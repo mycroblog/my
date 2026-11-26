@@ -44,7 +44,9 @@ type TagFollowRepository interface {
 	// ListHomeTags is the hashtag branch of the home timeline of q.ViewerAccountID (ADR-0013 §25,
 	// §26), newest first, at most q.Limit entries: the posts of visibility public and local
 	// with a tag that the viewer follows, by authors other than the viewer and the accounts the
-	// viewer follows, in the read window q.Floor, without the authors and domains that the
+	// viewer follows (whose posts ListHome lists), and by those authors too when ListHome leaves
+	// the post out as a reply whose parent's author is neither the viewer, its author, nor an
+	// account the viewer follows, in the read window q.Floor, without the authors and domains that the
 	// hashtag timeline leaves out (kept from discovery, capped at private, or hidden), the
 	// accounts the viewer blocks, is blocked by, or mutes, the domains the viewer mutes, and
 	// the languages outside q.Languages. Each entry has the viewer's followed tags it carries

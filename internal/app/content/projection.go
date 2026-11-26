@@ -130,16 +130,12 @@ func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 	if err := projectRevision(ctx, tx, repo, rev); err != nil {
 		return err
 	}
-	// Replies that arrived before this status now have a known parent.
-	replies, err := repo.ListLiveRepliesTo(ctx, tx, s.URI)
+	parent, replies, err := createdReplyLinks(ctx, tx, repo, s, held)
 	if err != nil {
 		return err
 	}
 	counters := content.Counters{StatusID: s.ID}
 	for _, reply := range replies {
-		if reply.ID == s.ID {
-			continue // a status that replies to itself is linked below, as a reply
-		}
 		if err := repo.UpsertReplyLink(ctx, tx, linkTo(reply, s)); err != nil {
 			return err
 		}
@@ -150,8 +146,8 @@ func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 	if err := repo.InsertCounters(ctx, tx, counters); err != nil {
 		return err
 	}
-	if !held {
-		if err := linkReply(ctx, tx, repo, s); err != nil {
+	if parent != nil {
+		if err := addReplyLink(ctx, tx, repo, s, *parent); err != nil {
 			return err
 		}
 	}
@@ -167,29 +163,94 @@ func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 	return nil
 }
 
-// linkReply links the reply s to its parent and counts it among the parent's replies, when the
-// parent is known and live; a parent that arrives later links it.
-func linkReply(ctx context.Context, tx uow.Tx, repo Repository, s content.Status) error {
+// createdReplyLinks returns the reply links that projecting the new status s makes
+// (projectCreated): the stored replies that waited for s as their parent, neither deleted nor
+// held and s itself left out, each of which links to s, and, unless s is held, the link of s to
+// its parent (replyLinkOf). The caller holds the lock keys statusLockKeys(s, false), which keep
+// the links as they are until it commits, so that the command that stores s and the projector of
+// its StatusCreated find the same links: the command puts them in the event (createdEventLinks)
+// and the projector writes them.
+func createdReplyLinks(ctx context.Context, tx uow.Tx, repo Repository, s content.Status, held bool) (*content.ReplyLink, []content.Status, error) {
+	all, err := repo.ListLiveRepliesTo(ctx, tx, s.URI)
+	if err != nil {
+		return nil, nil, err
+	}
+	// A status that replies to itself is linked as a reply, below.
+	replies := slices.DeleteFunc(all, func(r content.Status) bool { return r.ID == s.ID })
+	if held {
+		return nil, replies, nil
+	}
+	parent, err := replyLinkOf(ctx, tx, repo, s)
+	return parent, replies, err
+}
+
+// LinkCreated returns ev with ReplyLink and LinkedReplies filled in, as the projector of ev links
+// them, for the status of ev that tx has just stored, before tx emits ev. It takes the lock keys of
+// the status first. The commands of this module, which hold them already, fill the links the same
+// way (createdEventLinks); a test kit that stores a status and emits StatusCreated itself calls it.
+func LinkCreated(ctx context.Context, tx uow.Tx, repo Repository, ev StatusCreated) (StatusCreated, error) {
+	if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(ev.Status, false)); err != nil {
+		return ev, err
+	}
+	var err error
+	ev.ReplyLink, ev.LinkedReplies, err = createdEventLinks(ctx, tx, repo, ev.Status, ev.HeldReply)
+	return ev, err
+}
+
+// createdEventLinks returns StatusCreated.ReplyLink and StatusCreated.LinkedReplies of the new
+// status s, which createdReplyLinks decides.
+func createdEventLinks(ctx context.Context, tx uow.Tx, repo Repository, s content.Status, held bool) (*content.ReplyLink, []content.ReplyLink, error) {
+	parent, replies, err := createdReplyLinks(ctx, tx, repo, s, held)
+	if err != nil {
+		return nil, nil, err
+	}
+	var linked []content.ReplyLink
+	for _, r := range replies {
+		linked = append(linked, linkTo(r, s))
+	}
+	return parent, linked, nil
+}
+
+// replyLinkOf returns the link that linkReply makes for the reply s: to its parent when the
+// parent is stored and live and s is not linked yet; nil otherwise, so that a parent that arrives
+// later links it.
+func replyLinkOf(ctx context.Context, tx uow.Tx, repo Repository, s content.Status) (*content.ReplyLink, error) {
 	if s.InReplyToURI == "" {
-		return nil
+		return nil, nil
 	}
 	parent, err := repo.FindLiveStatusByURI(ctx, tx, s.InReplyToURI)
 	switch {
 	case errors.Is(err, ErrNotFound):
-		return nil
+		return nil, nil
 	case err != nil:
-		return err
+		return nil, err
 	}
 	if _, err := repo.ReplyLink(ctx, tx, s.ID); err == nil {
-		return nil // linked already
+		return nil, nil // linked already
 	} else if !errors.Is(err, ErrNotFound) {
+		return nil, err
+	}
+	l := linkTo(s, parent)
+	return &l, nil
+}
+
+// linkReply links the reply s to its parent and counts it among the parent's replies, when
+// replyLinkOf finds a link to make.
+func linkReply(ctx context.Context, tx uow.Tx, repo Repository, s content.Status) error {
+	l, err := replyLinkOf(ctx, tx, repo, s)
+	if err != nil || l == nil {
 		return err
 	}
-	if err := repo.UpsertReplyLink(ctx, tx, linkTo(s, parent)); err != nil {
+	return addReplyLink(ctx, tx, repo, s, *l)
+}
+
+// addReplyLink stores the link l of the reply s and counts s among the replies of its parent.
+func addReplyLink(ctx context.Context, tx uow.Tx, repo Repository, s content.Status, l content.ReplyLink) error {
+	if err := repo.UpsertReplyLink(ctx, tx, l); err != nil {
 		return err
 	}
 	if s.Visibility.CountsAsReply() {
-		return repo.AddReplies(ctx, tx, parent.ID, 1)
+		return repo.AddReplies(ctx, tx, l.ParentStatusID, 1)
 	}
 	return nil
 }

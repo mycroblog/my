@@ -168,7 +168,13 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	if err := s.d.Repository.InsertRevision(ctx, tx, rev); err != nil {
 		return Post{}, err
 	}
-	if err := tx.Emit(ctx, StatusCreated{Status: st, Revision: rev, ConversationID: ins.ConversationID, HeldReply: held}); err != nil {
+	// insertStatus took the lock keys of the status, which keep its reply links as the projector
+	// of StatusCreated finds them.
+	created := StatusCreated{Status: st, Revision: rev, ConversationID: ins.ConversationID, HeldReply: held}
+	if created.ReplyLink, created.LinkedReplies, err = createdEventLinks(ctx, tx, s.d.Repository, st, held); err != nil {
+		return Post{}, err
+	}
+	if err := tx.Emit(ctx, created); err != nil {
 		return Post{}, err
 	}
 	if err := s.recordQuote(ctx, tx, st, in.Quote); err != nil {

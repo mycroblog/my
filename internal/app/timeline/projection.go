@@ -25,7 +25,10 @@ var errEntryExists = errors.New("timeline: the feed entry already exists")
 
 // RegisterProjectors registers the timeline module's synchronous projectors. They read only the events and the feed_* tables:
 //   - feed_entries holds a post entry for each status that is not deleted, with the language of
-//     its current revision, and a boost entry for each live boost of such a status;
+//     its current revision, and a boost entry for each live boost of such a status; a post that
+//     replies to a status has the parent and its author while content links them
+//     (StatusCreated.ReplyLink and LinkedReplies, StatusReleased.ReplyLink), and loses them with
+//     the deletion of the parent;
 //   - feed_direct_recipients holds the current mentions of each direct post, and
 //     feed_conversation_participants and feed_conversations its parties by conversation, which
 //     follow the merges of conversations (conversations.go);
@@ -57,8 +60,20 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 			Visibility: s.Visibility, IsLocal: s.IsLocal, Language: language(rev.Language), RevisionSeq: rev.Seq,
 			IsReply: s.InReplyToURI != "",
 		}
+		if l := ev.ReplyLink; l != nil {
+			entry.InReplyToStatusID, entry.InReplyToAccountID = l.ParentStatusID, l.ParentAuthorAccountID
+		}
 		if err := insertEntry(ctx, tx, repo, entry); err != nil {
 			return err
+		}
+		if len(ev.LinkedReplies) > 0 {
+			replies := make([]string, len(ev.LinkedReplies))
+			for i, l := range ev.LinkedReplies {
+				replies[i] = l.StatusID
+			}
+			if err := repo.SetReplyTargets(ctx, tx, s.ID, s.AuthorAccountID, replies); err != nil {
+				return err
+			}
 		}
 		if err := projectRevision(ctx, tx, repo, entry, rev.MentionedAccountIDs, rev.TagIDs, rev.RevisedAt); err != nil {
 			return err
@@ -93,6 +108,10 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 		if err := repo.DeleteStatusEntries(ctx, tx, st.ID); err != nil {
 			return err
 		}
+		// The replies to it lose their parent, as content unlinks them.
+		if err := repo.ClearReplyTargetsTo(ctx, tx, []string{st.ID}); err != nil {
+			return err
+		}
 		if st.Visibility != appcontent.VisibilityDirect {
 			return nil
 		}
@@ -111,10 +130,21 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 		if err := repo.DeleteStatusEntriesOf(ctx, tx, ids); err != nil {
 			return err
 		}
+		if err := repo.ClearReplyTargetsTo(ctx, tx, ids); err != nil {
+			return err
+		}
 		if len(direct) == 0 {
 			return nil
 		}
 		return repo.DeleteConversationEntries(ctx, tx, direct)
+	})
+	// The release of a held reply links it to its parent (ADR-0155 §6).
+	r.Register(appcontent.EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.StatusReleased)
+		if ev.ReplyLink == nil {
+			return nil
+		}
+		return repo.SetReplyTargets(ctx, tx, ev.ReplyLink.ParentStatusID, ev.ReplyLink.ParentAuthorAccountID, []string{ev.Status.ID})
 	})
 	registerConversationProjectors(r, repo)
 	r.Register(appcontent.EventBoosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -368,7 +398,8 @@ func GraphSource(repo appgraph.Repository) Source {
 // writes a replayBatch gathers.
 // The restrictions are left alone: RebuildRestrictions derives them. The lists
 // are not projections and stay, but a member whose follow the rebuilt feed_follow_edges no longer
-// holds leaves them, as the end of the follow would have taken it out.
+// holds leaves them, as the end of the follow would have taken it out; so a rebuild of the
+// projection service shadows list_members with the projection's tables.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository, sources ...Source) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		// The projectors write through a batch, a few statements for many rows (ADR-0172 §4).

@@ -46,7 +46,7 @@ listas: «Cualquiera» (el valor predeterminado), «Seguidores» (personas de es
 siempre ves ambas listas, y todo el mundo sigue viendo cuántas hay. Otros servidores reciben solo las cifras, salvo que
 elijas «Cualquiera». Una lista que no puedes abrir lo indica en lugar de las cuentas.
 
-<!-- source: timelines f7709f12328b -->
+<!-- source: timelines ecf964fa1eb9 -->
 ## Cronologías
 
 | Cronología | Qué muestra |
@@ -59,6 +59,8 @@ Las cronologías Local y Federada son para todas las personas que usan el servid
 servidor pueden desactivar cualquiera de las dos, o mostrarla solo a las personas que han iniciado sesión; la página lo indica entonces.
 «Idiomas que mostrar», en «Cronologías» dentro de los ajustes de «Visualización y publicación», limita todas las cronologías a los idiomas
 que elijas; las publicaciones sin idioma definido se siguen mostrando.
+
+Las respuestas solo se muestran donde puedes seguir la conversación. Inicio y tus listas muestran una respuesta cuando contesta a ti, a alguien a quien sigues o a una publicación de su propio autor; las cronologías Local y Federada muestran una respuesta solo cuando continúa el propio hilo de su autor. Abre una publicación para ver todas sus respuestas; las páginas de etiquetas y los perfiles también muestran respuestas.
 
 Una página de etiqueta (por ejemplo `#cats`) muestra las publicaciones públicas y las publicaciones para vecinos con esa etiqueta.
 
