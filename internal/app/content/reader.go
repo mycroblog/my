@@ -480,7 +480,8 @@ func (r *Reader) Favourites(ctx context.Context, viewer Viewer, before string, l
 
 // markedPage presents the statuses of marks, at most limit+1 rows newest first, that viewer may
 // see, and returns them with the cursor of the next page ("" when marks holds no more than
-// limit). key gives a mark's own ID (the cursor) and the ID of its status. A post of the board of
+// limit). key gives a mark's own ID (the cursor) and the ID of its status. It presents them as
+// Views does, with a number of queries that does not grow with the page. A post of the board of
 // an event is left out, as in every list but the board's.
 func markedPage[M any](ctx context.Context, r *Reader, viewer Viewer, marks []M, limit int, key func(M) (id, statusID string)) ([]StatusView, string, error) {
 	var next string
@@ -488,17 +489,17 @@ func markedPage[M any](ctx context.Context, r *Reader, viewer Viewer, marks []M,
 		marks = marks[:limit]
 		next, _ = key(marks[limit-1])
 	}
-	var out []StatusView
+	ids := make([]string, 0, len(marks))
 	for _, m := range marks {
 		_, statusID := key(m)
-		view, err := r.view(ctx, viewer, statusID)
-		if errors.Is(err, ErrNotFound) {
-			continue
-		}
-		if err != nil {
-			return nil, "", err
-		}
-		out = append(out, view)
+		ids = append(ids, statusID)
+	}
+	if len(ids) == 0 {
+		return nil, next, nil
+	}
+	out, err := r.Views(ctx, viewer, ids)
+	if err != nil {
+		return nil, "", err
 	}
 	return out, next, nil
 }
