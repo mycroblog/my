@@ -62,9 +62,10 @@ func (k *unreachableKV) CompareAndSwap(ctx context.Context, ns, key string, old,
 	return k.KeyValueStore.CompareAndSwap(ctx, ns, key, old, v, ttl)
 }
 
-// TestLostNodeRoomsArePlacedAgain loses the node of a room (ADR-0101 §14): the node stops
-// renewing, its leases expire, and the next grant of the room's session places the room on the
-// other node, where the speaker connects with the same session and a listener hears them.
+// TestLostNodeRoomsArePlacedAgain loses the node of a room with another node running (ADR-0101
+// §14): the node crashes, its clients lose it, and its leases expire; the next grants of the
+// room's sessions place the room on the other node, where both speakers connect with the same
+// sessions and hear each other again.
 func TestLostNodeRoomsArePlacedAgain(t *testing.T) {
 	clock := testkit.NewClock(time.Date(2026, 11, 27, 9, 0, 0, 0, time.UTC))
 	kv := testkit.NewKeyValueStore(clock)
@@ -73,14 +74,15 @@ func TestLostNodeRoomsArePlacedAgain(t *testing.T) {
 	rs := &rooms{state: map[string]appvoice.MediaRoom{}}
 	hub := stream.NewHub(stream.HubOptions{})
 	first := newNodeEnvOn(t, "node-1", sfu.NewRegistry(reach, clock), reg, clock, rs, hub)
+	second := newNodeEnvOn(t, "node-2", reg, reg, clock, rs, hub)
 	rs.set("room-4", appvoice.MediaRoom{Open: true, MaxParticipants: 10, Sessions: []appvoice.MediaSession{
 		{ID: "s-1", AccountID: "a-1", CanSpeak: true},
-		{ID: "s-2", AccountID: "a-2"},
+		{ID: "s-2", AccountID: "a-2", CanSpeak: true},
 	}})
+	// Both nodes reserve nothing: the room goes to the first by ID.
 	if err := first.transport.Open(t.Context(), appvoice.RoomRef{ID: "room-4", MaxParticipants: 10}); err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	old := first.connect(t, "room-4", "s-1", "a-1")
 	connected := func(cs ...*client) func() bool {
 		return func() bool {
 			for _, c := range cs {
@@ -91,41 +93,56 @@ func TestLostNodeRoomsArePlacedAgain(t *testing.T) {
 			return true
 		}
 	}
-	if !testkit.Eventually(t, 10*time.Second, connected(old)) {
-		t.Fatalf("the speaker did not connect to node-1: %s", old.pc.ConnectionState())
+	hearEachOther := func(a, b *client, on *env) {
+		t.Helper()
+		if !testkit.Eventually(t, 10*time.Second, connected(a, b)) {
+			t.Fatalf("not connected to %s: %s, %s", on.node.ID(), a.pc.ConnectionState(), b.pc.ConnectionState())
+		}
+		ctx, stop := context.WithCancel(t.Context())
+		defer stop()
+		go a.speak(ctx, 30)
+		go b.speak(ctx, 30)
+		if !testkit.Eventually(t, 10*time.Second, func() bool { return a.heardFrom("a-2") > 10 && b.heardFrom("a-1") > 10 }) {
+			t.Fatalf("on %s, s-1 heard %d packets of a-2 and s-2 %d of a-1; totals %+v", on.node.ID(), a.heardFrom("a-2"), b.heardFrom("a-1"), on.node.Totals())
+		}
 	}
+	old1 := first.connect(t, "room-4", "s-1", "a-1")
+	old2 := first.connect(t, "room-4", "s-2", "a-2")
+	hearEachOther(old1, old2, first)
 	if a, ok, err := reg.Assignment(t.Context(), "room-4"); err != nil || !ok || a.Node != "node-1" {
 		t.Fatalf("Assignment = %+v, %t, %v, want node-1", a, ok, err)
 	}
 
-	// node-1 is lost: it renews nothing, and its leases expire.
+	// node-1 is lost: it reaches the KeyValueStore no more, its clients lose it, and its leases
+	// expire.
 	reach.cut.Store(true)
+	_ = first.node.Close(context.Background())
+	for _, c := range []*client{old1, old2} {
+		if !testkit.Eventually(t, 10*time.Second, func() bool { return c.pc.ConnectionState() != webrtc.PeerConnectionStateConnected }) {
+			t.Fatalf("a client of the lost node is still connected")
+		}
+		_ = c.pc.Close()
+	}
 	clock.Advance(sfu.LeaseTTL + time.Second)
 	if l, ok, err := reg.Lease(t.Context(), "node-1"); err != nil || ok {
 		t.Fatalf("Lease of the lost node = %+v, %t, %v, want none", l, ok, err)
 	}
-	second := newNodeEnvOn(t, "node-2", reg, reg, clock, rs, hub)
-
-	g, err := second.transport.Grant(t.Context(), appvoice.RoomRef{ID: "room-4"}, appvoice.Session{ID: "s-1", AccountID: "a-1"}, true)
-	if err != nil {
-		t.Fatalf("Grant after the loss: %v", err)
+	// The clock passed the lease of node-2 too, which renews it on its next round.
+	if !testkit.Eventually(t, 2*sfu.LeaseRenewal, func() bool { _, ok, _ := reg.Lease(t.Context(), "node-2"); return ok }) {
+		t.Fatal("node-2 did not renew its lease")
 	}
-	if g.URL != second.url {
-		t.Fatalf("Grant after the loss names %s, want node-2 %s", g.URL, second.url)
+
+	for _, s := range []appvoice.Session{{ID: "s-1", AccountID: "a-1"}, {ID: "s-2", AccountID: "a-2"}} {
+		g, err := second.transport.Grant(t.Context(), appvoice.RoomRef{ID: "room-4"}, s, true)
+		if err != nil {
+			t.Fatalf("Grant of %s after the loss: %v", s.ID, err)
+		}
+		if g.URL != second.url {
+			t.Fatalf("Grant of %s after the loss names %s, want node-2 %s", s.ID, g.URL, second.url)
+		}
 	}
 	if a, ok, err := reg.Assignment(t.Context(), "room-4"); err != nil || !ok || a.Node != "node-2" {
-		t.Fatalf("Assignment after the grant = %+v, %t, %v, want node-2", a, ok, err)
+		t.Fatalf("Assignment after the grants = %+v, %t, %v, want node-2", a, ok, err)
 	}
-	_ = old.pc.Close()
-	speaker := second.connect(t, "room-4", "s-1", "a-1")
-	listener := second.connect(t, "room-4", "s-2", "a-2")
-	if !testkit.Eventually(t, 10*time.Second, connected(speaker, listener)) {
-		t.Fatalf("not connected to node-2: speaker %s, listener %s", speaker.pc.ConnectionState(), listener.pc.ConnectionState())
-	}
-	ctx, stop := context.WithCancel(t.Context())
-	defer stop()
-	go speaker.speak(ctx, 30)
-	if !testkit.Eventually(t, 10*time.Second, func() bool { return listener.heardFrom("a-1") > 10 }) {
-		t.Fatalf("the listener heard %d packets of the speaker on node-2; totals %+v", listener.heardFrom("a-1"), second.node.Totals())
-	}
+	hearEachOther(second.connect(t, "room-4", "s-1", "a-1"), second.connect(t, "room-4", "s-2", "a-2"), second)
 }
