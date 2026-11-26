@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The statuses that reach a streamed timeline after its first page (ADR-0013 §3–§8, §13, ADR-0028 §7): the home
-// timeline and each of the reader's lists. The stream (FR-207) hands what it receives to receiveHomeStatuses and
-// receiveListStatuses, and the break it reports when it connects again to receiveHomeGap and receiveListsGap. While no
+// The statuses that reach a streamed timeline after its first page (ADR-0013 §3–§8, §13, §17, ADR-0028 §7): the home
+// timeline, each of the reader's lists, and the local and federated timelines. The streams (FR-207) hand what they
+// receive to receiveHomeStatuses, receiveListStatuses and receivePublicStatuses, and the break they report when they
+// connect again to receiveHomeGap, receiveListsGap and receivePublicGap. While no
 // screen shows a timeline, a status goes at once to the top of its cached first page, and a break marks it to be read
 // again from its first page. While one shows it, the screen's policy decides at each arrival whether it goes in now;
 // what it does not take is held here, with a break when the held statuses no longer join those loaded (after a
@@ -15,13 +16,16 @@ import { useAppData } from "./provider";
 import { receiveGone, shadowed } from "./shadow";
 import { retryStream } from "./stream-retry";
 import type { Status } from "./statuses";
-import { homeTimelineQuery, listTimelineQuery } from "./timeline";
+import { homeTimelineQuery, listTimelineQuery, publicTimelineQuery, type PublicTimelineKind } from "./timeline";
 
 /** What reached the shown timeline: statuses, as many as would go in now, or a break. */
 export type Arrival = { readonly kind: "statuses"; readonly count: number } | { readonly kind: "gap" };
 
-/** A timeline the stream brings new statuses to: the home timeline, or the reader's list of `list` (its ID). */
-export type StreamedTimeline = "home" | { readonly list: string };
+/**
+ * A timeline a stream brings new statuses to: the home timeline, a public timeline of the instance, or the reader's list
+ * of `list` (its ID).
+ */
+export type StreamedTimeline = "home" | PublicTimelineKind | { readonly list: string };
 
 /** What is held for the shown timeline: the statuses, newest first, and whether they no longer join those loaded. */
 type HeldArrivals = { readonly statuses: readonly Status[]; readonly gap: boolean };
@@ -40,7 +44,7 @@ type Store = {
 const none: HeldArrivals = { statuses: [], gap: false };
 const stores = new WeakMap<AppData, Map<string, Store>>();
 
-const nameOf = (timeline: StreamedTimeline) => (timeline === "home" ? "home" : `list:${timeline.list}`);
+const nameOf = (timeline: StreamedTimeline) => (typeof timeline === "string" ? timeline : `list:${timeline.list}`);
 
 function storesOf(data: AppData): Map<string, Store> {
   let all = stores.get(data);
@@ -64,7 +68,11 @@ function storeOf(data: AppData, timeline: StreamedTimeline): Store {
 
 /** The cache key of a streamed timeline. */
 const queryKeyOf = (data: AppData, timeline: StreamedTimeline) =>
-  timeline === "home" ? homeTimelineQuery(data).queryKey : listTimelineQuery(data, timeline.list).queryKey;
+  timeline === "home"
+    ? homeTimelineQuery(data).queryKey
+    : typeof timeline === "string"
+      ? publicTimelineQuery(data, timeline).queryKey
+      : listTimelineQuery(data, timeline.list).queryKey;
 
 function hold(store: Store, held: HeldArrivals): void {
   store.held = held;
@@ -159,6 +167,11 @@ export function receiveListStatuses(data: AppData, list: string, statuses: reado
   receiveStatuses(data, { list }, statuses);
 }
 
+/** Hands new statuses of the public timeline of `kind` (newest first), from its stream, to the timeline. */
+export function receivePublicStatuses(data: AppData, kind: PublicTimelineKind, statuses: readonly Status[]): void {
+  receiveStatuses(data, kind, statuses);
+}
+
 /**
  * Takes a status that was deleted, from the stream, out of every list and view through the shadow, and out of what
  * every streamed timeline holds: the status and the boosts of it go, and a quote of it shows it deleted.
@@ -203,8 +216,13 @@ export function receiveListsGap(data: AppData): void {
     if (method === "get" && path === "/timelines/list/{id}" && id !== undefined) lists.add(id);
   }
   for (const store of storesOf(data).values())
-    if (store.timeline !== "home" && store.policy) lists.add(store.timeline.list);
+    if (typeof store.timeline !== "string" && store.policy) lists.add(store.timeline.list);
   for (const list of lists) receiveGap(data, { list });
+}
+
+/** Tells the public timeline of `kind` that statuses may have been missed: its stream opened, or connected again. */
+export function receivePublicGap(data: AppData, kind: PublicTimelineKind): void {
+  receiveGap(data, kind);
 }
 
 /** What a screen that shows a streamed timeline holds of what reached it, and how it puts that in. */

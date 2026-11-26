@@ -2,14 +2,23 @@
 
 // A public timeline of the instance (ADR-0110 §11): the local posts, or the posts it knows from every server, each a
 // screen of its own with no tab to the other. A reader without a session reads it while the instance shows it to
-// everyone; the actions of their posts that need an account lead to the sign-in the app gives (`signIn`).
+// everyone; the actions of their posts that need an account lead to the sign-in the app gives (`signIn`). A signed-in
+// reader gets its new posts from its stream while the screen shows it, as on the home timeline (ADR-0013 §3, §17); a
+// visitor, whom the server does not stream to, reads it again by a pull.
 
 import { Column, statusPath, type PostStatus } from "@my/app-components";
-import { publicTimelineQuery, usePublicTimeline, type AppData, type PublicTimelineKind } from "@my/app-data";
+import {
+  publicTimelineQuery,
+  usePublicTimeline,
+  useTimelineStream,
+  type AppData,
+  type PublicTimelineKind,
+} from "@my/app-data";
 import { useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
 import { usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost } from "../post-translation";
+import { useNewPostsColumn } from "./new-posts";
 
 /** What the route's loader waits for: the timeline's first page, from the cache unless a write marked it stale. */
 export async function loadPublicTimeline(data: AppData, kind: PublicTimelineKind): Promise<void> {
@@ -34,6 +43,8 @@ export function PublicTimeline({
   const votingOf = usePostVoting();
   const ownOf = usePostOwn();
   const picker = usePostPicker();
+  useTimelineStream(kind);
+  const newPosts = useNewPostsColumn(kind, signIn === undefined);
   const visitor =
     signIn === undefined
       ? undefined
@@ -44,6 +55,7 @@ export function PublicTimeline({
     <Column
       label={kind === "local" ? t("timeline.local") : t("timeline.federated")}
       {...usePublicTimeline(kind)}
+      {...(signIn === undefined ? newPosts : {})}
       onAction={onAction}
       postProps={(s) => (visitor === undefined ? { voting: votingOf(s), own: ownOf(s), picker } : { signIn: visitor })}
       postAs={TranslatablePost}

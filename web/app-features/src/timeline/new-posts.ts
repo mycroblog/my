@@ -91,10 +91,11 @@ function useNewPosts(timeline: StreamedTimeline, autoInsert: boolean): NewPosts 
 /**
  * What the column of a streamed timeline takes for its new posts, by the reader's `timeline_auto_insert`, and as with
  * it off until their preferences are read: what its feed hears, its button, worded, and what a pull at its top reads.
+ * A visitor (`signedIn` false) has no preferences to read.
  */
-export function useNewPostsColumn(timeline: StreamedTimeline) {
+export function useNewPostsColumn(timeline: StreamedTimeline, signedIn = true) {
   const { t } = stringsIn(useLocale().locale);
-  const autoInsert = usePreferences()?.timeline_auto_insert ?? false;
+  const autoInsert = usePreferences(signedIn)?.timeline_auto_insert ?? false;
   const { onTopChange, onReaderChange, told, onPress, refresh } = useNewPosts(timeline, autoInsert);
   const label =
     told === undefined
