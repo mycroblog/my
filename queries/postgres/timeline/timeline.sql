@@ -576,3 +576,29 @@ INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expir
 SELECT unnest(sqlc.arg(viewer_account_ids)::uuid[]), unnest(sqlc.arg(target_account_ids)::uuid[]), unnest(sqlc.arg(reasons)::text[]),
   NULLIF(unnest(sqlc.arg(expires_ats)::text[]), '')::timestamptz
 ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at;
+
+-- The rows that a rebuild derived (InsertReplayed, ADR-0172 §4), many entries in one statement each
+-- (the unnests of a select list advance together).
+
+-- name: InsertManyFeedEntries :exec
+INSERT INTO feed_entries (
+  id, kind, status_id, author_account_id, author_domain, original_author_account_id,
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+)
+SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(kinds)::text[]), unnest(sqlc.arg(status_ids)::uuid[]),
+  unnest(sqlc.arg(author_account_ids)::uuid[]), unnest(sqlc.arg(author_domains)::text[]),
+  unnest(sqlc.arg(original_author_account_ids)::uuid[]), unnest(sqlc.arg(original_author_domains)::text[]),
+  unnest(sqlc.arg(visibilities)::text[]), unnest(sqlc.arg(is_locals)::boolean[]), unnest(sqlc.arg(languages)::text[]),
+  unnest(sqlc.arg(revision_seqs)::integer[]), unnest(sqlc.arg(is_replies)::boolean[])
+ON CONFLICT (id) DO NOTHING;
+
+-- name: InsertManyFeedDirectRecipients :exec
+INSERT INTO feed_direct_recipients (entry_id, recipient_account_id)
+SELECT unnest(sqlc.arg(entry_ids)::uuid[]), unnest(sqlc.arg(recipient_account_ids)::uuid[])
+ON CONFLICT DO NOTHING;
+
+-- name: InsertManyFeedTagEntries :exec
+INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at)
+SELECT unnest(sqlc.arg(tag_ids)::uuid[]), unnest(sqlc.arg(entry_ids)::uuid[]), unnest(sqlc.arg(author_account_ids)::uuid[]),
+  unnest(sqlc.arg(visibilities)::text[]), unnest(sqlc.arg(is_locals)::boolean[]), unnest(sqlc.arg(revised_ats)::timestamptz[])
+ON CONFLICT DO NOTHING;

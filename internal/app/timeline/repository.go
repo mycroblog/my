@@ -256,6 +256,11 @@ type Repository interface {
 	// ones out (deleting a row that drops to zero), and reads LastUsedAt of every tag of both
 	// again from the tag entries.
 	ReplaceTags(ctx context.Context, tx uow.Tx, e Entry, tagIDs []string, revisedAt time.Time) error
+	// InsertReplayed writes the rows that a rebuild derived, in a number of statements that does
+	// not grow with them (ADR-0172 §4): the entries, their direct recipients, and their tag
+	// entries, skipping a row whose key exists, then adds usage[tag] posts to the usage of each
+	// tag and reads its LastUsedAt again from the tag entries, as ReplaceTags does.
+	InsertReplayed(ctx context.Context, tx uow.Tx, entries []Entry, recipients []DirectRecipient, tags []TagEntry, usage map[string]int64) error
 	// UpsertFollowEdge stores e, replacing the pair's edge.
 	UpsertFollowEdge(ctx context.Context, tx uow.Tx, e FollowEdge) error
 	// UpsertFollowEdges is UpsertFollowEdge of each of es.

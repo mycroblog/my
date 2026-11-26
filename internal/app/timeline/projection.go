@@ -364,14 +364,17 @@ func GraphSource(repo appgraph.Repository) Source {
 }
 
 // RebuildProjections empties the projections of Projection and derives them again, in one
-// transaction, by applying this module's projectors to the events that sources replay.
+// transaction, by applying this module's projectors to the events that sources replay, whose
+// writes a replayBatch gathers.
 // The restrictions are left alone: RebuildRestrictions derives them. The lists
 // are not projections and stay, but a member whose follow the rebuilt feed_follow_edges no longer
 // holds leaves them, as the end of the follow would have taken it out.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository, sources ...Source) error {
-	projectors := &uow.Projectors{}
-	RegisterProjectors(projectors, repo, nil)
 	err := u.Tx(ctx, func(tx uow.Tx) error {
+		// The projectors write through a batch, a few statements for many rows (ADR-0172 §4).
+		batch := newReplayBatch(repo)
+		projectors := &uow.Projectors{}
+		RegisterProjectors(projectors, batch, nil)
 		if err := repo.DeleteProjection(ctx, tx); err != nil {
 			return err
 		}
@@ -380,7 +383,7 @@ func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository, 
 				return err
 			}
 		}
-		return repo.DeleteListMembersWithoutFollow(ctx, tx)
+		return batch.DeleteListMembersWithoutFollow(ctx, tx)
 	})
 	if err != nil {
 		return fmt.Errorf("rebuild the feed projections: %w", err)

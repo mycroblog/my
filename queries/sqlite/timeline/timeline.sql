@@ -582,3 +582,30 @@ INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expir
 SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
 FROM json_each(CAST(sqlc.arg(exclusions) AS TEXT)) WHERE true
 ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at;
+
+-- The rows that a rebuild derived (InsertReplayed), many entries in one statement each,
+-- JSON arrays; WHERE true keeps ON CONFLICT from reading as a join constraint.
+
+-- name: InsertManyFeedEntries :exec
+INSERT INTO feed_entries (
+  id, kind, status_id, author_account_id, author_domain, original_author_account_id,
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+)
+SELECT value ->> '$.id', value ->> '$.kind', value ->> '$.status_id', value ->> '$.author_account_id', value ->> '$.author_domain',
+  value ->> '$.original_author_account_id', value ->> '$.original_author_domain', value ->> '$.visibility',
+  value ->> '$.is_local', value ->> '$.language', value ->> '$.revision_seq', value ->> '$.is_reply'
+FROM json_each(CAST(sqlc.arg(entries) AS TEXT)) WHERE true
+ON CONFLICT (id) DO NOTHING;
+
+-- name: InsertManyFeedDirectRecipients :exec
+INSERT INTO feed_direct_recipients (entry_id, recipient_account_id)
+SELECT value ->> '$.entry_id', value ->> '$.recipient_account_id'
+FROM json_each(CAST(sqlc.arg(recipients) AS TEXT)) WHERE true
+ON CONFLICT (recipient_account_id, entry_id) DO NOTHING;
+
+-- name: InsertManyFeedTagEntries :exec
+INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at)
+SELECT value ->> '$.tag_id', value ->> '$.entry_id', value ->> '$.author_account_id', value ->> '$.visibility',
+  value ->> '$.is_local', value ->> '$.revised_at'
+FROM json_each(CAST(sqlc.arg(tags) AS TEXT)) WHERE true
+ON CONFLICT (tag_id, entry_id) DO NOTHING;

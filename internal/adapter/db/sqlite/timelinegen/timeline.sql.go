@@ -593,6 +593,51 @@ func (q *Queries) InsertListMember(ctx context.Context, arg InsertListMemberPara
 	return result.RowsAffected()
 }
 
+const insertManyFeedDirectRecipients = `-- name: InsertManyFeedDirectRecipients :exec
+INSERT INTO feed_direct_recipients (entry_id, recipient_account_id)
+SELECT value ->> '$.entry_id', value ->> '$.recipient_account_id'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (recipient_account_id, entry_id) DO NOTHING
+`
+
+func (q *Queries) InsertManyFeedDirectRecipients(ctx context.Context, recipients string) error {
+	_, err := q.db.ExecContext(ctx, insertManyFeedDirectRecipients, recipients)
+	return err
+}
+
+const insertManyFeedEntries = `-- name: InsertManyFeedEntries :exec
+
+INSERT INTO feed_entries (
+  id, kind, status_id, author_account_id, author_domain, original_author_account_id,
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+)
+SELECT value ->> '$.id', value ->> '$.kind', value ->> '$.status_id', value ->> '$.author_account_id', value ->> '$.author_domain',
+  value ->> '$.original_author_account_id', value ->> '$.original_author_domain', value ->> '$.visibility',
+  value ->> '$.is_local', value ->> '$.language', value ->> '$.revision_seq', value ->> '$.is_reply'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (id) DO NOTHING
+`
+
+// The rows that a rebuild derived (InsertReplayed), many entries in one statement each,
+// JSON arrays; WHERE true keeps ON CONFLICT from reading as a join constraint.
+func (q *Queries) InsertManyFeedEntries(ctx context.Context, entries string) error {
+	_, err := q.db.ExecContext(ctx, insertManyFeedEntries, entries)
+	return err
+}
+
+const insertManyFeedTagEntries = `-- name: InsertManyFeedTagEntries :exec
+INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at)
+SELECT value ->> '$.tag_id', value ->> '$.entry_id', value ->> '$.author_account_id', value ->> '$.visibility',
+  value ->> '$.is_local', value ->> '$.revised_at'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (tag_id, entry_id) DO NOTHING
+`
+
+func (q *Queries) InsertManyFeedTagEntries(ctx context.Context, tags string) error {
+	_, err := q.db.ExecContext(ctx, insertManyFeedTagEntries, tags)
+	return err
+}
+
 const listAllFeedDirectRecipients = `-- name: ListAllFeedDirectRecipients :many
 SELECT entry_id, recipient_account_id FROM feed_direct_recipients ORDER BY entry_id, recipient_account_id
 `

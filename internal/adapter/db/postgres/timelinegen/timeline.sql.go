@@ -614,6 +614,99 @@ func (q *Queries) InsertListMember(ctx context.Context, arg InsertListMemberPara
 	return result.RowsAffected(), nil
 }
 
+const insertManyFeedDirectRecipients = `-- name: InsertManyFeedDirectRecipients :exec
+INSERT INTO feed_direct_recipients (entry_id, recipient_account_id)
+SELECT unnest($1::uuid[]), unnest($2::uuid[])
+ON CONFLICT DO NOTHING
+`
+
+type InsertManyFeedDirectRecipientsParams struct {
+	EntryIds            []string
+	RecipientAccountIds []string
+}
+
+func (q *Queries) InsertManyFeedDirectRecipients(ctx context.Context, arg InsertManyFeedDirectRecipientsParams) error {
+	_, err := q.db.Exec(ctx, insertManyFeedDirectRecipients, arg.EntryIds, arg.RecipientAccountIds)
+	return err
+}
+
+const insertManyFeedEntries = `-- name: InsertManyFeedEntries :exec
+
+INSERT INTO feed_entries (
+  id, kind, status_id, author_account_id, author_domain, original_author_account_id,
+  original_author_domain, visibility, is_local, language, revision_seq, is_reply
+)
+SELECT unnest($1::uuid[]), unnest($2::text[]), unnest($3::uuid[]),
+  unnest($4::uuid[]), unnest($5::text[]),
+  unnest($6::uuid[]), unnest($7::text[]),
+  unnest($8::text[]), unnest($9::boolean[]), unnest($10::text[]),
+  unnest($11::integer[]), unnest($12::boolean[])
+ON CONFLICT (id) DO NOTHING
+`
+
+type InsertManyFeedEntriesParams struct {
+	Ids                      []string
+	Kinds                    []string
+	StatusIds                []string
+	AuthorAccountIds         []string
+	AuthorDomains            []string
+	OriginalAuthorAccountIds []string
+	OriginalAuthorDomains    []string
+	Visibilities             []string
+	IsLocals                 []bool
+	Languages                []string
+	RevisionSeqs             []int32
+	IsReplies                []bool
+}
+
+// The rows that a rebuild derived (InsertReplayed, ADR-0172 §4), many entries in one statement each
+// (the unnests of a select list advance together).
+func (q *Queries) InsertManyFeedEntries(ctx context.Context, arg InsertManyFeedEntriesParams) error {
+	_, err := q.db.Exec(ctx, insertManyFeedEntries,
+		arg.Ids,
+		arg.Kinds,
+		arg.StatusIds,
+		arg.AuthorAccountIds,
+		arg.AuthorDomains,
+		arg.OriginalAuthorAccountIds,
+		arg.OriginalAuthorDomains,
+		arg.Visibilities,
+		arg.IsLocals,
+		arg.Languages,
+		arg.RevisionSeqs,
+		arg.IsReplies,
+	)
+	return err
+}
+
+const insertManyFeedTagEntries = `-- name: InsertManyFeedTagEntries :exec
+INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at)
+SELECT unnest($1::uuid[]), unnest($2::uuid[]), unnest($3::uuid[]),
+  unnest($4::text[]), unnest($5::boolean[]), unnest($6::timestamptz[])
+ON CONFLICT DO NOTHING
+`
+
+type InsertManyFeedTagEntriesParams struct {
+	TagIds           []string
+	EntryIds         []string
+	AuthorAccountIds []string
+	Visibilities     []string
+	IsLocals         []bool
+	RevisedAts       []time.Time
+}
+
+func (q *Queries) InsertManyFeedTagEntries(ctx context.Context, arg InsertManyFeedTagEntriesParams) error {
+	_, err := q.db.Exec(ctx, insertManyFeedTagEntries,
+		arg.TagIds,
+		arg.EntryIds,
+		arg.AuthorAccountIds,
+		arg.Visibilities,
+		arg.IsLocals,
+		arg.RevisedAts,
+	)
+	return err
+}
+
 const listAllFeedDirectRecipients = `-- name: ListAllFeedDirectRecipients :many
 SELECT entry_id, recipient_account_id FROM feed_direct_recipients ORDER BY entry_id, recipient_account_id
 `
