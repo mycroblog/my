@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"syscall"
@@ -20,6 +21,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/voice/sfu"
+	"github.com/mycroblog/my/internal/adapter/voice/sfu/node"
 	"github.com/mycroblog/my/internal/adapter/voice/sfu/node/nodetest"
 	"github.com/mycroblog/my/internal/app/stream"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
@@ -132,6 +134,9 @@ type measured struct {
 	heap, stacks int64
 	cpu          float64 // CPU-seconds per second
 	forwarded    float64 // packets per second
+	// connected is the time from the start of the clients' process to every client connected,
+	// and offerMedian and offerMax the time from a join to its first offer (OfferWait).
+	connected, offerMedian, offerMax time.Duration
 }
 
 // TestMeasureCost measures a media node on loopback: the memory of an idle node, of a room and of
@@ -178,14 +183,15 @@ func TestMeasureCost(t *testing.T) {
 		order = append(order, s)
 	}
 	var out strings.Builder
-	fmt.Fprintf(&out, "\n| load | heap | stacks | forwarded packets/s | CPU-seconds/s | µs of CPU per forwarded packet |\n|---|---|---|---|---|---|\n")
+	fmt.Fprintf(&out, "\n| load | heap | stacks | forwarded packets/s | CPU-seconds/s | µs of CPU per forwarded packet | all connected | first offer, median and last |\n|---|---|---|---|---|---|---|---|\n")
 	for _, s := range order {
 		m := results[s]
 		per := "-"
 		if m.forwarded > 0 {
 			per = fmt.Sprintf("%.1f", m.cpu/m.forwarded*1e6)
 		}
-		fmt.Fprintf(&out, "| %s | %s | %s | %.0f | %.3f | %s |\n", s, kib(m.heap), kib(m.stacks), m.forwarded, m.cpu, per)
+		fmt.Fprintf(&out, "| %s | %s | %s | %.0f | %.3f | %s | %s | %s, %s |\n", s, kib(m.heap), kib(m.stacks), m.forwarded, m.cpu, per,
+			m.connected.Round(time.Millisecond), m.offerMedian.Round(time.Millisecond), m.offerMax.Round(time.Millisecond))
 	}
 	t.Log(out.String())
 }
@@ -247,6 +253,8 @@ func measureScenario(t *testing.T, e *env, rs *rooms, s scenario, idle int) meas
 	if err != nil {
 		t.Fatal(err)
 	}
+	waits := len(e.meter.Measurements(node.OfferWait.Name, nil))
+	started := time.Now()
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -276,6 +284,7 @@ func measureScenario(t *testing.T, e *env, rs *rooms, s scenario, idle int) meas
 	case <-time.After(60 * time.Second):
 		t.Fatalf("%s: the clients did not connect within a minute", s)
 	}
+	connected := time.Since(started)
 	n := s.rooms * s.participants
 	if !testkit.Eventually(t, 10*time.Second, func() bool { return e.node.Sessions() == n }) {
 		t.Fatalf("%s: Sessions = %d, want %d", s, e.node.Sessions(), n)
@@ -287,7 +296,16 @@ func measureScenario(t *testing.T, e *env, rs *rooms, s scenario, idle int) meas
 	cpu1, at1, fwd1 := cpuTime(t), time.Now(), e.node.Totals().Forwarded
 	heap1, stacks1 := footprint()
 	wall := at1.Sub(at0).Seconds()
-	m := measured{cpu: (cpu1 - cpu0).Seconds() / wall, forwarded: float64(fwd1-fwd0) / wall}
+	m := measured{cpu: (cpu1 - cpu0).Seconds() / wall, forwarded: float64(fwd1-fwd0) / wall, connected: connected}
+	var offers []float64
+	for _, w := range e.meter.Measurements(node.OfferWait.Name, nil)[waits:] {
+		offers = append(offers, w.Value)
+	}
+	if len(offers) > 0 {
+		slices.Sort(offers)
+		second := func(v float64) time.Duration { return time.Duration(v * float64(time.Second)) }
+		m.offerMedian, m.offerMax = second(offers[len(offers)/2]), second(offers[len(offers)-1])
+	}
 	if tot := e.node.Totals(); tot.QueueFull > 0 {
 		t.Logf("%s: %d packets dropped for a full queue", s, tot.QueueFull)
 	}
@@ -307,8 +325,9 @@ func measureScenario(t *testing.T, e *env, rs *rooms, s scenario, idle int) meas
 	settle(t, idle, s.String()+", after")
 	heap2, stacks2 := footprint()
 	m.heap, m.stacks = heap1-heap2, stacks1-stacks2
-	t.Logf("%s: heap %s, stacks %s (%s and %s more than before the clients joined), %.0f forwarded packets/s, %.3f CPU-seconds/s",
-		s, kib(m.heap), kib(m.stacks), kib(heap1-heap0), kib(stacks1-stacks0), m.forwarded, m.cpu)
+	t.Logf("%s: heap %s, stacks %s (%s and %s more than before the clients joined), %.0f forwarded packets/s, %.3f CPU-seconds/s; all connected in %s, first offers in %s (median) to %s",
+		s, kib(m.heap), kib(m.stacks), kib(heap1-heap0), kib(stacks1-stacks0), m.forwarded, m.cpu,
+		m.connected.Round(time.Millisecond), m.offerMedian.Round(time.Millisecond), m.offerMax.Round(time.Millisecond))
 	return m
 }
 

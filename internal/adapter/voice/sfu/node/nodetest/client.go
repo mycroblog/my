@@ -10,14 +10,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/pion/ice/v4"
 	"github.com/pion/rtp"
 	"github.com/pion/sdp/v3"
+	"github.com/pion/transport/v5/stdnet"
 	"github.com/pion/webrtc/v4"
 
 	"github.com/mycroblog/my/internal/adapter/voice/sfu/node"
@@ -49,6 +52,10 @@ type Client struct {
 	added       bool
 }
 
+// interfaces is the view of the network interfaces that every client of the process shares, as
+// the node's connections do: each would list them again otherwise.
+var interfaces = sync.OnceValues(stdnet.NewNet)
+
 // Connect connects session to the node at url with ticket, and fails the test when the
 // WebSocket does not open.
 func Connect(t testing.TB, url, ticket, session string) *Client {
@@ -66,8 +73,18 @@ func Dial(t testing.TB, url, ticket, session string) (*Client, error) {
 	if err := node.RegisterCodecs(engine); err != nil {
 		return nil, err
 	}
+	nw, err := interfaces()
+	if err != nil {
+		return nil, err
+	}
 	var se webrtc.SettingEngine
+	se.SetNet(nw)
+	// The nodes of the tests are on loopback: a client gathers there only, with no mDNS, as the
+	// sockets of the other interfaces (one per interface and client) only slowed a burst of
+	// clients in one process and never connected.
 	se.SetIncludeLoopbackCandidate(true)
+	se.SetICEMulticastDNSMode(ice.MulticastDNSModeDisabled)
+	se.SetIPFilter(func(ip net.IP) bool { return ip.IsLoopback() })
 	se.SetNetworkTypes([]webrtc.NetworkType{webrtc.NetworkTypeUDP4})
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(engine), webrtc.WithSettingEngine(se))
 	pc, err := api.NewPeerConnection(webrtc.Configuration{})
