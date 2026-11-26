@@ -84,7 +84,7 @@ describe("the language", () => {
     const app = await opened("/lists", { preferences: japanese });
     await reads("ja", lists.ja);
 
-    await updatePreferences(app.data, { locale: "fr" });
+    await updatePreferences(app.data, { locale: "it" });
     await reads("en", lists.en);
 
     await updatePreferences(app.data, { locale: "ja-JP" });
@@ -102,7 +102,7 @@ describe("the language", () => {
     const app = await opened("/lists", { locale: "ja", preferences: { locale: "en", locale_follows_browser: false } });
     await reads("en", lists.en);
 
-    await updatePreferences(app.data, { locale: "fr" });
+    await updatePreferences(app.data, { locale: "it" });
     await reads("ja", lists.ja);
   });
 
