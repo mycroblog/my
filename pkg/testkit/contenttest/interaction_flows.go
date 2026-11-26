@@ -53,6 +53,7 @@ func InteractionFlows(t *testing.T, newHarness InteractionFactory) {
 		{"BoostsAndRetracts", interactionBoosts},
 		{"BoostsCopyVisibility", interactionBoostsCopyVisibility},
 		{"FavouritesAndUnfavourites", interactionFavourites},
+		{"PagesMarkedStatusesAtOnce", interactionPagesMarkedStatusesAtOnce},
 		{"ReactsInTheLikeSlot", interactionReactsInTheLikeSlot},
 		{"BookmarksAndPins", interactionBookmarksAndPins},
 		{"LimitsConcurrentPins", interactionLimitsConcurrentPins},
@@ -458,6 +459,74 @@ func interactionFavourites(t *testing.T, e *interactionEnv) {
 	}
 	if _, err := e.h.Interactions.FindFavourite(ctx, fan, s.ID); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindFavourite after Unfavourite = %v, want ErrNotFound", err)
+	}
+}
+
+// countingStatuses counts the reads of one status's current revision, which a page of statuses
+// makes for all of them at once.
+type countingStatuses struct {
+	appcontent.Repository
+	mu    sync.Mutex
+	reads int
+}
+
+func (c *countingStatuses) FindCurrentRevision(ctx context.Context, statusID string) (content.Revision, error) {
+	c.mu.Lock()
+	c.reads++
+	c.mu.Unlock()
+	return c.Repository.FindCurrentRevision(ctx, statusID)
+}
+
+// interactionPagesMarkedStatusesAtOnce checks that the pages of the favourites and the bookmarks
+// (FR-107, FR-113) present their statuses newest mark first, with the cursor of the next page,
+// reading the statuses for the page at once: no status is read alone, however many the page holds.
+func interactionPagesMarkedStatusesAtOnce(t *testing.T, e *interactionEnv) {
+	ctx := t.Context()
+	author, fan := e.localAccount(), e.localAccount()
+	var posts []string
+	for range 5 {
+		posts = append(posts, e.post(t, author, content.VisibilityPublic).ID)
+	}
+	for _, id := range posts {
+		if _, err := e.svc.Favourite(ctx, fan, id); err != nil {
+			t.Fatal(err)
+		}
+		if err := e.svc.Bookmark(ctx, fan, id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	statuses := &countingStatuses{Repository: e.h.Statuses}
+	reader := appcontent.NewReader(appcontent.ReaderDeps{
+		Statuses: statuses, Interactions: e.h.Interactions, Accounts: e.actors, Relationships: e.relations, Clock: e.Clock,
+	})
+	viewer := appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: fan}
+	ids := func(views []appcontent.StatusView) []string {
+		out := make([]string, 0, len(views))
+		for _, v := range views {
+			out = append(out, v.Status.ID)
+		}
+		return out
+	}
+	want := []string{posts[4], posts[3], posts[2], posts[1]}
+	favs, err := reader.Favourites(ctx, viewer, "", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := ids(favs.Statuses); !reflect.DeepEqual(got, want) || favs.Next == "" {
+		t.Errorf("Favourites = %v, next %q; want %v and a next page", got, favs.Next, want)
+	}
+	if rest, err := reader.Favourites(ctx, viewer, favs.Next, 4); err != nil || !reflect.DeepEqual(ids(rest.Statuses), posts[:1]) || rest.Next != "" {
+		t.Errorf("Favourites(next) = %v, next %q, %v; want %v and no next page", ids(rest.Statuses), rest.Next, err, posts[:1])
+	}
+	marks, err := reader.Bookmarks(ctx, viewer, "", 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := ids(marks.Statuses); !reflect.DeepEqual(got, want) || marks.Next == "" {
+		t.Errorf("Bookmarks = %v, next %q; want %v and a next page", got, marks.Next, want)
+	}
+	if statuses.reads != 0 {
+		t.Errorf("the pages read %d statuses' revisions one at a time, want none", statuses.reads)
 	}
 }
 
