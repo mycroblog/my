@@ -232,7 +232,9 @@ const form = tv({
       "aria-invalid:outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
     alert: [
-      "rounded-overlay bg-text p-form-page-alert-padding",
+      // The body's size and leading, not the font's `normal`, which the fallback fonts set to the size alone: lines
+      // that wrap keep the body's air between them.
+      "rounded-overlay bg-text p-form-page-alert-padding text-body",
       "text-surface outline-hidden focus-visible:shadow-focus [word-break:auto-phrase]",
     ],
     othersHeading: "text-caption font-normal text-muted-text",

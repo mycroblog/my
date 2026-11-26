@@ -72,6 +72,7 @@ import {
   Spoken,
   Stack,
   TextButton,
+  TextLink,
   useLocale,
   type PickerEmoji,
   type Reaction,
@@ -327,14 +328,15 @@ function About({ room, t }: { room: VoiceRoom; t: T }) {
 /**
  * What a room in the call says while more people are in it than its maximum, after its maximum was lowered; null
  * while it is not. Its host reads how to let new people join, while the maximum in force is the one they set (below
- * the server's); everyone else, and the host under the server's lower maximum, reads that no one was removed.
+ * the server's), and the way to Room settings after it (`host`); everyone else, and the host under the server's lower
+ * maximum, reads that no one was removed.
  */
-function useOverMax(state: VoiceCallState | null, t: T): string | null {
+function useOverMax(state: VoiceCallState | null, t: T): { words: string; host: boolean } | null {
   const serverMax = useInstance()?.voice_max_participants;
   if (state === null || state.room.participants_count <= state.room.max_participants) return null;
   const max = state.room.max_participants;
-  const own = state.self?.hosting === true && serverMax !== undefined && max < serverMax;
-  return t("voice.over_max", { reader: own ? "host" : "other", max });
+  const host = state.self?.hosting === true && serverMax !== undefined && max < serverMax;
+  return { words: t("voice.over_max", { reader: host ? "host" : "other", max }), host };
 }
 
 /** A line of what the call goes through, for the eye: the live region says it to assistive technology. */
@@ -447,12 +449,13 @@ function BeforeJoin({
       <Participants room={room} live={undefined} t={t} />
       <FrameFoot>
         <div ref={foot}>
-          <Stack gap="entry-line">
-            <Box as="p" dir="auto">
+          {/* One group: its lines at the body's leading, as far apart as a group's parts are. */}
+          <Stack gap="screen-field-gap">
+            <Box as="p" text="body" dir="auto">
               {t("voice.join_note")}
             </Box>
             {other !== null && other.roomId !== room.id && (
-              <Box as="p" tone="muted" dir="auto">
+              <Box as="p" text="body" tone="muted" dir="auto">
                 {t("voice.join_moves", { room: other.room.name })}
               </Box>
             )}
@@ -750,8 +753,17 @@ function InRoom({
       {report.dialog}
       <About room={room} t={t} />
       {overMax !== null && (
-        <FormAlert regular announce={false}>
-          {overMax}
+        <FormAlert
+          regular
+          announce={false}
+          action={
+            // The host's sentence leads to where the maximum is raised, as the room's menu does.
+            overMax.host ? (
+              <TextLink href={voiceRoomSettingsPath(room.id)}>{t("voice.settings.title")}</TextLink>
+            ) : undefined
+          }
+        >
+          {overMax.words}
         </FormAlert>
       )}
       {callStatus(state, t).map((words) => (
@@ -982,7 +994,7 @@ export function VoiceRoomScreen({
   const status = [
     ...(endSaid === null || inIt ? [] : [endSaid]),
     ...(inIt ? callStatus(state, t) : []),
-    ...(overMax === null ? [] : [overMax]),
+    ...(overMax === null ? [] : [overMax.words]),
   ];
   const page = (() => {
     if (off) return <FeedNotice lead>{t("voice.off")}</FeedNotice>;
