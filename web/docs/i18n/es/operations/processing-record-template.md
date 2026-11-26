@@ -36,7 +36,7 @@ Si ejecutas una instancia por cuenta de otra persona, puedes ser su encargado de
 | Software | my, versión {{VERSIÓN}} |
 | Última revisión | {{FECHA, POR QUIÉN}} |
 
-<!-- source: recipients-used-in-this-record 8f1748f022f5 -->
+<!-- source: recipients-used-in-this-record a09123befeea -->
 ### Destinatarios usados en este registro
 
 Estos nombres se usan en las actividades que siguen. Enumera cada uno de los que uses.
@@ -52,7 +52,7 @@ Estos nombres se usan en las actividades que siguen. Enumera cada uno de los que
 | {{IF payments}} Proveedor de pagos (Stripe o PAY.JP) | {{...}} | {{...}} |
 | {{IF error reports}} Rastreador de errores | {{...}} | {{...}} |
 | {{IF telemetry}} Servicio de métricas y trazas | {{...}} | {{...}} |
-| {{IF voice}} Servidor multimedia de voz, STUN y TURN | {{...}} | {{...}} |
+| {{IF voice}} Servicio STUN y TURN (coturn o Cloudflare); los nodos multimedia de `voice = sfu` forman parte del alojamiento | {{...}} | {{...}} |
 | {{IF webhooks}} Receptores de webhooks | {{...}} | {{...}} |
 | {{IF follow review}} Servicio de revisión de seguimientos | {{...}} | {{...}} |
 | {{IF sign-up review}} Servicio de revisión de registros | {{...}} | {{...}} |
